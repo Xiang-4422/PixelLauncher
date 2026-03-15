@@ -36,6 +36,9 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.render.GlyphStyle
+import com.purride.pixellauncherv2.render.HorizontalPageController
+import com.purride.pixellauncherv2.render.HorizontalPageSnapshot
+import com.purride.pixellauncherv2.render.HorizontalPageState
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.render.PixelDisplayView
 import com.purride.pixellauncherv2.render.PixelFontEngine
@@ -97,6 +100,19 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private var drawerRailDragLastY: Int = 0
     private var drawerRailDragAccumulatorPx: Float = 0f
     private var drawerRailPixelsPerApp: Float = 1f
+    private val horizontalPageController = HorizontalPageController()
+    private var horizontalPageState: HorizontalPageState = horizontalPageController.create(
+        pageCount = pagerPageCount,
+        currentIndex = pagerHomeIndex,
+    )
+    private var pagerDragTracking = false
+    private var pagerDragConsumed = false
+    private var pagerDragLastX = 0
+    private var pagerDragLastY = 0
+    private var pagerDragStartX = 0
+    private var pagerDragStartY = 0
+    private var pagerDragLastUptimeMs: Long = 0L
+    private var pagerDragVelocityPxPerSecond: Float = 0f
 
     private val clockTicker = object : Runnable {
         override fun run() {
@@ -116,7 +132,15 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             if (!shouldRunAnimationTicker()) {
                 return
             }
+            val wasPagerSettling = horizontalPageState.isSettling
+            horizontalPageState = horizontalPageController.step(
+                state = horizontalPageState,
+                deltaMs = LauncherAnimationState.frameDelayMs,
+            )
             animationState = animationState.nextFrame()
+            if (wasPagerSettling && !horizontalPageState.isSettling) {
+                applyPagerSettledMode(horizontalPageState.currentIndex)
+            }
             renderCurrentFrame()
             if (shouldRunAnimationTicker()) {
                 mainHandler.postDelayed(this, LauncherAnimationState.frameDelayMs)
@@ -364,6 +388,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
     override fun onPause() {
         hideDrawerKeyboard()
+        resetPagerDragTracking()
         if (::drawerInputProxy.isInitialized) {
             drawerInputProxy.clearFocus()
         }
@@ -565,83 +590,158 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         if (wakeIfIdle()) {
             return true
         }
-        if (state.mode != LauncherMode.APP_DRAWER) {
+        resetPagerDragTracking()
+
+        if (state.mode == LauncherMode.APP_DRAWER) {
+            val railHit = AppListLayout.hitTestIndexRailLetter(
+                screenProfile = screenProfile,
+                logicalX = x,
+                logicalY = y,
+            ) != null
+            if (railHit) {
+                recordInteraction()
+                if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
+                    state = LauncherStateTransitions.exitDrawerSearch(
+                        state = state,
+                        visibleRows = visibleRows(),
+                    )
+                }
+                state = state.copy(isDrawerRailSliding = true)
+                drawerRailDragLastY = y
+                drawerRailDragAccumulatorPx = 0f
+                drawerRailPixelsPerApp = resolveRailPixelsPerApp(currentDrawerApps().size)
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+                updateDrawerInputFocus()
+                return true
+            }
+        }
+
+        if (!canHandlePagerNavigation()) {
             return false
         }
-        AppListLayout.hitTestIndexRailLetter(
-            screenProfile = screenProfile,
-            logicalX = x,
-            logicalY = y,
-        ) ?: return false
-
-        recordInteraction()
-        if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
-            state = LauncherStateTransitions.exitDrawerSearch(
-                state = state,
-                visibleRows = visibleRows(),
-            )
-        }
-        state = state.copy(isDrawerRailSliding = true)
-        drawerRailDragLastY = y
-        drawerRailDragAccumulatorPx = 0f
-        drawerRailPixelsPerApp = resolveRailPixelsPerApp(currentDrawerApps().size)
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
-        updateDrawerInputFocus()
-        return true
+        pagerDragTracking = true
+        pagerDragConsumed = false
+        pagerDragStartX = x
+        pagerDragStartY = y
+        pagerDragLastX = x
+        pagerDragLastY = y
+        pagerDragLastUptimeMs = SystemClock.uptimeMillis()
+        pagerDragVelocityPxPerSecond = 0f
+        return false
     }
 
     override fun onLogicalDragMove(x: Int, y: Int): Boolean {
-        if (state.mode != LauncherMode.APP_DRAWER || !state.isDrawerRailSliding) {
-            return false
-        }
-        recordInteraction()
-        val deltaY = y - drawerRailDragLastY
-        drawerRailDragLastY = y
-        if (deltaY == 0) {
+        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
+            recordInteraction()
+            val deltaY = y - drawerRailDragLastY
+            drawerRailDragLastY = y
+            if (deltaY == 0) {
+                return true
+            }
+            val dragResult = DrawerRailDragMapper.consumeDrag(
+                accumulatedPx = drawerRailDragAccumulatorPx,
+                deltaPx = deltaY.toFloat(),
+                pixelsPerApp = drawerRailPixelsPerApp,
+            )
+            drawerRailDragAccumulatorPx = dragResult.accumulatedPx
+
+            var moved = false
+            val stepDirection = when {
+                dragResult.stepDelta > 0 -> 1
+                dragResult.stepDelta < 0 -> -1
+                else -> 0
+            }
+            repeat(kotlin.math.abs(dragResult.stepDelta)) {
+                state = LauncherStateTransitions.moveSelection(
+                    state = state,
+                    delta = stepDirection,
+                    visibleRows = visibleRows(),
+                )
+                moved = true
+            }
+            if (moved) {
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+            }
             return true
         }
-        val dragResult = DrawerRailDragMapper.consumeDrag(
-            accumulatedPx = drawerRailDragAccumulatorPx,
-            deltaPx = deltaY.toFloat(),
-            pixelsPerApp = drawerRailPixelsPerApp,
-        )
-        drawerRailDragAccumulatorPx = dragResult.accumulatedPx
 
-        var moved = false
-        val stepDirection = when {
-            dragResult.stepDelta > 0 -> 1
-            dragResult.stepDelta < 0 -> -1
-            else -> 0
+        if (!pagerDragTracking || !canHandlePagerNavigation()) {
+            return false
         }
-        repeat(kotlin.math.abs(dragResult.stepDelta)) {
-            state = LauncherStateTransitions.moveSelection(
-                state = state,
-                delta = stepDirection,
-                visibleRows = visibleRows(),
+
+        val now = SystemClock.uptimeMillis()
+        val deltaX = x - pagerDragLastX
+        val deltaY = y - pagerDragLastY
+        pagerDragLastX = x
+        pagerDragLastY = y
+
+        if (!pagerDragConsumed) {
+            val totalDx = x - pagerDragStartX
+            val totalDy = y - pagerDragStartY
+            if (kotlin.math.abs(totalDx) < pagerDragStartThresholdPx) {
+                return false
+            }
+            if (kotlin.math.abs(totalDx) <= kotlin.math.abs(totalDy) * pagerDragAxisBias) {
+                return false
+            }
+            val currentPageIndex = pagerIndexForMode(state.mode) ?: return false
+            horizontalPageState = horizontalPageController.syncToIndex(
+                state = horizontalPageState,
+                targetIndex = currentPageIndex,
             )
-            moved = true
+            horizontalPageState = horizontalPageController.startDrag(horizontalPageState)
+            pagerDragConsumed = true
         }
-        if (moved) {
-            renderCurrentFrame()
-            startAnimationTickerIfNeeded()
+        if (!pagerDragConsumed) {
+            return false
         }
+
+        recordInteraction()
+        horizontalPageState = horizontalPageController.dragBy(
+            state = horizontalPageState,
+            deltaPx = deltaX.toFloat(),
+            pageWidth = screenProfile.logicalWidth,
+        )
+        val elapsedMs = (now - pagerDragLastUptimeMs).coerceAtLeast(1L)
+        if (deltaX != 0) {
+            pagerDragVelocityPxPerSecond = (deltaX.toFloat() * 1000f) / elapsedMs.toFloat()
+        }
+        pagerDragLastUptimeMs = now
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
         return true
     }
 
     override fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean {
-        if (state.mode != LauncherMode.APP_DRAWER || !state.isDrawerRailSliding) {
+        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
+            recordInteraction()
+            state = state.copy(isDrawerRailSliding = false)
+            drawerRailDragLastY = y
+            drawerRailDragAccumulatorPx = 0f
+            drawerRailPixelsPerApp = 1f
+            renderCurrentFrame()
+            startAnimationTickerIfNeeded()
+            updateDrawerInputFocus()
+            return true
+        }
+        if (!pagerDragTracking) {
             return false
         }
-        recordInteraction()
-        state = state.copy(isDrawerRailSliding = false)
-        drawerRailDragLastY = y
-        drawerRailDragAccumulatorPx = 0f
-        drawerRailPixelsPerApp = 1f
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
-        updateDrawerInputFocus()
-        return true
+        val consumed = pagerDragConsumed
+        if (consumed) {
+            recordInteraction()
+            horizontalPageState = horizontalPageController.endDrag(
+                state = horizontalPageState,
+                pageWidth = screenProfile.logicalWidth,
+                velocityPxPerSecond = if (cancelled) 0f else pagerDragVelocityPxPerSecond,
+            )
+            renderCurrentFrame()
+            startAnimationTickerIfNeeded()
+        }
+        resetPagerDragTracking()
+        return consumed
     }
 
     override fun onSwipeUp() {
@@ -689,16 +789,14 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             return
         }
         recordInteraction()
+        if (animatePagerBy(deltaPages = -1)) {
+            return
+        }
         when (state.mode) {
-            LauncherMode.HOME -> openSettingsMenu()
-            LauncherMode.APP_DRAWER -> {
-                state = LauncherStateTransitions.showHome(state)
-                renderCurrentFrame()
-                startAnimationTickerIfNeeded()
-                updateDrawerInputFocus()
-            }
-            LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS,
+            LauncherMode.HOME,
+            LauncherMode.APP_DRAWER,
+            LauncherMode.SETTINGS,
             LauncherMode.IDLE -> Unit
         }
     }
@@ -711,10 +809,13 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             return
         }
         recordInteraction()
+        if (animatePagerBy(deltaPages = 1)) {
+            return
+        }
         when (state.mode) {
-            LauncherMode.SETTINGS -> closeSettingsMenu()
             LauncherMode.DIAGNOSTICS -> closeDiagnostics()
-            LauncherMode.HOME -> showAppDrawer()
+            LauncherMode.SETTINGS,
+            LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE -> Unit
         }
@@ -785,10 +886,13 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun renderCurrentFrame() {
+        syncPagerIndexToMode()
+        val pagerSnapshot = activePagerSnapshot()
         val pixelBuffer = pixelRenderer.render(
             state = state,
             screenProfile = screenProfile,
             animationState = animationState,
+            pagerSnapshot = pagerSnapshot,
         )
         pixelDisplayView.submitFrame(
             pixelBuffer = pixelBuffer,
@@ -825,6 +929,119 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         } else {
             metrics.visibleRows
         }
+    }
+
+    private fun syncPagerIndexToMode() {
+        val modeIndex = pagerIndexForMode(state.mode) ?: return
+        if (horizontalPageController.isActive(horizontalPageState)) {
+            return
+        }
+        horizontalPageState = horizontalPageController.syncToIndex(
+            state = horizontalPageState,
+            targetIndex = modeIndex,
+        )
+    }
+
+    private fun activePagerSnapshot(): HorizontalPageSnapshot? {
+        if (!horizontalPageController.isActive(horizontalPageState)) {
+            return null
+        }
+        return horizontalPageController.snapshot(horizontalPageState)
+    }
+
+    private fun pagerIndexForMode(mode: LauncherMode): Int? {
+        return when (mode) {
+            LauncherMode.SETTINGS -> pagerSettingsIndex
+            LauncherMode.HOME -> pagerHomeIndex
+            LauncherMode.APP_DRAWER -> pagerAppsIndex
+            LauncherMode.DIAGNOSTICS,
+            LauncherMode.IDLE -> null
+        }
+    }
+
+    private fun pagerModeForIndex(index: Int): LauncherMode? {
+        return when (index) {
+            pagerSettingsIndex -> LauncherMode.SETTINGS
+            pagerHomeIndex -> LauncherMode.HOME
+            pagerAppsIndex -> LauncherMode.APP_DRAWER
+            else -> null
+        }
+    }
+
+    private fun isPagerMode(mode: LauncherMode): Boolean {
+        return pagerIndexForMode(mode) != null
+    }
+
+    private fun canHandlePagerNavigation(): Boolean {
+        if (!isPagerMode(state.mode)) {
+            return false
+        }
+        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused) {
+            return false
+        }
+        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
+            return false
+        }
+        return true
+    }
+
+    private fun applyPagerSettledMode(pageIndex: Int) {
+        val targetMode = pagerModeForIndex(pageIndex) ?: return
+        if (state.mode == targetMode) {
+            return
+        }
+        val drawerRows = AppListLayout.centeredVisibleRows(screenProfile)
+        state = when (targetMode) {
+            LauncherMode.HOME -> LauncherStateTransitions.showHome(state)
+            LauncherMode.SETTINGS -> LauncherStateTransitions.showSettings(state)
+            LauncherMode.APP_DRAWER -> LauncherStateTransitions.showAppDrawer(
+                state = LauncherStateTransitions.clearDrawerQuery(
+                    state = state,
+                    visibleRows = drawerRows,
+                ),
+                visibleRows = drawerRows,
+            ).copy(
+                isDrawerSearchFocused = false,
+                isDrawerRailSliding = false,
+            )
+
+            LauncherMode.DIAGNOSTICS,
+            LauncherMode.IDLE -> state
+        }
+        updateDrawerInputFocus()
+        scheduleIdleCheck()
+    }
+
+    private fun animatePagerBy(deltaPages: Int): Boolean {
+        if (!canHandlePagerNavigation()) {
+            return false
+        }
+        val currentIndex = pagerIndexForMode(state.mode) ?: return false
+        horizontalPageState = horizontalPageController.syncToIndex(
+            state = horizontalPageState,
+            targetIndex = currentIndex,
+        )
+        horizontalPageState = horizontalPageController.startDrag(horizontalPageState)
+        horizontalPageState = horizontalPageController.dragBy(
+            state = horizontalPageState,
+            deltaPx = if (deltaPages > 0) screenProfile.logicalWidth.toFloat() else -screenProfile.logicalWidth.toFloat(),
+            pageWidth = screenProfile.logicalWidth,
+        )
+        horizontalPageState = horizontalPageController.endDrag(
+            state = horizontalPageState,
+            pageWidth = screenProfile.logicalWidth,
+            velocityPxPerSecond = 0f,
+        )
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+        return true
+    }
+
+    private fun resetPagerDragTracking() {
+        pagerDragTracking = false
+        pagerDragConsumed = false
+        pagerDragVelocityPxPerSecond = 0f
+        pagerDragLastUptimeMs = 0L
     }
 
     private fun showAppDrawer() {
@@ -1127,7 +1344,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         return animationState.hasActiveAnimations ||
             shouldAnimateHeaderCharge() ||
             shouldAnimateHomeMarquee() ||
-            shouldAnimateDrawerCursor()
+            shouldAnimateDrawerCursor() ||
+            horizontalPageState.isSettling
     }
 
     private fun shouldAnimateDrawerCursor(): Boolean {
@@ -1345,6 +1563,12 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private companion object {
         const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
+        const val pagerSettingsIndex = 0
+        const val pagerHomeIndex = 1
+        const val pagerAppsIndex = 2
+        const val pagerPageCount = 3
+        const val pagerDragStartThresholdPx = 2
+        const val pagerDragAxisBias = 1.1f
         const val idleFixedStepMs: Long = 16L
         const val idleFixedStepSeconds: Float = idleFixedStepMs / 1000f
         const val idleTickerDelayMs: Long = 16L

@@ -27,6 +27,81 @@ class PixelRenderer(
         state: LauncherState,
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
+        pagerSnapshot: HorizontalPageSnapshot? = null,
+    ): PixelBuffer {
+        val bootBuffer = PixelBuffer(
+            width = screenProfile.logicalWidth,
+            height = screenProfile.logicalHeight,
+        )
+        bootBuffer.clear()
+
+        val bootSequence = animationState.bootSequence
+        if (bootSequence != null) {
+            drawBootSequence(bootBuffer, screenProfile, bootSequence)
+            return bootBuffer
+        }
+
+        val pageBuffer = if (pagerSnapshot == null) {
+            renderSingleMode(
+                state = state,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                mode = state.mode,
+            )
+        } else {
+            renderPagerSnapshot(
+                state = state,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                pagerSnapshot = pagerSnapshot,
+            )
+        }
+        applyLaunchShutterOverlay(pageBuffer, animationState.launchShutter)
+        return pageBuffer
+    }
+
+    private fun renderPagerSnapshot(
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+        pagerSnapshot: HorizontalPageSnapshot,
+    ): PixelBuffer {
+        val anchorMode = pagerModeForIndex(pagerSnapshot.anchorPageIndex) ?: state.mode
+        val anchorPage = renderSingleMode(
+            state = state,
+            screenProfile = screenProfile,
+            animationState = animationState,
+            mode = anchorMode,
+        )
+
+        val dragOffset = pagerSnapshot.dragOffsetPx
+        if (kotlin.math.abs(dragOffset) < pagerCompositionThresholdPx) {
+            return anchorPage
+        }
+        val adjacentMode = adjacentPagerMode(
+            anchorIndex = pagerSnapshot.anchorPageIndex,
+            dragOffsetPx = dragOffset,
+            pageCount = pagerSnapshot.pageCount,
+        ) ?: return anchorPage
+        val adjacentPage = renderSingleMode(
+            state = state,
+            screenProfile = screenProfile,
+            animationState = animationState,
+            mode = adjacentMode,
+        )
+        return HorizontalPageRenderer.compose(
+            currentPage = anchorPage,
+            adjacentPage = adjacentPage,
+            dragOffsetPx = dragOffset,
+            contentStartY = LauncherHeaderLayout.contentTop,
+        )
+    }
+
+    private fun renderSingleMode(
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+        mode: LauncherMode,
     ): PixelBuffer {
         val buffer = PixelBuffer(
             width = screenProfile.logicalWidth,
@@ -34,25 +109,43 @@ class PixelRenderer(
         )
         buffer.clear()
 
-        val bootSequence = animationState.bootSequence
-        if (bootSequence != null) {
-            drawBootSequence(buffer, screenProfile, bootSequence)
-            return buffer
+        val modeState = if (state.mode == mode) state else state.copy(mode = mode)
+        when (mode) {
+            LauncherMode.HOME -> drawHome(buffer, modeState, screenProfile, animationState)
+            LauncherMode.APP_DRAWER -> drawAppDrawer(buffer, modeState, screenProfile, animationState)
+            LauncherMode.SETTINGS -> drawSettings(buffer, modeState, screenProfile, animationState)
+            LauncherMode.DIAGNOSTICS -> drawDiagnostics(buffer, modeState, screenProfile, animationState)
+            LauncherMode.IDLE -> drawIdle(buffer, modeState, screenProfile)
         }
-
-        when (state.mode) {
-            LauncherMode.HOME -> drawHome(buffer, state, screenProfile, animationState)
-            LauncherMode.APP_DRAWER -> drawAppDrawer(buffer, state, screenProfile, animationState)
-            LauncherMode.SETTINGS -> drawSettings(buffer, state, screenProfile, animationState)
-            LauncherMode.DIAGNOSTICS -> drawDiagnostics(buffer, state, screenProfile, animationState)
-            LauncherMode.IDLE -> drawIdle(buffer, state, screenProfile)
-        }
-
-        if (state.mode == LauncherMode.APP_DRAWER) {
+        if (mode == LauncherMode.APP_DRAWER) {
             applyDrawerRevealOverlay(buffer, animationState.drawerReveal)
         }
-        applyLaunchShutterOverlay(buffer, animationState.launchShutter)
         return buffer
+    }
+
+    private fun pagerModeForIndex(index: Int): LauncherMode? {
+        return when (index) {
+            pagerSettingsIndex -> LauncherMode.SETTINGS
+            pagerHomeIndex -> LauncherMode.HOME
+            pagerAppsIndex -> LauncherMode.APP_DRAWER
+            else -> null
+        }
+    }
+
+    private fun adjacentPagerMode(
+        anchorIndex: Int,
+        dragOffsetPx: Float,
+        pageCount: Int,
+    ): LauncherMode? {
+        val adjacentIndex = if (dragOffsetPx > 0f) {
+            anchorIndex - 1
+        } else {
+            anchorIndex + 1
+        }
+        if (adjacentIndex !in 0 until pageCount) {
+            return null
+        }
+        return pagerModeForIndex(adjacentIndex)
     }
 
     private fun drawHome(
@@ -1053,6 +1146,10 @@ class PixelRenderer(
         const val drawerCursorBottomInset: Int = 1
         const val drawerRailBaseEmphasisCopies: Int = 1
         const val drawerRailSlidingEmphasisCopies: Int = 3
+        const val pagerSettingsIndex: Int = 0
+        const val pagerHomeIndex: Int = 1
+        const val pagerAppsIndex: Int = 2
+        const val pagerCompositionThresholdPx: Float = 0.5f
     }
 
     private fun drawHorizontalLine(

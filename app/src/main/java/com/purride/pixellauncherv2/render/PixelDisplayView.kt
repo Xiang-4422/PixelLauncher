@@ -148,17 +148,15 @@ class PixelDisplayView @JvmOverloads constructor(
                 if (!touchActive) {
                     return true
                 }
-                if (!dragConsumed) {
-                    return true
-                }
                 val profile = screenProfile ?: return true
                 val logicalPoint = mapTouchToLogical(event.x, event.y, profile) ?: return true
                 lastLogicalX = logicalPoint.first
                 lastLogicalY = logicalPoint.second
-                dragConsumed = interactionListener?.onLogicalDragMove(
+                val moveConsumed = interactionListener?.onLogicalDragMove(
                     x = logicalPoint.first,
                     y = logicalPoint.second,
                 ) == true
+                dragConsumed = dragConsumed || moveConsumed
                 return true
             }
 
