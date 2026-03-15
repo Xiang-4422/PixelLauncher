@@ -70,5 +70,6 @@ class SettingsMenuModelTest {
 
         assertTrue(SettingsMenuItem.THEME in rowItems)
         assertTrue(SettingsMenuItem.ADVANCED in rowItems)
+        assertEquals(5, rowItems.size)
     }
 }

@@ -638,7 +638,6 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             SettingsMenuItem.STYLE -> changeSettingValue(1)
             SettingsMenuItem.THEME -> changeSettingValue(1)
             SettingsMenuItem.ADVANCED -> openDiagnostics()
-            SettingsMenuItem.CLOSE -> closeSettingsMenu()
         }
     }
 
@@ -687,12 +686,6 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             SettingsMenuItem.ADVANCED -> {
                 if (direction >= 0) {
                     openDiagnostics()
-                }
-            }
-
-            SettingsMenuItem.CLOSE -> {
-                if (direction >= 0) {
-                    closeSettingsMenu()
                 }
             }
         }

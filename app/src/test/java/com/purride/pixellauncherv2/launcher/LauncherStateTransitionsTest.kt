@@ -168,6 +168,32 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showDiagnosticsKeepsExistingReturnModeForSettingsExit() {
+        val state = LauncherState(
+            mode = LauncherMode.SETTINGS,
+            returnMode = LauncherMode.HOME,
+        )
+
+        val diagnosticsState = LauncherStateTransitions.showDiagnostics(state)
+
+        assertEquals(LauncherMode.DIAGNOSTICS, diagnosticsState.mode)
+        assertEquals(LauncherMode.HOME, diagnosticsState.returnMode)
+    }
+
+    @Test
+    fun hideSettingsFallsBackToHomeWhenReturnModeIsInvalid() {
+        val state = LauncherState(
+            mode = LauncherMode.SETTINGS,
+            returnMode = LauncherMode.SETTINGS,
+        )
+
+        val contentState = LauncherStateTransitions.hideSettings(state)
+
+        assertEquals(LauncherMode.HOME, contentState.mode)
+        assertEquals(LauncherMode.HOME, contentState.returnMode)
+    }
+
+    @Test
     fun updateAppearanceStoresSelectedResolutionPreset() {
         val updatedState = LauncherStateTransitions.updateAppearance(
             state = LauncherState(),

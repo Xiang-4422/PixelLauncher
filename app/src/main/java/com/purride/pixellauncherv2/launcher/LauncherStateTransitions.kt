@@ -29,14 +29,22 @@ object LauncherStateTransitions {
     }
 
     fun hideSettings(state: LauncherState): LauncherState {
-        return state.copy(mode = state.returnMode)
+        val fallbackMode = when (state.returnMode) {
+            LauncherMode.HOME,
+            LauncherMode.APP_DRAWER,
+            LauncherMode.IDLE -> state.returnMode
+
+            LauncherMode.SETTINGS,
+            LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
+        }
+        return state.copy(
+            mode = fallbackMode,
+            returnMode = fallbackMode,
+        )
     }
 
     fun showDiagnostics(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.DIAGNOSTICS,
-            returnMode = LauncherMode.SETTINGS,
-        )
+        return state.copy(mode = LauncherMode.DIAGNOSTICS)
     }
 
     fun hideDiagnostics(state: LauncherState): LauncherState {

@@ -13,7 +13,6 @@ enum class SettingsMenuItem {
     STYLE,
     THEME,
     ADVANCED,
-    CLOSE,
 }
 
 data class SettingsMenuRow(
@@ -59,11 +58,6 @@ object SettingsMenuModel {
                 item = SettingsMenuItem.ADVANCED,
                 title = "ADVANCED",
                 value = "OPEN",
-            ),
-            SettingsMenuRow(
-                item = SettingsMenuItem.CLOSE,
-                title = "CLOSE",
-                value = "BACK",
             ),
         )
     }
