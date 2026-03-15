@@ -6,6 +6,7 @@ import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppListLayoutMetrics
 import com.purride.pixellauncherv2.launcher.DiagnosticsLine
 import com.purride.pixellauncherv2.launcher.DiagnosticsModel
+import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
@@ -59,7 +60,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
     ) {
-        val layout = HomeLayout.metrics(screenProfile)
+        val layoutMetrics = HomeLayout.metrics(screenProfile)
         drawHeader(
             buffer = buffer,
             screenProfile = screenProfile,
@@ -68,29 +69,112 @@ class PixelRenderer(
             chargeTick = animationState.headerChargeTick,
         )
 
-        when {
-            state.isLoading -> drawCenteredText(
+        val dateLine = pixelFontEngine.trimToWidth(
+            text = state.currentDateText.ifBlank { "--- --" },
+            style = GlyphStyle.UI_SMALL_10,
+            maxWidth = layoutMetrics.innerWidth,
+        )
+        if (dateLine.isNotEmpty()) {
+            drawTextAsValue(
                 buffer = buffer,
-                text = "Loading",
-                y = layout.titleY,
-                style = GlyphStyle.APP_LABEL_16,
+                text = dateLine,
+                startX = layoutMetrics.innerLeft,
+                startY = layoutMetrics.dateY,
+                maxWidth = layoutMetrics.innerWidth,
+                style = GlyphStyle.UI_SMALL_10,
+                value = PixelBuffer.ACCENT,
             )
+        }
 
-            state.apps.isEmpty() -> drawCenteredText(
+        val weekdayLine = pixelFontEngine.trimToWidth(
+            text = state.currentWeekdayText.ifBlank { "-------" },
+            style = GlyphStyle.UI_SMALL_10,
+            maxWidth = layoutMetrics.innerWidth,
+        )
+        if (weekdayLine.isNotEmpty()) {
+            drawTextAsValue(
                 buffer = buffer,
-                text = "No apps",
-                y = layout.titleY,
-                style = GlyphStyle.APP_LABEL_16,
+                text = weekdayLine,
+                startX = layoutMetrics.innerLeft,
+                startY = layoutMetrics.weekdayY,
+                maxWidth = layoutMetrics.innerWidth,
+                style = GlyphStyle.UI_SMALL_10,
+                value = PixelBuffer.ON,
             )
+        }
 
-            else -> {
-                drawCenteredText(
-                    buffer = buffer,
-                    text = state.terminalStatusText,
-                    y = layout.statusY,
+        val fixedInfoLines = listOf(
+            "ALARM ${state.nextAlarmText.ifBlank { "--:--" }}",
+            "CALL ${state.missedCallCount}  SMS ${state.unreadSmsCount}",
+            "RAIN ${state.rainHintText.ifBlank { "--" }}",
+            "24H ${state.screenOnTrack24h.ifBlank { "........" }}",
+            "YDAY ${state.yesterdayScreenOnCount}  ${state.terminalStatusText.ifBlank { "READY" }}",
+        )
+        var detailY = layoutMetrics.fixedInfoStartY
+        fixedInfoLines.forEach { line ->
+            if (detailY + GlyphStyle.UI_SMALL_10.cellHeight <= layoutMetrics.fixedBottom) {
+                val trimmedLine = pixelFontEngine.trimToWidth(
+                    text = line,
                     style = GlyphStyle.UI_SMALL_10,
+                    maxWidth = layoutMetrics.innerWidth,
                 )
+                if (trimmedLine.isNotEmpty()) {
+                    pixelFontEngine.drawText(
+                        buffer = buffer,
+                        text = trimmedLine,
+                        startX = layoutMetrics.innerLeft,
+                        startY = detailY,
+                        maxWidth = layoutMetrics.innerWidth,
+                        style = GlyphStyle.UI_SMALL_10,
+                    )
+                }
             }
+            detailY += layoutMetrics.fixedInfoRowHeight
+        }
+
+        val contextBody = homeContextBody(state)
+        if (contextBody.isNotEmpty()) {
+            if (state.homeContextCard == HomeContextCard.QUOTE) {
+                drawMarqueeTextAsValue(
+                    buffer = buffer,
+                    text = contextBody,
+                    startX = layoutMetrics.innerLeft,
+                    startY = layoutMetrics.stackCardBodyY,
+                    maxWidth = layoutMetrics.innerWidth,
+                    style = GlyphStyle.UI_SMALL_10,
+                    value = PixelBuffer.ACCENT,
+                    tick = animationState.headerChargeTick,
+                )
+            } else {
+                val trimmedContextBody = pixelFontEngine.trimToWidth(
+                    text = contextBody,
+                    style = GlyphStyle.UI_SMALL_10,
+                    maxWidth = layoutMetrics.innerWidth,
+                )
+                if (trimmedContextBody.isNotEmpty()) {
+                    drawTextAsValue(
+                        buffer = buffer,
+                        text = trimmedContextBody,
+                        startX = layoutMetrics.innerLeft,
+                        startY = layoutMetrics.stackCardBodyY,
+                        maxWidth = layoutMetrics.innerWidth,
+                        style = GlyphStyle.UI_SMALL_10,
+                        value = PixelBuffer.ACCENT,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun homeContextBody(state: LauncherState): String {
+        if (state.isLoading) {
+            return "Loading context"
+        }
+        return when (state.homeContextCard) {
+            HomeContextCard.QUOTE -> state.quoteText
+            HomeContextCard.MEDIA -> "No media now"
+            HomeContextCard.NOTIFICATIONS -> "No priority notice"
+            HomeContextCard.TODO -> "No TODO source"
         }
     }
 
@@ -678,20 +762,70 @@ class PixelRenderer(
         }
     }
 
-    private fun drawRectOutline(
+    private fun drawMarqueeTextAsValue(
         buffer: PixelBuffer,
-        left: Int,
-        top: Int,
-        right: Int,
-        bottom: Int,
-        value: Byte = PixelBuffer.ON,
+        text: String,
+        startX: Int,
+        startY: Int,
+        maxWidth: Int,
+        style: GlyphStyle,
+        value: Byte,
+        tick: Int,
     ) {
-        drawHorizontalLine(buffer, left, right, top, value)
-        drawHorizontalLine(buffer, left, right, bottom, value)
-        for (drawY in top..bottom) {
-            buffer.setPixel(left, drawY, value)
-            buffer.setPixel(right, drawY, value)
+        if (text.isEmpty() || maxWidth <= 0) {
+            return
         }
+
+        val staticWidth = pixelFontEngine.measureText(text, style)
+        if (staticWidth <= maxWidth) {
+            drawTextAsValue(
+                buffer = buffer,
+                text = text,
+                startX = startX,
+                startY = startY,
+                maxWidth = maxWidth,
+                style = style,
+                value = value,
+            )
+            return
+        }
+
+        val separator = "   "
+        val scrollBase = text + separator
+        val loopText = scrollBase + text
+        val scrollSpan = pixelFontEngine.measureText(scrollBase, style).coerceAtLeast(1)
+        val loopWidth = pixelFontEngine.measureText(loopText, style).coerceAtLeast(maxWidth)
+        val slowTick = tick / marqueeStepFramesPerPixel
+        val offset = slowTick % scrollSpan
+
+        val strip = PixelBuffer(
+            width = loopWidth,
+            height = style.cellHeight,
+        )
+        pixelFontEngine.drawText(
+            buffer = strip,
+            text = loopText,
+            startX = 0,
+            startY = 0,
+            maxWidth = strip.width,
+            style = style,
+        )
+
+        for (y in 0 until strip.height) {
+            for (x in 0 until maxWidth) {
+                val sourceX = x + offset
+                if (sourceX >= strip.width) {
+                    continue
+                }
+                if (strip.getPixel(sourceX, y) == PixelBuffer.ON) {
+                    buffer.setPixel(startX + x, startY + y, value)
+                }
+            }
+        }
+    }
+
+    private companion object {
+        const val marqueeStepFramesPerPixel: Int = 5
     }
 
     private fun drawHorizontalLine(

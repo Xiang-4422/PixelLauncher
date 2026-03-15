@@ -238,8 +238,17 @@ object LauncherStateTransitions {
         )
     }
 
-    fun updateTime(state: LauncherState, currentTimeText: String): LauncherState {
-        return state.copy(currentTimeText = currentTimeText)
+    fun updateTime(
+        state: LauncherState,
+        currentTimeText: String,
+        currentDateText: String = state.currentDateText,
+        currentWeekdayText: String = state.currentWeekdayText,
+    ): LauncherState {
+        return state.copy(
+            currentTimeText = currentTimeText,
+            currentDateText = currentDateText,
+            currentWeekdayText = currentWeekdayText,
+        )
     }
 
     fun updateAppearance(

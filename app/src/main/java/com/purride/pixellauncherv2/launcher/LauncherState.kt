@@ -15,6 +15,8 @@ data class LauncherState(
     val drawerFocus: DrawerFocus = DrawerFocus.LIST,
     val isLoading: Boolean = true,
     val currentTimeText: String = "",
+    val currentDateText: String = "",
+    val currentWeekdayText: String = "",
     val mode: LauncherMode = LauncherMode.HOME,
     val returnMode: LauncherMode = LauncherMode.HOME,
     val settingsSelectedIndex: Int = 0,
@@ -29,8 +31,23 @@ data class LauncherState(
     val launchCount: Int = 0,
     val lastLaunchPackageName: String? = null,
     val terminalStatusText: String = "",
+    val nextAlarmText: String = "--:--",
+    val missedCallCount: Int = 0,
+    val unreadSmsCount: Int = 0,
+    val rainHintText: String = "--",
+    val screenOnTrack24h: String = "........",
+    val yesterdayScreenOnCount: Int = 0,
+    val quoteText: String = "BREATHE, FOCUS ON ONE THING, AND LET THE REST WAIT.",
+    val homeContextCard: HomeContextCard = HomeContextCard.QUOTE,
     val idleFluidState: IdleFluidState = IdleFluidState(),
 )
+
+enum class HomeContextCard {
+    QUOTE,
+    MEDIA,
+    NOTIFICATIONS,
+    TODO,
+}
 
 enum class DrawerFocus {
     LIST,

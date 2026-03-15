@@ -17,12 +17,15 @@ import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppDrawerIndexModel
+import com.purride.pixellauncherv2.launcher.HomeContextCard
+import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
+import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.render.PixelDisplayView
 import com.purride.pixellauncherv2.render.PixelFontEngine
@@ -85,6 +88,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             state = LauncherStateTransitions.updateTime(
                 state = state,
                 currentTimeText = timeTextProvider.currentTimeText(),
+                currentDateText = timeTextProvider.currentDateText(),
+                currentWeekdayText = timeTextProvider.currentWeekdayText(),
             )
             refreshDerivedUiState(render = true)
             mainHandler.postDelayed(this, timeTextProvider.millisUntilNextMinute())
@@ -173,7 +178,12 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         )
         state = LauncherStateTransitions.updateStats(state, launcherStatsRepository.read())
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
-        state = LauncherStateTransitions.updateTime(state, timeTextProvider.currentTimeText())
+        state = LauncherStateTransitions.updateTime(
+            state = state,
+            currentTimeText = timeTextProvider.currentTimeText(),
+            currentDateText = timeTextProvider.currentDateText(),
+            currentWeekdayText = timeTextProvider.currentWeekdayText(),
+        )
         refreshDerivedUiState(render = false)
 
         pixelRenderer = PixelRenderer(pixelFontEngine)
@@ -206,6 +216,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     LauncherMode.APP_DRAWER -> {
                         state = LauncherStateTransitions.showHome(state)
                         renderCurrentFrame()
+                        startAnimationTickerIfNeeded()
                     }
 
                     LauncherMode.IDLE -> wakeFromIdle()
@@ -448,6 +459,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             if (state.drawerPageIndex == 0) {
                 state = LauncherStateTransitions.showHome(state)
                 renderCurrentFrame()
+                startAnimationTickerIfNeeded()
             } else {
                 pageDrawer(-1)
             }
@@ -503,6 +515,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 state = LauncherStateTransitions.updateTime(
                     state = state,
                     currentTimeText = timeTextProvider.currentTimeText(),
+                    currentDateText = timeTextProvider.currentDateText(),
+                    currentWeekdayText = timeTextProvider.currentWeekdayText(),
                 )
                 state = LauncherStateTransitions.withApps(
                     previous = state,
@@ -610,6 +624,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private fun closeSettingsMenu() {
         state = LauncherStateTransitions.hideSettings(state)
         renderCurrentFrame()
+        startAnimationTickerIfNeeded()
         scheduleIdleCheck()
     }
 
@@ -719,7 +734,19 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun shouldRunAnimationTicker(): Boolean {
-        return animationState.hasActiveAnimations || shouldAnimateHeaderCharge()
+        return animationState.hasActiveAnimations ||
+            shouldAnimateHeaderCharge() ||
+            shouldAnimateHomeMarquee()
+    }
+
+    private fun shouldAnimateHomeMarquee(): Boolean {
+        if (state.mode != LauncherMode.HOME || state.homeContextCard != HomeContextCard.QUOTE) {
+            return false
+        }
+        val quote = state.quoteText.ifBlank { return false }
+        val homeLayout = HomeLayout.metrics(screenProfile)
+        val quoteWidth = pixelFontEngine.measureText(quote, GlyphStyle.UI_SMALL_10)
+        return quoteWidth > homeLayout.innerWidth
     }
 
     private fun shouldAnimateHeaderCharge(): Boolean {

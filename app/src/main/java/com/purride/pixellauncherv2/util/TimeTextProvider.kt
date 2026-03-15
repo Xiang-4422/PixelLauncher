@@ -10,10 +10,20 @@ class TimeTextProvider(
     locale: Locale = Locale.getDefault(),
 ) {
 
-    private val formatter = SimpleDateFormat("HH:mm", locale)
+    private val timeFormatter = SimpleDateFormat("HH:mm", locale)
+    private val dateFormatter = SimpleDateFormat("MMM dd", Locale.ENGLISH)
+    private val weekdayFormatter = SimpleDateFormat("EEEE", Locale.ENGLISH)
 
     fun currentTimeText(nowMillis: Long = System.currentTimeMillis()): String {
-        return formatter.format(Date(nowMillis))
+        return timeFormatter.format(Date(nowMillis))
+    }
+
+    fun currentDateText(nowMillis: Long = System.currentTimeMillis()): String {
+        return dateFormatter.format(Date(nowMillis)).uppercase(Locale.ENGLISH)
+    }
+
+    fun currentWeekdayText(nowMillis: Long = System.currentTimeMillis()): String {
+        return weekdayFormatter.format(Date(nowMillis)).uppercase(Locale.ENGLISH)
     }
 
     fun millisUntilNextMinute(nowMillis: Long = System.currentTimeMillis()): Long {
