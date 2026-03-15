@@ -46,6 +46,7 @@
 
 ## 文档列表
 
+- [工程分工与工作包 v1](./engineering-work-allocation-v1.md)
 - [Home PRD v1](./home-prd-v1.md)
 - [Drawer PRD v1](./drawer-prd-v1.md)
 - [Idle PRD v1](./idle-prd-v1.md)
@@ -66,5 +67,6 @@
 ## 使用建议
 
 - 工程启动前优先阅读“产品总规约 v1”
+- 排任务和领任务时优先阅读“工程分工与工作包 v1”
 - 模块开发时再进入对应的 Home、Drawer、Idle、Settings 文档
 - 排期和拆分以“MVP 任务拆分”为准
