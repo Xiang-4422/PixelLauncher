@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pixel_background">#FF000000</color>
+    <color name="pixel_on">#FF97FFA7</color>
+    <color name="pixel_off">#FF08250D</color>
+    <color name="pixel_accent">#FFC7FFD0</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

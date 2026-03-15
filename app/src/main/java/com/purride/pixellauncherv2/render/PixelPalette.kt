@@ -1,0 +1,45 @@
+package com.purride.pixellauncherv2.render
+
+import android.graphics.Color
+
+enum class PixelTheme {
+    GREEN_PHOSPHOR,
+    AMBER_CRT,
+    ICE_LCD,
+}
+
+data class PixelPalette(
+    val backgroundColor: Int,
+    val pixelOnColor: Int,
+    val pixelOffColor: Int,
+    val accentColor: Int,
+) {
+    companion object {
+        fun terminalGreen(): PixelPalette = fromTheme(PixelTheme.GREEN_PHOSPHOR)
+
+        fun fromTheme(theme: PixelTheme, isLowBattery: Boolean = false): PixelPalette {
+            return when (theme) {
+                PixelTheme.GREEN_PHOSPHOR -> PixelPalette(
+                    backgroundColor = Color.rgb(0, 0, 0),
+                    pixelOnColor = Color.rgb(151, 255, 167),
+                    pixelOffColor = Color.rgb(8, 37, 13),
+                    accentColor = if (isLowBattery) Color.rgb(118, 178, 120) else Color.rgb(199, 255, 208),
+                )
+
+                PixelTheme.AMBER_CRT -> PixelPalette(
+                    backgroundColor = Color.rgb(8, 3, 0),
+                    pixelOnColor = Color.rgb(255, 191, 92),
+                    pixelOffColor = Color.rgb(46, 25, 5),
+                    accentColor = if (isLowBattery) Color.rgb(185, 128, 58) else Color.rgb(255, 225, 164),
+                )
+
+                PixelTheme.ICE_LCD -> PixelPalette(
+                    backgroundColor = Color.rgb(3, 8, 14),
+                    pixelOnColor = Color.rgb(184, 237, 255),
+                    pixelOffColor = Color.rgb(12, 34, 47),
+                    accentColor = if (isLowBattery) Color.rgb(122, 173, 188) else Color.rgb(235, 248, 255),
+                )
+            }
+        }
+    }
+}
