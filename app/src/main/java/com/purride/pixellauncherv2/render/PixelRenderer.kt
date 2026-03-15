@@ -186,7 +186,8 @@ class PixelRenderer(
         animationState: LauncherAnimationState,
     ) {
         val drawerApps = resolveDrawerApps(state)
-        val shouldShowApps = state.drawerQuery.isNotBlank() || !state.isDrawerSearchFocused
+        val showPagedSearchResults = state.isDrawerSearchFocused && state.drawerQuery.isNotBlank()
+        val shouldShowApps = showPagedSearchResults || !state.isDrawerSearchFocused
         val layoutMetrics = AppListLayout.metrics(screenProfile)
         val drawerIndexModel = AppDrawerIndexModel.create(
             apps = drawerApps,
@@ -229,7 +230,7 @@ class PixelRenderer(
             )
 
             else -> {
-                if (state.isDrawerSearchFocused) {
+                if (showPagedSearchResults) {
                     drawPagedApps(
                         buffer = buffer,
                         layoutMetrics = layoutMetrics,

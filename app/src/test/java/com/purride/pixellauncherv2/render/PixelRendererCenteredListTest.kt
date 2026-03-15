@@ -33,6 +33,7 @@ class PixelRendererCenteredListTest {
             apps = apps,
             selectedIndex = 0,
             isSearchFocused = false,
+            query = "",
         )
 
         for (row in 0 until centerRow) {
@@ -54,6 +55,7 @@ class PixelRendererCenteredListTest {
             apps = apps,
             selectedIndex = 8,
             isSearchFocused = false,
+            query = "",
         )
 
         val selectedPixels = rowLitPixelCount(buffer, centerRow)
@@ -68,12 +70,13 @@ class PixelRendererCenteredListTest {
         apps: List<AppEntry>,
         selectedIndex: Int,
         isSearchFocused: Boolean,
+        query: String,
     ): PixelBuffer {
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
             apps = apps,
             drawerVisibleApps = apps,
-            drawerQuery = "",
+            drawerQuery = query,
             isDrawerSearchFocused = isSearchFocused,
             selectedIndex = selectedIndex,
             listStartIndex = selectedIndex.coerceAtLeast(0),
@@ -116,6 +119,7 @@ class PixelRendererCenteredListTest {
             apps = apps,
             selectedIndex = 8,
             isSearchFocused = false,
+            query = "",
         )
 
         val firstLitY = firstLitY(buffer)
@@ -139,6 +143,7 @@ class PixelRendererCenteredListTest {
             apps = apps,
             selectedIndex = 8,
             isSearchFocused = false,
+            query = "",
         )
 
         val topGapStart = centeredWindow.rowBottomExclusive(centerRow - 1)
@@ -150,9 +155,9 @@ class PixelRendererCenteredListTest {
     }
 
     private fun firstLitY(buffer: PixelBuffer): Int {
-        val listTop = centeredWindow.listTop
-        val listBottom = centeredWindow.listBottomExclusive
-        for (y in listTop until listBottom.coerceAtMost(buffer.height)) {
+        val listTop = layout.listStartY
+        val listBottom = (layout.listStartY + layout.railHeight).coerceAtMost(buffer.height)
+        for (y in listTop until listBottom) {
             for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(buffer.width)) {
                 if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
                     return y
@@ -174,6 +179,63 @@ class PixelRendererCenteredListTest {
             }
         }
         return true
+    }
+
+    @Test
+    fun searchWithQueryUsesPagedListInsteadOfCenteredList() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val pagedBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            isSearchFocused = true,
+            query = "A",
+        )
+        val centeredBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            isSearchFocused = false,
+            query = "",
+        )
+
+        val pagedFirstLitY = firstLitY(pagedBuffer)
+        val centeredFirstLitY = firstLitY(centeredBuffer)
+
+        assertTrue(pagedFirstLitY < centeredFirstLitY)
+    }
+
+    @Test
+    fun focusedSearchWithoutQueryHidesListArea() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val hiddenListBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            isSearchFocused = true,
+            query = "",
+        )
+
+        var litPixels = 0
+        val listTop = layout.listStartY
+        val listBottom = (layout.listStartY + layout.railHeight).coerceAtMost(hiddenListBuffer.height)
+        for (y in listTop until listBottom) {
+            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(hiddenListBuffer.width)) {
+                if (hiddenListBuffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    litPixels += 1
+                }
+            }
+        }
+        assertTrue(litPixels == 0)
     }
 
     private class BlockGlyphProvider : GlyphProvider {

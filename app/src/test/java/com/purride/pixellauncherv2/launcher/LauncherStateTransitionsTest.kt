@@ -319,4 +319,64 @@ class LauncherStateTransitionsTest {
         assertEquals(2, selectedState.listStartIndex)
         assertEquals(1, selectedState.drawerPageIndex)
     }
+
+    @Test
+    fun exitDrawerSearchClearsQueryAndSearchFlagsWhileStayingInDrawer() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = listOf(
+                AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+                AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
+                AppEntry(label = "Charlie", packageName = "pkg.c", activityName = "C"),
+            ),
+            drawerVisibleApps = listOf(
+                AppEntry(label = "Charlie", packageName = "pkg.c", activityName = "C"),
+            ),
+            drawerQuery = "cha",
+            isDrawerSearchFocused = true,
+            isDrawerRailSliding = true,
+            selectedIndex = 0,
+            listStartIndex = 0,
+        )
+
+        val exitedState = LauncherStateTransitions.exitDrawerSearch(
+            state = state,
+            visibleRows = 3,
+        )
+
+        assertEquals(LauncherMode.APP_DRAWER, exitedState.mode)
+        assertEquals("", exitedState.drawerQuery)
+        assertEquals(false, exitedState.isDrawerSearchFocused)
+        assertEquals(false, exitedState.isDrawerRailSliding)
+        assertEquals(listOf("pkg.a", "pkg.b", "pkg.c"), exitedState.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun exitDrawerSearchWithBlankQueryStillResetsSearchFlags() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = listOf(
+                AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+                AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
+            ),
+            drawerVisibleApps = listOf(
+                AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
+            ),
+            drawerQuery = "",
+            isDrawerSearchFocused = true,
+            isDrawerRailSliding = true,
+            selectedIndex = 0,
+            listStartIndex = 0,
+        )
+
+        val exitedState = LauncherStateTransitions.exitDrawerSearch(
+            state = state,
+            visibleRows = 3,
+        )
+
+        assertEquals("", exitedState.drawerQuery)
+        assertEquals(false, exitedState.isDrawerSearchFocused)
+        assertEquals(false, exitedState.isDrawerRailSliding)
+        assertEquals(listOf("pkg.a", "pkg.b"), exitedState.drawerVisibleApps.map { it.packageName })
+    }
 }

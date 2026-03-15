@@ -332,6 +332,16 @@ object LauncherStateTransitions {
         )
     }
 
+    fun exitDrawerSearch(state: LauncherState, visibleRows: Int): LauncherState {
+        return clearDrawerQuery(
+            state = state,
+            visibleRows = visibleRows,
+        ).copy(
+            isDrawerSearchFocused = false,
+            isDrawerRailSliding = false,
+        )
+    }
+
     fun selectSettingsIndex(state: LauncherState, index: Int): LauncherState {
         val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
         return state.copy(settingsSelectedIndex = index.coerceIn(0, maxIndex))

@@ -305,7 +305,14 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     LauncherMode.SETTINGS -> closeSettingsMenu()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
-                        state = LauncherStateTransitions.showHome(state)
+                        state = if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
+                            LauncherStateTransitions.exitDrawerSearch(
+                                state = state,
+                                visibleRows = visibleRows(),
+                            )
+                        } else {
+                            LauncherStateTransitions.showHome(state)
+                        }
                         renderCurrentFrame()
                         startAnimationTickerIfNeeded()
                         updateDrawerInputFocus()
@@ -485,21 +492,18 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 )
                 if (tappedLetterIndex != null) {
                     if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
-                        state = LauncherStateTransitions.clearDrawerQuery(
+                        state = LauncherStateTransitions.exitDrawerSearch(
                             state = state,
                             visibleRows = visibleRows(),
-                        ).copy(isDrawerSearchFocused = false)
+                        )
                     }
                     selectByRailLetter(tappedLetterIndex)
                     return
                 }
-                if (state.isDrawerSearchFocused) {
-                    state = LauncherStateTransitions.clearDrawerQuery(
+                if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
+                    state = LauncherStateTransitions.exitDrawerSearch(
                         state = state,
                         visibleRows = visibleRows(),
-                    ).copy(
-                        isDrawerSearchFocused = false,
-                        isDrawerRailSliding = false,
                     )
                     renderCurrentFrame()
                     startAnimationTickerIfNeeded()
@@ -572,10 +576,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
         recordInteraction()
         if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
-            state = LauncherStateTransitions.clearDrawerQuery(
+            state = LauncherStateTransitions.exitDrawerSearch(
                 state = state,
                 visibleRows = visibleRows(),
-            ).copy(isDrawerSearchFocused = false)
+            )
         }
         state = state.copy(isDrawerRailSliding = true)
         drawerRailDragLastY = y
@@ -957,12 +961,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             }
 
             KeyEvent.KEYCODE_ESCAPE -> {
-                state = LauncherStateTransitions.clearDrawerQuery(
+                state = LauncherStateTransitions.exitDrawerSearch(
                     state = state,
                     visibleRows = visibleRows(),
-                ).copy(
-                    isDrawerSearchFocused = false,
-                    isDrawerRailSliding = false,
                 )
                 syncDrawerInputProxyText()
                 renderCurrentFrame()
