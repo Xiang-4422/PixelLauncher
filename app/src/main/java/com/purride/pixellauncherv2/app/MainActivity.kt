@@ -653,7 +653,11 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
         recordInteraction()
         when (state.mode) {
-            LauncherMode.APP_DRAWER -> pageDrawer(1)
+            LauncherMode.APP_DRAWER -> {
+                if (!state.isDrawerSearchFocused) {
+                    pageDrawer(1)
+                }
+            }
             LauncherMode.HOME -> Unit
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS,
@@ -670,6 +674,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
         recordInteraction()
         if (state.mode == LauncherMode.APP_DRAWER) {
+            if (state.isDrawerSearchFocused) {
+                return
+            }
             if (state.drawerPageIndex == 0) {
                 state = LauncherStateTransitions.showHome(state)
                 renderCurrentFrame()

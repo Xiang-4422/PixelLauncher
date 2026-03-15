@@ -6,6 +6,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 class PixelRendererCenteredListTest {
 
@@ -71,11 +72,13 @@ class PixelRendererCenteredListTest {
         selectedIndex: Int,
         isSearchFocused: Boolean,
         query: String,
+        drawerVisibleApps: List<AppEntry> = apps,
+        headerChargeTick: Int = 0,
     ): PixelBuffer {
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
             apps = apps,
-            drawerVisibleApps = apps,
+            drawerVisibleApps = drawerVisibleApps,
             drawerQuery = query,
             isDrawerSearchFocused = isSearchFocused,
             selectedIndex = selectedIndex,
@@ -85,7 +88,7 @@ class PixelRendererCenteredListTest {
         return renderer.render(
             state = state,
             screenProfile = screenProfile,
-            animationState = LauncherAnimationState(),
+            animationState = LauncherAnimationState(headerChargeTick = headerChargeTick),
         )
     }
 
@@ -236,6 +239,82 @@ class PixelRendererCenteredListTest {
             }
         }
         assertTrue(litPixels == 0)
+    }
+
+    @Test
+    fun cursorBlinkRemainsVisibleLongerBeforeTogglingOff() {
+        val apps = List(6) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val tick0 = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            isSearchFocused = true,
+            query = "",
+            headerChargeTick = 0,
+        )
+        val tick10 = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            isSearchFocused = true,
+            query = "",
+            headerChargeTick = 10,
+        )
+        val tick14 = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            isSearchFocused = true,
+            query = "",
+            headerChargeTick = 14,
+        )
+
+        val litAt0 = searchBoxLitPixelCount(tick0)
+        val litAt10 = searchBoxLitPixelCount(tick10)
+        val litAt14 = searchBoxLitPixelCount(tick14)
+
+        assertTrue(litAt0 > 0)
+        assertTrue(litAt10 > 0)
+        assertTrue(litAt14 == 0)
+    }
+
+    @Test
+    fun noResultMessageIsCenteredInListArea() {
+        val allApps = listOf(
+            AppEntry(label = "Alpha", packageName = "pkg.alpha", activityName = "A"),
+            AppEntry(label = "Bravo", packageName = "pkg.bravo", activityName = "B"),
+        )
+        val buffer = renderBuffer(
+            apps = allApps,
+            selectedIndex = 0,
+            isSearchFocused = true,
+            query = "zzz",
+            drawerVisibleApps = emptyList(),
+        )
+
+        val firstLitY = firstLitY(buffer)
+        val expectedY = layout.listStartY +
+            ((layout.railHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
+        assertTrue(abs(firstLitY - expectedY) <= 1)
+    }
+
+    private fun searchBoxLitPixelCount(buffer: PixelBuffer): Int {
+        var count = 0
+        val startY = layout.searchTextY.coerceIn(0, buffer.height)
+        val endY = (layout.searchTextY + layout.searchHeight).coerceIn(0, buffer.height)
+        val startX = layout.searchTextX.coerceIn(0, buffer.width)
+        val endX = (layout.searchTextX + layout.searchWidth).coerceIn(0, buffer.width)
+        for (y in startY until endY) {
+            for (x in startX until endX) {
+                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    count += 1
+                }
+            }
+        }
+        return count
     }
 
     private class BlockGlyphProvider : GlyphProvider {

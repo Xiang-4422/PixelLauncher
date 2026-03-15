@@ -224,8 +224,13 @@ class PixelRenderer(
 
             drawerApps.isEmpty() -> drawCenteredText(
                 buffer = buffer,
-                text = if (state.drawerQuery.isBlank()) "No apps" else "No result",
-                y = layoutMetrics.listStartY,
+                text = if (state.drawerQuery.isBlank()) "No apps" else "NO RESULT",
+                y = if (state.drawerQuery.isBlank()) {
+                    layoutMetrics.listStartY
+                } else {
+                    layoutMetrics.listStartY +
+                        ((layoutMetrics.railHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
+                },
                 style = GlyphStyle.APP_LABEL_16,
             )
 
@@ -1041,7 +1046,7 @@ class PixelRenderer(
 
     private companion object {
         const val marqueeStepFramesPerPixel: Int = 5
-        const val drawerCursorBlinkFrames: Int = 8
+        const val drawerCursorBlinkFrames: Int = 12
         const val drawerCursorWidth: Int = 1
         const val drawerCursorGapFromText: Int = 1
         const val drawerCursorTopInset: Int = 0
