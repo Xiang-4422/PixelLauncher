@@ -674,17 +674,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
         recordInteraction()
         if (state.mode == LauncherMode.APP_DRAWER) {
-            if (state.isDrawerSearchFocused) {
-                return
-            }
-            if (state.drawerPageIndex == 0) {
-                state = LauncherStateTransitions.showHome(state)
-                renderCurrentFrame()
-                startAnimationTickerIfNeeded()
-                updateDrawerInputFocus()
-            } else {
+            if (!state.isDrawerSearchFocused) {
                 pageDrawer(-1)
             }
+            return
         }
     }
 
