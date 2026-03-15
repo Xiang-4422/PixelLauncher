@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.content.res.Configuration
 import android.os.Build
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.util.LabelFormatter
@@ -30,16 +31,31 @@ class PackageManagerAppRepository(
                     return@mapNotNull null
                 }
 
-                val rawLabel = resolveInfo.loadLabel(packageManager)?.toString().orEmpty()
-                val label = LabelFormatter.fallbackLabel(
-                    label = rawLabel,
+                val systemLabel = resolveInfo.loadLabel(packageManager)?.toString().orEmpty()
+                val chineseLabel = loadLabelForLocale(
+                    resolveInfo = resolveInfo,
+                    locale = Locale.SIMPLIFIED_CHINESE,
+                    fallbackLabel = systemLabel,
+                )
+                val englishLabel = loadLabelForLocale(
+                    resolveInfo = resolveInfo,
+                    locale = Locale.ENGLISH,
+                    fallbackLabel = systemLabel,
+                )
+                val displayLabel = selectDisplayLabel(
+                    chineseLabel = chineseLabel,
+                    fallbackLabel = systemLabel,
                     packageName = activityInfo.packageName,
                 )
 
                 AppEntry(
-                    label = label,
+                    label = displayLabel,
                     packageName = activityInfo.packageName,
                     activityName = activityInfo.name,
+                    englishLabel = LabelFormatter.fallbackLabel(
+                        label = englishLabel,
+                        packageName = activityInfo.packageName,
+                    ),
                 )
             }
             .sortedWith { left, right ->
@@ -58,5 +74,59 @@ class PackageManagerAppRepository(
         } else {
             packageManager.queryIntentActivities(intent, 0)
         }
+    }
+
+    private fun loadLabelForLocale(
+        resolveInfo: ResolveInfo,
+        locale: Locale,
+        fallbackLabel: String,
+    ): String {
+        val activityInfo = resolveInfo.activityInfo ?: return fallbackLabel
+        return runCatching {
+            val packageContext = context.createPackageContext(
+                activityInfo.packageName,
+                Context.CONTEXT_IGNORE_SECURITY,
+            )
+            val localizedConfig = Configuration(packageContext.resources.configuration).apply {
+                setLocale(locale)
+            }
+            val localizedResources = packageContext.createConfigurationContext(localizedConfig).resources
+            val rawLocalizedLabel = when {
+                activityInfo.nonLocalizedLabel != null -> activityInfo.nonLocalizedLabel.toString()
+                activityInfo.labelRes != 0 -> localizedResources.getString(activityInfo.labelRes)
+                activityInfo.applicationInfo.nonLocalizedLabel != null -> {
+                    activityInfo.applicationInfo.nonLocalizedLabel.toString()
+                }
+
+                activityInfo.applicationInfo.labelRes != 0 -> {
+                    localizedResources.getString(activityInfo.applicationInfo.labelRes)
+                }
+
+                else -> resolveInfo.loadLabel(packageManager)?.toString().orEmpty()
+            }
+            rawLocalizedLabel
+        }.getOrElse { fallbackLabel }
+    }
+
+    private fun selectDisplayLabel(
+        chineseLabel: String,
+        fallbackLabel: String,
+        packageName: String,
+    ): String {
+        val normalizedChinese = LabelFormatter.fallbackLabel(
+            label = chineseLabel,
+            packageName = packageName,
+        )
+        if (normalizedChinese.any { isCjk(it) }) {
+            return normalizedChinese
+        }
+        return LabelFormatter.fallbackLabel(
+            label = fallbackLabel,
+            packageName = packageName,
+        )
+    }
+
+    private fun isCjk(char: Char): Boolean {
+        return Character.UnicodeScript.of(char.code) == Character.UnicodeScript.HAN
     }
 }

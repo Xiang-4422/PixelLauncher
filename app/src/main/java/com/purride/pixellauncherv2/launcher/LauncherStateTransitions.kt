@@ -594,16 +594,25 @@ object LauncherStateTransitions {
     ): Int? {
         return when {
             metadata.normalizedLabel == normalizedQuery ||
+                metadata.normalizedEnglishLabel == normalizedQuery ||
                 metadata.normalizedAlias == normalizedQuery ||
+                metadata.normalizedPackage == normalizedQuery ||
+                metadata.normalizedActivity == normalizedQuery ||
                 metadata.pinyinFull == normalizedQuery ||
                 metadata.pinyinInitial == normalizedQuery -> 0
 
             metadata.normalizedLabel.startsWith(normalizedQuery) -> 1
+            metadata.normalizedEnglishLabel.startsWith(normalizedQuery) -> 1
             metadata.normalizedAlias.startsWith(normalizedQuery) -> 2
+            metadata.normalizedPackage.startsWith(normalizedQuery) -> 2
+            metadata.normalizedActivity.startsWith(normalizedQuery) -> 2
             metadata.pinyinFull.startsWith(normalizedQuery) -> 3
             metadata.pinyinInitial.startsWith(normalizedQuery) -> 4
             metadata.normalizedLabel.contains(normalizedQuery) ||
+                metadata.normalizedEnglishLabel.contains(normalizedQuery) ||
                 metadata.normalizedAlias.contains(normalizedQuery) ||
+                metadata.normalizedPackage.contains(normalizedQuery) ||
+                metadata.normalizedActivity.contains(normalizedQuery) ||
                 metadata.pinyinFull.contains(normalizedQuery) ||
                 metadata.pinyinInitial.contains(normalizedQuery) -> 5
 

@@ -10,7 +10,10 @@ import kotlin.math.absoluteValue
 
 data class DrawerSearchMetadata(
     val normalizedLabel: String,
+    val normalizedEnglishLabel: String,
     val normalizedAlias: String,
+    val normalizedPackage: String,
+    val normalizedActivity: String,
     val pinyinFull: String,
     val pinyinInitial: String,
     val sortKey: String,
@@ -22,13 +25,23 @@ object DrawerSearchSupport {
     fun buildMetadata(appEntry: AppEntry): DrawerSearchMetadata {
         return buildMetadata(
             label = appEntry.label,
+            englishLabel = appEntry.englishLabel,
             packageName = appEntry.packageName,
+            activityName = appEntry.activityName,
         )
     }
 
-    fun buildMetadata(label: String, packageName: String): DrawerSearchMetadata {
+    fun buildMetadata(
+        label: String,
+        englishLabel: String = "",
+        packageName: String,
+        activityName: String = "",
+    ): DrawerSearchMetadata {
         val normalizedLabel = normalizeForSearch(label)
+        val normalizedEnglishLabel = normalizeForSearch(englishLabel)
         val normalizedAlias = normalizeForSearch(packageName.substringAfterLast('.'))
+        val normalizedPackage = normalizeForSearch(packageName)
+        val normalizedActivity = normalizeForSearch(activityName.substringAfterLast('.'))
         val pinyin = toPinyin(label)
         val sortKey = when {
             pinyin.full.isNotEmpty() -> pinyin.full
@@ -43,7 +56,10 @@ object DrawerSearchSupport {
         )
         return DrawerSearchMetadata(
             normalizedLabel = normalizedLabel,
+            normalizedEnglishLabel = normalizedEnglishLabel,
             normalizedAlias = normalizedAlias,
+            normalizedPackage = normalizedPackage,
+            normalizedActivity = normalizedActivity,
             pinyinFull = pinyin.full,
             pinyinInitial = pinyin.initial,
             sortKey = sortKey,

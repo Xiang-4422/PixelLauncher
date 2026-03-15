@@ -388,6 +388,101 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun updateDrawerQueryMatchesEnglishByPackageName() {
+        val apps = listOf(
+            AppEntry(
+                label = "微信",
+                packageName = "com.tencent.mm",
+                activityName = "com.tencent.mm.ui.LauncherUI",
+            ),
+            AppEntry(
+                label = "浏览器",
+                packageName = "com.android.browser",
+                activityName = "com.android.browser.BrowserActivity",
+            ),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "tencent",
+            visibleRows = 4,
+        )
+
+        assertEquals(listOf("com.tencent.mm"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun updateDrawerQueryMatchesEnglishByActivityName() {
+        val apps = listOf(
+            AppEntry(
+                label = "图库",
+                packageName = "pkg.gallery",
+                activityName = "com.example.photo.GalleryActivity",
+            ),
+            AppEntry(
+                label = "相机",
+                packageName = "pkg.camera",
+                activityName = "com.example.photo.CameraActivity",
+            ),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "gallery",
+            visibleRows = 4,
+        )
+
+        assertEquals(listOf("pkg.gallery"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun updateDrawerQueryMatchesEnglishLocalizedLabel() {
+        val apps = listOf(
+            AppEntry(
+                label = "微信",
+                packageName = "pkg.chat",
+                activityName = "pkg.chat.MainActivity",
+                englishLabel = "WeChat",
+            ),
+            AppEntry(
+                label = "短信",
+                packageName = "pkg.sms",
+                activityName = "pkg.sms.MainActivity",
+                englishLabel = "Messages",
+            ),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "wechat",
+            visibleRows = 4,
+        )
+
+        assertEquals(listOf("pkg.chat"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
     fun selectByLetterIndexMovesSelectionAndWindow() {
         val state = LauncherState(
             apps = listOf(
