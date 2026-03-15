@@ -26,6 +26,8 @@ import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
+import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerRailDragMapper
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
@@ -525,36 +527,43 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     selectByRailLetter(tappedLetterIndex)
                     return
                 }
-                if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
-                    state = LauncherStateTransitions.exitDrawerSearch(
+                val canTapResultList = !state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()
+                val tappedIndex = if (canTapResultList) {
+                    AppListLayout.hitTestAppIndex(
+                        screenProfile = screenProfile,
                         state = state,
-                        visibleRows = visibleRows(),
+                        logicalX = x,
+                        logicalY = y,
                     )
-                    renderCurrentFrame()
-                    startAnimationTickerIfNeeded()
-                    updateDrawerInputFocus()
-                    return
+                } else {
+                    null
                 }
-                val drawerApps = currentDrawerApps()
+                val decision = DrawerContentTapResolver.resolve(state, tappedIndex)
+                when (decision.action) {
+                    DrawerContentTapAction.LAUNCH_SELECTED -> launchSelectedApp()
 
-                val tappedIndex = AppListLayout.hitTestAppIndex(
-                    screenProfile = screenProfile,
-                    state = state,
-                    logicalX = x,
-                    logicalY = y,
-                ) ?: return
+                    DrawerContentTapAction.SELECT_INDEX -> {
+                        val targetIndex = decision.targetIndex ?: return
+                        state = LauncherStateTransitions.selectIndex(
+                            state = state,
+                            index = targetIndex,
+                            visibleRows = visibleRows(),
+                        )
+                        renderCurrentFrame()
+                    }
 
-                if (tappedIndex == state.selectedIndex) {
-                    launchSelectedApp()
-                    return
+                    DrawerContentTapAction.EXIT_SEARCH -> {
+                        state = LauncherStateTransitions.exitDrawerSearch(
+                            state = state,
+                            visibleRows = visibleRows(),
+                        )
+                        renderCurrentFrame()
+                        startAnimationTickerIfNeeded()
+                        updateDrawerInputFocus()
+                    }
+
+                    DrawerContentTapAction.NONE -> Unit
                 }
-
-                state = LauncherStateTransitions.selectIndex(
-                    state = state,
-                    index = tappedIndex,
-                    visibleRows = visibleRows(),
-                )
-                renderCurrentFrame()
             }
 
             LauncherMode.SETTINGS -> {
