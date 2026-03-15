@@ -5,7 +5,6 @@ import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.render.PixelFontId
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
-import com.purride.pixellauncherv2.util.LabelFormatter
 import java.text.Collator
 import java.util.Locale
 
@@ -100,6 +99,7 @@ object LauncherStateTransitions {
         val drawerApps = filterDrawerApps(
             orderedApps = orderedApps,
             query = previous.drawerQuery,
+            recentApps = previous.recentApps,
         )
         if (orderedApps.isEmpty()) {
             return previous.copy(
@@ -276,6 +276,7 @@ object LauncherStateTransitions {
         val drawerApps = filterDrawerApps(
             orderedApps = orderedApps,
             query = safeQuery,
+            recentApps = state.recentApps,
         )
         val preservedApp = currentDrawerApps(state).getOrNull(state.selectedIndex)
         val selectedIndex = preservedApp?.let { selected ->
@@ -474,62 +475,161 @@ object LauncherStateTransitions {
         return state.apps
     }
 
-    private fun orderDefaultApps(apps: List<AppEntry>, _recentApps: List<String>): List<AppEntry> {
+    private fun orderDefaultApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {
         if (apps.isEmpty()) {
             return apps
         }
-        return apps.sortedWith { left, right ->
-            labelCollator.compare(
-                LabelFormatter.sortKey(left.label),
-                LabelFormatter.sortKey(right.label),
+        val metadataByIdentity = buildMetadataMap(apps)
+        val alphabetical = apps.sortedWith { left, right ->
+            val leftMeta = metadataByIdentity.getValue(appIdentity(left))
+            val rightMeta = metadataByIdentity.getValue(appIdentity(right))
+            val letterCompare = leftMeta.letterIndex.compareTo(rightMeta.letterIndex)
+            if (letterCompare != 0) {
+                return@sortedWith letterCompare
+            }
+            val sortCompare = labelCollator.compare(
+                leftMeta.sortKey,
+                rightMeta.sortKey,
             )
+            if (sortCompare != 0) {
+                return@sortedWith sortCompare
+            }
+            labelCollator.compare(left.label, right.label)
         }
+        return applyLightRecentBoost(
+            orderedApps = alphabetical,
+            recentApps = recentApps,
+            metadataByIdentity = metadataByIdentity,
+        )
     }
 
-    private fun filterDrawerApps(orderedApps: List<AppEntry>, query: String): List<AppEntry> {
+    private fun filterDrawerApps(
+        orderedApps: List<AppEntry>,
+        query: String,
+        recentApps: List<String>,
+    ): List<AppEntry> {
         if (query.isBlank()) {
             return orderedApps
         }
-        val normalizedQuery = normalizeForSearch(query)
+        val normalizedQuery = DrawerSearchSupport.normalizeForSearch(query)
         if (normalizedQuery.isEmpty()) {
             return orderedApps
         }
+        val metadataByIdentity = buildMetadataMap(orderedApps)
+        val recentRankByPackage = recentApps
+            .take(maxRecentBoostAppCount)
+            .withIndex()
+            .associate { indexed -> indexed.value to indexed.index }
 
         return orderedApps
             .asSequence()
             .mapNotNull { app ->
-                val normalizedLabel = normalizeForSearch(app.label)
-                val packageTail = app.packageName.substringAfterLast('.')
-                val normalizedPackageTail = normalizeForSearch(packageTail)
-                val score = when {
-                    app.label.startsWith(query, ignoreCase = true) -> 0
-                    normalizedLabel.startsWith(normalizedQuery) -> 1
-                    normalizedPackageTail.startsWith(normalizedQuery) -> 2
-                    normalizedLabel.contains(normalizedQuery) -> 3
-                    normalizedPackageTail.contains(normalizedQuery) -> 4
-                    else -> null
-                }
-                score?.let { DrawerSearchHit(app = app, score = it) }
+                val metadata = metadataByIdentity.getValue(appIdentity(app))
+                val score = resolveSearchScore(
+                    normalizedQuery = normalizedQuery,
+                    metadata = metadata,
+                ) ?: return@mapNotNull null
+
+                DrawerSearchHit(
+                    app = app,
+                    score = score,
+                    recentRank = recentRankByPackage[app.packageName] ?: Int.MAX_VALUE,
+                    sortKey = metadata.sortKey,
+                )
             }
-            .sortedWith(compareBy<DrawerSearchHit> { it.score }.thenComparator { left, right ->
-                labelCollator.compare(left.app.label, right.app.label)
-            })
+            .sortedWith(
+                compareBy<DrawerSearchHit> { it.score }
+                    .thenBy { it.recentRank }
+                    .thenComparator { left, right ->
+                        val sortCompare = labelCollator.compare(left.sortKey, right.sortKey)
+                        if (sortCompare != 0) {
+                            sortCompare
+                        } else {
+                            labelCollator.compare(left.app.label, right.app.label)
+                        }
+                    },
+            )
             .map { it.app }
             .toList()
     }
 
-    private fun normalizeForSearch(value: String): String {
-        return value
-            .lowercase(Locale.getDefault())
-            .replace(searchNoiseRegex, "")
+    private fun applyLightRecentBoost(
+        orderedApps: List<AppEntry>,
+        recentApps: List<String>,
+        metadataByIdentity: Map<String, DrawerSearchMetadata>,
+    ): List<AppEntry> {
+        if (orderedApps.size < 2 || recentApps.isEmpty()) {
+            return orderedApps
+        }
+        val adjustedApps = orderedApps.toMutableList()
+        recentApps
+            .take(maxRecentBoostAppCount)
+            .forEachIndexed { recentRank, packageName ->
+                val fromIndex = adjustedApps.indexOfFirst { it.packageName == packageName }
+                if (fromIndex <= 0) {
+                    return@forEachIndexed
+                }
+                val movingApp = adjustedApps[fromIndex]
+                val movingMeta = metadataByIdentity.getValue(appIdentity(movingApp))
+                val letterStartIndex = adjustedApps.indexOfFirst { candidate ->
+                    metadataByIdentity.getValue(appIdentity(candidate)).letterIndex == movingMeta.letterIndex
+                }
+                if (letterStartIndex < 0) {
+                    return@forEachIndexed
+                }
+                val maxShift = (maxRecentBoostShift - recentRank).coerceAtLeast(1)
+                val targetIndex = (fromIndex - maxShift).coerceAtLeast(letterStartIndex)
+                if (targetIndex >= fromIndex) {
+                    return@forEachIndexed
+                }
+                adjustedApps.removeAt(fromIndex)
+                adjustedApps.add(targetIndex, movingApp)
+            }
+        return adjustedApps
+    }
+
+    private fun resolveSearchScore(
+        normalizedQuery: String,
+        metadata: DrawerSearchMetadata,
+    ): Int? {
+        return when {
+            metadata.normalizedLabel == normalizedQuery ||
+                metadata.normalizedAlias == normalizedQuery ||
+                metadata.pinyinFull == normalizedQuery ||
+                metadata.pinyinInitial == normalizedQuery -> 0
+
+            metadata.normalizedLabel.startsWith(normalizedQuery) -> 1
+            metadata.normalizedAlias.startsWith(normalizedQuery) -> 2
+            metadata.pinyinFull.startsWith(normalizedQuery) -> 3
+            metadata.pinyinInitial.startsWith(normalizedQuery) -> 4
+            metadata.normalizedLabel.contains(normalizedQuery) ||
+                metadata.normalizedAlias.contains(normalizedQuery) ||
+                metadata.pinyinFull.contains(normalizedQuery) ||
+                metadata.pinyinInitial.contains(normalizedQuery) -> 5
+
+            else -> null
+        }
+    }
+
+    private fun buildMetadataMap(apps: List<AppEntry>): Map<String, DrawerSearchMetadata> {
+        return apps.associate { appEntry ->
+            appIdentity(appEntry) to DrawerSearchSupport.buildMetadata(appEntry)
+        }
+    }
+
+    private fun appIdentity(appEntry: AppEntry): String {
+        return "${appEntry.packageName}/${appEntry.activityName}"
     }
 
     private data class DrawerSearchHit(
         val app: AppEntry,
         val score: Int,
+        val recentRank: Int,
+        val sortKey: String,
     )
 
     private val labelCollator: Collator = Collator.getInstance(Locale.getDefault())
-    private val searchNoiseRegex = Regex("[\\s\\p{Punct}_]+")
     private const val maxDrawerQueryLength: Int = 40
+    private const val maxRecentBoostAppCount: Int = 3
+    private const val maxRecentBoostShift: Int = 3
 }

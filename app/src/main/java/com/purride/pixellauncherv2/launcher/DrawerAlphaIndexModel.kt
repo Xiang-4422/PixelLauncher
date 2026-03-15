@@ -35,7 +35,6 @@ data class DrawerAlphaIndexModel(
     companion object {
         const val letterCount: Int = 26
         const val lastLetterIndex: Int = letterCount - 1
-        const val nonLatinFallbackIndex: Int = lastLetterIndex
 
         fun create(
             apps: List<AppEntry>,
@@ -67,11 +66,7 @@ data class DrawerAlphaIndexModel(
         }
 
         fun letterIndexForLabel(label: String): Int {
-            val firstMeaningfulChar = label.trimStart().firstOrNull()?.uppercaseChar()
-            if (firstMeaningfulChar != null && firstMeaningfulChar in 'A'..'Z') {
-                return firstMeaningfulChar - 'A'
-            }
-            return nonLatinFallbackIndex
+            return DrawerSearchSupport.letterIndexForLabel(label)
         }
     }
 }

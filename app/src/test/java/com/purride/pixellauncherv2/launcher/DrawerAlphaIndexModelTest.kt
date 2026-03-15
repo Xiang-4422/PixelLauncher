@@ -7,11 +7,11 @@ import org.junit.Test
 class DrawerAlphaIndexModelTest {
 
     @Test
-    fun createMapsLettersAndNonLatinToZ() {
+    fun createMapsChineseLabelByPinyinInitialInsteadOfZBucket() {
         val apps = listOf(
             AppEntry(label = "Alpha", packageName = "pkg.alpha", activityName = "A"),
             AppEntry(label = "beta", packageName = "pkg.beta", activityName = "B"),
-            AppEntry(label = "中文应用", packageName = "pkg.cn", activityName = "C"),
+            AppEntry(label = "微信", packageName = "pkg.wechat", activityName = "C"),
         )
 
         val model = DrawerAlphaIndexModel.create(
@@ -21,8 +21,17 @@ class DrawerAlphaIndexModelTest {
 
         assertEquals(0, model.letterToFirstAppIndex[0])
         assertEquals(1, model.letterToFirstAppIndex[1])
-        assertEquals(2, model.letterToFirstAppIndex[25])
-        assertEquals(25, model.selectedLetterIndex)
+        assertEquals(2, model.letterToFirstAppIndex[22]) // W
+        assertEquals(22, model.selectedLetterIndex)
+    }
+
+    @Test
+    fun nonLatinWithoutPinyinUsesDistributedFallbackBuckets() {
+        val omegaIndex = DrawerAlphaIndexModel.letterIndexForLabel("Ωmega")
+        val cyrillicIndex = DrawerAlphaIndexModel.letterIndexForLabel("Журнал")
+
+        assertEquals(false, omegaIndex == DrawerAlphaIndexModel.lastLetterIndex)
+        assertEquals(false, cyrillicIndex == DrawerAlphaIndexModel.lastLetterIndex)
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.render.PixelTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LauncherStateTransitionsTest {
@@ -270,14 +271,15 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
-    fun withAppsKeepsAlphabeticalOrderWithoutRecentBoost() {
+    fun withAppsAppliesLightRecentBoostWithinSameInitialGroup() {
         val previous = LauncherState(
-            recentApps = listOf("pkg.z"),
+            recentApps = listOf("pkg.atlas"),
             isLoading = true,
         )
         val unsortedApps = listOf(
-            AppEntry(label = "Zulu", packageName = "pkg.z", activityName = "Z"),
             AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+            AppEntry(label = "Atlas", packageName = "pkg.atlas", activityName = "Atlas"),
+            AppEntry(label = "Apex", packageName = "pkg.apex", activityName = "Apex"),
             AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
         )
 
@@ -287,7 +289,102 @@ class LauncherStateTransitionsTest {
             visibleRows = 3,
         )
 
-        assertEquals(listOf("pkg.a", "pkg.b", "pkg.z"), newState.drawerVisibleApps.map { it.packageName })
+        val orderedPackages = newState.drawerVisibleApps.map { it.packageName }
+        assertTrue(orderedPackages.indexOf("pkg.atlas") < orderedPackages.indexOf("pkg.apex"))
+        assertTrue(orderedPackages.indexOf("pkg.b") > orderedPackages.indexOf("pkg.apex"))
+    }
+
+    @Test
+    fun updateDrawerQueryMatchesPinyinFullPrefix() {
+        val apps = listOf(
+            AppEntry(label = "微信", packageName = "pkg.wechat", activityName = "Wechat"),
+            AppEntry(label = "相机", packageName = "pkg.camera", activityName = "Camera"),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "weixin",
+            visibleRows = 4,
+        )
+
+        assertEquals(listOf("pkg.wechat"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun updateDrawerQueryMatchesChineseNameDirectly() {
+        val apps = listOf(
+            AppEntry(label = "微信", packageName = "pkg.wechat", activityName = "Wechat"),
+            AppEntry(label = "支付宝", packageName = "pkg.alipay", activityName = "Alipay"),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "微",
+            visibleRows = 4,
+        )
+
+        assertEquals(listOf("pkg.wechat"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun updateDrawerQueryMatchesPinyinInitialPrefix() {
+        val apps = listOf(
+            AppEntry(label = "支付宝", packageName = "pkg.alipay", activityName = "Alipay"),
+            AppEntry(label = "浏览器", packageName = "pkg.browser", activityName = "Browser"),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "zfb",
+            visibleRows = 4,
+        )
+
+        assertEquals(listOf("pkg.alipay"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun searchResultsUseRecentAppsAsLightTieBreakerWithinSameMatchTier() {
+        val apps = listOf(
+            AppEntry(label = "Calendar", packageName = "pkg.calendar", activityName = "Calendar"),
+            AppEntry(label = "Camera", packageName = "pkg.camera", activityName = "Camera"),
+            AppEntry(label = "Calculator", packageName = "pkg.calculator", activityName = "Calculator"),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            recentApps = listOf("pkg.camera"),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "ca",
+            visibleRows = 5,
+        )
+
+        assertEquals("pkg.camera", updated.drawerVisibleApps.firstOrNull()?.packageName)
     }
 
     @Test
