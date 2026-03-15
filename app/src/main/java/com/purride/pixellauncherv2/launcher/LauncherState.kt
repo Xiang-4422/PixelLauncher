@@ -9,6 +9,10 @@ import com.purride.pixellauncherv2.render.IdleFluidState
 
 data class LauncherState(
     val apps: List<AppEntry> = emptyList(),
+    val drawerVisibleApps: List<AppEntry> = emptyList(),
+    val drawerQuery: String = "",
+    val isDrawerSearchFocused: Boolean = false,
+    val isDrawerRailSliding: Boolean = false,
     val selectedIndex: Int = 0,
     val listStartIndex: Int = 0,
     val drawerPageIndex: Int = 0,

@@ -79,6 +79,30 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showAppDrawerUsesAllAppsWhenQueryIsBlank() {
+        val state = LauncherState(
+            apps = listOf(
+                AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+                AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
+                AppEntry(label = "Charlie", packageName = "pkg.c", activityName = "C"),
+            ),
+            recentApps = listOf("pkg.c", "pkg.a"),
+            selectedIndex = 0,
+            isLoading = false,
+        )
+
+        val drawerState = LauncherStateTransitions.showAppDrawer(
+            state = state,
+            visibleRows = 3,
+        )
+
+        assertEquals(LauncherMode.APP_DRAWER, drawerState.mode)
+        assertEquals(listOf("pkg.a", "pkg.b", "pkg.c"), drawerState.drawerVisibleApps.map { it.packageName })
+        assertEquals(0, drawerState.selectedIndex)
+        assertEquals(0, drawerState.listStartIndex)
+    }
+
+    @Test
     fun showHomeOnlySwitchesMode() {
         val state = LauncherState(
             apps = apps,
@@ -243,5 +267,56 @@ class LauncherStateTransitionsTest {
 
         assertEquals(42, updatedState.batteryLevel)
         assertEquals(true, updatedState.isCharging)
+    }
+
+    @Test
+    fun withAppsKeepsAlphabeticalOrderWithoutRecentBoost() {
+        val previous = LauncherState(
+            recentApps = listOf("pkg.z"),
+            isLoading = true,
+        )
+        val unsortedApps = listOf(
+            AppEntry(label = "Zulu", packageName = "pkg.z", activityName = "Z"),
+            AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+            AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
+        )
+
+        val newState = LauncherStateTransitions.withApps(
+            previous = previous,
+            apps = unsortedApps,
+            visibleRows = 3,
+        )
+
+        assertEquals(listOf("pkg.a", "pkg.b", "pkg.z"), newState.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
+    fun selectByLetterIndexMovesSelectionAndWindow() {
+        val state = LauncherState(
+            apps = listOf(
+                AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+                AppEntry(label = "Charlie", packageName = "pkg.c", activityName = "C"),
+                AppEntry(label = "Foxtrot", packageName = "pkg.f", activityName = "F"),
+            ),
+            drawerVisibleApps = listOf(
+                AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+                AppEntry(label = "Charlie", packageName = "pkg.c", activityName = "C"),
+                AppEntry(label = "Foxtrot", packageName = "pkg.f", activityName = "F"),
+            ),
+            selectedIndex = 0,
+            listStartIndex = 0,
+            mode = LauncherMode.APP_DRAWER,
+            isLoading = false,
+        )
+
+        val selectedState = LauncherStateTransitions.selectByLetterIndex(
+            state = state,
+            letterIndex = 5, // F
+            visibleRows = 2,
+        )
+
+        assertEquals(2, selectedState.selectedIndex)
+        assertEquals(2, selectedState.listStartIndex)
+        assertEquals(1, selectedState.drawerPageIndex)
     }
 }

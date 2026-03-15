@@ -24,6 +24,9 @@ class PixelDisplayView @JvmOverloads constructor(
         fun onSwipeDown()
         fun onSwipeLeft()
         fun onSwipeRight()
+        fun onLogicalDragStart(x: Int, y: Int): Boolean
+        fun onLogicalDragMove(x: Int, y: Int): Boolean
+        fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean
     }
 
     var interactionListener: InteractionListener? = null
@@ -39,6 +42,9 @@ class PixelDisplayView @JvmOverloads constructor(
     private var touchDownX = 0f
     private var touchDownY = 0f
     private var touchActive = false
+    private var dragConsumed = false
+    private var lastLogicalX = 0
+    private var lastLogicalY = 0
 
     private val onPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -124,16 +130,61 @@ class PixelDisplayView @JvmOverloads constructor(
                 touchDownX = event.x
                 touchDownY = event.y
                 touchActive = true
+                dragConsumed = false
+                val profile = screenProfile
+                val logicalPoint = profile?.let { mapTouchToLogical(event.x, event.y, it) }
+                if (logicalPoint != null) {
+                    lastLogicalX = logicalPoint.first
+                    lastLogicalY = logicalPoint.second
+                    dragConsumed = interactionListener?.onLogicalDragStart(
+                        x = logicalPoint.first,
+                        y = logicalPoint.second,
+                    ) == true
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (!touchActive) {
+                    return true
+                }
+                if (!dragConsumed) {
+                    return true
+                }
+                val profile = screenProfile ?: return true
+                val logicalPoint = mapTouchToLogical(event.x, event.y, profile) ?: return true
+                lastLogicalX = logicalPoint.first
+                lastLogicalY = logicalPoint.second
+                dragConsumed = interactionListener?.onLogicalDragMove(
+                    x = logicalPoint.first,
+                    y = logicalPoint.second,
+                ) == true
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
-                performClick()
                 if (!touchActive) {
                     return true
                 }
 
                 touchActive = false
+                val profile = screenProfile
+                val logicalPoint = profile?.let { mapTouchToLogical(event.x, event.y, it) }
+                if (logicalPoint != null) {
+                    lastLogicalX = logicalPoint.first
+                    lastLogicalY = logicalPoint.second
+                }
+                if (dragConsumed) {
+                    interactionListener?.onLogicalDragEnd(
+                        x = lastLogicalX,
+                        y = lastLogicalY,
+                        cancelled = false,
+                    )
+                    dragConsumed = false
+                    return true
+                }
+
+                performClick()
                 val deltaX = event.x - touchDownX
                 val deltaY = event.y - touchDownY
                 if (abs(deltaY) >= swipeDistanceThresholdPx && abs(deltaY) > abs(deltaX) * swipeAxisBias) {
@@ -153,14 +204,22 @@ class PixelDisplayView @JvmOverloads constructor(
                     return true
                 }
 
-                val profile = screenProfile ?: return true
-                val logicalPoint = mapTouchToLogical(event.x, event.y, profile) ?: return true
-                interactionListener?.onLogicalTap(logicalPoint.first, logicalPoint.second)
+                val tapProfile = screenProfile ?: return true
+                val tapLogicalPoint = mapTouchToLogical(event.x, event.y, tapProfile) ?: return true
+                interactionListener?.onLogicalTap(tapLogicalPoint.first, tapLogicalPoint.second)
                 return true
             }
 
             MotionEvent.ACTION_CANCEL -> {
+                if (touchActive && dragConsumed) {
+                    interactionListener?.onLogicalDragEnd(
+                        x = lastLogicalX,
+                        y = lastLogicalY,
+                        cancelled = true,
+                    )
+                }
                 touchActive = false
+                dragConsumed = false
                 return true
             }
         }

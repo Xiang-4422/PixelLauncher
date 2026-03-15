@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.AppDrawerIndexModel
+import com.purride.pixellauncherv2.launcher.DrawerAlphaIndexModel
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppListLayoutMetrics
 import com.purride.pixellauncherv2.launcher.DiagnosticsLine
@@ -184,69 +185,167 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
     ) {
+        val drawerApps = resolveDrawerApps(state)
+        val shouldShowApps = state.drawerQuery.isNotBlank() || !state.isDrawerSearchFocused
         val layoutMetrics = AppListLayout.metrics(screenProfile)
         val drawerIndexModel = AppDrawerIndexModel.create(
-            apps = state.apps,
+            apps = drawerApps,
             visibleRows = layoutMetrics.visibleRows,
+            selectedIndex = state.selectedIndex,
+        )
+        val alphaIndexModel = DrawerAlphaIndexModel.create(
+            apps = drawerApps,
             selectedIndex = state.selectedIndex,
         )
         drawHeader(
             buffer = buffer,
             screenProfile = screenProfile,
             state = state,
-            titleCandidates = appDrawerHeaderTitles(drawerIndexModel),
+            titleCandidates = appDrawerHeaderTitles(state.drawerQuery),
             chargeTick = animationState.headerChargeTick,
+        )
+        drawDrawerSearchBox(
+            buffer = buffer,
+            state = state,
+            layoutMetrics = layoutMetrics,
+            tick = animationState.headerChargeTick,
         )
 
         when {
-            state.isLoading -> drawCenteredText(
+            state.isLoading && shouldShowApps -> drawCenteredText(
                 buffer = buffer,
                 text = "Loading",
                 y = layoutMetrics.listStartY,
                 style = GlyphStyle.APP_LABEL_16,
             )
 
-            state.apps.isEmpty() -> drawCenteredText(
+            !shouldShowApps -> Unit
+
+            drawerApps.isEmpty() -> drawCenteredText(
                 buffer = buffer,
-                text = "No apps",
+                text = if (state.drawerQuery.isBlank()) "No apps" else "No result",
                 y = layoutMetrics.listStartY,
                 style = GlyphStyle.APP_LABEL_16,
             )
 
             else -> {
-                drawApps(
+                if (state.isDrawerSearchFocused) {
+                    drawPagedApps(
+                        buffer = buffer,
+                        layoutMetrics = layoutMetrics,
+                        drawerIndexModel = drawerIndexModel,
+                    )
+                } else {
+                    drawCenteredApps(
+                        buffer = buffer,
+                        state = state,
+                        screenProfile = screenProfile,
+                        layoutMetrics = layoutMetrics,
+                        drawerApps = drawerApps,
+                    )
+                }
+                drawAppDrawerIndexRail(
                     buffer = buffer,
                     state = state,
                     layoutMetrics = layoutMetrics,
-                    drawerIndexModel = drawerIndexModel,
-                )
-                drawAppDrawerIndexRail(
-                    buffer = buffer,
-                    layoutMetrics = layoutMetrics,
-                    drawerIndexModel = drawerIndexModel,
+                    alphaIndexModel = alphaIndexModel,
+                    showRail = !state.isDrawerSearchFocused,
                 )
             }
         }
     }
 
-    private fun drawApps(
+    private fun resolveDrawerApps(state: LauncherState): List<AppEntry> {
+        if (state.drawerVisibleApps.isNotEmpty()) {
+            return state.drawerVisibleApps
+        }
+        if (state.drawerQuery.isNotBlank()) {
+            return emptyList()
+        }
+        return state.apps
+    }
+
+    private fun drawDrawerSearchBox(
         buffer: PixelBuffer,
         state: LauncherState,
         layoutMetrics: AppListLayoutMetrics,
-        drawerIndexModel: AppDrawerIndexModel,
+        tick: Int,
     ) {
-        val listEndX = (layoutMetrics.textX + layoutMetrics.listWidth - 1).coerceAtMost(buffer.width - 1)
-        drawerIndexModel.currentPageApps.forEachIndexed { row, appEntry ->
-            val rowTop = layoutMetrics.listStartY + (row * layoutMetrics.rowHeight)
-            if (row == drawerIndexModel.currentPageSelectedRow) {
-                drawHorizontalLine(
+        val searchStyle = GlyphStyle.APP_LABEL_16
+        val textLeft = layoutMetrics.searchTextX.coerceIn(0, buffer.width - 1)
+        val textTop = layoutMetrics.searchTextY.coerceIn(0, buffer.height - 1)
+        val textRight = (textLeft + layoutMetrics.searchWidth - 1).coerceIn(textLeft, buffer.width - 1)
+        val availableWidth = (textRight - textLeft + 1).coerceAtLeast(1)
+        val query = state.drawerQuery
+        val searchFocused = state.isDrawerSearchFocused
+
+        if (query.isBlank() && !searchFocused) {
+            val placeholder = pixelFontEngine.trimToWidth(
+                text = "SEARCH",
+                style = searchStyle,
+                maxWidth = availableWidth,
+            )
+            if (placeholder.isNotEmpty()) {
+                drawTextAsValue(
                     buffer = buffer,
-                    startX = 1,
-                    endX = listEndX,
-                    y = rowTop + layoutMetrics.labelFontHeight,
+                    text = placeholder,
+                    startX = textLeft,
+                    startY = textTop,
+                    maxWidth = availableWidth,
+                    style = searchStyle,
                     value = PixelBuffer.ACCENT,
                 )
             }
+            return
+        }
+
+        val textMaxWidth = (availableWidth - drawerCursorGapFromText - drawerCursorWidth).coerceAtLeast(1)
+        val trimmed = pixelFontEngine.trimToWidth(
+            text = query,
+            style = searchStyle,
+            maxWidth = textMaxWidth,
+        )
+        if (trimmed.isNotEmpty()) {
+            drawTextAsValue(
+                buffer = buffer,
+                text = trimmed,
+                startX = textLeft,
+                startY = textTop,
+                maxWidth = textMaxWidth,
+                style = searchStyle,
+                value = PixelBuffer.ON,
+            )
+        }
+
+        if (!searchFocused) {
+            return
+        }
+        val cursorVisible = ((tick / drawerCursorBlinkFrames) % 2) == 0
+        if (!cursorVisible) {
+            return
+        }
+        val textWidth = pixelFontEngine.measureText(trimmed, searchStyle)
+        val cursorX = (textLeft + textWidth + drawerCursorGapFromText).coerceIn(textLeft, textRight)
+        val cursorTop = (textTop + drawerCursorTopInset).coerceIn(0, buffer.height - 1)
+        val cursorBottom = (textTop + searchStyle.cellHeight - drawerCursorBottomInset)
+            .coerceIn(cursorTop, buffer.height - 1)
+        drawVerticalLine(
+            buffer = buffer,
+            x = cursorX,
+            startY = cursorTop,
+            endY = cursorBottom,
+            value = PixelBuffer.ACCENT,
+        )
+    }
+
+    private fun drawPagedApps(
+        buffer: PixelBuffer,
+        layoutMetrics: AppListLayoutMetrics,
+        drawerIndexModel: AppDrawerIndexModel,
+    ) {
+        val selectedRow = drawerIndexModel.currentPageSelectedRow
+        drawerIndexModel.currentPageApps.forEachIndexed { row, appEntry ->
+            val rowTop = layoutMetrics.listStartY + (row * layoutMetrics.rowHeight)
 
             val displayLabel = LabelFormatter.displayLabel(appEntry.label)
             val trimmedLabel = pixelFontEngine.trimToWidth(
@@ -255,71 +354,124 @@ class PixelRenderer(
                 maxWidth = layoutMetrics.maxTextWidth,
             )
 
-            pixelFontEngine.drawText(
+            val isSelected = row == selectedRow
+            val textValue = if (isSelected) PixelBuffer.ACCENT else PixelBuffer.ON
+            drawTextAsValue(
                 buffer = buffer,
                 text = trimmedLabel,
                 startX = layoutMetrics.textX,
                 startY = rowTop + layoutMetrics.labelYInset,
                 maxWidth = layoutMetrics.maxTextWidth,
                 style = GlyphStyle.APP_LABEL_16,
+                value = textValue,
             )
+            if (isSelected) {
+                // Simulate a larger selected label without changing line height.
+                drawTextAsValue(
+                    buffer = buffer,
+                    text = trimmedLabel,
+                    startX = layoutMetrics.textX + 1,
+                    startY = rowTop + layoutMetrics.labelYInset,
+                    maxWidth = (layoutMetrics.maxTextWidth - 1).coerceAtLeast(0),
+                    style = GlyphStyle.APP_LABEL_16,
+                    value = PixelBuffer.ACCENT,
+                )
+            }
+        }
+    }
+
+    private fun drawCenteredApps(
+        buffer: PixelBuffer,
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        layoutMetrics: AppListLayoutMetrics,
+        drawerApps: List<AppEntry>,
+    ) {
+        if (drawerApps.isEmpty()) {
+            return
+        }
+
+        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
+        val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
+
+        for (row in 0 until centeredWindow.visibleRows) {
+            val appIndex = safeSelectedIndex + (row - centeredWindow.centerRow)
+            if (appIndex !in drawerApps.indices) {
+                continue
+            }
+            val rowTop = centeredWindow.rowTop(row)
+            val rowHeight = centeredWindow.rowHeight(row)
+            val appEntry = drawerApps[appIndex]
+            val displayLabel = LabelFormatter.displayLabel(appEntry.label)
+
+            if (row == centeredWindow.centerRow) {
+                drawScaledTextAsValue(
+                    buffer = buffer,
+                    text = displayLabel,
+                    startX = layoutMetrics.textX,
+                    startY = rowTop,
+                    maxWidth = layoutMetrics.maxTextWidth,
+                    baseStyle = GlyphStyle.APP_LABEL_16,
+                    targetHeight = rowHeight,
+                    value = PixelBuffer.ACCENT,
+                )
+            } else {
+                val trimmedLabel = pixelFontEngine.trimToWidth(
+                    text = displayLabel,
+                    style = GlyphStyle.APP_LABEL_16,
+                    maxWidth = layoutMetrics.maxTextWidth,
+                )
+                val nonSelectedTop = rowTop + ((rowHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2)
+                drawTextAsValue(
+                    buffer = buffer,
+                    text = trimmedLabel,
+                    startX = layoutMetrics.textX,
+                    startY = nonSelectedTop,
+                    maxWidth = layoutMetrics.maxTextWidth,
+                    style = GlyphStyle.APP_LABEL_16,
+                    value = PixelBuffer.ON,
+                )
+            }
         }
     }
 
     private fun drawAppDrawerIndexRail(
         buffer: PixelBuffer,
+        state: LauncherState,
         layoutMetrics: AppListLayoutMetrics,
-        drawerIndexModel: AppDrawerIndexModel,
+        alphaIndexModel: DrawerAlphaIndexModel,
+        showRail: Boolean,
     ) {
-        if (layoutMetrics.indexRailWidth <= 0 || drawerIndexModel.pageCount <= 1) {
+        if (!showRail || layoutMetrics.indexRailWidth <= 0) {
             return
         }
 
+        val selectedLetter = alphaIndexModel.selectedLetterIndex.coerceIn(0, DrawerAlphaIndexModel.lastLetterIndex)
         val railLeft = layoutMetrics.indexRailLeft
         val railRight = railLeft + layoutMetrics.indexRailWidth - 1
-        val railTop = layoutMetrics.railTop
-        val railHeight = layoutMetrics.railHeight.coerceAtLeast(1)
-        val numericAnchorCapacity = (railHeight / GlyphStyle.UI_SMALL_10.cellHeight).coerceAtLeast(1)
-        val pageCount = drawerIndexModel.pageCount
-
-        if (pageCount <= numericAnchorCapacity) {
-            val anchorSpacing = railHeight.toFloat() / pageCount.toFloat()
-            for (pageIndex in 0 until pageCount) {
-                val labelTop = railTop + (pageIndex * anchorSpacing).toInt()
-                val label = formatDrawerPageAnchor(pageIndex + 1, pageCount)
-                drawCenteredTextInBounds(
-                    buffer = buffer,
-                    text = label,
-                    left = railLeft,
-                    top = labelTop,
-                    width = layoutMetrics.indexRailWidth,
-                    style = GlyphStyle.UI_SMALL_10,
-                    value = if (pageIndex == drawerIndexModel.currentPageIndex) PixelBuffer.ACCENT else PixelBuffer.ON,
-                )
-            }
-            return
+        val style = GlyphStyle.APP_LABEL_16
+        val renderTop = layoutMetrics.searchTextY.coerceIn(
+            0,
+            (buffer.height - style.cellHeight).coerceAtLeast(0),
+        )
+        val letterText = DrawerAlphaIndexModel.letterAt(selectedLetter).toString()
+        val letterWidth = pixelFontEngine.measureText(letterText, style).coerceAtLeast(1)
+        val emphasizeCopies = if (state.isDrawerRailSliding) {
+            drawerRailSlidingEmphasisCopies
+        } else {
+            drawerRailBaseEmphasisCopies
         }
-
-        for (pageIndex in 0 until pageCount) {
-            val anchorY = railTop + (((pageIndex + 0.5f) * railHeight) / pageCount).toInt()
-                .coerceIn(railTop, railTop + railHeight - 1)
-            if (pageIndex == drawerIndexModel.currentPageIndex) {
-                drawHorizontalLine(
-                    buffer = buffer,
-                    startX = railLeft,
-                    endX = railRight,
-                    y = anchorY,
-                    value = PixelBuffer.ACCENT,
-                )
-            } else {
-                drawHorizontalLine(
-                    buffer = buffer,
-                    startX = railRight - 1,
-                    endX = railRight,
-                    y = anchorY,
-                    value = PixelBuffer.ON,
-                )
-            }
+        val baseX = railRight - letterWidth + 1
+        for (copy in 0..emphasizeCopies.coerceAtLeast(0)) {
+            drawTextAsValue(
+                buffer = buffer,
+                text = letterText,
+                startX = baseX - copy,
+                startY = renderTop,
+                maxWidth = letterWidth,
+                style = style,
+                value = PixelBuffer.ACCENT,
+            )
         }
     }
 
@@ -634,15 +786,6 @@ class PixelRenderer(
                 buffer.setPixel(x, y, PixelBuffer.OFF)
             }
         }
-        if (revealRows in 0 until buffer.height) {
-            drawHorizontalLine(
-                buffer = buffer,
-                startX = 0,
-                endX = buffer.width - 1,
-                y = revealRows,
-                value = PixelBuffer.ACCENT,
-            )
-        }
     }
 
     private fun applyLaunchShutterOverlay(buffer: PixelBuffer, animation: LaunchShutterAnimation?) {
@@ -762,6 +905,77 @@ class PixelRenderer(
         }
     }
 
+    private fun drawScaledTextAsValue(
+        buffer: PixelBuffer,
+        text: String,
+        startX: Int,
+        startY: Int,
+        maxWidth: Int,
+        baseStyle: GlyphStyle,
+        targetHeight: Int,
+        value: Byte,
+    ) {
+        if (text.isEmpty() || maxWidth <= 0 || targetHeight <= 0) {
+            return
+        }
+
+        val scaleNumerator = targetHeight.toFloat()
+        val scaleDenominator = baseStyle.cellHeight.toFloat().coerceAtLeast(1f)
+        val sourceMaxWidth = (maxWidth * (scaleDenominator / scaleNumerator)).toInt().coerceAtLeast(1)
+        val trimmed = pixelFontEngine.trimToWidth(
+            text = text,
+            style = baseStyle,
+            maxWidth = sourceMaxWidth,
+        )
+        if (trimmed.isEmpty()) {
+            return
+        }
+
+        val sourceWidth = pixelFontEngine.measureText(trimmed, baseStyle).coerceAtLeast(1)
+        val source = PixelBuffer(
+            width = sourceWidth,
+            height = baseStyle.cellHeight,
+        )
+        pixelFontEngine.drawText(
+            buffer = source,
+            text = trimmed,
+            startX = 0,
+            startY = 0,
+            maxWidth = source.width,
+            style = baseStyle,
+        )
+
+        val targetWidth = ((sourceWidth * targetHeight.toFloat()) / baseStyle.cellHeight.toFloat())
+            .toInt()
+            .coerceAtLeast(1)
+            .coerceAtMost(maxWidth)
+
+        for (targetY in 0 until targetHeight) {
+            val sourceYStart = (targetY * source.height) / targetHeight
+            val sourceYEndExclusive = (((targetY + 1) * source.height) + targetHeight - 1) / targetHeight
+            for (targetX in 0 until targetWidth) {
+                val sourceXStart = (targetX * source.width) / targetWidth
+                val sourceXEndExclusive = (((targetX + 1) * source.width) + targetWidth - 1) / targetWidth
+
+                var lit = false
+                for (sourceY in sourceYStart until sourceYEndExclusive.coerceAtMost(source.height)) {
+                    for (sourceX in sourceXStart until sourceXEndExclusive.coerceAtMost(source.width)) {
+                        if (source.getPixel(sourceX, sourceY) == PixelBuffer.ON) {
+                            lit = true
+                            break
+                        }
+                    }
+                    if (lit) {
+                        break
+                    }
+                }
+                if (lit) {
+                    buffer.setPixel(startX + targetX, startY + targetY, value)
+                }
+            }
+        }
+    }
+
     private fun drawMarqueeTextAsValue(
         buffer: PixelBuffer,
         text: String,
@@ -826,6 +1040,13 @@ class PixelRenderer(
 
     private companion object {
         const val marqueeStepFramesPerPixel: Int = 5
+        const val drawerCursorBlinkFrames: Int = 8
+        const val drawerCursorWidth: Int = 1
+        const val drawerCursorGapFromText: Int = 1
+        const val drawerCursorTopInset: Int = 0
+        const val drawerCursorBottomInset: Int = 1
+        const val drawerRailBaseEmphasisCopies: Int = 1
+        const val drawerRailSlidingEmphasisCopies: Int = 3
     }
 
     private fun drawHorizontalLine(
@@ -843,6 +1064,21 @@ class PixelRenderer(
         }
     }
 
+    private fun drawVerticalLine(
+        buffer: PixelBuffer,
+        x: Int,
+        startY: Int,
+        endY: Int,
+        value: Byte = PixelBuffer.ON,
+    ) {
+        if (endY < startY) {
+            return
+        }
+        for (drawY in startY..endY) {
+            buffer.setPixel(x, drawY, value)
+        }
+    }
+
     private fun pickHeaderTitle(
         availableWidth: Int,
         titleCandidates: List<String>,
@@ -855,25 +1091,11 @@ class PixelRenderer(
         } ?: ""
     }
 
-    private fun appDrawerHeaderTitles(drawerIndexModel: AppDrawerIndexModel): List<String> {
-        if (drawerIndexModel.pageCount <= 0) {
-            return listOf("APPS", "APP")
+    private fun appDrawerHeaderTitles(drawerQuery: String): List<String> {
+        if (drawerQuery.isNotBlank()) {
+            return listOf("SEARCH", "SRCH")
         }
-
-        val digits = drawerIndexModel.pageCount.toString().length.coerceAtLeast(2)
-        val currentPage = (drawerIndexModel.currentPageIndex + 1).toString().padStart(digits, '0')
-        val totalPages = drawerIndexModel.pageCount.toString().padStart(digits, '0')
-        val pageSuffix = "$currentPage/$totalPages"
-
-        return linkedSetOf(
-            "APPS $pageSuffix",
-            "APP $pageSuffix",
-            pageSuffix,
-        ).toList()
+        return listOf("APPS", "APP")
     }
 
-    private fun formatDrawerPageAnchor(pageNumber: Int, pageCount: Int): String {
-        val digits = pageCount.toString().length.coerceAtLeast(2)
-        return pageNumber.toString().padStart(digits, '0')
-    }
 }

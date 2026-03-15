@@ -4,7 +4,16 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
+import android.view.Gravity
 import android.view.KeyEvent
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.purride.pixellauncherv2.data.AppRepository
@@ -16,7 +25,8 @@ import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
-import com.purride.pixellauncherv2.launcher.AppDrawerIndexModel
+import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.DrawerRailDragMapper
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
@@ -67,6 +77,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private lateinit var pixelFontEngine: PixelFontEngine
     private lateinit var pixelRenderer: PixelRenderer
     private lateinit var pixelDisplayView: PixelDisplayView
+    private lateinit var drawerInputProxy: EditText
 
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
     private var palette: PixelPalette = PixelPalette.terminalGreen()
@@ -82,6 +93,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private var motionSnapshot = DeviceMotionSnapshot()
     private var idlePhysicsAccumulatorMs: Long = 0L
     private var idlePhysicsLastTickUptimeMs: Long = 0L
+    private var syncingDrawerInputProxyText = false
+    private var drawerRailDragLastY: Int = 0
+    private var drawerRailDragAccumulatorPx: Float = 0f
+    private var drawerRailPixelsPerApp: Float = 1f
 
     private val clockTicker = object : Runnable {
         override fun run() {
@@ -206,8 +221,84 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             isFocusableInTouchMode = true
             requestFocus()
         }
+        drawerInputProxy = EditText(this).apply {
+            layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
+            alpha = 0f
+            background = null
+            setSingleLine(true)
+            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_ACTION_NONE
+            inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            isFocusable = true
+            isFocusableInTouchMode = true
+            setText(state.drawerQuery)
+            setSelection(text?.length ?: 0)
+            setOnKeyListener { _, keyCode, event ->
+                if (event.action != KeyEvent.ACTION_DOWN || state.mode != LauncherMode.APP_DRAWER) {
+                    return@setOnKeyListener false
+                }
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP,
+                    KeyEvent.KEYCODE_DPAD_DOWN,
+                    KeyEvent.KEYCODE_DPAD_LEFT,
+                    KeyEvent.KEYCODE_DPAD_RIGHT,
+                    KeyEvent.KEYCODE_DPAD_CENTER,
+                    KeyEvent.KEYCODE_ENTER,
+                    KeyEvent.KEYCODE_NUMPAD_ENTER,
+                    KeyEvent.KEYCODE_SPACE -> onKeyDown(keyCode, event)
 
-        setContentView(pixelDisplayView)
+                    else -> false
+                }
+            }
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+
+                override fun afterTextChanged(s: Editable?) {
+                    if (syncingDrawerInputProxyText || state.mode != LauncherMode.APP_DRAWER) {
+                        return
+                    }
+                    val query = s?.toString().orEmpty()
+                    if (query == state.drawerQuery) {
+                        return
+                    }
+                    recordInteraction()
+                    val focusedState = if (state.isDrawerSearchFocused && !state.isDrawerRailSliding) {
+                        state
+                    } else {
+                        state.copy(
+                            isDrawerSearchFocused = true,
+                            isDrawerRailSliding = false,
+                        )
+                    }
+                    state = LauncherStateTransitions.updateDrawerQuery(
+                        state = focusedState,
+                        query = query,
+                        visibleRows = visibleRows(),
+                    )
+                    renderCurrentFrame()
+                    startAnimationTickerIfNeeded()
+                }
+            })
+        }
+        val rootContainer = FrameLayout(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+            addView(
+                pixelDisplayView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
+            addView(drawerInputProxy)
+        }
+        setContentView(rootContainer)
+        updateDrawerInputFocus()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when (state.mode) {
@@ -217,6 +308,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                         state = LauncherStateTransitions.showHome(state)
                         renderCurrentFrame()
                         startAnimationTickerIfNeeded()
+                        updateDrawerInputFocus()
                     }
 
                     LauncherMode.IDLE -> wakeFromIdle()
@@ -249,6 +341,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         refreshDerivedUiState(render = false)
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
+        updateDrawerInputFocus()
         scheduleIdleCheck()
         loadApps()
         suppressActivityAnimations()
@@ -258,10 +351,15 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             windowModeController.hideSystemBars()
+            updateDrawerInputFocus()
         }
     }
 
     override fun onPause() {
+        hideDrawerKeyboard()
+        if (::drawerInputProxy.isInitialized) {
+            drawerInputProxy.clearFocus()
+        }
         mainHandler.removeCallbacks(clockTicker)
         mainHandler.removeCallbacks(animationTicker)
         mainHandler.removeCallbacks(idlePhysicsTicker)
@@ -349,7 +447,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 true
             }
 
-            else -> super.onKeyDown(keyCode, event)
+            else -> if (handleDrawerTextInput(keyCode, event)) true else super.onKeyDown(keyCode, event)
         }
     }
 
@@ -363,26 +461,52 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         recordInteraction()
         when (state.mode) {
             LauncherMode.APP_DRAWER -> {
-                val drawerIndexModel = AppDrawerIndexModel.create(
-                    apps = state.apps,
-                    visibleRows = visibleRows(),
-                    selectedIndex = state.selectedIndex,
-                )
-                val tappedPageIndex = AppListLayout.hitTestIndexRailPage(
+                val tappedSearchBox = AppListLayout.hitTestSearchBox(
                     screenProfile = screenProfile,
                     logicalX = x,
                     logicalY = y,
-                    pageCount = drawerIndexModel.pageCount,
                 )
-                if (tappedPageIndex != null) {
-                    state = LauncherStateTransitions.selectDrawerPage(
-                        state = state,
-                        pageIndex = tappedPageIndex,
-                        visibleRows = visibleRows(),
-                    )
-                    renderCurrentFrame()
+                if (tappedSearchBox) {
+                    if (!state.isDrawerSearchFocused) {
+                        state = state.copy(
+                            isDrawerSearchFocused = true,
+                            isDrawerRailSliding = false,
+                        )
+                        renderCurrentFrame()
+                        startAnimationTickerIfNeeded()
+                        updateDrawerInputFocus()
+                    }
                     return
                 }
+                val tappedLetterIndex = AppListLayout.hitTestIndexRailLetter(
+                    screenProfile = screenProfile,
+                    logicalX = x,
+                    logicalY = y,
+                )
+                if (tappedLetterIndex != null) {
+                    if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
+                        state = LauncherStateTransitions.clearDrawerQuery(
+                            state = state,
+                            visibleRows = visibleRows(),
+                        ).copy(isDrawerSearchFocused = false)
+                    }
+                    selectByRailLetter(tappedLetterIndex)
+                    return
+                }
+                if (state.isDrawerSearchFocused) {
+                    state = LauncherStateTransitions.clearDrawerQuery(
+                        state = state,
+                        visibleRows = visibleRows(),
+                    ).copy(
+                        isDrawerSearchFocused = false,
+                        isDrawerRailSliding = false,
+                    )
+                    renderCurrentFrame()
+                    startAnimationTickerIfNeeded()
+                    updateDrawerInputFocus()
+                    return
+                }
+                val drawerApps = currentDrawerApps()
 
                 val tappedIndex = AppListLayout.hitTestAppIndex(
                     screenProfile = screenProfile,
@@ -430,6 +554,92 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    override fun onLogicalDragStart(x: Int, y: Int): Boolean {
+        if (launchPending || animationState.bootSequence != null) {
+            return false
+        }
+        if (wakeIfIdle()) {
+            return true
+        }
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return false
+        }
+        AppListLayout.hitTestIndexRailLetter(
+            screenProfile = screenProfile,
+            logicalX = x,
+            logicalY = y,
+        ) ?: return false
+
+        recordInteraction()
+        if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
+            state = LauncherStateTransitions.clearDrawerQuery(
+                state = state,
+                visibleRows = visibleRows(),
+            ).copy(isDrawerSearchFocused = false)
+        }
+        state = state.copy(isDrawerRailSliding = true)
+        drawerRailDragLastY = y
+        drawerRailDragAccumulatorPx = 0f
+        drawerRailPixelsPerApp = resolveRailPixelsPerApp(currentDrawerApps().size)
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+        updateDrawerInputFocus()
+        return true
+    }
+
+    override fun onLogicalDragMove(x: Int, y: Int): Boolean {
+        if (state.mode != LauncherMode.APP_DRAWER || !state.isDrawerRailSliding) {
+            return false
+        }
+        recordInteraction()
+        val deltaY = y - drawerRailDragLastY
+        drawerRailDragLastY = y
+        if (deltaY == 0) {
+            return true
+        }
+        val dragResult = DrawerRailDragMapper.consumeDrag(
+            accumulatedPx = drawerRailDragAccumulatorPx,
+            deltaPx = deltaY.toFloat(),
+            pixelsPerApp = drawerRailPixelsPerApp,
+        )
+        drawerRailDragAccumulatorPx = dragResult.accumulatedPx
+
+        var moved = false
+        val stepDirection = when {
+            dragResult.stepDelta > 0 -> 1
+            dragResult.stepDelta < 0 -> -1
+            else -> 0
+        }
+        repeat(kotlin.math.abs(dragResult.stepDelta)) {
+            state = LauncherStateTransitions.moveSelection(
+                state = state,
+                delta = stepDirection,
+                visibleRows = visibleRows(),
+            )
+            moved = true
+        }
+        if (moved) {
+            renderCurrentFrame()
+            startAnimationTickerIfNeeded()
+        }
+        return true
+    }
+
+    override fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean {
+        if (state.mode != LauncherMode.APP_DRAWER || !state.isDrawerRailSliding) {
+            return false
+        }
+        recordInteraction()
+        state = state.copy(isDrawerRailSliding = false)
+        drawerRailDragLastY = y
+        drawerRailDragAccumulatorPx = 0f
+        drawerRailPixelsPerApp = 1f
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+        updateDrawerInputFocus()
+        return true
+    }
+
     override fun onSwipeUp() {
         if (launchPending || animationState.bootSequence != null) {
             return
@@ -440,7 +650,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         recordInteraction()
         when (state.mode) {
             LauncherMode.APP_DRAWER -> pageDrawer(1)
-            LauncherMode.HOME -> showAppDrawer()
+            LauncherMode.HOME -> Unit
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS,
             LauncherMode.IDLE -> Unit
@@ -460,6 +670,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 state = LauncherStateTransitions.showHome(state)
                 renderCurrentFrame()
                 startAnimationTickerIfNeeded()
+                updateDrawerInputFocus()
             } else {
                 pageDrawer(-1)
             }
@@ -475,8 +686,13 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
         recordInteraction()
         when (state.mode) {
-            LauncherMode.HOME,
-            LauncherMode.APP_DRAWER -> openSettingsMenu()
+            LauncherMode.HOME -> openSettingsMenu()
+            LauncherMode.APP_DRAWER -> {
+                state = LauncherStateTransitions.showHome(state)
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+                updateDrawerInputFocus()
+            }
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS,
             LauncherMode.IDLE -> Unit
@@ -494,7 +710,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         when (state.mode) {
             LauncherMode.SETTINGS -> closeSettingsMenu()
             LauncherMode.DIAGNOSTICS -> closeDiagnostics()
-            LauncherMode.HOME,
+            LauncherMode.HOME -> showAppDrawer()
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE -> Unit
         }
@@ -538,7 +754,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun launchSelectedApp() {
-        val selectedApp = state.apps.getOrNull(state.selectedIndex) ?: return
+        val selectedApp = currentDrawerApps().getOrNull(state.selectedIndex) ?: return
         if (!throttleClickHelper.canClick() || launchPending) {
             return
         }
@@ -554,6 +770,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 state = LauncherStateTransitions.updateStats(state, launcherStatsRepository.recordLaunch(selectedApp))
                 state = LauncherStateTransitions.showHome(state)
                 refreshDerivedUiState(render = false)
+                updateDrawerInputFocus()
                 suppressActivityAnimations()
             } else {
                 renderCurrentFrame()
@@ -597,13 +814,29 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         return true
     }
 
-    private fun visibleRows(): Int = AppListLayout.metrics(screenProfile).visibleRows
+    private fun visibleRows(): Int {
+        val metrics = AppListLayout.metrics(screenProfile)
+        return if (state.mode == LauncherMode.APP_DRAWER && !state.isDrawerSearchFocused) {
+            AppListLayout.centeredVisibleRows(screenProfile)
+        } else {
+            metrics.visibleRows
+        }
+    }
 
     private fun showAppDrawer() {
         val previousMode = state.mode
+        if (previousMode != LauncherMode.APP_DRAWER) {
+            state = LauncherStateTransitions.clearDrawerQuery(
+                state = state,
+                visibleRows = visibleRows(),
+            )
+        }
         state = LauncherStateTransitions.showAppDrawer(
             state = state,
             visibleRows = visibleRows(),
+        ).copy(
+            isDrawerSearchFocused = false,
+            isDrawerRailSliding = false,
         )
         stopIdlePhysics()
         if (previousMode != LauncherMode.APP_DRAWER) {
@@ -611,13 +844,166 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             startAnimationTickerIfNeeded()
         }
         renderCurrentFrame()
+        updateDrawerInputFocus()
         scheduleIdleCheck()
+    }
+
+    private fun currentDrawerApps(): List<AppEntry> {
+        if (state.drawerVisibleApps.isNotEmpty()) {
+            return state.drawerVisibleApps
+        }
+        if (state.drawerQuery.isNotBlank()) {
+            return emptyList()
+        }
+        return state.apps
+    }
+
+    private fun selectByRailLetter(letterIndex: Int) {
+        val keepRailSliding = state.isDrawerRailSliding
+        state = LauncherStateTransitions.selectByLetterIndex(
+            state = state,
+            letterIndex = letterIndex,
+            visibleRows = visibleRows(),
+        ).copy(isDrawerRailSliding = keepRailSliding)
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+        updateDrawerInputFocus()
+    }
+
+    private fun resolveRailPixelsPerApp(appCount: Int): Float {
+        val safeCount = appCount.coerceAtLeast(1)
+        val railHeight = AppListLayout.metrics(screenProfile).railHeight.coerceAtLeast(1)
+        return (railHeight.toFloat() / safeCount.toFloat()).coerceAtLeast(1f)
+    }
+
+    private fun syncDrawerInputProxyText() {
+        if (!::drawerInputProxy.isInitialized) {
+            return
+        }
+        val targetQuery = state.drawerQuery
+        val currentText = drawerInputProxy.text?.toString().orEmpty()
+        if (currentText == targetQuery) {
+            return
+        }
+        syncingDrawerInputProxyText = true
+        drawerInputProxy.setText(targetQuery)
+        drawerInputProxy.setSelection(targetQuery.length)
+        syncingDrawerInputProxyText = false
+    }
+
+    private fun showDrawerKeyboard() {
+        if (!::drawerInputProxy.isInitialized) {
+            return
+        }
+        drawerInputProxy.post {
+            if (state.mode != LauncherMode.APP_DRAWER || !state.isDrawerSearchFocused) {
+                return@post
+            }
+            if (!drawerInputProxy.hasFocus()) {
+                drawerInputProxy.requestFocus()
+            }
+            drawerInputProxy.setSelection(drawerInputProxy.text?.length ?: 0)
+            val inputManager = getSystemService(InputMethodManager::class.java) ?: return@post
+            inputManager.showSoftInput(drawerInputProxy, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun hideDrawerKeyboard() {
+        if (!::drawerInputProxy.isInitialized) {
+            return
+        }
+        val inputManager = getSystemService(InputMethodManager::class.java) ?: return
+        inputManager.hideSoftInputFromWindow(drawerInputProxy.windowToken, 0)
+    }
+
+    private fun updateDrawerInputFocus() {
+        if (!::drawerInputProxy.isInitialized || !::pixelDisplayView.isInitialized) {
+            return
+        }
+        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused) {
+            syncDrawerInputProxyText()
+            showDrawerKeyboard()
+        } else {
+            hideDrawerKeyboard()
+            if (drawerInputProxy.hasFocus()) {
+                drawerInputProxy.clearFocus()
+            }
+            pixelDisplayView.requestFocus()
+        }
+    }
+
+    private fun handleDrawerTextInput(keyCode: Int, event: KeyEvent?): Boolean {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return false
+        }
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_DEL,
+            KeyEvent.KEYCODE_FORWARD_DEL -> {
+                if (!state.isDrawerSearchFocused) {
+                    state = state.copy(
+                        isDrawerSearchFocused = true,
+                        isDrawerRailSliding = false,
+                    )
+                    updateDrawerInputFocus()
+                }
+                state = LauncherStateTransitions.backspaceDrawerQuery(
+                    state = state,
+                    visibleRows = visibleRows(),
+                )
+                syncDrawerInputProxyText()
+                renderCurrentFrame()
+                return true
+            }
+
+            KeyEvent.KEYCODE_ESCAPE -> {
+                state = LauncherStateTransitions.clearDrawerQuery(
+                    state = state,
+                    visibleRows = visibleRows(),
+                ).copy(
+                    isDrawerSearchFocused = false,
+                    isDrawerRailSliding = false,
+                )
+                syncDrawerInputProxyText()
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+                updateDrawerInputFocus()
+                return true
+            }
+        }
+
+        val keyEvent = event ?: return false
+        val unicode = keyEvent.unicodeChar
+        if (unicode <= 0) {
+            return false
+        }
+        val inputChar = unicode.toChar()
+        if (Character.isISOControl(inputChar.code)) {
+            return false
+        }
+        if (!state.isDrawerSearchFocused) {
+            state = state.copy(
+                isDrawerSearchFocused = true,
+                isDrawerRailSliding = false,
+            )
+            updateDrawerInputFocus()
+        }
+
+        state = LauncherStateTransitions.appendDrawerQuery(
+            state = state,
+            text = inputChar.toString(),
+            visibleRows = visibleRows(),
+        )
+        syncDrawerInputProxyText()
+        renderCurrentFrame()
+        return true
     }
 
     private fun openSettingsMenu() {
         state = LauncherStateTransitions.showSettings(state)
         stopIdlePhysics()
         renderCurrentFrame()
+        updateDrawerInputFocus()
         scheduleIdleCheck()
     }
 
@@ -625,17 +1011,20 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         state = LauncherStateTransitions.hideSettings(state)
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
+        updateDrawerInputFocus()
         scheduleIdleCheck()
     }
 
     private fun openDiagnostics() {
         state = LauncherStateTransitions.showDiagnostics(state)
         renderCurrentFrame()
+        updateDrawerInputFocus()
     }
 
     private fun closeDiagnostics() {
         state = LauncherStateTransitions.hideDiagnostics(state)
         renderCurrentFrame()
+        updateDrawerInputFocus()
     }
 
     private fun moveSettingsSelection(delta: Int) {
@@ -736,7 +1125,12 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private fun shouldRunAnimationTicker(): Boolean {
         return animationState.hasActiveAnimations ||
             shouldAnimateHeaderCharge() ||
-            shouldAnimateHomeMarquee()
+            shouldAnimateHomeMarquee() ||
+            shouldAnimateDrawerCursor()
+    }
+
+    private fun shouldAnimateDrawerCursor(): Boolean {
+        return state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
     }
 
     private fun shouldAnimateHomeMarquee(): Boolean {
@@ -842,6 +1236,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         stopIdlePhysics()
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
+        updateDrawerInputFocus()
         scheduleIdleCheck()
     }
 
