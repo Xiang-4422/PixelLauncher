@@ -74,6 +74,7 @@ class PixelRendererCenteredListTest {
         query: String,
         drawerVisibleApps: List<AppEntry> = apps,
         headerChargeTick: Int = 0,
+        drawerScrollOffsetPx: Int = 0,
     ): PixelBuffer {
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
@@ -89,6 +90,7 @@ class PixelRendererCenteredListTest {
             state = state,
             screenProfile = screenProfile,
             animationState = LauncherAnimationState(headerChargeTick = headerChargeTick),
+            drawerListScrollOffsetPx = drawerScrollOffsetPx,
         )
     }
 
@@ -184,8 +186,39 @@ class PixelRendererCenteredListTest {
         return true
     }
 
+    private fun searchRowLitPixelCount(buffer: PixelBuffer, row: Int): Int {
+        if (row !in 0 until layout.visibleRows) {
+            return 0
+        }
+        val rowTop = layout.listStartY + (row * layout.rowHeight)
+        val rowBottomExclusive = (rowTop + layout.rowHeight).coerceAtMost(buffer.height)
+        var pixels = 0
+        for (y in rowTop until rowBottomExclusive) {
+            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(buffer.width)) {
+                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    pixels += 1
+                }
+            }
+        }
+        return pixels
+    }
+
+    private fun pixelDiffCount(left: PixelBuffer, right: PixelBuffer): Int {
+        var diff = 0
+        val width = minOf(left.width, right.width)
+        val height = minOf(left.height, right.height)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (left.getPixel(x, y) != right.getPixel(x, y)) {
+                    diff += 1
+                }
+            }
+        }
+        return diff
+    }
+
     @Test
-    fun searchWithQueryUsesPagedListInsteadOfCenteredList() {
+    fun searchWithQueryKeepsSelectedNearViewportCenter() {
         val apps = List(20) { index ->
             AppEntry(
                 label = "AAAAA",
@@ -193,23 +226,45 @@ class PixelRendererCenteredListTest {
                 activityName = "Activity$index",
             )
         }
-        val pagedBuffer = renderBuffer(
+        val searchBuffer = renderBuffer(
             apps = apps,
             selectedIndex = 8,
             isSearchFocused = true,
             query = "A",
         )
-        val centeredBuffer = renderBuffer(
+        val centerRow = layout.visibleRows / 2
+        val selectedPixels = searchRowLitPixelCount(searchBuffer, centerRow)
+        val abovePixels = searchRowLitPixelCount(searchBuffer, centerRow - 1)
+        val belowPixels = searchRowLitPixelCount(searchBuffer, centerRow + 1)
+        assertTrue(selectedPixels > abovePixels)
+        assertTrue(selectedPixels > belowPixels)
+    }
+
+    @Test
+    fun searchRowsFollowDrawerScrollOffset() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val baseBuffer = renderBuffer(
             apps = apps,
             selectedIndex = 8,
-            isSearchFocused = false,
-            query = "",
+            isSearchFocused = true,
+            query = "A",
+            drawerScrollOffsetPx = 0,
+        )
+        val shiftedBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            isSearchFocused = true,
+            query = "A",
+            drawerScrollOffsetPx = 5,
         )
 
-        val pagedFirstLitY = firstLitY(pagedBuffer)
-        val centeredFirstLitY = firstLitY(centeredBuffer)
-
-        assertTrue(pagedFirstLitY < centeredFirstLitY)
+        assertTrue(pixelDiffCount(baseBuffer, shiftedBuffer) > 0)
     }
 
     @Test

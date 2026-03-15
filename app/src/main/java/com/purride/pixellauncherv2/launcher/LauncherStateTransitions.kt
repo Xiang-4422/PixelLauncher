@@ -451,11 +451,23 @@ object LauncherStateTransitions {
             visibleRows = visibleRows,
             selectedIndex = safeSelectedIndex,
         )
-        val listStartIndex = calculateListStartIndex(
-            selectedIndex = safeSelectedIndex,
-            visibleRows = visibleRows,
-            totalCount = drawerApps.size,
-        )
+        val listStartIndex = if (
+            state.mode == LauncherMode.APP_DRAWER &&
+            state.isDrawerSearchFocused &&
+            state.drawerQuery.isNotBlank()
+        ) {
+            calculateCenteredAnchorListStartIndex(
+                selectedIndex = safeSelectedIndex,
+                visibleRows = visibleRows,
+                totalCount = drawerApps.size,
+            )
+        } else {
+            calculateListStartIndex(
+                selectedIndex = safeSelectedIndex,
+                visibleRows = visibleRows,
+                totalCount = drawerApps.size,
+            )
+        }
 
         return state.copy(
             selectedIndex = safeSelectedIndex,
@@ -473,6 +485,21 @@ object LauncherStateTransitions {
             return emptyList()
         }
         return state.apps
+    }
+
+    private fun calculateCenteredAnchorListStartIndex(
+        selectedIndex: Int,
+        visibleRows: Int,
+        totalCount: Int,
+    ): Int {
+        if (totalCount <= 0) {
+            return 0
+        }
+        val safeRows = visibleRows.coerceAtLeast(1)
+        val safeSelectedIndex = selectedIndex.coerceIn(0, totalCount - 1)
+        val centerRow = safeRows / 2
+        val maxStart = (totalCount - safeRows).coerceAtLeast(0)
+        return (safeSelectedIndex - centerRow).coerceIn(0, maxStart)
     }
 
     private fun orderDefaultApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {

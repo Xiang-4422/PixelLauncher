@@ -29,6 +29,8 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerRailDragMapper
+import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollController
+import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollThresholds
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
@@ -102,6 +104,16 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private var drawerRailDragLastY: Int = 0
     private var drawerRailDragAccumulatorPx: Float = 0f
     private var drawerRailPixelsPerApp: Float = 1f
+    private var drawerListDragTracking = false
+    private var drawerListDragConsumed = false
+    private var drawerListDragStartX = 0
+    private var drawerListDragStartY = 0
+    private var drawerListDragLastY = 0
+    private var drawerListDragLastUptimeMs: Long = 0L
+    private var drawerListDragVelocityPxPerSecond: Float = 0f
+    private var drawerListScrollResidualOffsetPx: Float = 0f
+    private var drawerListScrollVelocityPxPerSecond: Float = 0f
+    private var drawerListScrollAnimating = false
     private val horizontalPageController = HorizontalPageController()
     private var horizontalPageState: HorizontalPageState = horizontalPageController.create(
         pageCount = pagerPageCount,
@@ -133,6 +145,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         override fun run() {
             if (!shouldRunAnimationTicker()) {
                 return
+            }
+            if (shouldAnimateDrawerListScroll()) {
+                stepDrawerVerticalListAnimation(LauncherAnimationState.frameDelayMs)
             }
             val wasPagerSettling = horizontalPageState.isSettling
             horizontalPageState = horizontalPageController.step(
@@ -304,6 +319,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                         query = query,
                         visibleRows = visibleRows(),
                     )
+                    stopDrawerVerticalListAnimation(resetOffset = true)
                     renderCurrentFrame()
                     startAnimationTickerIfNeeded()
                 }
@@ -339,6 +355,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                         } else {
                             LauncherStateTransitions.showHome(state)
                         }
+                        stopDrawerVerticalListAnimation(resetOffset = true)
                         renderCurrentFrame()
                         startAnimationTickerIfNeeded()
                         updateDrawerInputFocus()
@@ -369,6 +386,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         windowModeController.hideSystemBars()
         startClockTicker()
         deviceStatusRepository.start(::onDeviceStatusChanged)
+        resetDrawerVerticalGesture()
         state = LauncherStateTransitions.showHome(state)
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
         refreshDerivedUiState(render = false)
@@ -391,6 +409,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     override fun onPause() {
         hideDrawerKeyboard()
         resetPagerDragTracking()
+        resetDrawerVerticalGesture()
         if (::drawerInputProxy.isInitialized) {
             drawerInputProxy.clearFocus()
         }
@@ -506,6 +525,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                             isDrawerSearchFocused = true,
                             isDrawerRailSliding = false,
                         )
+                        stopDrawerVerticalListAnimation(resetOffset = true)
                         renderCurrentFrame()
                         startAnimationTickerIfNeeded()
                         updateDrawerInputFocus()
@@ -524,6 +544,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                             visibleRows = visibleRows(),
                         )
                     }
+                    stopDrawerVerticalListAnimation(resetOffset = true)
                     selectByRailLetter(tappedLetterIndex)
                     return
                 }
@@ -534,6 +555,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                         state = state,
                         logicalX = x,
                         logicalY = y,
+                        drawerListScrollOffsetPx = drawerListScrollResidualOffsetPx.toInt(),
                     )
                 } else {
                     null
@@ -557,6 +579,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                             state = state,
                             visibleRows = visibleRows(),
                         )
+                        stopDrawerVerticalListAnimation(resetOffset = true)
                         renderCurrentFrame()
                         startAnimationTickerIfNeeded()
                         updateDrawerInputFocus()
@@ -600,6 +623,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             return true
         }
         resetPagerDragTracking()
+        resetDrawerVerticalDragTracking()
 
         if (state.mode == LauncherMode.APP_DRAWER) {
             val railHit = AppListLayout.hitTestIndexRailLetter(
@@ -609,6 +633,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             ) != null
             if (railHit) {
                 recordInteraction()
+                stopDrawerVerticalListAnimation(resetOffset = true)
                 if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
                     state = LauncherStateTransitions.exitDrawerSearch(
                         state = state,
@@ -626,17 +651,30 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             }
         }
 
-        if (!canHandlePagerNavigation()) {
-            return false
+        if (state.mode == LauncherMode.APP_DRAWER &&
+            shouldShowDrawerScrollableList() &&
+            isPointInDrawerScrollableListArea(x, y)
+        ) {
+            drawerListDragTracking = true
+            drawerListDragConsumed = false
+            drawerListDragStartX = x
+            drawerListDragStartY = y
+            drawerListDragLastY = y
+            drawerListDragLastUptimeMs = SystemClock.uptimeMillis()
+            drawerListDragVelocityPxPerSecond = 0f
+            stopDrawerVerticalListAnimation(resetOffset = false)
         }
-        pagerDragTracking = true
-        pagerDragConsumed = false
-        pagerDragStartX = x
-        pagerDragStartY = y
-        pagerDragLastX = x
-        pagerDragLastY = y
-        pagerDragLastUptimeMs = SystemClock.uptimeMillis()
-        pagerDragVelocityPxPerSecond = 0f
+
+        if (canHandlePagerNavigation()) {
+            pagerDragTracking = true
+            pagerDragConsumed = false
+            pagerDragStartX = x
+            pagerDragStartY = y
+            pagerDragLastX = x
+            pagerDragLastY = y
+            pagerDragLastUptimeMs = SystemClock.uptimeMillis()
+            pagerDragVelocityPxPerSecond = 0f
+        }
         return false
     }
 
@@ -674,6 +712,45 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 startAnimationTickerIfNeeded()
             }
             return true
+        }
+
+        if (drawerListDragTracking) {
+            val totalDx = x - drawerListDragStartX
+            val totalDy = y - drawerListDragStartY
+            if (!drawerListDragConsumed) {
+                if (kotlin.math.abs(totalDy) >= drawerListDragStartThresholdPx &&
+                    kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) * drawerListDragAxisBias
+                ) {
+                    drawerListDragConsumed = true
+                    resetPagerDragTracking()
+                }
+            }
+
+            if (drawerListDragConsumed) {
+                recordInteraction()
+                val now = SystemClock.uptimeMillis()
+                val deltaY = y - drawerListDragLastY
+                val elapsedMs = (now - drawerListDragLastUptimeMs).coerceAtLeast(1L)
+                drawerListDragLastY = y
+                drawerListDragLastUptimeMs = now
+                if (deltaY != 0) {
+                    val thresholds = drawerListScrollThresholds()
+                    val dragResult = DrawerVerticalScrollController.consumeDrag(
+                        residualOffsetPx = drawerListScrollResidualOffsetPx,
+                        deltaPx = deltaY.toFloat(),
+                        thresholds = thresholds,
+                    )
+                    drawerListScrollResidualOffsetPx = dragResult.residualOffsetPx
+                    drawerListDragVelocityPxPerSecond = (deltaY.toFloat() * 1000f) / elapsedMs.toFloat()
+                    if (dragResult.stepDelta != 0) {
+                        applyDrawerVerticalStepDelta(dragResult.stepDelta)
+                    } else {
+                        renderCurrentFrame()
+                        startAnimationTickerIfNeeded()
+                    }
+                }
+                return true
+            }
         }
 
         if (!pagerDragTracking || !canHandlePagerNavigation()) {
@@ -735,6 +812,29 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             updateDrawerInputFocus()
             return true
         }
+
+        if (drawerListDragTracking) {
+            val consumed = drawerListDragConsumed
+            if (consumed) {
+                recordInteraction()
+                val releaseVelocity = if (cancelled) 0f else drawerListDragVelocityPxPerSecond
+                val releaseState = DrawerVerticalScrollController.release(
+                    residualOffsetPx = drawerListScrollResidualOffsetPx,
+                    velocityPxPerSecond = releaseVelocity,
+                    thresholds = drawerListScrollThresholds(),
+                )
+                drawerListScrollResidualOffsetPx = releaseState.residualOffsetPx
+                drawerListScrollVelocityPxPerSecond = releaseState.nextVelocityPxPerSecond
+                drawerListScrollAnimating = releaseState.isAnimating
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+            }
+            resetDrawerVerticalDragTracking()
+            if (consumed) {
+                return true
+            }
+        }
+
         if (!pagerDragTracking) {
             return false
         }
@@ -761,17 +861,6 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             return
         }
         recordInteraction()
-        when (state.mode) {
-            LauncherMode.APP_DRAWER -> {
-                if (!state.isDrawerSearchFocused) {
-                    pageDrawer(1)
-                }
-            }
-            LauncherMode.HOME -> Unit
-            LauncherMode.SETTINGS,
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.IDLE -> Unit
-        }
     }
 
     override fun onSwipeDown() {
@@ -782,12 +871,6 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             return
         }
         recordInteraction()
-        if (state.mode == LauncherMode.APP_DRAWER) {
-            if (!state.isDrawerSearchFocused) {
-                pageDrawer(-1)
-            }
-            return
-        }
     }
 
     override fun onSwipeLeft() {
@@ -902,6 +985,11 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             screenProfile = screenProfile,
             animationState = animationState,
             pagerSnapshot = pagerSnapshot,
+            drawerListScrollOffsetPx = if (state.mode == LauncherMode.APP_DRAWER) {
+                drawerListScrollResidualOffsetPx.toInt()
+            } else {
+                0
+            },
         )
         pixelDisplayView.submitFrame(
             pixelBuffer = pixelBuffer,
@@ -999,6 +1087,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         if (state.mode == targetMode) {
             return
         }
+        stopDrawerVerticalListAnimation(resetOffset = true)
+        resetDrawerVerticalDragTracking()
         val drawerRows = AppListLayout.centeredVisibleRows(screenProfile)
         state = when (targetMode) {
             LauncherMode.HOME -> LauncherStateTransitions.showHome(state)
@@ -1054,6 +1144,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun showAppDrawer() {
+        stopDrawerVerticalListAnimation(resetOffset = true)
+        resetDrawerVerticalDragTracking()
         val previousMode = state.mode
         if (previousMode != LauncherMode.APP_DRAWER) {
             state = LauncherStateTransitions.clearDrawerQuery(
@@ -1181,6 +1273,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     state = state,
                     visibleRows = visibleRows(),
                 )
+                stopDrawerVerticalListAnimation(resetOffset = true)
                 syncDrawerInputProxyText()
                 renderCurrentFrame()
                 return true
@@ -1191,6 +1284,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     state = state,
                     visibleRows = visibleRows(),
                 )
+                stopDrawerVerticalListAnimation(resetOffset = true)
                 syncDrawerInputProxyText()
                 renderCurrentFrame()
                 startAnimationTickerIfNeeded()
@@ -1221,6 +1315,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             text = inputChar.toString(),
             visibleRows = visibleRows(),
         )
+        stopDrawerVerticalListAnimation(resetOffset = true)
         syncDrawerInputProxyText()
         renderCurrentFrame()
         return true
@@ -1331,6 +1426,110 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         renderCurrentFrame()
     }
 
+    private fun shouldShowDrawerScrollableList(): Boolean {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return false
+        }
+        if (state.isDrawerSearchFocused && state.drawerQuery.isBlank()) {
+            return false
+        }
+        return currentDrawerApps().isNotEmpty()
+    }
+
+    private fun isPointInDrawerScrollableListArea(x: Int, y: Int): Boolean {
+        if (x !in 0 until screenProfile.logicalWidth) {
+            return false
+        }
+        val metrics = AppListLayout.metrics(screenProfile)
+        if (metrics.indexRailWidth > 0 && x >= metrics.indexRailLeft) {
+            return false
+        }
+        if (y < metrics.listStartY) {
+            return false
+        }
+        return y < metrics.listStartY + metrics.railHeight
+    }
+
+    private fun drawerListScrollThresholds(): DrawerVerticalScrollThresholds {
+        if (state.mode == LauncherMode.APP_DRAWER && !state.isDrawerSearchFocused) {
+            val rowGap = AppListLayout.centeredRowGapPx().toFloat()
+            return DrawerVerticalScrollThresholds(
+                upwardStepPx = AppListLayout.centeredSelectedRowHeightPx().toFloat() + rowGap,
+                downwardStepPx = AppListLayout.centeredUnselectedRowHeightPx().toFloat() + rowGap,
+            )
+        }
+        val rowHeight = AppListLayout.metrics(screenProfile).rowHeight.toFloat()
+        return DrawerVerticalScrollThresholds(
+            upwardStepPx = rowHeight,
+            downwardStepPx = rowHeight,
+        )
+    }
+
+    private fun applyDrawerVerticalStepDelta(stepDelta: Int, renderAfter: Boolean = true) {
+        if (stepDelta == 0) {
+            return
+        }
+        var remaining = stepDelta
+        while (remaining != 0) {
+            val direction = if (remaining > 0) 1 else -1
+            val previousSelectedIndex = state.selectedIndex
+            state = LauncherStateTransitions.moveSelection(
+                state = state,
+                delta = direction,
+                visibleRows = visibleRows(),
+            )
+            if (state.selectedIndex == previousSelectedIndex) {
+                drawerListScrollResidualOffsetPx = 0f
+                drawerListScrollVelocityPxPerSecond = 0f
+                drawerListScrollAnimating = false
+                break
+            }
+            remaining -= direction
+        }
+        if (renderAfter) {
+            renderCurrentFrame()
+            startAnimationTickerIfNeeded()
+        }
+    }
+
+    private fun stepDrawerVerticalListAnimation(deltaMs: Long) {
+        if (!drawerListScrollAnimating) {
+            return
+        }
+        val animationStep = DrawerVerticalScrollController.stepAnimation(
+            residualOffsetPx = drawerListScrollResidualOffsetPx,
+            velocityPxPerSecond = drawerListScrollVelocityPxPerSecond,
+            thresholds = drawerListScrollThresholds(),
+            deltaMs = deltaMs,
+        )
+        drawerListScrollResidualOffsetPx = animationStep.residualOffsetPx
+        drawerListScrollVelocityPxPerSecond = animationStep.nextVelocityPxPerSecond
+        drawerListScrollAnimating = animationStep.isAnimating
+        if (animationStep.stepDelta != 0) {
+            applyDrawerVerticalStepDelta(animationStep.stepDelta, renderAfter = false)
+        }
+    }
+
+    private fun stopDrawerVerticalListAnimation(resetOffset: Boolean) {
+        drawerListScrollAnimating = false
+        drawerListScrollVelocityPxPerSecond = 0f
+        if (resetOffset) {
+            drawerListScrollResidualOffsetPx = 0f
+        }
+    }
+
+    private fun resetDrawerVerticalDragTracking() {
+        drawerListDragTracking = false
+        drawerListDragConsumed = false
+        drawerListDragVelocityPxPerSecond = 0f
+        drawerListDragLastUptimeMs = 0L
+    }
+
+    private fun resetDrawerVerticalGesture() {
+        resetDrawerVerticalDragTracking()
+        stopDrawerVerticalListAnimation(resetOffset = true)
+    }
+
     private fun startClockTicker() {
         mainHandler.removeCallbacks(clockTicker)
         mainHandler.post(clockTicker)
@@ -1354,11 +1553,16 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             shouldAnimateHeaderCharge() ||
             shouldAnimateHomeMarquee() ||
             shouldAnimateDrawerCursor() ||
+            shouldAnimateDrawerListScroll() ||
             horizontalPageState.isSettling
     }
 
     private fun shouldAnimateDrawerCursor(): Boolean {
         return state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
+    }
+
+    private fun shouldAnimateDrawerListScroll(): Boolean {
+        return state.mode == LauncherMode.APP_DRAWER && drawerListScrollAnimating
     }
 
     private fun shouldAnimateHomeMarquee(): Boolean {
@@ -1578,6 +1782,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         const val pagerPageCount = 3
         const val pagerDragStartThresholdPx = 2
         const val pagerDragAxisBias = 1.1f
+        const val drawerListDragStartThresholdPx = 2
+        const val drawerListDragAxisBias = 1.1f
+        const val drawerListFlingStartVelocityPxPerSecond = 24f
         const val idleFixedStepMs: Long = 16L
         const val idleFixedStepSeconds: Float = idleFixedStepMs / 1000f
         const val idleTickerDelayMs: Long = 16L

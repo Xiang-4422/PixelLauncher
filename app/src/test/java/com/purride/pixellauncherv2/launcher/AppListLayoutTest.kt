@@ -318,4 +318,90 @@ class AppListLayoutTest {
             assertNull(tappedIndex)
         }
     }
+
+    @Test
+    fun hitTestTracksCenteredRowsWithScrollOffset() {
+        val screenProfile = ScreenProfile(
+            logicalWidth = 72,
+            logicalHeight = 160,
+            dotSizePx = 15,
+        )
+        val metrics = AppListLayout.metrics(screenProfile)
+        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isDrawerSearchFocused = false,
+            apps = List(20) { index ->
+                AppEntry(
+                    label = "App $index",
+                    packageName = "pkg.$index",
+                    activityName = "Activity$index",
+                )
+            },
+            selectedIndex = 8,
+            isLoading = false,
+        )
+
+        val offset = 6
+        val tappedCenterIndex = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = centeredWindow.rowTop(centeredWindow.centerRow) + offset + 1,
+            drawerListScrollOffsetPx = offset,
+        )
+
+        assertEquals(8, tappedCenterIndex)
+    }
+
+    @Test
+    fun searchHitTestUsesCenteredAnchorAndScrollOffset() {
+        val screenProfile = ScreenProfile(
+            logicalWidth = 72,
+            logicalHeight = 160,
+            dotSizePx = 15,
+        )
+        val metrics = AppListLayout.metrics(screenProfile)
+        val centerRow = metrics.visibleRows / 2
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isDrawerSearchFocused = true,
+            drawerQuery = "A",
+            apps = List(20) { index ->
+                AppEntry(
+                    label = "App $index",
+                    packageName = "pkg.$index",
+                    activityName = "Activity$index",
+                )
+            },
+            drawerVisibleApps = List(20) { index ->
+                AppEntry(
+                    label = "App $index",
+                    packageName = "pkg.$index",
+                    activityName = "Activity$index",
+                )
+            },
+            selectedIndex = 10,
+            isLoading = false,
+        )
+
+        val offset = -5
+        val selectedTap = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = metrics.listStartY + (centerRow * metrics.rowHeight) + offset + 1,
+            drawerListScrollOffsetPx = offset,
+        )
+        val nextTap = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = metrics.listStartY + ((centerRow + 1) * metrics.rowHeight) + offset + 1,
+            drawerListScrollOffsetPx = offset,
+        )
+
+        assertEquals(10, selectedTap)
+        assertEquals(11, nextTap)
+    }
 }

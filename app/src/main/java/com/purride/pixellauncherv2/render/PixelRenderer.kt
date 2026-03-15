@@ -1,7 +1,6 @@
 package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.AppEntry
-import com.purride.pixellauncherv2.launcher.AppDrawerIndexModel
 import com.purride.pixellauncherv2.launcher.DrawerAlphaIndexModel
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppListLayoutMetrics
@@ -28,6 +27,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
         pagerSnapshot: HorizontalPageSnapshot? = null,
+        drawerListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
         val bootBuffer = PixelBuffer(
             width = screenProfile.logicalWidth,
@@ -47,6 +47,7 @@ class PixelRenderer(
                 screenProfile = screenProfile,
                 animationState = animationState,
                 mode = state.mode,
+                drawerListScrollOffsetPx = drawerListScrollOffsetPx,
             )
         } else {
             renderPagerSnapshot(
@@ -54,6 +55,7 @@ class PixelRenderer(
                 screenProfile = screenProfile,
                 animationState = animationState,
                 pagerSnapshot = pagerSnapshot,
+                drawerListScrollOffsetPx = drawerListScrollOffsetPx,
             )
         }
         applyLaunchShutterOverlay(pageBuffer, animationState.launchShutter)
@@ -65,6 +67,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
         pagerSnapshot: HorizontalPageSnapshot,
+        drawerListScrollOffsetPx: Int,
     ): PixelBuffer {
         val anchorMode = pagerModeForIndex(pagerSnapshot.anchorPageIndex) ?: state.mode
         val anchorPage = renderSingleMode(
@@ -72,6 +75,7 @@ class PixelRenderer(
             screenProfile = screenProfile,
             animationState = animationState,
             mode = anchorMode,
+            drawerListScrollOffsetPx = drawerListScrollOffsetPx,
         )
 
         val dragOffset = pagerSnapshot.dragOffsetPx
@@ -88,6 +92,7 @@ class PixelRenderer(
             screenProfile = screenProfile,
             animationState = animationState,
             mode = adjacentMode,
+            drawerListScrollOffsetPx = drawerListScrollOffsetPx,
         )
         return HorizontalPageRenderer.compose(
             currentPage = anchorPage,
@@ -102,6 +107,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
         mode: LauncherMode,
+        drawerListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
         val buffer = PixelBuffer(
             width = screenProfile.logicalWidth,
@@ -110,9 +116,20 @@ class PixelRenderer(
         buffer.clear()
 
         val modeState = if (state.mode == mode) state else state.copy(mode = mode)
+        val modeScrollOffset = if (mode == LauncherMode.APP_DRAWER && state.mode == LauncherMode.APP_DRAWER) {
+            drawerListScrollOffsetPx
+        } else {
+            0
+        }
         when (mode) {
             LauncherMode.HOME -> drawHome(buffer, modeState, screenProfile, animationState)
-            LauncherMode.APP_DRAWER -> drawAppDrawer(buffer, modeState, screenProfile, animationState)
+            LauncherMode.APP_DRAWER -> drawAppDrawer(
+                buffer = buffer,
+                state = modeState,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                drawerListScrollOffsetPx = modeScrollOffset,
+            )
             LauncherMode.SETTINGS -> drawSettings(buffer, modeState, screenProfile, animationState)
             LauncherMode.DIAGNOSTICS -> drawDiagnostics(buffer, modeState, screenProfile, animationState)
             LauncherMode.IDLE -> drawIdle(buffer, modeState, screenProfile)
@@ -277,16 +294,12 @@ class PixelRenderer(
         state: LauncherState,
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
+        drawerListScrollOffsetPx: Int,
     ) {
         val drawerApps = resolveDrawerApps(state)
         val showPagedSearchResults = state.isDrawerSearchFocused && state.drawerQuery.isNotBlank()
         val shouldShowApps = showPagedSearchResults || !state.isDrawerSearchFocused
         val layoutMetrics = AppListLayout.metrics(screenProfile)
-        val drawerIndexModel = AppDrawerIndexModel.create(
-            apps = drawerApps,
-            visibleRows = layoutMetrics.visibleRows,
-            selectedIndex = state.selectedIndex,
-        )
         val alphaIndexModel = DrawerAlphaIndexModel.create(
             apps = drawerApps,
             selectedIndex = state.selectedIndex,
@@ -329,10 +342,12 @@ class PixelRenderer(
 
             else -> {
                 if (showPagedSearchResults) {
-                    drawPagedApps(
+                    drawSearchScrollableApps(
                         buffer = buffer,
+                        state = state,
                         layoutMetrics = layoutMetrics,
-                        drawerIndexModel = drawerIndexModel,
+                        drawerApps = drawerApps,
+                        drawerListScrollOffsetPx = drawerListScrollOffsetPx,
                     )
                 } else {
                     drawCenteredApps(
@@ -341,6 +356,7 @@ class PixelRenderer(
                         screenProfile = screenProfile,
                         layoutMetrics = layoutMetrics,
                         drawerApps = drawerApps,
+                        drawerListScrollOffsetPx = drawerListScrollOffsetPx,
                     )
                 }
                 drawAppDrawerIndexRail(
@@ -437,14 +453,25 @@ class PixelRenderer(
         )
     }
 
-    private fun drawPagedApps(
+    private fun drawSearchScrollableApps(
         buffer: PixelBuffer,
+        state: LauncherState,
         layoutMetrics: AppListLayoutMetrics,
-        drawerIndexModel: AppDrawerIndexModel,
+        drawerApps: List<AppEntry>,
+        drawerListScrollOffsetPx: Int,
     ) {
-        val selectedRow = drawerIndexModel.currentPageSelectedRow
-        drawerIndexModel.currentPageApps.forEachIndexed { row, appEntry ->
-            val rowTop = layoutMetrics.listStartY + (row * layoutMetrics.rowHeight)
+        if (drawerApps.isEmpty()) {
+            return
+        }
+        val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
+        val centerRow = layoutMetrics.visibleRows / 2
+        for (row in -1..layoutMetrics.visibleRows) {
+            val appIndex = safeSelectedIndex + (row - centerRow)
+            if (appIndex !in drawerApps.indices) {
+                continue
+            }
+            val appEntry = drawerApps[appIndex]
+            val rowTop = layoutMetrics.listStartY + (row * layoutMetrics.rowHeight) + drawerListScrollOffsetPx
 
             val displayLabel = LabelFormatter.displayLabel(appEntry.label)
             val trimmedLabel = pixelFontEngine.trimToWidth(
@@ -453,7 +480,7 @@ class PixelRenderer(
                 maxWidth = layoutMetrics.maxTextWidth,
             )
 
-            val isSelected = row == selectedRow
+            val isSelected = row == centerRow
             val textValue = if (isSelected) PixelBuffer.ACCENT else PixelBuffer.ON
             drawTextAsValue(
                 buffer = buffer,
@@ -485,6 +512,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         layoutMetrics: AppListLayoutMetrics,
         drawerApps: List<AppEntry>,
+        drawerListScrollOffsetPx: Int,
     ) {
         if (drawerApps.isEmpty()) {
             return
@@ -498,7 +526,7 @@ class PixelRenderer(
             if (appIndex !in drawerApps.indices) {
                 continue
             }
-            val rowTop = centeredWindow.rowTop(row)
+            val rowTop = centeredWindow.rowTop(row) + drawerListScrollOffsetPx
             val rowHeight = centeredWindow.rowHeight(row)
             val appEntry = drawerApps[appIndex]
             val displayLabel = LabelFormatter.displayLabel(appEntry.label)

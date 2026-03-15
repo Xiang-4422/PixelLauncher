@@ -73,6 +73,7 @@ object AppListLayout {
         state: LauncherState,
         logicalX: Int,
         logicalY: Int,
+        drawerListScrollOffsetPx: Int = 0,
     ): Int? {
         val drawerApps = when {
             state.drawerVisibleApps.isNotEmpty() -> state.drawerVisibleApps
@@ -93,20 +94,34 @@ object AppListLayout {
 
         if (state.mode == LauncherMode.APP_DRAWER && !state.isDrawerSearchFocused) {
             val centeredWindow = centeredListWindow(screenProfile)
-            if (logicalY < centeredWindow.listTop || logicalY >= centeredWindow.listBottomExclusive) {
+            val adjustedY = logicalY - drawerListScrollOffsetPx
+            if (adjustedY < centeredWindow.listTop || adjustedY >= centeredWindow.listBottomExclusive) {
                 return null
             }
-            val row = centeredWindow.rowAt(logicalY) ?: return null
+            val row = centeredWindow.rowAt(adjustedY) ?: return null
             val appIndex = state.selectedIndex + (row - centeredWindow.centerRow)
             return appIndex.takeIf { it in drawerApps.indices }
         }
 
-        val row = (logicalY - metrics.listStartY) / metrics.rowHeight
+        val adjustedY = logicalY - drawerListScrollOffsetPx
+        if (adjustedY < metrics.listStartY) {
+            return null
+        }
+        val row = (adjustedY - metrics.listStartY) / metrics.rowHeight
         if (row !in 0 until metrics.visibleRows) {
             return null
         }
 
-        val appIndex = state.listStartIndex + row
+        val appIndex = if (
+            state.mode == LauncherMode.APP_DRAWER &&
+            state.isDrawerSearchFocused &&
+            state.drawerQuery.isNotBlank()
+        ) {
+            val centerRow = metrics.visibleRows / 2
+            state.selectedIndex + (row - centerRow)
+        } else {
+            state.listStartIndex + row
+        }
         return appIndex.takeIf { it in drawerApps.indices }
     }
 
