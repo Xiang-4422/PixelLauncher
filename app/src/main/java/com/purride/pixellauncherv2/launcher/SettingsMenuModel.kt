@@ -12,7 +12,7 @@ enum class SettingsMenuItem {
     RESOLUTION,
     STYLE,
     THEME,
-    INFO,
+    ADVANCED,
     CLOSE,
 }
 
@@ -56,8 +56,8 @@ object SettingsMenuModel {
                 value = themeLabel(state.selectedTheme),
             ),
             SettingsMenuRow(
-                item = SettingsMenuItem.INFO,
-                title = "INFO",
+                item = SettingsMenuItem.ADVANCED,
+                title = "ADVANCED",
                 value = "OPEN",
             ),
             SettingsMenuRow(

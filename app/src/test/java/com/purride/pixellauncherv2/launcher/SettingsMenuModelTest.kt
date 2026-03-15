@@ -62,13 +62,13 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun rowsIncludeThemeAndInfoItems() {
+    fun rowsIncludeThemeAndAdvancedItems() {
         val rowItems = SettingsMenuModel.rows(
             LauncherState(selectedTheme = PixelTheme.AMBER_CRT),
             null,
         ).map { it.item }
 
         assertTrue(SettingsMenuItem.THEME in rowItems)
-        assertTrue(SettingsMenuItem.INFO in rowItems)
+        assertTrue(SettingsMenuItem.ADVANCED in rowItems)
     }
 }

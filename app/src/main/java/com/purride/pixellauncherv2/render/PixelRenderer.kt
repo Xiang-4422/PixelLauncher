@@ -333,7 +333,7 @@ class PixelRenderer(
             buffer = buffer,
             screenProfile = screenProfile,
             state = state,
-            titleCandidates = listOf("DIAG", "INFO"),
+            titleCandidates = listOf("ADVANCED", "ADV"),
             chargeTick = animationState.headerChargeTick,
         )
 

@@ -235,7 +235,6 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         deviceStatusRepository.start(::onDeviceStatusChanged)
         state = LauncherStateTransitions.showHome(state)
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
-        animationState = animationState.startBootSequence()
         refreshDerivedUiState(render = false)
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
@@ -638,7 +637,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             SettingsMenuItem.RESOLUTION -> changeSettingValue(1)
             SettingsMenuItem.STYLE -> changeSettingValue(1)
             SettingsMenuItem.THEME -> changeSettingValue(1)
-            SettingsMenuItem.INFO -> openDiagnostics()
+            SettingsMenuItem.ADVANCED -> openDiagnostics()
             SettingsMenuItem.CLOSE -> closeSettingsMenu()
         }
     }
@@ -685,7 +684,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 )
             }
 
-            SettingsMenuItem.INFO -> {
+            SettingsMenuItem.ADVANCED -> {
                 if (direction >= 0) {
                     openDiagnostics()
                 }
