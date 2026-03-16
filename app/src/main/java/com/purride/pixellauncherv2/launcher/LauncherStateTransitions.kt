@@ -54,6 +54,9 @@ object LauncherStateTransitions {
     }
 
     fun showIdle(state: LauncherState): LauncherState {
+        if (!state.isIdlePageEnabled) {
+            return state
+        }
         if (state.mode != LauncherMode.HOME && state.mode != LauncherMode.APP_DRAWER) {
             return state
         }
@@ -372,6 +375,19 @@ object LauncherStateTransitions {
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
             selectedTheme = selectedTheme,
+        )
+    }
+
+    fun updateUiBehavior(
+        state: LauncherState,
+        drawerListAlignment: DrawerListAlignment = state.drawerListAlignment,
+        isIdlePageEnabled: Boolean = state.isIdlePageEnabled,
+        openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
+    ): LauncherState {
+        return state.copy(
+            drawerListAlignment = drawerListAlignment,
+            isIdlePageEnabled = isIdlePageEnabled,
+            openDrawerInSearchMode = openDrawerInSearchMode,
         )
     }
 

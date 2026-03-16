@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.AppListLayout
+import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
@@ -131,6 +132,71 @@ class PixelRendererCenteredListTest {
         assertTrue(rowAccentPixelCount(smallBuffer, row = 0, offsetPx = smallOffset) > 0)
         assertEquals(0, rowAccentPixelCount(smallBuffer, row = 1, offsetPx = smallOffset))
         assertEquals(0, rowAccentPixelCount(largeBuffer, row = 1, offsetPx = largeOffset))
+    }
+
+    @Test
+    fun drawerAlignmentChangesTextStartX() {
+        val apps = listOf(
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.a",
+                activityName = "ActivityA",
+            ),
+        )
+        val leftBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = false,
+            query = "",
+            drawerListAlignment = DrawerListAlignment.LEFT,
+        )
+        val centerBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = false,
+            query = "",
+            drawerListAlignment = DrawerListAlignment.CENTER,
+        )
+        val rightBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = false,
+            query = "",
+            drawerListAlignment = DrawerListAlignment.RIGHT,
+        )
+
+        val leftX = firstLitXForRow(leftBuffer, row = 0)
+        val centerX = firstLitXForRow(centerBuffer, row = 0)
+        val rightX = firstLitXForRow(rightBuffer, row = 0)
+
+        assertTrue(leftX < centerX)
+        assertTrue(centerX < rightX)
+    }
+
+    @Test
+    fun rightAlignmentCanUseHiddenRailSpace() {
+        val apps = listOf(
+            AppEntry(
+                label = "AAAAAAAAAAAA",
+                packageName = "pkg.a",
+                activityName = "ActivityA",
+            ),
+        )
+        val rightBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = false,
+            query = "",
+            drawerListAlignment = DrawerListAlignment.RIGHT,
+        )
+
+        val lastX = lastLitXForRow(rightBuffer, row = 0)
+
+        assertTrue(lastX >= layout.hiddenRailLeft)
     }
 
     @Test
@@ -316,6 +382,7 @@ class PixelRendererCenteredListTest {
         isSearchFocused: Boolean,
         query: String,
         drawerVisibleApps: List<AppEntry> = apps,
+        drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
         headerChargeTick: Int = 0,
         drawerScrollOffsetPx: Int = 0,
     ): PixelBuffer {
@@ -327,6 +394,7 @@ class PixelRendererCenteredListTest {
             isDrawerSearchFocused = isSearchFocused,
             selectedIndex = selectedIndex,
             listStartIndex = listStartIndex,
+            drawerListAlignment = drawerListAlignment,
             isLoading = false,
         )
         return renderer.render(
@@ -352,6 +420,38 @@ class PixelRendererCenteredListTest {
             }
         }
         return pixels
+    }
+
+    private fun firstLitXForRow(buffer: PixelBuffer, row: Int): Int {
+        if (row !in 0 until layout.visibleRows) {
+            return Int.MAX_VALUE
+        }
+        val rowTop = (layout.listStartY + (row * layout.rowHeight)).coerceAtLeast(0)
+        val rowBottomExclusive = (rowTop + layout.rowHeight).coerceAtMost(buffer.height)
+        for (x in 0 until buffer.width) {
+            for (y in rowTop until rowBottomExclusive) {
+                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    return x
+                }
+            }
+        }
+        return Int.MAX_VALUE
+    }
+
+    private fun lastLitXForRow(buffer: PixelBuffer, row: Int): Int {
+        if (row !in 0 until layout.visibleRows) {
+            return Int.MIN_VALUE
+        }
+        val rowTop = (layout.listStartY + (row * layout.rowHeight)).coerceAtLeast(0)
+        val rowBottomExclusive = (rowTop + layout.rowHeight).coerceAtMost(buffer.height)
+        for (x in buffer.width - 1 downTo 0) {
+            for (y in rowTop until rowBottomExclusive) {
+                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    return x
+                }
+            }
+        }
+        return Int.MIN_VALUE
     }
 
     private fun firstLitY(buffer: PixelBuffer): Int {

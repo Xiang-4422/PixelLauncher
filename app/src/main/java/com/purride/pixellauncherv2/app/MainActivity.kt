@@ -31,6 +31,7 @@ import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerDirectionalSettlePolicy
+import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.DrawerMotionInterruption
 import com.purride.pixellauncherv2.launcher.DrawerMotionRuntimeState
 import com.purride.pixellauncherv2.launcher.DrawerRailDragMapper
@@ -251,6 +252,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         deviceMotionRepository = DeviceMotionRepository(applicationContext)
         pixelFontResolver = PixelFontResolver(applicationContext)
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
+        val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
         val resolvedPixelFont = pixelFontResolver.createFont(appearanceSettings.fontId)
         pixelFontEngine = resolvedPixelFont.engine
         pixelShape = appearanceSettings.pixelShape
@@ -262,6 +264,12 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
             selectedTheme = appearanceSettings.theme,
+        )
+        state = LauncherStateTransitions.updateUiBehavior(
+            state = state,
+            drawerListAlignment = uiBehaviorSettings.drawerListAlignment,
+            isIdlePageEnabled = uiBehaviorSettings.isIdlePageEnabled,
+            openDrawerInSearchMode = uiBehaviorSettings.openDrawerInSearchMode,
         )
         state = LauncherStateTransitions.updateStats(state, launcherStatsRepository.read())
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
@@ -1173,7 +1181,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 ),
                 visibleRows = drawerRows,
             ).copy(
-                isDrawerSearchFocused = false,
+                isDrawerSearchFocused = state.openDrawerInSearchMode,
                 isDrawerRailSliding = false,
             )
 
@@ -1222,6 +1230,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private fun showAppDrawer() {
         settleDrawerMotionBeforeExplicitAction()
         val previousMode = state.mode
+        val shouldFocusSearchOnEntry = previousMode != LauncherMode.APP_DRAWER && state.openDrawerInSearchMode
         if (previousMode != LauncherMode.APP_DRAWER) {
             state = LauncherStateTransitions.clearDrawerQuery(
                 state = state,
@@ -1232,7 +1241,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             state = state,
             visibleRows = visibleRows(),
         ).copy(
-            isDrawerSearchFocused = false,
+            isDrawerSearchFocused = shouldFocusSearchOnEntry,
             isDrawerRailSliding = false,
         )
         stopIdlePhysics()
@@ -1442,6 +1451,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             SettingsMenuItem.RESOLUTION -> changeSettingValue(1)
             SettingsMenuItem.STYLE -> changeSettingValue(1)
             SettingsMenuItem.THEME -> changeSettingValue(1)
+            SettingsMenuItem.APP_LIST_ALIGNMENT -> changeSettingValue(1)
+            SettingsMenuItem.IDLE_PAGE -> changeSettingValue(1)
+            SettingsMenuItem.DRAWER_AUTO_SEARCH -> changeSettingValue(1)
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
@@ -1485,6 +1497,30 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
                     newTheme = nextTheme,
+                )
+            }
+
+            SettingsMenuItem.APP_LIST_ALIGNMENT -> {
+                applyUiBehavior(
+                    drawerListAlignment = SettingsMenuModel.nextDrawerListAlignment(state.drawerListAlignment, direction),
+                    isIdlePageEnabled = state.isIdlePageEnabled,
+                    openDrawerInSearchMode = state.openDrawerInSearchMode,
+                )
+            }
+
+            SettingsMenuItem.IDLE_PAGE -> {
+                applyUiBehavior(
+                    drawerListAlignment = state.drawerListAlignment,
+                    isIdlePageEnabled = SettingsMenuModel.toggle(state.isIdlePageEnabled),
+                    openDrawerInSearchMode = state.openDrawerInSearchMode,
+                )
+            }
+
+            SettingsMenuItem.DRAWER_AUTO_SEARCH -> {
+                applyUiBehavior(
+                    drawerListAlignment = state.drawerListAlignment,
+                    isIdlePageEnabled = state.isIdlePageEnabled,
+                    openDrawerInSearchMode = SettingsMenuModel.toggle(state.openDrawerInSearchMode),
                 )
             }
 
@@ -1790,6 +1826,31 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         refreshDerivedUiState(render = !screenProfileChanged)
     }
 
+    private fun applyUiBehavior(
+        drawerListAlignment: DrawerListAlignment,
+        isIdlePageEnabled: Boolean,
+        openDrawerInSearchMode: Boolean,
+    ) {
+        fontSettingsRepository.setUiBehaviorSettings(
+            drawerListAlignment = drawerListAlignment,
+            isIdlePageEnabled = isIdlePageEnabled,
+            openDrawerInSearchMode = openDrawerInSearchMode,
+        )
+        state = LauncherStateTransitions.updateUiBehavior(
+            state = state,
+            drawerListAlignment = drawerListAlignment,
+            isIdlePageEnabled = isIdlePageEnabled,
+            openDrawerInSearchMode = openDrawerInSearchMode,
+        )
+        if (!isIdlePageEnabled && state.mode == LauncherMode.IDLE) {
+            wakeFromIdle()
+            return
+        }
+        refreshDerivedUiState(render = true)
+        updateDrawerInputFocus()
+        scheduleIdleCheck()
+    }
+
     private fun onDeviceStatusChanged(deviceStatus: DeviceStatus) {
         state = LauncherStateTransitions.updateDeviceStatus(state, deviceStatus)
         syncIdleFluidWithBattery()
@@ -1843,7 +1904,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun canEnterIdle(): Boolean {
-        return !launchPending && (state.mode == LauncherMode.HOME || state.mode == LauncherMode.APP_DRAWER)
+        return state.isIdlePageEnabled &&
+            !launchPending &&
+            (state.mode == LauncherMode.HOME || state.mode == LauncherMode.APP_DRAWER)
     }
 
     private fun scheduleIdleCheck() {

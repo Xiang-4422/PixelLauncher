@@ -28,6 +28,9 @@ data class LauncherState(
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR,
+    val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
+    val isIdlePageEnabled: Boolean = true,
+    val openDrawerInSearchMode: Boolean = false,
     val batteryLevel: Int = 100,
     val isCharging: Boolean = false,
     val recentApps: List<String> = emptyList(),
@@ -55,6 +58,12 @@ enum class HomeContextCard {
 
 enum class DrawerFocus {
     LIST,
+}
+
+enum class DrawerListAlignment {
+    LEFT,
+    CENTER,
+    RIGHT,
 }
 
 enum class LauncherMode {

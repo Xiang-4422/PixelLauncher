@@ -289,6 +289,20 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun updateUiBehaviorStoresDrawerAndIdlePreferences() {
+        val updatedState = LauncherStateTransitions.updateUiBehavior(
+            state = LauncherState(),
+            drawerListAlignment = DrawerListAlignment.RIGHT,
+            isIdlePageEnabled = false,
+            openDrawerInSearchMode = true,
+        )
+
+        assertEquals(DrawerListAlignment.RIGHT, updatedState.drawerListAlignment)
+        assertEquals(false, updatedState.isIdlePageEnabled)
+        assertEquals(true, updatedState.openDrawerInSearchMode)
+    }
+
+    @Test
     fun showIdleStoresPreviousModeForWakeUp() {
         val idleState = LauncherStateTransitions.showIdle(
             LauncherState(mode = LauncherMode.APP_DRAWER),
@@ -296,6 +310,19 @@ class LauncherStateTransitionsTest {
 
         assertEquals(LauncherMode.IDLE, idleState.mode)
         assertEquals(LauncherMode.APP_DRAWER, idleState.returnMode)
+    }
+
+    @Test
+    fun showIdleDoesNothingWhenIdlePageIsDisabled() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isIdlePageEnabled = false,
+        )
+
+        val idleState = LauncherStateTransitions.showIdle(state)
+
+        assertEquals(LauncherMode.APP_DRAWER, idleState.mode)
+        assertEquals(false, idleState.isIdlePageEnabled)
     }
 
     @Test

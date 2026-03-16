@@ -64,12 +64,52 @@ class SettingsMenuModelTest {
     @Test
     fun rowsIncludeThemeAndAdvancedItems() {
         val rowItems = SettingsMenuModel.rows(
-            LauncherState(selectedTheme = PixelTheme.AMBER_CRT),
+            LauncherState(
+                selectedTheme = PixelTheme.AMBER_CRT,
+                drawerListAlignment = DrawerListAlignment.RIGHT,
+                isIdlePageEnabled = false,
+                openDrawerInSearchMode = true,
+            ),
             null,
         ).map { it.item }
 
         assertTrue(SettingsMenuItem.THEME in rowItems)
+        assertTrue(SettingsMenuItem.APP_LIST_ALIGNMENT in rowItems)
+        assertTrue(SettingsMenuItem.IDLE_PAGE in rowItems)
+        assertTrue(SettingsMenuItem.DRAWER_AUTO_SEARCH in rowItems)
         assertTrue(SettingsMenuItem.ADVANCED in rowItems)
-        assertEquals(5, rowItems.size)
+        assertEquals(8, rowItems.size)
+    }
+
+    @Test
+    fun rowsReflectDrawerBehaviorValues() {
+        val rows = SettingsMenuModel.rows(
+            LauncherState(
+                drawerListAlignment = DrawerListAlignment.CENTER,
+                isIdlePageEnabled = false,
+                openDrawerInSearchMode = true,
+            ),
+            null,
+        )
+
+        assertEquals(
+            "CENTER",
+            rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.value,
+        )
+        assertEquals(
+            "OFF",
+            rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value,
+        )
+        assertEquals(
+            "ON",
+            rows.first { it.item == SettingsMenuItem.DRAWER_AUTO_SEARCH }.value,
+        )
+    }
+
+    @Test
+    fun nextDrawerListAlignmentWrapsAcrossAllOptions() {
+        val next = SettingsMenuModel.nextDrawerListAlignment(DrawerListAlignment.RIGHT, 1)
+
+        assertEquals(DrawerListAlignment.LEFT, next)
     }
 }

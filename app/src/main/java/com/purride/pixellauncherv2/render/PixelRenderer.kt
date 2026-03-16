@@ -6,6 +6,7 @@ import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppListLayoutMetrics
 import com.purride.pixellauncherv2.launcher.DiagnosticsLine
 import com.purride.pixellauncherv2.launcher.DiagnosticsModel
+import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
@@ -512,6 +513,10 @@ class PixelRenderer(
         val listClipBottomExclusive = layoutMetrics.listStartY + layoutMetrics.railHeight
         val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
         val safeListStartIndex = state.listStartIndex.coerceIn(0, drawerApps.lastIndex)
+        val textAreaWidth = drawerTextAreaWidth(
+            state = state,
+            layoutMetrics = layoutMetrics,
+        )
         val remainingRows = drawerApps.size - safeListStartIndex
         val rowRange = if (drawerListScrollOffsetPx == 0) {
             0 until remainingRows
@@ -530,7 +535,13 @@ class PixelRenderer(
             val trimmedLabel = pixelFontEngine.trimToWidth(
                 text = displayLabel,
                 style = GlyphStyle.APP_LABEL_16,
-                maxWidth = layoutMetrics.maxTextWidth,
+                maxWidth = textAreaWidth,
+            )
+            val textStartX = drawerTextStartX(
+                text = trimmedLabel,
+                layoutMetrics = layoutMetrics,
+                textAreaWidth = textAreaWidth,
+                alignment = state.drawerListAlignment,
             )
 
             val isSelected = appIndex == safeSelectedIndex
@@ -538,15 +549,47 @@ class PixelRenderer(
             drawTextAsValueClipped(
                 buffer = buffer,
                 text = trimmedLabel,
-                startX = layoutMetrics.textX,
+                startX = textStartX,
                 startY = rowTop + layoutMetrics.labelYInset,
-                maxWidth = layoutMetrics.maxTextWidth,
+                maxWidth = textAreaWidth,
                 style = GlyphStyle.APP_LABEL_16,
                 value = textValue,
                 clipTop = listClipTop,
                 clipBottomExclusive = listClipBottomExclusive,
             )
         }
+    }
+
+    private fun drawerTextAreaWidth(
+        state: LauncherState,
+        layoutMetrics: AppListLayoutMetrics,
+    ): Int {
+        if (state.isDrawerSearchFocused || state.drawerListAlignment != DrawerListAlignment.LEFT) {
+            return layoutMetrics.maxTextWidth
+        }
+        return (layoutMetrics.hiddenRailLeft - layoutMetrics.textX - 1)
+            .coerceAtLeast(8)
+            .coerceAtMost(layoutMetrics.maxTextWidth)
+    }
+
+    private fun drawerTextStartX(
+        text: String,
+        layoutMetrics: AppListLayoutMetrics,
+        textAreaWidth: Int,
+        alignment: DrawerListAlignment,
+    ): Int {
+        if (text.isEmpty()) {
+            return layoutMetrics.textX
+        }
+        val textWidth = pixelFontEngine.measureText(text, GlyphStyle.APP_LABEL_16)
+            .coerceAtMost(textAreaWidth)
+            .coerceAtLeast(0)
+        val horizontalOffset = when (alignment) {
+            DrawerListAlignment.LEFT -> 0
+            DrawerListAlignment.CENTER -> ((textAreaWidth - textWidth) / 2).coerceAtLeast(0)
+            DrawerListAlignment.RIGHT -> (textAreaWidth - textWidth).coerceAtLeast(0)
+        }
+        return layoutMetrics.textX + horizontalOffset
     }
 
     private fun drawSettings(

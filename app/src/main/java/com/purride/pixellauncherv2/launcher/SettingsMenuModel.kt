@@ -12,6 +12,9 @@ enum class SettingsMenuItem {
     RESOLUTION,
     STYLE,
     THEME,
+    APP_LIST_ALIGNMENT,
+    IDLE_PAGE,
+    DRAWER_AUTO_SEARCH,
     ADVANCED,
 }
 
@@ -53,6 +56,21 @@ object SettingsMenuModel {
                 item = SettingsMenuItem.THEME,
                 title = "THEME",
                 value = themeLabel(state.selectedTheme),
+            ),
+            SettingsMenuRow(
+                item = SettingsMenuItem.APP_LIST_ALIGNMENT,
+                title = "APP ALIGN",
+                value = drawerListAlignmentLabel(state.drawerListAlignment),
+            ),
+            SettingsMenuRow(
+                item = SettingsMenuItem.IDLE_PAGE,
+                title = "SHOW IDLE",
+                value = onOffLabel(state.isIdlePageEnabled),
+            ),
+            SettingsMenuRow(
+                item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
+                title = "DRAWER SEARCH",
+                value = onOffLabel(state.openDrawerInSearchMode),
             ),
             SettingsMenuRow(
                 item = SettingsMenuItem.ADVANCED,
@@ -105,6 +123,26 @@ object SettingsMenuModel {
             PixelTheme.AMBER_CRT -> "AMBER"
             PixelTheme.ICE_LCD -> "ICE"
         }
+    }
+
+    fun nextDrawerListAlignment(current: DrawerListAlignment, direction: Int): DrawerListAlignment {
+        val currentIndex = DrawerListAlignment.entries.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, DrawerListAlignment.entries.size)
+        return DrawerListAlignment.entries[nextIndex]
+    }
+
+    fun drawerListAlignmentLabel(alignment: DrawerListAlignment): String {
+        return when (alignment) {
+            DrawerListAlignment.LEFT -> "LEFT"
+            DrawerListAlignment.CENTER -> "CENTER"
+            DrawerListAlignment.RIGHT -> "RIGHT"
+        }
+    }
+
+    fun toggle(value: Boolean): Boolean = !value
+
+    fun onOffLabel(value: Boolean): String {
+        return if (value) "ON" else "OFF"
     }
 
     fun resolutionLabel(dotSizePx: Int, screenProfile: ScreenProfile? = null): String {
