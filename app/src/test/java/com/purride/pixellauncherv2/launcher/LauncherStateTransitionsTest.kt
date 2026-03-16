@@ -38,7 +38,7 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
-    fun withAppsPreservesPreviousSelectionWhenPossible() {
+    fun withAppsPreservesPreviousSelectionAndMovesItToTopWhenPossible() {
         val previous = LauncherState(
             apps = apps,
             selectedIndex = 4,
@@ -54,13 +54,13 @@ class LauncherStateTransitionsTest {
         )
 
         assertEquals(1, newState.selectedIndex)
-        assertEquals(0, newState.listStartIndex)
+        assertEquals(1, newState.listStartIndex)
         assertEquals(0, newState.drawerPageIndex)
         assertEquals(false, newState.isLoading)
     }
 
     @Test
-    fun showAppDrawerMakesSelectedItemVisible() {
+    fun showAppDrawerResetsToFirstItem() {
         val state = LauncherState(
             apps = apps,
             selectedIndex = 6,
@@ -74,9 +74,9 @@ class LauncherStateTransitionsTest {
         )
 
         assertEquals(LauncherMode.APP_DRAWER, drawerState.mode)
-        assertEquals(6, drawerState.listStartIndex)
-        assertEquals(6, drawerState.selectedIndex)
-        assertEquals(2, drawerState.drawerPageIndex)
+        assertEquals(0, drawerState.listStartIndex)
+        assertEquals(0, drawerState.selectedIndex)
+        assertEquals(0, drawerState.drawerPageIndex)
     }
 
     @Test
@@ -139,6 +139,64 @@ class LauncherStateTransitionsTest {
         assertEquals(3, pagedState.selectedIndex)
         assertEquals(3, pagedState.listStartIndex)
         assertEquals(1, pagedState.drawerPageIndex)
+    }
+
+    @Test
+    fun pageSelectionAdvancesFromCurrentTopItemWithoutOverlap() {
+        val largerApps = List(20) { index ->
+            AppEntry(
+                label = "App $index",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val state = LauncherState(
+            apps = largerApps,
+            drawerVisibleApps = largerApps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isLoading = false,
+            mode = LauncherMode.APP_DRAWER,
+        )
+
+        val pagedState = LauncherStateTransitions.pageSelection(
+            state = state,
+            direction = 1,
+            visibleRows = 7,
+        )
+
+        assertEquals(15, pagedState.selectedIndex)
+        assertEquals(15, pagedState.listStartIndex)
+        assertEquals(2, pagedState.drawerPageIndex)
+    }
+
+    @Test
+    fun pageSelectionMovesBackwardFromCurrentTopItemWithoutOverlap() {
+        val largerApps = List(20) { index ->
+            AppEntry(
+                label = "App $index",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val state = LauncherState(
+            apps = largerApps,
+            drawerVisibleApps = largerApps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isLoading = false,
+            mode = LauncherMode.APP_DRAWER,
+        )
+
+        val pagedState = LauncherStateTransitions.pageSelection(
+            state = state,
+            direction = -1,
+            visibleRows = 7,
+        )
+
+        assertEquals(1, pagedState.selectedIndex)
+        assertEquals(1, pagedState.listStartIndex)
+        assertEquals(0, pagedState.drawerPageIndex)
     }
 
     @Test
@@ -315,6 +373,8 @@ class LauncherStateTransitionsTest {
         )
 
         assertEquals(listOf("pkg.wechat"), updated.drawerVisibleApps.map { it.packageName })
+        assertEquals(0, updated.selectedIndex)
+        assertEquals(0, updated.listStartIndex)
     }
 
     @Test
@@ -483,6 +543,35 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun updateDrawerQueryResetsSelectionToFirstResult() {
+        val apps = listOf(
+            AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+            AppEntry(label = "Camera", packageName = "pkg.camera", activityName = "Camera"),
+            AppEntry(label = "Calendar", packageName = "pkg.calendar", activityName = "Calendar"),
+        )
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = apps,
+            drawerVisibleApps = apps,
+            drawerQuery = "",
+            selectedIndex = 2,
+            listStartIndex = 2,
+            recentApps = emptyList(),
+            isLoading = false,
+        )
+
+        val updated = LauncherStateTransitions.updateDrawerQuery(
+            state = state,
+            query = "ca",
+            visibleRows = 4,
+        )
+
+        assertEquals(0, updated.selectedIndex)
+        assertEquals(0, updated.listStartIndex)
+        assertEquals(listOf("pkg.calendar", "pkg.camera"), updated.drawerVisibleApps.map { it.packageName })
+    }
+
+    @Test
     fun selectByLetterIndexMovesSelectionAndWindow() {
         val state = LauncherState(
             apps = listOf(
@@ -541,6 +630,8 @@ class LauncherStateTransitionsTest {
         assertEquals(false, exitedState.isDrawerSearchFocused)
         assertEquals(false, exitedState.isDrawerRailSliding)
         assertEquals(listOf("pkg.a", "pkg.b", "pkg.c"), exitedState.drawerVisibleApps.map { it.packageName })
+        assertEquals(2, exitedState.selectedIndex)
+        assertEquals(2, exitedState.listStartIndex)
     }
 
     @Test
@@ -570,5 +661,7 @@ class LauncherStateTransitionsTest {
         assertEquals(false, exitedState.isDrawerSearchFocused)
         assertEquals(false, exitedState.isDrawerRailSliding)
         assertEquals(listOf("pkg.a", "pkg.b"), exitedState.drawerVisibleApps.map { it.packageName })
+        assertEquals(1, exitedState.selectedIndex)
+        assertEquals(1, exitedState.listStartIndex)
     }
 }

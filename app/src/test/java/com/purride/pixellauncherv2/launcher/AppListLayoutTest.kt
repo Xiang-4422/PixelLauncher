@@ -7,13 +7,14 @@ import org.junit.Test
 
 class AppListLayoutTest {
 
+    private val screenProfile = ScreenProfile(
+        logicalWidth = 72,
+        logicalHeight = 160,
+        dotSizePx = 15,
+    )
+
     @Test
     fun hitTestMapsLogicalPointToScrolledAppIndex() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
         val metrics = AppListLayout.metrics(screenProfile)
         val state = LauncherState(
             apps = List(20) { index ->
@@ -39,17 +40,12 @@ class AppListLayoutTest {
     }
 
     @Test
-    fun hitTestMapsRailTapToDrawerPage() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
+    fun hitTestMapsHiddenRailTapToDrawerPage() {
         val metrics = AppListLayout.metrics(screenProfile)
 
         val tappedPage = AppListLayout.hitTestIndexRailPage(
             screenProfile = screenProfile,
-            logicalX = metrics.indexRailLeft + 1,
+            logicalX = metrics.hiddenRailLeft + 1,
             logicalY = metrics.railTop + (metrics.railHeight / 2),
             pageCount = 6,
         )
@@ -58,22 +54,17 @@ class AppListLayoutTest {
     }
 
     @Test
-    fun hitTestMapsRailTapToLetterBounds() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
+    fun hitTestMapsHiddenRailTapToLetterBounds() {
         val metrics = AppListLayout.metrics(screenProfile)
 
         val topLetter = AppListLayout.hitTestIndexRailLetter(
             screenProfile = screenProfile,
-            logicalX = metrics.indexRailLeft + 1,
+            logicalX = metrics.hiddenRailLeft + 1,
             logicalY = metrics.railTop,
         )
         val bottomLetter = AppListLayout.hitTestIndexRailLetter(
             screenProfile = screenProfile,
-            logicalX = metrics.indexRailLeft + 1,
+            logicalX = metrics.hiddenRailLeft + 1,
             logicalY = metrics.railTop + metrics.railHeight - 1,
         )
 
@@ -83,11 +74,6 @@ class AppListLayoutTest {
 
     @Test
     fun hitTestReturnsNullOutsideListArea() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
         val state = LauncherState(
             apps = List(3) { index ->
                 AppEntry(
@@ -110,121 +96,7 @@ class AppListLayoutTest {
     }
 
     @Test
-    fun hitTestAppReturnsNullInsideIndexRail() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
-        val metrics = AppListLayout.metrics(screenProfile)
-        val state = LauncherState(
-            apps = List(8) { index ->
-                AppEntry(
-                    label = "App $index",
-                    packageName = "pkg.$index",
-                    activityName = "Activity$index",
-                )
-            },
-            isLoading = false,
-        )
-
-        val tappedIndex = AppListLayout.hitTestAppIndex(
-            screenProfile = screenProfile,
-            state = state,
-            logicalX = metrics.indexRailLeft + 1,
-            logicalY = metrics.listStartY + 1,
-        )
-
-        assertNull(tappedIndex)
-    }
-
-    @Test
-    fun listStartsBelowSharedHeaderDivider() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
-
-        val metrics = AppListLayout.metrics(screenProfile)
-
-        assertEquals(true, metrics.listStartY > LauncherHeaderLayout.dividerY)
-    }
-
-    @Test
-    fun centeredVisibleRowsIsAlwaysOdd() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
-
-        val centeredRows = AppListLayout.centeredVisibleRows(screenProfile)
-
-        assertEquals(1, centeredRows % 2)
-    }
-
-    @Test
-    fun centeredVisibleRowsGrowsWithAvailableHeight() {
-        val small = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 120,
-            dotSizePx = 15,
-        )
-        val large = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 220,
-            dotSizePx = 15,
-        )
-
-        val smallRows = AppListLayout.centeredVisibleRows(small)
-        val largeRows = AppListLayout.centeredVisibleRows(large)
-
-        assertEquals(1, smallRows % 2)
-        assertEquals(1, largeRows % 2)
-        assertEquals(true, largeRows >= smallRows)
-    }
-
-    @Test
-    fun hitTestUsesCenteredWindowInDrawerListMode() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
-        val metrics = AppListLayout.metrics(screenProfile)
-        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
-        val state = LauncherState(
-            mode = LauncherMode.APP_DRAWER,
-            isDrawerSearchFocused = false,
-            apps = List(20) { index ->
-                AppEntry(
-                    label = "App $index",
-                    packageName = "pkg.$index",
-                    activityName = "Activity$index",
-                )
-            },
-            selectedIndex = 8,
-            isLoading = false,
-        )
-
-        val tappedCenterIndex = AppListLayout.hitTestAppIndex(
-            screenProfile = screenProfile,
-            state = state,
-            logicalX = metrics.textX,
-            logicalY = centeredWindow.rowTop(centeredWindow.centerRow) + 1,
-        )
-
-        assertEquals(8, tappedCenterIndex)
-    }
-
-    @Test
-    fun hitTestReturnsNullForCenteredPaddingRows() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
+    fun hitTestAppReturnsNullInsideHiddenRailForDrawerList() {
         val metrics = AppListLayout.metrics(screenProfile)
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
@@ -237,13 +109,14 @@ class AppListLayoutTest {
                 )
             },
             selectedIndex = 0,
+            listStartIndex = 0,
             isLoading = false,
         )
 
         val tappedIndex = AppListLayout.hitTestAppIndex(
             screenProfile = screenProfile,
             state = state,
-            logicalX = metrics.textX,
+            logicalX = metrics.hiddenRailLeft + 1,
             logicalY = metrics.listStartY + 1,
         )
 
@@ -251,83 +124,86 @@ class AppListLayoutTest {
     }
 
     @Test
-    fun centeredListTopKeepsTopAndBottomPaddingBalanced() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
+    fun hitTestHeaderAreaCoversWholeStatusBarRow() {
         val metrics = AppListLayout.metrics(screenProfile)
-        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
-        val centeredTop = centeredWindow.listTop
-        val centeredBottom = centeredWindow.listBottomExclusive
-        val topPadding = centeredTop - metrics.listStartY
-        val bottomPadding = (metrics.listStartY + metrics.railHeight) - centeredBottom
 
-        assertEquals(true, topPadding >= 0)
-        assertEquals(true, bottomPadding >= 0)
-        assertEquals(true, kotlin.math.abs(topPadding - bottomPadding) <= 1)
+        val headerHit = AppListLayout.hitTestDrawerHeaderSearchArea(
+            screenProfile = screenProfile,
+            logicalX = screenProfile.logicalWidth / 2,
+            logicalY = (metrics.headerTop + metrics.headerBottomExclusive) / 2,
+        )
+
+        assertEquals(true, headerHit)
     }
 
     @Test
-    fun centeredWindowHeightNeverExceedsRailHeight() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
+    fun hitTestAppAllowsSearchResultsInsideHiddenRailWidth() {
         val metrics = AppListLayout.metrics(screenProfile)
-        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
-
-        val contentHeight = centeredWindow.listBottomExclusive - centeredWindow.listTop
-        assertEquals(true, contentHeight <= metrics.railHeight)
-    }
-
-    @Test
-    fun hitTestReturnsNullAboveCenteredTopInDrawerListMode() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
-        val metrics = AppListLayout.metrics(screenProfile)
-        val centeredTop = AppListLayout.centeredListTop(screenProfile)
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "App $index",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
-            isDrawerSearchFocused = false,
-            apps = List(10) { index ->
-                AppEntry(
-                    label = "App $index",
-                    packageName = "pkg.$index",
-                    activityName = "Activity$index",
-                )
-            },
-            selectedIndex = 5,
+            isDrawerSearchFocused = true,
+            drawerQuery = "a",
+            apps = apps,
+            drawerVisibleApps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
             isLoading = false,
         )
 
-        val logicalY = (centeredTop - 1).coerceAtLeast(metrics.listStartY)
         val tappedIndex = AppListLayout.hitTestAppIndex(
             screenProfile = screenProfile,
             state = state,
-            logicalX = metrics.textX,
-            logicalY = logicalY,
+            logicalX = metrics.hiddenRailLeft + 1,
+            logicalY = metrics.listStartY + 1,
         )
 
-        if (centeredTop > metrics.listStartY) {
-            assertNull(tappedIndex)
-        }
+        assertEquals(8, tappedIndex)
     }
 
     @Test
-    fun hitTestTracksCenteredRowsWithScrollOffset() {
-        val screenProfile = ScreenProfile(
+    fun listStartsBelowSharedHeaderDivider() {
+        val metrics = AppListLayout.metrics(screenProfile)
+
+        assertEquals(true, metrics.listStartY > LauncherHeaderLayout.dividerY)
+    }
+
+    @Test
+    fun visibleRowsUsesFullAvailableHeight() {
+        val metrics = AppListLayout.metrics(screenProfile)
+        val expectedRows = ((screenProfile.logicalHeight - metrics.listStartY) / metrics.rowHeight).coerceAtLeast(1)
+
+        assertEquals(expectedRows, metrics.visibleRows)
+    }
+
+    @Test
+    fun visibleRowsGrowsWithAvailableHeight() {
+        val small = ScreenProfile(
             logicalWidth = 72,
-            logicalHeight = 160,
+            logicalHeight = 120,
             dotSizePx = 15,
         )
+        val large = ScreenProfile(
+            logicalWidth = 72,
+            logicalHeight = 220,
+            dotSizePx = 15,
+        )
+
+        val smallRows = AppListLayout.metrics(small).visibleRows
+        val largeRows = AppListLayout.metrics(large).visibleRows
+
+        assertEquals(true, largeRows >= smallRows)
+    }
+
+    @Test
+    fun drawerHitTestUsesTopAlignedRows() {
         val metrics = AppListLayout.metrics(screenProfile)
-        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
             isDrawerSearchFocused = false,
@@ -339,30 +215,92 @@ class AppListLayoutTest {
                 )
             },
             selectedIndex = 8,
+            listStartIndex = 8,
+            isLoading = false,
+        )
+
+        val firstTap = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = metrics.listStartY + 1,
+        )
+        val secondTap = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = metrics.listStartY + metrics.rowHeight + 1,
+        )
+
+        assertEquals(8, firstTap)
+        assertEquals(9, secondTap)
+    }
+
+    @Test
+    fun hitTestTracksTopAlignedRowsWithScrollOffset() {
+        val metrics = AppListLayout.metrics(screenProfile)
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isDrawerSearchFocused = false,
+            apps = List(20) { index ->
+                AppEntry(
+                    label = "App $index",
+                    packageName = "pkg.$index",
+                    activityName = "Activity$index",
+                )
+            },
+            selectedIndex = 8,
+            listStartIndex = 8,
             isLoading = false,
         )
 
         val offset = 6
-        val tappedCenterIndex = AppListLayout.hitTestAppIndex(
+        val tappedIndex = AppListLayout.hitTestAppIndex(
             screenProfile = screenProfile,
             state = state,
             logicalX = metrics.textX,
-            logicalY = centeredWindow.rowTop(centeredWindow.centerRow) + offset + 1,
+            logicalY = metrics.listStartY + offset + 1,
             drawerListScrollOffsetPx = offset,
         )
 
-        assertEquals(8, tappedCenterIndex)
+        assertEquals(8, tappedIndex)
     }
 
     @Test
-    fun searchHitTestUsesCenteredAnchorAndScrollOffset() {
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = 15,
-        )
+    fun hitTestMapsBottomClippedOverflowRow() {
         val metrics = AppListLayout.metrics(screenProfile)
-        val centerRow = metrics.visibleRows / 2
+        val overflowY = metrics.listStartY + (metrics.visibleRows * metrics.rowHeight) + 1
+        if (overflowY >= metrics.listStartY + metrics.railHeight) {
+            return
+        }
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isDrawerSearchFocused = false,
+            apps = List(20) { index ->
+                AppEntry(
+                    label = "App $index",
+                    packageName = "pkg.$index",
+                    activityName = "Activity$index",
+                )
+            },
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isLoading = false,
+        )
+
+        val tappedIndex = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = overflowY,
+        )
+
+        assertEquals(metrics.visibleRows, tappedIndex)
+    }
+
+    @Test
+    fun hitTestMapsTopClippedPreviousRowDuringPositiveOffset() {
+        val metrics = AppListLayout.metrics(screenProfile)
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
             isDrawerSearchFocused = true,
@@ -382,6 +320,39 @@ class AppListLayoutTest {
                 )
             },
             selectedIndex = 10,
+            listStartIndex = 10,
+            isLoading = false,
+        )
+
+        val tappedIndex = AppListLayout.hitTestAppIndex(
+            screenProfile = screenProfile,
+            state = state,
+            logicalX = metrics.textX,
+            logicalY = metrics.listStartY + 1,
+            drawerListScrollOffsetPx = 5,
+        )
+
+        assertEquals(9, tappedIndex)
+    }
+
+    @Test
+    fun searchHitTestUsesTopAlignedRowsAndScrollOffset() {
+        val metrics = AppListLayout.metrics(screenProfile)
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "App $index",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isDrawerSearchFocused = true,
+            drawerQuery = "A",
+            apps = apps,
+            drawerVisibleApps = apps,
+            selectedIndex = 10,
+            listStartIndex = 10,
             isLoading = false,
         )
 
@@ -390,14 +361,14 @@ class AppListLayoutTest {
             screenProfile = screenProfile,
             state = state,
             logicalX = metrics.textX,
-            logicalY = metrics.listStartY + (centerRow * metrics.rowHeight) + offset + 1,
+            logicalY = metrics.listStartY + 1,
             drawerListScrollOffsetPx = offset,
         )
         val nextTap = AppListLayout.hitTestAppIndex(
             screenProfile = screenProfile,
             state = state,
             logicalX = metrics.textX,
-            logicalY = metrics.listStartY + ((centerRow + 1) * metrics.rowHeight) + offset + 1,
+            logicalY = metrics.listStartY + metrics.rowHeight + 1,
             drawerListScrollOffsetPx = offset,
         )
 

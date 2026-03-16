@@ -1,6 +1,9 @@
 package com.purride.pixellauncherv2.launcher
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -64,9 +67,9 @@ class DrawerVerticalScrollControllerTest {
     }
 
     @Test
-    fun lowVelocityReleaseEntersSnapOnly() {
+    fun lowVelocityReleaseStartsDirectionalSettleUsingResidualSign() {
         val result = DrawerVerticalScrollController.release(
-            residualOffsetPx = 8f,
+            residualOffsetPx = -8f,
             velocityPxPerSecond = 10f,
             thresholds = DrawerVerticalScrollThresholds(
                 upwardStepPx = 17f,
@@ -77,26 +80,106 @@ class DrawerVerticalScrollControllerTest {
         assertEquals(0, result.stepDelta)
         assertEquals(0f, result.nextVelocityPxPerSecond, 0.0001f)
         assertTrue(result.isAnimating)
+        assertNotNull(result.settleTarget)
+        assertEquals(1, result.settleTarget?.direction)
+        assertEquals(-17f, result.settleTarget?.targetResidualPx ?: 0f, 0.0001f)
     }
 
     @Test
-    fun snapAnimationConvergesResidualToZero() {
-        var residual = 8f
-        var velocity = 0f
-        repeat(10) {
-            val step = DrawerVerticalScrollController.stepAnimation(
-                residualOffsetPx = residual,
-                velocityPxPerSecond = velocity,
+    fun settlePhaseContinuesUpwardUntilNextStableItem() {
+        var step = DrawerVerticalScrollController.release(
+            residualOffsetPx = -8f,
+            velocityPxPerSecond = 0f,
+            thresholds = DrawerVerticalScrollThresholds(
+                upwardStepPx = 17f,
+                downwardStepPx = 17f,
+            ),
+        )
+        var accumulatedStepDelta = 0
+        var guard = 0
+        while (step.isAnimating && guard < 32) {
+            step = DrawerVerticalScrollController.stepAnimation(
+                residualOffsetPx = step.residualOffsetPx,
+                velocityPxPerSecond = step.nextVelocityPxPerSecond,
                 thresholds = DrawerVerticalScrollThresholds(
                     upwardStepPx = 17f,
                     downwardStepPx = 17f,
                 ),
                 deltaMs = 16L,
+                settleTarget = step.settleTarget,
             )
-            residual = step.residualOffsetPx
-            velocity = step.nextVelocityPxPerSecond
+            accumulatedStepDelta += step.stepDelta
+            guard += 1
         }
-        assertEquals(0f, residual, 0.5f)
-        assertEquals(0f, velocity, 0.0001f)
+
+        assertTrue(guard < 32)
+        assertFalse(step.isAnimating)
+        assertNull(step.settleTarget)
+        assertEquals(1, accumulatedStepDelta)
+        assertEquals(0f, step.residualOffsetPx, 0.0001f)
+        assertEquals(0f, step.nextVelocityPxPerSecond, 0.0001f)
+    }
+
+    @Test
+    fun settlePhaseCommitsSelectionBeforeResidualFullySettles() {
+        val release = DrawerVerticalScrollController.release(
+            residualOffsetPx = -8f,
+            velocityPxPerSecond = 0f,
+            thresholds = DrawerVerticalScrollThresholds(
+                upwardStepPx = 17f,
+                downwardStepPx = 17f,
+            ),
+        )
+
+        val firstStep = DrawerVerticalScrollController.stepAnimation(
+            residualOffsetPx = release.residualOffsetPx,
+            velocityPxPerSecond = release.nextVelocityPxPerSecond,
+            thresholds = DrawerVerticalScrollThresholds(
+                upwardStepPx = 17f,
+                downwardStepPx = 17f,
+            ),
+            deltaMs = 16L,
+            settleTarget = release.settleTarget,
+        )
+
+        assertEquals(1, firstStep.stepDelta)
+        assertTrue(firstStep.residualOffsetPx > 0f)
+        assertTrue(firstStep.isAnimating)
+        assertNull(firstStep.settleTarget)
+    }
+
+    @Test
+    fun settlePhaseContinuesDownwardUntilPreviousStableItem() {
+        var step = DrawerVerticalScrollController.release(
+            residualOffsetPx = 9f,
+            velocityPxPerSecond = 0f,
+            thresholds = DrawerVerticalScrollThresholds(
+                upwardStepPx = 17f,
+                downwardStepPx = 17f,
+            ),
+        )
+        var accumulatedStepDelta = 0
+        var guard = 0
+        while (step.isAnimating && guard < 32) {
+            step = DrawerVerticalScrollController.stepAnimation(
+                residualOffsetPx = step.residualOffsetPx,
+                velocityPxPerSecond = step.nextVelocityPxPerSecond,
+                thresholds = DrawerVerticalScrollThresholds(
+                    upwardStepPx = 17f,
+                    downwardStepPx = 17f,
+                ),
+                deltaMs = 16L,
+                settleTarget = step.settleTarget,
+            )
+            accumulatedStepDelta += step.stepDelta
+            guard += 1
+        }
+
+        assertTrue(guard < 32)
+        assertFalse(step.isAnimating)
+        assertNull(step.settleTarget)
+        assertEquals(-1, accumulatedStepDelta)
+        assertEquals(0f, step.residualOffsetPx, 0.0001f)
+        assertEquals(0f, step.nextVelocityPxPerSecond, 0.0001f)
     }
 }

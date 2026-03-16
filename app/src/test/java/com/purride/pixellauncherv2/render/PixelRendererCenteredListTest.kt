@@ -2,8 +2,10 @@ package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.AppListLayout
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
@@ -16,35 +18,10 @@ class PixelRendererCenteredListTest {
         dotSizePx = 15,
     )
     private val layout = AppListLayout.metrics(screenProfile)
-    private val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
-    private val centeredRows = centeredWindow.visibleRows
-    private val centerRow = centeredWindow.centerRow
     private val renderer = PixelRenderer(PixelFontEngine(BlockGlyphProvider()))
 
     @Test
-    fun nonSearchDrawerKeepsSelectedItemOnCenterRowWithTopPaddingWhenAtStart() {
-        val apps = List(6) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val buffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 0,
-            isSearchFocused = false,
-            query = "",
-        )
-
-        for (row in 0 until centerRow) {
-            assertTrue(rowLitPixelCount(buffer, row) == 0)
-        }
-        assertTrue(rowLitPixelCount(buffer, centerRow) > 0)
-    }
-
-    @Test
-    fun nonSearchDrawerRendersSelectedRowLargerThanNeighborRows() {
+    fun nonSearchDrawerHighlightsFirstVisibleRow() {
         val apps = List(20) { index ->
             AppEntry(
                 label = "AAAAA",
@@ -55,21 +32,287 @@ class PixelRendererCenteredListTest {
         val buffer = renderBuffer(
             apps = apps,
             selectedIndex = 8,
+            listStartIndex = 8,
             isSearchFocused = false,
             query = "",
         )
 
-        val selectedPixels = rowLitPixelCount(buffer, centerRow)
-        val abovePixels = rowLitPixelCount(buffer, centerRow - 1)
-        val belowPixels = rowLitPixelCount(buffer, centerRow + 1)
+        val firstRowAccent = rowAccentPixelCount(buffer, row = 0, offsetPx = 0)
+        val secondRowAccent = rowAccentPixelCount(buffer, row = 1, offsetPx = 0)
 
-        assertTrue(selectedPixels > abovePixels)
-        assertTrue(selectedPixels > belowPixels)
+        assertTrue(firstRowAccent > 0)
+        assertEquals(0, secondRowAccent)
+    }
+
+    @Test
+    fun nonSearchDrawerStartsRenderingFromListTop() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val buffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = false,
+            query = "",
+        )
+
+        val firstLitY = firstLitY(buffer)
+        assertTrue(firstLitY >= layout.listStartY)
+        assertTrue(firstLitY < layout.listStartY + layout.rowHeight)
+    }
+
+    @Test
+    fun nonSearchDrawerClipsOverflowRowInsteadOfDroppingIt() {
+        val overflowTop = layout.listStartY + (layout.visibleRows * layout.rowHeight)
+        val clipBottomExclusive = layout.listStartY + layout.railHeight
+        if (overflowTop >= clipBottomExclusive) {
+            return
+        }
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val buffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = false,
+            query = "",
+        )
+
+        var overflowPixels = 0
+        for (y in overflowTop until clipBottomExclusive.coerceAtMost(buffer.height)) {
+            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(buffer.width)) {
+                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    overflowPixels += 1
+                }
+            }
+        }
+
+        assertTrue(overflowPixels > 0)
+    }
+
+    @Test
+    fun nonSearchScrollOffsetDoesNotMoveSelectionIntoSecondRow() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val smallOffset = -5
+        val largeOffset = -16
+        val smallBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = false,
+            query = "",
+            drawerScrollOffsetPx = smallOffset,
+        )
+        val largeBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = false,
+            query = "",
+            drawerScrollOffsetPx = largeOffset,
+        )
+
+        assertTrue(rowAccentPixelCount(smallBuffer, row = 0, offsetPx = smallOffset) > 0)
+        assertEquals(0, rowAccentPixelCount(smallBuffer, row = 1, offsetPx = smallOffset))
+        assertEquals(0, rowAccentPixelCount(largeBuffer, row = 1, offsetPx = largeOffset))
+    }
+
+    @Test
+    fun searchWithQueryHighlightsFirstVisibleRow() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val searchBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = true,
+            query = "A",
+        )
+
+        val firstRowAccent = rowAccentPixelCount(searchBuffer, row = 0, offsetPx = 0)
+        val secondRowAccent = rowAccentPixelCount(searchBuffer, row = 1, offsetPx = 0)
+
+        assertTrue(firstRowAccent > 0)
+        assertEquals(0, secondRowAccent)
+    }
+
+    @Test
+    fun searchRowsFollowDrawerScrollOffset() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val baseBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = true,
+            query = "A",
+            drawerScrollOffsetPx = 0,
+        )
+        val shiftedBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = true,
+            query = "A",
+            drawerScrollOffsetPx = 5,
+        )
+
+        assertTrue(pixelDiffCount(baseBuffer, shiftedBuffer) > 0)
+    }
+
+    @Test
+    fun searchScrollDoesNotIntrudeIntoHeaderArea() {
+        val apps = List(30) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val baseline = renderBuffer(
+            apps = apps,
+            selectedIndex = 12,
+            listStartIndex = 12,
+            isSearchFocused = true,
+            query = "A",
+            drawerScrollOffsetPx = 0,
+        )
+        val shifted = renderBuffer(
+            apps = apps,
+            selectedIndex = 12,
+            listStartIndex = 12,
+            isSearchFocused = true,
+            query = "A",
+            drawerScrollOffsetPx = 18,
+        )
+
+        assertEquals(0, pixelDiffCountInSearchHeader(baseline, shifted))
+    }
+
+    @Test
+    fun focusedSearchWithoutQueryHidesListArea() {
+        val apps = List(20) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val hiddenListBuffer = renderBuffer(
+            apps = apps,
+            selectedIndex = 8,
+            listStartIndex = 8,
+            isSearchFocused = true,
+            query = "",
+        )
+
+        var litPixels = 0
+        val listTop = layout.listStartY
+        val listBottom = (layout.listStartY + layout.railHeight).coerceAtMost(hiddenListBuffer.height)
+        for (y in listTop until listBottom) {
+            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(hiddenListBuffer.width)) {
+                if (hiddenListBuffer.getPixel(x, y) != PixelBuffer.OFF) {
+                    litPixels += 1
+                }
+            }
+        }
+        assertEquals(0, litPixels)
+    }
+
+    @Test
+    fun cursorBlinkRemainsVisibleLongerBeforeTogglingOff() {
+        val apps = List(6) { index ->
+            AppEntry(
+                label = "AAAAA",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val tick0 = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = true,
+            query = "",
+            headerChargeTick = 0,
+        )
+        val tick10 = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = true,
+            query = "",
+            headerChargeTick = 10,
+        )
+        val tick14 = renderBuffer(
+            apps = apps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = true,
+            query = "",
+            headerChargeTick = 14,
+        )
+
+        val litAt0 = searchHeaderLitPixelCount(tick0)
+        val litAt10 = searchHeaderLitPixelCount(tick10)
+        val litAt14 = searchHeaderLitPixelCount(tick14)
+
+        assertTrue(litAt0 > 0)
+        assertTrue(litAt10 > 0)
+        assertTrue(litAt14 == 0)
+    }
+
+    @Test
+    fun noResultMessageIsCenteredInListArea() {
+        val allApps = listOf(
+            AppEntry(label = "Alpha", packageName = "pkg.alpha", activityName = "A"),
+            AppEntry(label = "Bravo", packageName = "pkg.bravo", activityName = "B"),
+        )
+        val buffer = renderBuffer(
+            apps = allApps,
+            selectedIndex = 0,
+            listStartIndex = 0,
+            isSearchFocused = true,
+            query = "zzz",
+            drawerVisibleApps = emptyList(),
+        )
+
+        val firstLitY = firstLitY(buffer)
+        val expectedY = layout.listStartY +
+            ((layout.railHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
+        assertTrue(abs(firstLitY - expectedY) <= 1)
     }
 
     private fun renderBuffer(
         apps: List<AppEntry>,
         selectedIndex: Int,
+        listStartIndex: Int,
         isSearchFocused: Boolean,
         query: String,
         drawerVisibleApps: List<AppEntry> = apps,
@@ -83,7 +326,7 @@ class PixelRendererCenteredListTest {
             drawerQuery = query,
             isDrawerSearchFocused = isSearchFocused,
             selectedIndex = selectedIndex,
-            listStartIndex = selectedIndex.coerceAtLeast(0),
+            listStartIndex = listStartIndex,
             isLoading = false,
         )
         return renderer.render(
@@ -94,69 +337,21 @@ class PixelRendererCenteredListTest {
         )
     }
 
-    private fun rowLitPixelCount(buffer: PixelBuffer, row: Int): Int {
-        if (row !in 0 until centeredRows) {
+    private fun rowAccentPixelCount(buffer: PixelBuffer, row: Int, offsetPx: Int): Int {
+        if (row !in 0 until layout.visibleRows) {
             return 0
         }
-        val rowTop = centeredWindow.rowTop(row)
-        val rowBottomExclusive = centeredWindow.rowBottomExclusive(row).coerceAtMost(buffer.height)
+        val rowTop = layout.listStartY + (row * layout.rowHeight) + offsetPx
+        val rowBottomExclusive = (rowTop + layout.rowHeight).coerceAtMost(buffer.height)
         var pixels = 0
-        for (y in rowTop until rowBottomExclusive) {
+        for (y in rowTop.coerceAtLeast(0) until rowBottomExclusive) {
             for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(buffer.width)) {
-                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
+                if (buffer.getPixel(x, y) == PixelBuffer.ACCENT) {
                     pixels += 1
                 }
             }
         }
         return pixels
-    }
-
-    @Test
-    fun centeredRowsUseVerticalCenteredTopOffset() {
-        val apps = List(20) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val buffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 8,
-            isSearchFocused = false,
-            query = "",
-        )
-
-        val firstLitY = firstLitY(buffer)
-        val centeredTop = centeredWindow.listTop
-        assertTrue(firstLitY >= centeredTop)
-    }
-
-    @Test
-    fun centeredRowGapStaysClearBetweenSelectedAndNeighborRows() {
-        if (centerRow <= 0 || centerRow >= centeredRows - 1) {
-            return
-        }
-        val apps = List(20) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val buffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 8,
-            isSearchFocused = false,
-            query = "",
-        )
-
-        val topGapStart = centeredWindow.rowBottomExclusive(centerRow - 1)
-        val topGapEnd = centeredWindow.rowTop(centerRow)
-        val bottomGapStart = centeredWindow.rowBottomExclusive(centerRow)
-        val bottomGapEnd = centeredWindow.rowTop(centerRow + 1)
-        assertTrue(isGapClear(buffer, topGapStart, topGapEnd))
-        assertTrue(isGapClear(buffer, bottomGapStart, bottomGapEnd))
     }
 
     private fun firstLitY(buffer: PixelBuffer): Int {
@@ -170,37 +365,6 @@ class PixelRendererCenteredListTest {
             }
         }
         return Int.MAX_VALUE
-    }
-
-    private fun isGapClear(buffer: PixelBuffer, startY: Int, endY: Int): Boolean {
-        if (endY <= startY) {
-            return true
-        }
-        for (y in startY until endY.coerceAtMost(buffer.height)) {
-            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(buffer.width)) {
-                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
-                    return false
-                }
-            }
-        }
-        return true
-    }
-
-    private fun searchRowLitPixelCount(buffer: PixelBuffer, row: Int): Int {
-        if (row !in 0 until layout.visibleRows) {
-            return 0
-        }
-        val rowTop = layout.listStartY + (row * layout.rowHeight)
-        val rowBottomExclusive = (rowTop + layout.rowHeight).coerceAtMost(buffer.height)
-        var pixels = 0
-        for (y in rowTop until rowBottomExclusive) {
-            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(buffer.width)) {
-                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
-                    pixels += 1
-                }
-            }
-        }
-        return pixels
     }
 
     private fun pixelDiffCount(left: PixelBuffer, right: PixelBuffer): Int {
@@ -217,151 +381,28 @@ class PixelRendererCenteredListTest {
         return diff
     }
 
-    @Test
-    fun searchWithQueryKeepsSelectedNearViewportCenter() {
-        val apps = List(20) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val searchBuffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 8,
-            isSearchFocused = true,
-            query = "A",
-        )
-        val centerRow = layout.visibleRows / 2
-        val selectedPixels = searchRowLitPixelCount(searchBuffer, centerRow)
-        val abovePixels = searchRowLitPixelCount(searchBuffer, centerRow - 1)
-        val belowPixels = searchRowLitPixelCount(searchBuffer, centerRow + 1)
-        assertTrue(selectedPixels > abovePixels)
-        assertTrue(selectedPixels > belowPixels)
-    }
-
-    @Test
-    fun searchRowsFollowDrawerScrollOffset() {
-        val apps = List(20) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val baseBuffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 8,
-            isSearchFocused = true,
-            query = "A",
-            drawerScrollOffsetPx = 0,
-        )
-        val shiftedBuffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 8,
-            isSearchFocused = true,
-            query = "A",
-            drawerScrollOffsetPx = 5,
-        )
-
-        assertTrue(pixelDiffCount(baseBuffer, shiftedBuffer) > 0)
-    }
-
-    @Test
-    fun focusedSearchWithoutQueryHidesListArea() {
-        val apps = List(20) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val hiddenListBuffer = renderBuffer(
-            apps = apps,
-            selectedIndex = 8,
-            isSearchFocused = true,
-            query = "",
-        )
-
-        var litPixels = 0
-        val listTop = layout.listStartY
-        val listBottom = (layout.listStartY + layout.railHeight).coerceAtMost(hiddenListBuffer.height)
-        for (y in listTop until listBottom) {
-            for (x in layout.textX until (layout.textX + layout.maxTextWidth).coerceAtMost(hiddenListBuffer.width)) {
-                if (hiddenListBuffer.getPixel(x, y) != PixelBuffer.OFF) {
-                    litPixels += 1
+    private fun pixelDiffCountInSearchHeader(left: PixelBuffer, right: PixelBuffer): Int {
+        var diff = 0
+        val startY = layout.headerTop.coerceAtLeast(0)
+        val endY = layout.headerBottomExclusive.coerceAtMost(left.height)
+        val startX = 0
+        val endX = left.width.coerceAtMost(right.width)
+        for (y in startY until endY) {
+            for (x in startX until endX) {
+                if (left.getPixel(x, y) != right.getPixel(x, y)) {
+                    diff += 1
                 }
             }
         }
-        assertTrue(litPixels == 0)
+        return diff
     }
 
-    @Test
-    fun cursorBlinkRemainsVisibleLongerBeforeTogglingOff() {
-        val apps = List(6) { index ->
-            AppEntry(
-                label = "AAAAA",
-                packageName = "pkg.$index",
-                activityName = "Activity$index",
-            )
-        }
-        val tick0 = renderBuffer(
-            apps = apps,
-            selectedIndex = 0,
-            isSearchFocused = true,
-            query = "",
-            headerChargeTick = 0,
-        )
-        val tick10 = renderBuffer(
-            apps = apps,
-            selectedIndex = 0,
-            isSearchFocused = true,
-            query = "",
-            headerChargeTick = 10,
-        )
-        val tick14 = renderBuffer(
-            apps = apps,
-            selectedIndex = 0,
-            isSearchFocused = true,
-            query = "",
-            headerChargeTick = 14,
-        )
-
-        val litAt0 = searchBoxLitPixelCount(tick0)
-        val litAt10 = searchBoxLitPixelCount(tick10)
-        val litAt14 = searchBoxLitPixelCount(tick14)
-
-        assertTrue(litAt0 > 0)
-        assertTrue(litAt10 > 0)
-        assertTrue(litAt14 == 0)
-    }
-
-    @Test
-    fun noResultMessageIsCenteredInListArea() {
-        val allApps = listOf(
-            AppEntry(label = "Alpha", packageName = "pkg.alpha", activityName = "A"),
-            AppEntry(label = "Bravo", packageName = "pkg.bravo", activityName = "B"),
-        )
-        val buffer = renderBuffer(
-            apps = allApps,
-            selectedIndex = 0,
-            isSearchFocused = true,
-            query = "zzz",
-            drawerVisibleApps = emptyList(),
-        )
-
-        val firstLitY = firstLitY(buffer)
-        val expectedY = layout.listStartY +
-            ((layout.railHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
-        assertTrue(abs(firstLitY - expectedY) <= 1)
-    }
-
-    private fun searchBoxLitPixelCount(buffer: PixelBuffer): Int {
+    private fun searchHeaderLitPixelCount(buffer: PixelBuffer): Int {
         var count = 0
-        val startY = layout.searchTextY.coerceIn(0, buffer.height)
-        val endY = (layout.searchTextY + layout.searchHeight).coerceIn(0, buffer.height)
-        val startX = layout.searchTextX.coerceIn(0, buffer.width)
-        val endX = (layout.searchTextX + layout.searchWidth).coerceIn(0, buffer.width)
+        val startY = layout.headerTop.coerceIn(0, buffer.height)
+        val endY = LauncherHeaderLayout.dividerY.coerceIn(startY, buffer.height)
+        val startX = 0
+        val endX = buffer.width
         for (y in startY until endY) {
             for (x in startX until endX) {
                 if (buffer.getPixel(x, y) != PixelBuffer.OFF) {

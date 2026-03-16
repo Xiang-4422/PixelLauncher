@@ -2,12 +2,12 @@ package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.AppListLayout
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.math.abs
 
 class PixelRendererDrawerRailTest {
 
@@ -25,52 +25,76 @@ class PixelRendererDrawerRailTest {
     )
 
     @Test
-    fun railShowsSingleLetterAndMagnifiesDuringSliding() {
-        val idleBuffer = renderBuffer(selectedIndex = 1, isRailSliding = false)
-        val slidingBuffer = renderBuffer(selectedIndex = 1, isRailSliding = true)
-        val idleRows = railLitRows(idleBuffer)
-        val slidingRows = railLitRows(slidingBuffer)
+    fun idleHeaderShowsLeftTimeCenterSearchAndRightAppsLetter() {
+        val buffer = renderBuffer(
+            selectedIndex = 1,
+            isSearchFocused = false,
+            query = "",
+        )
 
-        assertTrue(idleRows.isNotEmpty())
-        assertTrue(slidingRows.isNotEmpty())
-        assertEquals(1, contiguousRowSegments(idleRows))
-        assertEquals(1, contiguousRowSegments(slidingRows))
-        assertTrue(railLitPixelCount(slidingBuffer) > railLitPixelCount(idleBuffer))
+        val leftPixels = headerRegionLitPixelCount(buffer, 0, screenProfile.logicalWidth / 4)
+        val centerPixels = headerRegionLitPixelCount(
+            buffer,
+            (screenProfile.logicalWidth / 3),
+            ((screenProfile.logicalWidth * 2) / 3),
+        )
+        val rightPixels = headerRegionLitPixelCount(
+            buffer,
+            ((screenProfile.logicalWidth * 3) / 4),
+            screenProfile.logicalWidth,
+        )
+
+        assertTrue(leftPixels > 0)
+        assertTrue(centerPixels > 0)
+        assertTrue(rightPixels > 0)
     }
 
     @Test
-    fun railLetterStaysOnSearchRowForDifferentLetters() {
-        val alphaCenter = railLitCenterY(renderBuffer(selectedIndex = 0, isRailSliding = false))
-        val zuluCenter = railLitCenterY(renderBuffer(selectedIndex = 2, isRailSliding = false))
-        val expectedCenter = layout.searchTextY + (GlyphStyle.APP_LABEL_16.cellHeight / 2)
+    fun searchHeaderHidesTimeAndAppsLetterWhileKeepingCenteredQuery() {
+        val idleBuffer = renderBuffer(
+            selectedIndex = 1,
+            isSearchFocused = false,
+            query = "",
+        )
+        val searchBuffer = renderBuffer(
+            selectedIndex = 1,
+            isSearchFocused = true,
+            query = "A",
+        )
 
-        assertTrue(abs(alphaCenter - expectedCenter) <= 1)
-        assertTrue(abs(zuluCenter - expectedCenter) <= 1)
-        assertTrue(abs(alphaCenter - zuluCenter) <= 1)
+        val leftBoundary = screenProfile.logicalWidth / 4
+        val rightBoundary = (screenProfile.logicalWidth * 3) / 4
+        val idleLeft = headerRegionLitPixelCount(idleBuffer, 0, leftBoundary)
+        val idleRight = headerRegionLitPixelCount(idleBuffer, rightBoundary, screenProfile.logicalWidth)
+        val searchLeft = headerRegionLitPixelCount(searchBuffer, 0, leftBoundary)
+        val searchCenter = headerRegionLitPixelCount(searchBuffer, leftBoundary, rightBoundary)
+        val searchRight = headerRegionLitPixelCount(searchBuffer, rightBoundary, screenProfile.logicalWidth)
+
+        assertTrue(idleLeft > 0)
+        assertTrue(idleRight > 0)
+        assertEquals(0, searchLeft)
+        assertTrue(searchCenter > 0)
+        assertEquals(0, searchRight)
     }
 
-    @Test
-    fun railLetterIsRightAlignedInRailArea() {
-        val idleRightMostX = railRightMostLitX(renderBuffer(selectedIndex = 1, isRailSliding = false))
-        val slidingRightMostX = railRightMostLitX(renderBuffer(selectedIndex = 1, isRailSliding = true))
-        val railRight = layout.indexRailLeft + layout.indexRailWidth - 1
-
-        assertEquals(railRight, idleRightMostX)
-        assertEquals(railRight, slidingRightMostX)
-    }
-
-    private fun renderBuffer(selectedIndex: Int, isRailSliding: Boolean): PixelBuffer {
+    private fun renderBuffer(
+        selectedIndex: Int,
+        isSearchFocused: Boolean,
+        query: String,
+    ): PixelBuffer {
+        val visibleApps = if (query.isBlank()) drawerApps else drawerApps.filter { it.label.contains(query, ignoreCase = true) }
+        val safeSelectedIndex = selectedIndex.coerceAtMost(visibleApps.lastIndex.coerceAtLeast(0))
         val state = LauncherState(
             apps = drawerApps,
-            drawerVisibleApps = drawerApps,
-            drawerQuery = "",
-            isDrawerSearchFocused = false,
-            isDrawerRailSliding = isRailSliding,
-            selectedIndex = selectedIndex,
-            listStartIndex = 0,
+            drawerVisibleApps = visibleApps,
+            drawerQuery = query,
+            isDrawerSearchFocused = isSearchFocused,
+            selectedIndex = safeSelectedIndex,
+            listStartIndex = safeSelectedIndex,
             drawerPageIndex = 0,
             isLoading = false,
             mode = LauncherMode.APP_DRAWER,
+            currentTimeText = "09:41",
         )
         return renderer.render(
             state = state,
@@ -79,77 +103,20 @@ class PixelRendererDrawerRailTest {
         )
     }
 
-    private fun railLitCenterY(buffer: PixelBuffer): Int {
-        val litRows = railLitRows(buffer)
-        assertTrue(litRows.isNotEmpty())
-        return litRows.sum() / litRows.size
-    }
-
-    private fun railLitRows(buffer: PixelBuffer): List<Int> {
-        val rows = mutableSetOf<Int>()
-        val top = letterRegionTop(buffer)
-        val bottomExclusive = letterRegionBottomExclusive(buffer)
-        for (y in top until bottomExclusive) {
-            for (x in layout.indexRailLeft until (layout.indexRailLeft + layout.indexRailWidth)) {
-                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
-                    rows += y
-                    break
-                }
-            }
-        }
-        return rows.sorted()
-    }
-
-    private fun railLitPixelCount(buffer: PixelBuffer): Int {
+    private fun headerRegionLitPixelCount(buffer: PixelBuffer, startX: Int, endXExclusive: Int): Int {
         var count = 0
-        val top = letterRegionTop(buffer)
-        val bottomExclusive = letterRegionBottomExclusive(buffer)
-        for (y in top until bottomExclusive) {
-            for (x in layout.indexRailLeft until (layout.indexRailLeft + layout.indexRailWidth)) {
+        val safeStartX = startX.coerceIn(0, buffer.width)
+        val safeEndX = endXExclusive.coerceIn(safeStartX, buffer.width)
+        val safeStartY = layout.headerTop.coerceIn(0, buffer.height)
+        val safeEndY = LauncherHeaderLayout.dividerY.coerceIn(safeStartY, buffer.height)
+        for (y in safeStartY until safeEndY) {
+            for (x in safeStartX until safeEndX) {
                 if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
                     count += 1
                 }
             }
         }
         return count
-    }
-
-    private fun railRightMostLitX(buffer: PixelBuffer): Int {
-        var rightMostX = -1
-        val top = letterRegionTop(buffer)
-        val bottomExclusive = letterRegionBottomExclusive(buffer)
-        for (y in top until bottomExclusive) {
-            for (x in layout.indexRailLeft until (layout.indexRailLeft + layout.indexRailWidth)) {
-                if (buffer.getPixel(x, y) != PixelBuffer.OFF) {
-                    rightMostX = maxOf(rightMostX, x)
-                }
-            }
-        }
-        return rightMostX
-    }
-
-    private fun contiguousRowSegments(rows: List<Int>): Int {
-        if (rows.isEmpty()) {
-            return 0
-        }
-        var segments = 1
-        var previous = rows.first()
-        for (index in 1 until rows.size) {
-            val current = rows[index]
-            if (current - previous > 1) {
-                segments += 1
-            }
-            previous = current
-        }
-        return segments
-    }
-
-    private fun letterRegionTop(buffer: PixelBuffer): Int {
-        return layout.searchTextY.coerceIn(0, buffer.height)
-    }
-
-    private fun letterRegionBottomExclusive(buffer: PixelBuffer): Int {
-        return (layout.searchTextY + GlyphStyle.APP_LABEL_16.cellHeight).coerceIn(0, buffer.height)
     }
 
     private class BlockGlyphProvider : GlyphProvider {

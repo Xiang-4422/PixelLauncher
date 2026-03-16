@@ -304,17 +304,11 @@ class PixelRenderer(
             apps = drawerApps,
             selectedIndex = state.selectedIndex,
         )
-        drawHeader(
+        drawDrawerHeader(
             buffer = buffer,
             screenProfile = screenProfile,
             state = state,
-            titleCandidates = appDrawerHeaderTitles(state.drawerQuery),
-            chargeTick = animationState.headerChargeTick,
-        )
-        drawDrawerSearchBox(
-            buffer = buffer,
-            state = state,
-            layoutMetrics = layoutMetrics,
+            alphaIndexModel = alphaIndexModel,
             tick = animationState.headerChargeTick,
         )
 
@@ -341,30 +335,12 @@ class PixelRenderer(
             )
 
             else -> {
-                if (showPagedSearchResults) {
-                    drawSearchScrollableApps(
-                        buffer = buffer,
-                        state = state,
-                        layoutMetrics = layoutMetrics,
-                        drawerApps = drawerApps,
-                        drawerListScrollOffsetPx = drawerListScrollOffsetPx,
-                    )
-                } else {
-                    drawCenteredApps(
-                        buffer = buffer,
-                        state = state,
-                        screenProfile = screenProfile,
-                        layoutMetrics = layoutMetrics,
-                        drawerApps = drawerApps,
-                        drawerListScrollOffsetPx = drawerListScrollOffsetPx,
-                    )
-                }
-                drawAppDrawerIndexRail(
+                drawScrollableApps(
                     buffer = buffer,
                     state = state,
                     layoutMetrics = layoutMetrics,
-                    alphaIndexModel = alphaIndexModel,
-                    showRail = !state.isDrawerSearchFocused,
+                    drawerApps = drawerApps,
+                    drawerListScrollOffsetPx = drawerListScrollOffsetPx,
                 )
             }
         }
@@ -380,80 +356,149 @@ class PixelRenderer(
         return state.apps
     }
 
-    private fun drawDrawerSearchBox(
+    private fun drawDrawerHeader(
         buffer: PixelBuffer,
+        screenProfile: ScreenProfile,
         state: LauncherState,
-        layoutMetrics: AppListLayoutMetrics,
+        alphaIndexModel: DrawerAlphaIndexModel,
         tick: Int,
     ) {
-        val searchStyle = GlyphStyle.APP_LABEL_16
-        val textLeft = layoutMetrics.searchTextX.coerceIn(0, buffer.width - 1)
-        val textTop = layoutMetrics.searchTextY.coerceIn(0, buffer.height - 1)
-        val textRight = (textLeft + layoutMetrics.searchWidth - 1).coerceIn(textLeft, buffer.width - 1)
-        val availableWidth = (textRight - textLeft + 1).coerceAtLeast(1)
-        val query = state.drawerQuery
-        val searchFocused = state.isDrawerSearchFocused
-
-        if (query.isBlank() && !searchFocused) {
-            val placeholder = pixelFontEngine.trimToWidth(
-                text = "SEARCH",
-                style = searchStyle,
-                maxWidth = availableWidth,
+        if (state.isDrawerSearchFocused) {
+            drawDrawerSearchHeader(
+                buffer = buffer,
+                screenProfile = screenProfile,
+                query = state.drawerQuery,
+                tick = tick,
             )
-            if (placeholder.isNotEmpty()) {
-                drawTextAsValue(
-                    buffer = buffer,
-                    text = placeholder,
-                    startX = textLeft,
-                    startY = textTop,
-                    maxWidth = availableWidth,
-                    style = searchStyle,
-                    value = PixelBuffer.ACCENT,
-                )
-            }
-            return
+        } else {
+            drawDrawerIdleHeader(
+                buffer = buffer,
+                screenProfile = screenProfile,
+                currentTimeText = state.currentTimeText,
+                currentLetter = DrawerAlphaIndexModel.letterAt(alphaIndexModel.selectedLetterIndex).toString(),
+            )
         }
+        drawHeaderBatteryDivider(
+            buffer = buffer,
+            screenProfile = screenProfile,
+            batteryLevel = state.batteryLevel,
+            isCharging = state.isCharging,
+            chargeTick = tick,
+        )
+    }
 
+    private fun drawDrawerIdleHeader(
+        buffer: PixelBuffer,
+        screenProfile: ScreenProfile,
+        currentTimeText: String,
+        currentLetter: String,
+    ) {
+        val style = GlyphStyle.UI_SMALL_10
+        val leftPadding = LauncherHeaderLayout.horizontalPadding
+        val headerY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
+        val displayTime = currentTimeText.ifBlank { "--:--" }
+        val rightText = "APPS:$currentLetter"
+        val trimmedTime = pixelFontEngine.trimToWidth(
+            text = displayTime,
+            style = style,
+            maxWidth = (screenProfile.logicalWidth / 3).coerceAtLeast(1),
+        )
+        val rightWidth = pixelFontEngine.measureText(rightText, style)
+        val rightX = (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - rightWidth)
+            .coerceAtLeast(leftPadding)
+        val leftWidth = pixelFontEngine.measureText(trimmedTime, style)
+        val middleLeft = (leftPadding + leftWidth + LauncherHeaderLayout.titleGap).coerceAtLeast(leftPadding)
+        val middleRightExclusive = (rightX - LauncherHeaderLayout.titleGap).coerceAtLeast(middleLeft)
+        val middleWidth = (middleRightExclusive - middleLeft).coerceAtLeast(0)
+        val searchText = pixelFontEngine.trimToWidth(
+            text = "SEARCH",
+            style = style,
+            maxWidth = middleWidth,
+        )
+        if (trimmedTime.isNotEmpty()) {
+            drawTextAsValue(
+                buffer = buffer,
+                text = trimmedTime,
+                startX = leftPadding,
+                startY = headerY,
+                maxWidth = (screenProfile.logicalWidth - leftPadding).coerceAtLeast(0),
+                style = style,
+                value = PixelBuffer.ON,
+            )
+        }
+        if (searchText.isNotEmpty()) {
+            val searchWidth = pixelFontEngine.measureText(searchText, style)
+            val searchX = middleLeft + ((middleWidth - searchWidth) / 2).coerceAtLeast(0)
+            drawTextAsValue(
+                buffer = buffer,
+                text = searchText,
+                startX = searchX,
+                startY = headerY,
+                maxWidth = middleWidth,
+                style = style,
+                value = PixelBuffer.ACCENT,
+            )
+        }
+        drawTextAsValue(
+            buffer = buffer,
+            text = rightText,
+            startX = rightX,
+            startY = headerY,
+            maxWidth = (screenProfile.logicalWidth - rightX - LauncherHeaderLayout.horizontalPadding).coerceAtLeast(0),
+            style = style,
+            value = PixelBuffer.ON,
+        )
+    }
+
+    private fun drawDrawerSearchHeader(
+        buffer: PixelBuffer,
+        screenProfile: ScreenProfile,
+        query: String,
+        tick: Int,
+    ) {
+        val style = GlyphStyle.UI_SMALL_10
+        val leftPadding = LauncherHeaderLayout.horizontalPadding
+        val availableWidth = (screenProfile.logicalWidth - (leftPadding * 2)).coerceAtLeast(1)
         val textMaxWidth = (availableWidth - drawerCursorGapFromText - drawerCursorWidth).coerceAtLeast(1)
         val trimmed = pixelFontEngine.trimToWidth(
             text = query,
-            style = searchStyle,
+            style = style,
             maxWidth = textMaxWidth,
         )
+        val cursorVisible = ((tick / drawerCursorBlinkFrames) % 2) == 0
+        val textWidth = pixelFontEngine.measureText(trimmed, style)
+        val cursorBlockWidth = if (cursorVisible) drawerCursorGapFromText + drawerCursorWidth else 0
+        val contentWidth = (textWidth + cursorBlockWidth).coerceAtLeast(if (cursorVisible) drawerCursorWidth else 0)
+        val startX = leftPadding + ((availableWidth - contentWidth) / 2).coerceAtLeast(0)
+        val startY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
         if (trimmed.isNotEmpty()) {
             drawTextAsValue(
                 buffer = buffer,
                 text = trimmed,
-                startX = textLeft,
-                startY = textTop,
+                startX = startX,
+                startY = startY,
                 maxWidth = textMaxWidth,
-                style = searchStyle,
+                style = style,
                 value = PixelBuffer.ON,
             )
         }
-
-        if (!searchFocused) {
-            return
+        if (cursorVisible) {
+            val cursorX = (startX + textWidth + if (trimmed.isNotEmpty()) drawerCursorGapFromText else 0)
+                .coerceIn(leftPadding, (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - 1).coerceAtLeast(leftPadding))
+            val cursorTop = (startY + drawerCursorTopInset).coerceIn(0, buffer.height - 1)
+            val cursorBottom = (startY + style.cellHeight - drawerCursorBottomInset)
+                .coerceIn(cursorTop, buffer.height - 1)
+            drawVerticalLine(
+                buffer = buffer,
+                x = cursorX,
+                startY = cursorTop,
+                endY = cursorBottom,
+                value = PixelBuffer.ACCENT,
+            )
         }
-        val cursorVisible = ((tick / drawerCursorBlinkFrames) % 2) == 0
-        if (!cursorVisible) {
-            return
-        }
-        val textWidth = pixelFontEngine.measureText(trimmed, searchStyle)
-        val cursorX = (textLeft + textWidth + drawerCursorGapFromText).coerceIn(textLeft, textRight)
-        val cursorTop = (textTop + drawerCursorTopInset).coerceIn(0, buffer.height - 1)
-        val cursorBottom = (textTop + searchStyle.cellHeight - drawerCursorBottomInset)
-            .coerceIn(cursorTop, buffer.height - 1)
-        drawVerticalLine(
-            buffer = buffer,
-            x = cursorX,
-            startY = cursorTop,
-            endY = cursorBottom,
-            value = PixelBuffer.ACCENT,
-        )
     }
 
-    private fun drawSearchScrollableApps(
+    private fun drawScrollableApps(
         buffer: PixelBuffer,
         state: LauncherState,
         layoutMetrics: AppListLayoutMetrics,
@@ -463,10 +508,18 @@ class PixelRenderer(
         if (drawerApps.isEmpty()) {
             return
         }
+        val listClipTop = layoutMetrics.listStartY
+        val listClipBottomExclusive = layoutMetrics.listStartY + layoutMetrics.railHeight
         val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
-        val centerRow = layoutMetrics.visibleRows / 2
-        for (row in -1..layoutMetrics.visibleRows) {
-            val appIndex = safeSelectedIndex + (row - centerRow)
+        val safeListStartIndex = state.listStartIndex.coerceIn(0, drawerApps.lastIndex)
+        val remainingRows = drawerApps.size - safeListStartIndex
+        val rowRange = if (drawerListScrollOffsetPx == 0) {
+            0 until remainingRows
+        } else {
+            -1 until remainingRows
+        }
+        for (row in rowRange) {
+            val appIndex = safeListStartIndex + row
             if (appIndex !in drawerApps.indices) {
                 continue
             }
@@ -480,9 +533,9 @@ class PixelRenderer(
                 maxWidth = layoutMetrics.maxTextWidth,
             )
 
-            val isSelected = row == centerRow
+            val isSelected = appIndex == safeSelectedIndex
             val textValue = if (isSelected) PixelBuffer.ACCENT else PixelBuffer.ON
-            drawTextAsValue(
+            drawTextAsValueClipped(
                 buffer = buffer,
                 text = trimmedLabel,
                 startX = layoutMetrics.textX,
@@ -490,114 +543,8 @@ class PixelRenderer(
                 maxWidth = layoutMetrics.maxTextWidth,
                 style = GlyphStyle.APP_LABEL_16,
                 value = textValue,
-            )
-            if (isSelected) {
-                // Simulate a larger selected label without changing line height.
-                drawTextAsValue(
-                    buffer = buffer,
-                    text = trimmedLabel,
-                    startX = layoutMetrics.textX + 1,
-                    startY = rowTop + layoutMetrics.labelYInset,
-                    maxWidth = (layoutMetrics.maxTextWidth - 1).coerceAtLeast(0),
-                    style = GlyphStyle.APP_LABEL_16,
-                    value = PixelBuffer.ACCENT,
-                )
-            }
-        }
-    }
-
-    private fun drawCenteredApps(
-        buffer: PixelBuffer,
-        state: LauncherState,
-        screenProfile: ScreenProfile,
-        layoutMetrics: AppListLayoutMetrics,
-        drawerApps: List<AppEntry>,
-        drawerListScrollOffsetPx: Int,
-    ) {
-        if (drawerApps.isEmpty()) {
-            return
-        }
-
-        val centeredWindow = AppListLayout.centeredListWindow(screenProfile)
-        val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
-
-        for (row in 0 until centeredWindow.visibleRows) {
-            val appIndex = safeSelectedIndex + (row - centeredWindow.centerRow)
-            if (appIndex !in drawerApps.indices) {
-                continue
-            }
-            val rowTop = centeredWindow.rowTop(row) + drawerListScrollOffsetPx
-            val rowHeight = centeredWindow.rowHeight(row)
-            val appEntry = drawerApps[appIndex]
-            val displayLabel = LabelFormatter.displayLabel(appEntry.label)
-
-            if (row == centeredWindow.centerRow) {
-                drawScaledTextAsValue(
-                    buffer = buffer,
-                    text = displayLabel,
-                    startX = layoutMetrics.textX,
-                    startY = rowTop,
-                    maxWidth = layoutMetrics.maxTextWidth,
-                    baseStyle = GlyphStyle.APP_LABEL_16,
-                    targetHeight = rowHeight,
-                    value = PixelBuffer.ACCENT,
-                )
-            } else {
-                val trimmedLabel = pixelFontEngine.trimToWidth(
-                    text = displayLabel,
-                    style = GlyphStyle.APP_LABEL_16,
-                    maxWidth = layoutMetrics.maxTextWidth,
-                )
-                val nonSelectedTop = rowTop + ((rowHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2)
-                drawTextAsValue(
-                    buffer = buffer,
-                    text = trimmedLabel,
-                    startX = layoutMetrics.textX,
-                    startY = nonSelectedTop,
-                    maxWidth = layoutMetrics.maxTextWidth,
-                    style = GlyphStyle.APP_LABEL_16,
-                    value = PixelBuffer.ON,
-                )
-            }
-        }
-    }
-
-    private fun drawAppDrawerIndexRail(
-        buffer: PixelBuffer,
-        state: LauncherState,
-        layoutMetrics: AppListLayoutMetrics,
-        alphaIndexModel: DrawerAlphaIndexModel,
-        showRail: Boolean,
-    ) {
-        if (!showRail || layoutMetrics.indexRailWidth <= 0) {
-            return
-        }
-
-        val selectedLetter = alphaIndexModel.selectedLetterIndex.coerceIn(0, DrawerAlphaIndexModel.lastLetterIndex)
-        val railLeft = layoutMetrics.indexRailLeft
-        val railRight = railLeft + layoutMetrics.indexRailWidth - 1
-        val style = GlyphStyle.APP_LABEL_16
-        val renderTop = layoutMetrics.searchTextY.coerceIn(
-            0,
-            (buffer.height - style.cellHeight).coerceAtLeast(0),
-        )
-        val letterText = DrawerAlphaIndexModel.letterAt(selectedLetter).toString()
-        val letterWidth = pixelFontEngine.measureText(letterText, style).coerceAtLeast(1)
-        val emphasizeCopies = if (state.isDrawerRailSliding) {
-            drawerRailSlidingEmphasisCopies
-        } else {
-            drawerRailBaseEmphasisCopies
-        }
-        val baseX = railRight - letterWidth + 1
-        for (copy in 0..emphasizeCopies.coerceAtLeast(0)) {
-            drawTextAsValue(
-                buffer = buffer,
-                text = letterText,
-                startX = baseX - copy,
-                startY = renderTop,
-                maxWidth = letterWidth,
-                style = style,
-                value = PixelBuffer.ACCENT,
+                clipTop = listClipTop,
+                clipBottomExclusive = listClipBottomExclusive,
             )
         }
     }
@@ -1008,7 +955,36 @@ class PixelRenderer(
         style: GlyphStyle,
         value: Byte,
     ) {
+        drawTextAsValueClipped(
+            buffer = buffer,
+            text = text,
+            startX = startX,
+            startY = startY,
+            maxWidth = maxWidth,
+            style = style,
+            value = value,
+            clipTop = 0,
+            clipBottomExclusive = buffer.height,
+        )
+    }
+
+    private fun drawTextAsValueClipped(
+        buffer: PixelBuffer,
+        text: String,
+        startX: Int,
+        startY: Int,
+        maxWidth: Int,
+        style: GlyphStyle,
+        value: Byte,
+        clipTop: Int,
+        clipBottomExclusive: Int,
+    ) {
         if (text.isEmpty() || maxWidth <= 0) {
+            return
+        }
+        val safeClipTop = clipTop.coerceAtLeast(0)
+        val safeClipBottomExclusive = clipBottomExclusive.coerceIn(safeClipTop, buffer.height)
+        if (safeClipBottomExclusive <= safeClipTop) {
             return
         }
         val temp = PixelBuffer(
@@ -1024,80 +1000,13 @@ class PixelRenderer(
             style = style,
         )
         for (y in 0 until temp.height) {
+            val targetY = startY + y
+            if (targetY !in safeClipTop until safeClipBottomExclusive) {
+                continue
+            }
             for (x in 0 until temp.width) {
                 if (temp.getPixel(x, y) == PixelBuffer.ON) {
-                    buffer.setPixel(startX + x, startY + y, value)
-                }
-            }
-        }
-    }
-
-    private fun drawScaledTextAsValue(
-        buffer: PixelBuffer,
-        text: String,
-        startX: Int,
-        startY: Int,
-        maxWidth: Int,
-        baseStyle: GlyphStyle,
-        targetHeight: Int,
-        value: Byte,
-    ) {
-        if (text.isEmpty() || maxWidth <= 0 || targetHeight <= 0) {
-            return
-        }
-
-        val scaleNumerator = targetHeight.toFloat()
-        val scaleDenominator = baseStyle.cellHeight.toFloat().coerceAtLeast(1f)
-        val sourceMaxWidth = (maxWidth * (scaleDenominator / scaleNumerator)).toInt().coerceAtLeast(1)
-        val trimmed = pixelFontEngine.trimToWidth(
-            text = text,
-            style = baseStyle,
-            maxWidth = sourceMaxWidth,
-        )
-        if (trimmed.isEmpty()) {
-            return
-        }
-
-        val sourceWidth = pixelFontEngine.measureText(trimmed, baseStyle).coerceAtLeast(1)
-        val source = PixelBuffer(
-            width = sourceWidth,
-            height = baseStyle.cellHeight,
-        )
-        pixelFontEngine.drawText(
-            buffer = source,
-            text = trimmed,
-            startX = 0,
-            startY = 0,
-            maxWidth = source.width,
-            style = baseStyle,
-        )
-
-        val targetWidth = ((sourceWidth * targetHeight.toFloat()) / baseStyle.cellHeight.toFloat())
-            .toInt()
-            .coerceAtLeast(1)
-            .coerceAtMost(maxWidth)
-
-        for (targetY in 0 until targetHeight) {
-            val sourceYStart = (targetY * source.height) / targetHeight
-            val sourceYEndExclusive = (((targetY + 1) * source.height) + targetHeight - 1) / targetHeight
-            for (targetX in 0 until targetWidth) {
-                val sourceXStart = (targetX * source.width) / targetWidth
-                val sourceXEndExclusive = (((targetX + 1) * source.width) + targetWidth - 1) / targetWidth
-
-                var lit = false
-                for (sourceY in sourceYStart until sourceYEndExclusive.coerceAtMost(source.height)) {
-                    for (sourceX in sourceXStart until sourceXEndExclusive.coerceAtMost(source.width)) {
-                        if (source.getPixel(sourceX, sourceY) == PixelBuffer.ON) {
-                            lit = true
-                            break
-                        }
-                    }
-                    if (lit) {
-                        break
-                    }
-                }
-                if (lit) {
-                    buffer.setPixel(startX + targetX, startY + targetY, value)
+                    buffer.setPixel(startX + x, targetY, value)
                 }
             }
         }

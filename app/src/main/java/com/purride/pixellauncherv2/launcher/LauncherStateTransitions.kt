@@ -84,11 +84,11 @@ object LauncherStateTransitions {
             )
         }
 
-        val safeSelectedIndex = stateWithDrawerApps.selectedIndex.coerceIn(0, drawerApps.lastIndex)
         return syncDrawerWindow(
             state = stateWithDrawerApps.copy(
                 mode = LauncherMode.APP_DRAWER,
-                selectedIndex = safeSelectedIndex,
+                selectedIndex = 0,
+                listStartIndex = 0,
             ),
             visibleRows = visibleRows,
         )
@@ -165,27 +165,15 @@ object LauncherStateTransitions {
             )
         }
 
-        val indexModel = AppDrawerIndexModel.create(
-            apps = drawerApps,
+        val pageSize = visibleRows.coerceAtLeast(1)
+        val currentTopIndex = state.listStartIndex.coerceIn(0, drawerApps.lastIndex)
+        val targetIndex = (currentTopIndex + (direction * pageSize)).coerceIn(0, drawerApps.lastIndex)
+        return syncDrawerWindow(
+            state = state.copy(
+                selectedIndex = targetIndex,
+                listStartIndex = targetIndex,
+            ),
             visibleRows = visibleRows,
-            selectedIndex = state.selectedIndex,
-        )
-        if (indexModel.pageCount == 0) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
-
-        val newPageIndex = (indexModel.currentPageIndex + direction).coerceIn(0, indexModel.pageCount - 1)
-        val newSelectedIndex = indexModel.pageStartIndices[newPageIndex].coerceIn(0, drawerApps.lastIndex)
-        return state.copy(
-            selectedIndex = newSelectedIndex,
-            listStartIndex = newSelectedIndex,
-            drawerPageIndex = newPageIndex,
-            drawerFocus = DrawerFocus.LIST,
         )
     }
 
@@ -278,19 +266,13 @@ object LauncherStateTransitions {
             query = safeQuery,
             recentApps = state.recentApps,
         )
-        val preservedApp = currentDrawerApps(state).getOrNull(state.selectedIndex)
-        val selectedIndex = preservedApp?.let { selected ->
-            drawerApps.indexOfFirst { candidate ->
-                candidate.packageName == selected.packageName &&
-                    candidate.activityName == selected.activityName
-            }
-        }?.takeIf { it >= 0 } ?: 0
 
         return syncDrawerWindow(
             state = state.copy(
                 drawerQuery = safeQuery,
                 drawerVisibleApps = drawerApps,
-                selectedIndex = selectedIndex,
+                selectedIndex = 0,
+                listStartIndex = 0,
             ),
             visibleRows = visibleRows,
         )
@@ -319,13 +301,6 @@ object LauncherStateTransitions {
     }
 
     fun clearDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState {
-        if (state.drawerQuery.isBlank()) {
-            val orderedApps = orderDefaultApps(state.apps, state.recentApps)
-            return syncDrawerWindow(
-                state = state.copy(drawerVisibleApps = orderedApps),
-                visibleRows = visibleRows,
-            )
-        }
         return updateDrawerQuery(
             state = state,
             query = "",
@@ -334,8 +309,25 @@ object LauncherStateTransitions {
     }
 
     fun exitDrawerSearch(state: LauncherState, visibleRows: Int): LauncherState {
-        return clearDrawerQuery(
+        val preservedApp = currentDrawerApps(state).getOrNull(state.selectedIndex)
+        val clearedState = clearDrawerQuery(
             state = state,
+            visibleRows = visibleRows,
+        ).copy(
+            isDrawerSearchFocused = false,
+            isDrawerRailSliding = false,
+        )
+        val restoredIndex = preservedApp?.let { selected ->
+            currentDrawerApps(clearedState).indexOfFirst { candidate ->
+                candidate.packageName == selected.packageName &&
+                    candidate.activityName == selected.activityName
+            }.takeIf { it >= 0 }
+        } ?: 0
+        return syncDrawerWindow(
+            state = clearedState.copy(
+                selectedIndex = restoredIndex,
+                listStartIndex = restoredIndex,
+            ),
             visibleRows = visibleRows,
         ).copy(
             isDrawerSearchFocused = false,
@@ -451,23 +443,7 @@ object LauncherStateTransitions {
             visibleRows = visibleRows,
             selectedIndex = safeSelectedIndex,
         )
-        val listStartIndex = if (
-            state.mode == LauncherMode.APP_DRAWER &&
-            state.isDrawerSearchFocused &&
-            state.drawerQuery.isNotBlank()
-        ) {
-            calculateCenteredAnchorListStartIndex(
-                selectedIndex = safeSelectedIndex,
-                visibleRows = visibleRows,
-                totalCount = drawerApps.size,
-            )
-        } else {
-            calculateListStartIndex(
-                selectedIndex = safeSelectedIndex,
-                visibleRows = visibleRows,
-                totalCount = drawerApps.size,
-            )
-        }
+        val listStartIndex = safeSelectedIndex
 
         return state.copy(
             selectedIndex = safeSelectedIndex,
@@ -485,21 +461,6 @@ object LauncherStateTransitions {
             return emptyList()
         }
         return state.apps
-    }
-
-    private fun calculateCenteredAnchorListStartIndex(
-        selectedIndex: Int,
-        visibleRows: Int,
-        totalCount: Int,
-    ): Int {
-        if (totalCount <= 0) {
-            return 0
-        }
-        val safeRows = visibleRows.coerceAtLeast(1)
-        val safeSelectedIndex = selectedIndex.coerceIn(0, totalCount - 1)
-        val centerRow = safeRows / 2
-        val maxStart = (totalCount - safeRows).coerceAtLeast(0)
-        return (safeSelectedIndex - centerRow).coerceIn(0, maxStart)
     }
 
     private fun orderDefaultApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {
