@@ -11,19 +11,18 @@ class TimeTextProvider(
 ) {
 
     private val timeFormatter = SimpleDateFormat("HH:mm", locale)
-    private val dateFormatter = SimpleDateFormat("MMM dd", Locale.ENGLISH)
-    private val weekdayFormatter = SimpleDateFormat("EEEE", Locale.ENGLISH)
+    private val dateLineFormatter = SimpleDateFormat("EEEE MMM dd", Locale.ENGLISH)
 
     fun currentTimeText(nowMillis: Long = System.currentTimeMillis()): String {
         return timeFormatter.format(Date(nowMillis))
     }
 
     fun currentDateText(nowMillis: Long = System.currentTimeMillis()): String {
-        return dateFormatter.format(Date(nowMillis)).uppercase(Locale.ENGLISH)
+        return dateLineFormatter.format(Date(nowMillis)).uppercase(Locale.ENGLISH)
     }
 
     fun currentWeekdayText(nowMillis: Long = System.currentTimeMillis()): String {
-        return weekdayFormatter.format(Date(nowMillis)).uppercase(Locale.ENGLISH)
+        return ""
     }
 
     fun millisUntilNextMinute(nowMillis: Long = System.currentTimeMillis()): Long {

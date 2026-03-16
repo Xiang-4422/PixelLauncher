@@ -182,7 +182,7 @@ class PixelRenderer(
         )
 
         val dateLine = pixelFontEngine.trimToWidth(
-            text = state.currentDateText.ifBlank { "--- --" },
+            text = state.currentDateText.ifBlank { "------- --- --" },
             style = GlyphStyle.UI_SMALL_10,
             maxWidth = layoutMetrics.innerWidth,
         )
@@ -195,23 +195,6 @@ class PixelRenderer(
                 maxWidth = layoutMetrics.innerWidth,
                 style = GlyphStyle.UI_SMALL_10,
                 value = PixelBuffer.ACCENT,
-            )
-        }
-
-        val weekdayLine = pixelFontEngine.trimToWidth(
-            text = state.currentWeekdayText.ifBlank { "-------" },
-            style = GlyphStyle.UI_SMALL_10,
-            maxWidth = layoutMetrics.innerWidth,
-        )
-        if (weekdayLine.isNotEmpty()) {
-            drawTextAsValue(
-                buffer = buffer,
-                text = weekdayLine,
-                startX = layoutMetrics.innerLeft,
-                startY = layoutMetrics.weekdayY,
-                maxWidth = layoutMetrics.innerWidth,
-                style = GlyphStyle.UI_SMALL_10,
-                value = PixelBuffer.ON,
             )
         }
 
