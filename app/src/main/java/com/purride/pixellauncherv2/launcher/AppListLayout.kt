@@ -9,7 +9,9 @@ object AppListLayout {
     private const val rowHeight = 17
     private const val labelTopInset = 0
     private const val drawerLeftVisualOffset = 1
-    private const val hiddenRailWidthDivisor = 3
+    private const val hiddenRailWidthDivisor = 5
+    private const val hiddenRailMinWidth = 12
+    private const val hiddenRailMaxWidth = 16
 
     fun metrics(screenProfile: ScreenProfile): AppListLayoutMetrics {
         val listStartY = LauncherHeaderLayout.contentTop
@@ -18,7 +20,8 @@ object AppListLayout {
             .coerceAtLeast(1)
         val textX = (LauncherHeaderLayout.horizontalPadding - drawerLeftVisualOffset).coerceAtLeast(0)
         val listWidth = (screenProfile.logicalWidth - textX - LauncherHeaderLayout.horizontalPadding).coerceAtLeast(8)
-        val hiddenRailWidth = (screenProfile.logicalWidth / hiddenRailWidthDivisor).coerceAtLeast(1)
+        val hiddenRailWidth = (screenProfile.logicalWidth / hiddenRailWidthDivisor)
+            .coerceIn(hiddenRailMinWidth, hiddenRailMaxWidth)
         val hiddenRailLeft = (screenProfile.logicalWidth - hiddenRailWidth).coerceAtLeast(0)
 
         return AppListLayoutMetrics(
