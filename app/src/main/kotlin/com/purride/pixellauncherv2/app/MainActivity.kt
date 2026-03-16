@@ -24,6 +24,7 @@ import com.purride.pixellauncherv2.data.DeviceMotionRepository
 import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
+import com.purride.pixellauncherv2.data.NextAlarmRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
@@ -84,6 +85,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private lateinit var fontSettingsRepository: FontSettingsRepository
     private lateinit var launcherStatsRepository: LauncherStatsRepository
     private lateinit var deviceStatusRepository: DeviceStatusRepository
+    private lateinit var nextAlarmRepository: NextAlarmRepository
     private lateinit var deviceMotionRepository: DeviceMotionRepository
     private lateinit var pixelFontResolver: PixelFontResolver
     private lateinit var appLauncher: AndroidAppLauncher
@@ -249,6 +251,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         fontSettingsRepository = FontSettingsRepository(applicationContext)
         launcherStatsRepository = LauncherStatsRepository(applicationContext)
         deviceStatusRepository = DeviceStatusRepository(applicationContext)
+        nextAlarmRepository = NextAlarmRepository(applicationContext)
         deviceMotionRepository = DeviceMotionRepository(applicationContext)
         pixelFontResolver = PixelFontResolver(applicationContext)
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
@@ -444,6 +447,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         windowModeController.hideSystemBars()
         startClockTicker()
         deviceStatusRepository.start(::onDeviceStatusChanged)
+        nextAlarmRepository.start(::onNextAlarmChanged)
         resetDrawerVerticalGesture()
         state = LauncherStateTransitions.showHome(state)
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
@@ -481,6 +485,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         launchRunnable = null
         launchPending = false
         deviceStatusRepository.stop()
+        nextAlarmRepository.stop()
         stopIdlePhysics()
         suppressActivityAnimations()
         super.onPause()
@@ -1856,6 +1861,14 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         syncIdleFluidWithBattery()
         refreshDerivedUiState(render = true)
         startAnimationTickerIfNeeded()
+    }
+
+    private fun onNextAlarmChanged(nextAlarmText: String) {
+        state = LauncherStateTransitions.updateNextAlarmText(
+            state = state,
+            nextAlarmText = nextAlarmText,
+        )
+        refreshDerivedUiState(render = true)
     }
 
     private fun refreshDerivedUiState(render: Boolean) {

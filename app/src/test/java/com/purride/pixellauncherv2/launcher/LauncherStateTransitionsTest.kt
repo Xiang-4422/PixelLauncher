@@ -326,6 +326,16 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun updateNextAlarmTextStoresLatestAlarmValue() {
+        val updatedState = LauncherStateTransitions.updateNextAlarmText(
+            state = LauncherState(),
+            nextAlarmText = "07:30",
+        )
+
+        assertEquals("07:30", updatedState.nextAlarmText)
+    }
+
+    @Test
     fun updateStatsStoresRecentAppsAndLaunchMetadata() {
         val updatedState = LauncherStateTransitions.updateStats(
             state = LauncherState(),
