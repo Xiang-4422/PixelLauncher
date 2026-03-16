@@ -2,8 +2,8 @@ package com.purride.pixellauncherv2.render
 
 object ScreenProfileFactory {
 
-    const val defaultDotSizePx: Int = 15
-    val supportedDotSizePxOptions: List<Int> = listOf(10, 12, 15, 18, 21)
+    const val defaultDotSizePx: Int = 12
+    val supportedDotSizePxOptions: List<Int> = listOf(7, 8, 10, 12)
 
     fun create(
         widthPx: Int,

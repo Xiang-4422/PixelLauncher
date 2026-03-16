@@ -6,6 +6,7 @@ enum class PixelTheme {
     GREEN_PHOSPHOR,
     AMBER_CRT,
     ICE_LCD,
+    MONO_LCD,
 }
 
 data class PixelPalette(
@@ -38,6 +39,13 @@ data class PixelPalette(
                     pixelOnColor = Color.rgb(184, 237, 255),
                     pixelOffColor = Color.rgb(12, 34, 47),
                     accentColor = if (isLowBattery) Color.rgb(122, 173, 188) else Color.rgb(235, 248, 255),
+                )
+
+                PixelTheme.MONO_LCD -> PixelPalette(
+                    backgroundColor = Color.rgb(0, 0, 0),
+                    pixelOnColor = Color.rgb(255, 255, 255),
+                    pixelOffColor = Color.rgb(0, 0, 0),
+                    accentColor = Color.rgb(255, 255, 255),
                 )
             }
         }

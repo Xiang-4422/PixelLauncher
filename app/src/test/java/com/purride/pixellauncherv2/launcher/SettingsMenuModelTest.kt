@@ -112,4 +112,11 @@ class SettingsMenuModelTest {
 
         assertEquals(DrawerListAlignment.LEFT, next)
     }
+
+    @Test
+    fun themeLabelIncludesMonoTheme() {
+        val label = SettingsMenuModel.themeLabel(PixelTheme.MONO_LCD)
+
+        assertEquals("MONO", label)
+    }
 }

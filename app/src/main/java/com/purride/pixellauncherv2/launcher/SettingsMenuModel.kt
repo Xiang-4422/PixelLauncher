@@ -122,6 +122,7 @@ object SettingsMenuModel {
             PixelTheme.GREEN_PHOSPHOR -> "GREEN"
             PixelTheme.AMBER_CRT -> "AMBER"
             PixelTheme.ICE_LCD -> "ICE"
+            PixelTheme.MONO_LCD -> "MONO"
         }
     }
 
