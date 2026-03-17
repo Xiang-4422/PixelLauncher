@@ -43,8 +43,6 @@ import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerDirectionalSettlePolicy
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
-import com.purride.pixellauncherv2.launcher.DrawerMotionInterruption
-import com.purride.pixellauncherv2.launcher.DrawerMotionRuntimeState
 import com.purride.pixellauncherv2.launcher.DrawerRailDragMapper
 import com.purride.pixellauncherv2.launcher.DrawerSettleTarget
 import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollController
@@ -57,6 +55,8 @@ import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
+import com.purride.pixellauncherv2.launcher.TextListRuntimeState
+import com.purride.pixellauncherv2.launcher.TextListSupport
 import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.HorizontalPageController
 import com.purride.pixellauncherv2.render.HorizontalPageSnapshot
@@ -138,6 +138,17 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private var drawerListScrollVelocityPxPerSecond: Float = 0f
     private var drawerListScrollAnimating = false
     private var drawerSettleTarget: DrawerSettleTarget? = null
+    private var settingsListDragTracking = false
+    private var settingsListDragConsumed = false
+    private var settingsListDragStartX = 0
+    private var settingsListDragStartY = 0
+    private var settingsListDragLastY = 0
+    private var settingsListDragLastUptimeMs: Long = 0L
+    private var settingsListDragVelocityPxPerSecond: Float = 0f
+    private var settingsListScrollResidualOffsetPx: Float = 0f
+    private var settingsListScrollVelocityPxPerSecond: Float = 0f
+    private var settingsListScrollAnimating = false
+    private var settingsSettleTarget: DrawerSettleTarget? = null
     private val horizontalPageController = HorizontalPageController()
     private var horizontalPageState: HorizontalPageState = horizontalPageController.create(
         pageCount = pagerPageCount,
@@ -203,6 +214,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
             if (shouldAnimateDrawerListScroll()) {
                 stepDrawerVerticalListAnimation(deltaMs)
+            }
+            if (shouldAnimateSettingsListScroll()) {
+                stepSettingsVerticalListAnimation(deltaMs)
             }
             val wasPagerSettling = horizontalPageState.isSettling
             horizontalPageState = horizontalPageController.step(
@@ -561,7 +575,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                         settleDrawerMotionBeforeExplicitAction()
                         moveSelection(-1)
                     }
-                    LauncherMode.SETTINGS -> moveSettingsSelection(-1)
+                    LauncherMode.SETTINGS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        moveSettingsSelection(-1)
+                    }
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
                     LauncherMode.IDLE -> Unit
@@ -575,7 +592,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                         settleDrawerMotionBeforeExplicitAction()
                         moveSelection(1)
                     }
-                    LauncherMode.SETTINGS -> moveSettingsSelection(1)
+                    LauncherMode.SETTINGS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        moveSettingsSelection(1)
+                    }
                     LauncherMode.HOME -> showAppDrawer()
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
@@ -585,7 +605,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> changeSettingValue(-1)
+                    LauncherMode.SETTINGS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        changeSettingValue(-1)
+                    }
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -599,7 +622,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> changeSettingValue(1)
+                    LauncherMode.SETTINGS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        changeSettingValue(1)
+                    }
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -616,7 +642,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             KeyEvent.KEYCODE_NUMPAD_ENTER,
             KeyEvent.KEYCODE_SPACE -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> activateSelectedSetting()
+                    LauncherMode.SETTINGS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        activateSelectedSetting()
+                    }
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.HOME -> showAppDrawer()
                     LauncherMode.APP_DRAWER -> {
@@ -712,9 +741,16 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     logicalX = x,
                     logicalY = y,
                     rowCount = rows.size,
+                    listStartIndex = state.settingsListStartIndex,
+                    scrollOffsetPx = settingsListScrollResidualOffsetPx.toInt(),
                 ) ?: return
 
-                state = LauncherStateTransitions.selectSettingsIndex(state, tappedRow)
+                settleSettingsMotionBeforeExplicitAction()
+                state = LauncherStateTransitions.selectSettingsIndex(
+                    state = state,
+                    index = tappedRow,
+                    visibleRows = settingsVisibleRows(),
+                )
                 activateSelectedSetting()
             }
 
@@ -736,6 +772,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
         resetPagerDragTracking()
         resetDrawerVerticalDragTracking()
+        resetSettingsVerticalDragTracking()
 
         if (state.mode == LauncherMode.APP_DRAWER) {
             val railHit = !state.isDrawerSearchFocused &&
@@ -770,6 +807,20 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             drawerListDragLastUptimeMs = SystemClock.uptimeMillis()
             drawerListDragVelocityPxPerSecond = 0f
             stopDrawerVerticalListAnimation(resetOffset = false)
+        }
+
+        if (state.mode == LauncherMode.SETTINGS &&
+            shouldShowSettingsScrollableList() &&
+            isPointInSettingsScrollableListArea(x, y)
+        ) {
+            settingsListDragTracking = true
+            settingsListDragConsumed = false
+            settingsListDragStartX = x
+            settingsListDragStartY = y
+            settingsListDragLastY = y
+            settingsListDragLastUptimeMs = SystemClock.uptimeMillis()
+            settingsListDragVelocityPxPerSecond = 0f
+            stopSettingsVerticalListAnimation(resetOffset = false)
         }
 
         if (canHandlePagerNavigation()) {
@@ -874,6 +925,59 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             }
         }
 
+        if (settingsListDragTracking) {
+            val totalDx = x - settingsListDragStartX
+            val totalDy = y - settingsListDragStartY
+            if (!settingsListDragConsumed) {
+                if (kotlin.math.abs(totalDy) >= drawerListDragStartThresholdPx &&
+                    kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) * drawerListDragAxisBias
+                ) {
+                    settingsListDragConsumed = true
+                    resetPagerDragTracking()
+                }
+            }
+
+            if (settingsListDragConsumed) {
+                recordInteraction()
+                val now = SystemClock.uptimeMillis()
+                val deltaY = y - settingsListDragLastY
+                val elapsedMs = (now - settingsListDragLastUptimeMs).coerceAtLeast(1L)
+                settingsListDragLastY = y
+                settingsListDragLastUptimeMs = now
+                if (deltaY != 0) {
+                    if (isOutwardSettingsBoundaryDelta(deltaY.toFloat())) {
+                        val hadMotion = settingsListScrollResidualOffsetPx != 0f ||
+                            settingsListScrollVelocityPxPerSecond != 0f ||
+                            settingsListScrollAnimating
+                        stopSettingsVerticalListAnimation(resetOffset = true)
+                        settingsListDragVelocityPxPerSecond = 0f
+                        if (hadMotion) {
+                            renderCurrentFrame()
+                            startAnimationTickerIfNeeded()
+                        }
+                        return true
+                    }
+                    val thresholds = settingsListScrollThresholds()
+                    val dragResult = DrawerVerticalScrollController.consumeDrag(
+                        residualOffsetPx = settingsListScrollResidualOffsetPx,
+                        deltaPx = deltaY.toFloat(),
+                        thresholds = thresholds,
+                    )
+                    settingsListScrollResidualOffsetPx = dragResult.residualOffsetPx
+                    settingsListDragVelocityPxPerSecond = (deltaY.toFloat() * 1000f) / elapsedMs.toFloat()
+                    settingsSettleTarget = null
+                    clampSettingsMotionAtListBounds()
+                    if (dragResult.stepDelta != 0) {
+                        applySettingsVerticalStepDelta(dragResult.stepDelta)
+                    } else {
+                        renderCurrentFrame()
+                        startAnimationTickerIfNeeded()
+                    }
+                }
+                return true
+            }
+        }
+
         if (!pagerDragTracking || !canHandlePagerNavigation()) {
             return false
         }
@@ -896,6 +1000,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             val currentPageIndex = pagerIndexForMode(state.mode) ?: return false
             if (state.mode == LauncherMode.APP_DRAWER) {
                 settleDrawerMotionBeforeExplicitAction()
+            } else if (state.mode == LauncherMode.SETTINGS) {
+                settleSettingsMotionBeforeExplicitAction()
             }
             horizontalPageState = horizontalPageController.syncToIndex(
                 state = horizontalPageState,
@@ -958,6 +1064,33 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             resetDrawerVerticalDragTracking()
             if (!consumed) {
                 drawerSettleTarget = null
+            }
+            if (consumed) {
+                return true
+            }
+        }
+
+        if (settingsListDragTracking) {
+            val consumed = settingsListDragConsumed
+            if (consumed) {
+                recordInteraction()
+                val releaseVelocity = if (cancelled) 0f else settingsListDragVelocityPxPerSecond
+                val releaseState = DrawerVerticalScrollController.release(
+                    residualOffsetPx = settingsListScrollResidualOffsetPx,
+                    velocityPxPerSecond = releaseVelocity,
+                    thresholds = settingsListScrollThresholds(),
+                )
+                settingsListScrollResidualOffsetPx = releaseState.residualOffsetPx
+                settingsListScrollVelocityPxPerSecond = releaseState.nextVelocityPxPerSecond
+                settingsSettleTarget = releaseState.settleTarget
+                settingsListScrollAnimating = releaseState.isAnimating
+                clampSettingsMotionAtListBounds()
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+            }
+            resetSettingsVerticalDragTracking()
+            if (!consumed) {
+                settingsSettleTarget = null
             }
             if (consumed) {
                 return true
@@ -1135,6 +1268,11 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             } else {
                 0
             },
+            settingsListScrollOffsetPx = if (state.mode == LauncherMode.SETTINGS) {
+                settingsListScrollResidualOffsetPx.toInt()
+            } else {
+                0
+            },
         )
         pixelDisplayView.submitFrame(
             pixelBuffer = pixelBuffer,
@@ -1159,13 +1297,21 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             state = state,
             visibleRows = visibleRows(),
         )
+        state = LauncherStateTransitions.reflowSettingsWindow(
+            state = state,
+            visibleRows = settingsVisibleRows(),
+        )
         syncIdleFluidWithBattery()
         renderCurrentFrame()
         return true
     }
 
     private fun visibleRows(): Int {
-        return AppListLayout.metrics(screenProfile).visibleRows
+        return AppListLayout.metrics(screenProfile).textList.viewport.visibleRows
+    }
+
+    private fun settingsVisibleRows(): Int {
+        return SettingsMenuLayout.metrics(screenProfile).textList.viewport.visibleRows
     }
 
     private fun syncPagerIndexToMode() {
@@ -1228,10 +1374,16 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             return
         }
         settleDrawerMotionBeforeExplicitAction()
+        if (targetMode != LauncherMode.SETTINGS) {
+            stopSettingsVerticalListAnimation(resetOffset = true)
+        }
         val drawerRows = AppListLayout.metrics(screenProfile).visibleRows
         state = when (targetMode) {
             LauncherMode.HOME -> LauncherStateTransitions.showHome(state)
-            LauncherMode.SETTINGS -> LauncherStateTransitions.showSettings(state)
+            LauncherMode.SETTINGS -> LauncherStateTransitions.showSettings(
+                state = state,
+                visibleRows = settingsVisibleRows(),
+            )
             LauncherMode.APP_DRAWER -> LauncherStateTransitions.showAppDrawer(
                 state = LauncherStateTransitions.clearDrawerQuery(
                     state = state,
@@ -1256,6 +1408,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
         if (state.mode == LauncherMode.APP_DRAWER) {
             settleDrawerMotionBeforeExplicitAction()
+        } else if (state.mode == LauncherMode.SETTINGS) {
+            settleSettingsMotionBeforeExplicitAction()
         }
         val currentIndex = pagerIndexForMode(state.mode) ?: return false
         horizontalPageState = horizontalPageController.syncToIndex(
@@ -1468,7 +1622,12 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun openSettingsMenu() {
-        state = LauncherStateTransitions.showSettings(state)
+        settleDrawerMotionBeforeExplicitAction()
+        stopSettingsVerticalListAnimation(resetOffset = true)
+        state = LauncherStateTransitions.showSettings(
+            state = state,
+            visibleRows = settingsVisibleRows(),
+        )
         stopIdlePhysics()
         renderCurrentFrame()
         updateDrawerInputFocus()
@@ -1476,6 +1635,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun closeSettingsMenu() {
+        settleSettingsMotionBeforeExplicitAction()
         state = LauncherStateTransitions.hideSettings(state)
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
@@ -1484,6 +1644,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun openDiagnostics() {
+        settleSettingsMotionBeforeExplicitAction()
         state = LauncherStateTransitions.showDiagnostics(state)
         renderCurrentFrame()
         updateDrawerInputFocus()
@@ -1499,6 +1660,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         state = LauncherStateTransitions.moveSettingsSelection(
             state = state,
             delta = delta,
+            visibleRows = settingsVisibleRows(),
         )
         renderCurrentFrame()
     }
@@ -1610,7 +1772,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         if (state.isDrawerSearchFocused && state.drawerQuery.isBlank()) {
             return false
         }
-        return currentDrawerApps().isNotEmpty()
+        return TextListSupport.hasScrollableContent(
+            rowCount = currentDrawerApps().size,
+            viewport = AppListLayout.metrics(screenProfile).textList.viewport,
+        )
     }
 
     private fun isPointInDrawerScrollableListArea(x: Int, y: Int): Boolean {
@@ -1634,6 +1799,167 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
             upwardStepPx = rowHeight,
             downwardStepPx = rowHeight,
         )
+    }
+
+    private fun settingsListScrollThresholds(): DrawerVerticalScrollThresholds {
+        val rowHeight = SettingsMenuLayout.metrics(screenProfile).rowHeight.toFloat()
+        return DrawerVerticalScrollThresholds(
+            upwardStepPx = rowHeight,
+            downwardStepPx = rowHeight,
+        )
+    }
+
+    private fun settingsMaxStartIndex(): Int {
+        return (SettingsMenuModel.rows(state).size - settingsVisibleRows()).coerceAtLeast(0)
+    }
+
+    private fun canScrollSettingsInDirection(direction: Int): Boolean {
+        return when {
+            direction > 0 -> state.settingsListStartIndex < settingsMaxStartIndex()
+            direction < 0 -> state.settingsListStartIndex > 0
+            else -> false
+        }
+    }
+
+    private fun shouldShowSettingsScrollableList(): Boolean {
+        if (state.mode != LauncherMode.SETTINGS) {
+            return false
+        }
+        return TextListSupport.hasScrollableContent(
+            rowCount = SettingsMenuModel.rows(state).size,
+            viewport = SettingsMenuLayout.metrics(screenProfile).textList.viewport,
+        )
+    }
+
+    private fun isPointInSettingsScrollableListArea(x: Int, y: Int): Boolean {
+        if (x !in 0 until screenProfile.logicalWidth) {
+            return false
+        }
+        val metrics = SettingsMenuLayout.metrics(screenProfile)
+        return y in metrics.firstRowY until metrics.panelBottom
+    }
+
+    private fun isSettingsAtListStart(): Boolean {
+        return state.settingsListStartIndex <= 0
+    }
+
+    private fun isSettingsAtListEnd(): Boolean {
+        return state.settingsListStartIndex >= settingsMaxStartIndex()
+    }
+
+    private fun isOutwardSettingsBoundaryDelta(deltaY: Float): Boolean {
+        if (deltaY == 0f || !shouldShowSettingsScrollableList()) {
+            return false
+        }
+        return (deltaY > 0f && isSettingsAtListStart()) ||
+            (deltaY < 0f && isSettingsAtListEnd())
+    }
+
+    private fun clampSettingsMotionAtListBounds() {
+        if (!shouldShowSettingsScrollableList()) {
+            stopSettingsVerticalListAnimation(resetOffset = true)
+            return
+        }
+        val atStart = isSettingsAtListStart()
+        val atEnd = isSettingsAtListEnd()
+        val outwardResidual =
+            (settingsListScrollResidualOffsetPx > drawerBoundaryEpsilonPx && atStart) ||
+                (settingsListScrollResidualOffsetPx < -drawerBoundaryEpsilonPx && atEnd)
+        val outwardVelocity =
+            (settingsListScrollVelocityPxPerSecond > drawerBoundaryVelocityEpsilonPx && atStart) ||
+                (settingsListScrollVelocityPxPerSecond < -drawerBoundaryVelocityEpsilonPx && atEnd)
+        val invalidSettleTarget = settingsSettleTarget?.let { target -> !canScrollSettingsInDirection(target.direction) } == true
+        if (outwardResidual || outwardVelocity || invalidSettleTarget) {
+            stopSettingsVerticalListAnimation(resetOffset = true)
+            return
+        }
+        if (!settingsListScrollAnimating && kotlin.math.abs(settingsListScrollResidualOffsetPx) <= drawerBoundaryEpsilonPx) {
+            settingsListScrollResidualOffsetPx = 0f
+        }
+    }
+
+    private fun applySettingsVerticalStepDelta(stepDelta: Int, renderAfter: Boolean = true) {
+        if (stepDelta == 0) {
+            return
+        }
+        var remaining = stepDelta
+        while (remaining != 0) {
+            val direction = if (remaining > 0) 1 else -1
+            val previousListStartIndex = state.settingsListStartIndex
+            state = LauncherStateTransitions.scrollSettingsWindow(
+                state = state,
+                delta = direction,
+                visibleRows = settingsVisibleRows(),
+            )
+            if (state.settingsListStartIndex == previousListStartIndex) {
+                settingsListScrollResidualOffsetPx = 0f
+                settingsListScrollVelocityPxPerSecond = 0f
+                settingsListScrollAnimating = false
+                break
+            }
+            remaining -= direction
+        }
+        if (renderAfter) {
+            renderCurrentFrame()
+            startAnimationTickerIfNeeded()
+        }
+    }
+
+    private fun stepSettingsVerticalListAnimation(deltaMs: Long) {
+        clampSettingsMotionAtListBounds()
+        if (!settingsListScrollAnimating) {
+            return
+        }
+        val animationStep = DrawerVerticalScrollController.stepAnimation(
+            residualOffsetPx = settingsListScrollResidualOffsetPx,
+            velocityPxPerSecond = settingsListScrollVelocityPxPerSecond,
+            thresholds = settingsListScrollThresholds(),
+            deltaMs = deltaMs,
+            settleTarget = settingsSettleTarget,
+        )
+        settingsListScrollResidualOffsetPx = animationStep.residualOffsetPx
+        settingsListScrollVelocityPxPerSecond = animationStep.nextVelocityPxPerSecond
+        settingsSettleTarget = animationStep.settleTarget
+        settingsListScrollAnimating = animationStep.isAnimating
+        if (animationStep.stepDelta != 0) {
+            applySettingsVerticalStepDelta(animationStep.stepDelta, renderAfter = false)
+        }
+        clampSettingsMotionAtListBounds()
+    }
+
+    private fun stopSettingsVerticalListAnimation(resetOffset: Boolean) {
+        settingsListScrollAnimating = false
+        settingsListScrollVelocityPxPerSecond = 0f
+        settingsSettleTarget = null
+        if (resetOffset) {
+            settingsListScrollResidualOffsetPx = 0f
+        }
+    }
+
+    private fun resetSettingsVerticalDragTracking() {
+        settingsListDragTracking = false
+        settingsListDragConsumed = false
+        settingsListDragVelocityPxPerSecond = 0f
+        settingsListDragLastUptimeMs = 0L
+    }
+
+    private fun settleSettingsMotionBeforeExplicitAction() {
+        val settledState = TextListSupport.settleBeforeExplicitAction(
+            TextListRuntimeState(
+                selectedIndex = state.settingsSelectedIndex,
+                listStartIndex = state.settingsListStartIndex,
+                residualOffsetPx = settingsListScrollResidualOffsetPx,
+                velocityPxPerSecond = settingsListScrollVelocityPxPerSecond,
+                settleTarget = settingsSettleTarget,
+                isDragging = settingsListDragTracking || settingsListDragConsumed,
+                isAnimating = settingsListScrollAnimating,
+            ),
+        )
+        resetSettingsVerticalDragTracking()
+        settingsListScrollAnimating = settledState.isAnimating
+        settingsListScrollResidualOffsetPx = settledState.residualOffsetPx
+        settingsListScrollVelocityPxPerSecond = settledState.velocityPxPerSecond
+        settingsSettleTarget = null
     }
 
     private fun drawerListLastIndex(): Int {
@@ -1766,12 +2092,15 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun settleDrawerMotionBeforeExplicitAction() {
-        val settledState = DrawerMotionInterruption.settleBeforeExplicitAction(
-            DrawerMotionRuntimeState(
-                isDragging = drawerListDragTracking || drawerListDragConsumed,
-                isAnimating = drawerListScrollAnimating,
+        val settledState = TextListSupport.settleBeforeExplicitAction(
+            TextListRuntimeState(
+                selectedIndex = state.selectedIndex,
+                listStartIndex = state.listStartIndex,
                 residualOffsetPx = drawerListScrollResidualOffsetPx,
                 velocityPxPerSecond = drawerListScrollVelocityPxPerSecond,
+                settleTarget = drawerSettleTarget,
+                isDragging = drawerListDragTracking || drawerListDragConsumed,
+                isAnimating = drawerListScrollAnimating,
             ),
         )
         resetDrawerVerticalDragTracking()
@@ -1822,6 +2151,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
     private fun shouldRunInteractionTicker(): Boolean {
         return shouldAnimateDrawerListScroll() ||
+            shouldAnimateSettingsListScroll() ||
             horizontalPageState.isSettling
     }
 
@@ -1831,6 +2161,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
     private fun shouldAnimateDrawerListScroll(): Boolean {
         return state.mode == LauncherMode.APP_DRAWER && drawerListScrollAnimating
+    }
+
+    private fun shouldAnimateSettingsListScroll(): Boolean {
+        return state.mode == LauncherMode.SETTINGS && settingsListScrollAnimating
     }
 
     private fun shouldAnimateHomeMarquee(): Boolean {

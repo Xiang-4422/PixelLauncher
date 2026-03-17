@@ -17,6 +17,8 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayoutMetrics
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.SettingsMenuRow
+import com.purride.pixellauncherv2.launcher.TextListViewport
+import com.purride.pixellauncherv2.launcher.TextListSupport
 import com.purride.pixellauncherv2.util.LabelFormatter
 
 class PixelRenderer(
@@ -29,6 +31,7 @@ class PixelRenderer(
         animationState: LauncherAnimationState,
         pagerSnapshot: HorizontalPageSnapshot? = null,
         drawerListScrollOffsetPx: Int = 0,
+        settingsListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
         val bootBuffer = PixelBuffer(
             width = screenProfile.logicalWidth,
@@ -49,6 +52,7 @@ class PixelRenderer(
                 animationState = animationState,
                 mode = state.mode,
                 drawerListScrollOffsetPx = drawerListScrollOffsetPx,
+                settingsListScrollOffsetPx = settingsListScrollOffsetPx,
             )
         } else {
             renderPagerSnapshot(
@@ -57,6 +61,7 @@ class PixelRenderer(
                 animationState = animationState,
                 pagerSnapshot = pagerSnapshot,
                 drawerListScrollOffsetPx = drawerListScrollOffsetPx,
+                settingsListScrollOffsetPx = settingsListScrollOffsetPx,
             )
         }
         applyLaunchShutterOverlay(pageBuffer, animationState.launchShutter)
@@ -69,6 +74,7 @@ class PixelRenderer(
         animationState: LauncherAnimationState,
         pagerSnapshot: HorizontalPageSnapshot,
         drawerListScrollOffsetPx: Int,
+        settingsListScrollOffsetPx: Int,
     ): PixelBuffer {
         val anchorMode = pagerModeForIndex(pagerSnapshot.anchorPageIndex) ?: state.mode
         val anchorPage = renderSingleMode(
@@ -77,6 +83,7 @@ class PixelRenderer(
             animationState = animationState,
             mode = anchorMode,
             drawerListScrollOffsetPx = drawerListScrollOffsetPx,
+            settingsListScrollOffsetPx = settingsListScrollOffsetPx,
         )
 
         val dragOffset = pagerSnapshot.dragOffsetPx
@@ -94,6 +101,7 @@ class PixelRenderer(
             animationState = animationState,
             mode = adjacentMode,
             drawerListScrollOffsetPx = drawerListScrollOffsetPx,
+            settingsListScrollOffsetPx = settingsListScrollOffsetPx,
         )
         return HorizontalPageRenderer.compose(
             currentPage = anchorPage,
@@ -109,6 +117,7 @@ class PixelRenderer(
         animationState: LauncherAnimationState,
         mode: LauncherMode,
         drawerListScrollOffsetPx: Int = 0,
+        settingsListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
         val buffer = PixelBuffer(
             width = screenProfile.logicalWidth,
@@ -122,6 +131,11 @@ class PixelRenderer(
         } else {
             0
         }
+        val modeSettingsScrollOffset = if (mode == LauncherMode.SETTINGS && state.mode == LauncherMode.SETTINGS) {
+            settingsListScrollOffsetPx
+        } else {
+            0
+        }
         when (mode) {
             LauncherMode.HOME -> drawHome(buffer, modeState, screenProfile, animationState)
             LauncherMode.APP_DRAWER -> drawAppDrawer(
@@ -131,7 +145,13 @@ class PixelRenderer(
                 animationState = animationState,
                 drawerListScrollOffsetPx = modeScrollOffset,
             )
-            LauncherMode.SETTINGS -> drawSettings(buffer, modeState, screenProfile, animationState)
+            LauncherMode.SETTINGS -> drawSettings(
+                buffer = buffer,
+                state = modeState,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                settingsListScrollOffsetPx = modeSettingsScrollOffset,
+            )
             LauncherMode.DIAGNOSTICS -> drawDiagnostics(buffer, modeState, screenProfile, animationState)
             LauncherMode.IDLE -> drawIdle(buffer, modeState, screenProfile)
         }
@@ -504,27 +524,18 @@ class PixelRenderer(
         if (drawerApps.isEmpty()) {
             return
         }
-        val listClipTop = layoutMetrics.listStartY
-        val listClipBottomExclusive = layoutMetrics.listStartY + layoutMetrics.railHeight
-        val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
         val safeListStartIndex = state.listStartIndex.coerceIn(0, drawerApps.lastIndex)
         val textAreaWidth = drawerTextAreaWidth(
             state = state,
             layoutMetrics = layoutMetrics,
         )
-        val remainingRows = drawerApps.size - safeListStartIndex
-        val rowRange = if (drawerListScrollOffsetPx == 0) {
-            0 until remainingRows
-        } else {
-            -1 until remainingRows
-        }
-        for (row in rowRange) {
-            val appIndex = safeListStartIndex + row
-            if (appIndex !in drawerApps.indices) {
-                continue
-            }
+        forEachTextListRenderableRow(
+            viewport = layoutMetrics.textList.viewport,
+            rowCount = drawerApps.size,
+            listStartIndex = safeListStartIndex,
+            scrollOffsetPx = drawerListScrollOffsetPx,
+        ) { appIndex, rowTop ->
             val appEntry = drawerApps[appIndex]
-            val rowTop = layoutMetrics.listStartY + (row * layoutMetrics.rowHeight) + drawerListScrollOffsetPx
 
             val displayLabel = LabelFormatter.displayLabel(appEntry.label)
             val trimmedLabel = pixelFontEngine.trimToWidth(
@@ -547,8 +558,8 @@ class PixelRenderer(
                 maxWidth = textAreaWidth,
                 style = GlyphStyle.APP_LABEL_16,
                 value = PixelBuffer.ON,
-                clipTop = listClipTop,
-                clipBottomExclusive = listClipBottomExclusive,
+                clipTop = layoutMetrics.textList.viewport.top,
+                clipBottomExclusive = layoutMetrics.textList.viewport.bottomExclusive,
             )
         }
     }
@@ -590,6 +601,7 @@ class PixelRenderer(
         state: LauncherState,
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
+        settingsListScrollOffsetPx: Int,
     ) {
         val layout = SettingsMenuLayout.metrics(screenProfile)
         drawHeader(
@@ -601,13 +613,19 @@ class PixelRenderer(
         )
 
         val rows = SettingsMenuModel.rows(state, screenProfile)
-        rows.forEachIndexed { rowIndex, row ->
+        forEachTextListRenderableRow(
+            viewport = layout.textList.viewport,
+            rowCount = rows.size,
+            listStartIndex = state.settingsListStartIndex,
+            scrollOffsetPx = settingsListScrollOffsetPx,
+        ) { rowIndex, rowTop ->
             drawSettingsRow(
                 buffer = buffer,
                 layout = layout,
-                row = row,
-                rowIndex = rowIndex,
-                selected = rowIndex == state.settingsSelectedIndex,
+                row = rows[rowIndex],
+                rowTop = rowTop,
+                clipTop = layout.textList.viewport.top,
+                clipBottomExclusive = layout.panelBottom,
             )
         }
     }
@@ -616,10 +634,10 @@ class PixelRenderer(
         buffer: PixelBuffer,
         layout: SettingsMenuLayoutMetrics,
         row: SettingsMenuRow,
-        rowIndex: Int,
-        selected: Boolean,
+        rowTop: Int,
+        clipTop: Int,
+        clipBottomExclusive: Int,
     ) {
-        val rowTop = layout.firstRowY + (rowIndex * layout.rowHeight)
         val stableValueText = SettingsMenuModel.displayValue(row)
         val stableValue = pixelFontEngine.trimToWidth(
             text = stableValueText,
@@ -640,18 +658,21 @@ class PixelRenderer(
         )
 
         if (trimmedTitle.isNotEmpty()) {
-            pixelFontEngine.drawText(
+            drawTextAsValueClipped(
                 buffer = buffer,
                 text = trimmedTitle,
                 startX = layout.rowTextX,
                 startY = rowTop + layout.rowTextYOffset,
                 maxWidth = titleMaxWidth,
                 style = GlyphStyle.UI_SMALL_10,
+                value = PixelBuffer.ON,
+                clipTop = clipTop,
+                clipBottomExclusive = clipBottomExclusive,
             )
         }
 
         if (stableValue.isNotEmpty()) {
-            drawTextAsValue(
+            drawTextAsValueClipped(
                 buffer = buffer,
                 text = stableValue,
                 startX = stableValueStartX,
@@ -659,6 +680,8 @@ class PixelRenderer(
                 maxWidth = stableValueWidth.coerceAtLeast(1),
                 style = GlyphStyle.UI_SMALL_10,
                 value = PixelBuffer.ON,
+                clipTop = clipTop,
+                clipBottomExclusive = clipBottomExclusive,
             )
         }
     }
@@ -1040,6 +1063,30 @@ class PixelRenderer(
                     buffer.setPixel(startX + x, targetY, value)
                 }
             }
+        }
+    }
+
+    private inline fun forEachTextListRenderableRow(
+        viewport: TextListViewport,
+        rowCount: Int,
+        listStartIndex: Int,
+        scrollOffsetPx: Int,
+        block: (rowIndex: Int, rowTop: Int) -> Unit,
+    ) {
+        if (rowCount <= 0) {
+            return
+        }
+        val firstRenderableIndex = TextListSupport.firstRenderableIndex(listStartIndex)
+        for (rowIndex in firstRenderableIndex until rowCount) {
+            block(
+                rowIndex,
+                TextListSupport.rowTop(
+                    viewport = viewport,
+                    rowIndex = rowIndex,
+                    listStartIndex = listStartIndex,
+                    scrollOffsetPx = scrollOffsetPx,
+                ),
+            )
         }
     }
 

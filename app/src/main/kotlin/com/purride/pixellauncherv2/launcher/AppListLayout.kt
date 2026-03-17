@@ -16,8 +16,11 @@ object AppListLayout {
     fun metrics(screenProfile: ScreenProfile): AppListLayoutMetrics {
         val listStartY = LauncherHeaderLayout.contentTop
         val railHeight = (screenProfile.logicalHeight - listStartY - bottomPadding).coerceAtLeast(rowHeight)
-        val visibleRows = (railHeight / rowHeight)
-            .coerceAtLeast(1)
+        val textList = TextListSupport.createLayoutMetrics(
+            top = listStartY,
+            bottomExclusive = listStartY + railHeight,
+            rowHeight = rowHeight,
+        )
         val textX = (LauncherHeaderLayout.horizontalPadding - drawerLeftVisualOffset).coerceAtLeast(0)
         val listWidth = (screenProfile.logicalWidth - textX - LauncherHeaderLayout.horizontalPadding).coerceAtLeast(8)
         val hiddenRailWidth = (screenProfile.logicalWidth / hiddenRailWidthDivisor)
@@ -29,9 +32,10 @@ object AppListLayout {
             timeY = LauncherHeaderLayout.rowY,
             headerTop = 0,
             headerBottomExclusive = LauncherHeaderLayout.contentTop,
+            textList = textList,
             listStartY = listStartY,
             rowHeight = rowHeight,
-            visibleRows = visibleRows,
+            visibleRows = textList.viewport.visibleRows,
             textX = textX,
             labelYInset = labelTopInset,
             listWidth = listWidth,
@@ -70,12 +74,13 @@ object AppListLayout {
         if (state.mode == LauncherMode.APP_DRAWER && !state.isDrawerSearchFocused && logicalX >= metrics.hiddenRailLeft) {
             return null
         }
-
-        val adjustedY = logicalY - drawerListScrollOffsetPx
-        val row = Math.floorDiv(adjustedY - metrics.listStartY, metrics.rowHeight)
-
-        val appIndex = state.listStartIndex + row
-        return appIndex.takeIf { it in drawerApps.indices }
+        return TextListSupport.hitTestRow(
+            viewport = metrics.textList.viewport,
+            logicalY = logicalY,
+            rowCount = drawerApps.size,
+            listStartIndex = state.listStartIndex,
+            scrollOffsetPx = drawerListScrollOffsetPx,
+        )
     }
 
     fun hitTestDrawerHeaderSearchArea(
@@ -141,6 +146,7 @@ data class AppListLayoutMetrics(
     val timeY: Int,
     val headerTop: Int,
     val headerBottomExclusive: Int,
+    val textList: TextListLayoutMetrics,
     val listStartY: Int,
     val rowHeight: Int,
     val visibleRows: Int,

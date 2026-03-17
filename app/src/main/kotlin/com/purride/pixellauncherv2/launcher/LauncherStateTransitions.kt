@@ -14,7 +14,7 @@ object LauncherStateTransitions {
         return state.copy(mode = LauncherMode.HOME)
     }
 
-    fun showSettings(state: LauncherState): LauncherState {
+    fun showSettings(state: LauncherState, visibleRows: Int): LauncherState {
         val returnMode = when (state.mode) {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
@@ -23,10 +23,14 @@ object LauncherStateTransitions {
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS -> state.returnMode
         }
-        return state.copy(
-            mode = LauncherMode.SETTINGS,
-            returnMode = returnMode,
-            settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, SettingsMenuModel.rows(state).lastIndex),
+        val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
+        return syncSettingsWindow(
+            state = state.copy(
+                mode = LauncherMode.SETTINGS,
+                returnMode = returnMode,
+                settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex),
+            ),
+            visibleRows = visibleRows,
         )
     }
 
@@ -338,15 +342,49 @@ object LauncherStateTransitions {
         )
     }
 
-    fun selectSettingsIndex(state: LauncherState, index: Int): LauncherState {
+    fun selectSettingsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
         val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
-        return state.copy(settingsSelectedIndex = index.coerceIn(0, maxIndex))
+        return syncSettingsWindow(
+            state = state.copy(settingsSelectedIndex = index.coerceIn(0, maxIndex)),
+            visibleRows = visibleRows,
+        )
     }
 
-    fun moveSettingsSelection(state: LauncherState, delta: Int): LauncherState {
+    fun moveSettingsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
         return selectSettingsIndex(
             state = state,
             index = state.settingsSelectedIndex + delta,
+            visibleRows = visibleRows,
+        )
+    }
+
+    fun scrollSettingsWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
+        val rows = SettingsMenuModel.rows(state)
+        if (rows.isEmpty() || delta == 0) {
+            return reflowSettingsWindow(state, visibleRows)
+        }
+
+        val safeVisibleRows = visibleRows.coerceAtLeast(1)
+        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
+        val safeListStartIndex = state.settingsListStartIndex.coerceIn(0, maxStartIndex)
+        val nextListStartIndex = (safeListStartIndex + delta).coerceIn(0, maxStartIndex)
+        val relativeFocusIndex = (state.settingsSelectedIndex - safeListStartIndex)
+            .coerceIn(0, safeVisibleRows - 1)
+        val maxVisibleIndex = (nextListStartIndex + safeVisibleRows - 1).coerceAtMost(rows.lastIndex)
+        val nextSelectedIndex = (nextListStartIndex + relativeFocusIndex)
+            .coerceIn(nextListStartIndex, maxVisibleIndex)
+
+        return state.copy(
+            settingsSelectedIndex = nextSelectedIndex,
+            settingsListStartIndex = nextListStartIndex,
+        )
+    }
+
+    fun reflowSettingsWindow(state: LauncherState, visibleRows: Int): LauncherState {
+        val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
+        return syncSettingsWindow(
+            state = state.copy(settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex)),
+            visibleRows = visibleRows,
         )
     }
 
@@ -662,6 +700,33 @@ object LauncherStateTransitions {
 
     private fun appIdentity(appEntry: AppEntry): String {
         return "${appEntry.packageName}/${appEntry.activityName}"
+    }
+
+    private fun syncSettingsWindow(state: LauncherState, visibleRows: Int): LauncherState {
+        val rows = SettingsMenuModel.rows(state)
+        if (rows.isEmpty()) {
+            return state.copy(
+                settingsSelectedIndex = 0,
+                settingsListStartIndex = 0,
+            )
+        }
+
+        val safeVisibleRows = visibleRows.coerceAtLeast(1)
+        val safeSelectedIndex = state.settingsSelectedIndex.coerceIn(0, rows.lastIndex)
+        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
+        val safeListStartIndex = state.settingsListStartIndex.coerceIn(0, maxStartIndex)
+        val nextListStartIndex = when {
+            safeSelectedIndex < safeListStartIndex -> safeSelectedIndex
+            safeSelectedIndex >= safeListStartIndex + safeVisibleRows -> {
+                (safeSelectedIndex - safeVisibleRows + 1).coerceIn(0, maxStartIndex)
+            }
+            else -> safeListStartIndex
+        }
+
+        return state.copy(
+            settingsSelectedIndex = safeSelectedIndex,
+            settingsListStartIndex = nextListStartIndex,
+        )
     }
 
     private data class DrawerSearchHit(

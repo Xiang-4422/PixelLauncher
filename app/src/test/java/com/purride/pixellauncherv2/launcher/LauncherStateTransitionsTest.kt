@@ -230,7 +230,10 @@ class LauncherStateTransitionsTest {
             mode = LauncherMode.APP_DRAWER,
         )
 
-        val settingsState = LauncherStateTransitions.showSettings(state)
+        val settingsState = LauncherStateTransitions.showSettings(
+            state = state,
+            visibleRows = 3,
+        )
 
         assertEquals(LauncherMode.SETTINGS, settingsState.mode)
         assertEquals(LauncherMode.APP_DRAWER, settingsState.returnMode)
@@ -248,6 +251,42 @@ class LauncherStateTransitionsTest {
         val contentState = LauncherStateTransitions.hideSettings(state)
 
         assertEquals(LauncherMode.APP_DRAWER, contentState.mode)
+    }
+
+    @Test
+    fun scrollSettingsWindowAdvancesVisibleContentOneRowAtATime() {
+        val state = LauncherState(
+            mode = LauncherMode.SETTINGS,
+            settingsSelectedIndex = 0,
+            settingsListStartIndex = 0,
+        )
+
+        val scrolledState = LauncherStateTransitions.scrollSettingsWindow(
+            state = state,
+            delta = 1,
+            visibleRows = 3,
+        )
+
+        assertEquals(1, scrolledState.settingsListStartIndex)
+        assertEquals(1, scrolledState.settingsSelectedIndex)
+    }
+
+    @Test
+    fun scrollSettingsWindowKeepsRelativeFocusWithinViewport() {
+        val state = LauncherState(
+            mode = LauncherMode.SETTINGS,
+            settingsSelectedIndex = 4,
+            settingsListStartIndex = 2,
+        )
+
+        val scrolledState = LauncherStateTransitions.scrollSettingsWindow(
+            state = state,
+            delta = 1,
+            visibleRows = 3,
+        )
+
+        assertEquals(3, scrolledState.settingsListStartIndex)
+        assertEquals(5, scrolledState.settingsSelectedIndex)
     }
 
     @Test

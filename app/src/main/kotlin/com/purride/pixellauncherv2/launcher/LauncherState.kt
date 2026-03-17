@@ -24,6 +24,7 @@ data class LauncherState(
     val mode: LauncherMode = LauncherMode.HOME,
     val returnMode: LauncherMode = LauncherMode.HOME,
     val settingsSelectedIndex: Int = 0,
+    val settingsListStartIndex: Int = 0,
     val selectedFontId: PixelFontId = PixelFontCatalog.defaultFontId,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,

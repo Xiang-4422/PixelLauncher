@@ -28,6 +28,27 @@ class SettingsMenuLayoutTest {
     }
 
     @Test
+    fun hitTestResolvesScrolledRowsFromVisibleWindow() {
+        val screenProfile = ScreenProfile(
+            logicalWidth = 72,
+            logicalHeight = 160,
+            dotSizePx = 15,
+        )
+        val metrics = SettingsMenuLayout.metrics(screenProfile)
+
+        val tappedRow = SettingsMenuLayout.hitTestRow(
+            screenProfile = screenProfile,
+            logicalX = metrics.rowTextX + 2,
+            logicalY = metrics.firstRowY + 1,
+            rowCount = 8,
+            listStartIndex = 3,
+            scrollOffsetPx = 0,
+        )
+
+        assertEquals(3, tappedRow)
+    }
+
+    @Test
     fun hitTestReturnsNullOutsideSettingsPanel() {
         val screenProfile = ScreenProfile(
             logicalWidth = 72,
@@ -86,5 +107,6 @@ class SettingsMenuLayoutTest {
 
         assertEquals(72, metrics.panelWidth)
         assertEquals(true, metrics.rowMaxTextWidth >= 68)
+        assertEquals(true, metrics.visibleRows >= 1)
     }
 }
