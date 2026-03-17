@@ -22,7 +22,7 @@ class PixelRendererCenteredListTest {
     private val renderer = PixelRenderer(PixelFontEngine(BlockGlyphProvider()))
 
     @Test
-    fun nonSearchDrawerHighlightsFirstVisibleRow() {
+    fun nonSearchDrawerDoesNotHighlightVisibleRows() {
         val apps = List(20) { index ->
             AppEntry(
                 label = "AAAAA",
@@ -41,7 +41,7 @@ class PixelRendererCenteredListTest {
         val firstRowAccent = rowAccentPixelCount(buffer, row = 0, offsetPx = 0)
         val secondRowAccent = rowAccentPixelCount(buffer, row = 1, offsetPx = 0)
 
-        assertTrue(firstRowAccent > 0)
+        assertEquals(0, firstRowAccent)
         assertEquals(0, secondRowAccent)
     }
 
@@ -102,7 +102,7 @@ class PixelRendererCenteredListTest {
     }
 
     @Test
-    fun nonSearchScrollOffsetDoesNotMoveSelectionIntoSecondRow() {
+    fun nonSearchScrollOffsetDoesNotIntroduceHighlight() {
         val apps = List(20) { index ->
             AppEntry(
                 label = "AAAAA",
@@ -129,7 +129,7 @@ class PixelRendererCenteredListTest {
             drawerScrollOffsetPx = largeOffset,
         )
 
-        assertTrue(rowAccentPixelCount(smallBuffer, row = 0, offsetPx = smallOffset) > 0)
+        assertEquals(0, rowAccentPixelCount(smallBuffer, row = 0, offsetPx = smallOffset))
         assertEquals(0, rowAccentPixelCount(smallBuffer, row = 1, offsetPx = smallOffset))
         assertEquals(0, rowAccentPixelCount(largeBuffer, row = 1, offsetPx = largeOffset))
     }
@@ -200,7 +200,7 @@ class PixelRendererCenteredListTest {
     }
 
     @Test
-    fun searchWithQueryHighlightsFirstVisibleRow() {
+    fun searchWithQueryDoesNotHighlightVisibleRows() {
         val apps = List(20) { index ->
             AppEntry(
                 label = "AAAAA",
@@ -219,7 +219,7 @@ class PixelRendererCenteredListTest {
         val firstRowAccent = rowAccentPixelCount(searchBuffer, row = 0, offsetPx = 0)
         val secondRowAccent = rowAccentPixelCount(searchBuffer, row = 1, offsetPx = 0)
 
-        assertTrue(firstRowAccent > 0)
+        assertEquals(0, firstRowAccent)
         assertEquals(0, secondRowAccent)
     }
 

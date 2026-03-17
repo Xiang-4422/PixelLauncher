@@ -539,8 +539,6 @@ class PixelRenderer(
                 alignment = state.drawerListAlignment,
             )
 
-            val isSelected = appIndex == safeSelectedIndex
-            val textValue = if (isSelected) PixelBuffer.ACCENT else PixelBuffer.ON
             drawTextAsValueClipped(
                 buffer = buffer,
                 text = trimmedLabel,
@@ -548,7 +546,7 @@ class PixelRenderer(
                 startY = rowTop + layoutMetrics.labelYInset,
                 maxWidth = textAreaWidth,
                 style = GlyphStyle.APP_LABEL_16,
-                value = textValue,
+                value = PixelBuffer.ON,
                 clipTop = listClipTop,
                 clipBottomExclusive = listClipBottomExclusive,
             )
@@ -640,11 +638,6 @@ class PixelRenderer(
             style = GlyphStyle.UI_SMALL_10,
             maxWidth = titleMaxWidth,
         )
-
-        if (selected) {
-            buffer.setPixel(0, rowTop + 4, PixelBuffer.ACCENT)
-            buffer.setPixel(buffer.width - 1, rowTop + 4, PixelBuffer.ACCENT)
-        }
 
         if (trimmedTitle.isNotEmpty()) {
             pixelFontEngine.drawText(

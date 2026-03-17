@@ -676,7 +676,7 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 when (decision.action) {
                     DrawerContentTapAction.LAUNCH_SELECTED -> {
                         settleDrawerMotionBeforeExplicitAction()
-                        launchSelectedApp()
+                        launchAppAtIndex(decision.targetIndex ?: state.selectedIndex)
                     }
 
                     DrawerContentTapAction.SELECT_INDEX -> {
@@ -1091,6 +1091,15 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
     private fun launchSelectedApp() {
         val selectedApp = currentDrawerApps().getOrNull(state.selectedIndex) ?: return
+        launchApp(selectedApp)
+    }
+
+    private fun launchAppAtIndex(index: Int) {
+        val app = currentDrawerApps().getOrNull(index) ?: return
+        launchApp(app)
+    }
+
+    private fun launchApp(selectedApp: AppEntry) {
         if (!throttleClickHelper.canClick() || launchPending) {
             return
         }

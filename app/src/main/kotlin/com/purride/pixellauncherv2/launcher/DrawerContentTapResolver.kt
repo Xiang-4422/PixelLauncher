@@ -20,14 +20,10 @@ object DrawerContentTapResolver {
     ): DrawerContentTapDecision {
         val resultsVisible = !state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()
         if (resultsVisible && tappedAppIndex != null) {
-            return if (tappedAppIndex == state.selectedIndex) {
-                DrawerContentTapDecision(action = DrawerContentTapAction.LAUNCH_SELECTED)
-            } else {
-                DrawerContentTapDecision(
-                    action = DrawerContentTapAction.SELECT_INDEX,
-                    targetIndex = tappedAppIndex,
-                )
-            }
+            return DrawerContentTapDecision(
+                action = DrawerContentTapAction.LAUNCH_SELECTED,
+                targetIndex = tappedAppIndex,
+            )
         }
         return if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
             DrawerContentTapDecision(action = DrawerContentTapAction.EXIT_SEARCH)

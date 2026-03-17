@@ -6,7 +6,7 @@ import org.junit.Test
 class DrawerContentTapResolverTest {
 
     @Test
-    fun searchWithResultsTapNonSelectedItemSelectsTarget() {
+    fun searchWithResultsTapAnyItemLaunchesDirectly() {
         val state = LauncherState(
             mode = LauncherMode.APP_DRAWER,
             drawerQuery = "cam",
@@ -19,7 +19,7 @@ class DrawerContentTapResolverTest {
             tappedAppIndex = 3,
         )
 
-        assertEquals(DrawerContentTapAction.SELECT_INDEX, decision.action)
+        assertEquals(DrawerContentTapAction.LAUNCH_SELECTED, decision.action)
         assertEquals(3, decision.targetIndex)
     }
 
@@ -38,7 +38,7 @@ class DrawerContentTapResolverTest {
         )
 
         assertEquals(DrawerContentTapAction.LAUNCH_SELECTED, decision.action)
-        assertEquals(null, decision.targetIndex)
+        assertEquals(2, decision.targetIndex)
     }
 
     @Test
