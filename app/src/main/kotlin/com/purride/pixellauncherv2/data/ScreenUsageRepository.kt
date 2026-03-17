@@ -21,6 +21,9 @@ class ScreenUsageRepository(
     private val usageStatsManager = appContext.getSystemService(UsageStatsManager::class.java)
     private val appOpsManager = appContext.getSystemService(AppOpsManager::class.java)
 
+    /**
+     * 聚合当天的屏幕交互事件，生成 Home 中 `USE / OPEN` 所需的摘要数据。
+     */
     fun readTodaySummary(nowMillis: Long = System.currentTimeMillis()): ScreenUsageSnapshot {
         if (!hasUsageAccess()) {
             return noAccessSnapshot
@@ -63,6 +66,7 @@ class ScreenUsageRepository(
         )
     }
 
+    /** 检查当前是否已经获得 Usage Access。 */
     fun hasUsageAccess(): Boolean {
         val mode = appOpsManager?.unsafeCheckOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
@@ -88,6 +92,7 @@ class ScreenUsageRepository(
             openCountText = "--",
         )
 
+        /** 把时长格式化成 Home 固定使用的时钟式文本。 */
         fun formatDurationText(durationMillis: Long): String {
             val totalMinutes = (durationMillis / 60_000L).coerceAtLeast(0L)
             val hours = totalMinutes / 60L

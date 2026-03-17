@@ -16,6 +16,7 @@ data class GeoPoint(
     val latitude: Double,
     val longitude: Double,
 ) {
+    /** 返回当前点与另一点之间的大致米数距离。 */
     fun distanceToMeters(other: GeoPoint): Float {
         val results = FloatArray(1)
         Location.distanceBetween(
@@ -36,10 +37,14 @@ class DeviceLocationRepository(
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val timeoutHandler = Handler(Looper.getMainLooper())
 
+    /** 判断当前是否具备粗略或精确定位权限。 */
     fun hasLocationPermission(): Boolean {
         return hasFineLocationPermission() || hasCoarseLocationPermission()
     }
 
+    /**
+     * 从首选 provider 中读取最新的可用缓存位置。
+     */
     fun readBestLastKnownLocation(): GeoPoint? {
         if (!hasLocationPermission()) {
             return null
@@ -53,6 +58,9 @@ class DeviceLocationRepository(
             ?.toGeoPoint()
     }
 
+    /**
+     * 为天气刷新解析一个可用位置，优先使用缓存位置，不够时再请求一次实时位置。
+     */
     fun requestBestLocation(onResult: (GeoPoint?) -> Unit) {
         if (!hasLocationPermission()) {
             onResult(null)

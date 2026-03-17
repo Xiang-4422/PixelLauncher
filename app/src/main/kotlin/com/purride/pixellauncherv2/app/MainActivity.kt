@@ -83,6 +83,12 @@ import com.purride.pixellauncherv2.util.TimeTextProvider
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+/**
+ * 启动器运行时的总编排入口。
+ *
+ * 它持有各类仓库，把 Android 输入转换成 [LauncherState] 变化，驱动动画 ticker，
+ * 并要求 [PixelRenderer] 把当前状态重新绘制到 [PixelDisplayView]。
+ */
 class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
 
     private val backgroundExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -278,6 +284,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    /**
+     * 启动整个 launcher 运行时，恢复设置，接线仓库与渲染链路，并完成首次渲染。
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
@@ -482,6 +491,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         suppressActivityAnimations()
     }
 
+    /**
+     * 在回到前台时重启监听器，并刷新设备状态、Home 数据和天气等前台专属工作。
+     */
     override fun onResume() {
         super.onResume()
         windowModeController.hideSystemBars()
@@ -515,6 +527,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    /**
+     * 在进入后台时停止前台监听器和不应继续运行的临时 UI 工作。
+     */
     override fun onPause() {
         hideDrawerKeyboard()
         resetPagerDragTracking()
@@ -539,6 +554,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         super.onPause()
     }
 
+    /**
+     * 响应运行时权限变化，并立即刷新依赖这些权限的 Home 数据。
+     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -560,6 +578,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         super.onDestroy()
     }
 
+    /**
+     * 统一处理硬件按键导航，包括 pager、设置页、抽屉搜索和应用启动。
+     */
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (launchPending || animationState.bootSequence != null) {
             return true
@@ -661,6 +682,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    /**
+     * 把逻辑点击事件路由到当前页面，依赖布局层 hit-test，而不是 Android 原生控件树。
+     */
     override fun onLogicalTap(x: Int, y: Int) {
         if (launchPending || animationState.bootSequence != null) {
             return
@@ -763,6 +787,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    /**
+     * 根据当前命中的交互区域，启动抽屉、设置页或横向 pager 的拖动流程。
+     */
     override fun onLogicalDragStart(x: Int, y: Int): Boolean {
         if (launchPending || animationState.bootSequence != null) {
             return false
@@ -836,6 +863,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         return false
     }
 
+    /**
+     * 推进当前拖动目标，把拖动位移转换成列表滚动、rail 快速定位或横向分页移动。
+     */
     override fun onLogicalDragMove(x: Int, y: Int): Boolean {
         if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
             recordInteraction()
@@ -1030,6 +1060,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         return true
     }
 
+    /**
+     * 结束当前拖动；如果手势已被消费，则把残余速度交给共享 settle 逻辑继续处理。
+     */
     override fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean {
         if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
             recordInteraction()
@@ -1181,6 +1214,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    /**
+     * 在后台线程加载可启动应用，并在结果返回后刷新派生 UI 状态。
+     */
     private fun loadApps() {
         val generation = ++loadGeneration
         state = state.copy(isLoading = true)
@@ -1228,6 +1264,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         launchApp(app)
     }
 
+    /**
+     * 执行启动遮罩动画、拉起目标应用，并记录 launcher 的启动统计。
+     */
     private fun launchApp(selectedApp: AppEntry) {
         if (!throttleClickHelper.canClick() || launchPending) {
             return
@@ -1255,6 +1294,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         mainHandler.postDelayed(pendingRunnable, LauncherAnimationState.launchShutterDurationMs)
     }
 
+    /**
+     * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
+     */
     private fun renderCurrentFrame() {
         syncPagerIndexToMode()
         val pagerSnapshot = activePagerSnapshot()
@@ -1368,6 +1410,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         return true
     }
 
+    /**
+     * 在横向 pager settle 完成后，应用对应页面模式并同步页面相关状态。
+     */
     private fun applyPagerSettledMode(pageIndex: Int) {
         val targetMode = pagerModeForIndex(pageIndex) ?: return
         if (state.mode == targetMode) {
@@ -1402,6 +1447,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         scheduleIdleCheck()
     }
 
+    /**
+     * 执行一次编程式横向分页切换，并先取消与之冲突的抽屉或设置页纵向滚动。
+     */
     private fun animatePagerBy(deltaPages: Int): Boolean {
         if (!canHandlePagerNavigation()) {
             return false
@@ -1439,6 +1487,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         pagerDragLastUptimeMs = 0L
     }
 
+    /**
+     * 从当前页面打开抽屉，并根据持久化偏好决定是否默认进入搜索态。
+     */
     private fun showAppDrawer() {
         settleDrawerMotionBeforeExplicitAction()
         val previousMode = state.mode
@@ -1550,6 +1601,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         }
     }
 
+    /**
+     * 把硬件键盘输入映射到抽屉的 ASCII 搜索模型，并处理删除、退出搜索等行为。
+     */
     private fun handleDrawerTextInput(keyCode: Int, event: KeyEvent?): Boolean {
         if (state.mode != LauncherMode.APP_DRAWER) {
             return false

@@ -21,6 +21,7 @@ class CommunicationStatusRepository(
     private var callObserver: ContentObserver? = null
     private var smsObserver: ContentObserver? = null
 
+    /** 判断当前是否具备读取未接来电数据的权限。 */
     fun hasCallLogPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -28,6 +29,7 @@ class CommunicationStatusRepository(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    /** 判断当前是否具备读取未读短信数据的权限。 */
     fun hasSmsPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -35,6 +37,9 @@ class CommunicationStatusRepository(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * 启动轻量级内容观察者，让 Home 可以在来电或短信变化时即时刷新，而不是轮询。
+     */
     fun start(onStatusChanged: (CommunicationStatus) -> Unit) {
         stop()
         if (hasCallLogPermission()) {
@@ -66,6 +71,7 @@ class CommunicationStatusRepository(
         onStatusChanged(readStatus())
     }
 
+    /** 停止已经注册的内容观察者。 */
     fun stop() {
         callObserver?.let(contentResolver::unregisterContentObserver)
         smsObserver?.let(contentResolver::unregisterContentObserver)
@@ -73,6 +79,7 @@ class CommunicationStatusRepository(
         smsObserver = null
     }
 
+    /** 读取最新的未接来电数和未读短信数快照。 */
     fun readStatus(): CommunicationStatus {
         return CommunicationStatus(
             missedCallCount = readMissedCallCount(),

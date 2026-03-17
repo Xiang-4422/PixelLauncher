@@ -18,6 +18,9 @@ class PackageManagerAppRepository(
     private val packageManager: PackageManager = context.packageManager
     private val labelCollator: Collator = Collator.getInstance(Locale.getDefault())
 
+    /**
+     * 读取所有可启动 Activity，推导多语言标签，并返回稳定的本地化排序结果。
+     */
     override fun loadLaunchableApps(): List<AppEntry> {
         val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
@@ -76,6 +79,9 @@ class PackageManagerAppRepository(
         }
     }
 
+    /**
+     * 在不切换整个进程语言环境的前提下，尝试读取某个指定语言下的应用标签。
+     */
     private fun loadLabelForLocale(
         resolveInfo: ResolveInfo,
         locale: Locale,
@@ -108,6 +114,9 @@ class PackageManagerAppRepository(
         }.getOrElse { fallbackLabel }
     }
 
+    /**
+     * 优先选择更适合中文设备显示的标签，否则回退到系统标签或包名派生值。
+     */
     private fun selectDisplayLabel(
         chineseLabel: String,
         fallbackLabel: String,

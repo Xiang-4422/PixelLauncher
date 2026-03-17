@@ -25,6 +25,11 @@ class PixelRenderer(
     private val pixelFontEngine: PixelFontEngine,
 ) {
 
+    /**
+     * 把当前启动器状态渲染成一帧像素缓冲。
+     *
+     * 这是 Activity 使用的唯一主入口，会把 boot、分页快照、页面内容和启动遮罩统一合成为一帧。
+     */
     fun render(
         state: LauncherState,
         screenProfile: ScreenProfile,
@@ -68,6 +73,9 @@ class PixelRenderer(
         return pageBuffer
     }
 
+    /**
+     * 在横向分页拖动或 settle 时，同时渲染锚点页和相邻页并完成合成。
+     */
     private fun renderPagerSnapshot(
         state: LauncherState,
         screenProfile: ScreenProfile,
@@ -111,6 +119,9 @@ class PixelRenderer(
         )
     }
 
+    /**
+     * 在不做分页合成的前提下，单独渲染某一个页面模式。
+     */
     private fun renderSingleMode(
         state: LauncherState,
         screenProfile: ScreenProfile,
@@ -186,6 +197,7 @@ class PixelRenderer(
         return pagerModeForIndex(adjacentIndex)
     }
 
+    /** 绘制 Home 页面，包括固定信息区和当前上下文卡片。 */
     private fun drawHome(
         buffer: PixelBuffer,
         state: LauncherState,
@@ -305,6 +317,7 @@ class PixelRenderer(
         }
     }
 
+    /** 绘制应用抽屉的头部、加载态和基于共享文本列表基座的正文内容。 */
     private fun drawAppDrawer(
         buffer: PixelBuffer,
         state: LauncherState,
@@ -372,6 +385,9 @@ class PixelRenderer(
         return state.apps
     }
 
+    /**
+     * 根据抽屉当前处于普通态还是搜索态，绘制不同的状态栏头部，并保持电池分隔线在同一行。
+     */
     private fun drawDrawerHeader(
         buffer: PixelBuffer,
         screenProfile: ScreenProfile,
@@ -514,6 +530,7 @@ class PixelRenderer(
         }
     }
 
+    /** 使用共享文本列表 viewport 语义，绘制顶对齐且可滚动的抽屉正文列表。 */
     private fun drawScrollableApps(
         buffer: PixelBuffer,
         state: LauncherState,
@@ -596,6 +613,7 @@ class PixelRenderer(
         return layoutMetrics.textX + horizontalOffset
     }
 
+    /** 使用和抽屉正文一致的文本列表渲染模型绘制设置页。 */
     private fun drawSettings(
         buffer: PixelBuffer,
         state: LauncherState,

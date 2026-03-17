@@ -16,6 +16,11 @@ class RainForecastRepository(
     },
 ) {
 
+    /**
+     * 从 Open-Meteo 拉取未来六小时内最早的有效降雨时间。
+     *
+     * 返回 `null` 表示未来窗口内没有满足阈值的降雨，或响应无法解析。
+     */
     fun fetchRainHint(latitude: Double, longitude: Double): String? {
         val requestUrl = URL(
             String.format(
@@ -60,6 +65,7 @@ class RainForecastRepository(
         private val inputTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
         private val outputTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 
+        /** 解析 API 响应，并提取 Home 使用的第一条有效降雨时间。 */
         fun parseRainHint(responseBody: String): String? {
             val root = JSONObject(responseBody)
             val hourly = root.optJSONObject("hourly") ?: return null
@@ -70,6 +76,7 @@ class RainForecastRepository(
             )
         }
 
+        /** 供测试和 JSON 解析路径复用的重载方法。 */
         fun selectEarliestRainTime(
             times: JSONArray?,
             precipitationProbabilities: JSONArray?,
@@ -82,6 +89,9 @@ class RainForecastRepository(
             )
         }
 
+        /**
+         * 选择同时满足降雨概率阈值和降雨量阈值的最早小时。
+         */
         fun selectEarliestRainTime(
             times: List<String>,
             precipitationProbabilities: List<Double>,
@@ -108,6 +118,7 @@ class RainForecastRepository(
             return null
         }
 
+        /** 把 Open-Meteo 的 ISO 本地时间转换成 Home 固定使用的 `HH:mm` 格式。 */
         fun formatRainTime(isoTime: String): String? {
             if (isoTime.isBlank()) {
                 return null

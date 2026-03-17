@@ -10,10 +10,14 @@ import java.util.Locale
 
 object LauncherStateTransitions {
 
+    /** 切回 Home 模式，不改动其他派生字段。 */
     fun showHome(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.HOME)
     }
 
+    /**
+     * 打开设置页，并记录关闭设置后应该回到哪个页面。
+     */
     fun showSettings(state: LauncherState, visibleRows: Int): LauncherState {
         val returnMode = when (state.mode) {
             LauncherMode.HOME,
@@ -34,6 +38,11 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 关闭设置页。
+     *
+     * 如果记录的返回模式已经失效，会回退到最后一个合法的 pager 页面。
+     */
     fun hideSettings(state: LauncherState): LauncherState {
         val fallbackMode = when (state.returnMode) {
             LauncherMode.HOME,
@@ -49,14 +58,21 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 从设置页进入轻量 diagnostics 页面。 */
     fun showDiagnostics(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.DIAGNOSTICS)
     }
 
+    /** 关闭 diagnostics，并返回设置页。 */
     fun hideDiagnostics(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
+    /**
+     * 进入 Idle。
+     *
+     * 只有在 Home / Drawer 中且功能开关开启时，才允许进入待机页。
+     */
     fun showIdle(state: LauncherState): LauncherState {
         if (!state.isIdlePageEnabled) {
             return state
@@ -70,10 +86,14 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 从 Idle 返回到进入前的页面模式。 */
     fun hideIdle(state: LauncherState): LauncherState {
         return state.copy(mode = state.returnMode)
     }
 
+    /**
+     * 以默认状态打开抽屉，并把焦点和窗口重置到第一项。
+     */
     fun showAppDrawer(state: LauncherState, visibleRows: Int): LauncherState {
         val stateWithDrawerApps = if (state.apps.isNotEmpty() && state.drawerQuery.isBlank()) {
             state.copy(drawerVisibleApps = orderDefaultApps(state.apps, state.recentApps))
@@ -101,6 +121,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 在应用仓库重新加载后重建抽屉列表，并尽量保留合理的当前选择。
+     */
     fun withApps(previous: LauncherState, apps: List<AppEntry>, visibleRows: Int): LauncherState {
         val orderedApps = orderDefaultApps(apps, previous.recentApps)
         val drawerApps = filterDrawerApps(
@@ -143,6 +166,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 按相对行数移动抽屉焦点，并同步重排可视窗口。 */
     fun moveSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
         val drawerApps = currentDrawerApps(state)
         if (drawerApps.isEmpty()) {
@@ -161,6 +185,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 以当前顶部项为基准，按一个 viewport 的大小向前或向后翻动抽屉。
+     */
     fun pageSelection(state: LauncherState, direction: Int, visibleRows: Int): LauncherState {
         val drawerApps = currentDrawerApps(state)
         if (drawerApps.isEmpty()) {
@@ -184,6 +211,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 选中抽屉中的绝对索引，并把顶对齐窗口同步到该项。 */
     fun selectIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
         val drawerApps = currentDrawerApps(state)
         if (drawerApps.isEmpty()) {
@@ -265,6 +293,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 根据新的 query 重新计算抽屉过滤结果，并把焦点重置到第一条结果。
+     */
     fun updateDrawerQuery(state: LauncherState, query: String, visibleRows: Int): LauncherState {
         val safeQuery = query.take(maxDrawerQueryLength)
         val orderedApps = orderDefaultApps(state.apps, state.recentApps)
@@ -285,6 +316,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 把已经过过滤的搜索文本追加到当前抽屉 query 后。 */
     fun appendDrawerQuery(state: LauncherState, text: String, visibleRows: Int): LauncherState {
         if (text.isEmpty()) {
             return state
@@ -296,6 +328,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 删除最后一个搜索字符，并保持过滤结果和窗口状态同步。 */
     fun backspaceDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState {
         if (state.drawerQuery.isEmpty()) {
             return state
@@ -307,6 +340,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 清空当前抽屉 query，并恢复默认排序后的抽屉列表。 */
     fun clearDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState {
         return updateDrawerQuery(
             state = state,
@@ -315,6 +349,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 退出抽屉搜索，并尽量把搜索态当前焦点保留为默认列表中的顶部项。
+     */
     fun exitDrawerSearch(state: LauncherState, visibleRows: Int): LauncherState {
         val preservedApp = currentDrawerApps(state).getOrNull(state.selectedIndex)
         val clearedState = clearDrawerQuery(
@@ -342,6 +379,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 选中设置页中的某一行，并按当前可视行数重排设置窗口。 */
     fun selectSettingsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
         val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
         return syncSettingsWindow(
@@ -350,6 +388,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 按相对行数移动设置页内部焦点。 */
     fun moveSettingsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
         return selectSettingsIndex(
             state = state,
@@ -358,6 +397,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 滚动设置页可视窗口，并尽量让当前焦点保持在相同的相对位置。
+     */
     fun scrollSettingsWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
         val rows = SettingsMenuModel.rows(state)
         if (rows.isEmpty() || delta == 0) {
@@ -380,6 +422,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 在 viewport 或内容变化后，重新校正设置页的焦点和窗口。 */
     fun reflowSettingsWindow(state: LauncherState, visibleRows: Int): LauncherState {
         val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
         return syncSettingsWindow(
@@ -388,6 +431,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 更新头部和 Home 固定区使用的时间相关文本。 */
     fun updateTime(
         state: LauncherState,
         currentTimeText: String,
@@ -401,6 +445,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 把当前外观选择写回状态。 */
     fun updateAppearance(
         state: LauncherState,
         selectedFontId: PixelFontId = state.selectedFontId,
@@ -416,6 +461,7 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 把抽屉对齐、Idle 开关等非视觉行为偏好写回状态。 */
     fun updateUiBehavior(
         state: LauncherState,
         drawerListAlignment: DrawerListAlignment = state.drawerListAlignment,
@@ -452,6 +498,7 @@ object LauncherStateTransitions {
         return state.copy(nextAlarmText = nextAlarmText)
     }
 
+    /** 写入 Home 动态信息行使用的通话和短信计数。 */
     fun updateCommunicationStatus(
         state: LauncherState,
         missedCallCount: Int,
@@ -463,10 +510,16 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 写入未来降雨提示文本。
+     *
+     * 空字符串代表“整段雨提示不显示”，而不是显示占位文案。
+     */
     fun updateRainHintText(state: LauncherState, rainHintText: String): LauncherState {
         return state.copy(rainHintText = rainHintText)
     }
 
+    /** 更新 Home 中当天屏幕使用时长和打开次数摘要。 */
     fun updateScreenUsageSummary(
         state: LauncherState,
         screenUsageTimeText: String,
@@ -482,6 +535,9 @@ object LauncherStateTransitions {
         return state.copy(lastInteractionUptimeMs = uptimeMs)
     }
 
+    /**
+     * 在屏幕尺寸、应用数据或焦点变化后，重新校正抽屉窗口。
+     */
     fun reflowWindow(state: LauncherState, visibleRows: Int): LauncherState {
         val drawerApps = currentDrawerApps(state)
         if (drawerApps.isEmpty()) {
@@ -500,6 +556,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 根据当前可视行数，把选中索引换算成顶对齐列表的起始索引。
+     */
     fun calculateListStartIndex(selectedIndex: Int, visibleRows: Int, totalCount: Int): Int {
         if (totalCount <= 0) {
             return 0
@@ -510,6 +569,9 @@ object LauncherStateTransitions {
         return ((safeSelectedIndex / safeRows) * safeRows).coerceAtLeast(0)
     }
 
+    /**
+     * 保持抽屉的焦点、顶部项和派生页索引处于一致状态。
+     */
     private fun syncDrawerWindow(state: LauncherState, visibleRows: Int): LauncherState {
         val drawerApps = currentDrawerApps(state)
         if (drawerApps.isEmpty()) {
@@ -547,6 +609,9 @@ object LauncherStateTransitions {
         return state.apps
     }
 
+    /**
+     * 在不破坏字母排序心智模型的前提下，给最近使用的应用做轻量前移。
+     */
     private fun orderDefaultApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {
         if (apps.isEmpty()) {
             return apps
@@ -575,6 +640,9 @@ object LauncherStateTransitions {
         )
     }
 
+    /**
+     * 根据归一化标签、别名和轻量 recent 规则过滤并排序抽屉搜索结果。
+     */
     private fun filterDrawerApps(
         orderedApps: List<AppEntry>,
         query: String,

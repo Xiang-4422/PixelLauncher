@@ -20,6 +20,9 @@ class NextAlarmRepository(
 
     private var receiver: BroadcastReceiver? = null
 
+    /**
+     * 开始监听系统闹钟变化，并立即回调当前的下一次闹钟文本。
+     */
     fun start(onNextAlarmChanged: (String) -> Unit) {
         stop()
         val filter = IntentFilter().apply {
@@ -37,12 +40,14 @@ class NextAlarmRepository(
         onNextAlarmChanged(readNextAlarmText())
     }
 
+    /** 停止已经注册的系统闹钟广播接收器。 */
     fun stop() {
         val registeredReceiver = receiver ?: return
         context.unregisterReceiver(registeredReceiver)
         receiver = null
     }
 
+    /** 读取下一次系统闹钟，并按 Home 固定格式输出。 */
     fun readNextAlarmText(): String {
         val triggerAtMillis = alarmManager?.nextAlarmClock?.triggerTime ?: return noAlarmText
         if (triggerAtMillis <= 0L) {
