@@ -658,7 +658,7 @@ class PixelRenderer(
                 startY = rowTop + layout.rowTextYOffset,
                 maxWidth = stableValueWidth.coerceAtLeast(1),
                 style = GlyphStyle.UI_SMALL_10,
-                value = if (selected) PixelBuffer.ACCENT else PixelBuffer.ON,
+                value = PixelBuffer.ON,
             )
         }
     }

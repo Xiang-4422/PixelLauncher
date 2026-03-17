@@ -714,12 +714,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                     rowCount = rows.size,
                 ) ?: return
 
-                if (tappedRow == state.settingsSelectedIndex) {
-                    activateSelectedSetting()
-                } else {
-                    state = LauncherStateTransitions.selectSettingsIndex(state, tappedRow)
-                    renderCurrentFrame()
-                }
+                state = LauncherStateTransitions.selectSettingsIndex(state, tappedRow)
+                activateSelectedSetting()
             }
 
             LauncherMode.HOME -> {
@@ -1508,7 +1504,11 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     }
 
     private fun activateSelectedSetting() {
-        when (SettingsMenuModel.selectedItem(state)) {
+        activateSettingItem(SettingsMenuModel.selectedItem(state))
+    }
+
+    private fun activateSettingItem(item: SettingsMenuItem) {
+        when (item) {
             SettingsMenuItem.FONT -> changeSettingValue(1)
             SettingsMenuItem.RESOLUTION -> changeSettingValue(1)
             SettingsMenuItem.STYLE -> changeSettingValue(1)
