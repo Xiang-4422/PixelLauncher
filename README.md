@@ -219,6 +219,7 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
   - [README.md](/Users/xiangyu/StudioProjects/PixelLauncher/README.md)
 - 当前真实实现：
   - [技术实现总览-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/技术实现总览-第一版.md)
+  - [渲染实现原理-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/渲染实现原理-第一版.md)
 - 产品目标与模块设计：
   - [产品总规约-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/产品总规约-第一版.md)
   - 模块设计文档
@@ -231,8 +232,9 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 
 1. [docs/design/设计文档总览.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/设计文档总览.md)
 2. [docs/design/技术实现总览-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/技术实现总览-第一版.md)
-3. [docs/design/产品总规约-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/产品总规约-第一版.md)
-4. [docs/design/工程分工与工作包-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/工程分工与工作包-第一版.md)
+3. 如果涉及渲染、性能或 Idle 动画，读 [docs/design/渲染实现原理-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/渲染实现原理-第一版.md)
+4. [docs/design/产品总规约-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/产品总规约-第一版.md)
+5. [docs/design/工程分工与工作包-第一版.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/工程分工与工作包-第一版.md)
 
 模块文档：
 
