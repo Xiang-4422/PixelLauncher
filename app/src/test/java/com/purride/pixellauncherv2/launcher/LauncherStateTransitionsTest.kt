@@ -336,6 +336,45 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun updateScreenUsageSummaryStoresUsageTimeAndOpenCount() {
+        val updatedState = LauncherStateTransitions.updateScreenUsageSummary(
+            state = LauncherState(),
+            screenUsageTimeText = "02:15",
+            screenOpenCountText = "17",
+        )
+
+        assertEquals("02:15", updatedState.screenUsageTimeText)
+        assertEquals("17", updatedState.screenOpenCountText)
+    }
+
+    @Test
+    fun updateRainHintTextSupportsVisibleAndHiddenStates() {
+        val visibleState = LauncherStateTransitions.updateRainHintText(
+            state = LauncherState(),
+            rainHintText = "14:00",
+        )
+        val hiddenState = LauncherStateTransitions.updateRainHintText(
+            state = visibleState,
+            rainHintText = "",
+        )
+
+        assertEquals("14:00", visibleState.rainHintText)
+        assertEquals("", hiddenState.rainHintText)
+    }
+
+    @Test
+    fun updateCommunicationStatusStoresLatestCounts() {
+        val updatedState = LauncherStateTransitions.updateCommunicationStatus(
+            state = LauncherState(),
+            missedCallCount = 3,
+            unreadSmsCount = 5,
+        )
+
+        assertEquals(3, updatedState.missedCallCount)
+        assertEquals(5, updatedState.unreadSmsCount)
+    }
+
+    @Test
     fun updateStatsStoresRecentAppsAndLaunchMetadata() {
         val updatedState = LauncherStateTransitions.updateStats(
             state = LauncherState(),

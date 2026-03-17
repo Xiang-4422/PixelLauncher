@@ -414,6 +414,32 @@ object LauncherStateTransitions {
         return state.copy(nextAlarmText = nextAlarmText)
     }
 
+    fun updateCommunicationStatus(
+        state: LauncherState,
+        missedCallCount: Int,
+        unreadSmsCount: Int,
+    ): LauncherState {
+        return state.copy(
+            missedCallCount = missedCallCount.coerceAtLeast(0),
+            unreadSmsCount = unreadSmsCount.coerceAtLeast(0),
+        )
+    }
+
+    fun updateRainHintText(state: LauncherState, rainHintText: String): LauncherState {
+        return state.copy(rainHintText = rainHintText)
+    }
+
+    fun updateScreenUsageSummary(
+        state: LauncherState,
+        screenUsageTimeText: String,
+        screenOpenCountText: String,
+    ): LauncherState {
+        return state.copy(
+            screenUsageTimeText = screenUsageTimeText,
+            screenOpenCountText = screenOpenCountText,
+        )
+    }
+
     fun recordInteraction(state: LauncherState, uptimeMs: Long): LauncherState {
         return state.copy(lastInteractionUptimeMs = uptimeMs)
     }

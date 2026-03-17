@@ -1,9 +1,13 @@
 package com.purride.pixellauncherv2.app
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.provider.Settings
 import android.text.Editable
 import android.text.InputFilter
 import android.text.InputType
@@ -18,14 +22,20 @@ import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.purride.pixellauncherv2.data.AppRepository
+import com.purride.pixellauncherv2.data.CommunicationStatus
+import com.purride.pixellauncherv2.data.CommunicationStatusRepository
+import com.purride.pixellauncherv2.data.DeviceLocationRepository
 import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.DeviceMotionRepository
 import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.data.FontSettingsRepository
+import com.purride.pixellauncherv2.data.GeoPoint
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.NextAlarmRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
+import com.purride.pixellauncherv2.data.RainForecastRepository
+import com.purride.pixellauncherv2.data.ScreenUsageRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
@@ -86,6 +96,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private lateinit var launcherStatsRepository: LauncherStatsRepository
     private lateinit var deviceStatusRepository: DeviceStatusRepository
     private lateinit var nextAlarmRepository: NextAlarmRepository
+    private lateinit var screenUsageRepository: ScreenUsageRepository
+    private lateinit var communicationStatusRepository: CommunicationStatusRepository
+    private lateinit var deviceLocationRepository: DeviceLocationRepository
+    private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var deviceMotionRepository: DeviceMotionRepository
     private lateinit var pixelFontResolver: PixelFontResolver
     private lateinit var appLauncher: AndroidAppLauncher
@@ -138,6 +152,12 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
     private var pagerDragLastUptimeMs: Long = 0L
     private var pagerDragVelocityPxPerSecond: Float = 0f
     private var interactionTickerLastUptimeMs: Long = 0L
+    private var usageAccessPromptShown = false
+    private var homeDataPermissionPromptShown = false
+    private var rainRefreshInFlight = false
+    private var lastRainRefreshElapsedRealtimeMs: Long = 0L
+    private var lastRainLocation: GeoPoint? = null
+    private var lastSuccessfulRainHintText: String = ""
 
     private val clockTicker = object : Runnable {
         override fun run() {
@@ -148,6 +168,8 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
                 currentWeekdayText = timeTextProvider.currentWeekdayText(),
             )
             refreshDerivedUiState(render = true)
+            refreshScreenUsageSummary(render = true)
+            refreshRainHint(force = false, render = true)
             mainHandler.postDelayed(this, timeTextProvider.millisUntilNextMinute())
         }
     }
@@ -252,6 +274,10 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         launcherStatsRepository = LauncherStatsRepository(applicationContext)
         deviceStatusRepository = DeviceStatusRepository(applicationContext)
         nextAlarmRepository = NextAlarmRepository(applicationContext)
+        screenUsageRepository = ScreenUsageRepository(applicationContext)
+        communicationStatusRepository = CommunicationStatusRepository(applicationContext)
+        deviceLocationRepository = DeviceLocationRepository(applicationContext)
+        rainForecastRepository = RainForecastRepository()
         deviceMotionRepository = DeviceMotionRepository(applicationContext)
         pixelFontResolver = PixelFontResolver(applicationContext)
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
@@ -452,6 +478,13 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         state = LauncherStateTransitions.showHome(state)
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
         refreshDerivedUiState(render = false)
+        val launchedUsageAccessSettings = maybeRequestUsageAccess()
+        if (!launchedUsageAccessSettings) {
+            communicationStatusRepository.start(::onCommunicationStatusChanged)
+            refreshScreenUsageSummary(render = false)
+            refreshRainHint(force = true, render = false)
+            maybeRequestHomeDataPermissions()
+        }
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
         updateDrawerInputFocus()
@@ -486,9 +519,24 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         launchPending = false
         deviceStatusRepository.stop()
         nextAlarmRepository.stop()
+        communicationStatusRepository.stop()
         stopIdlePhysics()
         suppressActivityAnimations()
         super.onPause()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != homeDataPermissionRequestCode) {
+            return
+        }
+        communicationStatusRepository.start(::onCommunicationStatusChanged)
+        refreshCommunicationStatus(render = false)
+        refreshRainHint(force = true, render = true)
     }
 
     override fun onDestroy() {
@@ -1871,6 +1919,182 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         refreshDerivedUiState(render = true)
     }
 
+    private fun onCommunicationStatusChanged(communicationStatus: CommunicationStatus) {
+        state = LauncherStateTransitions.updateCommunicationStatus(
+            state = state,
+            missedCallCount = communicationStatus.missedCallCount,
+            unreadSmsCount = communicationStatus.unreadSmsCount,
+        )
+        refreshDerivedUiState(render = true)
+    }
+
+    private fun refreshScreenUsageSummary(render: Boolean) {
+        backgroundExecutor.execute {
+            val snapshot = screenUsageRepository.readTodaySummary()
+            mainHandler.post {
+                if (isDestroyed || isFinishing) {
+                    return@post
+                }
+                state = LauncherStateTransitions.updateScreenUsageSummary(
+                    state = state,
+                    screenUsageTimeText = snapshot.usageTimeText,
+                    screenOpenCountText = snapshot.openCountText,
+                )
+                if (render) {
+                    refreshDerivedUiState(render = true)
+                } else {
+                    renderCurrentFrame()
+                }
+            }
+        }
+    }
+
+    private fun refreshCommunicationStatus(render: Boolean) {
+        backgroundExecutor.execute {
+            val communicationStatus = communicationStatusRepository.readStatus()
+            mainHandler.post {
+                if (isDestroyed || isFinishing) {
+                    return@post
+                }
+                state = LauncherStateTransitions.updateCommunicationStatus(
+                    state = state,
+                    missedCallCount = communicationStatus.missedCallCount,
+                    unreadSmsCount = communicationStatus.unreadSmsCount,
+                )
+                if (render) {
+                    refreshDerivedUiState(render = true)
+                } else {
+                    renderCurrentFrame()
+                }
+            }
+        }
+    }
+
+    private fun refreshRainHint(force: Boolean, render: Boolean) {
+        if (!force) {
+            val elapsedSinceLastRefresh = SystemClock.elapsedRealtime() - lastRainRefreshElapsedRealtimeMs
+            if (lastRainRefreshElapsedRealtimeMs > 0L && elapsedSinceLastRefresh < rainRefreshIntervalMs) {
+                return
+            }
+        }
+        if (rainRefreshInFlight) {
+            return
+        }
+        if (!deviceLocationRepository.hasLocationPermission()) {
+            lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
+            applyRainHintText(rainLocationPromptText, render = render)
+            maybeRequestHomeDataPermissions()
+            return
+        }
+
+        rainRefreshInFlight = true
+        deviceLocationRepository.requestBestLocation { location ->
+            if (isDestroyed || isFinishing) {
+                rainRefreshInFlight = false
+                return@requestBestLocation
+            }
+            if (location == null) {
+                lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
+                rainRefreshInFlight = false
+                applyRainHintText(rainLocationPromptText, render = render)
+                return@requestBestLocation
+            }
+
+            val nowElapsedRealtime = SystemClock.elapsedRealtime()
+            val shouldFetch = force ||
+                lastRainRefreshElapsedRealtimeMs <= 0L ||
+                (nowElapsedRealtime - lastRainRefreshElapsedRealtimeMs) >= rainRefreshIntervalMs ||
+                lastRainLocation?.distanceToMeters(location)?.let { it >= rainRefreshDistanceThresholdMeters } != false
+            if (!shouldFetch) {
+                rainRefreshInFlight = false
+                return@requestBestLocation
+            }
+
+            backgroundExecutor.execute {
+                val previousSuccessfulHint = lastSuccessfulRainHintText
+                runCatching {
+                    rainForecastRepository.fetchRainHint(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                    )
+                }.onSuccess { rainHint ->
+                    mainHandler.post {
+                        if (isDestroyed || isFinishing) {
+                            rainRefreshInFlight = false
+                            return@post
+                        }
+                        lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
+                        lastRainLocation = location
+                        lastSuccessfulRainHintText = rainHint.orEmpty()
+                        rainRefreshInFlight = false
+                        applyRainHintText(rainHint.orEmpty(), render = render)
+                    }
+                }.onFailure {
+                    mainHandler.post {
+                        if (isDestroyed || isFinishing) {
+                            rainRefreshInFlight = false
+                            return@post
+                        }
+                        lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
+                        rainRefreshInFlight = false
+                        applyRainHintText(previousSuccessfulHint, render = render)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyRainHintText(rainHintText: String, render: Boolean) {
+        state = LauncherStateTransitions.updateRainHintText(
+            state = state,
+            rainHintText = rainHintText,
+        )
+        if (render) {
+            refreshDerivedUiState(render = true)
+        } else {
+            renderCurrentFrame()
+        }
+    }
+
+    private fun maybeRequestHomeDataPermissions() {
+        if (homeDataPermissionPromptShown) {
+            return
+        }
+        val missingPermissions = buildList {
+            if (!deviceLocationRepository.hasLocationPermission()) {
+                add(Manifest.permission.ACCESS_COARSE_LOCATION)
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+            if (!communicationStatusRepository.hasCallLogPermission()) {
+                add(Manifest.permission.READ_CALL_LOG)
+            }
+            if (!communicationStatusRepository.hasSmsPermission()) {
+                add(Manifest.permission.READ_SMS)
+            }
+        }.distinct()
+        if (missingPermissions.isEmpty()) {
+            return
+        }
+        homeDataPermissionPromptShown = true
+        requestPermissions(
+            missingPermissions.toTypedArray(),
+            homeDataPermissionRequestCode,
+        )
+    }
+
+    private fun maybeRequestUsageAccess(): Boolean {
+        if (usageAccessPromptShown || screenUsageRepository.hasUsageAccess()) {
+            return false
+        }
+        usageAccessPromptShown = true
+        startActivity(
+            Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+        return true
+    }
+
     private fun refreshDerivedUiState(render: Boolean) {
         state = LauncherStateTransitions.updateTerminalStatus(
             state = state,
@@ -2040,5 +2264,9 @@ class MainActivity : AppCompatActivity(), PixelDisplayView.InteractionListener {
         const val idleTickerDelayMs: Long = 16L
         const val idleMaxCatchUpSteps: Int = 4
         const val idleMaxAccumulationMs: Long = idleFixedStepMs * idleMaxCatchUpSteps
+        const val homeDataPermissionRequestCode = 1001
+        const val rainRefreshIntervalMs: Long = 30 * 60 * 1000L
+        const val rainRefreshDistanceThresholdMeters = 1_000f
+        const val rainLocationPromptText = "LOC"
     }
 }

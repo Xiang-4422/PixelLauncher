@@ -198,13 +198,25 @@ class PixelRenderer(
             )
         }
 
-        val fixedInfoLines = listOf(
-            "ALARM ${state.nextAlarmText.ifBlank { "--:--" }}",
-            "CALL ${state.missedCallCount}  SMS ${state.unreadSmsCount}",
-            "RAIN ${state.rainHintText.ifBlank { "--" }}",
-            "24H ${state.screenOnTrack24h.ifBlank { "........" }}",
-            "YDAY ${state.yesterdayScreenOnCount}  ${state.terminalStatusText.ifBlank { "READY" }}",
-        )
+        val dynamicInfoSegments = buildList {
+            if (state.missedCallCount > 0) {
+                add("CALL ${state.missedCallCount}")
+            }
+            if (state.unreadSmsCount > 0) {
+                add("SMS ${state.unreadSmsCount}")
+            }
+            if (state.rainHintText.isNotBlank()) {
+                add("RAIN ${state.rainHintText}")
+            }
+        }
+        val fixedInfoLines = buildList {
+            add("ALARM ${state.nextAlarmText.ifBlank { "--:--" }}")
+            if (dynamicInfoSegments.isNotEmpty()) {
+                add(dynamicInfoSegments.joinToString(separator = "  "))
+            }
+            add("USE ${state.screenUsageTimeText.ifBlank { "--:--" }}  OPEN ${state.screenOpenCountText.ifBlank { "--" }}")
+            add(state.terminalStatusText.ifBlank { "READY" })
+        }
         var detailY = layoutMetrics.fixedInfoStartY
         fixedInfoLines.forEach { line ->
             if (detailY + GlyphStyle.UI_SMALL_10.cellHeight <= layoutMetrics.fixedBottom) {
