@@ -218,6 +218,36 @@ class IdleFluidEngineTest {
         assertTrue((movedCentroidX - initialCentroidX) >= minExpectedShift)
     }
 
+    @Test
+    fun steadySizeSimulationReusesCoverageAndMaskBuffers() {
+        var state = engine.syncToBattery(
+            state = IdleFluidState(),
+            batteryLevel = 65,
+            logicalWidth = 30,
+            logicalHeight = 30,
+            gravityX = 0f,
+            gravityY = 9.81f,
+            nowUptimeMs = 1_000L,
+        )
+        val initialCoverageResizes = engine.coverageBufferResizeCountForTesting()
+        val initialMaskResizes = engine.maskBufferResizeCountForTesting()
+
+        repeat(60) { frame ->
+            state = engine.step(
+                state = state,
+                logicalWidth = 30,
+                logicalHeight = 30,
+                gravityX = 0f,
+                gravityY = 9.81f,
+                deltaSeconds = 0.016f,
+                nowUptimeMs = 1_016L + (frame * 16L),
+            )
+        }
+
+        assertEquals(initialCoverageResizes, engine.coverageBufferResizeCountForTesting())
+        assertEquals(initialMaskResizes, engine.maskBufferResizeCountForTesting())
+    }
+
     private fun centroidX(mask: BooleanArray, width: Int): Float {
         if (mask.isEmpty() || width <= 0) {
             return 0f

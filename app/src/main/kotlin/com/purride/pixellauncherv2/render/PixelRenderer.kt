@@ -38,39 +38,65 @@ class PixelRenderer(
         drawerListScrollOffsetPx: Int = 0,
         settingsListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
-        val bootBuffer = PixelBuffer(
-            width = screenProfile.logicalWidth,
-            height = screenProfile.logicalHeight,
-        )
-        bootBuffer.clear()
+        return RenderPerfLogger.measure("renderer.render.${state.mode.name}") {
+            val bootBuffer = PixelBuffer(
+                width = screenProfile.logicalWidth,
+                height = screenProfile.logicalHeight,
+            )
+            bootBuffer.clear()
 
-        val bootSequence = animationState.bootSequence
-        if (bootSequence != null) {
-            drawBootSequence(bootBuffer, screenProfile, bootSequence)
-            return bootBuffer
+            val bootSequence = animationState.bootSequence
+            if (bootSequence != null) {
+                drawBootSequence(bootBuffer, screenProfile, bootSequence)
+                return@measure bootBuffer
+            }
+
+            val pageBuffer = if (pagerSnapshot == null) {
+                renderSingleMode(
+                    state = state,
+                    screenProfile = screenProfile,
+                    animationState = animationState,
+                    mode = state.mode,
+                    drawerListScrollOffsetPx = drawerListScrollOffsetPx,
+                    settingsListScrollOffsetPx = settingsListScrollOffsetPx,
+                )
+            } else {
+                renderPagerSnapshot(
+                    state = state,
+                    screenProfile = screenProfile,
+                    animationState = animationState,
+                    pagerSnapshot = pagerSnapshot,
+                    drawerListScrollOffsetPx = drawerListScrollOffsetPx,
+                    settingsListScrollOffsetPx = settingsListScrollOffsetPx,
+                )
+            }
+            applyLaunchShutterOverlay(pageBuffer, animationState.launchShutter)
+            pageBuffer
         }
+    }
 
-        val pageBuffer = if (pagerSnapshot == null) {
-            renderSingleMode(
+    /**
+     * 只渲染 Idle 页的低频静态内容。
+     *
+     * 供 GL 动态遮罩模式使用，故意不包含流体粒子。
+     */
+    fun renderIdleStatic(
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+    ): PixelBuffer {
+        return RenderPerfLogger.measure("renderer.renderIdleStatic") {
+            val buffer = PixelBuffer(
+                width = screenProfile.logicalWidth,
+                height = screenProfile.logicalHeight,
+            )
+            buffer.clear()
+            drawIdleStatic(
+                buffer = buffer,
                 state = state,
                 screenProfile = screenProfile,
-                animationState = animationState,
-                mode = state.mode,
-                drawerListScrollOffsetPx = drawerListScrollOffsetPx,
-                settingsListScrollOffsetPx = settingsListScrollOffsetPx,
             )
-        } else {
-            renderPagerSnapshot(
-                state = state,
-                screenProfile = screenProfile,
-                animationState = animationState,
-                pagerSnapshot = pagerSnapshot,
-                drawerListScrollOffsetPx = drawerListScrollOffsetPx,
-                settingsListScrollOffsetPx = settingsListScrollOffsetPx,
-            )
+            buffer
         }
-        applyLaunchShutterOverlay(pageBuffer, animationState.launchShutter)
-        return pageBuffer
     }
 
     /**
@@ -768,6 +794,10 @@ class PixelRenderer(
 
     private fun drawIdle(buffer: PixelBuffer, state: LauncherState, screenProfile: ScreenProfile) {
         drawIdleParticles(buffer, state)
+        drawIdleStatic(buffer, state, screenProfile)
+    }
+
+    private fun drawIdleStatic(buffer: PixelBuffer, state: LauncherState, screenProfile: ScreenProfile) {
         val timeY = ((screenProfile.logicalHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
         drawCenteredText(
             buffer = buffer,

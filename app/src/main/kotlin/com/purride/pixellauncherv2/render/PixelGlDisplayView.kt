@@ -1,27 +1,29 @@
 package com.purride.pixellauncherv2.render
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Path
+import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
-class PixelDisplayView @JvmOverloads constructor(
+class PixelGlDisplayView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-) : View(context, attrs), PixelFrameView {
-
+) : GLSurfaceView(context, attrs), PixelFrameView {
     override var interactionListener: PixelFrameView.InteractionListener? = null
 
-    private var pixelBuffer: PixelBuffer? = null
+    private val frameSwapBuffer = FrameSwapBuffer()
+    private val idleMaskSwapBuffer = IdleMaskSwapBuffer()
+    private val glRenderer = PixelGlRenderer(
+        frameSwapBuffer = frameSwapBuffer,
+        idleMaskSwapBuffer = idleMaskSwapBuffer,
+    )
     private var screenProfile: ScreenProfile? = null
-    private var palette: PixelPalette = PixelPalette.terminalGreen()
+    private var latestPixelBuffer: PixelBuffer? = null
+    private var latestPalette: PixelPalette = PixelPalette.terminalGreen()
     private val swipeDistanceThresholdPx = max(
         ViewConfiguration.get(context).scaledTouchSlop * 4f,
         context.resources.displayMetrics.density * 32f,
@@ -34,92 +36,69 @@ class PixelDisplayView @JvmOverloads constructor(
     private var lastLogicalX = 0
     private var lastLogicalY = 0
 
-    private val onPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        isAntiAlias = false
-        isFilterBitmap = false
+    init {
+        setEGLContextClientVersion(2)
+        preserveEGLContextOnPause = true
+        setRenderer(glRenderer)
+        renderMode = RENDERMODE_WHEN_DIRTY
     }
-    private val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        isAntiAlias = false
-        isFilterBitmap = false
-    }
-    private val offPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        isAntiAlias = false
-        isFilterBitmap = false
-    }
-    private val reusableDiamondPath = Path()
 
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette) {
-        RenderPerfLogger.measure("canvas.submitFrame") {
-            this.pixelBuffer = pixelBuffer
+        RenderPerfLogger.measure("gl.submitFrame") {
+            this.latestPixelBuffer = pixelBuffer
             this.screenProfile = screenProfile
-            this.palette = palette
-            invalidate()
+            this.latestPalette = palette
+            frameSwapBuffer.offer(
+                pixelBuffer = pixelBuffer,
+                screenProfile = screenProfile,
+                palette = palette,
+            )
+            requestRender()
         }
     }
 
     override fun setPalette(palette: PixelPalette) {
-        this.palette = palette
-        invalidate()
+        latestPalette = palette
+        glRenderer.setFallbackPalette(palette)
+        val pixelBuffer = latestPixelBuffer
+        val profile = screenProfile
+        if (pixelBuffer != null && profile != null) {
+            frameSwapBuffer.offer(
+                pixelBuffer = pixelBuffer,
+                screenProfile = profile,
+                palette = palette,
+            )
+        }
+        requestRender()
+    }
+
+    override fun submitIdleMask(frame: IdleMaskFrame?) {
+        RenderPerfLogger.measure("gl.submitIdleMask") {
+            if (frame == null) {
+                idleMaskSwapBuffer.clear()
+            } else {
+                idleMaskSwapBuffer.offer(frame)
+            }
+            requestRender()
+        }
+    }
+
+    override fun setIdleContinuousRendering(enabled: Boolean) {
+        renderMode = if (enabled) RENDERMODE_CONTINUOUSLY else RENDERMODE_WHEN_DIRTY
+        RenderPerfLogger.mark("gl.renderMode", if (enabled) "continuous" else "when_dirty")
+        if (!enabled) {
+            requestRender()
+        }
     }
 
     override fun asView(): View = this
 
-    override fun onDraw(canvas: Canvas) {
-        RenderPerfLogger.measure("canvas.onDraw") {
-            super.onDraw(canvas)
-            canvas.drawColor(palette.backgroundColor)
+    override fun onHostResume() {
+        onResume()
+    }
 
-            val buffer = pixelBuffer ?: return@measure
-            val profile = screenProfile ?: return@measure
-            val gridMetrics = PixelGridGeometryResolver.resolve(
-                viewWidth = width,
-                viewHeight = height,
-                profile = profile,
-            ) ?: return@measure
-
-            onPaint.color = palette.pixelOnColor
-            accentPaint.color = palette.accentColor
-            offPaint.color = palette.pixelOffColor
-
-            for (y in 0 until buffer.height) {
-                for (x in 0 until buffer.width) {
-                    val left = gridMetrics.originX + (x * gridMetrics.cellSize) + gridMetrics.dotInset
-                    val top = gridMetrics.originY + (y * gridMetrics.cellSize) + gridMetrics.dotInset
-                    val right = left + gridMetrics.dotSize
-                    val bottom = top + gridMetrics.dotSize
-                    val paint = when (buffer.getPixel(x, y)) {
-                        PixelBuffer.ON -> onPaint
-                        PixelBuffer.ACCENT -> accentPaint
-                        else -> offPaint
-                    }
-
-                    when (profile.pixelShape) {
-                        PixelShape.SQUARE -> canvas.drawRect(left, top, right, bottom, paint)
-                        PixelShape.CIRCLE -> {
-                            val centerX = (left + right) / 2f
-                            val centerY = (top + bottom) / 2f
-                            val radius = min(right - left, bottom - top) / 2f
-                            canvas.drawCircle(centerX, centerY, radius, paint)
-                        }
-
-                        PixelShape.DIAMOND -> {
-                            val centerX = (left + right) / 2f
-                            val centerY = (top + bottom) / 2f
-                            reusableDiamondPath.reset()
-                            reusableDiamondPath.moveTo(centerX, top)
-                            reusableDiamondPath.lineTo(left, centerY)
-                            reusableDiamondPath.lineTo(centerX, bottom)
-                            reusableDiamondPath.lineTo(right, centerY)
-                            reusableDiamondPath.close()
-                            canvas.drawPath(reusableDiamondPath, paint)
-                        }
-                    }
-                }
-            }
-        }
+    override fun onHostPause() {
+        onPause()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -162,7 +141,6 @@ class PixelDisplayView @JvmOverloads constructor(
                 if (!touchActive) {
                     return true
                 }
-
                 touchActive = false
                 val profile = screenProfile
                 val logicalPoint = profile?.let { mapTouchToLogical(event.x, event.y, it) }
@@ -219,7 +197,6 @@ class PixelDisplayView @JvmOverloads constructor(
                 return true
             }
         }
-
         return super.onTouchEvent(event)
     }
 

@@ -32,6 +32,14 @@ class IdleFluidEngine(
 
     private val random = Random(seed)
     private var simulation: FluidSimulation? = null
+    private var coverageBufferA: FloatArray = FloatArray(0)
+    private var coverageBufferB: FloatArray = FloatArray(0)
+    private var maskBufferA: BooleanArray = BooleanArray(0)
+    private var maskBufferB: BooleanArray = BooleanArray(0)
+    private var useCoverageBufferA = false
+    private var useMaskBufferA = false
+    private var coverageBufferResizeCount = 0
+    private var maskBufferResizeCount = 0
 
     fun syncToBattery(
         state: IdleFluidState,
@@ -224,6 +232,10 @@ class IdleFluidEngine(
             previousCoverageField = previousCoverageField,
         )
     }
+
+    internal fun coverageBufferResizeCountForTesting(): Int = coverageBufferResizeCount
+
+    internal fun maskBufferResizeCountForTesting(): Int = maskBufferResizeCount
 
     private fun ensureSimulation(width: Int, height: Int): FluidSimulation {
         val safeWidth = width.coerceAtLeast(tuning.minSimulationSize)
@@ -523,7 +535,11 @@ class IdleFluidEngine(
         width: Int,
         height: Int,
     ): FloatArray {
-        val coverageField = FloatArray(width * height)
+        val size = width * height
+        ensureCoverageBufferCapacity(size)
+        useCoverageBufferA = !useCoverageBufferA
+        val coverageField = if (useCoverageBufferA) coverageBufferA else coverageBufferB
+        coverageField.fill(0f)
         val positions = world.getParticlePositionBuffer()
         val count = world.getParticleCount().coerceAtMost(positions.size)
         for (index in 0 until count) {
@@ -570,7 +586,9 @@ class IdleFluidEngine(
         previousMask: BooleanArray,
         previousCoverageField: FloatArray,
     ): BooleanArray {
-        val mask = BooleanArray(coverageField.size)
+        ensureMaskBufferCapacity(coverageField.size)
+        useMaskBufferA = !useMaskBufferA
+        val mask = if (useMaskBufferA) maskBufferA else maskBufferB
         val stablePreviousMask = if (previousMask.size == coverageField.size) {
             previousMask
         } else {
@@ -592,6 +610,26 @@ class IdleFluidEngine(
             }
         }
         return mask
+    }
+
+    private fun ensureCoverageBufferCapacity(size: Int) {
+        if (coverageBufferA.size == size && coverageBufferB.size == size) {
+            return
+        }
+        coverageBufferA = FloatArray(size)
+        coverageBufferB = FloatArray(size)
+        useCoverageBufferA = false
+        coverageBufferResizeCount += 1
+    }
+
+    private fun ensureMaskBufferCapacity(size: Int) {
+        if (maskBufferA.size == size && maskBufferB.size == size) {
+            return
+        }
+        maskBufferA = BooleanArray(size)
+        maskBufferB = BooleanArray(size)
+        useMaskBufferA = false
+        maskBufferResizeCount += 1
     }
 
     private fun innerBounds(width: Int, height: Int): ContainerBounds {
