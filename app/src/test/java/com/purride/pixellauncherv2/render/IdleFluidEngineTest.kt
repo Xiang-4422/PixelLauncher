@@ -23,8 +23,8 @@ class IdleFluidEngineTest {
         val state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 50,
-            logicalWidth = 20,
-            logicalHeight = 10,
+            simulationWidth = 20,
+            simulationHeight = 10,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -40,8 +40,8 @@ class IdleFluidEngineTest {
         val state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 100,
-            logicalWidth = 1,
-            logicalHeight = 1,
+            simulationWidth = 1,
+            simulationHeight = 1,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -58,8 +58,8 @@ class IdleFluidEngineTest {
         var state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 50,
-            logicalWidth = 32,
-            logicalHeight = 32,
+            simulationWidth = 32,
+            simulationHeight = 32,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -67,8 +67,8 @@ class IdleFluidEngineTest {
         repeat(300) { frame ->
             state = engine.step(
                 state = state,
-                logicalWidth = 32,
-                logicalHeight = 32,
+                simulationWidth = 32,
+                simulationHeight = 32,
                 gravityX = 0f,
                 gravityY = 9.81f,
                 deltaSeconds = 0.016f,
@@ -87,8 +87,8 @@ class IdleFluidEngineTest {
         var state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 50,
-            logicalWidth = width,
-            logicalHeight = height,
+            simulationWidth = width,
+            simulationHeight = height,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -98,8 +98,8 @@ class IdleFluidEngineTest {
         repeat(30) { frame ->
             state = engine.step(
                 state = state,
-                logicalWidth = width,
-                logicalHeight = height,
+                simulationWidth = width,
+                simulationHeight = height,
                 gravityX = 9.81f,
                 gravityY = 0f,
                 deltaSeconds = 0.016f,
@@ -116,8 +116,8 @@ class IdleFluidEngineTest {
         var state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 50,
-            logicalWidth = 24,
-            logicalHeight = 24,
+            simulationWidth = 24,
+            simulationHeight = 24,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -133,8 +133,8 @@ class IdleFluidEngineTest {
 
         state = engine.step(
             state = state,
-            logicalWidth = 24,
-            logicalHeight = 24,
+            simulationWidth = 24,
+            simulationHeight = 24,
             gravityX = 0f,
             gravityY = 9.81f,
             deltaSeconds = 0.016f,
@@ -194,8 +194,8 @@ class IdleFluidEngineTest {
         var state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 50,
-            logicalWidth = width,
-            logicalHeight = height,
+            simulationWidth = width,
+            simulationHeight = height,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -205,8 +205,8 @@ class IdleFluidEngineTest {
         repeat(38) { frame ->
             state = engine.step(
                 state = state,
-                logicalWidth = width,
-                logicalHeight = height,
+                simulationWidth = width,
+                simulationHeight = height,
                 gravityX = 6.94f,
                 gravityY = 6.94f,
                 deltaSeconds = 0.016f,
@@ -223,8 +223,8 @@ class IdleFluidEngineTest {
         var state = engine.syncToBattery(
             state = IdleFluidState(),
             batteryLevel = 65,
-            logicalWidth = 30,
-            logicalHeight = 30,
+            simulationWidth = 30,
+            simulationHeight = 30,
             gravityX = 0f,
             gravityY = 9.81f,
             nowUptimeMs = 1_000L,
@@ -235,8 +235,8 @@ class IdleFluidEngineTest {
         repeat(60) { frame ->
             state = engine.step(
                 state = state,
-                logicalWidth = 30,
-                logicalHeight = 30,
+                simulationWidth = 30,
+                simulationHeight = 30,
                 gravityX = 0f,
                 gravityY = 9.81f,
                 deltaSeconds = 0.016f,

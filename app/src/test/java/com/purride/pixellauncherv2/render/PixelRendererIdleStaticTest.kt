@@ -39,6 +39,40 @@ class PixelRendererIdleStaticTest {
         assertTrue(litPixelCount(fullBuffer) > litPixelCount(staticBuffer))
     }
 
+    @Test
+    fun fullIdleRenderScalesLowResolutionMaskAcrossLogicalBuffer() {
+        val state = LauncherState(
+            mode = LauncherMode.IDLE,
+            currentTimeText = "",
+            idleFluidState = IdleFluidState(
+                width = 4,
+                height = 4,
+                litMask = booleanArrayOf(
+                    true, false, false, false,
+                    false, false, false, false,
+                    false, false, false, false,
+                    false, false, false, false,
+                ),
+            ),
+        )
+
+        val fullBuffer = renderer.render(
+            state = state,
+            screenProfile = screenProfile,
+            animationState = LauncherAnimationState(),
+        )
+
+        var litPixels = 0
+        for (y in 0 until 10) {
+            for (x in 0 until 10) {
+                if (fullBuffer.getPixel(x, y) == PixelBuffer.ON) {
+                    litPixels += 1
+                }
+            }
+        }
+        assertTrue(litPixels > 1)
+    }
+
     private fun litPixelCount(buffer: PixelBuffer): Int {
         var count = 0
         for (y in 0 until buffer.height) {

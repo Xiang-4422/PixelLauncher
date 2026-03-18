@@ -314,8 +314,8 @@ class PixelGlRenderer(
         val logicalWidth = profile.logicalWidth.toFloat().coerceAtLeast(1f)
         val logicalHeight = profile.logicalHeight.toFloat().coerceAtLeast(1f)
         val idleMaskEnabled = idleMask != null &&
-            idleMask.width == profile.logicalWidth &&
-            idleMask.height == profile.logicalHeight
+            idleMask.width > 0 &&
+            idleMask.height > 0
 
         GLES20.glDisable(GLES20.GL_BLEND)
         GLES20.glUseProgram(programHandle)

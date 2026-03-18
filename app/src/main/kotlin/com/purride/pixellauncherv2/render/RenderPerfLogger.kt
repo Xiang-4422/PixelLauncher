@@ -1,7 +1,5 @@
 package com.purride.pixellauncherv2.render
 
-import android.os.SystemClock
-import android.util.Log
 import java.util.Locale
 
 /**
@@ -16,24 +14,24 @@ object RenderPerfLogger {
     private const val enabled = true
     private val lock = Any()
     private val statsByStage = linkedMapOf<String, StageStats>()
-    private var lastFlushUptimeMs = SystemClock.uptimeMillis()
+    private var lastFlushUptimeMs = nowMs()
 
     fun mark(event: String, detail: String) {
         if (!enabled) {
             return
         }
-        Log.i(TAG, "$event | $detail")
+        emit("$event | $detail")
     }
 
     fun <T> measure(stage: String, block: () -> T): T {
         if (!enabled) {
             return block()
         }
-        val startNs = SystemClock.elapsedRealtimeNanos()
+        val startNs = nowNs()
         return try {
             block()
         } finally {
-            record(stage, SystemClock.elapsedRealtimeNanos() - startNs)
+            record(stage, nowNs() - startNs)
         }
     }
 
@@ -42,7 +40,7 @@ object RenderPerfLogger {
             return
         }
         val safeDurationNs = durationNs.coerceAtLeast(0L)
-        val now = SystemClock.uptimeMillis()
+        val now = nowMs()
         synchronized(lock) {
             val stats = statsByStage.getOrPut(stage) { StageStats() }
             stats.count += 1
@@ -73,9 +71,23 @@ object RenderPerfLogger {
                 hz,
             )
         }
-        Log.i(TAG, "window=${windowMs}ms | $summary")
+        emit("window=${windowMs}ms | $summary")
         statsByStage.clear()
         lastFlushUptimeMs = nowUptimeMs
+    }
+
+    private fun nowNs(): Long = System.nanoTime()
+
+    private fun nowMs(): Long = nowNs() / 1_000_000L
+
+    private fun emit(message: String) {
+        runCatching {
+            val logClass = Class.forName("android.util.Log")
+            val infoMethod = logClass.getMethod("i", String::class.java, String::class.java)
+            infoMethod.invoke(null, TAG, message)
+        }.getOrElse {
+            println("$TAG: $message")
+        }
     }
 
     private data class StageStats(

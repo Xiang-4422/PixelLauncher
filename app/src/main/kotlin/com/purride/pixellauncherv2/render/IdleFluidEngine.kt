@@ -10,6 +10,7 @@ import de.pirckheimer_gymnasium.jbox2d.particle.ParticleGroupDef
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -40,18 +41,21 @@ class IdleFluidEngine(
     private var useMaskBufferA = false
     private var coverageBufferResizeCount = 0
     private var maskBufferResizeCount = 0
+    private var coverageKernelRadiusCells = -1
+    private var coverageKernelSide = 0
+    private var coverageKernelWeights: FloatArray = FloatArray(0)
 
     fun syncToBattery(
         state: IdleFluidState,
         batteryLevel: Int,
-        logicalWidth: Int,
-        logicalHeight: Int,
+        simulationWidth: Int,
+        simulationHeight: Int,
         gravityX: Float,
         gravityY: Float,
         nowUptimeMs: Long,
     ): IdleFluidState {
-        val width = logicalWidth.coerceAtLeast(1)
-        val height = logicalHeight.coerceAtLeast(1)
+        val width = simulationWidth.coerceAtLeast(1)
+        val height = simulationHeight.coerceAtLeast(1)
         val targetLitCount = targetLitCount(batteryLevel, width, height)
         val simulation = ensureSimulation(width, height)
         val world = simulation.world
@@ -81,16 +85,20 @@ class IdleFluidEngine(
             )
         }
 
-        val coverageField = buildCoverageField(
-            world = world,
-            width = width,
-            height = height,
-        )
-        val litMask = buildLitMask(
-            coverageField = coverageField,
-            previousMask = state.litMask,
-            previousCoverageField = state.coverageField,
-        )
+        val coverageField = RenderPerfLogger.measure("idle.physics.buildCoverageField") {
+            buildCoverageField(
+                world = world,
+                width = width,
+                height = height,
+            )
+        }
+        val litMask = RenderPerfLogger.measure("idle.physics.buildLitMask") {
+            buildLitMask(
+                coverageField = coverageField,
+                previousMask = state.litMask,
+                previousCoverageField = state.coverageField,
+            )
+        }
 
         return state.copy(
             width = width,
@@ -127,15 +135,15 @@ class IdleFluidEngine(
 
     fun step(
         state: IdleFluidState,
-        logicalWidth: Int,
-        logicalHeight: Int,
+        simulationWidth: Int,
+        simulationHeight: Int,
         gravityX: Float,
         gravityY: Float,
         deltaSeconds: Float,
         nowUptimeMs: Long,
     ): IdleFluidState {
-        val width = logicalWidth.coerceAtLeast(1)
-        val height = logicalHeight.coerceAtLeast(1)
+        val width = simulationWidth.coerceAtLeast(1)
+        val height = simulationHeight.coerceAtLeast(1)
         if (width <= 0 || height <= 0) {
             return state.copy(lastUpdateUptimeMs = nowUptimeMs)
         }
@@ -170,22 +178,28 @@ class IdleFluidEngine(
                 disturbanceMagnitude = sqrt((disturbance.x * disturbance.x) + (disturbance.y * disturbance.y)),
             ),
         )
-        world.step(
-            deltaSeconds.coerceIn(tuning.minStepSeconds, tuning.maxStepSeconds),
-            tuning.worldVelocityIterations,
-            tuning.worldPositionIterations,
-        )
+        RenderPerfLogger.measure("idle.physics.worldStep") {
+            world.step(
+                deltaSeconds.coerceIn(tuning.minStepSeconds, tuning.maxStepSeconds),
+                tuning.worldVelocityIterations,
+                tuning.worldPositionIterations,
+            )
+        }
 
-        val coverageField = buildCoverageField(
-            world = world,
-            width = width,
-            height = height,
-        )
-        val litMask = buildLitMask(
-            coverageField = coverageField,
-            previousMask = state.litMask,
-            previousCoverageField = state.coverageField,
-        )
+        val coverageField = RenderPerfLogger.measure("idle.physics.buildCoverageField") {
+            buildCoverageField(
+                world = world,
+                width = width,
+                height = height,
+            )
+        }
+        val litMask = RenderPerfLogger.measure("idle.physics.buildLitMask") {
+            buildLitMask(
+                coverageField = coverageField,
+                previousMask = state.litMask,
+                previousCoverageField = state.coverageField,
+            )
+        }
         val disturbanceExpired = nowUptimeMs >= state.disturbanceUntilUptimeMs
 
         return state.copy(
@@ -203,11 +217,11 @@ class IdleFluidEngine(
 
     fun targetLitCount(
         batteryLevel: Int,
-        logicalWidth: Int,
-        logicalHeight: Int,
+        simulationWidth: Int,
+        simulationHeight: Int,
     ): Int {
-        val width = logicalWidth.coerceAtLeast(1)
-        val height = logicalHeight.coerceAtLeast(1)
+        val width = simulationWidth.coerceAtLeast(1)
+        val height = simulationHeight.coerceAtLeast(1)
         val totalCells = width * height
         val level = batteryLevel.coerceIn(0, 100)
         return ((totalCells * level) / 100).coerceIn(0, totalCells)
@@ -537,6 +551,7 @@ class IdleFluidEngine(
     ): FloatArray {
         val size = width * height
         ensureCoverageBufferCapacity(size)
+        ensureCoverageKernel()
         useCoverageBufferA = !useCoverageBufferA
         val coverageField = if (useCoverageBufferA) coverageBufferA else coverageBufferB
         coverageField.fill(0f)
@@ -562,21 +577,25 @@ class IdleFluidEngine(
         centerX: Float,
         centerY: Float,
     ) {
-        val startX = floor(centerX - tuning.coverageRadiusPx).toInt().coerceAtLeast(0)
-        val endX = ceil(centerX + tuning.coverageRadiusPx).toInt().coerceAtMost(width - 1)
-        val startY = floor(centerY - tuning.coverageRadiusPx).toInt().coerceAtLeast(0)
-        val endY = ceil(centerY + tuning.coverageRadiusPx).toInt().coerceAtMost(height - 1)
-
-        for (y in startY..endY) {
-            for (x in startX..endX) {
-                val dx = x.toFloat() - centerX
-                val dy = y.toFloat() - centerY
-                val distance = sqrt((dx * dx) + (dy * dy))
-                if (distance > tuning.coverageRadiusPx) {
+        val centerCellX = centerX.roundToInt()
+        val centerCellY = centerY.roundToInt()
+        val radius = coverageKernelRadiusCells
+        val side = coverageKernelSide
+        for (kernelY in 0 until side) {
+            val y = centerCellY + kernelY - radius
+            if (y !in 0 until height) {
+                continue
+            }
+            for (kernelX in 0 until side) {
+                val x = centerCellX + kernelX - radius
+                if (x !in 0 until width) {
                     continue
                 }
-                val normalized = 1f - (distance / tuning.coverageRadiusPx)
-                coverageField[(y * width) + x] += normalized * normalized
+                val weight = coverageKernelWeights[(kernelY * side) + kernelX]
+                if (weight <= 0f) {
+                    continue
+                }
+                coverageField[(y * width) + x] += weight
             }
         }
     }
@@ -630,6 +649,32 @@ class IdleFluidEngine(
         maskBufferB = BooleanArray(size)
         useMaskBufferA = false
         maskBufferResizeCount += 1
+    }
+
+    private fun ensureCoverageKernel() {
+        val radiusCells = ceil(tuning.coverageRadiusPx).toInt().coerceAtLeast(0)
+        if (coverageKernelRadiusCells == radiusCells && coverageKernelWeights.isNotEmpty()) {
+            return
+        }
+        val side = (radiusCells * 2) + 1
+        val radius = tuning.coverageRadiusPx
+        val radiusSquared = radius * radius
+        val weights = FloatArray(side * side)
+        for (kernelY in 0 until side) {
+            val dy = (kernelY - radiusCells).toFloat()
+            for (kernelX in 0 until side) {
+                val dx = (kernelX - radiusCells).toFloat()
+                val distanceSquared = (dx * dx) + (dy * dy)
+                if (distanceSquared > radiusSquared) {
+                    continue
+                }
+                val normalized = 1f - (sqrt(distanceSquared) / radius.coerceAtLeast(1e-4f))
+                weights[(kernelY * side) + kernelX] = normalized * normalized
+            }
+        }
+        coverageKernelRadiusCells = radiusCells
+        coverageKernelSide = side
+        coverageKernelWeights = weights
     }
 
     private fun innerBounds(width: Int, height: Int): ContainerBounds {

@@ -978,18 +978,25 @@ class PixelRenderer(
     private fun drawIdleParticles(buffer: PixelBuffer, state: LauncherState) {
         val fluidState = state.idleFluidState
         val mask = fluidState.litMask
-        if (mask.isEmpty()) {
+        val maskWidth = fluidState.width
+        val maskHeight = fluidState.height
+        if (mask.isEmpty() || maskWidth <= 0 || maskHeight <= 0 || mask.size < (maskWidth * maskHeight)) {
             return
         }
 
-        val maxPixels = (buffer.width * buffer.height).coerceAtMost(mask.size)
-        for (index in 0 until maxPixels) {
-            if (!mask[index]) {
-                continue
+        for (y in 0 until buffer.height) {
+            val maskY = ((y.toFloat() / buffer.height.toFloat()) * maskHeight)
+                .toInt()
+                .coerceIn(0, maskHeight - 1)
+            for (x in 0 until buffer.width) {
+                val maskX = ((x.toFloat() / buffer.width.toFloat()) * maskWidth)
+                    .toInt()
+                    .coerceIn(0, maskWidth - 1)
+                if (!mask[(maskY * maskWidth) + maskX]) {
+                    continue
+                }
+                buffer.setPixel(x = x, y = y, value = PixelBuffer.ON)
             }
-            val x = index % buffer.width
-            val y = index / buffer.width
-            buffer.setPixel(x = x, y = y, value = PixelBuffer.ON)
         }
     }
 

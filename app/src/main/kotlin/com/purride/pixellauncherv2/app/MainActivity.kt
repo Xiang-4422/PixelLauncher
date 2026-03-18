@@ -66,6 +66,7 @@ import com.purride.pixellauncherv2.render.HorizontalPageState
 import com.purride.pixellauncherv2.render.IdleMaskFrame
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.render.IdleFluidState
+import com.purride.pixellauncherv2.render.IdleSimulationProfile
 import com.purride.pixellauncherv2.render.PixelFrameView
 import com.purride.pixellauncherv2.render.PixelGlDisplayView
 import com.purride.pixellauncherv2.render.PixelDisplayView
@@ -147,12 +148,12 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     @Volatile
     private var idleBatteryLevelSnapshot: Int = state.batteryLevel
     @Volatile
-    private var idleLogicalWidthSnapshot: Int = screenProfile.logicalWidth
+    private var idleSimulationWidthSnapshot: Int = screenProfile.logicalWidth
     @Volatile
-    private var idleLogicalHeightSnapshot: Int = screenProfile.logicalHeight
+    private var idleSimulationHeightSnapshot: Int = screenProfile.logicalHeight
     private var idlePhysicsSyncedBatteryLevel: Int = Int.MIN_VALUE
-    private var idlePhysicsSyncedLogicalWidth: Int = -1
-    private var idlePhysicsSyncedLogicalHeight: Int = -1
+    private var idlePhysicsSyncedSimulationWidth: Int = -1
+    private var idlePhysicsSyncedSimulationHeight: Int = -1
     private var idleMaskSequence: Long = 0L
     private var syncingDrawerInputProxyText = false
     private var drawerRailDragLastY: Int = 0
@@ -303,6 +304,13 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     idlePhysicsAccumulatorMs -= idleFixedStepMs
                     steps += 1
                 }
+            }
+            if (steps > 1) {
+                RenderPerfLogger.record("idle.physics.catchup", 0L)
+            }
+            if (steps >= idleMaxCatchUpSteps && idlePhysicsAccumulatorMs >= idleFixedStepMs) {
+                RenderPerfLogger.record("idle.physics.catchup.saturated", 0L)
+                idlePhysicsAccumulatorMs = 0L
             }
             if (steps > 0) {
                 if (usesGlIdleComposite()) {
@@ -2656,15 +2664,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (state.mode != LauncherMode.IDLE || !::idlePhysicsHandler.isInitialized) {
             return
         }
+        val simulationProfile = currentIdleSimulationProfile()
         idleBatteryLevelSnapshot = state.batteryLevel
-        idleLogicalWidthSnapshot = screenProfile.logicalWidth
-        idleLogicalHeightSnapshot = screenProfile.logicalHeight
+        idleSimulationWidthSnapshot = simulationProfile.width
+        idleSimulationHeightSnapshot = simulationProfile.height
         idleGravityX = motionSnapshot.gravityX
         idleGravityY = motionSnapshot.gravityY
         idlePhysicsRunning = true
         idlePhysicsSyncedBatteryLevel = Int.MIN_VALUE
-        idlePhysicsSyncedLogicalWidth = -1
-        idlePhysicsSyncedLogicalHeight = -1
+        idlePhysicsSyncedSimulationWidth = -1
+        idlePhysicsSyncedSimulationHeight = -1
         idlePhysicsState = state.idleFluidState
         idlePhysicsAccumulatorMs = idleFixedStepMs
         idlePhysicsLastTickUptimeMs = SystemClock.uptimeMillis()
@@ -2689,8 +2698,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         idlePhysicsAccumulatorMs = 0L
         idlePhysicsLastTickUptimeMs = 0L
         idlePhysicsSyncedBatteryLevel = Int.MIN_VALUE
-        idlePhysicsSyncedLogicalWidth = -1
-        idlePhysicsSyncedLogicalHeight = -1
+        idlePhysicsSyncedSimulationWidth = -1
+        idlePhysicsSyncedSimulationHeight = -1
         if (::pixelFrameView.isInitialized) {
             pixelFrameView.submitIdleMask(null)
             pixelFrameView.setIdleContinuousRendering(false)
@@ -2743,32 +2752,32 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             return
         }
         val batteryLevel = idleBatteryLevelSnapshot
-        val logicalWidth = idleLogicalWidthSnapshot.coerceAtLeast(1)
-        val logicalHeight = idleLogicalHeightSnapshot.coerceAtLeast(1)
+        val simulationWidth = idleSimulationWidthSnapshot.coerceAtLeast(1)
+        val simulationHeight = idleSimulationHeightSnapshot.coerceAtLeast(1)
         if (idlePhysicsSyncedBatteryLevel != batteryLevel ||
-            idlePhysicsSyncedLogicalWidth != logicalWidth ||
-            idlePhysicsSyncedLogicalHeight != logicalHeight
+            idlePhysicsSyncedSimulationWidth != simulationWidth ||
+            idlePhysicsSyncedSimulationHeight != simulationHeight
         ) {
             idlePhysicsState = RenderPerfLogger.measure("idle.physics.syncToBattery") {
                 idleFluidEngine.syncToBattery(
                     state = idlePhysicsState,
                     batteryLevel = batteryLevel,
-                    logicalWidth = logicalWidth,
-                    logicalHeight = logicalHeight,
+                    simulationWidth = simulationWidth,
+                    simulationHeight = simulationHeight,
                     gravityX = idleGravityX,
                     gravityY = idleGravityY,
                     nowUptimeMs = nowUptimeMs,
                 )
             }
             idlePhysicsSyncedBatteryLevel = batteryLevel
-            idlePhysicsSyncedLogicalWidth = logicalWidth
-            idlePhysicsSyncedLogicalHeight = logicalHeight
+            idlePhysicsSyncedSimulationWidth = simulationWidth
+            idlePhysicsSyncedSimulationHeight = simulationHeight
         }
         idlePhysicsState = RenderPerfLogger.measure("idle.physics.step") {
             idleFluidEngine.step(
                 state = idlePhysicsState,
-                logicalWidth = logicalWidth,
-                logicalHeight = logicalHeight,
+                simulationWidth = simulationWidth,
+                simulationHeight = simulationHeight,
                 gravityX = idleGravityX,
                 gravityY = idleGravityY,
                 deltaSeconds = idleFixedStepSeconds,
@@ -2809,14 +2818,15 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun syncIdleFluidWithBattery() {
+        val simulationProfile = currentIdleSimulationProfile()
         idleBatteryLevelSnapshot = state.batteryLevel
-        idleLogicalWidthSnapshot = screenProfile.logicalWidth
-        idleLogicalHeightSnapshot = screenProfile.logicalHeight
+        idleSimulationWidthSnapshot = simulationProfile.width
+        idleSimulationHeightSnapshot = simulationProfile.height
         if (idlePhysicsRunning && ::idlePhysicsHandler.isInitialized) {
             idlePhysicsHandler.post {
                 idlePhysicsSyncedBatteryLevel = Int.MIN_VALUE
-                idlePhysicsSyncedLogicalWidth = -1
-                idlePhysicsSyncedLogicalHeight = -1
+                idlePhysicsSyncedSimulationWidth = -1
+                idlePhysicsSyncedSimulationHeight = -1
             }
             return
         }
@@ -2824,14 +2834,21 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             idleFluidState = idleFluidEngine.syncToBattery(
                 state = state.idleFluidState,
                 batteryLevel = state.batteryLevel,
-                logicalWidth = screenProfile.logicalWidth,
-                logicalHeight = screenProfile.logicalHeight,
+                simulationWidth = simulationProfile.width,
+                simulationHeight = simulationProfile.height,
                 gravityX = motionSnapshot.gravityX,
                 gravityY = motionSnapshot.gravityY,
                 nowUptimeMs = SystemClock.uptimeMillis(),
             ),
         )
         idlePhysicsState = state.idleFluidState
+    }
+
+    private fun currentIdleSimulationProfile(): IdleSimulationProfile {
+        return IdleSimulationProfile.fromLogicalSize(
+            logicalWidth = screenProfile.logicalWidth,
+            logicalHeight = screenProfile.logicalHeight,
+        )
     }
 
     @Suppress("DEPRECATION")
@@ -2859,7 +2876,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val idleFixedStepMs: Long = 16L
         const val idleFixedStepSeconds: Float = idleFixedStepMs / 1000f
         const val idleTickerDelayMs: Long = 16L
-        const val idleMaxCatchUpSteps: Int = 4
+        const val idleMaxCatchUpSteps: Int = 2
         const val idleMaxAccumulationMs: Long = idleFixedStepMs * idleMaxCatchUpSteps
         const val homeDataPermissionRequestCode = 1001
         const val rainRefreshIntervalMs: Long = 30 * 60 * 1000L
