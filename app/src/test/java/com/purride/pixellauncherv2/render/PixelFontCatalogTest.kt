@@ -47,5 +47,7 @@ class PixelFontCatalogTest {
         assertTrue(PixelFontId.DOTTED_SONGTI_CIRCLE !in settingsOptions)
         assertTrue(PixelFontId.DOTTED_SONGTI_DIAMOND !in settingsOptions)
         assertTrue(PixelFontId.WEN_QUAN_YI_BITMAP_SONG_16PX in settingsOptions)
+        assertTrue(PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_CN !in settingsOptions)
+        assertTrue(PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_CN in settingsOptions)
     }
 }

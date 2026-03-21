@@ -125,7 +125,19 @@ class FontSettingsRepository(
     private fun readStoredFontId(): PixelFontId {
         val storedValue = sharedPreferences.getString(KEY_FONT_ID, null) ?: return PixelFontCatalog.defaultFontId
         val storedFontId = PixelFontId.entries.firstOrNull { it.name == storedValue } ?: return PixelFontCatalog.defaultFontId
-        return if (storedFontId == LEGACY_DEFAULT_FONT_ID) PixelFontCatalog.defaultFontId else storedFontId
+        return when (storedFontId) {
+            LEGACY_DEFAULT_FONT_ID -> PixelFontCatalog.defaultFontId
+            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_CN,
+            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_HK,
+            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_TW,
+            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_TR,
+            PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_HK,
+            PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_TW,
+            PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_TR,
+            -> PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_CN
+
+            else -> storedFontId
+        }
     }
 
     private fun readStoredPixelShape(): PixelShape? {

@@ -182,14 +182,7 @@ object PixelFontCatalog {
     fun settingsFontOptions(): List<PixelFontId> {
         return listOf(
             PixelFontId.WEN_QUAN_YI_BITMAP_SONG_16PX,
-            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_CN,
-            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_HK,
-            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_TW,
-            PixelFontId.ARK_PIXEL_16PX_MONOSPACED_ZH_TR,
             PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_CN,
-            PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_HK,
-            PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_TW,
-            PixelFontId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_TR,
             PixelFontId.GNU_UNIFONT_17_0_03,
             PixelFontId.SYSTEM_RASTERIZED,
         )

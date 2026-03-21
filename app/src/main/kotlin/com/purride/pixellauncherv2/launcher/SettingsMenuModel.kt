@@ -15,7 +15,6 @@ enum class SettingsMenuItem {
     THEME,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
-    CHARGE_IDLE,
     DRAWER_AUTO_SEARCH,
     ADVANCED,
 }
@@ -35,8 +34,6 @@ object SettingsMenuModel {
         PixelShape.DIAMOND,
     )
     val themeOptions: List<PixelTheme> = PixelTheme.entries
-    val resolutionOptions: List<Int> = ScreenProfileFactory.supportedDotSizePxOptions
-
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
         return listOf(
             SettingsMenuRow(
@@ -65,24 +62,9 @@ object SettingsMenuModel {
                 value = drawerListAlignmentLabel(state.drawerListAlignment),
             ),
             SettingsMenuRow(
-                item = SettingsMenuItem.IDLE_PAGE,
-                title = "SHOW IDLE",
-                value = onOffLabel(state.isIdlePageEnabled),
-            ),
-            SettingsMenuRow(
-                item = SettingsMenuItem.CHARGE_IDLE,
-                title = "CHARGE IDLE",
-                value = chargeIdleEffectLabel(state.chargeIdleEffect),
-            ),
-            SettingsMenuRow(
                 item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
                 title = "DRAWER SEARCH",
                 value = onOffLabel(state.openDrawerInSearchMode),
-            ),
-            SettingsMenuRow(
-                item = SettingsMenuItem.ADVANCED,
-                title = "ADVANCED",
-                value = "OPEN",
             ),
         )
     }
@@ -104,7 +86,8 @@ object SettingsMenuModel {
         return styleOptions[nextIndex]
     }
 
-    fun nextResolution(current: Int, direction: Int): Int {
+    fun nextResolution(current: Int, direction: Int, screenProfile: ScreenProfile? = null): Int {
+        val resolutionOptions = ScreenProfileFactory.squareResolutionOptions(screenProfile)
         val currentIndex = resolutionOptions.indexOf(current).takeIf { it >= 0 } ?: 0
         val nextIndex = wrapIndex(currentIndex + direction, resolutionOptions.size)
         return resolutionOptions[nextIndex]
