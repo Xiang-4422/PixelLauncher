@@ -57,6 +57,7 @@ class IdleFluidEngine(
         val width = simulationWidth.coerceAtLeast(1)
         val height = simulationHeight.coerceAtLeast(1)
         val targetLitCount = targetLitCount(batteryLevel, width, height)
+        val targetVisibleCellCount = targetVisibleCellCount(batteryLevel, width, height)
         val simulation = ensureSimulation(width, height)
         val world = simulation.world
         val simulationWidth = simulation.width
@@ -97,6 +98,7 @@ class IdleFluidEngine(
                 coverageField = coverageField,
                 previousMask = state.litMask,
                 previousCoverageField = state.coverageField,
+                targetVisibleCellCount = targetVisibleCellCount,
             )
         }
 
@@ -154,6 +156,7 @@ class IdleFluidEngine(
         val simulationHeight = simulation.height
         val gravityDirection = resolveGravityDirection(gravityX, gravityY)
         val targetLitCount = state.targetLitCount.coerceAtLeast(0)
+        val targetVisibleCellCount = (targetLitCount / 2).coerceIn(0, width * height)
 
         if (world.getParticleCount() != targetLitCount) {
             reconcileParticleCount(
@@ -198,6 +201,7 @@ class IdleFluidEngine(
                 coverageField = coverageField,
                 previousMask = state.litMask,
                 previousCoverageField = state.coverageField,
+                targetVisibleCellCount = targetVisibleCellCount,
             )
         }
         val disturbanceExpired = nowUptimeMs >= state.disturbanceUntilUptimeMs
@@ -227,6 +231,18 @@ class IdleFluidEngine(
         return ((totalCells * level) / 100).coerceIn(0, totalCells)
     }
 
+    fun targetVisibleCellCount(
+        batteryLevel: Int,
+        simulationWidth: Int,
+        simulationHeight: Int,
+    ): Int {
+        val width = simulationWidth.coerceAtLeast(1)
+        val height = simulationHeight.coerceAtLeast(1)
+        val totalCells = width * height
+        val level = batteryLevel.coerceIn(0, 100)
+        return ((totalCells * level) / 200).coerceIn(0, totalCells)
+    }
+
     internal fun resolveGravityScaleForHeight(logicalHeight: Int): Float {
         return resolveGravityScale(logicalHeight.coerceAtLeast(1))
     }
@@ -239,11 +255,13 @@ class IdleFluidEngine(
         coverageField: FloatArray,
         previousMask: BooleanArray,
         previousCoverageField: FloatArray,
+        targetVisibleCellCount: Int,
     ): BooleanArray {
         return buildLitMask(
             coverageField = coverageField,
             previousMask = previousMask,
             previousCoverageField = previousCoverageField,
+            targetVisibleCellCount = targetVisibleCellCount,
         )
     }
 
@@ -604,6 +622,7 @@ class IdleFluidEngine(
         coverageField: FloatArray,
         previousMask: BooleanArray,
         previousCoverageField: FloatArray,
+        targetVisibleCellCount: Int,
     ): BooleanArray {
         ensureMaskBufferCapacity(coverageField.size)
         useMaskBufferA = !useMaskBufferA
@@ -618,15 +637,31 @@ class IdleFluidEngine(
         } else {
             FloatArray(coverageField.size)
         }
-        coverageField.forEachIndexed { index, coverage ->
-            val delta = coverage - stablePreviousCoverage[index]
-            mask[index] = when {
-                coverage >= tuning.onThreshold -> true
-                coverage <= tuning.offThreshold -> false
-                delta >= tuning.trendDeltaThreshold -> true
-                delta <= -tuning.trendDeltaThreshold -> false
-                else -> stablePreviousMask[index]
+        val targetCount = targetVisibleCellCount.coerceIn(0, coverageField.size)
+        if (targetCount <= 0) {
+            mask.fill(false)
+            return mask
+        }
+        if (targetCount >= coverageField.size) {
+            mask.fill(true)
+            return mask
+        }
+        val retentionBias = tuning.trendDeltaThreshold * 4f
+        val order = Array(coverageField.size) { index -> index }
+        order.sortWith { left, right ->
+            val leftScore = coverageField[left] + if (stablePreviousMask[left]) retentionBias else 0f
+            val rightScore = coverageField[right] + if (stablePreviousMask[right]) retentionBias else 0f
+            when {
+                leftScore > rightScore -> -1
+                leftScore < rightScore -> 1
+                stablePreviousCoverage[left] > stablePreviousCoverage[right] -> -1
+                stablePreviousCoverage[left] < stablePreviousCoverage[right] -> 1
+                else -> left.compareTo(right)
             }
+        }
+        mask.fill(false)
+        for (index in 0 until targetCount) {
+            mask[order[index]] = true
         }
         return mask
     }

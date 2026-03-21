@@ -19,6 +19,16 @@ class IdleFluidEngineTest {
     }
 
     @Test
+    fun targetVisibleCellCountCapsAtHalfScreenWhenFullyCharged() {
+        val width = 10
+        val height = 10
+
+        assertEquals(0, engine.targetVisibleCellCount(0, width, height))
+        assertEquals(25, engine.targetVisibleCellCount(50, width, height))
+        assertEquals(50, engine.targetVisibleCellCount(100, width, height))
+    }
+
+    @Test
     fun syncToBatteryProducesApproximateVisibleCoverage() {
         val state = engine.syncToBattery(
             state = IdleFluidState(),
@@ -32,7 +42,7 @@ class IdleFluidEngineTest {
 
         assertEquals(200, state.coverageField.size)
         val litCount = state.litMask.count { it }
-        assertTrue(litCount in 60..180)
+        assertEquals(50, litCount)
     }
 
     @Test
@@ -75,8 +85,7 @@ class IdleFluidEngineTest {
                 nowUptimeMs = 1_016L + (frame * 16L),
             )
             val litCount = state.litMask.count { it }
-            assertTrue(litCount > 0)
-            assertTrue(litCount < (32 * 32))
+            assertEquals(engine.targetVisibleCellCount(50, 32, 32), litCount)
         }
     }
 
@@ -153,7 +162,7 @@ class IdleFluidEngineTest {
     }
 
     @Test
-    fun dynamicDampingIsDecoupledFromGravityAndOnlyTracksDisturbance() {
+    fun dynamicDampingRespondsToDisturbanceAndAllowsSmallGravityContribution() {
         val noGravityNoDisturbance = engine.dynamicDampingForTesting(
             gravityMagnitude = 0f,
             disturbanceMagnitude = 0f,
@@ -167,23 +176,21 @@ class IdleFluidEngineTest {
             disturbanceMagnitude = 1.8f,
         )
 
-        assertEquals(noGravityNoDisturbance, earthGravityNoDisturbance, 1e-4f)
+        assertTrue(earthGravityNoDisturbance >= noGravityNoDisturbance)
         assertTrue(noGravityHighDisturbance > noGravityNoDisturbance)
     }
 
     @Test
-    fun weakHysteresisUsesCoverageTrendToFlipWithoutLongTail() {
+    fun buildLitMaskKeepsTargetVisibleCellCountStable() {
         val nextMask = engine.buildLitMaskForTesting(
             coverageField = floatArrayOf(0.28f, 0.28f, 0.28f, 0.31f, 0.25f),
             previousMask = booleanArrayOf(false, true, true, false, true),
             previousCoverageField = floatArrayOf(0.26f, 0.30f, 0.27f, 0.29f, 0.27f),
+            targetVisibleCellCount = 2,
         )
 
-        assertTrue(nextMask[0])
-        assertTrue(!nextMask[1])
-        assertTrue(nextMask[2])
-        assertTrue(nextMask[3])
-        assertTrue(!nextMask[4])
+        assertEquals(2, nextMask.count { it })
+        assertTrue(nextMask[1] || nextMask[2] || nextMask[3])
     }
 
     @Test

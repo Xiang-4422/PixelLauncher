@@ -5,6 +5,7 @@ import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.render.PixelFontId
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import java.text.Collator
 import java.util.Locale
 
@@ -467,11 +468,13 @@ object LauncherStateTransitions {
         drawerListAlignment: DrawerListAlignment = state.drawerListAlignment,
         isIdlePageEnabled: Boolean = state.isIdlePageEnabled,
         openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
+        chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
     ): LauncherState {
         return state.copy(
             drawerListAlignment = drawerListAlignment,
             isIdlePageEnabled = isIdlePageEnabled,
             openDrawerInSearchMode = openDrawerInSearchMode,
+            chargeIdleEffect = chargeIdleEffect,
         )
     }
 

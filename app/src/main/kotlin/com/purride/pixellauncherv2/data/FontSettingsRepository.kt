@@ -7,6 +7,7 @@ import com.purride.pixellauncherv2.render.PixelFontId
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 
 class FontSettingsRepository(
     context: Context,
@@ -25,6 +26,7 @@ class FontSettingsRepository(
         val drawerListAlignment: DrawerListAlignment,
         val isIdlePageEnabled: Boolean,
         val openDrawerInSearchMode: Boolean,
+        val chargeIdleEffect: ChargeIdleEffect,
     )
 
     fun getAppearanceSettings(): AppearanceSettings {
@@ -91,6 +93,7 @@ class FontSettingsRepository(
             drawerListAlignment = readStoredDrawerListAlignment(),
             isIdlePageEnabled = sharedPreferences.getBoolean(KEY_IDLE_PAGE_ENABLED, true),
             openDrawerInSearchMode = sharedPreferences.getBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, false),
+            chargeIdleEffect = readStoredChargeIdleEffect(),
         )
     }
 
@@ -109,11 +112,13 @@ class FontSettingsRepository(
         drawerListAlignment: DrawerListAlignment,
         isIdlePageEnabled: Boolean,
         openDrawerInSearchMode: Boolean,
+        chargeIdleEffect: ChargeIdleEffect,
     ) {
         sharedPreferences.edit()
             .putString(KEY_DRAWER_LIST_ALIGNMENT, drawerListAlignment.name)
             .putBoolean(KEY_IDLE_PAGE_ENABLED, isIdlePageEnabled)
             .putBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, openDrawerInSearchMode)
+            .putString(KEY_CHARGE_IDLE_EFFECT, chargeIdleEffect.name)
             .apply()
     }
 
@@ -147,6 +152,11 @@ class FontSettingsRepository(
         return DrawerListAlignment.entries.firstOrNull { it.name == storedValue } ?: DrawerListAlignment.LEFT
     }
 
+    private fun readStoredChargeIdleEffect(): ChargeIdleEffect {
+        val storedValue = sharedPreferences.getString(KEY_CHARGE_IDLE_EFFECT, null)
+        return ChargeIdleEffect.entries.firstOrNull { it.name == storedValue } ?: ChargeIdleEffect.FLUID
+    }
+
     private companion object {
         const val PREFERENCES_NAME = "pixel_launcher_prefs"
         const val KEY_FONT_ID = "selected_font_id"
@@ -156,6 +166,7 @@ class FontSettingsRepository(
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"
         const val KEY_IDLE_PAGE_ENABLED = "idle_page_enabled"
         const val KEY_OPEN_DRAWER_IN_SEARCH_MODE = "open_drawer_in_search_mode"
+        const val KEY_CHARGE_IDLE_EFFECT = "charge_idle_effect"
         val LEGACY_DEFAULT_FONT_ID: PixelFontId = PixelFontId.WEN_QUAN_YI_BITMAP_SONG_16PX
     }
 }

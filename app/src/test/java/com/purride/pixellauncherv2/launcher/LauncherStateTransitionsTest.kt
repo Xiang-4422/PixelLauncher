@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -334,11 +335,13 @@ class LauncherStateTransitionsTest {
             drawerListAlignment = DrawerListAlignment.RIGHT,
             isIdlePageEnabled = false,
             openDrawerInSearchMode = true,
+            chargeIdleEffect = ChargeIdleEffect.DOT_MATRIX,
         )
 
         assertEquals(DrawerListAlignment.RIGHT, updatedState.drawerListAlignment)
         assertEquals(false, updatedState.isIdlePageEnabled)
         assertEquals(true, updatedState.openDrawerInSearchMode)
+        assertEquals(ChargeIdleEffect.DOT_MATRIX, updatedState.chargeIdleEffect)
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -68,6 +69,7 @@ class SettingsMenuModelTest {
                 selectedTheme = PixelTheme.AMBER_CRT,
                 drawerListAlignment = DrawerListAlignment.RIGHT,
                 isIdlePageEnabled = false,
+                chargeIdleEffect = ChargeIdleEffect.TANK,
                 openDrawerInSearchMode = true,
             ),
             null,
@@ -76,9 +78,10 @@ class SettingsMenuModelTest {
         assertTrue(SettingsMenuItem.THEME in rowItems)
         assertTrue(SettingsMenuItem.APP_LIST_ALIGNMENT in rowItems)
         assertTrue(SettingsMenuItem.IDLE_PAGE in rowItems)
+        assertTrue(SettingsMenuItem.CHARGE_IDLE in rowItems)
         assertTrue(SettingsMenuItem.DRAWER_AUTO_SEARCH in rowItems)
         assertTrue(SettingsMenuItem.ADVANCED in rowItems)
-        assertEquals(8, rowItems.size)
+        assertEquals(9, rowItems.size)
     }
 
     @Test
@@ -87,6 +90,7 @@ class SettingsMenuModelTest {
             LauncherState(
                 drawerListAlignment = DrawerListAlignment.CENTER,
                 isIdlePageEnabled = false,
+                chargeIdleEffect = ChargeIdleEffect.CASCADE,
                 openDrawerInSearchMode = true,
             ),
             null,
@@ -99,6 +103,10 @@ class SettingsMenuModelTest {
         assertEquals(
             "OFF",
             rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value,
+        )
+        assertEquals(
+            "CASCADE",
+            rows.first { it.item == SettingsMenuItem.CHARGE_IDLE }.value,
         )
         assertEquals(
             "ON",
@@ -118,5 +126,12 @@ class SettingsMenuModelTest {
         val label = SettingsMenuModel.themeLabel(PixelTheme.MONO_LCD)
 
         assertEquals("MONO", label)
+    }
+
+    @Test
+    fun nextChargeIdleEffectWrapsAcrossAllOptions() {
+        val next = SettingsMenuModel.nextChargeIdleEffect(ChargeIdleEffect.CASCADE, 1)
+
+        assertEquals(ChargeIdleEffect.FLUID, next)
     }
 }

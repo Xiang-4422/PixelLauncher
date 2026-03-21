@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -71,6 +72,54 @@ class PixelRendererIdleStaticTest {
             }
         }
         assertTrue(litPixels > 1)
+    }
+
+    @Test
+    fun renderIdleStaticUsesHollowCenterTimeGlyphs() {
+        val state = LauncherState(
+            mode = LauncherMode.IDLE,
+            currentTimeText = "8",
+        )
+
+        val staticBuffer = renderer.renderIdleStatic(
+            state = state,
+            screenProfile = screenProfile,
+        )
+
+        val expectedTextWidth = PixelFontEngine(BlockGlyphProvider()).measureText("8", GlyphStyle.APP_LABEL_16)
+        val startX = ((screenProfile.logicalWidth - expectedTextWidth) / 2).coerceAtLeast(0)
+        val timeY = ((screenProfile.logicalHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
+        val centerX = startX + (expectedTextWidth / 2)
+        val centerY = timeY + (GlyphStyle.APP_LABEL_16.cellHeight / 2)
+
+        assertEquals(PixelBuffer.OFF, staticBuffer.getPixel(centerX, centerY))
+    }
+
+    @Test
+    fun carveIdleTimeCutoutClearsDynamicMaskAtTimeCenter() {
+        val frame = IdleMaskFrame(
+            sequence = 1L,
+            width = 40,
+            height = 40,
+            mask = ByteArray(40 * 40) { 0x7F.toByte() },
+        )
+
+        val carved = renderer.carveIdleTimeCutout(
+            frame = frame,
+            currentTimeText = "8",
+            screenProfile = screenProfile,
+        )
+
+        val textWidth = PixelFontEngine(BlockGlyphProvider()).measureText("8", GlyphStyle.APP_LABEL_16)
+        val startX = ((screenProfile.logicalWidth - textWidth) / 2).coerceAtLeast(0)
+        val timeY = ((screenProfile.logicalHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
+        val centerX = startX + (textWidth / 2)
+        val centerY = timeY + (GlyphStyle.APP_LABEL_16.cellHeight / 2)
+
+        assertEquals(
+            0x00.toByte(),
+            carved.mask[(centerY * carved.width) + centerX],
+        )
     }
 
     private fun litPixelCount(buffer: PixelBuffer): Int {

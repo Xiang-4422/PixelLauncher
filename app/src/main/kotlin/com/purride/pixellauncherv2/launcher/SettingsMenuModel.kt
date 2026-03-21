@@ -6,6 +6,7 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 
 enum class SettingsMenuItem {
     FONT,
@@ -14,6 +15,7 @@ enum class SettingsMenuItem {
     THEME,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
+    CHARGE_IDLE,
     DRAWER_AUTO_SEARCH,
     ADVANCED,
 }
@@ -66,6 +68,11 @@ object SettingsMenuModel {
                 item = SettingsMenuItem.IDLE_PAGE,
                 title = "SHOW IDLE",
                 value = onOffLabel(state.isIdlePageEnabled),
+            ),
+            SettingsMenuRow(
+                item = SettingsMenuItem.CHARGE_IDLE,
+                title = "CHARGE IDLE",
+                value = chargeIdleEffectLabel(state.chargeIdleEffect),
             ),
             SettingsMenuRow(
                 item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
@@ -132,11 +139,28 @@ object SettingsMenuModel {
         return DrawerListAlignment.entries[nextIndex]
     }
 
+    fun nextChargeIdleEffect(current: ChargeIdleEffect, direction: Int): ChargeIdleEffect {
+        val currentIndex = ChargeIdleEffect.entries.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, ChargeIdleEffect.entries.size)
+        return ChargeIdleEffect.entries[nextIndex]
+    }
+
     fun drawerListAlignmentLabel(alignment: DrawerListAlignment): String {
         return when (alignment) {
             DrawerListAlignment.LEFT -> "LEFT"
             DrawerListAlignment.CENTER -> "CENTER"
             DrawerListAlignment.RIGHT -> "RIGHT"
+        }
+    }
+
+    fun chargeIdleEffectLabel(effect: ChargeIdleEffect): String {
+        return when (effect) {
+            ChargeIdleEffect.FLUID -> "FLUID"
+            ChargeIdleEffect.HORIZON -> "HORIZON"
+            ChargeIdleEffect.STACK -> "STACK"
+            ChargeIdleEffect.DOT_MATRIX -> "DOT MATRIX"
+            ChargeIdleEffect.TANK -> "TANK"
+            ChargeIdleEffect.CASCADE -> "CASCADE"
         }
     }
 

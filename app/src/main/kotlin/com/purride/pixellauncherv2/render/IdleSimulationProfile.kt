@@ -13,7 +13,7 @@ data class IdleSimulationProfile(
     val height: Int,
 ) {
     companion object {
-        const val defaultMaxLongestSide = 64
+        const val defaultMaxLongestSide = 96
 
         fun fromLogicalSize(
             logicalWidth: Int,

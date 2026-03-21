@@ -6,6 +6,7 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.IdleFluidState
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 
 data class LauncherState(
     val apps: List<AppEntry> = emptyList(),
@@ -32,6 +33,7 @@ data class LauncherState(
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     val isIdlePageEnabled: Boolean = true,
     val openDrawerInSearchMode: Boolean = false,
+    val chargeIdleEffect: ChargeIdleEffect = ChargeIdleEffect.FLUID,
     val batteryLevel: Int = 100,
     val isCharging: Boolean = false,
     val recentApps: List<String> = emptyList(),

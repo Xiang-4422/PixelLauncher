@@ -26,6 +26,49 @@ class PixelRenderer(
 ) {
 
     /**
+     * 在 Idle 动态遮罩上挖掉中央时间区域，避免充电/流体效果覆盖时间主体。
+     */
+    fun carveIdleTimeCutout(
+        frame: IdleMaskFrame,
+        currentTimeText: String,
+        screenProfile: ScreenProfile,
+    ): IdleMaskFrame {
+        val displayTime = currentTimeText.ifBlank { "--:--" }
+        if (frame.width <= 0 || frame.height <= 0 || frame.mask.isEmpty()) {
+            return frame
+        }
+        val logicalBuffer = PixelBuffer(
+            width = screenProfile.logicalWidth.coerceAtLeast(1),
+            height = screenProfile.logicalHeight.coerceAtLeast(1),
+        )
+        val timeY = ((screenProfile.logicalHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
+        drawCenteredText(
+            buffer = logicalBuffer,
+            text = displayTime,
+            y = timeY,
+            style = GlyphStyle.APP_LABEL_16,
+        )
+
+        val carvedMask = frame.mask.copyOf()
+        for (y in 0 until logicalBuffer.height) {
+            val maskY = ((y.toFloat() / logicalBuffer.height.toFloat()) * frame.height)
+                .toInt()
+                .coerceIn(0, frame.height - 1)
+            for (x in 0 until logicalBuffer.width) {
+                if (logicalBuffer.getPixel(x, y) == PixelBuffer.OFF) {
+                    continue
+                }
+                val maskX = ((x.toFloat() / logicalBuffer.width.toFloat()) * frame.width)
+                    .toInt()
+                    .coerceIn(0, frame.width - 1)
+                carvedMask[(maskY * frame.width) + maskX] = 0x00
+            }
+        }
+
+        return frame.copy(mask = carvedMask)
+    }
+
+    /**
      * 把当前启动器状态渲染成一帧像素缓冲。
      *
      * 这是 Activity 使用的唯一主入口，会把 boot、分页快照、页面内容和启动遮罩统一合成为一帧。
@@ -518,8 +561,9 @@ class PixelRenderer(
         val leftPadding = LauncherHeaderLayout.horizontalPadding
         val availableWidth = (screenProfile.logicalWidth - (leftPadding * 2)).coerceAtLeast(1)
         val textMaxWidth = (availableWidth - drawerCursorGapFromText - drawerCursorWidth).coerceAtLeast(1)
+        val displayQuery = query.uppercase()
         val trimmed = pixelFontEngine.trimToWidth(
-            text = query,
+            text = displayQuery,
             style = style,
             maxWidth = textMaxWidth,
         )
@@ -799,7 +843,7 @@ class PixelRenderer(
 
     private fun drawIdleStatic(buffer: PixelBuffer, state: LauncherState, screenProfile: ScreenProfile) {
         val timeY = ((screenProfile.logicalHeight - GlyphStyle.APP_LABEL_16.cellHeight) / 2).coerceAtLeast(0)
-        drawCenteredText(
+        drawCenteredHollowText(
             buffer = buffer,
             text = state.currentTimeText.ifBlank { "--:--" },
             y = timeY,
@@ -1032,6 +1076,24 @@ class PixelRenderer(
         )
     }
 
+    /**
+     * Idle 中央时间使用中空字，保留轮廓让充电遮罩从内部穿过，避免时间被整块盖住。
+     */
+    private fun drawCenteredHollowText(buffer: PixelBuffer, text: String, y: Int, style: GlyphStyle) {
+        val trimmed = pixelFontEngine.trimToWidth(text, style, buffer.width - 2)
+        val textWidth = pixelFontEngine.measureText(trimmed, style)
+        val startX = ((buffer.width - textWidth) / 2).coerceAtLeast(0)
+        drawTextAsHollowValue(
+            buffer = buffer,
+            text = trimmed,
+            startX = startX,
+            startY = y,
+            maxWidth = buffer.width,
+            style = style,
+            value = PixelBuffer.ON,
+        )
+    }
+
     private fun drawCenteredTextInBounds(
         buffer: PixelBuffer,
         text: String,
@@ -1118,6 +1180,57 @@ class PixelRenderer(
                     buffer.setPixel(startX + x, targetY, value)
                 }
             }
+        }
+    }
+
+    private fun drawTextAsHollowValue(
+        buffer: PixelBuffer,
+        text: String,
+        startX: Int,
+        startY: Int,
+        maxWidth: Int,
+        style: GlyphStyle,
+        value: Byte,
+    ) {
+        if (text.isEmpty() || maxWidth <= 0) {
+            return
+        }
+        val temp = PixelBuffer(
+            width = maxWidth.coerceAtLeast(1),
+            height = style.cellHeight,
+        )
+        pixelFontEngine.drawText(
+            buffer = temp,
+            text = text,
+            startX = 0,
+            startY = 0,
+            maxWidth = temp.width,
+            style = style,
+        )
+        for (y in 0 until temp.height) {
+            for (x in 0 until temp.width) {
+                if (temp.getPixel(x, y) != PixelBuffer.ON) {
+                    continue
+                }
+                if (!isOutlinePixel(temp, x, y)) {
+                    continue
+                }
+                buffer.setPixel(startX + x, startY + y, value)
+            }
+        }
+    }
+
+    private fun isOutlinePixel(buffer: PixelBuffer, x: Int, y: Int): Boolean {
+        val neighbors = arrayOf(
+            x - 1 to y,
+            x + 1 to y,
+            x to y - 1,
+            x to y + 1,
+        )
+        return neighbors.any { (neighborX, neighborY) ->
+            neighborX !in 0 until buffer.width ||
+                neighborY !in 0 until buffer.height ||
+                buffer.getPixel(neighborX, neighborY) == PixelBuffer.OFF
         }
     }
 
