@@ -456,6 +456,19 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     else -> false
                 }
             }
+            setOnEditorActionListener { _, _, event ->
+                if (state.mode != LauncherMode.APP_DRAWER || state.drawerQuery.isBlank()) {
+                    return@setOnEditorActionListener false
+                }
+                val isEnterAction = event == null ||
+                    event.action == KeyEvent.ACTION_DOWN &&
+                    (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)
+                if (!isEnterAction) {
+                    return@setOnEditorActionListener false
+                }
+                launchAppAtIndex(0)
+                true
+            }
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
 
@@ -748,7 +761,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     LauncherMode.HOME -> showAppDrawer()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
-                        launchSelectedApp()
+                        if (state.drawerQuery.isNotBlank()) {
+                            launchAppAtIndex(0)
+                        } else {
+                            launchSelectedApp()
+                        }
                     }
                     LauncherMode.IDLE -> Unit
                 }

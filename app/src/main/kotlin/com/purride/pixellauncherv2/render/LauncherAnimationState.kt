@@ -36,7 +36,8 @@ data class LauncherAnimationState(
 
     companion object {
         const val frameDelayMs: Long = 60L
-        val launchShutterDurationMs: Long = frameDelayMs * LaunchShutterAnimation.totalFrames
+        val launchShutterDurationMs: Long =
+            frameDelayMs * (LaunchShutterAnimation.totalFrames + LaunchShutterAnimation.holdFrames)
     }
 }
 
@@ -98,14 +99,15 @@ data class LaunchShutterAnimation(
     val frameIndex: Int = 0,
 ) {
     val isComplete: Boolean
-        get() = frameIndex >= totalFrames - 1
+        get() = frameIndex >= totalFrames + holdFrames - 1
 
     val closeProgress: Float
-        get() = ((frameIndex + 1).toFloat() / totalFrames.toFloat()).coerceIn(0f, 1f)
+        get() = ((minOf(frameIndex + 1, totalFrames)).toFloat() / totalFrames.toFloat()).coerceIn(0f, 1f)
 
     fun nextFrame(): LaunchShutterAnimation = copy(frameIndex = frameIndex + 1)
 
     companion object {
         const val totalFrames: Int = 3
+        const val holdFrames: Int = 1
     }
 }

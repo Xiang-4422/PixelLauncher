@@ -5,10 +5,8 @@ import com.purride.pixellauncherv2.render.ScreenProfile
 object SettingsMenuLayout {
 
     private const val panelX = 0
-    private const val panelTopOffset = 1
     private const val panelBottomPadding = 4
     private const val rowHeight = 14
-    private const val firstRowInsetY = 3
     private const val rowTextInsetX = 2
     private const val rowValueInsetRight = 2
     private const val rowTextYOffset = 1
@@ -16,12 +14,12 @@ object SettingsMenuLayout {
 
     fun metrics(screenProfile: ScreenProfile): SettingsMenuLayoutMetrics {
         val width = screenProfile.logicalWidth.coerceAtLeast(24)
-        val panelTop = LauncherHeaderLayout.contentTop + panelTopOffset
+        val panelTop = LauncherHeaderLayout.firstContentItemTop
         val panelBottom = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(panelTop + 24)
         val rowTextX = panelX + rowTextInsetX
         val rowValueRightX = (panelX + width - rowValueInsetRight).coerceAtLeast(rowTextX)
         val textList = TextListSupport.createLayoutMetrics(
-            top = panelTop + firstRowInsetY,
+            top = panelTop,
             bottomExclusive = panelBottom,
             rowHeight = rowHeight,
         )

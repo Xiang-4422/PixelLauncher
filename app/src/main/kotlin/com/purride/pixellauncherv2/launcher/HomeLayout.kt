@@ -12,7 +12,7 @@ object HomeLayout {
     private const val splitRatioPercent = 52
 
     fun metrics(screenProfile: ScreenProfile): HomeLayoutMetrics {
-        val contentTop = LauncherHeaderLayout.contentTop + 1
+        val contentTop = LauncherHeaderLayout.firstContentItemTop
         val minimumContentHeight = minFixedHeight + sectionGap + minStackHeight
         val contentBottom = (screenProfile.logicalHeight - bottomPadding)
             .coerceAtLeast(contentTop + minimumContentHeight - 1)
@@ -52,7 +52,7 @@ object HomeLayout {
     }
 
     private fun fixedTopY(contentTop: Int): Int {
-        return contentTop + 2
+        return contentTop
     }
 }
 
