@@ -18,7 +18,7 @@ object DrawerContentTapResolver {
         state: LauncherState,
         tappedAppIndex: Int?,
     ): DrawerContentTapDecision {
-        val resultsVisible = !state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()
+        val resultsVisible = true
         if (resultsVisible && tappedAppIndex != null) {
             return DrawerContentTapDecision(
                 action = DrawerContentTapAction.LAUNCH_SELECTED,

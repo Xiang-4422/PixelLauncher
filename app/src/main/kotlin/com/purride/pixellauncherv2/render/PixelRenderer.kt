@@ -395,8 +395,7 @@ class PixelRenderer(
         drawerListScrollOffsetPx: Int,
     ) {
         val drawerApps = resolveDrawerApps(state)
-        val showPagedSearchResults = state.isDrawerSearchFocused && state.drawerQuery.isNotBlank()
-        val shouldShowApps = showPagedSearchResults || !state.isDrawerSearchFocused
+        val shouldShowApps = true
         val layoutMetrics = AppListLayout.metrics(screenProfile)
         val alphaIndexModel = DrawerAlphaIndexModel.create(
             apps = drawerApps,

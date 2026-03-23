@@ -1965,9 +1965,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (state.mode != LauncherMode.APP_DRAWER) {
             return false
         }
-        if (state.isDrawerSearchFocused && state.drawerQuery.isBlank()) {
-            return false
-        }
         return TextListSupport.hasScrollableContent(
             rowCount = currentDrawerApps().size,
             viewport = AppListLayout.metrics(screenProfile).textList.viewport,

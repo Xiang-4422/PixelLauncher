@@ -299,7 +299,7 @@ object LauncherStateTransitions {
      */
     fun updateDrawerQuery(state: LauncherState, query: String, visibleRows: Int): LauncherState {
         val safeQuery = query.take(maxDrawerQueryLength)
-        val orderedApps = orderDefaultApps(state.apps, state.recentApps)
+        val orderedApps = orderBlankQueryApps(state.apps, state.recentApps)
         val drawerApps = filterDrawerApps(
             orderedApps = orderedApps,
             query = safeQuery,
@@ -355,8 +355,14 @@ object LauncherStateTransitions {
      */
     fun exitDrawerSearch(state: LauncherState, visibleRows: Int): LauncherState {
         val preservedApp = currentDrawerApps(state).getOrNull(state.selectedIndex)
-        val clearedState = clearDrawerQuery(
-            state = state,
+        val defaultDrawerApps = orderDefaultApps(state.apps, state.recentApps)
+        val clearedState = syncDrawerWindow(
+            state = state.copy(
+                drawerQuery = "",
+                drawerVisibleApps = defaultDrawerApps,
+                selectedIndex = 0,
+                listStartIndex = 0,
+            ),
             visibleRows = visibleRows,
         ).copy(
             isDrawerSearchFocused = false,
@@ -610,6 +616,31 @@ object LauncherStateTransitions {
             return emptyList()
         }
         return state.apps
+    }
+
+    private fun orderBlankQueryApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {
+        if (apps.isEmpty()) {
+            return apps
+        }
+        val metadataByIdentity = buildMetadataMap(apps)
+        val recentRankByPackage = recentApps
+            .take(maxRecentBoostAppCount)
+            .withIndex()
+            .associate { indexed -> indexed.value to indexed.index }
+
+        return apps.sortedWith(
+            compareBy<AppEntry> { recentRankByPackage[it.packageName] ?: Int.MAX_VALUE }
+                .thenComparator { left, right ->
+                    val leftMeta = metadataByIdentity.getValue(appIdentity(left))
+                    val rightMeta = metadataByIdentity.getValue(appIdentity(right))
+                    val sortCompare = labelCollator.compare(leftMeta.sortKey, rightMeta.sortKey)
+                    if (sortCompare != 0) {
+                        sortCompare
+                    } else {
+                        labelCollator.compare(left.label, right.label)
+                    }
+                },
+        )
     }
 
     /**
