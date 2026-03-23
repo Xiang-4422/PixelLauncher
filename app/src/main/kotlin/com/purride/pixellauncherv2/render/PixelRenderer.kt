@@ -467,6 +467,7 @@ class PixelRenderer(
             drawDrawerSearchHeader(
                 buffer = buffer,
                 screenProfile = screenProfile,
+                alignment = state.drawerListAlignment,
                 query = state.drawerQuery,
                 tick = tick,
             )
@@ -506,14 +507,11 @@ class PixelRenderer(
         val rightWidth = pixelFontEngine.measureText(rightText, style)
         val rightX = (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - rightWidth)
             .coerceAtLeast(leftPadding)
-        val leftWidth = pixelFontEngine.measureText(trimmedTime, style)
-        val middleLeft = (leftPadding + leftWidth + LauncherHeaderLayout.titleGap).coerceAtLeast(leftPadding)
-        val middleRightExclusive = (rightX - LauncherHeaderLayout.titleGap).coerceAtLeast(middleLeft)
-        val middleWidth = (middleRightExclusive - middleLeft).coerceAtLeast(0)
+        val availableWidth = (screenProfile.logicalWidth - (leftPadding * 2)).coerceAtLeast(0)
         val searchText = pixelFontEngine.trimToWidth(
             text = "SEARCH",
             style = style,
-            maxWidth = middleWidth,
+            maxWidth = availableWidth,
         )
         if (trimmedTime.isNotEmpty()) {
             drawTextAsValue(
@@ -528,13 +526,13 @@ class PixelRenderer(
         }
         if (searchText.isNotEmpty()) {
             val searchWidth = pixelFontEngine.measureText(searchText, style)
-            val searchX = middleLeft + ((middleWidth - searchWidth) / 2).coerceAtLeast(0)
+            val searchX = leftPadding + ((availableWidth - searchWidth) / 2).coerceAtLeast(0)
             drawTextAsValue(
                 buffer = buffer,
                 text = searchText,
                 startX = searchX,
                 startY = headerY,
-                maxWidth = middleWidth,
+                maxWidth = availableWidth,
                 style = style,
                 value = PixelBuffer.ACCENT,
             )
@@ -553,6 +551,7 @@ class PixelRenderer(
     private fun drawDrawerSearchHeader(
         buffer: PixelBuffer,
         screenProfile: ScreenProfile,
+        alignment: DrawerListAlignment,
         query: String,
         tick: Int,
     ) {
@@ -568,9 +567,13 @@ class PixelRenderer(
         )
         val cursorVisible = ((tick / drawerCursorBlinkFrames) % 2) == 0
         val textWidth = pixelFontEngine.measureText(trimmed, style)
-        val cursorBlockWidth = if (cursorVisible) drawerCursorGapFromText + drawerCursorWidth else 0
-        val contentWidth = (textWidth + cursorBlockWidth).coerceAtLeast(if (cursorVisible) drawerCursorWidth else 0)
-        val startX = leftPadding + ((availableWidth - contentWidth) / 2).coerceAtLeast(0)
+        val trailingCursorSpace = drawerCursorGapFromText + drawerCursorWidth
+        val horizontalOffset = when (alignment) {
+            DrawerListAlignment.LEFT -> 0
+            DrawerListAlignment.CENTER -> ((availableWidth - textWidth) / 2).coerceAtLeast(0)
+            DrawerListAlignment.RIGHT -> (availableWidth - textWidth - trailingCursorSpace).coerceAtLeast(0)
+        }
+        val startX = leftPadding + horizontalOffset
         val startY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
         if (trimmed.isNotEmpty()) {
             drawTextAsValue(
