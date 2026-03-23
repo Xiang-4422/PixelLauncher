@@ -78,6 +78,8 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
         pagerSnapshot: HorizontalPageSnapshot? = null,
+        smsPageSnapshot: HorizontalPageSnapshot? = null,
+        smsBodyScrollOffsetPx: Int = 0,
         drawerListScrollOffsetPx: Int = 0,
         settingsListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
@@ -94,12 +96,21 @@ class PixelRenderer(
                 return@measure bootBuffer
             }
 
-            val pageBuffer = if (pagerSnapshot == null) {
+            val pageBuffer = if (smsPageSnapshot != null && state.mode == LauncherMode.SMS_INBOX) {
+                renderSmsPageSnapshot(
+                    state = state,
+                    screenProfile = screenProfile,
+                    animationState = animationState,
+                    smsPageSnapshot = smsPageSnapshot,
+                    smsBodyScrollOffsetPx = smsBodyScrollOffsetPx,
+                )
+            } else if (pagerSnapshot == null) {
                 renderSingleMode(
                     state = state,
                     screenProfile = screenProfile,
                     animationState = animationState,
                     mode = state.mode,
+                    smsBodyScrollOffsetPx = smsBodyScrollOffsetPx,
                     drawerListScrollOffsetPx = drawerListScrollOffsetPx,
                     settingsListScrollOffsetPx = settingsListScrollOffsetPx,
                 )
@@ -109,6 +120,7 @@ class PixelRenderer(
                     screenProfile = screenProfile,
                     animationState = animationState,
                     pagerSnapshot = pagerSnapshot,
+                    smsBodyScrollOffsetPx = smsBodyScrollOffsetPx,
                     drawerListScrollOffsetPx = drawerListScrollOffsetPx,
                     settingsListScrollOffsetPx = settingsListScrollOffsetPx,
                 )
@@ -116,6 +128,47 @@ class PixelRenderer(
             applyLaunchShutterOverlay(pageBuffer, animationState.launchShutter)
             pageBuffer
         }
+    }
+
+    /** 在短信全文页左右切换时，同时渲染当前短信页与相邻短信页并合成横向滑动效果。 */
+    private fun renderSmsPageSnapshot(
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+        smsPageSnapshot: HorizontalPageSnapshot,
+        smsBodyScrollOffsetPx: Int,
+    ): PixelBuffer {
+        val anchorIndex = smsPageSnapshot.anchorPageIndex.coerceIn(0, (state.unreadSmsEntries.size - 1).coerceAtLeast(0))
+        val anchorPage = renderSingleMode(
+            state = state.copy(smsSelectedIndex = anchorIndex),
+            screenProfile = screenProfile,
+            animationState = animationState,
+            mode = LauncherMode.SMS_INBOX,
+            smsBodyScrollOffsetPx = smsBodyScrollOffsetPx,
+        )
+
+        val dragOffset = smsPageSnapshot.dragOffsetPx
+        if (kotlin.math.abs(dragOffset) < pagerCompositionThresholdPx) {
+            return anchorPage
+        }
+        val adjacentIndex = when {
+            dragOffset < 0f -> (anchorIndex + 1).takeIf { it < state.unreadSmsEntries.size }
+            dragOffset > 0f -> (anchorIndex - 1).takeIf { it >= 0 }
+            else -> null
+        } ?: return anchorPage
+        val adjacentPage = renderSingleMode(
+            state = state.copy(smsSelectedIndex = adjacentIndex),
+            screenProfile = screenProfile,
+            animationState = animationState,
+            mode = LauncherMode.SMS_INBOX,
+            smsBodyScrollOffsetPx = 0,
+        )
+        return HorizontalPageRenderer.compose(
+            currentPage = anchorPage,
+            adjacentPage = adjacentPage,
+            dragOffsetPx = dragOffset,
+            contentStartY = LauncherHeaderLayout.contentTop,
+        )
     }
 
     /**
@@ -150,6 +203,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
         pagerSnapshot: HorizontalPageSnapshot,
+        smsBodyScrollOffsetPx: Int,
         drawerListScrollOffsetPx: Int,
         settingsListScrollOffsetPx: Int,
     ): PixelBuffer {
@@ -159,6 +213,7 @@ class PixelRenderer(
             screenProfile = screenProfile,
             animationState = animationState,
             mode = anchorMode,
+            smsBodyScrollOffsetPx = smsBodyScrollOffsetPx,
             drawerListScrollOffsetPx = drawerListScrollOffsetPx,
             settingsListScrollOffsetPx = settingsListScrollOffsetPx,
         )
@@ -177,6 +232,7 @@ class PixelRenderer(
             screenProfile = screenProfile,
             animationState = animationState,
             mode = adjacentMode,
+            smsBodyScrollOffsetPx = smsBodyScrollOffsetPx,
             drawerListScrollOffsetPx = drawerListScrollOffsetPx,
             settingsListScrollOffsetPx = settingsListScrollOffsetPx,
         )
@@ -196,6 +252,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
         mode: LauncherMode,
+        smsBodyScrollOffsetPx: Int = 0,
         drawerListScrollOffsetPx: Int = 0,
         settingsListScrollOffsetPx: Int = 0,
     ): PixelBuffer {
@@ -211,7 +268,9 @@ class PixelRenderer(
         } else {
             0
         }
-        val modeSettingsScrollOffset = if (mode == LauncherMode.SETTINGS && state.mode == LauncherMode.SETTINGS) {
+        val modeSettingsScrollOffset = if ((mode == LauncherMode.SETTINGS || mode == LauncherMode.SMS_INBOX) &&
+            (state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_INBOX)
+        ) {
             settingsListScrollOffsetPx
         } else {
             0
@@ -231,6 +290,13 @@ class PixelRenderer(
                 screenProfile = screenProfile,
                 animationState = animationState,
                 settingsListScrollOffsetPx = modeSettingsScrollOffset,
+            )
+            LauncherMode.SMS_INBOX -> drawSmsInbox(
+                buffer = buffer,
+                state = modeState,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                smsListScrollOffsetPx = smsBodyScrollOffsetPx,
             )
             LauncherMode.DIAGNOSTICS -> drawDiagnostics(buffer, modeState, screenProfile, animationState)
             LauncherMode.IDLE -> drawIdle(buffer, modeState, screenProfile)
@@ -801,6 +867,149 @@ class PixelRenderer(
         }
     }
 
+    /** 绘制 Home 中短信入口打开的未读短信全文页。 */
+    private fun drawSmsInbox(
+        buffer: PixelBuffer,
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+        smsListScrollOffsetPx: Int,
+    ) {
+        val layout = SettingsMenuLayout.largeTextMetrics(screenProfile)
+        val entries = state.unreadSmsEntries
+        val entry = entries.getOrNull(state.smsSelectedIndex)
+        drawSmsInboxHeader(
+            buffer = buffer,
+            screenProfile = screenProfile,
+            state = state,
+            sender = entry?.address.orEmpty(),
+            currentIndex = (state.smsSelectedIndex + 1).coerceAtLeast(1),
+            totalCount = entries.size,
+            tick = animationState.headerChargeTick,
+        )
+        if (entries.isEmpty()) {
+            drawCenteredText(
+                buffer = buffer,
+                text = "NO UNREAD",
+                y = layout.firstRowY,
+                style = GlyphStyle.APP_LABEL_16,
+            )
+            return
+        }
+        val safeEntry = entry ?: return
+        val body = safeEntry.body
+            .replace("\r", "")
+            .ifBlank { "(EMPTY)" }
+            .uppercase()
+        val bodyTop = layout.firstRowY
+        val bodyBottomExclusive = screenProfile.logicalHeight - 2
+        val bodyLines = wrapTextToWidth(
+            text = body,
+            style = GlyphStyle.APP_LABEL_16,
+            maxWidth = layout.rowMaxTextWidth,
+        )
+        var lineY = bodyTop - smsListScrollOffsetPx
+        bodyLines.forEach { line ->
+            if (lineY + GlyphStyle.APP_LABEL_16.cellHeight > bodyBottomExclusive) {
+                return@forEach
+            }
+            drawTextAsValueClipped(
+                buffer = buffer,
+                text = line,
+                startX = layout.rowTextX,
+                startY = lineY,
+                maxWidth = layout.rowMaxTextWidth,
+                style = GlyphStyle.APP_LABEL_16,
+                value = PixelBuffer.ON,
+                clipTop = LauncherHeaderLayout.contentTop,
+                clipBottomExclusive = bodyBottomExclusive,
+            )
+            lineY += GlyphStyle.APP_LABEL_16.cellHeight + 2
+        }
+    }
+
+    /** 短信全文页头部：中间显示号码，右侧显示当前位置，视觉口径和抽屉状态栏一致。 */
+    private fun drawSmsInboxHeader(
+        buffer: PixelBuffer,
+        screenProfile: ScreenProfile,
+        state: LauncherState,
+        sender: String,
+        currentIndex: Int,
+        totalCount: Int,
+        tick: Int,
+    ) {
+        val style = GlyphStyle.UI_SMALL_10
+        val leftPadding = LauncherHeaderLayout.horizontalPadding
+        val headerY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
+        val displayTime = state.currentTimeText.ifBlank { "--:--" }
+        val rightText = "SMS:${currentIndex.coerceAtLeast(0)}/${totalCount.coerceAtLeast(0)}"
+        val trimmedTime = pixelFontEngine.trimToWidth(
+            text = displayTime,
+            style = style,
+            maxWidth = (screenProfile.logicalWidth / 3).coerceAtLeast(1),
+        )
+        val timeWidth = pixelFontEngine.measureText(trimmedTime, style)
+        val rightWidth = pixelFontEngine.measureText(rightText, style)
+        val rightX = (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - rightWidth)
+            .coerceAtLeast(leftPadding)
+        val availableWidth = (screenProfile.logicalWidth - (leftPadding * 2)).coerceAtLeast(0)
+        val displaySender = sanitizeSmsHeaderSender(sender)
+        val senderMaxWidth = (screenProfile.logicalWidth - (leftPadding * 2) - timeWidth - rightWidth - 4).coerceAtLeast(1)
+        val senderText = pixelFontEngine.trimToWidth(
+            text = displaySender,
+            style = style,
+            maxWidth = senderMaxWidth,
+        )
+        if (trimmedTime.isNotEmpty()) {
+            drawTextAsValue(
+                buffer = buffer,
+                text = trimmedTime,
+                startX = leftPadding,
+                startY = headerY,
+                maxWidth = (screenProfile.logicalWidth - leftPadding).coerceAtLeast(0),
+                style = style,
+                value = PixelBuffer.ON,
+            )
+        }
+        if (senderText.isNotEmpty()) {
+            val senderWidth = pixelFontEngine.measureText(senderText, style)
+            val senderX = ((screenProfile.logicalWidth - senderWidth) / 2).coerceAtLeast(leftPadding)
+            drawTextAsValue(
+                buffer = buffer,
+                text = senderText,
+                startX = senderX,
+                startY = headerY,
+                maxWidth = senderMaxWidth,
+                style = style,
+                value = PixelBuffer.ACCENT,
+            )
+        }
+        drawTextAsValue(
+            buffer = buffer,
+            text = rightText,
+            startX = rightX,
+            startY = headerY,
+            maxWidth = (screenProfile.logicalWidth - rightX - LauncherHeaderLayout.horizontalPadding).coerceAtLeast(0),
+            style = style,
+            value = PixelBuffer.ON,
+        )
+        drawHeaderBatteryDivider(
+            buffer = buffer,
+            screenProfile = screenProfile,
+            batteryLevel = state.batteryLevel,
+            isCharging = state.isCharging,
+            chargeTick = tick,
+        )
+    }
+
+    /** 短信页头部只显示号码相关字符，过滤中文联系人名和无关符号。 */
+    private fun sanitizeSmsHeaderSender(sender: String): String {
+        val filtered = sender.filter { ch ->
+            ch.isDigit() || ch == '+' || ch == '*' || ch == '#' || ch == '-' || ch == ' ' || ch == '(' || ch == ')'
+        }.trim()
+        return filtered.ifBlank { "UNKNOWN" }.uppercase()
+    }
+
     private fun drawDiagnosticsLine(
         buffer: PixelBuffer,
         layout: SettingsMenuLayoutMetrics,
@@ -1258,6 +1467,35 @@ class PixelRenderer(
                 ),
             )
         }
+    }
+
+    /** 按像素宽度把全文拆成多行，优先保留显式换行，其余按字符级换行。 */
+    private fun wrapTextToWidth(
+        text: String,
+        style: GlyphStyle,
+        maxWidth: Int,
+    ): List<String> {
+        val safeWidth = maxWidth.coerceAtLeast(style.narrowAdvanceWidth)
+        val normalized = text.replace('\t', ' ')
+        val lines = mutableListOf<String>()
+        normalized.split('\n').forEach { rawLine ->
+            if (rawLine.isEmpty()) {
+                lines += ""
+                return@forEach
+            }
+            var current = StringBuilder()
+            rawLine.forEach { ch ->
+                val candidate = current.toString() + ch
+                if (pixelFontEngine.measureText(candidate, style) <= safeWidth || current.isEmpty()) {
+                    current.append(ch)
+                } else {
+                    lines += current.toString()
+                    current = StringBuilder().append(ch)
+                }
+            }
+            lines += current.toString()
+        }
+        return lines
     }
 
     private fun drawMarqueeTextAsValue(

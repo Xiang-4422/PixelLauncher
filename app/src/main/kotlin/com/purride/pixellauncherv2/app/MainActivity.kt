@@ -2,14 +2,18 @@ package com.purride.pixellauncherv2.app
 
 import android.Manifest
 import android.app.ActivityManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
+import android.provider.AlarmClock
+import android.provider.CalendarContract
 import android.text.Editable
 import android.text.InputFilter
 import android.text.InputType
@@ -38,6 +42,7 @@ import com.purride.pixellauncherv2.data.NextAlarmRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
+import com.purride.pixellauncherv2.data.UnreadSmsRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
@@ -51,6 +56,8 @@ import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollController
 import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollThresholds
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
+import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -114,6 +121,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var nextAlarmRepository: NextAlarmRepository
     private lateinit var screenUsageRepository: ScreenUsageRepository
     private lateinit var communicationStatusRepository: CommunicationStatusRepository
+    private lateinit var unreadSmsRepository: UnreadSmsRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var deviceMotionRepository: DeviceMotionRepository
@@ -190,10 +198,20 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var settingsListScrollVelocityPxPerSecond: Float = 0f
     private var settingsListScrollAnimating = false
     private var settingsSettleTarget: DrawerSettleTarget? = null
+    private var smsBodyDragTracking = false
+    private var smsBodyDragConsumed = false
+    private var smsBodyDragStartX = 0
+    private var smsBodyDragStartY = 0
+    private var smsBodyDragLastY = 0
+    private var smsBodyScrollOffsetPx: Float = 0f
     private val horizontalPageController = HorizontalPageController()
     private var horizontalPageState: HorizontalPageState = horizontalPageController.create(
         pageCount = pagerPageCount,
         currentIndex = pagerHomeIndex,
+    )
+    private var smsPageState: HorizontalPageState = horizontalPageController.create(
+        pageCount = 1,
+        currentIndex = 0,
     )
     private var pagerDragTracking = false
     private var pagerDragConsumed = false
@@ -266,6 +284,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             )
             if (wasPagerSettling && !horizontalPageState.isSettling) {
                 applyPagerSettledMode(horizontalPageState.currentIndex)
+            }
+            val wasSmsSettling = smsPageState.isSettling
+            smsPageState = horizontalPageController.step(
+                state = smsPageState,
+                deltaMs = deltaMs,
+            )
+            if (wasSmsSettling && !smsPageState.isSettling && state.mode == LauncherMode.SMS_INBOX) {
+                state = LauncherStateTransitions.selectSmsIndex(
+                    state = state,
+                    index = smsPageState.currentIndex,
+                    visibleRows = smsInboxVisibleRows(),
+                )
             }
             renderCurrentFrame()
             if (shouldRunInteractionTicker()) {
@@ -355,6 +385,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         nextAlarmRepository = NextAlarmRepository(applicationContext)
         screenUsageRepository = ScreenUsageRepository(applicationContext)
         communicationStatusRepository = CommunicationStatusRepository(applicationContext)
+        unreadSmsRepository = UnreadSmsRepository(applicationContext)
         deviceLocationRepository = DeviceLocationRepository(applicationContext)
         rainForecastRepository = RainForecastRepository()
         deviceMotionRepository = DeviceMotionRepository(applicationContext)
@@ -534,6 +565,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             override fun handleOnBackPressed() {
                 when (state.mode) {
                     LauncherMode.SETTINGS -> closeSettingsMenu()
+                    LauncherMode.SMS_INBOX -> closeUnreadSmsInbox()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -686,6 +718,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         settleDrawerMotionBeforeExplicitAction()
                         moveSelection(-1)
                     }
+                    LauncherMode.SMS_INBOX -> {
+                        animateSmsPageBy(-1)
+                    }
                     LauncherMode.SETTINGS -> {
                         settleSettingsMotionBeforeExplicitAction()
                         moveSettingsSelection(-1)
@@ -702,6 +737,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
                         moveSelection(1)
+                    }
+                    LauncherMode.SMS_INBOX -> {
+                        animateSmsPageBy(1)
                     }
                     LauncherMode.SETTINGS -> {
                         settleSettingsMotionBeforeExplicitAction()
@@ -721,6 +759,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         changeSettingValue(-1)
                     }
                     LauncherMode.HOME -> Unit
+                    LauncherMode.SMS_INBOX -> animateSmsPageBy(-1)
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
                         pageDrawer(-1)
@@ -738,6 +777,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         changeSettingValue(1)
                     }
                     LauncherMode.HOME -> Unit
+                    LauncherMode.SMS_INBOX -> animateSmsPageBy(1)
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
                         pageDrawer(1)
@@ -756,6 +796,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     LauncherMode.SETTINGS -> {
                         settleSettingsMotionBeforeExplicitAction()
                         activateSelectedSetting()
+                    }
+                    LauncherMode.SMS_INBOX -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        launchSelectedUnreadSms()
                     }
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.HOME -> showAppDrawer()
@@ -872,12 +916,138 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 activateSelectedSetting()
             }
 
+            LauncherMode.SMS_INBOX -> {
+                if (y < LauncherHeaderLayout.contentTop) {
+                    return
+                }
+                launchSelectedUnreadSms()
+            }
+
             LauncherMode.HOME -> {
-                Unit
+                handleHomeTap(x, y)
             }
 
             LauncherMode.DIAGNOSTICS,
             LauncherMode.IDLE -> Unit
+        }
+    }
+
+    private fun handleHomeTap(x: Int, y: Int) {
+        val layout = HomeLayout.metrics(screenProfile)
+        if (x !in layout.innerLeft..layout.innerRight) {
+            return
+        }
+
+        if (y in layout.dateY until (layout.dateY + GlyphStyle.UI_SMALL_10.cellHeight)) {
+            launchFirstAvailableIntent(
+                Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_APP_CALENDAR)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+                Intent(Intent.ACTION_VIEW).apply {
+                    data = CalendarContract.CONTENT_URI
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+            return
+        }
+
+        val rowHeight = layout.fixedInfoRowHeight
+        val rowIndex = ((y - layout.fixedInfoStartY) / rowHeight).takeIf { y >= layout.fixedInfoStartY } ?: return
+        when (rowIndex) {
+            0 -> launchSystemIntent(
+                Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+
+            1 -> handleHomeDynamicInfoTap(x, y, layout)
+
+            2 -> launchFirstAvailableIntent(
+                Intent(Intent.ACTION_MAIN).apply {
+                    setClassName(
+                        "com.google.android.apps.wellbeing",
+                        "com.google.android.apps.wellbeing.settings.TopLevelSettingsActivity",
+                    )
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+                Intent(Settings.ACTION_APP_USAGE_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+        }
+    }
+
+    private fun handleHomeDynamicInfoTap(x: Int, y: Int, layout: HomeLayoutMetrics) {
+        if (y !in layout.fixedInfoStartY + layout.fixedInfoRowHeight until
+            (layout.fixedInfoStartY + layout.fixedInfoRowHeight + GlyphStyle.UI_SMALL_10.cellHeight)
+        ) {
+            return
+        }
+
+        val segments = buildList {
+            if (state.missedCallCount > 0) {
+                add("CALL ${state.missedCallCount}")
+            }
+            if (state.unreadSmsCount > 0) {
+                add("SMS ${state.unreadSmsCount}")
+            }
+            if (state.rainHintText.isNotBlank()) {
+                add("RAIN ${state.rainHintText}")
+            }
+        }
+        if (segments.isEmpty()) {
+            return
+        }
+
+        var currentX = layout.innerLeft
+        segments.forEachIndexed { index, segment ->
+            val width = pixelFontEngine.measureText(segment, GlyphStyle.UI_SMALL_10)
+            if (x in currentX until (currentX + width)) {
+                when {
+                    segment.startsWith("CALL ") -> launchSystemIntent(
+                        Intent(Intent.ACTION_DIAL).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        },
+                    )
+
+                    segment.startsWith("SMS ") -> openUnreadSmsInbox()
+                }
+                return
+            }
+            currentX += width
+            if (index < segments.lastIndex) {
+                currentX += pixelFontEngine.measureText("  ", GlyphStyle.UI_SMALL_10)
+            }
+        }
+    }
+
+    private fun launchSystemIntent(intent: Intent) {
+        val resolved = intent.resolveActivity(packageManager) ?: return
+        try {
+            startActivity(intent)
+            overridePendingTransition(0, 0)
+        } catch (_: SecurityException) {
+            return
+        } catch (_: ActivityNotFoundException) {
+            return
+        }
+    }
+
+    private fun launchFirstAvailableIntent(vararg intents: Intent) {
+        intents.forEach { candidate ->
+            if (candidate.resolveActivity(packageManager) == null) {
+                return@forEach
+            }
+            try {
+                startActivity(candidate)
+                overridePendingTransition(0, 0)
+                return
+            } catch (_: SecurityException) {
+                return@forEach
+            } catch (_: ActivityNotFoundException) {
+                return@forEach
+            }
         }
     }
 
@@ -894,6 +1064,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         resetPagerDragTracking()
         resetDrawerVerticalDragTracking()
         resetSettingsVerticalDragTracking()
+        resetSmsBodyDragTracking()
 
         if (state.mode == LauncherMode.APP_DRAWER) {
             val railHit = !state.isDrawerSearchFocused &&
@@ -944,7 +1115,15 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             stopSettingsVerticalListAnimation(resetOffset = false)
         }
 
-        if (canHandlePagerNavigation()) {
+        if (state.mode == LauncherMode.SMS_INBOX && isPointInSmsBodyArea(x, y) && smsBodyCanScroll()) {
+            smsBodyDragTracking = true
+            smsBodyDragConsumed = false
+            smsBodyDragStartX = x
+            smsBodyDragStartY = y
+            smsBodyDragLastY = y
+        }
+
+        if (canHandlePagerNavigation() || state.mode == LauncherMode.SMS_INBOX) {
             pagerDragTracking = true
             pagerDragConsumed = false
             pagerDragStartX = x
@@ -1102,7 +1281,32 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
         }
 
-        if (!pagerDragTracking || !canHandlePagerNavigation()) {
+        if (smsBodyDragTracking) {
+            val totalDx = x - smsBodyDragStartX
+            val totalDy = y - smsBodyDragStartY
+            if (!smsBodyDragConsumed) {
+                if (kotlin.math.abs(totalDy) >= drawerListDragStartThresholdPx &&
+                    kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) * drawerListDragAxisBias
+                ) {
+                    smsBodyDragConsumed = true
+                    resetPagerDragTracking()
+                }
+            }
+
+            if (smsBodyDragConsumed) {
+                recordInteraction()
+                val deltaY = y - smsBodyDragLastY
+                smsBodyDragLastY = y
+                if (deltaY != 0) {
+                    smsBodyScrollOffsetPx = (smsBodyScrollOffsetPx - deltaY.toFloat())
+                        .coerceIn(0f, smsBodyMaxScrollPx().toFloat())
+                    renderCurrentFrame()
+                }
+                return true
+            }
+        }
+
+        if (!pagerDragTracking || (!canHandlePagerNavigation() && state.mode != LauncherMode.SMS_INBOX)) {
             return false
         }
 
@@ -1121,17 +1325,28 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             if (kotlin.math.abs(totalDx) <= kotlin.math.abs(totalDy) * pagerDragAxisBias) {
                 return false
             }
-            val currentPageIndex = pagerIndexForMode(state.mode) ?: return false
+            val currentPageIndex = when (state.mode) {
+                LauncherMode.SMS_INBOX -> state.smsSelectedIndex
+                else -> pagerIndexForMode(state.mode)
+            } ?: return false
             if (state.mode == LauncherMode.APP_DRAWER) {
                 settleDrawerMotionBeforeExplicitAction()
             } else if (state.mode == LauncherMode.SETTINGS) {
                 settleSettingsMotionBeforeExplicitAction()
             }
-            horizontalPageState = horizontalPageController.syncToIndex(
-                state = horizontalPageState,
-                targetIndex = currentPageIndex,
-            )
-            horizontalPageState = horizontalPageController.startDrag(horizontalPageState)
+            if (state.mode == LauncherMode.SMS_INBOX) {
+                smsPageState = horizontalPageController.syncToIndex(
+                    state = smsPageState.copy(pageCount = state.unreadSmsEntries.size.coerceAtLeast(1)),
+                    targetIndex = currentPageIndex,
+                )
+                smsPageState = horizontalPageController.startDrag(smsPageState)
+            } else {
+                horizontalPageState = horizontalPageController.syncToIndex(
+                    state = horizontalPageState,
+                    targetIndex = currentPageIndex,
+                )
+                horizontalPageState = horizontalPageController.startDrag(horizontalPageState)
+            }
             pagerDragConsumed = true
         }
         if (!pagerDragConsumed) {
@@ -1139,11 +1354,19 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
 
         recordInteraction()
-        horizontalPageState = horizontalPageController.dragBy(
-            state = horizontalPageState,
-            deltaPx = deltaX.toFloat(),
-            pageWidth = screenProfile.logicalWidth,
-        )
+        if (state.mode == LauncherMode.SMS_INBOX) {
+            smsPageState = horizontalPageController.dragBy(
+                state = smsPageState,
+                deltaPx = deltaX.toFloat(),
+                pageWidth = screenProfile.logicalWidth,
+            )
+        } else {
+            horizontalPageState = horizontalPageController.dragBy(
+                state = horizontalPageState,
+                deltaPx = deltaX.toFloat(),
+                pageWidth = screenProfile.logicalWidth,
+            )
+        }
         val elapsedMs = (now - pagerDragLastUptimeMs).coerceAtLeast(1L)
         if (deltaX != 0) {
             pagerDragVelocityPxPerSecond = (deltaX.toFloat() * 1000f) / elapsedMs.toFloat()
@@ -1224,17 +1447,33 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
         }
 
+        if (smsBodyDragTracking) {
+            val consumed = smsBodyDragConsumed
+            resetSmsBodyDragTracking()
+            if (consumed) {
+                return true
+            }
+        }
+
         if (!pagerDragTracking) {
             return false
         }
         val consumed = pagerDragConsumed
         if (consumed) {
             recordInteraction()
-            horizontalPageState = horizontalPageController.endDrag(
-                state = horizontalPageState,
-                pageWidth = screenProfile.logicalWidth,
-                velocityPxPerSecond = if (cancelled) 0f else pagerDragVelocityPxPerSecond,
-            )
+            if (state.mode == LauncherMode.SMS_INBOX) {
+                smsPageState = horizontalPageController.endDrag(
+                    state = smsPageState,
+                    pageWidth = screenProfile.logicalWidth,
+                    velocityPxPerSecond = if (cancelled) 0f else pagerDragVelocityPxPerSecond,
+                )
+            } else {
+                horizontalPageState = horizontalPageController.endDrag(
+                    state = horizontalPageState,
+                    pageWidth = screenProfile.logicalWidth,
+                    velocityPxPerSecond = if (cancelled) 0f else pagerDragVelocityPxPerSecond,
+                )
+            }
             renderCurrentFrame()
             startAnimationTickerIfNeeded()
         }
@@ -1273,6 +1512,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (state.mode == LauncherMode.APP_DRAWER) {
             settleDrawerMotionBeforeExplicitAction()
         }
+        if (state.mode == LauncherMode.SMS_INBOX && animateSmsPageBy(1)) {
+            return
+        }
         if (animatePagerBy(deltaPages = -1)) {
             return
         }
@@ -1281,6 +1523,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
+            LauncherMode.SMS_INBOX,
             LauncherMode.IDLE -> Unit
         }
     }
@@ -1296,12 +1539,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (state.mode == LauncherMode.APP_DRAWER) {
             settleDrawerMotionBeforeExplicitAction()
         }
+        if (state.mode == LauncherMode.SMS_INBOX && animateSmsPageBy(-1)) {
+            return
+        }
         if (animatePagerBy(deltaPages = 1)) {
             return
         }
         when (state.mode) {
             LauncherMode.DIAGNOSTICS -> closeDiagnostics()
             LauncherMode.SETTINGS,
+            LauncherMode.SMS_INBOX,
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE -> Unit
@@ -1401,18 +1648,21 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         RenderPerfLogger.measure("main.render.full.${state.mode.name}.total") {
             syncPagerIndexToMode()
             val pagerSnapshot = activePagerSnapshot()
+            val smsPageSnapshot = activeSmsPageSnapshot()
             val pixelBuffer = RenderPerfLogger.measure("main.render.full.${state.mode.name}.compose") {
                 pixelRenderer.render(
                     state = state,
                     screenProfile = screenProfile,
                     animationState = animationState,
                     pagerSnapshot = pagerSnapshot,
+                    smsPageSnapshot = smsPageSnapshot,
+                    smsBodyScrollOffsetPx = smsBodyScrollOffsetPx.toInt(),
                     drawerListScrollOffsetPx = if (state.mode == LauncherMode.APP_DRAWER) {
                         drawerListScrollResidualOffsetPx.toInt()
                     } else {
                         0
                     },
-                    settingsListScrollOffsetPx = if (state.mode == LauncherMode.SETTINGS) {
+                    settingsListScrollOffsetPx = if (state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_INBOX) {
                         settingsListScrollResidualOffsetPx.toInt()
                     } else {
                         0
@@ -1516,12 +1766,20 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         return horizontalPageController.snapshot(horizontalPageState)
     }
 
+    private fun activeSmsPageSnapshot(): HorizontalPageSnapshot? {
+        if (state.mode != LauncherMode.SMS_INBOX || !horizontalPageController.isActive(smsPageState)) {
+            return null
+        }
+        return horizontalPageController.snapshot(smsPageState)
+    }
+
     private fun pagerIndexForMode(mode: LauncherMode): Int? {
         return when (mode) {
             LauncherMode.SETTINGS -> pagerSettingsIndex
             LauncherMode.HOME -> pagerHomeIndex
             LauncherMode.APP_DRAWER -> pagerAppsIndex
             LauncherMode.DIAGNOSTICS,
+            LauncherMode.SMS_INBOX,
             LauncherMode.IDLE -> null
         }
     }
@@ -1580,6 +1838,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             )
 
             LauncherMode.DIAGNOSTICS,
+            LauncherMode.SMS_INBOX,
             LauncherMode.IDLE -> state
         }
         updateDrawerInputFocus()
@@ -1849,6 +2108,99 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         updateDrawerInputFocus()
     }
 
+    private fun openUnreadSmsInbox() {
+        state = LauncherStateTransitions.updateUnreadSmsEntries(
+            state = state,
+            entries = unreadSmsRepository.readUnreadMessages(),
+            visibleRows = smsInboxVisibleRows(),
+        )
+        smsBodyScrollOffsetPx = 0f
+        smsPageState = horizontalPageController.create(
+            pageCount = state.unreadSmsEntries.size.coerceAtLeast(1),
+            currentIndex = state.smsSelectedIndex,
+        )
+        state = LauncherStateTransitions.showUnreadSmsInbox(
+            state = state,
+            visibleRows = smsInboxVisibleRows(),
+        )
+        smsPageState = horizontalPageController.syncToIndex(
+            state = smsPageState,
+            targetIndex = state.smsSelectedIndex,
+        )
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun closeUnreadSmsInbox() {
+        smsPageState = horizontalPageController.syncToIndex(
+            state = smsPageState,
+            targetIndex = state.smsSelectedIndex,
+        )
+        smsBodyScrollOffsetPx = 0f
+        state = LauncherStateTransitions.hideUnreadSmsInbox(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+        scheduleIdleCheck()
+    }
+
+    private fun moveSmsSelection(delta: Int) {
+        state = LauncherStateTransitions.moveSmsSelection(
+            state = state,
+            delta = delta,
+            visibleRows = smsInboxVisibleRows(),
+        )
+        smsBodyScrollOffsetPx = 0f
+        smsPageState = horizontalPageController.syncToIndex(
+            state = smsPageState.copy(pageCount = state.unreadSmsEntries.size.coerceAtLeast(1)),
+            targetIndex = state.smsSelectedIndex,
+        )
+        renderCurrentFrame()
+    }
+
+    private fun animateSmsPageBy(delta: Int): Boolean {
+        if (state.mode != LauncherMode.SMS_INBOX || delta == 0) {
+            return false
+        }
+        val pageCount = state.unreadSmsEntries.size
+        if (pageCount <= 1) {
+            return false
+        }
+        smsPageState = horizontalPageController.syncToIndex(
+            state = smsPageState.copy(pageCount = pageCount),
+            targetIndex = state.smsSelectedIndex,
+        )
+        val currentIndex = smsPageState.currentIndex
+        val targetIndex = (currentIndex + delta).coerceIn(0, pageCount - 1)
+        if (targetIndex == currentIndex) {
+            return false
+        }
+        smsBodyScrollOffsetPx = 0f
+        smsPageState = horizontalPageController.startDrag(smsPageState)
+        smsPageState = horizontalPageController.dragBy(
+            state = smsPageState,
+            deltaPx = if (targetIndex > currentIndex) -screenProfile.logicalWidth.toFloat() else screenProfile.logicalWidth.toFloat(),
+            pageWidth = screenProfile.logicalWidth,
+        )
+        smsPageState = horizontalPageController.endDrag(
+            state = smsPageState,
+            pageWidth = screenProfile.logicalWidth,
+            velocityPxPerSecond = 0f,
+        )
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+        return true
+    }
+
+    private fun launchSelectedUnreadSms() {
+        val entry = state.unreadSmsEntries.getOrNull(state.smsSelectedIndex) ?: return
+        launchSystemIntent(
+            Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("sms:${Uri.encode(entry.address)}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }
+
     private fun moveSettingsSelection(delta: Int) {
         state = LauncherStateTransitions.moveSettingsSelection(
             state = state,
@@ -1995,15 +2347,33 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun settingsListScrollThresholds(): DrawerVerticalScrollThresholds {
-        val rowHeight = SettingsMenuLayout.metrics(screenProfile).rowHeight.toFloat()
+        val rowHeight = if (state.mode == LauncherMode.SMS_INBOX) {
+            SettingsMenuLayout.largeTextMetrics(screenProfile).rowHeight.toFloat()
+        } else {
+            SettingsMenuLayout.metrics(screenProfile).rowHeight.toFloat()
+        }
         return DrawerVerticalScrollThresholds(
             upwardStepPx = rowHeight,
             downwardStepPx = rowHeight,
         )
     }
 
+    private fun smsInboxVisibleRows(): Int {
+        return SettingsMenuLayout.largeTextMetrics(screenProfile).visibleRows
+    }
+
     private fun settingsMaxStartIndex(): Int {
-        return (SettingsMenuModel.rows(state).size - settingsVisibleRows()).coerceAtLeast(0)
+        val rowCount = when (state.mode) {
+            LauncherMode.SETTINGS -> SettingsMenuModel.rows(state).size
+            LauncherMode.SMS_INBOX -> state.unreadSmsEntries.size
+            else -> SettingsMenuModel.rows(state).size
+        }
+        val visibleRows = when (state.mode) {
+            LauncherMode.SETTINGS -> settingsVisibleRows()
+            LauncherMode.SMS_INBOX -> smsInboxVisibleRows()
+            else -> settingsVisibleRows()
+        }
+        return (rowCount - visibleRows).coerceAtLeast(0)
     }
 
     private fun canScrollSettingsInDirection(direction: Int): Boolean {
@@ -2015,12 +2385,20 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun shouldShowSettingsScrollableList(): Boolean {
-        if (state.mode != LauncherMode.SETTINGS) {
+        if (state.mode != LauncherMode.SETTINGS && state.mode != LauncherMode.SMS_INBOX) {
             return false
         }
         return TextListSupport.hasScrollableContent(
-            rowCount = SettingsMenuModel.rows(state).size,
-            viewport = SettingsMenuLayout.metrics(screenProfile).textList.viewport,
+            rowCount = if (state.mode == LauncherMode.SETTINGS) {
+                SettingsMenuModel.rows(state).size
+            } else {
+                state.unreadSmsEntries.size
+            },
+            viewport = if (state.mode == LauncherMode.SMS_INBOX) {
+                SettingsMenuLayout.largeTextMetrics(screenProfile).textList.viewport
+            } else {
+                SettingsMenuLayout.metrics(screenProfile).textList.viewport
+            },
         )
     }
 
@@ -2028,16 +2406,28 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (x !in 0 until screenProfile.logicalWidth) {
             return false
         }
-        val metrics = SettingsMenuLayout.metrics(screenProfile)
+        val metrics = if (state.mode == LauncherMode.SMS_INBOX) {
+            SettingsMenuLayout.largeTextMetrics(screenProfile)
+        } else {
+            SettingsMenuLayout.metrics(screenProfile)
+        }
         return y in metrics.firstRowY until metrics.panelBottom
     }
 
     private fun isSettingsAtListStart(): Boolean {
-        return state.settingsListStartIndex <= 0
+        return if (state.mode == LauncherMode.SMS_INBOX) {
+            state.smsListStartIndex <= 0
+        } else {
+            state.settingsListStartIndex <= 0
+        }
     }
 
     private fun isSettingsAtListEnd(): Boolean {
-        return state.settingsListStartIndex >= settingsMaxStartIndex()
+        return if (state.mode == LauncherMode.SMS_INBOX) {
+            state.smsListStartIndex >= settingsMaxStartIndex()
+        } else {
+            state.settingsListStartIndex >= settingsMaxStartIndex()
+        }
     }
 
     private fun isOutwardSettingsBoundaryDelta(deltaY: Float): Boolean {
@@ -2078,13 +2468,30 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         var remaining = stepDelta
         while (remaining != 0) {
             val direction = if (remaining > 0) 1 else -1
-            val previousListStartIndex = state.settingsListStartIndex
-            state = LauncherStateTransitions.scrollSettingsWindow(
-                state = state,
-                delta = direction,
-                visibleRows = settingsVisibleRows(),
-            )
-            if (state.settingsListStartIndex == previousListStartIndex) {
+            val previousListStartIndex = if (state.mode == LauncherMode.SMS_INBOX) {
+                state.smsListStartIndex
+            } else {
+                state.settingsListStartIndex
+            }
+            state = if (state.mode == LauncherMode.SMS_INBOX) {
+                LauncherStateTransitions.scrollSmsWindow(
+                    state = state,
+                    delta = direction,
+                    visibleRows = smsInboxVisibleRows(),
+                )
+            } else {
+                LauncherStateTransitions.scrollSettingsWindow(
+                    state = state,
+                    delta = direction,
+                    visibleRows = settingsVisibleRows(),
+                )
+            }
+            val currentListStartIndex = if (state.mode == LauncherMode.SMS_INBOX) {
+                state.smsListStartIndex
+            } else {
+                state.settingsListStartIndex
+            }
+            if (currentListStartIndex == previousListStartIndex) {
                 settingsListScrollResidualOffsetPx = 0f
                 settingsListScrollVelocityPxPerSecond = 0f
                 settingsListScrollAnimating = false
@@ -2139,8 +2546,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private fun settleSettingsMotionBeforeExplicitAction() {
         val settledState = TextListSupport.settleBeforeExplicitAction(
             TextListRuntimeState(
-                selectedIndex = state.settingsSelectedIndex,
-                listStartIndex = state.settingsListStartIndex,
+                selectedIndex = if (state.mode == LauncherMode.SMS_INBOX) state.smsSelectedIndex else state.settingsSelectedIndex,
+                listStartIndex = if (state.mode == LauncherMode.SMS_INBOX) state.smsListStartIndex else state.settingsListStartIndex,
                 residualOffsetPx = settingsListScrollResidualOffsetPx,
                 velocityPxPerSecond = settingsListScrollVelocityPxPerSecond,
                 settleTarget = settingsSettleTarget,
@@ -2345,7 +2752,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private fun shouldRunInteractionTicker(): Boolean {
         return shouldAnimateDrawerListScroll() ||
             shouldAnimateSettingsListScroll() ||
-            horizontalPageState.isSettling
+            horizontalPageState.isSettling ||
+            smsPageState.isSettling
     }
 
     private fun shouldAnimateDrawerCursor(): Boolean {
@@ -2378,10 +2786,71 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
+            LauncherMode.SMS_INBOX,
             LauncherMode.DIAGNOSTICS -> true
 
             LauncherMode.IDLE -> false
         }
+    }
+
+    private fun isPointInSmsBodyArea(x: Int, y: Int): Boolean {
+        if (state.mode != LauncherMode.SMS_INBOX) {
+            return false
+        }
+        return x in 0 until screenProfile.logicalWidth &&
+            y in smsBodyTopY() until smsBodyBottomExclusiveY()
+    }
+
+    private fun smsBodyTopY(): Int {
+        return SettingsMenuLayout.largeTextMetrics(screenProfile).firstRowY + GlyphStyle.APP_LABEL_16.cellHeight + 2
+    }
+
+    private fun smsBodyBottomExclusiveY(): Int = screenProfile.logicalHeight - 2
+
+    private fun smsBodyLineHeight(): Int = GlyphStyle.APP_LABEL_16.cellHeight + 2
+
+    private fun smsBodyCanScroll(): Boolean = smsBodyMaxScrollPx() > 0
+
+    private fun smsBodyMaxScrollPx(): Int {
+        val entry = state.unreadSmsEntries.getOrNull(state.smsSelectedIndex) ?: return 0
+        val availableHeight = (smsBodyBottomExclusiveY() - smsBodyTopY()).coerceAtLeast(0)
+        val body = entry.body
+            .replace("\r", "")
+            .ifBlank { "(EMPTY)" }
+            .uppercase()
+        val lines = wrapSmsBodyLines(body)
+        val contentHeight = lines.size * smsBodyLineHeight()
+        return (contentHeight - availableHeight).coerceAtLeast(0)
+    }
+
+    private fun wrapSmsBodyLines(text: String): List<String> {
+        val maxWidth = SettingsMenuLayout.largeTextMetrics(screenProfile).rowMaxTextWidth
+        val safeWidth = maxWidth.coerceAtLeast(GlyphStyle.APP_LABEL_16.narrowAdvanceWidth)
+        val normalized = text.replace('\t', ' ')
+        val lines = mutableListOf<String>()
+        normalized.split('\n').forEach { rawLine ->
+            if (rawLine.isEmpty()) {
+                lines += ""
+                return@forEach
+            }
+            var current = StringBuilder()
+            rawLine.forEach { ch ->
+                val candidate = current.toString() + ch
+                if (pixelFontEngine.measureText(candidate, GlyphStyle.APP_LABEL_16) <= safeWidth || current.isEmpty()) {
+                    current.append(ch)
+                } else {
+                    lines += current.toString()
+                    current = StringBuilder().append(ch)
+                }
+            }
+            lines += current.toString()
+        }
+        return lines
+    }
+
+    private fun resetSmsBodyDragTracking() {
+        smsBodyDragTracking = false
+        smsBodyDragConsumed = false
     }
 
     private fun applyAppearance(

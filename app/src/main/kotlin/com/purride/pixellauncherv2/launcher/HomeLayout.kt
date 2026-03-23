@@ -10,6 +10,7 @@ object HomeLayout {
     private const val minFixedHeight = 40
     private const val minStackHeight = 22
     private const val splitRatioPercent = 52
+    private const val fixedInfoRowGap = 2
 
     fun metrics(screenProfile: ScreenProfile): HomeLayoutMetrics {
         val contentTop = LauncherHeaderLayout.firstContentItemTop
@@ -30,8 +31,8 @@ object HomeLayout {
         val innerLeft = left
         val innerRight = right
         val dateY = fixedTopY(contentTop)
-        val weekdayY = dateY + GlyphStyle.UI_SMALL_10.cellHeight + 1
-        val fixedInfoStartY = weekdayY + GlyphStyle.UI_SMALL_10.cellHeight + 2
+        val fixedInfoRowHeight = GlyphStyle.UI_SMALL_10.cellHeight + fixedInfoRowGap
+        val fixedInfoStartY = dateY + fixedInfoRowHeight
         val stackCardBodyY = (screenProfile.logicalHeight - GlyphStyle.UI_SMALL_10.cellHeight).coerceAtLeast(stackTop)
 
         return HomeLayoutMetrics(
@@ -44,9 +45,9 @@ object HomeLayout {
             innerLeft = innerLeft,
             innerRight = innerRight,
             dateY = dateY,
-            weekdayY = weekdayY,
+            weekdayY = dateY,
             fixedInfoStartY = fixedInfoStartY,
-            fixedInfoRowHeight = GlyphStyle.UI_SMALL_10.cellHeight,
+            fixedInfoRowHeight = fixedInfoRowHeight,
             stackCardBodyY = stackCardBodyY,
         )
     }

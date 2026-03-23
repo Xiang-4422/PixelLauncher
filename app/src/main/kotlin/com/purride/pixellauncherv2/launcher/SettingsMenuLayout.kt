@@ -1,18 +1,32 @@
 package com.purride.pixellauncherv2.launcher
 
+import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.ScreenProfile
 
 object SettingsMenuLayout {
 
     private const val panelX = 0
     private const val panelBottomPadding = 4
-    private const val rowHeight = 14
+    private const val rowGap = 2
+    private val rowHeight = GlyphStyle.UI_SMALL_10.cellHeight + rowGap
     private const val rowTextInsetX = 2
     private const val rowValueInsetRight = 2
-    private const val rowTextYOffset = 1
+    private const val rowTextYOffset = 0
     private const val rowMinGap = 3
+    private val largeRowHeight = (GlyphStyle.APP_LABEL_16.cellHeight * 2) + rowGap
 
     fun metrics(screenProfile: ScreenProfile): SettingsMenuLayoutMetrics {
+        return metrics(screenProfile, rowHeight)
+    }
+
+    fun largeTextMetrics(screenProfile: ScreenProfile): SettingsMenuLayoutMetrics {
+        return metrics(screenProfile, largeRowHeight)
+    }
+
+    private fun metrics(
+        screenProfile: ScreenProfile,
+        listRowHeight: Int,
+    ): SettingsMenuLayoutMetrics {
         val width = screenProfile.logicalWidth.coerceAtLeast(24)
         val panelTop = LauncherHeaderLayout.firstContentItemTop
         val panelBottom = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(panelTop + 24)
@@ -21,7 +35,7 @@ object SettingsMenuLayout {
         val textList = TextListSupport.createLayoutMetrics(
             top = panelTop,
             bottomExclusive = panelBottom,
-            rowHeight = rowHeight,
+            rowHeight = listRowHeight,
         )
 
         return SettingsMenuLayoutMetrics(
@@ -32,7 +46,7 @@ object SettingsMenuLayout {
             textList = textList,
             firstRowY = textList.viewport.top,
             rowAreaHeight = textList.viewport.height,
-            rowHeight = rowHeight,
+            rowHeight = listRowHeight,
             visibleRows = textList.viewport.visibleRows,
             rowTextX = rowTextX,
             rowValueRightX = rowValueRightX,

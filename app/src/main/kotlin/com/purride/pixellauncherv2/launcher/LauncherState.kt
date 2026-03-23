@@ -7,6 +7,7 @@ import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.IdleFluidState
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
+import com.purride.pixellauncherv2.data.UnreadSmsEntry
 
 data class LauncherState(
     val apps: List<AppEntry> = emptyList(),
@@ -26,6 +27,9 @@ data class LauncherState(
     val returnMode: LauncherMode = LauncherMode.HOME,
     val settingsSelectedIndex: Int = 0,
     val settingsListStartIndex: Int = 0,
+    val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
+    val smsSelectedIndex: Int = 0,
+    val smsListStartIndex: Int = 0,
     val selectedFontId: PixelFontId = PixelFontCatalog.defaultFontId,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
@@ -73,6 +77,7 @@ enum class LauncherMode {
     HOME,
     APP_DRAWER,
     SETTINGS,
+    SMS_INBOX,
     DIAGNOSTICS,
     IDLE,
 }

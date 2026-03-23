@@ -23,7 +23,8 @@ object LauncherStateTransitions {
         val returnMode = when (state.mode) {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
-            LauncherMode.IDLE -> state.mode
+            LauncherMode.IDLE,
+            LauncherMode.SMS_INBOX -> state.mode
 
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS -> state.returnMode
@@ -48,7 +49,8 @@ object LauncherStateTransitions {
         val fallbackMode = when (state.returnMode) {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
-            LauncherMode.IDLE -> state.returnMode
+            LauncherMode.IDLE,
+            LauncherMode.SMS_INBOX -> state.returnMode
 
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
@@ -90,6 +92,24 @@ object LauncherStateTransitions {
     /** 从 Idle 返回到进入前的页面模式。 */
     fun hideIdle(state: LauncherState): LauncherState {
         return state.copy(mode = state.returnMode)
+    }
+
+    /** 打开未读短信列表页，并把正文窗口同步到第一条。 */
+    fun showUnreadSmsInbox(state: LauncherState, visibleRows: Int): LauncherState {
+        return syncSmsWindow(
+            state = state.copy(
+                mode = LauncherMode.SMS_INBOX,
+                returnMode = LauncherMode.HOME,
+                smsSelectedIndex = 0,
+                smsListStartIndex = 0,
+            ),
+            visibleRows = visibleRows,
+        )
+    }
+
+    /** 关闭未读短信列表页，返回 Home。 */
+    fun hideUnreadSmsInbox(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.HOME)
     }
 
     /**
@@ -434,6 +454,68 @@ object LauncherStateTransitions {
         val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
         return syncSettingsWindow(
             state = state.copy(settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex)),
+            visibleRows = visibleRows,
+        )
+    }
+
+    /** 用最新未读短信列表更新短信页状态，并尽量保持当前选中有效。 */
+    fun updateUnreadSmsEntries(state: LauncherState, entries: List<com.purride.pixellauncherv2.data.UnreadSmsEntry>, visibleRows: Int): LauncherState {
+        val safeSelectedIndex = state.smsSelectedIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))
+        return syncSmsWindow(
+            state = state.copy(
+                unreadSmsEntries = entries,
+                smsSelectedIndex = safeSelectedIndex,
+            ),
+            visibleRows = visibleRows,
+        )
+    }
+
+    /** 选中短信页中的某一行。 */
+    fun selectSmsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
+        val maxIndex = (state.unreadSmsEntries.size - 1).coerceAtLeast(0)
+        return syncSmsWindow(
+            state = state.copy(smsSelectedIndex = index.coerceIn(0, maxIndex)),
+            visibleRows = visibleRows,
+        )
+    }
+
+    /** 按相对行数移动短信页内部焦点。 */
+    fun moveSmsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
+        return selectSmsIndex(
+            state = state,
+            index = state.smsSelectedIndex + delta,
+            visibleRows = visibleRows,
+        )
+    }
+
+    /** 滚动短信页可视窗口，并尽量保持当前焦点相对位置。 */
+    fun scrollSmsWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
+        val rows = state.unreadSmsEntries
+        if (rows.isEmpty() || delta == 0) {
+            return reflowSmsWindow(state, visibleRows)
+        }
+
+        val safeVisibleRows = visibleRows.coerceAtLeast(1)
+        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
+        val safeListStartIndex = state.smsListStartIndex.coerceIn(0, maxStartIndex)
+        val nextListStartIndex = (safeListStartIndex + delta).coerceIn(0, maxStartIndex)
+        val relativeFocusIndex = (state.smsSelectedIndex - safeListStartIndex)
+            .coerceIn(0, safeVisibleRows - 1)
+        val maxVisibleIndex = (nextListStartIndex + safeVisibleRows - 1).coerceAtMost(rows.lastIndex)
+        val nextSelectedIndex = (nextListStartIndex + relativeFocusIndex)
+            .coerceIn(nextListStartIndex, maxVisibleIndex)
+
+        return state.copy(
+            smsSelectedIndex = nextSelectedIndex,
+            smsListStartIndex = nextListStartIndex,
+        )
+    }
+
+    /** 在 viewport 或内容变化后，重新校正短信页的焦点和窗口。 */
+    fun reflowSmsWindow(state: LauncherState, visibleRows: Int): LauncherState {
+        val maxIndex = (state.unreadSmsEntries.size - 1).coerceAtLeast(0)
+        return syncSmsWindow(
+            state = state.copy(smsSelectedIndex = state.smsSelectedIndex.coerceIn(0, maxIndex)),
             visibleRows = visibleRows,
         )
     }
@@ -828,6 +910,33 @@ object LauncherStateTransitions {
         return state.copy(
             settingsSelectedIndex = safeSelectedIndex,
             settingsListStartIndex = nextListStartIndex,
+        )
+    }
+
+    private fun syncSmsWindow(state: LauncherState, visibleRows: Int): LauncherState {
+        val rows = state.unreadSmsEntries
+        if (rows.isEmpty()) {
+            return state.copy(
+                smsSelectedIndex = 0,
+                smsListStartIndex = 0,
+            )
+        }
+
+        val safeVisibleRows = visibleRows.coerceAtLeast(1)
+        val safeSelectedIndex = state.smsSelectedIndex.coerceIn(0, rows.lastIndex)
+        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
+        val safeListStartIndex = state.smsListStartIndex.coerceIn(0, maxStartIndex)
+        val nextListStartIndex = when {
+            safeSelectedIndex < safeListStartIndex -> safeSelectedIndex
+            safeSelectedIndex >= safeListStartIndex + safeVisibleRows -> {
+                (safeSelectedIndex - safeVisibleRows + 1).coerceIn(0, maxStartIndex)
+            }
+            else -> safeListStartIndex
+        }
+
+        return state.copy(
+            smsSelectedIndex = safeSelectedIndex,
+            smsListStartIndex = nextListStartIndex,
         )
     }
 
