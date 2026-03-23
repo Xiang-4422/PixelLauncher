@@ -43,7 +43,7 @@ object SettingsMenuModel {
             ),
             SettingsMenuRow(
                 item = SettingsMenuItem.RESOLUTION,
-                title = "RESOLUTION",
+                title = "PIXEL SIZE",
                 value = resolutionLabel(state.selectedDotSizePx, screenProfile),
             ),
             SettingsMenuRow(
@@ -154,9 +154,6 @@ object SettingsMenuModel {
     }
 
     fun resolutionLabel(dotSizePx: Int, screenProfile: ScreenProfile? = null): String {
-        if (screenProfile != null && screenProfile.dotSizePx == dotSizePx) {
-            return "${screenProfile.logicalWidth}X${screenProfile.logicalHeight}"
-        }
         return "${dotSizePx}PX"
     }
 

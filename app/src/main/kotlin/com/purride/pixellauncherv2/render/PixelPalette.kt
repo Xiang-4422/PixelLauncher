@@ -44,7 +44,7 @@ data class PixelPalette(
                 PixelTheme.MONO_LCD -> PixelPalette(
                     backgroundColor = Color.rgb(0, 0, 0),
                     pixelOnColor = Color.rgb(255, 255, 255),
-                    pixelOffColor = Color.rgb(0, 0, 0),
+                    pixelOffColor = Color.rgb(32, 32, 32),
                     accentColor = Color.rgb(255, 255, 255),
                 )
             }

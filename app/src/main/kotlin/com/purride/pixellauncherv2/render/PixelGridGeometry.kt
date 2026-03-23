@@ -16,6 +16,8 @@ data class PixelGridGeometry(
 
 object PixelGridGeometryResolver {
     private const val dotInsetRatio = 0.16f
+    private const val compactDotInsetPx = 0.5f
+    private const val compactCellSizeThresholdPx = 8f
 
     /**
      * 统一计算逻辑像素网格在真实 View/Surface 中的几何信息。
@@ -43,10 +45,13 @@ object PixelGridGeometryResolver {
         }
         val contentWidth = cellSize * profile.logicalWidth
         val contentHeight = cellSize * profile.logicalHeight
-        val originX = (viewWidth - contentWidth) / 2f
-        val originY = (viewHeight - contentHeight) / 2f
-        val dotInset = max(1f, floor(cellSize * dotInsetRatio))
-        val dotSize = max(1f, floor(cellSize - (dotInset * 2f)))
+        val originX = floor((viewWidth - contentWidth) / 2f)
+        val originY = floor((viewHeight - contentHeight) / 2f)
+        val dotInset = when {
+            cellSize <= compactCellSizeThresholdPx -> compactDotInsetPx
+            else -> max(1f, floor(cellSize * dotInsetRatio))
+        }
+        val dotSize = max(1f, cellSize - (dotInset * 2f))
         return PixelGridGeometry(
             cellSize = cellSize,
             originX = originX,

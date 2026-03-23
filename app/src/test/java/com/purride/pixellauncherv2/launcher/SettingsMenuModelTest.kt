@@ -10,7 +10,7 @@ import org.junit.Test
 class SettingsMenuModelTest {
 
     @Test
-    fun rowsShowCurrentLogicalResolutionForResolutionItem() {
+    fun rowsShowPixelSizeForResolutionItem() {
         val state = LauncherState(
             selectedDotSizePx = 15,
         )
@@ -23,7 +23,8 @@ class SettingsMenuModelTest {
         val resolutionRow = SettingsMenuModel.rows(state, screenProfile)
             .first { it.item == SettingsMenuItem.RESOLUTION }
 
-        assertEquals("72X160", resolutionRow.value)
+        assertEquals("PIXEL SIZE", resolutionRow.title)
+        assertEquals("15PX", resolutionRow.value)
     }
 
     @Test

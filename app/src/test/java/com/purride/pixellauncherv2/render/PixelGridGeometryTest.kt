@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.render
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelGridGeometryTest {
@@ -63,5 +64,25 @@ class PixelGridGeometryTest {
         )
 
         assertNull(logicalPoint)
+    }
+
+    @Test
+    fun resolveUsesCompactInsetForSmallCells() {
+        val profile = ScreenProfile(
+            logicalWidth = 10,
+            logicalHeight = 20,
+            dotSizePx = 8,
+        )
+
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = 80,
+            viewHeight = 160,
+            profile = profile,
+        )
+
+        assertNotNull(geometry)
+        assertEquals(8f, geometry?.cellSize ?: 0f, 1e-4f)
+        assertEquals(0.5f, geometry?.dotInset ?: 0f, 1e-4f)
+        assertEquals(7f, geometry?.dotSize ?: 0f, 1e-4f)
     }
 }

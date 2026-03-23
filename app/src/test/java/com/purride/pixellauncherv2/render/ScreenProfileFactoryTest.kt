@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.render
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ScreenProfileFactoryTest {
@@ -41,5 +42,20 @@ class ScreenProfileFactoryTest {
         assertEquals(90, profile.logicalWidth)
         assertEquals(200, profile.logicalHeight)
         assertEquals(12, profile.dotSizePx)
+    }
+
+    @Test
+    fun resolutionOptionsFilterOutTooSmallPixelSizesForCurrentScreen() {
+        val currentProfile = ScreenProfileFactory.create(
+            widthPx = 1080,
+            heightPx = 2400,
+            dotSizePx = 12,
+        )
+
+        val options = ScreenProfileFactory.resolutionOptions(currentProfile)
+
+        assertFalse(7 in options)
+        assertFalse(8 in options)
+        assertEquals(listOf(10, 12), options)
     }
 }
