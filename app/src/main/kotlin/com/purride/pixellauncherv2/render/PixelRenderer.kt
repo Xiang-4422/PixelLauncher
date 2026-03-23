@@ -355,14 +355,13 @@ class PixelRenderer(
             maxWidth = layoutMetrics.innerWidth,
         )
         if (dateLine.isNotEmpty()) {
-            drawTextAsValue(
+            pixelFontEngine.drawText(
                 buffer = buffer,
                 text = dateLine,
                 startX = layoutMetrics.innerLeft,
                 startY = layoutMetrics.dateY,
                 maxWidth = layoutMetrics.innerWidth,
                 style = GlyphStyle.UI_SMALL_10,
-                value = PixelBuffer.ACCENT,
             )
         }
 
