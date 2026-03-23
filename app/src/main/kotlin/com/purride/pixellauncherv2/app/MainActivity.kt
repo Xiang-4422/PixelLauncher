@@ -1543,9 +1543,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (!isPagerMode(state.mode)) {
             return false
         }
-        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused) {
-            return false
-        }
         if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
             return false
         }
