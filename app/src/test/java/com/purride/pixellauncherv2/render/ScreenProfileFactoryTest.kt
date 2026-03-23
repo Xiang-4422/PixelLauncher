@@ -10,7 +10,7 @@ class ScreenProfileFactoryTest {
         val profile = ScreenProfileFactory.create(widthPx = 1080, heightPx = 2400)
 
         assertEquals(90, profile.logicalWidth)
-        assertEquals(90, profile.logicalHeight)
+        assertEquals(200, profile.logicalHeight)
         assertEquals(ScreenProfileFactory.defaultDotSizePx, profile.dotSizePx)
     }
 
@@ -19,7 +19,7 @@ class ScreenProfileFactoryTest {
         val profile = ScreenProfileFactory.create(widthPx = 1080, heightPx = 1920)
 
         assertEquals(90, profile.logicalWidth)
-        assertEquals(90, profile.logicalHeight)
+        assertEquals(160, profile.logicalHeight)
     }
 
     @Test
@@ -27,7 +27,7 @@ class ScreenProfileFactoryTest {
         val profile = ScreenProfileFactory.create(widthPx = 1440, heightPx = 3200)
 
         assertEquals(120, profile.logicalWidth)
-        assertEquals(120, profile.logicalHeight)
+        assertEquals(266, profile.logicalHeight)
     }
 
     @Test
@@ -39,7 +39,7 @@ class ScreenProfileFactoryTest {
         )
 
         assertEquals(90, profile.logicalWidth)
-        assertEquals(90, profile.logicalHeight)
+        assertEquals(200, profile.logicalHeight)
         assertEquals(12, profile.dotSizePx)
     }
 }

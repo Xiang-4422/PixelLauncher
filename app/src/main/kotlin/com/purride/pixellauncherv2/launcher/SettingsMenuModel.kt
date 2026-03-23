@@ -87,7 +87,7 @@ object SettingsMenuModel {
     }
 
     fun nextResolution(current: Int, direction: Int, screenProfile: ScreenProfile? = null): Int {
-        val resolutionOptions = ScreenProfileFactory.squareResolutionOptions(screenProfile)
+        val resolutionOptions = ScreenProfileFactory.resolutionOptions(screenProfile)
         val currentIndex = resolutionOptions.indexOf(current).takeIf { it >= 0 } ?: 0
         val nextIndex = wrapIndex(currentIndex + direction, resolutionOptions.size)
         return resolutionOptions[nextIndex]
