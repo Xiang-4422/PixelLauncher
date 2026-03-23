@@ -29,16 +29,16 @@ class SettingsMenuModelTest {
 
     @Test
     fun nextResolutionWrapsAcrossSupportedPresets() {
-        val current = ScreenProfileFactory.supportedDotSizePxOptions.last()
-        val screenProfile = ScreenProfile(
-            logicalWidth = 72,
-            logicalHeight = 160,
-            dotSizePx = current,
+        val screenProfile = ScreenProfileFactory.create(
+            widthPx = 1080,
+            heightPx = 2400,
+            dotSizePx = 12,
         )
+        val current = ScreenProfileFactory.resolutionOptions(screenProfile).last()
 
         val next = SettingsMenuModel.nextResolution(current, 1, screenProfile)
 
-        assertEquals(ScreenProfileFactory.supportedDotSizePxOptions.first(), next)
+        assertEquals(ScreenProfileFactory.resolutionOptions(screenProfile).first(), next)
     }
 
     @Test
@@ -118,5 +118,12 @@ class SettingsMenuModelTest {
         val label = SettingsMenuModel.themeLabel(PixelTheme.MONO_LCD)
 
         assertEquals("MONO", label)
+    }
+
+    @Test
+    fun themeLabelIncludesNightTheme() {
+        val label = SettingsMenuModel.themeLabel(PixelTheme.NIGHT_MONO)
+
+        assertEquals("NIGHT", label)
     }
 }

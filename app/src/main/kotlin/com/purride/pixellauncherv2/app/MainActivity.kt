@@ -55,6 +55,8 @@ import com.purride.pixellauncherv2.launcher.DrawerSettleTarget
 import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollController
 import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollThresholds
 import com.purride.pixellauncherv2.launcher.HomeContextCard
+import com.purride.pixellauncherv2.launcher.HomeFixedInfoModel
+import com.purride.pixellauncherv2.launcher.HomeFixedInfoRowType
 import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
@@ -954,16 +956,17 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
         val rowHeight = layout.fixedInfoRowHeight
         val rowIndex = ((y - layout.fixedInfoStartY) / rowHeight).takeIf { y >= layout.fixedInfoStartY } ?: return
-        when (rowIndex) {
-            0 -> launchSystemIntent(
+        val row = HomeFixedInfoModel.rows(state).getOrNull(rowIndex) ?: return
+        when (row.type) {
+            HomeFixedInfoRowType.ALARM -> launchSystemIntent(
                 Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 },
             )
 
-            1 -> handleHomeDynamicInfoTap(x, y, layout)
+            HomeFixedInfoRowType.COMMUNICATION -> handleHomeDynamicInfoTap(x, y, layout, rowIndex)
 
-            2 -> launchFirstAvailableIntent(
+            HomeFixedInfoRowType.USAGE -> launchFirstAvailableIntent(
                 Intent(Intent.ACTION_MAIN).apply {
                     setClassName(
                         "com.google.android.apps.wellbeing",
@@ -975,27 +978,20 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 },
             )
+
+            HomeFixedInfoRowType.WEATHER,
+            HomeFixedInfoRowType.STATUS -> Unit
         }
     }
 
-    private fun handleHomeDynamicInfoTap(x: Int, y: Int, layout: HomeLayoutMetrics) {
-        if (y !in layout.fixedInfoStartY + layout.fixedInfoRowHeight until
-            (layout.fixedInfoStartY + layout.fixedInfoRowHeight + GlyphStyle.UI_SMALL_10.cellHeight)
+    private fun handleHomeDynamicInfoTap(x: Int, y: Int, layout: HomeLayoutMetrics, rowIndex: Int) {
+        val rowTop = layout.fixedInfoStartY + (layout.fixedInfoRowHeight * rowIndex)
+        if (y !in rowTop until (rowTop + GlyphStyle.UI_SMALL_10.cellHeight)
         ) {
             return
         }
 
-        val segments = buildList {
-            if (state.missedCallCount > 0) {
-                add("CALL ${state.missedCallCount}")
-            }
-            if (state.unreadSmsCount > 0) {
-                add("SMS ${state.unreadSmsCount}")
-            }
-            if (state.rainHintText.isNotBlank()) {
-                add("RAIN ${state.rainHintText}")
-            }
-        }
+        val segments = HomeFixedInfoModel.communicationSegments(state)
         if (segments.isEmpty()) {
             return
         }
@@ -3027,11 +3023,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             backgroundExecutor.execute {
                 val previousSuccessfulHint = lastSuccessfulRainHintText
                 runCatching {
-                    rainForecastRepository.fetchRainHint(
+                    rainForecastRepository.fetchWeatherSummary(
                         latitude = location.latitude,
                         longitude = location.longitude,
                     )
-                }.onSuccess { rainHint ->
+                }.onSuccess { weatherSummary ->
                     mainHandler.post {
                         if (isDestroyed || isFinishing) {
                             rainRefreshInFlight = false
@@ -3039,9 +3035,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         }
                         lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
                         lastRainLocation = location
-                        lastSuccessfulRainHintText = rainHint.orEmpty()
+                        lastSuccessfulRainHintText = weatherSummary.orEmpty()
                         rainRefreshInFlight = false
-                        applyRainHintText(rainHint.orEmpty(), render = render)
+                        applyRainHintText(weatherSummary.orEmpty(), render = render)
                     }
                 }.onFailure {
                     mainHandler.post {

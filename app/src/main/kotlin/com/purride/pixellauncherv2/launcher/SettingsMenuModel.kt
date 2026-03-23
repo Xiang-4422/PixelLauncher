@@ -113,6 +113,7 @@ object SettingsMenuModel {
             PixelTheme.AMBER_CRT -> "AMBER"
             PixelTheme.ICE_LCD -> "ICE"
             PixelTheme.MONO_LCD -> "MONO"
+            PixelTheme.NIGHT_MONO -> "NIGHT"
         }
     }
 

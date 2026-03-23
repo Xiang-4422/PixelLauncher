@@ -601,11 +601,7 @@ object LauncherStateTransitions {
         )
     }
 
-    /**
-     * 写入未来降雨提示文本。
-     *
-     * 空字符串代表“整段雨提示不显示”，而不是显示占位文案。
-     */
+    /** 写入 Home 的天气与温度摘要文本。 */
     fun updateRainHintText(state: LauncherState, rainHintText: String): LauncherState {
         return state.copy(rainHintText = rainHintText)
     }

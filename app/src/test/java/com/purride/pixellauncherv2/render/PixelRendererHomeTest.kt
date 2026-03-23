@@ -17,7 +17,7 @@ class PixelRendererHomeTest {
     private val renderer = PixelRenderer(PixelFontEngine(BlockGlyphProvider()))
 
     @Test
-    fun homeOmitsRainRowWhenHintTextIsBlank() {
+    fun homeKeepsRainRowWhenHintTextIsBlank() {
         val withoutRain = renderHome(
             rainHintText = "",
             missedCallCount = 0,
@@ -32,12 +32,13 @@ class PixelRendererHomeTest {
         val withoutRainPixels = fixedInfoLitPixels(withoutRain)
         val withRainPixels = fixedInfoLitPixels(withRain)
 
-        assertTrue(withRainPixels > withoutRainPixels)
+        assertTrue(withoutRainPixels > 0)
+        assertTrue(withRainPixels >= withoutRainPixels)
     }
 
     @Test
-    fun homeOmitsDynamicInfoRowWhenCallSmsAndRainAreAllEmpty() {
-        val withoutDynamicInfo = renderHome(
+    fun homeStillShowsDynamicInfoRowWhenOnlyRainPlaceholderIsPresent() {
+        val withRainPlaceholder = renderHome(
             rainHintText = "",
             missedCallCount = 0,
             unreadSmsCount = 0,
@@ -48,7 +49,8 @@ class PixelRendererHomeTest {
             unreadSmsCount = 2,
         )
 
-        assertTrue(fixedInfoLitPixels(withDynamicInfo) > fixedInfoLitPixels(withoutDynamicInfo))
+        assertTrue(fixedInfoLitPixels(withRainPlaceholder) > 0)
+        assertTrue(fixedInfoLitPixels(withDynamicInfo) > fixedInfoLitPixels(withRainPlaceholder))
     }
 
     private fun renderHome(

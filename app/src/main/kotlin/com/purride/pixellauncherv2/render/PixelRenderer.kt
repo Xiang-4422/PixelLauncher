@@ -9,6 +9,7 @@ import com.purride.pixellauncherv2.launcher.DiagnosticsModel
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeLayout
+import com.purride.pixellauncherv2.launcher.HomeFixedInfoModel
 import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
@@ -365,25 +366,7 @@ class PixelRenderer(
             )
         }
 
-        val dynamicInfoSegments = buildList {
-            if (state.missedCallCount > 0) {
-                add("CALL ${state.missedCallCount}")
-            }
-            if (state.unreadSmsCount > 0) {
-                add("SMS ${state.unreadSmsCount}")
-            }
-            if (state.rainHintText.isNotBlank()) {
-                add("RAIN ${state.rainHintText}")
-            }
-        }
-        val fixedInfoLines = buildList {
-            add("ALARM ${state.nextAlarmText.ifBlank { "--:--" }}")
-            if (dynamicInfoSegments.isNotEmpty()) {
-                add(dynamicInfoSegments.joinToString(separator = "  "))
-            }
-            add("USE ${state.screenUsageTimeText.ifBlank { "--:--" }}  OPEN ${state.screenOpenCountText.ifBlank { "--" }}")
-            add(state.terminalStatusText.ifBlank { "READY" })
-        }
+        val fixedInfoLines = HomeFixedInfoModel.rows(state).map { it.text }
         var detailY = layoutMetrics.fixedInfoStartY
         fixedInfoLines.forEach { line ->
             if (detailY + GlyphStyle.UI_SMALL_10.cellHeight <= layoutMetrics.fixedBottom) {
