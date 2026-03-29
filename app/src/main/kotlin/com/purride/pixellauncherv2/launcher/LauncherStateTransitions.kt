@@ -24,7 +24,10 @@ object LauncherStateTransitions {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE,
-            LauncherMode.SMS_INBOX -> state.mode
+            LauncherMode.SMS_INBOX,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL -> state.mode
 
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS -> state.returnMode
@@ -50,7 +53,10 @@ object LauncherStateTransitions {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE,
-            LauncherMode.SMS_INBOX -> state.returnMode
+            LauncherMode.SMS_INBOX,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL -> state.returnMode
 
             LauncherMode.SETTINGS,
             LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
@@ -110,6 +116,57 @@ object LauncherStateTransitions {
     /** 关闭未读短信列表页，返回 Home。 */
     fun hideUnreadSmsInbox(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.HOME)
+    }
+
+    /** 打开短信角色引导页。 */
+    fun showSmsRolePrompt(state: LauncherState): LauncherState {
+        return state.copy(
+            mode = LauncherMode.SMS_ROLE_PROMPT,
+            returnMode = LauncherMode.HOME,
+        )
+    }
+
+    /** 打开短信会话列表。 */
+    fun showSmsThreads(state: LauncherState, visibleRows: Int): LauncherState {
+        return syncSmsThreadWindow(
+            state = state.copy(
+                mode = LauncherMode.SMS_THREADS,
+                returnMode = LauncherMode.HOME,
+                smsThreadSelectedIndex = state.smsThreadSelectedIndex.coerceAtLeast(0),
+            ),
+            visibleRows = visibleRows,
+        )
+    }
+
+    /** 关闭短信模块并回到 Home。 */
+    fun hideSmsThreads(state: LauncherState): LauncherState {
+        return state.copy(
+            mode = LauncherMode.HOME,
+            smsDraftText = "",
+        )
+    }
+
+    /** 打开指定短信线程详情页。 */
+    fun showSmsThreadDetail(
+        state: LauncherState,
+        threadId: Long?,
+        address: String,
+    ): LauncherState {
+        return state.copy(
+            mode = LauncherMode.SMS_THREAD_DETAIL,
+            returnMode = LauncherMode.SMS_THREADS,
+            smsCurrentThreadId = threadId,
+            smsCurrentAddress = address,
+        )
+    }
+
+    /** 从详情页返回短信会话列表。 */
+    fun hideSmsThreadDetail(state: LauncherState): LauncherState {
+        return state.copy(
+            mode = LauncherMode.SMS_THREADS,
+            returnMode = LauncherMode.HOME,
+            smsDraftText = "",
+        )
     }
 
     /**
@@ -622,6 +679,96 @@ object LauncherStateTransitions {
         return state.copy(lastInteractionUptimeMs = uptimeMs)
     }
 
+    fun updateSmsCapability(
+        state: LauncherState,
+        isDefaultSmsApp: Boolean,
+        smsPermissionState: SmsPermissionState,
+    ): LauncherState {
+        return state.copy(
+            isDefaultSmsApp = isDefaultSmsApp,
+            smsPermissionState = smsPermissionState,
+        )
+    }
+
+    fun updateSmsThreads(
+        state: LauncherState,
+        threads: List<com.purride.pixellauncherv2.data.SmsThreadSummary>,
+        visibleRows: Int,
+    ): LauncherState {
+        val safeSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, (threads.size - 1).coerceAtLeast(0))
+        return syncSmsThreadWindow(
+            state = state.copy(
+                smsThreads = threads,
+                smsThreadSelectedIndex = safeSelectedIndex,
+            ),
+            visibleRows = visibleRows,
+        )
+    }
+
+    fun selectSmsThreadIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
+        val maxIndex = (state.smsThreads.size - 1).coerceAtLeast(0)
+        return syncSmsThreadWindow(
+            state = state.copy(smsThreadSelectedIndex = index.coerceIn(0, maxIndex)),
+            visibleRows = visibleRows,
+        )
+    }
+
+    fun moveSmsThreadSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
+        return selectSmsThreadIndex(
+            state = state,
+            index = state.smsThreadSelectedIndex + delta,
+            visibleRows = visibleRows,
+        )
+    }
+
+    fun scrollSmsThreadWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
+        val rows = state.smsThreads
+        if (rows.isEmpty() || delta == 0) {
+            return reflowSmsThreadWindow(state, visibleRows)
+        }
+        val safeVisibleRows = visibleRows.coerceAtLeast(1)
+        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
+        val safeListStartIndex = state.smsThreadListStartIndex.coerceIn(0, maxStartIndex)
+        val nextListStartIndex = (safeListStartIndex + delta).coerceIn(0, maxStartIndex)
+        val relativeFocusIndex = (state.smsThreadSelectedIndex - safeListStartIndex).coerceIn(0, safeVisibleRows - 1)
+        val maxVisibleIndex = (nextListStartIndex + safeVisibleRows - 1).coerceAtMost(rows.lastIndex)
+        val nextSelectedIndex = (nextListStartIndex + relativeFocusIndex).coerceIn(nextListStartIndex, maxVisibleIndex)
+        return state.copy(
+            smsThreadSelectedIndex = nextSelectedIndex,
+            smsThreadListStartIndex = nextListStartIndex,
+        )
+    }
+
+    fun reflowSmsThreadWindow(state: LauncherState, visibleRows: Int): LauncherState {
+        val maxIndex = (state.smsThreads.size - 1).coerceAtLeast(0)
+        return syncSmsThreadWindow(
+            state = state.copy(
+                smsThreadSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, maxIndex),
+            ),
+            visibleRows = visibleRows,
+        )
+    }
+
+    fun updateSmsMessages(
+        state: LauncherState,
+        threadId: Long?,
+        address: String,
+        messages: List<com.purride.pixellauncherv2.data.SmsMessageEntry>,
+    ): LauncherState {
+        return state.copy(
+            smsCurrentThreadId = threadId,
+            smsCurrentAddress = address,
+            smsMessages = messages,
+        )
+    }
+
+    fun updateSmsDraftText(
+        state: LauncherState,
+        smsDraftText: String,
+    ): LauncherState {
+        return state.copy(smsDraftText = smsDraftText)
+    }
+
     /**
      * 在屏幕尺寸、应用数据或焦点变化后，重新校正抽屉窗口。
      */
@@ -933,6 +1080,33 @@ object LauncherStateTransitions {
         return state.copy(
             smsSelectedIndex = safeSelectedIndex,
             smsListStartIndex = nextListStartIndex,
+        )
+    }
+
+    private fun syncSmsThreadWindow(state: LauncherState, visibleRows: Int): LauncherState {
+        val rows = state.smsThreads
+        if (rows.isEmpty()) {
+            return state.copy(
+                smsThreadSelectedIndex = 0,
+                smsThreadListStartIndex = 0,
+            )
+        }
+
+        val safeVisibleRows = visibleRows.coerceAtLeast(1)
+        val safeSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, rows.lastIndex)
+        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
+        val safeListStartIndex = state.smsThreadListStartIndex.coerceIn(0, maxStartIndex)
+        val nextListStartIndex = when {
+            safeSelectedIndex < safeListStartIndex -> safeSelectedIndex
+            safeSelectedIndex >= safeListStartIndex + safeVisibleRows -> {
+                (safeSelectedIndex - safeVisibleRows + 1).coerceIn(0, maxStartIndex)
+            }
+            else -> safeListStartIndex
+        }
+
+        return state.copy(
+            smsThreadSelectedIndex = safeSelectedIndex,
+            smsThreadListStartIndex = nextListStartIndex,
         )
     }
 

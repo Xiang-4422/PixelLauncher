@@ -7,6 +7,8 @@ import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.IdleFluidState
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
+import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.data.UnreadSmsEntry
 
 data class LauncherState(
@@ -30,6 +32,15 @@ data class LauncherState(
     val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
+    val smsThreads: List<SmsThreadSummary> = emptyList(),
+    val smsThreadSelectedIndex: Int = 0,
+    val smsThreadListStartIndex: Int = 0,
+    val smsCurrentThreadId: Long? = null,
+    val smsCurrentAddress: String = "",
+    val smsMessages: List<SmsMessageEntry> = emptyList(),
+    val smsDraftText: String = "",
+    val isDefaultSmsApp: Boolean = false,
+    val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
     val selectedFontId: PixelFontId = PixelFontCatalog.defaultFontId,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
@@ -77,7 +88,16 @@ enum class LauncherMode {
     HOME,
     APP_DRAWER,
     SETTINGS,
+    SMS_ROLE_PROMPT,
+    SMS_THREADS,
+    SMS_THREAD_DETAIL,
     SMS_INBOX,
     DIAGNOSTICS,
     IDLE,
+}
+
+enum class SmsPermissionState {
+    MISSING,
+    READ_ONLY,
+    READY,
 }

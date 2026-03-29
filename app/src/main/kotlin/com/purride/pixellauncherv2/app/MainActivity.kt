@@ -14,10 +14,12 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.provider.AlarmClock
 import android.provider.CalendarContract
+import android.provider.Telephony
 import android.text.Editable
 import android.text.InputFilter
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.ViewGroup
@@ -42,6 +44,10 @@ import com.purride.pixellauncherv2.data.NextAlarmRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
+import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.data.SmsRepository
+import com.purride.pixellauncherv2.data.SmsSendRequest
+import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.data.UnreadSmsRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
@@ -63,6 +69,8 @@ import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
+import com.purride.pixellauncherv2.launcher.SmsLayout
+import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -99,6 +107,7 @@ import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.util.TerminalStatusProvider
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -124,6 +133,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var screenUsageRepository: ScreenUsageRepository
     private lateinit var communicationStatusRepository: CommunicationStatusRepository
     private lateinit var unreadSmsRepository: UnreadSmsRepository
+    private lateinit var smsRepository: SmsRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var deviceMotionRepository: DeviceMotionRepository
@@ -136,6 +146,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var idlePhysicsThread: HandlerThread
     private lateinit var idlePhysicsHandler: Handler
     private lateinit var drawerInputProxy: EditText
+    private lateinit var smsDraftInputProxy: EditText
 
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
     private var palette: PixelPalette = PixelPalette.terminalGreen()
@@ -175,6 +186,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var idleMaskSequence: Long = 0L
     private var idleChargeMaskFrame: IdleMaskFrame? = null
     private var syncingDrawerInputProxyText = false
+    private var syncingSmsDraftInputProxyText = false
     private var drawerRailDragLastY: Int = 0
     private var drawerRailDragAccumulatorPx: Float = 0f
     private var drawerRailPixelsPerApp: Float = 1f
@@ -226,6 +238,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var interactionTickerLastUptimeMs: Long = 0L
     private var usageAccessPromptShown = false
     private var homeDataPermissionPromptShown = false
+    private var smsRolePromptDismissedThisSession = false
+    private var smsThreadsUnreadOnly = true
     private var rainRefreshInFlight = false
     private var lastRainRefreshElapsedRealtimeMs: Long = 0L
     private var lastRainLocation: GeoPoint? = null
@@ -284,7 +298,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 state = horizontalPageState,
                 deltaMs = deltaMs,
             )
-            if (wasPagerSettling && !horizontalPageState.isSettling) {
+            if (wasPagerSettling && !horizontalPageState.isSettling && isPagerMode(state.mode)) {
                 applyPagerSettledMode(horizontalPageState.currentIndex)
             }
             val wasSmsSettling = smsPageState.isSettling
@@ -388,6 +402,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         screenUsageRepository = ScreenUsageRepository(applicationContext)
         communicationStatusRepository = CommunicationStatusRepository(applicationContext)
         unreadSmsRepository = UnreadSmsRepository(applicationContext)
+        smsRepository = SmsRepository(applicationContext)
         deviceLocationRepository = DeviceLocationRepository(applicationContext)
         rainForecastRepository = RainForecastRepository()
         deviceMotionRepository = DeviceMotionRepository(applicationContext)
@@ -547,6 +562,45 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 }
             })
         }
+        smsDraftInputProxy = EditText(this).apply {
+            layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
+            alpha = 0f
+            background = null
+            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_ACTION_SEND
+            inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+                InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
+            setSingleLine(true)
+            setOnEditorActionListener { _, actionId, event ->
+                val isEnterKey = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
+                if (actionId == EditorInfo.IME_ACTION_SEND || isEnterKey) {
+                    sendSmsDraft()
+                    true
+                } else {
+                    false
+                }
+            }
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+
+                override fun afterTextChanged(editable: Editable?) {
+                    if (syncingSmsDraftInputProxyText) {
+                        return
+                    }
+                    val draft = editable?.toString().orEmpty()
+                    if (draft == state.smsDraftText) {
+                        return
+                    }
+                    state = LauncherStateTransitions.updateSmsDraftText(
+                        state = state,
+                        smsDraftText = draft,
+                    )
+                    renderCurrentFrame()
+                }
+            })
+        }
         val rootContainer = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -560,13 +614,17 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 ),
             )
             addView(drawerInputProxy)
+            addView(smsDraftInputProxy)
         }
         setContentView(rootContainer)
-        updateDrawerInputFocus()
+        updateTextInputFocus()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when (state.mode) {
                     LauncherMode.SETTINGS -> closeSettingsMenu()
+                    LauncherMode.SMS_ROLE_PROMPT -> closeSmsModule()
+                    LauncherMode.SMS_THREADS -> closeSmsModule()
+                    LauncherMode.SMS_THREAD_DETAIL -> closeSmsThreadDetail()
                     LauncherMode.SMS_INBOX -> closeUnreadSmsInbox()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
@@ -601,6 +659,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
 
         renderCurrentFrame()
+        handleLaunchIntent(intent)
         suppressActivityAnimations()
     }
 
@@ -617,19 +676,28 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         deviceStatusRepository.start(::onDeviceStatusChanged)
         nextAlarmRepository.start(::onNextAlarmChanged)
         resetDrawerVerticalGesture()
-        state = LauncherStateTransitions.showHome(state)
+        if (
+            state.mode != LauncherMode.SMS_ROLE_PROMPT &&
+            state.mode != LauncherMode.SMS_THREADS &&
+            state.mode != LauncherMode.SMS_THREAD_DETAIL &&
+            state.mode != LauncherMode.SMS_INBOX
+        ) {
+            state = LauncherStateTransitions.showHome(state)
+        }
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
         refreshDerivedUiState(render = false)
         val launchedUsageAccessSettings = maybeRequestUsageAccess()
         if (!launchedUsageAccessSettings) {
             communicationStatusRepository.start(::onCommunicationStatusChanged)
+            smsRepository.start(::onSmsProviderChanged)
             refreshScreenUsageSummary(render = false)
+            refreshSmsCapability(render = false)
             refreshRainHint(force = true, render = false)
             maybeRequestHomeDataPermissions()
         }
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
-        updateDrawerInputFocus()
+        updateTextInputFocus()
         scheduleIdleCheck()
         loadApps()
         suppressActivityAnimations()
@@ -639,8 +707,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             windowModeController.hideSystemBars()
-            updateDrawerInputFocus()
+            updateTextInputFocus()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        Log.d(
+            smsIntentLogTag,
+            "onNewIntent action=${intent.action} data=${intent.data} extras=${intent.extras?.keySet()?.joinToString()} mode=${state.mode}",
+        )
+        handleLaunchIntent(intent)
     }
 
     /**
@@ -653,6 +731,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (::drawerInputProxy.isInitialized) {
             drawerInputProxy.clearFocus()
         }
+        if (::smsDraftInputProxy.isInitialized) {
+            smsDraftInputProxy.clearFocus()
+        }
         mainHandler.removeCallbacks(clockTicker)
         mainHandler.removeCallbacks(animationTicker)
         mainHandler.removeCallbacks(interactionTicker)
@@ -664,6 +745,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         deviceStatusRepository.stop()
         nextAlarmRepository.stop()
         communicationStatusRepository.stop()
+        smsRepository.stop()
         stopIdlePhysics()
         suppressActivityAnimations()
         if (::pixelFrameView.isInitialized) {
@@ -681,12 +763,31 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != homeDataPermissionRequestCode) {
+        when (requestCode) {
+            homeDataPermissionRequestCode -> {
+                communicationStatusRepository.start(::onCommunicationStatusChanged)
+                refreshCommunicationStatus(render = false)
+                refreshRainHint(force = true, render = true)
+            }
+
+            smsPermissionRequestCode -> {
+                refreshSmsCapability(render = false)
+                refreshSmsThreads(render = false)
+                maybeRequestDefaultSmsRole()
+                renderCurrentFrame()
+            }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != smsRoleRequestCode) {
             return
         }
-        communicationStatusRepository.start(::onCommunicationStatusChanged)
-        refreshCommunicationStatus(render = false)
-        refreshRainHint(force = true, render = true)
+        refreshSmsCapability(render = false)
+        smsRolePromptDismissedThisSession = !smsRepository.isDefaultSmsApp()
+        openSmsModule(forceRefresh = true, unreadOnly = false)
     }
 
     override fun onDestroy() {
@@ -720,6 +821,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         settleDrawerMotionBeforeExplicitAction()
                         moveSelection(-1)
                     }
+                    LauncherMode.SMS_THREADS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        moveSmsThreadSelection(-1)
+                    }
+                    LauncherMode.SMS_THREAD_DETAIL -> scrollSmsDetailBy(-smsBodyLineHeight())
                     LauncherMode.SMS_INBOX -> {
                         animateSmsPageBy(-1)
                     }
@@ -729,7 +835,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     }
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
-                    LauncherMode.IDLE -> Unit
+                    LauncherMode.IDLE,
+                    LauncherMode.SMS_ROLE_PROMPT -> Unit
                 }
                 true
             }
@@ -740,6 +847,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         settleDrawerMotionBeforeExplicitAction()
                         moveSelection(1)
                     }
+                    LauncherMode.SMS_THREADS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        moveSmsThreadSelection(1)
+                    }
+                    LauncherMode.SMS_THREAD_DETAIL -> scrollSmsDetailBy(smsBodyLineHeight())
                     LauncherMode.SMS_INBOX -> {
                         animateSmsPageBy(1)
                     }
@@ -749,7 +861,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     }
                     LauncherMode.HOME -> showAppDrawer()
                     LauncherMode.DIAGNOSTICS,
-                    LauncherMode.IDLE -> Unit
+                    LauncherMode.IDLE,
+                    LauncherMode.SMS_ROLE_PROMPT -> Unit
                 }
                 true
             }
@@ -761,6 +874,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         changeSettingValue(-1)
                     }
                     LauncherMode.HOME -> Unit
+                    LauncherMode.SMS_ROLE_PROMPT,
+                    LauncherMode.SMS_THREADS,
+                    LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> animateSmsPageBy(-1)
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -779,6 +895,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         changeSettingValue(1)
                     }
                     LauncherMode.HOME -> Unit
+                    LauncherMode.SMS_ROLE_PROMPT,
+                    LauncherMode.SMS_THREADS,
+                    LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> animateSmsPageBy(1)
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -798,6 +917,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     LauncherMode.SETTINGS -> {
                         settleSettingsMotionBeforeExplicitAction()
                         activateSelectedSetting()
+                    }
+                    LauncherMode.SMS_ROLE_PROMPT -> ensureSmsReadAccessAndRole()
+                    LauncherMode.SMS_THREADS -> {
+                        settleSettingsMotionBeforeExplicitAction()
+                        openSelectedSmsThread()
+                    }
+                    LauncherMode.SMS_THREAD_DETAIL -> {
+                        if (state.smsDraftText.isBlank()) {
+                            focusSmsDraftInput()
+                        } else {
+                            sendSmsDraft()
+                        }
                     }
                     LauncherMode.SMS_INBOX -> {
                         settleSettingsMotionBeforeExplicitAction()
@@ -918,6 +1049,39 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 activateSelectedSetting()
             }
 
+            LauncherMode.SMS_ROLE_PROMPT -> {
+                ensureSmsReadAccessAndRole()
+            }
+
+            LauncherMode.SMS_THREADS -> {
+                val tappedRow = SmsLayout.hitTestThreadRow(
+                    screenProfile = screenProfile,
+                    logicalX = x,
+                    logicalY = y,
+                    rowCount = state.smsThreads.size,
+                    listStartIndex = state.smsThreadListStartIndex,
+                    scrollOffsetPx = settingsListScrollResidualOffsetPx.toInt(),
+                ) ?: return
+                settleSettingsMotionBeforeExplicitAction()
+                state = LauncherStateTransitions.selectSmsThreadIndex(
+                    state = state,
+                    index = tappedRow,
+                    visibleRows = smsThreadsVisibleRows(),
+                )
+                openSelectedSmsThread()
+            }
+
+            LauncherMode.SMS_THREAD_DETAIL -> {
+                if (isPointInSmsComposeSendArea(x, y)) {
+                    sendSmsDraft()
+                    return
+                }
+                if (isPointInSmsComposeArea(x, y)) {
+                    focusSmsDraftInput()
+                    return
+                }
+            }
+
             LauncherMode.SMS_INBOX -> {
                 if (y < LauncherHeaderLayout.contentTop) {
                     return
@@ -1007,7 +1171,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         },
                     )
 
-                    segment.startsWith("SMS ") -> openUnreadSmsInbox()
+                    segment.startsWith("SMS ") -> openSmsModule(forceRefresh = true)
                 }
                 return
             }
@@ -1097,7 +1261,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             stopDrawerVerticalListAnimation(resetOffset = false)
         }
 
-        if (state.mode == LauncherMode.SETTINGS &&
+        if ((state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_THREADS) &&
             shouldShowSettingsScrollableList() &&
             isPointInSettingsScrollableListArea(x, y)
         ) {
@@ -1111,12 +1275,19 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             stopSettingsVerticalListAnimation(resetOffset = false)
         }
 
-        if (state.mode == LauncherMode.SMS_INBOX && isPointInSmsBodyArea(x, y) && smsBodyCanScroll()) {
+        if ((state.mode == LauncherMode.SMS_INBOX || state.mode == LauncherMode.SMS_THREAD_DETAIL) &&
+            isPointInSmsBodyArea(x, y) &&
+            smsBodyCanScroll()
+        ) {
             smsBodyDragTracking = true
             smsBodyDragConsumed = false
             smsBodyDragStartX = x
             smsBodyDragStartY = y
             smsBodyDragLastY = y
+            Log.d(
+                smsScrollLogTag,
+                "start mode=${state.mode} x=$x y=$y offset=${smsBodyScrollOffsetPx} max=${smsBodyMaxScrollPx()}",
+            )
         }
 
         if (canHandlePagerNavigation() || state.mode == LauncherMode.SMS_INBOX) {
@@ -1294,8 +1465,13 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 val deltaY = y - smsBodyDragLastY
                 smsBodyDragLastY = y
                 if (deltaY != 0) {
+                    val previousOffset = smsBodyScrollOffsetPx
                     smsBodyScrollOffsetPx = (smsBodyScrollOffsetPx - deltaY.toFloat())
                         .coerceIn(0f, smsBodyMaxScrollPx().toFloat())
+                    Log.d(
+                        smsScrollLogTag,
+                        "move mode=${state.mode} deltaY=$deltaY from=$previousOffset to=$smsBodyScrollOffsetPx max=${smsBodyMaxScrollPx()} startY=$smsBodyDragStartY currentY=$y",
+                    )
                     renderCurrentFrame()
                 }
                 return true
@@ -1519,6 +1695,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.SMS_INBOX,
             LauncherMode.IDLE -> Unit
         }
@@ -1543,6 +1722,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
         when (state.mode) {
             LauncherMode.DIAGNOSTICS -> closeDiagnostics()
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL -> Unit
             LauncherMode.SETTINGS,
             LauncherMode.SMS_INBOX,
             LauncherMode.HOME,
@@ -1645,6 +1827,19 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             syncPagerIndexToMode()
             val pagerSnapshot = activePagerSnapshot()
             val smsPageSnapshot = activeSmsPageSnapshot()
+            if (
+                state.mode == LauncherMode.SMS_ROLE_PROMPT ||
+                state.mode == LauncherMode.SMS_THREADS ||
+                state.mode == LauncherMode.SMS_THREAD_DETAIL ||
+                state.mode == LauncherMode.SMS_INBOX
+            ) {
+                Log.d(
+                    smsIntentLogTag,
+                    "renderCurrentFrame mode=${state.mode} pagerActive=${pagerSnapshot != null} " +
+                        "smsPagerActive=${smsPageSnapshot != null} currentThread=${state.smsCurrentThreadId} " +
+                        "threads=${state.smsThreads.size} messages=${state.smsMessages.size}",
+                )
+            }
             val pixelBuffer = RenderPerfLogger.measure("main.render.full.${state.mode.name}.compose") {
                 pixelRenderer.render(
                     state = state,
@@ -1658,7 +1853,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     } else {
                         0
                     },
-                    settingsListScrollOffsetPx = if (state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_INBOX) {
+                    settingsListScrollOffsetPx = if (
+                        state.mode == LauncherMode.SETTINGS ||
+                        state.mode == LauncherMode.SMS_INBOX ||
+                        state.mode == LauncherMode.SMS_THREADS
+                    ) {
                         settingsListScrollResidualOffsetPx.toInt()
                     } else {
                         0
@@ -1756,7 +1955,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun activePagerSnapshot(): HorizontalPageSnapshot? {
-        if (!horizontalPageController.isActive(horizontalPageState)) {
+        // 短信/Idle 这类非 pager 页面进入后，不应再继续复用旧的分页快照，
+        // 否则 UI 会短暂甚至持续显示 HOME/SETTINGS/DRAWER。
+        if (!isPagerMode(state.mode) || !horizontalPageController.isActive(horizontalPageState)) {
             return null
         }
         return horizontalPageController.snapshot(horizontalPageState)
@@ -1775,6 +1976,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             LauncherMode.HOME -> pagerHomeIndex
             LauncherMode.APP_DRAWER -> pagerAppsIndex
             LauncherMode.DIAGNOSTICS,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.SMS_INBOX,
             LauncherMode.IDLE -> null
         }
@@ -1834,6 +2038,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             )
 
             LauncherMode.DIAGNOSTICS,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.SMS_INBOX,
             LauncherMode.IDLE -> state
         }
@@ -1977,22 +2184,81 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
         val inputManager = getSystemService(InputMethodManager::class.java) ?: return
         inputManager.hideSoftInputFromWindow(drawerInputProxy.windowToken, 0)
+        if (::smsDraftInputProxy.isInitialized) {
+            inputManager.hideSoftInputFromWindow(smsDraftInputProxy.windowToken, 0)
+        }
     }
 
-    private fun updateDrawerInputFocus() {
-        if (!::drawerInputProxy.isInitialized || !::pixelFrameView.isInitialized) {
+    private fun syncSmsDraftInputProxyText() {
+        if (!::smsDraftInputProxy.isInitialized) {
+            return
+        }
+        val targetDraft = state.smsDraftText
+        val currentText = smsDraftInputProxy.text?.toString().orEmpty()
+        if (currentText == targetDraft) {
+            return
+        }
+        syncingSmsDraftInputProxyText = true
+        smsDraftInputProxy.setText(targetDraft)
+        smsDraftInputProxy.setSelection(targetDraft.length)
+        syncingSmsDraftInputProxyText = false
+    }
+
+    private fun showSmsDraftKeyboard() {
+        if (!::smsDraftInputProxy.isInitialized) {
+            return
+        }
+        smsDraftInputProxy.post {
+            if (state.mode != LauncherMode.SMS_THREAD_DETAIL || state.smsPermissionState != SmsPermissionState.READY) {
+                return@post
+            }
+            syncSmsDraftInputProxyText()
+            if (!smsDraftInputProxy.hasFocus()) {
+                smsDraftInputProxy.requestFocus()
+            }
+            smsDraftInputProxy.setSelection(smsDraftInputProxy.text?.length ?: 0)
+            val inputManager = getSystemService(InputMethodManager::class.java) ?: return@post
+            inputManager.showSoftInput(smsDraftInputProxy, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun focusSmsDraftInput() {
+        if (!::smsDraftInputProxy.isInitialized) {
+            return
+        }
+        syncSmsDraftInputProxyText()
+        showSmsDraftKeyboard()
+    }
+
+    private fun updateTextInputFocus() {
+        if (!::drawerInputProxy.isInitialized || !::pixelFrameView.isInitialized || !::smsDraftInputProxy.isInitialized) {
             return
         }
         if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused) {
             syncDrawerInputProxyText()
             showDrawerKeyboard()
+            if (smsDraftInputProxy.hasFocus()) {
+                smsDraftInputProxy.clearFocus()
+            }
+        } else if (state.mode == LauncherMode.SMS_THREAD_DETAIL && smsDraftInputProxy.hasFocus()) {
+            showSmsDraftKeyboard()
+            if (drawerInputProxy.hasFocus()) {
+                drawerInputProxy.clearFocus()
+            }
         } else {
             hideDrawerKeyboard()
             if (drawerInputProxy.hasFocus()) {
                 drawerInputProxy.clearFocus()
             }
+            if (smsDraftInputProxy.hasFocus()) {
+                smsDraftInputProxy.clearFocus()
+            }
             pixelFrameView.asView().requestFocus()
         }
+    }
+
+    private fun updateDrawerInputFocus() {
+        updateTextInputFocus()
     }
 
     /**
@@ -2102,6 +2368,283 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         state = LauncherStateTransitions.hideDiagnostics(state)
         renderCurrentFrame()
         updateDrawerInputFocus()
+    }
+
+    private fun openSmsModule(forceRefresh: Boolean = false, unreadOnly: Boolean = true) {
+        smsThreadsUnreadOnly = unreadOnly
+        refreshSmsCapability(render = false)
+        if (forceRefresh) {
+            refreshSmsThreads(render = false, unreadOnly = smsThreadsUnreadOnly)
+        }
+        state = if (
+            state.smsPermissionState != SmsPermissionState.MISSING &&
+            (state.isDefaultSmsApp || smsRolePromptDismissedThisSession)
+        ) {
+            LauncherStateTransitions.showSmsThreads(
+                state = state,
+                visibleRows = smsThreadsVisibleRows(),
+            )
+        } else {
+            LauncherStateTransitions.showSmsRolePrompt(state)
+        }
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun closeSmsModule() {
+        smsBodyScrollOffsetPx = 0f
+        smsThreadsUnreadOnly = true
+        state = LauncherStateTransitions.hideSmsThreads(state)
+        renderCurrentFrame()
+        updateTextInputFocus()
+        scheduleIdleCheck()
+    }
+
+    private fun openSelectedSmsThread() {
+        val thread = state.smsThreads.getOrNull(state.smsThreadSelectedIndex) ?: return
+        openSmsThread(
+            threadId = thread.threadId,
+            address = thread.address,
+        )
+    }
+
+    private fun openSmsThread(
+        threadId: Long?,
+        address: String,
+        prefilledDraft: String = "",
+    ) {
+        Log.d(
+            smsIntentLogTag,
+            "openSmsThread threadId=$threadId address=$address draftLength=${prefilledDraft.length} beforeMode=${state.mode}",
+        )
+        smsBodyScrollOffsetPx = 0f
+        state = LauncherStateTransitions.showSmsThreadDetail(
+            state = LauncherStateTransitions.updateSmsDraftText(
+                state = state,
+                smsDraftText = prefilledDraft,
+            ),
+            threadId = threadId,
+            address = address,
+        )
+        Log.d(
+            smsIntentLogTag,
+            "openSmsThread afterMode=${state.mode} currentThread=${state.smsCurrentThreadId} address=${state.smsCurrentAddress}",
+        )
+        syncSmsDraftInputProxyText()
+        renderCurrentFrame()
+        updateTextInputFocus()
+        refreshSmsThreadDetail(
+            threadId = threadId,
+            fallbackAddress = address,
+            render = true,
+        )
+        if (threadId != null) {
+            backgroundExecutor.execute {
+                smsRepository.markThreadRead(threadId)
+                refreshSmsThreads(render = false, unreadOnly = smsThreadsUnreadOnly)
+                refreshCommunicationStatus(render = false)
+            }
+        }
+    }
+
+    private fun closeSmsThreadDetail() {
+        smsBodyScrollOffsetPx = 0f
+        state = LauncherStateTransitions.hideSmsThreadDetail(state)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun refreshSmsCapability(render: Boolean) {
+        state = LauncherStateTransitions.updateSmsCapability(
+            state = state,
+            isDefaultSmsApp = smsRepository.isDefaultSmsApp(),
+            smsPermissionState = smsRepository.permissionState(),
+        )
+        if (state.isDefaultSmsApp) {
+            smsRolePromptDismissedThisSession = false
+        }
+        if (render) {
+            renderCurrentFrame()
+        }
+    }
+
+    private fun refreshSmsThreads(render: Boolean, unreadOnly: Boolean = smsThreadsUnreadOnly) {
+        backgroundExecutor.execute {
+            val threads = smsRepository.readThreads().let { allThreads ->
+                if (unreadOnly) allThreads.filter { it.unreadCount > 0 } else allThreads
+            }
+            mainHandler.post {
+                if (isDestroyed || isFinishing) {
+                    return@post
+                }
+                state = LauncherStateTransitions.updateSmsThreads(
+                    state = state,
+                    threads = threads,
+                    visibleRows = smsThreadsVisibleRows(),
+                )
+                if (render) {
+                    renderCurrentFrame()
+                }
+            }
+        }
+    }
+
+    private fun refreshSmsThreadDetail(
+        threadId: Long?,
+        fallbackAddress: String,
+        render: Boolean,
+    ) {
+        backgroundExecutor.execute {
+            val messages = threadId?.let(smsRepository::readThreadMessages).orEmpty()
+            val resolvedAddress = messages.lastOrNull()?.address?.takeIf { it.isNotBlank() } ?: fallbackAddress
+            mainHandler.post {
+                if (isDestroyed || isFinishing) {
+                    return@post
+                }
+                state = LauncherStateTransitions.updateSmsMessages(
+                    state = state,
+                    threadId = threadId,
+                    address = resolvedAddress,
+                    messages = messages,
+                )
+                if (render) {
+                    renderCurrentFrame()
+                }
+            }
+        }
+    }
+
+    private fun onSmsProviderChanged() {
+        refreshSmsCapability(render = false)
+        refreshSmsThreads(
+            render = state.mode == LauncherMode.SMS_THREADS || state.mode == LauncherMode.SMS_ROLE_PROMPT,
+            unreadOnly = smsThreadsUnreadOnly,
+        )
+        if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
+            refreshSmsThreadDetail(
+                threadId = state.smsCurrentThreadId,
+                fallbackAddress = state.smsCurrentAddress,
+                render = true,
+            )
+        }
+    }
+
+    private fun moveSmsThreadSelection(delta: Int) {
+        state = LauncherStateTransitions.moveSmsThreadSelection(
+            state = state,
+            delta = delta,
+            visibleRows = smsThreadsVisibleRows(),
+        )
+        renderCurrentFrame()
+    }
+
+    private fun smsThreadsVisibleRows(): Int {
+        return SmsLayout.threadListMetrics(screenProfile).textList.viewport.visibleRows
+    }
+
+    private fun maybeRequestDefaultSmsRole() {
+        if (smsRepository.isDefaultSmsApp()) {
+            state = LauncherStateTransitions.showSmsThreads(
+                state = state,
+                visibleRows = smsThreadsVisibleRows(),
+            )
+            renderCurrentFrame()
+            return
+        }
+        val intent = smsRepository.buildDefaultSmsRoleIntent() ?: return
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, smsRoleRequestCode)
+    }
+
+    private fun ensureSmsReadAccessAndRole() {
+        val missingPermissions = buildList {
+            if (!smsRepository.hasReadSmsPermission()) add(Manifest.permission.READ_SMS)
+            if (!smsRepository.hasSendSmsPermission()) add(Manifest.permission.SEND_SMS)
+            if (!smsRepository.hasReceiveSmsPermission()) add(Manifest.permission.RECEIVE_SMS)
+        }
+        if (missingPermissions.isNotEmpty()) {
+            requestPermissions(missingPermissions.toTypedArray(), smsPermissionRequestCode)
+            return
+        }
+        maybeRequestDefaultSmsRole()
+    }
+
+    private fun handleLaunchIntent(intent: Intent?) {
+        if (intent == null) {
+            return
+        }
+        Log.d(
+            smsIntentLogTag,
+            "handleLaunchIntent action=${intent.action} data=${intent.data} extras=${intent.extras?.keySet()?.joinToString()} mode=${state.mode}",
+        )
+        val openThreadId = intent.getLongExtra(EXTRA_OPEN_SMS_THREAD_ID, -1L).takeIf { it >= 0L }
+        val openAddress = intent.getStringExtra(EXTRA_OPEN_SMS_ADDRESS).orEmpty()
+        val draftBody = intent.getStringExtra("sms_body")
+            ?: intent.getStringExtra(Intent.EXTRA_TEXT)
+            ?: ""
+        val isSmsSendTo = intent.action == Intent.ACTION_SENDTO &&
+            intent.data?.scheme?.lowercase(Locale.US) in setOf("sms", "smsto")
+        if (openThreadId != null || openAddress.isNotBlank() || isSmsSendTo) {
+            val resolvedAddress = when {
+                openAddress.isNotBlank() -> openAddress
+                isSmsSendTo -> intent.data?.schemeSpecificPart.orEmpty().substringBefore('?')
+                else -> ""
+            }
+            Log.d(
+                smsIntentLogTag,
+                "handleLaunchIntent resolved threadId=$openThreadId address=$resolvedAddress isSmsSendTo=$isSmsSendTo draftLength=${draftBody.length}",
+            )
+            if (resolvedAddress.isNotBlank() || openThreadId != null) {
+                refreshSmsCapability(render = false)
+                openSmsThread(
+                    threadId = openThreadId ?: smsRepository.findThreadForAddress(resolvedAddress)?.threadId,
+                    address = resolvedAddress,
+                    prefilledDraft = draftBody,
+                )
+            }
+        }
+    }
+
+    private fun sendSmsDraft() {
+        val address = state.smsCurrentAddress.trim()
+        val draft = state.smsDraftText.trim()
+        if (address.isBlank() || draft.isBlank()) {
+            return
+        }
+        if (state.smsPermissionState != SmsPermissionState.READY) {
+            ensureSmsReadAccessAndRole()
+            return
+        }
+        backgroundExecutor.execute {
+            val result = smsRepository.sendMessage(
+                SmsSendRequest(
+                    address = address,
+                    body = draft,
+                    threadId = state.smsCurrentThreadId,
+                ),
+            )
+            mainHandler.post {
+                if (isDestroyed || isFinishing) {
+                    return@post
+                }
+                result.onSuccess { sentEntry ->
+                    val nextMessages = state.smsMessages + sentEntry
+                    state = LauncherStateTransitions.updateSmsMessages(
+                        state = LauncherStateTransitions.updateSmsDraftText(
+                            state = state,
+                            smsDraftText = "",
+                        ),
+                        threadId = sentEntry.threadId.takeIf { it > 0L } ?: state.smsCurrentThreadId,
+                        address = sentEntry.address,
+                        messages = nextMessages,
+                    )
+                    syncSmsDraftInputProxyText()
+                    renderCurrentFrame()
+                    refreshSmsThreads(render = false)
+                    refreshCommunicationStatus(render = false)
+                }
+            }
+        }
     }
 
     private fun openUnreadSmsInbox() {
@@ -2343,10 +2886,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun settingsListScrollThresholds(): DrawerVerticalScrollThresholds {
-        val rowHeight = if (state.mode == LauncherMode.SMS_INBOX) {
-            SettingsMenuLayout.largeTextMetrics(screenProfile).rowHeight.toFloat()
-        } else {
-            SettingsMenuLayout.metrics(screenProfile).rowHeight.toFloat()
+        val rowHeight = when (state.mode) {
+            LauncherMode.SMS_INBOX -> SettingsMenuLayout.largeTextMetrics(screenProfile).rowHeight.toFloat()
+            LauncherMode.SMS_THREADS -> SmsLayout.threadListMetrics(screenProfile).rowHeight.toFloat()
+            else -> SettingsMenuLayout.metrics(screenProfile).rowHeight.toFloat()
         }
         return DrawerVerticalScrollThresholds(
             upwardStepPx = rowHeight,
@@ -2362,11 +2905,13 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         val rowCount = when (state.mode) {
             LauncherMode.SETTINGS -> SettingsMenuModel.rows(state).size
             LauncherMode.SMS_INBOX -> state.unreadSmsEntries.size
+            LauncherMode.SMS_THREADS -> state.smsThreads.size
             else -> SettingsMenuModel.rows(state).size
         }
         val visibleRows = when (state.mode) {
             LauncherMode.SETTINGS -> settingsVisibleRows()
             LauncherMode.SMS_INBOX -> smsInboxVisibleRows()
+            LauncherMode.SMS_THREADS -> smsThreadsVisibleRows()
             else -> settingsVisibleRows()
         }
         return (rowCount - visibleRows).coerceAtLeast(0)
@@ -2381,19 +2926,23 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun shouldShowSettingsScrollableList(): Boolean {
-        if (state.mode != LauncherMode.SETTINGS && state.mode != LauncherMode.SMS_INBOX) {
+        if (
+            state.mode != LauncherMode.SETTINGS &&
+            state.mode != LauncherMode.SMS_INBOX &&
+            state.mode != LauncherMode.SMS_THREADS
+        ) {
             return false
         }
         return TextListSupport.hasScrollableContent(
-            rowCount = if (state.mode == LauncherMode.SETTINGS) {
-                SettingsMenuModel.rows(state).size
-            } else {
-                state.unreadSmsEntries.size
+            rowCount = when (state.mode) {
+                LauncherMode.SETTINGS -> SettingsMenuModel.rows(state).size
+                LauncherMode.SMS_THREADS -> state.smsThreads.size
+                else -> state.unreadSmsEntries.size
             },
-            viewport = if (state.mode == LauncherMode.SMS_INBOX) {
-                SettingsMenuLayout.largeTextMetrics(screenProfile).textList.viewport
-            } else {
-                SettingsMenuLayout.metrics(screenProfile).textList.viewport
+            viewport = when (state.mode) {
+                LauncherMode.SMS_INBOX -> SettingsMenuLayout.largeTextMetrics(screenProfile).textList.viewport
+                LauncherMode.SMS_THREADS -> SmsLayout.threadListMetrics(screenProfile).textList.viewport
+                else -> SettingsMenuLayout.metrics(screenProfile).textList.viewport
             },
         )
     }
@@ -2402,27 +2951,35 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (x !in 0 until screenProfile.logicalWidth) {
             return false
         }
-        val metrics = if (state.mode == LauncherMode.SMS_INBOX) {
-            SettingsMenuLayout.largeTextMetrics(screenProfile)
-        } else {
-            SettingsMenuLayout.metrics(screenProfile)
+        return when (state.mode) {
+            LauncherMode.SMS_INBOX -> {
+                val metrics = SettingsMenuLayout.largeTextMetrics(screenProfile)
+                y in metrics.firstRowY until metrics.panelBottom
+            }
+            LauncherMode.SMS_THREADS -> {
+                val metrics = SmsLayout.threadListMetrics(screenProfile)
+                y in metrics.textList.viewport.top until metrics.panelBottom
+            }
+            else -> {
+                val metrics = SettingsMenuLayout.metrics(screenProfile)
+                y in metrics.firstRowY until metrics.panelBottom
+            }
         }
-        return y in metrics.firstRowY until metrics.panelBottom
     }
 
     private fun isSettingsAtListStart(): Boolean {
-        return if (state.mode == LauncherMode.SMS_INBOX) {
-            state.smsListStartIndex <= 0
-        } else {
-            state.settingsListStartIndex <= 0
+        return when (state.mode) {
+            LauncherMode.SMS_INBOX -> state.smsListStartIndex <= 0
+            LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex <= 0
+            else -> state.settingsListStartIndex <= 0
         }
     }
 
     private fun isSettingsAtListEnd(): Boolean {
-        return if (state.mode == LauncherMode.SMS_INBOX) {
-            state.smsListStartIndex >= settingsMaxStartIndex()
-        } else {
-            state.settingsListStartIndex >= settingsMaxStartIndex()
+        return when (state.mode) {
+            LauncherMode.SMS_INBOX -> state.smsListStartIndex >= settingsMaxStartIndex()
+            LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex >= settingsMaxStartIndex()
+            else -> state.settingsListStartIndex >= settingsMaxStartIndex()
         }
     }
 
@@ -2464,28 +3021,32 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         var remaining = stepDelta
         while (remaining != 0) {
             val direction = if (remaining > 0) 1 else -1
-            val previousListStartIndex = if (state.mode == LauncherMode.SMS_INBOX) {
-                state.smsListStartIndex
-            } else {
-                state.settingsListStartIndex
+            val previousListStartIndex = when (state.mode) {
+                LauncherMode.SMS_INBOX -> state.smsListStartIndex
+                LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex
+                else -> state.settingsListStartIndex
             }
-            state = if (state.mode == LauncherMode.SMS_INBOX) {
-                LauncherStateTransitions.scrollSmsWindow(
+            state = when (state.mode) {
+                LauncherMode.SMS_INBOX -> LauncherStateTransitions.scrollSmsWindow(
                     state = state,
                     delta = direction,
                     visibleRows = smsInboxVisibleRows(),
                 )
-            } else {
-                LauncherStateTransitions.scrollSettingsWindow(
+                LauncherMode.SMS_THREADS -> LauncherStateTransitions.scrollSmsThreadWindow(
+                    state = state,
+                    delta = direction,
+                    visibleRows = smsThreadsVisibleRows(),
+                )
+                else -> LauncherStateTransitions.scrollSettingsWindow(
                     state = state,
                     delta = direction,
                     visibleRows = settingsVisibleRows(),
                 )
             }
-            val currentListStartIndex = if (state.mode == LauncherMode.SMS_INBOX) {
-                state.smsListStartIndex
-            } else {
-                state.settingsListStartIndex
+            val currentListStartIndex = when (state.mode) {
+                LauncherMode.SMS_INBOX -> state.smsListStartIndex
+                LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex
+                else -> state.settingsListStartIndex
             }
             if (currentListStartIndex == previousListStartIndex) {
                 settingsListScrollResidualOffsetPx = 0f
@@ -2542,8 +3103,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private fun settleSettingsMotionBeforeExplicitAction() {
         val settledState = TextListSupport.settleBeforeExplicitAction(
             TextListRuntimeState(
-                selectedIndex = if (state.mode == LauncherMode.SMS_INBOX) state.smsSelectedIndex else state.settingsSelectedIndex,
-                listStartIndex = if (state.mode == LauncherMode.SMS_INBOX) state.smsListStartIndex else state.settingsListStartIndex,
+                selectedIndex = when (state.mode) {
+                    LauncherMode.SMS_INBOX -> state.smsSelectedIndex
+                    LauncherMode.SMS_THREADS -> state.smsThreadSelectedIndex
+                    else -> state.settingsSelectedIndex
+                },
+                listStartIndex = when (state.mode) {
+                    LauncherMode.SMS_INBOX -> state.smsListStartIndex
+                    LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex
+                    else -> state.settingsListStartIndex
+                },
                 residualOffsetPx = settingsListScrollResidualOffsetPx,
                 velocityPxPerSecond = settingsListScrollVelocityPxPerSecond,
                 settleTarget = settingsSettleTarget,
@@ -2783,6 +3352,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
             LauncherMode.SMS_INBOX,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIAGNOSTICS -> true
 
             LauncherMode.IDLE -> false
@@ -2790,7 +3362,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun isPointInSmsBodyArea(x: Int, y: Int): Boolean {
-        if (state.mode != LauncherMode.SMS_INBOX) {
+        if (state.mode != LauncherMode.SMS_INBOX && state.mode != LauncherMode.SMS_THREAD_DETAIL) {
             return false
         }
         return x in 0 until screenProfile.logicalWidth &&
@@ -2798,16 +3370,30 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun smsBodyTopY(): Int {
-        return SettingsMenuLayout.largeTextMetrics(screenProfile).firstRowY + GlyphStyle.APP_LABEL_16.cellHeight + 2
+        return if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
+            SmsLayout.detailMetrics(screenProfile).bodyTop
+        } else {
+            SettingsMenuLayout.largeTextMetrics(screenProfile).firstRowY + GlyphStyle.APP_LABEL_16.cellHeight + 2
+        }
     }
 
-    private fun smsBodyBottomExclusiveY(): Int = screenProfile.logicalHeight - 2
+    private fun smsBodyBottomExclusiveY(): Int {
+        return if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
+            SmsLayout.detailMetrics(screenProfile).bodyBottomExclusive
+        } else {
+            screenProfile.logicalHeight - 2
+        }
+    }
 
     private fun smsBodyLineHeight(): Int = GlyphStyle.APP_LABEL_16.cellHeight + 2
 
     private fun smsBodyCanScroll(): Boolean = smsBodyMaxScrollPx() > 0
 
     private fun smsBodyMaxScrollPx(): Int {
+        if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
+            val availableHeight = (smsBodyBottomExclusiveY() - smsBodyTopY()).coerceAtLeast(0)
+            return (measureSmsThreadDetailContentHeight() - availableHeight).coerceAtLeast(0)
+        }
         val entry = state.unreadSmsEntries.getOrNull(state.smsSelectedIndex) ?: return 0
         val availableHeight = (smsBodyBottomExclusiveY() - smsBodyTopY()).coerceAtLeast(0)
         val body = entry.body
@@ -2821,6 +3407,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun wrapSmsBodyLines(text: String): List<String> {
         val maxWidth = SettingsMenuLayout.largeTextMetrics(screenProfile).rowMaxTextWidth
+        val safeWidth = maxWidth.coerceAtLeast(GlyphStyle.APP_LABEL_16.narrowAdvanceWidth)
+        return wrapSmsLinesToWidth(text = text, maxWidth = safeWidth)
+    }
+
+    private fun wrapSmsLinesToWidth(text: String, maxWidth: Int): List<String> {
         val safeWidth = maxWidth.coerceAtLeast(GlyphStyle.APP_LABEL_16.narrowAdvanceWidth)
         val normalized = text.replace('\t', ' ')
         val lines = mutableListOf<String>()
@@ -2842,6 +3433,60 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             lines += current.toString()
         }
         return lines
+    }
+
+    private fun scrollSmsDetailBy(deltaPx: Int) {
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL || deltaPx == 0) {
+            return
+        }
+        val previousOffset = smsBodyScrollOffsetPx
+        smsBodyScrollOffsetPx = (smsBodyScrollOffsetPx + deltaPx.toFloat())
+            .coerceIn(0f, smsBodyMaxScrollPx().toFloat())
+        Log.d(
+            smsScrollLogTag,
+            "key-scroll deltaPx=$deltaPx from=$previousOffset to=$smsBodyScrollOffsetPx max=${smsBodyMaxScrollPx()}",
+        )
+        renderCurrentFrame()
+    }
+
+    private fun isPointInSmsComposeArea(x: Int, y: Int): Boolean {
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
+            return false
+        }
+        val metrics = SmsLayout.detailMetrics(screenProfile)
+        return x in 0 until screenProfile.logicalWidth &&
+            y in metrics.composeTop until metrics.composeBottomExclusive
+    }
+
+    private fun isPointInSmsComposeSendArea(x: Int, y: Int): Boolean {
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
+            return false
+        }
+        val metrics = SmsLayout.detailMetrics(screenProfile)
+        val sendLabel = if (state.smsPermissionState == SmsPermissionState.READY) "SEND" else "DEFAULT"
+        val sendWidth = pixelFontEngine.measureText(sendLabel, GlyphStyle.UI_SMALL_10)
+        val sendX = (metrics.composeSendRight - sendWidth).coerceAtLeast(metrics.composeTextLeft)
+        return x in sendX until metrics.composeSendRight &&
+            y in metrics.composeTop until metrics.composeBottomExclusive
+    }
+
+    private fun measureSmsThreadDetailContentHeight(): Int {
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
+            return 0
+        }
+        val metrics = SmsLayout.detailMetrics(screenProfile)
+        val lineGap = 1
+        var height = 0
+        state.smsMessages.forEach { message ->
+            height += GlyphStyle.UI_SMALL_10.cellHeight + lineGap
+            val bodyLines = wrapSmsLinesToWidth(
+                text = message.body.replace("\r", "").ifBlank { "(EMPTY)" }.uppercase(),
+                maxWidth = metrics.textWidth,
+            )
+            height += bodyLines.size * (GlyphStyle.APP_LABEL_16.cellHeight + lineGap)
+            height += 2
+        }
+        return height
     }
 
     private fun resetSmsBodyDragTracking() {
@@ -3458,7 +4103,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         overridePendingTransition(0, 0)
     }
 
-    private companion object {
+    companion object {
         const val REQUIRED_GLES_VERSION = 0x20000
         const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
@@ -3481,8 +4126,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val idleMaxCatchUpSteps: Int = 2
         const val idleMaxAccumulationMs: Long = idleFixedStepMs * idleMaxCatchUpSteps
         const val homeDataPermissionRequestCode = 1001
+        const val smsPermissionRequestCode = 1002
+        const val smsRoleRequestCode = 1003
         const val rainRefreshIntervalMs: Long = 30 * 60 * 1000L
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"
+        const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
+        const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
+        const val smsScrollLogTag = "SmsScroll"
+        const val smsIntentLogTag = "SmsIntent"
     }
 }

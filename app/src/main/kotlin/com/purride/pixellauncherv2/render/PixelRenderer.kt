@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.render
 
+import android.provider.Telephony
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerAlphaIndexModel
 import com.purride.pixellauncherv2.launcher.AppListLayout
@@ -18,9 +19,13 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayoutMetrics
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.SettingsMenuRow
+import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.TextListViewport
 import com.purride.pixellauncherv2.launcher.TextListSupport
 import com.purride.pixellauncherv2.util.LabelFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class PixelRenderer(
     private val pixelFontEngine: PixelFontEngine,
@@ -269,8 +274,8 @@ class PixelRenderer(
         } else {
             0
         }
-        val modeSettingsScrollOffset = if ((mode == LauncherMode.SETTINGS || mode == LauncherMode.SMS_INBOX) &&
-            (state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_INBOX)
+        val modeSettingsScrollOffset = if ((mode == LauncherMode.SETTINGS || mode == LauncherMode.SMS_INBOX || mode == LauncherMode.SMS_THREADS) &&
+            (state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_INBOX || state.mode == LauncherMode.SMS_THREADS)
         ) {
             settingsListScrollOffsetPx
         } else {
@@ -291,6 +296,26 @@ class PixelRenderer(
                 screenProfile = screenProfile,
                 animationState = animationState,
                 settingsListScrollOffsetPx = modeSettingsScrollOffset,
+            )
+            LauncherMode.SMS_ROLE_PROMPT -> drawSmsRolePrompt(
+                buffer = buffer,
+                state = modeState,
+                screenProfile = screenProfile,
+                animationState = animationState,
+            )
+            LauncherMode.SMS_THREADS -> drawSmsThreads(
+                buffer = buffer,
+                state = modeState,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                scrollOffsetPx = modeSettingsScrollOffset,
+            )
+            LauncherMode.SMS_THREAD_DETAIL -> drawSmsThreadDetail(
+                buffer = buffer,
+                state = modeState,
+                screenProfile = screenProfile,
+                animationState = animationState,
+                bodyScrollOffsetPx = smsBodyScrollOffsetPx,
             )
             LauncherMode.SMS_INBOX -> drawSmsInbox(
                 buffer = buffer,
@@ -910,6 +935,228 @@ class PixelRenderer(
         }
     }
 
+    /** 默认短信角色申请提示页。 */
+    private fun drawSmsRolePrompt(
+        buffer: PixelBuffer,
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+    ) {
+        drawHeader(
+            buffer = buffer,
+            screenProfile = screenProfile,
+            state = state,
+            titleCandidates = listOf("SMS"),
+            chargeTick = animationState.headerChargeTick,
+        )
+        val layout = SettingsMenuLayout.largeTextMetrics(screenProfile)
+        val lines = listOf(
+            "SET PIXEL LAUNCHER",
+            "AS DEFAULT SMS",
+            "TO RECEIVE AND REPLY",
+            "ENTER TO CONTINUE",
+        )
+        var y = layout.firstRowY
+        lines.forEach { line ->
+            drawCenteredText(
+                buffer = buffer,
+                text = line,
+                y = y,
+                style = GlyphStyle.APP_LABEL_16,
+            )
+            y += GlyphStyle.APP_LABEL_16.cellHeight + 2
+        }
+    }
+
+    /** 短信线程列表页。 */
+    private fun drawSmsThreads(
+        buffer: PixelBuffer,
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+        scrollOffsetPx: Int,
+    ) {
+        drawHeader(
+            buffer = buffer,
+            screenProfile = screenProfile,
+            state = state,
+            titleCandidates = listOf("SMS"),
+            chargeTick = animationState.headerChargeTick,
+        )
+        val layout = SmsLayout.threadListMetrics(screenProfile)
+        if (state.smsThreads.isEmpty()) {
+            drawCenteredText(
+                buffer = buffer,
+                text = if (state.smsPermissionState == com.purride.pixellauncherv2.launcher.SmsPermissionState.MISSING) "ALLOW SMS ACCESS" else "NO SMS",
+                y = layout.textList.viewport.top,
+                style = GlyphStyle.APP_LABEL_16,
+            )
+            return
+        }
+        val firstIndex = (state.smsThreadListStartIndex - 1).coerceAtLeast(0)
+        val lastIndexExclusive = (state.smsThreadListStartIndex + layout.textList.viewport.visibleRows + 2)
+            .coerceAtMost(state.smsThreads.size)
+        for (index in firstIndex until lastIndexExclusive) {
+            val rowTop = layout.textList.viewport.top +
+                ((index - state.smsThreadListStartIndex) * layout.rowHeight) -
+                scrollOffsetPx
+            val rowBottom = rowTop + layout.rowHeight
+            if (rowBottom <= layout.textList.viewport.top || rowTop >= layout.panelBottom) {
+                continue
+            }
+            val thread = state.smsThreads[index]
+            val addressText = sanitizeSmsHeaderSender(thread.address)
+            val timeText = formatSmsHeaderTime(thread.dateMillis)
+            val unreadText = if (thread.unreadCount > 0) "NEW ${thread.unreadCount}" else ""
+            val addressAvailableWidth = (layout.rowMaxWidth - pixelFontEngine.measureText(timeText, GlyphStyle.UI_SMALL_10) - 2)
+                .coerceAtLeast(8)
+            drawTextAsValueClipped(
+                buffer = buffer,
+                text = pixelFontEngine.trimToWidth(addressText, GlyphStyle.APP_LABEL_16, addressAvailableWidth),
+                startX = layout.rowTextX,
+                startY = rowTop,
+                maxWidth = addressAvailableWidth,
+                style = GlyphStyle.APP_LABEL_16,
+                value = PixelBuffer.ON,
+                clipTop = layout.textList.viewport.top,
+                clipBottomExclusive = layout.panelBottom,
+            )
+            drawTextAsValueClipped(
+                buffer = buffer,
+                text = timeText,
+                startX = (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - pixelFontEngine.measureText(timeText, GlyphStyle.UI_SMALL_10)).coerceAtLeast(layout.rowTextX),
+                startY = rowTop + 2,
+                maxWidth = pixelFontEngine.measureText(timeText, GlyphStyle.UI_SMALL_10),
+                style = GlyphStyle.UI_SMALL_10,
+                value = PixelBuffer.ACCENT,
+                clipTop = layout.textList.viewport.top,
+                clipBottomExclusive = layout.panelBottom,
+            )
+            val metaLine = buildString {
+                if (unreadText.isNotBlank()) {
+                    append(unreadText)
+                    append("  ")
+                }
+                append(thread.snippet.ifBlank { "(EMPTY)" }.uppercase())
+            }
+            drawTextAsValueClipped(
+                buffer = buffer,
+                text = pixelFontEngine.trimToWidth(metaLine, GlyphStyle.UI_SMALL_10, layout.rowMaxWidth),
+                startX = layout.rowTextX,
+                startY = rowTop + GlyphStyle.APP_LABEL_16.cellHeight + 1,
+                maxWidth = layout.rowMaxWidth,
+                style = GlyphStyle.UI_SMALL_10,
+                value = PixelBuffer.ACCENT,
+                clipTop = layout.textList.viewport.top,
+                clipBottomExclusive = layout.panelBottom,
+            )
+        }
+    }
+
+    /** 单个短信线程详情页，底部包含最小发送入口。 */
+    private fun drawSmsThreadDetail(
+        buffer: PixelBuffer,
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+        animationState: LauncherAnimationState,
+        bodyScrollOffsetPx: Int,
+    ) {
+        val sender = state.smsCurrentAddress.ifBlank {
+            state.smsMessages.lastOrNull()?.address.orEmpty()
+        }
+        val currentIndex = state.smsThreads.indexOfFirst { it.threadId == state.smsCurrentThreadId }
+            .takeIf { it >= 0 }?.plus(1) ?: 1
+        drawSmsInboxHeader(
+            buffer = buffer,
+            screenProfile = screenProfile,
+            state = state,
+            sender = sender,
+            currentIndex = currentIndex,
+            totalCount = state.smsThreads.size.coerceAtLeast(1),
+            tick = animationState.headerChargeTick,
+        )
+        val layout = SmsLayout.detailMetrics(screenProfile)
+        val messages = state.smsMessages
+        if (messages.isEmpty()) {
+            drawCenteredText(
+                buffer = buffer,
+                text = if (state.smsCurrentAddress.isNotBlank()) "START MESSAGE" else "NO MESSAGES",
+                y = layout.bodyTop,
+                style = GlyphStyle.APP_LABEL_16,
+            )
+        } else {
+            var lineY = layout.bodyTop - bodyScrollOffsetPx
+            messages.forEach { message ->
+                val meta = "${if (message.type == Telephony.Sms.MESSAGE_TYPE_SENT) "OUT" else "IN"} ${formatSmsHeaderTime(message.dateMillis)}"
+                drawTextAsValueClipped(
+                    buffer = buffer,
+                    text = meta,
+                    startX = layout.textLeft,
+                    startY = lineY,
+                    maxWidth = layout.textWidth,
+                    style = GlyphStyle.UI_SMALL_10,
+                    value = PixelBuffer.ACCENT,
+                    clipTop = layout.bodyTop,
+                    clipBottomExclusive = layout.bodyBottomExclusive,
+                )
+                lineY += GlyphStyle.UI_SMALL_10.cellHeight + 1
+                wrapTextToWidth(
+                    text = message.body.replace("\r", "").ifBlank { "(EMPTY)" }.uppercase(),
+                    style = GlyphStyle.APP_LABEL_16,
+                    maxWidth = layout.textWidth,
+                ).forEach { line ->
+                    drawTextAsValueClipped(
+                        buffer = buffer,
+                        text = line,
+                        startX = layout.textLeft,
+                        startY = lineY,
+                        maxWidth = layout.textWidth,
+                        style = GlyphStyle.APP_LABEL_16,
+                        value = PixelBuffer.ON,
+                        clipTop = layout.bodyTop,
+                        clipBottomExclusive = layout.bodyBottomExclusive,
+                    )
+                    lineY += GlyphStyle.APP_LABEL_16.cellHeight + 1
+                }
+                lineY += 2
+            }
+        }
+
+        drawHorizontalLine(
+            buffer = buffer,
+            startX = LauncherHeaderLayout.horizontalPadding,
+            endX = screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - 1,
+            y = layout.composeTop - 1,
+        )
+        val sendLabel = if (state.smsPermissionState == com.purride.pixellauncherv2.launcher.SmsPermissionState.READY) "SEND" else "DEFAULT"
+        val sendWidth = pixelFontEngine.measureText(sendLabel, GlyphStyle.UI_SMALL_10)
+        val sendX = (layout.composeSendRight - sendWidth).coerceAtLeast(layout.composeTextLeft)
+        val draftMaxWidth = (sendX - layout.composeTextLeft - 2).coerceAtLeast(8)
+        val draftText = when {
+            state.smsDraftText.isNotBlank() -> state.smsDraftText
+            state.smsPermissionState == com.purride.pixellauncherv2.launcher.SmsPermissionState.READY -> "TYPE SMS"
+            else -> "SET DEFAULT SMS TO REPLY"
+        }
+        drawTextAsValue(
+            buffer = buffer,
+            text = pixelFontEngine.trimToWidth(draftText, GlyphStyle.UI_SMALL_10, draftMaxWidth),
+            startX = layout.composeTextLeft,
+            startY = layout.composeTop + 1,
+            maxWidth = draftMaxWidth,
+            style = GlyphStyle.UI_SMALL_10,
+            value = if (state.smsDraftText.isNotBlank()) PixelBuffer.ON else PixelBuffer.ACCENT,
+        )
+        drawTextAsValue(
+            buffer = buffer,
+            text = sendLabel,
+            startX = sendX,
+            startY = layout.composeTop + 1,
+            maxWidth = sendWidth,
+            style = GlyphStyle.UI_SMALL_10,
+            value = PixelBuffer.ACCENT,
+        )
+    }
+
     /** 短信全文页头部：中间显示号码，右侧显示当前位置，视觉口径和抽屉状态栏一致。 */
     private fun drawSmsInboxHeader(
         buffer: PixelBuffer,
@@ -930,18 +1177,25 @@ class PixelRenderer(
             style = style,
             maxWidth = (screenProfile.logicalWidth / 3).coerceAtLeast(1),
         )
+        val centerGap = pixelFontEngine.measureText("0", style).coerceAtLeast(1)
         val timeWidth = pixelFontEngine.measureText(trimmedTime, style)
         val rightWidth = pixelFontEngine.measureText(rightText, style)
         val rightX = (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - rightWidth)
             .coerceAtLeast(leftPadding)
-        val availableWidth = (screenProfile.logicalWidth - (leftPadding * 2)).coerceAtLeast(0)
         val displaySender = sanitizeSmsHeaderSender(sender)
-        val senderMaxWidth = (screenProfile.logicalWidth - (leftPadding * 2) - timeWidth - rightWidth - 4).coerceAtLeast(1)
-        val senderText = pixelFontEngine.trimToWidth(
-            text = displaySender,
-            style = style,
-            maxWidth = senderMaxWidth,
+        val senderMarqueeKey = normalizeSmsHeaderSenderKey(sender)
+        if (senderMarqueeKey != lastSmsHeaderSenderKey) {
+            lastSmsHeaderSenderKey = senderMarqueeKey
+            smsHeaderMarqueeStartTick = tick
+        }
+        val senderSafeLeft = (leftPadding + timeWidth + centerGap).coerceAtLeast(leftPadding)
+        val senderSafeRight = (rightX - centerGap - 1).coerceAtLeast(senderSafeLeft)
+        val centeredWindowWidth = centeredHeaderWindowWidth(
+            screenWidth = screenProfile.logicalWidth,
+            safeLeft = senderSafeLeft,
+            safeRight = senderSafeRight,
         )
+        val centeredWindowLeft = ((screenProfile.logicalWidth - centeredWindowWidth) / 2).coerceAtLeast(senderSafeLeft)
         if (trimmedTime.isNotEmpty()) {
             drawTextAsValue(
                 buffer = buffer,
@@ -953,18 +1207,32 @@ class PixelRenderer(
                 value = PixelBuffer.ON,
             )
         }
-        if (senderText.isNotEmpty()) {
-            val senderWidth = pixelFontEngine.measureText(senderText, style)
-            val senderX = ((screenProfile.logicalWidth - senderWidth) / 2).coerceAtLeast(leftPadding)
-            drawTextAsValue(
-                buffer = buffer,
-                text = senderText,
-                startX = senderX,
-                startY = headerY,
-                maxWidth = senderMaxWidth,
-                style = style,
-                value = PixelBuffer.ACCENT,
-            )
+        if (displaySender.isNotEmpty()) {
+            val senderWidth = pixelFontEngine.measureText(displaySender, style)
+            if (senderWidth <= centeredWindowWidth) {
+                val senderX = ((screenProfile.logicalWidth - senderWidth) / 2).coerceAtLeast(0)
+                drawTextAsValue(
+                    buffer = buffer,
+                    text = displaySender,
+                    startX = senderX,
+                    startY = headerY,
+                    maxWidth = centeredWindowWidth,
+                    style = style,
+                    value = PixelBuffer.ACCENT,
+                )
+            } else {
+                drawMarqueeTextAsValue(
+                    buffer = buffer,
+                    text = displaySender,
+                    startX = centeredWindowLeft,
+                    startY = headerY,
+                    maxWidth = centeredWindowWidth,
+                    style = style,
+                    value = PixelBuffer.ACCENT,
+                    tick = (tick - smsHeaderMarqueeStartTick).coerceAtLeast(0),
+                    separatorText = marqueeSeparatorForWidth(style, centerGap),
+                )
+            }
         }
         drawTextAsValue(
             buffer = buffer,
@@ -990,6 +1258,38 @@ class PixelRenderer(
             ch.isDigit() || ch == '+' || ch == '*' || ch == '#' || ch == '-' || ch == ' ' || ch == '(' || ch == ')'
         }.trim()
         return filtered.ifBlank { "UNKNOWN" }.uppercase()
+    }
+
+    /** 跑马灯重置只基于号码本体，不受空格、括号、横杠等格式差异影响。 */
+    private fun normalizeSmsHeaderSenderKey(sender: String): String {
+        val normalized = sender.filter { ch ->
+            ch.isDigit() || ch == '+' || ch == '*' || ch == '#'
+        }.uppercase()
+        return normalized.ifBlank { "UNKNOWN" }
+    }
+
+    private fun centeredHeaderWindowWidth(
+        screenWidth: Int,
+        safeLeft: Int,
+        safeRight: Int,
+    ): Int {
+        val centerLeft = (screenWidth - 1) / 2
+        val centerRight = screenWidth / 2
+        val leftReach = (centerLeft - safeLeft + 1).coerceAtLeast(0)
+        val rightReach = (safeRight - centerRight + 1).coerceAtLeast(0)
+        val halfWidth = minOf(leftReach, rightReach)
+        return (halfWidth * 2).coerceAtLeast(1)
+    }
+
+    private fun marqueeSeparatorForWidth(style: GlyphStyle, targetWidthPx: Int): String {
+        if (targetWidthPx <= 0) {
+            return " "
+        }
+        var separator = " "
+        while (pixelFontEngine.measureText(separator, style) < targetWidthPx) {
+            separator += " "
+        }
+        return separator
     }
 
     private fun drawDiagnosticsLine(
@@ -1489,6 +1789,7 @@ class PixelRenderer(
         style: GlyphStyle,
         value: Byte,
         tick: Int,
+        separatorText: String = "   ",
     ) {
         if (text.isEmpty() || maxWidth <= 0) {
             return
@@ -1508,7 +1809,7 @@ class PixelRenderer(
             return
         }
 
-        val separator = "   "
+        val separator = separatorText.ifEmpty { " " }
         val scrollBase = text + separator
         val loopText = scrollBase + text
         val scrollSpan = pixelFontEngine.measureText(scrollBase, style).coerceAtLeast(1)
@@ -1555,6 +1856,16 @@ class PixelRenderer(
         const val pagerHomeIndex: Int = 1
         const val pagerAppsIndex: Int = 2
         const val pagerCompositionThresholdPx: Float = 0.5f
+    }
+
+    private var lastSmsHeaderSenderKey: String = ""
+    private var smsHeaderMarqueeStartTick: Int = 0
+    private val smsHeaderTimeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    private fun formatSmsHeaderTime(dateMillis: Long): String {
+        return runCatching {
+            smsHeaderTimeFormatter.format(Date(dateMillis))
+        }.getOrDefault("--:--")
     }
 
     private fun drawHorizontalLine(
