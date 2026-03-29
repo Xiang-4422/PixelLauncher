@@ -46,7 +46,7 @@ data class LauncherState(
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR,
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
-    val isIdlePageEnabled: Boolean = true,
+    val isIdlePageEnabled: Boolean = false,
     val openDrawerInSearchMode: Boolean = false,
     val chargeIdleEffect: ChargeIdleEffect = ChargeIdleEffect.FLUID,
     val batteryLevel: Int = 100,

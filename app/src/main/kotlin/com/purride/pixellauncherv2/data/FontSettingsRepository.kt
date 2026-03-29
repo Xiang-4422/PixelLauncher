@@ -91,7 +91,8 @@ class FontSettingsRepository(
     fun getUiBehaviorSettings(): UiBehaviorSettings {
         return UiBehaviorSettings(
             drawerListAlignment = readStoredDrawerListAlignment(),
-            isIdlePageEnabled = sharedPreferences.getBoolean(KEY_IDLE_PAGE_ENABLED, true),
+            // Idle 设置入口已经下线，当前版本统一视为关闭，避免旧偏好值继续生效。
+            isIdlePageEnabled = false,
             openDrawerInSearchMode = sharedPreferences.getBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, false),
             chargeIdleEffect = readStoredChargeIdleEffect(),
         )
