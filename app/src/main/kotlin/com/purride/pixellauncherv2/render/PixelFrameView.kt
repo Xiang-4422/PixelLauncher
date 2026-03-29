@@ -22,6 +22,8 @@ interface PixelFrameView {
 
     fun setPalette(palette: PixelPalette)
 
+    fun setPixelGapEnabled(enabled: Boolean) = Unit
+
     fun setIdleContinuousRendering(enabled: Boolean) = Unit
 
     fun asView(): View

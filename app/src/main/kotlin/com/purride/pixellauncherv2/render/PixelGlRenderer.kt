@@ -75,6 +75,8 @@ class PixelGlRenderer(
     private val frameSwapBuffer: FrameSwapBuffer,
     private val idleMaskSwapBuffer: IdleMaskSwapBuffer,
 ) : GLSurfaceView.Renderer {
+    var pixelGapEnabled: Boolean = true
+        private set
     private var programHandle: Int = 0
     private var staticTextureHandle: Int = 0
     private var idleMaskTextureHandle: Int = 0
@@ -123,6 +125,10 @@ class PixelGlRenderer(
 
     fun setFallbackPalette(palette: PixelPalette) {
         fallbackPalette = palette
+    }
+
+    fun setPixelGapEnabled(enabled: Boolean) {
+        pixelGapEnabled = enabled
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -307,6 +313,7 @@ class PixelGlRenderer(
             viewWidth = surfaceWidth,
             viewHeight = surfaceHeight,
             profile = profile,
+            pixelGapEnabled = pixelGapEnabled,
         ) ?: run {
             drawBackgroundOnly(frame.palette)
             return

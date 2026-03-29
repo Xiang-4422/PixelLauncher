@@ -21,6 +21,7 @@ class FontSettingsRepository(
         val fontStyle: PixelFontStyle,
         val pixelShape: PixelShape,
         val dotSizePx: Int,
+        val pixelGapEnabled: Boolean,
         val theme: PixelTheme,
     )
 
@@ -39,6 +40,7 @@ class FontSettingsRepository(
             fontStyle = storedFontStyle,
             pixelShape = readStoredPixelShape() ?: PixelShape.SQUARE,
             dotSizePx = readStoredDotSizePx(),
+            pixelGapEnabled = readStoredPixelGapEnabled(),
             theme = readStoredTheme(),
         )
     }
@@ -57,6 +59,7 @@ class FontSettingsRepository(
         fontStyle: PixelFontStyle,
         pixelShape: PixelShape,
         dotSizePx: Int,
+        pixelGapEnabled: Boolean,
         theme: PixelTheme,
     ) {
         val safeDotSizePx = ScreenProfileFactory.supportedDotSizePxOptions.firstOrNull { it == dotSizePx }
@@ -66,6 +69,7 @@ class FontSettingsRepository(
             .putString(KEY_FONT_STYLE, fontStyle.name)
             .putString(KEY_PIXEL_SHAPE, pixelShape.name)
             .putInt(KEY_DOT_SIZE_PX, safeDotSizePx)
+            .putBoolean(KEY_PIXEL_GAP_ENABLED, pixelGapEnabled)
             .putString(KEY_THEME, theme.name)
             .apply()
     }
@@ -115,6 +119,10 @@ class FontSettingsRepository(
         return PixelTheme.entries.firstOrNull { it.name == storedValue } ?: PixelTheme.GREEN_PHOSPHOR
     }
 
+    private fun readStoredPixelGapEnabled(): Boolean {
+        return sharedPreferences.getBoolean(KEY_PIXEL_GAP_ENABLED, true)
+    }
+
     private fun readStoredDrawerListAlignment(): DrawerListAlignment {
         val storedValue = sharedPreferences.getString(KEY_DRAWER_LIST_ALIGNMENT, null)
         return DrawerListAlignment.entries.firstOrNull { it.name == storedValue } ?: DrawerListAlignment.LEFT
@@ -131,6 +139,7 @@ class FontSettingsRepository(
         const val KEY_FONT_STYLE = "selected_font_style"
         const val KEY_PIXEL_SHAPE = "selected_pixel_shape"
         const val KEY_DOT_SIZE_PX = "selected_dot_size_px"
+        const val KEY_PIXEL_GAP_ENABLED = "pixel_gap_enabled"
         const val KEY_THEME = "selected_theme"
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"
         const val KEY_IDLE_PAGE_ENABLED = "idle_page_enabled"

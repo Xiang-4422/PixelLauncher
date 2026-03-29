@@ -153,6 +153,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var palette: PixelPalette = PixelPalette.terminalGreen()
     private var pixelShape: PixelShape = PixelShape.SQUARE
     private var dotSizePx: Int = ScreenProfileFactory.defaultDotSizePx
+    private var pixelGapEnabled: Boolean = true
     private var selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR
     private var state = LauncherState()
     private var animationState = LauncherAnimationState()
@@ -417,6 +418,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         pixelFontEngine = resolvedPixelFont.engine
         pixelShape = appearanceSettings.pixelShape
         dotSizePx = appearanceSettings.dotSizePx
+        pixelGapEnabled = appearanceSettings.pixelGapEnabled
         selectedTheme = appearanceSettings.theme
         state = LauncherStateTransitions.updateAppearance(
             state = state,
@@ -424,6 +426,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             selectedFontStyle = appearanceSettings.fontStyle,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
+            isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
         )
         state = LauncherStateTransitions.updateUiBehavior(
@@ -462,6 +465,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         pixelFrameView = createPixelFrameView().apply {
             interactionListener = this@MainActivity
             setPalette(palette)
+            setPixelGapEnabled(pixelGapEnabled)
         }
         pixelFrameView.asView().apply {
             isFocusable = true
@@ -2763,6 +2767,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             SettingsMenuItem.FONT_SIZE -> changeSettingValue(1)
             SettingsMenuItem.FONT_STYLE -> changeSettingValue(1)
             SettingsMenuItem.RESOLUTION -> changeSettingValue(1)
+            SettingsMenuItem.PIXEL_GAP -> changeSettingValue(1)
             SettingsMenuItem.STYLE -> changeSettingValue(1)
             SettingsMenuItem.THEME -> changeSettingValue(1)
             SettingsMenuItem.APP_LIST_ALIGNMENT -> changeSettingValue(1)
@@ -2781,6 +2786,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
+                    newPixelGapEnabled = state.isPixelGapEnabled,
                     newTheme = state.selectedTheme,
                 )
             }
@@ -2792,6 +2798,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     fontStyle = nextFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
+                    newPixelGapEnabled = state.isPixelGapEnabled,
                     newTheme = state.selectedTheme,
                 )
             }
@@ -2807,6 +2814,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = nextDotSizePx,
+                    newPixelGapEnabled = state.isPixelGapEnabled,
+                    newTheme = state.selectedTheme,
+                )
+            }
+
+            SettingsMenuItem.PIXEL_GAP -> {
+                applyAppearance(
+                    fontSize = state.selectedFontSize,
+                    fontStyle = state.selectedFontStyle,
+                    newPixelShape = state.selectedPixelShape,
+                    newDotSizePx = state.selectedDotSizePx,
+                    newPixelGapEnabled = SettingsMenuModel.toggle(state.isPixelGapEnabled),
                     newTheme = state.selectedTheme,
                 )
             }
@@ -2818,6 +2837,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = nextPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
+                    newPixelGapEnabled = state.isPixelGapEnabled,
                     newTheme = state.selectedTheme,
                 )
             }
@@ -2829,6 +2849,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
+                    newPixelGapEnabled = state.isPixelGapEnabled,
                     newTheme = nextTheme,
                 )
             }
@@ -3520,6 +3541,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         fontStyle: PixelFontStyle,
         newPixelShape: PixelShape,
         newDotSizePx: Int,
+        newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
     ) {
         if (::pixelFontEngine.isInitialized) {
@@ -3531,14 +3553,24 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         pixelRenderer = PixelRenderer(pixelFontEngine)
         pixelShape = newPixelShape
         dotSizePx = newDotSizePx
+        pixelGapEnabled = newPixelGapEnabled
         selectedTheme = newTheme
-        fontSettingsRepository.setAppearanceSettings(fontSize, fontStyle, newPixelShape, newDotSizePx, newTheme)
+        pixelFrameView.setPixelGapEnabled(newPixelGapEnabled)
+        fontSettingsRepository.setAppearanceSettings(
+            fontSize = fontSize,
+            fontStyle = fontStyle,
+            pixelShape = newPixelShape,
+            dotSizePx = newDotSizePx,
+            pixelGapEnabled = newPixelGapEnabled,
+            theme = newTheme,
+        )
         state = LauncherStateTransitions.updateAppearance(
             state = state,
             selectedFontSize = fontSize,
             selectedFontStyle = fontStyle,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
+            isPixelGapEnabled = newPixelGapEnabled,
             selectedTheme = newTheme,
         )
 

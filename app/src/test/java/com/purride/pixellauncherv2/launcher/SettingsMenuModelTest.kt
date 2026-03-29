@@ -70,12 +70,13 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun rowsIncludeThemeAndAdvancedItems() {
+    fun rowsIncludeThemeAndPixelGapItems() {
         val rowItems = SettingsMenuModel.rows(
             LauncherState(
                 selectedFontSize = PixelFontSize.PX_12,
                 selectedFontStyle = PixelFontStyle.MONO,
                 selectedTheme = PixelTheme.AMBER_CRT,
+                isPixelGapEnabled = true,
                 drawerListAlignment = DrawerListAlignment.RIGHT,
                 isIdlePageEnabled = false,
                 openDrawerInSearchMode = true,
@@ -88,13 +89,15 @@ class SettingsMenuModelTest {
         assertTrue(SettingsMenuItem.DRAWER_AUTO_SEARCH in rowItems)
         assertTrue(SettingsMenuItem.FONT_SIZE in rowItems)
         assertTrue(SettingsMenuItem.FONT_STYLE in rowItems)
-        assertEquals(7, rowItems.size)
+        assertTrue(SettingsMenuItem.PIXEL_GAP in rowItems)
+        assertEquals(8, rowItems.size)
     }
 
     @Test
     fun rowsReflectDrawerBehaviorValues() {
         val rows = SettingsMenuModel.rows(
             LauncherState(
+                isPixelGapEnabled = true,
                 drawerListAlignment = DrawerListAlignment.CENTER,
                 isIdlePageEnabled = false,
                 openDrawerInSearchMode = true,
@@ -109,6 +112,10 @@ class SettingsMenuModelTest {
         assertEquals(
             "ON",
             rows.first { it.item == SettingsMenuItem.DRAWER_AUTO_SEARCH }.value,
+        )
+        assertEquals(
+            "ON",
+            rows.first { it.item == SettingsMenuItem.PIXEL_GAP }.value,
         )
     }
 

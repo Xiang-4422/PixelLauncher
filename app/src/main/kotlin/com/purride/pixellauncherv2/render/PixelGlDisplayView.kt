@@ -72,6 +72,11 @@ class PixelGlDisplayView @JvmOverloads constructor(
         requestRender()
     }
 
+    override fun setPixelGapEnabled(enabled: Boolean) {
+        glRenderer.setPixelGapEnabled(enabled)
+        requestRender()
+    }
+
     override fun submitIdleMask(frame: IdleMaskFrame?) {
         RenderPerfLogger.measure("gl.submitIdleMask") {
             if (frame == null) {
@@ -212,6 +217,7 @@ class PixelGlDisplayView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = profile,
+            pixelGapEnabled = glRenderer.pixelGapEnabled,
         )
     }
 }

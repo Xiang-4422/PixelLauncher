@@ -85,4 +85,25 @@ class PixelGridGeometryTest {
         assertEquals(0.5f, geometry?.dotInset ?: 0f, 1e-4f)
         assertEquals(7f, geometry?.dotSize ?: 0f, 1e-4f)
     }
+
+    @Test
+    fun resolveDisablesInsetWhenPixelGapIsOff() {
+        val profile = ScreenProfile(
+            logicalWidth = 10,
+            logicalHeight = 20,
+            dotSizePx = 8,
+        )
+
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = 80,
+            viewHeight = 160,
+            profile = profile,
+            pixelGapEnabled = false,
+        )
+
+        assertNotNull(geometry)
+        assertEquals(8f, geometry?.cellSize ?: 0f, 1e-4f)
+        assertEquals(0f, geometry?.dotInset ?: -1f, 1e-4f)
+        assertEquals(8f, geometry?.dotSize ?: 0f, 1e-4f)
+    }
 }

@@ -46,6 +46,7 @@ data class LauncherState(
     val selectedFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
+    val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR,
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     val isIdlePageEnabled: Boolean = false,

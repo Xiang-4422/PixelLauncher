@@ -22,6 +22,7 @@ class PixelDisplayView @JvmOverloads constructor(
     private var pixelBuffer: PixelBuffer? = null
     private var screenProfile: ScreenProfile? = null
     private var palette: PixelPalette = PixelPalette.terminalGreen()
+    private var pixelGapEnabled: Boolean = true
     private val swipeDistanceThresholdPx = max(
         ViewConfiguration.get(context).scaledTouchSlop * 4f,
         context.resources.displayMetrics.density * 32f,
@@ -65,6 +66,11 @@ class PixelDisplayView @JvmOverloads constructor(
         invalidate()
     }
 
+    override fun setPixelGapEnabled(enabled: Boolean) {
+        pixelGapEnabled = enabled
+        invalidate()
+    }
+
     override fun asView(): View = this
 
     override fun onDraw(canvas: Canvas) {
@@ -78,6 +84,7 @@ class PixelDisplayView @JvmOverloads constructor(
                 viewWidth = width,
                 viewHeight = height,
                 profile = profile,
+                pixelGapEnabled = pixelGapEnabled,
             ) ?: return@measure
 
             onPaint.color = palette.pixelOnColor
@@ -235,6 +242,7 @@ class PixelDisplayView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = profile,
+            pixelGapEnabled = pixelGapEnabled,
         )
     }
 }

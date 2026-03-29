@@ -599,6 +599,7 @@ object LauncherStateTransitions {
         selectedFontStyle: PixelFontStyle = state.selectedFontStyle,
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
+        isPixelGapEnabled: Boolean = state.isPixelGapEnabled,
         selectedTheme: PixelTheme = state.selectedTheme,
     ): LauncherState {
         return state.copy(
@@ -606,6 +607,7 @@ object LauncherStateTransitions {
             selectedFontStyle = selectedFontStyle,
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
+            isPixelGapEnabled = isPixelGapEnabled,
             selectedTheme = selectedTheme,
         )
     }

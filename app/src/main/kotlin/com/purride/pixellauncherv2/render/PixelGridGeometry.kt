@@ -28,6 +28,7 @@ object PixelGridGeometryResolver {
         viewWidth: Int,
         viewHeight: Int,
         profile: ScreenProfile,
+        pixelGapEnabled: Boolean = true,
     ): PixelGridGeometry? {
         if (viewWidth <= 0 || viewHeight <= 0) {
             return null
@@ -47,7 +48,9 @@ object PixelGridGeometryResolver {
         val contentHeight = cellSize * profile.logicalHeight
         val originX = floor((viewWidth - contentWidth) / 2f)
         val originY = floor((viewHeight - contentHeight) / 2f)
-        val dotInset = when {
+        val dotInset = if (!pixelGapEnabled) {
+            0f
+        } else when {
             cellSize <= compactCellSizeThresholdPx -> compactDotInsetPx
             else -> max(1f, floor(cellSize * dotInsetRatio))
         }
@@ -72,11 +75,13 @@ object PixelGridGeometryResolver {
         viewWidth: Int,
         viewHeight: Int,
         profile: ScreenProfile,
+        pixelGapEnabled: Boolean = true,
     ): Pair<Int, Int>? {
         val geometry = resolve(
             viewWidth = viewWidth,
             viewHeight = viewHeight,
             profile = profile,
+            pixelGapEnabled = pixelGapEnabled,
         ) ?: return null
         val localX = touchX - geometry.originX
         val localY = touchY - geometry.originY

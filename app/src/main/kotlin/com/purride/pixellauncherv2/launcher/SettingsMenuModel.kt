@@ -13,6 +13,7 @@ enum class SettingsMenuItem {
     FONT_SIZE,
     FONT_STYLE,
     RESOLUTION,
+    PIXEL_GAP,
     STYLE,
     THEME,
     APP_LIST_ALIGNMENT,
@@ -53,6 +54,11 @@ object SettingsMenuModel {
                 item = SettingsMenuItem.RESOLUTION,
                 title = "PIXEL SIZE",
                 value = resolutionLabel(state.selectedDotSizePx, screenProfile),
+            ),
+            SettingsMenuRow(
+                item = SettingsMenuItem.PIXEL_GAP,
+                title = "PIXEL GAP",
+                value = onOffLabel(state.isPixelGapEnabled),
             ),
             SettingsMenuRow(
                 item = SettingsMenuItem.STYLE,
