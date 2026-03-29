@@ -14,6 +14,7 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.provider.AlarmClock
 import android.provider.CalendarContract
+import android.provider.ContactsContract
 import android.provider.Telephony
 import android.text.Editable
 import android.text.InputFilter
@@ -1127,6 +1128,24 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             return
         }
 
+        if (y in layout.buttonY until (layout.buttonY + GlyphStyle.UI_SMALL_10.cellHeight)) {
+            when (x) {
+                in layout.contactButtonLeft..layout.contactButtonRight -> launchFirstAvailableIntent(
+                    Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_APP_CONTACTS)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                    Intent(Intent.ACTION_VIEW).apply {
+                        data = ContactsContract.Contacts.CONTENT_URI
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                )
+
+                in layout.smsButtonLeft..layout.smsButtonRight -> openSmsModule(forceRefresh = true, unreadOnly = false)
+            }
+            return
+        }
+
         val rowHeight = layout.fixedInfoRowHeight
         val rowIndex = ((y - layout.fixedInfoStartY) / rowHeight).takeIf { y >= layout.fixedInfoStartY } ?: return
         val row = HomeFixedInfoModel.rows(state).getOrNull(rowIndex) ?: return
@@ -1180,7 +1199,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         },
                     )
 
-                    segment.startsWith("SMS ") -> openSmsModule(forceRefresh = true)
+                    segment.startsWith("SMS ") -> openSmsModule(forceRefresh = true, unreadOnly = false)
                 }
                 return
             }

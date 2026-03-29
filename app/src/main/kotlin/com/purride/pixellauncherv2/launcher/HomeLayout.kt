@@ -11,6 +11,8 @@ object HomeLayout {
     private const val minStackHeight = 22
     private const val splitRatioPercent = 52
     private const val fixedInfoRowGap = 2
+    private const val homeButtonLabel = "CONTACT"
+    private const val smsButtonLabel = "SMS"
 
     fun metrics(screenProfile: ScreenProfile): HomeLayoutMetrics {
         val contentTop = LauncherHeaderLayout.firstContentItemTop
@@ -34,6 +36,13 @@ object HomeLayout {
         val fixedInfoRowHeight = GlyphStyle.UI_SMALL_10.cellHeight + fixedInfoRowGap
         val fixedInfoStartY = dateY + fixedInfoRowHeight
         val stackCardBodyY = (screenProfile.logicalHeight - GlyphStyle.UI_SMALL_10.cellHeight).coerceAtLeast(stackTop)
+        val homeButtonY = stackCardBodyY
+        val homeButtonWidth = (homeButtonLabel.length * GlyphStyle.UI_SMALL_10.narrowAdvanceWidth).coerceAtLeast(1)
+        val smsButtonWidth = (smsButtonLabel.length * GlyphStyle.UI_SMALL_10.narrowAdvanceWidth).coerceAtLeast(1)
+        val contactButtonLeft = innerLeft
+        val contactButtonRight = (contactButtonLeft + homeButtonWidth - 1).coerceAtMost(innerRight)
+        val smsButtonRight = innerRight
+        val smsButtonLeft = (smsButtonRight - smsButtonWidth + 1).coerceAtLeast(innerLeft)
 
         return HomeLayoutMetrics(
             fixedTop = contentTop,
@@ -49,6 +58,11 @@ object HomeLayout {
             fixedInfoStartY = fixedInfoStartY,
             fixedInfoRowHeight = fixedInfoRowHeight,
             stackCardBodyY = stackCardBodyY,
+            contactButtonLeft = contactButtonLeft,
+            contactButtonRight = contactButtonRight,
+            smsButtonLeft = smsButtonLeft,
+            smsButtonRight = smsButtonRight,
+            buttonY = homeButtonY,
         )
     }
 
@@ -71,6 +85,11 @@ data class HomeLayoutMetrics(
     val fixedInfoStartY: Int,
     val fixedInfoRowHeight: Int,
     val stackCardBodyY: Int,
+    val contactButtonLeft: Int,
+    val contactButtonRight: Int,
+    val smsButtonLeft: Int,
+    val smsButtonRight: Int,
+    val buttonY: Int,
 ) {
     val fixedHeight: Int
         get() = (fixedBottom - fixedTop + 1).coerceAtLeast(0)

@@ -413,50 +413,31 @@ class PixelRenderer(
             detailY += layoutMetrics.fixedInfoRowHeight
         }
 
-        val contextBody = homeContextBody(state)
-        if (contextBody.isNotEmpty()) {
-            if (state.homeContextCard == HomeContextCard.QUOTE) {
-                drawMarqueeTextAsValue(
-                    buffer = buffer,
-                    text = contextBody,
-                    startX = layoutMetrics.innerLeft,
-                    startY = layoutMetrics.stackCardBodyY,
-                    maxWidth = layoutMetrics.innerWidth,
-                    style = GlyphStyle.UI_SMALL_10,
-                    value = PixelBuffer.ACCENT,
-                    tick = animationState.headerChargeTick,
-                )
-            } else {
-                val trimmedContextBody = pixelFontEngine.trimToWidth(
-                    text = contextBody,
-                    style = GlyphStyle.UI_SMALL_10,
-                    maxWidth = layoutMetrics.innerWidth,
-                )
-                if (trimmedContextBody.isNotEmpty()) {
-                    drawTextAsValue(
-                        buffer = buffer,
-                        text = trimmedContextBody,
-                        startX = layoutMetrics.innerLeft,
-                        startY = layoutMetrics.stackCardBodyY,
-                        maxWidth = layoutMetrics.innerWidth,
-                        style = GlyphStyle.UI_SMALL_10,
-                        value = PixelBuffer.ACCENT,
-                    )
-                }
-            }
-        }
+        drawHomeBottomButtons(buffer, layoutMetrics)
     }
 
-    private fun homeContextBody(state: LauncherState): String {
-        if (state.isLoading) {
-            return "Loading context"
-        }
-        return when (state.homeContextCard) {
-            HomeContextCard.QUOTE -> state.quoteText
-            HomeContextCard.MEDIA -> "No media now"
-            HomeContextCard.NOTIFICATIONS -> "No priority notice"
-            HomeContextCard.TODO -> "No TODO source"
-        }
+    private fun drawHomeBottomButtons(
+        buffer: PixelBuffer,
+        layoutMetrics: HomeLayoutMetrics,
+    ) {
+        drawTextAsValue(
+            buffer = buffer,
+            text = "CONTACT",
+            startX = layoutMetrics.contactButtonLeft,
+            startY = layoutMetrics.buttonY,
+            maxWidth = (layoutMetrics.contactButtonRight - layoutMetrics.contactButtonLeft + 1).coerceAtLeast(1),
+            style = GlyphStyle.UI_SMALL_10,
+            value = PixelBuffer.ACCENT,
+        )
+        drawTextAsValue(
+            buffer = buffer,
+            text = "SMS",
+            startX = layoutMetrics.smsButtonLeft,
+            startY = layoutMetrics.buttonY,
+            maxWidth = (layoutMetrics.smsButtonRight - layoutMetrics.smsButtonLeft + 1).coerceAtLeast(1),
+            style = GlyphStyle.UI_SMALL_10,
+            value = PixelBuffer.ACCENT,
+        )
     }
 
     /** 绘制应用抽屉的头部、加载态和基于共享文本列表基座的正文内容。 */
