@@ -6,7 +6,8 @@ import com.purride.pixellauncherv2.render.ScreenProfile
 object AppListLayout {
 
     private const val bottomPadding = 0
-    private const val rowHeight = 17
+    private val rowHeight: Int
+        get() = GlyphStyle.APP_LABEL_16.cellHeight + maxOf(2, GlyphStyle.APP_LABEL_16.cellHeight / 5)
     private const val labelTopInset = 0
     private const val hiddenRailWidthDivisor = 5
     private const val hiddenRailMinWidth = 12

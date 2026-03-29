@@ -2820,12 +2820,13 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
 
             SettingsMenuItem.PIXEL_GAP -> {
+                val nextPixelGapEnabled = SettingsMenuModel.toggle(state.isPixelGapEnabled)
                 applyAppearance(
                     fontSize = state.selectedFontSize,
                     fontStyle = state.selectedFontStyle,
-                    newPixelShape = state.selectedPixelShape,
+                    newPixelShape = if (nextPixelGapEnabled) state.selectedPixelShape else PixelShape.SQUARE,
                     newDotSizePx = state.selectedDotSizePx,
-                    newPixelGapEnabled = SettingsMenuModel.toggle(state.isPixelGapEnabled),
+                    newPixelGapEnabled = nextPixelGapEnabled,
                     newTheme = state.selectedTheme,
                 )
             }

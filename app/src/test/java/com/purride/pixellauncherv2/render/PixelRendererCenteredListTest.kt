@@ -282,7 +282,7 @@ class PixelRendererCenteredListTest {
     }
 
     @Test
-    fun focusedSearchWithoutQueryHidesListArea() {
+    fun focusedSearchWithoutQueryStillShowsAllApps() {
         val apps = List(20) { index ->
             AppEntry(
                 label = "AAAAA",
@@ -308,7 +308,7 @@ class PixelRendererCenteredListTest {
                 }
             }
         }
-        assertEquals(0, litPixels)
+        assertTrue(litPixels > 0)
     }
 
     @Test

@@ -7,10 +7,12 @@ object SmsLayout {
 
     private const val panelBottomPadding = 2
     private const val panelTextInsetX = 2
-    private val composeBarHeight = GlyphStyle.UI_SMALL_10.cellHeight + 4
+    private val composeBarHeight: Int
+        get() = GlyphStyle.UI_SMALL_10.cellHeight + 4
     private const val composeBarBottomGap = 1
     private const val threadMetaGap = 1
-    private val threadRowHeight = GlyphStyle.APP_LABEL_16.cellHeight + GlyphStyle.UI_SMALL_10.cellHeight + threadMetaGap + 2
+    private val threadRowHeight: Int
+        get() = GlyphStyle.APP_LABEL_16.cellHeight + GlyphStyle.UI_SMALL_10.cellHeight + threadMetaGap + 2
 
     fun threadListMetrics(screenProfile: ScreenProfile): SmsThreadListLayoutMetrics {
         val top = LauncherHeaderLayout.firstContentItemTop

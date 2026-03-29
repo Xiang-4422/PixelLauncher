@@ -8,12 +8,14 @@ object SettingsMenuLayout {
     private const val panelX = 0
     private const val panelBottomPadding = 4
     private const val rowGap = 2
-    private val rowHeight = GlyphStyle.UI_SMALL_10.cellHeight + rowGap
+    private val rowHeight: Int
+        get() = GlyphStyle.UI_SMALL_10.cellHeight + rowGap
     private const val rowTextInsetX = 2
     private const val rowValueInsetRight = 2
     private const val rowTextYOffset = 0
     private const val rowMinGap = 3
-    private val largeRowHeight = (GlyphStyle.APP_LABEL_16.cellHeight * 2) + rowGap
+    private val largeRowHeight: Int
+        get() = (GlyphStyle.APP_LABEL_16.cellHeight * 2) + rowGap
 
     fun metrics(screenProfile: ScreenProfile): SettingsMenuLayoutMetrics {
         return metrics(screenProfile, rowHeight)

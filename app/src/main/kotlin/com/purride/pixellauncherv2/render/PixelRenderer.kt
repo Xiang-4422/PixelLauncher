@@ -569,7 +569,7 @@ class PixelRenderer(
     ) {
         val style = GlyphStyle.UI_SMALL_10
         val leftPadding = LauncherHeaderLayout.horizontalPadding
-        val headerY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
+        val headerY = LauncherHeaderLayout.headerTextY
         val displayTime = currentTimeText.ifBlank { "--:--" }
         val rightText = "APPS:$currentLetter"
         val trimmedTime = pixelFontEngine.trimToWidth(
@@ -647,7 +647,7 @@ class PixelRenderer(
             DrawerListAlignment.RIGHT -> (availableWidth - textWidth - trailingCursorSpace).coerceAtLeast(0)
         }
         val startX = leftPadding + horizontalOffset
-        val startY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
+        val startY = LauncherHeaderLayout.headerTextY
         if (trimmed.isNotEmpty()) {
             drawTextAsValue(
                 buffer = buffer,
@@ -1169,7 +1169,7 @@ class PixelRenderer(
     ) {
         val style = GlyphStyle.UI_SMALL_10
         val leftPadding = LauncherHeaderLayout.horizontalPadding
-        val headerY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY
+        val headerY = LauncherHeaderLayout.headerTextY
         val displayTime = state.currentTimeText.ifBlank { "--:--" }
         val rightText = "SMS:${currentIndex.coerceAtLeast(0)}/${totalCount.coerceAtLeast(0)}"
         val trimmedTime = pixelFontEngine.trimToWidth(
@@ -1422,7 +1422,7 @@ class PixelRenderer(
                 buffer = buffer,
                 text = trimmedTime,
                 startX = LauncherHeaderLayout.horizontalPadding,
-                startY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY,
+                startY = LauncherHeaderLayout.headerTextY,
                 maxWidth = timeMaxWidth,
                 style = GlyphStyle.UI_SMALL_10,
             )
@@ -1436,7 +1436,7 @@ class PixelRenderer(
                 buffer = buffer,
                 text = titleText,
                 startX = titleX,
-                startY = LauncherHeaderLayout.rowY + LauncherHeaderLayout.textOffsetY,
+                startY = LauncherHeaderLayout.headerTextY,
                 maxWidth = (screenProfile.logicalWidth - titleX - LauncherHeaderLayout.horizontalPadding).coerceAtLeast(0),
                 style = GlyphStyle.UI_SMALL_10,
             )

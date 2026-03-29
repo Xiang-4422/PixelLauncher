@@ -71,7 +71,7 @@ class SettingsMenuModelTest {
 
     @Test
     fun rowsIncludeThemeAndPixelGapItems() {
-        val rowItems = SettingsMenuModel.rows(
+        val gapOnItems = SettingsMenuModel.rows(
             LauncherState(
                 selectedFontSize = PixelFontSize.PX_12,
                 selectedFontStyle = PixelFontStyle.MONO,
@@ -83,14 +83,25 @@ class SettingsMenuModelTest {
             ),
             null,
         ).map { it.item }
+        val gapOffItems = SettingsMenuModel.rows(
+            LauncherState(
+                isPixelGapEnabled = false,
+            ),
+            null,
+        ).map { it.item }
 
-        assertTrue(SettingsMenuItem.THEME in rowItems)
-        assertTrue(SettingsMenuItem.APP_LIST_ALIGNMENT in rowItems)
-        assertTrue(SettingsMenuItem.DRAWER_AUTO_SEARCH in rowItems)
-        assertTrue(SettingsMenuItem.FONT_SIZE in rowItems)
-        assertTrue(SettingsMenuItem.FONT_STYLE in rowItems)
-        assertTrue(SettingsMenuItem.PIXEL_GAP in rowItems)
-        assertEquals(8, rowItems.size)
+        assertTrue(SettingsMenuItem.THEME in gapOnItems)
+        assertTrue(SettingsMenuItem.APP_LIST_ALIGNMENT in gapOnItems)
+        assertTrue(SettingsMenuItem.DRAWER_AUTO_SEARCH in gapOnItems)
+        assertTrue(SettingsMenuItem.FONT_SIZE in gapOnItems)
+        assertTrue(SettingsMenuItem.FONT_STYLE in gapOnItems)
+        assertTrue(SettingsMenuItem.PIXEL_GAP in gapOnItems)
+        assertTrue(SettingsMenuItem.STYLE in gapOnItems)
+        assertEquals(8, gapOnItems.size)
+
+        assertTrue(SettingsMenuItem.PIXEL_GAP in gapOffItems)
+        assertTrue(SettingsMenuItem.STYLE !in gapOffItems)
+        assertEquals(7, gapOffItems.size)
     }
 
     @Test

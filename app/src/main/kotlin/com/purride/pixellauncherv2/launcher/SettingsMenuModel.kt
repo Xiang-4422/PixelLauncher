@@ -39,48 +39,59 @@ object SettingsMenuModel {
     )
     val themeOptions: List<PixelTheme> = PixelTheme.entries
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
-        return listOf(
+        return buildList {
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.FONT_SIZE,
                 title = "FONT SIZE",
                 value = PixelFontCatalog.sizeLabel(state.selectedFontSize),
-            ),
+            ))
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.FONT_STYLE,
                 title = "FONT STYLE",
                 value = PixelFontCatalog.styleLabel(state.selectedFontStyle),
-            ),
+            ))
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.RESOLUTION,
                 title = "PIXEL SIZE",
                 value = resolutionLabel(state.selectedDotSizePx, screenProfile),
-            ),
+            ))
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.PIXEL_GAP,
                 title = "PIXEL GAP",
                 value = onOffLabel(state.isPixelGapEnabled),
-            ),
-            SettingsMenuRow(
-                item = SettingsMenuItem.STYLE,
-                title = "STYLE",
-                value = styleLabel(state.selectedPixelShape),
-            ),
+            ))
+            if (state.isPixelGapEnabled) {
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.STYLE,
+                        title = "STYLE",
+                        value = styleLabel(state.selectedPixelShape),
+                    ),
+                )
+            }
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.THEME,
                 title = "THEME",
                 value = themeLabel(state.selectedTheme),
-            ),
+            ))
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.APP_LIST_ALIGNMENT,
                 title = "APP ALIGN",
                 value = drawerListAlignmentLabel(state.drawerListAlignment),
-            ),
+            ))
+            add(
             SettingsMenuRow(
                 item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
                 title = "DRAWER SEARCH",
                 value = onOffLabel(state.openDrawerInSearchMode),
-            ),
-        )
+            ))
+        }
     }
 
     fun selectedItem(state: LauncherState): SettingsMenuItem {
