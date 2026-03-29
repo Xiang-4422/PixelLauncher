@@ -1,7 +1,8 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.render.PixelFontCatalog
-import com.purride.pixellauncherv2.render.PixelFontId
+import com.purride.pixellauncherv2.render.PixelFontSize
+import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
@@ -41,7 +42,8 @@ data class LauncherState(
     val smsDraftText: String = "",
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
-    val selectedFontId: PixelFontId = PixelFontCatalog.defaultFontId,
+    val selectedFontSize: PixelFontSize = PixelFontCatalog.defaultFontSize,
+    val selectedFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR,

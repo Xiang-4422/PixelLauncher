@@ -13,13 +13,9 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT_DIR / "app" / "src" / "main" / "assets"
 FONT_DIR = ASSETS_DIR / "fonts"
 OUTPUT_DIR = ASSETS_DIR / "glyphpacks"
-ARK_GLYPHS_ROOT_DIR = ROOT_DIR / ".codex_tmp" / "ark-pixel-font" / "assets" / "glyphs"
 
 MAGIC = 0x50474C59  # PGLY
 VERSION = 1
-CELL_HEIGHT = 16
-ASCII_WIDTH = 8
-WIDE_WIDTH = 16
 
 
 @dataclass(frozen=True)
@@ -51,317 +47,191 @@ SUPPORTED_RANGES = [
     RangeSpec(0x3300, 0x33FF),
     RangeSpec(0x3400, 0x4DBF),
     RangeSpec(0x4E00, 0x9FFF),
-    RangeSpec(0xAC00, 0xD7A3),
     RangeSpec(0xFF00, 0xFFEF),
 ]
 
 
 @dataclass(frozen=True)
-class FontPackSpec:
+class FusionPackSpec:
     pack_id: str
     display_name: str
     font_path: Path
+    font_size: int
     baseline: int
+    default_advance: int
     supported_ranges: list[RangeSpec]
 
 
-@dataclass(frozen=True)
-class ArkPackSpec:
-    pack_id: str
-    display_name: str
-    font_size: int
-    width_mode: str
-    language_flavor: str
-    baseline: int
-
-
-FONT_PACKS = [
-    FontPackSpec(
-        pack_id="wenquanyi_bitmap_song_16px",
-        display_name="WenQuanYi Bitmap Song 16px",
-        font_path=FONT_DIR / "wenquanyi_bitmap_song_16px.ttf",
-        baseline=13,
+FUSION_PACKS = [
+    FusionPackSpec(
+        pack_id="fusion_pixel_8px_monospaced_latin",
+        display_name="Fusion Pixel 8px Monospaced (latin)",
+        font_path=FONT_DIR / "fusion-pixel-8px-monospaced-latin.ttf",
+        font_size=8,
+        baseline=7,
+        default_advance=8,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FontPackSpec(
-        pack_id="gnu_unifont_17_0_03",
-        display_name="GNU Unifont 17.0.03",
-        font_path=FONT_DIR / "unifont_17_0_03.otf",
-        baseline=13,
+    FusionPackSpec(
+        pack_id="fusion_pixel_8px_monospaced_zh_hans",
+        display_name="Fusion Pixel 8px Monospaced (zh_hans)",
+        font_path=FONT_DIR / "fusion-pixel-8px-monospaced-zh_hans.ttf",
+        font_size=8,
+        baseline=7,
+        default_advance=8,
         supported_ranges=SUPPORTED_RANGES,
     ),
-]
-
-
-ARK_PACKS = [
-    ArkPackSpec(
-        pack_id="ark_pixel_10px_monospaced_latin",
-        display_name="Ark Pixel 10px Monospaced (latin)",
+    FusionPackSpec(
+        pack_id="fusion_pixel_8px_proportional_latin",
+        display_name="Fusion Pixel 8px Proportional (latin)",
+        font_path=FONT_DIR / "fusion-pixel-8px-proportional-latin.ttf",
+        font_size=8,
+        baseline=7,
+        default_advance=4,
+        supported_ranges=SUPPORTED_RANGES,
+    ),
+    FusionPackSpec(
+        pack_id="fusion_pixel_8px_proportional_zh_hans",
+        display_name="Fusion Pixel 8px Proportional (zh_hans)",
+        font_path=FONT_DIR / "fusion-pixel-8px-proportional-zh_hans.ttf",
+        font_size=8,
+        baseline=7,
+        default_advance=8,
+        supported_ranges=SUPPORTED_RANGES,
+    ),
+    FusionPackSpec(
+        pack_id="fusion_pixel_10px_monospaced_latin",
+        display_name="Fusion Pixel 10px Monospaced (latin)",
+        font_path=FONT_DIR / "fusion-pixel-10px-monospaced-latin.ttf",
         font_size=10,
-        width_mode="monospaced",
-        language_flavor="latin",
-        baseline=8,
+        baseline=9,
+        default_advance=10,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_monospaced_zh_cn",
-        display_name="Ark Pixel 16px Monospaced (zh_CN)",
-        font_size=16,
-        width_mode="monospaced",
-        language_flavor="zh_cn",
-        baseline=13,
+    FusionPackSpec(
+        pack_id="fusion_pixel_10px_monospaced_zh_hans",
+        display_name="Fusion Pixel 10px Monospaced (zh_hans)",
+        font_path=FONT_DIR / "fusion-pixel-10px-monospaced-zh_hans.ttf",
+        font_size=10,
+        baseline=9,
+        default_advance=10,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_monospaced_zh_hk",
-        display_name="Ark Pixel 16px Monospaced (zh_HK)",
-        font_size=16,
-        width_mode="monospaced",
-        language_flavor="zh_hk",
-        baseline=13,
+    FusionPackSpec(
+        pack_id="fusion_pixel_10px_proportional_latin",
+        display_name="Fusion Pixel 10px Proportional (latin)",
+        font_path=FONT_DIR / "fusion-pixel-10px-proportional-latin.ttf",
+        font_size=10,
+        baseline=9,
+        default_advance=6,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_monospaced_zh_tw",
-        display_name="Ark Pixel 16px Monospaced (zh_TW)",
-        font_size=16,
-        width_mode="monospaced",
-        language_flavor="zh_tw",
-        baseline=13,
+    FusionPackSpec(
+        pack_id="fusion_pixel_10px_proportional_zh_hans",
+        display_name="Fusion Pixel 10px Proportional (zh_hans)",
+        font_path=FONT_DIR / "fusion-pixel-10px-proportional-zh_hans.ttf",
+        font_size=10,
+        baseline=9,
+        default_advance=10,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_monospaced_zh_tr",
-        display_name="Ark Pixel 16px Monospaced (zh_TR)",
-        font_size=16,
-        width_mode="monospaced",
-        language_flavor="zh_tr",
-        baseline=13,
+    FusionPackSpec(
+        pack_id="fusion_pixel_12px_monospaced_latin",
+        display_name="Fusion Pixel 12px Monospaced (latin)",
+        font_path=FONT_DIR / "fusion-pixel-12px-monospaced-latin.ttf",
+        font_size=12,
+        baseline=10,
+        default_advance=12,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_proportional_zh_cn",
-        display_name="Ark Pixel 16px Proportional (zh_CN)",
-        font_size=16,
-        width_mode="proportional",
-        language_flavor="zh_cn",
-        baseline=14,
+    FusionPackSpec(
+        pack_id="fusion_pixel_12px_monospaced_zh_hans",
+        display_name="Fusion Pixel 12px Monospaced (zh_hans)",
+        font_path=FONT_DIR / "fusion-pixel-12px-monospaced-zh_hans.ttf",
+        font_size=12,
+        baseline=10,
+        default_advance=12,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_proportional_zh_hk",
-        display_name="Ark Pixel 16px Proportional (zh_HK)",
-        font_size=16,
-        width_mode="proportional",
-        language_flavor="zh_hk",
-        baseline=14,
+    FusionPackSpec(
+        pack_id="fusion_pixel_12px_proportional_latin",
+        display_name="Fusion Pixel 12px Proportional (latin)",
+        font_path=FONT_DIR / "fusion-pixel-12px-proportional-latin.ttf",
+        font_size=12,
+        baseline=11,
+        default_advance=8,
+        supported_ranges=SUPPORTED_RANGES,
     ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_proportional_zh_tw",
-        display_name="Ark Pixel 16px Proportional (zh_TW)",
-        font_size=16,
-        width_mode="proportional",
-        language_flavor="zh_tw",
-        baseline=14,
-    ),
-    ArkPackSpec(
-        pack_id="ark_pixel_16px_proportional_zh_tr",
-        display_name="Ark Pixel 16px Proportional (zh_TR)",
-        font_size=16,
-        width_mode="proportional",
-        language_flavor="zh_tr",
-        baseline=14,
+    FusionPackSpec(
+        pack_id="fusion_pixel_12px_proportional_zh_hans",
+        display_name="Fusion Pixel 12px Proportional (zh_hans)",
+        font_path=FONT_DIR / "fusion-pixel-12px-proportional-zh_hans.ttf",
+        font_size=12,
+        baseline=11,
+        default_advance=12,
+        supported_ranges=SUPPORTED_RANGES,
     ),
 ]
 
 
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    for font_pack in FONT_PACKS:
-        generate_font_pack(font_pack)
-
-    for ark_pack in ARK_PACKS:
-        generate_ark_pack(ark_pack)
+    for pack in FUSION_PACKS:
+        generate_fusion_pack(pack)
 
 
-def generate_font_pack(spec: FontPackSpec) -> None:
+def generate_fusion_pack(spec: FusionPackSpec) -> None:
     font = ImageFont.truetype(
         str(spec.font_path),
-        size=CELL_HEIGHT,
+        size=spec.font_size,
         layout_engine=ImageFont.Layout.BASIC,
     )
 
     records = []
     for code_point in iter_code_points(spec.supported_ranges):
         character = chr(code_point)
-        cell_width = ASCII_WIDTH if is_ascii_printable(code_point) else WIDE_WIDTH
         glyph_pixels = render_font_glyph(
             font=font,
             character=character,
-            cell_width=cell_width,
-            cell_height=CELL_HEIGHT,
+            cell_height=spec.font_size,
             baseline=spec.baseline,
         )
-
         if glyph_pixels is None:
             continue
-
         if not any(glyph_pixels) and not character.isspace():
             continue
+
+        width = detect_glyph_width(glyph_pixels, spec.font_size, spec.font_size)
+        if width <= 0:
+            width = spec.default_advance
 
         records.append(
             (
                 code_point,
-                cell_width,
-                cell_width,
-                pack_bits(glyph_pixels),
+                width,
+                width,
+                pack_bits(crop_glyph_pixels(glyph_pixels, spec.font_size, spec.font_size, width)),
             ),
         )
 
     write_pack(
         pack_id=spec.pack_id,
         display_name=spec.display_name,
-        cell_height=CELL_HEIGHT,
-        baseline=spec.baseline,
-        default_advance=WIDE_WIDTH,
-        supported_ranges=[range_spec.label for range_spec in spec.supported_ranges],
-        records=records,
-    )
-
-
-def generate_ark_pack(spec: ArkPackSpec) -> None:
-    records_by_code_point = {}
-
-    ark_glyphs_dir = ARK_GLYPHS_ROOT_DIR / str(spec.font_size)
-    if ark_glyphs_dir.exists():
-        collect_ark_pngs(
-            base_dir=ark_glyphs_dir / "common",
-            language_flavor=spec.language_flavor,
-            cell_height=spec.font_size,
-            records_by_code_point=records_by_code_point,
-            priority_base=100,
-        )
-        collect_ark_pngs(
-            base_dir=ark_glyphs_dir / spec.width_mode,
-            language_flavor=spec.language_flavor,
-            cell_height=spec.font_size,
-            records_by_code_point=records_by_code_point,
-            priority_base=200,
-        )
-    else:
-        font_path = FONT_DIR / f"{spec.pack_id}.ttf"
-        font = ImageFont.truetype(
-            str(font_path),
-            size=spec.font_size,
-            layout_engine=ImageFont.Layout.BASIC,
-        )
-        for code_point in iter_code_points(SUPPORTED_RANGES):
-            character = chr(code_point)
-            cell_width = ark_cell_width(spec.font_size, code_point)
-            glyph_pixels = render_font_glyph(
-                font=font,
-                character=character,
-                cell_width=cell_width,
-                cell_height=spec.font_size,
-                baseline=spec.baseline,
-            )
-            if glyph_pixels is None or (not any(glyph_pixels) and not character.isspace()):
-                continue
-            records_by_code_point[code_point] = (
-                0,
-                ark_advance_width(cell_width),
-                cell_width,
-                pack_bits(glyph_pixels),
-            )
-
-    records = [
-        (code_point, advance_width, width, packed_pixels)
-        for code_point, (_, advance_width, width, packed_pixels) in sorted(records_by_code_point.items())
-    ]
-    supported_ranges = summarize_ranges([code_point for code_point, *_ in records])
-
-    write_pack(
-        pack_id=spec.pack_id,
-        display_name=spec.display_name,
         cell_height=spec.font_size,
         baseline=spec.baseline,
-        default_advance=ark_default_advance(spec.font_size),
-        supported_ranges=supported_ranges,
+        default_advance=spec.default_advance,
+        supported_ranges=summarize_ranges([code_point for code_point, *_ in records]),
         records=records,
     )
-
-
-def collect_ark_pngs(
-    base_dir: Path,
-    language_flavor: str,
-    cell_height: int,
-    records_by_code_point: dict[int, tuple[int, int, int, bytes]],
-    priority_base: int,
-) -> None:
-    if not base_dir.exists():
-        return
-
-    for path in sorted(base_dir.rglob("*.png")):
-        parse_result = parse_ark_file_name(path.stem)
-        if parse_result is None:
-            continue
-
-        code_point, variants = parse_result
-        variant_priority = variant_score(variants, language_flavor)
-        if variant_priority < 0:
-            continue
-
-        image = Image.open(path)
-        image = trim_transparent_bounds(image)
-        width, height = image.size
-        max_width = 5 if cell_height == 10 else WIDE_WIDTH
-        if width > max_width or height > cell_height:
-            continue
-
-        raw_pixels = image.getdata()
-        glyph_pixels = bytearray(width * cell_height)
-        vertical_offset = max(0, cell_height - height)
-        for y in range(height):
-            for x in range(width):
-                pixel = raw_pixels[(y * width) + x]
-                alpha = pixel[3] if isinstance(pixel, tuple) and len(pixel) == 4 else int(pixel)
-                if alpha > 0:
-                    glyph_pixels[((y + vertical_offset) * width) + x] = 1
-
-        priority = priority_base + variant_priority
-        advance_width = ark_advance_width(width)
-        packed_pixels = pack_bits(glyph_pixels)
-
-        current = records_by_code_point.get(code_point)
-        if current is None or priority >= current[0]:
-            records_by_code_point[code_point] = (priority, advance_width, width, packed_pixels)
-
-
-def parse_ark_file_name(stem: str) -> tuple[int, list[str]] | None:
-    if " " in stem:
-        code_point_text, variants_text = stem.split(" ", 1)
-        variants = [token.strip() for token in variants_text.split(",") if token.strip()]
-    else:
-        code_point_text = stem
-        variants = []
-
-    try:
-        return int(code_point_text, 16), variants
-    except ValueError:
-        return None
-
-
-def variant_score(variants: list[str], language_flavor: str) -> int:
-    if not variants:
-        return 1
-    if language_flavor in variants:
-        return 2
-    return -1
 
 
 def render_font_glyph(
     font: ImageFont.FreeTypeFont,
     character: str,
-    cell_width: int,
     cell_height: int,
     baseline: int,
 ) -> bytes | None:
-    image = Image.new("1", (cell_width, cell_height), 0)
+    image = Image.new("1", (cell_height, cell_height), 0)
     draw = ImageDraw.Draw(image)
     draw.fontmode = "1"
 
@@ -371,21 +241,35 @@ def render_font_glyph(
         bbox = draw.textbbox((0, draw_y), character, font=font)
         if bbox is None:
             return None
-        x = ((cell_width - (bbox[2] - bbox[0])) // 2) - bbox[0]
+        glyph_width = bbox[2] - bbox[0]
+        x = ((cell_height - glyph_width) // 2) - bbox[0]
         draw.text((x, draw_y), character, font=font, fill=1)
     except OSError:
         return None
 
-    return bytes(1 if image.getpixel((x, y)) else 0 for y in range(cell_height) for x in range(cell_width))
+    return bytes(1 if image.getpixel((x, y)) else 0 for y in range(cell_height) for x in range(cell_height))
 
 
-def trim_transparent_bounds(image: Image.Image) -> Image.Image:
-    rgba = image.convert("RGBA")
-    alpha = rgba.getchannel("A")
-    bbox = alpha.getbbox()
-    if bbox is None:
-        return rgba
-    return rgba.crop(bbox)
+def detect_glyph_width(pixels: bytes, canvas_width: int, canvas_height: int) -> int:
+    rightmost = -1
+    for y in range(canvas_height):
+        row_start = y * canvas_width
+        for x in range(canvas_width - 1, -1, -1):
+            if pixels[row_start + x]:
+                rightmost = max(rightmost, x)
+                break
+    return rightmost + 1
+
+
+def crop_glyph_pixels(pixels: bytes, canvas_width: int, canvas_height: int, width: int) -> bytes:
+    if width >= canvas_width:
+        return pixels
+    cropped = bytearray(width * canvas_height)
+    for y in range(canvas_height):
+        row_start = y * canvas_width
+        cropped_row_start = y * width
+        cropped[cropped_row_start : cropped_row_start + width] = pixels[row_start : row_start + width]
+    return bytes(cropped)
 
 
 def pack_bits(pixels: bytes | bytearray) -> bytes:
@@ -415,7 +299,6 @@ def summarize_ranges(code_points: list[int]) -> list[str]:
         if code_point == end + 1:
             end = code_point
             continue
-
         ranges.append(format_range(start, end))
         start = code_point
         end = code_point
@@ -425,27 +308,7 @@ def summarize_ranges(code_points: list[int]) -> list[str]:
 
 
 def format_range(start: int, end: int) -> str:
-    if start == end:
-        return f"{start:04X}-{end:04X}"
     return f"{start:04X}-{end:04X}"
-
-
-def is_ascii_printable(code_point: int) -> bool:
-    return 0x20 <= code_point <= 0x7E
-
-
-def ark_cell_width(font_size: int, code_point: int) -> int:
-    if font_size == 10:
-        return 5
-    return ASCII_WIDTH if is_ascii_printable(code_point) else WIDE_WIDTH
-
-
-def ark_advance_width(width: int) -> int:
-    return width + 1 if width < 16 else width
-
-
-def ark_default_advance(font_size: int) -> int:
-    return 6 if font_size == 10 else 16
 
 
 def write_pack(

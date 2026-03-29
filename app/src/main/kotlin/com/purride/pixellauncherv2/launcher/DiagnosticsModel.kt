@@ -28,7 +28,7 @@ object DiagnosticsModel {
             DiagnosticsLine("LAUNCHES", state.launchCount.toString()),
             DiagnosticsLine("LAST", lastLaunch),
             DiagnosticsLine("RECENT", recentSummary),
-            DiagnosticsLine("FONT", PixelFontCatalog.settingsLabel(state.selectedFontId)),
+            DiagnosticsLine("FONT", PixelFontCatalog.combinedLabel(state.selectedFontSize, state.selectedFontStyle)),
             DiagnosticsLine("DISPLAY", "${screenProfile.logicalWidth}X${screenProfile.logicalHeight}"),
             DiagnosticsLine("POWER", "${state.batteryLevel}%${if (state.isCharging) " CHG" else ""}"),
         )

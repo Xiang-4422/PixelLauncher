@@ -11,6 +11,36 @@ import org.junit.Test
 
 class PixelGlyphPackParserTest {
 
+    private val appLabelStyle = GlyphStyle(
+        cellHeight = 16,
+        narrowAdvanceWidth = 8,
+        wideAdvanceWidth = 16,
+        oversampleFactor = 1,
+        narrowMinimumSampleRatio = 1f,
+        wideMinimumSampleRatio = 1f,
+        narrowTextSizeRatio = 1f,
+        wideTextSizeRatio = 1f,
+        narrowFontWeight = PixelFontWeight.NORMAL,
+        wideFontWeight = PixelFontWeight.NORMAL,
+        narrowFontFamily = PixelFontFamily.MONOSPACE,
+        wideFontFamily = PixelFontFamily.DEFAULT,
+    )
+
+    private val uiSmallStyle = GlyphStyle(
+        cellHeight = 10,
+        narrowAdvanceWidth = 6,
+        wideAdvanceWidth = 10,
+        oversampleFactor = 1,
+        narrowMinimumSampleRatio = 1f,
+        wideMinimumSampleRatio = 1f,
+        narrowTextSizeRatio = 1f,
+        wideTextSizeRatio = 1f,
+        narrowFontWeight = PixelFontWeight.NORMAL,
+        wideFontWeight = PixelFontWeight.NORMAL,
+        narrowFontFamily = PixelFontFamily.MONOSPACE,
+        wideFontFamily = PixelFontFamily.DEFAULT,
+    )
+
     @Test
     fun parsesGlyphPackAndUnpacksBitmapGlyphs() {
         val manifest = PixelGlyphPackParser.parseManifest(
@@ -61,8 +91,8 @@ class PixelGlyphPackParserTest {
         )
         val source = BitmapGlyphSource(listOf(pack))
 
-        val asciiGlyph = source.findGlyph('A', GlyphStyle.APP_LABEL_16)
-        val wideGlyph = source.findGlyph('\u4E2D', GlyphStyle.APP_LABEL_16)
+        val asciiGlyph = source.findGlyph('A', appLabelStyle)
+        val wideGlyph = source.findGlyph('\u4E2D', appLabelStyle)
 
         assertNotNull(asciiGlyph)
         assertNotNull(wideGlyph)
@@ -102,7 +132,7 @@ class PixelGlyphPackParserTest {
         val pack = PixelGlyphPackParser.parseBinary(manifest, ByteArrayInputStream(binary))
         val source = BitmapGlyphSource(listOf(pack))
 
-        assertNull(source.findGlyph('A', GlyphStyle.UI_SMALL_10))
+        assertNull(source.findGlyph('A', uiSmallStyle))
     }
 
     private fun buildBinary(glyphs: List<SampleGlyph>): ByteArray {

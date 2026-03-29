@@ -5,14 +5,29 @@ import org.junit.Test
 
 class PixelFontEngineTest {
 
+    private val appLabelStyle = GlyphStyle(
+        cellHeight = 16,
+        narrowAdvanceWidth = 8,
+        wideAdvanceWidth = 16,
+        oversampleFactor = 1,
+        narrowMinimumSampleRatio = 1f,
+        wideMinimumSampleRatio = 1f,
+        narrowTextSizeRatio = 1f,
+        wideTextSizeRatio = 1f,
+        narrowFontWeight = PixelFontWeight.NORMAL,
+        wideFontWeight = PixelFontWeight.NORMAL,
+        narrowFontFamily = PixelFontFamily.MONOSPACE,
+        wideFontFamily = PixelFontFamily.DEFAULT,
+    )
+
     @Test
     fun measureTextReturnsStableWidthsForAsciiChineseAndMixedText() {
         val glyphProvider = CountingGlyphProvider()
         val pixelFontEngine = PixelFontEngine(glyphProvider)
 
-        assertEquals(48, pixelFontEngine.measureText("WeChat", GlyphStyle.APP_LABEL_16))
-        assertEquals(32, pixelFontEngine.measureText("\u5fae\u4fe1", GlyphStyle.APP_LABEL_16))
-        assertEquals(88, pixelFontEngine.measureText("\u5fae\u4fe1 WeChat", GlyphStyle.APP_LABEL_16))
+        assertEquals(48, pixelFontEngine.measureText("WeChat", appLabelStyle))
+        assertEquals(32, pixelFontEngine.measureText("\u5fae\u4fe1", appLabelStyle))
+        assertEquals(88, pixelFontEngine.measureText("\u5fae\u4fe1 WeChat", appLabelStyle))
     }
 
     @Test
@@ -22,7 +37,7 @@ class PixelFontEngineTest {
 
         val trimmed = pixelFontEngine.trimToWidth(
             text = "\u5fae\u4fe1WeChat",
-            style = GlyphStyle.APP_LABEL_16,
+            style = appLabelStyle,
             maxWidth = 40,
         )
 
@@ -34,7 +49,7 @@ class PixelFontEngineTest {
         val glyphProvider = CountingGlyphProvider()
         val pixelFontEngine = PixelFontEngine(glyphProvider)
 
-        pixelFontEngine.measureText("AAAA", GlyphStyle.APP_LABEL_16)
+        pixelFontEngine.measureText("AAAA", appLabelStyle)
 
         assertEquals(1, glyphProvider.rasterizeCount)
     }
@@ -44,8 +59,8 @@ class PixelFontEngineTest {
         val glyphProvider = CountingGlyphProvider()
         val pixelFontEngine = PixelFontEngine(glyphProvider)
 
-        assertEquals(8, pixelFontEngine.measureText("A", GlyphStyle.APP_LABEL_16))
-        assertEquals(16, pixelFontEngine.measureText("\u4e2d", GlyphStyle.APP_LABEL_16))
+        assertEquals(8, pixelFontEngine.measureText("A", appLabelStyle))
+        assertEquals(16, pixelFontEngine.measureText("\u4e2d", appLabelStyle))
     }
 
     private class CountingGlyphProvider : GlyphProvider {

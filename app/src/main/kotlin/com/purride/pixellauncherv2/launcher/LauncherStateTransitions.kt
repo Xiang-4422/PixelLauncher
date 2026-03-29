@@ -2,7 +2,8 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
-import com.purride.pixellauncherv2.render.PixelFontId
+import com.purride.pixellauncherv2.render.PixelFontSize
+import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
@@ -594,13 +595,15 @@ object LauncherStateTransitions {
     /** 把当前外观选择写回状态。 */
     fun updateAppearance(
         state: LauncherState,
-        selectedFontId: PixelFontId = state.selectedFontId,
+        selectedFontSize: PixelFontSize = state.selectedFontSize,
+        selectedFontStyle: PixelFontStyle = state.selectedFontStyle,
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
         selectedTheme: PixelTheme = state.selectedTheme,
     ): LauncherState {
         return state.copy(
-            selectedFontId = selectedFontId,
+            selectedFontSize = selectedFontSize,
+            selectedFontStyle = selectedFontStyle,
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
             selectedTheme = selectedTheme,

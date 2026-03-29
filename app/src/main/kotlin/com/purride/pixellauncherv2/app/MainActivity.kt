@@ -90,7 +90,8 @@ import com.purride.pixellauncherv2.render.PixelFrameView
 import com.purride.pixellauncherv2.render.PixelGlDisplayView
 import com.purride.pixellauncherv2.render.PixelDisplayView
 import com.purride.pixellauncherv2.render.PixelFontEngine
-import com.purride.pixellauncherv2.render.PixelFontId
+import com.purride.pixellauncherv2.render.PixelFontSize
+import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelFontResolver
 import com.purride.pixellauncherv2.render.PixelPalette
 import com.purride.pixellauncherv2.render.RenderPerfLogger
@@ -409,14 +410,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         pixelFontResolver = PixelFontResolver(applicationContext)
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
-        val resolvedPixelFont = pixelFontResolver.createFont(appearanceSettings.fontId)
+        val resolvedPixelFont = pixelFontResolver.createFont(
+            appearanceSettings.fontSize,
+            appearanceSettings.fontStyle,
+        )
         pixelFontEngine = resolvedPixelFont.engine
         pixelShape = appearanceSettings.pixelShape
         dotSizePx = appearanceSettings.dotSizePx
         selectedTheme = appearanceSettings.theme
         state = LauncherStateTransitions.updateAppearance(
             state = state,
-            selectedFontId = appearanceSettings.fontId,
+            selectedFontSize = appearanceSettings.fontSize,
+            selectedFontStyle = appearanceSettings.fontStyle,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
             selectedTheme = appearanceSettings.theme,
@@ -2755,7 +2760,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun activateSettingItem(item: SettingsMenuItem) {
         when (item) {
-            SettingsMenuItem.FONT -> changeSettingValue(1)
+            SettingsMenuItem.FONT_SIZE -> changeSettingValue(1)
+            SettingsMenuItem.FONT_STYLE -> changeSettingValue(1)
             SettingsMenuItem.RESOLUTION -> changeSettingValue(1)
             SettingsMenuItem.STYLE -> changeSettingValue(1)
             SettingsMenuItem.THEME -> changeSettingValue(1)
@@ -2768,10 +2774,22 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun changeSettingValue(direction: Int) {
         when (SettingsMenuModel.selectedItem(state)) {
-            SettingsMenuItem.FONT -> {
-                val nextFontId = SettingsMenuModel.nextFont(state.selectedFontId, direction)
+            SettingsMenuItem.FONT_SIZE -> {
+                val nextFontSize = SettingsMenuModel.nextFontSize(state.selectedFontSize, direction)
                 applyAppearance(
-                    fontId = nextFontId,
+                    fontSize = nextFontSize,
+                    fontStyle = state.selectedFontStyle,
+                    newPixelShape = state.selectedPixelShape,
+                    newDotSizePx = state.selectedDotSizePx,
+                    newTheme = state.selectedTheme,
+                )
+            }
+
+            SettingsMenuItem.FONT_STYLE -> {
+                val nextFontStyle = SettingsMenuModel.nextFontStyle(state.selectedFontStyle, direction)
+                applyAppearance(
+                    fontSize = state.selectedFontSize,
+                    fontStyle = nextFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
                     newTheme = state.selectedTheme,
@@ -2785,7 +2803,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     screenProfile = screenProfile,
                 )
                 applyAppearance(
-                    fontId = state.selectedFontId,
+                    fontSize = state.selectedFontSize,
+                    fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = nextDotSizePx,
                     newTheme = state.selectedTheme,
@@ -2795,7 +2814,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             SettingsMenuItem.STYLE -> {
                 val nextPixelShape = SettingsMenuModel.nextStyle(state.selectedPixelShape, direction)
                 applyAppearance(
-                    fontId = state.selectedFontId,
+                    fontSize = state.selectedFontSize,
+                    fontStyle = state.selectedFontStyle,
                     newPixelShape = nextPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
                     newTheme = state.selectedTheme,
@@ -2805,7 +2825,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             SettingsMenuItem.THEME -> {
                 val nextTheme = SettingsMenuModel.nextTheme(state.selectedTheme, direction)
                 applyAppearance(
-                    fontId = state.selectedFontId,
+                    fontSize = state.selectedFontSize,
+                    fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
                     newTheme = nextTheme,
@@ -3495,7 +3516,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun applyAppearance(
-        fontId: PixelFontId,
+        fontSize: PixelFontSize,
+        fontStyle: PixelFontStyle,
         newPixelShape: PixelShape,
         newDotSizePx: Int,
         newTheme: PixelTheme,
@@ -3504,16 +3526,17 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             pixelFontEngine.clearCache()
         }
 
-        val resolvedPixelFont = pixelFontResolver.createFont(fontId)
+        val resolvedPixelFont = pixelFontResolver.createFont(fontSize, fontStyle)
         pixelFontEngine = resolvedPixelFont.engine
         pixelRenderer = PixelRenderer(pixelFontEngine)
         pixelShape = newPixelShape
         dotSizePx = newDotSizePx
         selectedTheme = newTheme
-        fontSettingsRepository.setAppearanceSettings(fontId, newPixelShape, newDotSizePx, newTheme)
+        fontSettingsRepository.setAppearanceSettings(fontSize, fontStyle, newPixelShape, newDotSizePx, newTheme)
         state = LauncherStateTransitions.updateAppearance(
             state = state,
-            selectedFontId = fontId,
+            selectedFontSize = fontSize,
+            selectedFontStyle = fontStyle,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
             selectedTheme = newTheme,

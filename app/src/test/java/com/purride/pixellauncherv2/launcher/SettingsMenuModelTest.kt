@@ -2,6 +2,8 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.render.PixelFontSize
+import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -57,8 +59,8 @@ class SettingsMenuModelTest {
     @Test
     fun displayValueReturnsEmptyForBlankRows() {
         val row = SettingsMenuRow(
-            item = SettingsMenuItem.FONT,
-            title = "FONT",
+            item = SettingsMenuItem.FONT_SIZE,
+            title = "FONT SIZE",
             value = "",
         )
 
@@ -71,6 +73,8 @@ class SettingsMenuModelTest {
     fun rowsIncludeThemeAndAdvancedItems() {
         val rowItems = SettingsMenuModel.rows(
             LauncherState(
+                selectedFontSize = PixelFontSize.PX_12,
+                selectedFontStyle = PixelFontStyle.MONO,
                 selectedTheme = PixelTheme.AMBER_CRT,
                 drawerListAlignment = DrawerListAlignment.RIGHT,
                 isIdlePageEnabled = false,
@@ -82,7 +86,9 @@ class SettingsMenuModelTest {
         assertTrue(SettingsMenuItem.THEME in rowItems)
         assertTrue(SettingsMenuItem.APP_LIST_ALIGNMENT in rowItems)
         assertTrue(SettingsMenuItem.DRAWER_AUTO_SEARCH in rowItems)
-        assertEquals(6, rowItems.size)
+        assertTrue(SettingsMenuItem.FONT_SIZE in rowItems)
+        assertTrue(SettingsMenuItem.FONT_STYLE in rowItems)
+        assertEquals(7, rowItems.size)
     }
 
     @Test
@@ -125,5 +131,19 @@ class SettingsMenuModelTest {
         val label = SettingsMenuModel.themeLabel(PixelTheme.NIGHT_MONO)
 
         assertEquals("NIGHT", label)
+    }
+
+    @Test
+    fun nextFontSizeWrapsAcrossAllOptions() {
+        val next = SettingsMenuModel.nextFontSize(PixelFontSize.PX_12, 1)
+
+        assertEquals(PixelFontSize.PX_8, next)
+    }
+
+    @Test
+    fun nextFontStyleWrapsAcrossAllOptions() {
+        val next = SettingsMenuModel.nextFontStyle(PixelFontStyle.PROP, 1)
+
+        assertEquals(PixelFontStyle.MONO, next)
     }
 }

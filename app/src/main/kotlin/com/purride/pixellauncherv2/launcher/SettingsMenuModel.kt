@@ -1,7 +1,8 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.render.PixelFontCatalog
-import com.purride.pixellauncherv2.render.PixelFontId
+import com.purride.pixellauncherv2.render.PixelFontSize
+import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfile
@@ -9,7 +10,8 @@ import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
 
 enum class SettingsMenuItem {
-    FONT,
+    FONT_SIZE,
+    FONT_STYLE,
     RESOLUTION,
     STYLE,
     THEME,
@@ -27,7 +29,8 @@ data class SettingsMenuRow(
 
 object SettingsMenuModel {
 
-    val fontOptions: List<PixelFontId> = PixelFontCatalog.settingsFontOptions()
+    val fontSizeOptions: List<PixelFontSize> = PixelFontCatalog.fontSizeOptions()
+    val fontStyleOptions: List<PixelFontStyle> = PixelFontCatalog.fontStyleOptions()
     val styleOptions: List<PixelShape> = listOf(
         PixelShape.SQUARE,
         PixelShape.CIRCLE,
@@ -37,9 +40,14 @@ object SettingsMenuModel {
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
         return listOf(
             SettingsMenuRow(
-                item = SettingsMenuItem.FONT,
-                title = "FONT",
-                value = PixelFontCatalog.settingsLabel(state.selectedFontId),
+                item = SettingsMenuItem.FONT_SIZE,
+                title = "FONT SIZE",
+                value = PixelFontCatalog.sizeLabel(state.selectedFontSize),
+            ),
+            SettingsMenuRow(
+                item = SettingsMenuItem.FONT_STYLE,
+                title = "FONT STYLE",
+                value = PixelFontCatalog.styleLabel(state.selectedFontStyle),
             ),
             SettingsMenuRow(
                 item = SettingsMenuItem.RESOLUTION,
@@ -74,10 +82,16 @@ object SettingsMenuModel {
         return rows[state.settingsSelectedIndex.coerceIn(0, rows.lastIndex)].item
     }
 
-    fun nextFont(current: PixelFontId, direction: Int): PixelFontId {
-        val currentIndex = fontOptions.indexOf(current).takeIf { it >= 0 } ?: 0
-        val nextIndex = wrapIndex(currentIndex + direction, fontOptions.size)
-        return fontOptions[nextIndex]
+    fun nextFontSize(current: PixelFontSize, direction: Int): PixelFontSize {
+        val currentIndex = fontSizeOptions.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, fontSizeOptions.size)
+        return fontSizeOptions[nextIndex]
+    }
+
+    fun nextFontStyle(current: PixelFontStyle, direction: Int): PixelFontStyle {
+        val currentIndex = fontStyleOptions.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, fontStyleOptions.size)
+        return fontStyleOptions[nextIndex]
     }
 
     fun nextStyle(current: PixelShape, direction: Int): PixelShape {

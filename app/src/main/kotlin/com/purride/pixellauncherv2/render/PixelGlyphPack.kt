@@ -5,17 +5,18 @@ import java.io.DataInputStream
 import java.io.InputStream
 
 enum class PixelGlyphPackId {
-    ARK_PIXEL_10PX_MONOSPACED_LATIN,
-    WEN_QUAN_YI_BITMAP_SONG_16PX,
-    GNU_UNIFONT_17_0_03,
-    ARK_PIXEL_16PX_MONOSPACED_ZH_CN,
-    ARK_PIXEL_16PX_MONOSPACED_ZH_HK,
-    ARK_PIXEL_16PX_MONOSPACED_ZH_TW,
-    ARK_PIXEL_16PX_MONOSPACED_ZH_TR,
-    ARK_PIXEL_16PX_PROPORTIONAL_ZH_CN,
-    ARK_PIXEL_16PX_PROPORTIONAL_ZH_HK,
-    ARK_PIXEL_16PX_PROPORTIONAL_ZH_TW,
-    ARK_PIXEL_16PX_PROPORTIONAL_ZH_TR,
+    FUSION_PIXEL_8PX_MONOSPACED_LATIN,
+    FUSION_PIXEL_8PX_MONOSPACED_ZH_HANS,
+    FUSION_PIXEL_8PX_PROPORTIONAL_LATIN,
+    FUSION_PIXEL_8PX_PROPORTIONAL_ZH_HANS,
+    FUSION_PIXEL_10PX_MONOSPACED_LATIN,
+    FUSION_PIXEL_10PX_MONOSPACED_ZH_HANS,
+    FUSION_PIXEL_10PX_PROPORTIONAL_LATIN,
+    FUSION_PIXEL_10PX_PROPORTIONAL_ZH_HANS,
+    FUSION_PIXEL_12PX_MONOSPACED_LATIN,
+    FUSION_PIXEL_12PX_MONOSPACED_ZH_HANS,
+    FUSION_PIXEL_12PX_PROPORTIONAL_LATIN,
+    FUSION_PIXEL_12PX_PROPORTIONAL_ZH_HANS,
 }
 
 data class PixelGlyphPackDefinition(
@@ -26,54 +27,29 @@ data class PixelGlyphPackDefinition(
 object PixelGlyphPackCatalog {
 
     private val definitions = listOf(
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_10PX_MONOSPACED_LATIN,
-            assetDirectory = "glyphpacks/ark_pixel_10px_monospaced_latin",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.WEN_QUAN_YI_BITMAP_SONG_16PX,
-            assetDirectory = "glyphpacks/wenquanyi_bitmap_song_16px",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.GNU_UNIFONT_17_0_03,
-            assetDirectory = "glyphpacks/gnu_unifont_17_0_03",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_MONOSPACED_ZH_CN,
-            assetDirectory = "glyphpacks/ark_pixel_16px_monospaced_zh_cn",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_MONOSPACED_ZH_HK,
-            assetDirectory = "glyphpacks/ark_pixel_16px_monospaced_zh_hk",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_MONOSPACED_ZH_TW,
-            assetDirectory = "glyphpacks/ark_pixel_16px_monospaced_zh_tw",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_MONOSPACED_ZH_TR,
-            assetDirectory = "glyphpacks/ark_pixel_16px_monospaced_zh_tr",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_CN,
-            assetDirectory = "glyphpacks/ark_pixel_16px_proportional_zh_cn",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_HK,
-            assetDirectory = "glyphpacks/ark_pixel_16px_proportional_zh_hk",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_TW,
-            assetDirectory = "glyphpacks/ark_pixel_16px_proportional_zh_tw",
-        ),
-        PixelGlyphPackDefinition(
-            id = PixelGlyphPackId.ARK_PIXEL_16PX_PROPORTIONAL_ZH_TR,
-            assetDirectory = "glyphpacks/ark_pixel_16px_proportional_zh_tr",
-        ),
+        definition(PixelGlyphPackId.FUSION_PIXEL_8PX_MONOSPACED_LATIN, "fusion_pixel_8px_monospaced_latin"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_8PX_MONOSPACED_ZH_HANS, "fusion_pixel_8px_monospaced_zh_hans"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_8PX_PROPORTIONAL_LATIN, "fusion_pixel_8px_proportional_latin"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_8PX_PROPORTIONAL_ZH_HANS, "fusion_pixel_8px_proportional_zh_hans"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_10PX_MONOSPACED_LATIN, "fusion_pixel_10px_monospaced_latin"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_10PX_MONOSPACED_ZH_HANS, "fusion_pixel_10px_monospaced_zh_hans"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_10PX_PROPORTIONAL_LATIN, "fusion_pixel_10px_proportional_latin"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_10PX_PROPORTIONAL_ZH_HANS, "fusion_pixel_10px_proportional_zh_hans"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_12PX_MONOSPACED_LATIN, "fusion_pixel_12px_monospaced_latin"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_12PX_MONOSPACED_ZH_HANS, "fusion_pixel_12px_monospaced_zh_hans"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_12PX_PROPORTIONAL_LATIN, "fusion_pixel_12px_proportional_latin"),
+        definition(PixelGlyphPackId.FUSION_PIXEL_12PX_PROPORTIONAL_ZH_HANS, "fusion_pixel_12px_proportional_zh_hans"),
     )
 
     fun definition(id: PixelGlyphPackId): PixelGlyphPackDefinition {
         return definitions.first { it.id == id }
+    }
+
+    private fun definition(id: PixelGlyphPackId, assetDirectoryName: String): PixelGlyphPackDefinition {
+        return PixelGlyphPackDefinition(
+            id = id,
+            assetDirectory = "glyphpacks/$assetDirectoryName",
+        )
     }
 }
 
