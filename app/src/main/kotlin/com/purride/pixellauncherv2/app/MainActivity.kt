@@ -1109,7 +1109,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun handleHomeTap(x: Int, y: Int) {
-        val layout = HomeLayout.metrics(screenProfile)
+        val layout = HomeLayout.metrics(
+            screenProfile = screenProfile,
+            contactButtonWidth = pixelFontEngine.measureText("CONTACT", GlyphStyle.UI_SMALL_10),
+            smsButtonWidth = pixelFontEngine.measureText("SMS", GlyphStyle.UI_SMALL_10),
+        )
         if (x !in layout.innerLeft..layout.innerRight) {
             return
         }

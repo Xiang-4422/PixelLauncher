@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.render
 import com.purride.pixellauncherv2.launcher.HomeLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -53,6 +54,21 @@ class PixelRendererHomeTest {
         assertTrue(fixedInfoLitPixels(withDynamicInfo) > fixedInfoLitPixels(withRainPlaceholder))
     }
 
+    @Test
+    fun homeBottomButtonsUseMeasuredWidthsForPropFonts() {
+        val propFontEngine = PixelFontEngine(VariableWidthGlyphProvider())
+        val contactWidth = propFontEngine.measureText("CONTACT", GlyphStyle.UI_SMALL_10)
+        val smsWidth = propFontEngine.measureText("SMS", GlyphStyle.UI_SMALL_10)
+        val layout = HomeLayout.metrics(
+            screenProfile = screenProfile,
+            contactButtonWidth = contactWidth,
+            smsButtonWidth = smsWidth,
+        )
+
+        assertEquals(contactWidth, layout.contactButtonRight - layout.contactButtonLeft + 1)
+        assertEquals(smsWidth, layout.smsButtonRight - layout.smsButtonLeft + 1)
+    }
+
     private fun renderHome(
         rainHintText: String,
         missedCallCount: Int = 1,
@@ -93,6 +109,26 @@ class PixelRendererHomeTest {
         override fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
             val isWideGlyph = character.code !in 32..126
             val width = if (isWideGlyph) style.wideAdvanceWidth else style.narrowAdvanceWidth
+            return GlyphBitmap(
+                width = width,
+                height = style.cellHeight,
+                pixels = ByteArray(width * style.cellHeight) { 1 },
+                metrics = GlyphMetrics(
+                    advanceWidth = width,
+                    baselineOffset = style.cellHeight - 2,
+                    isWideGlyph = isWideGlyph,
+                ),
+            )
+        }
+    }
+
+    private class VariableWidthGlyphProvider : GlyphProvider {
+        override fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
+            val isWideGlyph = character.code !in 32..126
+            val width = when (character) {
+                'T', 'S' -> style.narrowAdvanceWidth + 2
+                else -> if (isWideGlyph) style.wideAdvanceWidth else style.narrowAdvanceWidth
+            }
             return GlyphBitmap(
                 width = width,
                 height = style.cellHeight,

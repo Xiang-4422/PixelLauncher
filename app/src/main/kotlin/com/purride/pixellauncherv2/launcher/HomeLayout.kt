@@ -14,7 +14,11 @@ object HomeLayout {
     private const val homeButtonLabel = "CONTACT"
     private const val smsButtonLabel = "SMS"
 
-    fun metrics(screenProfile: ScreenProfile): HomeLayoutMetrics {
+    fun metrics(
+        screenProfile: ScreenProfile,
+        contactButtonWidth: Int = (homeButtonLabel.length * GlyphStyle.UI_SMALL_10.narrowAdvanceWidth).coerceAtLeast(1),
+        smsButtonWidth: Int = (smsButtonLabel.length * GlyphStyle.UI_SMALL_10.narrowAdvanceWidth).coerceAtLeast(1),
+    ): HomeLayoutMetrics {
         val contentTop = LauncherHeaderLayout.firstContentItemTop
         val minimumContentHeight = minFixedHeight + sectionGap + minStackHeight
         val contentBottom = (screenProfile.logicalHeight - bottomPadding)
@@ -37,10 +41,8 @@ object HomeLayout {
         val fixedInfoStartY = dateY + fixedInfoRowHeight
         val stackCardBodyY = (screenProfile.logicalHeight - GlyphStyle.UI_SMALL_10.cellHeight).coerceAtLeast(stackTop)
         val homeButtonY = stackCardBodyY
-        val homeButtonWidth = (homeButtonLabel.length * GlyphStyle.UI_SMALL_10.narrowAdvanceWidth).coerceAtLeast(1)
-        val smsButtonWidth = (smsButtonLabel.length * GlyphStyle.UI_SMALL_10.narrowAdvanceWidth).coerceAtLeast(1)
         val contactButtonLeft = innerLeft
-        val contactButtonRight = (contactButtonLeft + homeButtonWidth - 1).coerceAtMost(innerRight)
+        val contactButtonRight = (contactButtonLeft + contactButtonWidth - 1).coerceAtMost(innerRight)
         val smsButtonRight = innerRight
         val smsButtonLeft = (smsButtonRight - smsButtonWidth + 1).coerceAtLeast(innerLeft)
 

@@ -365,7 +365,7 @@ class PixelRenderer(
         screenProfile: ScreenProfile,
         animationState: LauncherAnimationState,
     ) {
-        val layoutMetrics = HomeLayout.metrics(screenProfile)
+        val layoutMetrics = homeLayoutMetrics(screenProfile)
         drawHeader(
             buffer = buffer,
             screenProfile = screenProfile,
@@ -414,6 +414,14 @@ class PixelRenderer(
         }
 
         drawHomeBottomButtons(buffer, layoutMetrics)
+    }
+
+    private fun homeLayoutMetrics(screenProfile: ScreenProfile): HomeLayoutMetrics {
+        return HomeLayout.metrics(
+            screenProfile = screenProfile,
+            contactButtonWidth = pixelFontEngine.measureText("CONTACT", GlyphStyle.UI_SMALL_10),
+            smsButtonWidth = pixelFontEngine.measureText("SMS", GlyphStyle.UI_SMALL_10),
+        )
     }
 
     private fun drawHomeBottomButtons(
@@ -978,9 +986,12 @@ class PixelRenderer(
         val lastIndexExclusive = (state.smsThreadListStartIndex + layout.textList.viewport.visibleRows + 2)
             .coerceAtMost(state.smsThreads.size)
         for (index in firstIndex until lastIndexExclusive) {
-            val rowTop = layout.textList.viewport.top +
-                ((index - state.smsThreadListStartIndex) * layout.rowHeight) -
-                scrollOffsetPx
+            val rowTop = TextListSupport.rowTop(
+                viewport = layout.textList.viewport,
+                rowIndex = index,
+                listStartIndex = state.smsThreadListStartIndex,
+                scrollOffsetPx = scrollOffsetPx,
+            )
             val rowBottom = rowTop + layout.rowHeight
             if (rowBottom <= layout.textList.viewport.top || rowTop >= layout.panelBottom) {
                 continue
