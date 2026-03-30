@@ -265,6 +265,40 @@ object LauncherStateTransitions {
     }
 
     /**
+     * 按相对行数滚动抽屉可视窗口，并让选中项保持在新的可视范围内。
+     */
+    fun scrollDrawerWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
+        val drawerApps = currentDrawerApps(state)
+        if (drawerApps.isEmpty()) {
+            return state.copy(
+                selectedIndex = 0,
+                listStartIndex = 0,
+                drawerPageIndex = 0,
+                drawerFocus = DrawerFocus.LIST,
+            )
+        }
+
+        val safeRows = visibleRows.coerceAtLeast(1)
+        val maxStartIndex = (drawerApps.size - safeRows).coerceAtLeast(0)
+        val previousStartIndex = state.listStartIndex.coerceIn(0, maxStartIndex)
+        val newStartIndex = (previousStartIndex + delta).coerceIn(0, maxStartIndex)
+        val visibleEndIndex = (newStartIndex + safeRows - 1).coerceAtMost(drawerApps.lastIndex)
+        val relativeSelectionRow = (state.selectedIndex - previousStartIndex).coerceIn(0, safeRows - 1)
+        val newSelectedIndex = (newStartIndex + relativeSelectionRow).coerceIn(newStartIndex, visibleEndIndex)
+
+        return state.copy(
+            selectedIndex = newSelectedIndex,
+            listStartIndex = newStartIndex,
+            drawerPageIndex = AppDrawerIndexModel.create(
+                apps = drawerApps,
+                visibleRows = visibleRows,
+                selectedIndex = newSelectedIndex,
+            ).currentPageIndex,
+            drawerFocus = DrawerFocus.LIST,
+        )
+    }
+
+    /**
      * 以当前顶部项为基准，按一个 viewport 的大小向前或向后翻动抽屉。
      */
     fun pageSelection(state: LauncherState, direction: Int, visibleRows: Int): LauncherState {
@@ -331,11 +365,14 @@ object LauncherStateTransitions {
 
         val safePageIndex = pageIndex.coerceIn(0, indexModel.pageCount - 1)
         val pageStartIndex = indexModel.pageStartIndices[safePageIndex]
-        return state.copy(
-            selectedIndex = pageStartIndex,
-            listStartIndex = pageStartIndex,
-            drawerPageIndex = safePageIndex,
-            drawerFocus = DrawerFocus.LIST,
+        return syncDrawerWindow(
+            state = state.copy(
+                selectedIndex = pageStartIndex,
+                listStartIndex = pageStartIndex,
+                drawerPageIndex = safePageIndex,
+                drawerFocus = DrawerFocus.LIST,
+            ),
+            visibleRows = visibleRows,
         )
     }
 
@@ -796,7 +833,7 @@ object LauncherStateTransitions {
     }
 
     /**
-     * 根据当前可视行数，把选中索引换算成顶对齐列表的起始索引。
+     * 根据当前可视行数，为选中项计算一个尽量靠前但不会留下底部空白的窗口起点。
      */
     fun calculateListStartIndex(selectedIndex: Int, visibleRows: Int, totalCount: Int): Int {
         if (totalCount <= 0) {
@@ -805,7 +842,8 @@ object LauncherStateTransitions {
 
         val safeRows = visibleRows.coerceAtLeast(1)
         val safeSelectedIndex = selectedIndex.coerceIn(0, totalCount - 1)
-        return ((safeSelectedIndex / safeRows) * safeRows).coerceAtLeast(0)
+        val maxStartIndex = (totalCount - safeRows).coerceAtLeast(0)
+        return safeSelectedIndex.coerceAtMost(maxStartIndex)
     }
 
     /**
@@ -828,7 +866,11 @@ object LauncherStateTransitions {
             visibleRows = visibleRows,
             selectedIndex = safeSelectedIndex,
         )
-        val listStartIndex = safeSelectedIndex
+        val listStartIndex = calculateListStartIndex(
+            selectedIndex = safeSelectedIndex,
+            visibleRows = visibleRows,
+            totalCount = drawerApps.size,
+        )
 
         return state.copy(
             selectedIndex = safeSelectedIndex,

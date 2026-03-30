@@ -167,7 +167,7 @@ class LauncherStateTransitionsTest {
         )
 
         assertEquals(15, pagedState.selectedIndex)
-        assertEquals(15, pagedState.listStartIndex)
+        assertEquals(13, pagedState.listStartIndex)
         assertEquals(2, pagedState.drawerPageIndex)
     }
 
@@ -217,8 +217,52 @@ class LauncherStateTransitionsTest {
         )
 
         assertEquals(6, selectedState.selectedIndex)
-        assertEquals(6, selectedState.listStartIndex)
+        assertEquals(5, selectedState.listStartIndex)
         assertEquals(2, selectedState.drawerPageIndex)
+    }
+
+    @Test
+    fun moveSelectionKeepsLastItemAnchoredAtBottomNearDrawerEnd() {
+        val state = LauncherState(
+            apps = apps,
+            drawerVisibleApps = apps,
+            selectedIndex = 6,
+            listStartIndex = 5,
+            isLoading = false,
+            mode = LauncherMode.APP_DRAWER,
+        )
+
+        val movedState = LauncherStateTransitions.moveSelection(
+            state = state,
+            delta = 1,
+            visibleRows = 3,
+        )
+
+        assertEquals(7, movedState.selectedIndex)
+        assertEquals(5, movedState.listStartIndex)
+        assertEquals(2, movedState.drawerPageIndex)
+    }
+
+    @Test
+    fun scrollDrawerWindowMovesViewportByOneRowNearBottom() {
+        val state = LauncherState(
+            apps = apps,
+            drawerVisibleApps = apps,
+            selectedIndex = 7,
+            listStartIndex = 5,
+            isLoading = false,
+            mode = LauncherMode.APP_DRAWER,
+        )
+
+        val scrolledState = LauncherStateTransitions.scrollDrawerWindow(
+            state = state,
+            delta = -1,
+            visibleRows = 3,
+        )
+
+        assertEquals(4, scrolledState.listStartIndex)
+        assertEquals(6, scrolledState.selectedIndex)
+        assertEquals(2, scrolledState.drawerPageIndex)
     }
 
     @Test

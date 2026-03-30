@@ -3243,11 +3243,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun canMoveInDirection(direction: Int): Boolean {
-        return DrawerDirectionalSettlePolicy.canAdvance(
-            currentIndex = state.selectedIndex,
-            lastIndex = drawerListLastIndex(),
-            direction = direction,
-        )
+        val apps = currentDrawerApps()
+        if (apps.isEmpty()) {
+            return false
+        }
+        val pageSize = visibleRows().coerceAtLeast(1)
+        val currentTopIndex = state.listStartIndex.coerceIn(0, apps.lastIndex)
+        val maxTopIndex = (apps.size - pageSize).coerceAtLeast(0)
+        return when {
+            direction > 0 -> currentTopIndex < maxTopIndex
+            direction < 0 -> currentTopIndex > 0
+            else -> false
+        }
     }
 
     private fun isDrawerAtListStart(): Boolean {
@@ -3255,7 +3262,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (apps.isEmpty()) {
             return true
         }
-        return state.selectedIndex <= 0
+        return state.listStartIndex <= 0
     }
 
     private fun isDrawerAtListEnd(): Boolean {
@@ -3263,7 +3270,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (apps.isEmpty()) {
             return true
         }
-        return state.selectedIndex >= apps.lastIndex
+        val pageSize = visibleRows().coerceAtLeast(1)
+        val maxTopIndex = (apps.size - pageSize).coerceAtLeast(0)
+        return state.listStartIndex >= maxTopIndex
     }
 
     private fun isOutwardBoundaryDelta(deltaY: Float): Boolean {
@@ -3304,15 +3313,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         var remaining = stepDelta
         while (remaining != 0) {
             val direction = if (remaining > 0) 1 else -1
-            val previousSelectedIndex = state.selectedIndex
-            state = LauncherStateTransitions.moveSelection(
+            val previousListStartIndex = state.listStartIndex
+            state = LauncherStateTransitions.scrollDrawerWindow(
                 state = state,
                 delta = direction,
                 visibleRows = visibleRows(),
             )
-            if (state.selectedIndex == previousSelectedIndex) {
+            if (state.listStartIndex == previousListStartIndex) {
                 drawerListScrollResidualOffsetPx = 0f
                 drawerListScrollVelocityPxPerSecond = 0f
+                drawerSettleTarget = null
                 drawerListScrollAnimating = false
                 break
             }
