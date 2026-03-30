@@ -20,6 +20,10 @@ class PixelFontEngineTest {
         narrowFontFamily = PixelFontFamily.MONOSPACE,
         wideFontFamily = PixelFontFamily.DEFAULT,
     )
+    private val monoStyle = appLabelStyle.copy(
+        narrowAdvanceWidth = 16,
+        wideAdvanceWidth = 16,
+    )
 
     @Test
     fun measureTextReturnsStableWidthsForAsciiChineseAndMixedText() {
@@ -79,13 +83,25 @@ class PixelFontEngineTest {
     }
 
     @Test
-    fun cjkSpacingOnlyAppliesBetweenAdjacentCjkGlyphs() {
+    fun visualGapAppliesToAnyAdjacentPairContainingWideGlyph() {
         val glyphProvider = CountingGlyphProvider()
         val pixelFontEngine = PixelFontEngine(glyphProvider)
 
         assertEquals(33, pixelFontEngine.measureText("\u4e2d\u6587", appLabelStyle))
-        assertEquals(24, pixelFontEngine.measureText("\u4e2dA", appLabelStyle))
-        assertEquals(24, pixelFontEngine.measureText("A\u4e2d", appLabelStyle))
+        assertEquals(25, pixelFontEngine.measureText("\u4e2dA", appLabelStyle))
+        assertEquals(25, pixelFontEngine.measureText("A\u4e2d", appLabelStyle))
+        assertEquals(16, pixelFontEngine.measureText("AA", appLabelStyle))
+    }
+
+    @Test
+    fun monoStyleStillKeepsGapForChineseAndMixedPairs() {
+        val glyphProvider = CountingGlyphProvider()
+        val pixelFontEngine = PixelFontEngine(glyphProvider)
+
+        assertEquals(33, pixelFontEngine.measureText("\u4e2d\u6587", monoStyle))
+        assertEquals(33, pixelFontEngine.measureText("\u4e2dA", monoStyle))
+        assertEquals(33, pixelFontEngine.measureText("A\u4e2d", monoStyle))
+        assertEquals(32, pixelFontEngine.measureText("AA", monoStyle))
     }
 
     @Test
@@ -109,6 +125,27 @@ class PixelFontEngineTest {
         assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelBuffer.OFF })
     }
 
+    @Test
+    fun drawTextLeavesBlankColumnBetweenWideAndNarrowGlyphs() {
+        val glyphProvider = CountingGlyphProvider()
+        val pixelFontEngine = PixelFontEngine(glyphProvider)
+        val buffer = PixelBuffer(width = 40, height = 20)
+
+        pixelFontEngine.drawText(
+            buffer = buffer,
+            text = "\u4e2dA",
+            startX = 0,
+            startY = 0,
+            maxWidth = 40,
+            style = appLabelStyle,
+        )
+
+        for (y in 0 until appLabelStyle.cellHeight) {
+            assertEquals(PixelBuffer.OFF, buffer.getPixel(16, y))
+        }
+        assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelBuffer.OFF })
+    }
+
     private class CountingGlyphProvider : GlyphProvider {
         var rasterizeCount: Int = 0
             private set
@@ -117,15 +154,19 @@ class PixelFontEngineTest {
             rasterizeCount += 1
             val isWideGlyph = character.code !in 32..126
             val width = if (isWideGlyph) style.wideAdvanceWidth else style.narrowAdvanceWidth
+            val isBlankGlyph = character == ' '
 
             return GlyphBitmap(
                 width = width,
                 height = style.cellHeight,
-                pixels = ByteArray(width * style.cellHeight) { 1 },
+                pixels = ByteArray(width * style.cellHeight) { if (isBlankGlyph) 0 else 1 },
                 metrics = GlyphMetrics(
                     advanceWidth = width,
                     baselineOffset = style.cellHeight - 2,
                     isWideGlyph = isWideGlyph,
+                    requiresVisualGapProtection = isWideGlyph || character.code !in 32..126,
+                    inkLeft = if (isBlankGlyph) width else 0,
+                    inkRight = if (isBlankGlyph) -1 else width - 1,
                 ),
             )
         }

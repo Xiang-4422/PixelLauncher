@@ -102,6 +102,9 @@ data class GlyphMetrics(
     val advanceWidth: Int,
     val baselineOffset: Int,
     val isWideGlyph: Boolean,
+    val requiresVisualGapProtection: Boolean = false,
+    val inkLeft: Int = 0,
+    val inkRight: Int = advanceWidth - 1,
 )
 
 data class GlyphBitmap(
@@ -147,6 +150,9 @@ class CompositeGlyphProvider(
                 advanceWidth = width,
                 baselineOffset = style.cellHeight - 2,
                 isWideGlyph = isWideGlyph,
+                requiresVisualGapProtection = requiresVisualGapProtection(character, isWideGlyph),
+                inkLeft = width,
+                inkRight = -1,
             ),
         )
     }
@@ -172,6 +178,11 @@ class BitmapGlyphSource(
                     packed = record.packedPixels,
                     pixelCount = record.width * pack.manifest.cellHeight,
                 )
+                val inkBounds = computeInkBounds(
+                    width = record.width,
+                    height = pack.manifest.cellHeight,
+                    pixels = unpackedPixels,
+                )
                 GlyphBitmap(
                     width = record.width,
                     height = pack.manifest.cellHeight,
@@ -180,6 +191,12 @@ class BitmapGlyphSource(
                         advanceWidth = record.advanceWidth,
                         baselineOffset = pack.manifest.baseline,
                         isWideGlyph = record.advanceWidth > style.narrowAdvanceWidth,
+                        requiresVisualGapProtection = requiresVisualGapProtection(
+                            character = character,
+                            isWideGlyph = record.advanceWidth > style.narrowAdvanceWidth,
+                        ),
+                        inkLeft = inkBounds.first,
+                        inkRight = inkBounds.second,
                     ),
                 )
             }
@@ -201,6 +218,24 @@ class BitmapGlyphSource(
         return pixels
     }
 
+    private fun computeInkBounds(width: Int, height: Int, pixels: ByteArray): Pair<Int, Int> {
+        var left = width
+        var right = -1
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (pixels[(y * width) + x].toInt() != 0) {
+                    if (x < left) {
+                        left = x
+                    }
+                    if (x > right) {
+                        right = x
+                    }
+                }
+            }
+        }
+        return left to right
+    }
+
     private data class GlyphCacheKey(
         val packId: String,
         val codePoint: Int,
@@ -211,19 +246,20 @@ class PixelFontEngine(
     private val glyphProvider: GlyphProvider,
 ) {
     companion object {
-        private const val CJK_INTER_GLYPH_SPACING = 1
+        private const val MIN_WIDE_PAIR_VISUAL_GAP = 1
     }
 
     private val glyphCache = linkedMapOf<GlyphKey, GlyphBitmap>()
 
     fun measureText(text: String, style: GlyphStyle): Int {
-        return text.indices.sumOf { index ->
-            glyphAdvance(
-                previous = text.getOrNull(index - 1),
-                current = text[index],
-                style = style,
-            )
+        var totalWidth = 0
+        var previousGlyph: GlyphBitmap? = null
+        text.forEach { character ->
+            val glyph = glyphFor(character, style)
+            totalWidth += glyph.metrics.advanceWidth + interGlyphSpacing(previousGlyph, glyph)
+            previousGlyph = glyph
         }
+        return totalWidth
     }
 
     fun trimToWidth(text: String, style: GlyphStyle, maxWidth: Int): String {
@@ -231,20 +267,18 @@ class PixelFontEngine(
             return ""
         }
 
-        val builder = StringBuilder()
+        val builder = StringBuilder(text.length)
         var consumedWidth = 0
-        text.indices.forEach { index ->
-            val character = text[index]
-            val nextWidth = consumedWidth + glyphAdvance(
-                previous = builder.lastOrNull(),
-                current = character,
-                style = style,
-            )
+        var previousGlyph: GlyphBitmap? = null
+        text.forEach { character ->
+            val glyph = glyphFor(character, style)
+            val nextWidth = consumedWidth + glyph.metrics.advanceWidth + interGlyphSpacing(previousGlyph, glyph)
             if (nextWidth > maxWidth) {
                 return builder.toString()
             }
             builder.append(character)
             consumedWidth = nextWidth
+            previousGlyph = glyph
         }
         return builder.toString()
     }
@@ -272,11 +306,10 @@ class PixelFontEngine(
                 startX = cursorX,
                 startY = startY,
             )
-            cursorX += drawAdvance(
-                current = character,
-                next = renderableText.getOrNull(index + 1),
-                style = style,
-            )
+            val nextGlyph = renderableText.getOrNull(index + 1)?.let { nextCharacter ->
+                glyphFor(nextCharacter, style)
+            }
+            cursorX += glyph.metrics.advanceWidth + interGlyphSpacing(glyph, nextGlyph)
         }
     }
 
@@ -294,35 +327,30 @@ class PixelFontEngine(
         }
     }
 
-    private fun glyphAdvance(previous: Char?, current: Char, style: GlyphStyle): Int {
-        val baseAdvance = glyphFor(current, style).metrics.advanceWidth
-        return baseAdvance + interGlyphSpacing(previous, current)
-    }
-
-    private fun drawAdvance(current: Char, next: Char?, style: GlyphStyle): Int {
-        val baseAdvance = glyphFor(current, style).metrics.advanceWidth
-        return baseAdvance + interGlyphSpacing(current, next)
-    }
-
-    private fun interGlyphSpacing(left: Char?, right: Char?): Int {
+    private fun interGlyphSpacing(left: GlyphBitmap?, right: GlyphBitmap?): Int {
         if (left == null || right == null) {
             return 0
         }
-        return if (isCjkCharacter(left) && isCjkCharacter(right)) {
-            CJK_INTER_GLYPH_SPACING
-        } else {
+        return if (!requiresMinimumGap(left, right)) {
             0
+        } else {
+            (MIN_WIDE_PAIR_VISUAL_GAP - currentVisualGap(left, right)).coerceAtLeast(0)
         }
     }
 
-    private fun isCjkCharacter(character: Char): Boolean {
-        return when (Character.UnicodeBlock.of(character)) {
-            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
-            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
-            Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
-            Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT -> true
-            else -> false
+    private fun requiresMinimumGap(left: GlyphBitmap, right: GlyphBitmap): Boolean {
+        if (!left.hasVisibleInk() || !right.hasVisibleInk()) {
+            return false
         }
+        return left.metrics.requiresVisualGapProtection || right.metrics.requiresVisualGapProtection
+    }
+
+    private fun currentVisualGap(left: GlyphBitmap, right: GlyphBitmap): Int {
+        return left.metrics.advanceWidth + right.metrics.inkLeft - left.metrics.inkRight - 1
+    }
+
+    private fun GlyphBitmap.hasVisibleInk(): Boolean {
+        return metrics.inkRight >= metrics.inkLeft
     }
 
     private fun drawGlyph(buffer: PixelBuffer, glyph: GlyphBitmap, startX: Int, startY: Int) {
@@ -348,4 +376,27 @@ class PixelFontEngine(
         val character: Char,
         val style: GlyphStyle,
     )
+}
+
+private fun requiresVisualGapProtection(character: Char, isWideGlyph: Boolean): Boolean {
+    if (isWideGlyph) {
+        return true
+    }
+    return when (Character.UnicodeBlock.of(character)) {
+        Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
+        Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
+        Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
+        Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT,
+        Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION,
+        Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS,
+        Character.UnicodeBlock.HIRAGANA,
+        Character.UnicodeBlock.KATAKANA,
+        Character.UnicodeBlock.KATAKANA_PHONETIC_EXTENSIONS,
+        Character.UnicodeBlock.HANGUL_JAMO,
+        Character.UnicodeBlock.HANGUL_COMPATIBILITY_JAMO,
+        Character.UnicodeBlock.HANGUL_SYLLABLES,
+        Character.UnicodeBlock.BOPOMOFO,
+        Character.UnicodeBlock.BOPOMOFO_EXTENDED -> true
+        else -> false
+    }
 }
