@@ -813,6 +813,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         super.onDestroy()
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_HOME) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                navigateHomeFromHardwareKey()
+            }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     /**
      * 统一处理硬件按键导航，包括 pager、设置页、抽屉搜索和应用启动。
      */
@@ -961,6 +971,20 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
             else -> if (handleDrawerTextInput(keyCode, event)) true else super.onKeyDown(keyCode, event)
         }
+    }
+
+    private fun navigateHomeFromHardwareKey() {
+        if (launchPending || animationState.bootSequence != null) {
+            return
+        }
+        recordInteraction()
+        if (state.mode == LauncherMode.HOME) {
+            return
+        }
+        state = LauncherStateTransitions.showHome(state)
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+        updateTextInputFocus()
     }
 
     /**
@@ -2608,6 +2632,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             smsIntentLogTag,
             "handleLaunchIntent action=${intent.action} data=${intent.data} extras=${intent.extras?.keySet()?.joinToString()} mode=${state.mode}",
         )
+        if (isLauncherHomeIntent(intent)) {
+            navigateHomeFromHardwareKey()
+            return
+        }
         val openThreadId = intent.getLongExtra(EXTRA_OPEN_SMS_THREAD_ID, -1L).takeIf { it >= 0L }
         val openAddress = intent.getStringExtra(EXTRA_OPEN_SMS_ADDRESS).orEmpty()
         val draftBody = intent.getStringExtra("sms_body")
@@ -2634,6 +2662,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 )
             }
         }
+    }
+
+    private fun isLauncherHomeIntent(intent: Intent): Boolean {
+        if (intent.action != Intent.ACTION_MAIN) {
+            return false
+        }
+        val categories = intent.categories.orEmpty()
+        return Intent.CATEGORY_HOME in categories || Intent.CATEGORY_LAUNCHER in categories
     }
 
     private fun sendSmsDraft() {
