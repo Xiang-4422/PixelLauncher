@@ -1793,8 +1793,18 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      */
     private fun loadApps() {
         val generation = ++loadGeneration
-        state = state.copy(isLoading = true)
-        renderCurrentFrame()
+        val cachedApps = appRepository.loadCachedLaunchableApps()
+        if (cachedApps.isNotEmpty()) {
+            state = LauncherStateTransitions.withApps(
+                previous = state,
+                apps = cachedApps,
+                visibleRows = visibleRows(),
+            )
+            refreshDerivedUiState(render = true)
+        } else {
+            state = state.copy(isLoading = true)
+            renderCurrentFrame()
+        }
 
         backgroundExecutor.execute {
             val apps = appRepository.loadLaunchableApps()

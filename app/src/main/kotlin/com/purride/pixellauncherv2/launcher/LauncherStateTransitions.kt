@@ -236,7 +236,7 @@ object LauncherStateTransitions {
 
         return syncDrawerWindow(
             state = previous.copy(
-                apps = orderedApps,
+                apps = apps,
                 drawerVisibleApps = drawerApps,
                 selectedIndex = selectedIndex,
                 isLoading = false,

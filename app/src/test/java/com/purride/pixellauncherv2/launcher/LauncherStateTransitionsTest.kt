@@ -471,6 +471,61 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showAppDrawerKeepsSameOrderAfterWithAppsBuildsVisibleList() {
+        val sourceApps = listOf(
+            AppEntry(label = "Alpha", packageName = "pkg.a", activityName = "A"),
+            AppEntry(label = "Atlas", packageName = "pkg.atlas", activityName = "Atlas"),
+            AppEntry(label = "Apex", packageName = "pkg.apex", activityName = "Apex"),
+            AppEntry(label = "Bravo", packageName = "pkg.b", activityName = "B"),
+        )
+        val hydratedState = LauncherStateTransitions.withApps(
+            previous = LauncherState(
+                recentApps = listOf("pkg.atlas"),
+                isLoading = true,
+            ),
+            apps = sourceApps,
+            visibleRows = 3,
+        )
+
+        val drawerState = LauncherStateTransitions.showAppDrawer(
+            state = hydratedState.copy(mode = LauncherMode.HOME),
+            visibleRows = 3,
+        )
+
+        assertEquals(
+            hydratedState.drawerVisibleApps.map { it.packageName },
+            drawerState.drawerVisibleApps.map { it.packageName },
+        )
+    }
+
+    @Test
+    fun withAppsTopAlignsPreservedSelectionForSelectedIndexDrivenDrawer() {
+        val reloadedApps = List(8) { index ->
+            AppEntry(
+                label = "App $index",
+                packageName = "pkg.$index",
+                activityName = "Activity$index",
+            )
+        }
+        val previous = LauncherState(
+            apps = reloadedApps,
+            drawerVisibleApps = reloadedApps,
+            selectedIndex = 5,
+            listStartIndex = 3,
+            isLoading = true,
+        )
+
+        val newState = LauncherStateTransitions.withApps(
+            previous = previous,
+            apps = reloadedApps,
+            visibleRows = 3,
+        )
+
+        assertEquals(5, newState.selectedIndex)
+        assertEquals(5, newState.listStartIndex)
+    }
+
+    @Test
     fun updateDrawerQueryMatchesPinyinFullPrefix() {
         val apps = listOf(
             AppEntry(label = "微信", packageName = "pkg.wechat", activityName = "Wechat"),

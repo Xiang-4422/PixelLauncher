@@ -10,13 +10,52 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.util.LabelFormatter
 import java.text.Collator
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 
 class PackageManagerAppRepository(
     private val context: Context,
 ) : AppRepository {
+    companion object {
+        private const val PREFERENCES_NAME = "app_repository_cache"
+        private const val KEY_CACHED_APPS = "cached_launchable_apps"
+        private const val FIELD_LABEL = "label"
+        private const val FIELD_PACKAGE_NAME = "packageName"
+        private const val FIELD_ACTIVITY_NAME = "activityName"
+        private const val FIELD_ENGLISH_LABEL = "englishLabel"
+    }
 
     private val packageManager: PackageManager = context.packageManager
     private val labelCollator: Collator = Collator.getInstance(Locale.getDefault())
+    private val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+
+    override fun loadCachedLaunchableApps(): List<AppEntry> {
+        val rawJson = sharedPreferences.getString(KEY_CACHED_APPS, null).orEmpty()
+        if (rawJson.isBlank()) {
+            return emptyList()
+        }
+        return runCatching {
+            val jsonArray = JSONArray(rawJson)
+            buildList(jsonArray.length()) {
+                for (index in 0 until jsonArray.length()) {
+                    val item = jsonArray.optJSONObject(index) ?: continue
+                    val packageName = item.optString(FIELD_PACKAGE_NAME)
+                    val activityName = item.optString(FIELD_ACTIVITY_NAME)
+                    if (packageName.isBlank() || activityName.isBlank()) {
+                        continue
+                    }
+                    add(
+                        AppEntry(
+                            label = item.optString(FIELD_LABEL),
+                            packageName = packageName,
+                            activityName = activityName,
+                            englishLabel = item.optString(FIELD_ENGLISH_LABEL),
+                        ),
+                    )
+                }
+            }
+        }.getOrDefault(emptyList())
+    }
 
     /**
      * 读取所有可启动 Activity，推导多语言标签，并返回稳定的本地化排序结果。
@@ -26,7 +65,7 @@ class PackageManagerAppRepository(
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
 
-        return queryLauncherActivities(launcherIntent)
+        val apps = queryLauncherActivities(launcherIntent)
             .asSequence()
             .mapNotNull { resolveInfo ->
                 val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
@@ -68,6 +107,8 @@ class PackageManagerAppRepository(
                 )
             }
             .toList()
+        cacheLaunchableApps(apps)
+        return apps
     }
 
     @Suppress("DEPRECATION")
@@ -137,5 +178,21 @@ class PackageManagerAppRepository(
 
     private fun isCjk(char: Char): Boolean {
         return Character.UnicodeScript.of(char.code) == Character.UnicodeScript.HAN
+    }
+
+    private fun cacheLaunchableApps(apps: List<AppEntry>) {
+        val jsonArray = JSONArray()
+        apps.forEach { app ->
+            jsonArray.put(
+                JSONObject()
+                    .put(FIELD_LABEL, app.label)
+                    .put(FIELD_PACKAGE_NAME, app.packageName)
+                    .put(FIELD_ACTIVITY_NAME, app.activityName)
+                    .put(FIELD_ENGLISH_LABEL, app.englishLabel),
+            )
+        }
+        sharedPreferences.edit()
+            .putString(KEY_CACHED_APPS, jsonArray.toString())
+            .apply()
     }
 }
