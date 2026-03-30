@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class HomeFixedInfoModelTest {
@@ -28,5 +29,18 @@ class HomeFixedInfoModelTest {
 
         assertEquals(HomeFixedInfoRowType.WEATHER, rows.first().type)
         assertEquals(HomeFixedInfoRowType.ALARM, rows[1].type)
+    }
+
+    @Test
+    fun rowsDoNotIncludeStatusLine() {
+        val rows = HomeFixedInfoModel.rows(
+            LauncherState(
+                nextAlarmText = "07:30",
+                rainHintText = "CLEAR 23C",
+                terminalStatusText = "SYSTEM READY",
+            ),
+        )
+
+        assertFalse(rows.any { it.text.contains("READY") })
     }
 }

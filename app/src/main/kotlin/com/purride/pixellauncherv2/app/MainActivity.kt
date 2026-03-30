@@ -1175,8 +1175,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 },
             )
 
-            HomeFixedInfoRowType.WEATHER,
-            HomeFixedInfoRowType.STATUS -> Unit
+            HomeFixedInfoRowType.WEATHER -> Unit
         }
     }
 

@@ -5,7 +5,6 @@ enum class HomeFixedInfoRowType {
     WEATHER,
     COMMUNICATION,
     USAGE,
-    STATUS,
 }
 
 data class HomeFixedInfoRow(
@@ -43,12 +42,6 @@ object HomeFixedInfoModel {
                 HomeFixedInfoRow(
                     type = HomeFixedInfoRowType.USAGE,
                     text = "USE ${state.screenUsageTimeText.ifBlank { "--:--" }}  OPEN ${state.screenOpenCountText.ifBlank { "--" }}",
-                ),
-            )
-            add(
-                HomeFixedInfoRow(
-                    type = HomeFixedInfoRowType.STATUS,
-                    text = state.terminalStatusText.ifBlank { "READY" },
                 ),
             )
         }
