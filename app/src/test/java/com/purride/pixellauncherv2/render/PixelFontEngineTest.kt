@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.render
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelFontEngineTest {
@@ -26,8 +27,8 @@ class PixelFontEngineTest {
         val pixelFontEngine = PixelFontEngine(glyphProvider)
 
         assertEquals(48, pixelFontEngine.measureText("WeChat", appLabelStyle))
-        assertEquals(32, pixelFontEngine.measureText("\u5fae\u4fe1", appLabelStyle))
-        assertEquals(88, pixelFontEngine.measureText("\u5fae\u4fe1 WeChat", appLabelStyle))
+        assertEquals(33, pixelFontEngine.measureText("\u5fae\u4fe1", appLabelStyle))
+        assertEquals(89, pixelFontEngine.measureText("\u5fae\u4fe1 WeChat", appLabelStyle))
     }
 
     @Test
@@ -41,7 +42,21 @@ class PixelFontEngineTest {
             maxWidth = 40,
         )
 
-        assertEquals("\u5fae\u4fe1W", trimmed)
+        assertEquals("\u5fae\u4fe1", trimmed)
+    }
+
+    @Test
+    fun trimToWidthKeepsSingleCjkGlyphWhenOnlyBaseWidthFits() {
+        val glyphProvider = CountingGlyphProvider()
+        val pixelFontEngine = PixelFontEngine(glyphProvider)
+
+        val trimmed = pixelFontEngine.trimToWidth(
+            text = "\u4e2d\u6587",
+            style = appLabelStyle,
+            maxWidth = 16,
+        )
+
+        assertEquals("\u4e2d", trimmed)
     }
 
     @Test
@@ -61,6 +76,37 @@ class PixelFontEngineTest {
 
         assertEquals(8, pixelFontEngine.measureText("A", appLabelStyle))
         assertEquals(16, pixelFontEngine.measureText("\u4e2d", appLabelStyle))
+    }
+
+    @Test
+    fun cjkSpacingOnlyAppliesBetweenAdjacentCjkGlyphs() {
+        val glyphProvider = CountingGlyphProvider()
+        val pixelFontEngine = PixelFontEngine(glyphProvider)
+
+        assertEquals(33, pixelFontEngine.measureText("\u4e2d\u6587", appLabelStyle))
+        assertEquals(24, pixelFontEngine.measureText("\u4e2dA", appLabelStyle))
+        assertEquals(24, pixelFontEngine.measureText("A\u4e2d", appLabelStyle))
+    }
+
+    @Test
+    fun drawTextLeavesBlankColumnBetweenAdjacentCjkGlyphs() {
+        val glyphProvider = CountingGlyphProvider()
+        val pixelFontEngine = PixelFontEngine(glyphProvider)
+        val buffer = PixelBuffer(width = 40, height = 20)
+
+        pixelFontEngine.drawText(
+            buffer = buffer,
+            text = "\u4e2d\u6587",
+            startX = 0,
+            startY = 0,
+            maxWidth = 40,
+            style = appLabelStyle,
+        )
+
+        for (y in 0 until appLabelStyle.cellHeight) {
+            assertEquals(PixelBuffer.OFF, buffer.getPixel(16, y))
+        }
+        assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelBuffer.OFF })
     }
 
     private class CountingGlyphProvider : GlyphProvider {

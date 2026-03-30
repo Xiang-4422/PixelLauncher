@@ -210,11 +210,20 @@ class BitmapGlyphSource(
 class PixelFontEngine(
     private val glyphProvider: GlyphProvider,
 ) {
+    companion object {
+        private const val CJK_INTER_GLYPH_SPACING = 1
+    }
 
     private val glyphCache = linkedMapOf<GlyphKey, GlyphBitmap>()
 
     fun measureText(text: String, style: GlyphStyle): Int {
-        return text.sumOf { character -> glyphFor(character, style).metrics.advanceWidth }
+        return text.indices.sumOf { index ->
+            glyphAdvance(
+                previous = text.getOrNull(index - 1),
+                current = text[index],
+                style = style,
+            )
+        }
     }
 
     fun trimToWidth(text: String, style: GlyphStyle, maxWidth: Int): String {
@@ -224,9 +233,13 @@ class PixelFontEngine(
 
         val builder = StringBuilder()
         var consumedWidth = 0
-        text.forEach { character ->
-            val glyph = glyphFor(character, style)
-            val nextWidth = consumedWidth + glyph.metrics.advanceWidth
+        text.indices.forEach { index ->
+            val character = text[index]
+            val nextWidth = consumedWidth + glyphAdvance(
+                previous = builder.lastOrNull(),
+                current = character,
+                style = style,
+            )
             if (nextWidth > maxWidth) {
                 return builder.toString()
             }
@@ -250,7 +263,8 @@ class PixelFontEngine(
 
         val renderableText = trimToWidth(text, style, maxWidth)
         var cursorX = startX
-        renderableText.forEach { character ->
+        renderableText.indices.forEach { index ->
+            val character = renderableText[index]
             val glyph = glyphFor(character, style)
             drawGlyph(
                 buffer = buffer,
@@ -258,7 +272,11 @@ class PixelFontEngine(
                 startX = cursorX,
                 startY = startY,
             )
-            cursorX += glyph.metrics.advanceWidth
+            cursorX += drawAdvance(
+                current = character,
+                next = renderableText.getOrNull(index + 1),
+                style = style,
+            )
         }
     }
 
@@ -273,6 +291,37 @@ class PixelFontEngine(
             glyphProvider.rasterizeGlyph(character, style)
         }.also {
             trimCacheIfNeeded()
+        }
+    }
+
+    private fun glyphAdvance(previous: Char?, current: Char, style: GlyphStyle): Int {
+        val baseAdvance = glyphFor(current, style).metrics.advanceWidth
+        return baseAdvance + interGlyphSpacing(previous, current)
+    }
+
+    private fun drawAdvance(current: Char, next: Char?, style: GlyphStyle): Int {
+        val baseAdvance = glyphFor(current, style).metrics.advanceWidth
+        return baseAdvance + interGlyphSpacing(current, next)
+    }
+
+    private fun interGlyphSpacing(left: Char?, right: Char?): Int {
+        if (left == null || right == null) {
+            return 0
+        }
+        return if (isCjkCharacter(left) && isCjkCharacter(right)) {
+            CJK_INTER_GLYPH_SPACING
+        } else {
+            0
+        }
+    }
+
+    private fun isCjkCharacter(character: Char): Boolean {
+        return when (Character.UnicodeBlock.of(character)) {
+            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS,
+            Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A,
+            Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS,
+            Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS_SUPPLEMENT -> true
+            else -> false
         }
     }
 
