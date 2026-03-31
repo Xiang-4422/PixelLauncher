@@ -23,6 +23,7 @@ import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelRow
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
+import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
@@ -312,7 +313,13 @@ object DemoScenes {
             modifier = PixelModifier.Empty.fillMaxSize(),
             alignment = PixelAlignment.CENTER,
             children = listOf(
-                PixelText(text, tone = PixelTone.ACCENT, textRasterizer = textRasterizer),
+                PixelText(
+                    text,
+                    style = PixelTextStyle(
+                        tone = PixelTone.ACCENT,
+                        textRasterizer = textRasterizer,
+                    ),
+                ),
             ),
         ),
     )
@@ -330,11 +337,13 @@ object DemoScenes {
             modifier = PixelModifier.Empty.fillMaxSize().padding(2),
             spacing = 2,
             children = listOf(
-                PixelText(label, tone = PixelTone.ACCENT),
+                PixelText(label, style = PixelTextStyle.Accent),
                 PixelText(
                     value,
-                    tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
-                    textRasterizer = valueRasterizer,
+                    style = PixelTextStyle(
+                        tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
+                        textRasterizer = valueRasterizer,
+                    ),
                 ),
             ),
         ),
@@ -354,7 +363,7 @@ object DemoScenes {
             modifier = PixelModifier.Empty.fillMaxSize(),
             alignment = PixelAlignment.CENTER,
             children = listOf(
-                PixelText(text, tone = PixelTone.ON),
+                PixelText(text),
             ),
         ),
     )
@@ -367,7 +376,14 @@ object DemoScenes {
             modifier = PixelModifier.Empty.fillMaxSize(),
             alignment = PixelAlignment.CENTER,
             children = listOf(
-                PixelText(label, tone = if (tone == PixelTone.OFF) PixelTone.ON else PixelTone.ACCENT),
+                PixelText(
+                    label,
+                    style = if (tone == PixelTone.OFF) {
+                        PixelTextStyle.Default
+                    } else {
+                        PixelTextStyle.Accent
+                    },
+                ),
             ),
         ),
     )
@@ -380,7 +396,7 @@ object DemoScenes {
             modifier = PixelModifier.Empty.fillMaxSize(),
             alignment = PixelAlignment.CENTER,
             children = listOf(
-                PixelText(label, tone = PixelTone.ON),
+                PixelText(label),
             ),
         ),
     )
@@ -405,7 +421,10 @@ object DemoScenes {
                         modifier = PixelModifier.Empty.fillMaxWidth().height(20),
                         alignment = PixelAlignment.CENTER,
                         children = listOf(
-                            PixelText(title, tone = tone),
+                            PixelText(
+                                title,
+                                style = PixelTextStyle(tone = tone),
+                            ),
                         ),
                     ),
                 )
