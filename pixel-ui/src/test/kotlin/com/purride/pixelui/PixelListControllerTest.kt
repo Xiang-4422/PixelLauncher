@@ -80,4 +80,26 @@ class PixelListControllerTest {
         )
         assertFalse(controller.canConsumeDrag(state, deltaPx = -6f, viewportHeightPx = 20, contentHeightPx = 50))
     }
+
+    @Test
+    fun scrollItemIntoViewMovesOnlyWhenTargetLeavesViewport() {
+        val state = controller.create(initialScrollOffsetPx = 0f)
+        state.itemTopOffsetsPx = intArrayOf(0, 12, 24, 36)
+        state.itemHeightsPx = intArrayOf(8, 8, 8, 8)
+
+        controller.sync(
+            state = state,
+            viewportHeightPx = 20,
+            contentHeightPx = 44,
+        )
+
+        controller.scrollItemIntoView(state, itemIndex = 1)
+        assertEquals(0f, state.scrollOffsetPx, 0.001f)
+
+        controller.scrollItemIntoView(state, itemIndex = 2)
+        assertEquals(12f, state.scrollOffsetPx, 0.001f)
+
+        controller.scrollItemIntoView(state, itemIndex = 0)
+        assertEquals(0f, state.scrollOffsetPx, 0.001f)
+    }
 }

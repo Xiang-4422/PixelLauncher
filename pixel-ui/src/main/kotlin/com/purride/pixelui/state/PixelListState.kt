@@ -14,4 +14,15 @@ class PixelListState(
         internal set
 
     internal var maxScrollOffsetPx: Float = 0f
+    internal var viewportHeightPx: Int = 0
+    internal var contentHeightPx: Int = 0
+
+    /**
+     * 列表运行时最近一次测量出的项布局信息。
+     *
+     * 当前先把每一项在内容坐标系里的顶部位置和高度回填进状态，
+     * 这样控制器就能在不依赖业务侧布局代码的前提下做“滚动到某一项”。
+     */
+    internal var itemTopOffsetsPx: IntArray = intArrayOf()
+    internal var itemHeightsPx: IntArray = intArrayOf()
 }
