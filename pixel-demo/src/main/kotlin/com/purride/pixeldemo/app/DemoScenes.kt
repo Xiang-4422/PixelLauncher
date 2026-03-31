@@ -487,10 +487,33 @@ object DemoScenes {
                         sectionTitle("VERTICAL LIST"),
                         infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
                         infoCard("TAPS", tapCount.toString()),
+                        PixelRow(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            spacing = 2,
+                            children = listOf(
+                                PixelButton(
+                                    text = "SHOW 1",
+                                    onClick = {
+                                        controller.scrollItemIntoView(state, itemIndex = 0)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                ),
+                                PixelButton(
+                                    text = "SHOW 8",
+                                    onClick = {
+                                        controller.scrollItemIntoView(state, itemIndex = 7)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    style = com.purride.pixelui.PixelButtonStyle.Accent,
+                                ),
+                            ),
+                        ),
                         PixelList(
                             state = state,
                             controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(58),
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(40),
                             spacing = 3,
                             items = List(8) { index ->
                                 PixelButton(
