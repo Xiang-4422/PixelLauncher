@@ -8,6 +8,7 @@ import com.purride.pixelui.PixelButton
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
+import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
@@ -133,6 +134,50 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 18))
+    }
+
+    @Test
+    fun rowCrossAxisCenterAlignsChildrenVertically() {
+        val result = runtime.render(
+            root = PixelRow(
+                modifier = PixelModifier.Empty.size(12, 10),
+                crossAxisAlignment = PixelCrossAxisAlignment.CENTER,
+                children = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.size(4, 4),
+                        borderTone = null,
+                        fillTone = PixelTone.ON,
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 2))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 3))
+    }
+
+    @Test
+    fun columnCrossAxisEndAlignsChildrenHorizontally() {
+        val result = runtime.render(
+            root = PixelColumn(
+                modifier = PixelModifier.Empty.size(10, 12),
+                crossAxisAlignment = PixelCrossAxisAlignment.END,
+                children = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.size(4, 4),
+                        borderTone = null,
+                        fillTone = PixelTone.ACCENT,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 12,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(5, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(6, 1))
     }
 
     @Test

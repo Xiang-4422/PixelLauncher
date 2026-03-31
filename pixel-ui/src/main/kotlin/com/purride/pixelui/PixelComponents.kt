@@ -13,6 +13,18 @@ enum class PixelAlignment {
     CENTER,
 }
 
+/**
+ * `Row/Column` 当前阶段只支持交叉轴对齐。
+ *
+ * 主轴排布还没有进入这一轮实现，所以这里只先提供最常用的
+ * `START / CENTER / END` 三档，先把组合布局的基础语义补稳。
+ */
+enum class PixelCrossAxisAlignment {
+    START,
+    CENTER,
+    END,
+}
+
 data class PixelTextNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
@@ -42,6 +54,7 @@ data class PixelRowNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val spacing: Int = 0,
+    val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
 
 data class PixelColumnNode(
@@ -49,6 +62,7 @@ data class PixelColumnNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val spacing: Int = 0,
+    val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
 
 data class PixelPagerNode(
@@ -112,6 +126,7 @@ fun PixelRow(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
+    crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
     key: Any? = null,
 ): PixelNode {
     return PixelRowNode(
@@ -119,6 +134,7 @@ fun PixelRow(
         modifier = modifier,
         children = children,
         spacing = spacing,
+        crossAxisAlignment = crossAxisAlignment,
     )
 }
 
@@ -126,6 +142,7 @@ fun PixelColumn(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
+    crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
     key: Any? = null,
 ): PixelNode {
     return PixelColumnNode(
@@ -133,6 +150,7 @@ fun PixelColumn(
         modifier = modifier,
         children = children,
         spacing = spacing,
+        crossAxisAlignment = crossAxisAlignment,
     )
 }
 
