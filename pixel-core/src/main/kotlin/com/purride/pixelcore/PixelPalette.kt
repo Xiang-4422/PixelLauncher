@@ -3,9 +3,9 @@ package com.purride.pixelcore
 import android.graphics.Color
 
 /**
- * 像素主题类型。
+ * 逻辑像素调色板。
  *
- * 它描述的是一组显示风格预设，而不是业务层主题系统。
+ * 内核层只关心“像素值如何映射到真实颜色”，不关心产品页面该选什么主题。
  */
 enum class PixelTheme {
     GREEN_PHOSPHOR,
@@ -15,12 +15,6 @@ enum class PixelTheme {
     NIGHT_MONO,
 }
 
-/**
- * 像素显示调色板。
- *
- * 每个逻辑像素值最终都会映射到这组颜色定义上，
- * 因此它属于纯显示内核的一部分，适合放在 `:pixel-core`。
- */
 data class PixelPalette(
     val backgroundColor: Int,
     val pixelOnColor: Int,

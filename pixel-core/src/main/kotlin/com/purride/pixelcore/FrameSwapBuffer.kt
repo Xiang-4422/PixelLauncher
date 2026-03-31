@@ -1,10 +1,9 @@
 package com.purride.pixelcore
 
 /**
- * 一帧完整显示数据的封装。
+ * 主帧载荷。
  *
- * 它表示已经准备好提交到显示层的一次逻辑帧，
- * 包含像素缓冲、屏幕配置和调色板三部分信息。
+ * 第一版只保留对主像素帧的交换缓冲，不把 Idle 等产品专属附加帧带入内核层。
  */
 data class FramePayload(
     val sequence: Long,
@@ -13,12 +12,6 @@ data class FramePayload(
     val palette: PixelPalette,
 )
 
-/**
- * 主帧交换缓冲。
- *
- * 这层只负责“生产最新帧、消费比某个序号更新的帧”，
- * 不关心业务页面，也不关心具体显示实现。
- */
 class FrameSwapBuffer {
     private var latestSequence: Long = 0L
     private var latestFrame: FramePayload? = null

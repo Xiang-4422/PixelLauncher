@@ -3,10 +3,9 @@ package com.purride.pixelcore
 import android.view.View
 
 /**
- * 像素显示视图契约。
+ * 像素帧宿主契约。
  *
- * 它定义了宿主层和具体显示实现之间最基础的交互协议，
- * 包括提交主帧、提交待机遮罩、设置调色板以及逻辑坐标输入回调。
+ * 这层只定义“像素帧如何提交给宿主 View”，不定义更高层的页面运行时。
  */
 interface PixelFrameView {
     interface InteractionListener {
@@ -24,13 +23,9 @@ interface PixelFrameView {
 
     fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette)
 
-    fun submitIdleMask(frame: IdleMaskFrame?) = Unit
-
     fun setPalette(palette: PixelPalette)
 
     fun setPixelGapEnabled(enabled: Boolean) = Unit
-
-    fun setIdleContinuousRendering(enabled: Boolean) = Unit
 
     fun asView(): View
 

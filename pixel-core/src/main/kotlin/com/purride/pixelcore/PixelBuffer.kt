@@ -1,10 +1,13 @@
 package com.purride.pixelcore
 
+import kotlin.math.max
+import kotlin.math.min
+
 /**
- * 最基础的逻辑像素缓冲区。
+ * 像素帧缓冲。
  *
- * 每个元素代表一个逻辑像素位，具体的颜色解释交给调色板或显示层处理。
- * 这一层只负责存储和访问，不承担业务语义。
+ * 第一版依然采用最简单的单通道字节缓冲，每个逻辑像素只保存一个离散色阶值。
+ * 这样既能保持内核层简单，也足够支撑当前 demo 的文字、表面、按钮和分页过渡。
  */
 class PixelBuffer(
     val width: Int,
@@ -12,28 +15,118 @@ class PixelBuffer(
     val pixels: ByteArray = ByteArray(width * height),
 ) {
 
-    fun clear(value: Byte = 0) {
+    fun clear(value: Byte = PixelTone.OFF.value) {
         pixels.fill(value)
     }
 
-    fun setPixel(x: Int, y: Int, value: Byte = 1) {
+    fun setPixel(x: Int, y: Int, value: Byte = PixelTone.ON.value) {
         if (x !in 0 until width || y !in 0 until height) {
             return
         }
-
         pixels[(y * width) + x] = value
     }
 
     fun getPixel(x: Int, y: Int): Byte {
         if (x !in 0 until width || y !in 0 until height) {
-            return 0
+            return PixelTone.OFF.value
         }
         return pixels[(y * width) + x]
     }
 
-    companion object {
-        const val OFF: Byte = 0
-        const val ON: Byte = 1
-        const val ACCENT: Byte = 2
+    fun fillRect(
+        left: Int,
+        top: Int,
+        rectWidth: Int,
+        rectHeight: Int,
+        value: Byte,
+    ) {
+        val startX = left.coerceIn(0, width)
+        val startY = top.coerceIn(0, height)
+        val endX = (left + rectWidth).coerceIn(startX, width)
+        val endY = (top + rectHeight).coerceIn(startY, height)
+        for (y in startY until endY) {
+            for (x in startX until endX) {
+                setPixel(x, y, value)
+            }
+        }
     }
+
+    fun drawRect(
+        left: Int,
+        top: Int,
+        rectWidth: Int,
+        rectHeight: Int,
+        value: Byte,
+    ) {
+        if (rectWidth <= 0 || rectHeight <= 0) {
+            return
+        }
+        val right = left + rectWidth - 1
+        val bottom = top + rectHeight - 1
+        for (x in left..right) {
+            setPixel(x, top, value)
+            setPixel(x, bottom, value)
+        }
+        for (y in top..bottom) {
+            setPixel(left, y, value)
+            setPixel(right, y, value)
+        }
+    }
+
+    fun blit(
+        source: PixelBuffer,
+        destX: Int,
+        destY: Int,
+        sourceX: Int = 0,
+        sourceY: Int = 0,
+        copyWidth: Int = source.width,
+        copyHeight: Int = source.height,
+    ) {
+        val safeSourceX = sourceX.coerceIn(0, source.width)
+        val safeSourceY = sourceY.coerceIn(0, source.height)
+        val safeCopyWidth = min(copyWidth, source.width - safeSourceX)
+        val safeCopyHeight = min(copyHeight, source.height - safeSourceY)
+        if (safeCopyWidth <= 0 || safeCopyHeight <= 0) {
+            return
+        }
+
+        val destinationStartX = max(0, destX)
+        val destinationStartY = max(0, destY)
+        val sourceStartX = safeSourceX + max(0, -destX)
+        val sourceStartY = safeSourceY + max(0, -destY)
+        val destinationEndX = min(width, destX + safeCopyWidth)
+        val destinationEndY = min(height, destY + safeCopyHeight)
+        val actualWidth = destinationEndX - destinationStartX
+        val actualHeight = destinationEndY - destinationStartY
+        if (actualWidth <= 0 || actualHeight <= 0) {
+            return
+        }
+
+        for (row in 0 until actualHeight) {
+            for (column in 0 until actualWidth) {
+                val value = source.getPixel(sourceStartX + column, sourceStartY + row)
+                setPixel(destinationStartX + column, destinationStartY + row, value)
+            }
+        }
+    }
+
+    fun copy(): PixelBuffer {
+        return PixelBuffer(
+            width = width,
+            height = height,
+            pixels = pixels.copyOf(),
+        )
+    }
+}
+
+/**
+ * 像素色阶。
+ *
+ * 第一版只保留三个档位：背景关闭、主内容、强调色。
+ * 这套离散值会映射到调色板中的真实颜色。
+ */
+enum class PixelTone(val value: Byte) {
+    OFF(0),
+    ON(1),
+    ACCENT(2),
 }
