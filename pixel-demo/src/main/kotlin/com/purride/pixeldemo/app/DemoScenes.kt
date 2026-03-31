@@ -25,6 +25,8 @@ import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelRow
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
+import com.purride.pixelui.PixelTextField
+import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
@@ -33,6 +35,7 @@ import com.purride.pixelui.padding
 import com.purride.pixelui.size
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
+import com.purride.pixelui.state.PixelTextFieldController
 
 /**
  * Demo scene 定义集合。
@@ -55,6 +58,7 @@ object DemoScenes {
         return when (sceneKind) {
             DemoSceneKind.TEXT -> textScene()
             DemoSceneKind.PALETTE -> paletteScene(hostView)
+            DemoSceneKind.TEXT_FIELD -> textFieldScene(hostView)
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
             DemoSceneKind.LIST -> listScene(hostView)
@@ -158,6 +162,55 @@ object DemoScenes {
                                 swatch(PixelTone.ACCENT, "ACCENT"),
                                 swatch(PixelTone.OFF, "OFF"),
                             ),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun textFieldScene(hostView: PixelHostView): DemoScene {
+        val controller = PixelTextFieldController()
+        val primaryState = controller.create(initialText = "PIXEL")
+        val secondaryState = controller.create()
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            content = {
+                PixelColumn(
+                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                    spacing = 4,
+                    children = listOf(
+                        sectionTitle("TEXT FIELD"),
+                        infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
+                        infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
+                        PixelTextField(
+                            state = primaryState,
+                            controller = controller,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                            placeholder = "TYPE PRIMARY",
+                            style = PixelTextFieldStyle.Default,
+                        ),
+                        PixelTextField(
+                            state = secondaryState,
+                            controller = controller,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                            placeholder = "TYPE SECONDARY",
+                            style = PixelTextFieldStyle(
+                                borderTone = PixelTone.ON,
+                                focusedBorderTone = PixelTone.ACCENT,
+                                textStyle = PixelTextStyle.Accent,
+                                placeholderStyle = PixelTextStyle.Default,
+                            ),
+                        ),
+                        PixelButton(
+                            text = "CLEAR SECONDARY",
+                            onClick = {
+                                controller.updateText(secondaryState, "")
+                                hostView.requestRender()
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
                     ),
                 )
