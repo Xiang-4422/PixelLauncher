@@ -2,10 +2,12 @@ package com.purride.pixeldemo.app
 
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.PixelTheme
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
@@ -33,6 +35,7 @@ object DemoScenes {
     data class DemoScene(
         val initialProfile: ScreenProfile,
         val initialPalette: PixelPalette,
+        val initialTextRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
         val content: () -> com.purride.pixelui.PixelNode,
     )
 
@@ -53,13 +56,19 @@ object DemoScenes {
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.terminalGreen(),
+            initialTextRasterizer = PixelBitmapFont(
+                glyphWidth = 4,
+                glyphHeight = 5,
+                letterSpacing = 1,
+                lineSpacing = 1,
+            ),
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
                     spacing = 4,
                     children = listOf(
                         sectionTitle("PIXEL UI DEMO"),
-                        infoCard("TEXT", "BUILT IN BITMAP FONT"),
+                        infoCard("TEXT", "COMPACT RASTERIZER"),
                         infoCard("LAYOUT", "COLUMN ROW BOX SURFACE"),
                         infoCard("GOAL", "FRAMEWORK FIRST APP LATER"),
                     ),
