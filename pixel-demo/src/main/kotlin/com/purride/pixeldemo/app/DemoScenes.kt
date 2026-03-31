@@ -29,10 +29,12 @@ import com.purride.pixelui.PixelTextField
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.fillMaxSize
+import com.purride.pixelui.fillMaxHeight
 import com.purride.pixelui.fillMaxWidth
 import com.purride.pixelui.height
 import com.purride.pixelui.padding
 import com.purride.pixelui.size
+import com.purride.pixelui.weight
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
@@ -367,6 +369,32 @@ object DemoScenes {
                             children = listOf(
                                 demoSquare("LEFT"),
                                 demoSquare("RIGHT"),
+                            ),
+                        ),
+                        PixelRow(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(18),
+                            spacing = 2,
+                            children = listOf(
+                                PixelSurface(
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ON,
+                                    child = PixelBox(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        alignment = PixelAlignment.CENTER,
+                                        children = listOf(PixelText("1X")),
+                                    ),
+                                ),
+                                PixelSurface(
+                                    modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ACCENT,
+                                    child = PixelBox(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        alignment = PixelAlignment.CENTER,
+                                        children = listOf(PixelText("2X", style = PixelTextStyle.Accent)),
+                                    ),
+                                ),
                             ),
                         ),
                     ),
