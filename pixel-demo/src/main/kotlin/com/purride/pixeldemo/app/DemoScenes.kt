@@ -30,6 +30,7 @@ import com.purride.pixelui.PixelText
 import com.purride.pixelui.PixelTextField
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxHeight
 import com.purride.pixelui.fillMaxWidth
@@ -63,6 +64,7 @@ object DemoScenes {
             DemoSceneKind.TEXT -> textScene()
             DemoSceneKind.PALETTE -> paletteScene(hostView)
             DemoSceneKind.TEXT_FIELD -> textFieldScene(hostView)
+            DemoSceneKind.SINGLE_CHILD_SCROLL -> singleChildScrollScene(hostView)
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
             DemoSceneKind.LIST -> listScene(hostView)
@@ -216,6 +218,77 @@ object DemoScenes {
                                 hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun singleChildScrollScene(hostView: PixelHostView): DemoScene {
+        val scrollController = PixelListController()
+        val scrollState = scrollController.create()
+        val textController = PixelTextFieldController()
+        val titleState = textController.create(initialText = "SCROLL PAGE")
+        val noteState = textController.create(initialText = "DRAG TO READ")
+        var footerTapped = 0
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
+            content = {
+                PixelSingleChildScrollView(
+                    state = scrollState,
+                    controller = scrollController,
+                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                    child = PixelColumn(
+                        modifier = PixelModifier.Empty.fillMaxWidth(),
+                        spacing = 4,
+                        children = listOf(
+                            sectionTitle("SINGLE CHILD SCROLL"),
+                            infoCard("TITLE", titleState.text.ifEmpty { "(EMPTY)" }, accent = titleState.isFocused),
+                            PixelTextField(
+                                state = titleState,
+                                controller = textController,
+                                modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                placeholder = "TYPE TITLE",
+                                style = PixelTextFieldStyle.Default,
+                            ),
+                            infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
+                            PixelTextField(
+                                state = noteState,
+                                controller = textController,
+                                modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                placeholder = "TYPE NOTE",
+                                style = PixelTextFieldStyle(
+                                    borderTone = PixelTone.ON,
+                                    focusedBorderTone = PixelTone.ACCENT,
+                                    textStyle = PixelTextStyle.Accent,
+                                    placeholderStyle = PixelTextStyle.Default,
+                                ),
+                            ),
+                            infoCard("SECTION", "A LONG COLUMN"),
+                            infoCard("SCROLL", "WHOLE PAGE DRAGS"),
+                            infoCard("TARGET", "ONE CHILD TREE"),
+                            PixelButton(
+                                text = "FOOTER TAPS $footerTapped",
+                                onClick = {
+                                    footerTapped += 1
+                                    hostView.requestRender()
+                                },
+                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                style = com.purride.pixelui.PixelButtonStyle.Accent,
+                            ),
+                            PixelSurface(
+                                modifier = PixelModifier.Empty.fillMaxWidth().height(18),
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                child = PixelBox(
+                                    modifier = PixelModifier.Empty.fillMaxSize(),
+                                    alignment = PixelAlignment.CENTER,
+                                    children = listOf(PixelText("BOTTOM CARD")),
+                                ),
+                            ),
                         ),
                     ),
                 )
