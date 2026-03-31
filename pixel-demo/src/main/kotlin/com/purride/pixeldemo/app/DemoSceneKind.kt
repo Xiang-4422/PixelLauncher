@@ -12,6 +12,7 @@ enum class DemoSceneKind(
     HORIZONTAL_PAGER("横向分页"),
     VERTICAL_PAGER("纵向分页"),
     LIST("纵向列表"),
+    FORM_AND_LIST("表单与列表组合"),
     PAGER_AND_LIST("分页与列表组合"),
     LAYOUT_AND_CLICK("布局与点击"),
 }
