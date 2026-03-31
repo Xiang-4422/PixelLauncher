@@ -8,6 +8,7 @@ import com.purride.pixelui.PixelButton
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
+import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelSurface
@@ -18,6 +19,7 @@ import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.height
 import com.purride.pixelui.padding
 import com.purride.pixelui.size
+import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelcore.PixelTone
 import org.junit.Assert.assertEquals
@@ -225,6 +227,64 @@ class PixelRenderRuntimeTest {
         result.clickTargets.first().onClick.invoke()
         assertTrue(clicked)
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+    }
+
+    @Test
+    fun listExportsViewportTargetAndClipsChildClickArea() {
+        val controller = PixelListController()
+        val state = controller.create(initialScrollOffsetPx = 4f)
+
+        val result = runtime.render(
+            root = PixelList(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                items = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty
+                            .size(20, 8)
+                            .clickable {},
+                    ),
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.size(20, 8),
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.listTargets.size)
+        assertTrue(result.listTargets.single().bounds.contains(10, 5))
+        assertEquals(1, result.clickTargets.size)
+        assertEquals(0, result.clickTargets.single().bounds.top)
+        assertEquals(4, result.clickTargets.single().bounds.height)
+    }
+
+    @Test
+    fun listRendersLowerItemsAfterScrollOffsetApplied() {
+        val controller = PixelListController()
+        val state = controller.create(initialScrollOffsetPx = 8f)
+
+        val result = runtime.render(
+            root = PixelList(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 6),
+                spacing = 2,
+                items = listOf(
+                    PixelSurface(modifier = PixelModifier.Empty.size(20, 6)),
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.size(20, 6),
+                        fillTone = PixelTone.ACCENT,
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 6,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 1))
     }
 
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
