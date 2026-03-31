@@ -429,7 +429,8 @@ fun PixelPager(
 | 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
 | 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
 | 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `PixelList`、`PixelListState`、`PixelListController`，并支持列表视口裁剪与触摸滚动 |
-| 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动，边界处再交给分页 |
+| 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动 |
+| 已完成 | `pixel-ui` 列表到分页滚动接力 | 列表滑到边界后，同一次纵向手势可直接接力给外层分页，无需抬手重新触发 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、横纵分页、纵向列表、分页与列表组合、点击反馈、混合文本风格验证 |
 | 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页/列表复合交互和对应测试，以及更复杂的滚动接力策略 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
