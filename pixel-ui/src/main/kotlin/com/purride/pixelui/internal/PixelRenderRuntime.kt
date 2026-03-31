@@ -22,7 +22,6 @@ import com.purride.pixelui.PixelTextNode
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
-import com.purride.pixelui.state.PixelPagerSnapshot
 import kotlin.math.max
 
 internal data class PixelSize(
@@ -56,6 +55,15 @@ internal data class PixelRect(
             top = nextTop,
             width = nextRight - nextLeft,
             height = nextBottom - nextTop,
+        )
+    }
+
+    fun translate(deltaX: Int, deltaY: Int): PixelRect {
+        return PixelRect(
+            left = left + deltaX,
+            top = top + deltaY,
+            width = width,
+            height = height,
         )
     }
 }
@@ -481,34 +489,84 @@ internal class PixelRenderRuntime(
         val pageWidth = bounds.width.coerceAtLeast(1)
         val pageHeight = bounds.height.coerceAtLeast(1)
         val anchorPage = node.pages.getOrNull(snapshot.anchorPage) ?: return
-        val anchorBuffer = PixelBuffer(width = pageWidth, height = pageHeight).apply { clear() }
-        renderNode(
-            node = anchorPage,
-            bounds = PixelRect(left = 0, top = 0, width = pageWidth, height = pageHeight),
-            constraints = PixelConstraints(maxWidth = pageWidth, maxHeight = pageHeight),
-            buffer = anchorBuffer,
-            clickTargets = mutableListOf(),
-            pagerTargets = mutableListOf(),
+        val anchorPageResult = renderPagerPage(
+            page = anchorPage,
+            pageWidth = pageWidth,
+            pageHeight = pageHeight,
         )
 
-        val adjacentBuffer = snapshot.adjacentPage?.let { pageIndex ->
+        val adjacentPageResult = snapshot.adjacentPage?.let { pageIndex ->
             node.pages.getOrNull(pageIndex)?.let { adjacentPage ->
-                PixelBuffer(width = pageWidth, height = pageHeight).apply { clear() }.also { pageBuffer ->
-                    renderNode(
-                        node = adjacentPage,
-                        bounds = PixelRect(left = 0, top = 0, width = pageWidth, height = pageHeight),
-                        constraints = PixelConstraints(maxWidth = pageWidth, maxHeight = pageHeight),
-                        buffer = pageBuffer,
-                        clickTargets = mutableListOf(),
-                        pagerTargets = mutableListOf(),
-                    )
-                }
+                renderPagerPage(
+                    page = adjacentPage,
+                    pageWidth = pageWidth,
+                    pageHeight = pageHeight,
+                )
             }
         }
 
+        val anchorShiftX = if (snapshot.axis == PixelAxis.HORIZONTAL) {
+            snapshot.dragOffsetPx.toInt()
+        } else {
+            0
+        }
+        val anchorShiftY = if (snapshot.axis == PixelAxis.VERTICAL) {
+            snapshot.dragOffsetPx.toInt()
+        } else {
+            0
+        }
+        val adjacentShiftX = when (snapshot.axis) {
+            PixelAxis.HORIZONTAL -> if (snapshot.dragOffsetPx > 0f) {
+                anchorShiftX - pageWidth
+            } else {
+                anchorShiftX + pageWidth
+            }
+
+            PixelAxis.VERTICAL -> 0
+        }
+        val adjacentShiftY = when (snapshot.axis) {
+            PixelAxis.HORIZONTAL -> 0
+            PixelAxis.VERTICAL -> if (snapshot.dragOffsetPx > 0f) {
+                anchorShiftY - pageHeight
+            } else {
+                anchorShiftY + pageHeight
+            }
+        }
+
+        translateTargets(
+            targets = anchorPageResult.clickTargets,
+            parentBounds = bounds,
+            pageShiftX = anchorShiftX,
+            pageShiftY = anchorShiftY,
+            into = clickTargets,
+        )
+        translatePagerTargets(
+            targets = anchorPageResult.pagerTargets,
+            parentBounds = bounds,
+            pageShiftX = anchorShiftX,
+            pageShiftY = anchorShiftY,
+            into = pagerTargets,
+        )
+        adjacentPageResult?.let { result ->
+            translateTargets(
+                targets = result.clickTargets,
+                parentBounds = bounds,
+                pageShiftX = adjacentShiftX,
+                pageShiftY = adjacentShiftY,
+                into = clickTargets,
+            )
+            translatePagerTargets(
+                targets = result.pagerTargets,
+                parentBounds = bounds,
+                pageShiftX = adjacentShiftX,
+                pageShiftY = adjacentShiftY,
+                into = pagerTargets,
+            )
+        }
+
         val composed = AxisBufferComposer.compose(
-            primary = anchorBuffer,
-            secondary = adjacentBuffer,
+            primary = anchorPageResult.buffer,
+            secondary = adjacentPageResult?.buffer,
             axis = snapshot.axis,
             offsetPx = snapshot.dragOffsetPx,
         )
@@ -517,6 +575,64 @@ internal class PixelRenderRuntime(
             destX = bounds.left,
             destY = bounds.top,
         )
+    }
+
+    private fun renderPagerPage(
+        page: PixelNode,
+        pageWidth: Int,
+        pageHeight: Int,
+    ): PixelRenderResult {
+        val pageBuffer = PixelBuffer(width = pageWidth, height = pageHeight).apply { clear() }
+        val pageClickTargets = mutableListOf<PixelClickTarget>()
+        val pagePagerTargets = mutableListOf<PixelPagerTarget>()
+        renderNode(
+            node = page,
+            bounds = PixelRect(left = 0, top = 0, width = pageWidth, height = pageHeight),
+            constraints = PixelConstraints(maxWidth = pageWidth, maxHeight = pageHeight),
+            buffer = pageBuffer,
+            clickTargets = pageClickTargets,
+            pagerTargets = pagePagerTargets,
+        )
+        return PixelRenderResult(
+            buffer = pageBuffer,
+            clickTargets = pageClickTargets,
+            pagerTargets = pagePagerTargets,
+        )
+    }
+
+    private fun translateTargets(
+        targets: List<PixelClickTarget>,
+        parentBounds: PixelRect,
+        pageShiftX: Int,
+        pageShiftY: Int,
+        into: MutableList<PixelClickTarget>,
+    ) {
+        targets.forEach { target ->
+            into += PixelClickTarget(
+                bounds = target.bounds.translate(
+                    deltaX = parentBounds.left + pageShiftX,
+                    deltaY = parentBounds.top + pageShiftY,
+                ),
+                onClick = target.onClick,
+            )
+        }
+    }
+
+    private fun translatePagerTargets(
+        targets: List<PixelPagerTarget>,
+        parentBounds: PixelRect,
+        pageShiftX: Int,
+        pageShiftY: Int,
+        into: MutableList<PixelPagerTarget>,
+    ) {
+        targets.forEach { target ->
+            into += target.copy(
+                bounds = target.bounds.translate(
+                    deltaX = parentBounds.left + pageShiftX,
+                    deltaY = parentBounds.top + pageShiftY,
+                ),
+            )
+        }
     }
 
     private fun alignedBounds(
