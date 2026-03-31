@@ -1,0 +1,239 @@
+# 像素 UI 引擎当前进度与接手建议（第一版）
+
+这份文档只回答三个问题：
+
+- 当前 `:pixel-core`、`:pixel-ui`、`:pixel-demo` 到底已经做到哪一步
+- 哪些能力已经可以当成“可直接依赖的基础能力”继续开发
+- 后续工程师接手时，应该优先沿哪条路线继续推进
+
+如果只看一句话，当前结论是：
+
+> 像素引擎已经从“架构设想”进入“最小可运行框架”阶段，`pixel-core`、`pixel-ui`、`pixel-demo` 已经形成闭环，但 `:app` 还没有开始迁移。
+
+---
+
+## 1. 当前模块状态
+
+| 模块 | 当前状态 | 主要职责 |
+| --- | --- | --- |
+| `:app` | 稳定运行 | 现有 PixelLauncher 产品实现，本阶段不依赖新框架 |
+| `:pixel-core` | 可用 | 像素显示内核、字体底座、几何与轴向原语 |
+| `:pixel-ui` | 可用 | 最小通用组件、布局、分页、列表、输入、宿主桥接 |
+| `:pixel-demo` | 可用 | 框架验证宿主，负责真实设备上的能力验收 |
+
+当前依赖关系是：
+
+- `:pixel-demo -> :pixel-ui -> :pixel-core`
+- `:app` 暂时独立，不依赖 `:pixel-core`
+- `:app` 暂时独立，不依赖 `:pixel-ui`
+
+这条边界当前已经落地，后续不要再把过渡兼容层塞回 `:app`。
+
+---
+
+## 2. `pixel-core` 当前完成度
+
+### 2.1 已完成能力
+
+当前 `:pixel-core` 已经具备以下可复用底座：
+
+- 屏幕与几何
+  - [ScreenProfile.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/ScreenProfile.kt)
+  - [ScreenProfileFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/ScreenProfileFactory.kt)
+  - [PixelGridGeometry.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelGridGeometry.kt)
+- 像素缓冲与调色板
+  - [PixelBuffer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelBuffer.kt)
+  - [PixelPalette.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelPalette.kt)
+  - [FrameSwapBuffer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/FrameSwapBuffer.kt)
+- 字体与字形
+  - [PixelBitmapFont.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelBitmapFont.kt)
+  - [PixelTextRasterizer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelTextRasterizer.kt)
+  - [PixelGlyphPack.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelGlyphPack.kt)
+  - [PixelGlyphPackAssetLoader.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelGlyphPackAssetLoader.kt)
+  - [PixelFontEngine.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelFontEngine.kt)
+- 轴向运动与合成原语
+  - [PixelAxis.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelAxis.kt)
+  - [AxisMotion.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/AxisMotion.kt)
+  - [AxisBufferComposer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/AxisBufferComposer.kt)
+- 显示契约与调试
+  - [PixelFrameView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelFrameView.kt)
+  - [RenderPerfLogger.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/RenderPerfLogger.kt)
+
+### 2.2 当前测试覆盖
+
+`pixel-core` 已经有独立单测覆盖以下方向：
+
+- 屏幕与几何
+  - [ScreenProfileFactoryTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/ScreenProfileFactoryTest.kt)
+  - [PixelGridGeometryTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelGridGeometryTest.kt)
+  - [PixelGridGeometryResolverTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelGridGeometryResolverTest.kt)
+- 帧与缓冲
+  - [FrameSwapBufferTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/FrameSwapBufferTest.kt)
+- 字体
+  - [PixelBitmapFontTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelBitmapFontTest.kt)
+  - [PixelGlyphPackParserTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelGlyphPackParserTest.kt)
+  - [PixelFontEngineTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelFontEngineTest.kt)
+  - [PixelTextRasterizerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelTextRasterizerTest.kt)
+- 运动与合成
+  - [AxisMotionControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/AxisMotionControllerTest.kt)
+  - [AxisBufferComposerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/AxisBufferComposerTest.kt)
+
+### 2.3 当前边界判断
+
+`pixel-core` 现在的边界是正确的：
+
+- 它知道“像素怎么表示、怎么合成、怎么测量、怎么按轴移动”
+- 它不知道“页面是什么、列表是什么、抽屉是什么、短信是什么”
+
+后续如果一个类型需要知道 `pageCount`、`selectedIndex`、`drawer query`、`idle` 之类业务或 UI 语义，它就不应该进入 `pixel-core`。
+
+---
+
+## 3. `pixel-ui` 当前完成度
+
+### 3.1 已完成能力
+
+当前 `:pixel-ui` 已经具备最小可运行组件体系：
+
+- 基础节点与场景
+  - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelNode.kt)
+  - [PixelScene.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelScene.kt)
+  - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelModifier.kt)
+- 基础布局与内容组件
+  - [PixelComponents.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelComponents.kt)
+  - [PixelButton.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelButton.kt)
+  - [PixelTextStyle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelTextStyle.kt)
+- 分页
+  - [PixelPagerState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerState.kt)
+  - [PixelPagerSnapshot.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerSnapshot.kt)
+  - [PixelPagerController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerController.kt)
+- 列表与滚动
+  - [PixelList.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelList.kt)
+  - [PixelListState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListState.kt)
+  - [PixelListController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListController.kt)
+  - [PixelSingleChildScrollView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelSingleChildScrollView.kt)
+- 文本输入
+  - [PixelTextField.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelTextField.kt)
+  - [PixelTextFieldState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelTextFieldState.kt)
+  - [PixelTextFieldController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelTextFieldController.kt)
+- 宿主桥接
+  - [PixelHostBridge.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostBridge.kt)
+  - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostView.kt)
+- 运行时与手势
+  - [PixelRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelRenderRuntime.kt)
+  - [PagerGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PagerGesturePolicy.kt)
+  - [NestedScrollGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/NestedScrollGesturePolicy.kt)
+
+### 3.2 当前已验证场景
+
+`pixel-ui` 当前已经能稳定承载这些真实交互：
+
+- 文本与混合字体
+- 按钮点击
+- 横向分页
+- 纵向分页
+- 纵向列表
+- 单子节点滚动
+- 文本输入聚焦与宿主输入桥接
+- `Pager + List` 复合滚动仲裁
+- `TextField + Button + List` 组合页面
+- 权重布局、主轴排布、交叉轴对齐
+
+这些都已经在 [DemoScenes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt) 里有真机场景，不是只停留在单测层。
+
+### 3.3 当前测试覆盖
+
+`pixel-ui` 已经有独立测试覆盖：
+
+- [PixelPagerControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelPagerControllerTest.kt)
+- [PixelListControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelListControllerTest.kt)
+- [PixelTextFieldControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelTextFieldControllerTest.kt)
+- [PixelRenderRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/PixelRenderRuntimeTest.kt)
+- [PagerGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/PagerGesturePolicyTest.kt)
+- [NestedScrollGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/NestedScrollGesturePolicyTest.kt)
+
+### 3.4 当前限制
+
+当前 `pixel-ui` 仍然是“第一版可运行框架”，还不是完整产品级 UI 系统。当前限制包括：
+
+- 仍然是每帧重建组件树，不是 retained tree
+- `PixelList` 只有纵向单列，不是虚拟化列表
+- 列表当前没有惯性滚动、回弹和吸附
+- `PixelTextField` 目前只支持单行输入
+- 文本没有通用换行和多行排版
+- 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
+- 还没有开始把 `:app` 页面迁进来
+
+---
+
+## 4. `pixel-demo` 当前作用
+
+`pixel-demo` 现在已经不是“演示玩具”，而是框架验收宿主。
+
+关键文件如下：
+
+- [DemoMenuActivity.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoMenuActivity.kt)
+- [DemoSceneActivity.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoSceneActivity.kt)
+- [DemoSceneKind.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoSceneKind.kt)
+- [DemoScenes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt)
+- [DemoTextRasterizers.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoTextRasterizers.kt)
+
+当前 demo 已经验证了两件非常关键的事：
+
+1. 新框架可以在真实设备上承载中文与中英混排  
+2. 像素显示链路已经能按宿主尺寸全屏铺开，而不是只在中间显示一个小方块
+
+---
+
+## 5. 当前项目总体进度总结
+
+### 5.1 已完成
+
+- `:app` 已恢复为独立旧实现
+- `:pixel-core` 已具备可复用的像素显示底座
+- `:pixel-ui` 已具备最小可用组件体系
+- `:pixel-demo` 已能完成真实设备验收
+- 中文字形链路已打通到 demo
+- 核心组件已有单测
+
+### 5.2 正在进行
+
+- 把 `pixel-ui` 从“能跑”继续推进到“适合直接依赖开发”
+- 补齐组件说明、接入文档、约束说明
+- 稳定宿主接入方式和组件使用习惯
+
+### 5.3 尚未开始
+
+- `:app` 页面迁移
+- 更完整的主题系统
+- 多行文本
+- 惯性滚动
+- 懒加载列表
+- 更完整的 retained runtime
+
+---
+
+## 6. 接手建议
+
+如果下一位工程师现在接手，建议顺序如下：
+
+1. 先读 [像素 UI 引擎架构与实施计划（第一版）](./像素UI引擎架构与实施计划-第一版.md)
+2. 再读 [像素 UI 引擎组件接入与使用指南（第一版）](./像素UI引擎组件接入与使用指南-第一版.md)
+3. 先在 `:pixel-demo` 上验证或新增组件，不要直接改 `:app`
+4. 只有当 demo 能稳定覆盖新组件场景后，再讨论 `:app` 迁移
+
+当前最值得继续推进的方向有三条：
+
+- 补强文本系统：换行、多行、文本 token、主题样式
+- 补强列表系统：惯性滚动、回弹、列表项定位语义
+- 稳定宿主接入：让外部业务模块能更直接地把 `PixelHostView` 接进 Activity 或 Fragment
+
+---
+
+## 7. 当前结论
+
+当前像素引擎项目已经不再是“纯规划阶段”。
+
+更准确的说法是：
+
+> `pixel-core` 和 `pixel-ui` 已经形成了可运行、可测试、可继续演进的第一版基础框架；下一阶段的重点不是再讨论边界，而是把这套框架补成真正适合业务直接依赖的库。
