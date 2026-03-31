@@ -21,6 +21,7 @@ class DemoSceneActivity : AppCompatActivity() {
         val scene = DemoScenes.create(sceneKind, hostView)
         hostView.screenProfile = scene.initialProfile
         hostView.setPalette(scene.initialPalette)
+        hostView.textRasterizer = scene.initialTextRasterizer
         hostView.setContent(scene.content)
         setContentView(hostView)
     }

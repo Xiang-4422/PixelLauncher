@@ -11,6 +11,7 @@ import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelFrameView
 import com.purride.pixelcore.PixelGridGeometryResolver
@@ -18,6 +19,7 @@ import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.internal.PagerGesturePolicy
 import com.purride.pixelui.internal.PixelPagerTarget
@@ -50,7 +52,7 @@ class PixelHostView @JvmOverloads constructor(
             invalidate()
         }
 
-    private val runtime = PixelRenderRuntime()
+    private var runtime = PixelRenderRuntime()
     private var contentProvider: (() -> PixelNode)? = null
     private var lastRenderResult: PixelRenderResult? = null
     private var palette: PixelPalette = PixelPalette.terminalGreen()
@@ -67,6 +69,19 @@ class PixelHostView @JvmOverloads constructor(
     private var touchMoved = false
     private var candidatePagerTarget: PixelPagerTarget? = null
     private var activePagerTarget: PixelPagerTarget? = null
+
+    /**
+     * 当前宿主使用的文本栅格器。
+     *
+     * 默认继续使用内置位图字体，但 demo 或后续业务层可以在不改 runtime 的情况下
+     * 注入另一套文本实现。
+     */
+    var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
+        set(value) {
+            field = value
+            runtime = PixelRenderRuntime(textRasterizer = value)
+            invalidate()
+        }
 
     private val onPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
