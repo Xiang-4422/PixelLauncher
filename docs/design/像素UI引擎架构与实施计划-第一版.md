@@ -418,8 +418,10 @@ fun PixelPager(
 | 已完成 | 框架边界冻结 | `core/ui/demo/app` 的职责边界已确定，本文档是当前执行口径 |
 | 已完成 | `:pixel-core` 轴向原语重构 | `core` 已经落下 `PixelAxis / AxisMotionController / AxisBufferComposer` |
 | 已完成 | `:pixel-core` 字体底座首轮落地 | `core` 已具备字形包解析、位图字形源与 `PixelFontEngine` |
+| 已完成 | 默认字体链路统一到文本引擎 | `PixelBitmapFont` 已改为走 `PixelFontEngine`，默认文本链路与真实字体底座对齐 |
+| 已完成 | 节点级文本栅格器覆盖 | `pixel-ui` 文本节点已支持按节点覆盖文本栅格器，宿主与节点两层扩展点都已打通 |
 | 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
-| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、点击反馈 |
+| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、点击反馈、混合文本风格验证 |
 | 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页子页面交互和对应测试 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
