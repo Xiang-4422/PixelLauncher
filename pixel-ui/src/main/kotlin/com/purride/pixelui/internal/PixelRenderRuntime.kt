@@ -4,6 +4,7 @@ import com.purride.pixelcore.AxisBufferComposer
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelBoxNode
 import com.purride.pixelui.PixelClickableElement
@@ -116,7 +117,7 @@ internal data class PixelModifierInfo(
 )
 
 internal class PixelRenderRuntime(
-    private val font: PixelBitmapFont = PixelBitmapFont.Default,
+    private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
     fun render(
         root: PixelNode,
@@ -164,8 +165,8 @@ internal class PixelRenderRuntime(
 
         val contentSize = when (node) {
             is PixelTextNode -> PixelSize(
-                width = font.measureText(node.text),
-                height = font.measureHeight(node.text),
+                width = textRasterizer.measureText(node.text),
+                height = textRasterizer.measureHeight(node.text),
             )
 
             is PixelSurfaceNode -> {
@@ -313,7 +314,7 @@ internal class PixelRenderRuntime(
         bounds: PixelRect,
         buffer: PixelBuffer,
     ) {
-        font.drawText(
+        textRasterizer.drawText(
             buffer = buffer,
             text = node.text,
             x = bounds.left,
