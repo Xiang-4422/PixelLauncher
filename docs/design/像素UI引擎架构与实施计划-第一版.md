@@ -421,6 +421,7 @@ fun PixelPager(
 | 已完成 | 默认字体链路统一到文本引擎 | `PixelBitmapFont` 已改为走 `PixelFontEngine`，默认文本链路与真实字体底座对齐 |
 | 已完成 | 节点级文本栅格器覆盖 | `pixel-ui` 文本节点已支持按节点覆盖文本栅格器，宿主与节点两层扩展点都已打通 |
 | 已完成 | `pixel-ui` 文本样式对象 | 文本色阶与文本栅格器已收敛为 `PixelTextStyle`，页面层不再直接暴露底层字体实现 |
+| 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
 | 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、点击反馈、混合文本风格验证 |
 | 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页子页面交互和对应测试 |
