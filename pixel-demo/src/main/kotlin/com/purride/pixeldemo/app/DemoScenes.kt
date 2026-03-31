@@ -90,9 +90,9 @@ object DemoScenes {
                     children = listOf(
                         sectionTitle("文本与字体", textRasterizer = wideRasterizer),
                         infoCard("中文", "像素中文已经接通"),
-                        infoCard("混排", "HELLO 你好 PIXEL UI", valueRasterizer = wideRasterizer),
+                        infoCard("混排", "HELLO 你好 UI", valueRasterizer = wideRasterizer),
                         infoCard("紧凑", "COMPACT 4X5", valueRasterizer = compactRasterizer),
-                        infoCard("复用", "复用 Launcher 的 Fusion Pixel 字形包"),
+                        infoCard("复用", "复用 Launcher 的字形包"),
                     ),
                 )
             },
@@ -817,12 +817,16 @@ object DemoScenes {
     private fun sectionTitle(
         text: String,
         textRasterizer: PixelTextRasterizer? = null,
-    ) = PixelSurface(
-        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+    ): com.purride.pixelui.PixelNode {
+        val resolvedRasterizer = textRasterizer ?: PixelBitmapFont.Default
+        val titleHeight = resolvedRasterizer.measureHeight(text)
+        return PixelSurface(
+        modifier = PixelModifier.Empty.fillMaxWidth().height(titleHeight + 6),
         fillTone = PixelTone.OFF,
         borderTone = PixelTone.ACCENT,
+        padding = 0,
         child = PixelBox(
-            modifier = PixelModifier.Empty.fillMaxSize(),
+            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
             alignment = PixelAlignment.CENTER,
             children = listOf(
                 PixelText(
@@ -835,23 +839,42 @@ object DemoScenes {
             ),
         ),
     )
+    }
 
     private fun infoCard(
         label: String,
         value: String,
         accent: Boolean = false,
         valueRasterizer: PixelTextRasterizer? = null,
-    ) = PixelSurface(
-        modifier = PixelModifier.Empty.fillMaxWidth().height(18),
+    ): com.purride.pixelui.PixelNode {
+        val labelRasterizer = PixelBitmapFont.Default
+        val resolvedValueRasterizer = valueRasterizer ?: PixelBitmapFont.Default
+        val trimmedLabel = trimSingleLineText(
+            text = label,
+            rasterizer = labelRasterizer,
+            maxWidth = 76,
+        )
+        val trimmedValue = trimSingleLineText(
+            text = value,
+            rasterizer = resolvedValueRasterizer,
+            maxWidth = 76,
+        )
+        val cardHeight = labelRasterizer.measureHeight(trimmedLabel) +
+            resolvedValueRasterizer.measureHeight(trimmedValue) +
+            8
+
+        return PixelSurface(
+        modifier = PixelModifier.Empty.fillMaxWidth().height(cardHeight),
         fillTone = PixelTone.OFF,
         borderTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
+        padding = 0,
         child = PixelColumn(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(2),
+            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
             spacing = 2,
             children = listOf(
-                PixelText(label, style = PixelTextStyle.Accent),
+                PixelText(trimmedLabel, style = PixelTextStyle.Accent),
                 PixelText(
-                    value,
+                    trimmedValue,
                     style = PixelTextStyle(
                         tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
                         textRasterizer = valueRasterizer,
@@ -860,6 +883,7 @@ object DemoScenes {
             ),
         ),
     )
+    }
 
     private fun swatch(tone: PixelTone, label: String) = PixelSurface(
         modifier = PixelModifier.Empty.size(22, 18),
@@ -948,5 +972,54 @@ object DemoScenes {
             dotSizePx = 8,
             pixelShape = pixelShape,
         )
+    }
+
+    /**
+     * 当前 demo 卡片先按单行文本做裁剪，避免中文或中英混排接上真实字形后直接溢出边框。
+     *
+     * 后续如果 `pixel-ui` 内核补了通用单行裁剪或多行换行能力，这里可以再回收。
+     */
+    private fun trimSingleLineText(
+        text: String,
+        rasterizer: PixelTextRasterizer,
+        maxWidth: Int,
+    ): String {
+        if (text.isEmpty() || maxWidth <= 0) {
+            return ""
+        }
+        if (rasterizer.measureText(text) <= maxWidth) {
+            return text
+        }
+
+        val ellipsis = "..."
+        val builder = StringBuilder(text.length)
+        text.forEach { character ->
+            val candidate = builder.toString() + character
+            if (rasterizer.measureText(candidate) > maxWidth) {
+                val safeText = builder.toString()
+                if (safeText.isEmpty()) {
+                    return ""
+                }
+                if (rasterizer.measureText(safeText) <= maxWidth &&
+                    rasterizer.measureText(safeText + ellipsis) <= maxWidth
+                ) {
+                    return safeText + ellipsis
+                }
+
+                val fallbackBuilder = StringBuilder(safeText)
+                while (fallbackBuilder.isNotEmpty() &&
+                    rasterizer.measureText(fallbackBuilder.toString() + ellipsis) > maxWidth
+                ) {
+                    fallbackBuilder.deleteCharAt(fallbackBuilder.lastIndex)
+                }
+                return if (fallbackBuilder.isEmpty()) {
+                    ""
+                } else {
+                    fallbackBuilder.toString() + ellipsis
+                }
+            }
+            builder.append(character)
+        }
+        return builder.toString()
     }
 }
