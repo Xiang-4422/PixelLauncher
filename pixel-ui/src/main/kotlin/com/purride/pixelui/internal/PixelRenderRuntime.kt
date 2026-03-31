@@ -9,6 +9,7 @@ import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelBoxNode
 import com.purride.pixelui.PixelClickableElement
 import com.purride.pixelui.PixelColumnNode
+import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelFillMaxHeightElement
 import com.purride.pixelui.PixelFillMaxWidthElement
 import com.purride.pixelui.PixelListNode
@@ -530,7 +531,12 @@ internal class PixelRenderRuntime(
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childBounds = PixelRect(
                 left = cursorX,
-                top = bounds.top,
+                top = crossAxisStart(
+                    containerStart = bounds.top,
+                    containerExtent = bounds.height,
+                    childExtent = childSize.height,
+                    alignment = node.crossAxisAlignment,
+                ),
                 width = childSize.width,
                 height = childSize.height,
             )
@@ -565,7 +571,12 @@ internal class PixelRenderRuntime(
         var cursorY = bounds.top
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childBounds = PixelRect(
-                left = bounds.left,
+                left = crossAxisStart(
+                    containerStart = bounds.left,
+                    containerExtent = bounds.width,
+                    childExtent = childSize.width,
+                    alignment = node.crossAxisAlignment,
+                ),
                 top = cursorY,
                 width = childSize.width,
                 height = childSize.height,
@@ -704,6 +715,26 @@ internal class PixelRenderRuntime(
             ?.weight
             ?.coerceAtLeast(0f)
             ?: 0f
+    }
+
+    /**
+     * `Row/Column` 当前阶段只处理交叉轴上的起点偏移。
+     *
+     * 这样可以先把最常见的顶部/居中/底部对齐补齐，而不用提前把
+     * 更复杂的主轴排布和多段对齐语义一起做进来。
+     */
+    private fun crossAxisStart(
+        containerStart: Int,
+        containerExtent: Int,
+        childExtent: Int,
+        alignment: PixelCrossAxisAlignment,
+    ): Int {
+        val remaining = (containerExtent - childExtent).coerceAtLeast(0)
+        return when (alignment) {
+            PixelCrossAxisAlignment.START -> containerStart
+            PixelCrossAxisAlignment.CENTER -> containerStart + (remaining / 2)
+            PixelCrossAxisAlignment.END -> containerStart + remaining
+        }
     }
 
     private fun renderPager(
