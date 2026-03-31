@@ -4,7 +4,7 @@ package com.purride.pixelui
  * 通用像素组件修饰器。
  *
  * 设计方向参考 Compose 的 Modifier，但当前阶段只做最小可运行能力：
- * 尺寸、填充、点击。
+ * 尺寸、填充、点击、权重。
  */
 data class PixelModifier(
     val elements: List<PixelModifierElement> = emptyList(),
@@ -48,6 +48,10 @@ data class PixelFillMaxHeightElement(
 
 data class PixelClickableElement(
     val onClick: () -> Unit,
+) : PixelModifierElement
+
+data class PixelWeightElement(
+    val weight: Float,
 ) : PixelModifierElement
 
 fun PixelModifier.padding(all: Int): PixelModifier {
@@ -110,4 +114,8 @@ fun PixelModifier.fillMaxSize(): PixelModifier {
 
 fun PixelModifier.clickable(onClick: () -> Unit): PixelModifier {
     return then(PixelClickableElement(onClick))
+}
+
+fun PixelModifier.weight(weight: Float): PixelModifier {
+    return then(PixelWeightElement(weight = weight.coerceAtLeast(0f)))
 }

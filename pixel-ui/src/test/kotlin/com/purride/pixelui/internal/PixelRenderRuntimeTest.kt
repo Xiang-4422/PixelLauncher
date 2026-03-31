@@ -11,6 +11,7 @@ import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
+import com.purride.pixelui.PixelRow
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
 import com.purride.pixelui.PixelTextField
@@ -18,9 +19,11 @@ import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
+import com.purride.pixelui.fillMaxWidth
 import com.purride.pixelui.height
 import com.purride.pixelui.padding
 import com.purride.pixelui.size
+import com.purride.pixelui.weight
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
@@ -76,6 +79,60 @@ class PixelRenderRuntimeTest {
         assertTrue(clickFreeBounds.contains(5))
         assertTrue(clickFreeBounds.contains(9))
         assertTrue(clickFreeBounds.contains(14))
+    }
+
+    @Test
+    fun rowWeightDistributesRemainingWidth() {
+        val result = runtime.render(
+            root = PixelRow(
+                modifier = PixelModifier.Empty.size(20, 4),
+                spacing = 2,
+                children = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.size(4, 4),
+                        borderTone = null,
+                        fillTone = PixelTone.ON,
+                    ),
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.weight(1f).height(4),
+                        borderTone = null,
+                        fillTone = PixelTone.ACCENT,
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(18, 1))
+    }
+
+    @Test
+    fun columnWeightDistributesRemainingHeight() {
+        val result = runtime.render(
+            root = PixelColumn(
+                modifier = PixelModifier.Empty.size(6, 20),
+                spacing = 2,
+                children = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.size(6, 4),
+                        borderTone = null,
+                        fillTone = PixelTone.ON,
+                    ),
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.fillMaxWidth().weight(1f),
+                        borderTone = null,
+                        fillTone = PixelTone.ACCENT,
+                    ),
+                ),
+            ),
+            logicalWidth = 6,
+            logicalHeight = 20,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 18))
     }
 
     @Test
