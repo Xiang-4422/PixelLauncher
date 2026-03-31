@@ -1,0 +1,16 @@
+com.purride.pixelcore.pixel-core-annotation-experimental-1.4.1-0 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/07977c30f2e427b697be6728f00f8c43/transformed/annotation-experimental-1.4.1/res
+com.purride.pixelcore.pixel-core-core-viewtree-1.0.0-1 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/1a6d093abfc54f10e4d9afe64685d06d/transformed/core-viewtree-1.0.0/res
+com.purride.pixelcore.pixel-core-core-1.17.0-2 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/480c07376712f0eee9016919ee725602/transformed/core-1.17.0/res
+com.purride.pixelcore.pixel-core-core-ktx-1.17.0-3 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/5d21d2e62e4ce17e47c61206dca97a3c/transformed/core-ktx-1.17.0/res
+com.purride.pixelcore.pixel-core-profileinstaller-1.3.0-4 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/5f14d7ca24ff978286f21add95b8227c/transformed/profileinstaller-1.3.0/res
+com.purride.pixelcore.pixel-core-startup-runtime-1.1.1-5 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/60c0d1f3745f74bfda122de4096a327a/transformed/startup-runtime-1.1.1/res
+com.purride.pixelcore.pixel-core-lifecycle-runtime-2.6.2-6 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/84db81bbada105646b50b2c306140d35/transformed/lifecycle-runtime-2.6.2/res
+com.purride.pixelcore.pixel-core-tracing-1.2.0-7 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/c203910a6515de87f4413f730cd1b69f/transformed/tracing-1.2.0/res
+com.purride.pixelcore.pixel-core-core-runtime-2.2.0-8 /Users/jiuzhou/.gradle/caches/9.1.0/transforms/faf7b0452f91c25d6840b0cdbf113d61/transformed/core-runtime-2.2.0/res
+com.purride.pixelcore.pixel-core-pngs-9 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/build/generated/res/pngs/release
+com.purride.pixelcore.pixel-core-updated_navigation_xml-10 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/build/generated/updated_navigation_xml/release
+com.purride.pixelcore.pixel-core-mergeReleaseResources-11 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/build/intermediates/incremental/release/mergeReleaseResources/merged.dir
+com.purride.pixelcore.pixel-core-mergeReleaseResources-12 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/build/intermediates/incremental/release/mergeReleaseResources/stripped.dir
+com.purride.pixelcore.pixel-core-release-13 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/build/intermediates/merged_res/release/mergeReleaseResources
+com.purride.pixelcore.pixel-core-main-14 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/res
+com.purride.pixelcore.pixel-core-release-15 /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/release/res
