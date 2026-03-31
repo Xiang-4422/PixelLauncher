@@ -2,6 +2,8 @@ package com.purride.pixelui
 
 import com.purride.pixelui.state.PixelListController
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelListControllerTest {
@@ -48,5 +50,34 @@ class PixelListControllerTest {
         )
 
         assertEquals(16f, state.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun canConsumeDragReflectsTopAndBottomBoundaries() {
+        val state = controller.create(initialScrollOffsetPx = 10f)
+
+        controller.sync(
+            state = state,
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+        assertTrue(controller.canConsumeDrag(state, deltaPx = 6f, viewportHeightPx = 20, contentHeightPx = 50))
+        assertTrue(controller.canConsumeDrag(state, deltaPx = -6f, viewportHeightPx = 20, contentHeightPx = 50))
+
+        controller.scrollTo(
+            state = state,
+            targetOffsetPx = 0f,
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+        assertFalse(controller.canConsumeDrag(state, deltaPx = 6f, viewportHeightPx = 20, contentHeightPx = 50))
+
+        controller.scrollTo(
+            state = state,
+            targetOffsetPx = 30f,
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+        assertFalse(controller.canConsumeDrag(state, deltaPx = -6f, viewportHeightPx = 20, contentHeightPx = 50))
     }
 }

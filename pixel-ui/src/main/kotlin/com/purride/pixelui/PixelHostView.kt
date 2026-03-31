@@ -21,6 +21,7 @@ import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
+import com.purride.pixelui.internal.NestedScrollGesturePolicy
 import com.purride.pixelui.internal.PagerGesturePolicy
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
@@ -211,7 +212,7 @@ class PixelHostView @JvmOverloads constructor(
                     return true
                 }
                 activeListTarget?.let { target ->
-                    // 列表第一版只支持纵向拖动，不做惯性和嵌套滚动协调。
+                    // 列表第一版只支持纵向拖动，不做惯性和更复杂的嵌套滚动接力。
                     val deltaPx = (logicalPoint.second - lastListLogicalY).toFloat()
                     target.controller.dragBy(
                         state = target.state,
@@ -224,13 +225,30 @@ class PixelHostView @JvmOverloads constructor(
                     return true
                 }
                 candidatePagerTarget?.let { target ->
-                    if (PagerGesturePolicy.shouldStartDrag(
-                            axis = target.axis,
-                            deltaX = rawDeltaX,
-                            deltaY = rawDeltaY,
-                            touchSlopPx = touchSlop,
+                    val pagerWantsDrag = PagerGesturePolicy.shouldStartDrag(
+                        axis = target.axis,
+                        deltaX = rawDeltaX,
+                        deltaY = rawDeltaY,
+                        touchSlopPx = touchSlop,
+                    )
+                    val listWantsDrag = candidateListTarget?.let {
+                        shouldStartListDrag(rawDeltaX = rawDeltaX, rawDeltaY = rawDeltaY)
+                    } ?: false
+                    val listCanConsumeDrag = candidateListTarget?.let { listTarget ->
+                        listTarget.controller.canConsumeDrag(
+                            state = listTarget.state,
+                            deltaPx = rawDeltaY,
+                            viewportHeightPx = listTarget.viewportHeightPx,
+                            contentHeightPx = listTarget.contentHeightPx,
                         )
-                    ) {
+                    } ?: false
+                    val shouldDeferToList = NestedScrollGesturePolicy.shouldDeferPagerToList(
+                        pagerAxis = target.axis,
+                        pagerWantsDrag = pagerWantsDrag,
+                        listWantsDrag = listWantsDrag,
+                        listCanConsumeDrag = listCanConsumeDrag,
+                    )
+                    if (pagerWantsDrag && !shouldDeferToList) {
                         activePagerTarget = target
                         candidatePagerTarget = null
                         target.controller.startDrag(target.state)
