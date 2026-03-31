@@ -19,6 +19,7 @@ data class GlyphStyle(
     val wideFontWeight: PixelFontWeight,
     val narrowFontFamily: PixelFontFamily,
     val wideFontFamily: PixelFontFamily,
+    val baseLetterSpacing: Int = 0,
 )
 
 enum class PixelFontWeight {
@@ -213,7 +214,7 @@ class PixelFontEngine(
         var previousGlyph: GlyphBitmap? = null
         text.forEach { character ->
             val glyph = glyphFor(character, style)
-            totalWidth += glyph.metrics.advanceWidth + interGlyphSpacing(previousGlyph, glyph)
+            totalWidth += glyph.metrics.advanceWidth + interGlyphSpacing(previousGlyph, glyph, style)
             previousGlyph = glyph
         }
         return totalWidth
@@ -229,7 +230,7 @@ class PixelFontEngine(
         var previousGlyph: GlyphBitmap? = null
         text.forEach { character ->
             val glyph = glyphFor(character, style)
-            val nextWidth = consumedWidth + glyph.metrics.advanceWidth + interGlyphSpacing(previousGlyph, glyph)
+            val nextWidth = consumedWidth + glyph.metrics.advanceWidth + interGlyphSpacing(previousGlyph, glyph, style)
             if (nextWidth > maxWidth) {
                 return builder.toString()
             }
@@ -268,7 +269,7 @@ class PixelFontEngine(
             val nextGlyph = renderableText.getOrNull(index + 1)?.let { nextCharacter ->
                 glyphFor(nextCharacter, style)
             }
-            cursorX += glyph.metrics.advanceWidth + interGlyphSpacing(glyph, nextGlyph)
+            cursorX += glyph.metrics.advanceWidth + interGlyphSpacing(glyph, nextGlyph, style)
         }
     }
 
@@ -286,15 +287,16 @@ class PixelFontEngine(
         }
     }
 
-    private fun interGlyphSpacing(left: GlyphBitmap?, right: GlyphBitmap?): Int {
+    private fun interGlyphSpacing(left: GlyphBitmap?, right: GlyphBitmap?, style: GlyphStyle): Int {
         if (left == null || right == null) {
             return 0
         }
-        return if (!requiresMinimumGap(left, right)) {
+        val protectedGapCompensation = if (!requiresMinimumGap(left, right)) {
             0
         } else {
             (MIN_WIDE_PAIR_VISUAL_GAP - currentVisualGap(left, right)).coerceAtLeast(0)
         }
+        return style.baseLetterSpacing + protectedGapCompensation
     }
 
     private fun requiresMinimumGap(left: GlyphBitmap, right: GlyphBitmap): Boolean {
