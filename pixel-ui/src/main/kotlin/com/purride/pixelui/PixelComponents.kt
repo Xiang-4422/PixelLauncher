@@ -25,6 +25,17 @@ enum class PixelCrossAxisAlignment {
     END,
 }
 
+/**
+ * `Row/Column` 的主轴排布方式。
+ *
+ * 当前先支持最基础的起始、居中、末尾三种排布，先把常见布局场景补齐。
+ */
+enum class PixelMainAxisAlignment {
+    START,
+    CENTER,
+    END,
+}
+
 data class PixelTextNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
@@ -54,6 +65,7 @@ data class PixelRowNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val spacing: Int = 0,
+    val mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
 
@@ -62,6 +74,7 @@ data class PixelColumnNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val spacing: Int = 0,
+    val mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
 
@@ -126,6 +139,7 @@ fun PixelRow(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
+    mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
     key: Any? = null,
 ): PixelNode {
@@ -134,6 +148,7 @@ fun PixelRow(
         modifier = modifier,
         children = children,
         spacing = spacing,
+        mainAxisAlignment = mainAxisAlignment,
         crossAxisAlignment = crossAxisAlignment,
     )
 }
@@ -142,6 +157,7 @@ fun PixelColumn(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
+    mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
     key: Any? = null,
 ): PixelNode {
@@ -150,6 +166,7 @@ fun PixelColumn(
         modifier = modifier,
         children = children,
         spacing = spacing,
+        mainAxisAlignment = mainAxisAlignment,
         crossAxisAlignment = crossAxisAlignment,
     )
 }
