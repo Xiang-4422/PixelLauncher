@@ -18,6 +18,7 @@ import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelButton
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
+import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelModifier
@@ -393,6 +394,66 @@ object DemoScenes {
                                         modifier = PixelModifier.Empty.fillMaxSize(),
                                         alignment = PixelAlignment.CENTER,
                                         children = listOf(PixelText("2X", style = PixelTextStyle.Accent)),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        PixelRow(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(20),
+                            spacing = 2,
+                            crossAxisAlignment = PixelCrossAxisAlignment.CENTER,
+                            children = listOf(
+                                PixelSurface(
+                                    modifier = PixelModifier.Empty.size(18, 8),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ON,
+                                    child = PixelBox(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        alignment = PixelAlignment.CENTER,
+                                        children = listOf(PixelText("MID")),
+                                    ),
+                                ),
+                                PixelSurface(
+                                    modifier = PixelModifier.Empty.size(18, 14),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ACCENT,
+                                    child = PixelBox(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        alignment = PixelAlignment.CENTER,
+                                        children = listOf(PixelText("TALL", style = PixelTextStyle.Accent)),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        PixelSurface(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(24),
+                            fillTone = PixelTone.OFF,
+                            borderTone = PixelTone.ON,
+                            padding = 2,
+                            child = PixelColumn(
+                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                spacing = 2,
+                                crossAxisAlignment = PixelCrossAxisAlignment.END,
+                                children = listOf(
+                                    PixelSurface(
+                                        modifier = PixelModifier.Empty.size(16, 6),
+                                        fillTone = PixelTone.OFF,
+                                        borderTone = PixelTone.ON,
+                                        child = PixelBox(
+                                            modifier = PixelModifier.Empty.fillMaxSize(),
+                                            alignment = PixelAlignment.CENTER,
+                                            children = listOf(PixelText("END")),
+                                        ),
+                                    ),
+                                    PixelSurface(
+                                        modifier = PixelModifier.Empty.size(24, 6),
+                                        fillTone = PixelTone.OFF,
+                                        borderTone = PixelTone.ACCENT,
+                                        child = PixelBox(
+                                            modifier = PixelModifier.Empty.fillMaxSize(),
+                                            alignment = PixelAlignment.CENTER,
+                                            children = listOf(PixelText("ALIGN", style = PixelTextStyle.Accent)),
+                                        ),
                                     ),
                                 ),
                             ),
