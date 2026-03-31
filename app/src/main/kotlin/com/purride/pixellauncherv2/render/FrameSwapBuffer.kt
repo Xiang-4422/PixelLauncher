@@ -1,47 +1,25 @@
 package com.purride.pixellauncherv2.render
 
-data class FramePayload(
-    val sequence: Long,
-    val pixelBuffer: PixelBuffer,
-    val screenProfile: ScreenProfile,
-    val palette: PixelPalette,
-)
+/**
+ * 兼容层别名。
+ *
+ * 主帧载荷的真实定义已经迁到 `:pixel-core`，
+ * 当前保留旧包名，降低第一轮拆分的改动面。
+ */
+typealias FramePayload = com.purride.pixelcore.FramePayload
 
 data class IdleMaskUpdate(
     val sequence: Long,
     val frame: IdleMaskFrame?,
 )
 
-class FrameSwapBuffer {
-    private var latestSequence: Long = 0L
-    private var latestFrame: FramePayload? = null
-
-    @Synchronized
-    fun offer(
-        pixelBuffer: PixelBuffer,
-        screenProfile: ScreenProfile,
-        palette: PixelPalette,
-    ): FramePayload {
-        latestSequence += 1L
-        val payload = FramePayload(
-            sequence = latestSequence,
-            pixelBuffer = pixelBuffer,
-            screenProfile = screenProfile,
-            palette = palette,
-        )
-        latestFrame = payload
-        return payload
-    }
-
-    @Synchronized
-    fun consumeLatest(afterSequence: Long): FramePayload? {
-        val payload = latestFrame ?: return null
-        return if (payload.sequence > afterSequence) payload else null
-    }
-
-    @Synchronized
-    fun latest(): FramePayload? = latestFrame
-}
+/**
+ * 兼容层别名。
+ *
+ * 主帧交换缓冲的真实实现已经迁到 `:pixel-core`，
+ * 当前先保留旧包名入口。
+ */
+typealias FrameSwapBuffer = com.purride.pixelcore.FrameSwapBuffer
 
 class IdleMaskSwapBuffer {
     private var latestSequence: Long = 0L
