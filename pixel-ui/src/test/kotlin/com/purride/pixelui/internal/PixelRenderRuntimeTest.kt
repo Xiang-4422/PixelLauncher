@@ -10,6 +10,7 @@ import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
+import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.height
@@ -180,7 +181,10 @@ class PixelRenderRuntimeTest {
                 fillTone = PixelTone.OFF,
                 child = PixelText(
                     text = "WIDE",
-                    textRasterizer = customRasterizer,
+                    style = PixelTextStyle(
+                        tone = PixelTone.ACCENT,
+                        textRasterizer = customRasterizer,
+                    ),
                 ),
             ),
             logicalWidth = 10,
@@ -196,6 +200,7 @@ class PixelRenderRuntimeTest {
         assertEquals(2, maxX)
         assertEquals(0, minY)
         assertEquals(3, maxY)
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
     }
 
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
