@@ -4,6 +4,8 @@ import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelAlignment
+import com.purride.pixelui.PixelButton
+import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelModifier
@@ -200,6 +202,28 @@ class PixelRenderRuntimeTest {
         assertEquals(2, maxX)
         assertEquals(0, minY)
         assertEquals(3, maxY)
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+    }
+
+    @Test
+    fun pixelButtonBuildsClickableSurfaceWithStyledText() {
+        var clicked = false
+
+        val result = runtime.render(
+            root = PixelButton(
+                text = "OK",
+                onClick = { clicked = true },
+                modifier = PixelModifier.Empty.size(18, 10),
+                style = PixelButtonStyle.Accent,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 12,
+        )
+
+        assertEquals(1, result.clickTargets.size)
+        assertTrue(result.clickTargets.first().bounds.contains(9, 5))
+        result.clickTargets.first().onClick.invoke()
+        assertTrue(clicked)
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
     }
 
