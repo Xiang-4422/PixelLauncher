@@ -1,10 +1,10 @@
 package com.purride.pixelcore
 
 /**
- * 像素屏幕配置。
+ * 逻辑屏幕配置。
  *
- * 这是像素显示内核中最基础的几何描述之一，
- * 用来定义逻辑分辨率、点阵尺寸以及屏幕缩放策略。
+ * 这层只描述“逻辑像素世界”如何映射到真实 Surface，
+ * 不负责任何页面排版语义。
  */
 data class ScreenProfile(
     val logicalWidth: Int,
@@ -14,21 +14,12 @@ data class ScreenProfile(
     val scaleMode: ScaleMode = ScaleMode.FIT_CENTER,
 )
 
-/**
- * 单个逻辑像素在真实屏幕上的绘制形状。
- */
 enum class PixelShape {
     SQUARE,
     CIRCLE,
     DIAMOND,
 }
 
-/**
- * 逻辑画面到物理屏幕的缩放模式。
- *
- * 第一版先只保留当前仓库已经实际使用的策略，
- * 后续再按需要扩展更多模式。
- */
 enum class ScaleMode {
     FIT_CENTER,
 }
