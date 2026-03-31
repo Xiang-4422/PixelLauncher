@@ -21,6 +21,7 @@ import com.purride.pixelui.PixelPaddingElement
 import com.purride.pixelui.PixelPagerNode
 import com.purride.pixelui.PixelRowNode
 import com.purride.pixelui.PixelSizeElement
+import com.purride.pixelui.PixelSingleChildScrollViewNode
 import com.purride.pixelui.PixelSurfaceNode
 import com.purride.pixelui.PixelTextNode
 import com.purride.pixelui.PixelTextFieldNode
@@ -158,6 +159,16 @@ internal data class PixelModifierInfo(
 internal class PixelRenderRuntime(
     private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
+
+    companion object {
+        /**
+         * 纵向滚动容器在滚动轴上的“近似无界”测量上限。
+         *
+         * 第一版还没有真正的无界约束模型，所以先用一个足够大的逻辑像素值，
+         * 让单子节点滚动容器可以测出比视口更高的自然内容高度。
+         */
+        private const val SCROLL_AXIS_UNBOUNDED_MAX = 4096
+    }
     fun render(
         root: PixelNode,
         logicalWidth: Int,
@@ -262,6 +273,11 @@ internal class PixelRenderRuntime(
             )
 
             is PixelListNode -> PixelSize(
+                width = innerConstraints.maxWidth,
+                height = innerConstraints.maxHeight,
+            )
+
+            is PixelSingleChildScrollViewNode -> PixelSize(
                 width = innerConstraints.maxWidth,
                 height = innerConstraints.maxHeight,
             )
@@ -387,6 +403,16 @@ internal class PixelRenderRuntime(
             )
 
             is PixelListNode -> renderList(
+                node = node,
+                bounds = paddedBounds,
+                buffer = buffer,
+                clickTargets = clickTargets,
+                pagerTargets = pagerTargets,
+                listTargets = listTargets,
+                textInputTargets = textInputTargets,
+            )
+
+            is PixelSingleChildScrollViewNode -> renderSingleChildScrollView(
                 node = node,
                 bounds = paddedBounds,
                 buffer = buffer,
@@ -1015,6 +1041,98 @@ internal class PixelRenderRuntime(
 
         buffer.blit(
             source = listBuffer,
+            destX = bounds.left,
+            destY = bounds.top,
+        )
+    }
+
+    private fun renderSingleChildScrollView(
+        node: PixelSingleChildScrollViewNode,
+        bounds: PixelRect,
+        buffer: PixelBuffer,
+        clickTargets: MutableList<PixelClickTarget>,
+        pagerTargets: MutableList<PixelPagerTarget>,
+        listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
+    ) {
+        val viewportWidth = bounds.width.coerceAtLeast(1)
+        val viewportHeight = bounds.height.coerceAtLeast(1)
+        val childConstraints = PixelConstraints(
+            maxWidth = viewportWidth,
+            maxHeight = SCROLL_AXIS_UNBOUNDED_MAX,
+        )
+        val childSize = measure(node.child, childConstraints)
+        val contentHeight = childSize.height
+        node.state.itemTopOffsetsPx = intArrayOf(0)
+        node.state.itemHeightsPx = intArrayOf(childSize.height)
+        node.controller.sync(
+            state = node.state,
+            viewportHeightPx = viewportHeight,
+            contentHeightPx = contentHeight,
+        )
+
+        listTargets += PixelListTarget(
+            bounds = bounds,
+            viewportHeightPx = viewportHeight,
+            contentHeightPx = contentHeight,
+            state = node.state,
+            controller = node.controller,
+        )
+
+        val scrollBuffer = PixelBuffer(width = viewportWidth, height = viewportHeight).apply { clear() }
+        val scrollClickTargets = mutableListOf<PixelClickTarget>()
+        val scrollPagerTargets = mutableListOf<PixelPagerTarget>()
+        val nestedListTargets = mutableListOf<PixelListTarget>()
+        val scrollTextInputTargets = mutableListOf<PixelTextInputTarget>()
+        val childBounds = PixelRect(
+            left = 0,
+            top = -node.state.scrollOffsetPx.roundToInt(),
+            width = childSize.width,
+            height = childSize.height,
+        )
+
+        renderNode(
+            node = node.child,
+            bounds = childBounds,
+            constraints = childConstraints,
+            buffer = scrollBuffer,
+            clickTargets = scrollClickTargets,
+            pagerTargets = scrollPagerTargets,
+            listTargets = nestedListTargets,
+            textInputTargets = scrollTextInputTargets,
+        )
+
+        translateTargets(
+            targets = scrollClickTargets,
+            parentBounds = bounds,
+            pageShiftX = 0,
+            pageShiftY = 0,
+            into = clickTargets,
+        )
+        translatePagerTargets(
+            targets = scrollPagerTargets,
+            parentBounds = bounds,
+            pageShiftX = 0,
+            pageShiftY = 0,
+            into = pagerTargets,
+        )
+        translateListTargets(
+            targets = nestedListTargets,
+            parentBounds = bounds,
+            pageShiftX = 0,
+            pageShiftY = 0,
+            into = listTargets,
+        )
+        translateTextInputTargets(
+            targets = scrollTextInputTargets,
+            parentBounds = bounds,
+            pageShiftX = 0,
+            pageShiftY = 0,
+            into = textInputTargets,
+        )
+
+        buffer.blit(
+            source = scrollBuffer,
             destX = bounds.left,
             destY = bounds.top,
         )

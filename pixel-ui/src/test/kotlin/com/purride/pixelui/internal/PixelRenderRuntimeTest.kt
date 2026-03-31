@@ -19,6 +19,7 @@ import com.purride.pixelui.PixelText
 import com.purride.pixelui.PixelTextField
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
@@ -435,6 +436,42 @@ class PixelRenderRuntimeTest {
         )
 
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 1))
+    }
+
+    @Test
+    fun singleChildScrollViewExportsViewportTargetAndClipsChildClickArea() {
+        val controller = PixelListController()
+        val state = controller.create(initialScrollOffsetPx = 4f)
+
+        val result = runtime.render(
+            root = PixelSingleChildScrollView(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                child = PixelColumn(
+                    spacing = 2,
+                    children = listOf(
+                        PixelSurface(
+                            modifier = PixelModifier.Empty
+                                .size(20, 8)
+                                .clickable {},
+                        ),
+                        PixelSurface(
+                            modifier = PixelModifier.Empty.size(20, 8),
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.listTargets.size)
+        assertTrue(result.listTargets.single().bounds.contains(10, 5))
+        assertEquals(1, result.clickTargets.size)
+        assertEquals(0, result.clickTargets.single().bounds.top)
+        assertEquals(4, result.clickTargets.single().bounds.height)
+        assertEquals(18f, state.contentHeightPx.toFloat(), 0.001f)
     }
 
     @Test
