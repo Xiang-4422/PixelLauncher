@@ -22,6 +22,6 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(project(":pixel-core"))
+    api(project(":pixel-core"))
     testImplementation(libs.junit)
 }
