@@ -13,6 +13,7 @@ import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelFillMaxHeightElement
 import com.purride.pixelui.PixelFillMaxWidthElement
 import com.purride.pixelui.PixelListNode
+import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelModifierElement
 import com.purride.pixelui.PixelNode
@@ -527,7 +528,13 @@ internal class PixelRenderRuntime(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         val childSizes = measureRowChildren(node, constraints)
-        var cursorX = bounds.left
+        val contentWidth = childSizes.sumOf { it.width } + (max(0, node.children.size - 1) * node.spacing)
+        var cursorX = mainAxisStart(
+            containerStart = bounds.left,
+            containerExtent = bounds.width,
+            contentExtent = contentWidth,
+            alignment = node.mainAxisAlignment,
+        )
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childBounds = PixelRect(
                 left = cursorX,
@@ -568,7 +575,13 @@ internal class PixelRenderRuntime(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         val childSizes = measureColumnChildren(node, constraints)
-        var cursorY = bounds.top
+        val contentHeight = childSizes.sumOf { it.height } + (max(0, node.children.size - 1) * node.spacing)
+        var cursorY = mainAxisStart(
+            containerStart = bounds.top,
+            containerExtent = bounds.height,
+            contentExtent = contentHeight,
+            alignment = node.mainAxisAlignment,
+        )
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childBounds = PixelRect(
                 left = crossAxisStart(
@@ -734,6 +747,26 @@ internal class PixelRenderRuntime(
             PixelCrossAxisAlignment.START -> containerStart
             PixelCrossAxisAlignment.CENTER -> containerStart + (remaining / 2)
             PixelCrossAxisAlignment.END -> containerStart + remaining
+        }
+    }
+
+    /**
+     * 主轴排布当前只处理整体内容块的起点偏移。
+     *
+     * 先提供 `START / CENTER / END` 三档，让线性布局具备最基础的
+     * 主轴排布能力，后面再考虑 `spaceBetween` 这类更复杂规则。
+     */
+    private fun mainAxisStart(
+        containerStart: Int,
+        containerExtent: Int,
+        contentExtent: Int,
+        alignment: PixelMainAxisAlignment,
+    ): Int {
+        val remaining = (containerExtent - contentExtent).coerceAtLeast(0)
+        return when (alignment) {
+            PixelMainAxisAlignment.START -> containerStart
+            PixelMainAxisAlignment.CENTER -> containerStart + (remaining / 2)
+            PixelMainAxisAlignment.END -> containerStart + remaining
         }
     }
 
