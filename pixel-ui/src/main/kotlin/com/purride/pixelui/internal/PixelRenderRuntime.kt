@@ -928,6 +928,14 @@ internal class PixelRenderRuntime(
         )
         val itemSizes = node.items.map { child -> measure(child, itemConstraints) }
         val contentHeight = itemSizes.sumOf { size -> size.height } + (max(0, itemSizes.size - 1) * node.spacing)
+        val itemTopOffsets = IntArray(itemSizes.size)
+        var nextItemTop = 0
+        itemSizes.forEachIndexed { index, size ->
+            itemTopOffsets[index] = nextItemTop
+            nextItemTop += size.height + node.spacing
+        }
+        node.state.itemTopOffsetsPx = itemTopOffsets
+        node.state.itemHeightsPx = itemSizes.map { it.height }.toIntArray()
         node.controller.sync(
             state = node.state,
             viewportHeightPx = viewportHeight,
