@@ -66,6 +66,7 @@ object DemoScenes {
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
             DemoSceneKind.LIST -> listScene(hostView)
+            DemoSceneKind.FORM_AND_LIST -> formAndListScene(hostView)
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(hostView)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView)
         }
@@ -530,6 +531,96 @@ object DemoScenes {
                                     },
                                     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                     style = if (index % 2 == 0) {
+                                        com.purride.pixelui.PixelButtonStyle.Accent
+                                    } else {
+                                        com.purride.pixelui.PixelButtonStyle.Default
+                                    },
+                                )
+                            },
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun formAndListScene(hostView: PixelHostView): DemoScene {
+        val textController = PixelTextFieldController()
+        val nameState = textController.create(initialText = "PIXEL")
+        val cityState = textController.create(initialText = "SHANGHAI")
+        val listController = PixelListController()
+        val listState = listController.create()
+        var selectedLabel = "ITEM 1"
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            content = {
+                PixelColumn(
+                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                    spacing = 4,
+                    children = listOf(
+                        sectionTitle("FORM + LIST"),
+                        infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
+                        infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
+                        infoCard("SELECTED", selectedLabel),
+                        PixelTextField(
+                            state = nameState,
+                            controller = textController,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                            placeholder = "TYPE NAME",
+                            style = PixelTextFieldStyle.Default,
+                        ),
+                        PixelTextField(
+                            state = cityState,
+                            controller = textController,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                            placeholder = "TYPE CITY",
+                            style = PixelTextFieldStyle(
+                                borderTone = PixelTone.ON,
+                                focusedBorderTone = PixelTone.ACCENT,
+                                textStyle = PixelTextStyle.Accent,
+                                placeholderStyle = PixelTextStyle.Default,
+                            ),
+                        ),
+                        PixelRow(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            spacing = 2,
+                            children = listOf(
+                                PixelButton(
+                                    text = "SHOW 1",
+                                    onClick = {
+                                        listController.scrollItemIntoView(listState, itemIndex = 0)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                ),
+                                PixelButton(
+                                    text = "SHOW 6",
+                                    onClick = {
+                                        listController.scrollItemIntoView(listState, itemIndex = 5)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    style = com.purride.pixelui.PixelButtonStyle.Accent,
+                                ),
+                            ),
+                        ),
+                        PixelList(
+                            state = listState,
+                            controller = listController,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(24),
+                            spacing = 3,
+                            items = List(6) { index ->
+                                val label = "ITEM ${index + 1}"
+                                PixelButton(
+                                    text = label,
+                                    onClick = {
+                                        selectedLabel = label
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    style = if (selectedLabel == label) {
                                         com.purride.pixelui.PixelButtonStyle.Accent
                                     } else {
                                         com.purride.pixelui.PixelButtonStyle.Default
