@@ -23,6 +23,7 @@ import com.purride.pixelui.PixelSurfaceNode
 import com.purride.pixelui.PixelTextNode
 import com.purride.pixelui.PixelTextFieldNode
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelWeightElement
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
@@ -228,8 +229,12 @@ internal class PixelRenderRuntime(
             }
 
             is PixelRowNode -> {
-                val children = node.children.map { child -> measure(child, innerConstraints) }
-                val childrenWidth = children.sumOf { it.width } + (max(0, children.size - 1) * node.spacing)
+                val children = measureRowChildren(node, innerConstraints)
+                val childrenWidth = if (node.children.any { childWeight(it) > 0f }) {
+                    innerConstraints.maxWidth
+                } else {
+                    children.sumOf { it.width } + (max(0, children.size - 1) * node.spacing)
+                }
                 PixelSize(
                     width = childrenWidth,
                     height = children.maxOfOrNull { it.height } ?: 0,
@@ -237,8 +242,12 @@ internal class PixelRenderRuntime(
             }
 
             is PixelColumnNode -> {
-                val children = node.children.map { child -> measure(child, innerConstraints) }
-                val childrenHeight = children.sumOf { it.height } + (max(0, children.size - 1) * node.spacing)
+                val children = measureColumnChildren(node, innerConstraints)
+                val childrenHeight = if (node.children.any { childWeight(it) > 0f }) {
+                    innerConstraints.maxHeight
+                } else {
+                    children.sumOf { it.height } + (max(0, children.size - 1) * node.spacing)
+                }
                 PixelSize(
                     width = children.maxOfOrNull { it.width } ?: 0,
                     height = childrenHeight,
@@ -516,9 +525,9 @@ internal class PixelRenderRuntime(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
+        val childSizes = measureRowChildren(node, constraints)
         var cursorX = bounds.left
-        node.children.forEach { child ->
-            val childSize = measure(child, constraints)
+        node.children.zip(childSizes).forEach { (child, childSize) ->
             val childBounds = PixelRect(
                 left = cursorX,
                 top = bounds.top,
@@ -552,9 +561,9 @@ internal class PixelRenderRuntime(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
+        val childSizes = measureColumnChildren(node, constraints)
         var cursorY = bounds.top
-        node.children.forEach { child ->
-            val childSize = measure(child, constraints)
+        node.children.zip(childSizes).forEach { (child, childSize) ->
             val childBounds = PixelRect(
                 left = bounds.left,
                 top = cursorY,
@@ -576,6 +585,125 @@ internal class PixelRenderRuntime(
             )
             cursorY += childSize.height + node.spacing
         }
+    }
+
+    private fun measureRowChildren(
+        node: PixelRowNode,
+        constraints: PixelConstraints,
+    ): List<PixelSize> {
+        val sizes = MutableList(node.children.size) { PixelSize(width = 0, height = 0) }
+        val spacingWidth = max(0, node.children.size - 1) * node.spacing
+        var occupiedWidth = 0
+        var totalWeight = 0f
+
+        node.children.forEachIndexed { index, child ->
+            val weight = childWeight(child)
+            if (weight > 0f) {
+                totalWeight += weight
+            } else {
+                val childSize = measure(child, constraints)
+                sizes[index] = childSize
+                occupiedWidth += childSize.width
+            }
+        }
+
+        val remainingWidth = (constraints.maxWidth - spacingWidth - occupiedWidth).coerceAtLeast(0)
+        if (totalWeight <= 0f) {
+            return sizes
+        }
+
+        var assignedWidth = 0
+        var weightedSeen = 0
+        val weightedCount = node.children.count { childWeight(it) > 0f }
+        node.children.forEachIndexed { index, child ->
+            val weight = childWeight(child)
+            if (weight <= 0f) {
+                return@forEachIndexed
+            }
+            weightedSeen += 1
+            val allocatedWidth = if (weightedSeen == weightedCount) {
+                remainingWidth - assignedWidth
+            } else {
+                ((remainingWidth * (weight / totalWeight)).toInt()).coerceAtLeast(0)
+            }
+            assignedWidth += allocatedWidth
+            val measured = measure(
+                child,
+                PixelConstraints(
+                    maxWidth = allocatedWidth,
+                    maxHeight = constraints.maxHeight,
+                ),
+            )
+            sizes[index] = PixelSize(
+                width = allocatedWidth,
+                height = measured.height,
+            )
+        }
+        return sizes
+    }
+
+    private fun measureColumnChildren(
+        node: PixelColumnNode,
+        constraints: PixelConstraints,
+    ): List<PixelSize> {
+        val sizes = MutableList(node.children.size) { PixelSize(width = 0, height = 0) }
+        val spacingHeight = max(0, node.children.size - 1) * node.spacing
+        var occupiedHeight = 0
+        var totalWeight = 0f
+
+        node.children.forEachIndexed { index, child ->
+            val weight = childWeight(child)
+            if (weight > 0f) {
+                totalWeight += weight
+            } else {
+                val childSize = measure(child, constraints)
+                sizes[index] = childSize
+                occupiedHeight += childSize.height
+            }
+        }
+
+        val remainingHeight = (constraints.maxHeight - spacingHeight - occupiedHeight).coerceAtLeast(0)
+        if (totalWeight <= 0f) {
+            return sizes
+        }
+
+        var assignedHeight = 0
+        var weightedSeen = 0
+        val weightedCount = node.children.count { childWeight(it) > 0f }
+        node.children.forEachIndexed { index, child ->
+            val weight = childWeight(child)
+            if (weight <= 0f) {
+                return@forEachIndexed
+            }
+            weightedSeen += 1
+            val allocatedHeight = if (weightedSeen == weightedCount) {
+                remainingHeight - assignedHeight
+            } else {
+                ((remainingHeight * (weight / totalWeight)).toInt()).coerceAtLeast(0)
+            }
+            assignedHeight += allocatedHeight
+            val measured = measure(
+                child,
+                PixelConstraints(
+                    maxWidth = constraints.maxWidth,
+                    maxHeight = allocatedHeight,
+                ),
+            )
+            sizes[index] = PixelSize(
+                width = measured.width,
+                height = allocatedHeight,
+            )
+        }
+        return sizes
+    }
+
+    private fun childWeight(node: PixelNode): Float {
+        return node.modifier.elements
+            .filterIsInstance<PixelWeightElement>()
+            .lastOrNull()
+            ?.weight
+            ?.coerceAtLeast(0f)
+            ?: 0f
     }
 
     private fun renderPager(
