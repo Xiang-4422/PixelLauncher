@@ -58,6 +58,7 @@ object DemoScenes {
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
             DemoSceneKind.LIST -> listScene(hostView)
+            DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(hostView)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView)
         }
     }
@@ -367,6 +368,95 @@ object DemoScenes {
                                     },
                                 )
                             },
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun pagerAndListScene(hostView: PixelHostView): DemoScene {
+        val pagerController = PixelPagerController()
+        val pagerState = pagerController.create(
+            pageCount = 2,
+            currentPage = 0,
+            axis = PixelAxis.VERTICAL,
+        )
+        val listController = PixelListController()
+        val listState = listController.create()
+        var itemTapCount = 0
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            content = {
+                PixelPager(
+                    axis = PixelAxis.VERTICAL,
+                    state = pagerState,
+                    controller = pagerController,
+                    modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                    pages = listOf(
+                        pagerPage(
+                            title = "OUTER PAGE 1",
+                            tone = PixelTone.ACCENT,
+                            onPrimaryAction = {
+                                pagerController.syncToPage(pagerState, 1)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "GO LIST",
+                        ),
+                        PixelSurface(
+                            modifier = PixelModifier.Empty.fillMaxSize(),
+                            fillTone = PixelTone.OFF,
+                            borderTone = PixelTone.ACCENT,
+                            child = PixelColumn(
+                                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                                spacing = 4,
+                                children = listOf(
+                                    PixelText(
+                                        "PAGE 2 LIST",
+                                        style = PixelTextStyle.Accent,
+                                    ),
+                                    infoCard(
+                                        label = "TAPS",
+                                        value = itemTapCount.toString(),
+                                        accent = itemTapCount > 0,
+                                    ),
+                                    PixelList(
+                                        state = listState,
+                                        controller = listController,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(56),
+                                        spacing = 3,
+                                        items = List(7) { index ->
+                                            PixelButton(
+                                                text = "INNER ITEM ${index + 1}",
+                                                onClick = {
+                                                    itemTapCount += 1
+                                                    hostView.requestRender()
+                                                },
+                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                style = if (index % 2 == 0) {
+                                                    com.purride.pixelui.PixelButtonStyle.Accent
+                                                } else {
+                                                    com.purride.pixelui.PixelButtonStyle.Default
+                                                },
+                                            )
+                                        },
+                                    ),
+                                    PixelButton(
+                                        text = "BACK PAGE 1",
+                                        onClick = {
+                                            pagerController.syncToPage(pagerState, 0)
+                                            hostView.requestRender()
+                                        },
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                ),
+                            ),
                         ),
                     ),
                 )
