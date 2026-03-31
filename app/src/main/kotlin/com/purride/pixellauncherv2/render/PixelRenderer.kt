@@ -271,16 +271,9 @@ class PixelRenderer(
 
         val modeState = when {
             mode == LauncherMode.APP_DRAWER && state.mode != LauncherMode.APP_DRAWER -> {
-                val visibleRows = AppListLayout.metrics(screenProfile).textList.viewport.visibleRows
-                LauncherStateTransitions.showAppDrawer(
-                    state = LauncherStateTransitions.clearDrawerQuery(
-                        state = state,
-                        visibleRows = visibleRows,
-                    ),
-                    visibleRows = visibleRows,
-                ).copy(
-                    isDrawerSearchFocused = state.openDrawerInSearchMode,
-                    isDrawerRailSliding = false,
+                previewAppDrawerEntryState(
+                    state = state,
+                    screenProfile = screenProfile,
                 )
             }
             state.mode == mode -> state
@@ -348,6 +341,34 @@ class PixelRenderer(
             applyDrawerRevealOverlay(buffer, animationState.drawerReveal)
         }
         return buffer
+    }
+
+    private fun previewAppDrawerEntryState(
+        state: LauncherState,
+        screenProfile: ScreenProfile,
+    ): LauncherState {
+        val visibleRows = AppListLayout.metrics(screenProfile).textList.viewport.visibleRows
+        if (state.drawerQuery.isBlank() && state.drawerVisibleApps.isNotEmpty()) {
+            return state.copy(
+                mode = LauncherMode.APP_DRAWER,
+                selectedIndex = 0,
+                listStartIndex = 0,
+                drawerPageIndex = 0,
+                drawerFocus = com.purride.pixellauncherv2.launcher.DrawerFocus.LIST,
+                isDrawerSearchFocused = state.openDrawerInSearchMode,
+                isDrawerRailSliding = false,
+            )
+        }
+        return LauncherStateTransitions.showAppDrawer(
+            state = LauncherStateTransitions.clearDrawerQuery(
+                state = state,
+                visibleRows = visibleRows,
+            ),
+            visibleRows = visibleRows,
+        ).copy(
+            isDrawerSearchFocused = state.openDrawerInSearchMode,
+            isDrawerRailSliding = false,
+        )
     }
 
     private fun pagerModeForIndex(index: Int): LauncherMode? {
