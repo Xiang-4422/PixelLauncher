@@ -73,4 +73,18 @@ class PixelPagerControllerTest {
         controller.endDrag(lastPageState, viewportSizePx = 100, velocityPxPerSecond = -120f)
         assertEquals(2, lastPageState.settleTargetPage)
     }
+
+    @Test
+    fun cancelDragKeepsCurrentPageAndSettlesBackToZeroOffset() {
+        val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.HORIZONTAL)
+        controller.startDrag(state)
+        controller.dragBy(state, deltaPx = -30f, viewportSizePx = 100)
+
+        controller.cancelDrag(state)
+        assertEquals(1, state.settleTargetPage)
+
+        controller.step(state, deltaMs = 240L)
+        assertEquals(1, state.currentPage)
+        assertFalse(state.isSettling)
+    }
 }

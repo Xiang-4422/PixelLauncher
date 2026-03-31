@@ -19,6 +19,7 @@ import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.internal.PixelClickTarget
+import com.purride.pixelui.internal.PagerGesturePolicy
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelRenderRuntime
@@ -59,9 +60,12 @@ class PixelHostView @JvmOverloads constructor(
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private var touchDownX = 0f
     private var touchDownY = 0f
-    private var lastLogicalX = 0
-    private var lastLogicalY = 0
+    private var touchDownLogicalX = 0
+    private var touchDownLogicalY = 0
+    private var lastPagerLogicalX = 0
+    private var lastPagerLogicalY = 0
     private var touchMoved = false
+    private var candidatePagerTarget: PixelPagerTarget? = null
     private var activePagerTarget: PixelPagerTarget? = null
 
     private val onPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -147,37 +151,67 @@ class PixelHostView @JvmOverloads constructor(
                 touchDownY = event.y
                 touchMoved = false
                 val logicalPoint = mapTouchToLogical(event.x, event.y) ?: return true
-                lastLogicalX = logicalPoint.first
-                lastLogicalY = logicalPoint.second
-                activePagerTarget = lastRenderResult
+                touchDownLogicalX = logicalPoint.first
+                touchDownLogicalY = logicalPoint.second
+                lastPagerLogicalX = logicalPoint.first
+                lastPagerLogicalY = logicalPoint.second
+                candidatePagerTarget = lastRenderResult
                     ?.pagerTargets
                     ?.lastOrNull { target -> target.bounds.contains(logicalPoint.first, logicalPoint.second) }
-                    ?.also { target ->
-                        target.controller.startDrag(target.state)
-                    }
+                activePagerTarget = null
                 return true
             }
 
             MotionEvent.ACTION_MOVE -> {
                 velocityTracker?.addMovement(event)
                 val logicalPoint = mapTouchToLogical(event.x, event.y) ?: return true
-                if (abs(event.x - touchDownX) > touchSlop || abs(event.y - touchDownY) > touchSlop) {
+                val rawDeltaX = event.x - touchDownX
+                val rawDeltaY = event.y - touchDownY
+                if (abs(rawDeltaX) > touchSlop || abs(rawDeltaY) > touchSlop) {
                     touchMoved = true
                 }
                 activePagerTarget?.let { target ->
                     val deltaPx = when (target.axis) {
-                        PixelAxis.HORIZONTAL -> logicalPoint.first - lastLogicalX
-                        PixelAxis.VERTICAL -> logicalPoint.second - lastLogicalY
+                        PixelAxis.HORIZONTAL -> logicalPoint.first - lastPagerLogicalX
+                        PixelAxis.VERTICAL -> logicalPoint.second - lastPagerLogicalY
                     }.toFloat()
                     target.controller.dragBy(
                         state = target.state,
                         deltaPx = deltaPx,
                         viewportSizePx = pagerViewportSize(target),
                     )
+                    lastPagerLogicalX = logicalPoint.first
+                    lastPagerLogicalY = logicalPoint.second
                     invalidate()
+                    return true
                 }
-                lastLogicalX = logicalPoint.first
-                lastLogicalY = logicalPoint.second
+                candidatePagerTarget?.let { target ->
+                    if (PagerGesturePolicy.shouldStartDrag(
+                            axis = target.axis,
+                            deltaX = rawDeltaX,
+                            deltaY = rawDeltaY,
+                            touchSlopPx = touchSlop,
+                        )
+                    ) {
+                        activePagerTarget = target
+                        candidatePagerTarget = null
+                        target.controller.startDrag(target.state)
+                        val initialDeltaPx = when (target.axis) {
+                            PixelAxis.HORIZONTAL -> logicalPoint.first - touchDownLogicalX
+                            PixelAxis.VERTICAL -> logicalPoint.second - touchDownLogicalY
+                        }.toFloat()
+                        if (initialDeltaPx != 0f) {
+                            target.controller.dragBy(
+                                state = target.state,
+                                deltaPx = initialDeltaPx,
+                                viewportSizePx = pagerViewportSize(target),
+                            )
+                        }
+                        lastPagerLogicalX = logicalPoint.first
+                        lastPagerLogicalY = logicalPoint.second
+                        invalidate()
+                    }
+                }
                 return true
             }
 
@@ -194,12 +228,14 @@ class PixelHostView @JvmOverloads constructor(
                         velocityPxPerSecond = velocityPxPerSecond,
                     )
                     activePagerTarget = null
+                    candidatePagerTarget = null
                     velocityTracker?.recycle()
                     velocityTracker = null
                     invalidate()
                     return true
                 }
 
+                candidatePagerTarget = null
                 if (!touchMoved && logicalPoint != null) {
                     resolveClickTarget(logicalPoint.first, logicalPoint.second)?.onClick?.invoke()
                     invalidate()
@@ -210,6 +246,11 @@ class PixelHostView @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_CANCEL -> {
+                activePagerTarget?.let { target ->
+                    target.controller.cancelDrag(target.state)
+                    invalidate()
+                }
+                candidatePagerTarget = null
                 activePagerTarget = null
                 velocityTracker?.recycle()
                 velocityTracker = null

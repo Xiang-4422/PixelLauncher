@@ -106,6 +106,17 @@ class PixelPagerController(
         }
     }
 
+    fun cancelDrag(state: PixelPagerState) {
+        state.settleTargetPage = state.currentPage
+        state.motionState = motionController.settleTo(
+            state = state.motionState,
+            targetOffsetPx = 0f,
+        )
+        if (!state.motionState.isSettling) {
+            state.motionState = motionController.reset()
+        }
+    }
+
     fun step(state: PixelPagerState, deltaMs: Long) {
         val wasSettling = state.motionState.isSettling
         state.motionState = motionController.step(state.motionState, deltaMs)
