@@ -276,10 +276,10 @@ fun PixelPager(
 - `PixelColumn`
 - `PixelPager`
 - `PixelList`
+- `PixelTextField`
 
 这一轮明确不做：
 
-- `PixelTextField`
 - 产品级组件库
 
 ---
@@ -349,6 +349,7 @@ fun PixelPager(
 
 - 文本与字体页
 - 调色板与像素形状页
+- 文本输入页
 - 横向分页页
 - 纵向分页页
 - 纵向列表页
@@ -431,8 +432,9 @@ fun PixelPager(
 | 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `PixelList`、`PixelListState`、`PixelListController`，并支持列表视口裁剪与触摸滚动 |
 | 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动 |
 | 已完成 | `pixel-ui` 列表到分页滚动接力 | 列表滑到边界后，同一次纵向手势可直接接力给外层分页，无需抬手重新触发 |
-| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、横纵分页、纵向列表、分页与列表组合、点击反馈、混合文本风格验证 |
-| 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页/列表复合交互和对应测试，以及更复杂的滚动接力策略 |
+| 已完成 | `pixel-ui` 最小文本输入链路 | `pixel-ui` 已具备 `PixelTextField`、文本输入目标、宿主输入桥接接线和基础测试 |
+| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、横纵分页、纵向列表、分页与列表组合、点击反馈、混合文本风格验证 |
+| 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页/列表复合交互、文本输入焦点与对应测试，以及更复杂的滚动接力策略 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
@@ -457,7 +459,7 @@ fun PixelPager(
 1. 继续补稳 `pixel-ui` 的布局约束与命中边界
 2. 继续完善 `Pager + List` 的滚动接力策略与测试
 3. 在 `pixel-demo` 增加更接近真实页面的组合场景
-4. 评估 `PixelTextField` 或更高层列表项组件是否进入下一阶段
+4. 在 `PixelTextField` 上继续补焦点切换、输入行为和更接近真实页面的组合场景
 5. 通过后才讨论 Launcher 迁移
 
 这份顺序不是建议，而是当前阶段的执行顺序。
