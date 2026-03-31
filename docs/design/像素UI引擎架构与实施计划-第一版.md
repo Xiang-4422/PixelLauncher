@@ -275,12 +275,11 @@ fun PixelPager(
 - `PixelRow`
 - `PixelColumn`
 - `PixelPager`
+- `PixelList`
 
 这一轮明确不做：
 
-- `PixelList`
 - `PixelTextField`
-- 通用列表滚动 runtime
 - 产品级组件库
 
 ---
@@ -335,6 +334,8 @@ fun PixelPager(
 5. `PixelBox / PixelRow / PixelColumn`
 6. `PixelPagerState / PixelPagerController / PixelPagerSnapshot`
 7. `PixelPager`
+8. `PixelListState / PixelListController`
+9. `PixelList`
 
 ### Phase D. 新增 `:pixel-demo`
 
@@ -350,6 +351,7 @@ fun PixelPager(
 - 调色板与像素形状页
 - 横向分页页
 - 纵向分页页
+- 纵向列表页
 - 基础布局与点击反馈页
 
 ### Phase E. 迁移 Launcher
@@ -391,6 +393,8 @@ fun PixelPager(
 
 - `PixelPager` 横向分页
 - `PixelPager` 纵向分页
+- `PixelList` 纵向滚动与边界夹紧
+- 列表视口裁剪与点击命中
 - 分页边界夹紧
 - 阈值翻页
 - 速度翻页
@@ -406,6 +410,7 @@ fun PixelPager(
 - 能演示点击反馈
 - 能演示横向分页
 - 能演示纵向分页
+- 能演示纵向列表滚动与列表项点击
 
 ---
 
@@ -423,8 +428,9 @@ fun PixelPager(
 | 已完成 | `pixel-ui` 文本样式对象 | 文本色阶与文本栅格器已收敛为 `PixelTextStyle`，页面层不再直接暴露底层字体实现 |
 | 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
 | 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
-| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、点击反馈、混合文本风格验证 |
-| 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页子页面交互和对应测试 |
+| 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `PixelList`、`PixelListState`、`PixelListController`，并支持列表视口裁剪与触摸滚动 |
+| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、纵向列表、点击反馈、混合文本风格验证 |
+| 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页/列表复合交互和对应测试 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
@@ -446,12 +452,10 @@ fun PixelPager(
 
 如果从现在开始继续实现，推荐起手顺序固定为：
 
-1. 把 `pixel-core` 中旧的 `HorizontalPageView` 重构成轴向原语
-2. 给 `pixel-core` 补齐轴向原语测试
-3. 在 `pixel-ui` 落下 `PixelPagerState / PixelPagerController / PixelPagerSnapshot`
-4. 在 `pixel-ui` 落下最小布局与 `PixelPager`
-5. 新增 `:pixel-demo`
-6. 用 demo 验证横向与纵向分页
-7. 通过后才讨论 Launcher 迁移
+1. 继续补稳 `pixel-ui` 的布局约束与命中边界
+2. 给 `PixelList` 和 `PixelPager` 补更多复合交互测试
+3. 在 `pixel-demo` 增加更接近真实页面的组合场景
+4. 评估 `PixelTextField` 或更高层列表项组件是否进入下一阶段
+5. 通过后才讨论 Launcher 迁移
 
 这份顺序不是建议，而是当前阶段的执行顺序。
