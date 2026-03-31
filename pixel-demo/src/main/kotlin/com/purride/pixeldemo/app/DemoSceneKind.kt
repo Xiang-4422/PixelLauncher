@@ -8,6 +8,7 @@ enum class DemoSceneKind(
 ) {
     TEXT("文本与字体"),
     PALETTE("调色板与像素形状"),
+    TEXT_FIELD("文本输入"),
     HORIZONTAL_PAGER("横向分页"),
     VERTICAL_PAGER("纵向分页"),
     LIST("纵向列表"),
