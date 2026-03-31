@@ -21,4 +21,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "PixelLauncherV2"
 include(":app")
+include(":pixel-core")
+include(":pixel-ui")
  
