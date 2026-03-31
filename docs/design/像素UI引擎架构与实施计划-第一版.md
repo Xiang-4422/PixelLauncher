@@ -435,6 +435,7 @@ fun PixelPager(
 | 已完成 | `pixel-ui` 最小文本输入链路 | `pixel-ui` 已具备 `PixelTextField`、文本输入目标、宿主输入桥接接线和基础测试 |
 | 已完成 | `pixel-ui` 基础权重布局 | `Row/Column` 已支持基于 `Modifier.weight(...)` 按比例分配剩余空间 |
 | 已完成 | `pixel-ui` 交叉轴对齐 | `Row/Column` 已支持 `START / CENTER / END` 交叉轴对齐，demo 已补可视化验证 |
+| 已完成 | `pixel-ui` 主轴排布首轮落地 | `Row/Column` 已支持 `START / CENTER / END` 主轴排布，demo 已补可视化验证 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、横纵分页、纵向列表、分页与列表组合、点击反馈、混合文本风格验证与权重布局展示 |
 | 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局约束、命中、分页/列表复合交互、文本输入焦点与对应测试，以及更复杂的滚动接力策略 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
@@ -458,7 +459,7 @@ fun PixelPager(
 
 如果从现在开始继续实现，推荐起手顺序固定为：
 
-1. 继续补稳 `pixel-ui` 的布局约束、尤其是权重布局、交叉轴对齐和命中边界
+1. 继续补稳 `pixel-ui` 的布局约束、尤其是权重布局、线性布局对齐和命中边界
 2. 继续完善 `Pager + List` 的滚动接力策略与测试
 3. 在 `pixel-demo` 增加更接近真实页面的组合场景
 4. 在 `PixelTextField` 上继续补焦点切换、输入行为和更接近真实页面的组合场景
