@@ -48,11 +48,12 @@
 
 ### 2.1 当前模块情况
 
-当前仓库已经有三个模块入口：
+当前仓库已经有四个模块入口：
 
 - `:app`
 - `:pixel-core`
 - `:pixel-ui`
+- `:pixel-demo`
 
 `settings.gradle.kts` 当前真实内容包含：
 
@@ -61,6 +62,7 @@ rootProject.name = "PixelLauncherV2"
 include(":app")
 include(":pixel-core")
 include(":pixel-ui")
+include(":pixel-demo")
 ```
 
 但要注意：
@@ -415,6 +417,7 @@ fun PixelPager(
 | 已完成 | `:pixel-core` / `:pixel-ui` 模块入口存在 | 仓库已经具备独立框架模块入口 |
 | 已完成 | 框架边界冻结 | `core/ui/demo/app` 的职责边界已确定，本文档是当前执行口径 |
 | 已完成 | `:pixel-core` 轴向原语重构 | `core` 已经落下 `PixelAxis / AxisMotionController / AxisBufferComposer` |
+| 已完成 | `:pixel-core` 字体底座首轮落地 | `core` 已具备字形包解析、位图字形源与 `PixelFontEngine` |
 | 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、点击反馈 |
 | 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页子页面交互和对应测试 |
