@@ -19,6 +19,7 @@ import com.purride.pixelui.PixelButton
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelHostView
+import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelRow
@@ -30,6 +31,7 @@ import com.purride.pixelui.fillMaxWidth
 import com.purride.pixelui.height
 import com.purride.pixelui.padding
 import com.purride.pixelui.size
+import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 
 /**
@@ -55,6 +57,7 @@ object DemoScenes {
             DemoSceneKind.PALETTE -> paletteScene(hostView)
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
+            DemoSceneKind.LIST -> listScene(hostView)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView)
         }
     }
@@ -311,6 +314,59 @@ object DemoScenes {
                                 demoSquare("LEFT"),
                                 demoSquare("RIGHT"),
                             ),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun listScene(hostView: PixelHostView): DemoScene {
+        val controller = PixelListController()
+        val state = controller.create()
+        var tapCount = 0
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
+            content = {
+                PixelColumn(
+                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                    spacing = 4,
+                    children = listOf(
+                        sectionTitle("VERTICAL LIST"),
+                        infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
+                        infoCard("TAPS", tapCount.toString()),
+                        PixelList(
+                            state = state,
+                            controller = controller,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(58),
+                            spacing = 3,
+                            items = List(8) { index ->
+                                PixelButton(
+                                    text = if (index == 0) {
+                                        "TAP ITEM ${index + 1}"
+                                    } else {
+                                        "LIST ITEM ${index + 1}"
+                                    },
+                                    onClick = {
+                                        if (index == 0) {
+                                            tapCount += 1
+                                            hostView.requestRender()
+                                        }
+                                    },
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    style = if (index % 2 == 0) {
+                                        com.purride.pixelui.PixelButtonStyle.Accent
+                                    } else {
+                                        com.purride.pixelui.PixelButtonStyle.Default
+                                    },
+                                )
+                            },
                         ),
                     ),
                 )

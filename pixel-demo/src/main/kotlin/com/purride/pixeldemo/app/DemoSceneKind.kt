@@ -10,5 +10,6 @@ enum class DemoSceneKind(
     PALETTE("调色板与像素形状"),
     HORIZONTAL_PAGER("横向分页"),
     VERTICAL_PAGER("纵向分页"),
+    LIST("纵向列表"),
     LAYOUT_AND_CLICK("布局与点击"),
 }
