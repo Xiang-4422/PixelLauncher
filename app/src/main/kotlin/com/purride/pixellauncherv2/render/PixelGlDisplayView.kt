@@ -6,7 +6,6 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import com.purride.pixelcore.PixelFrameView
 import kotlin.math.abs
 import kotlin.math.max
 

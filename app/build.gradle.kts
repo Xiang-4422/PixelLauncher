@@ -42,7 +42,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.jbox2d)
     implementation(libs.pinyin4j)
-    implementation(project(":pixel-core"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
