@@ -1,9 +1,11 @@
 package com.purride.pixellauncherv2.render
 
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -72,9 +74,17 @@ class PixelRendererPageViewTest {
 
     @Test
     fun negativeOffsetFromHomeComposesWithAppsPage() {
-        val homeState = baseState(mode = LauncherMode.HOME)
+        val homeState = baseState(
+            mode = LauncherMode.HOME,
+            selectedIndex = 8,
+            listStartIndex = 8,
+        )
         val homePage = renderMode(LauncherMode.HOME)
-        val appsPage = renderMode(LauncherMode.APP_DRAWER)
+        val appsPage = renderer.render(
+            state = expectedDrawerEntryState(homeState),
+            screenProfile = screenProfile,
+            animationState = LauncherAnimationState(),
+        )
         val expected = HorizontalPageRenderer.compose(
             currentPage = homePage,
             adjacentPage = appsPage,
@@ -125,15 +135,33 @@ class PixelRendererPageViewTest {
         )
     }
 
-    private fun baseState(mode: LauncherMode): LauncherState {
+    private fun expectedDrawerEntryState(homeState: LauncherState): LauncherState {
+        val visibleRows = AppListLayout.metrics(screenProfile).textList.viewport.visibleRows
+        return LauncherStateTransitions.showAppDrawer(
+            state = LauncherStateTransitions.clearDrawerQuery(
+                state = homeState,
+                visibleRows = visibleRows,
+            ),
+            visibleRows = visibleRows,
+        ).copy(
+            isDrawerSearchFocused = homeState.openDrawerInSearchMode,
+            isDrawerRailSliding = false,
+        )
+    }
+
+    private fun baseState(
+        mode: LauncherMode,
+        selectedIndex: Int = 3,
+        listStartIndex: Int = 0,
+    ): LauncherState {
         return LauncherState(
             mode = mode,
             apps = apps,
             drawerVisibleApps = apps,
             drawerQuery = "",
             isDrawerSearchFocused = false,
-            selectedIndex = 3,
-            listStartIndex = 0,
+            selectedIndex = selectedIndex,
+            listStartIndex = listStartIndex,
             isLoading = false,
             currentDateText = "MAR 16",
             currentWeekdayText = "MONDAY",

@@ -15,6 +15,7 @@ import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayoutMetrics
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -268,7 +269,23 @@ class PixelRenderer(
         )
         buffer.clear()
 
-        val modeState = if (state.mode == mode) state else state.copy(mode = mode)
+        val modeState = when {
+            mode == LauncherMode.APP_DRAWER && state.mode != LauncherMode.APP_DRAWER -> {
+                val visibleRows = AppListLayout.metrics(screenProfile).textList.viewport.visibleRows
+                LauncherStateTransitions.showAppDrawer(
+                    state = LauncherStateTransitions.clearDrawerQuery(
+                        state = state,
+                        visibleRows = visibleRows,
+                    ),
+                    visibleRows = visibleRows,
+                ).copy(
+                    isDrawerSearchFocused = state.openDrawerInSearchMode,
+                    isDrawerRailSliding = false,
+                )
+            }
+            state.mode == mode -> state
+            else -> state.copy(mode = mode)
+        }
         val modeScrollOffset = if (mode == LauncherMode.APP_DRAWER && state.mode == LauncherMode.APP_DRAWER) {
             drawerListScrollOffsetPx
         } else {
