@@ -22,4 +22,21 @@ internal object NestedScrollGesturePolicy {
             listWantsDrag &&
             listCanConsumeDrag
     }
+
+    /**
+     * 列表已经开始消费手势后，是否应该把后续拖动接力给外层分页。
+     *
+     * 这一版只处理纵向分页 + 纵向列表的同轴场景：
+     * 当列表已经到边界，且当前手势仍在继续沿纵向拖动时，
+     * 允许外层分页接管本次手势，避免用户必须抬手再滑一次。
+     */
+    fun shouldHandOffListToPager(
+        pagerAxis: PixelAxis,
+        listCanConsumeDrag: Boolean,
+        deltaPx: Float,
+    ): Boolean {
+        return pagerAxis == PixelAxis.VERTICAL &&
+            !listCanConsumeDrag &&
+            deltaPx != 0f
+    }
 }

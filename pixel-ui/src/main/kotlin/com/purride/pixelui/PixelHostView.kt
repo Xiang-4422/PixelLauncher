@@ -212,16 +212,54 @@ class PixelHostView @JvmOverloads constructor(
                     return true
                 }
                 activeListTarget?.let { target ->
-                    // 列表第一版只支持纵向拖动，不做惯性和更复杂的嵌套滚动接力。
+                    // 列表第一版只支持纵向拖动。
+                    // 但当列表已经滑到边界时，会尝试把同一次手势接力给外层纵向分页。
                     val deltaPx = (logicalPoint.second - lastListLogicalY).toFloat()
-                    target.controller.dragBy(
+                    val listCanConsumeDrag = target.controller.canConsumeDrag(
                         state = target.state,
                         deltaPx = deltaPx,
                         viewportHeightPx = target.viewportHeightPx,
                         contentHeightPx = target.contentHeightPx,
                     )
+                    if (listCanConsumeDrag) {
+                        target.controller.dragBy(
+                            state = target.state,
+                            deltaPx = deltaPx,
+                            viewportHeightPx = target.viewportHeightPx,
+                            contentHeightPx = target.contentHeightPx,
+                        )
+                        lastListLogicalY = logicalPoint.second
+                        invalidate()
+                        return true
+                    }
+
+                    val pagerTarget = candidatePagerTarget
+                    if (pagerTarget != null &&
+                        NestedScrollGesturePolicy.shouldHandOffListToPager(
+                            pagerAxis = pagerTarget.axis,
+                            listCanConsumeDrag = listCanConsumeDrag,
+                            deltaPx = deltaPx,
+                        )
+                    ) {
+                        activeListTarget = null
+                        activePagerTarget = pagerTarget
+                        candidatePagerTarget = null
+                        candidateListTarget = null
+                        pagerTarget.controller.startDrag(pagerTarget.state)
+                        lastPagerLogicalX = logicalPoint.first
+                        lastPagerLogicalY = lastListLogicalY
+                        pagerTarget.controller.dragBy(
+                            state = pagerTarget.state,
+                            deltaPx = deltaPx,
+                            viewportSizePx = pagerViewportSize(pagerTarget),
+                        )
+                        lastPagerLogicalX = logicalPoint.first
+                        lastPagerLogicalY = logicalPoint.second
+                        invalidate()
+                        return true
+                    }
+
                     lastListLogicalY = logicalPoint.second
-                    invalidate()
                     return true
                 }
                 candidatePagerTarget?.let { target ->
@@ -273,7 +311,6 @@ class PixelHostView @JvmOverloads constructor(
                     if (shouldStartListDrag(rawDeltaX = rawDeltaX, rawDeltaY = rawDeltaY)) {
                         activeListTarget = target
                         candidateListTarget = null
-                        candidatePagerTarget = null
                         val initialDeltaPx = (logicalPoint.second - touchDownLogicalY).toFloat()
                         if (initialDeltaPx != 0f) {
                             target.controller.dragBy(
