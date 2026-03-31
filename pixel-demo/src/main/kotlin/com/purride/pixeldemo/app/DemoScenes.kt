@@ -54,10 +54,11 @@ object DemoScenes {
         sceneKind: DemoSceneKind,
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
+        applyPreferredProfile: (ScreenProfile) -> Unit,
     ): DemoScene {
         return when (sceneKind) {
             DemoSceneKind.TEXT -> textScene(textRasterizers)
-            DemoSceneKind.PALETTE -> paletteScene(hostView, textRasterizers)
+            DemoSceneKind.PALETTE -> paletteScene(hostView, textRasterizers, applyPreferredProfile)
             DemoSceneKind.TEXT_FIELD -> textFieldScene(hostView, textRasterizers)
             DemoSceneKind.SINGLE_CHILD_SCROLL -> singleChildScrollScene(hostView, textRasterizers)
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView, textRasterizers)
@@ -72,6 +73,8 @@ object DemoScenes {
     private fun textScene(
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
+        val scrollController = PixelListController()
+        val scrollState = scrollController.create()
         val compactRasterizer = PixelBitmapFont(
             glyphWidth = 4,
             glyphHeight = 5,
@@ -84,9 +87,9 @@ object DemoScenes {
             initialPalette = PixelPalette.terminalGreen(),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelColumn(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    spacing = 4,
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
                     children = listOf(
                         sectionTitle("文本与字体", textRasterizer = wideRasterizer),
                         infoCard("中文", "像素中文已经接通"),
@@ -102,7 +105,10 @@ object DemoScenes {
     private fun paletteScene(
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
+        applyPreferredProfile: (ScreenProfile) -> Unit,
     ): DemoScene {
+        val scrollController = PixelListController()
+        val scrollState = scrollController.create()
         val themes = PixelTheme.entries
         val shapes = PixelShape.entries
         var currentThemeIndex = 0
@@ -110,7 +116,7 @@ object DemoScenes {
 
         fun applyHostAppearance() {
             hostView.setPalette(PixelPalette.fromTheme(themes[currentThemeIndex]))
-            hostView.screenProfile = defaultProfile(pixelShape = shapes[currentShapeIndex])
+            applyPreferredProfile(defaultProfile(pixelShape = shapes[currentShapeIndex]))
         }
 
         return DemoScene(
@@ -118,9 +124,9 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(themes[currentThemeIndex]),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelColumn(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    spacing = 4,
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
                     children = listOf(
                         sectionTitle("PALETTE AND SHAPE"),
                         infoCard("THEME", themes[currentThemeIndex].name),
@@ -161,6 +167,8 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
+        val scrollController = PixelListController()
+        val scrollState = scrollController.create()
         val controller = PixelTextFieldController()
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
@@ -170,9 +178,9 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelColumn(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    spacing = 4,
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
                     children = listOf(
                         sectionTitle("TEXT FIELD"),
                         infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
@@ -411,6 +419,8 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
+        val scrollController = PixelListController()
+        val scrollState = scrollController.create()
         var count = 0
         var accentMode = false
 
@@ -419,9 +429,9 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelColumn(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    spacing = 4,
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
                     children = listOf(
                         sectionTitle("LAYOUT AND CLICK"),
                         infoCard("COUNTER", count.toString(), accent = accentMode),
@@ -1021,5 +1031,28 @@ object DemoScenes {
             builder.append(character)
         }
         return builder.toString()
+    }
+
+    /**
+     * 普通 demo 页面统一使用单子节点滚动容器做根布局。
+     *
+     * 这样页面内容继续变多时，不会因为逻辑高度固定而把底部组件直接裁掉。
+     * `Pager` / `List` 专项验证页继续保留各自的根容器，不混进额外滚动层。
+     */
+    private fun scrollableRoot(
+        state: com.purride.pixelui.state.PixelListState,
+        controller: PixelListController,
+        children: List<com.purride.pixelui.PixelNode>,
+    ): com.purride.pixelui.PixelNode {
+        return PixelSingleChildScrollView(
+            state = state,
+            controller = controller,
+            modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+            child = PixelColumn(
+                modifier = PixelModifier.Empty.fillMaxWidth(),
+                spacing = 4,
+                children = children,
+            ),
+        )
     }
 }
