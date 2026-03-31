@@ -3,10 +3,15 @@ package com.purride.pixelui.state
 /**
  * 通用列表状态。
  *
- * 第一版明确采用显式状态提升，列表的窗口位置和滚动偏移
- * 都由宿主或上层 scene 持有，不隐藏在组件内部。
+ * 这一版先采用最简单的绝对滚动偏移模型：
+ * `scrollOffsetPx` 表示内容顶部相对视口顶部已经向上滚动了多少像素。
+ * 这样可以先把列表视口、裁剪和触摸拖动打通，再决定后续是否增加虚拟化窗口等能力。
  */
-data class PixelListState(
-    val firstVisibleIndex: Int = 0,
-    val scrollOffsetPx: Float = 0f,
-)
+class PixelListState(
+    initialScrollOffsetPx: Float = 0f,
+) {
+    var scrollOffsetPx: Float = initialScrollOffsetPx.coerceAtLeast(0f)
+        internal set
+
+    internal var maxScrollOffsetPx: Float = 0f
+}

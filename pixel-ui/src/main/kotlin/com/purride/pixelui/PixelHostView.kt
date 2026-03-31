@@ -25,6 +25,7 @@ import com.purride.pixelui.internal.PagerGesturePolicy
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelRenderRuntime
+import com.purride.pixelui.internal.PixelListTarget
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -66,9 +67,12 @@ class PixelHostView @JvmOverloads constructor(
     private var touchDownLogicalY = 0
     private var lastPagerLogicalX = 0
     private var lastPagerLogicalY = 0
+    private var lastListLogicalY = 0
     private var touchMoved = false
     private var candidatePagerTarget: PixelPagerTarget? = null
     private var activePagerTarget: PixelPagerTarget? = null
+    private var candidateListTarget: PixelListTarget? = null
+    private var activeListTarget: PixelListTarget? = null
 
     /**
      * 当前宿主使用的文本栅格器。
@@ -116,6 +120,7 @@ class PixelHostView @JvmOverloads constructor(
             buffer = pixelBuffer,
             clickTargets = emptyList(),
             pagerTargets = emptyList(),
+            listTargets = emptyList(),
         )
         invalidate()
     }
@@ -170,10 +175,15 @@ class PixelHostView @JvmOverloads constructor(
                 touchDownLogicalY = logicalPoint.second
                 lastPagerLogicalX = logicalPoint.first
                 lastPagerLogicalY = logicalPoint.second
+                lastListLogicalY = logicalPoint.second
                 candidatePagerTarget = lastRenderResult
                     ?.pagerTargets
                     ?.lastOrNull { target -> target.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                candidateListTarget = lastRenderResult
+                    ?.listTargets
+                    ?.lastOrNull { target -> target.bounds.contains(logicalPoint.first, logicalPoint.second) }
                 activePagerTarget = null
+                activeListTarget = null
                 return true
             }
 
@@ -197,6 +207,19 @@ class PixelHostView @JvmOverloads constructor(
                     )
                     lastPagerLogicalX = logicalPoint.first
                     lastPagerLogicalY = logicalPoint.second
+                    invalidate()
+                    return true
+                }
+                activeListTarget?.let { target ->
+                    // 列表第一版只支持纵向拖动，不做惯性和嵌套滚动协调。
+                    val deltaPx = (logicalPoint.second - lastListLogicalY).toFloat()
+                    target.controller.dragBy(
+                        state = target.state,
+                        deltaPx = deltaPx,
+                        viewportHeightPx = target.viewportHeightPx,
+                        contentHeightPx = target.contentHeightPx,
+                    )
+                    lastListLogicalY = logicalPoint.second
                     invalidate()
                     return true
                 }
@@ -224,6 +247,25 @@ class PixelHostView @JvmOverloads constructor(
                         }
                         lastPagerLogicalX = logicalPoint.first
                         lastPagerLogicalY = logicalPoint.second
+                        candidateListTarget = null
+                        invalidate()
+                    }
+                }
+                candidateListTarget?.let { target ->
+                    if (shouldStartListDrag(rawDeltaX = rawDeltaX, rawDeltaY = rawDeltaY)) {
+                        activeListTarget = target
+                        candidateListTarget = null
+                        candidatePagerTarget = null
+                        val initialDeltaPx = (logicalPoint.second - touchDownLogicalY).toFloat()
+                        if (initialDeltaPx != 0f) {
+                            target.controller.dragBy(
+                                state = target.state,
+                                deltaPx = initialDeltaPx,
+                                viewportHeightPx = target.viewportHeightPx,
+                                contentHeightPx = target.contentHeightPx,
+                            )
+                        }
+                        lastListLogicalY = logicalPoint.second
                         invalidate()
                     }
                 }
@@ -244,6 +286,17 @@ class PixelHostView @JvmOverloads constructor(
                     )
                     activePagerTarget = null
                     candidatePagerTarget = null
+                    candidateListTarget = null
+                    velocityTracker?.recycle()
+                    velocityTracker = null
+                    invalidate()
+                    return true
+                }
+
+                activeListTarget?.let {
+                    activeListTarget = null
+                    candidateListTarget = null
+                    candidatePagerTarget = null
                     velocityTracker?.recycle()
                     velocityTracker = null
                     invalidate()
@@ -251,6 +304,7 @@ class PixelHostView @JvmOverloads constructor(
                 }
 
                 candidatePagerTarget = null
+                candidateListTarget = null
                 if (!touchMoved && logicalPoint != null) {
                     resolveClickTarget(logicalPoint.first, logicalPoint.second)?.onClick?.invoke()
                     invalidate()
@@ -267,6 +321,8 @@ class PixelHostView @JvmOverloads constructor(
                 }
                 candidatePagerTarget = null
                 activePagerTarget = null
+                candidateListTarget = null
+                activeListTarget = null
                 velocityTracker?.recycle()
                 velocityTracker = null
                 return true
@@ -308,6 +364,10 @@ class PixelHostView @JvmOverloads constructor(
             PixelAxis.HORIZONTAL -> target.bounds.width
             PixelAxis.VERTICAL -> target.bounds.height
         }.coerceAtLeast(1)
+    }
+
+    private fun shouldStartListDrag(rawDeltaX: Float, rawDeltaY: Float): Boolean {
+        return abs(rawDeltaY) > touchSlop && abs(rawDeltaY) >= abs(rawDeltaX)
     }
 
     private fun rawVelocityToLogical(velocityTracker: VelocityTracker?, axis: PixelAxis): Float {
