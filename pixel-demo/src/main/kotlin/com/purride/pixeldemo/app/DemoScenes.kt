@@ -422,6 +422,11 @@ object DemoScenes {
                                         style = PixelTextStyle.Accent,
                                     ),
                                     infoCard(
+                                        label = "TIP",
+                                        value = "LIST FIRST THEN PAGE",
+                                        accent = true,
+                                    ),
+                                    infoCard(
                                         label = "TAPS",
                                         value = itemTapCount.toString(),
                                         accent = itemTapCount > 0,
