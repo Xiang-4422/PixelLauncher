@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
@@ -18,6 +19,7 @@ data class PixelTextNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val text: String,
     val tone: PixelTone = PixelTone.ON,
+    val textRasterizer: PixelTextRasterizer? = null,
 ) : PixelNode
 
 data class PixelSurfaceNode(
@@ -64,6 +66,7 @@ fun PixelText(
     text: String,
     modifier: PixelModifier = PixelModifier.Empty,
     tone: PixelTone = PixelTone.ON,
+    textRasterizer: PixelTextRasterizer? = null,
     key: Any? = null,
 ): PixelNode {
     return PixelTextNode(
@@ -71,6 +74,7 @@ fun PixelText(
         modifier = modifier,
         text = text,
         tone = tone,
+        textRasterizer = textRasterizer,
     )
 }
 
