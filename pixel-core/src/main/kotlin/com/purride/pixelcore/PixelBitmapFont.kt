@@ -156,18 +156,31 @@ class PixelBitmapFont(
             }
             return glyphCache.getOrPut(normalizedCharacter) {
                 val rows = GLYPHS[normalizedCharacter] ?: GLYPHS.getValue('?')
+                val sourceHeight = rows.size.coerceAtLeast(1)
+                val sourceWidth = rows.maxOfOrNull { row -> row.length }?.coerceAtLeast(1) ?: 1
                 val pixels = ByteArray(glyphWidth * glyphHeight)
                 var inkLeft = glyphWidth
                 var inkRight = -1
-                rows.forEachIndexed { rowIndex, row ->
-                    row.forEachIndexed { columnIndex, pixel ->
-                        if (pixel == '1') {
-                            pixels[(rowIndex * glyphWidth) + columnIndex] = 1
-                            if (columnIndex < inkLeft) {
-                                inkLeft = columnIndex
+
+                /**
+                 * 内置字模源固定是 5x7，但 `PixelBitmapFont` 允许上层请求别的尺寸。
+                 *
+                 * 这里统一把源字模按目标 `glyphWidth/glyphHeight` 重新采样，避免再出现
+                 * “4x5 字体去直接写 5x7 源像素”导致的数组越界。
+                 */
+                for (targetY in 0 until glyphHeight) {
+                    val sourceY = (targetY * sourceHeight) / glyphHeight.coerceAtLeast(1)
+                    val sourceRow = rows[sourceY]
+                    for (targetX in 0 until glyphWidth) {
+                        val sourceX = (targetX * sourceWidth) / glyphWidth.coerceAtLeast(1)
+                        val sourcePixel = sourceRow.getOrNull(sourceX) ?: '0'
+                        if (sourcePixel == '1') {
+                            pixels[(targetY * glyphWidth) + targetX] = 1
+                            if (targetX < inkLeft) {
+                                inkLeft = targetX
                             }
-                            if (columnIndex > inkRight) {
-                                inkRight = columnIndex
+                            if (targetX > inkRight) {
+                                inkRight = targetX
                             }
                         }
                     }
