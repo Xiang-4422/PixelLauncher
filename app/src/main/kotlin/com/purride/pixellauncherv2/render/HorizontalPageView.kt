@@ -24,9 +24,9 @@ data class HorizontalPageSnapshot(
 )
 
 class HorizontalPageController(
-    private val distanceThresholdFraction: Float = 0.25f,
+    private val distanceThresholdFraction: Float = 0.4f,
     private val velocityThresholdPagesPerSecond: Float = 0.35f,
-    private val settleDurationMs: Long = 200L,
+    private val settleDurationMs: Long = 240L,
 ) {
     fun create(pageCount: Int, currentIndex: Int): HorizontalPageState {
         val safePageCount = pageCount.coerceAtLeast(1)
@@ -166,7 +166,7 @@ class HorizontalPageController(
             state.isSettling -> lerp(
                 start = state.settleStartOffsetPx,
                 end = state.settleEndOffsetPx,
-                progress = state.settleProgress,
+                progress = easeOutCubic(state.settleProgress),
             )
 
             else -> 0f
@@ -198,6 +198,12 @@ class HorizontalPageController(
 
     private fun lerp(start: Float, end: Float, progress: Float): Float {
         return start + ((end - start) * progress.coerceIn(0f, 1f))
+    }
+
+    private fun easeOutCubic(progress: Float): Float {
+        val t = progress.coerceIn(0f, 1f)
+        val oneMinusT = 1f - t
+        return 1f - (oneMinusT * oneMinusT * oneMinusT)
     }
 
     private fun Float.sign(): Int = when {

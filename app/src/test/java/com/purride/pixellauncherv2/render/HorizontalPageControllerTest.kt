@@ -12,7 +12,7 @@ class HorizontalPageControllerTest {
     fun dragPastDistanceThresholdSettlesToPreviousPage() {
         var state = controller.create(pageCount = 3, currentIndex = 1)
         state = controller.startDrag(state)
-        state = controller.dragBy(state = state, deltaPx = 30f, pageWidth = 100)
+        state = controller.dragBy(state = state, deltaPx = 45f, pageWidth = 100)
         state = controller.endDrag(
             state = state,
             pageWidth = 100,
@@ -22,7 +22,7 @@ class HorizontalPageControllerTest {
         assertTrue(state.isSettling)
         assertEquals(0, state.settleTargetIndex)
 
-        state = controller.step(state, deltaMs = 200L)
+        state = controller.step(state, deltaMs = 240L)
         assertEquals(false, state.isSettling)
         assertEquals(0, state.currentIndex)
     }
@@ -31,7 +31,7 @@ class HorizontalPageControllerTest {
     fun dragPastDistanceThresholdSettlesToNextPage() {
         var state = controller.create(pageCount = 3, currentIndex = 1)
         state = controller.startDrag(state)
-        state = controller.dragBy(state = state, deltaPx = -30f, pageWidth = 100)
+        state = controller.dragBy(state = state, deltaPx = -45f, pageWidth = 100)
         state = controller.endDrag(
             state = state,
             pageWidth = 100,
@@ -39,7 +39,7 @@ class HorizontalPageControllerTest {
         )
 
         assertEquals(2, state.settleTargetIndex)
-        state = controller.step(state, deltaMs = 200L)
+        state = controller.step(state, deltaMs = 240L)
         assertEquals(2, state.currentIndex)
     }
 
