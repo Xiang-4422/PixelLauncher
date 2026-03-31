@@ -21,6 +21,7 @@ import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelList
+import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelRow
@@ -401,6 +402,7 @@ object DemoScenes {
                         PixelRow(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(20),
                             spacing = 2,
+                            mainAxisAlignment = PixelMainAxisAlignment.CENTER,
                             crossAxisAlignment = PixelCrossAxisAlignment.CENTER,
                             children = listOf(
                                 PixelSurface(
@@ -433,6 +435,7 @@ object DemoScenes {
                             child = PixelColumn(
                                 modifier = PixelModifier.Empty.fillMaxSize(),
                                 spacing = 2,
+                                mainAxisAlignment = PixelMainAxisAlignment.END,
                                 crossAxisAlignment = PixelCrossAxisAlignment.END,
                                 children = listOf(
                                     PixelSurface(
