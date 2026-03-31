@@ -42,4 +42,37 @@ class NestedScrollGesturePolicyTest {
             ),
         )
     }
+
+    @Test
+    fun verticalPagerCanTakeOverWhenListReachedBoundary() {
+        assertTrue(
+            NestedScrollGesturePolicy.shouldHandOffListToPager(
+                pagerAxis = PixelAxis.VERTICAL,
+                listCanConsumeDrag = false,
+                deltaPx = -6f,
+            ),
+        )
+    }
+
+    @Test
+    fun handoffDoesNotHappenWhenListStillCanScroll() {
+        assertFalse(
+            NestedScrollGesturePolicy.shouldHandOffListToPager(
+                pagerAxis = PixelAxis.VERTICAL,
+                listCanConsumeDrag = true,
+                deltaPx = -6f,
+            ),
+        )
+    }
+
+    @Test
+    fun horizontalPagerStillDoesNotUseListHandoffRule() {
+        assertFalse(
+            NestedScrollGesturePolicy.shouldHandOffListToPager(
+                pagerAxis = PixelAxis.HORIZONTAL,
+                listCanConsumeDrag = false,
+                deltaPx = -6f,
+            ),
+        )
+    }
 }
