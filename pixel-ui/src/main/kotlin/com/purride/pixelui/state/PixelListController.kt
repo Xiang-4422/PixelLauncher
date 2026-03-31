@@ -41,6 +41,31 @@ class PixelListController {
         state.scrollOffsetPx = (state.scrollOffsetPx - deltaPx).coerceIn(0f, state.maxScrollOffsetPx)
     }
 
+    /**
+     * 判断当前这次拖动是否还能被列表消费。
+     *
+     * `deltaPx` 使用触摸点的位移方向：
+     * - 手指向下拖动时，`deltaPx > 0`，列表只有在“顶部上方还有内容”时才能继续跟手下移
+     * - 手指向上拖动时，`deltaPx < 0`，列表只有在“底部下方还有内容”时才能继续向上滚
+     */
+    fun canConsumeDrag(
+        state: PixelListState,
+        deltaPx: Float,
+        viewportHeightPx: Int,
+        contentHeightPx: Int,
+    ): Boolean {
+        sync(
+            state = state,
+            viewportHeightPx = viewportHeightPx,
+            contentHeightPx = contentHeightPx,
+        )
+        return when {
+            deltaPx > 0f -> state.scrollOffsetPx > 0f
+            deltaPx < 0f -> state.scrollOffsetPx < state.maxScrollOffsetPx
+            else -> false
+        }
+    }
+
     fun scrollTo(
         state: PixelListState,
         targetOffsetPx: Float,
