@@ -12,7 +12,7 @@ class PixelBitmapFont(
     val glyphHeight: Int = 7,
     private val letterSpacing: Int = 1,
     private val lineSpacing: Int = 2,
-) {
+) : PixelTextRasterizer {
     private val glyphStyle = GlyphStyle(
         cellHeight = glyphHeight,
         narrowAdvanceWidth = glyphWidth,
@@ -43,22 +43,22 @@ class PixelBitmapFont(
     val lineHeight: Int
         get() = glyphHeight + lineSpacing
 
-    fun measureText(text: String): Int {
+    override fun measureText(text: String): Int {
         val lines = text.lines()
         return lines.maxOfOrNull { line -> engine.measureText(line, glyphStyle) } ?: 0
     }
 
-    fun measureHeight(text: String): Int {
+    override fun measureHeight(text: String): Int {
         val lineCount = text.lines().size.coerceAtLeast(1)
         return (lineCount * glyphHeight) + ((lineCount - 1) * lineSpacing)
     }
 
-    fun drawText(
+    override fun drawText(
         buffer: PixelBuffer,
         text: String,
         x: Int,
         y: Int,
-        value: Byte = PixelTone.ON.value,
+        value: Byte,
     ) {
         var cursorY = y
         text.lines().forEach { line ->
