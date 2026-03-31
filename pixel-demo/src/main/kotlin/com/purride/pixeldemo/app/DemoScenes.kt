@@ -3,17 +3,11 @@ package com.purride.pixeldemo.app
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.PixelTheme
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
-import com.purride.pixelcore.PixelStyledTextRasterizer
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelcore.GlyphStyle
-import com.purride.pixelcore.PixelFontEngine
-import com.purride.pixelcore.PixelFontFamily
-import com.purride.pixelcore.PixelFontWeight
 import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelButton
 import com.purride.pixelui.PixelBox
@@ -52,77 +46,63 @@ object DemoScenes {
     data class DemoScene(
         val initialProfile: ScreenProfile,
         val initialPalette: PixelPalette,
-        val initialTextRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+        val initialTextRasterizer: PixelTextRasterizer,
         val content: () -> com.purride.pixelui.PixelNode,
     )
 
     fun create(
         sceneKind: DemoSceneKind,
         hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         return when (sceneKind) {
-            DemoSceneKind.TEXT -> textScene()
-            DemoSceneKind.PALETTE -> paletteScene(hostView)
-            DemoSceneKind.TEXT_FIELD -> textFieldScene(hostView)
-            DemoSceneKind.SINGLE_CHILD_SCROLL -> singleChildScrollScene(hostView)
-            DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
-            DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
-            DemoSceneKind.LIST -> listScene(hostView)
-            DemoSceneKind.FORM_AND_LIST -> formAndListScene(hostView)
-            DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(hostView)
-            DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView)
+            DemoSceneKind.TEXT -> textScene(textRasterizers)
+            DemoSceneKind.PALETTE -> paletteScene(hostView, textRasterizers)
+            DemoSceneKind.TEXT_FIELD -> textFieldScene(hostView, textRasterizers)
+            DemoSceneKind.SINGLE_CHILD_SCROLL -> singleChildScrollScene(hostView, textRasterizers)
+            DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView, textRasterizers)
+            DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView, textRasterizers)
+            DemoSceneKind.LIST -> listScene(hostView, textRasterizers)
+            DemoSceneKind.FORM_AND_LIST -> formAndListScene(hostView, textRasterizers)
+            DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(hostView, textRasterizers)
+            DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView, textRasterizers)
         }
     }
 
-    private fun textScene(): DemoScene {
+    private fun textScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val compactRasterizer = PixelBitmapFont(
             glyphWidth = 4,
             glyphHeight = 5,
             letterSpacing = 1,
             lineSpacing = 1,
         )
-        val wideRasterizer = PixelStyledTextRasterizer(
-            engine = PixelFontEngine(
-                glyphProvider = builtInDemoGlyphProvider(),
-            ),
-            style = GlyphStyle(
-                cellHeight = 7,
-                narrowAdvanceWidth = 6,
-                wideAdvanceWidth = 6,
-                oversampleFactor = 1,
-                narrowMinimumSampleRatio = 1f,
-                wideMinimumSampleRatio = 1f,
-                narrowTextSizeRatio = 1f,
-                wideTextSizeRatio = 1f,
-                narrowFontWeight = PixelFontWeight.NORMAL,
-                wideFontWeight = PixelFontWeight.NORMAL,
-                narrowFontFamily = PixelFontFamily.MONOSPACE,
-                wideFontFamily = PixelFontFamily.MONOSPACE,
-                baseLetterSpacing = 2,
-            ),
-            lineSpacing = 1,
-        )
+        val wideRasterizer = textRasterizers.emphasis
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.terminalGreen(),
-            initialTextRasterizer = compactRasterizer,
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
                     spacing = 4,
                     children = listOf(
-                        sectionTitle("PIXEL UI DEMO", textRasterizer = wideRasterizer),
-                        infoCard("TEXT", "COMPACT RASTERIZER"),
-                        infoCard("STYLE", "NODE OVERRIDE", valueRasterizer = wideRasterizer),
-                        infoCard("LAYOUT", "COLUMN ROW BOX SURFACE"),
-                        infoCard("GOAL", "FRAMEWORK FIRST APP LATER"),
+                        sectionTitle("文本与字体", textRasterizer = wideRasterizer),
+                        infoCard("中文", "像素中文已经接通"),
+                        infoCard("混排", "HELLO 你好 PIXEL UI", valueRasterizer = wideRasterizer),
+                        infoCard("紧凑", "COMPACT 4X5", valueRasterizer = compactRasterizer),
+                        infoCard("复用", "复用 Launcher 的 Fusion Pixel 字形包"),
                     ),
                 )
             },
         )
     }
 
-    private fun paletteScene(hostView: PixelHostView): DemoScene {
+    private fun paletteScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val themes = PixelTheme.entries
         val shapes = PixelShape.entries
         var currentThemeIndex = 0
@@ -136,6 +116,7 @@ object DemoScenes {
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(themes[currentThemeIndex]),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -176,7 +157,10 @@ object DemoScenes {
         )
     }
 
-    private fun textFieldScene(hostView: PixelHostView): DemoScene {
+    private fun textFieldScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val controller = PixelTextFieldController()
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
@@ -184,6 +168,7 @@ object DemoScenes {
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -225,7 +210,10 @@ object DemoScenes {
         )
     }
 
-    private fun singleChildScrollScene(hostView: PixelHostView): DemoScene {
+    private fun singleChildScrollScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val scrollController = PixelListController()
         val scrollState = scrollController.create()
         val textController = PixelTextFieldController()
@@ -236,6 +224,7 @@ object DemoScenes {
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelSingleChildScrollView(
                     state = scrollState,
@@ -296,7 +285,10 @@ object DemoScenes {
         )
     }
 
-    private fun horizontalPagerScene(hostView: PixelHostView): DemoScene {
+    private fun horizontalPagerScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val controller = PixelPagerController()
         val state = controller.create(
             pageCount = 3,
@@ -306,6 +298,7 @@ object DemoScenes {
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelPager(
                     axis = PixelAxis.HORIZONTAL,
@@ -351,7 +344,10 @@ object DemoScenes {
         )
     }
 
-    private fun verticalPagerScene(hostView: PixelHostView): DemoScene {
+    private fun verticalPagerScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val controller = PixelPagerController()
         val state = controller.create(
             pageCount = 3,
@@ -365,6 +361,7 @@ object DemoScenes {
                 dotSizePx = 8,
             ),
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelPager(
                     axis = PixelAxis.VERTICAL,
@@ -410,13 +407,17 @@ object DemoScenes {
         )
     }
 
-    private fun layoutAndClickScene(hostView: PixelHostView): DemoScene {
+    private fun layoutAndClickScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         var count = 0
         var accentMode = false
 
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -541,7 +542,10 @@ object DemoScenes {
         )
     }
 
-    private fun listScene(hostView: PixelHostView): DemoScene {
+    private fun listScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val controller = PixelListController()
         val state = controller.create()
         var tapCount = 0
@@ -553,6 +557,7 @@ object DemoScenes {
                 dotSizePx = 8,
             ),
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -617,7 +622,10 @@ object DemoScenes {
         )
     }
 
-    private fun formAndListScene(hostView: PixelHostView): DemoScene {
+    private fun formAndListScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val textController = PixelTextFieldController()
         val nameState = textController.create(initialText = "PIXEL")
         val cityState = textController.create(initialText = "SHANGHAI")
@@ -628,6 +636,7 @@ object DemoScenes {
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelColumn(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -707,7 +716,10 @@ object DemoScenes {
         )
     }
 
-    private fun pagerAndListScene(hostView: PixelHostView): DemoScene {
+    private fun pagerAndListScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
         val pagerController = PixelPagerController()
         val pagerState = pagerController.create(
             pageCount = 2,
@@ -725,6 +737,7 @@ object DemoScenes {
                 dotSizePx = 8,
             ),
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            initialTextRasterizer = textRasterizers.default,
             content = {
                 PixelPager(
                     axis = PixelAxis.VERTICAL,
@@ -935,69 +948,5 @@ object DemoScenes {
             dotSizePx = 8,
             pixelShape = pixelShape,
         )
-    }
-
-    /**
-     * Demo 内置字形源。
-     *
-     * 这里直接复用 `PixelBitmapFont` 的默认字模宽高，让文本 demo 可以验证
-     * “同页混用不同文本栅格器”，而不需要额外引入资产文件。
-     */
-    private fun builtInDemoGlyphProvider(): com.purride.pixelcore.GlyphProvider {
-        return object : com.purride.pixelcore.GlyphProvider {
-            private val backingFont = PixelBitmapFont.Default
-            private val tempBuffer = PixelBuffer(width = 5, height = 7)
-
-            override fun rasterizeGlyph(
-                character: Char,
-                style: GlyphStyle,
-            ): com.purride.pixelcore.GlyphBitmap {
-                tempBuffer.clear()
-                backingFont.drawText(
-                    buffer = tempBuffer,
-                    text = character.toString(),
-                    x = 0,
-                    y = 0,
-                    value = PixelTone.ON.value,
-                )
-                val pixels = tempBuffer.pixels.copyOf()
-                return com.purride.pixelcore.GlyphBitmap(
-                    width = tempBuffer.width,
-                    height = tempBuffer.height,
-                    pixels = pixels,
-                    metrics = com.purride.pixelcore.GlyphMetrics(
-                        advanceWidth = style.narrowAdvanceWidth,
-                        baselineOffset = tempBuffer.height - 1,
-                        isWideGlyph = false,
-                        inkLeft = firstInkColumn(pixels, tempBuffer.width, tempBuffer.height),
-                        inkRight = lastInkColumn(pixels, tempBuffer.width, tempBuffer.height),
-                    ),
-                )
-            }
-        }
-    }
-
-    private fun firstInkColumn(pixels: ByteArray, width: Int, height: Int): Int {
-        var left = width
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                if (pixels[(y * width) + x] != PixelTone.OFF.value && x < left) {
-                    left = x
-                }
-            }
-        }
-        return if (left == width) width else left
-    }
-
-    private fun lastInkColumn(pixels: ByteArray, width: Int, height: Int): Int {
-        var right = -1
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                if (pixels[(y * width) + x] != PixelTone.OFF.value && x > right) {
-                    right = x
-                }
-            }
-        }
-        return right
     }
 }

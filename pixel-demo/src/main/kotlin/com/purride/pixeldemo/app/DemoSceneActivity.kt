@@ -90,7 +90,8 @@ class DemoSceneActivity : AppCompatActivity() {
 
             override fun dispatchSystemAction(action: PixelSystemAction) = Unit
         }
-        val scene = DemoScenes.create(sceneKind, hostView)
+        val textRasterizers = DemoTextRasterizers(this)
+        val scene = DemoScenes.create(sceneKind, hostView, textRasterizers)
         hostView.screenProfile = scene.initialProfile
         hostView.setPalette(scene.initialPalette)
         hostView.textRasterizer = scene.initialTextRasterizer

@@ -33,6 +33,17 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    sourceSets {
+        getByName("main") {
+            /**
+             * Demo 直接复用 Launcher 已经生成好的 glyphpack 资产。
+             *
+             * 这样可以先验证框架对真实中文字形的承载能力，而不是在 demo 里维护一份重复资源。
+             */
+            assets.srcDir("../app/src/main/assets")
+        }
+    }
 }
 
 dependencies {
