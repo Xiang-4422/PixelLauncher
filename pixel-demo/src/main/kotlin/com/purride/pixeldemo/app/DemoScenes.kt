@@ -43,8 +43,8 @@ object DemoScenes {
         return when (sceneKind) {
             DemoSceneKind.TEXT -> textScene()
             DemoSceneKind.PALETTE -> paletteScene(hostView)
-            DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene()
-            DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene()
+            DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView)
+            DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView)
         }
     }
@@ -114,7 +114,7 @@ object DemoScenes {
         )
     }
 
-    private fun horizontalPagerScene(): DemoScene {
+    private fun horizontalPagerScene(hostView: PixelHostView): DemoScene {
         val controller = PixelPagerController()
         val state = controller.create(
             pageCount = 3,
@@ -131,16 +131,45 @@ object DemoScenes {
                     controller = controller,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                     pages = listOf(
-                        pagerPage("H PAGE 1", PixelTone.ON),
-                        pagerPage("H PAGE 2", PixelTone.ACCENT),
-                        pagerPage("H PAGE 3", PixelTone.ON),
+                        pagerPage(
+                            title = "H PAGE 1",
+                            tone = PixelTone.ON,
+                            onPrimaryAction = {
+                                controller.syncToPage(state, 1)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "GO 2",
+                        ),
+                        pagerPage(
+                            title = "H PAGE 2",
+                            tone = PixelTone.ACCENT,
+                            onPrimaryAction = {
+                                controller.syncToPage(state, 2)
+                                hostView.requestRender()
+                            },
+                            onSecondaryAction = {
+                                controller.syncToPage(state, 0)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "GO 3",
+                            secondaryActionLabel = "BACK 1",
+                        ),
+                        pagerPage(
+                            title = "H PAGE 3",
+                            tone = PixelTone.ON,
+                            onPrimaryAction = {
+                                controller.syncToPage(state, 0)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "BACK 1",
+                        ),
                     ),
                 )
             },
         )
     }
 
-    private fun verticalPagerScene(): DemoScene {
+    private fun verticalPagerScene(hostView: PixelHostView): DemoScene {
         val controller = PixelPagerController()
         val state = controller.create(
             pageCount = 3,
@@ -161,9 +190,38 @@ object DemoScenes {
                     controller = controller,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                     pages = listOf(
-                        pagerPage("V PAGE 1", PixelTone.ON),
-                        pagerPage("V PAGE 2", PixelTone.ACCENT),
-                        pagerPage("V PAGE 3", PixelTone.ON),
+                        pagerPage(
+                            title = "V PAGE 1",
+                            tone = PixelTone.ON,
+                            onPrimaryAction = {
+                                controller.syncToPage(state, 1)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "GO 2",
+                        ),
+                        pagerPage(
+                            title = "V PAGE 2",
+                            tone = PixelTone.ACCENT,
+                            onPrimaryAction = {
+                                controller.syncToPage(state, 2)
+                                hostView.requestRender()
+                            },
+                            onSecondaryAction = {
+                                controller.syncToPage(state, 0)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "GO 3",
+                            secondaryActionLabel = "BACK 1",
+                        ),
+                        pagerPage(
+                            title = "V PAGE 3",
+                            tone = PixelTone.ON,
+                            onPrimaryAction = {
+                                controller.syncToPage(state, 0)
+                                hostView.requestRender()
+                            },
+                            primaryActionLabel = "BACK 1",
+                        ),
                     ),
                 )
             },
@@ -281,16 +339,39 @@ object DemoScenes {
         ),
     )
 
-    private fun pagerPage(text: String, tone: PixelTone) = PixelSurface(
+    private fun pagerPage(
+        title: String,
+        tone: PixelTone,
+        onPrimaryAction: () -> Unit,
+        primaryActionLabel: String,
+        onSecondaryAction: (() -> Unit)? = null,
+        secondaryActionLabel: String? = null,
+    ) = PixelSurface(
         modifier = PixelModifier.Empty.fillMaxSize(),
         fillTone = PixelTone.OFF,
         borderTone = tone,
-        child = PixelBox(
-            modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = PixelAlignment.CENTER,
-            children = listOf(
-                PixelText(text, tone = tone),
-            ),
+        child = PixelColumn(
+            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+            spacing = 4,
+            children = buildList {
+                add(
+                    PixelBox(
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(20),
+                        alignment = PixelAlignment.CENTER,
+                        children = listOf(
+                            PixelText(title, tone = tone),
+                        ),
+                    ),
+                )
+                add(
+                    demoButton(primaryActionLabel, onPrimaryAction),
+                )
+                if (onSecondaryAction != null && secondaryActionLabel != null) {
+                    add(
+                        demoButton(secondaryActionLabel, onSecondaryAction),
+                    )
+                }
+            },
         ),
     )
 
