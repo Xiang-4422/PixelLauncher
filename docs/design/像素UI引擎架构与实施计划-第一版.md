@@ -413,10 +413,11 @@ fun PixelPager(
 | --- | --- | --- |
 | 已完成 | `:app` 恢复独立实现 | Launcher 不再依赖 `:pixel-core`，可独立构建运行 |
 | 已完成 | `:pixel-core` / `:pixel-ui` 模块入口存在 | 仓库已经具备独立框架模块入口 |
-| 进行中 | 框架边界冻结 | `core/ui/demo/app` 的职责边界已确定，本文件即当前执行口径 |
-| 未开始 | `:pixel-core` 轴向原语重构 | 还未把旧分页实现拆成通用轴向原语 |
-| 未开始 | `:pixel-ui` 最小分页 runtime | 还未形成真正可运行的 `PixelPager` |
-| 未开始 | `:pixel-demo` 宿主 | 还未建立独立 demo 验证模块 |
+| 已完成 | 框架边界冻结 | `core/ui/demo/app` 的职责边界已确定，本文档是当前执行口径 |
+| 已完成 | `:pixel-core` 轴向原语重构 | `core` 已经落下 `PixelAxis / AxisMotionController / AxisBufferComposer` |
+| 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
+| 已完成 | `:pixel-demo` 宿主 | Demo 已可编译、安装、运行，并覆盖文本、调色板、横纵分页、点击反馈 |
+| 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局、命中、分页子页面交互和对应测试 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
