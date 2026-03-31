@@ -27,6 +27,7 @@ import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelRenderRuntime
 import com.purride.pixelui.internal.PixelListTarget
+import com.purride.pixelui.internal.PixelTextInputTarget
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -74,6 +75,9 @@ class PixelHostView @JvmOverloads constructor(
     private var activePagerTarget: PixelPagerTarget? = null
     private var candidateListTarget: PixelListTarget? = null
     private var activeListTarget: PixelListTarget? = null
+    private var focusedTextInputTarget: PixelTextInputTarget? = null
+
+    var hostBridge: PixelHostBridge? = null
 
     /**
      * 当前宿主使用的文本栅格器。
@@ -114,6 +118,29 @@ class PixelHostView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun updateFocusedTextInput(
+        text: String,
+        selectionStart: Int = text.length,
+        selectionEnd: Int = selectionStart,
+    ) {
+        val target = focusedTextInputTarget ?: return
+        target.controller.updateText(
+            state = target.state,
+            text = text,
+            selectionStart = selectionStart,
+            selectionEnd = selectionEnd,
+        )
+        invalidate()
+    }
+
+    fun clearFocusedTextInput() {
+        val target = focusedTextInputTarget ?: return
+        target.controller.blur(target.state)
+        focusedTextInputTarget = null
+        hostBridge?.hideTextInput()
+        invalidate()
+    }
+
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette) {
         this.screenProfile = screenProfile
         this.palette = palette
@@ -122,6 +149,7 @@ class PixelHostView @JvmOverloads constructor(
             clickTargets = emptyList(),
             pagerTargets = emptyList(),
             listTargets = emptyList(),
+            textInputTargets = emptyList(),
         )
         invalidate()
     }
@@ -183,6 +211,12 @@ class PixelHostView @JvmOverloads constructor(
                 candidateListTarget = lastRenderResult
                     ?.listTargets
                     ?.lastOrNull { target -> target.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                val textInputTarget = lastRenderResult
+                    ?.textInputTargets
+                    ?.lastOrNull { target -> target.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                if (textInputTarget == null && focusedTextInputTarget != null) {
+                    clearFocusedTextInput()
+                }
                 activePagerTarget = null
                 activeListTarget = null
                 return true
@@ -361,6 +395,11 @@ class PixelHostView @JvmOverloads constructor(
                 candidatePagerTarget = null
                 candidateListTarget = null
                 if (!touchMoved && logicalPoint != null) {
+                    resolveTextInputTarget(logicalPoint.first, logicalPoint.second)?.let { target ->
+                        focusTextInput(target)
+                        invalidate()
+                        return true
+                    }
                     resolveClickTarget(logicalPoint.first, logicalPoint.second)?.onClick?.invoke()
                     invalidate()
                 }
@@ -412,6 +451,29 @@ class PixelHostView @JvmOverloads constructor(
         return lastRenderResult
             ?.clickTargets
             ?.lastOrNull { target -> target.bounds.contains(logicalX, logicalY) }
+    }
+
+    private fun resolveTextInputTarget(logicalX: Int, logicalY: Int): PixelTextInputTarget? {
+        return lastRenderResult
+            ?.textInputTargets
+            ?.lastOrNull { target -> target.bounds.contains(logicalX, logicalY) }
+    }
+
+    private fun focusTextInput(target: PixelTextInputTarget) {
+        if (focusedTextInputTarget?.state !== target.state) {
+            focusedTextInputTarget?.let { previous ->
+                previous.controller.blur(previous.state)
+            }
+        }
+        target.controller.focus(target.state)
+        focusedTextInputTarget = target
+        hostBridge?.showTextInput(
+            PixelTextInputRequest(
+                text = target.state.text,
+                selectionStart = target.state.selectionStart,
+                selectionEnd = target.state.selectionEnd,
+            ),
+        )
     }
 
     private fun pagerViewportSize(target: PixelPagerTarget): Int {
