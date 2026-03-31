@@ -3,8 +3,9 @@ package com.purride.pixelcore
 /**
  * 最小可用位图字体。
  *
- * 这一版先提供稳定、零资产依赖的英文/数字位图字体，用来支撑 `pixel-ui`
- * 的文本组件与 demo 页面。更完整的字形包体系可以在后续阶段继续增强。
+ * 这一层继续给 `pixel-ui` 和 `pixel-demo` 提供零资产依赖的默认文本能力，
+ * 但内部已经改为复用 `PixelFontEngine`。这样后续无论切到真实字形包还是保留内置字体，
+ * 上层都走同一条文本测量与绘制链路。
  */
 class PixelBitmapFont(
     val glyphWidth: Int = 5,
@@ -12,12 +13,39 @@ class PixelBitmapFont(
     private val letterSpacing: Int = 1,
     private val lineSpacing: Int = 2,
 ) {
+    private val glyphStyle = GlyphStyle(
+        cellHeight = glyphHeight,
+        narrowAdvanceWidth = glyphWidth,
+        wideAdvanceWidth = glyphWidth,
+        oversampleFactor = 1,
+        narrowMinimumSampleRatio = 1f,
+        wideMinimumSampleRatio = 1f,
+        narrowTextSizeRatio = 1f,
+        wideTextSizeRatio = 1f,
+        narrowFontWeight = PixelFontWeight.NORMAL,
+        wideFontWeight = PixelFontWeight.NORMAL,
+        narrowFontFamily = PixelFontFamily.MONOSPACE,
+        wideFontFamily = PixelFontFamily.MONOSPACE,
+        baseLetterSpacing = letterSpacing,
+    )
+
+    private val engine = PixelFontEngine(
+        glyphProvider = CompositeGlyphProvider(
+            sources = listOf(
+                BuiltinBitmapGlyphSource(
+                    glyphWidth = glyphWidth,
+                    glyphHeight = glyphHeight,
+                ),
+            ),
+        ),
+    )
+
     val lineHeight: Int
         get() = glyphHeight + lineSpacing
 
     fun measureText(text: String): Int {
         val lines = text.lines()
-        return lines.maxOfOrNull { measureSingleLine(it) } ?: 0
+        return lines.maxOfOrNull { line -> engine.measureText(line, glyphStyle) } ?: 0
     }
 
     fun measureHeight(text: String): Int {
@@ -34,52 +62,17 @@ class PixelBitmapFont(
     ) {
         var cursorY = y
         text.lines().forEach { line ->
-            drawSingleLine(
+            engine.drawText(
                 buffer = buffer,
                 text = line,
-                x = x,
-                y = cursorY,
+                startX = x,
+                startY = cursorY,
+                maxWidth = Int.MAX_VALUE,
                 value = value,
+                style = glyphStyle,
             )
             cursorY += lineHeight
         }
-    }
-
-    private fun measureSingleLine(text: String): Int {
-        if (text.isEmpty()) {
-            return 0
-        }
-        return (text.length * glyphWidth) + ((text.length - 1) * letterSpacing)
-    }
-
-    private fun drawSingleLine(
-        buffer: PixelBuffer,
-        text: String,
-        x: Int,
-        y: Int,
-        value: Byte,
-    ) {
-        var cursorX = x
-        text.forEach { character ->
-            val glyphRows = glyphFor(character)
-            glyphRows.forEachIndexed { rowIndex, row ->
-                row.forEachIndexed { columnIndex, pixel ->
-                    if (pixel == '1') {
-                        buffer.setPixel(cursorX + columnIndex, y + rowIndex, value)
-                    }
-                }
-            }
-            cursorX += glyphWidth + letterSpacing
-        }
-    }
-
-    private fun glyphFor(character: Char): List<String> {
-        val normalizedCharacter = when {
-            character == ' ' -> ' '
-            character.isLowerCase() -> character.uppercaseChar()
-            else -> character
-        }
-        return GLYPHS[normalizedCharacter] ?: GLYPHS.getValue('?')
     }
 
     companion object {
@@ -140,5 +133,63 @@ class PixelBitmapFont(
             row6: String,
             row7: String,
         ): List<String> = listOf(row1, row2, row3, row4, row5, row6, row7)
+    }
+
+    /**
+     * 内置位图字形源。
+     *
+     * 这一层把原来硬编码在 `PixelBitmapFont` 里的 5x7 字模转成 `GlyphBitmap`，
+     * 这样 `pixel-ui` 默认文本链路也能走 `PixelFontEngine` 的测量与绘制逻辑。
+     */
+    private class BuiltinBitmapGlyphSource(
+        private val glyphWidth: Int,
+        private val glyphHeight: Int,
+    ) : GlyphSource {
+
+        private val glyphCache = mutableMapOf<Char, GlyphBitmap>()
+
+        override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
+            val normalizedCharacter = when {
+                character == ' ' -> ' '
+                character.isLowerCase() -> character.uppercaseChar()
+                else -> character
+            }
+            return glyphCache.getOrPut(normalizedCharacter) {
+                val rows = GLYPHS[normalizedCharacter] ?: GLYPHS.getValue('?')
+                val pixels = ByteArray(glyphWidth * glyphHeight)
+                var inkLeft = glyphWidth
+                var inkRight = -1
+                rows.forEachIndexed { rowIndex, row ->
+                    row.forEachIndexed { columnIndex, pixel ->
+                        if (pixel == '1') {
+                            pixels[(rowIndex * glyphWidth) + columnIndex] = 1
+                            if (columnIndex < inkLeft) {
+                                inkLeft = columnIndex
+                            }
+                            if (columnIndex > inkRight) {
+                                inkRight = columnIndex
+                            }
+                        }
+                    }
+                }
+                GlyphBitmap(
+                    width = glyphWidth,
+                    height = glyphHeight,
+                    pixels = pixels,
+                    metrics = GlyphMetrics(
+                        advanceWidth = style.narrowAdvanceWidth,
+                        baselineOffset = glyphHeight - 1,
+                        isWideGlyph = false,
+                        requiresVisualGapProtection = false,
+                        inkLeft = inkLeft,
+                        inkRight = inkRight,
+                    ),
+                )
+            }
+        }
+
+        override fun clearCache() {
+            glyphCache.clear()
+        }
     }
 }
