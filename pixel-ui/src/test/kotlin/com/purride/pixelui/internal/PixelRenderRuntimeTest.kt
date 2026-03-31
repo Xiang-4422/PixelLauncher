@@ -1,6 +1,8 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
@@ -143,6 +145,57 @@ class PixelRenderRuntimeTest {
 
         val adjacentTarget = result.clickTargets.single()
         assertTrue(adjacentTarget.bounds.contains(12, 2))
+    }
+
+    @Test
+    fun textNodeCanOverrideRuntimeTextRasterizer() {
+        val customRasterizer = object : PixelTextRasterizer {
+            override fun measureText(text: String): Int = 3
+
+            override fun measureHeight(text: String): Int = 4
+
+            override fun drawText(
+                buffer: PixelBuffer,
+                text: String,
+                x: Int,
+                y: Int,
+                value: Byte,
+            ) {
+                buffer.fillRect(
+                    left = x,
+                    top = y,
+                    rectWidth = 3,
+                    rectHeight = 4,
+                    value = value,
+                )
+            }
+        }
+
+        val result = runtime.render(
+            root = PixelSurface(
+                modifier = PixelModifier.Empty.size(10, 10),
+                padding = 0,
+                alignment = PixelAlignment.TOP_START,
+                borderTone = null,
+                fillTone = PixelTone.OFF,
+                child = PixelText(
+                    text = "WIDE",
+                    textRasterizer = customRasterizer,
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        val pixels = collectOnPixels(result)
+        val minX = pixels.minOf { it.first }
+        val maxX = pixels.maxOf { it.first }
+        val minY = pixels.minOf { it.second }
+        val maxY = pixels.maxOf { it.second }
+        assertEquals(0, minX)
+        assertEquals(2, maxX)
+        assertEquals(0, minY)
+        assertEquals(3, maxY)
     }
 
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {

@@ -165,8 +165,8 @@ internal class PixelRenderRuntime(
 
         val contentSize = when (node) {
             is PixelTextNode -> PixelSize(
-                width = textRasterizer.measureText(node.text),
-                height = textRasterizer.measureHeight(node.text),
+                width = node.resolveTextRasterizer().measureText(node.text),
+                height = node.resolveTextRasterizer().measureHeight(node.text),
             )
 
             is PixelSurfaceNode -> {
@@ -314,13 +314,17 @@ internal class PixelRenderRuntime(
         bounds: PixelRect,
         buffer: PixelBuffer,
     ) {
-        textRasterizer.drawText(
+        node.resolveTextRasterizer().drawText(
             buffer = buffer,
             text = node.text,
             x = bounds.left,
             y = bounds.top,
             value = node.tone.value,
         )
+    }
+
+    private fun PixelTextNode.resolveTextRasterizer(): PixelTextRasterizer {
+        return textRasterizer ?: this@PixelRenderRuntime.textRasterizer
     }
 
     private fun renderSurface(
