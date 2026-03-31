@@ -30,6 +30,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.purride.pixelcore.PixelFrameView
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
@@ -87,7 +88,6 @@ import com.purride.pixellauncherv2.render.IdleFluidState
 import com.purride.pixellauncherv2.render.IdleSimulationProfile
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.ChargeIdleEffectRegistry
-import com.purride.pixellauncherv2.render.PixelFrameView
 import com.purride.pixellauncherv2.render.PixelGlDisplayView
 import com.purride.pixellauncherv2.render.PixelDisplayView
 import com.purride.pixellauncherv2.render.PixelFontEngine
