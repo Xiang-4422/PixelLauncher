@@ -15,6 +15,7 @@ import com.purride.pixelcore.PixelFontEngine
 import com.purride.pixelcore.PixelFontFamily
 import com.purride.pixelcore.PixelFontWeight
 import com.purride.pixelui.PixelAlignment
+import com.purride.pixelui.PixelButton
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelHostView
@@ -24,7 +25,6 @@ import com.purride.pixelui.PixelRow
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
 import com.purride.pixelui.PixelTextStyle
-import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
 import com.purride.pixelui.height
@@ -129,16 +129,24 @@ object DemoScenes {
                         sectionTitle("PALETTE AND SHAPE"),
                         infoCard("THEME", themes[currentThemeIndex].name),
                         infoCard("SHAPE", shapes[currentShapeIndex].name),
-                        demoButton("NEXT THEME") {
+                        PixelButton(
+                            text = "NEXT THEME",
+                            onClick = {
                             currentThemeIndex = (currentThemeIndex + 1) % themes.size
                             applyHostAppearance()
                             hostView.requestRender()
-                        },
-                        demoButton("NEXT SHAPE") {
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                        PixelButton(
+                            text = "NEXT SHAPE",
+                            onClick = {
                             currentShapeIndex = (currentShapeIndex + 1) % shapes.size
                             applyHostAppearance()
                             hostView.requestRender()
-                        },
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
                         PixelRow(
                             spacing = 4,
                             children = listOf(
@@ -281,14 +289,22 @@ object DemoScenes {
                     children = listOf(
                         sectionTitle("LAYOUT AND CLICK"),
                         infoCard("COUNTER", count.toString(), accent = accentMode),
-                        demoButton("INCREASE") {
+                        PixelButton(
+                            text = "INCREASE",
+                            onClick = {
                             count += 1
                             hostView.requestRender()
-                        },
-                        demoButton("TOGGLE ACCENT") {
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                        PixelButton(
+                            text = "TOGGLE ACCENT",
+                            onClick = {
                             accentMode = !accentMode
                             hostView.requestRender()
-                        },
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
                         PixelRow(
                             spacing = 4,
                             children = listOf(
@@ -345,25 +361,6 @@ object DemoScenes {
                         textRasterizer = valueRasterizer,
                     ),
                 ),
-            ),
-        ),
-    )
-
-    private fun demoButton(
-        text: String,
-        onClick: () -> Unit,
-    ) = PixelSurface(
-        modifier = PixelModifier.Empty
-            .fillMaxWidth()
-            .height(14)
-            .clickable(onClick),
-        fillTone = PixelTone.OFF,
-        borderTone = PixelTone.ON,
-        child = PixelBox(
-            modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = PixelAlignment.CENTER,
-            children = listOf(
-                PixelText(text),
             ),
         ),
     )
@@ -429,11 +426,19 @@ object DemoScenes {
                     ),
                 )
                 add(
-                    demoButton(primaryActionLabel, onPrimaryAction),
+                    PixelButton(
+                        text = primaryActionLabel,
+                        onClick = onPrimaryAction,
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                    ),
                 )
                 if (onSecondaryAction != null && secondaryActionLabel != null) {
                     add(
-                        demoButton(secondaryActionLabel, onSecondaryAction),
+                        PixelButton(
+                            text = secondaryActionLabel,
+                            onClick = onSecondaryAction,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
                     )
                 }
             },
