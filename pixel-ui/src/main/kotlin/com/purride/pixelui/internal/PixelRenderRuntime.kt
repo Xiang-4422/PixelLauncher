@@ -21,6 +21,7 @@ import com.purride.pixelui.PixelRowNode
 import com.purride.pixelui.PixelSizeElement
 import com.purride.pixelui.PixelSurfaceNode
 import com.purride.pixelui.PixelTextNode
+import com.purride.pixelui.PixelTextFieldNode
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
@@ -125,11 +126,18 @@ internal data class PixelListTarget(
     val controller: com.purride.pixelui.state.PixelListController,
 )
 
+internal data class PixelTextInputTarget(
+    val bounds: PixelRect,
+    val state: com.purride.pixelui.state.PixelTextFieldState,
+    val controller: com.purride.pixelui.state.PixelTextFieldController,
+)
+
 internal data class PixelRenderResult(
     val buffer: PixelBuffer,
     val clickTargets: List<PixelClickTarget>,
     val pagerTargets: List<PixelPagerTarget>,
     val listTargets: List<PixelListTarget>,
+    val textInputTargets: List<PixelTextInputTarget>,
 )
 
 internal data class PixelModifierInfo(
@@ -157,6 +165,7 @@ internal class PixelRenderRuntime(
         val clickTargets = mutableListOf<PixelClickTarget>()
         val pagerTargets = mutableListOf<PixelPagerTarget>()
         val listTargets = mutableListOf<PixelListTarget>()
+        val textInputTargets = mutableListOf<PixelTextInputTarget>()
         val rootConstraints = PixelConstraints(
             maxWidth = logicalWidth,
             maxHeight = logicalHeight,
@@ -176,12 +185,14 @@ internal class PixelRenderRuntime(
             clickTargets = clickTargets,
             pagerTargets = pagerTargets,
             listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
         return PixelRenderResult(
             buffer = buffer,
             clickTargets = clickTargets,
             pagerTargets = pagerTargets,
             listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
     }
 
@@ -244,6 +255,17 @@ internal class PixelRenderRuntime(
                 height = innerConstraints.maxHeight,
             )
 
+            is PixelTextFieldNode -> {
+                val textRasterizer = node.resolveTextRasterizer()
+                val displayText = node.state.text.ifEmpty { node.placeholder.ifEmpty { " " } }
+                val textWidth = textRasterizer.measureText(displayText)
+                val textHeight = textRasterizer.measureHeight(displayText)
+                PixelSize(
+                    width = textWidth + (node.style.padding * 2) + if (node.state.isFocused) 2 else 0,
+                    height = textHeight + (node.style.padding * 2),
+                )
+            }
+
             is CustomDraw -> PixelSize(
                 width = innerConstraints.maxWidth,
                 height = innerConstraints.maxHeight,
@@ -273,6 +295,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         val modifierInfo = modifierInfo(node.modifier)
         modifierInfo.onClick?.let { onClick ->
@@ -306,6 +329,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
 
             is PixelBoxNode -> renderBox(
@@ -316,6 +340,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
 
             is PixelRowNode -> renderRow(
@@ -326,6 +351,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
 
             is PixelColumnNode -> renderColumn(
@@ -336,6 +362,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
 
             is PixelPagerNode -> renderPager(
@@ -345,6 +372,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
 
             is PixelListNode -> renderList(
@@ -354,6 +382,14 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
+            )
+
+            is PixelTextFieldNode -> renderTextField(
+                node = node,
+                bounds = paddedBounds,
+                buffer = buffer,
+                textInputTargets = textInputTargets,
             )
 
             is CustomDraw -> Unit
@@ -378,6 +414,10 @@ internal class PixelRenderRuntime(
         return style.textRasterizer ?: this@PixelRenderRuntime.textRasterizer
     }
 
+    private fun PixelTextFieldNode.resolveTextRasterizer(): PixelTextRasterizer {
+        return style.textStyle.textRasterizer ?: this@PixelRenderRuntime.textRasterizer
+    }
+
     private fun renderSurface(
         node: PixelSurfaceNode,
         bounds: PixelRect,
@@ -386,6 +426,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         buffer.fillRect(
             left = bounds.left,
@@ -431,6 +472,7 @@ internal class PixelRenderRuntime(
             clickTargets = clickTargets,
             pagerTargets = pagerTargets,
             listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
     }
 
@@ -442,6 +484,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         node.children.forEach { child ->
             val childSize = measure(child, constraints)
@@ -458,6 +501,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
         }
     }
@@ -470,6 +514,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         var cursorX = bounds.left
         node.children.forEach { child ->
@@ -491,6 +536,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
             cursorX += childSize.width + node.spacing
         }
@@ -504,6 +550,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         var cursorY = bounds.top
         node.children.forEach { child ->
@@ -525,6 +572,7 @@ internal class PixelRenderRuntime(
                 clickTargets = clickTargets,
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
+                textInputTargets = textInputTargets,
             )
             cursorY += childSize.height + node.spacing
         }
@@ -537,6 +585,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         node.controller.sync(
             state = node.state,
@@ -619,6 +668,13 @@ internal class PixelRenderRuntime(
             pageShiftY = anchorShiftY,
             into = listTargets,
         )
+        translateTextInputTargets(
+            targets = anchorPageResult.textInputTargets,
+            parentBounds = bounds,
+            pageShiftX = anchorShiftX,
+            pageShiftY = anchorShiftY,
+            into = textInputTargets,
+        )
         adjacentPageResult?.let { result ->
             translateTargets(
                 targets = result.clickTargets,
@@ -640,6 +696,13 @@ internal class PixelRenderRuntime(
                 pageShiftX = adjacentShiftX,
                 pageShiftY = adjacentShiftY,
                 into = listTargets,
+            )
+            translateTextInputTargets(
+                targets = result.textInputTargets,
+                parentBounds = bounds,
+                pageShiftX = adjacentShiftX,
+                pageShiftY = adjacentShiftY,
+                into = textInputTargets,
             )
         }
 
@@ -663,6 +726,7 @@ internal class PixelRenderRuntime(
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         val viewportWidth = bounds.width.coerceAtLeast(1)
         val viewportHeight = bounds.height.coerceAtLeast(1)
@@ -692,6 +756,7 @@ internal class PixelRenderRuntime(
         val listClickTargets = mutableListOf<PixelClickTarget>()
         val listPagerTargets = mutableListOf<PixelPagerTarget>()
         val nestedListTargets = mutableListOf<PixelListTarget>()
+        val listTextInputTargets = mutableListOf<PixelTextInputTarget>()
         var cursorY = -node.state.scrollOffsetPx.roundToInt()
 
         node.items.zip(itemSizes).forEach { (child, childSize) ->
@@ -713,6 +778,7 @@ internal class PixelRenderRuntime(
                     clickTargets = listClickTargets,
                     pagerTargets = listPagerTargets,
                     listTargets = nestedListTargets,
+                    textInputTargets = listTextInputTargets,
                 )
             }
             cursorY += childSize.height + node.spacing
@@ -739,11 +805,87 @@ internal class PixelRenderRuntime(
             pageShiftY = 0,
             into = listTargets,
         )
+        translateTextInputTargets(
+            targets = listTextInputTargets,
+            parentBounds = bounds,
+            pageShiftX = 0,
+            pageShiftY = 0,
+            into = textInputTargets,
+        )
 
         buffer.blit(
             source = listBuffer,
             destX = bounds.left,
             destY = bounds.top,
+        )
+    }
+
+    private fun renderTextField(
+        node: PixelTextFieldNode,
+        bounds: PixelRect,
+        buffer: PixelBuffer,
+        textInputTargets: MutableList<PixelTextInputTarget>,
+    ) {
+        val borderTone = if (node.state.isFocused) {
+            node.style.focusedBorderTone ?: node.style.borderTone
+        } else {
+            node.style.borderTone
+        }
+        buffer.fillRect(
+            left = bounds.left,
+            top = bounds.top,
+            rectWidth = bounds.width,
+            rectHeight = bounds.height,
+            value = node.style.fillTone.value,
+        )
+        borderTone?.let { tone ->
+            buffer.drawRect(
+                left = bounds.left,
+                top = bounds.top,
+                rectWidth = bounds.width,
+                rectHeight = bounds.height,
+                value = tone.value,
+            )
+        }
+
+        val displayText = node.state.text.ifEmpty { node.placeholder }
+        val displayStyle = if (node.state.text.isEmpty()) {
+            node.style.placeholderStyle
+        } else {
+            node.style.textStyle
+        }
+        val displayRasterizer = displayStyle.textRasterizer ?: textRasterizer
+        val textHeight = displayRasterizer.measureHeight(displayText.ifEmpty { " " })
+        val textY = bounds.top + ((bounds.height - textHeight).coerceAtLeast(0) / 2)
+        val textX = bounds.left + node.style.padding
+        if (displayText.isNotEmpty()) {
+            displayRasterizer.drawText(
+                buffer = buffer,
+                text = displayText,
+                x = textX,
+                y = textY,
+                value = displayStyle.tone.value,
+            )
+        }
+
+        if (node.state.isFocused) {
+            val visibleText = node.state.text.take(node.state.selectionStart.coerceAtMost(node.state.text.length))
+            val cursorX = textX + (node.style.textStyle.textRasterizer ?: textRasterizer).measureText(visibleText)
+            val cursorTop = bounds.top + node.style.padding
+            val cursorHeight = (bounds.height - (node.style.padding * 2)).coerceAtLeast(1)
+            buffer.fillRect(
+                left = cursorX.coerceAtMost(bounds.right - 1),
+                top = cursorTop,
+                rectWidth = 1,
+                rectHeight = cursorHeight,
+                value = node.style.cursorTone.value,
+            )
+        }
+
+        textInputTargets += PixelTextInputTarget(
+            bounds = bounds,
+            state = node.state,
+            controller = node.controller,
         )
     }
 
@@ -756,6 +898,7 @@ internal class PixelRenderRuntime(
         val pageClickTargets = mutableListOf<PixelClickTarget>()
         val pagePagerTargets = mutableListOf<PixelPagerTarget>()
         val pageListTargets = mutableListOf<PixelListTarget>()
+        val pageTextInputTargets = mutableListOf<PixelTextInputTarget>()
         renderNode(
             node = page,
             bounds = PixelRect(left = 0, top = 0, width = pageWidth, height = pageHeight),
@@ -764,12 +907,14 @@ internal class PixelRenderRuntime(
             clickTargets = pageClickTargets,
             pagerTargets = pagePagerTargets,
             listTargets = pageListTargets,
+            textInputTargets = pageTextInputTargets,
         )
         return PixelRenderResult(
             buffer = pageBuffer,
             clickTargets = pageClickTargets,
             pagerTargets = pagePagerTargets,
             listTargets = pageListTargets,
+            textInputTargets = pageTextInputTargets,
         )
     }
 
@@ -822,6 +967,26 @@ internal class PixelRenderRuntime(
         pageShiftX: Int,
         pageShiftY: Int,
         into: MutableList<PixelListTarget>,
+    ) {
+        targets.forEach { target ->
+            target.bounds
+                .translate(
+                    deltaX = parentBounds.left + pageShiftX,
+                    deltaY = parentBounds.top + pageShiftY,
+                )
+                .intersect(parentBounds)
+                ?.let { translatedBounds ->
+                    into += target.copy(bounds = translatedBounds)
+                }
+        }
+    }
+
+    private fun translateTextInputTargets(
+        targets: List<PixelTextInputTarget>,
+        parentBounds: PixelRect,
+        pageShiftX: Int,
+        pageShiftY: Int,
+        into: MutableList<PixelTextInputTarget>,
     ) {
         targets.forEach { target ->
             target.bounds

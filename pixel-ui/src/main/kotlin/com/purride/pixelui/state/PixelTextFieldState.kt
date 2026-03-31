@@ -3,11 +3,27 @@ package com.purride.pixelui.state
 /**
  * 通用文本输入状态。
  *
- * 第一版输入法仍通过宿主桥接，所以这里先保留文本和选区，
- * 后续再补光标闪烁、组合输入和选择手柄等更复杂状态。
+ * 第一版先只收敛最关键的几项：
+ * 1. 当前文本
+ * 2. 当前选区
+ * 3. 当前是否聚焦
+ *
+ * 暂时不做组合输入、选择手柄和光标闪烁节拍，这些后续可以继续扩展。
  */
-data class PixelTextFieldState(
-    val text: String = "",
-    val selectionStart: Int = text.length,
-    val selectionEnd: Int = selectionStart,
-)
+class PixelTextFieldState(
+    initialText: String = "",
+    selectionStart: Int = initialText.length,
+    selectionEnd: Int = selectionStart,
+) {
+    var text: String = initialText
+        internal set
+
+    var selectionStart: Int = selectionStart.coerceIn(0, initialText.length)
+        internal set
+
+    var selectionEnd: Int = selectionEnd.coerceIn(this.selectionStart, initialText.length)
+        internal set
+
+    var isFocused: Boolean = false
+        internal set
+}

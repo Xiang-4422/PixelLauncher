@@ -13,6 +13,8 @@ import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
+import com.purride.pixelui.PixelTextField
+import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
@@ -21,6 +23,7 @@ import com.purride.pixelui.padding
 import com.purride.pixelui.size
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
+import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelcore.PixelTone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -287,6 +290,66 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 1))
     }
 
+    @Test
+    fun textFieldExportsInputTargetAndDrawsPlaceholder() {
+        val controller = PixelTextFieldController()
+        val state = controller.create()
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                placeholder = "TYPE",
+                style = PixelTextFieldStyle.Default,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.textInputTargets.size)
+        assertTrue(result.textInputTargets.single().bounds.contains(5, 5))
+        assertTrue(
+            hasTone(
+                result = result,
+                tone = PixelTone.ACCENT,
+                minX = 2,
+                maxX = 18,
+                minY = 1,
+                maxY = 9,
+            ),
+        )
+    }
+
+    @Test
+    fun focusedTextFieldDrawsAccentCursor() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "HI")
+        controller.focus(state)
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                style = PixelTextFieldStyle.Default,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertTrue(
+            hasTone(
+                result = result,
+                tone = PixelTone.ACCENT,
+                minX = 1,
+                maxX = 19,
+                minY = 1,
+                maxY = 9,
+            ),
+        )
+    }
+
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until result.buffer.height) {
@@ -314,5 +377,23 @@ class PixelRenderRuntimeTest {
             }
         }
         return rows
+    }
+
+    private fun hasTone(
+        result: PixelRenderResult,
+        tone: PixelTone,
+        minX: Int,
+        maxX: Int,
+        minY: Int,
+        maxY: Int,
+    ): Boolean {
+        for (y in minY until maxY) {
+            for (x in minX until maxX) {
+                if (result.buffer.getPixel(x, y) == tone.value) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 }
