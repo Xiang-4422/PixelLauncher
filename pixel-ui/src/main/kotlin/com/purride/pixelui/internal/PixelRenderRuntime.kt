@@ -20,6 +20,7 @@ import com.purride.pixelui.PixelRowNode
 import com.purride.pixelui.PixelSizeElement
 import com.purride.pixelui.PixelSurfaceNode
 import com.purride.pixelui.PixelTextNode
+import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
@@ -319,12 +320,12 @@ internal class PixelRenderRuntime(
             text = node.text,
             x = bounds.left,
             y = bounds.top,
-            value = node.tone.value,
+            value = node.style.tone.value,
         )
     }
 
     private fun PixelTextNode.resolveTextRasterizer(): PixelTextRasterizer {
-        return textRasterizer ?: this@PixelRenderRuntime.textRasterizer
+        return style.textRasterizer ?: this@PixelRenderRuntime.textRasterizer
     }
 
     private fun renderSurface(
