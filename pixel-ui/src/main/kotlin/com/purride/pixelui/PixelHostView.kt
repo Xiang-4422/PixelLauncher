@@ -1,0 +1,331 @@
+package com.purride.pixelui
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.os.SystemClock
+import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.VelocityTracker
+import android.view.View
+import android.view.ViewConfiguration
+import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelFrameView
+import com.purride.pixelcore.PixelGridGeometryResolver
+import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelShape
+import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelui.internal.PixelClickTarget
+import com.purride.pixelui.internal.PixelPagerTarget
+import com.purride.pixelui.internal.PixelRenderResult
+import com.purride.pixelui.internal.PixelRenderRuntime
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+
+/**
+ * `pixel-ui` 的最小宿主 View。
+ *
+ * 第一版不做 retained tree 和复杂增量渲染，而是以“每帧重建组件树 + 轻量布局绘制”的方式
+ * 打通最小可运行链路，优先验证 API 与分层是否成立。
+ */
+class PixelHostView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+) : View(context, attrs), PixelFrameView {
+
+    override var interactionListener: PixelFrameView.InteractionListener? = null
+
+    var screenProfile: ScreenProfile = ScreenProfile(
+        logicalWidth = 96,
+        logicalHeight = 96,
+        dotSizePx = 8,
+    )
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    private val runtime = PixelRenderRuntime()
+    private var contentProvider: (() -> PixelNode)? = null
+    private var lastRenderResult: PixelRenderResult? = null
+    private var palette: PixelPalette = PixelPalette.terminalGreen()
+    private var pixelGapEnabled: Boolean = true
+    private var lastFrameUptimeMs: Long = 0L
+    private var velocityTracker: VelocityTracker? = null
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+    private var touchDownX = 0f
+    private var touchDownY = 0f
+    private var lastLogicalX = 0
+    private var lastLogicalY = 0
+    private var touchMoved = false
+    private var activePagerTarget: PixelPagerTarget? = null
+
+    private val onPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        isAntiAlias = false
+        isFilterBitmap = false
+    }
+    private val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        isAntiAlias = false
+        isFilterBitmap = false
+    }
+    private val offPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        isAntiAlias = false
+        isFilterBitmap = false
+    }
+    private val reusableDiamondPath = Path()
+
+    fun setContent(provider: () -> PixelNode) {
+        contentProvider = provider
+        invalidate()
+    }
+
+    fun requestRender() {
+        invalidate()
+    }
+
+    override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette) {
+        this.screenProfile = screenProfile
+        this.palette = palette
+        lastRenderResult = PixelRenderResult(
+            buffer = pixelBuffer,
+            clickTargets = emptyList(),
+            pagerTargets = emptyList(),
+        )
+        invalidate()
+    }
+
+    override fun setPalette(palette: PixelPalette) {
+        this.palette = palette
+        invalidate()
+    }
+
+    override fun setPixelGapEnabled(enabled: Boolean) {
+        pixelGapEnabled = enabled
+        invalidate()
+    }
+
+    override fun asView(): View = this
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        stepActivePagers()
+        val provider = contentProvider
+        val renderResult = if (provider != null) {
+            runtime.render(
+                root = provider(),
+                logicalWidth = screenProfile.logicalWidth,
+                logicalHeight = screenProfile.logicalHeight,
+            )
+        } else {
+            lastRenderResult
+        }
+
+        if (renderResult == null) {
+            canvas.drawColor(palette.backgroundColor)
+            return
+        }
+        lastRenderResult = renderResult
+        drawBuffer(canvas, renderResult.buffer)
+        if (renderResult.pagerTargets.any { target -> target.controller.isActive(target.state) }) {
+            postInvalidateOnAnimation()
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                velocityTracker?.recycle()
+                velocityTracker = VelocityTracker.obtain().apply { addMovement(event) }
+                touchDownX = event.x
+                touchDownY = event.y
+                touchMoved = false
+                val logicalPoint = mapTouchToLogical(event.x, event.y) ?: return true
+                lastLogicalX = logicalPoint.first
+                lastLogicalY = logicalPoint.second
+                activePagerTarget = lastRenderResult
+                    ?.pagerTargets
+                    ?.lastOrNull { target -> target.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                    ?.also { target ->
+                        target.controller.startDrag(target.state)
+                    }
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                velocityTracker?.addMovement(event)
+                val logicalPoint = mapTouchToLogical(event.x, event.y) ?: return true
+                if (abs(event.x - touchDownX) > touchSlop || abs(event.y - touchDownY) > touchSlop) {
+                    touchMoved = true
+                }
+                activePagerTarget?.let { target ->
+                    val deltaPx = when (target.axis) {
+                        PixelAxis.HORIZONTAL -> logicalPoint.first - lastLogicalX
+                        PixelAxis.VERTICAL -> logicalPoint.second - lastLogicalY
+                    }.toFloat()
+                    target.controller.dragBy(
+                        state = target.state,
+                        deltaPx = deltaPx,
+                        viewportSizePx = pagerViewportSize(target),
+                    )
+                    invalidate()
+                }
+                lastLogicalX = logicalPoint.first
+                lastLogicalY = logicalPoint.second
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+                velocityTracker?.addMovement(event)
+                velocityTracker?.computeCurrentVelocity(1000)
+                val logicalPoint = mapTouchToLogical(event.x, event.y)
+
+                activePagerTarget?.let { target ->
+                    val velocityPxPerSecond = rawVelocityToLogical(velocityTracker, target.axis)
+                    target.controller.endDrag(
+                        state = target.state,
+                        viewportSizePx = pagerViewportSize(target),
+                        velocityPxPerSecond = velocityPxPerSecond,
+                    )
+                    activePagerTarget = null
+                    velocityTracker?.recycle()
+                    velocityTracker = null
+                    invalidate()
+                    return true
+                }
+
+                if (!touchMoved && logicalPoint != null) {
+                    resolveClickTarget(logicalPoint.first, logicalPoint.second)?.onClick?.invoke()
+                    invalidate()
+                }
+                velocityTracker?.recycle()
+                velocityTracker = null
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                activePagerTarget = null
+                velocityTracker?.recycle()
+                velocityTracker = null
+                return true
+            }
+        }
+
+        return super.onTouchEvent(event)
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
+    private fun stepActivePagers() {
+        val now = SystemClock.uptimeMillis()
+        val deltaMs = if (lastFrameUptimeMs == 0L) {
+            16L
+        } else {
+            (now - lastFrameUptimeMs).coerceAtLeast(1L)
+        }
+        lastFrameUptimeMs = now
+        lastRenderResult?.pagerTargets?.forEach { target ->
+            target.controller.step(
+                state = target.state,
+                deltaMs = deltaMs,
+            )
+        }
+    }
+
+    private fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
+        return lastRenderResult
+            ?.clickTargets
+            ?.lastOrNull { target -> target.bounds.contains(logicalX, logicalY) }
+    }
+
+    private fun pagerViewportSize(target: PixelPagerTarget): Int {
+        return when (target.axis) {
+            PixelAxis.HORIZONTAL -> target.bounds.width
+            PixelAxis.VERTICAL -> target.bounds.height
+        }.coerceAtLeast(1)
+    }
+
+    private fun rawVelocityToLogical(velocityTracker: VelocityTracker?, axis: PixelAxis): Float {
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = width,
+            viewHeight = height,
+            profile = screenProfile,
+            pixelGapEnabled = pixelGapEnabled,
+        ) ?: return 0f
+        val rawVelocity = when (axis) {
+            PixelAxis.HORIZONTAL -> velocityTracker?.xVelocity ?: 0f
+            PixelAxis.VERTICAL -> velocityTracker?.yVelocity ?: 0f
+        }
+        return rawVelocity / geometry.cellSize.coerceAtLeast(1f)
+    }
+
+    private fun drawBuffer(canvas: Canvas, buffer: PixelBuffer) {
+        canvas.drawColor(palette.backgroundColor)
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = width,
+            viewHeight = height,
+            profile = screenProfile,
+            pixelGapEnabled = pixelGapEnabled,
+        ) ?: return
+
+        onPaint.color = palette.pixelOnColor
+        accentPaint.color = palette.accentColor
+        offPaint.color = palette.pixelOffColor
+
+        for (y in 0 until buffer.height) {
+            for (x in 0 until buffer.width) {
+                val left = geometry.originX + (x * geometry.cellSize) + geometry.dotInset
+                val top = geometry.originY + (y * geometry.cellSize) + geometry.dotInset
+                val right = left + geometry.dotSize
+                val bottom = top + geometry.dotSize
+                val paint = when (buffer.getPixel(x, y)) {
+                    PixelTone.ON.value -> onPaint
+                    PixelTone.ACCENT.value -> accentPaint
+                    else -> offPaint
+                }
+
+                when (screenProfile.pixelShape) {
+                    PixelShape.SQUARE -> canvas.drawRect(left, top, right, bottom, paint)
+                    PixelShape.CIRCLE -> {
+                        val centerX = (left + right) / 2f
+                        val centerY = (top + bottom) / 2f
+                        val radius = min(right - left, bottom - top) / 2f
+                        canvas.drawCircle(centerX, centerY, radius, paint)
+                    }
+
+                    PixelShape.DIAMOND -> {
+                        val centerX = (left + right) / 2f
+                        val centerY = (top + bottom) / 2f
+                        reusableDiamondPath.reset()
+                        reusableDiamondPath.moveTo(centerX, top)
+                        reusableDiamondPath.lineTo(left, centerY)
+                        reusableDiamondPath.lineTo(centerX, bottom)
+                        reusableDiamondPath.lineTo(right, centerY)
+                        reusableDiamondPath.close()
+                        canvas.drawPath(reusableDiamondPath, paint)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
+        return PixelGridGeometryResolver.mapSurfaceToLogical(
+            touchX = touchX,
+            touchY = touchY,
+            viewWidth = width,
+            viewHeight = height,
+            profile = screenProfile,
+            pixelGapEnabled = pixelGapEnabled,
+        )
+    }
+}
