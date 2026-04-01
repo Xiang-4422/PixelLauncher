@@ -547,6 +547,7 @@ setContentView(
 4. 禁用态
 5. 只读态
 6. 首次自动聚焦
+7. 输入动作配置
 
 示例：
 
@@ -632,6 +633,11 @@ TextField(
     controller = controller,
     placeholder = "TYPE PRIMARY",
     autofocus = true,
+    textInputAction = TextInputAction.NEXT,
+    onSubmitted = {
+        controller.requestFocus(secondaryState)
+        hostView.requestRender()
+    },
 )
 ```
 
@@ -639,6 +645,27 @@ TextField(
 
 - 只在该状态对象第一次出现在页面里时自动聚焦一次
 - 不会因为后续 `requestRender()` 重绘反复抢焦点
+
+输入动作示例：
+
+```kotlin
+TextField(
+    state = secondaryState,
+    controller = controller,
+    placeholder = "TYPE SECONDARY",
+    textInputAction = TextInputAction.DONE,
+    onSubmitted = { text ->
+        submit(text)
+    },
+)
+```
+
+当前支持的动作：
+
+- `TextInputAction.DONE`
+- `TextInputAction.NEXT`
+- `TextInputAction.GO`
+- `TextInputAction.SEND`
 
 ---
 

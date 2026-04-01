@@ -28,6 +28,7 @@ import com.purride.pixelui.PixelText
 import com.purride.pixelui.PixelTextField
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextFieldStyle
+import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.Padding
@@ -987,6 +988,26 @@ class PixelRenderRuntimeTest {
 
         assertEquals(1, result.textInputTargets.size)
         assertTrue(result.textInputTargets.first().autofocus)
+    }
+
+    @Test
+    fun textFieldExportsRequestedInputAction() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "NEXT")
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                textInputAction = PixelTextInputAction.NEXT,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.textInputTargets.size)
+        assertEquals(PixelTextInputAction.NEXT, result.textInputTargets.first().action)
     }
 
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
