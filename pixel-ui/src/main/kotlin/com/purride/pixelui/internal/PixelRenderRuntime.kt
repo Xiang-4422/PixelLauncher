@@ -1388,13 +1388,19 @@ internal class PixelRenderRuntime(
             node.style.textStyle
         }
         val displayRasterizer = displayStyle.textRasterizer ?: textRasterizer
-        val textHeight = displayRasterizer.measureHeight(displayText.ifEmpty { " " })
+        val contentMaxWidth = (bounds.width - (node.style.padding * 2)).coerceAtLeast(0)
+        val visibleDisplayText = clipTextToWidth(
+            text = displayText,
+            maxWidth = contentMaxWidth,
+            rasterizer = displayRasterizer,
+        )
+        val textHeight = displayRasterizer.measureHeight(visibleDisplayText.ifEmpty { " " })
         val textY = bounds.top + ((bounds.height - textHeight).coerceAtLeast(0) / 2)
         val textX = bounds.left + node.style.padding
-        if (displayText.isNotEmpty()) {
+        if (visibleDisplayText.isNotEmpty()) {
             displayRasterizer.drawText(
                 buffer = buffer,
-                text = displayText,
+                text = visibleDisplayText,
                 x = textX,
                 y = textY,
                 value = displayStyle.tone.value,
@@ -1403,7 +1409,12 @@ internal class PixelRenderRuntime(
 
         if (node.enabled && !node.readOnly && node.state.isFocused) {
             val visibleText = node.state.text.take(node.state.selectionStart.coerceAtMost(node.state.text.length))
-            val cursorX = textX + (node.style.textStyle.textRasterizer ?: textRasterizer).measureText(visibleText)
+            val clippedVisibleText = clipTextToWidth(
+                text = visibleText,
+                maxWidth = contentMaxWidth,
+                rasterizer = node.style.textStyle.textRasterizer ?: textRasterizer,
+            )
+            val cursorX = textX + (node.style.textStyle.textRasterizer ?: textRasterizer).measureText(clippedVisibleText)
             val cursorTop = bounds.top + node.style.padding
             val cursorHeight = (bounds.height - (node.style.padding * 2)).coerceAtLeast(1)
             buffer.fillRect(

@@ -667,6 +667,8 @@ TextField(
 - `TextInputAction.GO`
 - `TextInputAction.SEND`
 
+当前 `TextField` 仍然是单行显示，超出可用宽度的文本和占位内容会按输入框内容区宽度裁剪，不会直接画出边框。
+
 ---
 
 ## 7. 中文与自定义字体接入
