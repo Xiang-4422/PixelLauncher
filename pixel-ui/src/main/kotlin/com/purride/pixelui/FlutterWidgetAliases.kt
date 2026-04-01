@@ -342,6 +342,7 @@ fun PageView(
     state: PixelPagerState,
     pages: List<Widget>,
     modifier: PixelModifier = PixelModifier.Empty,
+    onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
     return PixelPager(
@@ -350,6 +351,7 @@ fun PageView(
         controller = controller,
         pages = pages.map { it.asPixelNode() },
         modifier = modifier,
+        onPageChanged = onPageChanged,
         key = key,
     )
 }

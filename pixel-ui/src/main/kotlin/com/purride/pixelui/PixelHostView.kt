@@ -213,6 +213,7 @@ class PixelHostView @JvmOverloads constructor(
             return
         }
         lastRenderResult = renderResult
+        dispatchPageChanged(renderResult.pagerTargets)
         syncRequestedTextInputFocus(renderResult.textInputTargets)
         drawBuffer(canvas, renderResult.buffer)
         if (renderResult.pagerTargets.any { target -> target.controller.isActive(target.state) } ||
@@ -512,6 +513,16 @@ class PixelHostView @JvmOverloads constructor(
                 state = target.state,
                 deltaMs = deltaMs,
             )
+        }
+    }
+
+    private fun dispatchPageChanged(targets: List<PixelPagerTarget>) {
+        targets.forEach { target ->
+            val currentPage = target.state.currentPage
+            if (currentPage != target.state.lastDispatchedPage) {
+                target.state.lastDispatchedPage = currentPage
+                target.onPageChanged?.invoke(currentPage)
+            }
         }
     }
 

@@ -26,6 +26,8 @@ class PixelPagerState(
     var settleTargetPage: Int = this.currentPage
         internal set
 
+    internal var lastDispatchedPage: Int = this.currentPage
+
     internal var motionState: AxisMotionState = AxisMotionState()
 
     val isDragging: Boolean

@@ -93,6 +93,7 @@ data class PixelPagerNode(
     val state: PixelPagerState,
     val controller: PixelPagerController,
     val pages: List<PixelNode>,
+    val onPageChanged: ((Int) -> Unit)? = null,
 ) : PixelNode
 
 fun PixelText(
@@ -191,6 +192,7 @@ fun PixelPager(
     controller: PixelPagerController,
     pages: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
+    onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): PixelNode {
     return PixelPagerNode(
@@ -200,5 +202,6 @@ fun PixelPager(
         state = state,
         controller = controller,
         pages = pages,
+        onPageChanged = onPageChanged,
     )
 }
