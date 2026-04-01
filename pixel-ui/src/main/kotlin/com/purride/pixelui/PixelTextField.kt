@@ -36,6 +36,7 @@ data class PixelTextFieldNode(
     val controller: PixelTextFieldController,
     val placeholder: String = "",
     val style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
+    val onChanged: ((String) -> Unit)? = null,
     val onSubmitted: ((String) -> Unit)? = null,
 ) : PixelNode
 
@@ -45,6 +46,7 @@ fun PixelTextField(
     modifier: PixelModifier = PixelModifier.Empty,
     placeholder: String = "",
     style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
+    onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
 ): PixelNode {
@@ -55,6 +57,7 @@ fun PixelTextField(
         controller = controller,
         placeholder = placeholder,
         style = style,
+        onChanged = onChanged,
         onSubmitted = onSubmitted,
     )
 }

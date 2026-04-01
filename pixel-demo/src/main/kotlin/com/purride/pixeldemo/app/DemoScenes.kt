@@ -200,6 +200,7 @@ object DemoScenes {
         val controller = TextEditingController()
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
+        var liveText = primaryState.text
         var submittedText = ""
 
         return DemoScene(
@@ -214,6 +215,7 @@ object DemoScenes {
                         sectionTitle("TEXT FIELD"),
                         infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
                         infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
+                        infoCard("LIVE", liveText.ifEmpty { "(EMPTY)" }, accent = liveText.isNotEmpty()),
                         infoCard("SUBMITTED", submittedText.ifEmpty { "(NONE)" }, accent = submittedText.isNotEmpty()),
                         TextField(
                             state = primaryState,
@@ -221,6 +223,10 @@ object DemoScenes {
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE PRIMARY",
                             style = TextFieldStyle.Default,
+                            onChanged = { text ->
+                                liveText = text
+                                hostView.requestRender()
+                            },
                             onSubmitted = { text ->
                                 submittedText = text
                                 hostView.requestRender()

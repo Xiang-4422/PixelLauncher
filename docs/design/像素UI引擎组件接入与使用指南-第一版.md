@@ -506,6 +506,7 @@ setContentView(
 
 1. 程序化请求焦点
 2. 提交动作回调
+3. 实时文本变化回调
 
 示例：
 
@@ -517,6 +518,9 @@ TextField(
     state = nameState,
     controller = textController,
     placeholder = "TYPE NAME",
+    onChanged = { text ->
+        hostView.requestRender()
+    },
     onSubmitted = { text ->
         hostView.requestRender()
     },
@@ -536,6 +540,11 @@ OutlinedButton(
 - `requestFocus(state)`
 - `requestBlur(state)`
 - `updateText(state, text, selectionStart, selectionEnd)`
+
+当前输入事件可用回调：
+
+- `onChanged(text)`
+- `onSubmitted(text)`
 
 ---
 

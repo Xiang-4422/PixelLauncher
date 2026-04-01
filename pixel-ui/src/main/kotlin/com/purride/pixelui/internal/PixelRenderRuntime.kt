@@ -135,6 +135,7 @@ internal data class PixelTextInputTarget(
     val bounds: PixelRect,
     val state: com.purride.pixelui.state.PixelTextFieldState,
     val controller: com.purride.pixelui.state.PixelTextFieldController,
+    val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
 )
 
@@ -1402,6 +1403,7 @@ internal class PixelRenderRuntime(
             bounds = bounds,
             state = node.state,
             controller = node.controller,
+            onChanged = node.onChanged,
             onSubmitted = node.onSubmitted,
         )
     }
