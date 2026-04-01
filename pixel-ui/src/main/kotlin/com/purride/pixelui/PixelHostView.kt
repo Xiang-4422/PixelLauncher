@@ -160,6 +160,12 @@ class PixelHostView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun submitFocusedTextInput() {
+        val target = focusedTextInputTarget ?: return
+        target.onSubmitted?.invoke(target.state.text)
+        invalidate()
+    }
+
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette) {
         this.screenProfile = screenProfile
         this.palette = palette
@@ -206,6 +212,7 @@ class PixelHostView @JvmOverloads constructor(
             return
         }
         lastRenderResult = renderResult
+        syncRequestedTextInputFocus(renderResult.textInputTargets)
         drawBuffer(canvas, renderResult.buffer)
         if (renderResult.pagerTargets.any { target -> target.controller.isActive(target.state) } ||
             renderResult.listTargets.any { target -> target.controller.isActive(target.state) }
@@ -528,6 +535,21 @@ class PixelHostView @JvmOverloads constructor(
         return lastRenderResult
             ?.textInputTargets
             ?.lastOrNull { target -> target.bounds.contains(logicalX, logicalY) }
+    }
+
+    private fun syncRequestedTextInputFocus(targets: List<PixelTextInputTarget>) {
+        val blurTarget = focusedTextInputTarget?.takeIf { it.state.blurRequested }
+        if (blurTarget != null) {
+            blurTarget.state.blurRequested = false
+            clearFocusedTextInput()
+            return
+        }
+
+        val requestedTarget = targets.lastOrNull { target -> target.state.focusRequested }
+        if (requestedTarget != null) {
+            requestedTarget.state.focusRequested = false
+            focusTextInput(requestedTarget)
+        }
     }
 
     private fun focusTextInput(target: PixelTextInputTarget) {

@@ -36,4 +36,17 @@ class PixelTextFieldControllerTest {
         controller.blur(state)
         assertFalse(state.isFocused)
     }
+
+    @Test
+    fun requestFocusAndBlurSetPendingFlags() {
+        val state = controller.create()
+
+        controller.requestFocus(state)
+        assertTrue(state.focusRequested)
+        assertFalse(state.blurRequested)
+
+        controller.requestBlur(state)
+        assertTrue(state.blurRequested)
+        assertFalse(state.focusRequested)
+    }
 }
