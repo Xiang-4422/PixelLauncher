@@ -9,7 +9,14 @@ import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBox
 import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelCrossAxisAlignment
+import com.purride.pixelui.Column
+import com.purride.pixelui.Center
+import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.DecoratedBox
+import com.purride.pixelui.Alignment
+import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelList
+import com.purride.pixelui.Align
 import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelPager
@@ -20,6 +27,12 @@ import com.purride.pixelui.PixelTextField
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
+import com.purride.pixelui.Padding
+import com.purride.pixelui.Row
+import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Spacer
+import com.purride.pixelui.Text
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
@@ -255,6 +268,143 @@ class PixelRenderRuntimeTest {
 
         assertEquals(1, result.clickTargets.size)
         assertTrue(result.clickTargets.first().bounds.contains(5, 5))
+        result.clickTargets.first().onClick.invoke()
+        assertTrue(clicked)
+    }
+
+    @Test
+    fun flutterStyleAliasesRenderThroughCompatibilityLayer() {
+        val result = runtime.render(
+            root = Column(
+                modifier = PixelModifier.Empty.size(20, 10),
+                spacing = 2,
+                mainAxisAlignment = MainAxisAlignment.START,
+                crossAxisAlignment = CrossAxisAlignment.START,
+                children = listOf(
+                    DecoratedBox(
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(4),
+                        borderTone = null,
+                        fillTone = PixelTone.ON,
+                        alignment = Alignment.CENTER,
+                        child = Row(
+                            mainAxisAlignment = MainAxisAlignment.START,
+                            crossAxisAlignment = CrossAxisAlignment.START,
+                            children = listOf(
+                                Text("A"),
+                            ),
+                        ),
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertTrue(collectOnPixels(result).isNotEmpty())
+    }
+
+    @Test
+    fun flutterStylePaddingAndCenterWrapExistingLayoutSemantics() {
+        val result = runtime.render(
+            root = Padding(
+                all = 2,
+                modifier = PixelModifier.Empty.size(12, 12),
+                child = Center(
+                    child = SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 12,
+            logicalHeight = 12,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(4, 4))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(7, 7))
+    }
+
+    @Test
+    fun flutterStyleSpacerPushesTrailingChild() {
+        val result = runtime.render(
+            root = Row(
+                modifier = PixelModifier.Empty.size(20, 4),
+                children = listOf(
+                    SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                    ),
+                    Spacer(),
+                    SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 20,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(10, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(17, 1))
+    }
+
+    @Test
+    fun flutterStyleAlignPlacesChildAtTopStart() {
+        val result = runtime.render(
+            root = Align(
+                alignment = Alignment.TOP_START,
+                modifier = PixelModifier.Empty.size(10, 10),
+                child = SizedBox(
+                    width = 4,
+                    height = 4,
+                    child = DecoratedBox(
+                        fillTone = PixelTone.ON,
+                        borderTone = null,
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(5, 5))
+    }
+
+    @Test
+    fun flutterStyleGestureDetectorExportsClickTarget() {
+        var clicked = false
+        val result = runtime.render(
+            root = GestureDetector(
+                modifier = PixelModifier.Empty.size(8, 8),
+                onTap = { clicked = true },
+                child = DecoratedBox(
+                    fillTone = PixelTone.ACCENT,
+                    borderTone = null,
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.clickTargets.size)
+        assertTrue(result.clickTargets.first().bounds.contains(4, 4))
         result.clickTargets.first().onClick.invoke()
         assertTrue(clicked)
     }

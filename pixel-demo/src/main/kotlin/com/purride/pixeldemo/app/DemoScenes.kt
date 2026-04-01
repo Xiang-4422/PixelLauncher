@@ -8,23 +8,31 @@ import com.purride.pixelcore.PixelTheme
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixelui.Alignment
+import com.purride.pixelui.Align
+import com.purride.pixelui.Axis
+import com.purride.pixelui.Center
+import com.purride.pixelui.Column
+import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.DecoratedBox
+import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.ListView
+import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.PageView
+import com.purride.pixelui.Row
+import com.purride.pixelui.SingleChildScrollView
+import com.purride.pixelui.Text
+import com.purride.pixelui.TextField
 import com.purride.pixelui.PixelAlignment
-import com.purride.pixelui.PixelButton
-import com.purride.pixelui.PixelBox
-import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelHostView
-import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
-import com.purride.pixelui.PixelPager
-import com.purride.pixelui.PixelRow
-import com.purride.pixelui.PixelSurface
-import com.purride.pixelui.PixelText
-import com.purride.pixelui.PixelTextField
+import com.purride.pixelui.PixelNode
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
-import com.purride.pixelui.PixelSingleChildScrollView
+import com.purride.pixelui.Widget
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxHeight
 import com.purride.pixelui.fillMaxWidth
@@ -47,7 +55,7 @@ object DemoScenes {
         val initialProfile: ScreenProfile,
         val initialPalette: PixelPalette,
         val initialTextRasterizer: PixelTextRasterizer,
-        val content: () -> com.purride.pixelui.PixelNode,
+        val content: () -> Widget,
     )
 
     fun create(
@@ -131,25 +139,25 @@ object DemoScenes {
                         sectionTitle("PALETTE AND SHAPE"),
                         infoCard("THEME", themes[currentThemeIndex].name),
                         infoCard("SHAPE", shapes[currentShapeIndex].name),
-                        PixelButton(
+                        OutlinedButton(
                             text = "NEXT THEME",
-                            onClick = {
-                            currentThemeIndex = (currentThemeIndex + 1) % themes.size
-                            applyHostAppearance()
-                            hostView.requestRender()
+                            onPressed = {
+                                currentThemeIndex = (currentThemeIndex + 1) % themes.size
+                                applyHostAppearance()
+                                hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
-                        PixelButton(
+                        OutlinedButton(
                             text = "NEXT SHAPE",
-                            onClick = {
-                            currentShapeIndex = (currentShapeIndex + 1) % shapes.size
-                            applyHostAppearance()
-                            hostView.requestRender()
+                            onPressed = {
+                                currentShapeIndex = (currentShapeIndex + 1) % shapes.size
+                                applyHostAppearance()
+                                hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
-                        PixelRow(
+                        Row(
                             spacing = 4,
                             children = listOf(
                                 swatch(PixelTone.ON, "ON"),
@@ -185,14 +193,14 @@ object DemoScenes {
                         sectionTitle("TEXT FIELD"),
                         infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
                         infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
-                        PixelTextField(
+                        TextField(
                             state = primaryState,
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE PRIMARY",
                             style = PixelTextFieldStyle.Default,
                         ),
-                        PixelTextField(
+                        TextField(
                             state = secondaryState,
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
@@ -204,9 +212,9 @@ object DemoScenes {
                                 placeholderStyle = PixelTextStyle.Default,
                             ),
                         ),
-                        PixelButton(
+                        OutlinedButton(
                             text = "CLEAR SECONDARY",
-                            onClick = {
+                            onPressed = {
                                 controller.updateText(secondaryState, "")
                                 hostView.requestRender()
                             },
@@ -234,17 +242,17 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelSingleChildScrollView(
+                SingleChildScrollView(
                     state = scrollState,
                     controller = scrollController,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    child = PixelColumn(
+                    child = Column(
                         modifier = PixelModifier.Empty.fillMaxWidth(),
                         spacing = 4,
                         children = listOf(
                             sectionTitle("SINGLE CHILD SCROLL"),
                             infoCard("TITLE", titleState.text.ifEmpty { "(EMPTY)" }, accent = titleState.isFocused),
-                            PixelTextField(
+                            TextField(
                                 state = titleState,
                                 controller = textController,
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(16),
@@ -252,7 +260,7 @@ object DemoScenes {
                                 style = PixelTextFieldStyle.Default,
                             ),
                             infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
-                            PixelTextField(
+                            TextField(
                                 state = noteState,
                                 controller = textController,
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(16),
@@ -267,23 +275,22 @@ object DemoScenes {
                             infoCard("SECTION", "A LONG COLUMN"),
                             infoCard("SCROLL", "WHOLE PAGE DRAGS"),
                             infoCard("TARGET", "ONE CHILD TREE"),
-                            PixelButton(
+                            OutlinedButton(
                                 text = "FOOTER TAPS $footerTapped",
-                                onClick = {
+                                onPressed = {
                                     footerTapped += 1
                                     hostView.requestRender()
                                 },
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                 style = com.purride.pixelui.PixelButtonStyle.Accent,
                             ),
-                            PixelSurface(
+                            DecoratedBox(
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(18),
                                 fillTone = PixelTone.OFF,
                                 borderTone = PixelTone.ON,
-                                child = PixelBox(
+                                child = Center(
                                     modifier = PixelModifier.Empty.fillMaxSize(),
-                                    alignment = PixelAlignment.CENTER,
-                                    children = listOf(PixelText("BOTTOM CARD")),
+                                    child = Text("BOTTOM CARD"),
                                 ),
                             ),
                         ),
@@ -308,8 +315,8 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelPager(
-                    axis = PixelAxis.HORIZONTAL,
+                PageView(
+                    axis = Axis.HORIZONTAL,
                     state = state,
                     controller = controller,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
@@ -371,8 +378,8 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelPager(
-                    axis = PixelAxis.VERTICAL,
+                PageView(
+                    axis = Axis.VERTICAL,
                     state = state,
                     controller = controller,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
@@ -435,118 +442,120 @@ object DemoScenes {
                     children = listOf(
                         sectionTitle("LAYOUT AND CLICK"),
                         infoCard("COUNTER", count.toString(), accent = accentMode),
-                        PixelButton(
+                        OutlinedButton(
                             text = "INCREASE",
-                            onClick = {
-                            count += 1
-                            hostView.requestRender()
+                            onPressed = {
+                                count += 1
+                                hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
-                        PixelButton(
+                        OutlinedButton(
                             text = "TOGGLE ACCENT",
-                            onClick = {
-                            accentMode = !accentMode
-                            hostView.requestRender()
+                            onPressed = {
+                                accentMode = !accentMode
+                                hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
-                        PixelRow(
+                        Row(
                             spacing = 4,
                             children = listOf(
                                 demoSquare("LEFT"),
                                 demoSquare("RIGHT"),
                             ),
                         ),
-                        PixelRow(
+                        Row(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(18),
                             spacing = 2,
                             children = listOf(
-                                PixelSurface(
+                                DecoratedBox(
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
                                     fillTone = PixelTone.OFF,
                                     borderTone = PixelTone.ON,
-                                    child = PixelBox(
+                                    child = Center(
                                         modifier = PixelModifier.Empty.fillMaxSize(),
-                                        alignment = PixelAlignment.CENTER,
-                                        children = listOf(PixelText("1X")),
+                                        child = Text("1X"),
                                     ),
                                 ),
-                                PixelSurface(
+                                DecoratedBox(
                                     modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
                                     fillTone = PixelTone.OFF,
                                     borderTone = PixelTone.ACCENT,
-                                    child = PixelBox(
+                                    child = Center(
                                         modifier = PixelModifier.Empty.fillMaxSize(),
-                                        alignment = PixelAlignment.CENTER,
-                                        children = listOf(PixelText("2X", style = PixelTextStyle.Accent)),
+                                        child = Text("2X", style = PixelTextStyle.Accent),
                                     ),
                                 ),
                             ),
                         ),
-                        PixelRow(
+                        Row(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(20),
                             spacing = 2,
-                            mainAxisAlignment = PixelMainAxisAlignment.CENTER,
-                            crossAxisAlignment = PixelCrossAxisAlignment.CENTER,
+                            mainAxisAlignment = MainAxisAlignment.CENTER,
+                            crossAxisAlignment = CrossAxisAlignment.CENTER,
                             children = listOf(
-                                PixelSurface(
+                                DecoratedBox(
                                     modifier = PixelModifier.Empty.size(18, 8),
                                     fillTone = PixelTone.OFF,
                                     borderTone = PixelTone.ON,
-                                    child = PixelBox(
+                                    child = Center(
                                         modifier = PixelModifier.Empty.fillMaxSize(),
-                                        alignment = PixelAlignment.CENTER,
-                                        children = listOf(PixelText("MID")),
+                                        child = Text("MID"),
                                     ),
                                 ),
-                                PixelSurface(
+                                DecoratedBox(
                                     modifier = PixelModifier.Empty.size(18, 14),
                                     fillTone = PixelTone.OFF,
                                     borderTone = PixelTone.ACCENT,
-                                    child = PixelBox(
+                                    child = Center(
                                         modifier = PixelModifier.Empty.fillMaxSize(),
-                                        alignment = PixelAlignment.CENTER,
-                                        children = listOf(PixelText("TALL", style = PixelTextStyle.Accent)),
+                                        child = Text("TALL", style = PixelTextStyle.Accent),
                                     ),
                                 ),
                             ),
                         ),
-                        PixelSurface(
+                        GestureDetector(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(24),
+                            onTap = {
+                                accentMode = !accentMode
+                                hostView.requestRender()
+                            },
+                            child = DecoratedBox(
+                                modifier = PixelModifier.Empty.fillMaxSize(),
                             fillTone = PixelTone.OFF,
                             borderTone = PixelTone.ON,
                             padding = 2,
-                            child = PixelColumn(
+                            child = Column(
                                 modifier = PixelModifier.Empty.fillMaxSize(),
                                 spacing = 2,
-                                mainAxisAlignment = PixelMainAxisAlignment.END,
-                                crossAxisAlignment = PixelCrossAxisAlignment.END,
+                                mainAxisAlignment = MainAxisAlignment.END,
+                                crossAxisAlignment = CrossAxisAlignment.END,
                                 children = listOf(
-                                    PixelSurface(
+                                    DecoratedBox(
                                         modifier = PixelModifier.Empty.size(16, 6),
                                         fillTone = PixelTone.OFF,
                                         borderTone = PixelTone.ON,
-                                        child = PixelBox(
+                                        child = Center(
                                             modifier = PixelModifier.Empty.fillMaxSize(),
-                                            alignment = PixelAlignment.CENTER,
-                                            children = listOf(PixelText("END")),
+                                            child = Text("END"),
                                         ),
                                     ),
-                                    PixelSurface(
+                                    DecoratedBox(
                                         modifier = PixelModifier.Empty.size(24, 6),
                                         fillTone = PixelTone.OFF,
                                         borderTone = PixelTone.ACCENT,
-                                        child = PixelBox(
+                                        child = Align(
                                             modifier = PixelModifier.Empty.fillMaxSize(),
-                                            alignment = PixelAlignment.CENTER,
-                                            children = listOf(PixelText("ALIGN", style = PixelTextStyle.Accent)),
+                                            alignment = Alignment.CENTER,
+                                            child = Text("ALIGN", style = PixelTextStyle.Accent),
                                         ),
                                     ),
                                 ),
                             ),
                         ),
                     ),
+                )
                 )
             },
         )
@@ -569,49 +578,49 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelColumn(
+                Column(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
                     spacing = 4,
                     children = listOf(
                         sectionTitle("VERTICAL LIST"),
                         infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
                         infoCard("TAPS", tapCount.toString()),
-                        PixelRow(
+                        Row(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                             spacing = 2,
                             children = listOf(
-                                PixelButton(
+                                OutlinedButton(
                                     text = "SHOW 1",
-                                    onClick = {
+                                    onPressed = {
                                         controller.scrollItemIntoView(state, itemIndex = 0)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ),
-                                PixelButton(
+                                ) as PixelNode,
+                                OutlinedButton(
                                     text = "SHOW 8",
-                                    onClick = {
+                                    onPressed = {
                                         controller.scrollItemIntoView(state, itemIndex = 7)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
                                     style = com.purride.pixelui.PixelButtonStyle.Accent,
-                                ),
+                                ) as PixelNode,
                             ),
                         ),
-                        PixelList(
+                        ListView(
                             state = state,
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(40),
                             spacing = 3,
                             items = List(8) { index ->
-                                PixelButton(
+                                OutlinedButton(
                                     text = if (index == 0) {
                                         "TAP ITEM ${index + 1}"
                                     } else {
                                         "LIST ITEM ${index + 1}"
                                     },
-                                    onClick = {
+                                    onPressed = {
                                         if (index == 0) {
                                             tapCount += 1
                                             hostView.requestRender()
@@ -625,7 +634,7 @@ object DemoScenes {
                                     },
                                 )
                             },
-                        ),
+                        ) as PixelNode,
                     ),
                 )
             },
@@ -648,7 +657,7 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelColumn(
+                Column(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
                     spacing = 4,
                     children = listOf(
@@ -656,14 +665,14 @@ object DemoScenes {
                         infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
                         infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
                         infoCard("SELECTED", selectedLabel),
-                        PixelTextField(
+                        TextField(
                             state = nameState,
                             controller = textController,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE NAME",
                             style = PixelTextFieldStyle.Default,
                         ),
-                        PixelTextField(
+                        TextField(
                             state = cityState,
                             controller = textController,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
@@ -675,39 +684,39 @@ object DemoScenes {
                                 placeholderStyle = PixelTextStyle.Default,
                             ),
                         ),
-                        PixelRow(
+                        Row(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                             spacing = 2,
                             children = listOf(
-                                PixelButton(
+                                OutlinedButton(
                                     text = "SHOW 1",
-                                    onClick = {
+                                    onPressed = {
                                         listController.scrollItemIntoView(listState, itemIndex = 0)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ),
-                                PixelButton(
+                                ) as PixelNode,
+                                OutlinedButton(
                                     text = "SHOW 6",
-                                    onClick = {
+                                    onPressed = {
                                         listController.scrollItemIntoView(listState, itemIndex = 5)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
                                     style = com.purride.pixelui.PixelButtonStyle.Accent,
-                                ),
+                                ) as PixelNode,
                             ),
                         ),
-                        PixelList(
+                        ListView(
                             state = listState,
                             controller = listController,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(24),
                             spacing = 3,
                             items = List(6) { index ->
                                 val label = "ITEM ${index + 1}"
-                                PixelButton(
+                                OutlinedButton(
                                     text = label,
-                                    onClick = {
+                                    onPressed = {
                                         selectedLabel = label
                                         hostView.requestRender()
                                     },
@@ -719,7 +728,7 @@ object DemoScenes {
                                     },
                                 )
                             },
-                        ),
+                        ) as PixelNode,
                     ),
                 )
             },
@@ -749,8 +758,8 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PixelPager(
-                    axis = PixelAxis.VERTICAL,
+                PageView(
+                    axis = Axis.VERTICAL,
                     state = pagerState,
                     controller = pagerController,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
@@ -764,18 +773,15 @@ object DemoScenes {
                             },
                             primaryActionLabel = "GO LIST",
                         ),
-                        PixelSurface(
+                        DecoratedBox(
                             modifier = PixelModifier.Empty.fillMaxSize(),
                             fillTone = PixelTone.OFF,
                             borderTone = PixelTone.ACCENT,
-                            child = PixelColumn(
+                            child = Column(
                                 modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                                 spacing = 4,
                                 children = listOf(
-                                    PixelText(
-                                        "PAGE 2 LIST",
-                                        style = PixelTextStyle.Accent,
-                                    ),
+                                    Text("PAGE 2 LIST", style = PixelTextStyle.Accent),
                                     infoCard(
                                         label = "TIP",
                                         value = "LIST FIRST THEN PAGE",
@@ -786,15 +792,15 @@ object DemoScenes {
                                         value = itemTapCount.toString(),
                                         accent = itemTapCount > 0,
                                     ),
-                                    PixelList(
+                                    ListView(
                                         state = listState,
                                         controller = listController,
                                         modifier = PixelModifier.Empty.fillMaxWidth().height(56),
                                         spacing = 3,
                                         items = List(7) { index ->
-                                            PixelButton(
+                                            OutlinedButton(
                                                 text = "INNER ITEM ${index + 1}",
-                                                onClick = {
+                                                onPressed = {
                                                     itemTapCount += 1
                                                     hostView.requestRender()
                                                 },
@@ -807,9 +813,9 @@ object DemoScenes {
                                             )
                                         },
                                     ),
-                                    PixelButton(
+                                    OutlinedButton(
                                         text = "BACK PAGE 1",
-                                        onClick = {
+                                        onPressed = {
                                             pagerController.syncToPage(pagerState, 0)
                                             hostView.requestRender()
                                         },
@@ -827,19 +833,17 @@ object DemoScenes {
     private fun sectionTitle(
         text: String,
         textRasterizer: PixelTextRasterizer? = null,
-    ): com.purride.pixelui.PixelNode {
+    ): PixelNode {
         val resolvedRasterizer = textRasterizer ?: PixelBitmapFont.Default
         val titleHeight = resolvedRasterizer.measureHeight(text)
-        return PixelSurface(
-        modifier = PixelModifier.Empty.fillMaxWidth().height(titleHeight + 6),
-        fillTone = PixelTone.OFF,
-        borderTone = PixelTone.ACCENT,
-        padding = 0,
-        child = PixelBox(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-            alignment = PixelAlignment.CENTER,
-            children = listOf(
-                PixelText(
+        return DecoratedBox(
+            modifier = PixelModifier.Empty.fillMaxWidth().height(titleHeight + 6),
+            fillTone = PixelTone.OFF,
+            borderTone = PixelTone.ACCENT,
+            padding = 0,
+            child = Center(
+                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                child = Text(
                     text,
                     style = PixelTextStyle(
                         tone = PixelTone.ACCENT,
@@ -847,8 +851,7 @@ object DemoScenes {
                     ),
                 ),
             ),
-        ),
-    )
+        ) as PixelNode
     }
 
     private fun infoCard(
@@ -856,7 +859,7 @@ object DemoScenes {
         value: String,
         accent: Boolean = false,
         valueRasterizer: PixelTextRasterizer? = null,
-    ): com.purride.pixelui.PixelNode {
+    ): PixelNode {
         val labelRasterizer = PixelBitmapFont.Default
         val resolvedValueRasterizer = valueRasterizer ?: PixelBitmapFont.Default
         val trimmedLabel = trimSingleLineText(
@@ -873,37 +876,35 @@ object DemoScenes {
             resolvedValueRasterizer.measureHeight(trimmedValue) +
             8
 
-        return PixelSurface(
-        modifier = PixelModifier.Empty.fillMaxWidth().height(cardHeight),
-        fillTone = PixelTone.OFF,
-        borderTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
-        padding = 0,
-        child = PixelColumn(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-            spacing = 2,
-            children = listOf(
-                PixelText(trimmedLabel, style = PixelTextStyle.Accent),
-                PixelText(
+        return DecoratedBox(
+            modifier = PixelModifier.Empty.fillMaxWidth().height(cardHeight),
+            fillTone = PixelTone.OFF,
+            borderTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
+            padding = 0,
+            child = Column(
+                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                spacing = 2,
+                children = listOf(
+                    Text(trimmedLabel, style = PixelTextStyle.Accent),
+                    Text(
                     trimmedValue,
                     style = PixelTextStyle(
                         tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
                         textRasterizer = valueRasterizer,
                     ),
                 ),
+                ),
             ),
-        ),
-    )
+        ) as PixelNode
     }
 
-    private fun swatch(tone: PixelTone, label: String) = PixelSurface(
+    private fun swatch(tone: PixelTone, label: String): PixelNode = DecoratedBox(
         modifier = PixelModifier.Empty.size(22, 18),
         fillTone = tone,
         borderTone = PixelTone.ON,
-        child = PixelBox(
+        child = Center(
             modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = PixelAlignment.CENTER,
-            children = listOf(
-                PixelText(
+            child = Text(
                     label,
                     style = if (tone == PixelTone.OFF) {
                         PixelTextStyle.Default
@@ -911,22 +912,18 @@ object DemoScenes {
                         PixelTextStyle.Accent
                     },
                 ),
-            ),
         ),
-    )
+    ) as PixelNode
 
-    private fun demoSquare(label: String) = PixelSurface(
+    private fun demoSquare(label: String): PixelNode = DecoratedBox(
         modifier = PixelModifier.Empty.size(28, 28),
         fillTone = PixelTone.OFF,
         borderTone = PixelTone.ON,
-        child = PixelBox(
+        child = Center(
             modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = PixelAlignment.CENTER,
-            children = listOf(
-                PixelText(label),
-            ),
+            child = Text(label),
         ),
-    )
+    ) as PixelNode
 
     private fun pagerPage(
         title: String,
@@ -935,45 +932,42 @@ object DemoScenes {
         primaryActionLabel: String,
         onSecondaryAction: (() -> Unit)? = null,
         secondaryActionLabel: String? = null,
-    ) = PixelSurface(
+    ): PixelNode = DecoratedBox(
         modifier = PixelModifier.Empty.fillMaxSize(),
         fillTone = PixelTone.OFF,
         borderTone = tone,
-        child = PixelColumn(
+        child = Column(
             modifier = PixelModifier.Empty.fillMaxSize().padding(3),
             spacing = 4,
             children = buildList {
                 add(
-                    PixelBox(
+                    Center(
                         modifier = PixelModifier.Empty.fillMaxWidth().height(20),
-                        alignment = PixelAlignment.CENTER,
-                        children = listOf(
-                            PixelText(
+                        child = Text(
                                 title,
                                 style = PixelTextStyle(tone = tone),
                             ),
-                        ),
                     ),
                 )
                 add(
-                    PixelButton(
+                    OutlinedButton(
                         text = primaryActionLabel,
-                        onClick = onPrimaryAction,
+                        onPressed = onPrimaryAction,
                         modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                     ),
                 )
                 if (onSecondaryAction != null && secondaryActionLabel != null) {
                     add(
-                        PixelButton(
+                        OutlinedButton(
                             text = secondaryActionLabel,
-                            onClick = onSecondaryAction,
+                            onPressed = onSecondaryAction,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
                     )
                 }
             },
         ),
-    )
+    ) as PixelNode
 
     private fun defaultProfile(pixelShape: PixelShape = PixelShape.SQUARE): ScreenProfile {
         return ScreenProfile(
@@ -1042,17 +1036,17 @@ object DemoScenes {
     private fun scrollableRoot(
         state: com.purride.pixelui.state.PixelListState,
         controller: PixelListController,
-        children: List<com.purride.pixelui.PixelNode>,
-    ): com.purride.pixelui.PixelNode {
-        return PixelSingleChildScrollView(
+        children: List<Widget>,
+    ): PixelNode {
+        return SingleChildScrollView(
             state = state,
             controller = controller,
             modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-            child = PixelColumn(
+            child = Column(
                 modifier = PixelModifier.Empty.fillMaxWidth(),
                 spacing = 4,
                 children = children,
             ),
-        )
+        ) as PixelNode
     }
 }

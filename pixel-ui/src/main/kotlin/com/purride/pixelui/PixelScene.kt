@@ -7,5 +7,5 @@ package com.purride.pixelui
  * 第一版先采用显式状态输入，不引入隐式 remember 或编译器增强能力。
  */
 fun interface PixelScene<State> {
-    fun render(state: State): PixelNode
+    fun render(state: State): Widget
 }
