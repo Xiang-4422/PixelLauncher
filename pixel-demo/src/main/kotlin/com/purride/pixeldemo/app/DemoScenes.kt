@@ -20,9 +20,12 @@ import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
+import com.purride.pixelui.PageController
 import com.purride.pixelui.Row
+import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
@@ -37,9 +40,6 @@ import com.purride.pixelui.height
 import com.purride.pixelui.padding
 import com.purride.pixelui.size
 import com.purride.pixelui.weight
-import com.purride.pixelui.state.PixelListController
-import com.purride.pixelui.state.PixelPagerController
-import com.purride.pixelui.state.PixelTextFieldController
 
 /**
  * Demo scene 定义集合。
@@ -78,7 +78,7 @@ object DemoScenes {
     private fun textScene(
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val scrollController = PixelListController()
+        val scrollController = ScrollController()
         val scrollState = scrollController.create()
         val compactRasterizer = PixelBitmapFont(
             glyphWidth = 4,
@@ -131,7 +131,7 @@ object DemoScenes {
         textRasterizers: DemoTextRasterizers,
         applyPreferredProfile: (ScreenProfile) -> Unit,
     ): DemoScene {
-        val scrollController = PixelListController()
+        val scrollController = ScrollController()
         val scrollState = scrollController.create()
         val themes = PixelTheme.entries
         val shapes = PixelShape.entries
@@ -191,9 +191,9 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val scrollController = PixelListController()
+        val scrollController = ScrollController()
         val scrollState = scrollController.create()
-        val controller = PixelTextFieldController()
+        val controller = TextEditingController()
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
         var submittedText = ""
@@ -264,9 +264,9 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val scrollController = PixelListController()
+        val scrollController = ScrollController()
         val scrollState = scrollController.create()
-        val textController = PixelTextFieldController()
+        val textController = TextEditingController()
         val titleState = textController.create(initialText = "SCROLL PAGE")
         val noteState = textController.create(initialText = "DRAG TO READ")
         var footerTapped = 0
@@ -338,7 +338,7 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val controller = PixelPagerController()
+        val controller = PageController()
         val state = controller.create(
             pageCount = 3,
             currentPage = 0,
@@ -397,7 +397,7 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val controller = PixelPagerController()
+        val controller = PageController()
         val state = controller.create(
             pageCount = 3,
             currentPage = 0,
@@ -460,7 +460,7 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val scrollController = PixelListController()
+        val scrollController = ScrollController()
         val scrollState = scrollController.create()
         var count = 0
         var accentMode = false
@@ -599,7 +599,7 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val controller = PixelListController()
+        val controller = ScrollController()
         val state = controller.create()
         var tapCount = 0
 
@@ -679,10 +679,10 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val textController = PixelTextFieldController()
+        val textController = TextEditingController()
         val nameState = textController.create(initialText = "PIXEL")
         val cityState = textController.create(initialText = "SHANGHAI")
-        val listController = PixelListController()
+        val listController = ScrollController()
         val listState = listController.create()
         var selectedLabel = "ITEM 1"
 
@@ -773,13 +773,13 @@ object DemoScenes {
         hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
-        val pagerController = PixelPagerController()
+        val pagerController = PageController()
         val pagerState = pagerController.create(
             pageCount = 2,
             currentPage = 0,
             axis = PixelAxis.VERTICAL,
         )
-        val listController = PixelListController()
+        val listController = ScrollController()
         val listState = listController.create()
         var itemTapCount = 0
 
@@ -1069,7 +1069,7 @@ object DemoScenes {
      */
     private fun scrollableRoot(
         state: com.purride.pixelui.state.PixelListState,
-        controller: PixelListController,
+        controller: ScrollController,
         children: List<Widget>,
     ): Widget {
         return SingleChildScrollView(

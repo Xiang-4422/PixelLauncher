@@ -100,6 +100,7 @@
   - [BuildContext.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/BuildContext.kt)
   - [FlutterLayoutPrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterLayoutPrimitives.kt)
   - [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
+  - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - 兼容层基础节点与场景
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelNode.kt)
   - [PixelScene.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelScene.kt)
@@ -157,6 +158,9 @@
 - `ListView`
 - `SingleChildScrollView`
 - `TextField`
+- `PageController`
+- `ScrollController`
+- `TextEditingController`
 
 旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前主要作为兼容层保留，不再建议新页面直接使用。
 
@@ -177,9 +181,9 @@
 
 - 仍然是每帧重建组件树，不是 retained tree
 - `ListView` 只有纵向单列，不是虚拟化列表
-- 列表当前没有惯性滚动、回弹和吸附
+- 列表当前没有回弹和吸附
 - `TextField` 目前只支持单行输入
-- 文本没有通用换行和多行排版
+- 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 还没有开始把 `:app` 页面迁进来
 
