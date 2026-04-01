@@ -326,6 +326,15 @@ OutlinedButton(
 - `Accent`
 - `Disabled`
 
+如果想写成更贴近 Flutter 的禁用语义，当前也支持直接传 `onPressed = null`：
+
+```kotlin
+OutlinedButton(
+    text = "DISABLED",
+    onPressed = null,
+)
+```
+
 ---
 
 ## 5. 滚动与分页

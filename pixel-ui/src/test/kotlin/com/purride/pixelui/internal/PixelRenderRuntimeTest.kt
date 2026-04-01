@@ -735,6 +735,23 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun pixelButtonDoesNotExportClickTargetWhenOnClickIsNull() {
+        val result = runtime.render(
+            root = PixelButton(
+                text = "NULL",
+                onClick = null,
+                modifier = PixelModifier.Empty.size(18, 10),
+                style = PixelButtonStyle.Accent,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 12,
+        )
+
+        assertEquals(0, result.clickTargets.size)
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
+    }
+
+    @Test
     fun listExportsViewportTargetAndClipsChildClickArea() {
         val controller = PixelListController()
         val state = controller.create(initialScrollOffsetPx = 4f)

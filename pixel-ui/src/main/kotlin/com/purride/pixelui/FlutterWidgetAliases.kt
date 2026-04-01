@@ -496,7 +496,7 @@ fun TextField(
 
 fun OutlinedButton(
     text: String,
-    onPressed: () -> Unit,
+    onPressed: (() -> Unit)?,
     modifier: PixelModifier = PixelModifier.Empty,
     style: ButtonStyle = ButtonStyle.Default,
     enabled: Boolean = true,
