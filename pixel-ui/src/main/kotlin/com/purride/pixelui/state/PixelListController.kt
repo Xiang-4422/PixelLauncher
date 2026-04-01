@@ -11,6 +11,11 @@ package com.purride.pixelui.state
  */
 class PixelListController {
 
+    companion object {
+        private const val SETTLE_DECELERATION_PX_PER_SECOND_SQUARED = 2400f
+        private const val MIN_SETTLE_VELOCITY_PX_PER_SECOND = 12f
+    }
+
     fun create(initialScrollOffsetPx: Float = 0f): PixelListState {
         return PixelListState(initialScrollOffsetPx = initialScrollOffsetPx)
     }
@@ -27,6 +32,11 @@ class PixelListController {
             contentHeightPx = contentHeightPx,
         )
         state.scrollOffsetPx = state.scrollOffsetPx.coerceIn(0f, state.maxScrollOffsetPx)
+        if (state.scrollOffsetPx <= 0f || state.scrollOffsetPx >= state.maxScrollOffsetPx) {
+            if (state.isSettling) {
+                stopSettling(state)
+            }
+        }
     }
 
     fun dragBy(
@@ -40,7 +50,16 @@ class PixelListController {
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
+        state.isDragging = true
+        state.isSettling = false
+        state.scrollVelocityPxPerSecond = 0f
         state.scrollOffsetPx = (state.scrollOffsetPx - deltaPx).coerceIn(0f, state.maxScrollOffsetPx)
+    }
+
+    fun startDrag(state: PixelListState) {
+        state.isDragging = true
+        state.isSettling = false
+        state.scrollVelocityPxPerSecond = 0f
     }
 
     /**
@@ -80,6 +99,79 @@ class PixelListController {
             contentHeightPx = contentHeightPx,
         )
         state.scrollOffsetPx = targetOffsetPx.coerceIn(0f, state.maxScrollOffsetPx)
+    }
+
+    fun endDrag(
+        state: PixelListState,
+        velocityPxPerSecond: Float,
+        viewportHeightPx: Int,
+        contentHeightPx: Int,
+    ) {
+        sync(
+            state = state,
+            viewportHeightPx = viewportHeightPx,
+            contentHeightPx = contentHeightPx,
+        )
+        state.isDragging = false
+
+        val canScroll = state.maxScrollOffsetPx > 0f
+        if (!canScroll || kotlin.math.abs(velocityPxPerSecond) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
+            stopSettling(state)
+            return
+        }
+
+        state.isSettling = true
+        state.scrollVelocityPxPerSecond = velocityPxPerSecond
+    }
+
+    fun step(
+        state: PixelListState,
+        deltaMs: Long,
+        viewportHeightPx: Int,
+        contentHeightPx: Int,
+    ) {
+        sync(
+            state = state,
+            viewportHeightPx = viewportHeightPx,
+            contentHeightPx = contentHeightPx,
+        )
+        if (!state.isSettling || deltaMs <= 0L) {
+            return
+        }
+
+        val deltaSeconds = deltaMs / 1000f
+        val velocity = state.scrollVelocityPxPerSecond
+        if (kotlin.math.abs(velocity) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
+            stopSettling(state)
+            return
+        }
+
+        state.scrollOffsetPx = (state.scrollOffsetPx - (velocity * deltaSeconds))
+            .coerceIn(0f, state.maxScrollOffsetPx)
+
+        val deceleration = if (velocity > 0f) {
+            -SETTLE_DECELERATION_PX_PER_SECOND_SQUARED
+        } else {
+            SETTLE_DECELERATION_PX_PER_SECOND_SQUARED
+        }
+        val nextVelocity = velocity + (deceleration * deltaSeconds)
+        state.scrollVelocityPxPerSecond = when {
+            velocity > 0f && nextVelocity < 0f -> 0f
+            velocity < 0f && nextVelocity > 0f -> 0f
+            else -> nextVelocity
+        }
+
+        if (state.scrollOffsetPx <= 0f || state.scrollOffsetPx >= state.maxScrollOffsetPx) {
+            stopSettling(state)
+            return
+        }
+        if (kotlin.math.abs(state.scrollVelocityPxPerSecond) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
+            stopSettling(state)
+        }
+    }
+
+    fun isActive(state: PixelListState): Boolean {
+        return state.isDragging || state.isSettling
     }
 
     /**
@@ -124,5 +216,10 @@ class PixelListController {
         contentHeightPx: Int,
     ): Float {
         return (contentHeightPx - viewportHeightPx).coerceAtLeast(0).toFloat()
+    }
+
+    private fun stopSettling(state: PixelListState) {
+        state.isSettling = false
+        state.scrollVelocityPxPerSecond = 0f
     }
 }

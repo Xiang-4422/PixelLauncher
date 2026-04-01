@@ -187,7 +187,9 @@ class PixelHostView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        stepActivePagers()
+        val frameDeltaMs = consumeFrameDeltaMs()
+        stepActivePagers(frameDeltaMs)
+        stepActiveLists(frameDeltaMs)
         val provider = contentProvider
         val renderResult = if (provider != null) {
             runtime.render(
@@ -205,7 +207,9 @@ class PixelHostView @JvmOverloads constructor(
         }
         lastRenderResult = renderResult
         drawBuffer(canvas, renderResult.buffer)
-        if (renderResult.pagerTargets.any { target -> target.controller.isActive(target.state) }) {
+        if (renderResult.pagerTargets.any { target -> target.controller.isActive(target.state) } ||
+            renderResult.listTargets.any { target -> target.controller.isActive(target.state) }
+        ) {
             postInvalidateOnAnimation()
         }
     }
@@ -372,6 +376,7 @@ class PixelHostView @JvmOverloads constructor(
                     if (shouldStartListDrag(rawDeltaX = rawDeltaX, rawDeltaY = rawDeltaY)) {
                         activeListTarget = target
                         candidateListTarget = null
+                        target.controller.startDrag(target.state)
                         val initialDeltaPx = (logicalPoint.second - touchDownLogicalY).toFloat()
                         if (initialDeltaPx != 0f) {
                             target.controller.dragBy(
@@ -409,7 +414,14 @@ class PixelHostView @JvmOverloads constructor(
                     return true
                 }
 
-                activeListTarget?.let {
+                activeListTarget?.let { target ->
+                    val velocityPxPerSecond = rawVelocityToLogical(velocityTracker, PixelAxis.VERTICAL)
+                    target.controller.endDrag(
+                        state = target.state,
+                        velocityPxPerSecond = velocityPxPerSecond,
+                        viewportHeightPx = target.viewportHeightPx,
+                        contentHeightPx = target.contentHeightPx,
+                    )
                     activeListTarget = null
                     candidateListTarget = null
                     candidatePagerTarget = null
@@ -439,6 +451,14 @@ class PixelHostView @JvmOverloads constructor(
                 activePagerTarget?.let { target ->
                     target.controller.cancelDrag(target.state)
                     invalidate()
+                }
+                activeListTarget?.let { target ->
+                    target.controller.endDrag(
+                        state = target.state,
+                        velocityPxPerSecond = 0f,
+                        viewportHeightPx = target.viewportHeightPx,
+                        contentHeightPx = target.contentHeightPx,
+                    )
                 }
                 candidatePagerTarget = null
                 activePagerTarget = null
@@ -471,18 +491,29 @@ class PixelHostView @JvmOverloads constructor(
         )
     }
 
-    private fun stepActivePagers() {
+    private fun consumeFrameDeltaMs(): Long {
         val now = SystemClock.uptimeMillis()
-        val deltaMs = if (lastFrameUptimeMs == 0L) {
-            16L
-        } else {
-            (now - lastFrameUptimeMs).coerceAtLeast(1L)
-        }
+        val deltaMs = if (lastFrameUptimeMs == 0L) 16L else (now - lastFrameUptimeMs).coerceAtLeast(1L)
         lastFrameUptimeMs = now
+        return deltaMs
+    }
+
+    private fun stepActivePagers(deltaMs: Long) {
         lastRenderResult?.pagerTargets?.forEach { target ->
             target.controller.step(
                 state = target.state,
                 deltaMs = deltaMs,
+            )
+        }
+    }
+
+    private fun stepActiveLists(deltaMs: Long) {
+        lastRenderResult?.listTargets?.forEach { target ->
+            target.controller.step(
+                state = target.state,
+                deltaMs = deltaMs,
+                viewportHeightPx = target.viewportHeightPx,
+                contentHeightPx = target.contentHeightPx,
             )
         }
     }

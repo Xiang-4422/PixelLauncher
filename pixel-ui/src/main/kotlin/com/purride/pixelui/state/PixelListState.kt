@@ -13,6 +13,15 @@ class PixelListState(
     var scrollOffsetPx: Float = initialScrollOffsetPx.coerceAtLeast(0f)
         internal set
 
+    var isDragging: Boolean = false
+        internal set
+
+    var isSettling: Boolean = false
+        internal set
+
+    var scrollVelocityPxPerSecond: Float = 0f
+        internal set
+
     internal var maxScrollOffsetPx: Float = 0f
     internal var viewportHeightPx: Int = 0
     internal var contentHeightPx: Int = 0

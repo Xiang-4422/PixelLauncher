@@ -102,4 +102,66 @@ class PixelListControllerTest {
         controller.scrollItemIntoView(state, itemIndex = 0)
         assertEquals(0f, state.scrollOffsetPx, 0.001f)
     }
+
+    @Test
+    fun endDragStartsSettlingWhenVelocityIsLargeEnough() {
+        val state = controller.create(initialScrollOffsetPx = 10f)
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = -600f,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+
+        assertFalse(state.isDragging)
+        assertTrue(state.isSettling)
+        assertEquals(-600f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
+
+    @Test
+    fun stepMovesScrollOffsetAndGraduallySlowsDown() {
+        val state = controller.create(initialScrollOffsetPx = 10f)
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = -600f,
+            viewportHeightPx = 20,
+            contentHeightPx = 120,
+        )
+
+        controller.step(
+            state = state,
+            deltaMs = 100,
+            viewportHeightPx = 20,
+            contentHeightPx = 120,
+        )
+
+        assertEquals(70f, state.scrollOffsetPx, 0.001f)
+        assertEquals(-360f, state.scrollVelocityPxPerSecond, 0.001f)
+        assertTrue(state.isSettling)
+    }
+
+    @Test
+    fun stepStopsSettlingAtScrollBoundary() {
+        val state = controller.create(initialScrollOffsetPx = 55f)
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = -600f,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+
+        controller.step(
+            state = state,
+            deltaMs = 100,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+
+        assertEquals(60f, state.scrollOffsetPx, 0.001f)
+        assertFalse(state.isSettling)
+        assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
 }
