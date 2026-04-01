@@ -256,6 +256,7 @@ fun Container(
     width: Int? = null,
     height: Int? = null,
     padding: EdgeInsets? = null,
+    margin: EdgeInsets? = null,
     modifier: PixelModifier = PixelModifier.Empty,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
@@ -275,7 +276,7 @@ fun Container(
             it
         }
     }
-    return DecoratedBox(
+    val decoratedBox = DecoratedBox(
         child = decoratedChild,
         modifier = sizedModifier,
         fillTone = fillTone,
@@ -284,6 +285,14 @@ fun Container(
         alignment = alignment,
         key = key,
     )
+    return if (margin != null) {
+        Padding(
+            child = decoratedBox,
+            padding = margin,
+        )
+    } else {
+        decoratedBox
+    }
 }
 
 fun Stack(
