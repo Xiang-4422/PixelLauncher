@@ -842,6 +842,36 @@ class PixelRenderRuntimeTest {
         )
     }
 
+    @Test
+    fun disabledTextFieldDoesNotExportInputTarget() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "LOCKED")
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                style = PixelTextFieldStyle.Default,
+                enabled = false,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(0, result.textInputTargets.size)
+        assertTrue(
+            hasTone(
+                result = result,
+                tone = PixelTone.OFF,
+                minX = 2,
+                maxX = 18,
+                minY = 1,
+                maxY = 9,
+            ),
+        )
+    }
+
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until result.buffer.height) {
