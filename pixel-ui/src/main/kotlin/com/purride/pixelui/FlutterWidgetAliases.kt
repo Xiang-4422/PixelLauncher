@@ -365,6 +365,27 @@ fun PageView(
     )
 }
 
+fun PageViewBuilder(
+    axis: Axis,
+    controller: PixelPagerController,
+    state: PixelPagerState,
+    itemCount: Int,
+    itemBuilder: (Int) -> Widget,
+    modifier: PixelModifier = PixelModifier.Empty,
+    onPageChanged: ((Int) -> Unit)? = null,
+    key: Any? = null,
+): Widget {
+    return PageView(
+        axis = axis,
+        controller = controller,
+        state = state,
+        pages = List(itemCount) { index -> itemBuilder(index) },
+        modifier = modifier,
+        onPageChanged = onPageChanged,
+        key = key,
+    )
+}
+
 fun ListView(
     items: List<Widget>,
     state: PixelListState,
@@ -375,6 +396,25 @@ fun ListView(
 ): Widget {
     return PixelList(
         items = items.map { it.asPixelNode() },
+        state = state,
+        controller = controller,
+        modifier = modifier,
+        spacing = spacing,
+        key = key,
+    )
+}
+
+fun ListViewBuilder(
+    itemCount: Int,
+    itemBuilder: (Int) -> Widget,
+    state: PixelListState,
+    controller: PixelListController,
+    modifier: PixelModifier = PixelModifier.Empty,
+    spacing: Int = 0,
+    key: Any? = null,
+): Widget {
+    return ListView(
+        items = List(itemCount) { index -> itemBuilder(index) },
         state = state,
         controller = controller,
         modifier = modifier,

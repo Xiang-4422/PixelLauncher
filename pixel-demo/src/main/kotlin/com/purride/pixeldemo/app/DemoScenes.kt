@@ -19,10 +19,12 @@ import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
+import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparated
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
+import com.purride.pixelui.PageViewBuilder
 import com.purride.pixelui.PageController
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
@@ -396,7 +398,7 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PageView(
+                PageViewBuilder(
                     axis = Axis.HORIZONTAL,
                     state = state,
                     controller = controller,
@@ -405,40 +407,43 @@ object DemoScenes {
                         reportedPage = page + 1
                         hostView.requestRender()
                     },
-                    pages = listOf(
-                        pagerPage(
-                            title = "H PAGE 1 / NOW $reportedPage",
-                            tone = PixelTone.ON,
-                            onPrimaryAction = {
-                                controller.nextPage(state)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "GO 2",
-                        ),
-                        pagerPage(
-                            title = "H PAGE 2 / NOW $reportedPage",
-                            tone = PixelTone.ACCENT,
-                            onPrimaryAction = {
-                                controller.nextPage(state)
-                                hostView.requestRender()
-                            },
-                            onSecondaryAction = {
-                                controller.previousPage(state)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "GO 3",
-                            secondaryActionLabel = "BACK 1",
-                        ),
-                        pagerPage(
-                            title = "H PAGE 3 / NOW $reportedPage",
-                            tone = PixelTone.ON,
-                            onPrimaryAction = {
-                                controller.jumpToPage(state, 0)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "BACK 1",
-                        ),
-                    ),
+                    itemCount = 3,
+                    itemBuilder = { index ->
+                        when (index) {
+                            0 -> pagerPage(
+                                title = "H PAGE 1 / NOW $reportedPage",
+                                tone = PixelTone.ON,
+                                onPrimaryAction = {
+                                    controller.nextPage(state)
+                                    hostView.requestRender()
+                                },
+                                primaryActionLabel = "GO 2",
+                            )
+                            1 -> pagerPage(
+                                title = "H PAGE 2 / NOW $reportedPage",
+                                tone = PixelTone.ACCENT,
+                                onPrimaryAction = {
+                                    controller.nextPage(state)
+                                    hostView.requestRender()
+                                },
+                                onSecondaryAction = {
+                                    controller.previousPage(state)
+                                    hostView.requestRender()
+                                },
+                                primaryActionLabel = "GO 3",
+                                secondaryActionLabel = "BACK 1",
+                            )
+                            else -> pagerPage(
+                                title = "H PAGE 3 / NOW $reportedPage",
+                                tone = PixelTone.ON,
+                                onPrimaryAction = {
+                                    controller.jumpToPage(state, 0)
+                                    hostView.requestRender()
+                                },
+                                primaryActionLabel = "BACK 1",
+                            )
+                        }
+                    },
                 )
             },
         )
@@ -732,7 +737,7 @@ object DemoScenes {
                                 ),
                             ),
                         ),
-                        ListViewSeparated(
+                        ListViewBuilder(
                             itemCount = 8,
                             state = state,
                             controller = controller,
@@ -758,9 +763,7 @@ object DemoScenes {
                                     },
                                 )
                             },
-                            separatorBuilder = {
-                                SizedBox(height = 3)
-                            },
+                            spacing = 3,
                         ),
                     ),
                 )

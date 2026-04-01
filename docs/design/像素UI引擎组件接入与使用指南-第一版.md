@@ -339,6 +339,7 @@ OutlinedButton(
 - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - [FlutterControllerExtensions.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerExtensions.kt)
 - [PageView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
+- [PageViewBuilder](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
 
@@ -381,6 +382,7 @@ PageView(
 - 分页吸附
 - `onPageChanged(page)`
 - `jumpToPage / nextPage / previousPage`
+- `PageViewBuilder(itemCount, itemBuilder)`
 
 ### 5.2 `ListView`
 
@@ -391,6 +393,7 @@ PageView(
 - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - [FlutterControllerExtensions.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerExtensions.kt)
 - [ListView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
+- [ListViewBuilder](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 - [ListViewSeparated](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
@@ -423,6 +426,7 @@ ListView(
 - 裁剪视口
 - 程序化滚动到某一项
 - 与外层分页做手势仲裁
+- `ListViewBuilder(itemCount, itemBuilder)`
 - `ListViewSeparated` 分隔列表
 - `showItem / jumpToStart / jumpToEnd`
 
