@@ -41,7 +41,15 @@ data class PixelTextNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val text: String,
     val style: PixelTextStyle = PixelTextStyle.Default,
+    val softWrap: Boolean = false,
+    val maxLines: Int = 1,
+    val overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
 ) : PixelNode
+
+enum class PixelTextOverflow {
+    CLIP,
+    ELLIPSIS,
+}
 
 data class PixelSurfaceNode(
     override val key: Any? = null,
@@ -91,6 +99,9 @@ fun PixelText(
     text: String,
     modifier: PixelModifier = PixelModifier.Empty,
     style: PixelTextStyle = PixelTextStyle.Default,
+    softWrap: Boolean = false,
+    maxLines: Int = 1,
+    overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     key: Any? = null,
 ): PixelNode {
     return PixelTextNode(
@@ -98,6 +109,9 @@ fun PixelText(
         modifier = modifier,
         text = text,
         style = style,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        overflow = overflow,
     )
 }
 

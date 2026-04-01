@@ -24,6 +24,7 @@ import com.purride.pixelui.PixelRow
 import com.purride.pixelui.PixelSurface
 import com.purride.pixelui.PixelText
 import com.purride.pixelui.PixelTextField
+import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
@@ -506,6 +507,103 @@ class PixelRenderRuntimeTest {
         assertEquals(0, minY)
         assertEquals(3, maxY)
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+    }
+
+    @Test
+    fun textSoftWrapRendersMultipleLinesWithinWidth() {
+        val drawnTexts = mutableListOf<String>()
+        val customRasterizer = object : PixelTextRasterizer {
+            override fun measureText(text: String): Int = text.length
+
+            override fun measureHeight(text: String): Int = 1
+
+            override fun drawText(
+                buffer: PixelBuffer,
+                text: String,
+                x: Int,
+                y: Int,
+                value: Byte,
+            ) {
+                drawnTexts += text
+                if (text.isNotEmpty()) {
+                    buffer.fillRect(
+                        left = x,
+                        top = y,
+                        rectWidth = text.length,
+                        rectHeight = 1,
+                        value = value,
+                    )
+                }
+            }
+        }
+
+        val result = runtime.render(
+            root = PixelSurface(
+                modifier = PixelModifier.Empty.size(3, 2),
+                padding = 0,
+                alignment = PixelAlignment.TOP_START,
+                borderTone = null,
+                fillTone = PixelTone.OFF,
+                child = PixelText(
+                    text = "ABCD",
+                    softWrap = true,
+                    maxLines = 2,
+                    style = PixelTextStyle(
+                        tone = PixelTone.ACCENT,
+                        textRasterizer = customRasterizer,
+                    ),
+                ),
+            ),
+            logicalWidth = 3,
+            logicalHeight = 2,
+        )
+
+        assertEquals(listOf("ABC", "D"), drawnTexts)
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 1))
+    }
+
+    @Test
+    fun textEllipsisTrimsLastVisibleLineWhenLineCountOverflows() {
+        val drawnTexts = mutableListOf<String>()
+        val customRasterizer = object : PixelTextRasterizer {
+            override fun measureText(text: String): Int = text.length
+
+            override fun measureHeight(text: String): Int = 1
+
+            override fun drawText(
+                buffer: PixelBuffer,
+                text: String,
+                x: Int,
+                y: Int,
+                value: Byte,
+            ) {
+                drawnTexts += text
+            }
+        }
+
+        runtime.render(
+            root = PixelSurface(
+                modifier = PixelModifier.Empty.size(3, 1),
+                padding = 0,
+                alignment = PixelAlignment.TOP_START,
+                borderTone = null,
+                fillTone = PixelTone.OFF,
+                child = PixelText(
+                    text = "ABCD",
+                    maxLines = 1,
+                    overflow = PixelTextOverflow.ELLIPSIS,
+                    style = PixelTextStyle(
+                        tone = PixelTone.ACCENT,
+                        textRasterizer = customRasterizer,
+                    ),
+                ),
+            ),
+            logicalWidth = 3,
+            logicalHeight = 1,
+        )
+
+        assertEquals(listOf("..."), drawnTexts)
     }
 
     @Test
