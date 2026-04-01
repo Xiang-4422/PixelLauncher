@@ -177,11 +177,11 @@ Text("DEFAULT")
 
 Text(
     data = "ACCENT",
-    style = PixelTextStyle.Accent,
+    style = TextStyle.Accent,
 )
 ```
 
-如果要切换文字风格，可以通过 [PixelTextStyle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelTextStyle.kt) 指定：
+如果要切换文字风格，可以通过 [PixelTextStyle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelTextStyle.kt) 指定，公开层推荐直接使用 `TextStyle`：
 
 - `tone`
 - `textRasterizer`
@@ -192,7 +192,7 @@ Text(
 ```kotlin
 Text(
     data = "中文标题",
-    style = PixelTextStyle(
+    style = TextStyle(
         tone = PixelTone.ACCENT,
         textRasterizer = titleRasterizer,
     ),
@@ -206,7 +206,7 @@ Text(
     data = "这是一段用于验证中文换行与省略的像素文本内容。",
     softWrap = true,
     maxLines = 3,
-    overflow = PixelTextOverflow.ELLIPSIS,
+    overflow = TextOverflow.ELLIPSIS,
 )
 ```
 
@@ -280,7 +280,7 @@ OutlinedButton(
 )
 ```
 
-当前按钮视觉风格用 `PixelButtonStyle` 控制：
+当前按钮视觉风格用 `ButtonStyle` 控制：
 
 - `Default`
 - `Accent`
@@ -305,7 +305,7 @@ private val pagerController = PageController()
 private val pagerState = pagerController.create(
     pageCount = 3,
     currentPage = 0,
-    axis = PixelAxis.HORIZONTAL,
+    axis = Axis.HORIZONTAL,
 )
 ```
 
@@ -508,7 +508,7 @@ OutlinedButton(
 
 - 宿主先准备一套默认 `PixelTextRasterizer`
 - `PixelHostView.textRasterizer` 作为全局默认字体
-- 某些节点如果需要不同文本风格，再通过 `PixelTextStyle(textRasterizer = ...)` 局部覆盖
+- 某些节点如果需要不同文本风格，再通过 `TextStyle(textRasterizer = ...)` 局部覆盖
 
 ---
 
