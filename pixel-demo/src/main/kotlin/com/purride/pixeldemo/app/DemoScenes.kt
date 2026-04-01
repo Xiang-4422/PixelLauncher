@@ -233,6 +233,7 @@ object DemoScenes {
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE PRIMARY",
                             style = TextFieldStyle.Default,
+                            autofocus = true,
                             onChanged = { text ->
                                 liveText = text
                                 hostView.requestRender()

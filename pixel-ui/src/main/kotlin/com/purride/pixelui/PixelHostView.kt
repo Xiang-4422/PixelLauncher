@@ -564,6 +564,18 @@ class PixelHostView @JvmOverloads constructor(
         if (requestedTarget != null) {
             requestedTarget.state.focusRequested = false
             focusTextInput(requestedTarget)
+            requestedTarget.state.autofocusConsumed = true
+            return
+        }
+
+        val autofocusTarget = targets.lastOrNull { target ->
+            target.autofocus &&
+                !target.state.autofocusConsumed &&
+                focusedTextInputTarget == null
+        }
+        if (autofocusTarget != null) {
+            autofocusTarget.state.autofocusConsumed = true
+            focusTextInput(autofocusTarget)
         }
     }
 

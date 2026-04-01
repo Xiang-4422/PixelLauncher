@@ -42,6 +42,7 @@ data class PixelTextFieldNode(
     val style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
     val enabled: Boolean = true,
     val readOnly: Boolean = false,
+    val autofocus: Boolean = false,
     val onChanged: ((String) -> Unit)? = null,
     val onSubmitted: ((String) -> Unit)? = null,
 ) : PixelNode
@@ -54,6 +55,7 @@ fun PixelTextField(
     style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
     enabled: Boolean = true,
     readOnly: Boolean = false,
+    autofocus: Boolean = false,
     onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
@@ -67,6 +69,7 @@ fun PixelTextField(
         style = style,
         enabled = enabled,
         readOnly = readOnly,
+        autofocus = autofocus,
         onChanged = onChanged,
         onSubmitted = onSubmitted,
     )
