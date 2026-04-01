@@ -303,6 +303,7 @@ OutlinedButton(
     text = "SUBMIT",
     onPressed = { hostView.requestRender() },
     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+    enabled = true,
 )
 ```
 
@@ -310,6 +311,7 @@ OutlinedButton(
 
 - `Default`
 - `Accent`
+- `Disabled`
 
 ---
 

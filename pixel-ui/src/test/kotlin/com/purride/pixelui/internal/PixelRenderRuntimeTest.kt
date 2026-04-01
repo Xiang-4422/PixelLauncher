@@ -48,6 +48,7 @@ import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelcore.PixelTone
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -664,6 +665,27 @@ class PixelRenderRuntimeTest {
         result.clickTargets.first().onClick.invoke()
         assertTrue(clicked)
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+    }
+
+    @Test
+    fun pixelButtonDoesNotExportClickTargetWhenDisabled() {
+        var clicked = false
+
+        val result = runtime.render(
+            root = PixelButton(
+                text = "DISABLED",
+                onClick = { clicked = true },
+                modifier = PixelModifier.Empty.size(18, 10),
+                style = PixelButtonStyle.Accent,
+                enabled = false,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 12,
+        )
+
+        assertEquals(0, result.clickTargets.size)
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
+        assertFalse(clicked)
     }
 
     @Test

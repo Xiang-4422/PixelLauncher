@@ -26,6 +26,11 @@ data class PixelButtonStyle(
             borderTone = PixelTone.ACCENT,
             textStyle = PixelTextStyle.Accent,
         )
+        val Disabled = PixelButtonStyle(
+            fillTone = PixelTone.OFF,
+            borderTone = PixelTone.ON,
+            textStyle = PixelTextStyle(tone = PixelTone.OFF),
+        )
     }
 }
 
@@ -41,19 +46,21 @@ fun PixelButton(
     onClick: () -> Unit,
     modifier: PixelModifier = PixelModifier.Empty,
     style: PixelButtonStyle = PixelButtonStyle.Default,
+    enabled: Boolean = true,
     key: Any? = null,
 ): PixelNode {
+    val resolvedStyle = if (enabled) style else PixelButtonStyle.Disabled
     return PixelSurface(
-        modifier = modifier.clickable(onClick),
-        fillTone = style.fillTone,
-        borderTone = style.borderTone,
+        modifier = if (enabled) modifier.clickable(onClick) else modifier,
+        fillTone = resolvedStyle.fillTone,
+        borderTone = resolvedStyle.borderTone,
         child = PixelBox(
             modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = style.alignment,
+            alignment = resolvedStyle.alignment,
             children = listOf(
                 PixelText(
                     text = text,
-                    style = style.textStyle,
+                    style = resolvedStyle.textStyle,
                 ),
             ),
         ),

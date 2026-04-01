@@ -442,6 +442,7 @@ fun OutlinedButton(
     onPressed: () -> Unit,
     modifier: PixelModifier = PixelModifier.Empty,
     style: ButtonStyle = ButtonStyle.Default,
+    enabled: Boolean = true,
     key: Any? = null,
 ): Widget {
     return PixelButton(
@@ -449,6 +450,7 @@ fun OutlinedButton(
         onClick = onPressed,
         modifier = modifier,
         style = style,
+        enabled = enabled,
         key = key,
     )
 }
