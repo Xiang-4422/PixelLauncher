@@ -43,15 +43,16 @@ data class PixelButtonStyle(
  */
 fun PixelButton(
     text: String,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: PixelModifier = PixelModifier.Empty,
     style: PixelButtonStyle = PixelButtonStyle.Default,
     enabled: Boolean = true,
     key: Any? = null,
 ): PixelNode {
-    val resolvedStyle = if (enabled) style else PixelButtonStyle.Disabled
+    val isEnabled = enabled && onClick != null
+    val resolvedStyle = if (isEnabled) style else PixelButtonStyle.Disabled
     return PixelSurface(
-        modifier = if (enabled) modifier.clickable(onClick) else modifier,
+        modifier = if (isEnabled) modifier.clickable { onClick?.invoke() } else modifier,
         fillTone = resolvedStyle.fillTone,
         borderTone = resolvedStyle.borderTone,
         child = PixelBox(

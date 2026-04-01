@@ -284,12 +284,15 @@ object DemoScenes {
                         ),
                         OutlinedButton(
                             text = "CLEAR SECONDARY",
-                            onPressed = {
-                                controller.clear(secondaryState)
-                                hostView.requestRender()
+                            onPressed = if (secondaryState.text.isNotEmpty()) {
+                                {
+                                    controller.clear(secondaryState)
+                                    hostView.requestRender()
+                                }
+                            } else {
+                                null
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            enabled = secondaryState.text.isNotEmpty(),
                         ),
                         Row(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
@@ -318,6 +321,11 @@ object DemoScenes {
                                     style = ButtonStyle.Accent,
                                 ),
                             ),
+                        ),
+                        OutlinedButton(
+                            text = "NULL DISABLED",
+                            onPressed = null,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
                     ),
                 )
