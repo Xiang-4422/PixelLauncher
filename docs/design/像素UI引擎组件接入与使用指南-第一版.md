@@ -536,6 +536,7 @@ setContentView(
 2. 提交动作回调
 3. 实时文本变化回调
 4. 禁用态
+5. 只读态
 
 示例：
 
@@ -594,6 +595,24 @@ TextField(
 - 不导出输入目标，不能聚焦和编辑
 - 不显示输入光标
 - 使用 `TextFieldStyle` 中的禁用边框、禁用文本和禁用占位样式
+
+只读态示例：
+
+```kotlin
+TextField(
+    state = readOnlyState,
+    controller = controller,
+    placeholder = "READ ONLY",
+    readOnly = true,
+)
+```
+
+只读时当前行为：
+
+- 仍然可以聚焦，页面能感知焦点状态
+- 不弹出键盘
+- 不接受宿主输入回写
+- 不显示输入光标
 
 ---
 

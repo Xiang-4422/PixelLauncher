@@ -143,6 +143,9 @@ class PixelHostView @JvmOverloads constructor(
         selectionEnd: Int = selectionStart,
     ) {
         val target = focusedTextInputTarget ?: return
+        if (target.readOnly) {
+            return
+        }
         target.controller.updateText(
             state = target.state,
             text = text,
@@ -577,6 +580,7 @@ class PixelHostView @JvmOverloads constructor(
                 text = target.state.text,
                 selectionStart = target.state.selectionStart,
                 selectionEnd = target.state.selectionEnd,
+                readOnly = target.readOnly,
             ),
         )
     }

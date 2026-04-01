@@ -136,6 +136,7 @@ internal data class PixelTextInputTarget(
     val bounds: PixelRect,
     val state: com.purride.pixelui.state.PixelTextFieldState,
     val controller: com.purride.pixelui.state.PixelTextFieldController,
+    val readOnly: Boolean,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
 )
@@ -1347,6 +1348,8 @@ internal class PixelRenderRuntime(
     ) {
         val borderTone = if (!node.enabled) {
             node.style.disabledBorderTone ?: node.style.borderTone
+        } else if (node.readOnly) {
+            node.style.readOnlyBorderTone ?: node.style.borderTone
         } else if (node.state.isFocused) {
             node.style.focusedBorderTone ?: node.style.borderTone
         } else {
@@ -1395,7 +1398,7 @@ internal class PixelRenderRuntime(
             )
         }
 
-        if (node.enabled && node.state.isFocused) {
+        if (node.enabled && !node.readOnly && node.state.isFocused) {
             val visibleText = node.state.text.take(node.state.selectionStart.coerceAtMost(node.state.text.length))
             val cursorX = textX + (node.style.textStyle.textRasterizer ?: textRasterizer).measureText(visibleText)
             val cursorTop = bounds.top + node.style.padding
@@ -1414,6 +1417,7 @@ internal class PixelRenderRuntime(
                 bounds = bounds,
                 state = node.state,
                 controller = node.controller,
+                readOnly = node.readOnly,
                 onChanged = node.onChanged,
                 onSubmitted = node.onSubmitted,
             )

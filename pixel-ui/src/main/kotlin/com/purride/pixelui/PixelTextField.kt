@@ -15,6 +15,7 @@ data class PixelTextFieldStyle(
     val borderTone: PixelTone? = PixelTone.ON,
     val focusedBorderTone: PixelTone? = PixelTone.ACCENT,
     val disabledBorderTone: PixelTone? = PixelTone.ON,
+    val readOnlyBorderTone: PixelTone? = PixelTone.ACCENT,
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
     val placeholderStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.ACCENT),
     val disabledTextStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.OFF),
@@ -40,6 +41,7 @@ data class PixelTextFieldNode(
     val placeholder: String = "",
     val style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
     val enabled: Boolean = true,
+    val readOnly: Boolean = false,
     val onChanged: ((String) -> Unit)? = null,
     val onSubmitted: ((String) -> Unit)? = null,
 ) : PixelNode
@@ -51,6 +53,7 @@ fun PixelTextField(
     placeholder: String = "",
     style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
     enabled: Boolean = true,
+    readOnly: Boolean = false,
     onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
@@ -63,6 +66,7 @@ fun PixelTextField(
         placeholder = placeholder,
         style = style,
         enabled = enabled,
+        readOnly = readOnly,
         onChanged = onChanged,
         onSubmitted = onSubmitted,
     )
