@@ -952,6 +952,26 @@ class PixelRenderRuntimeTest {
         )
     }
 
+    @Test
+    fun autofocusTextFieldExportsAutofocusTarget() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "AUTO")
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                autofocus = true,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.textInputTargets.size)
+        assertTrue(result.textInputTargets.first().autofocus)
+    }
+
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until result.buffer.height) {

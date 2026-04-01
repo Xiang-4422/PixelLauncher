@@ -537,6 +537,7 @@ setContentView(
 3. 实时文本变化回调
 4. 禁用态
 5. 只读态
+6. 首次自动聚焦
 
 示例：
 
@@ -613,6 +614,22 @@ TextField(
 - 不弹出键盘
 - 不接受宿主输入回写
 - 不显示输入光标
+
+自动聚焦示例：
+
+```kotlin
+TextField(
+    state = primaryState,
+    controller = controller,
+    placeholder = "TYPE PRIMARY",
+    autofocus = true,
+)
+```
+
+自动聚焦当前规则：
+
+- 只在该状态对象第一次出现在页面里时自动聚焦一次
+- 不会因为后续 `requestRender()` 重绘反复抢焦点
 
 ---
 
