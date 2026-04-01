@@ -368,6 +368,7 @@ PageView(
 - [PixelListController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListController.kt)
 - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - [ListView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
+- [ListViewSeparated](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
 
@@ -399,6 +400,28 @@ ListView(
 - 裁剪视口
 - 程序化滚动到某一项
 - 与外层分页做手势仲裁
+- `ListViewSeparated` 分隔列表
+
+如果你要表达“列表项 + 分隔块”的模式，公开层现在可以直接用：
+
+```kotlin
+ListViewSeparated(
+    itemCount = 5,
+    state = listState,
+    controller = listController,
+    modifier = PixelModifier.Empty.fillMaxWidth().height(40),
+    itemBuilder = { index ->
+        OutlinedButton(
+            text = "ITEM ${index + 1}",
+            onPressed = { hostView.requestRender() },
+            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+        )
+    },
+    separatorBuilder = {
+        SizedBox(height = 2)
+    },
+)
+```
 
 当前不支持：
 
