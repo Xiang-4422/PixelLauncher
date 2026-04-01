@@ -55,6 +55,7 @@ dependencies {
 
 1. 创建 `PixelHostView`
 2. 设置 `screenProfile`
+   或者优先设置 `profilePreference`
 3. 设置 `palette`
 4. 可选设置 `textRasterizer`
 5. 用 `setContent { ... }` 提供组件树
@@ -64,9 +65,7 @@ dependencies {
 
 ```kotlin
 val hostView = PixelHostView(this).apply {
-    screenProfile = ScreenProfileFactory.create(
-        widthPx = resources.displayMetrics.widthPixels,
-        heightPx = resources.displayMetrics.heightPixels,
+    profilePreference = PixelHostProfilePreference(
         dotSizePx = 8,
     )
     setPalette(PixelPalette.terminalGreen())
@@ -92,6 +91,7 @@ setContentView(hostView)
 关键类型：
 
 - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostView.kt)
+- [PixelHostProfilePreference.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostProfilePreference.kt)
 - [ScreenProfileFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/ScreenProfileFactory.kt)
 - [PixelPalette.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelPalette.kt)
 
