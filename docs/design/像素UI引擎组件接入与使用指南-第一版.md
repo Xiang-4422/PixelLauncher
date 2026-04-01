@@ -451,6 +451,41 @@ setContentView(
 如果后面要接更复杂的 IME 行为，仍然可以自定义实现 `PixelHostBridge`。  
 但对大多数普通页面来说，默认桥接已经足够把单行输入跑起来。
 
+当前 `TextField` 还支持两项很实用的页面行为：
+
+1. 程序化请求焦点
+2. 提交动作回调
+
+示例：
+
+```kotlin
+private val textController = PixelTextFieldController()
+private val nameState = textController.create()
+
+TextField(
+    state = nameState,
+    controller = textController,
+    placeholder = "TYPE NAME",
+    onSubmitted = { text ->
+        hostView.requestRender()
+    },
+)
+
+OutlinedButton(
+    text = "FOCUS NAME",
+    onPressed = {
+        textController.requestFocus(nameState)
+        hostView.requestRender()
+    },
+)
+```
+
+当前控制器可用动作：
+
+- `requestFocus(state)`
+- `requestBlur(state)`
+- `updateText(state, text, selectionStart, selectionEnd)`
+
 ---
 
 ## 7. 中文与自定义字体接入
