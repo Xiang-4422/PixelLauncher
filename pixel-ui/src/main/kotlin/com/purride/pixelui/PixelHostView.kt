@@ -56,7 +56,7 @@ class PixelHostView @JvmOverloads constructor(
         }
 
     private var runtime = PixelRenderRuntime()
-    private var contentProvider: (() -> PixelNode)? = null
+    private var contentProvider: (() -> Widget)? = null
     private var lastRenderResult: PixelRenderResult? = null
     private var palette: PixelPalette = PixelPalette.terminalGreen()
     private var pixelGapEnabled: Boolean = true
@@ -109,7 +109,13 @@ class PixelHostView @JvmOverloads constructor(
     }
     private val reusableDiamondPath = Path()
 
-    fun setContent(provider: () -> PixelNode) {
+    /**
+     * 设置宿主当前要渲染的组件树。
+     *
+     * 公开边界已经提升到 `Widget`，这样页面层可以按 Flutter 风格组织；
+     * 当前 runtime 仍然走 `PixelNode` 兼容层，所以这里会在真正渲染前做一次受控映射。
+     */
+    fun setContent(provider: () -> Widget) {
         contentProvider = provider
         invalidate()
     }
@@ -172,7 +178,7 @@ class PixelHostView @JvmOverloads constructor(
         val provider = contentProvider
         val renderResult = if (provider != null) {
             runtime.render(
-                root = provider(),
+                root = provider().asPixelNodeForCurrentRuntime(),
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
             )
@@ -560,5 +566,14 @@ class PixelHostView @JvmOverloads constructor(
             profile = screenProfile,
             pixelGapEnabled = pixelGapEnabled,
         )
+    }
+
+    /**
+     * 当前 runtime 还没有完全切到 `Widget / Element / RenderObject`，
+     * 所以这里先把公开 `Widget` 边界映射回兼容层 `PixelNode`。
+     */
+    private fun Widget.asPixelNodeForCurrentRuntime(): PixelNode {
+        return this as? PixelNode
+            ?: error("当前 PixelHostView 仍依赖 PixelNode 兼容层，收到未兼容的 Widget 类型: ${this::class.qualifiedName}")
     }
 }
