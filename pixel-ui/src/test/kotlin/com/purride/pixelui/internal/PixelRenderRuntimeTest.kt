@@ -1010,6 +1010,25 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTextInputAction.NEXT, result.textInputTargets.first().action)
     }
 
+    @Test
+    fun textFieldClipsLongDisplayTextToContentWidth() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "THIS IS A VERY LONG INPUT")
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(12, 10),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(11, 5))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 5))
+    }
+
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until result.buffer.height) {

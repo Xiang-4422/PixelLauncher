@@ -209,7 +209,7 @@ object DemoScenes {
         val controller = TextEditingController()
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
-        val readOnlyState = controller.create(initialText = "READ ONLY VALUE")
+        val readOnlyState = controller.create(initialText = "READ ONLY VALUE THAT SHOULD CLIP")
         var liveText = primaryState.text
         var submittedText = ""
 
@@ -225,7 +225,7 @@ object DemoScenes {
                         sectionTitle("TEXT FIELD"),
                         infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
                         infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
-                        infoCard("READ ONLY", "VISIBLE BUT LOCKED"),
+                        infoCard("READ ONLY", "VISIBLE BUT LOCKED AND CLIPPED"),
                         infoCard("LIVE", liveText.ifEmpty { "(EMPTY)" }, accent = liveText.isNotEmpty()),
                         infoCard("SUBMITTED", submittedText.ifEmpty { "(NONE)" }, accent = submittedText.isNotEmpty()),
                         TextField(
