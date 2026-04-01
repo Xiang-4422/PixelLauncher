@@ -14,7 +14,9 @@ import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisAlignment
@@ -870,13 +872,14 @@ object DemoScenes {
     ): Widget {
         val resolvedRasterizer = textRasterizer ?: PixelBitmapFont.Default
         val titleHeight = resolvedRasterizer.measureHeight(text)
-        return DecoratedBox(
-            modifier = PixelModifier.Empty.fillMaxWidth().height(titleHeight + 6),
+        return Container(
+            modifier = PixelModifier.Empty.fillMaxWidth(),
+            height = titleHeight + 6,
             fillTone = PixelTone.OFF,
             borderTone = PixelTone.ACCENT,
-            padding = 0,
+            padding = EdgeInsets.all(3),
             child = Center(
-                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                modifier = PixelModifier.Empty.fillMaxSize(),
                 child = Text(
                     text,
                     style = TextStyle(
@@ -910,13 +913,14 @@ object DemoScenes {
             resolvedValueRasterizer.measureHeight(trimmedValue) +
             8
 
-        return DecoratedBox(
-            modifier = PixelModifier.Empty.fillMaxWidth().height(cardHeight),
+        return Container(
+            modifier = PixelModifier.Empty.fillMaxWidth(),
+            height = cardHeight,
             fillTone = PixelTone.OFF,
             borderTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
-            padding = 0,
+            padding = EdgeInsets.all(3),
             child = Column(
-                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                modifier = PixelModifier.Empty.fillMaxSize(),
                 spacing = 2,
                 children = listOf(
                     Text(trimmedLabel, style = TextStyle.Accent),
@@ -932,8 +936,9 @@ object DemoScenes {
         )
     }
 
-    private fun swatch(tone: PixelTone, label: String): Widget = DecoratedBox(
-        modifier = PixelModifier.Empty.size(22, 18),
+    private fun swatch(tone: PixelTone, label: String): Widget = Container(
+        width = 22,
+        height = 18,
         fillTone = tone,
         borderTone = PixelTone.ON,
         child = Center(
@@ -949,8 +954,9 @@ object DemoScenes {
         ),
     )
 
-    private fun demoSquare(label: String): Widget = DecoratedBox(
-        modifier = PixelModifier.Empty.size(28, 28),
+    private fun demoSquare(label: String): Widget = Container(
+        width = 28,
+        height = 28,
         fillTone = PixelTone.OFF,
         borderTone = PixelTone.ON,
         child = Center(
@@ -966,12 +972,13 @@ object DemoScenes {
         primaryActionLabel: String,
         onSecondaryAction: (() -> Unit)? = null,
         secondaryActionLabel: String? = null,
-    ): Widget = DecoratedBox(
+    ): Widget = Container(
         modifier = PixelModifier.Empty.fillMaxSize(),
         fillTone = PixelTone.OFF,
         borderTone = tone,
+        padding = EdgeInsets.all(3),
         child = Column(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+            modifier = PixelModifier.Empty.fillMaxSize(),
             spacing = 4,
             children = buildList {
                 add(

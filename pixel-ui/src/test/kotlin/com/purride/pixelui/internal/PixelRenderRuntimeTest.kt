@@ -12,7 +12,9 @@ import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.Column
 import com.purride.pixelui.Center
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelList
@@ -75,6 +77,42 @@ class PixelRenderRuntimeTest {
         assertTrue(minX >= 7)
         assertTrue(maxX <= 12)
         assertTrue(minY >= 6)
+    }
+
+    @Test
+    fun paddingWithEdgeInsetsOffsetsChildBySpecifiedSides() {
+        val result = runtime.render(
+            root = Padding(
+                padding = EdgeInsets.only(left = 3, top = 2),
+                child = Text("A"),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 20,
+            logicalHeight = 20,
+        )
+
+        val pixels = collectOnPixels(result)
+        assertTrue(pixels.minOf { it.first } >= 3)
+        assertTrue(pixels.minOf { it.second } >= 2)
+    }
+
+    @Test
+    fun containerAppliesPaddingWithoutExposingSurfaceInternals() {
+        val result = runtime.render(
+            root = Container(
+                width = 20,
+                height = 12,
+                padding = EdgeInsets.all(2),
+                fillTone = PixelTone.OFF,
+                borderTone = null,
+                child = Text("A"),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 20,
+            logicalHeight = 12,
+        )
+
+        val pixels = collectOnPixels(result)
+        assertTrue(pixels.minOf { it.first } >= 2)
+        assertTrue(pixels.minOf { it.second } >= 2)
     }
 
     @Test

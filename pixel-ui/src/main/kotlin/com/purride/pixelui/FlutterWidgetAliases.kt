@@ -48,6 +48,25 @@ fun Padding(
 
 fun Padding(
     child: Widget,
+    padding: EdgeInsets,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    return Stack(
+        children = listOf(child),
+        modifier = modifier.padding(
+            left = padding.left,
+            top = padding.top,
+            right = padding.right,
+            bottom = padding.bottom,
+        ),
+        alignment = Alignment.TOP_START,
+        key = key,
+    )
+}
+
+fun Padding(
+    child: Widget,
     horizontal: Int = 0,
     vertical: Int = 0,
     modifier: PixelModifier = PixelModifier.Empty,
@@ -228,6 +247,41 @@ fun DecoratedBox(
         borderTone = borderTone,
         padding = padding,
         alignment = alignment.toPixelAlignment(),
+        key = key,
+    )
+}
+
+fun Container(
+    child: Widget? = null,
+    width: Int? = null,
+    height: Int? = null,
+    padding: EdgeInsets? = null,
+    modifier: PixelModifier = PixelModifier.Empty,
+    fillTone: PixelTone = PixelTone.OFF,
+    borderTone: PixelTone? = PixelTone.ON,
+    alignment: Alignment = Alignment.CENTER,
+    key: Any? = null,
+): Widget {
+    val sizedModifier = when {
+        width != null && height != null -> modifier.size(width, height)
+        width != null -> modifier.width(width)
+        height != null -> modifier.height(height)
+        else -> modifier
+    }
+    val decoratedChild = child?.let {
+        if (padding != null) {
+            Padding(child = it, padding = padding)
+        } else {
+            it
+        }
+    }
+    return DecoratedBox(
+        child = decoratedChild,
+        modifier = sizedModifier,
+        fillTone = fillTone,
+        borderTone = borderTone,
+        padding = 0,
+        alignment = alignment,
         key = key,
     )
 }

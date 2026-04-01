@@ -236,7 +236,33 @@ DecoratedBox(
 - 面板
 - 输入框或按钮的基础底座
 
-### 4.3 布局容器
+如果页面只是想表达一个“带尺寸、边框、内边距”的常用容器，公开层现在更推荐直接用 `Container`：
+
+```kotlin
+Container(
+    width = 32,
+    height = 18,
+    padding = EdgeInsets.all(3),
+    fillTone = PixelTone.OFF,
+    borderTone = PixelTone.ACCENT,
+    child = Center(
+        child = Text("CARD"),
+    ),
+)
+```
+
+### 4.3 间距包装
+
+当前公开层已经补了 `EdgeInsets`，推荐优先用它表达 Flutter 风格内边距：
+
+```kotlin
+Padding(
+    padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
+    child = Text("PADDED"),
+)
+```
+
+### 4.4 布局容器
 
 当前可用容器包括：
 
@@ -268,7 +294,7 @@ Row(
 - 交叉轴对齐 `START / CENTER / END`
 - `Modifier.weight(...)`
 
-### 4.4 按钮
+### 4.5 按钮
 
 使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
