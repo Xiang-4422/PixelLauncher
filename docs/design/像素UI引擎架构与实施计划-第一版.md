@@ -245,7 +245,7 @@ data class PixelPagerState(...)
 
 data class PixelPagerSnapshot(...)
 
-class PixelPagerController(...)
+class PageController(...)
 
 fun PixelPager(
     axis: PixelAxis,
@@ -332,9 +332,9 @@ fun PixelPager(
 3. `PixelText`
 4. `PixelSurface`
 5. `PixelBox / PixelRow / PixelColumn`
-6. `PixelPagerState / PixelPagerController / PixelPagerSnapshot`
+6. `PixelPagerState / PageController / PixelPagerSnapshot`
 7. `PixelPager`
-8. `PixelListState / PixelListController`
+8. `PixelListState / ScrollController`
 9. `PixelList`
 
 ### Phase D. 新增 `:pixel-demo`
@@ -429,14 +429,14 @@ fun PixelPager(
 | 已完成 | `pixel-ui` 文本样式对象 | 文本色阶与文本栅格器已收敛为 `PixelTextStyle`，页面层不再直接暴露底层字体实现 |
 | 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
 | 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
-| 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `PixelList`、`PixelListState`、`PixelListController`，并支持列表视口裁剪与触摸滚动 |
+| 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `ListView`、`PixelListState`、`ScrollController`，并支持列表视口裁剪、触摸滚动与基础惯性滚动 |
 | 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动 |
 | 已完成 | `pixel-ui` 列表到分页滚动接力 | 列表滑到边界后，同一次纵向手势可直接接力给外层分页，无需抬手重新触发 |
 | 已完成 | `pixel-ui` 最小文本输入链路 | `pixel-ui` 已具备 `PixelTextField`、文本输入目标、宿主输入桥接接线和基础测试 |
 | 已完成 | `pixel-ui` 基础权重布局 | `Row/Column` 已支持基于 `Modifier.weight(...)` 按比例分配剩余空间 |
 | 已完成 | `pixel-ui` 交叉轴对齐 | `Row/Column` 已支持 `START / CENTER / END` 交叉轴对齐，demo 已补可视化验证 |
 | 已完成 | `pixel-ui` 主轴排布首轮落地 | `Row/Column` 已支持 `START / CENTER / END` 主轴排布，demo 已补可视化验证 |
-| 已完成 | `pixel-ui` 列表程序化定位首轮落地 | `PixelListController` 已支持基于运行时测量结果将指定项滚入视口，demo 已补跳转验证 |
+| 已完成 | `pixel-ui` 列表程序化定位首轮落地 | `ScrollController` 已支持基于运行时测量结果将指定项滚入视口，demo 已补跳转验证 |
 | 已完成 | `pixel-ui` 单子节点滚动容器 | 已具备 `PixelSingleChildScrollView`，可承载单一长子树并复用现有纵向滚动链路 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、单子节点滚动、横纵分页、纵向列表、表单与列表组合、分页与列表组合、点击反馈、混合文本风格验证与权重布局展示 |
 | 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局约束、命中、分页/列表复合交互、文本输入焦点与对应测试，以及更复杂的滚动接力策略 |

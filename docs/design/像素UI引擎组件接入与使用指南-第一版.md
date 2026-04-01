@@ -295,12 +295,13 @@ OutlinedButton(
 
 - [PixelPagerState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerState.kt)
 - [PixelPagerController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerController.kt)
+- [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - [PageView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
 
 ```kotlin
-private val pagerController = PixelPagerController()
+private val pagerController = PageController()
 private val pagerState = pagerController.create(
     pageCount = 3,
     currentPage = 0,
@@ -339,12 +340,13 @@ PageView(
 
 - [PixelListState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListState.kt)
 - [PixelListController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListController.kt)
+- [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - [ListView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
 
 ```kotlin
-private val listController = PixelListController()
+private val listController = ScrollController()
 private val listState = listController.create()
 ```
 
@@ -374,7 +376,6 @@ ListView(
 
 当前不支持：
 
-- 惯性滚动
 - 回弹
 - 多列或瀑布流
 - 虚拟化
@@ -384,7 +385,7 @@ ListView(
 如果你不是要做“很多离散项”的列表，而是要做“一个很长的页面”，用 [SingleChildScrollView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
 ```kotlin
-private val scrollController = PixelListController()
+private val scrollController = ScrollController()
 private val scrollState = scrollController.create()
 ```
 
@@ -420,6 +421,7 @@ SingleChildScrollView(
 
 - [PixelTextField.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelTextField.kt)
 - [PixelTextFieldController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelTextFieldController.kt)
+- [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - [PixelHostBridge.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostBridge.kt)
 
 最小接法参考：
@@ -459,7 +461,7 @@ setContentView(
 示例：
 
 ```kotlin
-private val textController = PixelTextFieldController()
+private val textController = TextEditingController()
 private val nameState = textController.create()
 
 TextField(
@@ -518,7 +520,7 @@ OutlinedButton(
 
 ```kotlin
 setContent {
-    val controller = PixelListController()
+    val controller = ScrollController()
     val state = controller.create()
     ...
 }
@@ -529,7 +531,7 @@ setContent {
 正确写法是：
 
 ```kotlin
-private val controller = PixelListController()
+private val controller = ScrollController()
 private val state = controller.create()
 ```
 
