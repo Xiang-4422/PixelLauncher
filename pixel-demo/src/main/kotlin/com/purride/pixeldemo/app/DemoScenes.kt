@@ -532,6 +532,17 @@ object DemoScenes {
                     children = listOf(
                         sectionTitle("LAYOUT AND CLICK"),
                         infoCard("COUNTER", count.toString(), accent = accentMode),
+                        Container(
+                            width = 28,
+                            height = 12,
+                            margin = EdgeInsets.only(left = 6),
+                            fillTone = PixelTone.OFF,
+                            borderTone = PixelTone.ACCENT,
+                            child = Center(
+                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                child = Text("MARGIN", style = TextStyle.Accent),
+                            ),
+                        ),
                         OutlinedButton(
                             text = "INCREASE",
                             onPressed = {

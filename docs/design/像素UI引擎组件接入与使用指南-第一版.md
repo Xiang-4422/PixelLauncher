@@ -251,6 +251,19 @@ Container(
 )
 ```
 
+如果需要表达容器外边距，当前 `Container` 也支持 `margin`：
+
+```kotlin
+Container(
+    width = 32,
+    height = 18,
+    margin = EdgeInsets.only(top = 2),
+    fillTone = PixelTone.OFF,
+    borderTone = PixelTone.ACCENT,
+    child = Text("CARD"),
+)
+```
+
 ### 4.3 间距包装
 
 当前公开层已经补了 `EdgeInsets`，推荐优先用它表达 Flutter 风格内边距：

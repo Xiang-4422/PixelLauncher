@@ -398,6 +398,25 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun flutterStyleContainerMarginOffsetsDecoratedBox() {
+        val result = runtime.render(
+            root = Container(
+                width = 4,
+                height = 4,
+                margin = EdgeInsets.only(left = 2, top = 3),
+                fillTone = PixelTone.ACCENT,
+                borderTone = null,
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(2, 3))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 6))
+    }
+
+    @Test
     fun flutterStyleSpacerPushesTrailingChild() {
         val result = runtime.render(
             root = Row(
