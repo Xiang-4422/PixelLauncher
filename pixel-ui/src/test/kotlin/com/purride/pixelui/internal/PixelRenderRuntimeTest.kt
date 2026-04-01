@@ -313,6 +313,33 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun pagerExportsPageChangedCallback() {
+        val controller = PixelPagerController()
+        val state = controller.create(pageCount = 2, currentPage = 0, axis = PixelAxis.HORIZONTAL)
+        var changedPage = -1
+
+        val result = runtime.render(
+            root = PixelPager(
+                axis = PixelAxis.HORIZONTAL,
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 20),
+                onPageChanged = { page -> changedPage = page },
+                pages = listOf(
+                    PixelSurface(modifier = PixelModifier.Empty.size(10, 10)),
+                    PixelSurface(modifier = PixelModifier.Empty.size(10, 10)),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 20,
+        )
+
+        assertEquals(1, result.pagerTargets.size)
+        result.pagerTargets.first().onPageChanged?.invoke(1)
+        assertEquals(1, changedPage)
+    }
+
+    @Test
     fun flutterStyleAliasesRenderThroughCompatibilityLayer() {
         val result = runtime.render(
             root = Column(

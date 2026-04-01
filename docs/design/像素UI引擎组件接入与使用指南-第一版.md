@@ -345,6 +345,10 @@ PageView(
     axis = Axis.HORIZONTAL,
     state = pagerState,
     controller = pagerController,
+    onPageChanged = { page ->
+        currentPage = page
+        hostView.requestRender()
+    },
     modifier = PixelModifier.Empty.fillMaxSize(),
     pages = listOf(
         Text("PAGE 1"),
@@ -362,6 +366,7 @@ PageView(
 - 阈值翻页
 - 速度翻页
 - 分页吸附
+- `onPageChanged(page)`
 - `jumpToPage / nextPage / previousPage`
 
 ### 5.2 `ListView`

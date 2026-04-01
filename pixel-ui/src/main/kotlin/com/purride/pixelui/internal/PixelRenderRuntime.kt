@@ -121,6 +121,7 @@ internal data class PixelPagerTarget(
     val axis: PixelAxis,
     val state: PixelPagerState,
     val controller: PixelPagerController,
+    val onPageChanged: ((Int) -> Unit)?,
 )
 
 internal data class PixelListTarget(
@@ -1014,6 +1015,7 @@ internal class PixelRenderRuntime(
             axis = node.axis,
             state = node.state,
             controller = node.controller,
+            onPageChanged = node.onPageChanged,
         )
 
         val snapshot = node.controller.snapshot(node.state)

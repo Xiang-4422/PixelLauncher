@@ -390,6 +390,7 @@ object DemoScenes {
             currentPage = 0,
             axis = Axis.HORIZONTAL,
         )
+        var reportedPage = state.currentPage + 1
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
@@ -400,9 +401,13 @@ object DemoScenes {
                     state = state,
                     controller = controller,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                    onPageChanged = { page ->
+                        reportedPage = page + 1
+                        hostView.requestRender()
+                    },
                     pages = listOf(
                         pagerPage(
-                            title = "H PAGE 1",
+                            title = "H PAGE 1 / NOW $reportedPage",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
                                 controller.nextPage(state)
@@ -411,7 +416,7 @@ object DemoScenes {
                             primaryActionLabel = "GO 2",
                         ),
                         pagerPage(
-                            title = "H PAGE 2",
+                            title = "H PAGE 2 / NOW $reportedPage",
                             tone = PixelTone.ACCENT,
                             onPrimaryAction = {
                                 controller.nextPage(state)
@@ -425,7 +430,7 @@ object DemoScenes {
                             secondaryActionLabel = "BACK 1",
                         ),
                         pagerPage(
-                            title = "H PAGE 3",
+                            title = "H PAGE 3 / NOW $reportedPage",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
                                 controller.jumpToPage(state, 0)
@@ -449,6 +454,7 @@ object DemoScenes {
             currentPage = 0,
             axis = Axis.VERTICAL,
         )
+        var reportedPage = state.currentPage + 1
         return DemoScene(
             initialProfile = ScreenProfile(
                 logicalWidth = 80,
@@ -463,9 +469,13 @@ object DemoScenes {
                     state = state,
                     controller = controller,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                    onPageChanged = { page ->
+                        reportedPage = page + 1
+                        hostView.requestRender()
+                    },
                     pages = listOf(
                         pagerPage(
-                            title = "V PAGE 1",
+                            title = "V PAGE 1 / NOW $reportedPage",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
                                 controller.nextPage(state)
@@ -474,7 +484,7 @@ object DemoScenes {
                             primaryActionLabel = "GO 2",
                         ),
                         pagerPage(
-                            title = "V PAGE 2",
+                            title = "V PAGE 2 / NOW $reportedPage",
                             tone = PixelTone.ACCENT,
                             onPrimaryAction = {
                                 controller.nextPage(state)
@@ -488,7 +498,7 @@ object DemoScenes {
                             secondaryActionLabel = "BACK 1",
                         ),
                         pagerPage(
-                            title = "V PAGE 3",
+                            title = "V PAGE 3 / NOW $reportedPage",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
                                 controller.jumpToPage(state, 0)
