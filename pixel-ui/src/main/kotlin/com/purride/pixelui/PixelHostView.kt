@@ -149,6 +149,7 @@ class PixelHostView @JvmOverloads constructor(
             selectionStart = selectionStart,
             selectionEnd = selectionEnd,
         )
+        target.onChanged?.invoke(text)
         invalidate()
     }
 
