@@ -3,7 +3,9 @@ package com.purride.pixelui
 import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.KeyEvent
 import android.view.HapticFeedbackConstants
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 
@@ -33,6 +35,19 @@ class PixelTextInputBridge(
         inputView.isFocusable = true
         inputView.isFocusableInTouchMode = true
         inputView.setSingleLine()
+        inputView.setOnEditorActionListener { _, actionId, event ->
+            val isEnterKey = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
+            val isSubmitAction = actionId == EditorInfo.IME_ACTION_DONE ||
+                actionId == EditorInfo.IME_ACTION_NEXT ||
+                actionId == EditorInfo.IME_ACTION_GO ||
+                actionId == EditorInfo.IME_ACTION_SEND
+            if (isEnterKey || isSubmitAction) {
+                hostView.submitFocusedTextInput()
+                true
+            } else {
+                false
+            }
+        }
         inputView.addTextChangedListener(
             object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit

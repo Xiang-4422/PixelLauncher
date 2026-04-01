@@ -26,4 +26,7 @@ class PixelTextFieldState(
 
     var isFocused: Boolean = false
         internal set
+
+    internal var focusRequested: Boolean = false
+    internal var blurRequested: Boolean = false
 }

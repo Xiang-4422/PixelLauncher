@@ -339,6 +339,7 @@ fun TextField(
     modifier: PixelModifier = PixelModifier.Empty,
     placeholder: String = "",
     style: TextFieldStyle = TextFieldStyle.Default,
+    onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
     return PixelTextField(
@@ -347,6 +348,7 @@ fun TextField(
         modifier = modifier,
         placeholder = placeholder,
         style = style,
+        onSubmitted = onSubmitted,
         key = key,
     )
 }

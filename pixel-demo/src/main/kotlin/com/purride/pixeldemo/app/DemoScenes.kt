@@ -196,6 +196,7 @@ object DemoScenes {
         val controller = PixelTextFieldController()
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
+        var submittedText = ""
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -209,12 +210,17 @@ object DemoScenes {
                         sectionTitle("TEXT FIELD"),
                         infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
                         infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
+                        infoCard("SUBMITTED", submittedText.ifEmpty { "(NONE)" }, accent = submittedText.isNotEmpty()),
                         TextField(
                             state = primaryState,
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE PRIMARY",
                             style = PixelTextFieldStyle.Default,
+                            onSubmitted = { text ->
+                                submittedText = text
+                                hostView.requestRender()
+                            },
                         ),
                         TextField(
                             state = secondaryState,
@@ -227,6 +233,18 @@ object DemoScenes {
                                 textStyle = PixelTextStyle.Accent,
                                 placeholderStyle = PixelTextStyle.Default,
                             ),
+                            onSubmitted = { text ->
+                                submittedText = text
+                                hostView.requestRender()
+                            },
+                        ),
+                        OutlinedButton(
+                            text = "FOCUS PRIMARY",
+                            onPressed = {
+                                controller.requestFocus(primaryState)
+                                hostView.requestRender()
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
                         OutlinedButton(
                             text = "CLEAR SECONDARY",

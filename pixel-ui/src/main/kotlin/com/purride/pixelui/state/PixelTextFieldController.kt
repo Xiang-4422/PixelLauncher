@@ -35,9 +35,23 @@ class PixelTextFieldController {
 
     fun focus(state: PixelTextFieldState) {
         state.isFocused = true
+        state.focusRequested = false
+        state.blurRequested = false
     }
 
     fun blur(state: PixelTextFieldState) {
         state.isFocused = false
+        state.focusRequested = false
+        state.blurRequested = false
+    }
+
+    fun requestFocus(state: PixelTextFieldState) {
+        state.focusRequested = true
+        state.blurRequested = false
+    }
+
+    fun requestBlur(state: PixelTextFieldState) {
+        state.blurRequested = true
+        state.focusRequested = false
     }
 }
