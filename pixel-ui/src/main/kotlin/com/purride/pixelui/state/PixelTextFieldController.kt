@@ -33,6 +33,27 @@ class PixelTextFieldController {
         state.selectionEnd = selectionEnd.coerceIn(state.selectionStart, text.length)
     }
 
+    fun setSelection(
+        state: PixelTextFieldState,
+        selectionStart: Int,
+        selectionEnd: Int = selectionStart,
+    ) {
+        state.selectionStart = selectionStart.coerceIn(0, state.text.length)
+        state.selectionEnd = selectionEnd.coerceIn(state.selectionStart, state.text.length)
+    }
+
+    fun clear(state: PixelTextFieldState) {
+        updateText(state = state, text = "")
+    }
+
+    fun selectAll(state: PixelTextFieldState) {
+        setSelection(
+            state = state,
+            selectionStart = 0,
+            selectionEnd = state.text.length,
+        )
+    }
+
     fun focus(state: PixelTextFieldState) {
         state.isFocused = true
         state.focusRequested = false

@@ -259,10 +259,38 @@ object DemoScenes {
                         OutlinedButton(
                             text = "CLEAR SECONDARY",
                             onPressed = {
-                                controller.updateText(secondaryState, "")
+                                controller.clear(secondaryState)
                                 hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                        Row(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            spacing = 2,
+                            children = listOf(
+                                OutlinedButton(
+                                    text = "SELECT ALL",
+                                    onPressed = {
+                                        controller.selectAll(primaryState)
+                                        controller.requestFocus(primaryState)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                ),
+                                OutlinedButton(
+                                    text = "CURSOR END",
+                                    onPressed = {
+                                        controller.setSelection(
+                                            state = primaryState,
+                                            selectionStart = primaryState.text.length,
+                                        )
+                                        controller.requestFocus(primaryState)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    style = ButtonStyle.Accent,
+                                ),
+                            ),
                         ),
                     ),
                 )
