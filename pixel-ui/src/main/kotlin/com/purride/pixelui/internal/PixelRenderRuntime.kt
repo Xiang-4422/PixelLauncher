@@ -1343,7 +1343,9 @@ internal class PixelRenderRuntime(
         buffer: PixelBuffer,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val borderTone = if (node.state.isFocused) {
+        val borderTone = if (!node.enabled) {
+            node.style.disabledBorderTone ?: node.style.borderTone
+        } else if (node.state.isFocused) {
             node.style.focusedBorderTone ?: node.style.borderTone
         } else {
             node.style.borderTone
@@ -1366,7 +1368,13 @@ internal class PixelRenderRuntime(
         }
 
         val displayText = node.state.text.ifEmpty { node.placeholder }
-        val displayStyle = if (node.state.text.isEmpty()) {
+        val displayStyle = if (!node.enabled) {
+            if (node.state.text.isEmpty()) {
+                node.style.disabledPlaceholderStyle
+            } else {
+                node.style.disabledTextStyle
+            }
+        } else if (node.state.text.isEmpty()) {
             node.style.placeholderStyle
         } else {
             node.style.textStyle
@@ -1385,7 +1393,7 @@ internal class PixelRenderRuntime(
             )
         }
 
-        if (node.state.isFocused) {
+        if (node.enabled && node.state.isFocused) {
             val visibleText = node.state.text.take(node.state.selectionStart.coerceAtMost(node.state.text.length))
             val cursorX = textX + (node.style.textStyle.textRasterizer ?: textRasterizer).measureText(visibleText)
             val cursorTop = bounds.top + node.style.padding
@@ -1399,13 +1407,15 @@ internal class PixelRenderRuntime(
             )
         }
 
-        textInputTargets += PixelTextInputTarget(
-            bounds = bounds,
-            state = node.state,
-            controller = node.controller,
-            onChanged = node.onChanged,
-            onSubmitted = node.onSubmitted,
-        )
+        if (node.enabled) {
+            textInputTargets += PixelTextInputTarget(
+                bounds = bounds,
+                state = node.state,
+                controller = node.controller,
+                onChanged = node.onChanged,
+                onSubmitted = node.onSubmitted,
+            )
+        }
     }
 
     private fun renderPagerPage(

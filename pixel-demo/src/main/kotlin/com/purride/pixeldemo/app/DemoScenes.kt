@@ -249,6 +249,7 @@ object DemoScenes {
                                 textStyle = TextStyle.Accent,
                                 placeholderStyle = TextStyle.Default,
                             ),
+                            enabled = primaryState.text.isNotEmpty(),
                             onSubmitted = { text ->
                                 submittedText = text
                                 hostView.requestRender()

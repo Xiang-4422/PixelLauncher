@@ -513,6 +513,7 @@ setContentView(
 1. 程序化请求焦点
 2. 提交动作回调
 3. 实时文本变化回调
+4. 禁用态
 
 示例：
 
@@ -554,6 +555,23 @@ OutlinedButton(
 
 - `onChanged(text)`
 - `onSubmitted(text)`
+
+禁用态示例：
+
+```kotlin
+TextField(
+    state = secondaryState,
+    controller = secondaryController,
+    placeholder = "WAIT PRIMARY",
+    enabled = primaryController.text.isNotEmpty(),
+)
+```
+
+禁用时当前行为：
+
+- 不导出输入目标，不能聚焦和编辑
+- 不显示输入光标
+- 使用 `TextFieldStyle` 中的禁用边框、禁用文本和禁用占位样式
 
 ---
 

@@ -14,8 +14,11 @@ data class PixelTextFieldStyle(
     val fillTone: PixelTone = PixelTone.OFF,
     val borderTone: PixelTone? = PixelTone.ON,
     val focusedBorderTone: PixelTone? = PixelTone.ACCENT,
+    val disabledBorderTone: PixelTone? = PixelTone.ON,
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
     val placeholderStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+    val disabledTextStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.OFF),
+    val disabledPlaceholderStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.OFF),
     val cursorTone: PixelTone = PixelTone.ACCENT,
     val padding: Int = 2,
 ) {
@@ -36,6 +39,7 @@ data class PixelTextFieldNode(
     val controller: PixelTextFieldController,
     val placeholder: String = "",
     val style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
+    val enabled: Boolean = true,
     val onChanged: ((String) -> Unit)? = null,
     val onSubmitted: ((String) -> Unit)? = null,
 ) : PixelNode
@@ -46,6 +50,7 @@ fun PixelTextField(
     modifier: PixelModifier = PixelModifier.Empty,
     placeholder: String = "",
     style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
+    enabled: Boolean = true,
     onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
@@ -57,6 +62,7 @@ fun PixelTextField(
         controller = controller,
         placeholder = placeholder,
         style = style,
+        enabled = enabled,
         onChanged = onChanged,
         onSubmitted = onSubmitted,
     )
