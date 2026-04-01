@@ -95,7 +95,12 @@
 
 当前 `:pixel-ui` 已经具备最小可运行组件体系：
 
-- 基础节点与场景
+- Flutter 风格公开层
+  - [Widget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/Widget.kt)
+  - [BuildContext.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/BuildContext.kt)
+  - [FlutterLayoutPrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterLayoutPrimitives.kt)
+  - [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
+- 兼容层基础节点与场景
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelNode.kt)
   - [PixelScene.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelScene.kt)
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelModifier.kt)
@@ -141,6 +146,20 @@
 
 这些都已经在 [DemoScenes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt) 里有真机场景，不是只停留在单测层。
 
+当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
+
+- `Text`
+- `OutlinedButton`
+- `Row`
+- `Column`
+- `DecoratedBox`
+- `PageView`
+- `ListView`
+- `SingleChildScrollView`
+- `TextField`
+
+旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前主要作为兼容层保留，不再建议新页面直接使用。
+
 ### 3.3 当前测试覆盖
 
 `pixel-ui` 已经有独立测试覆盖：
@@ -157,9 +176,9 @@
 当前 `pixel-ui` 仍然是“第一版可运行框架”，还不是完整产品级 UI 系统。当前限制包括：
 
 - 仍然是每帧重建组件树，不是 retained tree
-- `PixelList` 只有纵向单列，不是虚拟化列表
+- `ListView` 只有纵向单列，不是虚拟化列表
 - 列表当前没有惯性滚动、回弹和吸附
-- `PixelTextField` 目前只支持单行输入
+- `TextField` 目前只支持单行输入
 - 文本没有通用换行和多行排版
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 还没有开始把 `:app` 页面迁进来

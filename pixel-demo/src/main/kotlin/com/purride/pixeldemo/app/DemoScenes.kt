@@ -24,12 +24,8 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
-import com.purride.pixelui.PixelAlignment
-import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelHostView
-import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
-import com.purride.pixelui.PixelNode
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.Widget
@@ -596,7 +592,7 @@ object DemoScenes {
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ) as PixelNode,
+                                ),
                                 OutlinedButton(
                                     text = "SHOW 8",
                                     onPressed = {
@@ -605,7 +601,7 @@ object DemoScenes {
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
                                     style = com.purride.pixelui.PixelButtonStyle.Accent,
-                                ) as PixelNode,
+                                ),
                             ),
                         ),
                         ListView(
@@ -634,7 +630,7 @@ object DemoScenes {
                                     },
                                 )
                             },
-                        ) as PixelNode,
+                        ),
                     ),
                 )
             },
@@ -695,7 +691,7 @@ object DemoScenes {
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ) as PixelNode,
+                                ),
                                 OutlinedButton(
                                     text = "SHOW 6",
                                     onPressed = {
@@ -704,7 +700,7 @@ object DemoScenes {
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
                                     style = com.purride.pixelui.PixelButtonStyle.Accent,
-                                ) as PixelNode,
+                                ),
                             ),
                         ),
                         ListView(
@@ -728,7 +724,7 @@ object DemoScenes {
                                     },
                                 )
                             },
-                        ) as PixelNode,
+                        ),
                     ),
                 )
             },
@@ -833,7 +829,7 @@ object DemoScenes {
     private fun sectionTitle(
         text: String,
         textRasterizer: PixelTextRasterizer? = null,
-    ): PixelNode {
+    ): Widget {
         val resolvedRasterizer = textRasterizer ?: PixelBitmapFont.Default
         val titleHeight = resolvedRasterizer.measureHeight(text)
         return DecoratedBox(
@@ -851,7 +847,7 @@ object DemoScenes {
                     ),
                 ),
             ),
-        ) as PixelNode
+        )
     }
 
     private fun infoCard(
@@ -859,7 +855,7 @@ object DemoScenes {
         value: String,
         accent: Boolean = false,
         valueRasterizer: PixelTextRasterizer? = null,
-    ): PixelNode {
+    ): Widget {
         val labelRasterizer = PixelBitmapFont.Default
         val resolvedValueRasterizer = valueRasterizer ?: PixelBitmapFont.Default
         val trimmedLabel = trimSingleLineText(
@@ -887,35 +883,35 @@ object DemoScenes {
                 children = listOf(
                     Text(trimmedLabel, style = PixelTextStyle.Accent),
                     Text(
-                    trimmedValue,
-                    style = PixelTextStyle(
-                        tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
-                        textRasterizer = valueRasterizer,
+                        trimmedValue,
+                        style = PixelTextStyle(
+                            tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
+                            textRasterizer = valueRasterizer,
+                        ),
                     ),
                 ),
-                ),
             ),
-        ) as PixelNode
+        )
     }
 
-    private fun swatch(tone: PixelTone, label: String): PixelNode = DecoratedBox(
+    private fun swatch(tone: PixelTone, label: String): Widget = DecoratedBox(
         modifier = PixelModifier.Empty.size(22, 18),
         fillTone = tone,
         borderTone = PixelTone.ON,
         child = Center(
             modifier = PixelModifier.Empty.fillMaxSize(),
             child = Text(
-                    label,
-                    style = if (tone == PixelTone.OFF) {
-                        PixelTextStyle.Default
-                    } else {
-                        PixelTextStyle.Accent
-                    },
-                ),
+                label,
+                style = if (tone == PixelTone.OFF) {
+                    PixelTextStyle.Default
+                } else {
+                    PixelTextStyle.Accent
+                },
+            ),
         ),
-    ) as PixelNode
+    )
 
-    private fun demoSquare(label: String): PixelNode = DecoratedBox(
+    private fun demoSquare(label: String): Widget = DecoratedBox(
         modifier = PixelModifier.Empty.size(28, 28),
         fillTone = PixelTone.OFF,
         borderTone = PixelTone.ON,
@@ -923,7 +919,7 @@ object DemoScenes {
             modifier = PixelModifier.Empty.fillMaxSize(),
             child = Text(label),
         ),
-    ) as PixelNode
+    )
 
     private fun pagerPage(
         title: String,
@@ -932,7 +928,7 @@ object DemoScenes {
         primaryActionLabel: String,
         onSecondaryAction: (() -> Unit)? = null,
         secondaryActionLabel: String? = null,
-    ): PixelNode = DecoratedBox(
+    ): Widget = DecoratedBox(
         modifier = PixelModifier.Empty.fillMaxSize(),
         fillTone = PixelTone.OFF,
         borderTone = tone,
@@ -944,9 +940,9 @@ object DemoScenes {
                     Center(
                         modifier = PixelModifier.Empty.fillMaxWidth().height(20),
                         child = Text(
-                                title,
-                                style = PixelTextStyle(tone = tone),
-                            ),
+                            title,
+                            style = PixelTextStyle(tone = tone),
+                        ),
                     ),
                 )
                 add(
@@ -967,7 +963,7 @@ object DemoScenes {
                 }
             },
         ),
-    ) as PixelNode
+    )
 
     private fun defaultProfile(pixelShape: PixelShape = PixelShape.SQUARE): ScreenProfile {
         return ScreenProfile(
@@ -1037,7 +1033,7 @@ object DemoScenes {
         state: com.purride.pixelui.state.PixelListState,
         controller: PixelListController,
         children: List<Widget>,
-    ): PixelNode {
+    ): Widget {
         return SingleChildScrollView(
             state = state,
             controller = controller,
@@ -1047,6 +1043,6 @@ object DemoScenes {
                 spacing = 4,
                 children = children,
             ),
-        ) as PixelNode
+        )
     }
 }

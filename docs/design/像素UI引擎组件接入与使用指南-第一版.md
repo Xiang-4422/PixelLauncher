@@ -28,7 +28,7 @@ dependencies {
 
 - `pixel-ui` 已经通过 `api(project(":pixel-core"))` 暴露 `pixel-core`
 - 页面层通常不应该直接长期操作 `PixelBuffer`
-- 大多数业务页面只需要 `PixelHostView + PixelNode + 组件 + 状态控制器`
+- 大多数业务页面只需要 `PixelHostView + Widget + 公开组件 + 状态控制器`
 
 只有在你明确要做以下事情时，才建议直接依赖 `:pixel-core`：
 
@@ -58,7 +58,7 @@ dependencies {
 3. 设置 `palette`
 4. 可选设置 `textRasterizer`
 5. 用 `setContent { ... }` 提供组件树
-6. 如果页面里有 `PixelTextField`，还需要实现 `PixelHostBridge`
+6. 如果页面里有 `TextField`，还需要实现 `PixelHostBridge`
 
 ### 最小示例
 
@@ -71,14 +71,14 @@ val hostView = PixelHostView(this).apply {
     )
     setPalette(PixelPalette.terminalGreen())
     setContent {
-        PixelColumn(
+        Column(
             modifier = PixelModifier.Empty.fillMaxSize().padding(4),
             spacing = 4,
             children = listOf(
-                PixelText("HELLO PIXEL"),
-                PixelButton(
+                Text("HELLO PIXEL"),
+                OutlinedButton(
                     text = "CLICK",
-                    onClick = { requestRender() },
+                    onPressed = { requestRender() },
                     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                 ),
             ),
@@ -130,15 +130,15 @@ class ExampleActivity : AppCompatActivity() {
         setContentView(hostView)
     }
 
-    private fun renderScene(): PixelNode {
-        return PixelColumn(
+    private fun renderScene(): Widget {
+        return Column(
             modifier = PixelModifier.Empty.fillMaxSize().padding(4),
             spacing = 4,
             children = listOf(
-                PixelText("COUNT $counter"),
-                PixelButton(
+                Text("COUNT $counter"),
+                OutlinedButton(
                     text = "PLUS",
-                    onClick = {
+                    onPressed = {
                         counter += 1
                         hostView.requestRender()
                     },
@@ -166,15 +166,17 @@ class ExampleActivity : AppCompatActivity() {
 
 ## 4. 基础组件使用方式
 
+当前对外主推的是 Flutter 风格公开组件名。旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等还存在，但现在主要作为兼容层保留，不建议新页面继续直接使用。
+
 ### 4.1 文本
 
-使用 [PixelText](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelComponents.kt)：
+使用 [Text](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
 ```kotlin
-PixelText("DEFAULT")
+Text("DEFAULT")
 
-PixelText(
-    text = "ACCENT",
+Text(
+    data = "ACCENT",
     style = PixelTextStyle.Accent,
 )
 ```
@@ -187,8 +189,8 @@ PixelText(
 示例：
 
 ```kotlin
-PixelText(
-    text = "中文标题",
+Text(
+    data = "中文标题",
     style = PixelTextStyle(
         tone = PixelTone.ACCENT,
         textRasterizer = titleRasterizer,
@@ -198,14 +200,14 @@ PixelText(
 
 ### 4.2 表面容器
 
-使用 [PixelSurface](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelComponents.kt)：
+使用 [DecoratedBox](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
 ```kotlin
-PixelSurface(
+DecoratedBox(
     modifier = PixelModifier.Empty.fillMaxWidth().height(16),
     fillTone = PixelTone.OFF,
     borderTone = PixelTone.ACCENT,
-    child = PixelText("CARD"),
+    child = Text("CARD"),
 )
 ```
 
@@ -220,21 +222,23 @@ PixelSurface(
 
 当前可用容器包括：
 
-- `PixelBox`
-- `PixelRow`
-- `PixelColumn`
+- `Row`
+- `Column`
+- `Align`
+- `Center`
+- `DecoratedBox`
 
 示例：
 
 ```kotlin
-PixelRow(
+Row(
     modifier = PixelModifier.Empty.fillMaxWidth().height(18),
     spacing = 2,
-    mainAxisAlignment = PixelMainAxisAlignment.CENTER,
-    crossAxisAlignment = PixelCrossAxisAlignment.CENTER,
+    mainAxisAlignment = MainAxisAlignment.CENTER,
+    crossAxisAlignment = CrossAxisAlignment.CENTER,
     children = listOf(
-        PixelText("LEFT"),
-        PixelText("RIGHT"),
+        Text("LEFT"),
+        Text("RIGHT"),
     ),
 )
 ```
@@ -248,12 +252,12 @@ PixelRow(
 
 ### 4.4 按钮
 
-使用 [PixelButton.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelButton.kt)：
+使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
 ```kotlin
-PixelButton(
+OutlinedButton(
     text = "SUBMIT",
-    onClick = { hostView.requestRender() },
+    onPressed = { hostView.requestRender() },
     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
 )
 ```
@@ -267,13 +271,13 @@ PixelButton(
 
 ## 5. 滚动与分页
 
-### 5.1 `PixelPager`
+### 5.1 `PageView`
 
 当前分页使用：
 
 - [PixelPagerState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerState.kt)
 - [PixelPagerController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerController.kt)
-- [PixelPager](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelComponents.kt)
+- [PageView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
 
@@ -289,15 +293,15 @@ private val pagerState = pagerController.create(
 然后在页面里使用：
 
 ```kotlin
-PixelPager(
-    axis = PixelAxis.HORIZONTAL,
+PageView(
+    axis = Axis.HORIZONTAL,
     state = pagerState,
     controller = pagerController,
     modifier = PixelModifier.Empty.fillMaxSize(),
     pages = listOf(
-        PixelText("PAGE 1"),
-        PixelText("PAGE 2"),
-        PixelText("PAGE 3"),
+        Text("PAGE 1"),
+        Text("PAGE 2"),
+        Text("PAGE 3"),
     ),
 )
 ```
@@ -311,13 +315,13 @@ PixelPager(
 - 速度翻页
 - 分页吸附
 
-### 5.2 `PixelList`
+### 5.2 `ListView`
 
 当前列表使用：
 
 - [PixelListState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListState.kt)
 - [PixelListController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListController.kt)
-- [PixelList](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelList.kt)
+- [ListView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
 
 推荐写法：
 
@@ -327,15 +331,15 @@ private val listState = listController.create()
 ```
 
 ```kotlin
-PixelList(
+ListView(
     state = listState,
     controller = listController,
     modifier = PixelModifier.Empty.fillMaxWidth().height(40),
     spacing = 3,
     items = List(8) { index ->
-        PixelButton(
+        OutlinedButton(
             text = "ITEM ${index + 1}",
-            onClick = { hostView.requestRender() },
+            onPressed = { hostView.requestRender() },
             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
         )
     },
@@ -356,9 +360,9 @@ PixelList(
 - 多列或瀑布流
 - 虚拟化
 
-### 5.3 `PixelSingleChildScrollView`
+### 5.3 `SingleChildScrollView`
 
-如果你不是要做“很多离散项”的列表，而是要做“一个很长的页面”，用 [PixelSingleChildScrollView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelSingleChildScrollView.kt)：
+如果你不是要做“很多离散项”的列表，而是要做“一个很长的页面”，用 [SingleChildScrollView](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
 ```kotlin
 private val scrollController = PixelListController()
@@ -366,11 +370,11 @@ private val scrollState = scrollController.create()
 ```
 
 ```kotlin
-PixelSingleChildScrollView(
+SingleChildScrollView(
     state = scrollState,
     controller = scrollController,
     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-    child = PixelColumn(
+    child = Column(
         modifier = PixelModifier.Empty.fillMaxWidth(),
         spacing = 4,
         children = longFormChildren,
@@ -389,7 +393,7 @@ PixelSingleChildScrollView(
 
 ## 6. 文本输入接入方式
 
-`PixelTextField` 当前不是自己实现完整 IME，而是通过宿主桥接。
+`TextField` 当前不是自己实现完整 IME，而是通过宿主桥接。
 
 核心类型：
 
