@@ -58,7 +58,7 @@ dependencies {
 3. 设置 `palette`
 4. 可选设置 `textRasterizer`
 5. 用 `setContent { ... }` 提供组件树
-6. 如果页面里有 `TextField`，还需要实现 `PixelHostBridge`
+6. 如果页面里有 `TextField`，优先使用默认的 `PixelTextInputBridge`
 
 ### 最小示例
 
@@ -423,14 +423,30 @@ SingleChildScrollView(
 
 - [DemoSceneActivity.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoSceneActivity.kt)
 
-当前接入步骤是：
+当前推荐优先使用默认桥接：
 
-1. 宿主创建隐藏 `EditText`
-2. 实现 `PixelHostBridge.showTextInput(...)`
-3. 当隐藏输入框文本变化时，调用 `hostView.updateFocusedTextInput(...)`
-4. 当像素输入框失焦时，调用 `hostView.clearFocusedTextInput()`
+- [PixelTextInputBridge.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelTextInputBridge.kt)
 
-这一步当前是必须的，因为第一版不在 `pixel-ui` 内部重做输入法系统。
+最小接法：
+
+```kotlin
+val hostView = PixelHostView(this)
+val textInputBridge = PixelTextInputBridge(
+    context = this,
+    hostView = hostView,
+)
+hostView.hostBridge = textInputBridge
+
+setContentView(
+    FrameLayout(this).apply {
+        addView(hostView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        addView(textInputBridge.inputView, FrameLayout.LayoutParams(1, WRAP_CONTENT))
+    },
+)
+```
+
+如果后面要接更复杂的 IME 行为，仍然可以自定义实现 `PixelHostBridge`。  
+但对大多数普通页面来说，默认桥接已经足够把单行输入跑起来。
 
 ---
 
