@@ -19,6 +19,7 @@ import com.purride.pixelui.state.PixelTextFieldState
 typealias TextStyle = PixelTextStyle
 typealias ButtonStyle = PixelButtonStyle
 typealias TextFieldStyle = PixelTextFieldStyle
+typealias TextOverflow = PixelTextOverflow
 
 private fun Widget.asPixelNode(): PixelNode {
     return this as? PixelNode

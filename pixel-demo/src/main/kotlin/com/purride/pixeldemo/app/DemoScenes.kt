@@ -1,6 +1,5 @@
 package com.purride.pixeldemo.app
 
-import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelShape
@@ -11,6 +10,7 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Align
 import com.purride.pixelui.Axis
+import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -25,13 +25,13 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextOverflow
+import com.purride.pixelui.TextStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
-import com.purride.pixelui.PixelTextOverflow
-import com.purride.pixelui.PixelTextFieldStyle
-import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxHeight
@@ -110,12 +110,12 @@ object DemoScenes {
                                 modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                                 spacing = 2,
                                 children = listOf(
-                                    Text("段落", style = PixelTextStyle.Accent),
+                                    Text("段落", style = TextStyle.Accent),
                                     Text(
                                         data = "这是一段用于验证中文换行与省略的像素文本内容，后续页面可以直接复用这套能力。",
                                         softWrap = true,
                                         maxLines = 3,
-                                        overflow = PixelTextOverflow.ELLIPSIS,
+                                        overflow = TextOverflow.ELLIPSIS,
                                     ),
                                 ),
                             ),
@@ -216,7 +216,7 @@ object DemoScenes {
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE PRIMARY",
-                            style = PixelTextFieldStyle.Default,
+                            style = TextFieldStyle.Default,
                             onSubmitted = { text ->
                                 submittedText = text
                                 hostView.requestRender()
@@ -227,11 +227,11 @@ object DemoScenes {
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE SECONDARY",
-                            style = PixelTextFieldStyle(
+                            style = TextFieldStyle(
                                 borderTone = PixelTone.ON,
                                 focusedBorderTone = PixelTone.ACCENT,
-                                textStyle = PixelTextStyle.Accent,
-                                placeholderStyle = PixelTextStyle.Default,
+                                textStyle = TextStyle.Accent,
+                                placeholderStyle = TextStyle.Default,
                             ),
                             onSubmitted = { text ->
                                 submittedText = text
@@ -291,7 +291,7 @@ object DemoScenes {
                                 controller = textController,
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                                 placeholder = "TYPE TITLE",
-                                style = PixelTextFieldStyle.Default,
+                                style = TextFieldStyle.Default,
                             ),
                             infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
                             TextField(
@@ -299,11 +299,11 @@ object DemoScenes {
                                 controller = textController,
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                                 placeholder = "TYPE NOTE",
-                                style = PixelTextFieldStyle(
+                                style = TextFieldStyle(
                                     borderTone = PixelTone.ON,
                                     focusedBorderTone = PixelTone.ACCENT,
-                                    textStyle = PixelTextStyle.Accent,
-                                    placeholderStyle = PixelTextStyle.Default,
+                                    textStyle = TextStyle.Accent,
+                                    placeholderStyle = TextStyle.Default,
                                 ),
                             ),
                             infoCard("SECTION", "A LONG COLUMN"),
@@ -316,7 +316,7 @@ object DemoScenes {
                                     hostView.requestRender()
                                 },
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                style = com.purride.pixelui.PixelButtonStyle.Accent,
+                                style = ButtonStyle.Accent,
                             ),
                             DecoratedBox(
                                 modifier = PixelModifier.Empty.fillMaxWidth().height(18),
@@ -342,7 +342,7 @@ object DemoScenes {
         val state = controller.create(
             pageCount = 3,
             currentPage = 0,
-            axis = PixelAxis.HORIZONTAL,
+            axis = Axis.HORIZONTAL,
         )
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -401,7 +401,7 @@ object DemoScenes {
         val state = controller.create(
             pageCount = 3,
             currentPage = 0,
-            axis = PixelAxis.VERTICAL,
+            axis = Axis.VERTICAL,
         )
         return DemoScene(
             initialProfile = ScreenProfile(
@@ -518,7 +518,7 @@ object DemoScenes {
                                     borderTone = PixelTone.ACCENT,
                                     child = Center(
                                         modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("2X", style = PixelTextStyle.Accent),
+                                        child = Text("2X", style = TextStyle.Accent),
                                     ),
                                 ),
                             ),
@@ -544,7 +544,7 @@ object DemoScenes {
                                     borderTone = PixelTone.ACCENT,
                                     child = Center(
                                         modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("TALL", style = PixelTextStyle.Accent),
+                                        child = Text("TALL", style = TextStyle.Accent),
                                     ),
                                 ),
                             ),
@@ -582,7 +582,7 @@ object DemoScenes {
                                         child = Align(
                                             modifier = PixelModifier.Empty.fillMaxSize(),
                                             alignment = Alignment.CENTER,
-                                            child = Text("ALIGN", style = PixelTextStyle.Accent),
+                                            child = Text("ALIGN", style = TextStyle.Accent),
                                         ),
                                     ),
                                 ),
@@ -638,7 +638,7 @@ object DemoScenes {
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    style = com.purride.pixelui.PixelButtonStyle.Accent,
+                                    style = ButtonStyle.Accent,
                                 ),
                             ),
                         ),
@@ -704,18 +704,18 @@ object DemoScenes {
                             controller = textController,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE NAME",
-                            style = PixelTextFieldStyle.Default,
+                            style = TextFieldStyle.Default,
                         ),
                         TextField(
                             state = cityState,
                             controller = textController,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(16),
                             placeholder = "TYPE CITY",
-                            style = PixelTextFieldStyle(
+                            style = TextFieldStyle(
                                 borderTone = PixelTone.ON,
                                 focusedBorderTone = PixelTone.ACCENT,
-                                textStyle = PixelTextStyle.Accent,
-                                placeholderStyle = PixelTextStyle.Default,
+                                textStyle = TextStyle.Accent,
+                                placeholderStyle = TextStyle.Default,
                             ),
                         ),
                         Row(
@@ -737,7 +737,7 @@ object DemoScenes {
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    style = com.purride.pixelui.PixelButtonStyle.Accent,
+                                    style = ButtonStyle.Accent,
                                 ),
                             ),
                         ),
@@ -756,9 +756,9 @@ object DemoScenes {
                                     },
                                     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                     style = if (selectedLabel == label) {
-                                        com.purride.pixelui.PixelButtonStyle.Accent
+                                        ButtonStyle.Accent
                                     } else {
-                                        com.purride.pixelui.PixelButtonStyle.Default
+                                        ButtonStyle.Default
                                     },
                                 )
                             },
@@ -777,7 +777,7 @@ object DemoScenes {
         val pagerState = pagerController.create(
             pageCount = 2,
             currentPage = 0,
-            axis = PixelAxis.VERTICAL,
+            axis = Axis.VERTICAL,
         )
         val listController = ScrollController()
         val listState = listController.create()
@@ -815,7 +815,7 @@ object DemoScenes {
                                 modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                                 spacing = 4,
                                 children = listOf(
-                                    Text("PAGE 2 LIST", style = PixelTextStyle.Accent),
+                                    Text("PAGE 2 LIST", style = TextStyle.Accent),
                                     infoCard(
                                         label = "TIP",
                                         value = "LIST FIRST THEN PAGE",
@@ -840,9 +840,9 @@ object DemoScenes {
                                                 },
                                                 modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                                 style = if (index % 2 == 0) {
-                                                    com.purride.pixelui.PixelButtonStyle.Accent
+                                                    ButtonStyle.Accent
                                                 } else {
-                                                    com.purride.pixelui.PixelButtonStyle.Default
+                                                    ButtonStyle.Default
                                                 },
                                             )
                                         },
@@ -879,7 +879,7 @@ object DemoScenes {
                 modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                 child = Text(
                     text,
-                    style = PixelTextStyle(
+                    style = TextStyle(
                         tone = PixelTone.ACCENT,
                         textRasterizer = textRasterizer,
                     ),
@@ -919,10 +919,10 @@ object DemoScenes {
                 modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                 spacing = 2,
                 children = listOf(
-                    Text(trimmedLabel, style = PixelTextStyle.Accent),
+                    Text(trimmedLabel, style = TextStyle.Accent),
                     Text(
                         trimmedValue,
-                        style = PixelTextStyle(
+                        style = TextStyle(
                             tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
                             textRasterizer = valueRasterizer,
                         ),
@@ -941,9 +941,9 @@ object DemoScenes {
             child = Text(
                 label,
                 style = if (tone == PixelTone.OFF) {
-                    PixelTextStyle.Default
+                    TextStyle.Default
                 } else {
-                    PixelTextStyle.Accent
+                    TextStyle.Accent
                 },
             ),
         ),
@@ -979,7 +979,7 @@ object DemoScenes {
                         modifier = PixelModifier.Empty.fillMaxWidth().height(20),
                         child = Text(
                             title,
-                            style = PixelTextStyle(tone = tone),
+                            style = TextStyle(tone = tone),
                         ),
                     ),
                 )
