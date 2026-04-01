@@ -918,6 +918,40 @@ class PixelRenderRuntimeTest {
         )
     }
 
+    @Test
+    fun readOnlyTextFieldExportsReadOnlyTargetWithoutCursor() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "READ")
+        controller.focus(state)
+
+        val result = runtime.render(
+            root = PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                style = PixelTextFieldStyle.Default.copy(
+                    readOnlyBorderTone = PixelTone.ON,
+                ),
+                readOnly = true,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(1, result.textInputTargets.size)
+        assertTrue(result.textInputTargets.first().readOnly)
+        assertFalse(
+            hasTone(
+                result = result,
+                tone = PixelTone.ACCENT,
+                minX = 0,
+                maxX = 19,
+                minY = 0,
+                maxY = 9,
+            ),
+        )
+    }
+
     private fun collectOnPixels(result: PixelRenderResult): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until result.buffer.height) {

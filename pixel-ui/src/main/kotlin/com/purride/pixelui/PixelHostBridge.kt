@@ -27,6 +27,7 @@ data class PixelTextInputRequest(
     val text: String,
     val selectionStart: Int = text.length,
     val selectionEnd: Int = selectionStart,
+    val readOnly: Boolean = false,
 )
 
 /**

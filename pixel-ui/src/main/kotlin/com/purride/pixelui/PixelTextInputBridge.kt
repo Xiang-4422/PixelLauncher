@@ -82,8 +82,13 @@ class PixelTextInputBridge(
             syncingFromHost = false
         }
 
-        inputView.requestFocus()
-        inputMethodManager?.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
+        if (request.readOnly) {
+            inputMethodManager?.hideSoftInputFromWindow(inputView.windowToken, 0)
+            inputView.clearFocus()
+        } else {
+            inputView.requestFocus()
+            inputMethodManager?.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
+        }
     }
 
     override fun hideTextInput() {
