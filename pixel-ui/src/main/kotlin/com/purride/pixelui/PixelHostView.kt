@@ -19,6 +19,7 @@ import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelcore.ScreenProfileFactory
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.internal.NestedScrollGesturePolicy
@@ -53,6 +54,18 @@ class PixelHostView @JvmOverloads constructor(
         set(value) {
             field = value
             invalidate()
+        }
+
+    /**
+     * 宿主显示偏好。
+     *
+     * 当业务层只关心“点大小和像素形状”时，可以设置这个偏好，把真正的
+     * 全屏 `ScreenProfile` 推导交给 `PixelHostView` 自己完成。
+     */
+    var profilePreference: PixelHostProfilePreference? = null
+        set(value) {
+            field = value
+            updateScreenProfileFromPreference()
         }
 
     private var runtime = PixelRenderRuntime()
@@ -195,6 +208,14 @@ class PixelHostView @JvmOverloads constructor(
         if (renderResult.pagerTargets.any { target -> target.controller.isActive(target.state) }) {
             postInvalidateOnAnimation()
         }
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        if (w == oldw && h == oldh) {
+            return
+        }
+        updateScreenProfileFromPreference()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -435,6 +456,19 @@ class PixelHostView @JvmOverloads constructor(
     override fun performClick(): Boolean {
         super.performClick()
         return true
+    }
+
+    private fun updateScreenProfileFromPreference() {
+        val preference = profilePreference ?: return
+        if (width <= 0 || height <= 0) {
+            return
+        }
+        screenProfile = ScreenProfileFactory.create(
+            widthPx = width,
+            heightPx = height,
+            dotSizePx = preference.dotSizePx,
+            pixelShape = preference.pixelShape,
+        )
     }
 
     private fun stepActivePagers() {
