@@ -19,6 +19,7 @@ import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
+import com.purride.pixelui.ListViewSeparated
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
@@ -26,6 +27,7 @@ import com.purride.pixelui.PageController
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
+import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
@@ -644,12 +646,12 @@ object DemoScenes {
                                 ),
                             ),
                         ),
-                        ListView(
+                        ListViewSeparated(
+                            itemCount = 8,
                             state = state,
                             controller = controller,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(40),
-                            spacing = 3,
-                            items = List(8) { index ->
+                            itemBuilder = { index ->
                                 OutlinedButton(
                                     text = if (index == 0) {
                                         "TAP ITEM ${index + 1}"
@@ -664,11 +666,14 @@ object DemoScenes {
                                     },
                                     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                     style = if (index % 2 == 0) {
-                                        com.purride.pixelui.PixelButtonStyle.Accent
+                                        ButtonStyle.Accent
                                     } else {
-                                        com.purride.pixelui.PixelButtonStyle.Default
+                                        ButtonStyle.Default
                                     },
                                 )
+                            },
+                            separatorBuilder = {
+                                SizedBox(height = 3)
                             },
                         ),
                     ),

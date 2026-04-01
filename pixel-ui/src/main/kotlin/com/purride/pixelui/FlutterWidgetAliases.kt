@@ -372,6 +372,33 @@ fun ListView(
     )
 }
 
+fun ListViewSeparated(
+    itemCount: Int,
+    itemBuilder: (Int) -> Widget,
+    separatorBuilder: (Int) -> Widget,
+    state: PixelListState,
+    controller: PixelListController,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    val separatedItems = buildList {
+        repeat(itemCount) { index ->
+            add(itemBuilder(index))
+            if (index < itemCount - 1) {
+                add(separatorBuilder(index))
+            }
+        }
+    }
+    return ListView(
+        items = separatedItems,
+        state = state,
+        controller = controller,
+        modifier = modifier,
+        spacing = 0,
+        key = key,
+    )
+}
+
 fun SingleChildScrollView(
     child: Widget,
     state: PixelListState,
