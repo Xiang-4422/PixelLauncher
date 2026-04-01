@@ -24,6 +24,9 @@ import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PageController
+import com.purride.pixelui.jumpToPage
+import com.purride.pixelui.nextPage
+import com.purride.pixelui.previousPage
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
@@ -42,6 +45,9 @@ import com.purride.pixelui.fillMaxHeight
 import com.purride.pixelui.fillMaxWidth
 import com.purride.pixelui.height
 import com.purride.pixelui.padding
+import com.purride.pixelui.jumpToEnd
+import com.purride.pixelui.jumpToStart
+import com.purride.pixelui.showItem
 import com.purride.pixelui.size
 import com.purride.pixelui.weight
 
@@ -397,7 +403,7 @@ object DemoScenes {
                             title = "H PAGE 1",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
-                                controller.syncToPage(state, 1)
+                                controller.nextPage(state)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "GO 2",
@@ -406,11 +412,11 @@ object DemoScenes {
                             title = "H PAGE 2",
                             tone = PixelTone.ACCENT,
                             onPrimaryAction = {
-                                controller.syncToPage(state, 2)
+                                controller.nextPage(state)
                                 hostView.requestRender()
                             },
                             onSecondaryAction = {
-                                controller.syncToPage(state, 0)
+                                controller.previousPage(state)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "GO 3",
@@ -420,7 +426,7 @@ object DemoScenes {
                             title = "H PAGE 3",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
-                                controller.syncToPage(state, 0)
+                                controller.jumpToPage(state, 0)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "BACK 1",
@@ -460,7 +466,7 @@ object DemoScenes {
                             title = "V PAGE 1",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
-                                controller.syncToPage(state, 1)
+                                controller.nextPage(state)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "GO 2",
@@ -469,11 +475,11 @@ object DemoScenes {
                             title = "V PAGE 2",
                             tone = PixelTone.ACCENT,
                             onPrimaryAction = {
-                                controller.syncToPage(state, 2)
+                                controller.nextPage(state)
                                 hostView.requestRender()
                             },
                             onSecondaryAction = {
-                                controller.syncToPage(state, 0)
+                                controller.previousPage(state)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "GO 3",
@@ -483,7 +489,7 @@ object DemoScenes {
                             title = "V PAGE 3",
                             tone = PixelTone.ON,
                             onPrimaryAction = {
-                                controller.syncToPage(state, 0)
+                                controller.jumpToPage(state, 0)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "BACK 1",
@@ -664,7 +670,7 @@ object DemoScenes {
                                 OutlinedButton(
                                     text = "SHOW 1",
                                     onPressed = {
-                                        controller.scrollItemIntoView(state, itemIndex = 0)
+                                        controller.showItem(state, itemIndex = 0)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
@@ -672,7 +678,30 @@ object DemoScenes {
                                 OutlinedButton(
                                     text = "SHOW 8",
                                     onPressed = {
-                                        controller.scrollItemIntoView(state, itemIndex = 7)
+                                        controller.showItem(state, itemIndex = 7)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    style = ButtonStyle.Accent,
+                                ),
+                            ),
+                        ),
+                        Row(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            spacing = 2,
+                            children = listOf(
+                                OutlinedButton(
+                                    text = "TOP",
+                                    onPressed = {
+                                        controller.jumpToStart(state)
+                                        hostView.requestRender()
+                                    },
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                ),
+                                OutlinedButton(
+                                    text = "BOTTOM",
+                                    onPressed = {
+                                        controller.jumpToEnd(state)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
@@ -766,7 +795,7 @@ object DemoScenes {
                                 OutlinedButton(
                                     text = "SHOW 1",
                                     onPressed = {
-                                        listController.scrollItemIntoView(listState, itemIndex = 0)
+                                        listController.showItem(listState, itemIndex = 0)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
@@ -774,7 +803,7 @@ object DemoScenes {
                                 OutlinedButton(
                                     text = "SHOW 6",
                                     onPressed = {
-                                        listController.scrollItemIntoView(listState, itemIndex = 5)
+                                        listController.showItem(listState, itemIndex = 5)
                                         hostView.requestRender()
                                     },
                                     modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
@@ -843,7 +872,7 @@ object DemoScenes {
                             title = "OUTER PAGE 1",
                             tone = PixelTone.ACCENT,
                             onPrimaryAction = {
-                                pagerController.syncToPage(pagerState, 1)
+                                pagerController.nextPage(pagerState)
                                 hostView.requestRender()
                             },
                             primaryActionLabel = "GO LIST",
@@ -891,7 +920,7 @@ object DemoScenes {
                                     OutlinedButton(
                                         text = "BACK PAGE 1",
                                         onPressed = {
-                                            pagerController.syncToPage(pagerState, 0)
+                                            pagerController.previousPage(pagerState)
                                             hostView.requestRender()
                                         },
                                         modifier = PixelModifier.Empty.fillMaxWidth().height(14),
