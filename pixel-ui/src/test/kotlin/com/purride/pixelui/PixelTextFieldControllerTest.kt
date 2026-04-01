@@ -49,4 +49,39 @@ class PixelTextFieldControllerTest {
         assertTrue(state.blurRequested)
         assertFalse(state.focusRequested)
     }
+
+    @Test
+    fun clearResetsTextAndMovesSelectionToStart() {
+        val state = controller.create(initialText = "HELLO")
+
+        controller.clear(state)
+
+        assertEquals("", state.text)
+        assertEquals(0, state.selectionStart)
+        assertEquals(0, state.selectionEnd)
+    }
+
+    @Test
+    fun selectAllMarksWholeTextRange() {
+        val state = controller.create(initialText = "PIXEL")
+
+        controller.selectAll(state)
+
+        assertEquals(0, state.selectionStart)
+        assertEquals(5, state.selectionEnd)
+    }
+
+    @Test
+    fun setSelectionClampsIntoCurrentTextRange() {
+        val state = controller.create(initialText = "ABCD")
+
+        controller.setSelection(
+            state = state,
+            selectionStart = -2,
+            selectionEnd = 99,
+        )
+
+        assertEquals(0, state.selectionStart)
+        assertEquals(4, state.selectionEnd)
+    }
 }

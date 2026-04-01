@@ -540,6 +540,9 @@ OutlinedButton(
 - `requestFocus(state)`
 - `requestBlur(state)`
 - `updateText(state, text, selectionStart, selectionEnd)`
+- `setSelection(state, selectionStart, selectionEnd)`
+- `clear(state)`
+- `selectAll(state)`
 
 当前输入事件可用回调：
 
