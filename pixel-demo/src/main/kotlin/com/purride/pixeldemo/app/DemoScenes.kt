@@ -39,6 +39,7 @@ import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.TextField
+import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.Widget
@@ -234,12 +235,14 @@ object DemoScenes {
                             placeholder = "TYPE PRIMARY",
                             style = TextFieldStyle.Default,
                             autofocus = true,
+                            textInputAction = TextInputAction.NEXT,
                             onChanged = { text ->
                                 liveText = text
                                 hostView.requestRender()
                             },
                             onSubmitted = { text ->
                                 submittedText = text
+                                controller.requestFocus(secondaryState)
                                 hostView.requestRender()
                             },
                         ),
@@ -255,6 +258,7 @@ object DemoScenes {
                                 placeholderStyle = TextStyle.Default,
                             ),
                             enabled = primaryState.text.isNotEmpty(),
+                            textInputAction = TextInputAction.DONE,
                             onSubmitted = { text ->
                                 submittedText = text
                                 hostView.requestRender()

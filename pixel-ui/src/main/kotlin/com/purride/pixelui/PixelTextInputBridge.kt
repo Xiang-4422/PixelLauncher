@@ -78,6 +78,12 @@ class PixelTextInputBridge(
             val safeSelectionStart = request.selectionStart.coerceIn(0, textLength)
             val safeSelectionEnd = request.selectionEnd.coerceIn(safeSelectionStart, textLength)
             inputView.setSelection(safeSelectionStart, safeSelectionEnd)
+            inputView.imeOptions = when (request.action) {
+                PixelTextInputAction.DONE -> EditorInfo.IME_ACTION_DONE
+                PixelTextInputAction.NEXT -> EditorInfo.IME_ACTION_NEXT
+                PixelTextInputAction.GO -> EditorInfo.IME_ACTION_GO
+                PixelTextInputAction.SEND -> EditorInfo.IME_ACTION_SEND
+            }
         } finally {
             syncingFromHost = false
         }

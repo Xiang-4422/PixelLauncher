@@ -593,6 +593,7 @@ class PixelHostView @JvmOverloads constructor(
                 selectionStart = target.state.selectionStart,
                 selectionEnd = target.state.selectionEnd,
                 readOnly = target.readOnly,
+                action = target.action,
             ),
         )
     }

@@ -27,6 +27,7 @@ import com.purride.pixelui.PixelTextNode
 import com.purride.pixelui.PixelTextFieldNode
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelWeightElement
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
@@ -138,6 +139,7 @@ internal data class PixelTextInputTarget(
     val controller: com.purride.pixelui.state.PixelTextFieldController,
     val readOnly: Boolean,
     val autofocus: Boolean,
+    val action: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
 )
@@ -1420,6 +1422,7 @@ internal class PixelRenderRuntime(
                 controller = node.controller,
                 readOnly = node.readOnly,
                 autofocus = node.autofocus,
+                action = node.textInputAction,
                 onChanged = node.onChanged,
                 onSubmitted = node.onSubmitted,
             )

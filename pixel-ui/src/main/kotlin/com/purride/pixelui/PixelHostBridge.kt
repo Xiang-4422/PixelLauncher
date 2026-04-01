@@ -28,7 +28,20 @@ data class PixelTextInputRequest(
     val selectionStart: Int = text.length,
     val selectionEnd: Int = selectionStart,
     val readOnly: Boolean = false,
+    val action: PixelTextInputAction = PixelTextInputAction.DONE,
 )
+
+/**
+ * 文本输入动作。
+ *
+ * 第一版先只覆盖最常用的几种 IME 动作，页面层通过它表达“下一项”还是“提交完成”。
+ */
+enum class PixelTextInputAction {
+    DONE,
+    NEXT,
+    GO,
+    SEND,
+}
 
 /**
  * 宿主系统动作。

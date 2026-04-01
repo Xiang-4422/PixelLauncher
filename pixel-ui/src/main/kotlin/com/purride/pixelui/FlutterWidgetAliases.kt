@@ -20,6 +20,7 @@ typealias TextStyle = PixelTextStyle
 typealias ButtonStyle = PixelButtonStyle
 typealias TextFieldStyle = PixelTextFieldStyle
 typealias TextOverflow = PixelTextOverflow
+typealias TextInputAction = PixelTextInputAction
 
 private fun Widget.asPixelNode(): PixelNode {
     return this as? PixelNode
@@ -475,6 +476,7 @@ fun TextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     autofocus: Boolean = false,
+    textInputAction: TextInputAction = TextInputAction.DONE,
     onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
@@ -488,6 +490,7 @@ fun TextField(
         enabled = enabled,
         readOnly = readOnly,
         autofocus = autofocus,
+        textInputAction = textInputAction,
         onChanged = onChanged,
         onSubmitted = onSubmitted,
         key = key,
