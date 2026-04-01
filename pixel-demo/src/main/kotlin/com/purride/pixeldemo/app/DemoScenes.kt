@@ -269,6 +269,7 @@ object DemoScenes {
                                 hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            enabled = secondaryState.text.isNotEmpty(),
                         ),
                         Row(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
