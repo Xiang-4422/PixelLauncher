@@ -12,6 +12,7 @@ import com.purride.pixelcore.PixelTone
 data class PixelTextStyle(
     val tone: PixelTone = PixelTone.ON,
     val textRasterizer: PixelTextRasterizer? = null,
+    val lineSpacing: Int = 0,
 ) {
     companion object {
         val Default = PixelTextStyle()

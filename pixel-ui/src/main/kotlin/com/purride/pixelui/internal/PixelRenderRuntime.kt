@@ -25,6 +25,7 @@ import com.purride.pixelui.PixelSingleChildScrollViewNode
 import com.purride.pixelui.PixelSurfaceNode
 import com.purride.pixelui.PixelTextNode
 import com.purride.pixelui.PixelTextFieldNode
+import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelWeightElement
 import com.purride.pixelui.node.CustomDraw
@@ -156,6 +157,20 @@ internal data class PixelModifierInfo(
     val onClick: (() -> Unit)? = null,
 )
 
+internal data class PixelTextLayoutLine(
+    val text: String,
+    val width: Int,
+)
+
+internal data class PixelTextLayout(
+    val lines: List<PixelTextLayoutLine>,
+    val width: Int,
+    val height: Int,
+    val lineHeight: Int,
+    val lineSpacing: Int,
+    val rasterizer: PixelTextRasterizer,
+)
+
 internal class PixelRenderRuntime(
     private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
@@ -220,10 +235,12 @@ internal class PixelRenderRuntime(
         )
 
         val contentSize = when (node) {
-            is PixelTextNode -> PixelSize(
-                width = node.resolveTextRasterizer().measureText(node.text),
-                height = node.resolveTextRasterizer().measureHeight(node.text),
-            )
+            is PixelTextNode -> layoutText(
+                node = node,
+                maxWidth = innerConstraints.maxWidth,
+            ).let { layout ->
+                PixelSize(width = layout.width, height = layout.height)
+            }
 
             is PixelSurfaceNode -> {
                 val childSize = node.child?.let { child -> measure(child, innerConstraints) } ?: PixelSize(width = 0, height = 0)
@@ -438,17 +455,197 @@ internal class PixelRenderRuntime(
         bounds: PixelRect,
         buffer: PixelBuffer,
     ) {
-        node.resolveTextRasterizer().drawText(
-            buffer = buffer,
-            text = node.text,
-            x = bounds.left,
-            y = bounds.top,
-            value = node.style.tone.value,
+        val layout = layoutText(
+            node = node,
+            maxWidth = bounds.width,
         )
+        var cursorY = bounds.top
+        layout.lines.forEach { line ->
+            if (line.text.isNotEmpty()) {
+                layout.rasterizer.drawText(
+                    buffer = buffer,
+                    text = line.text,
+                    x = bounds.left,
+                    y = cursorY,
+                    value = node.style.tone.value,
+                )
+            }
+            cursorY += layout.lineHeight + layout.lineSpacing
+        }
     }
 
     private fun PixelTextNode.resolveTextRasterizer(): PixelTextRasterizer {
         return style.textRasterizer ?: this@PixelRenderRuntime.textRasterizer
+    }
+
+    private fun layoutText(
+        node: PixelTextNode,
+        maxWidth: Int,
+    ): PixelTextLayout {
+        val rasterizer = node.resolveTextRasterizer()
+        val constrainedWidth = maxWidth.coerceAtLeast(0)
+        val effectiveMaxLines = node.maxLines.coerceAtLeast(1)
+        val lineHeight = rasterizer.measureHeight(" ")
+        val lineSpacing = node.style.lineSpacing.coerceAtLeast(0)
+        val sourceLines = node.text.ifEmpty { "" }.split('\n')
+        val laidOutLines = mutableListOf<String>()
+
+        sourceLines.forEach { sourceLine ->
+            if (laidOutLines.size >= effectiveMaxLines) {
+                return@forEach
+            }
+
+            if (node.softWrap && constrainedWidth > 0) {
+                appendWrappedLines(
+                    sourceLine = sourceLine,
+                    maxWidth = constrainedWidth,
+                    maxLines = effectiveMaxLines,
+                    target = laidOutLines,
+                    rasterizer = rasterizer,
+                )
+            } else {
+                laidOutLines += sourceLine
+            }
+        }
+
+        if (laidOutLines.isEmpty()) {
+            laidOutLines += ""
+        }
+
+        val visibleLines = laidOutLines.take(effectiveMaxLines).toMutableList()
+        val truncatedByLineCount = laidOutLines.size > effectiveMaxLines
+        visibleLines.indices.forEach { index ->
+            val shouldEllipsize = truncatedByLineCount && index == visibleLines.lastIndex
+            visibleLines[index] = fitTextToWidth(
+                text = visibleLines[index],
+                maxWidth = constrainedWidth,
+                overflow = node.overflow,
+                rasterizer = rasterizer,
+                forceEllipsis = shouldEllipsize,
+            )
+        }
+
+        val measuredLines = visibleLines.map { line ->
+            PixelTextLayoutLine(
+                text = line,
+                width = rasterizer.measureText(line),
+            )
+        }
+        val measuredWidth = measuredLines.maxOfOrNull { it.width } ?: 0
+        val width = if (constrainedWidth > 0) {
+            measuredWidth.coerceAtMost(constrainedWidth)
+        } else {
+            measuredWidth
+        }
+        val height = if (measuredLines.isEmpty()) {
+            0
+        } else {
+            (measuredLines.size * lineHeight) + ((measuredLines.size - 1) * lineSpacing)
+        }
+
+        return PixelTextLayout(
+            lines = measuredLines,
+            width = width,
+            height = height,
+            lineHeight = lineHeight,
+            lineSpacing = lineSpacing,
+            rasterizer = rasterizer,
+        )
+    }
+
+    private fun appendWrappedLines(
+        sourceLine: String,
+        maxWidth: Int,
+        maxLines: Int,
+        target: MutableList<String>,
+        rasterizer: PixelTextRasterizer,
+    ) {
+        if (target.size >= maxLines) {
+            return
+        }
+        if (sourceLine.isEmpty()) {
+            target += ""
+            return
+        }
+
+        var currentLine = StringBuilder()
+        sourceLine.forEach { character ->
+            val candidate = currentLine.toString() + character
+            if (rasterizer.measureText(candidate) <= maxWidth || currentLine.isEmpty()) {
+                currentLine.append(character)
+            } else {
+                target += currentLine.toString()
+                if (target.size >= maxLines) {
+                    return
+                }
+                currentLine = StringBuilder().append(character)
+            }
+        }
+
+        if (target.size < maxLines) {
+            target += currentLine.toString()
+        }
+    }
+
+    private fun fitTextToWidth(
+        text: String,
+        maxWidth: Int,
+        overflow: PixelTextOverflow,
+        rasterizer: PixelTextRasterizer,
+        forceEllipsis: Boolean,
+    ): String {
+        if (maxWidth <= 0 || text.isEmpty()) {
+            return ""
+        }
+        if (rasterizer.measureText(text) <= maxWidth && !forceEllipsis) {
+            return text
+        }
+
+        if (overflow == PixelTextOverflow.ELLIPSIS || forceEllipsis) {
+            val ellipsis = "..."
+            if (rasterizer.measureText(ellipsis) > maxWidth) {
+                return clipTextToWidth(text, maxWidth, rasterizer)
+            }
+
+            val builder = StringBuilder(text)
+            while (builder.isNotEmpty() &&
+                rasterizer.measureText(builder.toString() + ellipsis) > maxWidth
+            ) {
+                builder.deleteCharAt(builder.lastIndex)
+            }
+            return if (builder.isEmpty()) {
+                clipTextToWidth(ellipsis, maxWidth, rasterizer)
+            } else {
+                builder.toString() + ellipsis
+            }
+        }
+
+        return clipTextToWidth(
+            text = text,
+            maxWidth = maxWidth,
+            rasterizer = rasterizer,
+        )
+    }
+
+    private fun clipTextToWidth(
+        text: String,
+        maxWidth: Int,
+        rasterizer: PixelTextRasterizer,
+    ): String {
+        if (maxWidth <= 0) {
+            return ""
+        }
+
+        val builder = StringBuilder()
+        text.forEach { character ->
+            val candidate = builder.toString() + character
+            if (rasterizer.measureText(candidate) <= maxWidth) {
+                builder.append(character)
+            } else {
+                return builder.toString()
+            }
+        }
+        return builder.toString()
     }
 
     private fun PixelTextFieldNode.resolveTextRasterizer(): PixelTextRasterizer {

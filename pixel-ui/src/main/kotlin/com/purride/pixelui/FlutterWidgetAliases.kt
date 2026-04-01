@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -194,12 +195,18 @@ fun Text(
     data: String,
     modifier: PixelModifier = PixelModifier.Empty,
     style: TextStyle = TextStyle.Default,
+    softWrap: Boolean = false,
+    maxLines: Int = 1,
+    overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     key: Any? = null,
 ): Widget {
     return PixelText(
         text = data,
         modifier = modifier,
         style = style,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        overflow = overflow,
         key = key,
     )
 }

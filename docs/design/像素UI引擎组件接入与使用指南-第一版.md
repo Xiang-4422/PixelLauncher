@@ -185,6 +185,7 @@ Text(
 
 - `tone`
 - `textRasterizer`
+- `lineSpacing`
 
 示例：
 
@@ -197,6 +198,23 @@ Text(
     ),
 )
 ```
+
+如果需要长文案换行或省略，当前 `Text` 已支持最小可用参数：
+
+```kotlin
+Text(
+    data = "这是一段用于验证中文换行与省略的像素文本内容。",
+    softWrap = true,
+    maxLines = 3,
+    overflow = PixelTextOverflow.ELLIPSIS,
+)
+```
+
+当前规则是：
+
+- 默认还是单行 `softWrap = false`
+- `maxLines` 至少为 1
+- `overflow` 当前支持 `CLIP` 和 `ELLIPSIS`
 
 ### 4.2 表面容器
 

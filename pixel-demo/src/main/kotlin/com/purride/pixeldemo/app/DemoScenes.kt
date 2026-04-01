@@ -26,6 +26,7 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
+import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.Widget
@@ -100,6 +101,25 @@ object DemoScenes {
                         infoCard("混排", "HELLO 你好 UI", valueRasterizer = wideRasterizer),
                         infoCard("紧凑", "COMPACT 4X5", valueRasterizer = compactRasterizer),
                         infoCard("复用", "复用 Launcher 的字形包"),
+                        DecoratedBox(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(28),
+                            fillTone = PixelTone.OFF,
+                            borderTone = PixelTone.ACCENT,
+                            padding = 0,
+                            child = Column(
+                                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                                spacing = 2,
+                                children = listOf(
+                                    Text("段落", style = PixelTextStyle.Accent),
+                                    Text(
+                                        data = "这是一段用于验证中文换行与省略的像素文本内容，后续页面可以直接复用这套能力。",
+                                        softWrap = true,
+                                        maxLines = 3,
+                                        overflow = PixelTextOverflow.ELLIPSIS,
+                                    ),
+                                ),
+                            ),
+                        ),
                     ),
                 )
             },
