@@ -105,6 +105,9 @@
   - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - retained build/runtime 入口
   - [RetainedBuildRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedBuildRuntime.kt)
+  - [BuildOwner.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/BuildOwner.kt)
+  - [RetainedElements.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedElements.kt)
+  - [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedWidgetRenderRuntime.kt)
   - [LegacyNodeWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyNodeWidgets.kt)
   - [LegacyLayoutWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyLayoutWidgets.kt)
   - [LegacyTextInputWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyTextInputWidgets.kt)
@@ -139,6 +142,18 @@
   - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostView.kt)
 - 运行时与手势
   - [PixelRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelRenderRuntime.kt)
+  - [PixelLegacyRenderSupportGraph.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelLegacyRenderSupportGraph.kt)
+  - [PixelRootRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelRootRenderSupport.kt)
+  - [PixelNodeRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelNodeRenderSupport.kt)
+  - [PixelLayoutRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelLayoutRenderSupport.kt)
+  - [PixelViewportRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelViewportRenderSupport.kt)
+  - [PixelViewportSessionSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelViewportSessionSupport.kt)
+  - [PixelTargetTranslateSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelTargetTranslateSupport.kt)
+  - [PixelTextRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelTextRenderSupport.kt)
+  - [PixelTextFieldRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelTextFieldRenderSupport.kt)
+  - [PixelMeasureSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelMeasureSupport.kt)
+  - [PixelModifierSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelModifierSupport.kt)
+  - [PixelRenderPrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelRenderPrimitives.kt)
   - [PagerGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PagerGesturePolicy.kt)
   - [NestedScrollGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/NestedScrollGesturePolicy.kt)
 
@@ -168,6 +183,13 @@
 - `Theme / Directionality / MediaQuery` 这类环境传播
 
 其中 `Theme / Directionality / MediaQuery` 已经不只是在测试里可用，文本页现在已经有真实的环境信息展示和局部覆盖场景。
+
+当前 retained 主链的真实状态是：
+
+- `Widget -> BuildOwner / Element tree` 已经成立
+- `StatefulWidget / InheritedWidget / InheritedNotifier / Builder / StatefulBuilder` 已经在真实 demo 页面里使用
+- 最终绘制仍然通过 `RetainedWidgetRenderRuntime -> PixelRenderRuntime` 这条 bridge 落到 legacy 渲染器
+- 当前重构主线不是再补更多组件名字，而是继续把 retained 主链和 legacy render bridge 切得更干净
 
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
 
@@ -211,12 +233,14 @@
 当前 `pixel-ui` 仍然是“第一版可运行框架”，还不是完整产品级 UI 系统。当前限制包括：
 
 - 已经有 retained build tree，但最终绘制仍然落到 legacy `PixelNode + PixelRenderRuntime`
+- retained build tree 已经拆分出 `BuildOwner / Element` 层级，但还没有自己的 retained render object 树
 - `ListView` 只有纵向单列，不是虚拟化列表
 - 列表当前没有回弹和吸附
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部的底层节点和兼容运行时里
+- legacy 渲染主链已经被拆成 support graph，但 retained runtime 和 legacy bridge 还没有彻底解耦
 - 还没有开始把 `:app` 页面迁进来
 
 ---
@@ -260,11 +284,10 @@
 ### 5.3 尚未开始
 
 - `:app` 页面迁移
-- 更完整的主题系统
-- 多行文本
-- 惯性滚动
+- retained render object 树
+- 更完整的主题与环境默认值系统
 - 懒加载列表
-- 更完整的 retained runtime
+- 列表虚拟化与更高级滚动物理
 
 ---
 
@@ -279,9 +302,9 @@
 
 当前最值得继续推进的方向有三条：
 
-- 补强文本系统：换行、多行、文本 token、主题样式
-- 补强列表系统：惯性滚动、回弹、列表项定位语义
-- 稳定宿主接入：让外部业务模块能更直接地把 `PixelHostView` 接进 Activity 或 Fragment
+- 继续切 retained 主链和 legacy render bridge：让 retained runtime 尽量只面对 bridge，而不再感知 legacy 细节
+- 继续压薄 legacy renderer：把 `PixelRenderRuntime` 收成更纯的 façade，让 support graph 成为唯一装配入口
+- 在 `pixel-demo` 上持续验收 retained 状态、环境、分页、列表、输入和方向性，不提前启动 `:app` 迁移
 
 ---
 
@@ -292,3 +315,7 @@
 更准确的说法是：
 
 > `pixel-core` 和 `pixel-ui` 已经形成了可运行、可测试、可继续演进的第一版基础框架；下一阶段的重点不是再讨论边界，而是把这套框架补成真正适合业务直接依赖的库。
+
+更具体一点说，当前工程已经进入：
+
+> “retained runtime 重构中段”，短期主线是继续做架构收口，而不是启动业务页迁移。
