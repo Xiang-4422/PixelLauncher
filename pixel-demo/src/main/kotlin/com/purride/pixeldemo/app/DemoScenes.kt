@@ -50,7 +50,6 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.Theme
 import com.purride.pixelui.PixelHostView
-import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Directionality
@@ -62,16 +61,9 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.ValueListenableBuilder
 import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.dependOnInheritedWidgetOfExactType
-import com.purride.pixelui.fillMaxSize
-import com.purride.pixelui.fillMaxHeight
-import com.purride.pixelui.fillMaxWidth
-import com.purride.pixelui.height
-import com.purride.pixelui.padding
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
-import com.purride.pixelui.size
-import com.purride.pixelui.weight
 
 /**
  * Demo scene 定义集合。

@@ -30,6 +30,11 @@ enum class MainAxisAlignment {
     END,
 }
 
+enum class MainAxisSize {
+    MIN,
+    MAX,
+}
+
 enum class CrossAxisAlignment {
     START,
     CENTER,
@@ -49,6 +54,13 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignmen
         MainAxisAlignment.START -> PixelMainAxisAlignment.START
         MainAxisAlignment.CENTER -> PixelMainAxisAlignment.CENTER
         MainAxisAlignment.END -> PixelMainAxisAlignment.END
+    }
+}
+
+internal fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
+    return when (this) {
+        MainAxisSize.MIN -> PixelMainAxisSize.MIN
+        MainAxisSize.MAX -> PixelMainAxisSize.MAX
     }
 }
 
