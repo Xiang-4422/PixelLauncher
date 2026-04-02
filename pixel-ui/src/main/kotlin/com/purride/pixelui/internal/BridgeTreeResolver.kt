@@ -10,7 +10,7 @@ internal object BridgeTreeResolver {
 
     private fun resolveElement(element: Element): BridgeRenderNode? {
         return when (element) {
-            is BridgeAdapterElement -> {
+            is BridgeResolvableElement -> {
                 val childNodes = resolveChildren(element)
                 element.resolveBridgeNode(childNodes)
             }
