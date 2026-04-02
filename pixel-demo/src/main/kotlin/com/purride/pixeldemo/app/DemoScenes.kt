@@ -18,6 +18,7 @@ import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.FlexFit
 import com.purride.pixelui.Flexible
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
@@ -1543,6 +1544,38 @@ object DemoScenes {
                                             borderTone = PixelTone.ACCENT,
                                             child = Center(
                                                 child = Text("2X", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 18,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Center(
+                                                child = Text("TIGHT"),
+                                            ),
+                                        ),
+                                    ),
+                                    Flexible(
+                                        flex = 2,
+                                        fit = FlexFit.LOOSE,
+                                        child = SizedBox(
+                                            width = 18,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ACCENT,
+                                                child = Center(
+                                                    child = Text("LOOSE", style = TextStyle.Accent),
+                                                ),
                                             ),
                                         ),
                                     ),

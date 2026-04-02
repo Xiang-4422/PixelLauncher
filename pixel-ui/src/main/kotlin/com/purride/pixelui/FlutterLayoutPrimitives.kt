@@ -59,6 +59,11 @@ enum class CrossAxisAlignment {
     STRETCH,
 }
 
+enum class FlexFit {
+    TIGHT,
+    LOOSE,
+}
+
 internal fun Alignment.toPixelAlignment(): PixelAlignment {
     return when (this) {
         Alignment.TOP_START -> PixelAlignment.TOP_START
