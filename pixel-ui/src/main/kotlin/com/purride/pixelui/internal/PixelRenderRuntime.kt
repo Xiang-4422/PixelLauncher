@@ -794,12 +794,15 @@ internal class PixelRenderRuntime(
     ) {
         val childSizes = measureRowChildren(node, constraints)
         val contentWidth = childSizes.sumOf { it.width } + (max(0, node.children.size - 1) * node.spacing)
-        var cursorX = mainAxisStart(
+        val horizontalMainAxis = mainAxisArrangement(
             containerStart = bounds.left,
             containerExtent = bounds.width,
             contentExtent = contentWidth,
+            spacing = node.spacing,
+            childCount = childSizes.size,
             alignment = node.mainAxisAlignment,
         )
+        var cursorX = horizontalMainAxis.start
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childHeight = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) {
                 bounds.height
@@ -830,7 +833,7 @@ internal class PixelRenderRuntime(
                 listTargets = listTargets,
                 textInputTargets = textInputTargets,
             )
-            cursorX += childSize.width + node.spacing
+            cursorX += childSize.width + horizontalMainAxis.spacingAfterChild
         }
     }
 
@@ -846,12 +849,15 @@ internal class PixelRenderRuntime(
     ) {
         val childSizes = measureColumnChildren(node, constraints)
         val contentHeight = childSizes.sumOf { it.height } + (max(0, node.children.size - 1) * node.spacing)
-        var cursorY = mainAxisStart(
+        val verticalMainAxis = mainAxisArrangement(
             containerStart = bounds.top,
             containerExtent = bounds.height,
             contentExtent = contentHeight,
+            spacing = node.spacing,
+            childCount = childSizes.size,
             alignment = node.mainAxisAlignment,
         )
+        var cursorY = verticalMainAxis.start
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childWidth = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) {
                 bounds.width
@@ -882,7 +888,7 @@ internal class PixelRenderRuntime(
                 listTargets = listTargets,
                 textInputTargets = textInputTargets,
             )
-            cursorY += childSize.height + node.spacing
+            cursorY += childSize.height + verticalMainAxis.spacingAfterChild
         }
     }
 
@@ -1032,17 +1038,68 @@ internal class PixelRenderRuntime(
      * 先提供 `START / CENTER / END` 三档，让线性布局具备最基础的
      * 主轴排布能力，后面再考虑 `spaceBetween` 这类更复杂规则。
      */
-    private fun mainAxisStart(
+    private data class MainAxisArrangement(
+        val start: Int,
+        val spacingAfterChild: Int,
+    )
+
+    private fun mainAxisArrangement(
         containerStart: Int,
         containerExtent: Int,
         contentExtent: Int,
+        spacing: Int,
+        childCount: Int,
         alignment: PixelMainAxisAlignment,
-    ): Int {
+    ): MainAxisArrangement {
         val remaining = (containerExtent - contentExtent).coerceAtLeast(0)
         return when (alignment) {
-            PixelMainAxisAlignment.START -> containerStart
-            PixelMainAxisAlignment.CENTER -> containerStart + (remaining / 2)
-            PixelMainAxisAlignment.END -> containerStart + remaining
+            PixelMainAxisAlignment.START -> MainAxisArrangement(
+                start = containerStart,
+                spacingAfterChild = spacing,
+            )
+            PixelMainAxisAlignment.CENTER -> MainAxisArrangement(
+                start = containerStart + (remaining / 2),
+                spacingAfterChild = spacing,
+            )
+            PixelMainAxisAlignment.END -> MainAxisArrangement(
+                start = containerStart + remaining,
+                spacingAfterChild = spacing,
+            )
+            PixelMainAxisAlignment.SPACE_BETWEEN -> {
+                if (childCount <= 1) {
+                    MainAxisArrangement(
+                        start = containerStart,
+                        spacingAfterChild = spacing,
+                    )
+                } else {
+                    MainAxisArrangement(
+                        start = containerStart,
+                        spacingAfterChild = spacing + (remaining / (childCount - 1)),
+                    )
+                }
+            }
+            PixelMainAxisAlignment.SPACE_AROUND -> {
+                if (childCount <= 0) {
+                    MainAxisArrangement(
+                        start = containerStart,
+                        spacingAfterChild = spacing,
+                    )
+                } else {
+                    val unit = remaining / childCount
+                    MainAxisArrangement(
+                        start = containerStart + (unit / 2),
+                        spacingAfterChild = spacing + unit,
+                    )
+                }
+            }
+            PixelMainAxisAlignment.SPACE_EVENLY -> {
+                val slotCount = childCount + 1
+                val unit = if (slotCount <= 0) 0 else remaining / slotCount
+                MainAxisArrangement(
+                    start = containerStart + unit,
+                    spacingAfterChild = spacing + unit,
+                )
+            }
         }
     }
 
