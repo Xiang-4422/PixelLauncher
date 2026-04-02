@@ -31,6 +31,7 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PageViewBuilder
 import com.purride.pixelui.PageController
 import com.purride.pixelui.Positioned
+import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
 import com.purride.pixelui.previousPage
@@ -1806,6 +1807,38 @@ object DemoScenes {
                                                     child = Center(
                                                         child = Text("PIN"),
                                                     ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 22,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                child = Stack(
+                                    children = listOf(
+                                        PositionedFill(
+                                            left = 2,
+                                            top = 2,
+                                            right = 2,
+                                            bottom = 2,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ACCENT,
+                                            ),
+                                        ),
+                                        Positioned(
+                                            right = 3,
+                                            top = 3,
+                                            child = SizedBox(
+                                                width = 10,
+                                                height = 6,
+                                                child = Center(
+                                                    child = Text("FILL", style = TextStyle.Accent),
                                                 ),
                                             ),
                                         ),

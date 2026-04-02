@@ -733,6 +733,27 @@ Stack(
 )
 ```
 
+如果你希望先铺一层“填满剩余区域”的背景或蒙层，再叠其他元素，当前可以直接用 `PositionedFill`：
+
+```kotlin
+Stack(
+    children = listOf(
+        PositionedFill(
+            left = 2,
+            top = 2,
+            right = 2,
+            bottom = 2,
+            child = Container(),
+        ),
+        Positioned(
+            right = 3,
+            top = 3,
+            child = Text("TAG"),
+        ),
+    ),
+)
+```
+
 ### 4.5 按钮
 
 使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
