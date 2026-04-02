@@ -3,20 +3,6 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelui.internal.legacy.PixelBoxNode
-import com.purride.pixelui.internal.legacy.PixelButtonNode
-import com.purride.pixelui.internal.legacy.CustomDraw
-import com.purride.pixelui.internal.legacy.PixelColumnNode
-import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelListNode
-import com.purride.pixelui.internal.legacy.PixelPagerNode
-import com.purride.pixelui.internal.legacy.PixelPositionedNode
-import com.purride.pixelui.internal.legacy.PixelRowNode
-import com.purride.pixelui.internal.legacy.PixelSingleChildScrollViewNode
-import com.purride.pixelui.internal.legacy.PixelSurfaceNode
-import com.purride.pixelui.internal.legacy.PixelTextFieldNode
-import com.purride.pixelui.internal.legacy.PixelTextNode
-import com.purride.pixelui.internal.legacy.toSurfaceNode
 
 internal class PixelRenderRuntime(
     private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
@@ -40,6 +26,13 @@ internal class PixelRenderRuntime(
         textRenderSupport = textRenderSupport,
         textFieldRenderSupport = textFieldRenderSupport,
         layoutRenderSupport = layoutRenderSupport,
+    )
+    private val nodeRenderSupport = PixelNodeRenderSupport(
+        textRenderSupport = textRenderSupport,
+        textFieldRenderSupport = textFieldRenderSupport,
+        layoutRenderSupport = layoutRenderSupport,
+        viewportRenderSupport = viewportRenderSupport,
+        renderNode = ::renderNode,
     )
 
     companion object {
@@ -110,126 +103,16 @@ internal class PixelRenderRuntime(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val modifierInfo = PixelModifierSupport.resolve(node.modifier)
-        modifierInfo.onClick?.let { onClick ->
-            clickTargets += PixelClickTarget(bounds = bounds, onClick = onClick)
-        }
-        val paddedBounds = bounds.inset(
-            paddingLeft = modifierInfo.paddingLeft,
-            paddingTop = modifierInfo.paddingTop,
-            paddingRight = modifierInfo.paddingRight,
-            paddingBottom = modifierInfo.paddingBottom,
+        nodeRenderSupport.render(
+            node = node,
+            bounds = bounds,
+            constraints = constraints,
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
-        val innerConstraints = constraints.shrink(
-            paddingLeft = modifierInfo.paddingLeft,
-            paddingTop = modifierInfo.paddingTop,
-            paddingRight = modifierInfo.paddingRight,
-            paddingBottom = modifierInfo.paddingBottom,
-        )
-
-        when (node) {
-            is PixelTextNode -> textRenderSupport.renderText(
-                node = node,
-                bounds = paddedBounds,
-                buffer = buffer,
-            )
-
-            is PixelSurfaceNode -> layoutRenderSupport.renderSurface(
-                node = node,
-                bounds = paddedBounds,
-                constraints = innerConstraints,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelButtonNode -> renderNode(
-                node = node.toSurfaceNode(),
-                bounds = paddedBounds,
-                constraints = innerConstraints,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelBoxNode -> layoutRenderSupport.renderBox(
-                node = node,
-                bounds = paddedBounds,
-                constraints = innerConstraints,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelPositionedNode -> Unit
-
-            is PixelRowNode -> layoutRenderSupport.renderRow(
-                node = node,
-                bounds = paddedBounds,
-                constraints = innerConstraints,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelColumnNode -> layoutRenderSupport.renderColumn(
-                node = node,
-                bounds = paddedBounds,
-                constraints = innerConstraints,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelPagerNode -> viewportRenderSupport.renderPager(
-                node = node,
-                bounds = paddedBounds,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelListNode -> viewportRenderSupport.renderList(
-                node = node,
-                bounds = paddedBounds,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelSingleChildScrollViewNode -> viewportRenderSupport.renderSingleChildScrollView(
-                node = node,
-                bounds = paddedBounds,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
-
-            is PixelTextFieldNode -> textFieldRenderSupport.render(
-                node = node,
-                bounds = paddedBounds,
-                buffer = buffer,
-                textInputTargets = textInputTargets,
-            )
-
-            is CustomDraw -> Unit
-        }
     }
 
 }
