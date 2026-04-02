@@ -14,9 +14,9 @@ import com.purride.pixelcore.PixelTextRasterizer
  */
 internal class BridgeSupportGraph(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
-) {
-    val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
-    val elementTreeRenderer: ElementTreeRenderer = ElementTreeRenderer { root, logicalWidth, logicalHeight ->
+) : RetainedRenderSupport {
+    override val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
+    override val elementTreeRenderer: ElementTreeRenderer = ElementTreeRenderer { root, logicalWidth, logicalHeight ->
         renderElementTree(
             root = root,
             logicalWidth = logicalWidth,
