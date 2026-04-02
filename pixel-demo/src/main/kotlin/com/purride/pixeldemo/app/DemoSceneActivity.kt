@@ -44,6 +44,7 @@ class DemoSceneActivity : AppCompatActivity() {
         )
         hostView.setPalette(scene.initialPalette)
         hostView.textRasterizer = scene.initialTextRasterizer
+        hostView.themeData = scene.initialThemeData
         hostView.setContent(scene.content)
         setContentView(
             FrameLayout(this).apply {

@@ -58,7 +58,8 @@ dependencies {
    或者优先设置 `profilePreference`
 3. 设置 `palette`
 4. 可选设置 `textRasterizer`
-5. 用 `setContent { ... }` 提供组件树
+5. 可选设置 `themeData`
+6. 用 `setContent { ... }` 提供组件树
 6. 如果页面里有 `TextField`，优先使用默认的 `PixelTextInputBridge`
 
 ### 最小示例
@@ -69,6 +70,10 @@ val hostView = PixelHostView(this).apply {
         dotSizePx = 8,
     )
     setPalette(PixelPalette.terminalGreen())
+    themeData = ThemeData(
+        textStyle = TextStyle.Accent,
+        buttonStyle = ButtonStyle.Accent,
+    )
     setContent {
         Column(
             modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -92,6 +97,7 @@ setContentView(hostView)
 
 - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostView.kt)
 - [PixelHostProfilePreference.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostProfilePreference.kt)
+- [PixelThemeData.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelThemeData.kt)
 - [ScreenProfileFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/ScreenProfileFactory.kt)
 - [PixelPalette.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelPalette.kt)
 
@@ -233,6 +239,19 @@ Theme(
 当前更推荐把“同一块表单区”或“同一块操作区”作为 `Theme(...)` 的边界，
 而不是整页所有组件都塞进一个非常大的主题里。这样主题作用范围更清晰，
 后面做局部强调区、局部反色区也更容易管理。
+
+如果整页大部分组件都共享同一套默认主题，当前还可以直接把它挂在宿主上：
+
+```kotlin
+hostView.themeData = pageTheme
+```
+
+这样 `setContent { ... }` 返回的整棵页面树都会自动吃到这套默认主题。  
+推荐用法是：
+
+- 整页统一默认风格：用 `hostView.themeData`
+- 某一块表单区或操作区局部覆盖：用 `Theme(data, child)`
+- 某个单独组件临时覆写：继续直接传 `theme = ...`
 
 ---
 

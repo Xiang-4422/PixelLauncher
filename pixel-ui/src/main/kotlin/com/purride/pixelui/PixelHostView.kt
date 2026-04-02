@@ -93,6 +93,18 @@ class PixelHostView @JvmOverloads constructor(
     var hostBridge: PixelHostBridge? = null
 
     /**
+     * 宿主级默认主题。
+     *
+     * 当整页大部分组件共享同一套默认样式时，可以直接把主题挂在宿主上，
+     * 避免每个场景最外层都再包一层 `Theme(data, child)`。
+     */
+    var themeData: ThemeData? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
      * 当前宿主使用的文本栅格器。
      *
      * 默认继续使用内置位图字体，但 demo 或后续业务层可以在不改 runtime 的情况下
@@ -202,8 +214,12 @@ class PixelHostView @JvmOverloads constructor(
         stepActiveLists(frameDeltaMs)
         val provider = contentProvider
         val renderResult = if (provider != null) {
+            val rootWidget = provider()
+            val themedRoot = themeData?.let { theme ->
+                Theme(data = theme, child = rootWidget)
+            } ?: rootWidget
             runtime.render(
-                root = provider().asPixelNodeForCurrentRuntime(),
+                root = themedRoot.asPixelNodeForCurrentRuntime(),
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
             )
