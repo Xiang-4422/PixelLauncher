@@ -7,6 +7,7 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Container
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
@@ -131,6 +132,32 @@ class RetainedWidgetRuntimeTest {
     }
 
     @Test
+    fun inheritedNotifierMarksDependentsDirtyAfterNotifierChanges() {
+        val runtime = PixelRenderRuntime()
+        val count = ValueNotifier(0)
+        val root = CounterScope(
+            notifier = count,
+            child = CounterConsumerWidget(),
+        )
+
+        val first = runtime.render(
+            root = root,
+            logicalWidth = 4,
+            logicalHeight = 4,
+        )
+        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+
+        count.value = 1
+
+        val second = runtime.render(
+            root = root,
+            logicalWidth = 4,
+            logicalHeight = 4,
+        )
+        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
+    }
+
+    @Test
     fun builderReadsLocalInheritedContext() {
         val runtime = PixelRenderRuntime()
 
@@ -230,6 +257,23 @@ class RetainedWidgetRuntimeTest {
         }
     }
 
+    private class CounterScope(
+        notifier: ValueNotifier<Int>,
+        override val child: Widget,
+    ) : InheritedNotifier<ValueNotifier<Int>>(
+        notifier = notifier,
+        child = child,
+    ) {
+        companion object {
+            fun of(context: BuildContext): Int {
+                return context.dependOnInheritedWidgetOfExactType<CounterScope>()
+                    ?.notifier
+                    ?.value
+                    ?: 0
+            }
+        }
+    }
+
     private class ToneConsumerWidget : com.purride.pixelui.StatelessWidget() {
         override fun build(context: BuildContext): Widget {
             return Container(
@@ -249,6 +293,21 @@ class RetainedWidgetRuntimeTest {
                 width = mediaQuery.logicalWidth,
                 height = 1,
                 fillTone = if (direction == TextDirection.RTL) {
+                    PixelTone.ACCENT
+                } else {
+                    PixelTone.ON
+                },
+                borderTone = null,
+            )
+        }
+    }
+
+    private class CounterConsumerWidget : com.purride.pixelui.StatelessWidget() {
+        override fun build(context: BuildContext): Widget {
+            return Container(
+                width = 4,
+                height = 4,
+                fillTone = if (CounterScope.of(context) > 0) {
                     PixelTone.ACCENT
                 } else {
                     PixelTone.ON

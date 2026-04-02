@@ -52,12 +52,14 @@ import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Directionality
+import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
 import com.purride.pixelui.ValueListenableBuilder
 import com.purride.pixelui.ValueNotifier
+import com.purride.pixelui.dependOnInheritedWidgetOfExactType
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxHeight
 import com.purride.pixelui.fillMaxWidth
@@ -140,6 +142,7 @@ object DemoScenes {
         val scrollController = ScrollController()
         val scrollState = scrollController.create()
         var localStateHighlighted = false
+        val scopedCounter = ValueNotifier(0)
         val compactRasterizer = PixelBitmapFont(
             glyphWidth = 4,
             glyphHeight = 5,
@@ -204,6 +207,23 @@ object DemoScenes {
                                 )
                             }
                         },
+                        ScopedCounterScope(
+                            notifier = scopedCounter,
+                            child = Column(
+                                spacing = 2,
+                                children = listOf(
+                                    ScopedCounterInfoWidget(),
+                                    OutlinedButton(
+                                        text = "SCOPE COUNT +1",
+                                        onPressed = {
+                                            scopedCounter.value = scopedCounter.value + 1
+                                        },
+                                        style = ButtonStyle.Accent,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                ),
+                            ),
+                        ),
                         DecoratedBox(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(28),
                             fillTone = PixelTone.OFF,
@@ -981,6 +1001,34 @@ object DemoScenes {
                 ),
             ),
         )
+    }
+
+    private class ScopedCounterScope(
+        notifier: ValueNotifier<Int>,
+        override val child: Widget,
+    ) : InheritedNotifier<ValueNotifier<Int>>(
+        notifier = notifier,
+        child = child,
+    ) {
+        companion object {
+            fun of(context: BuildContext): Int {
+                return context.dependOnInheritedWidgetOfExactType<ScopedCounterScope>()
+                    ?.notifier
+                    ?.value
+                    ?: 0
+            }
+        }
+    }
+
+    private class ScopedCounterInfoWidget : StatelessWidget() {
+        override fun build(context: BuildContext): Widget {
+            val count = ScopedCounterScope.of(context)
+            return infoCard(
+                label = "INHERITED NOTIFIER",
+                value = "COUNT $count",
+                accent = count > 0,
+            )
+        }
     }
 
     private fun infoCard(
