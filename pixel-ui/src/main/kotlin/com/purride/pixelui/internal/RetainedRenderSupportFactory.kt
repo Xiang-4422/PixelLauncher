@@ -13,6 +13,6 @@ internal object RetainedRenderSupportFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): RetainedRenderSupport {
-        return BridgeSupportGraph(textRasterizer = textRasterizer)
+        return DefaultRetainedRenderSupport(textRasterizer = textRasterizer)
     }
 }
