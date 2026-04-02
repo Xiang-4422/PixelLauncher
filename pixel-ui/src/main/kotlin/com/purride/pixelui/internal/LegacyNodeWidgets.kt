@@ -26,8 +26,8 @@ internal interface LegacyNodeWidget : Widget {
 
     fun createLegacyNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode
+        childNodes: List<LegacyRenderNode>,
+    ): LegacyRenderNode
 }
 
 internal fun adaptLegacyWidget(widget: Widget): LegacyNodeWidget? {
@@ -43,7 +43,7 @@ internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeDat
 }
 
 private data class StaticLegacyNodeWidget(
-    private val node: PixelNode,
+    private val node: LegacyRenderNode,
 ) : LegacyNodeWidget {
     override val key: Any?
         get() = node.key
@@ -52,13 +52,13 @@ private data class StaticLegacyNodeWidget(
 
     override fun createLegacyNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
+        childNodes: List<LegacyRenderNode>,
+    ): LegacyRenderNode {
         return node
     }
 }
 
-internal fun PixelNode.withExtraModifier(extra: PixelModifier): PixelNode {
+internal fun LegacyRenderNode.withExtraModifier(extra: PixelModifier): LegacyRenderNode {
     val merged = modifier.then(extra)
     return when (this) {
         is PixelTextNode -> copy(modifier = merged)
@@ -78,14 +78,14 @@ internal fun PixelNode.withExtraModifier(extra: PixelModifier): PixelNode {
 
 internal data class LegacyLeafWidget(
     override val key: Any? = null,
-    private val factory: (BuildContext) -> PixelNode,
+    private val factory: (BuildContext) -> LegacyRenderNode,
 ) : LegacyNodeWidget {
     override val childWidgets: List<Widget> = emptyList()
 
     override fun createLegacyNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
+        childNodes: List<LegacyRenderNode>,
+    ): LegacyRenderNode {
         return factory(context)
     }
 }
@@ -93,15 +93,15 @@ internal data class LegacyLeafWidget(
 internal data class LegacySingleChildWidget(
     override val key: Any? = null,
     val child: Widget,
-    private val factory: (BuildContext, PixelNode) -> PixelNode,
+    private val factory: (BuildContext, LegacyRenderNode) -> LegacyRenderNode,
 ) : LegacyNodeWidget {
     override val childWidgets: List<Widget>
         get() = listOf(child)
 
     override fun createLegacyNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
+        childNodes: List<LegacyRenderNode>,
+    ): LegacyRenderNode {
         return factory(context, childNodes.single())
     }
 }
@@ -109,15 +109,15 @@ internal data class LegacySingleChildWidget(
 internal data class LegacyMultiChildWidget(
     override val key: Any? = null,
     val children: List<Widget>,
-    private val factory: (BuildContext, List<PixelNode>) -> PixelNode,
+    private val factory: (BuildContext, List<LegacyRenderNode>) -> LegacyRenderNode,
 ) : LegacyNodeWidget {
     override val childWidgets: List<Widget>
         get() = children
 
     override fun createLegacyNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
+        childNodes: List<LegacyRenderNode>,
+    ): LegacyRenderNode {
         return factory(context, childNodes)
     }
 }
@@ -133,8 +133,8 @@ internal data class FlexWrapperWidget(
 
     override fun createLegacyNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
+        childNodes: List<LegacyRenderNode>,
+    ): LegacyRenderNode {
         return childNodes.single().withExtraModifier(
             PixelModifier.Empty.weight(
                 weight = flex.coerceAtLeast(1).toFloat(),

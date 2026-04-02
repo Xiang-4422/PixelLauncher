@@ -9,7 +9,6 @@ import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
-import com.purride.pixelui.internal.legacy.PixelNode
 import kotlin.reflect.KClass
 
 internal class RetainedBuildRuntime(
@@ -17,7 +16,7 @@ internal class RetainedBuildRuntime(
 ) {
     private val buildOwner = BuildOwner(onVisualUpdate)
 
-    fun resolveLegacyTree(root: Widget): PixelNode? {
+    fun resolveLegacyTree(root: Widget): LegacyRenderNode? {
         buildOwner.updateRootWidget(root)
         buildOwner.buildScope()
         return buildOwner.rootElement?.createLegacyTree()
@@ -229,7 +228,7 @@ private abstract class Element(
         markNeedsBuild()
     }
 
-    open fun createLegacyTree(): PixelNode? = null
+    open fun createLegacyTree(): LegacyRenderNode? = null
 
     open fun unmount() {
         clearInheritedDependencies()
@@ -277,7 +276,7 @@ private abstract class ComponentElement(
         )
     }
 
-    override fun createLegacyTree(): PixelNode? {
+    override fun createLegacyTree(): LegacyRenderNode? {
         return child?.createLegacyTree()
     }
 
@@ -441,7 +440,7 @@ private class LegacyAdapterElement(
         children = nextChildren
     }
 
-    override fun createLegacyTree(): PixelNode {
+    override fun createLegacyTree(): LegacyRenderNode {
         owner.clearListenableDependencies(this)
         val childNodes = children.mapNotNull { child -> child.createLegacyTree() }
         return (widget as LegacyNodeWidget).createLegacyNode(
