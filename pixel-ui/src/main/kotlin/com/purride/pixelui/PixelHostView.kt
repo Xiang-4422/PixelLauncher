@@ -76,7 +76,7 @@ class PixelHostView @JvmOverloads constructor(
     private val buildRuntime = RetainedBuildRuntime(
         onVisualUpdate = { postInvalidateOnAnimation() },
     )
-    private var contentProvider: (() -> Widget)? = null
+    private var contentProvider: RootWidgetProvider? = null
     private var lastRenderResult: PixelRenderResult? = null
     private var palette: PixelPalette = PixelPalette.terminalGreen()
     private var pixelGapEnabled: Boolean = true
@@ -156,7 +156,7 @@ class PixelHostView @JvmOverloads constructor(
     /**
      * 设置宿主当前要渲染的根组件。
      */
-    fun setContent(provider: () -> Widget) {
+    fun setContent(provider: RootWidgetProvider) {
         contentProvider = provider
         postInvalidateOnAnimation()
     }

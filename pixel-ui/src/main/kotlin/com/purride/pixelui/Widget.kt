@@ -17,3 +17,12 @@ interface Widget {
      */
     val key: Any?
 }
+
+/**
+ * 宿主级根组件提供器。
+ *
+ * 它和 `WidgetBuilder` 不同：
+ * - `WidgetBuilder` 用在 retained tree 内部，带 `BuildContext`
+ * - `RootWidgetProvider` 用在宿主入口，不依赖上下文
+ */
+typealias RootWidgetProvider = () -> Widget

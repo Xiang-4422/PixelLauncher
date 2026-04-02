@@ -23,7 +23,7 @@ data class PixelHostSetup(
  * 默认宿主配置。
  *
  * 这层把业务页面最常见的宿主初始化项收成一个对象：
- * profile、调色板、文本栅格器、主题和页面内容都可以一次性带进来。
+ * profile、调色板、文本栅格器、主题和根组件提供器都可以一次性带进来。
  */
 data class PixelHostSetupConfig(
     val profilePreference: PixelHostProfilePreference? = null,
@@ -31,7 +31,7 @@ data class PixelHostSetupConfig(
     val textRasterizer: PixelTextRasterizer? = null,
     val themeData: ThemeData? = null,
     val textDirection: TextDirection = TextDirection.LTR,
-    val content: (() -> Widget)? = null,
+    val content: RootWidgetProvider? = null,
 )
 
 /**
