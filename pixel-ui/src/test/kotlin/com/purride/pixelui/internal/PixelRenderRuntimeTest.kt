@@ -1016,6 +1016,53 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun flutterStyleTextAlignStartUsesRightEdgeInRtl() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = SizedBox(
+                    width = 20,
+                    height = 8,
+                    child = Text(
+                        data = "A",
+                        textAlign = TextAlign.START,
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 8,
+        )
+
+        val pixels = collectOnPixels(result)
+        val minX = pixels.minOf { it.first }
+        val maxX = pixels.maxOf { it.first }
+        assertTrue("RTL START minX=$minX maxX=$maxX", minX >= 14)
+        assertTrue("RTL START minX=$minX maxX=$maxX", maxX >= 16)
+    }
+
+    @Test
+    fun flutterStyleTextAlignEndUsesLeftEdgeInRtl() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = SizedBox(
+                    width = 20,
+                    height = 8,
+                    child = Text(
+                        data = "A",
+                        textAlign = TextAlign.END,
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 8,
+        )
+
+        val pixels = collectOnPixels(result)
+        assertTrue(pixels.minOf { it.first } <= 2)
+    }
+
+    @Test
     fun flutterStylePositionedPlacesChildAtExplicitTopLeft() {
         val result = runtime.render(
             root = Stack(

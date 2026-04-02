@@ -170,7 +170,7 @@ object DemoScenes {
                         infoCard("紧凑", "COMPACT 4X5", valueRasterizer = compactRasterizer),
                         infoCard("复用", "复用 Launcher 的字形包"),
                         SizedBox(
-                            height = 34,
+                            height = 48,
                             child = DecoratedBox(
                                 fillTone = PixelTone.OFF,
                                 borderTone = PixelTone.ON,
@@ -193,6 +193,20 @@ object DemoScenes {
                                             SizedBox(
                                                 height = 6,
                                                 child = Text("END", textAlign = TextAlign.END),
+                                            ),
+                                            Directionality(
+                                                textDirection = TextDirection.RTL,
+                                                child = SizedBox(
+                                                    height = 6,
+                                                    child = Text("RTL START/END", textAlign = TextAlign.START),
+                                                ),
+                                            ),
+                                            Directionality(
+                                                textDirection = TextDirection.RTL,
+                                                child = SizedBox(
+                                                    height = 6,
+                                                    child = Text("RTL END/START", textAlign = TextAlign.END),
+                                                ),
                                             ),
                                         ),
                                     ),

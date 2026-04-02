@@ -507,6 +507,7 @@ Text(
 - `maxLines` 至少为 1
 - `overflow` 当前支持 `CLIP` 和 `ELLIPSIS`
 - `textAlign` 当前支持 `START / CENTER / END`
+- 如果页面已经挂了 `Directionality`，`TextAlign.START / END` 会跟着 `LTR / RTL` 自动翻转
 
 如果文本已经有固定显示宽度，当前也可以直接让它在自己的盒子里居左、居中、居右：
 

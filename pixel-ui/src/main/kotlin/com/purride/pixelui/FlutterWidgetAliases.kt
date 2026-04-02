@@ -376,6 +376,7 @@ fun Text(
             maxLines = maxLines,
             overflow = overflow,
             textAlign = textAlign.toPixelTextAlign(),
+            textDirection = Directionality.of(context),
             key = key,
         )
     }
