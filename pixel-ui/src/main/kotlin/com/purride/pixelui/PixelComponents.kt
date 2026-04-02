@@ -35,6 +35,9 @@ enum class PixelMainAxisAlignment {
     START,
     CENTER,
     END,
+    SPACE_BETWEEN,
+    SPACE_AROUND,
+    SPACE_EVENLY,
 }
 
 enum class PixelMainAxisSize {

@@ -28,6 +28,9 @@ enum class MainAxisAlignment {
     START,
     CENTER,
     END,
+    SPACE_BETWEEN,
+    SPACE_AROUND,
+    SPACE_EVENLY,
 }
 
 enum class MainAxisSize {
@@ -54,6 +57,9 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignmen
         MainAxisAlignment.START -> PixelMainAxisAlignment.START
         MainAxisAlignment.CENTER -> PixelMainAxisAlignment.CENTER
         MainAxisAlignment.END -> PixelMainAxisAlignment.END
+        MainAxisAlignment.SPACE_BETWEEN -> PixelMainAxisAlignment.SPACE_BETWEEN
+        MainAxisAlignment.SPACE_AROUND -> PixelMainAxisAlignment.SPACE_AROUND
+        MainAxisAlignment.SPACE_EVENLY -> PixelMainAxisAlignment.SPACE_EVENLY
     }
 }
 

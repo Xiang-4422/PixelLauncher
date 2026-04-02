@@ -612,7 +612,7 @@ Row(
 
 - `spacing`
 - `mainAxisSize = MIN / MAX`
-- 主轴排布 `START / CENTER / END`
+- 主轴排布 `START / CENTER / END / SPACE_BETWEEN / SPACE_AROUND / SPACE_EVENLY`
 - 交叉轴对齐 `START / CENTER / END / STRETCH`
 - `Expanded / Flexible / Spacer`
 
@@ -626,6 +626,20 @@ Column(
         Text("TOP"),
         Spacer(),
         Text("BOTTOM"),
+    ),
+)
+```
+
+如果你希望多个子项沿主轴自动分散排布，当前也可以直接写：
+
+```kotlin
+Row(
+    mainAxisSize = MainAxisSize.MAX,
+    mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    children = listOf(
+        SizedBox(width = 18, child = Text("LEFT")),
+        SizedBox(width = 18, child = Text("RIGHT")),
     ),
 )
 ```

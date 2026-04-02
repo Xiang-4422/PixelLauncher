@@ -24,6 +24,7 @@ import com.purride.pixelui.ListView
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparated
 import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PageViewBuilder
@@ -1581,6 +1582,36 @@ object DemoScenes {
                             ),
                         ),
                         SizedBox(
+                            height = 18,
+                            child = Row(
+                                mainAxisSize = MainAxisSize.MAX,
+                                mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    SizedBox(
+                                        width = 18,
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Center(
+                                                child = Text("BETWEEN"),
+                                            ),
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        width = 18,
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ACCENT,
+                                            child = Center(
+                                                child = Text("EVEN", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
                             height = 24,
                             child = GestureDetector(
                                 onTap = {
@@ -1594,6 +1625,7 @@ object DemoScenes {
                                     padding = 2,
                                     child = Column(
                                         spacing = 2,
+                                        mainAxisSize = MainAxisSize.MAX,
                                         mainAxisAlignment = MainAxisAlignment.END,
                                         crossAxisAlignment = CrossAxisAlignment.END,
                                         children = listOf(

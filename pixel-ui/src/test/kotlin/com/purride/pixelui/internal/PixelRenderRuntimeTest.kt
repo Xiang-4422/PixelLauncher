@@ -376,6 +376,67 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun rowMainAxisSpaceBetweenDistributesChildrenAcrossWidth() {
+        val result = runtime.render(
+            root = Row(
+                modifier = PixelModifier.Empty.size(12, 4),
+                mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+                children = listOf(
+                    Container(
+                        width = 2,
+                        height = 4,
+                        fillTone = PixelTone.ON,
+                        borderTone = null,
+                    ),
+                    Container(
+                        width = 2,
+                        height = 4,
+                        fillTone = PixelTone.ACCENT,
+                        borderTone = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 1))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(5, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(10, 1))
+    }
+
+    @Test
+    fun columnMainAxisSpaceEvenlyAddsTopAndBottomGaps() {
+        val result = runtime.render(
+            root = Column(
+                modifier = PixelModifier.Empty.size(4, 12),
+                mainAxisAlignment = MainAxisAlignment.SPACE_EVENLY,
+                children = listOf(
+                    Container(
+                        width = 4,
+                        height = 2,
+                        fillTone = PixelTone.ON,
+                        borderTone = null,
+                    ),
+                    Container(
+                        width = 4,
+                        height = 2,
+                        fillTone = PixelTone.ACCENT,
+                        borderTone = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 4,
+            logicalHeight = 12,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 0))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 2))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 6))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 11))
+    }
+
+    @Test
     fun pagerExportsClickTargetsFromCurrentPage() {
         var clicked = false
         val controller = PixelPagerController()
