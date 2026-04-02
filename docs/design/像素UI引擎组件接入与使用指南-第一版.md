@@ -589,6 +589,24 @@ Padding(
 )
 ```
 
+如果页面已经挂了 `Directionality`，并且你希望边距跟着 `start / end` 自动翻转，当前可以直接用 `EdgeInsetsDirectional`、`PaddingDirectional` 或 `ContainerDirectional`：
+
+```kotlin
+Directionality(
+    textDirection = TextDirection.RTL,
+    child = ContainerDirectional(
+        paddingDirectional = EdgeInsetsDirectional.only(start = 2, top = 2),
+        marginDirectional = EdgeInsetsDirectional.only(start = 1),
+        child = Text("TAG"),
+    ),
+)
+```
+
+当前规则是：
+
+- `LTR` 下 `start -> left`、`end -> right`
+- `RTL` 下 `start -> right`、`end -> left`
+
 ### 4.4 布局容器
 
 当前可用容器包括：
