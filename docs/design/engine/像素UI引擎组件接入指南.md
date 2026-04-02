@@ -1,4 +1,4 @@
-# 像素 UI 引擎组件接入与使用指南（第一版）
+# 像素 UI 引擎组件接入指南
 
 这份文档的目标很直接：
 
@@ -1319,8 +1319,8 @@ controller.nextPage(state)
 
 如果要真正开始基于这个库开发，建议按这个顺序读：
 
-1. [像素 UI 引擎当前进度与接手建议（第一版）](./像素UI引擎当前进度与接手建议-第一版.md)
-2. [像素 UI 引擎架构与实施计划（第一版）](./像素UI引擎架构与实施计划-第一版.md)
+1. [像素 UI 引擎当前进度与接手建议](./像素UI引擎当前进度.md)
+2. [像素 UI 引擎架构与实施计划](./像素UI引擎架构与实施计划.md)
 3. [DemoSceneActivity.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoSceneActivity.kt)
 4. [DemoScenes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt)
 
