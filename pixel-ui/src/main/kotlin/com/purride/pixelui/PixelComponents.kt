@@ -62,6 +62,7 @@ data class PixelTextNode(
     val maxLines: Int = 1,
     val overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     val textAlign: PixelTextAlign = PixelTextAlign.START,
+    val textDirection: TextDirection = TextDirection.LTR,
 ) : PixelNode
 
 enum class PixelTextOverflow {
@@ -143,6 +144,7 @@ fun PixelText(
     maxLines: Int = 1,
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     textAlign: PixelTextAlign = PixelTextAlign.START,
+    textDirection: TextDirection = TextDirection.LTR,
     key: Any? = null,
 ): PixelNode {
     return PixelTextNode(
@@ -154,6 +156,7 @@ fun PixelText(
         maxLines = maxLines,
         overflow = overflow,
         textAlign = textAlign,
+        textDirection = textDirection,
     )
 }
 

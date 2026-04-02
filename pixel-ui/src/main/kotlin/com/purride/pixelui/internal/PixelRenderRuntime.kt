@@ -34,6 +34,7 @@ import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextAlign
 import com.purride.pixelui.PixelWeightElement
+import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
 import com.purride.pixelui.toSurfaceNode
 import com.purride.pixelui.node.CustomDraw
@@ -269,7 +270,7 @@ internal class PixelRenderRuntime(
                 maxWidth = innerConstraints.maxWidth,
             ).let { layout ->
                 val measuredWidth = if (
-                    node.textAlign != PixelTextAlign.START &&
+                    textAlignNeedsFullWidth(node) &&
                     innerConstraints.maxWidth > 0 &&
                     innerConstraints.maxWidth > layout.width
                 ) {
@@ -531,9 +532,15 @@ internal class PixelRenderRuntime(
         layout.lines.forEach { line ->
             if (line.text.isNotEmpty()) {
                 val lineX = when (node.textAlign) {
-                    PixelTextAlign.START -> bounds.left
+                    PixelTextAlign.START -> when (node.textDirection) {
+                        TextDirection.LTR -> bounds.left
+                        TextDirection.RTL -> bounds.left + (bounds.width - line.width).coerceAtLeast(0)
+                    }
                     PixelTextAlign.CENTER -> bounds.left + ((bounds.width - line.width).coerceAtLeast(0) / 2)
-                    PixelTextAlign.END -> bounds.left + (bounds.width - line.width).coerceAtLeast(0)
+                    PixelTextAlign.END -> when (node.textDirection) {
+                        TextDirection.LTR -> bounds.left + (bounds.width - line.width).coerceAtLeast(0)
+                        TextDirection.RTL -> bounds.left
+                    }
                 }
                 layout.rasterizer.drawText(
                     buffer = buffer,
@@ -1932,5 +1939,13 @@ internal class PixelRenderRuntime(
             fillMaxHeight = fillMaxHeight,
             onClick = onClick,
         )
+    }
+
+    private fun textAlignNeedsFullWidth(node: PixelTextNode): Boolean {
+        return when (node.textAlign) {
+            PixelTextAlign.CENTER -> true
+            PixelTextAlign.START -> node.textDirection == TextDirection.RTL
+            PixelTextAlign.END -> node.textDirection == TextDirection.LTR
+        }
     }
 }
