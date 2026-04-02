@@ -5,8 +5,6 @@ import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelui.PixelButtonNode
-import com.purride.pixelui.PixelTextFieldNode
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
@@ -14,6 +12,7 @@ import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.internal.legacy.PixelBoxNode
+import com.purride.pixelui.internal.legacy.PixelButtonNode
 import com.purride.pixelui.internal.legacy.CustomDraw
 import com.purride.pixelui.internal.legacy.PixelColumnNode
 import com.purride.pixelui.internal.legacy.PixelClickableElement
@@ -35,9 +34,10 @@ import com.purride.pixelui.internal.legacy.PixelSizeElement
 import com.purride.pixelui.internal.legacy.PixelSingleChildScrollViewNode
 import com.purride.pixelui.internal.legacy.PixelSurfaceNode
 import com.purride.pixelui.internal.legacy.PixelTextAlign
+import com.purride.pixelui.internal.legacy.PixelTextFieldNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
 import com.purride.pixelui.internal.legacy.PixelWeightElement
-import com.purride.pixelui.toSurfaceNode
+import com.purride.pixelui.internal.legacy.toSurfaceNode
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 import kotlin.math.max
