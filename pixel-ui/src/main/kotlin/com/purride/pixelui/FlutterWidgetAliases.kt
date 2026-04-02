@@ -173,6 +173,30 @@ fun Padding(
     )
 }
 
+fun PaddingDirectional(
+    child: Widget,
+    padding: EdgeInsetsDirectional,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    return LegacySingleChildWidget(
+        key = key,
+        child = child,
+    ) { context, childNode ->
+        val resolvedPadding = padding.resolve(Directionality.of(context))
+        PixelBox(
+            children = listOf(childNode),
+            modifier = modifier.padding(
+                left = resolvedPadding.left,
+                top = resolvedPadding.top,
+                right = resolvedPadding.right,
+                bottom = resolvedPadding.bottom,
+            ),
+            alignment = PixelAlignment.TOP_START,
+        )
+    }
+}
+
 fun Padding(
     child: Widget,
     left: Int = 0,
@@ -466,7 +490,9 @@ fun ContainerDirectional(
     width: Int? = null,
     height: Int? = null,
     padding: EdgeInsets? = null,
+    paddingDirectional: EdgeInsetsDirectional? = null,
     margin: EdgeInsets? = null,
+    marginDirectional: EdgeInsetsDirectional? = null,
     style: ContainerStyle? = null,
     theme: ThemeData? = null,
     modifier: PixelModifier = PixelModifier.Empty,
@@ -479,7 +505,10 @@ fun ContainerDirectional(
         key = key,
         children = child?.let(::listOf) ?: emptyList(),
     ) { context, childNodes ->
+        val direction = Directionality.of(context)
         val resolvedTheme = context.resolveTheme(theme)
+        val resolvedPadding = paddingDirectional?.resolve(direction) ?: padding
+        val resolvedMargin = marginDirectional?.resolve(direction) ?: margin
         val resolvedStyle = style ?: when (
             ContainerStyle(
                 fillTone = fillTone,
@@ -495,18 +524,18 @@ fun ContainerDirectional(
                 alignment = Alignment.CENTER,
             )
         }
-        val resolvedAlignment = alignment.toPixelAlignment(Directionality.of(context))
+        val resolvedAlignment = alignment.toPixelAlignment(direction)
         val paddedChild = childNodes.singleOrNull()?.let { childNode ->
-            if (padding == null) {
+            if (resolvedPadding == null) {
                 childNode
             } else {
                 PixelBox(
                     children = listOf(childNode),
                     modifier = PixelModifier.Empty.padding(
-                        left = padding.left,
-                        top = padding.top,
-                        right = padding.right,
-                        bottom = padding.bottom,
+                        left = resolvedPadding.left,
+                        top = resolvedPadding.top,
+                        right = resolvedPadding.right,
+                        bottom = resolvedPadding.bottom,
                     ),
                     alignment = PixelAlignment.TOP_START,
                 )
@@ -527,16 +556,16 @@ fun ContainerDirectional(
             alignment = resolvedAlignment,
             key = key,
         )
-        if (margin == null) {
+        if (resolvedMargin == null) {
             baseNode
         } else {
             PixelBox(
                 children = listOf(baseNode),
                 modifier = PixelModifier.Empty.padding(
-                    left = margin.left,
-                    top = margin.top,
-                    right = margin.right,
-                    bottom = margin.bottom,
+                    left = resolvedMargin.left,
+                    top = resolvedMargin.top,
+                    right = resolvedMargin.right,
+                    bottom = resolvedMargin.bottom,
                 ),
                 alignment = PixelAlignment.TOP_START,
             )

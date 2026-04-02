@@ -17,6 +17,7 @@ import com.purride.pixelui.ContainerDirectional
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.EdgeInsetsDirectional
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
 import com.purride.pixelui.AlignDirectional
@@ -42,6 +43,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PaddingDirectional
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.PositionedDirectional
 import com.purride.pixelui.PositionedFill
@@ -1229,6 +1231,73 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 2))
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(8, 2))
+    }
+
+    @Test
+    fun flutterStylePaddingDirectionalResolvesStartAndEndByDirectionality() {
+        val ltr = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.LTR,
+                child = PaddingDirectional(
+                    padding = EdgeInsetsDirectional.only(start = 3, top = 1),
+                    child = Text("A"),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+        val rtl = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = PaddingDirectional(
+                    padding = EdgeInsetsDirectional.only(start = 3, top = 1),
+                    child = Text("A"),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertTrue(collectOnPixels(ltr).minOf { it.first } >= 3)
+        assertTrue(collectOnPixels(rtl).maxOf { it.first } <= 16)
+    }
+
+    @Test
+    fun flutterStyleContainerDirectionalResolvesDirectionalPaddingAndMargin() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = ContainerDirectional(
+                    width = 12,
+                    height = 8,
+                    alignment = AlignmentDirectional.TOP_START,
+                    paddingDirectional = EdgeInsetsDirectional.only(start = 2),
+                    marginDirectional = EdgeInsetsDirectional.only(start = 1),
+                    child = SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 12,
+        )
+
+        val accentPixels = mutableListOf<Pair<Int, Int>>()
+        for (y in 0 until result.buffer.height) {
+            for (x in 0 until result.buffer.width) {
+                if (result.buffer.getPixel(x, y).toInt() == PixelTone.ACCENT.value.toInt()) {
+                    accentPixels += x to y
+                }
+            }
+        }
+
+        assertTrue(accentPixels.minOf { it.first } >= 6)
+        assertTrue(accentPixels.maxOf { it.first } <= 9)
     }
 
     @Test

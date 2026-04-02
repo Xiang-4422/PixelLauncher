@@ -20,6 +20,7 @@ import com.purride.pixelui.Container
 import com.purride.pixelui.ContainerDirectional
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.EdgeInsetsDirectional
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.FlexFit
 import com.purride.pixelui.Flexible
@@ -1961,6 +1962,59 @@ object DemoScenes {
                                                             child = Center(
                                                                 child = Text("RTL", style = TextStyle.Accent),
                                                             ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 24,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.LTR,
+                                            child = ContainerDirectional(
+                                                marginDirectional = EdgeInsetsDirectional.only(start = 2),
+                                                paddingDirectional = EdgeInsetsDirectional.only(start = 2, top = 2),
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = SizedBox(
+                                                    width = 12,
+                                                    height = 8,
+                                                    child = DecoratedBox(
+                                                        fillTone = PixelTone.OFF,
+                                                        borderTone = PixelTone.ACCENT,
+                                                        child = Center(
+                                                            child = Text("LTR", style = TextStyle.Accent),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.RTL,
+                                            child = ContainerDirectional(
+                                                marginDirectional = EdgeInsetsDirectional.only(start = 2),
+                                                paddingDirectional = EdgeInsetsDirectional.only(start = 2, top = 2),
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = SizedBox(
+                                                    width = 12,
+                                                    height = 8,
+                                                    child = DecoratedBox(
+                                                        fillTone = PixelTone.OFF,
+                                                        borderTone = PixelTone.ACCENT,
+                                                        child = Center(
+                                                            child = Text("RTL", style = TextStyle.Accent),
                                                         ),
                                                     ),
                                                 ),
