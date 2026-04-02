@@ -153,6 +153,7 @@ val config = PixelHostSetupConfig(
 - 页面状态放在宿主或页面层
 - 组件树通过 `setContent { ... }` 返回
 - 交互优先通过 `State.setState`、`ValueNotifier`、控制器回调修改状态
+- 需要局部上下文或局部短状态时，优先用 `Builder` / `StatefulBuilder`
 - 重建应由 retained runtime 自动触发，不再把 `hostView.requestRender()` 当成页面主路径
 
 ### 当前推荐结构
@@ -213,6 +214,47 @@ class ExampleActivity : AppCompatActivity() {
 > `PixelPagerState`、`PixelListState`、`PixelTextFieldState` 这类状态对象，必须在 `content lambda` 外稳定持有，不要在每次重绘时重新创建。
 
 这是当前这套框架最重要的使用约束之一。
+
+### 局部上下文与局部状态
+
+如果只是想：
+
+- 在当前子树里读取 `Theme / MediaQuery / Directionality`
+- 做一个非常局部的点击切换
+
+不需要马上拆一个完整命名 `StatefulWidget`，当前可以直接用：
+
+```kotlin
+var accent = false
+
+Column(
+    spacing = 2,
+    children = listOf(
+        Builder { context ->
+            val mediaQuery = MediaQuery.of(context)
+            Text("VIEWPORT ${mediaQuery.logicalWidth}x${mediaQuery.logicalHeight}")
+        },
+        StatefulBuilder { _, setState ->
+            var accent = false
+            OutlinedButton(
+                text = if (accent) "ACCENT" else "DEFAULT",
+                onPressed = {
+                    setState {
+                        accent = !accent
+                    }
+                },
+                style = if (accent) ButtonStyle.Accent else ButtonStyle.Default,
+            )
+        },
+    ),
+)
+```
+
+这里有一个很重要的边界：
+
+- `Builder` 只解决“局部读取上下文”
+- `StatefulBuilder` 只适合非常小的局部交互
+- 如果状态已经影响整块页面结构，还是应该升级成命名 `StatefulWidget`
 
 如果页面已经开始出现大量重复的 `TextStyle / ButtonStyle / TextFieldStyle / Container` 视觉配置，
 当前推荐先收成轻量主题对象：
