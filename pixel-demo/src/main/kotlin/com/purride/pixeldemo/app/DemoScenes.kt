@@ -49,6 +49,10 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
+import com.purride.pixelui.Directionality
+import com.purride.pixelui.MediaQuery
+import com.purride.pixelui.StatelessWidget
+import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
 import com.purride.pixelui.ValueListenableBuilder
 import com.purride.pixelui.ValueNotifier
@@ -154,6 +158,26 @@ object DemoScenes {
                         infoCard("混排", "HELLO 你好 UI", valueRasterizer = wideRasterizer),
                         infoCard("紧凑", "COMPACT 4X5", valueRasterizer = compactRasterizer),
                         infoCard("复用", "复用 Launcher 的字形包"),
+                        EnvironmentInfoWidget(
+                            label = "HOST ENV",
+                        ),
+                        Directionality(
+                            textDirection = TextDirection.RTL,
+                            child = Theme(
+                                data = ThemeData(
+                                    textStyle = TextStyle.Accent,
+                                    buttonStyle = ButtonStyle.Accent,
+                                    containerStyle = ContainerStyle(
+                                        fillTone = PixelTone.OFF,
+                                        borderTone = PixelTone.ACCENT,
+                                        alignment = Alignment.CENTER,
+                                    ),
+                                ),
+                                child = EnvironmentInfoWidget(
+                                    label = "LOCAL OVERRIDE",
+                                ),
+                            ),
+                        ),
                         DecoratedBox(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(28),
                             fillTone = PixelTone.OFF,
@@ -1131,6 +1155,30 @@ object DemoScenes {
                 children = children,
             ),
         )
+    }
+
+    private class EnvironmentInfoWidget(
+        private val label: String,
+    ) : StatelessWidget() {
+        override fun build(context: BuildContext): Widget {
+            val mediaQuery = MediaQuery.of(context)
+            val direction = Directionality.of(context)
+            val theme = Theme.of(context)
+            val directionLabel = when (direction) {
+                TextDirection.LTR -> "LTR"
+                TextDirection.RTL -> "RTL"
+            }
+            val themeLabel = when (theme.textStyle.tone) {
+                PixelTone.ACCENT -> "ACCENT"
+                PixelTone.ON -> "ON"
+                else -> "OFF"
+            }
+            return infoCard(
+                label = label,
+                value = "${mediaQuery.logicalWidth}x${mediaQuery.logicalHeight} $directionLabel $themeLabel",
+                accent = direction == TextDirection.RTL,
+            )
+        }
     }
 
     private class PaletteSceneWidget(
