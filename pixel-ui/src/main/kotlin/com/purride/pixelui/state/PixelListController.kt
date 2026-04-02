@@ -1,5 +1,7 @@
 package com.purride.pixelui.state
 
+import com.purride.pixelui.ChangeNotifier
+
 /**
  * 通用列表控制器。
  *
@@ -9,7 +11,7 @@ package com.purride.pixelui.state
  *
  * 暂时不做惯性滚动、回弹或锚点定位，这些可以在后续迭代继续补。
  */
-class PixelListController {
+class PixelListController : ChangeNotifier() {
 
     companion object {
         private const val SETTLE_DECELERATION_PX_PER_SECOND_SQUARED = 2400f
@@ -37,6 +39,7 @@ class PixelListController {
                 stopSettling(state)
             }
         }
+        notifyListeners()
     }
 
     fun dragBy(
@@ -54,12 +57,14 @@ class PixelListController {
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
         state.scrollOffsetPx = (state.scrollOffsetPx - deltaPx).coerceIn(0f, state.maxScrollOffsetPx)
+        notifyListeners()
     }
 
     fun startDrag(state: PixelListState) {
         state.isDragging = true
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
+        notifyListeners()
     }
 
     /**
@@ -99,6 +104,7 @@ class PixelListController {
             contentHeightPx = contentHeightPx,
         )
         state.scrollOffsetPx = targetOffsetPx.coerceIn(0f, state.maxScrollOffsetPx)
+        notifyListeners()
     }
 
     fun endDrag(
@@ -122,6 +128,7 @@ class PixelListController {
 
         state.isSettling = true
         state.scrollVelocityPxPerSecond = velocityPxPerSecond
+        notifyListeners()
     }
 
     fun step(
@@ -168,6 +175,7 @@ class PixelListController {
         if (kotlin.math.abs(state.scrollVelocityPxPerSecond) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
             stopSettling(state)
         }
+        notifyListeners()
     }
 
     fun isActive(state: PixelListState): Boolean {

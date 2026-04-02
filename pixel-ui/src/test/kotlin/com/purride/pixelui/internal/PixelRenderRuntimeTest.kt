@@ -94,7 +94,7 @@ class PixelRenderRuntimeTest {
             root = Padding(
                 padding = EdgeInsets.only(left = 3, top = 2),
                 child = Text("A"),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 20,
             logicalHeight = 20,
         )
@@ -114,7 +114,7 @@ class PixelRenderRuntimeTest {
                 fillTone = PixelTone.OFF,
                 borderTone = null,
                 child = Text("A"),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 20,
             logicalHeight = 12,
         )
@@ -370,7 +370,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 20,
             logicalHeight = 10,
         )
@@ -395,7 +395,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 12,
             logicalHeight = 12,
         )
@@ -414,7 +414,7 @@ class PixelRenderRuntimeTest {
                 margin = EdgeInsets.only(left = 2, top = 3),
                 fillTone = PixelTone.ACCENT,
                 borderTone = null,
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 10,
             logicalHeight = 10,
         )
@@ -461,7 +461,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 24,
             logicalHeight = 20,
         )
@@ -504,7 +504,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 24,
             logicalHeight = 20,
         )
@@ -533,7 +533,7 @@ class PixelRenderRuntimeTest {
                     modifier = PixelModifier.Empty.size(20, 10),
                     readOnly = true,
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 20,
             logicalHeight = 10,
         )
@@ -590,7 +590,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 24,
             logicalHeight = 30,
         )
@@ -634,7 +634,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 24,
             logicalHeight = 24,
         )
@@ -667,7 +667,7 @@ class PixelRenderRuntimeTest {
                         ),
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 20,
             logicalHeight = 4,
         )
@@ -691,7 +691,7 @@ class PixelRenderRuntimeTest {
                         borderTone = null,
                     ),
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 10,
             logicalHeight = 10,
         )
@@ -711,7 +711,7 @@ class PixelRenderRuntimeTest {
                     fillTone = PixelTone.ACCENT,
                     borderTone = null,
                 ),
-            ) as com.purride.pixelui.PixelNode,
+            ),
             logicalWidth = 10,
             logicalHeight = 10,
         )

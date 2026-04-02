@@ -30,6 +30,7 @@ import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelWeightElement
+import com.purride.pixelui.Widget
 import com.purride.pixelui.toSurfaceNode
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
@@ -183,6 +184,7 @@ internal data class PixelTextLayout(
 internal class PixelRenderRuntime(
     private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
+    private val buildRuntime = RetainedBuildRuntime(onVisualUpdate = { })
 
     companion object {
         /**
@@ -231,6 +233,20 @@ internal class PixelRenderRuntime(
             pagerTargets = pagerTargets,
             listTargets = listTargets,
             textInputTargets = textInputTargets,
+        )
+    }
+
+    fun render(
+        root: Widget,
+        logicalWidth: Int,
+        logicalHeight: Int,
+    ): PixelRenderResult {
+        val legacyRoot = buildRuntime.resolve(root)
+            ?: error("当前 Widget 树没有生成可渲染的 legacy node。")
+        return render(
+            root = legacyRoot,
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
         )
     }
 
