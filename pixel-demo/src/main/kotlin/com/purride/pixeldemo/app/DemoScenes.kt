@@ -18,6 +18,7 @@ import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.Flexible
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
 import com.purride.pixelui.ListViewBuilder
@@ -991,7 +992,6 @@ object DemoScenes {
                             axis = Axis.VERTICAL,
                             state = pagerState,
                             controller = pagerController,
-                            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
                             pages = listOf(
                                 pagerPage(
                                     title = "OUTER PAGE 1",
@@ -1002,7 +1002,6 @@ object DemoScenes {
                                     primaryActionLabel = "GO LIST",
                                 ),
                                 DecoratedBox(
-                                    modifier = PixelModifier.Empty.fillMaxSize(),
                                     fillTone = PixelTone.OFF,
                                     borderTone = PixelTone.ACCENT,
                                     child = Container(
@@ -1074,13 +1073,11 @@ object DemoScenes {
         val resolvedRasterizer = textRasterizer ?: PixelBitmapFont.Default
         val titleHeight = resolvedRasterizer.measureHeight(text)
         return Container(
-            modifier = PixelModifier.Empty.fillMaxWidth(),
             height = titleHeight + 6,
             fillTone = PixelTone.OFF,
             borderTone = PixelTone.ACCENT,
             padding = EdgeInsets.all(3),
             child = Center(
-                modifier = PixelModifier.Empty.fillMaxSize(),
                 child = Text(
                     text,
                     style = TextStyle(
@@ -1143,14 +1140,13 @@ object DemoScenes {
             8
 
         return Container(
-            modifier = PixelModifier.Empty.fillMaxWidth(),
             height = cardHeight,
             fillTone = PixelTone.OFF,
             borderTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
             padding = EdgeInsets.all(3),
             child = Column(
-                modifier = PixelModifier.Empty.fillMaxSize(),
                 spacing = 2,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 children = listOf(
                     Text(trimmedLabel, style = TextStyle.Accent),
                     Text(
@@ -1171,7 +1167,6 @@ object DemoScenes {
         fillTone = tone,
         borderTone = PixelTone.ON,
         child = Center(
-            modifier = PixelModifier.Empty.fillMaxSize(),
             child = Text(
                 label,
                 style = if (tone == PixelTone.OFF) {
@@ -1189,7 +1184,6 @@ object DemoScenes {
         fillTone = PixelTone.OFF,
         borderTone = PixelTone.ON,
         child = Center(
-            modifier = PixelModifier.Empty.fillMaxSize(),
             child = Text(label),
         ),
     )
@@ -1475,7 +1469,6 @@ object DemoScenes {
                             child = Theme(
                                 data = themedCard,
                                 child = Center(
-                                    modifier = PixelModifier.Empty.fillMaxSize(),
                                     child = Text("THEME"),
                                 ),
                             ),
@@ -1487,7 +1480,6 @@ object DemoScenes {
                             fillTone = PixelTone.OFF,
                             borderTone = PixelTone.ACCENT,
                             child = Center(
-                                modifier = PixelModifier.Empty.fillMaxSize(),
                                 child = Text("MARGIN", style = TextStyle.Accent),
                             ),
                         ),
@@ -1536,91 +1528,105 @@ object DemoScenes {
                                 demoSquare("RIGHT"),
                             ),
                         ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(18),
-                            spacing = 2,
-                            children = listOf(
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("1X"),
-                                    ),
-                                ),
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ACCENT,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("2X", style = TextStyle.Accent),
-                                    ),
-                                ),
-                            ),
-                        ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(20),
-                            spacing = 2,
-                            mainAxisAlignment = MainAxisAlignment.CENTER,
-                            crossAxisAlignment = CrossAxisAlignment.CENTER,
-                            children = listOf(
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.size(18, 8),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("MID"),
-                                    ),
-                                ),
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.size(18, 14),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ACCENT,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("TALL", style = TextStyle.Accent),
-                                    ),
-                                ),
-                            ),
-                        ),
-                        GestureDetector(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(24),
-                            onTap = {
-                                setState {
-                                    accentMode = !accentMode
-                                }
-                            },
-                            child = DecoratedBox(
-                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                fillTone = PixelTone.OFF,
-                                borderTone = PixelTone.ON,
-                                padding = 2,
-                                child = Column(
-                                    modifier = PixelModifier.Empty.fillMaxSize(),
-                                    spacing = 2,
-                                    mainAxisAlignment = MainAxisAlignment.END,
-                                    crossAxisAlignment = CrossAxisAlignment.END,
-                                    children = listOf(
-                                        DecoratedBox(
-                                            modifier = PixelModifier.Empty.size(16, 6),
+                        SizedBox(
+                            height = 18,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = DecoratedBox(
                                             fillTone = PixelTone.OFF,
                                             borderTone = PixelTone.ON,
                                             child = Center(
-                                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                                child = Text("END"),
+                                                child = Text("1X"),
                                             ),
                                         ),
-                                        DecoratedBox(
-                                            modifier = PixelModifier.Empty.size(24, 6),
+                                    ),
+                                    Flexible(
+                                        flex = 2,
+                                        child = DecoratedBox(
                                             fillTone = PixelTone.OFF,
                                             borderTone = PixelTone.ACCENT,
-                                            child = Align(
-                                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                                alignment = Alignment.CENTER,
-                                                child = Text("ALIGN", style = TextStyle.Accent),
+                                            child = Center(
+                                                child = Text("2X", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 20,
+                            child = Row(
+                                spacing = 2,
+                                mainAxisAlignment = MainAxisAlignment.CENTER,
+                                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                children = listOf(
+                                    SizedBox(
+                                        width = 18,
+                                        height = 8,
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Center(
+                                                child = Text("MID"),
+                                            ),
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        width = 18,
+                                        height = 14,
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ACCENT,
+                                            child = Center(
+                                                child = Text("TALL", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 24,
+                            child = GestureDetector(
+                                onTap = {
+                                    setState {
+                                        accentMode = !accentMode
+                                    }
+                                },
+                                child = DecoratedBox(
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ON,
+                                    padding = 2,
+                                    child = Column(
+                                        spacing = 2,
+                                        mainAxisAlignment = MainAxisAlignment.END,
+                                        crossAxisAlignment = CrossAxisAlignment.END,
+                                        children = listOf(
+                                            SizedBox(
+                                                width = 16,
+                                                height = 6,
+                                                child = DecoratedBox(
+                                                    fillTone = PixelTone.OFF,
+                                                    borderTone = PixelTone.ON,
+                                                    child = Center(
+                                                        child = Text("END"),
+                                                    ),
+                                                ),
+                                            ),
+                                            SizedBox(
+                                                width = 24,
+                                                height = 6,
+                                                child = DecoratedBox(
+                                                    fillTone = PixelTone.OFF,
+                                                    borderTone = PixelTone.ACCENT,
+                                                    child = Align(
+                                                        alignment = Alignment.CENTER,
+                                                        child = Text("ALIGN", style = TextStyle.Accent),
+                                                    ),
+                                                ),
                                             ),
                                         ),
                                     ),
