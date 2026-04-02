@@ -491,6 +491,40 @@ fun Positioned(
     }
 }
 
+fun PositionedDirectional(
+    child: Widget,
+    start: Int? = null,
+    top: Int? = null,
+    end: Int? = null,
+    bottom: Int? = null,
+    width: Int? = null,
+    height: Int? = null,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    return LegacySingleChildWidget(
+        key = key,
+        child = child,
+    ) { context, childNode ->
+        val direction = Directionality.of(context)
+        val (resolvedLeft, resolvedRight) = when (direction) {
+            TextDirection.LTR -> start to end
+            TextDirection.RTL -> end to start
+        }
+        PixelPositioned(
+            child = childNode,
+            modifier = modifier,
+            left = resolvedLeft,
+            top = top,
+            right = resolvedRight,
+            bottom = bottom,
+            width = width,
+            height = height,
+            key = key,
+        )
+    }
+}
+
 fun PositionedFill(
     child: Widget,
     left: Int = 0,
