@@ -1,7 +1,4 @@
-package com.purride.pixelui.node
-
-import com.purride.pixelui.PixelModifier
-import com.purride.pixelui.PixelNode
+package com.purride.pixelui.internal.legacy
 
 /**
  * 自定义像素绘制节点。

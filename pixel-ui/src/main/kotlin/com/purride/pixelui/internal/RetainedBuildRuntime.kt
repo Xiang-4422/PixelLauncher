@@ -5,11 +5,11 @@ import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.Listenable
-import com.purride.pixelui.PixelNode
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
+import com.purride.pixelui.internal.legacy.PixelNode
 import kotlin.reflect.KClass
 
 internal class RetainedBuildRuntime(

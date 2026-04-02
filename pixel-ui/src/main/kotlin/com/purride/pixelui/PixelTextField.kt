@@ -1,6 +1,8 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.internal.legacy.PixelModifier
+import com.purride.pixelui.internal.legacy.PixelNode
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 

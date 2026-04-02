@@ -1,5 +1,7 @@
 package com.purride.pixelui
 
+import com.purride.pixelui.internal.legacy.PixelModifier
+import com.purride.pixelui.internal.legacy.PixelNode
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 

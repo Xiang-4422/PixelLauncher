@@ -22,11 +22,8 @@ import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelColumn
 import com.purride.pixelui.PixelColumnNode
 import com.purride.pixelui.PixelContainerStyle
-import com.purride.pixelui.PixelFlexFit
 import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelListNode
-import com.purride.pixelui.PixelModifier
-import com.purride.pixelui.PixelNode
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelPagerNode
 import com.purride.pixelui.PixelPositioned
@@ -50,26 +47,29 @@ import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Theme
 import com.purride.pixelui.Widget
-import com.purride.pixelui.node.CustomDraw
+import com.purride.pixelui.internal.legacy.CustomDraw
+import com.purride.pixelui.internal.legacy.PixelFlexFit
+import com.purride.pixelui.internal.legacy.PixelModifier
+import com.purride.pixelui.internal.legacy.PixelNode
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
-import com.purride.pixelui.clickable
-import com.purride.pixelui.fillMaxSize
-import com.purride.pixelui.height
-import com.purride.pixelui.padding
+import com.purride.pixelui.internal.legacy.clickable
+import com.purride.pixelui.internal.legacy.fillMaxSize
+import com.purride.pixelui.internal.legacy.height
+import com.purride.pixelui.internal.legacy.padding
 import com.purride.pixelui.resolve
-import com.purride.pixelui.size
+import com.purride.pixelui.internal.legacy.size
 import com.purride.pixelui.toPixelAlignment
 import com.purride.pixelui.toPixelCrossAxisAlignment
 import com.purride.pixelui.toPixelMainAxisAlignment
 import com.purride.pixelui.toPixelMainAxisSize
 import com.purride.pixelui.toPixelTextAlign
-import com.purride.pixelui.weight
-import com.purride.pixelui.width
+import com.purride.pixelui.internal.legacy.weight
+import com.purride.pixelui.internal.legacy.width
 
 internal interface LegacyNodeWidget : Widget {
     val childWidgets: List<Widget>

@@ -1,4 +1,4 @@
-package com.purride.pixelui
+package com.purride.pixelui.internal.legacy
 
 /**
  * 通用像素组件修饰器。

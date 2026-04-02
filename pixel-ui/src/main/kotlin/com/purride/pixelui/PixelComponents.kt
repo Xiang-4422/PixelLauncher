@@ -2,6 +2,8 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.internal.legacy.PixelModifier
+import com.purride.pixelui.internal.legacy.PixelNode
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 

@@ -1,4 +1,6 @@
-package com.purride.pixelui
+package com.purride.pixelui.internal.legacy
+
+import com.purride.pixelui.Widget
 
 /**
  * 旧兼容节点抽象。
