@@ -53,46 +53,55 @@ dependencies {
 
 一个最小可运行页面，当前需要这几步：
 
-1. 创建默认宿主装配 `createPixelHostSetup(...)`
-2. 设置 `profilePreference`
-3. 设置 `palette`
-4. 可选设置 `textRasterizer`
-5. 可选设置 `themeData`
-6. 用 `setContent { ... }` 提供组件树
+1. 准备 `PixelHostSetupConfig`
+2. 调用 `createPixelHostSetup(...)`
+3. 把 `rootView` 设给 Activity
 
 ### 最小示例
 
 ```kotlin
-val hostSetup = createPixelHostSetup(this)
-val hostView = hostSetup.hostView
-
-hostView.apply {
-    profilePreference = PixelHostProfilePreference(
-        dotSizePx = 8,
-    )
-    setPalette(PixelPalette.terminalGreen())
-    themeData = ThemeData(
-        textStyle = TextStyle.Accent,
-        buttonStyle = ButtonStyle.Accent,
-    )
-    setContent {
-        Column(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-            spacing = 4,
-            children = listOf(
-                Text("HELLO PIXEL"),
-                OutlinedButton(
-                    text = "CLICK",
-                    onPressed = { requestRender() },
-                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+val hostView = PixelHostView(this)
+val hostSetup = createPixelHostSetup(
+    context = this,
+    hostView = hostView,
+    config = PixelHostSetupConfig(
+        profilePreference = PixelHostProfilePreference(
+            dotSizePx = 8,
+        ),
+        palette = PixelPalette.terminalGreen(),
+        themeData = ThemeData(
+            textStyle = TextStyle.Accent,
+            buttonStyle = ButtonStyle.Accent,
+        ),
+        content = {
+            Column(
+                modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                spacing = 4,
+                children = listOf(
+                    Text("HELLO PIXEL"),
+                    OutlinedButton(
+                        text = "CLICK",
+                        onPressed = { hostView.requestRender() },
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                    ),
                 ),
-            ),
-        )
-    }
-}
+            )
+        },
+    ),
+)
 
 setContentView(hostSetup.rootView)
 ```
+
+当前 `PixelHostSetupConfig` 已经能一次性收这些宿主初始化项：
+
+- `profilePreference`
+- `palette`
+- `textRasterizer`
+- `themeData`
+- `content`
+
+如果你更习惯显式分步设置，也仍然可以继续直接操作 `hostSetup.hostView`。
 
 关键类型：
 
@@ -102,6 +111,35 @@ setContentView(hostSetup.rootView)
 - [PixelThemeData.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelThemeData.kt)
 - [ScreenProfileFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/ScreenProfileFactory.kt)
 - [PixelPalette.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/PixelPalette.kt)
+
+### 当前更简洁的宿主配置对象
+
+```kotlin
+val config = PixelHostSetupConfig(
+    profilePreference = PixelHostProfilePreference(
+        dotSizePx = 8,
+    ),
+    palette = PixelPalette.terminalGreen(),
+    themeData = ThemeData(
+        textStyle = TextStyle.Accent,
+        buttonStyle = ButtonStyle.Accent,
+    ),
+    content = {
+        Column(
+            modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+            spacing = 4,
+            children = listOf(
+                Text("HELLO PIXEL"),
+                OutlinedButton(
+                    text = "CLICK",
+                    onPressed = { /* ... */ },
+                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                ),
+            ),
+        )
+    },
+)
+```
 
 ---
 
