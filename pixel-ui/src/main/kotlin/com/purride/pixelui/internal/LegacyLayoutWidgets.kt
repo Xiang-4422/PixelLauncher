@@ -31,10 +31,10 @@ import com.purride.pixelui.internal.legacy.padding
 import com.purride.pixelui.internal.legacy.size
 import com.purride.pixelui.internal.legacy.width
 import com.purride.pixelui.resolve
-import com.purride.pixelui.toPixelAlignment
-import com.purride.pixelui.toPixelCrossAxisAlignment
-import com.purride.pixelui.toPixelMainAxisAlignment
-import com.purride.pixelui.toPixelMainAxisSize
+import com.purride.pixelui.internal.toPixelAlignment
+import com.purride.pixelui.internal.toPixelCrossAxisAlignment
+import com.purride.pixelui.internal.toPixelMainAxisAlignment
+import com.purride.pixelui.internal.toPixelMainAxisSize
 
 internal data class ContainerWidget(
     val child: Widget?,

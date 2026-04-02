@@ -15,7 +15,7 @@ import com.purride.pixelui.internal.legacy.PixelText
 import com.purride.pixelui.internal.legacy.PixelTextField
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
-import com.purride.pixelui.toPixelTextAlign
+import com.purride.pixelui.internal.toPixelTextAlign
 
 internal data class TextWidget(
     val data: String,
