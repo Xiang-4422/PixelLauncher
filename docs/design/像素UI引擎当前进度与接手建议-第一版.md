@@ -158,6 +158,8 @@
 - `StatefulWidget + State.setState`
 - `Theme / Directionality / MediaQuery` 这类环境传播
 
+其中 `Theme / Directionality / MediaQuery` 已经不只是在测试里可用，文本页现在已经有真实的环境信息展示和局部覆盖场景。
+
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
 
 - `Text`
