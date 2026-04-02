@@ -397,6 +397,410 @@ private data class SingleChildScrollViewWidget(
     }
 }
 
+private data class PaddingWidget(
+    val child: Widget,
+    val padding: EdgeInsets,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacySingleChildWidget(
+            key = key,
+            child = child,
+        ) { _, childNode ->
+            PixelBox(
+                children = listOf(childNode),
+                modifier = PixelModifier.Empty.padding(
+                    left = padding.left,
+                    top = padding.top,
+                    right = padding.right,
+                    bottom = padding.bottom,
+                ),
+                alignment = PixelAlignment.TOP_START,
+            )
+        }
+    }
+}
+
+private data class PaddingDirectionalWidget(
+    val child: Widget,
+    val padding: EdgeInsetsDirectional,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val resolvedPadding = padding.resolve(Directionality.of(context))
+        return PaddingWidget(
+            child = child,
+            padding = resolvedPadding,
+            key = key,
+        )
+    }
+}
+
+private data class AlignWidget(
+    val child: Widget,
+    val alignment: Alignment,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacySingleChildWidget(
+            key = key,
+            child = child,
+        ) { _, childNode ->
+            PixelBox(
+                children = listOf(childNode),
+                modifier = PixelModifier.Empty.fillMaxSize(),
+                alignment = alignment.toPixelAlignment(),
+            )
+        }
+    }
+}
+
+private data class AlignDirectionalWidget(
+    val child: Widget,
+    val alignment: AlignmentDirectional,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacySingleChildWidget(
+            key = key,
+            child = child,
+        ) { _, childNode ->
+            PixelBox(
+                children = listOf(childNode),
+                modifier = PixelModifier.Empty.fillMaxSize(),
+                alignment = alignment.toPixelAlignment(Directionality.of(context)),
+            )
+        }
+    }
+}
+
+private data class SizedBoxWidget(
+    val width: Int?,
+    val height: Int?,
+    val child: Widget?,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacyMultiChildWidget(
+            key = key,
+            children = child?.let(::listOf) ?: emptyList(),
+        ) { _, childNodes ->
+            val baseModifier = when {
+                width != null && height != null -> PixelModifier.Empty.size(width, height)
+                width != null -> PixelModifier.Empty.width(width)
+                height != null -> PixelModifier.Empty.height(height)
+                else -> PixelModifier.Empty
+            }
+            PixelBox(
+                children = childNodes,
+                modifier = baseModifier,
+                alignment = PixelAlignment.TOP_START,
+            )
+        }
+    }
+}
+
+private data class GestureDetectorWidget(
+    val child: Widget,
+    val onTap: () -> Unit,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacySingleChildWidget(
+            key = key,
+            child = child,
+        ) { _, childNode ->
+            childNode.withExtraModifier(PixelModifier.Empty.clickable(onTap))
+        }
+    }
+}
+
+private data class DecoratedBoxWidget(
+    val child: Widget?,
+    val fillTone: PixelTone,
+    val borderTone: PixelTone?,
+    val padding: Int,
+    val alignment: Alignment,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacyMultiChildWidget(
+            key = key,
+            children = child?.let(::listOf) ?: emptyList(),
+        ) { _, childNodes ->
+            PixelSurface(
+                child = childNodes.singleOrNull(),
+                modifier = PixelModifier.Empty,
+                fillTone = fillTone,
+                borderTone = borderTone,
+                padding = padding,
+                alignment = alignment.toPixelAlignment(),
+                key = key,
+            )
+        }
+    }
+}
+
+private data class ContainerDirectionalWidget(
+    val child: Widget?,
+    val width: Int?,
+    val height: Int?,
+    val padding: EdgeInsets?,
+    val paddingDirectional: EdgeInsetsDirectional?,
+    val margin: EdgeInsets?,
+    val marginDirectional: EdgeInsetsDirectional?,
+    val style: ContainerStyle?,
+    val theme: ThemeData?,
+    val fillTone: PixelTone,
+    val borderTone: PixelTone?,
+    val alignment: AlignmentDirectional,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val direction = Directionality.of(context)
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedPadding = paddingDirectional?.resolve(direction) ?: padding
+        val resolvedMargin = marginDirectional?.resolve(direction) ?: margin
+        val resolvedStyle = style ?: when (
+            ContainerStyle(
+                fillTone = fillTone,
+                borderTone = borderTone,
+                alignment = Alignment.CENTER,
+            )
+        ) {
+            ContainerStyle.Default -> resolvedTheme.containerStyle
+            resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
+            else -> ContainerStyle(
+                fillTone = fillTone,
+                borderTone = borderTone,
+                alignment = Alignment.CENTER,
+            )
+        }
+        return LegacyMultiChildWidget(
+            key = key,
+            children = child?.let(::listOf) ?: emptyList(),
+        ) { _, childNodes ->
+            val resolvedAlignment = alignment.toPixelAlignment(direction)
+            val paddedChild = childNodes.singleOrNull()?.let { childNode ->
+                if (resolvedPadding == null) {
+                    childNode
+                } else {
+                    PixelBox(
+                        children = listOf(childNode),
+                        modifier = PixelModifier.Empty.padding(
+                            left = resolvedPadding.left,
+                            top = resolvedPadding.top,
+                            right = resolvedPadding.right,
+                            bottom = resolvedPadding.bottom,
+                        ),
+                        alignment = PixelAlignment.TOP_START,
+                    )
+                }
+            }
+            val sizedModifier = when {
+                width != null && height != null -> PixelModifier.Empty.size(width, height)
+                width != null -> PixelModifier.Empty.width(width)
+                height != null -> PixelModifier.Empty.height(height)
+                else -> PixelModifier.Empty
+            }
+            val baseNode = PixelSurface(
+                child = paddedChild,
+                modifier = sizedModifier,
+                fillTone = resolvedStyle.fillTone,
+                borderTone = resolvedStyle.borderTone,
+                padding = 0,
+                alignment = resolvedAlignment,
+                key = key,
+            )
+            if (resolvedMargin == null) {
+                baseNode
+            } else {
+                PixelBox(
+                    children = listOf(baseNode),
+                    modifier = PixelModifier.Empty.padding(
+                        left = resolvedMargin.left,
+                        top = resolvedMargin.top,
+                        right = resolvedMargin.right,
+                        bottom = resolvedMargin.bottom,
+                    ),
+                    alignment = PixelAlignment.TOP_START,
+                )
+            }
+        }
+    }
+}
+
+private data class StackWidget(
+    val children: List<Widget>,
+    val alignment: Alignment,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacyMultiChildWidget(
+            key = key,
+            children = children,
+        ) { _, childNodes ->
+            PixelBox(
+                children = childNodes,
+                modifier = PixelModifier.Empty,
+                alignment = alignment.toPixelAlignment(),
+                key = key,
+            )
+        }
+    }
+}
+
+private data class PositionedWidget(
+    val child: Widget,
+    val left: Int?,
+    val top: Int?,
+    val right: Int?,
+    val bottom: Int?,
+    val width: Int?,
+    val height: Int?,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return LegacySingleChildWidget(
+            key = key,
+            child = child,
+        ) { _, childNode ->
+            PixelPositioned(
+                child = childNode,
+                modifier = PixelModifier.Empty,
+                left = left,
+                top = top,
+                right = right,
+                bottom = bottom,
+                width = width,
+                height = height,
+                key = key,
+            )
+        }
+    }
+}
+
+private data class PositionedDirectionalWidget(
+    val child: Widget,
+    val start: Int?,
+    val top: Int?,
+    val end: Int?,
+    val bottom: Int?,
+    val width: Int?,
+    val height: Int?,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val direction = Directionality.of(context)
+        val (resolvedLeft, resolvedRight) = when (direction) {
+            TextDirection.LTR -> start to end
+            TextDirection.RTL -> end to start
+        }
+        return PositionedWidget(
+            child = child,
+            left = resolvedLeft,
+            top = top,
+            right = resolvedRight,
+            bottom = bottom,
+            width = width,
+            height = height,
+            key = key,
+        )
+    }
+}
+
+private data class RowWidget(
+    val children: List<Widget>,
+    val spacing: Int,
+    val mainAxisSize: MainAxisSize,
+    val mainAxisAlignment: MainAxisAlignment,
+    val crossAxisAlignment: CrossAxisAlignment,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val direction = Directionality.of(context)
+        return LegacyMultiChildWidget(
+            key = key,
+            children = children,
+        ) { _, childNodes ->
+            PixelRow(
+                children = childNodes,
+                modifier = PixelModifier.Empty,
+                spacing = spacing,
+                mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
+                mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                    axis = Axis.HORIZONTAL,
+                    direction = direction,
+                ),
+                crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                    axis = Axis.HORIZONTAL,
+                    direction = direction,
+                ),
+                key = key,
+            )
+        }
+    }
+}
+
+private data class ColumnWidget(
+    val children: List<Widget>,
+    val spacing: Int,
+    val mainAxisSize: MainAxisSize,
+    val mainAxisAlignment: MainAxisAlignment,
+    val crossAxisAlignment: CrossAxisAlignment,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val direction = Directionality.of(context)
+        return LegacyMultiChildWidget(
+            key = key,
+            children = children,
+        ) { _, childNodes ->
+            PixelColumn(
+                children = childNodes,
+                modifier = PixelModifier.Empty,
+                spacing = spacing,
+                mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
+                mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                    axis = Axis.VERTICAL,
+                    direction = direction,
+                ),
+                crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                    axis = Axis.VERTICAL,
+                    direction = direction,
+                ),
+                key = key,
+            )
+        }
+    }
+}
+
 fun Padding(
     child: Widget,
     all: Int,
@@ -414,21 +818,7 @@ fun Padding(
     padding: EdgeInsets,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
-        child = child,
-    ) { _, childNode ->
-        PixelBox(
-            children = listOf(childNode),
-            modifier = PixelModifier.Empty.padding(
-                left = padding.left,
-                top = padding.top,
-                right = padding.right,
-                bottom = padding.bottom,
-            ),
-            alignment = PixelAlignment.TOP_START,
-        )
-    }
+    return PaddingWidget(child = child, padding = padding, key = key)
 }
 
 fun Padding(
@@ -452,22 +842,7 @@ fun PaddingDirectional(
     padding: EdgeInsetsDirectional,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
-        child = child,
-    ) { context, childNode ->
-        val resolvedPadding = padding.resolve(Directionality.of(context))
-        PixelBox(
-            children = listOf(childNode),
-            modifier = PixelModifier.Empty.padding(
-                left = resolvedPadding.left,
-                top = resolvedPadding.top,
-                right = resolvedPadding.right,
-                bottom = resolvedPadding.bottom,
-            ),
-            alignment = PixelAlignment.TOP_START,
-        )
-    }
+    return PaddingDirectionalWidget(child = child, padding = padding, key = key)
 }
 
 fun Padding(
@@ -495,16 +870,7 @@ fun Align(
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
-        child = child,
-    ) { _, childNode ->
-        PixelBox(
-            children = listOf(childNode),
-            modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = alignment.toPixelAlignment(),
-        )
-    }
+    return AlignWidget(child = child, alignment = alignment, key = key)
 }
 
 fun Center(
@@ -523,16 +889,7 @@ fun AlignDirectional(
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
-        child = child,
-    ) { context, childNode ->
-        PixelBox(
-            children = listOf(childNode),
-            modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = alignment.toPixelAlignment(Directionality.of(context)),
-        )
-    }
+    return AlignDirectionalWidget(child = child, alignment = alignment, key = key)
 }
 
 fun SizedBox(
@@ -541,22 +898,7 @@ fun SizedBox(
     child: Widget? = null,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
-        key = key,
-        children = child?.let(::listOf) ?: emptyList(),
-    ) { _, childNodes ->
-        val baseModifier = when {
-            width != null && height != null -> PixelModifier.Empty.size(width, height)
-            width != null -> PixelModifier.Empty.width(width)
-            height != null -> PixelModifier.Empty.height(height)
-            else -> PixelModifier.Empty
-        }
-        PixelBox(
-            children = childNodes,
-            modifier = baseModifier,
-            alignment = PixelAlignment.TOP_START,
-        )
-    }
+    return SizedBoxWidget(width = width, height = height, child = child, key = key)
 }
 
 fun Expanded(
@@ -603,14 +945,7 @@ fun GestureDetector(
     onTap: () -> Unit,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
-        child = child,
-    ) { _, childNode ->
-        childNode.withExtraModifier(
-            PixelModifier.Empty.clickable(onTap),
-        )
-    }
+    return GestureDetectorWidget(child = child, onTap = onTap, key = key)
 }
 
 fun Text(
@@ -643,20 +978,14 @@ fun DecoratedBox(
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
+    return DecoratedBoxWidget(
+        child = child,
+        fillTone = fillTone,
+        borderTone = borderTone,
+        padding = padding,
+        alignment = alignment,
         key = key,
-        children = child?.let(::listOf) ?: emptyList(),
-    ) { _, childNodes ->
-        PixelSurface(
-            child = childNodes.singleOrNull(),
-            modifier = PixelModifier.Empty,
-            fillTone = fillTone,
-            borderTone = borderTone,
-            padding = padding,
-            alignment = alignment.toPixelAlignment(),
-            key = key,
-        )
-    }
+    )
 }
 
 fun Container(
@@ -702,76 +1031,21 @@ fun ContainerDirectional(
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
+    return ContainerDirectionalWidget(
+        child = child,
+        width = width,
+        height = height,
+        padding = padding,
+        paddingDirectional = paddingDirectional,
+        margin = margin,
+        marginDirectional = marginDirectional,
+        style = style,
+        theme = theme,
+        fillTone = fillTone,
+        borderTone = borderTone,
+        alignment = alignment,
         key = key,
-        children = child?.let(::listOf) ?: emptyList(),
-    ) { context, childNodes ->
-        val direction = Directionality.of(context)
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedPadding = paddingDirectional?.resolve(direction) ?: padding
-        val resolvedMargin = marginDirectional?.resolve(direction) ?: margin
-        val resolvedStyle = style ?: when (
-            ContainerStyle(
-                fillTone = fillTone,
-                borderTone = borderTone,
-                alignment = Alignment.CENTER,
-            )
-        ) {
-            ContainerStyle.Default -> resolvedTheme.containerStyle
-            resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
-            else -> ContainerStyle(
-                fillTone = fillTone,
-                borderTone = borderTone,
-                alignment = Alignment.CENTER,
-            )
-        }
-        val resolvedAlignment = alignment.toPixelAlignment(direction)
-        val paddedChild = childNodes.singleOrNull()?.let { childNode ->
-            if (resolvedPadding == null) {
-                childNode
-            } else {
-                PixelBox(
-                    children = listOf(childNode),
-                    modifier = PixelModifier.Empty.padding(
-                        left = resolvedPadding.left,
-                        top = resolvedPadding.top,
-                        right = resolvedPadding.right,
-                        bottom = resolvedPadding.bottom,
-                    ),
-                    alignment = PixelAlignment.TOP_START,
-                )
-            }
-        }
-        val sizedModifier = when {
-            width != null && height != null -> PixelModifier.Empty.size(width, height)
-            width != null -> PixelModifier.Empty.width(width)
-            height != null -> PixelModifier.Empty.height(height)
-            else -> PixelModifier.Empty
-        }
-        val baseNode = PixelSurface(
-            child = paddedChild,
-            modifier = sizedModifier,
-            fillTone = resolvedStyle.fillTone,
-            borderTone = resolvedStyle.borderTone,
-            padding = 0,
-            alignment = resolvedAlignment,
-            key = key,
-        )
-        if (resolvedMargin == null) {
-            baseNode
-        } else {
-            PixelBox(
-                children = listOf(baseNode),
-                modifier = PixelModifier.Empty.padding(
-                    left = resolvedMargin.left,
-                    top = resolvedMargin.top,
-                    right = resolvedMargin.right,
-                    bottom = resolvedMargin.bottom,
-                ),
-                alignment = PixelAlignment.TOP_START,
-            )
-        }
-    }
+    )
 }
 
 fun Stack(
@@ -779,17 +1053,7 @@ fun Stack(
     alignment: Alignment = Alignment.TOP_START,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
-        key = key,
-        children = children,
-    ) { _, childNodes ->
-        PixelBox(
-            children = childNodes,
-            modifier = PixelModifier.Empty,
-            alignment = alignment.toPixelAlignment(),
-            key = key,
-        )
-    }
+    return StackWidget(children = children, alignment = alignment, key = key)
 }
 
 fun Positioned(
@@ -802,22 +1066,16 @@ fun Positioned(
     height: Int? = null,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
+    return PositionedWidget(
         child = child,
-    ) { _, childNode ->
-        PixelPositioned(
-            child = childNode,
-            modifier = PixelModifier.Empty,
-            left = left,
-            top = top,
-            right = right,
-            bottom = bottom,
-            width = width,
-            height = height,
-            key = key,
-        )
-    }
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        width = width,
+        height = height,
+        key = key,
+    )
 }
 
 fun PositionedDirectional(
@@ -830,27 +1088,16 @@ fun PositionedDirectional(
     height: Int? = null,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
+    return PositionedDirectionalWidget(
         child = child,
-    ) { context, childNode ->
-        val direction = Directionality.of(context)
-        val (resolvedLeft, resolvedRight) = when (direction) {
-            TextDirection.LTR -> start to end
-            TextDirection.RTL -> end to start
-        }
-        PixelPositioned(
-            child = childNode,
-            modifier = PixelModifier.Empty,
-            left = resolvedLeft,
-            top = top,
-            right = resolvedRight,
-            bottom = bottom,
-            width = width,
-            height = height,
-            key = key,
-        )
-    }
+        start = start,
+        top = top,
+        end = end,
+        bottom = bottom,
+        width = width,
+        height = height,
+        key = key,
+    )
 }
 
 fun PositionedFill(
@@ -879,27 +1126,14 @@ fun Row(
     crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
-        key = key,
+    return RowWidget(
         children = children,
-    ) { context, childNodes ->
-        val direction = Directionality.of(context)
-        PixelRow(
-            children = childNodes,
-            modifier = PixelModifier.Empty,
-            spacing = spacing,
-            mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
-                axis = Axis.HORIZONTAL,
-                direction = direction,
-            ),
-            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
-                axis = Axis.HORIZONTAL,
-                direction = direction,
-            ),
-            key = key,
-        )
-    }
+        spacing = spacing,
+        mainAxisSize = mainAxisSize,
+        mainAxisAlignment = mainAxisAlignment,
+        crossAxisAlignment = crossAxisAlignment,
+        key = key,
+    )
 }
 
 fun Column(
@@ -910,27 +1144,14 @@ fun Column(
     crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
-        key = key,
+    return ColumnWidget(
         children = children,
-    ) { context, childNodes ->
-        val direction = Directionality.of(context)
-        PixelColumn(
-            children = childNodes,
-            modifier = PixelModifier.Empty,
-            spacing = spacing,
-            mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
-                axis = Axis.VERTICAL,
-                direction = direction,
-            ),
-            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
-                axis = Axis.VERTICAL,
-                direction = direction,
-            ),
-            key = key,
-        )
-    }
+        spacing = spacing,
+        mainAxisSize = mainAxisSize,
+        mainAxisAlignment = mainAxisAlignment,
+        crossAxisAlignment = crossAxisAlignment,
+        key = key,
+    )
 }
 
 fun PageView(
@@ -941,21 +1162,14 @@ fun PageView(
     onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
+    return PageViewWidget(
+        axis = axis,
+        controller = controller,
+        state = state,
+        pages = pages,
+        onPageChanged = onPageChanged,
         key = key,
-        children = pages,
-    ) { context, childNodes ->
-        context.watch(controller)
-        PixelPager(
-            axis = axis,
-            state = state,
-            controller = controller,
-            pages = childNodes,
-            modifier = PixelModifier.Empty,
-            onPageChanged = onPageChanged,
-            key = key,
-        )
-    }
+    )
 }
 
 fun PageViewBuilder(
