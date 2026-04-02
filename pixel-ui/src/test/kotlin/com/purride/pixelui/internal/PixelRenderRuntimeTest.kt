@@ -35,8 +35,6 @@ import com.purride.pixelui.PixelList
 import com.purride.pixelui.PixelListNode
 import com.purride.pixelui.Align
 import com.purride.pixelui.PixelMainAxisAlignment
-import com.purride.pixelui.PixelModifier
-import com.purride.pixelui.PixelNode
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelPagerNode
@@ -76,14 +74,17 @@ import com.purride.pixelui.Theme
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Widget
-import com.purride.pixelui.clickable
-import com.purride.pixelui.fillMaxSize
-import com.purride.pixelui.fillMaxWidth
-import com.purride.pixelui.height
-import com.purride.pixelui.padding
-import com.purride.pixelui.size
-import com.purride.pixelui.weight
-import com.purride.pixelui.width
+import com.purride.pixelui.internal.legacy.CustomDraw
+import com.purride.pixelui.internal.legacy.PixelModifier
+import com.purride.pixelui.internal.legacy.PixelNode
+import com.purride.pixelui.internal.legacy.clickable
+import com.purride.pixelui.internal.legacy.fillMaxSize
+import com.purride.pixelui.internal.legacy.fillMaxWidth
+import com.purride.pixelui.internal.legacy.height
+import com.purride.pixelui.internal.legacy.padding
+import com.purride.pixelui.internal.legacy.size
+import com.purride.pixelui.internal.legacy.weight
+import com.purride.pixelui.internal.legacy.width
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
@@ -107,7 +108,7 @@ private fun PixelNode.withTestModifier(extra: PixelModifier): PixelNode {
         is PixelSingleChildScrollViewNode -> copy(modifier = merged)
         is PixelTextFieldNode -> copy(modifier = merged)
         is PixelButtonNode -> copy(modifier = merged)
-        is com.purride.pixelui.node.CustomDraw -> copy(modifier = merged)
+        is CustomDraw -> copy(modifier = merged)
         else -> this
     }
 }

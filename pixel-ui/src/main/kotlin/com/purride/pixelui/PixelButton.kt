@@ -1,6 +1,10 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.internal.legacy.PixelModifier
+import com.purride.pixelui.internal.legacy.PixelNode
+import com.purride.pixelui.internal.legacy.clickable
+import com.purride.pixelui.internal.legacy.fillMaxSize
 
 /**
  * 像素按钮样式。
