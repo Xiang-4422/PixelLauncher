@@ -13,3 +13,9 @@ internal object BridgeWidgetAdapterFactory {
         return adaptBridgeWidget(widget)?.let(::BridgeAdapterElement)
     }
 }
+
+internal object BridgeWidgetAdapter : WidgetAdapter {
+    override fun adapt(widget: Widget): Element? {
+        return BridgeWidgetAdapterFactory.inflate(widget)
+    }
+}

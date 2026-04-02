@@ -21,7 +21,7 @@ internal class RetainedWidgetRenderRuntime(
     private val bridgeGraph = BridgeSupportGraph(textRasterizer = textRasterizer)
     private val buildRuntime = RetainedBuildRuntime(
         onVisualUpdate = onVisualUpdate,
-        widgetAdapter = bridgeGraph::adaptWidget,
+        widgetAdapter = bridgeGraph.widgetAdapter,
     )
 
     fun render(
