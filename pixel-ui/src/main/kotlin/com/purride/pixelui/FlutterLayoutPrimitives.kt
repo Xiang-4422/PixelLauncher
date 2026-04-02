@@ -1,7 +1,11 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
-import com.purride.pixelui.PixelTextAlign
+import com.purride.pixelui.internal.legacy.PixelAlignment
+import com.purride.pixelui.internal.legacy.PixelCrossAxisAlignment
+import com.purride.pixelui.internal.legacy.PixelMainAxisAlignment
+import com.purride.pixelui.internal.legacy.PixelMainAxisSize
+import com.purride.pixelui.internal.legacy.PixelTextAlign
 
 /**
  * Flutter 风格的主公开轴向类型。

@@ -1,9 +1,10 @@
-package com.purride.pixelui
+package com.purride.pixelui.internal.legacy
 
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelTone
-import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelNode
+import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.TextDirection
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 
@@ -66,11 +67,6 @@ internal data class PixelTextNode(
     val textAlign: PixelTextAlign = PixelTextAlign.START,
     val textDirection: TextDirection = TextDirection.LTR,
 ) : PixelNode
-
-enum class PixelTextOverflow {
-    CLIP,
-    ELLIPSIS,
-}
 
 internal enum class PixelTextAlign {
     START,
