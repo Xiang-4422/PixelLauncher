@@ -9,7 +9,7 @@ import com.purride.pixelui.Widget
 
 internal class BuildOwner(
     private val onVisualUpdate: () -> Unit,
-    private val fallbackInflater: (Widget) -> Element?,
+    private val widgetAdapter: (Widget) -> Element?,
 ) {
     var rootElement: Element? = null
         private set
@@ -119,7 +119,7 @@ internal class BuildOwner(
             is InheritedWidget -> InheritedElement(widget)
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)
-            else -> fallbackInflater(widget)
+            else -> widgetAdapter(widget)
                 ?: error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
         }
     }

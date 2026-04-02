@@ -8,7 +8,7 @@ import com.purride.pixelui.Widget
  * bridge 层的统一装配入口。
  *
  * retained 主链只通过这个 graph 拿两种能力：
- * 1. fallback widget inflater
+ * 1. retained widget adapter
  * 2. element tree -> 像素渲染结果
  *
  * 这样 retained 入口不再同时知道 bridge factory、bridge resolver 和 bridge runtime 的
@@ -19,7 +19,7 @@ internal class BridgeSupportGraph(
 ) {
     private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
 
-    fun fallbackInflater(widget: Widget): Element? {
+    fun adaptWidget(widget: Widget): Element? {
         return BridgeWidgetAdapterFactory.inflate(widget)
     }
 
