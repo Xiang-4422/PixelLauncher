@@ -726,81 +726,98 @@ object DemoScenes {
                         ValueListenableBuilder(
                             listenable = tapCount,
                         ) { _, taps ->
-                            Column(
-                                modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                                spacing = 4,
-                                children = listOf(
-                                    sectionTitle("VERTICAL LIST"),
-                                    infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
-                                    infoCard("TAPS", taps.toString()),
-                                    Row(
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                        spacing = 2,
-                                        children = listOf(
-                                            OutlinedButton(
-                                                text = "SHOW 1",
-                                                onPressed = {
-                                                    controller.showItem(state, itemIndex = 0)
-                                                },
-                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                            ),
-                                            OutlinedButton(
-                                                text = "SHOW 8",
-                                                onPressed = {
-                                                    controller.showItem(state, itemIndex = 7)
-                                                },
-                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                                style = ButtonStyle.Accent,
-                                            ),
-                                        ),
-                                    ),
-                                    Row(
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                        spacing = 2,
-                                        children = listOf(
-                                            OutlinedButton(
-                                                text = "TOP",
-                                                onPressed = {
-                                                    controller.jumpToStart(state)
-                                                },
-                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                            ),
-                                            OutlinedButton(
-                                                text = "BOTTOM",
-                                                onPressed = {
-                                                    controller.jumpToEnd(state)
-                                                },
-                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                                style = ButtonStyle.Accent,
+                            Container(
+                                padding = EdgeInsets.all(4),
+                                child = Column(
+                                    spacing = 4,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        sectionTitle("VERTICAL LIST"),
+                                        infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
+                                        infoCard("TAPS", taps.toString()),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "SHOW 1",
+                                                            onPressed = {
+                                                                controller.showItem(state, itemIndex = 0)
+                                                            },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "SHOW 8",
+                                                            onPressed = {
+                                                                controller.showItem(state, itemIndex = 7)
+                                                            },
+                                                            style = ButtonStyle.Accent,
+                                                        ),
+                                                    ),
+                                                ),
                                             ),
                                         ),
-                                    ),
-                                    ListViewBuilder(
-                                        itemCount = 8,
-                                        state = state,
-                                        controller = controller,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(40),
-                                        itemBuilder = { index ->
-                                            OutlinedButton(
-                                                text = if (index == 0) {
-                                                    "TAP ITEM ${index + 1}"
-                                                } else {
-                                                    "LIST ITEM ${index + 1}"
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "TOP",
+                                                            onPressed = {
+                                                                controller.jumpToStart(state)
+                                                            },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "BOTTOM",
+                                                            onPressed = {
+                                                                controller.jumpToEnd(state)
+                                                            },
+                                                            style = ButtonStyle.Accent,
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 40,
+                                            child = ListViewBuilder(
+                                                itemCount = 8,
+                                                state = state,
+                                                controller = controller,
+                                                itemBuilder = { index ->
+                                                    SizedBox(
+                                                        height = 14,
+                                                        child = OutlinedButton(
+                                                            text = if (index == 0) {
+                                                                "TAP ITEM ${index + 1}"
+                                                            } else {
+                                                                "LIST ITEM ${index + 1}"
+                                                            },
+                                                            onPressed = {
+                                                                if (index == 0) {
+                                                                    tapCount.value = taps + 1
+                                                                }
+                                                            },
+                                                            style = if (index % 2 == 0) {
+                                                                ButtonStyle.Accent
+                                                            } else {
+                                                                ButtonStyle.Default
+                                                            },
+                                                        ),
+                                                    )
                                                 },
-                                                onPressed = {
-                                                    if (index == 0) {
-                                                        tapCount.value = taps + 1
-                                                    }
-                                                },
-                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                                style = if (index % 2 == 0) {
-                                                    ButtonStyle.Accent
-                                                } else {
-                                                    ButtonStyle.Default
-                                                },
-                                            )
-                                        },
-                                        spacing = 3,
+                                                spacing = 3,
+                                            ),
+                                        ),
                                     ),
                                 ),
                             )
@@ -974,47 +991,56 @@ object DemoScenes {
                                     modifier = PixelModifier.Empty.fillMaxSize(),
                                     fillTone = PixelTone.OFF,
                                     borderTone = PixelTone.ACCENT,
-                                    child = Column(
-                                        modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                                        spacing = 4,
-                                        children = listOf(
-                                            Text("PAGE 2 LIST", style = TextStyle.Accent),
-                                            infoCard(
-                                                label = "TIP",
-                                                value = "LIST FIRST THEN PAGE",
-                                                accent = true,
-                                            ),
-                                            infoCard(
-                                                label = "TAPS",
-                                                value = tapCount.toString(),
-                                                accent = tapCount > 0,
-                                            ),
-                                            ListView(
-                                                state = listState,
-                                                controller = listController,
-                                                modifier = PixelModifier.Empty.fillMaxWidth().height(56),
-                                                spacing = 3,
-                                                items = List(7) { index ->
-                                                    OutlinedButton(
-                                                        text = "INNER ITEM ${index + 1}",
+                                    child = Container(
+                                        padding = EdgeInsets.all(3),
+                                        child = Column(
+                                            spacing = 4,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                Text("PAGE 2 LIST", style = TextStyle.Accent),
+                                                infoCard(
+                                                    label = "TIP",
+                                                    value = "LIST FIRST THEN PAGE",
+                                                    accent = true,
+                                                ),
+                                                infoCard(
+                                                    label = "TAPS",
+                                                    value = tapCount.toString(),
+                                                    accent = tapCount > 0,
+                                                ),
+                                                SizedBox(
+                                                    height = 56,
+                                                    child = ListView(
+                                                        state = listState,
+                                                        controller = listController,
+                                                        spacing = 3,
+                                                        items = List(7) { index ->
+                                                            SizedBox(
+                                                                height = 14,
+                                                                child = OutlinedButton(
+                                                                    text = "INNER ITEM ${index + 1}",
+                                                                    onPressed = {
+                                                                        itemTapCount.value = tapCount + 1
+                                                                    },
+                                                                    style = if (index % 2 == 0) {
+                                                                        ButtonStyle.Accent
+                                                                    } else {
+                                                                        ButtonStyle.Default
+                                                                    },
+                                                                ),
+                                                            )
+                                                        },
+                                                    ),
+                                                ),
+                                                SizedBox(
+                                                    height = 14,
+                                                    child = OutlinedButton(
+                                                        text = "BACK PAGE 1",
                                                         onPressed = {
-                                                            itemTapCount.value = tapCount + 1
+                                                            pagerController.previousPage(pagerState)
                                                         },
-                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                                        style = if (index % 2 == 0) {
-                                                            ButtonStyle.Accent
-                                                        } else {
-                                                            ButtonStyle.Default
-                                                        },
-                                                    )
-                                                },
-                                            ),
-                                            OutlinedButton(
-                                                text = "BACK PAGE 1",
-                                                onPressed = {
-                                                    pagerController.previousPage(pagerState)
-                                                },
-                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                    ),
+                                                ),
                                             ),
                                         ),
                                     ),
