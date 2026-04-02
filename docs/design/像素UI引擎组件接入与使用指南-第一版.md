@@ -279,6 +279,27 @@ Theme(
 而不是整页所有组件都塞进一个非常大的主题里。这样主题作用范围更清晰，
 后面做局部强调区、局部反色区也更容易管理。
 
+当宿主已经挂了 `hostView.themeData` 之后，局部 `Theme(...)` 仍然可以继续覆盖这块区域：
+
+```kotlin
+Theme(
+    data = ThemeData(
+        textStyle = TextStyle.Default,
+        buttonStyle = ButtonStyle.Default,
+    ),
+    child = OutlinedButton(
+        text = "LOCAL DEFAULT",
+        onPressed = { hostView.requestRender() },
+    ),
+)
+```
+
+当前推荐规则是：
+
+- 整页默认风格：`hostView.themeData`
+- 某一块区域和整页不一样：`Theme(data, child)`
+- 某个组件只临时改一处：直接传 `style` 或 `theme`
+
 如果整页大部分组件都共享同一套默认主题，当前还可以直接把它挂在宿主上：
 
 ```kotlin

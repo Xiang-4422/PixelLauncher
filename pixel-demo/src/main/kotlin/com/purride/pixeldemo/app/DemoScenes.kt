@@ -318,6 +318,35 @@ object DemoScenes {
                                 ),
                             ),
                         ),
+                        Theme(
+                            data = ThemeData(
+                                textStyle = TextStyle.Default,
+                                buttonStyle = ButtonStyle.Default,
+                                disabledButtonStyle = ButtonStyle.Disabled,
+                                textFieldStyle = TextFieldStyle.Default,
+                                readOnlyTextFieldStyle = TextFieldStyle.Default.copy(
+                                    readOnlyBorderTone = PixelTone.ON,
+                                ),
+                                disabledTextFieldStyle = TextFieldStyle.Default.copy(
+                                    disabledBorderTone = PixelTone.ON,
+                                ),
+                                containerStyle = ContainerStyle.Default,
+                            ),
+                            child = Container(
+                                padding = EdgeInsets.all(2),
+                                child = Column(
+                                    spacing = 2,
+                                    children = listOf(
+                                        Text("LOCAL DEFAULT OVERRIDE"),
+                                        OutlinedButton(
+                                            text = "LOCAL DEFAULT",
+                                            onPressed = { hostView.requestRender() },
+                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
                         OutlinedButton(
                             text = "FOCUS PRIMARY",
                             onPressed = {

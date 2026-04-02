@@ -41,6 +41,7 @@ data class PixelTextNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val text: String,
     val style: PixelTextStyle = PixelTextStyle.Default,
+    val styleLocked: Boolean = false,
     val softWrap: Boolean = false,
     val maxLines: Int = 1,
     val overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
@@ -59,6 +60,7 @@ data class PixelSurfaceNode(
     val borderTone: PixelTone? = PixelTone.ON,
     val padding: Int = 2,
     val alignment: PixelAlignment = PixelAlignment.CENTER,
+    val styleLocked: Boolean = false,
 ) : PixelNode
 
 data class PixelBoxNode(
