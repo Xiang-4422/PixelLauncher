@@ -720,7 +720,6 @@ fun PageView(
     controller: PixelPagerController,
     state: PixelPagerState,
     pages: List<Widget>,
-    modifier: PixelModifier = PixelModifier.Empty,
     onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
@@ -734,7 +733,7 @@ fun PageView(
             state = state,
             controller = controller,
             pages = childNodes,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             onPageChanged = onPageChanged,
             key = key,
         )
@@ -747,7 +746,6 @@ fun PageViewBuilder(
     state: PixelPagerState,
     itemCount: Int,
     itemBuilder: (Int) -> Widget,
-    modifier: PixelModifier = PixelModifier.Empty,
     onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
@@ -756,7 +754,6 @@ fun PageViewBuilder(
         controller = controller,
         state = state,
         pages = List(itemCount) { index -> itemBuilder(index) },
-        modifier = modifier,
         onPageChanged = onPageChanged,
         key = key,
     )
@@ -766,7 +763,6 @@ fun ListView(
     items: List<Widget>,
     state: PixelListState,
     controller: PixelListController,
-    modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
     key: Any? = null,
 ): Widget {
@@ -779,7 +775,7 @@ fun ListView(
             items = childNodes,
             state = state,
             controller = controller,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             spacing = spacing,
             key = key,
         )
@@ -791,7 +787,6 @@ fun ListViewBuilder(
     itemBuilder: (Int) -> Widget,
     state: PixelListState,
     controller: PixelListController,
-    modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
     key: Any? = null,
 ): Widget {
@@ -799,7 +794,6 @@ fun ListViewBuilder(
         items = List(itemCount) { index -> itemBuilder(index) },
         state = state,
         controller = controller,
-        modifier = modifier,
         spacing = spacing,
         key = key,
     )
@@ -811,7 +805,6 @@ fun ListViewSeparated(
     separatorBuilder: (Int) -> Widget,
     state: PixelListState,
     controller: PixelListController,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     val separatedItems = buildList {
@@ -826,7 +819,6 @@ fun ListViewSeparated(
         items = separatedItems,
         state = state,
         controller = controller,
-        modifier = modifier,
         spacing = 0,
         key = key,
     )
@@ -836,7 +828,6 @@ fun SingleChildScrollView(
     child: Widget,
     state: PixelListState,
     controller: PixelListController,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -848,7 +839,7 @@ fun SingleChildScrollView(
             child = childNode,
             state = state,
             controller = controller,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             key = key,
         )
     }
@@ -857,7 +848,6 @@ fun SingleChildScrollView(
 fun TextField(
     state: PixelTextFieldState,
     controller: PixelTextFieldController,
-    modifier: PixelModifier = PixelModifier.Empty,
     placeholder: String = "",
     style: TextFieldStyle = TextFieldStyle.Default,
     theme: ThemeData? = null,
@@ -883,7 +873,7 @@ fun TextField(
         PixelTextField(
             state = state,
             controller = controller,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             placeholder = placeholder,
             style = resolvedStyle,
             enabled = enabled,
@@ -900,7 +890,6 @@ fun TextField(
 fun OutlinedButton(
     text: String,
     onPressed: (() -> Unit)?,
-    modifier: PixelModifier = PixelModifier.Empty,
     style: ButtonStyle = ButtonStyle.Default,
     theme: ThemeData? = null,
     enabled: Boolean = true,
@@ -918,7 +907,7 @@ fun OutlinedButton(
         PixelButton(
             text = text,
             onClick = onPressed,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             style = resolvedStyle,
             disabledStyle = resolvedTheme.disabledButtonStyle,
             enabled = enabled,
