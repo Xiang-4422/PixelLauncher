@@ -236,51 +236,57 @@ object AxisBufferComposer
 - 一共有多少页
 - 目标页是哪一页
 
-### 4.2 `:pixel-ui` 第一批稳定接口
+### 4.2 `:pixel-ui` 当前稳定公开接口
 
-当前阶段要在 `:pixel-ui` 中稳定下来的分页接口如下：
+当前阶段 `:pixel-ui` 的公开主路径已经统一转成 Flutter 风格：
 
-```kotlin
-data class PixelPagerState(...)
+- `Widget`
+- `BuildContext`
+- `StatefulWidget / State`
+- `InheritedWidget / InheritedNotifier`
+- `Theme / Directionality / MediaQuery`
+- `Text`
+- `Container`
+- `Padding`
+- `Align`
+- `Center`
+- `SizedBox`
+- `Row`
+- `Column`
+- `Stack / Positioned / PositionedDirectional / PositionedFill`
+- `OutlinedButton`
+- `TextField`
+- `PageView`
+- `ListView`
+- `SingleChildScrollView`
+- `PageController`
+- `ScrollController`
+- `TextEditingController`
 
-data class PixelPagerSnapshot(...)
+当前执行口径是：
 
-class PageController(...)
+- 页面层优先使用 Flutter 风格公开组件和控制器
+- `PixelNode`、`PixelModifier`、旧 `Pixel*` 公开组件名只保留在模块内部兼容层
+- 不再继续扩展旧公开接口
 
-fun PixelPager(
-    axis: PixelAxis,
-    state: PixelPagerState,
-    ...
-)
-```
+### 4.3 `:pixel-ui` 当前运行时状态
 
-分页语义明确归 `:pixel-ui`：
+当前 `pixel-ui` 不是“只有一层组件别名”，而是已经进入 retained runtime 重构阶段。
 
-- `pageCount`
-- `currentPage`
-- `targetPage`
-- 分页阈值
-- 分页边界
-- 手势到分页语义的映射
+当前真实链路是：
 
-### 4.3 `:pixel-ui` 第一版最小组件集
+1. `Widget`
+2. `RetainedBuildRuntime / BuildOwner / Element tree`
+3. `RetainedWidgetRenderRuntime`
+4. `legacy render bridge`
+5. `PixelRenderRuntime`
 
-这一轮只实现最小必要组件，不扩散范围。
+这意味着：
 
-固定要做的组件：
-
-- `PixelText`
-- `PixelSurface`
-- `PixelBox`
-- `PixelRow`
-- `PixelColumn`
-- `PixelPager`
-- `PixelList`
-- `PixelTextField`
-
-这一轮明确不做：
-
-- 产品级组件库
+- retained build tree 已经成立
+- 状态、环境和依赖登记已经在 retained 主链上
+- 最终绘制仍然落到 legacy renderer
+- 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
 
 ---
 
@@ -321,21 +327,18 @@ fun PixelPager(
 
 完成定义：
 
-- `pixel-ui` 具备最小可运行组件与分页 runtime
-- `PixelPager(axis = ...)` 可以独立跑起来
-- 横向分页和纵向分页都能由 `pixel-ui` 自己驱动
+- `pixel-ui` 具备 retained build/runtime 与 Flutter 风格公开入口
+- `pixel-demo` 已经通过 retained 主链稳定跑在真实设备上
+- retained runtime 与 legacy render bridge 的职责边界持续收口
 
 当前阶段优先级：
 
-1. `PixelNode`
-2. `PixelModifier`
-3. `PixelText`
-4. `PixelSurface`
-5. `PixelBox / PixelRow / PixelColumn`
-6. `PixelPagerState / PageController / PixelPagerSnapshot`
-7. `PixelPager`
-8. `PixelListState / ScrollController`
-9. `PixelList`
+1. retained build runtime：`BuildOwner / Element / Inherited / Stateful`
+2. `RetainedWidgetRenderRuntime`
+3. legacy bridge：`LegacyNodeWidgets / LegacyLayoutWidgets / LegacyScrollWidgets / LegacyTextInputWidgets`
+4. legacy render façade：`PixelRenderRuntime`
+5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session
+6. demo 场景持续切到 retained 主链并维持验收稳定
 
 ### Phase D. 新增 `:pixel-demo`
 
@@ -428,7 +431,9 @@ fun PixelPager(
 | 已完成 | 节点级文本栅格器覆盖 | `pixel-ui` 文本节点已支持按节点覆盖文本栅格器，宿主与节点两层扩展点都已打通 |
 | 已完成 | `pixel-ui` 文本样式对象 | 文本色阶与文本栅格器已收敛为 `PixelTextStyle`，页面层不再直接暴露底层字体实现 |
 | 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
-| 已完成 | `:pixel-ui` 最小分页 runtime | `pixel-ui` 已具备最小布局组件、`PixelPager` 与 `PixelHostView` |
+| 已完成 | `:pixel-ui` Flutter 风格公开层 | 页面层主路径已转到 `Widget / BuildContext / Text / Container / Row / Column / PageView / ListView / TextField` |
+| 已完成 | retained build/runtime 首轮落地 | `BuildOwner / Element / Stateful / Inherited` 已成立，并已在 demo 真实使用 |
+| 已完成 | legacy renderer 主链拆分 | `PixelRenderRuntime` 已不再承担文本、输入、viewport、布局、测量的全部细节 |
 | 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `ListView`、`PixelListState`、`ScrollController`，并支持列表视口裁剪、触摸滚动与基础惯性滚动 |
 | 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动 |
 | 已完成 | `pixel-ui` 列表到分页滚动接力 | 列表滑到边界后，同一次纵向手势可直接接力给外层分页，无需抬手重新触发 |
@@ -439,7 +444,7 @@ fun PixelPager(
 | 已完成 | `pixel-ui` 列表程序化定位首轮落地 | `ScrollController` 已支持基于运行时测量结果将指定项滚入视口，demo 已补跳转验证 |
 | 已完成 | `pixel-ui` 单子节点滚动容器 | 已具备 `PixelSingleChildScrollView`，可承载单一长子树并复用现有纵向滚动链路 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、单子节点滚动、横纵分页、纵向列表、表单与列表组合、分页与列表组合、点击反馈、混合文本风格验证与权重布局展示 |
-| 进行中 | `pixel-ui` 运行时补稳 | 正在继续补布局约束、命中、分页/列表复合交互、文本输入焦点与对应测试，以及更复杂的滚动接力策略 |
+| 进行中 | retained/runtime 与 legacy bridge 收口 | 正在继续削弱 retained 主链对 legacy 细节的感知，并把 legacy renderer 收成 façade + support graph |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
@@ -461,10 +466,9 @@ fun PixelPager(
 
 如果从现在开始继续实现，推荐起手顺序固定为：
 
-1. 继续补稳 `pixel-ui` 的布局约束、线性布局对齐、列表程序化定位和命中边界
-2. 继续完善 `Pager + List` 的滚动接力策略与测试
-3. 在 `pixel-demo` 继续增加更接近真实页面的组合场景，并优先覆盖表单、按钮、单子节点滚动和列表混合页面
-4. 在 `PixelTextField` 上继续补焦点切换、输入行为和更接近真实页面的组合场景
-5. 通过后才讨论 Launcher 迁移
+1. 继续切 retained runtime 和 legacy render bridge 的边界
+2. 继续把 `PixelRenderRuntime` 压成 façade，把 support graph 做成唯一装配入口
+3. 在 `pixel-demo` 上持续验证 retained 状态、环境传播、分页、列表、输入和方向性
+4. 只有在 retained 主链稳定后，才讨论更重的主题系统、虚拟化列表和 `:app` 迁移
 
 这份顺序不是建议，而是当前阶段的执行顺序。
