@@ -18,6 +18,7 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PixelList
 import com.purride.pixelui.Align
 import com.purride.pixelui.PixelMainAxisAlignment
@@ -330,6 +331,48 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 7))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 8))
+    }
+
+    @Test
+    fun rowMainAxisMaxExpandsToAvailableWidth() {
+        val result = runtime.render(
+            root = Row(
+                mainAxisSize = MainAxisSize.MAX,
+                children = listOf(
+                    DecoratedBox(
+                        fillTone = PixelTone.ACCENT,
+                        borderTone = null,
+                        child = SizedBox(width = 4, height = 4),
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(11, 1))
+    }
+
+    @Test
+    fun columnMainAxisMaxExpandsToAvailableHeight() {
+        val result = runtime.render(
+            root = Column(
+                mainAxisSize = MainAxisSize.MAX,
+                children = listOf(
+                    DecoratedBox(
+                        fillTone = PixelTone.ON,
+                        borderTone = null,
+                        child = SizedBox(width = 4, height = 4),
+                    ),
+                ),
+            ),
+            logicalWidth = 4,
+            logicalHeight = 12,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 11))
     }
 
     @Test

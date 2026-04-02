@@ -611,9 +611,24 @@ Row(
 当前支持：
 
 - `spacing`
+- `mainAxisSize = MIN / MAX`
 - 主轴排布 `START / CENTER / END`
 - 交叉轴对齐 `START / CENTER / END / STRETCH`
 - `Expanded / Flexible / Spacer`
+
+如果你希望 `Row / Column` 主轴上直接吃满父级，而不是按内容自然包裹，当前可以直接写：
+
+```kotlin
+Column(
+    mainAxisSize = MainAxisSize.MAX,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    children = listOf(
+        Text("TOP"),
+        Spacer(),
+        Text("BOTTOM"),
+    ),
+)
+```
 
 ### 4.5 按钮
 

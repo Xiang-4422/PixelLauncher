@@ -37,6 +37,11 @@ enum class PixelMainAxisAlignment {
     END,
 }
 
+enum class PixelMainAxisSize {
+    MIN,
+    MAX,
+}
+
 data class PixelTextNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
@@ -76,6 +81,7 @@ data class PixelRowNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val spacing: Int = 0,
+    val mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
     val mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
@@ -85,6 +91,7 @@ data class PixelColumnNode(
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val spacing: Int = 0,
+    val mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
     val mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
@@ -157,6 +164,7 @@ fun PixelRow(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
+    mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
     mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
     key: Any? = null,
@@ -166,6 +174,7 @@ fun PixelRow(
         modifier = modifier,
         children = children,
         spacing = spacing,
+        mainAxisSize = mainAxisSize,
         mainAxisAlignment = mainAxisAlignment,
         crossAxisAlignment = crossAxisAlignment,
     )
@@ -175,6 +184,7 @@ fun PixelColumn(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
+    mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
     mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
     crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
     key: Any? = null,
@@ -184,6 +194,7 @@ fun PixelColumn(
         modifier = modifier,
         children = children,
         spacing = spacing,
+        mainAxisSize = mainAxisSize,
         mainAxisAlignment = mainAxisAlignment,
         crossAxisAlignment = crossAxisAlignment,
     )

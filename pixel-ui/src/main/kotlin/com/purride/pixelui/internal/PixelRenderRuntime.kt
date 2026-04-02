@@ -15,6 +15,7 @@ import com.purride.pixelui.PixelFillMaxHeightElement
 import com.purride.pixelui.PixelFillMaxWidthElement
 import com.purride.pixelui.PixelListNode
 import com.purride.pixelui.PixelMainAxisAlignment
+import com.purride.pixelui.PixelMainAxisSize
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelModifierElement
 import com.purride.pixelui.PixelNode
@@ -290,7 +291,7 @@ internal class PixelRenderRuntime(
 
             is PixelRowNode -> {
                 val children = measureRowChildren(node, innerConstraints)
-                val childrenWidth = if (node.children.any { childWeight(it) > 0f }) {
+                val childrenWidth = if (node.children.any { childWeight(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
                     innerConstraints.maxWidth
                 } else {
                     children.sumOf { it.width } + (max(0, children.size - 1) * node.spacing)
@@ -303,7 +304,7 @@ internal class PixelRenderRuntime(
 
             is PixelColumnNode -> {
                 val children = measureColumnChildren(node, innerConstraints)
-                val childrenHeight = if (node.children.any { childWeight(it) > 0f }) {
+                val childrenHeight = if (node.children.any { childWeight(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
                     innerConstraints.maxHeight
                 } else {
                     children.sumOf { it.height } + (max(0, children.size - 1) * node.spacing)
