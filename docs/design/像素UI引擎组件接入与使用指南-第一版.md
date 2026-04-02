@@ -162,6 +162,27 @@ class ExampleActivity : AppCompatActivity() {
 
 这是当前这套框架最重要的使用约束之一。
 
+如果页面已经开始出现大量重复的 `TextStyle / ButtonStyle / TextFieldStyle / Container` 视觉配置，
+当前推荐先收成轻量主题对象：
+
+```kotlin
+val pageTheme = ThemeData(
+    textStyle = TextStyle.Accent,
+    buttonStyle = ButtonStyle.Accent,
+    textFieldStyle = TextFieldStyle(
+        borderTone = PixelTone.ACCENT,
+        focusedBorderTone = PixelTone.ACCENT,
+        textStyle = TextStyle.Accent,
+        placeholderStyle = TextStyle.Default,
+    ),
+    containerStyle = ContainerStyle(
+        fillTone = PixelTone.OFF,
+        borderTone = PixelTone.ACCENT,
+        alignment = Alignment.CENTER,
+    ),
+)
+```
+
 ---
 
 ## 4. 基础组件使用方式
@@ -178,6 +199,15 @@ Text("DEFAULT")
 Text(
     data = "ACCENT",
     style = TextStyle.Accent,
+)
+```
+
+如果页面已经有统一主题对象，也可以直接把默认文本样式交给 `ThemeData`：
+
+```kotlin
+Text(
+    data = "THEMED",
+    theme = pageTheme,
 )
 ```
 
@@ -251,6 +281,9 @@ Container(
 )
 ```
 
+如果传入 `theme = pageTheme`，并且没有显式再传 `style`，`Container` 会直接使用
+`ThemeData.containerStyle` 作为默认视觉样式。
+
 如果需要表达容器外边距，当前 `Container` 也支持 `margin`：
 
 ```kotlin
@@ -317,6 +350,16 @@ OutlinedButton(
     onPressed = { hostView.requestRender() },
     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
     enabled = true,
+)
+```
+
+同样地，如果按钮处在统一页面主题里，也可以直接写：
+
+```kotlin
+OutlinedButton(
+    text = "THEMED",
+    onPressed = { hostView.requestRender() },
+    theme = pageTheme,
 )
 ```
 

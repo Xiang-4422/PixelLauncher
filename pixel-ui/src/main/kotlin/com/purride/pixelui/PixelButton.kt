@@ -46,11 +46,12 @@ fun PixelButton(
     onClick: (() -> Unit)?,
     modifier: PixelModifier = PixelModifier.Empty,
     style: PixelButtonStyle = PixelButtonStyle.Default,
+    disabledStyle: PixelButtonStyle = PixelButtonStyle.Disabled,
     enabled: Boolean = true,
     key: Any? = null,
 ): PixelNode {
     val isEnabled = enabled && onClick != null
-    val resolvedStyle = if (isEnabled) style else PixelButtonStyle.Disabled
+    val resolvedStyle = if (isEnabled) style else disabledStyle
     return PixelSurface(
         modifier = if (isEnabled) modifier.clickable { onClick?.invoke() } else modifier,
         fillTone = resolvedStyle.fillTone,
