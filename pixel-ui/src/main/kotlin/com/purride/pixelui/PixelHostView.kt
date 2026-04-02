@@ -30,7 +30,7 @@ import com.purride.pixelui.internal.PixelRenderRuntime
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.HostRootWidget
-import com.purride.pixelui.internal.RetainedBuildRuntime
+import com.purride.pixelui.internal.RetainedWidgetRenderRuntime
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -72,8 +72,7 @@ class PixelHostView @JvmOverloads constructor(
             updateScreenProfileFromPreference()
         }
 
-    private var runtime = PixelRenderRuntime()
-    private val buildRuntime = RetainedBuildRuntime(
+    private var runtime = RetainedWidgetRenderRuntime(
         onVisualUpdate = { postInvalidateOnAnimation() },
     )
     private var contentProvider: RootWidgetProvider? = null
@@ -132,7 +131,10 @@ class PixelHostView @JvmOverloads constructor(
     var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
             field = value
-            runtime = PixelRenderRuntime(textRasterizer = value)
+            runtime = RetainedWidgetRenderRuntime(
+                textRasterizer = value,
+                onVisualUpdate = { postInvalidateOnAnimation() },
+            )
             invalidate()
         }
 
@@ -244,13 +246,11 @@ class PixelHostView @JvmOverloads constructor(
                 child = rootWidget,
                 key = "host-root",
             )
-            buildRuntime.resolveLegacyTree(wrappedRoot)?.let { legacyRoot ->
-                runtime.render(
-                    root = legacyRoot,
-                    logicalWidth = screenProfile.logicalWidth,
-                    logicalHeight = screenProfile.logicalHeight,
-                )
-            }
+            runtime.render(
+                root = wrappedRoot,
+                logicalWidth = screenProfile.logicalWidth,
+                logicalHeight = screenProfile.logicalHeight,
+            )
         } else {
             lastRenderResult
         }
@@ -280,7 +280,7 @@ class PixelHostView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        buildRuntime.dispose()
+        runtime.dispose()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

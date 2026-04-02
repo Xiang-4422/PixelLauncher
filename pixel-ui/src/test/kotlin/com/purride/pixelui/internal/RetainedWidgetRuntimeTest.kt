@@ -26,7 +26,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun valueListenableBuilderUpdatesRenderedToneAfterNotifierChanges() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
         val tone = ValueNotifier(PixelTone.ON)
 
         val root = ValueListenableBuilder(
@@ -59,7 +59,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun statefulWidgetSetStateTriggersRetainedRebuild() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
         val root = ToggleToneWidget()
 
         val first = runtime.render(
@@ -80,7 +80,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun inheritedWidgetNotifiesDependentBuildsOnUpdate() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
 
         val first = runtime.render(
             root = ToneScope(
@@ -105,7 +105,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun mediaQueryAndDirectionalityPropagateThroughInheritedContext() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
         val screenProfile = ScreenProfile(
             logicalWidth = 6,
             logicalHeight = 4,
@@ -133,7 +133,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun inheritedNotifierMarksDependentsDirtyAfterNotifierChanges() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
         val count = ValueNotifier(0)
         val root = CounterScope(
             notifier = count,
@@ -159,7 +159,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun builderReadsLocalInheritedContext() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
 
         val result = runtime.render(
             root = ToneScope(
@@ -182,7 +182,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun statefulBuilderRebuildsLocalState() {
-        val runtime = PixelRenderRuntime()
+        val runtime = RetainedWidgetRenderRuntime()
         var accent = false
 
         val root = StatefulBuilder { _, setState ->
