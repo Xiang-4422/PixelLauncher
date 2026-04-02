@@ -1,7 +1,7 @@
 package com.purride.pixelui.internal.legacy
 
 import com.purride.pixelui.PixelButtonStyle
-import com.purride.pixelui.toPixelAlignment
+import com.purride.pixelui.internal.toPixelAlignment
 
 internal data class PixelButtonNode(
     override val key: Any? = null,
