@@ -42,6 +42,7 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Spacer
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.GestureDetector
@@ -962,6 +963,45 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 5))
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(6, 1))
+    }
+
+    @Test
+    fun flutterStyleTextAlignCenterCentersTextWithinWidth() {
+        val result = runtime.render(
+            root = SizedBox(
+                width = 20,
+                height = 8,
+                child = Text(
+                    data = "A",
+                    textAlign = TextAlign.CENTER,
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 8,
+        )
+
+        val pixels = collectOnPixels(result)
+        assertTrue(pixels.minOf { it.first } >= 7)
+        assertTrue(pixels.maxOf { it.first } <= 12)
+    }
+
+    @Test
+    fun flutterStyleTextAlignEndPlacesTextAtRightEdge() {
+        val result = runtime.render(
+            root = SizedBox(
+                width = 20,
+                height = 8,
+                child = Text(
+                    data = "A",
+                    textAlign = TextAlign.END,
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 8,
+        )
+
+        val pixels = collectOnPixels(result)
+        assertTrue(pixels.maxOf { it.first } >= 17)
     }
 
     @Test

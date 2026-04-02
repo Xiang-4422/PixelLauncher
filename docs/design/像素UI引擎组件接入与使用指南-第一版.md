@@ -506,6 +506,19 @@ Text(
 - 默认还是单行 `softWrap = false`
 - `maxLines` 至少为 1
 - `overflow` 当前支持 `CLIP` 和 `ELLIPSIS`
+- `textAlign` 当前支持 `START / CENTER / END`
+
+如果文本已经有固定显示宽度，当前也可以直接让它在自己的盒子里居左、居中、居右：
+
+```kotlin
+SizedBox(
+    width = 24,
+    child = Text(
+        data = "CENTER",
+        textAlign = TextAlign.CENTER,
+    ),
+)
+```
 
 ### 4.2 表面容器
 

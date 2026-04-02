@@ -31,6 +31,7 @@ import com.purride.pixelui.PixelTextFieldNode
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.PixelTextAlign
 import com.purride.pixelui.PixelWeightElement
 import com.purride.pixelui.Widget
 import com.purride.pixelui.toSurfaceNode
@@ -266,7 +267,16 @@ internal class PixelRenderRuntime(
                 node = node,
                 maxWidth = innerConstraints.maxWidth,
             ).let { layout ->
-                PixelSize(width = layout.width, height = layout.height)
+                val measuredWidth = if (
+                    node.textAlign != PixelTextAlign.START &&
+                    innerConstraints.maxWidth > 0 &&
+                    innerConstraints.maxWidth > layout.width
+                ) {
+                    innerConstraints.maxWidth
+                } else {
+                    layout.width
+                }
+                PixelSize(width = measuredWidth, height = layout.height)
             }
 
             is PixelSurfaceNode -> {
@@ -505,10 +515,15 @@ internal class PixelRenderRuntime(
         var cursorY = bounds.top
         layout.lines.forEach { line ->
             if (line.text.isNotEmpty()) {
+                val lineX = when (node.textAlign) {
+                    PixelTextAlign.START -> bounds.left
+                    PixelTextAlign.CENTER -> bounds.left + ((bounds.width - line.width).coerceAtLeast(0) / 2)
+                    PixelTextAlign.END -> bounds.left + (bounds.width - line.width).coerceAtLeast(0)
+                }
                 layout.rasterizer.drawText(
                     buffer = buffer,
                     text = line.text,
-                    x = bounds.left,
+                    x = lineX,
                     y = cursorY,
                     value = node.style.tone.value,
                 )

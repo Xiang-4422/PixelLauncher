@@ -61,11 +61,18 @@ data class PixelTextNode(
     val softWrap: Boolean = false,
     val maxLines: Int = 1,
     val overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
+    val textAlign: PixelTextAlign = PixelTextAlign.START,
 ) : PixelNode
 
 enum class PixelTextOverflow {
     CLIP,
     ELLIPSIS,
+}
+
+enum class PixelTextAlign {
+    START,
+    CENTER,
+    END,
 }
 
 data class PixelSurfaceNode(
@@ -123,6 +130,7 @@ fun PixelText(
     softWrap: Boolean = false,
     maxLines: Int = 1,
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
+    textAlign: PixelTextAlign = PixelTextAlign.START,
     key: Any? = null,
 ): PixelNode {
     return PixelTextNode(
@@ -133,6 +141,7 @@ fun PixelText(
         softWrap = softWrap,
         maxLines = maxLines,
         overflow = overflow,
+        textAlign = textAlign,
     )
 }
 

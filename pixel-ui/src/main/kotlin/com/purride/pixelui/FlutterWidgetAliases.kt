@@ -314,6 +314,7 @@ fun Text(
     softWrap: Boolean = false,
     maxLines: Int = 1,
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
+    textAlign: TextAlign = TextAlign.START,
     key: Any? = null,
 ): Widget {
     return LegacyLeafWidget(
@@ -332,6 +333,7 @@ fun Text(
             softWrap = softWrap,
             maxLines = maxLines,
             overflow = overflow,
+            textAlign = textAlign.toPixelTextAlign(),
             key = key,
         )
     }
