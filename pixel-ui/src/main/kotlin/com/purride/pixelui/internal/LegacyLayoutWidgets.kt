@@ -5,210 +5,36 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
 import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
-import com.purride.pixelui.FlexFit
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
-import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelContainerStyle
-import com.purride.pixelui.PixelTextFieldStyle
-import com.purride.pixelui.PixelTextInputAction
-import com.purride.pixelui.PixelTextOverflow
-import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.StatelessWidget
-import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
-import com.purride.pixelui.Theme
 import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.internal.legacy.PixelBox
-import com.purride.pixelui.internal.legacy.PixelBoxNode
-import com.purride.pixelui.internal.legacy.PixelButton
-import com.purride.pixelui.internal.legacy.PixelButtonNode
+import com.purride.pixelui.internal.legacy.PixelClickableElement
 import com.purride.pixelui.internal.legacy.PixelColumn
-import com.purride.pixelui.internal.legacy.PixelColumnNode
-import com.purride.pixelui.internal.legacy.CustomDraw
-import com.purride.pixelui.internal.legacy.PixelFlexFit
-import com.purride.pixelui.internal.legacy.PixelList
-import com.purride.pixelui.internal.legacy.PixelListNode
 import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelNode
-import com.purride.pixelui.internal.legacy.PixelPager
-import com.purride.pixelui.internal.legacy.PixelPagerNode
 import com.purride.pixelui.internal.legacy.PixelPositioned
 import com.purride.pixelui.internal.legacy.PixelRow
-import com.purride.pixelui.internal.legacy.PixelRowNode
-import com.purride.pixelui.internal.legacy.PixelSingleChildScrollView
-import com.purride.pixelui.internal.legacy.PixelSingleChildScrollViewNode
 import com.purride.pixelui.internal.legacy.PixelSurface
-import com.purride.pixelui.internal.legacy.PixelSurfaceNode
-import com.purride.pixelui.internal.legacy.PixelText
-import com.purride.pixelui.internal.legacy.PixelTextField
-import com.purride.pixelui.internal.legacy.PixelTextFieldNode
-import com.purride.pixelui.internal.legacy.PixelTextNode
-import com.purride.pixelui.state.PixelListController
-import com.purride.pixelui.state.PixelListState
-import com.purride.pixelui.state.PixelPagerController
-import com.purride.pixelui.state.PixelPagerState
-import com.purride.pixelui.state.PixelTextFieldController
-import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.legacy.clickable
 import com.purride.pixelui.internal.legacy.fillMaxSize
 import com.purride.pixelui.internal.legacy.height
 import com.purride.pixelui.internal.legacy.padding
-import com.purride.pixelui.resolve
 import com.purride.pixelui.internal.legacy.size
+import com.purride.pixelui.internal.legacy.width
+import com.purride.pixelui.resolve
 import com.purride.pixelui.toPixelAlignment
 import com.purride.pixelui.toPixelCrossAxisAlignment
 import com.purride.pixelui.toPixelMainAxisAlignment
 import com.purride.pixelui.toPixelMainAxisSize
-import com.purride.pixelui.toPixelTextAlign
-import com.purride.pixelui.internal.legacy.weight
-import com.purride.pixelui.internal.legacy.width
-
-internal interface LegacyNodeWidget : Widget {
-    val childWidgets: List<Widget>
-
-    fun createLegacyNode(
-        context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode
-}
-
-internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeData {
-    return explicit ?: Theme.maybeOf(this) ?: PixelThemeData.Default
-}
-
-private fun PixelNode.withExtraModifier(extra: PixelModifier): PixelNode {
-    val merged = modifier.then(extra)
-    return when (this) {
-        is PixelTextNode -> copy(modifier = merged)
-        is PixelSurfaceNode -> copy(modifier = merged)
-        is PixelBoxNode -> copy(modifier = merged)
-        is PixelRowNode -> copy(modifier = merged)
-        is PixelColumnNode -> copy(modifier = merged)
-        is PixelPagerNode -> copy(modifier = merged)
-        is PixelListNode -> copy(modifier = merged)
-        is PixelSingleChildScrollViewNode -> copy(modifier = merged)
-        is PixelTextFieldNode -> copy(modifier = merged)
-        is PixelButtonNode -> copy(modifier = merged)
-        is CustomDraw -> copy(modifier = merged)
-        else -> this
-    }
-}
-
-internal data class LegacyLeafWidget(
-    override val key: Any? = null,
-    private val factory: (BuildContext) -> PixelNode,
-) : LegacyNodeWidget {
-    override val childWidgets: List<Widget> = emptyList()
-
-    override fun createLegacyNode(
-        context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
-        return factory(context)
-    }
-}
-
-internal data class LegacySingleChildWidget(
-    override val key: Any? = null,
-    val child: Widget,
-    private val factory: (BuildContext, PixelNode) -> PixelNode,
-) : LegacyNodeWidget {
-    override val childWidgets: List<Widget>
-        get() = listOf(child)
-
-    override fun createLegacyNode(
-        context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
-        return factory(context, childNodes.single())
-    }
-}
-
-internal data class LegacyMultiChildWidget(
-    override val key: Any? = null,
-    val children: List<Widget>,
-    private val factory: (BuildContext, List<PixelNode>) -> PixelNode,
-) : LegacyNodeWidget {
-    override val childWidgets: List<Widget>
-        get() = children
-
-    override fun createLegacyNode(
-        context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
-        return factory(context, childNodes)
-    }
-}
-
-internal data class FlexWrapperWidget(
-    override val key: Any? = null,
-    val child: Widget,
-    val flex: Int,
-    val fit: FlexFit,
-) : LegacyNodeWidget {
-    override val childWidgets: List<Widget>
-        get() = listOf(child)
-
-    override fun createLegacyNode(
-        context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode {
-        return childNodes.single().withExtraModifier(
-            PixelModifier.Empty.weight(
-                weight = flex.coerceAtLeast(1).toFloat(),
-                fit = when (fit) {
-                    FlexFit.TIGHT -> PixelFlexFit.TIGHT
-                    FlexFit.LOOSE -> PixelFlexFit.LOOSE
-                },
-            ),
-        )
-    }
-}
-
-internal data class TextWidget(
-    val data: String,
-    val style: PixelTextStyle,
-    val theme: PixelThemeData?,
-    val softWrap: Boolean,
-    val maxLines: Int,
-    val overflow: PixelTextOverflow,
-    val textAlign: TextAlign,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when (style) {
-            PixelTextStyle.Default -> resolvedTheme.textStyle
-            PixelTextStyle.Accent -> resolvedTheme.accentTextStyle
-            else -> style
-        }
-        return LegacyLeafWidget(
-            key = key,
-        ) {
-            PixelText(
-                text = data,
-                modifier = PixelModifier.Empty,
-                style = resolvedStyle,
-                softWrap = softWrap,
-                maxLines = maxLines,
-                overflow = overflow,
-                textAlign = textAlign.toPixelTextAlign(),
-                textDirection = Directionality.of(context),
-                key = key,
-            )
-        }
-    }
-}
 
 internal data class ContainerWidget(
     val child: Widget?,
@@ -288,166 +114,6 @@ internal data class ContainerWidget(
                     alignment = PixelAlignment.TOP_START,
                 )
             }
-        }
-    }
-}
-
-internal data class TextFieldWidget(
-    val state: PixelTextFieldState,
-    val controller: PixelTextFieldController,
-    val placeholder: String,
-    val style: PixelTextFieldStyle,
-    val theme: PixelThemeData?,
-    val enabled: Boolean,
-    val readOnly: Boolean,
-    val autofocus: Boolean,
-    val textInputAction: PixelTextInputAction,
-    val onChanged: ((String) -> Unit)?,
-    val onSubmitted: ((String) -> Unit)?,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        context.watch(controller)
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when {
-            style != PixelTextFieldStyle.Default -> style
-            !enabled -> resolvedTheme.disabledTextFieldStyle
-            readOnly -> resolvedTheme.readOnlyTextFieldStyle
-            else -> resolvedTheme.textFieldStyle
-        }
-        return LegacyLeafWidget(
-            key = key,
-        ) {
-            PixelTextField(
-                state = state,
-                controller = controller,
-                modifier = PixelModifier.Empty,
-                placeholder = placeholder,
-                style = resolvedStyle,
-                enabled = enabled,
-                readOnly = readOnly,
-                autofocus = autofocus,
-                textInputAction = textInputAction,
-                onChanged = onChanged,
-                onSubmitted = onSubmitted,
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class OutlinedButtonWidget(
-    val text: String,
-    val onPressed: (() -> Unit)?,
-    val style: PixelButtonStyle,
-    val theme: PixelThemeData?,
-    val enabled: Boolean,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when (style) {
-            PixelButtonStyle.Default -> resolvedTheme.buttonStyle
-            PixelButtonStyle.Accent -> resolvedTheme.accentButtonStyle
-            else -> style
-        }
-        return LegacyLeafWidget(
-            key = key,
-        ) {
-            PixelButton(
-                text = text,
-                onClick = onPressed,
-                modifier = PixelModifier.Empty,
-                style = resolvedStyle,
-                disabledStyle = resolvedTheme.disabledButtonStyle,
-                enabled = enabled,
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class PageViewWidget(
-    val axis: Axis,
-    val controller: PixelPagerController,
-    val state: PixelPagerState,
-    val pages: List<Widget>,
-    val onPageChanged: ((Int) -> Unit)?,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        context.watch(controller)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = pages,
-        ) { _, childNodes ->
-            PixelPager(
-                axis = axis,
-                state = state,
-                controller = controller,
-                pages = childNodes,
-                modifier = PixelModifier.Empty,
-                onPageChanged = onPageChanged,
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class ListViewWidget(
-    val items: List<Widget>,
-    val state: PixelListState,
-    val controller: PixelListController,
-    val spacing: Int,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        context.watch(controller)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = items,
-        ) { _, childNodes ->
-            PixelList(
-                items = childNodes,
-                state = state,
-                controller = controller,
-                modifier = PixelModifier.Empty,
-                spacing = spacing,
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class SingleChildScrollViewWidget(
-    val child: Widget,
-    val state: PixelListState,
-    val controller: PixelListController,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        context.watch(controller)
-        return LegacySingleChildWidget(
-            key = key,
-            child = child,
-        ) { _, childNode ->
-            PixelSingleChildScrollView(
-                child = childNode,
-                state = state,
-                controller = controller,
-                modifier = PixelModifier.Empty,
-                key = key,
-            )
         }
     }
 }
