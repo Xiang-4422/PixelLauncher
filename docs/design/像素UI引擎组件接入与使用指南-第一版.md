@@ -163,7 +163,7 @@ val config = PixelHostSetupConfig(
 当前推荐的页面组织方式是：
 
 - 页面状态放在宿主或页面层
-- 组件树通过 `setContent { ... }` 返回
+- 组件树通过 `setContent(RootWidgetProvider)` 或 `PixelHostSetupConfig.content` 返回
 - 交互优先通过 `State.setState`、`ValueNotifier`、控制器回调修改状态
 - 需要局部上下文或局部短状态时，优先用 `Builder` / `StatefulBuilder`
 - 需要把一个 `Listenable` 作为子树环境向下广播时，优先用 `InheritedNotifier`

@@ -144,16 +144,16 @@ Launcher 当前真实主链路仍然是：
 
 允许放入 `:pixel-ui` 的内容：
 
-- `PixelScene`
-- `PixelNode`
-- `PixelModifier`
+- `Widget`
+- `BuildContext`
+- `StatefulWidget / InheritedWidget / Theme / MediaQuery`
 - 通用布局容器
 - 通用文本与表面组件
 - 通用点击、分页、焦点、命中测试
-- `PixelPager(axis = ...)`
-- `PixelPagerState`
-- `PixelPagerController`
-- `PixelPagerSnapshot`
+- `PageView`
+- `PageController`
+- `ScrollController`
+- `TextEditingController`
 
 禁止放入 `:pixel-ui` 的内容：
 

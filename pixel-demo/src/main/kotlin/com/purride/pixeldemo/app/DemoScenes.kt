@@ -44,6 +44,7 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Builder
 import com.purride.pixelui.ListenableBuilder
 import com.purride.pixelui.Row
+import com.purride.pixelui.RootWidgetProvider
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
@@ -88,7 +89,7 @@ object DemoScenes {
         val initialPalette: PixelPalette,
         val initialTextRasterizer: PixelTextRasterizer,
         val initialThemeData: ThemeData? = null,
-        val content: () -> Widget,
+        val content: RootWidgetProvider,
     )
 
     private fun accentUiTheme(): ThemeData {
