@@ -83,8 +83,6 @@ internal abstract class Element(
         markNeedsBuild()
     }
 
-    open fun createLegacyTree(): LegacyRenderNode? = null
-
     open fun unmount() {
         clearInheritedDependencies()
         owner.clearListenableDependencies(this)
@@ -94,7 +92,7 @@ internal abstract class Element(
 
     protected open fun onUnmount() = Unit
 
-    protected open fun visitChildren(visitor: (Element) -> Unit) = Unit
+    internal open fun visitChildren(visitor: (Element) -> Unit) = Unit
 
     protected abstract fun performRebuild()
 
@@ -129,10 +127,6 @@ internal abstract class ComponentElement(
             current = child,
             newWidget = built,
         )
-    }
-
-    override fun createLegacyTree(): LegacyRenderNode? {
-        return child?.createLegacyTree()
     }
 
     override fun visitChildren(visitor: (Element) -> Unit) {

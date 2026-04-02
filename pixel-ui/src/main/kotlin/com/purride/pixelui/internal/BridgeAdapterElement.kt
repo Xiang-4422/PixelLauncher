@@ -1,18 +1,18 @@
 package com.purride.pixelui.internal
 
 /**
- * retained build tree 到 legacy 渲染树的桥接 element。
+ * retained build tree 到 bridge 渲染树的桥接 element。
  *
  * 它不是 retained 语义本身的一部分，所以单独放在 bridge 文件里，避免继续把
  * retained element 层和 legacy 节点适配揉在一起。
  */
-internal class LegacyAdapterElement(
-    widget: LegacyNodeWidget,
+internal class BridgeAdapterElement(
+    widget: BridgeWidget,
 ) : Element(widget) {
     private var children = emptyList<Element>()
 
     override fun performRebuild() {
-        val childWidgets = (widget as LegacyNodeWidget).childWidgets
+        val childWidgets = (widget as BridgeWidget).childWidgets
         val nextChildren = ArrayList<Element>(childWidgets.size)
         val maxCount = maxOf(children.size, childWidgets.size)
         for (index in 0 until maxCount) {
@@ -27,10 +27,9 @@ internal class LegacyAdapterElement(
         children = nextChildren
     }
 
-    override fun createLegacyTree(): LegacyRenderNode {
+    internal fun resolveBridgeNode(childNodes: List<BridgeRenderNode>): BridgeRenderNode {
         owner.clearListenableDependencies(this)
-        val childNodes = children.mapNotNull { child -> child.createLegacyTree() }
-        return (widget as LegacyNodeWidget).createLegacyNode(
+        return (widget as BridgeWidget).createBridgeNode(
             context = this,
             childNodes = childNodes,
         )
