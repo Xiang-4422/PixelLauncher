@@ -23,6 +23,7 @@ enum class PixelCrossAxisAlignment {
     START,
     CENTER,
     END,
+    STRETCH,
 }
 
 /**

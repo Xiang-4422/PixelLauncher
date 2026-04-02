@@ -51,6 +51,7 @@ import com.purride.pixelui.height
 import com.purride.pixelui.padding
 import com.purride.pixelui.size
 import com.purride.pixelui.weight
+import com.purride.pixelui.width
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
@@ -241,6 +242,50 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(5, 1))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(6, 1))
+    }
+
+    @Test
+    fun rowCrossAxisStretchExpandsChildToContainerHeight() {
+        val result = runtime.render(
+            root = PixelRow(
+                modifier = PixelModifier.Empty.size(10, 8),
+                crossAxisAlignment = PixelCrossAxisAlignment.STRETCH,
+                children = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.width(4),
+                        borderTone = null,
+                        fillTone = PixelTone.ACCENT,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 0))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 7))
+    }
+
+    @Test
+    fun columnCrossAxisStretchExpandsChildToContainerWidth() {
+        val result = runtime.render(
+            root = PixelColumn(
+                modifier = PixelModifier.Empty.size(10, 8),
+                crossAxisAlignment = PixelCrossAxisAlignment.STRETCH,
+                children = listOf(
+                    PixelSurface(
+                        modifier = PixelModifier.Empty.height(4),
+                        borderTone = null,
+                        fillTone = PixelTone.ON,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 1))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(9, 1))
     }
 
     @Test

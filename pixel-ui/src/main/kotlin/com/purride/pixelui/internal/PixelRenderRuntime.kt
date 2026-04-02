@@ -800,16 +800,21 @@ internal class PixelRenderRuntime(
             alignment = node.mainAxisAlignment,
         )
         node.children.zip(childSizes).forEach { (child, childSize) ->
+            val childHeight = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) {
+                bounds.height
+            } else {
+                childSize.height
+            }
             val childBounds = PixelRect(
                 left = cursorX,
                 top = crossAxisStart(
                     containerStart = bounds.top,
                     containerExtent = bounds.height,
-                    childExtent = childSize.height,
+                    childExtent = childHeight,
                     alignment = node.crossAxisAlignment,
                 ),
                 width = childSize.width,
-                height = childSize.height,
+                height = childHeight,
             )
             renderNode(
                 node = child,
@@ -847,15 +852,20 @@ internal class PixelRenderRuntime(
             alignment = node.mainAxisAlignment,
         )
         node.children.zip(childSizes).forEach { (child, childSize) ->
+            val childWidth = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) {
+                bounds.width
+            } else {
+                childSize.width
+            }
             val childBounds = PixelRect(
                 left = crossAxisStart(
                     containerStart = bounds.left,
                     containerExtent = bounds.width,
-                    childExtent = childSize.width,
+                    childExtent = childWidth,
                     alignment = node.crossAxisAlignment,
                 ),
                 top = cursorY,
-                width = childSize.width,
+                width = childWidth,
                 height = childSize.height,
             )
             renderNode(
@@ -1011,6 +1021,7 @@ internal class PixelRenderRuntime(
             PixelCrossAxisAlignment.START -> containerStart
             PixelCrossAxisAlignment.CENTER -> containerStart + (remaining / 2)
             PixelCrossAxisAlignment.END -> containerStart + remaining
+            PixelCrossAxisAlignment.STRETCH -> containerStart
         }
     }
 

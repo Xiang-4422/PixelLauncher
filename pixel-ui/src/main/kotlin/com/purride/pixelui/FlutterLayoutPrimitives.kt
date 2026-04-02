@@ -34,6 +34,7 @@ enum class CrossAxisAlignment {
     START,
     CENTER,
     END,
+    STRETCH,
 }
 
 internal fun Alignment.toPixelAlignment(): PixelAlignment {
@@ -56,5 +57,6 @@ internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlign
         CrossAxisAlignment.START -> PixelCrossAxisAlignment.START
         CrossAxisAlignment.CENTER -> PixelCrossAxisAlignment.CENTER
         CrossAxisAlignment.END -> PixelCrossAxisAlignment.END
+        CrossAxisAlignment.STRETCH -> PixelCrossAxisAlignment.STRETCH
     }
 }
