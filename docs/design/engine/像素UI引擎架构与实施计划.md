@@ -278,13 +278,14 @@ object AxisBufferComposer
 1. `Widget`
 2. `RetainedBuildRuntime / BuildOwner / Element tree`
 3. `RetainedWidgetRenderRuntime`
-4. `legacy render bridge`
+4. `bridge resolver + bridge widget adapter`
 5. `PixelRenderRuntime`
 
 这意味着：
 
 - retained build tree 已经成立
 - 状态、环境和依赖登记已经在 retained 主链上
+- `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回 bridge tree
 - 最终绘制仍然落到 legacy renderer
 - 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
 
@@ -335,9 +336,9 @@ object AxisBufferComposer
 
 1. retained build runtime：`BuildOwner / Element / Inherited / Stateful`
 2. `RetainedWidgetRenderRuntime`
-3. legacy bridge：`LegacyNodeWidgets / LegacyLayoutWidgets / LegacyScrollWidgets / LegacyTextInputWidgets`
+3. bridge：`BridgeRenderNode / BridgeTreeResolver / BridgeWidgetAdapterFactory / BridgeAdapterElement / BridgeWidgets / BridgeNodeWidgets`
 4. legacy render façade：`PixelRenderRuntime`
-5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session
+5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session，以及 `LegacyLayoutWidgets / LegacyScrollWidgets / LegacyTextInputWidgets`
 6. demo 场景持续切到 retained 主链并维持验收稳定
 
 ### Phase D. 新增 `:pixel-demo`
