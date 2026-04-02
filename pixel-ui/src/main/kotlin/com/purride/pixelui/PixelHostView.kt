@@ -26,11 +26,10 @@ import com.purride.pixelui.internal.NestedScrollGesturePolicy
 import com.purride.pixelui.internal.PagerGesturePolicy
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
-import com.purride.pixelui.internal.PixelRenderRuntime
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.HostRootWidget
-import com.purride.pixelui.internal.RetainedWidgetRenderRuntime
+import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -72,7 +71,7 @@ class PixelHostView @JvmOverloads constructor(
             updateScreenProfileFromPreference()
         }
 
-    private var runtime = RetainedWidgetRenderRuntime(
+    private var runtime = PixelUiRuntime(
         onVisualUpdate = { postInvalidateOnAnimation() },
     )
     private var contentProvider: RootWidgetProvider? = null
@@ -131,7 +130,7 @@ class PixelHostView @JvmOverloads constructor(
     var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
             field = value
-            runtime = RetainedWidgetRenderRuntime(
+            runtime = PixelUiRuntime(
                 textRasterizer = value,
                 onVisualUpdate = { postInvalidateOnAnimation() },
             )
