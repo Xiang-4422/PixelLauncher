@@ -543,6 +543,63 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun flutterStyleThemeWrapsMixedSubtreeDefaults() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "VALUE")
+        val themed = ThemeData(
+            textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            buttonStyle = PixelButtonStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            ),
+            textFieldStyle = PixelTextFieldStyle.Default.copy(
+                borderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            ),
+            containerStyle = ContainerStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                alignment = Alignment.CENTER,
+            ),
+        )
+
+        val result = runtime.render(
+            root = Theme(
+                data = themed,
+                child = Column(
+                    modifier = PixelModifier.Empty.size(24, 30),
+                    spacing = 2,
+                    children = listOf(
+                        Container(
+                            width = 24,
+                            height = 8,
+                            child = Text("TITLE"),
+                        ),
+                        TextField(
+                            state = state,
+                            controller = controller,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(8),
+                        ),
+                        OutlinedButton(
+                            text = "ACTION",
+                            onPressed = { },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                        ),
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 24,
+            logicalHeight = 30,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 10))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 20))
+    }
+
+    @Test
     fun flutterStyleSpacerPushesTrailingChild() {
         val result = runtime.render(
             root = Row(
