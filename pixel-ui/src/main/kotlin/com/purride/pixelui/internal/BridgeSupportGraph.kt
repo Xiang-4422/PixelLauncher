@@ -28,8 +28,10 @@ internal class BridgeSupportGraph(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
+        val bridgeRoot = BridgeTreeResolver.resolve(root)
+            ?: error("当前 Widget 树没有生成可渲染的 bridge node。")
         return renderRuntime.render(
-            root = root,
+            root = bridgeRoot,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
         )
