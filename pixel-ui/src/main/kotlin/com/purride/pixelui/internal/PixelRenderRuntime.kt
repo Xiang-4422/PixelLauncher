@@ -246,7 +246,7 @@ internal class PixelRenderRuntime(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        val legacyRoot = buildRuntime.resolve(root)
+        val legacyRoot = buildRuntime.resolveLegacyTree(root)
             ?: error("当前 Widget 树没有生成可渲染的 legacy node。")
         return render(
             root = legacyRoot,

@@ -17,10 +17,10 @@ internal class RetainedBuildRuntime(
 ) {
     private val buildOwner = BuildOwner(onVisualUpdate)
 
-    fun resolve(root: Widget): PixelNode? {
+    fun resolveLegacyTree(root: Widget): PixelNode? {
         buildOwner.updateRootWidget(root)
         buildOwner.buildScope()
-        return buildOwner.rootElement?.buildLegacyNode()
+        return buildOwner.rootElement?.createLegacyTree()
     }
 
     fun dispose() {
@@ -229,7 +229,7 @@ private abstract class Element(
         markNeedsBuild()
     }
 
-    open fun buildLegacyNode(): PixelNode? = null
+    open fun createLegacyTree(): PixelNode? = null
 
     open fun unmount() {
         clearInheritedDependencies()
@@ -277,8 +277,8 @@ private abstract class ComponentElement(
         )
     }
 
-    override fun buildLegacyNode(): PixelNode? {
-        return child?.buildLegacyNode()
+    override fun createLegacyTree(): PixelNode? {
+        return child?.createLegacyTree()
     }
 
     override fun visitChildren(visitor: (Element) -> Unit) {
@@ -441,9 +441,9 @@ private class LegacyAdapterElement(
         children = nextChildren
     }
 
-    override fun buildLegacyNode(): PixelNode {
+    override fun createLegacyTree(): PixelNode {
         owner.clearListenableDependencies(this)
-        val childNodes = children.mapNotNull { child -> child.buildLegacyNode() }
+        val childNodes = children.mapNotNull { child -> child.createLegacyTree() }
         return (widget as LegacyNodeWidget).createLegacyNode(
             context = this,
             childNodes = childNodes,
