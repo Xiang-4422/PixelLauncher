@@ -12,7 +12,7 @@ import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import kotlin.reflect.KClass
 
-interface LegacyNodeWidget : Widget {
+internal interface LegacyNodeWidget : Widget {
     val childWidgets: List<Widget>
 
     fun createLegacyNode(

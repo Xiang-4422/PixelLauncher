@@ -106,7 +106,7 @@
   - retained build/runtime 入口
   - [RetainedBuildRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedBuildRuntime.kt)
 - 兼容层基础节点与场景
-  - 这一层当前只作为 retained runtime 过渡桥接使用，不再建议新页面继续直接依赖
+  - 这一层当前只作为 retained runtime 过渡桥接使用，已经开始收为模块内部实现
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelNode.kt)
   - [PixelScene.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelScene.kt)
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelModifier.kt)
@@ -185,7 +185,7 @@
 
 它们现在已经可以替掉大部分页面层公开“手动拉伸和尺寸兼容参数”写法。
 
-旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前主要作为兼容层保留，不再建议新页面直接使用。
+旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前只作为 `pixel-ui` 模块内部兼容桥接保留，已经不再是建议依赖的公开页面 API。
 
 ### 3.3 当前测试覆盖
 
@@ -209,7 +209,7 @@
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
-- 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要还留在底层节点和兼容运行时里
+- 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部的底层节点和兼容运行时里
 - 还没有开始把 `:app` 页面迁进来
 
 ---

@@ -17,7 +17,7 @@ data class PixelButtonStyle(
     val fillTone: PixelTone = PixelTone.OFF,
     val borderTone: PixelTone? = PixelTone.ON,
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
-    val alignment: PixelAlignment = PixelAlignment.CENTER,
+    val alignment: Alignment = Alignment.CENTER,
 ) {
     companion object {
         val Default = PixelButtonStyle()
@@ -34,7 +34,7 @@ data class PixelButtonStyle(
     }
 }
 
-data class PixelButtonNode(
+internal data class PixelButtonNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val text: String,
@@ -52,7 +52,7 @@ data class PixelButtonNode(
  * 但页面层不需要再重复手写这套按钮结构，后续如果按钮有统一交互或视觉演进，
  * 也可以只在这里收敛修改。
  */
-fun PixelButton(
+internal fun PixelButton(
     text: String,
     onClick: (() -> Unit)?,
     modifier: PixelModifier = PixelModifier.Empty,
@@ -82,7 +82,7 @@ internal fun PixelButtonNode.toSurfaceNode(): PixelSurfaceNode {
         borderTone = resolvedStyle.borderTone,
         child = PixelBox(
             modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = resolvedStyle.alignment,
+            alignment = resolvedStyle.alignment.toPixelAlignment(),
             children = listOf(
                 PixelText(
                     text = text,

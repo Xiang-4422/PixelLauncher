@@ -448,7 +448,7 @@ hostView.themeData = pageTheme
 
 ## 4. 基础组件使用方式
 
-当前对外主推的是 Flutter 风格公开组件名。旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等还存在，但现在主要作为兼容层保留，不建议新页面继续直接使用。
+当前对外主推的是 Flutter 风格公开组件名。旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前只在 `pixel-ui` 模块内部作为兼容桥接保留，新页面不应再直接依赖它们。
 
 ### 4.1 文本
 

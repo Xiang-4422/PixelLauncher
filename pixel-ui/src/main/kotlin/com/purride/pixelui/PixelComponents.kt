@@ -8,7 +8,7 @@ import com.purride.pixelui.state.PixelPagerState
 /**
  * 当前阶段的最小布局对齐方式。
  */
-enum class PixelAlignment {
+internal enum class PixelAlignment {
     TOP_START,
     TOP_CENTER,
     TOP_END,
@@ -26,7 +26,7 @@ enum class PixelAlignment {
  * 主轴排布还没有进入这一轮实现，所以这里只先提供最常用的
  * `START / CENTER / END` 三档，先把组合布局的基础语义补稳。
  */
-enum class PixelCrossAxisAlignment {
+internal enum class PixelCrossAxisAlignment {
     START,
     CENTER,
     END,
@@ -38,7 +38,7 @@ enum class PixelCrossAxisAlignment {
  *
  * 当前先支持最基础的起始、居中、末尾三种排布，先把常见布局场景补齐。
  */
-enum class PixelMainAxisAlignment {
+internal enum class PixelMainAxisAlignment {
     START,
     CENTER,
     END,
@@ -47,12 +47,12 @@ enum class PixelMainAxisAlignment {
     SPACE_EVENLY,
 }
 
-enum class PixelMainAxisSize {
+internal enum class PixelMainAxisSize {
     MIN,
     MAX,
 }
 
-data class PixelTextNode(
+internal data class PixelTextNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val text: String,
@@ -70,13 +70,13 @@ enum class PixelTextOverflow {
     ELLIPSIS,
 }
 
-enum class PixelTextAlign {
+internal enum class PixelTextAlign {
     START,
     CENTER,
     END,
 }
 
-data class PixelSurfaceNode(
+internal data class PixelSurfaceNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val child: PixelNode? = null,
@@ -87,14 +87,14 @@ data class PixelSurfaceNode(
     val styleLocked: Boolean = false,
 ) : PixelNode
 
-data class PixelBoxNode(
+internal data class PixelBoxNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
     val alignment: PixelAlignment = PixelAlignment.TOP_START,
 ) : PixelNode
 
-data class PixelPositionedNode(
+internal data class PixelPositionedNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val child: PixelNode,
@@ -106,7 +106,7 @@ data class PixelPositionedNode(
     val height: Int? = null,
 ) : PixelNode
 
-data class PixelRowNode(
+internal data class PixelRowNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
@@ -116,7 +116,7 @@ data class PixelRowNode(
     val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
 
-data class PixelColumnNode(
+internal data class PixelColumnNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val children: List<PixelNode>,
@@ -126,7 +126,7 @@ data class PixelColumnNode(
     val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
 ) : PixelNode
 
-data class PixelPagerNode(
+internal data class PixelPagerNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val axis: PixelAxis,
@@ -136,7 +136,7 @@ data class PixelPagerNode(
     val onPageChanged: ((Int) -> Unit)? = null,
 ) : PixelNode
 
-fun PixelText(
+internal fun PixelText(
     text: String,
     modifier: PixelModifier = PixelModifier.Empty,
     style: PixelTextStyle = PixelTextStyle.Default,
@@ -160,7 +160,7 @@ fun PixelText(
     )
 }
 
-fun PixelSurface(
+internal fun PixelSurface(
     child: PixelNode? = null,
     modifier: PixelModifier = PixelModifier.Empty,
     fillTone: PixelTone = PixelTone.OFF,
@@ -180,7 +180,7 @@ fun PixelSurface(
     )
 }
 
-fun PixelBox(
+internal fun PixelBox(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     alignment: PixelAlignment = PixelAlignment.TOP_START,
@@ -194,7 +194,7 @@ fun PixelBox(
     )
 }
 
-fun PixelPositioned(
+internal fun PixelPositioned(
     child: PixelNode,
     modifier: PixelModifier = PixelModifier.Empty,
     left: Int? = null,
@@ -218,7 +218,7 @@ fun PixelPositioned(
     )
 }
 
-fun PixelRow(
+internal fun PixelRow(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
@@ -238,7 +238,7 @@ fun PixelRow(
     )
 }
 
-fun PixelColumn(
+internal fun PixelColumn(
     children: List<PixelNode>,
     modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
@@ -258,7 +258,7 @@ fun PixelColumn(
     )
 }
 
-fun PixelPager(
+internal fun PixelPager(
     axis: PixelAxis,
     state: PixelPagerState,
     controller: PixelPagerController,

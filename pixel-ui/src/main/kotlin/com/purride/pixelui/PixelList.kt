@@ -8,7 +8,7 @@ import com.purride.pixelui.state.PixelListState
  *
  * 第一版列表先只支持纵向单列滚动。
  */
-data class PixelListNode(
+internal data class PixelListNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val state: PixelListState,
@@ -25,7 +25,7 @@ data class PixelListNode(
  * 2. 裁剪可见区域
  * 3. 通过 `PixelListController` 响应触摸拖动
  */
-fun PixelList(
+internal fun PixelList(
     items: List<PixelNode>,
     state: PixelListState,
     controller: PixelListController,
