@@ -118,6 +118,285 @@ private data class FlexWrapperWidget(
     }
 }
 
+private data class TextWidget(
+    val data: String,
+    val style: TextStyle,
+    val theme: ThemeData?,
+    val softWrap: Boolean,
+    val maxLines: Int,
+    val overflow: TextOverflow,
+    val textAlign: TextAlign,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = when (style) {
+            TextStyle.Default -> resolvedTheme.textStyle
+            TextStyle.Accent -> resolvedTheme.accentTextStyle
+            else -> style
+        }
+        return LegacyLeafWidget(
+            key = key,
+        ) {
+            PixelText(
+                text = data,
+                modifier = PixelModifier.Empty,
+                style = resolvedStyle,
+                softWrap = softWrap,
+                maxLines = maxLines,
+                overflow = overflow,
+                textAlign = textAlign.toPixelTextAlign(),
+                textDirection = Directionality.of(context),
+                key = key,
+            )
+        }
+    }
+}
+
+private data class ContainerWidget(
+    val child: Widget?,
+    val width: Int?,
+    val height: Int?,
+    val padding: EdgeInsets?,
+    val margin: EdgeInsets?,
+    val style: ContainerStyle?,
+    val theme: ThemeData?,
+    val fillTone: PixelTone,
+    val borderTone: PixelTone?,
+    val alignment: Alignment,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = style ?: run {
+            val requestedStyle = ContainerStyle(
+                fillTone = fillTone,
+                borderTone = borderTone,
+                alignment = alignment,
+            )
+            when (requestedStyle) {
+                ContainerStyle.Default -> resolvedTheme.containerStyle
+                resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
+                else -> requestedStyle
+            }
+        }
+        return LegacyMultiChildWidget(
+            key = key,
+            children = child?.let(::listOf) ?: emptyList(),
+        ) { _, childNodes ->
+            val paddedChild = childNodes.singleOrNull()?.let { childNode ->
+                if (padding == null) {
+                    childNode
+                } else {
+                    PixelBox(
+                        children = listOf(childNode),
+                        modifier = PixelModifier.Empty.padding(
+                            left = padding.left,
+                            top = padding.top,
+                            right = padding.right,
+                            bottom = padding.bottom,
+                        ),
+                        alignment = PixelAlignment.TOP_START,
+                    )
+                }
+            }
+            val sizedModifier = when {
+                width != null && height != null -> PixelModifier.Empty.size(width, height)
+                width != null -> PixelModifier.Empty.width(width)
+                height != null -> PixelModifier.Empty.height(height)
+                else -> PixelModifier.Empty
+            }
+            val baseNode = PixelSurface(
+                child = paddedChild,
+                modifier = sizedModifier,
+                fillTone = resolvedStyle.fillTone,
+                borderTone = resolvedStyle.borderTone,
+                padding = 0,
+                alignment = resolvedStyle.alignment.toPixelAlignment(),
+                key = key,
+            )
+            if (margin == null) {
+                baseNode
+            } else {
+                PixelBox(
+                    children = listOf(baseNode),
+                    modifier = PixelModifier.Empty.padding(
+                        left = margin.left,
+                        top = margin.top,
+                        right = margin.right,
+                        bottom = margin.bottom,
+                    ),
+                    alignment = PixelAlignment.TOP_START,
+                )
+            }
+        }
+    }
+}
+
+private data class TextFieldWidget(
+    val state: PixelTextFieldState,
+    val controller: PixelTextFieldController,
+    val placeholder: String,
+    val style: TextFieldStyle,
+    val theme: ThemeData?,
+    val enabled: Boolean,
+    val readOnly: Boolean,
+    val autofocus: Boolean,
+    val textInputAction: TextInputAction,
+    val onChanged: ((String) -> Unit)?,
+    val onSubmitted: ((String) -> Unit)?,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        context.watch(controller)
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = when {
+            style != TextFieldStyle.Default -> style
+            !enabled -> resolvedTheme.disabledTextFieldStyle
+            readOnly -> resolvedTheme.readOnlyTextFieldStyle
+            else -> resolvedTheme.textFieldStyle
+        }
+        return LegacyLeafWidget(
+            key = key,
+        ) {
+            PixelTextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty,
+                placeholder = placeholder,
+                style = resolvedStyle,
+                enabled = enabled,
+                readOnly = readOnly,
+                autofocus = autofocus,
+                textInputAction = textInputAction,
+                onChanged = onChanged,
+                onSubmitted = onSubmitted,
+                key = key,
+            )
+        }
+    }
+}
+
+private data class OutlinedButtonWidget(
+    val text: String,
+    val onPressed: (() -> Unit)?,
+    val style: ButtonStyle,
+    val theme: ThemeData?,
+    val enabled: Boolean,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = when (style) {
+            ButtonStyle.Default -> resolvedTheme.buttonStyle
+            ButtonStyle.Accent -> resolvedTheme.accentButtonStyle
+            else -> style
+        }
+        return LegacyLeafWidget(
+            key = key,
+        ) {
+            PixelButton(
+                text = text,
+                onClick = onPressed,
+                modifier = PixelModifier.Empty,
+                style = resolvedStyle,
+                disabledStyle = resolvedTheme.disabledButtonStyle,
+                enabled = enabled,
+                key = key,
+            )
+        }
+    }
+}
+
+private data class PageViewWidget(
+    val axis: Axis,
+    val controller: PixelPagerController,
+    val state: PixelPagerState,
+    val pages: List<Widget>,
+    val onPageChanged: ((Int) -> Unit)?,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        context.watch(controller)
+        return LegacyMultiChildWidget(
+            key = key,
+            children = pages,
+        ) { _, childNodes ->
+            PixelPager(
+                axis = axis,
+                state = state,
+                controller = controller,
+                pages = childNodes,
+                modifier = PixelModifier.Empty,
+                onPageChanged = onPageChanged,
+                key = key,
+            )
+        }
+    }
+}
+
+private data class ListViewWidget(
+    val items: List<Widget>,
+    val state: PixelListState,
+    val controller: PixelListController,
+    val spacing: Int,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        context.watch(controller)
+        return LegacyMultiChildWidget(
+            key = key,
+            children = items,
+        ) { _, childNodes ->
+            PixelList(
+                items = childNodes,
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty,
+                spacing = spacing,
+                key = key,
+            )
+        }
+    }
+}
+
+private data class SingleChildScrollViewWidget(
+    val child: Widget,
+    val state: PixelListState,
+    val controller: PixelListController,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        context.watch(controller)
+        return LegacySingleChildWidget(
+            key = key,
+            child = child,
+        ) { _, childNode ->
+            PixelSingleChildScrollView(
+                child = childNode,
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty,
+                key = key,
+            )
+        }
+    }
+}
+
 fun Padding(
     child: Widget,
     all: Int,
@@ -344,27 +623,16 @@ fun Text(
     textAlign: TextAlign = TextAlign.START,
     key: Any? = null,
 ): Widget {
-    return LegacyLeafWidget(
+    return TextWidget(
+        data = data,
+        style = style,
+        theme = theme,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        overflow = overflow,
+        textAlign = textAlign,
         key = key,
-    ) { context ->
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when (style) {
-            TextStyle.Default -> resolvedTheme.textStyle
-            TextStyle.Accent -> resolvedTheme.accentTextStyle
-            else -> style
-        }
-        PixelText(
-            text = data,
-            modifier = PixelModifier.Empty,
-            style = resolvedStyle,
-            softWrap = softWrap,
-            maxLines = maxLines,
-            overflow = overflow,
-            textAlign = textAlign.toPixelTextAlign(),
-            textDirection = Directionality.of(context),
-            key = key,
-        )
-    }
+    )
 }
 
 fun DecoratedBox(
@@ -404,69 +672,19 @@ fun Container(
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
+    return ContainerWidget(
+        child = child,
+        width = width,
+        height = height,
+        padding = padding,
+        margin = margin,
+        style = style,
+        theme = theme,
+        fillTone = fillTone,
+        borderTone = borderTone,
+        alignment = alignment,
         key = key,
-        children = child?.let(::listOf) ?: emptyList(),
-    ) { context, childNodes ->
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = style ?: run {
-            val requestedStyle = ContainerStyle(
-                fillTone = fillTone,
-                borderTone = borderTone,
-                alignment = alignment,
-            )
-            when (requestedStyle) {
-                ContainerStyle.Default -> resolvedTheme.containerStyle
-                resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
-                else -> requestedStyle
-            }
-        }
-        val paddedChild = childNodes.singleOrNull()?.let { childNode ->
-            if (padding == null) {
-                childNode
-            } else {
-                PixelBox(
-                    children = listOf(childNode),
-                    modifier = PixelModifier.Empty.padding(
-                        left = padding.left,
-                        top = padding.top,
-                        right = padding.right,
-                        bottom = padding.bottom,
-                    ),
-                    alignment = PixelAlignment.TOP_START,
-                )
-            }
-        }
-        val sizedModifier = when {
-            width != null && height != null -> PixelModifier.Empty.size(width, height)
-            width != null -> PixelModifier.Empty.width(width)
-            height != null -> PixelModifier.Empty.height(height)
-            else -> PixelModifier.Empty
-        }
-        val baseNode = PixelSurface(
-            child = paddedChild,
-            modifier = sizedModifier,
-            fillTone = resolvedStyle.fillTone,
-            borderTone = resolvedStyle.borderTone,
-            padding = 0,
-            alignment = resolvedStyle.alignment.toPixelAlignment(),
-            key = key,
-        )
-        if (margin == null) {
-            baseNode
-        } else {
-            PixelBox(
-                children = listOf(baseNode),
-                modifier = PixelModifier.Empty.padding(
-                    left = margin.left,
-                    top = margin.top,
-                    right = margin.right,
-                    bottom = margin.bottom,
-                ),
-                alignment = PixelAlignment.TOP_START,
-            )
-        }
-    }
+    )
 }
 
 fun ContainerDirectional(
@@ -749,13 +967,13 @@ fun PageViewBuilder(
     onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    return PageView(
+    return PageViewWidget(
         axis = axis,
         controller = controller,
         state = state,
         pages = List(itemCount) { index -> itemBuilder(index) },
-        onPageChanged = onPageChanged,
         key = key,
+        onPageChanged = onPageChanged,
     )
 }
 
@@ -766,20 +984,13 @@ fun ListView(
     spacing: Int = 0,
     key: Any? = null,
 ): Widget {
-    return LegacyMultiChildWidget(
+    return ListViewWidget(
+        items = items,
+        state = state,
+        controller = controller,
+        spacing = spacing,
         key = key,
-        children = items,
-    ) { context, childNodes ->
-        context.watch(controller)
-        PixelList(
-            items = childNodes,
-            state = state,
-            controller = controller,
-            modifier = PixelModifier.Empty,
-            spacing = spacing,
-            key = key,
-        )
-    }
+    )
 }
 
 fun ListViewBuilder(
@@ -830,19 +1041,12 @@ fun SingleChildScrollView(
     controller: PixelListController,
     key: Any? = null,
 ): Widget {
-    return LegacySingleChildWidget(
-        key = key,
+    return SingleChildScrollViewWidget(
         child = child,
-    ) { context, childNode ->
-        context.watch(controller)
-        PixelSingleChildScrollView(
-            child = childNode,
-            state = state,
-            controller = controller,
-            modifier = PixelModifier.Empty,
-            key = key,
-        )
-    }
+        state = state,
+        controller = controller,
+        key = key,
+    )
 }
 
 fun TextField(
@@ -859,32 +1063,20 @@ fun TextField(
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    return LegacyLeafWidget(
+    return TextFieldWidget(
+        state = state,
+        controller = controller,
+        placeholder = placeholder,
+        style = style,
+        theme = theme,
+        enabled = enabled,
+        readOnly = readOnly,
+        autofocus = autofocus,
+        textInputAction = textInputAction,
+        onChanged = onChanged,
+        onSubmitted = onSubmitted,
         key = key,
-    ) { context ->
-        context.watch(controller)
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when {
-            style != TextFieldStyle.Default -> style
-            !enabled -> resolvedTheme.disabledTextFieldStyle
-            readOnly -> resolvedTheme.readOnlyTextFieldStyle
-            else -> resolvedTheme.textFieldStyle
-        }
-        PixelTextField(
-            state = state,
-            controller = controller,
-            modifier = PixelModifier.Empty,
-            placeholder = placeholder,
-            style = resolvedStyle,
-            enabled = enabled,
-            readOnly = readOnly,
-            autofocus = autofocus,
-            textInputAction = textInputAction,
-            onChanged = onChanged,
-            onSubmitted = onSubmitted,
-            key = key,
-        )
-    }
+    )
 }
 
 fun OutlinedButton(
@@ -895,23 +1087,12 @@ fun OutlinedButton(
     enabled: Boolean = true,
     key: Any? = null,
 ): Widget {
-    return LegacyLeafWidget(
+    return OutlinedButtonWidget(
+        text = text,
+        onPressed = onPressed,
+        style = style,
+        theme = theme,
+        enabled = enabled,
         key = key,
-    ) { context ->
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when (style) {
-            ButtonStyle.Default -> resolvedTheme.buttonStyle
-            ButtonStyle.Accent -> resolvedTheme.accentButtonStyle
-            else -> style
-        }
-        PixelButton(
-            text = text,
-            onClick = onPressed,
-            modifier = PixelModifier.Empty,
-            style = resolvedStyle,
-            disabledStyle = resolvedTheme.disabledButtonStyle,
-            enabled = enabled,
-            key = key,
-        )
-    }
+    )
 }
