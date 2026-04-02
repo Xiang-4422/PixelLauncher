@@ -244,7 +244,7 @@ class PixelHostView @JvmOverloads constructor(
                 child = rootWidget,
                 key = "host-root",
             )
-            buildRuntime.resolve(wrappedRoot)?.let { legacyRoot ->
+            buildRuntime.resolveLegacyTree(wrappedRoot)?.let { legacyRoot ->
                 runtime.render(
                     root = legacyRoot,
                     logicalWidth = screenProfile.logicalWidth,
