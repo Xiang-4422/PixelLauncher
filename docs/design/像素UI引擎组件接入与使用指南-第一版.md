@@ -61,6 +61,7 @@ dependencies {
 
 ```kotlin
 val hostView = PixelHostView(this)
+val counter = ValueNotifier(0)
 val hostSetup = createPixelHostSetup(
     context = this,
     hostView = hostView,
@@ -74,18 +75,20 @@ val hostSetup = createPixelHostSetup(
             buttonStyle = ButtonStyle.Accent,
         ),
         content = {
-            Column(
-                modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                spacing = 4,
-                children = listOf(
-                    Text("HELLO PIXEL"),
-                    OutlinedButton(
-                        text = "CLICK",
-                        onPressed = { hostView.requestRender() },
-                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+            ValueListenableBuilder(counter) { _, value ->
+                Column(
+                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                    spacing = 4,
+                    children = listOf(
+                        Text("COUNT $value"),
+                        OutlinedButton(
+                            text = "CLICK",
+                            onPressed = { counter.value = value + 1 },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
                     ),
-                ),
-            )
+                )
+            }
         },
     ),
 )
@@ -149,48 +152,52 @@ val config = PixelHostSetupConfig(
 
 - 页面状态放在宿主或页面层
 - 组件树通过 `setContent { ... }` 返回
-- 交互通过控制器或 `onClick` 修改状态
-- 修改状态后调用 `hostView.requestRender()`
+- 交互优先通过 `State.setState`、`ValueNotifier`、控制器回调修改状态
+- 重建应由 retained runtime 自动触发，不再把 `hostView.requestRender()` 当成页面主路径
 
 ### 当前推荐结构
 
 ```kotlin
 class ExampleActivity : AppCompatActivity() {
 
-    private lateinit var hostView: PixelHostView
-    private var counter = 0
+    private val counter = ValueNotifier(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val hostSetup = createPixelHostSetup(this)
-        hostView = hostSetup.hostView.apply {
-            profilePreference = PixelHostProfilePreference(
-                dotSizePx = 8,
-            )
-            setPalette(PixelPalette.terminalGreen())
-            setContent { renderScene() }
-        }
+        val hostView = PixelHostView(this)
+        val hostSetup = createPixelHostSetup(
+            context = this,
+            hostView = hostView,
+            config = PixelHostSetupConfig(
+                profilePreference = PixelHostProfilePreference(
+                    dotSizePx = 8,
+                ),
+                palette = PixelPalette.terminalGreen(),
+                content = { renderScene() },
+            ),
+        )
 
         setContentView(hostSetup.rootView)
     }
 
     private fun renderScene(): Widget {
-        return Column(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-            spacing = 4,
-            children = listOf(
-                Text("COUNT $counter"),
-                OutlinedButton(
-                    text = "PLUS",
-                    onPressed = {
-                        counter += 1
-                        hostView.requestRender()
-                    },
-                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+        return ValueListenableBuilder(counter) { _, value ->
+            Column(
+                modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                spacing = 4,
+                children = listOf(
+                    Text("COUNT $value"),
+                    OutlinedButton(
+                        text = "PLUS",
+                        onPressed = {
+                            counter.value = value + 1
+                        },
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                    ),
                 ),
-            ),
-        )
+            )
+        }
     }
 }
 ```
@@ -198,7 +205,7 @@ class ExampleActivity : AppCompatActivity() {
 ### 当前不推荐的写法
 
 - 在 `setContent` 内每次新建宿主级对象
-- 在组件内部偷偷直接改外部状态但不触发 `requestRender()`
+- 在组件内部偷偷直接改外部状态，但既不走 `setState`，也不走 `Listenable/Controller`
 - 业务层直接长期绘制 `PixelBuffer`
 
 特别注意：
@@ -268,7 +275,7 @@ Theme(
             ),
             OutlinedButton(
                 text = "CONFIRM",
-                onPressed = { hostView.requestRender() },
+                onPressed = { submitCount.value += 1 },
             ),
         ),
     ),
@@ -289,7 +296,7 @@ Theme(
     ),
     child = OutlinedButton(
         text = "LOCAL DEFAULT",
-        onPressed = { hostView.requestRender() },
+        onPressed = { localCount.value += 1 },
     ),
 )
 ```
@@ -479,7 +486,7 @@ Row(
 ```kotlin
 OutlinedButton(
     text = "SUBMIT",
-    onPressed = { hostView.requestRender() },
+    onPressed = { submitCount.value += 1 },
     modifier = PixelModifier.Empty.fillMaxWidth().height(14),
     enabled = true,
 )
@@ -490,7 +497,7 @@ OutlinedButton(
 ```kotlin
 OutlinedButton(
     text = "THEMED",
-    onPressed = { hostView.requestRender() },
+    onPressed = { submitCount.value += 1 },
     theme = pageTheme,
 )
 ```
@@ -546,8 +553,7 @@ PageView(
     state = pagerState,
     controller = pagerController,
     onPageChanged = { page ->
-        currentPage = page
-        hostView.requestRender()
+        currentPage.value = page
     },
     modifier = PixelModifier.Empty.fillMaxSize(),
     pages = listOf(
@@ -598,7 +604,7 @@ ListView(
     items = List(8) { index ->
         OutlinedButton(
             text = "ITEM ${index + 1}",
-            onPressed = { hostView.requestRender() },
+            onPressed = { tappedItem.value = index },
             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
         )
     },
@@ -627,7 +633,7 @@ ListViewSeparated(
     itemBuilder = { index ->
         OutlinedButton(
             text = "ITEM ${index + 1}",
-            onPressed = { hostView.requestRender() },
+            onPressed = { tappedItem.value = index },
             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
         )
     },
@@ -728,10 +734,10 @@ TextField(
     controller = textController,
     placeholder = "TYPE NAME",
     onChanged = { text ->
-        hostView.requestRender()
+        liveName.value = text
     },
     onSubmitted = { text ->
-        hostView.requestRender()
+        submittedName.value = text
     },
 )
 
@@ -739,7 +745,6 @@ OutlinedButton(
     text = "FOCUS NAME",
     onPressed = {
         textController.requestFocus(nameState)
-        hostView.requestRender()
     },
 )
 ```
@@ -804,7 +809,6 @@ TextField(
     textInputAction = TextInputAction.NEXT,
     onSubmitted = {
         controller.requestFocus(secondaryState)
-        hostView.requestRender()
     },
 )
 ```
@@ -812,7 +816,7 @@ TextField(
 自动聚焦当前规则：
 
 - 只在该状态对象第一次出现在页面里时自动聚焦一次
-- 不会因为后续 `requestRender()` 重绘反复抢焦点
+- 不会因为后续 `setState`、`Listenable` 或 controller 驱动的重建反复抢焦点
 
 输入动作示例：
 
@@ -888,12 +892,26 @@ private val state = controller.create()
 
 ### 8.2 修改页面状态后要触发重新渲染
 
-当前第一版是轻量运行时，不是完整响应式框架。  
-因此业务状态变化后，通常要显式调用：
+当前第一版已经有 retained build tree。  
+因此业务状态变化后，优先应该走：
 
 ```kotlin
-hostView.requestRender()
+setState { ... }
 ```
+
+或者：
+
+```kotlin
+counter.value += 1
+```
+
+或者：
+
+```kotlin
+controller.nextPage(state)
+```
+
+也就是说，公开页面主路径已经不再推荐直接手动触发重绘。
 
 ### 8.3 优先在 `pixel-demo` 验证新组件
 
