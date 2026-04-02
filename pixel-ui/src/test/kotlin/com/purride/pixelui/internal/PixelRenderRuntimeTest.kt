@@ -38,9 +38,11 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.Padding
+import com.purride.pixelui.Positioned
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Spacer
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextField
@@ -1002,6 +1004,62 @@ class PixelRenderRuntimeTest {
 
         val pixels = collectOnPixels(result)
         assertTrue(pixels.maxOf { it.first } >= 17)
+    }
+
+    @Test
+    fun flutterStylePositionedPlacesChildAtExplicitTopLeft() {
+        val result = runtime.render(
+            root = Stack(
+                children = listOf(
+                    Positioned(
+                        left = 3,
+                        top = 2,
+                        child = SizedBox(
+                            width = 4,
+                            height = 4,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.ACCENT,
+                                borderTone = null,
+                            ),
+                        ),
+                    ),
+                ),
+                modifier = PixelModifier.Empty.size(12, 10),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(2, 2))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(3, 2))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(6, 5))
+    }
+
+    @Test
+    fun flutterStylePositionedUsesRightAndBottomOffsets() {
+        val result = runtime.render(
+            root = Stack(
+                children = listOf(
+                    Positioned(
+                        right = 1,
+                        bottom = 2,
+                        width = 4,
+                        height = 3,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+                modifier = PixelModifier.Empty.size(12, 10),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(6, 4))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(7, 5))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(10, 7))
     }
 
     @Test

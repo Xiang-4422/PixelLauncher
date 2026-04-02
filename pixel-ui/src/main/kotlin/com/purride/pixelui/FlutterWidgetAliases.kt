@@ -462,6 +462,35 @@ fun Stack(
     }
 }
 
+fun Positioned(
+    child: Widget,
+    left: Int? = null,
+    top: Int? = null,
+    right: Int? = null,
+    bottom: Int? = null,
+    width: Int? = null,
+    height: Int? = null,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    return LegacySingleChildWidget(
+        key = key,
+        child = child,
+    ) { _, childNode ->
+        PixelPositioned(
+            child = childNode,
+            modifier = modifier,
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            width = width,
+            height = height,
+            key = key,
+        )
+    }
+}
+
 fun Row(
     children: List<Widget>,
     modifier: PixelModifier = PixelModifier.Empty,
