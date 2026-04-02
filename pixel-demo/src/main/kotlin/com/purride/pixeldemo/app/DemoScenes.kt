@@ -488,63 +488,72 @@ object DemoScenes {
                 SingleChildScrollView(
                     state = scrollState,
                     controller = scrollController,
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    child = ListenableBuilder(
-                        listenable = textController,
-                        builder = {
-                            Column(
-                                modifier = PixelModifier.Empty.fillMaxWidth(),
-                                spacing = 4,
-                                children = listOf(
-                                    sectionTitle("SINGLE CHILD SCROLL"),
-                                    infoCard("TITLE", titleState.text.ifEmpty { "(EMPTY)" }, accent = titleState.isFocused),
-                                    TextField(
-                                        state = titleState,
-                                        controller = textController,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                        placeholder = "TYPE TITLE",
-                                        style = TextFieldStyle.Default,
-                                    ),
-                                    infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
-                                    TextField(
-                                        state = noteState,
-                                        controller = textController,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                        placeholder = "TYPE NOTE",
-                                        style = TextFieldStyle(
-                                            borderTone = PixelTone.ON,
-                                            focusedBorderTone = PixelTone.ACCENT,
-                                            textStyle = TextStyle.Accent,
-                                            placeholderStyle = TextStyle.Default,
+                    child = Container(
+                        padding = EdgeInsets.all(4),
+                        child = ListenableBuilder(
+                            listenable = textController,
+                            builder = {
+                                Column(
+                                    spacing = 4,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        sectionTitle("SINGLE CHILD SCROLL"),
+                                        infoCard("TITLE", titleState.text.ifEmpty { "(EMPTY)" }, accent = titleState.isFocused),
+                                        SizedBox(
+                                            height = 16,
+                                            child = TextField(
+                                                state = titleState,
+                                                controller = textController,
+                                                placeholder = "TYPE TITLE",
+                                                style = TextFieldStyle.Default,
+                                            ),
+                                        ),
+                                        infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
+                                        SizedBox(
+                                            height = 16,
+                                            child = TextField(
+                                                state = noteState,
+                                                controller = textController,
+                                                placeholder = "TYPE NOTE",
+                                                style = TextFieldStyle(
+                                                    borderTone = PixelTone.ON,
+                                                    focusedBorderTone = PixelTone.ACCENT,
+                                                    textStyle = TextStyle.Accent,
+                                                    placeholderStyle = TextStyle.Default,
+                                                ),
+                                            ),
+                                        ),
+                                        infoCard("SECTION", "A LONG COLUMN"),
+                                        infoCard("SCROLL", "WHOLE PAGE DRAGS"),
+                                        infoCard("TARGET", "ONE CHILD TREE"),
+                                        ValueListenableBuilder(
+                                            listenable = footerTapped,
+                                        ) { _, tapCount ->
+                                            SizedBox(
+                                                height = 14,
+                                                child = OutlinedButton(
+                                                    text = "FOOTER TAPS $tapCount",
+                                                    onPressed = {
+                                                        footerTapped.value = tapCount + 1
+                                                    },
+                                                    style = ButtonStyle.Accent,
+                                                ),
+                                            )
+                                        },
+                                        SizedBox(
+                                            height = 18,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = Center(
+                                                    child = Text("BOTTOM CARD"),
+                                                ),
+                                            ),
                                         ),
                                     ),
-                                    infoCard("SECTION", "A LONG COLUMN"),
-                                    infoCard("SCROLL", "WHOLE PAGE DRAGS"),
-                                    infoCard("TARGET", "ONE CHILD TREE"),
-                                    ValueListenableBuilder(
-                                        listenable = footerTapped,
-                                    ) { _, tapCount ->
-                                        OutlinedButton(
-                                            text = "FOOTER TAPS $tapCount",
-                                            onPressed = {
-                                                footerTapped.value = tapCount + 1
-                                            },
-                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                            style = ButtonStyle.Accent,
-                                        )
-                                    },
-                                    DecoratedBox(
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(18),
-                                        fillTone = PixelTone.OFF,
-                                        borderTone = PixelTone.ON,
-                                        child = Center(
-                                            modifier = PixelModifier.Empty.fillMaxSize(),
-                                            child = Text("BOTTOM CARD"),
-                                        ),
-                                    ),
-                                ),
-                            )
-                        },
+                                )
+                            },
+                        ),
                     ),
                 )
             },
@@ -828,71 +837,88 @@ object DemoScenes {
                                 ValueListenableBuilder(
                                     listenable = selectedLabel,
                                 ) { _, currentSelection ->
-                                    Column(
-                                        modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                                        spacing = 4,
-                                        children = listOf(
-                                            sectionTitle("FORM + LIST"),
-                                            infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
-                                            infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
-                                            infoCard("SELECTED", currentSelection),
-                                            Column(
-                                                spacing = 2,
-                                                children = listOf(
-                                                    TextField(
-                                                        state = nameState,
-                                                        controller = textController,
-                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                                        placeholder = "TYPE NAME",
-                                                    ),
-                                                    TextField(
-                                                        state = cityState,
-                                                        controller = textController,
-                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                                        placeholder = "TYPE CITY",
-                                                    ),
-                                                    Row(
-                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                                        spacing = 2,
-                                                        children = listOf(
-                                                            OutlinedButton(
-                                                                text = "SHOW 1",
-                                                                onPressed = {
-                                                                    listController.showItem(listState, itemIndex = 0)
-                                                                },
-                                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    Container(
+                                        padding = EdgeInsets.all(4),
+                                        child = Column(
+                                            spacing = 4,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                sectionTitle("FORM + LIST"),
+                                                infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
+                                                infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
+                                                infoCard("SELECTED", currentSelection),
+                                                Column(
+                                                    spacing = 2,
+                                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                    children = listOf(
+                                                        SizedBox(
+                                                            height = 16,
+                                                            child = TextField(
+                                                                state = nameState,
+                                                                controller = textController,
+                                                                placeholder = "TYPE NAME",
                                                             ),
-                                                            OutlinedButton(
-                                                                text = "SHOW 6",
-                                                                onPressed = {
-                                                                    listController.showItem(listState, itemIndex = 5)
-                                                                },
-                                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                        ),
+                                                        SizedBox(
+                                                            height = 16,
+                                                            child = TextField(
+                                                                state = cityState,
+                                                                controller = textController,
+                                                                placeholder = "TYPE CITY",
+                                                            ),
+                                                        ),
+                                                        SizedBox(
+                                                            height = 14,
+                                                            child = Row(
+                                                                spacing = 2,
+                                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                                children = listOf(
+                                                                    Expanded(
+                                                                        child = OutlinedButton(
+                                                                            text = "SHOW 1",
+                                                                            onPressed = {
+                                                                                listController.showItem(listState, itemIndex = 0)
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                    Expanded(
+                                                                        child = OutlinedButton(
+                                                                            text = "SHOW 6",
+                                                                            onPressed = {
+                                                                                listController.showItem(listState, itemIndex = 5)
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                ),
                                                             ),
                                                         ),
                                                     ),
                                                 ),
-                                            ),
-                                            ListView(
-                                                state = listState,
-                                                controller = listController,
-                                                modifier = PixelModifier.Empty.fillMaxWidth().height(24),
-                                                spacing = 3,
-                                                items = List(6) { index ->
-                                                    val label = "ITEM ${index + 1}"
-                                                    OutlinedButton(
-                                                        text = label,
-                                                        onPressed = {
-                                                            selectedLabel.value = label
+                                                SizedBox(
+                                                    height = 24,
+                                                    child = ListView(
+                                                        state = listState,
+                                                        controller = listController,
+                                                        spacing = 3,
+                                                        items = List(6) { index ->
+                                                            val label = "ITEM ${index + 1}"
+                                                            SizedBox(
+                                                                height = 14,
+                                                                child = OutlinedButton(
+                                                                    text = label,
+                                                                    onPressed = {
+                                                                        selectedLabel.value = label
+                                                                    },
+                                                                    style = if (currentSelection == label) {
+                                                                        ButtonStyle.Accent
+                                                                    } else {
+                                                                        ButtonStyle.Default
+                                                                    },
+                                                                ),
+                                                            )
                                                         },
-                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                                        style = if (currentSelection == label) {
-                                                            ButtonStyle.Accent
-                                                        } else {
-                                                            ButtonStyle.Default
-                                                        },
-                                                    )
-                                                },
+                                                    ),
+                                                ),
                                             ),
                                         ),
                                     )

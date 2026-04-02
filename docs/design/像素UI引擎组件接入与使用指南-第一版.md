@@ -166,6 +166,7 @@ val config = PixelHostSetupConfig(
 - 需要局部上下文或局部短状态时，优先用 `Builder` / `StatefulBuilder`
 - 需要把一个 `Listenable` 作为子树环境向下广播时，优先用 `InheritedNotifier`
 - 重建应由 retained runtime 自动触发，不再把 `hostView.requestRender()` 当成页面主路径
+- 线性布局里需要子项横向铺满时，优先用 `crossAxisAlignment = CrossAxisAlignment.STRETCH + SizedBox(height = ...)`
 
 ### 当前推荐结构
 
@@ -230,6 +231,38 @@ class ExampleActivity : AppCompatActivity() {
 > `PixelPagerState`、`PixelListState`、`PixelTextFieldState` 这类状态对象，必须在 `content lambda` 外稳定持有，不要在每次重绘时重新创建。
 
 这是当前这套框架最重要的使用约束之一。
+
+当前公开布局更推荐下面这种写法：
+
+```kotlin
+Container(
+    padding = EdgeInsets.all(4),
+    child = Column(
+        spacing = 2,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        children = listOf(
+            SizedBox(
+                height = 16,
+                child = TextField(
+                    state = state,
+                    controller = controller,
+                    placeholder = "TYPE",
+                ),
+            ),
+            SizedBox(
+                height = 14,
+                child = OutlinedButton(
+                    text = "SUBMIT",
+                    onPressed = { /* ... */ },
+                ),
+            ),
+        ),
+    ),
+)
+```
+
+比起直接在公开页面层大量写 `modifier = PixelModifier.Empty.fillMaxWidth().height(...)`，
+这条路径更接近 Flutter 风格，也更适合作为后续长期 API。
 
 ### 局部上下文与局部状态
 
