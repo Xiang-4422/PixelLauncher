@@ -17,6 +17,9 @@ import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.ButtonStyle
+import com.purride.pixelui.Expanded
+import com.purride.pixelui.FlexFit
+import com.purride.pixelui.Flexible
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PixelList
@@ -199,6 +202,72 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 18))
+    }
+
+    @Test
+    fun expandedUsesTightFitAndOccupiesRemainingWidth() {
+        val result = runtime.render(
+            root = Row(
+                children = listOf(
+                    SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                    ),
+                    Expanded(
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+                spacing = 2,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(18, 1))
+    }
+
+    @Test
+    fun flexibleLooseKeepsChildAtMeasuredWidthWithinAllocatedSlot() {
+        val result = runtime.render(
+            root = Row(
+                children = listOf(
+                    SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                    ),
+                    Flexible(
+                        fit = FlexFit.LOOSE,
+                        child = SizedBox(
+                            width = 6,
+                            height = 4,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.ACCENT,
+                                borderTone = null,
+                            ),
+                        ),
+                    ),
+                ),
+                spacing = 2,
+            ),
+            logicalWidth = 20,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(7, 1))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(18, 1))
     }
 
     @Test

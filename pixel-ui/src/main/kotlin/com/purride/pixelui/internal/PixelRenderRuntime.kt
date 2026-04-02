@@ -13,6 +13,7 @@ import com.purride.pixelui.PixelColumnNode
 import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelFillMaxHeightElement
 import com.purride.pixelui.PixelFillMaxWidthElement
+import com.purride.pixelui.PixelFlexFit
 import com.purride.pixelui.PixelListNode
 import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelMainAxisSize
@@ -925,6 +926,7 @@ internal class PixelRenderRuntime(
             if (weight <= 0f) {
                 return@forEachIndexed
             }
+            val fit = childFlexFit(child)
             weightedSeen += 1
             val allocatedWidth = if (weightedSeen == weightedCount) {
                 remainingWidth - assignedWidth
@@ -940,7 +942,11 @@ internal class PixelRenderRuntime(
                 ),
             )
             sizes[index] = PixelSize(
-                width = allocatedWidth,
+                width = if (fit == PixelFlexFit.TIGHT) {
+                    allocatedWidth
+                } else {
+                    measured.width.coerceAtMost(allocatedWidth)
+                },
                 height = measured.height,
             )
         }
@@ -980,6 +986,7 @@ internal class PixelRenderRuntime(
             if (weight <= 0f) {
                 return@forEachIndexed
             }
+            val fit = childFlexFit(child)
             weightedSeen += 1
             val allocatedHeight = if (weightedSeen == weightedCount) {
                 remainingHeight - assignedHeight
@@ -996,7 +1003,11 @@ internal class PixelRenderRuntime(
             )
             sizes[index] = PixelSize(
                 width = measured.width,
-                height = allocatedHeight,
+                height = if (fit == PixelFlexFit.TIGHT) {
+                    allocatedHeight
+                } else {
+                    measured.height.coerceAtMost(allocatedHeight)
+                },
             )
         }
         return sizes
@@ -1009,6 +1020,14 @@ internal class PixelRenderRuntime(
             ?.weight
             ?.coerceAtLeast(0f)
             ?: 0f
+    }
+
+    private fun childFlexFit(node: PixelNode): PixelFlexFit {
+        return node.modifier.elements
+            .filterIsInstance<PixelWeightElement>()
+            .lastOrNull()
+            ?.fit
+            ?: PixelFlexFit.TIGHT
     }
 
     /**

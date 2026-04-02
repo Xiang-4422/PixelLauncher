@@ -97,6 +97,7 @@ private data class FlexWrapperWidget(
     override val key: Any? = null,
     val child: Widget,
     val flex: Int,
+    val fit: FlexFit,
 ) : LegacyNodeWidget {
     override val childWidgets: List<Widget>
         get() = listOf(child)
@@ -106,7 +107,13 @@ private data class FlexWrapperWidget(
         childNodes: List<PixelNode>,
     ): PixelNode {
         return childNodes.single().withExtraModifier(
-            PixelModifier.Empty.weight(flex.coerceAtLeast(1).toFloat()),
+            PixelModifier.Empty.weight(
+                weight = flex.coerceAtLeast(1).toFloat(),
+                fit = when (fit) {
+                    FlexFit.TIGHT -> PixelFlexFit.TIGHT
+                    FlexFit.LOOSE -> PixelFlexFit.LOOSE
+                },
+            ),
         )
     }
 }
@@ -253,18 +260,21 @@ fun Expanded(
         key = key,
         child = child,
         flex = flex,
+        fit = FlexFit.TIGHT,
     )
 }
 
 fun Flexible(
     child: Widget,
     flex: Int = 1,
+    fit: FlexFit = FlexFit.LOOSE,
     key: Any? = null,
 ): Widget {
     return FlexWrapperWidget(
         key = key,
         child = child,
         flex = flex,
+        fit = fit,
     )
 }
 
@@ -276,6 +286,7 @@ fun Spacer(
         key = key,
         child = SizedBox(key = "${key ?: "spacer"}-box"),
         flex = flex,
+        fit = FlexFit.TIGHT,
     )
 }
 

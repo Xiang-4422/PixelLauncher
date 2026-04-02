@@ -648,6 +648,33 @@ Row(
 )
 ```
 
+如果你希望权重子项直接吃满分配到的剩余空间，当前优先用 `Expanded`。  
+如果你希望子项只是在剩余槽位里“最多占到某个宽高”，而不是强制拉满，当前可以直接用 `Flexible(fit = FlexFit.LOOSE)`：
+
+```kotlin
+Row(
+    spacing = 2,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    children = listOf(
+        Expanded(
+            child = Container(
+                child = Center(child = Text("TIGHT")),
+            ),
+        ),
+        Flexible(
+            flex = 2,
+            fit = FlexFit.LOOSE,
+            child = SizedBox(
+                width = 18,
+                child = Container(
+                    child = Center(child = Text("LOOSE")),
+                ),
+            ),
+        ),
+    ),
+)
+```
+
 对齐示例：
 
 ```kotlin

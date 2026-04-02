@@ -52,7 +52,13 @@ data class PixelClickableElement(
 
 data class PixelWeightElement(
     val weight: Float,
+    val fit: PixelFlexFit = PixelFlexFit.TIGHT,
 ) : PixelModifierElement
+
+enum class PixelFlexFit {
+    TIGHT,
+    LOOSE,
+}
 
 fun PixelModifier.padding(all: Int): PixelModifier {
     return then(PixelPaddingElement(left = all, top = all, right = all, bottom = all))
@@ -116,6 +122,14 @@ fun PixelModifier.clickable(onClick: () -> Unit): PixelModifier {
     return then(PixelClickableElement(onClick))
 }
 
-fun PixelModifier.weight(weight: Float): PixelModifier {
-    return then(PixelWeightElement(weight = weight.coerceAtLeast(0f)))
+fun PixelModifier.weight(
+    weight: Float,
+    fit: PixelFlexFit = PixelFlexFit.TIGHT,
+): PixelModifier {
+    return then(
+        PixelWeightElement(
+            weight = weight.coerceAtLeast(0f),
+            fit = fit,
+        ),
+    )
 }
