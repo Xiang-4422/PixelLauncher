@@ -196,15 +196,17 @@ object DemoScenes {
                         Builder { context ->
                             val direction = Directionality.of(context)
                             StatefulBuilder { _, setState ->
-                                OutlinedButton(
-                                    text = "LOCAL STATE ${if (localStateHighlighted) "ON" else direction.name}",
-                                    onPressed = {
-                                        setState {
-                                            localStateHighlighted = !localStateHighlighted
-                                        }
-                                    },
-                                    style = if (localStateHighlighted) ButtonStyle.Accent else ButtonStyle.Default,
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                SizedBox(
+                                    height = 14,
+                                    child = OutlinedButton(
+                                        text = "LOCAL STATE ${if (localStateHighlighted) "ON" else direction.name}",
+                                        onPressed = {
+                                            setState {
+                                                localStateHighlighted = !localStateHighlighted
+                                            }
+                                        },
+                                        style = if (localStateHighlighted) ButtonStyle.Accent else ButtonStyle.Default,
+                                    ),
                                 )
                             }
                         },
@@ -212,34 +214,42 @@ object DemoScenes {
                             notifier = scopedCounter,
                             child = Column(
                                 spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                 children = listOf(
                                     ScopedCounterInfoWidget(),
-                                    OutlinedButton(
-                                        text = "SCOPE COUNT +1",
-                                        onPressed = {
-                                            scopedCounter.value = scopedCounter.value + 1
-                                        },
-                                        style = ButtonStyle.Accent,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "SCOPE COUNT +1",
+                                            onPressed = {
+                                                scopedCounter.value = scopedCounter.value + 1
+                                            },
+                                            style = ButtonStyle.Accent,
+                                        ),
                                     ),
                                 ),
                             ),
                         ),
-                        DecoratedBox(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(28),
-                            fillTone = PixelTone.OFF,
-                            borderTone = PixelTone.ACCENT,
-                            padding = 0,
-                            child = Column(
-                                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                                spacing = 2,
-                                children = listOf(
-                                    Text("段落", style = TextStyle.Accent),
-                                    Text(
-                                        data = "这是一段用于验证中文换行与省略的像素文本内容，后续页面可以直接复用这套能力。",
-                                        softWrap = true,
-                                        maxLines = 3,
-                                        overflow = TextOverflow.ELLIPSIS,
+                        SizedBox(
+                            height = 28,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ACCENT,
+                                padding = 0,
+                                child = Container(
+                                    padding = EdgeInsets.all(3),
+                                    child = Column(
+                                        spacing = 2,
+                                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                        children = listOf(
+                                            Text("段落", style = TextStyle.Accent),
+                                            Text(
+                                                data = "这是一段用于验证中文换行与省略的像素文本内容，后续页面可以直接复用这套能力。",
+                                                softWrap = true,
+                                                maxLines = 3,
+                                                overflow = TextOverflow.ELLIPSIS,
+                                            ),
+                                        ),
                                     ),
                                 ),
                             ),
@@ -574,49 +584,51 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                ListenableBuilder(
-                    listenable = controller,
-                    builder = {
-                        PageViewBuilder(
-                            axis = Axis.HORIZONTAL,
-                            state = state,
-                            controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                            itemCount = 3,
-                            itemBuilder = { index ->
-                                when (index) {
-                                    0 -> pagerPage(
-                                        title = "H PAGE 1 / NOW ${state.currentPage + 1}",
-                                        tone = PixelTone.ON,
-                                        onPrimaryAction = {
-                                            controller.nextPage(state)
-                                        },
-                                        primaryActionLabel = "GO 2",
-                                    )
-                                    1 -> pagerPage(
-                                        title = "H PAGE 2 / NOW ${state.currentPage + 1}",
-                                        tone = PixelTone.ACCENT,
-                                        onPrimaryAction = {
-                                            controller.nextPage(state)
-                                        },
-                                        onSecondaryAction = {
-                                            controller.previousPage(state)
-                                        },
-                                        primaryActionLabel = "GO 3",
-                                        secondaryActionLabel = "BACK 1",
-                                    )
-                                    else -> pagerPage(
-                                        title = "H PAGE 3 / NOW ${state.currentPage + 1}",
-                                        tone = PixelTone.ON,
-                                        onPrimaryAction = {
-                                            controller.jumpToPage(state, 0)
-                                        },
-                                        primaryActionLabel = "BACK 1",
-                                    )
-                                }
-                            },
-                        )
-                    },
+                Container(
+                    padding = EdgeInsets.all(3),
+                    child = ListenableBuilder(
+                        listenable = controller,
+                        builder = {
+                            PageViewBuilder(
+                                axis = Axis.HORIZONTAL,
+                                state = state,
+                                controller = controller,
+                                itemCount = 3,
+                                itemBuilder = { index ->
+                                    when (index) {
+                                        0 -> pagerPage(
+                                            title = "H PAGE 1 / NOW ${state.currentPage + 1}",
+                                            tone = PixelTone.ON,
+                                            onPrimaryAction = {
+                                                controller.nextPage(state)
+                                            },
+                                            primaryActionLabel = "GO 2",
+                                        )
+                                        1 -> pagerPage(
+                                            title = "H PAGE 2 / NOW ${state.currentPage + 1}",
+                                            tone = PixelTone.ACCENT,
+                                            onPrimaryAction = {
+                                                controller.nextPage(state)
+                                            },
+                                            onSecondaryAction = {
+                                                controller.previousPage(state)
+                                            },
+                                            primaryActionLabel = "GO 3",
+                                            secondaryActionLabel = "BACK 1",
+                                        )
+                                        else -> pagerPage(
+                                            title = "H PAGE 3 / NOW ${state.currentPage + 1}",
+                                            tone = PixelTone.ON,
+                                            onPrimaryAction = {
+                                                controller.jumpToPage(state, 0)
+                                            },
+                                            primaryActionLabel = "BACK 1",
+                                        )
+                                    }
+                                },
+                            )
+                        },
+                    ),
                 )
             },
         )
@@ -640,46 +652,48 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                ListenableBuilder(
-                    listenable = controller,
-                    builder = {
-                        PageView(
-                            axis = Axis.VERTICAL,
-                            state = state,
-                            controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                            pages = listOf(
-                                pagerPage(
-                                    title = "V PAGE 1 / NOW ${state.currentPage + 1}",
-                                    tone = PixelTone.ON,
-                                    onPrimaryAction = {
-                                        controller.nextPage(state)
-                                    },
-                                    primaryActionLabel = "GO 2",
+                Container(
+                    padding = EdgeInsets.all(3),
+                    child = ListenableBuilder(
+                        listenable = controller,
+                        builder = {
+                            PageView(
+                                axis = Axis.VERTICAL,
+                                state = state,
+                                controller = controller,
+                                pages = listOf(
+                                    pagerPage(
+                                        title = "V PAGE 1 / NOW ${state.currentPage + 1}",
+                                        tone = PixelTone.ON,
+                                        onPrimaryAction = {
+                                            controller.nextPage(state)
+                                        },
+                                        primaryActionLabel = "GO 2",
+                                    ),
+                                    pagerPage(
+                                        title = "V PAGE 2 / NOW ${state.currentPage + 1}",
+                                        tone = PixelTone.ACCENT,
+                                        onPrimaryAction = {
+                                            controller.nextPage(state)
+                                        },
+                                        onSecondaryAction = {
+                                            controller.previousPage(state)
+                                        },
+                                        primaryActionLabel = "GO 3",
+                                        secondaryActionLabel = "BACK 1",
+                                    ),
+                                    pagerPage(
+                                        title = "V PAGE 3 / NOW ${state.currentPage + 1}",
+                                        tone = PixelTone.ON,
+                                        onPrimaryAction = {
+                                            controller.jumpToPage(state, 0)
+                                        },
+                                        primaryActionLabel = "BACK 1",
+                                    ),
                                 ),
-                                pagerPage(
-                                    title = "V PAGE 2 / NOW ${state.currentPage + 1}",
-                                    tone = PixelTone.ACCENT,
-                                    onPrimaryAction = {
-                                        controller.nextPage(state)
-                                    },
-                                    onSecondaryAction = {
-                                        controller.previousPage(state)
-                                    },
-                                    primaryActionLabel = "GO 3",
-                                    secondaryActionLabel = "BACK 1",
-                                ),
-                                pagerPage(
-                                    title = "V PAGE 3 / NOW ${state.currentPage + 1}",
-                                    tone = PixelTone.ON,
-                                    onPrimaryAction = {
-                                        controller.jumpToPage(state, 0)
-                                    },
-                                    primaryActionLabel = "BACK 1",
-                                ),
-                            ),
-                        )
-                    },
+                            )
+                        },
+                    ),
                 )
             },
         )
@@ -1188,36 +1202,41 @@ object DemoScenes {
         onSecondaryAction: (() -> Unit)? = null,
         secondaryActionLabel: String? = null,
     ): Widget = Container(
-        modifier = PixelModifier.Empty.fillMaxSize(),
         fillTone = PixelTone.OFF,
         borderTone = tone,
         padding = EdgeInsets.all(3),
         child = Column(
-            modifier = PixelModifier.Empty.fillMaxSize(),
             spacing = 4,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
             children = buildList {
                 add(
-                    Center(
-                        modifier = PixelModifier.Empty.fillMaxWidth().height(20),
-                        child = Text(
-                            title,
-                            style = TextStyle(tone = tone),
+                    SizedBox(
+                        height = 20,
+                        child = Center(
+                            child = Text(
+                                title,
+                                style = TextStyle(tone = tone),
+                            ),
                         ),
-                    ),
+                    )
                 )
                 add(
-                    OutlinedButton(
-                        text = primaryActionLabel,
-                        onPressed = onPrimaryAction,
-                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                    SizedBox(
+                        height = 14,
+                        child = OutlinedButton(
+                            text = primaryActionLabel,
+                            onPressed = onPrimaryAction,
+                        ),
                     ),
                 )
                 if (onSecondaryAction != null && secondaryActionLabel != null) {
                     add(
-                        OutlinedButton(
-                            text = secondaryActionLabel,
-                            onPressed = onSecondaryAction,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        SizedBox(
+                            height = 14,
+                            child = OutlinedButton(
+                                text = secondaryActionLabel,
+                                onPressed = onSecondaryAction,
+                            ),
                         ),
                     )
                 }
@@ -1297,11 +1316,13 @@ object DemoScenes {
         return SingleChildScrollView(
             state = state,
             controller = controller,
-            modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-            child = Column(
-                modifier = PixelModifier.Empty.fillMaxWidth(),
-                spacing = 4,
-                children = children,
+            child = Container(
+                padding = EdgeInsets.all(4),
+                child = Column(
+                    spacing = 4,
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    children = children,
+                ),
             ),
         )
     }
@@ -1357,25 +1378,29 @@ object DemoScenes {
                         sectionTitle("PALETTE AND SHAPE"),
                         infoCard("THEME", themes[currentThemeIndex].name),
                         infoCard("SHAPE", shapes[currentShapeIndex].name),
-                        OutlinedButton(
-                            text = "NEXT THEME",
-                            onPressed = {
-                                setState {
-                                    currentThemeIndex = (currentThemeIndex + 1) % themes.size
-                                }
-                                applyHostAppearance()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        SizedBox(
+                            height = 14,
+                            child = OutlinedButton(
+                                text = "NEXT THEME",
+                                onPressed = {
+                                    setState {
+                                        currentThemeIndex = (currentThemeIndex + 1) % themes.size
+                                    }
+                                    applyHostAppearance()
+                                },
+                            ),
                         ),
-                        OutlinedButton(
-                            text = "NEXT SHAPE",
-                            onPressed = {
-                                setState {
-                                    currentShapeIndex = (currentShapeIndex + 1) % shapes.size
-                                }
-                                applyHostAppearance()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        SizedBox(
+                            height = 14,
+                            child = OutlinedButton(
+                                text = "NEXT SHAPE",
+                                onPressed = {
+                                    setState {
+                                        currentShapeIndex = (currentShapeIndex + 1) % shapes.size
+                                    }
+                                    applyHostAppearance()
+                                },
+                            ),
                         ),
                         Row(
                             spacing = 4,
@@ -1470,32 +1495,39 @@ object DemoScenes {
                             data = themedCard,
                             child = Column(
                                 spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                 children = listOf(
-                                    OutlinedButton(
-                                        text = "INCREASE",
-                                        onPressed = {
-                                            setState {
-                                                count += 1
-                                            }
-                                        },
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "INCREASE",
+                                            onPressed = {
+                                                setState {
+                                                    count += 1
+                                                }
+                                            },
+                                        ),
                                     ),
-                                    OutlinedButton(
-                                        text = "THEMED DISABLED",
-                                        onPressed = null,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "THEMED DISABLED",
+                                            onPressed = null,
+                                        ),
                                     ),
                                 ),
                             ),
                         ),
-                        OutlinedButton(
-                            text = "TOGGLE ACCENT",
-                            onPressed = {
-                                setState {
-                                    accentMode = !accentMode
-                                }
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        SizedBox(
+                            height = 14,
+                            child = OutlinedButton(
+                                text = "TOGGLE ACCENT",
+                                onPressed = {
+                                    setState {
+                                        accentMode = !accentMode
+                                    }
+                                },
+                            ),
                         ),
                         Row(
                             spacing = 4,
