@@ -30,6 +30,7 @@ data class PixelHostSetupConfig(
     val palette: PixelPalette? = null,
     val textRasterizer: PixelTextRasterizer? = null,
     val themeData: ThemeData? = null,
+    val textDirection: TextDirection = TextDirection.LTR,
     val content: (() -> Widget)? = null,
 )
 
@@ -55,6 +56,7 @@ fun createPixelHostSetup(
     config.palette?.let { hostView.setPalette(it) }
     config.textRasterizer?.let { hostView.textRasterizer = it }
     hostView.themeData = config.themeData
+    hostView.textDirection = config.textDirection
     config.content?.let { hostView.setContent(it) }
     val rootView = FrameLayout(context).apply {
         addView(

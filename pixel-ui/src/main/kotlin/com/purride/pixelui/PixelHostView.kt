@@ -29,6 +29,7 @@ import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelRenderRuntime
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.HostRootWidget
 import com.purride.pixelui.internal.RetainedBuildRuntime
 import kotlin.math.abs
 import kotlin.math.max
@@ -105,6 +106,18 @@ class PixelHostView @JvmOverloads constructor(
      * 避免每个场景最外层都再包一层 `Theme(data, child)`。
      */
     var themeData: ThemeData? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 宿主级默认文本方向。
+     *
+     * 这层会进入根环境，供 `Directionality.of(context)`、方向性对齐、
+     * 方向性边距和方向性定位统一消费。
+     */
+    var textDirection: TextDirection = TextDirection.LTR
         set(value) {
             field = value
             invalidate()
@@ -224,21 +237,12 @@ class PixelHostView @JvmOverloads constructor(
         val provider = contentProvider
         val renderResult = if (provider != null) {
             val rootWidget = provider()
-            val wrappedRoot = MediaQuery(
-                data = MediaQueryData(
-                    logicalWidth = screenProfile.logicalWidth,
-                    logicalHeight = screenProfile.logicalHeight,
-                    screenProfile = screenProfile,
-                ),
-                child = Directionality(
-                    textDirection = TextDirection.LTR,
-                    child = themeData?.let { theme ->
-                        Theme(
-                            data = theme,
-                            child = rootWidget,
-                        )
-                    } ?: rootWidget,
-                ),
+            val wrappedRoot = HostRootWidget(
+                screenProfile = screenProfile,
+                textDirection = textDirection,
+                themeData = themeData,
+                child = rootWidget,
+                key = "host-root",
             )
             buildRuntime.resolve(wrappedRoot)?.let { legacyRoot ->
                 runtime.render(

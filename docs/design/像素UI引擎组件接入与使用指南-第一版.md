@@ -69,6 +69,7 @@ val hostSetup = createPixelHostSetup(
         profilePreference = PixelHostProfilePreference(
             dotSizePx = 8,
         ),
+        textDirection = TextDirection.LTR,
         palette = PixelPalette.terminalGreen(),
         themeData = ThemeData(
             textStyle = TextStyle.Accent,
@@ -127,6 +128,7 @@ val config = PixelHostSetupConfig(
     profilePreference = PixelHostProfilePreference(
         dotSizePx = 8,
     ),
+    textDirection = TextDirection.LTR,
     palette = PixelPalette.terminalGreen(),
     themeData = ThemeData(
         textStyle = TextStyle.Accent,
@@ -186,6 +188,7 @@ class ExampleActivity : AppCompatActivity() {
                 profilePreference = PixelHostProfilePreference(
                     dotSizePx = 8,
                 ),
+                textDirection = TextDirection.LTR,
                 palette = PixelPalette.terminalGreen(),
                 content = { renderScene() },
             ),
