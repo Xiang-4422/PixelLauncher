@@ -22,7 +22,7 @@ internal class RetainedWidgetRenderRuntime(
         onVisualUpdate = onVisualUpdate,
         fallbackInflater = BridgeWidgetAdapterFactory::inflate,
     )
-    private val renderRuntime = PixelRenderRuntime(textRasterizer = textRasterizer)
+    private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
 
     fun render(
         root: Widget,
@@ -30,10 +30,8 @@ internal class RetainedWidgetRenderRuntime(
         logicalHeight: Int,
     ): PixelRenderResult {
         val elementRoot = buildRuntime.resolveElementTree(root)
-        val bridgeRoot = BridgeTreeResolver.resolve(elementRoot)
-            ?: error("当前 Widget 树没有生成可渲染的 bridge node。")
         return renderRuntime.render(
-            root = bridgeRoot,
+            root = elementRoot,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
         )
