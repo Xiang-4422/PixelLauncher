@@ -688,14 +688,21 @@ fun Row(
     return LegacyMultiChildWidget(
         key = key,
         children = children,
-    ) { _, childNodes ->
+    ) { context, childNodes ->
+        val direction = Directionality.of(context)
         PixelRow(
             children = childNodes,
             modifier = modifier,
             spacing = spacing,
             mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(),
-            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(),
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                axis = Axis.HORIZONTAL,
+                direction = direction,
+            ),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                axis = Axis.HORIZONTAL,
+                direction = direction,
+            ),
             key = key,
         )
     }
@@ -713,14 +720,21 @@ fun Column(
     return LegacyMultiChildWidget(
         key = key,
         children = children,
-    ) { _, childNodes ->
+    ) { context, childNodes ->
+        val direction = Directionality.of(context)
         PixelColumn(
             children = childNodes,
             modifier = modifier,
             spacing = spacing,
             mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(),
-            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(),
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                axis = Axis.VERTICAL,
+                direction = direction,
+            ),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                axis = Axis.VERTICAL,
+                direction = direction,
+            ),
             key = key,
         )
     }

@@ -1063,6 +1063,68 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun flutterStyleRowMainAxisStartUsesRightEdgeInRtl() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = SizedBox(
+                    width = 20,
+                    height = 8,
+                    child = Row(
+                        mainAxisSize = MainAxisSize.MAX,
+                        mainAxisAlignment = MainAxisAlignment.START,
+                        children = listOf(
+                            SizedBox(
+                                width = 4,
+                                height = 4,
+                                child = DecoratedBox(
+                                    fillTone = PixelTone.ACCENT,
+                                    borderTone = null,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 8,
+        )
+
+        assertTrue(hasTone(result, PixelTone.ACCENT, minX = 16, maxX = 19, minY = 0, maxY = 7))
+    }
+
+    @Test
+    fun flutterStyleColumnCrossAxisStartUsesRightEdgeInRtl() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = SizedBox(
+                    width = 20,
+                    height = 12,
+                    child = Column(
+                        modifier = PixelModifier.Empty.fillMaxWidth(),
+                        crossAxisAlignment = CrossAxisAlignment.START,
+                        children = listOf(
+                            SizedBox(
+                                width = 4,
+                                height = 4,
+                                child = DecoratedBox(
+                                    fillTone = PixelTone.ACCENT,
+                                    borderTone = null,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 12,
+        )
+
+        assertTrue(hasTone(result, PixelTone.ACCENT, minX = 16, maxX = 19, minY = 0, maxY = 11))
+    }
+
+    @Test
     fun flutterStylePositionedPlacesChildAtExplicitTopLeft() {
         val result = runtime.render(
             root = Stack(

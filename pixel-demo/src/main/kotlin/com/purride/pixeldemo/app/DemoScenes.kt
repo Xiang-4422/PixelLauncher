@@ -1942,6 +1942,69 @@ object DemoScenes {
                                             child = DecoratedBox(
                                                 fillTone = PixelTone.OFF,
                                                 borderTone = PixelTone.ON,
+                                                child = Row(
+                                                    mainAxisSize = MainAxisSize.MAX,
+                                                    mainAxisAlignment = MainAxisAlignment.START,
+                                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                                    children = listOf(
+                                                        SizedBox(
+                                                            width = 10,
+                                                            height = 8,
+                                                            child = DecoratedBox(
+                                                                fillTone = PixelTone.OFF,
+                                                                borderTone = PixelTone.ACCENT,
+                                                                child = Center(
+                                                                    child = Text("LTR", style = TextStyle.Accent),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.RTL,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = Row(
+                                                    mainAxisSize = MainAxisSize.MAX,
+                                                    mainAxisAlignment = MainAxisAlignment.START,
+                                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                                    children = listOf(
+                                                        SizedBox(
+                                                            width = 10,
+                                                            height = 8,
+                                                            child = DecoratedBox(
+                                                                fillTone = PixelTone.OFF,
+                                                                borderTone = PixelTone.ACCENT,
+                                                                child = Center(
+                                                                    child = Text("RTL", style = TextStyle.Accent),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 24,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.LTR,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
                                                 child = AlignDirectional(
                                                     alignment = AlignmentDirectional.BOTTOM_START,
                                                     child = SizedBox(
@@ -1975,6 +2038,65 @@ object DemoScenes {
                                                             borderTone = PixelTone.ACCENT,
                                                             child = Center(
                                                                 child = Text("RTL", style = TextStyle.Accent),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 24,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.LTR,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = Column(
+                                                    crossAxisAlignment = CrossAxisAlignment.START,
+                                                    children = listOf(
+                                                        SizedBox(
+                                                            width = 10,
+                                                            height = 8,
+                                                            child = DecoratedBox(
+                                                                fillTone = PixelTone.OFF,
+                                                                borderTone = PixelTone.ACCENT,
+                                                                child = Center(
+                                                                    child = Text("LTR", style = TextStyle.Accent),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.RTL,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = Column(
+                                                    crossAxisAlignment = CrossAxisAlignment.START,
+                                                    children = listOf(
+                                                        SizedBox(
+                                                            width = 10,
+                                                            height = 8,
+                                                            child = DecoratedBox(
+                                                                fillTone = PixelTone.OFF,
+                                                                borderTone = PixelTone.ACCENT,
+                                                                child = Center(
+                                                                    child = Text("RTL", style = TextStyle.Accent),
+                                                                ),
                                                             ),
                                                         ),
                                                     ),

@@ -647,6 +647,9 @@ Row(
 - 主轴排布 `START / CENTER / END / SPACE_BETWEEN / SPACE_AROUND / SPACE_EVENLY`
 - 交叉轴对齐 `START / CENTER / END / STRETCH`
 - `Expanded / Flexible / Spacer`
+- 如果页面已经挂了 `Directionality`
+  - `Row` 的 `mainAxisAlignment = START / END` 会跟着 `LTR / RTL` 自动翻转
+  - `Column` 的 `crossAxisAlignment = START / END` 也会跟着 `LTR / RTL` 自动翻转
 - `Align` 常用方位：
   - `TOP_START / TOP_CENTER / TOP_END`
   - `CENTER_START / CENTER / CENTER_END`
