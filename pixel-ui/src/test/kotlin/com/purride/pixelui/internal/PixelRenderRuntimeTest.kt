@@ -39,6 +39,7 @@ import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Positioned
+import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Spacer
@@ -1060,6 +1061,34 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(6, 4))
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(7, 5))
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(10, 7))
+    }
+
+    @Test
+    fun flutterStylePositionedFillExpandsChildAcrossAvailableArea() {
+        val result = runtime.render(
+            root = Stack(
+                children = listOf(
+                    PositionedFill(
+                        left = 1,
+                        top = 2,
+                        right = 1,
+                        bottom = 2,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+                modifier = PixelModifier.Empty.size(12, 10),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(0, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 2))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(10, 7))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(11, 8))
     }
 
     @Test

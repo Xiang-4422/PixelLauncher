@@ -491,6 +491,26 @@ fun Positioned(
     }
 }
 
+fun PositionedFill(
+    child: Widget,
+    left: Int = 0,
+    top: Int = 0,
+    right: Int = 0,
+    bottom: Int = 0,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    return Positioned(
+        child = child,
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        modifier = modifier,
+        key = key,
+    )
+}
+
 fun Row(
     children: List<Widget>,
     modifier: PixelModifier = PixelModifier.Empty,
