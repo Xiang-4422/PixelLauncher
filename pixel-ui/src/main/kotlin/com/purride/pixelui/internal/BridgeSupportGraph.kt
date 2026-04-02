@@ -16,27 +16,6 @@ internal class BridgeSupportGraph(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) : RetainedRenderSupport {
     override val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
-    override val elementTreeRenderer: ElementTreeRenderer = ElementTreeRenderer { root, logicalWidth, logicalHeight ->
-        renderElementTree(
-            root = root,
-            logicalWidth = logicalWidth,
-            logicalHeight = logicalHeight,
-        )
-    }
-
     private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
-
-    fun renderElementTree(
-        root: Element?,
-        logicalWidth: Int,
-        logicalHeight: Int,
-    ): PixelRenderResult {
-        val bridgeRoot = BridgeTreeResolver.resolve(root)
-            ?: error("当前 Widget 树没有生成可渲染的 bridge node。")
-        return renderRuntime.render(
-            root = bridgeRoot,
-            logicalWidth = logicalWidth,
-            logicalHeight = logicalHeight,
-        )
-    }
+    override val elementTreeRenderer: ElementTreeRenderer = BridgeElementTreeRenderer(renderRuntime)
 }
