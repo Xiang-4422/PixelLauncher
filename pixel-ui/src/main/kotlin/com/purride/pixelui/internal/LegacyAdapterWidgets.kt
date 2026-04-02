@@ -71,6 +71,15 @@ import com.purride.pixelui.toPixelTextAlign
 import com.purride.pixelui.weight
 import com.purride.pixelui.width
 
+internal interface LegacyNodeWidget : Widget {
+    val childWidgets: List<Widget>
+
+    fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode
+}
+
 internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeData {
     return explicit ?: Theme.maybeOf(this) ?: PixelThemeData.Default
 }
