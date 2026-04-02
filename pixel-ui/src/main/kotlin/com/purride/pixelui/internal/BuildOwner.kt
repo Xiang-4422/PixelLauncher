@@ -118,7 +118,7 @@ internal class BuildOwner(
             is InheritedWidget -> InheritedElement(widget)
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)
-            else -> adaptLegacyWidget(widget)?.let(::LegacyAdapterElement)
+            else -> LegacyWidgetAdapterFactory.inflate(widget)
                 ?: error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
         }
     }
