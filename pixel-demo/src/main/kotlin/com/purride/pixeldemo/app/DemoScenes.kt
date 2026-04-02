@@ -46,6 +46,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.TextField
@@ -160,6 +161,36 @@ object DemoScenes {
                         infoCard("混排", "HELLO 你好 UI", valueRasterizer = wideRasterizer),
                         infoCard("紧凑", "COMPACT 4X5", valueRasterizer = compactRasterizer),
                         infoCard("复用", "复用 Launcher 的字形包"),
+                        SizedBox(
+                            height = 34,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                padding = 0,
+                                child = Container(
+                                    padding = EdgeInsets.all(3),
+                                    child = Column(
+                                        spacing = 2,
+                                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                        children = listOf(
+                                            Text("TEXT ALIGN", style = TextStyle.Accent),
+                                            SizedBox(
+                                                height = 6,
+                                                child = Text("START", textAlign = TextAlign.START),
+                                            ),
+                                            SizedBox(
+                                                height = 6,
+                                                child = Text("CENTER", textAlign = TextAlign.CENTER),
+                                            ),
+                                            SizedBox(
+                                                height = 6,
+                                                child = Text("END", textAlign = TextAlign.END),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
                         EnvironmentInfoWidget(
                             label = "HOST ENV",
                         ),

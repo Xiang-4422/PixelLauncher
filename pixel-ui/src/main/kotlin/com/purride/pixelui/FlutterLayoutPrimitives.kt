@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.PixelTextAlign
 
 /**
  * Flutter 风格的主公开轴向类型。
@@ -62,6 +63,20 @@ enum class CrossAxisAlignment {
 enum class FlexFit {
     TIGHT,
     LOOSE,
+}
+
+enum class TextAlign {
+    START,
+    CENTER,
+    END,
+}
+
+internal fun TextAlign.toPixelTextAlign(): PixelTextAlign {
+    return when (this) {
+        TextAlign.START -> PixelTextAlign.START
+        TextAlign.CENTER -> PixelTextAlign.CENTER
+        TextAlign.END -> PixelTextAlign.END
+    }
 }
 
 internal fun Alignment.toPixelAlignment(): PixelAlignment {
