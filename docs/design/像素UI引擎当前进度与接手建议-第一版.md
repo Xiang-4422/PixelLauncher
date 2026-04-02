@@ -209,7 +209,7 @@
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
-- 公开层仍然保留少量 `PixelModifier` 兼容参数，但主推荐路径已经基本切到 Flutter 风格布局组件
+- 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要还留在底层节点和兼容运行时里
 - 还没有开始把 `:app` 页面迁进来
 
 ---
