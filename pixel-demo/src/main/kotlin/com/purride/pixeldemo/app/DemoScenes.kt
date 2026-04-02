@@ -40,6 +40,7 @@ import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextInputAction
+import com.purride.pixelui.Theme
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.ThemeData
@@ -600,13 +601,12 @@ object DemoScenes {
                         Container(
                             width = 40,
                             height = 16,
-                            theme = themedCard,
                             padding = EdgeInsets.all(2),
-                            child = Center(
-                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                child = Text(
-                                    "THEME",
-                                    theme = themedCard,
+                            child = Theme(
+                                data = themedCard,
+                                child = Center(
+                                    modifier = PixelModifier.Empty.fillMaxSize(),
+                                    child = Text("THEME"),
                                 ),
                             ),
                         ),
@@ -621,20 +621,26 @@ object DemoScenes {
                                 child = Text("MARGIN", style = TextStyle.Accent),
                             ),
                         ),
-                        OutlinedButton(
-                            text = "INCREASE",
-                            onPressed = {
-                                count += 1
-                                hostView.requestRender()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            theme = themedCard,
-                        ),
-                        OutlinedButton(
-                            text = "THEMED DISABLED",
-                            onPressed = null,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            theme = themedCard,
+                        Theme(
+                            data = themedCard,
+                            child = Column(
+                                spacing = 2,
+                                children = listOf(
+                                    OutlinedButton(
+                                        text = "INCREASE",
+                                        onPressed = {
+                                            count += 1
+                                            hostView.requestRender()
+                                        },
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                    OutlinedButton(
+                                        text = "THEMED DISABLED",
+                                        onPressed = null,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                ),
+                            ),
                         ),
                         OutlinedButton(
                             text = "TOGGLE ACCENT",

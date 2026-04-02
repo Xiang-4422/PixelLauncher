@@ -40,6 +40,7 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.Theme
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.clickable
@@ -439,24 +440,24 @@ class PixelRenderRuntimeTest {
         )
 
         val result = runtime.render(
-            root = Column(
-                modifier = PixelModifier.Empty.size(24, 20),
-                spacing = 2,
-                children = listOf(
-                    Container(
-                        width = 24,
-                        height = 8,
-                        theme = themed,
-                        child = Text(
-                            data = "THEMED",
-                            theme = themed,
+            root = Theme(
+                data = themed,
+                child = Column(
+                    modifier = PixelModifier.Empty.size(24, 20),
+                    spacing = 2,
+                    children = listOf(
+                        Container(
+                            width = 24,
+                            height = 8,
+                            child = Text(
+                                data = "THEMED",
+                            ),
                         ),
-                    ),
-                    OutlinedButton(
-                        text = "BTN",
-                        onPressed = { },
-                        modifier = PixelModifier.Empty.fillMaxWidth().height(10),
-                        theme = themed,
+                        OutlinedButton(
+                            text = "BTN",
+                            onPressed = { },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                        ),
                     ),
                 ),
             ) as com.purride.pixelui.PixelNode,
@@ -485,20 +486,21 @@ class PixelRenderRuntimeTest {
         )
 
         val result = runtime.render(
-            root = Column(
-                modifier = PixelModifier.Empty.size(24, 20),
-                spacing = 2,
-                children = listOf(
-                    Text(
-                        data = "ACCENT",
-                        style = TextStyle.Accent,
-                        theme = themed,
-                    ),
-                    OutlinedButton(
-                        text = "DISABLED",
-                        onPressed = null,
-                        modifier = PixelModifier.Empty.fillMaxWidth().height(10),
-                        theme = themed,
+            root = Theme(
+                data = themed,
+                child = Column(
+                    modifier = PixelModifier.Empty.size(24, 20),
+                    spacing = 2,
+                    children = listOf(
+                        Text(
+                            data = "ACCENT",
+                            style = TextStyle.Accent,
+                        ),
+                        OutlinedButton(
+                            text = "DISABLED",
+                            onPressed = null,
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                        ),
                     ),
                 ),
             ) as com.purride.pixelui.PixelNode,
@@ -522,12 +524,14 @@ class PixelRenderRuntimeTest {
         )
 
         val result = runtime.render(
-            root = TextField(
-                state = state,
-                controller = controller,
-                modifier = PixelModifier.Empty.size(20, 10),
-                theme = themed,
-                readOnly = true,
+            root = Theme(
+                data = themed,
+                child = TextField(
+                    state = state,
+                    controller = controller,
+                    modifier = PixelModifier.Empty.size(20, 10),
+                    readOnly = true,
+                ),
             ) as com.purride.pixelui.PixelNode,
             logicalWidth = 20,
             logicalHeight = 10,

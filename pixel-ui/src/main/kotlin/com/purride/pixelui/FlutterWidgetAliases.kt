@@ -29,6 +29,96 @@ private fun Widget.asPixelNode(): PixelNode {
         ?: error("当前阶段 Flutter 风格公开组件仍需映射到 PixelNode 兼容层，收到未兼容的 Widget 类型: ${this::class.qualifiedName}")
 }
 
+private fun PixelAlignment.toAlignment(): Alignment {
+    return when (this) {
+        PixelAlignment.TOP_START -> Alignment.TOP_START
+        PixelAlignment.CENTER -> Alignment.CENTER
+    }
+}
+
+private fun PixelSurfaceNode.matchesThemeStyle(style: ContainerStyle): Boolean {
+    return fillTone == style.fillTone &&
+        borderTone == style.borderTone &&
+        alignment.toAlignment() == style.alignment
+}
+
+private fun applyThemeToNode(
+    node: PixelNode,
+    theme: ThemeData,
+): PixelNode {
+    return when (node) {
+        is PixelTextNode -> {
+            val resolvedStyle = when (node.style) {
+                TextStyle.Default -> theme.textStyle
+                TextStyle.Accent -> theme.accentTextStyle
+                else -> node.style
+            }
+            node.copy(style = resolvedStyle)
+        }
+
+        is PixelButtonNode -> {
+            val resolvedStyle = when (node.style) {
+                ButtonStyle.Default -> theme.buttonStyle
+                ButtonStyle.Accent -> theme.accentButtonStyle
+                else -> node.style
+            }
+            node.copy(
+                style = resolvedStyle,
+                disabledStyle = theme.disabledButtonStyle,
+            )
+        }
+
+        is PixelTextFieldNode -> {
+            val resolvedStyle = when {
+                node.style != TextFieldStyle.Default -> node.style
+                !node.enabled -> theme.disabledTextFieldStyle
+                node.readOnly -> theme.readOnlyTextFieldStyle
+                else -> theme.textFieldStyle
+            }
+            node.copy(style = resolvedStyle)
+        }
+
+        is PixelSurfaceNode -> {
+            val resolvedStyle = when {
+                node.matchesThemeStyle(ContainerStyle.Default) -> theme.containerStyle
+                node.matchesThemeStyle(theme.accentContainerStyle) -> theme.accentContainerStyle
+                node.matchesThemeStyle(
+                    ContainerStyle(
+                        fillTone = PixelTone.OFF,
+                        borderTone = PixelTone.ACCENT,
+                        alignment = Alignment.CENTER,
+                    ),
+                ) -> theme.accentContainerStyle
+                else -> null
+            }
+            node.copy(
+                child = node.child?.let { applyThemeToNode(it, theme) },
+                fillTone = resolvedStyle?.fillTone ?: node.fillTone,
+                borderTone = resolvedStyle?.borderTone ?: node.borderTone,
+                alignment = resolvedStyle?.alignment?.toPixelAlignment() ?: node.alignment,
+            )
+        }
+
+        is PixelBoxNode -> node.copy(children = node.children.map { applyThemeToNode(it, theme) })
+        is PixelRowNode -> node.copy(children = node.children.map { applyThemeToNode(it, theme) })
+        is PixelColumnNode -> node.copy(children = node.children.map { applyThemeToNode(it, theme) })
+        is PixelPagerNode -> node.copy(pages = node.pages.map { applyThemeToNode(it, theme) })
+        is PixelListNode -> node.copy(items = node.items.map { applyThemeToNode(it, theme) })
+        is PixelSingleChildScrollViewNode -> node.copy(child = applyThemeToNode(node.child, theme))
+        else -> node
+    }
+}
+
+fun Theme(
+    data: ThemeData,
+    child: Widget,
+): Widget {
+    return applyThemeToNode(
+        node = child.asPixelNode(),
+        theme = data,
+    )
+}
+
 /**
  * Flutter 风格的 `Padding` 包装组件。
  *
