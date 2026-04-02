@@ -132,6 +132,24 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignmen
     }
 }
 
+internal fun MainAxisAlignment.toPixelMainAxisAlignment(
+    axis: Axis,
+    direction: TextDirection,
+): PixelMainAxisAlignment {
+    return when {
+        axis == Axis.HORIZONTAL && direction == TextDirection.RTL -> when (this) {
+            MainAxisAlignment.START -> PixelMainAxisAlignment.END
+            MainAxisAlignment.END -> PixelMainAxisAlignment.START
+            MainAxisAlignment.CENTER -> PixelMainAxisAlignment.CENTER
+            MainAxisAlignment.SPACE_BETWEEN -> PixelMainAxisAlignment.SPACE_BETWEEN
+            MainAxisAlignment.SPACE_AROUND -> PixelMainAxisAlignment.SPACE_AROUND
+            MainAxisAlignment.SPACE_EVENLY -> PixelMainAxisAlignment.SPACE_EVENLY
+        }
+
+        else -> toPixelMainAxisAlignment()
+    }
+}
+
 internal fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
     return when (this) {
         MainAxisSize.MIN -> PixelMainAxisSize.MIN
@@ -145,5 +163,21 @@ internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlign
         CrossAxisAlignment.CENTER -> PixelCrossAxisAlignment.CENTER
         CrossAxisAlignment.END -> PixelCrossAxisAlignment.END
         CrossAxisAlignment.STRETCH -> PixelCrossAxisAlignment.STRETCH
+    }
+}
+
+internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(
+    axis: Axis,
+    direction: TextDirection,
+): PixelCrossAxisAlignment {
+    return when {
+        axis == Axis.VERTICAL && direction == TextDirection.RTL -> when (this) {
+            CrossAxisAlignment.START -> PixelCrossAxisAlignment.END
+            CrossAxisAlignment.END -> PixelCrossAxisAlignment.START
+            CrossAxisAlignment.CENTER -> PixelCrossAxisAlignment.CENTER
+            CrossAxisAlignment.STRETCH -> PixelCrossAxisAlignment.STRETCH
+        }
+
+        else -> toPixelCrossAxisAlignment()
     }
 }
