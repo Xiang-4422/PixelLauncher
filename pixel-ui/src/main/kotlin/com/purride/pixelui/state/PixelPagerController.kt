@@ -2,6 +2,7 @@ package com.purride.pixelui.state
 
 import com.purride.pixelcore.AxisMotionController
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.ChangeNotifier
 import kotlin.math.abs
 
 /**
@@ -14,7 +15,7 @@ class PixelPagerController(
     private val distanceThresholdFraction: Float = 0.4f,
     private val velocityThresholdPagesPerSecond: Float = 0.35f,
     private val motionController: AxisMotionController = AxisMotionController(),
-) {
+) : ChangeNotifier() {
     fun create(
         pageCount: Int,
         currentPage: Int = 0,
@@ -46,11 +47,13 @@ class PixelPagerController(
         state.currentPage = safeTargetPage
         state.settleTargetPage = safeTargetPage
         state.motionState = motionController.reset()
+        notifyListeners()
     }
 
     fun startDrag(state: PixelPagerState) {
         state.settleTargetPage = state.currentPage
         state.motionState = motionController.startDrag(state.motionState)
+        notifyListeners()
     }
 
     fun dragBy(
@@ -67,6 +70,7 @@ class PixelPagerController(
             minOffsetPx = minOffset,
             maxOffsetPx = maxOffset,
         )
+        notifyListeners()
     }
 
     fun endDrag(
@@ -104,6 +108,7 @@ class PixelPagerController(
             state.currentPage = targetPage
             state.motionState = motionController.reset()
         }
+        notifyListeners()
     }
 
     fun cancelDrag(state: PixelPagerState) {
@@ -115,6 +120,7 @@ class PixelPagerController(
         if (!state.motionState.isSettling) {
             state.motionState = motionController.reset()
         }
+        notifyListeners()
     }
 
     fun step(state: PixelPagerState, deltaMs: Long) {
@@ -124,6 +130,7 @@ class PixelPagerController(
             state.currentPage = state.settleTargetPage.coerceIn(0, state.pageCount - 1)
             state.motionState = motionController.reset()
         }
+        notifyListeners()
     }
 
     fun snapshot(state: PixelPagerState): PixelPagerSnapshot {

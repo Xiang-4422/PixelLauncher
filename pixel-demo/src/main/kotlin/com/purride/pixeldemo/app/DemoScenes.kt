@@ -29,6 +29,7 @@ import com.purride.pixelui.PageController
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
 import com.purride.pixelui.previousPage
+import com.purride.pixelui.ListenableBuilder
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
@@ -46,6 +47,8 @@ import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.ValueListenableBuilder
+import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxHeight
 import com.purride.pixelui.fillMaxWidth
@@ -111,14 +114,14 @@ object DemoScenes {
         return when (sceneKind) {
             DemoSceneKind.TEXT -> textScene(textRasterizers)
             DemoSceneKind.PALETTE -> paletteScene(hostView, textRasterizers, applyPreferredProfile)
-            DemoSceneKind.TEXT_FIELD -> textFieldScene(hostView, textRasterizers)
-            DemoSceneKind.SINGLE_CHILD_SCROLL -> singleChildScrollScene(hostView, textRasterizers)
-            DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(hostView, textRasterizers)
-            DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(hostView, textRasterizers)
-            DemoSceneKind.LIST -> listScene(hostView, textRasterizers)
-            DemoSceneKind.FORM_AND_LIST -> formAndListScene(hostView, textRasterizers)
-            DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(hostView, textRasterizers)
-            DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(hostView, textRasterizers)
+            DemoSceneKind.TEXT_FIELD -> textFieldScene(textRasterizers)
+            DemoSceneKind.SINGLE_CHILD_SCROLL -> singleChildScrollScene(textRasterizers)
+            DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(textRasterizers)
+            DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(textRasterizers)
+            DemoSceneKind.LIST -> listScene(textRasterizers)
+            DemoSceneKind.FORM_AND_LIST -> formAndListScene(textRasterizers)
+            DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
+            DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
         }
     }
 
@@ -182,60 +185,65 @@ object DemoScenes {
         val scrollState = scrollController.create()
         val themes = PixelTheme.entries
         val shapes = PixelShape.entries
-        var currentThemeIndex = 0
-        var currentShapeIndex = 0
+        val currentThemeIndex = ValueNotifier(0)
+        val currentShapeIndex = ValueNotifier(0)
 
         fun applyHostAppearance() {
-            hostView.setPalette(PixelPalette.fromTheme(themes[currentThemeIndex]))
-            applyPreferredProfile(defaultProfile(pixelShape = shapes[currentShapeIndex]))
+            hostView.setPalette(PixelPalette.fromTheme(themes[currentThemeIndex.value]))
+            applyPreferredProfile(defaultProfile(pixelShape = shapes[currentShapeIndex.value]))
         }
 
         return DemoScene(
             initialProfile = defaultProfile(),
-            initialPalette = PixelPalette.fromTheme(themes[currentThemeIndex]),
+            initialPalette = PixelPalette.fromTheme(themes[currentThemeIndex.value]),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                scrollableRoot(
-                    state = scrollState,
-                    controller = scrollController,
-                    children = listOf(
-                        sectionTitle("PALETTE AND SHAPE"),
-                        infoCard("THEME", themes[currentThemeIndex].name),
-                        infoCard("SHAPE", shapes[currentShapeIndex].name),
-                        OutlinedButton(
-                            text = "NEXT THEME",
-                            onPressed = {
-                                currentThemeIndex = (currentThemeIndex + 1) % themes.size
-                                applyHostAppearance()
-                                hostView.requestRender()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                        ),
-                        OutlinedButton(
-                            text = "NEXT SHAPE",
-                            onPressed = {
-                                currentShapeIndex = (currentShapeIndex + 1) % shapes.size
-                                applyHostAppearance()
-                                hostView.requestRender()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                        ),
-                        Row(
-                            spacing = 4,
+                ValueListenableBuilder(
+                    listenable = currentThemeIndex,
+                ) { _, themeIndex ->
+                    ValueListenableBuilder(
+                        listenable = currentShapeIndex,
+                    ) { _, shapeIndex ->
+                        scrollableRoot(
+                            state = scrollState,
+                            controller = scrollController,
                             children = listOf(
-                                swatch(PixelTone.ON, "ON"),
-                                swatch(PixelTone.ACCENT, "ACCENT"),
-                                swatch(PixelTone.OFF, "OFF"),
+                                sectionTitle("PALETTE AND SHAPE"),
+                                infoCard("THEME", themes[themeIndex].name),
+                                infoCard("SHAPE", shapes[shapeIndex].name),
+                                OutlinedButton(
+                                    text = "NEXT THEME",
+                                    onPressed = {
+                                        currentThemeIndex.value = (themeIndex + 1) % themes.size
+                                        applyHostAppearance()
+                                    },
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                ),
+                                OutlinedButton(
+                                    text = "NEXT SHAPE",
+                                    onPressed = {
+                                        currentShapeIndex.value = (shapeIndex + 1) % shapes.size
+                                        applyHostAppearance()
+                                    },
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                ),
+                                Row(
+                                    spacing = 4,
+                                    children = listOf(
+                                        swatch(PixelTone.ON, "ON"),
+                                        swatch(PixelTone.ACCENT, "ACCENT"),
+                                        swatch(PixelTone.OFF, "OFF"),
+                                    ),
+                                ),
                             ),
-                        ),
-                    ),
-                )
+                        )
+                    }
+                }
             },
         )
     }
 
     private fun textFieldScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val scrollController = ScrollController()
@@ -245,8 +253,9 @@ object DemoScenes {
         val secondaryState = controller.create()
         val readOnlyState = controller.create(initialText = "READ ONLY VALUE THAT SHOULD CLIP")
         val accentTheme = accentUiTheme()
-        var liveText = primaryState.text
-        var submittedText = ""
+        val liveText = ValueNotifier(primaryState.text)
+        val submittedText = ValueNotifier("")
+        val localThemeTapCount = ValueNotifier(0)
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -259,134 +268,149 @@ object DemoScenes {
                     controller = scrollController,
                     children = listOf(
                         sectionTitle("TEXT FIELD"),
-                        infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
-                        infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
-                        infoCard("READ ONLY", "VISIBLE BUT LOCKED AND CLIPPED"),
-                        infoCard("LIVE", liveText.ifEmpty { "(EMPTY)" }, accent = liveText.isNotEmpty()),
-                        infoCard("SUBMITTED", submittedText.ifEmpty { "(NONE)" }, accent = submittedText.isNotEmpty()),
-                        TextField(
-                            state = primaryState,
-                            controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                            placeholder = "TYPE PRIMARY",
-                            style = TextFieldStyle.Default,
-                            autofocus = true,
-                            textInputAction = TextInputAction.NEXT,
-                            onChanged = { text ->
-                                liveText = text
-                                hostView.requestRender()
-                            },
-                            onSubmitted = { text ->
-                                submittedText = text
-                                controller.requestFocus(secondaryState)
-                                hostView.requestRender()
-                            },
-                        ),
-                        Column(
-                            spacing = 2,
-                            children = listOf(
-                                TextField(
-                                    state = secondaryState,
-                                    controller = controller,
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                    placeholder = "TYPE SECONDARY",
-                                    enabled = primaryState.text.isNotEmpty(),
-                                    textInputAction = TextInputAction.DONE,
-                                    onSubmitted = { text ->
-                                        submittedText = text
-                                        hostView.requestRender()
-                                    },
-                                ),
-                                TextField(
-                                    state = readOnlyState,
-                                    controller = controller,
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                    placeholder = "READ ONLY",
-                                    readOnly = true,
-                                ),
-                                OutlinedButton(
-                                    text = "CLEAR SECONDARY",
-                                    onPressed = if (secondaryState.text.isNotEmpty()) {
-                                        {
-                                            controller.clear(secondaryState)
-                                            hostView.requestRender()
-                                        }
-                                    } else {
-                                        null
-                                    },
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                ),
-                            ),
-                        ),
-                        Theme(
-                            data = ThemeData(
-                                textStyle = TextStyle.Default,
-                                buttonStyle = ButtonStyle.Default,
-                                disabledButtonStyle = ButtonStyle.Disabled,
-                                textFieldStyle = TextFieldStyle.Default,
-                                readOnlyTextFieldStyle = TextFieldStyle.Default.copy(
-                                    readOnlyBorderTone = PixelTone.ON,
-                                ),
-                                disabledTextFieldStyle = TextFieldStyle.Default.copy(
-                                    disabledBorderTone = PixelTone.ON,
-                                ),
-                                containerStyle = ContainerStyle.Default,
-                            ),
-                            child = Container(
-                                padding = EdgeInsets.all(2),
-                                child = Column(
+                        ListenableBuilder(
+                            listenable = controller,
+                            builder = {
+                                Column(
                                     spacing = 2,
                                     children = listOf(
-                                        Text("LOCAL DEFAULT OVERRIDE"),
+                                        infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
+                                        infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
+                                        infoCard("READ ONLY", "VISIBLE BUT LOCKED AND CLIPPED"),
+                                        ValueListenableBuilder(
+                                            listenable = liveText,
+                                        ) { _, value ->
+                                            infoCard("LIVE", value.ifEmpty { "(EMPTY)" }, accent = value.isNotEmpty())
+                                        },
+                                        ValueListenableBuilder(
+                                            listenable = submittedText,
+                                        ) { _, value ->
+                                            infoCard("SUBMITTED", value.ifEmpty { "(NONE)" }, accent = value.isNotEmpty())
+                                        },
+                                        TextField(
+                                            state = primaryState,
+                                            controller = controller,
+                                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                            placeholder = "TYPE PRIMARY",
+                                            style = TextFieldStyle.Default,
+                                            autofocus = true,
+                                            textInputAction = TextInputAction.NEXT,
+                                            onChanged = { text ->
+                                                liveText.value = text
+                                            },
+                                            onSubmitted = { text ->
+                                                submittedText.value = text
+                                                controller.requestFocus(secondaryState)
+                                            },
+                                        ),
+                                        Column(
+                                            spacing = 2,
+                                            children = listOf(
+                                                TextField(
+                                                    state = secondaryState,
+                                                    controller = controller,
+                                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                                    placeholder = "TYPE SECONDARY",
+                                                    enabled = primaryState.text.isNotEmpty(),
+                                                    textInputAction = TextInputAction.DONE,
+                                                    onSubmitted = { text ->
+                                                        submittedText.value = text
+                                                    },
+                                                ),
+                                                TextField(
+                                                    state = readOnlyState,
+                                                    controller = controller,
+                                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                                    placeholder = "READ ONLY",
+                                                    readOnly = true,
+                                                ),
+                                                OutlinedButton(
+                                                    text = "CLEAR SECONDARY",
+                                                    onPressed = if (secondaryState.text.isNotEmpty()) {
+                                                        { controller.clear(secondaryState) }
+                                                    } else {
+                                                        null
+                                                    },
+                                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                ),
+                                            ),
+                                        ),
+                                        Theme(
+                                            data = ThemeData(
+                                                textStyle = TextStyle.Default,
+                                                buttonStyle = ButtonStyle.Default,
+                                                disabledButtonStyle = ButtonStyle.Disabled,
+                                                textFieldStyle = TextFieldStyle.Default,
+                                                readOnlyTextFieldStyle = TextFieldStyle.Default.copy(
+                                                    readOnlyBorderTone = PixelTone.ON,
+                                                ),
+                                                disabledTextFieldStyle = TextFieldStyle.Default.copy(
+                                                    disabledBorderTone = PixelTone.ON,
+                                                ),
+                                                containerStyle = ContainerStyle.Default,
+                                            ),
+                                            child = Container(
+                                                padding = EdgeInsets.all(2),
+                                                child = Column(
+                                                    spacing = 2,
+                                                    children = listOf(
+                                                        Text("LOCAL DEFAULT OVERRIDE"),
+                                                        ValueListenableBuilder(
+                                                            listenable = localThemeTapCount,
+                                                        ) { _, tapCount ->
+                                                            OutlinedButton(
+                                                                text = "LOCAL DEFAULT $tapCount",
+                                                                onPressed = {
+                                                                    localThemeTapCount.value = tapCount + 1
+                                                                },
+                                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                            )
+                                                        },
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
                                         OutlinedButton(
-                                            text = "LOCAL DEFAULT",
-                                            onPressed = { hostView.requestRender() },
+                                            text = "FOCUS PRIMARY",
+                                            onPressed = {
+                                                controller.requestFocus(primaryState)
+                                            },
+                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        ),
+                                        Row(
+                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                            spacing = 2,
+                                            children = listOf(
+                                                OutlinedButton(
+                                                    text = "SELECT ALL",
+                                                    onPressed = {
+                                                        controller.selectAll(primaryState)
+                                                        controller.requestFocus(primaryState)
+                                                    },
+                                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                ),
+                                                OutlinedButton(
+                                                    text = "CURSOR END",
+                                                    onPressed = {
+                                                        controller.setSelection(
+                                                            state = primaryState,
+                                                            selectionStart = primaryState.text.length,
+                                                        )
+                                                        controller.requestFocus(primaryState)
+                                                    },
+                                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                    style = ButtonStyle.Accent,
+                                                ),
+                                            ),
+                                        ),
+                                        OutlinedButton(
+                                            text = "NULL DISABLED",
+                                            onPressed = null,
                                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                         ),
                                     ),
-                                ),
-                            ),
-                        ),
-                        OutlinedButton(
-                            text = "FOCUS PRIMARY",
-                            onPressed = {
-                                controller.requestFocus(primaryState)
-                                hostView.requestRender()
+                                )
                             },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                        ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            spacing = 2,
-                            children = listOf(
-                                OutlinedButton(
-                                    text = "SELECT ALL",
-                                    onPressed = {
-                                        controller.selectAll(primaryState)
-                                        controller.requestFocus(primaryState)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ),
-                                OutlinedButton(
-                                    text = "CURSOR END",
-                                    onPressed = {
-                                        controller.setSelection(
-                                            state = primaryState,
-                                            selectionStart = primaryState.text.length,
-                                        )
-                                        controller.requestFocus(primaryState)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    style = ButtonStyle.Accent,
-                                ),
-                            ),
-                        ),
-                        OutlinedButton(
-                            text = "NULL DISABLED",
-                            onPressed = null,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
                     ),
                 )
@@ -395,7 +419,6 @@ object DemoScenes {
     }
 
     private fun singleChildScrollScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val scrollController = ScrollController()
@@ -403,7 +426,7 @@ object DemoScenes {
         val textController = TextEditingController()
         val titleState = textController.create(initialText = "SCROLL PAGE")
         val noteState = textController.create(initialText = "DRAG TO READ")
-        var footerTapped = 0
+        val footerTapped = ValueNotifier(0)
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -414,54 +437,62 @@ object DemoScenes {
                     state = scrollState,
                     controller = scrollController,
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    child = Column(
-                        modifier = PixelModifier.Empty.fillMaxWidth(),
-                        spacing = 4,
-                        children = listOf(
-                            sectionTitle("SINGLE CHILD SCROLL"),
-                            infoCard("TITLE", titleState.text.ifEmpty { "(EMPTY)" }, accent = titleState.isFocused),
-                            TextField(
-                                state = titleState,
-                                controller = textController,
-                                modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                placeholder = "TYPE TITLE",
-                                style = TextFieldStyle.Default,
-                            ),
-                            infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
-                            TextField(
-                                state = noteState,
-                                controller = textController,
-                                modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                placeholder = "TYPE NOTE",
-                                style = TextFieldStyle(
-                                    borderTone = PixelTone.ON,
-                                    focusedBorderTone = PixelTone.ACCENT,
-                                    textStyle = TextStyle.Accent,
-                                    placeholderStyle = TextStyle.Default,
+                    child = ListenableBuilder(
+                        listenable = textController,
+                        builder = {
+                            Column(
+                                modifier = PixelModifier.Empty.fillMaxWidth(),
+                                spacing = 4,
+                                children = listOf(
+                                    sectionTitle("SINGLE CHILD SCROLL"),
+                                    infoCard("TITLE", titleState.text.ifEmpty { "(EMPTY)" }, accent = titleState.isFocused),
+                                    TextField(
+                                        state = titleState,
+                                        controller = textController,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                        placeholder = "TYPE TITLE",
+                                        style = TextFieldStyle.Default,
+                                    ),
+                                    infoCard("NOTE", noteState.text.ifEmpty { "(EMPTY)" }, accent = noteState.isFocused),
+                                    TextField(
+                                        state = noteState,
+                                        controller = textController,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                        placeholder = "TYPE NOTE",
+                                        style = TextFieldStyle(
+                                            borderTone = PixelTone.ON,
+                                            focusedBorderTone = PixelTone.ACCENT,
+                                            textStyle = TextStyle.Accent,
+                                            placeholderStyle = TextStyle.Default,
+                                        ),
+                                    ),
+                                    infoCard("SECTION", "A LONG COLUMN"),
+                                    infoCard("SCROLL", "WHOLE PAGE DRAGS"),
+                                    infoCard("TARGET", "ONE CHILD TREE"),
+                                    ValueListenableBuilder(
+                                        listenable = footerTapped,
+                                    ) { _, tapCount ->
+                                        OutlinedButton(
+                                            text = "FOOTER TAPS $tapCount",
+                                            onPressed = {
+                                                footerTapped.value = tapCount + 1
+                                            },
+                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                            style = ButtonStyle.Accent,
+                                        )
+                                    },
+                                    DecoratedBox(
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(18),
+                                        fillTone = PixelTone.OFF,
+                                        borderTone = PixelTone.ON,
+                                        child = Center(
+                                            modifier = PixelModifier.Empty.fillMaxSize(),
+                                            child = Text("BOTTOM CARD"),
+                                        ),
+                                    ),
                                 ),
-                            ),
-                            infoCard("SECTION", "A LONG COLUMN"),
-                            infoCard("SCROLL", "WHOLE PAGE DRAGS"),
-                            infoCard("TARGET", "ONE CHILD TREE"),
-                            OutlinedButton(
-                                text = "FOOTER TAPS $footerTapped",
-                                onPressed = {
-                                    footerTapped += 1
-                                    hostView.requestRender()
-                                },
-                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                style = ButtonStyle.Accent,
-                            ),
-                            DecoratedBox(
-                                modifier = PixelModifier.Empty.fillMaxWidth().height(18),
-                                fillTone = PixelTone.OFF,
-                                borderTone = PixelTone.ON,
-                                child = Center(
-                                    modifier = PixelModifier.Empty.fillMaxSize(),
-                                    child = Text("BOTTOM CARD"),
-                                ),
-                            ),
-                        ),
+                            )
+                        },
                     ),
                 )
             },
@@ -469,7 +500,6 @@ object DemoScenes {
     }
 
     private fun horizontalPagerScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val controller = PageController()
@@ -478,57 +508,53 @@ object DemoScenes {
             currentPage = 0,
             axis = Axis.HORIZONTAL,
         )
-        var reportedPage = state.currentPage + 1
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PageViewBuilder(
-                    axis = Axis.HORIZONTAL,
-                    state = state,
-                    controller = controller,
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                    onPageChanged = { page ->
-                        reportedPage = page + 1
-                        hostView.requestRender()
-                    },
-                    itemCount = 3,
-                    itemBuilder = { index ->
-                        when (index) {
-                            0 -> pagerPage(
-                                title = "H PAGE 1 / NOW $reportedPage",
-                                tone = PixelTone.ON,
-                                onPrimaryAction = {
-                                    controller.nextPage(state)
-                                    hostView.requestRender()
-                                },
-                                primaryActionLabel = "GO 2",
-                            )
-                            1 -> pagerPage(
-                                title = "H PAGE 2 / NOW $reportedPage",
-                                tone = PixelTone.ACCENT,
-                                onPrimaryAction = {
-                                    controller.nextPage(state)
-                                    hostView.requestRender()
-                                },
-                                onSecondaryAction = {
-                                    controller.previousPage(state)
-                                    hostView.requestRender()
-                                },
-                                primaryActionLabel = "GO 3",
-                                secondaryActionLabel = "BACK 1",
-                            )
-                            else -> pagerPage(
-                                title = "H PAGE 3 / NOW $reportedPage",
-                                tone = PixelTone.ON,
-                                onPrimaryAction = {
-                                    controller.jumpToPage(state, 0)
-                                    hostView.requestRender()
-                                },
-                                primaryActionLabel = "BACK 1",
-                            )
-                        }
+                ListenableBuilder(
+                    listenable = controller,
+                    builder = {
+                        PageViewBuilder(
+                            axis = Axis.HORIZONTAL,
+                            state = state,
+                            controller = controller,
+                            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                            itemCount = 3,
+                            itemBuilder = { index ->
+                                when (index) {
+                                    0 -> pagerPage(
+                                        title = "H PAGE 1 / NOW ${state.currentPage + 1}",
+                                        tone = PixelTone.ON,
+                                        onPrimaryAction = {
+                                            controller.nextPage(state)
+                                        },
+                                        primaryActionLabel = "GO 2",
+                                    )
+                                    1 -> pagerPage(
+                                        title = "H PAGE 2 / NOW ${state.currentPage + 1}",
+                                        tone = PixelTone.ACCENT,
+                                        onPrimaryAction = {
+                                            controller.nextPage(state)
+                                        },
+                                        onSecondaryAction = {
+                                            controller.previousPage(state)
+                                        },
+                                        primaryActionLabel = "GO 3",
+                                        secondaryActionLabel = "BACK 1",
+                                    )
+                                    else -> pagerPage(
+                                        title = "H PAGE 3 / NOW ${state.currentPage + 1}",
+                                        tone = PixelTone.ON,
+                                        onPrimaryAction = {
+                                            controller.jumpToPage(state, 0)
+                                        },
+                                        primaryActionLabel = "BACK 1",
+                                    )
+                                }
+                            },
+                        )
                     },
                 )
             },
@@ -536,7 +562,6 @@ object DemoScenes {
     }
 
     private fun verticalPagerScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val controller = PageController()
@@ -545,7 +570,6 @@ object DemoScenes {
             currentPage = 0,
             axis = Axis.VERTICAL,
         )
-        var reportedPage = state.currentPage + 1
         return DemoScene(
             initialProfile = ScreenProfile(
                 logicalWidth = 80,
@@ -555,62 +579,58 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PageView(
-                    axis = Axis.VERTICAL,
-                    state = state,
-                    controller = controller,
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                    onPageChanged = { page ->
-                        reportedPage = page + 1
-                        hostView.requestRender()
+                ListenableBuilder(
+                    listenable = controller,
+                    builder = {
+                        PageView(
+                            axis = Axis.VERTICAL,
+                            state = state,
+                            controller = controller,
+                            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                            pages = listOf(
+                                pagerPage(
+                                    title = "V PAGE 1 / NOW ${state.currentPage + 1}",
+                                    tone = PixelTone.ON,
+                                    onPrimaryAction = {
+                                        controller.nextPage(state)
+                                    },
+                                    primaryActionLabel = "GO 2",
+                                ),
+                                pagerPage(
+                                    title = "V PAGE 2 / NOW ${state.currentPage + 1}",
+                                    tone = PixelTone.ACCENT,
+                                    onPrimaryAction = {
+                                        controller.nextPage(state)
+                                    },
+                                    onSecondaryAction = {
+                                        controller.previousPage(state)
+                                    },
+                                    primaryActionLabel = "GO 3",
+                                    secondaryActionLabel = "BACK 1",
+                                ),
+                                pagerPage(
+                                    title = "V PAGE 3 / NOW ${state.currentPage + 1}",
+                                    tone = PixelTone.ON,
+                                    onPrimaryAction = {
+                                        controller.jumpToPage(state, 0)
+                                    },
+                                    primaryActionLabel = "BACK 1",
+                                ),
+                            ),
+                        )
                     },
-                    pages = listOf(
-                        pagerPage(
-                            title = "V PAGE 1 / NOW $reportedPage",
-                            tone = PixelTone.ON,
-                            onPrimaryAction = {
-                                controller.nextPage(state)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "GO 2",
-                        ),
-                        pagerPage(
-                            title = "V PAGE 2 / NOW $reportedPage",
-                            tone = PixelTone.ACCENT,
-                            onPrimaryAction = {
-                                controller.nextPage(state)
-                                hostView.requestRender()
-                            },
-                            onSecondaryAction = {
-                                controller.previousPage(state)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "GO 3",
-                            secondaryActionLabel = "BACK 1",
-                        ),
-                        pagerPage(
-                            title = "V PAGE 3 / NOW $reportedPage",
-                            tone = PixelTone.ON,
-                            onPrimaryAction = {
-                                controller.jumpToPage(state, 0)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "BACK 1",
-                        ),
-                    ),
                 )
             },
         )
     }
 
     private fun layoutAndClickScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val scrollController = ScrollController()
         val scrollState = scrollController.create()
-        var count = 0
-        var accentMode = false
+        val count = ValueNotifier(0)
+        val accentMode = ValueNotifier(false)
         val themedCard = ThemeData(
             textStyle = TextStyle.Accent,
             buttonStyle = ButtonStyle.Accent,
@@ -646,174 +666,178 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                scrollableRoot(
-                    state = scrollState,
-                    controller = scrollController,
-                    children = listOf(
-                        sectionTitle("LAYOUT AND CLICK"),
-                        infoCard("COUNTER", count.toString(), accent = accentMode),
-                        Container(
-                            width = 40,
-                            height = 16,
-                            padding = EdgeInsets.all(2),
-                            child = Theme(
-                                data = themedCard,
-                                child = Center(
-                                    modifier = PixelModifier.Empty.fillMaxSize(),
-                                    child = Text("THEME"),
-                                ),
-                            ),
-                        ),
-                        Container(
-                            width = 28,
-                            height = 12,
-                            margin = EdgeInsets.only(left = 6),
-                            fillTone = PixelTone.OFF,
-                            borderTone = PixelTone.ACCENT,
-                            child = Center(
-                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                child = Text("MARGIN", style = TextStyle.Accent),
-                            ),
-                        ),
-                        Theme(
-                            data = themedCard,
-                            child = Column(
-                                spacing = 2,
-                                children = listOf(
-                                    OutlinedButton(
-                                        text = "INCREASE",
-                                        onPressed = {
-                                            count += 1
-                                            hostView.requestRender()
-                                        },
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                    ),
-                                    OutlinedButton(
-                                        text = "THEMED DISABLED",
-                                        onPressed = null,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                    ),
-                                ),
-                            ),
-                        ),
-                        OutlinedButton(
-                            text = "TOGGLE ACCENT",
-                            onPressed = {
-                                accentMode = !accentMode
-                                hostView.requestRender()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                        ),
-                        Row(
-                            spacing = 4,
+                ValueListenableBuilder(
+                    listenable = count,
+                ) { _, counterValue ->
+                    ValueListenableBuilder(
+                        listenable = accentMode,
+                    ) { _, isAccentMode ->
+                        scrollableRoot(
+                            state = scrollState,
+                            controller = scrollController,
                             children = listOf(
-                                demoSquare("LEFT"),
-                                demoSquare("RIGHT"),
-                            ),
-                        ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(18),
-                            spacing = 2,
-                            children = listOf(
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("1X"),
-                                    ),
-                                ),
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ACCENT,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("2X", style = TextStyle.Accent),
-                                    ),
-                                ),
-                            ),
-                        ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(20),
-                            spacing = 2,
-                            mainAxisAlignment = MainAxisAlignment.CENTER,
-                            crossAxisAlignment = CrossAxisAlignment.CENTER,
-                            children = listOf(
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.size(18, 8),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("MID"),
-                                    ),
-                                ),
-                                DecoratedBox(
-                                    modifier = PixelModifier.Empty.size(18, 14),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ACCENT,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("TALL", style = TextStyle.Accent),
-                                    ),
-                                ),
-                            ),
-                        ),
-                        GestureDetector(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(24),
-                            onTap = {
-                                accentMode = !accentMode
-                                hostView.requestRender()
-                            },
-                            child = DecoratedBox(
-                                modifier = PixelModifier.Empty.fillMaxSize(),
-                            fillTone = PixelTone.OFF,
-                            borderTone = PixelTone.ON,
-                            padding = 2,
-                            child = Column(
-                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                spacing = 2,
-                                mainAxisAlignment = MainAxisAlignment.END,
-                                crossAxisAlignment = CrossAxisAlignment.END,
-                                children = listOf(
-                                    DecoratedBox(
-                                        modifier = PixelModifier.Empty.size(16, 6),
-                                        fillTone = PixelTone.OFF,
-                                        borderTone = PixelTone.ON,
+                                sectionTitle("LAYOUT AND CLICK"),
+                                infoCard("COUNTER", counterValue.toString(), accent = isAccentMode),
+                                Container(
+                                    width = 40,
+                                    height = 16,
+                                    padding = EdgeInsets.all(2),
+                                    child = Theme(
+                                        data = themedCard,
                                         child = Center(
                                             modifier = PixelModifier.Empty.fillMaxSize(),
-                                            child = Text("END"),
+                                            child = Text("THEME"),
                                         ),
                                     ),
-                                    DecoratedBox(
-                                        modifier = PixelModifier.Empty.size(24, 6),
+                                ),
+                                Container(
+                                    width = 28,
+                                    height = 12,
+                                    margin = EdgeInsets.only(left = 6),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ACCENT,
+                                    child = Center(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        child = Text("MARGIN", style = TextStyle.Accent),
+                                    ),
+                                ),
+                                Theme(
+                                    data = themedCard,
+                                    child = Column(
+                                        spacing = 2,
+                                        children = listOf(
+                                            OutlinedButton(
+                                                text = "INCREASE",
+                                                onPressed = {
+                                                    count.value = counterValue + 1
+                                                },
+                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                            ),
+                                            OutlinedButton(
+                                                text = "THEMED DISABLED",
+                                                onPressed = null,
+                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                OutlinedButton(
+                                    text = "TOGGLE ACCENT",
+                                    onPressed = {
+                                        accentMode.value = !isAccentMode
+                                    },
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                ),
+                                Row(
+                                    spacing = 4,
+                                    children = listOf(
+                                        demoSquare("LEFT"),
+                                        demoSquare("RIGHT"),
+                                    ),
+                                ),
+                                Row(
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(18),
+                                    spacing = 2,
+                                    children = listOf(
+                                        DecoratedBox(
+                                            modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Center(
+                                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                                child = Text("1X"),
+                                            ),
+                                        ),
+                                        DecoratedBox(
+                                            modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ACCENT,
+                                            child = Center(
+                                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                                child = Text("2X", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                Row(
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(20),
+                                    spacing = 2,
+                                    mainAxisAlignment = MainAxisAlignment.CENTER,
+                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                    children = listOf(
+                                        DecoratedBox(
+                                            modifier = PixelModifier.Empty.size(18, 8),
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Center(
+                                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                                child = Text("MID"),
+                                            ),
+                                        ),
+                                        DecoratedBox(
+                                            modifier = PixelModifier.Empty.size(18, 14),
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ACCENT,
+                                            child = Center(
+                                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                                child = Text("TALL", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                                GestureDetector(
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(24),
+                                    onTap = {
+                                        accentMode.value = !isAccentMode
+                                    },
+                                    child = DecoratedBox(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
                                         fillTone = PixelTone.OFF,
-                                        borderTone = PixelTone.ACCENT,
-                                        child = Align(
+                                        borderTone = PixelTone.ON,
+                                        padding = 2,
+                                        child = Column(
                                             modifier = PixelModifier.Empty.fillMaxSize(),
-                                            alignment = Alignment.CENTER,
-                                            child = Text("ALIGN", style = TextStyle.Accent),
+                                            spacing = 2,
+                                            mainAxisAlignment = MainAxisAlignment.END,
+                                            crossAxisAlignment = CrossAxisAlignment.END,
+                                            children = listOf(
+                                                DecoratedBox(
+                                                    modifier = PixelModifier.Empty.size(16, 6),
+                                                    fillTone = PixelTone.OFF,
+                                                    borderTone = PixelTone.ON,
+                                                    child = Center(
+                                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                                        child = Text("END"),
+                                                    ),
+                                                ),
+                                                DecoratedBox(
+                                                    modifier = PixelModifier.Empty.size(24, 6),
+                                                    fillTone = PixelTone.OFF,
+                                                    borderTone = PixelTone.ACCENT,
+                                                    child = Align(
+                                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                                        alignment = Alignment.CENTER,
+                                                        child = Text("ALIGN", style = TextStyle.Accent),
+                                                    ),
+                                                ),
+                                            ),
                                         ),
                                     ),
                                 ),
                             ),
-                        ),
-                    ),
-                )
-                )
+                        )
+                    }
+                }
             },
         )
     }
 
     private fun listScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val controller = ScrollController()
         val state = controller.create()
-        var tapCount = 0
+        val tapCount = ValueNotifier(0)
 
         return DemoScene(
             initialProfile = ScreenProfile(
@@ -824,95 +848,98 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                Column(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    spacing = 4,
-                    children = listOf(
-                        sectionTitle("VERTICAL LIST"),
-                        infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
-                        infoCard("TAPS", tapCount.toString()),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            spacing = 2,
-                            children = listOf(
-                                OutlinedButton(
-                                    text = "SHOW 1",
-                                    onPressed = {
-                                        controller.showItem(state, itemIndex = 0)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                ListenableBuilder(
+                    listenable = controller,
+                    builder = {
+                        ValueListenableBuilder(
+                            listenable = tapCount,
+                        ) { _, taps ->
+                            Column(
+                                modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                                spacing = 4,
+                                children = listOf(
+                                    sectionTitle("VERTICAL LIST"),
+                                    infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.scrollOffsetPx > 0f),
+                                    infoCard("TAPS", taps.toString()),
+                                    Row(
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        spacing = 2,
+                                        children = listOf(
+                                            OutlinedButton(
+                                                text = "SHOW 1",
+                                                onPressed = {
+                                                    controller.showItem(state, itemIndex = 0)
+                                                },
+                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                            ),
+                                            OutlinedButton(
+                                                text = "SHOW 8",
+                                                onPressed = {
+                                                    controller.showItem(state, itemIndex = 7)
+                                                },
+                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                style = ButtonStyle.Accent,
+                                            ),
+                                        ),
+                                    ),
+                                    Row(
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        spacing = 2,
+                                        children = listOf(
+                                            OutlinedButton(
+                                                text = "TOP",
+                                                onPressed = {
+                                                    controller.jumpToStart(state)
+                                                },
+                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                            ),
+                                            OutlinedButton(
+                                                text = "BOTTOM",
+                                                onPressed = {
+                                                    controller.jumpToEnd(state)
+                                                },
+                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                style = ButtonStyle.Accent,
+                                            ),
+                                        ),
+                                    ),
+                                    ListViewBuilder(
+                                        itemCount = 8,
+                                        state = state,
+                                        controller = controller,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(40),
+                                        itemBuilder = { index ->
+                                            OutlinedButton(
+                                                text = if (index == 0) {
+                                                    "TAP ITEM ${index + 1}"
+                                                } else {
+                                                    "LIST ITEM ${index + 1}"
+                                                },
+                                                onPressed = {
+                                                    if (index == 0) {
+                                                        tapCount.value = taps + 1
+                                                    }
+                                                },
+                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                style = if (index % 2 == 0) {
+                                                    ButtonStyle.Accent
+                                                } else {
+                                                    ButtonStyle.Default
+                                                },
+                                            )
+                                        },
+                                        spacing = 3,
+                                    ),
                                 ),
-                                OutlinedButton(
-                                    text = "SHOW 8",
-                                    onPressed = {
-                                        controller.showItem(state, itemIndex = 7)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    style = ButtonStyle.Accent,
-                                ),
-                            ),
-                        ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            spacing = 2,
-                            children = listOf(
-                                OutlinedButton(
-                                    text = "TOP",
-                                    onPressed = {
-                                        controller.jumpToStart(state)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ),
-                                OutlinedButton(
-                                    text = "BOTTOM",
-                                    onPressed = {
-                                        controller.jumpToEnd(state)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    style = ButtonStyle.Accent,
-                                ),
-                            ),
-                        ),
-                        ListViewBuilder(
-                            itemCount = 8,
-                            state = state,
-                            controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(40),
-                            itemBuilder = { index ->
-                                OutlinedButton(
-                                    text = if (index == 0) {
-                                        "TAP ITEM ${index + 1}"
-                                    } else {
-                                        "LIST ITEM ${index + 1}"
-                                    },
-                                    onPressed = {
-                                        if (index == 0) {
-                                            tapCount += 1
-                                            hostView.requestRender()
-                                        }
-                                    },
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                    style = if (index % 2 == 0) {
-                                        ButtonStyle.Accent
-                                    } else {
-                                        ButtonStyle.Default
-                                    },
-                                )
-                            },
-                            spacing = 3,
-                        ),
-                    ),
+                            )
+                        }
+                    },
                 )
             },
         )
     }
 
     private fun formAndListScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val textController = TextEditingController()
@@ -921,7 +948,7 @@ object DemoScenes {
         val listController = ScrollController()
         val listState = listController.create()
         val accentTheme = accentUiTheme()
-        var selectedLabel = "ITEM 1"
+        val selectedLabel = ValueNotifier("ITEM 1")
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -929,83 +956,93 @@ object DemoScenes {
             initialTextRasterizer = textRasterizers.default,
             initialThemeData = accentTheme,
             content = {
-                Column(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
-                    spacing = 4,
-                    children = listOf(
-                        sectionTitle("FORM + LIST"),
-                        infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
-                        infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
-                        infoCard("SELECTED", selectedLabel),
-                        Column(
-                            spacing = 2,
-                            children = listOf(
-                                TextField(
-                                    state = nameState,
-                                    controller = textController,
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                    placeholder = "TYPE NAME",
-                                ),
-                                TextField(
-                                    state = cityState,
-                                    controller = textController,
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                    placeholder = "TYPE CITY",
-                                ),
-                                Row(
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                    spacing = 2,
-                                    children = listOf(
-                                        OutlinedButton(
-                                            text = "SHOW 1",
-                                            onPressed = {
-                                                listController.showItem(listState, itemIndex = 0)
-                                                hostView.requestRender()
-                                            },
-                                            modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                ListenableBuilder(
+                    listenable = textController,
+                    builder = {
+                        ListenableBuilder(
+                            listenable = listController,
+                            builder = {
+                                ValueListenableBuilder(
+                                    listenable = selectedLabel,
+                                ) { _, currentSelection ->
+                                    Column(
+                                        modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                                        spacing = 4,
+                                        children = listOf(
+                                            sectionTitle("FORM + LIST"),
+                                            infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
+                                            infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
+                                            infoCard("SELECTED", currentSelection),
+                                            Column(
+                                                spacing = 2,
+                                                children = listOf(
+                                                    TextField(
+                                                        state = nameState,
+                                                        controller = textController,
+                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                                        placeholder = "TYPE NAME",
+                                                    ),
+                                                    TextField(
+                                                        state = cityState,
+                                                        controller = textController,
+                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                                        placeholder = "TYPE CITY",
+                                                    ),
+                                                    Row(
+                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                        spacing = 2,
+                                                        children = listOf(
+                                                            OutlinedButton(
+                                                                text = "SHOW 1",
+                                                                onPressed = {
+                                                                    listController.showItem(listState, itemIndex = 0)
+                                                                },
+                                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                            ),
+                                                            OutlinedButton(
+                                                                text = "SHOW 6",
+                                                                onPressed = {
+                                                                    listController.showItem(listState, itemIndex = 5)
+                                                                },
+                                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                            ListView(
+                                                state = listState,
+                                                controller = listController,
+                                                modifier = PixelModifier.Empty.fillMaxWidth().height(24),
+                                                spacing = 3,
+                                                items = List(6) { index ->
+                                                    val label = "ITEM ${index + 1}"
+                                                    OutlinedButton(
+                                                        text = label,
+                                                        onPressed = {
+                                                            selectedLabel.value = label
+                                                        },
+                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                        style = if (currentSelection == label) {
+                                                            ButtonStyle.Accent
+                                                        } else {
+                                                            ButtonStyle.Default
+                                                        },
+                                                    )
+                                                },
+                                            ),
                                         ),
-                                        OutlinedButton(
-                                            text = "SHOW 6",
-                                            onPressed = {
-                                                listController.showItem(listState, itemIndex = 5)
-                                                hostView.requestRender()
-                                            },
-                                            modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                        ),
-                                    ),
-                                ),
-                            ),
-                        ),
-                        ListView(
-                            state = listState,
-                            controller = listController,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(24),
-                            spacing = 3,
-                            items = List(6) { index ->
-                                val label = "ITEM ${index + 1}"
-                                OutlinedButton(
-                                    text = label,
-                                    onPressed = {
-                                        selectedLabel = label
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                    style = if (selectedLabel == label) {
-                                        ButtonStyle.Accent
-                                    } else {
-                                        ButtonStyle.Default
-                                    },
-                                )
+                                    )
+                                }
                             },
-                        ),
-                    ),
+                        )
+                    },
                 )
             },
         )
     }
 
     private fun pagerAndListScene(
-        hostView: PixelHostView,
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val pagerController = PageController()
@@ -1016,7 +1053,7 @@ object DemoScenes {
         )
         val listController = ScrollController()
         val listState = listController.create()
-        var itemTapCount = 0
+        val itemTapCount = ValueNotifier(0)
 
         return DemoScene(
             initialProfile = ScreenProfile(
@@ -1027,73 +1064,75 @@ object DemoScenes {
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                PageView(
-                    axis = Axis.VERTICAL,
-                    state = pagerState,
-                    controller = pagerController,
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                    pages = listOf(
-                        pagerPage(
-                            title = "OUTER PAGE 1",
-                            tone = PixelTone.ACCENT,
-                            onPrimaryAction = {
-                                pagerController.nextPage(pagerState)
-                                hostView.requestRender()
-                            },
-                            primaryActionLabel = "GO LIST",
-                        ),
-                        DecoratedBox(
-                            modifier = PixelModifier.Empty.fillMaxSize(),
-                            fillTone = PixelTone.OFF,
-                            borderTone = PixelTone.ACCENT,
-                            child = Column(
-                                modifier = PixelModifier.Empty.fillMaxSize().padding(3),
-                                spacing = 4,
-                                children = listOf(
-                                    Text("PAGE 2 LIST", style = TextStyle.Accent),
-                                    infoCard(
-                                        label = "TIP",
-                                        value = "LIST FIRST THEN PAGE",
-                                        accent = true,
-                                    ),
-                                    infoCard(
-                                        label = "TAPS",
-                                        value = itemTapCount.toString(),
-                                        accent = itemTapCount > 0,
-                                    ),
-                                    ListView(
-                                        state = listState,
-                                        controller = listController,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(56),
-                                        spacing = 3,
-                                        items = List(7) { index ->
+                ValueListenableBuilder(
+                    listenable = itemTapCount,
+                    builder = { _, tapCount ->
+                        PageView(
+                            axis = Axis.VERTICAL,
+                            state = pagerState,
+                            controller = pagerController,
+                            modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                            pages = listOf(
+                                pagerPage(
+                                    title = "OUTER PAGE 1",
+                                    tone = PixelTone.ACCENT,
+                                    onPrimaryAction = {
+                                        pagerController.nextPage(pagerState)
+                                    },
+                                    primaryActionLabel = "GO LIST",
+                                ),
+                                DecoratedBox(
+                                    modifier = PixelModifier.Empty.fillMaxSize(),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ACCENT,
+                                    child = Column(
+                                        modifier = PixelModifier.Empty.fillMaxSize().padding(3),
+                                        spacing = 4,
+                                        children = listOf(
+                                            Text("PAGE 2 LIST", style = TextStyle.Accent),
+                                            infoCard(
+                                                label = "TIP",
+                                                value = "LIST FIRST THEN PAGE",
+                                                accent = true,
+                                            ),
+                                            infoCard(
+                                                label = "TAPS",
+                                                value = tapCount.toString(),
+                                                accent = tapCount > 0,
+                                            ),
+                                            ListView(
+                                                state = listState,
+                                                controller = listController,
+                                                modifier = PixelModifier.Empty.fillMaxWidth().height(56),
+                                                spacing = 3,
+                                                items = List(7) { index ->
+                                                    OutlinedButton(
+                                                        text = "INNER ITEM ${index + 1}",
+                                                        onPressed = {
+                                                            itemTapCount.value = tapCount + 1
+                                                        },
+                                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                        style = if (index % 2 == 0) {
+                                                            ButtonStyle.Accent
+                                                        } else {
+                                                            ButtonStyle.Default
+                                                        },
+                                                    )
+                                                },
+                                            ),
                                             OutlinedButton(
-                                                text = "INNER ITEM ${index + 1}",
+                                                text = "BACK PAGE 1",
                                                 onPressed = {
-                                                    itemTapCount += 1
-                                                    hostView.requestRender()
+                                                    pagerController.previousPage(pagerState)
                                                 },
                                                 modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                                style = if (index % 2 == 0) {
-                                                    ButtonStyle.Accent
-                                                } else {
-                                                    ButtonStyle.Default
-                                                },
-                                            )
-                                        },
-                                    ),
-                                    OutlinedButton(
-                                        text = "BACK PAGE 1",
-                                        onPressed = {
-                                            pagerController.previousPage(pagerState)
-                                            hostView.requestRender()
-                                        },
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                            ),
+                                        ),
                                     ),
                                 ),
                             ),
-                        ),
-                    ),
+                        )
+                    },
                 )
             },
         )

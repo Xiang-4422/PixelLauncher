@@ -1,5 +1,7 @@
 package com.purride.pixelui.state
 
+import com.purride.pixelui.ChangeNotifier
+
 /**
  * 通用文本输入控制器。
  *
@@ -8,7 +10,7 @@ package com.purride.pixelui.state
  * - 更新文本与选区
  * - 聚焦与失焦
  */
-class PixelTextFieldController {
+class PixelTextFieldController : ChangeNotifier() {
 
     fun create(
         initialText: String = "",
@@ -31,6 +33,7 @@ class PixelTextFieldController {
         state.text = text
         state.selectionStart = selectionStart.coerceIn(0, text.length)
         state.selectionEnd = selectionEnd.coerceIn(state.selectionStart, text.length)
+        notifyListeners()
     }
 
     fun setSelection(
@@ -40,6 +43,7 @@ class PixelTextFieldController {
     ) {
         state.selectionStart = selectionStart.coerceIn(0, state.text.length)
         state.selectionEnd = selectionEnd.coerceIn(state.selectionStart, state.text.length)
+        notifyListeners()
     }
 
     fun clear(state: PixelTextFieldState) {
@@ -58,21 +62,25 @@ class PixelTextFieldController {
         state.isFocused = true
         state.focusRequested = false
         state.blurRequested = false
+        notifyListeners()
     }
 
     fun blur(state: PixelTextFieldState) {
         state.isFocused = false
         state.focusRequested = false
         state.blurRequested = false
+        notifyListeners()
     }
 
     fun requestFocus(state: PixelTextFieldState) {
         state.focusRequested = true
         state.blurRequested = false
+        notifyListeners()
     }
 
     fun requestBlur(state: PixelTextFieldState) {
         state.blurRequested = true
         state.focusRequested = false
+        notifyListeners()
     }
 }

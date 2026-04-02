@@ -1,7 +1,9 @@
 package com.purride.pixelui
 
+import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelTone
-import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.internal.LegacyNodeWidget
+import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -12,10 +14,9 @@ import com.purride.pixelui.state.PixelTextFieldState
 /**
  * Flutter 风格公开别名层。
  *
- * 当前阶段先把外部使用语言统一为 Flutter 风格，
- * 底层仍然复用现有 `Pixel*` 组件实现，保证演进成本可控。
+ * 这一轮不再走“公开 Widget -> 直接强转 PixelNode”的路线，
+ * 而是让公开组件先形成 retained build tree，再在最后一步翻译成 legacy node。
  */
-
 typealias TextStyle = PixelTextStyle
 typealias ButtonStyle = PixelButtonStyle
 typealias ContainerStyle = PixelContainerStyle
@@ -24,146 +25,102 @@ typealias TextOverflow = PixelTextOverflow
 typealias TextInputAction = PixelTextInputAction
 typealias ThemeData = PixelThemeData
 
-private fun Widget.asPixelNode(): PixelNode {
-    return this as? PixelNode
-        ?: error("当前阶段 Flutter 风格公开组件仍需映射到 PixelNode 兼容层，收到未兼容的 Widget 类型: ${this::class.qualifiedName}")
-}
-
-private fun PixelAlignment.toAlignment(): Alignment {
+private fun PixelNode.withExtraModifier(extra: PixelModifier): PixelNode {
+    val merged = modifier.then(extra)
     return when (this) {
-        PixelAlignment.TOP_START -> Alignment.TOP_START
-        PixelAlignment.CENTER -> Alignment.CENTER
+        is PixelTextNode -> copy(modifier = merged)
+        is PixelSurfaceNode -> copy(modifier = merged)
+        is PixelBoxNode -> copy(modifier = merged)
+        is PixelRowNode -> copy(modifier = merged)
+        is PixelColumnNode -> copy(modifier = merged)
+        is PixelPagerNode -> copy(modifier = merged)
+        is PixelListNode -> copy(modifier = merged)
+        is PixelSingleChildScrollViewNode -> copy(modifier = merged)
+        is PixelTextFieldNode -> copy(modifier = merged)
+        is PixelButtonNode -> copy(modifier = merged)
+        is CustomDraw -> copy(modifier = merged)
+        else -> this
     }
 }
 
-private fun PixelSurfaceNode.matchesThemeStyle(style: ContainerStyle): Boolean {
-    return fillTone == style.fillTone &&
-        borderTone == style.borderTone &&
-        alignment.toAlignment() == style.alignment
+private fun BuildContext.resolveTheme(explicit: ThemeData?): ThemeData {
+    return explicit ?: Theme.maybeOf(this) ?: ThemeData.Default
 }
 
-private fun applyThemeToNode(
-    node: PixelNode,
-    theme: ThemeData,
-): PixelNode {
-    return when (node) {
-        is PixelTextNode -> {
-            val resolvedStyle = if (node.styleLocked) {
-                node.style
-            } else {
-                when (node.style) {
-                    TextStyle.Default -> theme.textStyle
-                    TextStyle.Accent -> theme.accentTextStyle
-                    else -> node.style
-                }
-            }
-            node.copy(
-                style = resolvedStyle,
-                styleLocked = true,
-            )
-        }
+private data class LegacyLeafWidget(
+    override val key: Any? = null,
+    private val factory: (BuildContext) -> PixelNode,
+) : LegacyNodeWidget {
+    override val childWidgets: List<Widget> = emptyList()
 
-        is PixelButtonNode -> {
-            val resolvedStyle = if (node.styleLocked) {
-                node.style
-            } else {
-                when (node.style) {
-                    ButtonStyle.Default -> theme.buttonStyle
-                    ButtonStyle.Accent -> theme.accentButtonStyle
-                    else -> node.style
-                }
-            }
-            val resolvedDisabledStyle = if (node.styleLocked) {
-                node.disabledStyle
-            } else {
-                theme.disabledButtonStyle
-            }
-            node.copy(
-                style = resolvedStyle,
-                disabledStyle = resolvedDisabledStyle,
-                styleLocked = true,
-            )
-        }
-
-        is PixelTextFieldNode -> {
-            val resolvedStyle = if (node.styleLocked) {
-                node.style
-            } else {
-                when {
-                    node.style != TextFieldStyle.Default -> node.style
-                    !node.enabled -> theme.disabledTextFieldStyle
-                    node.readOnly -> theme.readOnlyTextFieldStyle
-                    else -> theme.textFieldStyle
-                }
-            }
-            node.copy(
-                style = resolvedStyle,
-                styleLocked = true,
-            )
-        }
-
-        is PixelSurfaceNode -> {
-            val resolvedStyle = if (node.styleLocked) {
-                null
-            } else {
-                when {
-                    node.matchesThemeStyle(ContainerStyle.Default) -> theme.containerStyle
-                    node.matchesThemeStyle(theme.accentContainerStyle) -> theme.accentContainerStyle
-                    node.matchesThemeStyle(
-                        ContainerStyle(
-                            fillTone = PixelTone.OFF,
-                            borderTone = PixelTone.ACCENT,
-                            alignment = Alignment.CENTER,
-                        ),
-                    ) -> theme.accentContainerStyle
-                    else -> null
-                }
-            }
-            node.copy(
-                child = node.child?.let { applyThemeToNode(it, theme) },
-                fillTone = resolvedStyle?.fillTone ?: node.fillTone,
-                borderTone = resolvedStyle?.borderTone ?: node.borderTone,
-                alignment = resolvedStyle?.alignment?.toPixelAlignment() ?: node.alignment,
-                styleLocked = true,
-            )
-        }
-
-        is PixelBoxNode -> node.copy(children = node.children.map { applyThemeToNode(it, theme) })
-        is PixelRowNode -> node.copy(children = node.children.map { applyThemeToNode(it, theme) })
-        is PixelColumnNode -> node.copy(children = node.children.map { applyThemeToNode(it, theme) })
-        is PixelPagerNode -> node.copy(pages = node.pages.map { applyThemeToNode(it, theme) })
-        is PixelListNode -> node.copy(items = node.items.map { applyThemeToNode(it, theme) })
-        is PixelSingleChildScrollViewNode -> node.copy(child = applyThemeToNode(node.child, theme))
-        else -> node
+    override fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode {
+        return factory(context)
     }
 }
 
-fun Theme(
-    data: ThemeData,
-    child: Widget,
-): Widget {
-    return applyThemeToNode(
-        node = child.asPixelNode(),
-        theme = data,
-    )
+private data class LegacySingleChildWidget(
+    override val key: Any? = null,
+    val child: Widget,
+    private val factory: (BuildContext, PixelNode) -> PixelNode,
+) : LegacyNodeWidget {
+    override val childWidgets: List<Widget>
+        get() = listOf(child)
+
+    override fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode {
+        return factory(context, childNodes.single())
+    }
 }
 
-/**
- * Flutter 风格的 `Padding` 包装组件。
- *
- * 当前阶段直接复用兼容层的 `PixelModifier.padding(...)`，
- * 先把公开 API 拉到 Flutter 风格，底层布局语义保持不变。
- */
+private data class LegacyMultiChildWidget(
+    override val key: Any? = null,
+    val children: List<Widget>,
+    private val factory: (BuildContext, List<PixelNode>) -> PixelNode,
+) : LegacyNodeWidget {
+    override val childWidgets: List<Widget>
+        get() = children
+
+    override fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode {
+        return factory(context, childNodes)
+    }
+}
+
+private data class FlexWrapperWidget(
+    override val key: Any? = null,
+    val child: Widget,
+    val flex: Int,
+) : LegacyNodeWidget {
+    override val childWidgets: List<Widget>
+        get() = listOf(child)
+
+    override fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode {
+        return childNodes.single().withExtraModifier(
+            PixelModifier.Empty.weight(flex.coerceAtLeast(1).toFloat()),
+        )
+    }
+}
+
 fun Padding(
     child: Widget,
     all: Int,
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.padding(all),
-        alignment = Alignment.TOP_START,
+    return Padding(
+        child = child,
+        padding = EdgeInsets.all(all),
+        modifier = modifier,
         key = key,
     )
 }
@@ -174,17 +131,21 @@ fun Padding(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.padding(
-            left = padding.left,
-            top = padding.top,
-            right = padding.right,
-            bottom = padding.bottom,
-        ),
-        alignment = Alignment.TOP_START,
+    return LegacySingleChildWidget(
         key = key,
-    )
+        child = child,
+    ) { _, childNode ->
+        PixelBox(
+            children = listOf(childNode),
+            modifier = modifier.padding(
+                left = padding.left,
+                top = padding.top,
+                right = padding.right,
+                bottom = padding.bottom,
+            ),
+            alignment = PixelAlignment.TOP_START,
+        )
+    }
 }
 
 fun Padding(
@@ -194,10 +155,13 @@ fun Padding(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.padding(horizontal = horizontal, vertical = vertical),
-        alignment = Alignment.TOP_START,
+    return Padding(
+        child = child,
+        padding = EdgeInsets.symmetric(
+            horizontal = horizontal,
+            vertical = vertical,
+        ),
+        modifier = modifier,
         key = key,
     )
 }
@@ -211,10 +175,15 @@ fun Padding(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.padding(left = left, top = top, right = right, bottom = bottom),
-        alignment = Alignment.TOP_START,
+    return Padding(
+        child = child,
+        padding = EdgeInsets.only(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+        ),
+        modifier = modifier,
         key = key,
     )
 }
@@ -225,17 +194,18 @@ fun Align(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.fillMaxSize(),
-        alignment = alignment,
+    return LegacySingleChildWidget(
         key = key,
-    )
+        child = child,
+    ) { _, childNode ->
+        PixelBox(
+            children = listOf(childNode),
+            modifier = modifier.fillMaxSize(),
+            alignment = alignment.toPixelAlignment(),
+        )
+    }
 }
 
-/**
- * 当前阶段先提供最常用的 `Center`。
- */
 fun Center(
     child: Widget,
     modifier: PixelModifier = PixelModifier.Empty,
@@ -249,11 +219,6 @@ fun Center(
     )
 }
 
-/**
- * Flutter 风格的 `SizedBox`。
- *
- * 当前既支持空盒子，也支持包裹单个 child 的固定尺寸容器。
- */
 fun SizedBox(
     width: Int? = null,
     height: Int? = null,
@@ -261,61 +226,56 @@ fun SizedBox(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    val sizedModifier = when {
-        width != null && height != null -> modifier.size(width, height)
-        width != null -> modifier.width(width)
-        height != null -> modifier.height(height)
-        else -> modifier
+    return LegacyMultiChildWidget(
+        key = key,
+        children = child?.let(::listOf) ?: emptyList(),
+    ) { _, childNodes ->
+        val baseModifier = when {
+            width != null && height != null -> modifier.size(width, height)
+            width != null -> modifier.width(width)
+            height != null -> modifier.height(height)
+            else -> modifier
+        }
+        PixelBox(
+            children = childNodes,
+            modifier = baseModifier,
+            alignment = PixelAlignment.TOP_START,
+        )
     }
-    return Stack(
-        children = child?.let { listOf(it) } ?: emptyList(),
-        modifier = sizedModifier,
-        alignment = Alignment.TOP_START,
-        key = key,
-    )
-}
-
-/**
- * `Flexible/Expanded/Spacer` 当前仍然复用兼容层的 `weight` 语义。
- *
- * 这一步先把公开组件名称和分类拉正，后续再把“松/紧约束”语义补齐。
- */
-fun Flexible(
-    child: Widget,
-    flex: Int = 1,
-    modifier: PixelModifier = PixelModifier.Empty,
-    key: Any? = null,
-): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.weight(flex.coerceAtLeast(0).toFloat()),
-        alignment = Alignment.TOP_START,
-        key = key,
-    )
 }
 
 fun Expanded(
     child: Widget,
     flex: Int = 1,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Flexible(
+    return FlexWrapperWidget(
+        key = key,
         child = child,
         flex = flex,
-        modifier = modifier,
+    )
+}
+
+fun Flexible(
+    child: Widget,
+    flex: Int = 1,
+    key: Any? = null,
+): Widget {
+    return FlexWrapperWidget(
         key = key,
+        child = child,
+        flex = flex,
     )
 }
 
 fun Spacer(
     flex: Int = 1,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return SizedBox(
-        modifier = modifier.weight(flex.coerceAtLeast(0).toFloat()),
+    return FlexWrapperWidget(
         key = key,
+        child = SizedBox(key = "${key ?: "spacer"}-box"),
+        flex = flex,
     )
 }
 
@@ -325,12 +285,14 @@ fun GestureDetector(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return Stack(
-        children = listOf(child),
-        modifier = modifier.clickable(onTap),
-        alignment = Alignment.TOP_START,
+    return LegacySingleChildWidget(
         key = key,
-    )
+        child = child,
+    ) { _, childNode ->
+        childNode.withExtraModifier(
+            modifier.clickable(onTap),
+        )
+    }
 }
 
 fun Text(
@@ -343,21 +305,25 @@ fun Text(
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = when {
-        theme == null -> style
-        style == TextStyle.Default -> theme.textStyle
-        style == TextStyle.Accent -> theme.accentTextStyle
-        else -> style
-    }
-    return PixelText(
-        text = data,
-        modifier = modifier,
-        style = resolvedStyle,
-        softWrap = softWrap,
-        maxLines = maxLines,
-        overflow = overflow,
+    return LegacyLeafWidget(
         key = key,
-    )
+    ) { context ->
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = when (style) {
+            TextStyle.Default -> resolvedTheme.textStyle
+            TextStyle.Accent -> resolvedTheme.accentTextStyle
+            else -> style
+        }
+        PixelText(
+            text = data,
+            modifier = modifier,
+            style = resolvedStyle,
+            softWrap = softWrap,
+            maxLines = maxLines,
+            overflow = overflow,
+            key = key,
+        )
+    }
 }
 
 fun DecoratedBox(
@@ -369,15 +335,20 @@ fun DecoratedBox(
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
-    return PixelSurface(
-        child = child?.asPixelNode(),
-        modifier = modifier,
-        fillTone = fillTone,
-        borderTone = borderTone,
-        padding = padding,
-        alignment = alignment.toPixelAlignment(),
+    return LegacyMultiChildWidget(
         key = key,
-    )
+        children = child?.let(::listOf) ?: emptyList(),
+    ) { _, childNodes ->
+        PixelSurface(
+            child = childNodes.singleOrNull(),
+            modifier = modifier,
+            fillTone = fillTone,
+            borderTone = borderTone,
+            padding = padding,
+            alignment = alignment.toPixelAlignment(),
+            key = key,
+        )
+    }
 }
 
 fun Container(
@@ -394,53 +365,68 @@ fun Container(
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = style ?: theme?.let {
-        val defaultContainer = ContainerStyle(
-            fillTone = fillTone,
-            borderTone = borderTone,
-            alignment = alignment,
-        )
-        if (defaultContainer == ContainerStyle.Default) {
-            it.containerStyle
-        } else if (defaultContainer == it.accentContainerStyle) {
-            it.accentContainerStyle
-        } else {
-            defaultContainer
-        }
-    } ?: ContainerStyle(
-        fillTone = fillTone,
-        borderTone = borderTone,
-        alignment = alignment,
-    )
-    val sizedModifier = when {
-        width != null && height != null -> modifier.size(width, height)
-        width != null -> modifier.width(width)
-        height != null -> modifier.height(height)
-        else -> modifier
-    }
-    val decoratedChild = child?.let {
-        if (padding != null) {
-            Padding(child = it, padding = padding)
-        } else {
-            it
-        }
-    }
-    val decoratedBox = DecoratedBox(
-        child = decoratedChild,
-        modifier = sizedModifier,
-        fillTone = resolvedStyle.fillTone,
-        borderTone = resolvedStyle.borderTone,
-        padding = 0,
-        alignment = resolvedStyle.alignment,
+    return LegacyMultiChildWidget(
         key = key,
-    )
-    return if (margin != null) {
-        Padding(
-            child = decoratedBox,
-            padding = margin,
+        children = child?.let(::listOf) ?: emptyList(),
+    ) { context, childNodes ->
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = style ?: run {
+            val requestedStyle = ContainerStyle(
+                fillTone = fillTone,
+                borderTone = borderTone,
+                alignment = alignment,
+            )
+            when (requestedStyle) {
+                ContainerStyle.Default -> resolvedTheme.containerStyle
+                resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
+                else -> requestedStyle
+            }
+        }
+        val paddedChild = childNodes.singleOrNull()?.let { childNode ->
+            if (padding == null) {
+                childNode
+            } else {
+                PixelBox(
+                    children = listOf(childNode),
+                    modifier = PixelModifier.Empty.padding(
+                        left = padding.left,
+                        top = padding.top,
+                        right = padding.right,
+                        bottom = padding.bottom,
+                    ),
+                    alignment = PixelAlignment.TOP_START,
+                )
+            }
+        }
+        val sizedModifier = when {
+            width != null && height != null -> modifier.size(width, height)
+            width != null -> modifier.width(width)
+            height != null -> modifier.height(height)
+            else -> modifier
+        }
+        val baseNode = PixelSurface(
+            child = paddedChild,
+            modifier = sizedModifier,
+            fillTone = resolvedStyle.fillTone,
+            borderTone = resolvedStyle.borderTone,
+            padding = 0,
+            alignment = resolvedStyle.alignment.toPixelAlignment(),
+            key = key,
         )
-    } else {
-        decoratedBox
+        if (margin == null) {
+            baseNode
+        } else {
+            PixelBox(
+                children = listOf(baseNode),
+                modifier = PixelModifier.Empty.padding(
+                    left = margin.left,
+                    top = margin.top,
+                    right = margin.right,
+                    bottom = margin.bottom,
+                ),
+                alignment = PixelAlignment.TOP_START,
+            )
+        }
     }
 }
 
@@ -450,12 +436,17 @@ fun Stack(
     alignment: Alignment = Alignment.TOP_START,
     key: Any? = null,
 ): Widget {
-    return PixelBox(
-        children = children.map { it.asPixelNode() },
-        modifier = modifier,
-        alignment = alignment.toPixelAlignment(),
+    return LegacyMultiChildWidget(
         key = key,
-    )
+        children = children,
+    ) { _, childNodes ->
+        PixelBox(
+            children = childNodes,
+            modifier = modifier,
+            alignment = alignment.toPixelAlignment(),
+            key = key,
+        )
+    }
 }
 
 fun Row(
@@ -466,14 +457,19 @@ fun Row(
     crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
     key: Any? = null,
 ): Widget {
-    return PixelRow(
-        children = children.map { it.asPixelNode() },
-        modifier = modifier,
-        spacing = spacing,
-        mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(),
-        crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(),
+    return LegacyMultiChildWidget(
         key = key,
-    )
+        children = children,
+    ) { _, childNodes ->
+        PixelRow(
+            children = childNodes,
+            modifier = modifier,
+            spacing = spacing,
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(),
+            key = key,
+        )
+    }
 }
 
 fun Column(
@@ -484,14 +480,19 @@ fun Column(
     crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
     key: Any? = null,
 ): Widget {
-    return PixelColumn(
-        children = children.map { it.asPixelNode() },
-        modifier = modifier,
-        spacing = spacing,
-        mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(),
-        crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(),
+    return LegacyMultiChildWidget(
         key = key,
-    )
+        children = children,
+    ) { _, childNodes ->
+        PixelColumn(
+            children = childNodes,
+            modifier = modifier,
+            spacing = spacing,
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(),
+            key = key,
+        )
+    }
 }
 
 fun PageView(
@@ -503,15 +504,21 @@ fun PageView(
     onPageChanged: ((Int) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    return PixelPager(
-        axis = axis,
-        state = state,
-        controller = controller,
-        pages = pages.map { it.asPixelNode() },
-        modifier = modifier,
-        onPageChanged = onPageChanged,
+    return LegacyMultiChildWidget(
         key = key,
-    )
+        children = pages,
+    ) { context, childNodes ->
+        context.watch(controller)
+        PixelPager(
+            axis = axis,
+            state = state,
+            controller = controller,
+            pages = childNodes,
+            modifier = modifier,
+            onPageChanged = onPageChanged,
+            key = key,
+        )
+    }
 }
 
 fun PageViewBuilder(
@@ -543,14 +550,20 @@ fun ListView(
     spacing: Int = 0,
     key: Any? = null,
 ): Widget {
-    return PixelList(
-        items = items.map { it.asPixelNode() },
-        state = state,
-        controller = controller,
-        modifier = modifier,
-        spacing = spacing,
+    return LegacyMultiChildWidget(
         key = key,
-    )
+        children = items,
+    ) { context, childNodes ->
+        context.watch(controller)
+        PixelList(
+            items = childNodes,
+            state = state,
+            controller = controller,
+            modifier = modifier,
+            spacing = spacing,
+            key = key,
+        )
+    }
 }
 
 fun ListViewBuilder(
@@ -606,13 +619,19 @@ fun SingleChildScrollView(
     modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
-    return PixelSingleChildScrollView(
-        child = child.asPixelNode(),
-        state = state,
-        controller = controller,
-        modifier = modifier,
+    return LegacySingleChildWidget(
         key = key,
-    )
+        child = child,
+    ) { context, childNode ->
+        context.watch(controller)
+        PixelSingleChildScrollView(
+            child = childNode,
+            state = state,
+            controller = controller,
+            modifier = modifier,
+            key = key,
+        )
+    }
 }
 
 fun TextField(
@@ -630,27 +649,32 @@ fun TextField(
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = when {
-        theme == null -> style
-        style != TextFieldStyle.Default -> style
-        !enabled -> theme.disabledTextFieldStyle
-        readOnly -> theme.readOnlyTextFieldStyle
-        else -> theme.textFieldStyle
-    }
-    return PixelTextField(
-        state = state,
-        controller = controller,
-        modifier = modifier,
-        placeholder = placeholder,
-        style = resolvedStyle,
-        enabled = enabled,
-        readOnly = readOnly,
-        autofocus = autofocus,
-        textInputAction = textInputAction,
-        onChanged = onChanged,
-        onSubmitted = onSubmitted,
+    return LegacyLeafWidget(
         key = key,
-    )
+    ) { context ->
+        context.watch(controller)
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = when {
+            style != TextFieldStyle.Default -> style
+            !enabled -> resolvedTheme.disabledTextFieldStyle
+            readOnly -> resolvedTheme.readOnlyTextFieldStyle
+            else -> resolvedTheme.textFieldStyle
+        }
+        PixelTextField(
+            state = state,
+            controller = controller,
+            modifier = modifier,
+            placeholder = placeholder,
+            style = resolvedStyle,
+            enabled = enabled,
+            readOnly = readOnly,
+            autofocus = autofocus,
+            textInputAction = textInputAction,
+            onChanged = onChanged,
+            onSubmitted = onSubmitted,
+            key = key,
+        )
+    }
 }
 
 fun OutlinedButton(
@@ -662,20 +686,23 @@ fun OutlinedButton(
     enabled: Boolean = true,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = when {
-        theme == null -> style
-        style == ButtonStyle.Default -> theme.buttonStyle
-        style == ButtonStyle.Accent -> theme.accentButtonStyle
-        else -> style
-    }
-    val resolvedDisabledStyle = theme?.disabledButtonStyle ?: PixelButtonStyle.Disabled
-    return PixelButton(
-        text = text,
-        onClick = onPressed,
-        modifier = modifier,
-        style = resolvedStyle,
-        disabledStyle = resolvedDisabledStyle,
-        enabled = enabled,
+    return LegacyLeafWidget(
         key = key,
-    )
+    ) { context ->
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = when (style) {
+            ButtonStyle.Default -> resolvedTheme.buttonStyle
+            ButtonStyle.Accent -> resolvedTheme.accentButtonStyle
+            else -> style
+        }
+        PixelButton(
+            text = text,
+            onClick = onPressed,
+            modifier = modifier,
+            style = resolvedStyle,
+            disabledStyle = resolvedTheme.disabledButtonStyle,
+            enabled = enabled,
+            key = key,
+        )
+    }
 }

@@ -29,6 +29,7 @@ import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelRenderRuntime
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.RetainedBuildRuntime
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -36,8 +37,10 @@ import kotlin.math.min
 /**
  * `pixel-ui` 的最小宿主 View。
  *
- * 第一版不做 retained tree 和复杂增量渲染，而是以“每帧重建组件树 + 轻量布局绘制”的方式
- * 打通最小可运行链路，优先验证 API 与分层是否成立。
+ * 当前宿主已经开始走 retained build runtime：
+ * - 公开层交给 `Widget / StatefulWidget / InheritedWidget`
+ * - 宿主负责维持 retained build tree
+ * - 最后一步暂时仍把组件树翻译到 legacy pixel renderer
  */
 class PixelHostView @JvmOverloads constructor(
     context: Context,
@@ -69,6 +72,9 @@ class PixelHostView @JvmOverloads constructor(
         }
 
     private var runtime = PixelRenderRuntime()
+    private val buildRuntime = RetainedBuildRuntime(
+        onVisualUpdate = { postInvalidateOnAnimation() },
+    )
     private var contentProvider: (() -> Widget)? = null
     private var lastRenderResult: PixelRenderResult? = null
     private var palette: PixelPalette = PixelPalette.terminalGreen()
@@ -135,17 +141,20 @@ class PixelHostView @JvmOverloads constructor(
     private val reusableDiamondPath = Path()
 
     /**
-     * 设置宿主当前要渲染的组件树。
-     *
-     * 公开边界已经提升到 `Widget`，这样页面层可以按 Flutter 风格组织；
-     * 当前 runtime 仍然走 `PixelNode` 兼容层，所以这里会在真正渲染前做一次受控映射。
+     * 设置宿主当前要渲染的根组件。
      */
     fun setContent(provider: () -> Widget) {
         contentProvider = provider
-        invalidate()
+        postInvalidateOnAnimation()
     }
 
-    fun requestRender() {
+    /**
+     * 兼容旧 runtime 的手动重绘入口。
+     *
+     * 新公开主路径已经不再推荐页面层直接调用它；页面刷新应尽量走
+     * `State.setState`、`Listenable`、控制器通知这三类 retained 机制。
+     */
+    internal fun requestRender() {
         invalidate()
     }
 
@@ -215,14 +224,29 @@ class PixelHostView @JvmOverloads constructor(
         val provider = contentProvider
         val renderResult = if (provider != null) {
             val rootWidget = provider()
-            val themedRoot = themeData?.let { theme ->
-                Theme(data = theme, child = rootWidget)
-            } ?: rootWidget
-            runtime.render(
-                root = themedRoot.asPixelNodeForCurrentRuntime(),
-                logicalWidth = screenProfile.logicalWidth,
-                logicalHeight = screenProfile.logicalHeight,
+            val wrappedRoot = MediaQuery(
+                data = MediaQueryData(
+                    logicalWidth = screenProfile.logicalWidth,
+                    logicalHeight = screenProfile.logicalHeight,
+                    screenProfile = screenProfile,
+                ),
+                child = Directionality(
+                    textDirection = TextDirection.LTR,
+                    child = themeData?.let { theme ->
+                        Theme(
+                            data = theme,
+                            child = rootWidget,
+                        )
+                    } ?: rootWidget,
+                ),
             )
+            buildRuntime.resolve(wrappedRoot)?.let { legacyRoot ->
+                runtime.render(
+                    root = legacyRoot,
+                    logicalWidth = screenProfile.logicalWidth,
+                    logicalHeight = screenProfile.logicalHeight,
+                )
+            }
         } else {
             lastRenderResult
         }
@@ -248,6 +272,11 @@ class PixelHostView @JvmOverloads constructor(
             return
         }
         updateScreenProfileFromPreference()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        buildRuntime.dispose()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -698,14 +727,5 @@ class PixelHostView @JvmOverloads constructor(
             profile = screenProfile,
             pixelGapEnabled = pixelGapEnabled,
         )
-    }
-
-    /**
-     * 当前 runtime 还没有完全切到 `Widget / Element / RenderObject`，
-     * 所以这里先把公开 `Widget` 边界映射回兼容层 `PixelNode`。
-     */
-    private fun Widget.asPixelNodeForCurrentRuntime(): PixelNode {
-        return this as? PixelNode
-            ?: error("当前 PixelHostView 仍依赖 PixelNode 兼容层，收到未兼容的 Widget 类型: ${this::class.qualifiedName}")
     }
 }
