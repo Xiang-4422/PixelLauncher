@@ -701,6 +701,38 @@ Align(
 )
 ```
 
+如果你希望在 `Stack` 里直接把子项钉到固定偏移位置，当前已经可以用 `Positioned`：
+
+```kotlin
+Stack(
+    children = listOf(
+        Container(),
+        Positioned(
+            left = 2,
+            top = 2,
+            child = SizedBox(
+                width = 14,
+                height = 8,
+                child = Container(
+                    child = Center(child = Text("BADGE")),
+                ),
+            ),
+        ),
+        Positioned(
+            right = 2,
+            bottom = 2,
+            child = SizedBox(
+                width = 12,
+                height = 8,
+                child = Container(
+                    child = Center(child = Text("PIN")),
+                ),
+            ),
+        ),
+    ),
+)
+```
+
 ### 4.5 按钮
 
 使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：

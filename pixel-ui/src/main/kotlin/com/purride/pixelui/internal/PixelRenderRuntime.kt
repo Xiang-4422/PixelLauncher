@@ -21,6 +21,7 @@ import com.purride.pixelui.PixelModifier
 import com.purride.pixelui.PixelModifierElement
 import com.purride.pixelui.PixelNode
 import com.purride.pixelui.PixelPaddingElement
+import com.purride.pixelui.PixelPositionedNode
 import com.purride.pixelui.PixelPagerNode
 import com.purride.pixelui.PixelRowNode
 import com.purride.pixelui.PixelSizeElement
@@ -300,6 +301,18 @@ internal class PixelRenderRuntime(
                 )
             }
 
+            is PixelPositionedNode -> {
+                val childConstraints = PixelConstraints(
+                    maxWidth = positionedMaxWidth(node, innerConstraints),
+                    maxHeight = positionedMaxHeight(node, innerConstraints),
+                )
+                val childSize = measure(node.child, childConstraints)
+                PixelSize(
+                    width = positionedWidth(node, innerConstraints, childSize),
+                    height = positionedHeight(node, innerConstraints, childSize),
+                )
+            }
+
             is PixelRowNode -> {
                 val children = measureRowChildren(node, innerConstraints)
                 val childrenWidth = if (node.children.any { childWeight(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
@@ -439,6 +452,8 @@ internal class PixelRenderRuntime(
                 listTargets = listTargets,
                 textInputTargets = textInputTargets,
             )
+
+            is PixelPositionedNode -> Unit
 
             is PixelRowNode -> renderRow(
                 node = node,
@@ -779,22 +794,130 @@ internal class PixelRenderRuntime(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         node.children.forEach { child ->
-            val childSize = measure(child, constraints)
-            val childBounds = alignedBounds(
-                outerBounds = bounds,
-                childSize = childSize,
-                alignment = node.alignment,
-            )
-            renderNode(
-                node = child,
-                bounds = childBounds,
-                constraints = constraints,
-                buffer = buffer,
-                clickTargets = clickTargets,
-                pagerTargets = pagerTargets,
-                listTargets = listTargets,
-                textInputTargets = textInputTargets,
-            )
+            if (child is PixelPositionedNode) {
+                renderPositionedChild(
+                    node = child,
+                    outerBounds = bounds,
+                    outerConstraints = constraints,
+                    buffer = buffer,
+                    clickTargets = clickTargets,
+                    pagerTargets = pagerTargets,
+                    listTargets = listTargets,
+                    textInputTargets = textInputTargets,
+                )
+            } else {
+                val childSize = measure(child, constraints)
+                val childBounds = alignedBounds(
+                    outerBounds = bounds,
+                    childSize = childSize,
+                    alignment = node.alignment,
+                )
+                renderNode(
+                    node = child,
+                    bounds = childBounds,
+                    constraints = constraints,
+                    buffer = buffer,
+                    clickTargets = clickTargets,
+                    pagerTargets = pagerTargets,
+                    listTargets = listTargets,
+                    textInputTargets = textInputTargets,
+                )
+            }
+        }
+    }
+
+    private fun renderPositionedChild(
+        node: PixelPositionedNode,
+        outerBounds: PixelRect,
+        outerConstraints: PixelConstraints,
+        buffer: PixelBuffer,
+        clickTargets: MutableList<PixelClickTarget>,
+        pagerTargets: MutableList<PixelPagerTarget>,
+        listTargets: MutableList<PixelListTarget>,
+        textInputTargets: MutableList<PixelTextInputTarget>,
+    ) {
+        val childConstraints = PixelConstraints(
+            maxWidth = positionedMaxWidth(node, outerConstraints),
+            maxHeight = positionedMaxHeight(node, outerConstraints),
+        )
+        val childSize = measure(node.child, childConstraints)
+        val width = positionedWidth(node, outerConstraints, childSize).coerceAtLeast(0)
+        val height = positionedHeight(node, outerConstraints, childSize).coerceAtLeast(0)
+        val left = when {
+            node.left != null -> outerBounds.left + node.left
+            node.right != null -> outerBounds.right - node.right - width
+            else -> outerBounds.left
+        }
+        val top = when {
+            node.top != null -> outerBounds.top + node.top
+            node.bottom != null -> outerBounds.bottom - node.bottom - height
+            else -> outerBounds.top
+        }
+        val childBounds = PixelRect(
+            left = left,
+            top = top,
+            width = width.coerceAtMost(outerBounds.right - left),
+            height = height.coerceAtMost(outerBounds.bottom - top),
+        )
+        renderNode(
+            node = node.child,
+            bounds = childBounds,
+            constraints = childConstraints,
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
+        )
+    }
+
+    private fun positionedMaxWidth(
+        node: PixelPositionedNode,
+        constraints: PixelConstraints,
+    ): Int {
+        return when {
+            node.width != null -> node.width
+            node.left != null && node.right != null ->
+                (constraints.maxWidth - node.left - node.right).coerceAtLeast(0)
+            else -> constraints.maxWidth
+        }
+    }
+
+    private fun positionedMaxHeight(
+        node: PixelPositionedNode,
+        constraints: PixelConstraints,
+    ): Int {
+        return when {
+            node.height != null -> node.height
+            node.top != null && node.bottom != null ->
+                (constraints.maxHeight - node.top - node.bottom).coerceAtLeast(0)
+            else -> constraints.maxHeight
+        }
+    }
+
+    private fun positionedWidth(
+        node: PixelPositionedNode,
+        constraints: PixelConstraints,
+        childSize: PixelSize,
+    ): Int {
+        return when {
+            node.width != null -> node.width
+            node.left != null && node.right != null ->
+                (constraints.maxWidth - node.left - node.right).coerceAtLeast(0)
+            else -> childSize.width
+        }
+    }
+
+    private fun positionedHeight(
+        node: PixelPositionedNode,
+        constraints: PixelConstraints,
+        childSize: PixelSize,
+    ): Int {
+        return when {
+            node.height != null -> node.height
+            node.top != null && node.bottom != null ->
+                (constraints.maxHeight - node.top - node.bottom).coerceAtLeast(0)
+            else -> childSize.height
         }
     }
 

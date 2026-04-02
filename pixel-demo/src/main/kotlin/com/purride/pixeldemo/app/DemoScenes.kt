@@ -30,6 +30,7 @@ import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PageViewBuilder
 import com.purride.pixelui.PageController
+import com.purride.pixelui.Positioned
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
 import com.purride.pixelui.previousPage
@@ -43,6 +44,7 @@ import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulBuilder
 import com.purride.pixelui.StatefulWidget
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
@@ -1762,6 +1764,47 @@ object DemoScenes {
                                                         child = Center(
                                                             child = Text("END", style = TextStyle.Accent),
                                                         ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 22,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                child = Stack(
+                                    children = listOf(
+                                        Positioned(
+                                            left = 2,
+                                            top = 2,
+                                            child = SizedBox(
+                                                width = 14,
+                                                height = 8,
+                                                child = DecoratedBox(
+                                                    fillTone = PixelTone.OFF,
+                                                    borderTone = PixelTone.ACCENT,
+                                                    child = Center(
+                                                        child = Text("BADGE", style = TextStyle.Accent),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        Positioned(
+                                            right = 2,
+                                            bottom = 2,
+                                            child = SizedBox(
+                                                width = 12,
+                                                height = 8,
+                                                child = DecoratedBox(
+                                                    fillTone = PixelTone.OFF,
+                                                    borderTone = PixelTone.ON,
+                                                    child = Center(
+                                                        child = Text("PIN"),
                                                     ),
                                                 ),
                                             ),

@@ -93,6 +93,18 @@ data class PixelBoxNode(
     val alignment: PixelAlignment = PixelAlignment.TOP_START,
 ) : PixelNode
 
+data class PixelPositionedNode(
+    override val key: Any? = null,
+    override val modifier: PixelModifier = PixelModifier.Empty,
+    val child: PixelNode,
+    val left: Int? = null,
+    val top: Int? = null,
+    val right: Int? = null,
+    val bottom: Int? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+) : PixelNode
+
 data class PixelRowNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
@@ -176,6 +188,30 @@ fun PixelBox(
         modifier = modifier,
         children = children,
         alignment = alignment,
+    )
+}
+
+fun PixelPositioned(
+    child: PixelNode,
+    modifier: PixelModifier = PixelModifier.Empty,
+    left: Int? = null,
+    top: Int? = null,
+    right: Int? = null,
+    bottom: Int? = null,
+    width: Int? = null,
+    height: Int? = null,
+    key: Any? = null,
+): PixelNode {
+    return PixelPositionedNode(
+        key = key,
+        modifier = modifier,
+        child = child,
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        width = width,
+        height = height,
     )
 }
 
