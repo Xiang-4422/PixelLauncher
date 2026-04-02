@@ -21,6 +21,7 @@ import com.purride.pixelui.PixelList
 import com.purride.pixelui.Align
 import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
+import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelPager
 import com.purride.pixelui.PixelRow
 import com.purride.pixelui.PixelSurface
@@ -37,6 +38,8 @@ import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Spacer
 import com.purride.pixelui.Text
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.ThemeData
+import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
@@ -415,6 +418,52 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 1))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(2, 3))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 6))
+    }
+
+    @Test
+    fun flutterStyleThemeDataFeedsDefaultTextButtonAndContainerStyles() {
+        val themed = ThemeData(
+            textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            buttonStyle = PixelButtonStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            ),
+            containerStyle = ContainerStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                alignment = Alignment.CENTER,
+            ),
+        )
+
+        val result = runtime.render(
+            root = Column(
+                modifier = PixelModifier.Empty.size(24, 20),
+                spacing = 2,
+                children = listOf(
+                    Container(
+                        width = 24,
+                        height = 8,
+                        theme = themed,
+                        child = Text(
+                            data = "THEMED",
+                            theme = themed,
+                        ),
+                    ),
+                    OutlinedButton(
+                        text = "BTN",
+                        onPressed = { },
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                        theme = themed,
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 24,
+            logicalHeight = 20,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+        assertTrue(collectOnPixels(result).isNotEmpty())
     }
 
     @Test

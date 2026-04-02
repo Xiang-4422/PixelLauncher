@@ -18,9 +18,11 @@ import com.purride.pixelui.state.PixelTextFieldState
 
 typealias TextStyle = PixelTextStyle
 typealias ButtonStyle = PixelButtonStyle
+typealias ContainerStyle = PixelContainerStyle
 typealias TextFieldStyle = PixelTextFieldStyle
 typealias TextOverflow = PixelTextOverflow
 typealias TextInputAction = PixelTextInputAction
+typealias ThemeData = PixelThemeData
 
 private fun Widget.asPixelNode(): PixelNode {
     return this as? PixelNode
@@ -216,15 +218,21 @@ fun Text(
     data: String,
     modifier: PixelModifier = PixelModifier.Empty,
     style: TextStyle = TextStyle.Default,
+    theme: ThemeData? = null,
     softWrap: Boolean = false,
     maxLines: Int = 1,
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     key: Any? = null,
 ): Widget {
+    val resolvedStyle = if (theme != null && style == TextStyle.Default) {
+        theme.textStyle
+    } else {
+        style
+    }
     return PixelText(
         text = data,
         modifier = modifier,
-        style = style,
+        style = resolvedStyle,
         softWrap = softWrap,
         maxLines = maxLines,
         overflow = overflow,
@@ -258,12 +266,19 @@ fun Container(
     height: Int? = null,
     padding: EdgeInsets? = null,
     margin: EdgeInsets? = null,
+    style: ContainerStyle? = null,
+    theme: ThemeData? = null,
     modifier: PixelModifier = PixelModifier.Empty,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
+    val resolvedStyle = style ?: theme?.containerStyle ?: ContainerStyle(
+        fillTone = fillTone,
+        borderTone = borderTone,
+        alignment = alignment,
+    )
     val sizedModifier = when {
         width != null && height != null -> modifier.size(width, height)
         width != null -> modifier.width(width)
@@ -280,10 +295,10 @@ fun Container(
     val decoratedBox = DecoratedBox(
         child = decoratedChild,
         modifier = sizedModifier,
-        fillTone = fillTone,
-        borderTone = borderTone,
+        fillTone = resolvedStyle.fillTone,
+        borderTone = resolvedStyle.borderTone,
         padding = 0,
-        alignment = alignment,
+        alignment = resolvedStyle.alignment,
         key = key,
     )
     return if (margin != null) {
@@ -473,6 +488,7 @@ fun TextField(
     modifier: PixelModifier = PixelModifier.Empty,
     placeholder: String = "",
     style: TextFieldStyle = TextFieldStyle.Default,
+    theme: ThemeData? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     autofocus: Boolean = false,
@@ -481,12 +497,17 @@ fun TextField(
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
+    val resolvedStyle = if (theme != null && style == TextFieldStyle.Default) {
+        theme.textFieldStyle
+    } else {
+        style
+    }
     return PixelTextField(
         state = state,
         controller = controller,
         modifier = modifier,
         placeholder = placeholder,
-        style = style,
+        style = resolvedStyle,
         enabled = enabled,
         readOnly = readOnly,
         autofocus = autofocus,
@@ -502,14 +523,22 @@ fun OutlinedButton(
     onPressed: (() -> Unit)?,
     modifier: PixelModifier = PixelModifier.Empty,
     style: ButtonStyle = ButtonStyle.Default,
+    theme: ThemeData? = null,
     enabled: Boolean = true,
     key: Any? = null,
 ): Widget {
+    val resolvedStyle = if (theme != null && style == ButtonStyle.Default) {
+        theme.buttonStyle
+    } else {
+        style
+    }
+    val resolvedDisabledStyle = theme?.disabledButtonStyle ?: PixelButtonStyle.Disabled
     return PixelButton(
         text = text,
         onClick = onPressed,
         modifier = modifier,
-        style = style,
+        style = resolvedStyle,
+        disabledStyle = resolvedDisabledStyle,
         enabled = enabled,
         key = key,
     )

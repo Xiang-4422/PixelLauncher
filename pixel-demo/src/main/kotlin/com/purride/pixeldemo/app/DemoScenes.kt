@@ -42,6 +42,8 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelModifier
+import com.purride.pixelui.ThemeData
+import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxHeight
@@ -554,6 +556,21 @@ object DemoScenes {
         val scrollState = scrollController.create()
         var count = 0
         var accentMode = false
+        val themedCard = ThemeData(
+            textStyle = TextStyle.Accent,
+            buttonStyle = ButtonStyle.Accent,
+            textFieldStyle = TextFieldStyle(
+                borderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                textStyle = TextStyle.Accent,
+                placeholderStyle = TextStyle.Default,
+            ),
+            containerStyle = ContainerStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                alignment = Alignment.CENTER,
+            ),
+        )
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -566,6 +583,19 @@ object DemoScenes {
                     children = listOf(
                         sectionTitle("LAYOUT AND CLICK"),
                         infoCard("COUNTER", count.toString(), accent = accentMode),
+                        Container(
+                            width = 40,
+                            height = 16,
+                            theme = themedCard,
+                            padding = EdgeInsets.all(2),
+                            child = Center(
+                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                child = Text(
+                                    "THEME",
+                                    theme = themedCard,
+                                ),
+                            ),
+                        ),
                         Container(
                             width = 28,
                             height = 12,
@@ -584,6 +614,7 @@ object DemoScenes {
                                 hostView.requestRender()
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            theme = themedCard,
                         ),
                         OutlinedButton(
                             text = "TOGGLE ACCENT",
