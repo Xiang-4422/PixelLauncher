@@ -17,6 +17,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
 import com.purride.pixelui.ListViewBuilder
@@ -302,6 +303,7 @@ object DemoScenes {
                             builder = {
                                 Column(
                                     spacing = 2,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                     children = listOf(
                                         infoCard("PRIMARY", primaryState.text.ifEmpty { "(EMPTY)" }, accent = primaryState.isFocused),
                                         infoCard("SECONDARY", secondaryState.text.ifEmpty { "(EMPTY)" }, accent = secondaryState.isFocused),
@@ -316,51 +318,60 @@ object DemoScenes {
                                         ) { _, value ->
                                             infoCard("SUBMITTED", value.ifEmpty { "(NONE)" }, accent = value.isNotEmpty())
                                         },
-                                        TextField(
-                                            state = primaryState,
-                                            controller = controller,
-                                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                            placeholder = "TYPE PRIMARY",
-                                            style = TextFieldStyle.Default,
-                                            autofocus = true,
-                                            textInputAction = TextInputAction.NEXT,
-                                            onChanged = { text ->
-                                                liveText.value = text
-                                            },
-                                            onSubmitted = { text ->
-                                                submittedText.value = text
-                                                controller.requestFocus(secondaryState)
-                                            },
+                                        SizedBox(
+                                            height = 16,
+                                            child = TextField(
+                                                state = primaryState,
+                                                controller = controller,
+                                                placeholder = "TYPE PRIMARY",
+                                                style = TextFieldStyle.Default,
+                                                autofocus = true,
+                                                textInputAction = TextInputAction.NEXT,
+                                                onChanged = { text ->
+                                                    liveText.value = text
+                                                },
+                                                onSubmitted = { text ->
+                                                    submittedText.value = text
+                                                    controller.requestFocus(secondaryState)
+                                                },
+                                            ),
                                         ),
                                         Column(
                                             spacing = 2,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                             children = listOf(
-                                                TextField(
-                                                    state = secondaryState,
-                                                    controller = controller,
-                                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                                    placeholder = "TYPE SECONDARY",
-                                                    enabled = primaryState.text.isNotEmpty(),
-                                                    textInputAction = TextInputAction.DONE,
-                                                    onSubmitted = { text ->
-                                                        submittedText.value = text
-                                                    },
+                                                SizedBox(
+                                                    height = 16,
+                                                    child = TextField(
+                                                        state = secondaryState,
+                                                        controller = controller,
+                                                        placeholder = "TYPE SECONDARY",
+                                                        enabled = primaryState.text.isNotEmpty(),
+                                                        textInputAction = TextInputAction.DONE,
+                                                        onSubmitted = { text ->
+                                                            submittedText.value = text
+                                                        },
+                                                    ),
                                                 ),
-                                                TextField(
-                                                    state = readOnlyState,
-                                                    controller = controller,
-                                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                                    placeholder = "READ ONLY",
-                                                    readOnly = true,
+                                                SizedBox(
+                                                    height = 16,
+                                                    child = TextField(
+                                                        state = readOnlyState,
+                                                        controller = controller,
+                                                        placeholder = "READ ONLY",
+                                                        readOnly = true,
+                                                    ),
                                                 ),
-                                                OutlinedButton(
-                                                    text = "CLEAR SECONDARY",
-                                                    onPressed = if (secondaryState.text.isNotEmpty()) {
-                                                        { controller.clear(secondaryState) }
-                                                    } else {
-                                                        null
-                                                    },
-                                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                SizedBox(
+                                                    height = 14,
+                                                    child = OutlinedButton(
+                                                        text = "CLEAR SECONDARY",
+                                                        onPressed = if (secondaryState.text.isNotEmpty()) {
+                                                            { controller.clear(secondaryState) }
+                                                        } else {
+                                                            null
+                                                        },
+                                                    ),
                                                 ),
                                             ),
                                         ),
@@ -382,60 +393,72 @@ object DemoScenes {
                                                 padding = EdgeInsets.all(2),
                                                 child = Column(
                                                     spacing = 2,
+                                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                                     children = listOf(
                                                         Text("LOCAL DEFAULT OVERRIDE"),
                                                         ValueListenableBuilder(
                                                             listenable = localThemeTapCount,
                                                         ) { _, tapCount ->
-                                                            OutlinedButton(
-                                                                text = "LOCAL DEFAULT $tapCount",
-                                                                onPressed = {
-                                                                    localThemeTapCount.value = tapCount + 1
-                                                                },
-                                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                                            SizedBox(
+                                                                height = 14,
+                                                                child = OutlinedButton(
+                                                                    text = "LOCAL DEFAULT $tapCount",
+                                                                    onPressed = {
+                                                                        localThemeTapCount.value = tapCount + 1
+                                                                    },
+                                                                ),
                                                             )
                                                         },
                                                     ),
                                                 ),
                                             ),
                                         ),
-                                        OutlinedButton(
-                                            text = "FOCUS PRIMARY",
-                                            onPressed = {
-                                                controller.requestFocus(primaryState)
-                                            },
-                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        SizedBox(
+                                            height = 14,
+                                            child = OutlinedButton(
+                                                text = "FOCUS PRIMARY",
+                                                onPressed = {
+                                                    controller.requestFocus(primaryState)
+                                                },
+                                            ),
                                         ),
-                                        Row(
-                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                            spacing = 2,
-                                            children = listOf(
-                                                OutlinedButton(
-                                                    text = "SELECT ALL",
-                                                    onPressed = {
-                                                        controller.selectAll(primaryState)
-                                                        controller.requestFocus(primaryState)
-                                                    },
-                                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                                ),
-                                                OutlinedButton(
-                                                    text = "CURSOR END",
-                                                    onPressed = {
-                                                        controller.setSelection(
-                                                            state = primaryState,
-                                                            selectionStart = primaryState.text.length,
-                                                        )
-                                                        controller.requestFocus(primaryState)
-                                                    },
-                                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                                    style = ButtonStyle.Accent,
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "SELECT ALL",
+                                                            onPressed = {
+                                                                controller.selectAll(primaryState)
+                                                                controller.requestFocus(primaryState)
+                                                            },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "CURSOR END",
+                                                            onPressed = {
+                                                                controller.setSelection(
+                                                                    state = primaryState,
+                                                                    selectionStart = primaryState.text.length,
+                                                                )
+                                                                controller.requestFocus(primaryState)
+                                                            },
+                                                            style = ButtonStyle.Accent,
+                                                        ),
+                                                    ),
                                                 ),
                                             ),
                                         ),
-                                        OutlinedButton(
-                                            text = "NULL DISABLED",
-                                            onPressed = null,
-                                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        SizedBox(
+                                            height = 14,
+                                            child = OutlinedButton(
+                                                text = "NULL DISABLED",
+                                                onPressed = null,
+                                            ),
                                         ),
                                     ),
                                 )

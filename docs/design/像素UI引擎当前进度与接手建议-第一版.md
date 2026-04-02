@@ -177,6 +177,14 @@
 - `ScrollController`
 - `TextEditingController`
 
+公开布局这条线也已经开始往更像 Flutter 的写法收：
+
+- `CrossAxisAlignment.STRETCH`
+- `SizedBox(height = ...)`
+- `Expanded`
+
+它们现在已经可以替掉一部分页面层公开 `PixelModifier.fillMaxWidth()` 和 `fillMaxHeight()` 用法。
+
 旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前主要作为兼容层保留，不再建议新页面直接使用。
 
 ### 3.3 当前测试覆盖

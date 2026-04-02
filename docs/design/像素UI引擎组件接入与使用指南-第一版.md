@@ -76,17 +76,22 @@ val hostSetup = createPixelHostSetup(
         ),
         content = {
             ValueListenableBuilder(counter) { _, value ->
-                Column(
-                    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+                Container(
+                    padding = EdgeInsets.all(4),
+                    child = Column(
                     spacing = 4,
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
                     children = listOf(
                         Text("COUNT $value"),
-                        OutlinedButton(
-                            text = "CLICK",
-                            onPressed = { counter.value = value + 1 },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        SizedBox(
+                            height = 14,
+                            child = OutlinedButton(
+                                text = "CLICK",
+                                onPressed = { counter.value = value + 1 },
+                            ),
                         ),
                     ),
+                ),
                 )
             }
         },
@@ -128,17 +133,22 @@ val config = PixelHostSetupConfig(
         buttonStyle = ButtonStyle.Accent,
     ),
     content = {
-        Column(
-            modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+        Container(
+            padding = EdgeInsets.all(4),
+            child = Column(
             spacing = 4,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
             children = listOf(
                 Text("HELLO PIXEL"),
-                OutlinedButton(
-                    text = "CLICK",
-                    onPressed = { /* ... */ },
-                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                SizedBox(
+                    height = 14,
+                    child = OutlinedButton(
+                        text = "CLICK",
+                        onPressed = { /* ... */ },
+                    ),
                 ),
             ),
+        ),
         )
     },
 )
@@ -185,19 +195,24 @@ class ExampleActivity : AppCompatActivity() {
 
     private fun renderScene(): Widget {
         return ValueListenableBuilder(counter) { _, value ->
-            Column(
-                modifier = PixelModifier.Empty.fillMaxSize().padding(4),
+            Container(
+                padding = EdgeInsets.all(4),
+                child = Column(
                 spacing = 4,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 children = listOf(
                     Text("COUNT $value"),
-                    OutlinedButton(
-                        text = "PLUS",
-                        onPressed = {
-                            counter.value = value + 1
-                        },
-                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                    SizedBox(
+                        height = 14,
+                        child = OutlinedButton(
+                            text = "PLUS",
+                            onPressed = {
+                                counter.value = value + 1
+                            },
+                        ),
                     ),
                 ),
+            ),
             )
         }
     }
