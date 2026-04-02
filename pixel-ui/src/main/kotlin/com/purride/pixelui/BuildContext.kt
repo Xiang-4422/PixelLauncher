@@ -20,6 +20,9 @@ interface BuildContext {
     fun watch(listenable: Listenable?)
 }
 
+typealias WidgetBuilder = (BuildContext) -> Widget
+typealias StateSetter = (() -> Unit) -> Unit
+
 inline fun <reified T : InheritedWidget> BuildContext.dependOnInheritedWidgetOfExactType(): T? {
     return dependOnInheritedWidgetOfExactType(T::class)
 }
@@ -112,6 +115,17 @@ class ListenableBuilder(
     }
 }
 
+class Builder(
+    override val key: Any? = null,
+    private val builder: WidgetBuilder,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        return builder(context)
+    }
+}
+
 class ValueListenableBuilder<T>(
     private val listenable: ValueListenable<T>,
     override val key: Any? = null,
@@ -122,5 +136,22 @@ class ValueListenableBuilder<T>(
     override fun build(context: BuildContext): Widget {
         context.watch(listenable)
         return builder(context, listenable.value)
+    }
+}
+
+class StatefulBuilder(
+    override val key: Any? = null,
+    private val builder: (BuildContext, StateSetter) -> Widget,
+) : StatefulWidget(
+    key = key,
+) {
+    override fun createState(): State<out StatefulWidget> = StatefulBuilderState()
+
+    private class StatefulBuilderState : State<StatefulBuilder>() {
+        override fun build(context: BuildContext): Widget {
+            return widget.builder(context) { action ->
+                setState(action)
+            }
+        }
     }
 }

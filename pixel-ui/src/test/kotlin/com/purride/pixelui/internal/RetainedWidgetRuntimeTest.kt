@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.Builder
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Container
@@ -10,6 +11,7 @@ import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.State
+import com.purride.pixelui.StatefulBuilder
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.ValueListenableBuilder
@@ -126,6 +128,66 @@ class RetainedWidgetRuntimeTest {
         )
 
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 0))
+    }
+
+    @Test
+    fun builderReadsLocalInheritedContext() {
+        val runtime = PixelRenderRuntime()
+
+        val result = runtime.render(
+            root = ToneScope(
+                tone = PixelTone.ON,
+                child = Builder { context ->
+                    Container(
+                        width = 4,
+                        height = 4,
+                        fillTone = ToneScope.of(context),
+                        borderTone = null,
+                    )
+                },
+            ),
+            logicalWidth = 4,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+    }
+
+    @Test
+    fun statefulBuilderRebuildsLocalState() {
+        val runtime = PixelRenderRuntime()
+        var accent = false
+
+        val root = StatefulBuilder { _, setState ->
+            GestureDetector(
+                onTap = {
+                    setState {
+                        accent = !accent
+                    }
+                },
+                child = Container(
+                    width = 6,
+                    height = 6,
+                    fillTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
+                    borderTone = null,
+                ),
+            )
+        }
+
+        val first = runtime.render(
+            root = root,
+            logicalWidth = 6,
+            logicalHeight = 6,
+        )
+        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+        first.clickTargets.single().onClick.invoke()
+
+        val second = runtime.render(
+            root = root,
+            logicalWidth = 6,
+            logicalHeight = 6,
+        )
+        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
     }
 
     private class ToggleToneWidget : StatefulWidget() {

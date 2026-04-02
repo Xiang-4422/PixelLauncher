@@ -30,12 +30,14 @@ import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
 import com.purride.pixelui.previousPage
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.Builder
 import com.purride.pixelui.ListenableBuilder
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
+import com.purride.pixelui.StatefulBuilder
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextFieldStyle
@@ -137,6 +139,7 @@ object DemoScenes {
     ): DemoScene {
         val scrollController = ScrollController()
         val scrollState = scrollController.create()
+        var localStateHighlighted = false
         val compactRasterizer = PixelBitmapFont(
             glyphWidth = 4,
             glyphHeight = 5,
@@ -178,6 +181,29 @@ object DemoScenes {
                                 ),
                             ),
                         ),
+                        Builder { context ->
+                            val mediaQuery = MediaQuery.of(context)
+                            infoCard(
+                                label = "BUILDER",
+                                value = "VIEWPORT ${mediaQuery.logicalWidth}x${mediaQuery.logicalHeight}",
+                                accent = mediaQuery.logicalWidth >= mediaQuery.logicalHeight,
+                            )
+                        },
+                        Builder { context ->
+                            val direction = Directionality.of(context)
+                            StatefulBuilder { _, setState ->
+                                OutlinedButton(
+                                    text = "LOCAL STATE ${if (localStateHighlighted) "ON" else direction.name}",
+                                    onPressed = {
+                                        setState {
+                                            localStateHighlighted = !localStateHighlighted
+                                        }
+                                    },
+                                    style = if (localStateHighlighted) ButtonStyle.Accent else ButtonStyle.Default,
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                )
+                            }
+                        },
                         DecoratedBox(
                             modifier = PixelModifier.Empty.fillMaxWidth().height(28),
                             fillTone = PixelTone.OFF,
