@@ -754,6 +754,28 @@ Stack(
 )
 ```
 
+如果页面已经挂了 `Directionality`，并且你希望定位跟着 `start / end` 自动翻转，当前可以直接用 `PositionedDirectional`：
+
+```kotlin
+Directionality(
+    textDirection = TextDirection.RTL,
+    child = Stack(
+        children = listOf(
+            PositionedDirectional(
+                start = 2,
+                top = 2,
+                child = Text("TAG"),
+            ),
+        ),
+    ),
+)
+```
+
+当前规则是：
+
+- `LTR` 下 `start -> left`、`end -> right`
+- `RTL` 下 `start -> right`、`end -> left`
+
 ### 4.5 按钮
 
 使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：

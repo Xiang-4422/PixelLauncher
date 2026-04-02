@@ -14,6 +14,7 @@ import com.purride.pixelui.Center
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
+import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.ButtonStyle
@@ -39,6 +40,7 @@ import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Positioned
+import com.purride.pixelui.PositionedDirectional
 import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
@@ -46,6 +48,7 @@ import com.purride.pixelui.Spacer
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
+import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.GestureDetector
@@ -1089,6 +1092,67 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 2))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(10, 7))
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(11, 8))
+    }
+
+    @Test
+    fun flutterStylePositionedDirectionalUsesStartAsLeftInLtr() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.LTR,
+                child = Stack(
+                    children = listOf(
+                        PositionedDirectional(
+                            start = 2,
+                            top = 1,
+                            child = SizedBox(
+                                width = 4,
+                                height = 4,
+                                child = DecoratedBox(
+                                    fillTone = PixelTone.ACCENT,
+                                    borderTone = null,
+                                ),
+                            ),
+                        ),
+                    ),
+                    modifier = PixelModifier.Empty.size(12, 10),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(2, 1))
+    }
+
+    @Test
+    fun flutterStylePositionedDirectionalUsesStartAsRightInRtl() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = Stack(
+                    children = listOf(
+                        PositionedDirectional(
+                            start = 2,
+                            top = 1,
+                            width = 4,
+                            height = 4,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.ON,
+                                borderTone = null,
+                            ),
+                        ),
+                    ),
+                    modifier = PixelModifier.Empty.size(12, 10),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(5, 1))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(6, 1))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(9, 4))
     }
 
     @Test

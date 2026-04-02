@@ -31,6 +31,7 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PageViewBuilder
 import com.purride.pixelui.PageController
 import com.purride.pixelui.Positioned
+import com.purride.pixelui.PositionedDirectional
 import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
@@ -1839,6 +1840,71 @@ object DemoScenes {
                                                 height = 6,
                                                 child = Center(
                                                     child = Text("FILL", style = TextStyle.Accent),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(
+                            height = 24,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.LTR,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = Stack(
+                                                    children = listOf(
+                                                        PositionedDirectional(
+                                                            start = 2,
+                                                            top = 2,
+                                                            child = SizedBox(
+                                                                width = 10,
+                                                                height = 8,
+                                                                child = DecoratedBox(
+                                                                    fillTone = PixelTone.OFF,
+                                                                    borderTone = PixelTone.ACCENT,
+                                                                    child = Center(
+                                                                        child = Text("LTR", style = TextStyle.Accent),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    Expanded(
+                                        child = Directionality(
+                                            textDirection = TextDirection.RTL,
+                                            child = DecoratedBox(
+                                                fillTone = PixelTone.OFF,
+                                                borderTone = PixelTone.ON,
+                                                child = Stack(
+                                                    children = listOf(
+                                                        PositionedDirectional(
+                                                            start = 2,
+                                                            top = 2,
+                                                            child = SizedBox(
+                                                                width = 10,
+                                                                height = 8,
+                                                                child = DecoratedBox(
+                                                                    fillTone = PixelTone.OFF,
+                                                                    borderTone = PixelTone.ACCENT,
+                                                                    child = Center(
+                                                                        child = Text("RTL", style = TextStyle.Accent),
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ),
                                                 ),
                                             ),
                                         ),
