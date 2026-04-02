@@ -29,11 +29,14 @@ import com.purride.pixelui.PageController
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
 import com.purride.pixelui.previousPage
+import com.purride.pixelui.BuildContext
 import com.purride.pixelui.ListenableBuilder
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.State
+import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
@@ -183,62 +186,18 @@ object DemoScenes {
     ): DemoScene {
         val scrollController = ScrollController()
         val scrollState = scrollController.create()
-        val themes = PixelTheme.entries
-        val shapes = PixelShape.entries
-        val currentThemeIndex = ValueNotifier(0)
-        val currentShapeIndex = ValueNotifier(0)
-
-        fun applyHostAppearance() {
-            hostView.setPalette(PixelPalette.fromTheme(themes[currentThemeIndex.value]))
-            applyPreferredProfile(defaultProfile(pixelShape = shapes[currentShapeIndex.value]))
-        }
 
         return DemoScene(
             initialProfile = defaultProfile(),
-            initialPalette = PixelPalette.fromTheme(themes[currentThemeIndex.value]),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.entries.first()),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                ValueListenableBuilder(
-                    listenable = currentThemeIndex,
-                ) { _, themeIndex ->
-                    ValueListenableBuilder(
-                        listenable = currentShapeIndex,
-                    ) { _, shapeIndex ->
-                        scrollableRoot(
-                            state = scrollState,
-                            controller = scrollController,
-                            children = listOf(
-                                sectionTitle("PALETTE AND SHAPE"),
-                                infoCard("THEME", themes[themeIndex].name),
-                                infoCard("SHAPE", shapes[shapeIndex].name),
-                                OutlinedButton(
-                                    text = "NEXT THEME",
-                                    onPressed = {
-                                        currentThemeIndex.value = (themeIndex + 1) % themes.size
-                                        applyHostAppearance()
-                                    },
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                ),
-                                OutlinedButton(
-                                    text = "NEXT SHAPE",
-                                    onPressed = {
-                                        currentShapeIndex.value = (shapeIndex + 1) % shapes.size
-                                        applyHostAppearance()
-                                    },
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                ),
-                                Row(
-                                    spacing = 4,
-                                    children = listOf(
-                                        swatch(PixelTone.ON, "ON"),
-                                        swatch(PixelTone.ACCENT, "ACCENT"),
-                                        swatch(PixelTone.OFF, "OFF"),
-                                    ),
-                                ),
-                            ),
-                        )
-                    }
-                }
+                PaletteSceneWidget(
+                    hostView = hostView,
+                    applyPreferredProfile = applyPreferredProfile,
+                    scrollController = scrollController,
+                    scrollState = scrollState,
+                )
             },
         )
     }
@@ -629,205 +588,16 @@ object DemoScenes {
     ): DemoScene {
         val scrollController = ScrollController()
         val scrollState = scrollController.create()
-        val count = ValueNotifier(0)
-        val accentMode = ValueNotifier(false)
-        val themedCard = ThemeData(
-            textStyle = TextStyle.Accent,
-            buttonStyle = ButtonStyle.Accent,
-            disabledButtonStyle = ButtonStyle(
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ACCENT,
-                textStyle = TextStyle.Accent.copy(
-                    tone = PixelTone.OFF,
-                ),
-            ),
-            textFieldStyle = TextFieldStyle(
-                borderTone = PixelTone.ACCENT,
-                focusedBorderTone = PixelTone.ACCENT,
-                textStyle = TextStyle.Accent,
-                placeholderStyle = TextStyle.Default,
-            ),
-            readOnlyTextFieldStyle = TextFieldStyle(
-                borderTone = PixelTone.ACCENT,
-                focusedBorderTone = PixelTone.ACCENT,
-                readOnlyBorderTone = PixelTone.ACCENT,
-                textStyle = TextStyle.Accent,
-                placeholderStyle = TextStyle.Default,
-            ),
-            containerStyle = ContainerStyle(
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ACCENT,
-                alignment = Alignment.CENTER,
-            ),
-        )
 
         return DemoScene(
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
             initialTextRasterizer = textRasterizers.default,
             content = {
-                ValueListenableBuilder(
-                    listenable = count,
-                ) { _, counterValue ->
-                    ValueListenableBuilder(
-                        listenable = accentMode,
-                    ) { _, isAccentMode ->
-                        scrollableRoot(
-                            state = scrollState,
-                            controller = scrollController,
-                            children = listOf(
-                                sectionTitle("LAYOUT AND CLICK"),
-                                infoCard("COUNTER", counterValue.toString(), accent = isAccentMode),
-                                Container(
-                                    width = 40,
-                                    height = 16,
-                                    padding = EdgeInsets.all(2),
-                                    child = Theme(
-                                        data = themedCard,
-                                        child = Center(
-                                            modifier = PixelModifier.Empty.fillMaxSize(),
-                                            child = Text("THEME"),
-                                        ),
-                                    ),
-                                ),
-                                Container(
-                                    width = 28,
-                                    height = 12,
-                                    margin = EdgeInsets.only(left = 6),
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ACCENT,
-                                    child = Center(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        child = Text("MARGIN", style = TextStyle.Accent),
-                                    ),
-                                ),
-                                Theme(
-                                    data = themedCard,
-                                    child = Column(
-                                        spacing = 2,
-                                        children = listOf(
-                                            OutlinedButton(
-                                                text = "INCREASE",
-                                                onPressed = {
-                                                    count.value = counterValue + 1
-                                                },
-                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                            ),
-                                            OutlinedButton(
-                                                text = "THEMED DISABLED",
-                                                onPressed = null,
-                                                modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                                OutlinedButton(
-                                    text = "TOGGLE ACCENT",
-                                    onPressed = {
-                                        accentMode.value = !isAccentMode
-                                    },
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                ),
-                                Row(
-                                    spacing = 4,
-                                    children = listOf(
-                                        demoSquare("LEFT"),
-                                        demoSquare("RIGHT"),
-                                    ),
-                                ),
-                                Row(
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(18),
-                                    spacing = 2,
-                                    children = listOf(
-                                        DecoratedBox(
-                                            modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                            fillTone = PixelTone.OFF,
-                                            borderTone = PixelTone.ON,
-                                            child = Center(
-                                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                                child = Text("1X"),
-                                            ),
-                                        ),
-                                        DecoratedBox(
-                                            modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
-                                            fillTone = PixelTone.OFF,
-                                            borderTone = PixelTone.ACCENT,
-                                            child = Center(
-                                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                                child = Text("2X", style = TextStyle.Accent),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                                Row(
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(20),
-                                    spacing = 2,
-                                    mainAxisAlignment = MainAxisAlignment.CENTER,
-                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
-                                    children = listOf(
-                                        DecoratedBox(
-                                            modifier = PixelModifier.Empty.size(18, 8),
-                                            fillTone = PixelTone.OFF,
-                                            borderTone = PixelTone.ON,
-                                            child = Center(
-                                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                                child = Text("MID"),
-                                            ),
-                                        ),
-                                        DecoratedBox(
-                                            modifier = PixelModifier.Empty.size(18, 14),
-                                            fillTone = PixelTone.OFF,
-                                            borderTone = PixelTone.ACCENT,
-                                            child = Center(
-                                                modifier = PixelModifier.Empty.fillMaxSize(),
-                                                child = Text("TALL", style = TextStyle.Accent),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                                GestureDetector(
-                                    modifier = PixelModifier.Empty.fillMaxWidth().height(24),
-                                    onTap = {
-                                        accentMode.value = !isAccentMode
-                                    },
-                                    child = DecoratedBox(
-                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                        fillTone = PixelTone.OFF,
-                                        borderTone = PixelTone.ON,
-                                        padding = 2,
-                                        child = Column(
-                                            modifier = PixelModifier.Empty.fillMaxSize(),
-                                            spacing = 2,
-                                            mainAxisAlignment = MainAxisAlignment.END,
-                                            crossAxisAlignment = CrossAxisAlignment.END,
-                                            children = listOf(
-                                                DecoratedBox(
-                                                    modifier = PixelModifier.Empty.size(16, 6),
-                                                    fillTone = PixelTone.OFF,
-                                                    borderTone = PixelTone.ON,
-                                                    child = Center(
-                                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                                        child = Text("END"),
-                                                    ),
-                                                ),
-                                                DecoratedBox(
-                                                    modifier = PixelModifier.Empty.size(24, 6),
-                                                    fillTone = PixelTone.OFF,
-                                                    borderTone = PixelTone.ACCENT,
-                                                    child = Align(
-                                                        modifier = PixelModifier.Empty.fillMaxSize(),
-                                                        alignment = Alignment.CENTER,
-                                                        child = Text("ALIGN", style = TextStyle.Accent),
-                                                    ),
-                                                ),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            ),
-                        )
-                    }
-                }
+                LayoutAndClickSceneWidget(
+                    scrollController = scrollController,
+                    scrollState = scrollState,
+                )
             },
         )
     }
@@ -1361,5 +1131,276 @@ object DemoScenes {
                 children = children,
             ),
         )
+    }
+
+    private class PaletteSceneWidget(
+        private val hostView: PixelHostView,
+        private val applyPreferredProfile: (ScreenProfile) -> Unit,
+        private val scrollController: ScrollController,
+        private val scrollState: com.purride.pixelui.state.PixelListState,
+    ) : StatefulWidget() {
+        override fun createState(): State<out StatefulWidget> = PaletteSceneState()
+
+        private class PaletteSceneState : State<PaletteSceneWidget>() {
+            private val themes = PixelTheme.entries
+            private val shapes = PixelShape.entries
+            private var currentThemeIndex = 0
+            private var currentShapeIndex = 0
+
+            override fun initState() {
+                super.initState()
+                applyHostAppearance()
+            }
+
+            override fun build(context: BuildContext): Widget {
+                return scrollableRoot(
+                    state = widget.scrollState,
+                    controller = widget.scrollController,
+                    children = listOf(
+                        sectionTitle("PALETTE AND SHAPE"),
+                        infoCard("THEME", themes[currentThemeIndex].name),
+                        infoCard("SHAPE", shapes[currentShapeIndex].name),
+                        OutlinedButton(
+                            text = "NEXT THEME",
+                            onPressed = {
+                                setState {
+                                    currentThemeIndex = (currentThemeIndex + 1) % themes.size
+                                }
+                                applyHostAppearance()
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                        OutlinedButton(
+                            text = "NEXT SHAPE",
+                            onPressed = {
+                                setState {
+                                    currentShapeIndex = (currentShapeIndex + 1) % shapes.size
+                                }
+                                applyHostAppearance()
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                        Row(
+                            spacing = 4,
+                            children = listOf(
+                                swatch(PixelTone.ON, "ON"),
+                                swatch(PixelTone.ACCENT, "ACCENT"),
+                                swatch(PixelTone.OFF, "OFF"),
+                            ),
+                        ),
+                    ),
+                )
+            }
+
+            private fun applyHostAppearance() {
+                widget.hostView.setPalette(PixelPalette.fromTheme(themes[currentThemeIndex]))
+                widget.applyPreferredProfile(defaultProfile(pixelShape = shapes[currentShapeIndex]))
+            }
+        }
+    }
+
+    private class LayoutAndClickSceneWidget(
+        private val scrollController: ScrollController,
+        private val scrollState: com.purride.pixelui.state.PixelListState,
+    ) : StatefulWidget() {
+        override fun createState(): State<out StatefulWidget> = LayoutAndClickSceneState()
+
+        private class LayoutAndClickSceneState : State<LayoutAndClickSceneWidget>() {
+            private var count = 0
+            private var accentMode = false
+
+            private val themedCard = ThemeData(
+                textStyle = TextStyle.Accent,
+                buttonStyle = ButtonStyle.Accent,
+                disabledButtonStyle = ButtonStyle(
+                    fillTone = PixelTone.OFF,
+                    borderTone = PixelTone.ACCENT,
+                    textStyle = TextStyle.Accent.copy(
+                        tone = PixelTone.OFF,
+                    ),
+                ),
+                textFieldStyle = TextFieldStyle(
+                    borderTone = PixelTone.ACCENT,
+                    focusedBorderTone = PixelTone.ACCENT,
+                    textStyle = TextStyle.Accent,
+                    placeholderStyle = TextStyle.Default,
+                ),
+                readOnlyTextFieldStyle = TextFieldStyle(
+                    borderTone = PixelTone.ACCENT,
+                    focusedBorderTone = PixelTone.ACCENT,
+                    readOnlyBorderTone = PixelTone.ACCENT,
+                    textStyle = TextStyle.Accent,
+                    placeholderStyle = TextStyle.Default,
+                ),
+                containerStyle = ContainerStyle(
+                    fillTone = PixelTone.OFF,
+                    borderTone = PixelTone.ACCENT,
+                    alignment = Alignment.CENTER,
+                ),
+            )
+
+            override fun build(context: BuildContext): Widget {
+                return scrollableRoot(
+                    state = widget.scrollState,
+                    controller = widget.scrollController,
+                    children = listOf(
+                        sectionTitle("LAYOUT AND CLICK"),
+                        infoCard("COUNTER", count.toString(), accent = accentMode),
+                        Container(
+                            width = 40,
+                            height = 16,
+                            padding = EdgeInsets.all(2),
+                            child = Theme(
+                                data = themedCard,
+                                child = Center(
+                                    modifier = PixelModifier.Empty.fillMaxSize(),
+                                    child = Text("THEME"),
+                                ),
+                            ),
+                        ),
+                        Container(
+                            width = 28,
+                            height = 12,
+                            margin = EdgeInsets.only(left = 6),
+                            fillTone = PixelTone.OFF,
+                            borderTone = PixelTone.ACCENT,
+                            child = Center(
+                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                child = Text("MARGIN", style = TextStyle.Accent),
+                            ),
+                        ),
+                        Theme(
+                            data = themedCard,
+                            child = Column(
+                                spacing = 2,
+                                children = listOf(
+                                    OutlinedButton(
+                                        text = "INCREASE",
+                                        onPressed = {
+                                            setState {
+                                                count += 1
+                                            }
+                                        },
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                    OutlinedButton(
+                                        text = "THEMED DISABLED",
+                                        onPressed = null,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        OutlinedButton(
+                            text = "TOGGLE ACCENT",
+                            onPressed = {
+                                setState {
+                                    accentMode = !accentMode
+                                }
+                            },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                        ),
+                        Row(
+                            spacing = 4,
+                            children = listOf(
+                                demoSquare("LEFT"),
+                                demoSquare("RIGHT"),
+                            ),
+                        ),
+                        Row(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(18),
+                            spacing = 2,
+                            children = listOf(
+                                DecoratedBox(
+                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ON,
+                                    child = Center(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        child = Text("1X"),
+                                    ),
+                                ),
+                                DecoratedBox(
+                                    modifier = PixelModifier.Empty.weight(2f).fillMaxHeight(),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ACCENT,
+                                    child = Center(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        child = Text("2X", style = TextStyle.Accent),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        Row(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(20),
+                            spacing = 2,
+                            mainAxisAlignment = MainAxisAlignment.CENTER,
+                            crossAxisAlignment = CrossAxisAlignment.CENTER,
+                            children = listOf(
+                                DecoratedBox(
+                                    modifier = PixelModifier.Empty.size(18, 8),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ON,
+                                    child = Center(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        child = Text("MID"),
+                                    ),
+                                ),
+                                DecoratedBox(
+                                    modifier = PixelModifier.Empty.size(18, 14),
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ACCENT,
+                                    child = Center(
+                                        modifier = PixelModifier.Empty.fillMaxSize(),
+                                        child = Text("TALL", style = TextStyle.Accent),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        GestureDetector(
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(24),
+                            onTap = {
+                                setState {
+                                    accentMode = !accentMode
+                                }
+                            },
+                            child = DecoratedBox(
+                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                padding = 2,
+                                child = Column(
+                                    modifier = PixelModifier.Empty.fillMaxSize(),
+                                    spacing = 2,
+                                    mainAxisAlignment = MainAxisAlignment.END,
+                                    crossAxisAlignment = CrossAxisAlignment.END,
+                                    children = listOf(
+                                        DecoratedBox(
+                                            modifier = PixelModifier.Empty.size(16, 6),
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Center(
+                                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                                child = Text("END"),
+                                            ),
+                                        ),
+                                        DecoratedBox(
+                                            modifier = PixelModifier.Empty.size(24, 6),
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ACCENT,
+                                            child = Align(
+                                                modifier = PixelModifier.Empty.fillMaxSize(),
+                                                alignment = Alignment.CENTER,
+                                                child = Text("ALIGN", style = TextStyle.Accent),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            }
+        }
     }
 }

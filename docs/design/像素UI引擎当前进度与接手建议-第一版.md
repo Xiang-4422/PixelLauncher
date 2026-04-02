@@ -98,9 +98,13 @@
 - Flutter 风格公开层
   - [Widget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/Widget.kt)
   - [BuildContext.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/BuildContext.kt)
+  - [FrameworkEnvironment.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FrameworkEnvironment.kt)
+  - [Listenable.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/Listenable.kt)
   - [FlutterLayoutPrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterLayoutPrimitives.kt)
   - [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
   - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
+  - retained build/runtime 入口
+  - [RetainedBuildRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedBuildRuntime.kt)
 - 兼容层基础节点与场景
   - 这一层当前只作为 retained runtime 过渡桥接使用，不再建议新页面继续直接依赖
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelNode.kt)
@@ -148,6 +152,12 @@
 
 这些都已经在 [DemoScenes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt) 里有真机场景，不是只停留在单测层。
 
+另外，当前 demo 已经开始真实使用 retained 状态机制，而不再主要依赖手动 `requestRender()`：
+
+- `ListenableBuilder / ValueListenableBuilder`
+- `StatefulWidget + State.setState`
+- `Theme / Directionality / MediaQuery` 这类环境传播
+
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
 
 - `Text`
@@ -173,6 +183,7 @@
 - [PixelListControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelListControllerTest.kt)
 - [PixelTextFieldControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelTextFieldControllerTest.kt)
 - [PixelRenderRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/PixelRenderRuntimeTest.kt)
+- [RetainedWidgetRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/RetainedWidgetRuntimeTest.kt)
 - [PagerGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/PagerGesturePolicyTest.kt)
 - [NestedScrollGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/NestedScrollGesturePolicyTest.kt)
 
@@ -180,12 +191,13 @@
 
 当前 `pixel-ui` 仍然是“第一版可运行框架”，还不是完整产品级 UI 系统。当前限制包括：
 
-- 仍然是每帧重建组件树，不是 retained tree
+- 已经有 retained build tree，但最终绘制仍然落到 legacy `PixelNode + PixelRenderRuntime`
 - `ListView` 只有纵向单列，不是虚拟化列表
 - 列表当前没有回弹和吸附
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
+- 公开层仍然有一部分 `PixelModifier` 兼容参数没有完全回收
 - 还没有开始把 `:app` 页面迁进来
 
 ---
