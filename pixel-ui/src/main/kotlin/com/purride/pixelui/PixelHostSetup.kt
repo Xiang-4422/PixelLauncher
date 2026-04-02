@@ -4,6 +4,8 @@ import android.content.Context
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
+import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelTextRasterizer
 
 /**
  * 宿主级装配结果。
@@ -18,6 +20,20 @@ data class PixelHostSetup(
 )
 
 /**
+ * 默认宿主配置。
+ *
+ * 这层把业务页面最常见的宿主初始化项收成一个对象：
+ * profile、调色板、文本栅格器、主题和页面内容都可以一次性带进来。
+ */
+data class PixelHostSetupConfig(
+    val profilePreference: PixelHostProfilePreference? = null,
+    val palette: PixelPalette? = null,
+    val textRasterizer: PixelTextRasterizer? = null,
+    val themeData: ThemeData? = null,
+    val content: (() -> Widget)? = null,
+)
+
+/**
  * 创建默认宿主装配。
  *
  * 当前会完成三件事：
@@ -28,12 +44,18 @@ data class PixelHostSetup(
 fun createPixelHostSetup(
     context: Context,
     hostView: PixelHostView = PixelHostView(context),
+    config: PixelHostSetupConfig = PixelHostSetupConfig(),
 ): PixelHostSetup {
     val textInputBridge = PixelTextInputBridge(
         context = context,
         hostView = hostView,
     )
     hostView.hostBridge = textInputBridge
+    config.profilePreference?.let { hostView.profilePreference = it }
+    config.palette?.let { hostView.setPalette(it) }
+    config.textRasterizer?.let { hostView.textRasterizer = it }
+    hostView.themeData = config.themeData
+    config.content?.let { hostView.setContent(it) }
     val rootView = FrameLayout(context).apply {
         addView(
             hostView,

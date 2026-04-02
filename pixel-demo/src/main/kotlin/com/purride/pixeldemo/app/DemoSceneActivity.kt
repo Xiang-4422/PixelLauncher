@@ -2,7 +2,8 @@ package com.purride.pixeldemo.app
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelui.PixelHostView
+import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.createPixelHostSetup
 
@@ -19,8 +20,7 @@ class DemoSceneActivity : AppCompatActivity() {
         )
         title = sceneKind.menuLabel
 
-        val hostSetup = createPixelHostSetup(this)
-        val hostView = hostSetup.hostView
+        val hostView = PixelHostView(this)
         val textRasterizers = DemoTextRasterizers(this)
 
         val scene = DemoScenes.create(
@@ -34,15 +34,21 @@ class DemoSceneActivity : AppCompatActivity() {
                 )
             },
         )
-        hostView.setPalette(scene.initialPalette)
-        hostView.textRasterizer = scene.initialTextRasterizer
-        hostView.themeData = scene.initialThemeData
-        hostView.setContent(scene.content)
-        setContentView(hostSetup.rootView)
-        hostView.profilePreference = PixelHostProfilePreference(
-            dotSizePx = scene.initialProfile.dotSizePx,
-            pixelShape = scene.initialProfile.pixelShape,
+        val hostSetup = createPixelHostSetup(
+            context = this,
+            hostView = hostView,
+            config = PixelHostSetupConfig(
+                profilePreference = PixelHostProfilePreference(
+                    dotSizePx = scene.initialProfile.dotSizePx,
+                    pixelShape = scene.initialProfile.pixelShape,
+                ),
+                palette = scene.initialPalette,
+                textRasterizer = scene.initialTextRasterizer,
+                themeData = scene.initialThemeData,
+                content = scene.content,
+            ),
         )
+        setContentView(hostSetup.rootView)
     }
 
     companion object {
