@@ -169,9 +169,21 @@ class ExampleActivity : AppCompatActivity() {
 val pageTheme = ThemeData(
     textStyle = TextStyle.Accent,
     buttonStyle = ButtonStyle.Accent,
+    disabledButtonStyle = ButtonStyle(
+        fillTone = PixelTone.OFF,
+        borderTone = PixelTone.ACCENT,
+        textStyle = TextStyle(tone = PixelTone.OFF),
+    ),
     textFieldStyle = TextFieldStyle(
         borderTone = PixelTone.ACCENT,
         focusedBorderTone = PixelTone.ACCENT,
+        textStyle = TextStyle.Accent,
+        placeholderStyle = TextStyle.Default,
+    ),
+    readOnlyTextFieldStyle = TextFieldStyle(
+        borderTone = PixelTone.ACCENT,
+        focusedBorderTone = PixelTone.ACCENT,
+        readOnlyBorderTone = PixelTone.ACCENT,
         textStyle = TextStyle.Accent,
         placeholderStyle = TextStyle.Default,
     ),
@@ -182,6 +194,19 @@ val pageTheme = ThemeData(
     ),
 )
 ```
+
+当前这一层主题已经能统一收这些默认分支：
+
+- `textStyle`
+- `accentTextStyle`
+- `buttonStyle`
+- `accentButtonStyle`
+- `disabledButtonStyle`
+- `textFieldStyle`
+- `readOnlyTextFieldStyle`
+- `disabledTextFieldStyle`
+- `containerStyle`
+- `accentContainerStyle`
 
 ---
 

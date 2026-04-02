@@ -559,9 +559,23 @@ object DemoScenes {
         val themedCard = ThemeData(
             textStyle = TextStyle.Accent,
             buttonStyle = ButtonStyle.Accent,
+            disabledButtonStyle = ButtonStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                textStyle = TextStyle.Accent.copy(
+                    tone = PixelTone.OFF,
+                ),
+            ),
             textFieldStyle = TextFieldStyle(
                 borderTone = PixelTone.ACCENT,
                 focusedBorderTone = PixelTone.ACCENT,
+                textStyle = TextStyle.Accent,
+                placeholderStyle = TextStyle.Default,
+            ),
+            readOnlyTextFieldStyle = TextFieldStyle(
+                borderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                readOnlyBorderTone = PixelTone.ACCENT,
                 textStyle = TextStyle.Accent,
                 placeholderStyle = TextStyle.Default,
             ),
@@ -613,6 +627,12 @@ object DemoScenes {
                                 count += 1
                                 hostView.requestRender()
                             },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                            theme = themedCard,
+                        ),
+                        OutlinedButton(
+                            text = "THEMED DISABLED",
+                            onPressed = null,
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                             theme = themedCard,
                         ),

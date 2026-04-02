@@ -31,7 +31,20 @@ data class PixelThemeData(
     val accentButtonStyle: PixelButtonStyle = PixelButtonStyle.Accent,
     val disabledButtonStyle: PixelButtonStyle = PixelButtonStyle.Disabled,
     val textFieldStyle: PixelTextFieldStyle = PixelTextFieldStyle.Default,
+    val readOnlyTextFieldStyle: PixelTextFieldStyle = PixelTextFieldStyle.Default.copy(
+        readOnlyBorderTone = PixelTone.ACCENT,
+    ),
+    val disabledTextFieldStyle: PixelTextFieldStyle = PixelTextFieldStyle.Default.copy(
+        disabledBorderTone = PixelTone.ON,
+        disabledTextStyle = PixelTextStyle(tone = PixelTone.OFF),
+        disabledPlaceholderStyle = PixelTextStyle(tone = PixelTone.OFF),
+    ),
     val containerStyle: PixelContainerStyle = PixelContainerStyle.Default,
+    val accentContainerStyle: PixelContainerStyle = PixelContainerStyle(
+        fillTone = PixelTone.OFF,
+        borderTone = PixelTone.ACCENT,
+        alignment = Alignment.CENTER,
+    ),
 ) {
     companion object {
         val Default = PixelThemeData()
