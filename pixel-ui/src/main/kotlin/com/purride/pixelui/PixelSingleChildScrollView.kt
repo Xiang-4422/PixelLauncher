@@ -11,7 +11,7 @@ import com.purride.pixelui.state.PixelListState
  * - 复用现有 `PixelListState / PixelListController`
  * - 适合承载“一个很长的表单或内容列”，而不是离散列表项
  */
-data class PixelSingleChildScrollViewNode(
+internal data class PixelSingleChildScrollViewNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val state: PixelListState,
@@ -27,7 +27,7 @@ data class PixelSingleChildScrollViewNode(
  * 2. 纵向触摸拖动
  * 3. 子树点击、分页、输入目标的裁剪与平移
  */
-fun PixelSingleChildScrollView(
+internal fun PixelSingleChildScrollView(
     child: PixelNode,
     state: PixelListState,
     controller: PixelListController,

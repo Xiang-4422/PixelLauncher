@@ -33,7 +33,7 @@ data class PixelTextFieldStyle(
  *
  * 第一版先聚焦单行输入和点击聚焦，不做多行排版。
  */
-data class PixelTextFieldNode(
+internal data class PixelTextFieldNode(
     override val key: Any? = null,
     override val modifier: PixelModifier = PixelModifier.Empty,
     val state: PixelTextFieldState,
@@ -49,7 +49,7 @@ data class PixelTextFieldNode(
     val onSubmitted: ((String) -> Unit)? = null,
 ) : PixelNode
 
-fun PixelTextField(
+internal fun PixelTextField(
     state: PixelTextFieldState,
     controller: PixelTextFieldController,
     modifier: PixelModifier = PixelModifier.Empty,

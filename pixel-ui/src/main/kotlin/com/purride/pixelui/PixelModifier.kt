@@ -6,7 +6,7 @@ package com.purride.pixelui
  * 设计方向参考 Compose 的 Modifier，但当前阶段只做最小可运行能力：
  * 尺寸、填充、点击、权重。
  */
-data class PixelModifier(
+internal data class PixelModifier(
     val elements: List<PixelModifierElement> = emptyList(),
 ) {
     fun then(element: PixelModifierElement): PixelModifier = copy(elements = elements + element)
@@ -24,47 +24,47 @@ data class PixelModifier(
  * 后续尺寸、间距、点击、焦点、滚动等能力都会拆成独立 element，
  * 运行时再基于 element 类型做布局和事件能力注入。
  */
-interface PixelModifierElement
+internal interface PixelModifierElement
 
-data class PixelPaddingElement(
+internal data class PixelPaddingElement(
     val left: Int,
     val top: Int,
     val right: Int,
     val bottom: Int,
 ) : PixelModifierElement
 
-data class PixelSizeElement(
+internal data class PixelSizeElement(
     val width: Int? = null,
     val height: Int? = null,
 ) : PixelModifierElement
 
-data class PixelFillMaxWidthElement(
+internal data class PixelFillMaxWidthElement(
     val enabled: Boolean = true,
 ) : PixelModifierElement
 
-data class PixelFillMaxHeightElement(
+internal data class PixelFillMaxHeightElement(
     val enabled: Boolean = true,
 ) : PixelModifierElement
 
-data class PixelClickableElement(
+internal data class PixelClickableElement(
     val onClick: () -> Unit,
 ) : PixelModifierElement
 
-data class PixelWeightElement(
+internal data class PixelWeightElement(
     val weight: Float,
     val fit: PixelFlexFit = PixelFlexFit.TIGHT,
 ) : PixelModifierElement
 
-enum class PixelFlexFit {
+internal enum class PixelFlexFit {
     TIGHT,
     LOOSE,
 }
 
-fun PixelModifier.padding(all: Int): PixelModifier {
+internal fun PixelModifier.padding(all: Int): PixelModifier {
     return then(PixelPaddingElement(left = all, top = all, right = all, bottom = all))
 }
 
-fun PixelModifier.padding(
+internal fun PixelModifier.padding(
     horizontal: Int = 0,
     vertical: Int = 0,
 ): PixelModifier {
@@ -78,7 +78,7 @@ fun PixelModifier.padding(
     )
 }
 
-fun PixelModifier.padding(
+internal fun PixelModifier.padding(
     left: Int = 0,
     top: Int = 0,
     right: Int = 0,
@@ -94,35 +94,35 @@ fun PixelModifier.padding(
     )
 }
 
-fun PixelModifier.size(width: Int, height: Int): PixelModifier {
+internal fun PixelModifier.size(width: Int, height: Int): PixelModifier {
     return then(PixelSizeElement(width = width, height = height))
 }
 
-fun PixelModifier.width(width: Int): PixelModifier {
+internal fun PixelModifier.width(width: Int): PixelModifier {
     return then(PixelSizeElement(width = width))
 }
 
-fun PixelModifier.height(height: Int): PixelModifier {
+internal fun PixelModifier.height(height: Int): PixelModifier {
     return then(PixelSizeElement(height = height))
 }
 
-fun PixelModifier.fillMaxWidth(): PixelModifier {
+internal fun PixelModifier.fillMaxWidth(): PixelModifier {
     return then(PixelFillMaxWidthElement())
 }
 
-fun PixelModifier.fillMaxHeight(): PixelModifier {
+internal fun PixelModifier.fillMaxHeight(): PixelModifier {
     return then(PixelFillMaxHeightElement())
 }
 
-fun PixelModifier.fillMaxSize(): PixelModifier {
+internal fun PixelModifier.fillMaxSize(): PixelModifier {
     return fillMaxWidth().fillMaxHeight()
 }
 
-fun PixelModifier.clickable(onClick: () -> Unit): PixelModifier {
+internal fun PixelModifier.clickable(onClick: () -> Unit): PixelModifier {
     return then(PixelClickableElement(onClick))
 }
 
-fun PixelModifier.weight(
+internal fun PixelModifier.weight(
     weight: Float,
     fit: PixelFlexFit = PixelFlexFit.TIGHT,
 ): PixelModifier {
