@@ -16,6 +16,6 @@ internal class DefaultRetainedRenderSupport(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) : RetainedRenderSupport {
     override val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
-    private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
-    override val elementTreeRenderer: ElementTreeRenderer = BridgeElementTreeRenderer(renderRuntime)
+    override val elementTreeRenderer: ElementTreeRenderer =
+        BridgeElementTreeRendererFactory.createDefault(textRasterizer = textRasterizer)
 }
