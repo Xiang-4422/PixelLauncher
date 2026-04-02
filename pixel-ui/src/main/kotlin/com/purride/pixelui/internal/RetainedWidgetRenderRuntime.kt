@@ -18,11 +18,11 @@ internal class RetainedWidgetRenderRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
 ) {
+    private val bridgeGraph = BridgeSupportGraph(textRasterizer = textRasterizer)
     private val buildRuntime = RetainedBuildRuntime(
         onVisualUpdate = onVisualUpdate,
-        fallbackInflater = BridgeWidgetAdapterFactory::inflate,
+        fallbackInflater = bridgeGraph::fallbackInflater,
     )
-    private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
 
     fun render(
         root: Widget,
@@ -30,7 +30,7 @@ internal class RetainedWidgetRenderRuntime(
         logicalHeight: Int,
     ): PixelRenderResult {
         val elementRoot = buildRuntime.resolveElementTree(root)
-        return renderRuntime.render(
+        return bridgeGraph.renderElementTree(
             root = elementRoot,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
