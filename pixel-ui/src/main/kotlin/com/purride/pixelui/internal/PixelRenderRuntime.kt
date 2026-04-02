@@ -1,8 +1,7 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.AxisBufferComposer
-import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
+import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextInputAction
@@ -36,7 +35,6 @@ import com.purride.pixelui.internal.legacy.toSurfaceNode
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 internal data class PixelSize(
     val width: Int,
@@ -174,6 +172,11 @@ internal class PixelRenderRuntime(
     private val textFieldRenderSupport = PixelTextFieldRenderSupport(
         defaultTextRasterizer = textRasterizer,
         textRenderSupport = textRenderSupport,
+    )
+    private val viewportRenderSupport = PixelViewportRenderSupport(
+        measureNode = ::measure,
+        renderNode = ::renderNode,
+        scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
     )
 
     companion object {
@@ -442,7 +445,7 @@ internal class PixelRenderRuntime(
                 textInputTargets = textInputTargets,
             )
 
-            is PixelPagerNode -> renderPager(
+            is PixelPagerNode -> viewportRenderSupport.renderPager(
                 node = node,
                 bounds = paddedBounds,
                 buffer = buffer,
@@ -452,7 +455,7 @@ internal class PixelRenderRuntime(
                 textInputTargets = textInputTargets,
             )
 
-            is PixelListNode -> renderList(
+            is PixelListNode -> viewportRenderSupport.renderList(
                 node = node,
                 bounds = paddedBounds,
                 buffer = buffer,
@@ -462,7 +465,7 @@ internal class PixelRenderRuntime(
                 textInputTargets = textInputTargets,
             )
 
-            is PixelSingleChildScrollViewNode -> renderSingleChildScrollView(
+            is PixelSingleChildScrollViewNode -> viewportRenderSupport.renderSingleChildScrollView(
                 node = node,
                 bounds = paddedBounds,
                 buffer = buffer,
@@ -1025,461 +1028,6 @@ internal class PixelRenderRuntime(
                     spacingAfterChild = spacing + unit,
                 )
             }
-        }
-    }
-
-    private fun renderPager(
-        node: PixelPagerNode,
-        bounds: PixelRect,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) {
-        node.controller.sync(
-            state = node.state,
-            axis = node.axis,
-            pageCount = node.pages.size.coerceAtLeast(1),
-        )
-        pagerTargets += PixelPagerTarget(
-            bounds = bounds,
-            axis = node.axis,
-            state = node.state,
-            controller = node.controller,
-            onPageChanged = node.onPageChanged,
-        )
-
-        val snapshot = node.controller.snapshot(node.state)
-        val pageWidth = bounds.width.coerceAtLeast(1)
-        val pageHeight = bounds.height.coerceAtLeast(1)
-        val anchorPage = node.pages.getOrNull(snapshot.anchorPage) ?: return
-        val anchorPageResult = renderPagerPage(
-            page = anchorPage,
-            pageWidth = pageWidth,
-            pageHeight = pageHeight,
-        )
-
-        val adjacentPageResult = snapshot.adjacentPage?.let { pageIndex ->
-            node.pages.getOrNull(pageIndex)?.let { adjacentPage ->
-                renderPagerPage(
-                    page = adjacentPage,
-                    pageWidth = pageWidth,
-                    pageHeight = pageHeight,
-                )
-            }
-        }
-
-        val anchorShiftX = if (snapshot.axis == PixelAxis.HORIZONTAL) {
-            snapshot.dragOffsetPx.toInt()
-        } else {
-            0
-        }
-        val anchorShiftY = if (snapshot.axis == PixelAxis.VERTICAL) {
-            snapshot.dragOffsetPx.toInt()
-        } else {
-            0
-        }
-        val adjacentShiftX = when (snapshot.axis) {
-            PixelAxis.HORIZONTAL -> if (snapshot.dragOffsetPx > 0f) {
-                anchorShiftX - pageWidth
-            } else {
-                anchorShiftX + pageWidth
-            }
-
-            PixelAxis.VERTICAL -> 0
-        }
-        val adjacentShiftY = when (snapshot.axis) {
-            PixelAxis.HORIZONTAL -> 0
-            PixelAxis.VERTICAL -> if (snapshot.dragOffsetPx > 0f) {
-                anchorShiftY - pageHeight
-            } else {
-                anchorShiftY + pageHeight
-            }
-        }
-
-        translateTargets(
-            targets = anchorPageResult.clickTargets,
-            parentBounds = bounds,
-            pageShiftX = anchorShiftX,
-            pageShiftY = anchorShiftY,
-            into = clickTargets,
-        )
-        translatePagerTargets(
-            targets = anchorPageResult.pagerTargets,
-            parentBounds = bounds,
-            pageShiftX = anchorShiftX,
-            pageShiftY = anchorShiftY,
-            into = pagerTargets,
-        )
-        translateListTargets(
-            targets = anchorPageResult.listTargets,
-            parentBounds = bounds,
-            pageShiftX = anchorShiftX,
-            pageShiftY = anchorShiftY,
-            into = listTargets,
-        )
-        translateTextInputTargets(
-            targets = anchorPageResult.textInputTargets,
-            parentBounds = bounds,
-            pageShiftX = anchorShiftX,
-            pageShiftY = anchorShiftY,
-            into = textInputTargets,
-        )
-        adjacentPageResult?.let { result ->
-            translateTargets(
-                targets = result.clickTargets,
-                parentBounds = bounds,
-                pageShiftX = adjacentShiftX,
-                pageShiftY = adjacentShiftY,
-                into = clickTargets,
-            )
-            translatePagerTargets(
-                targets = result.pagerTargets,
-                parentBounds = bounds,
-                pageShiftX = adjacentShiftX,
-                pageShiftY = adjacentShiftY,
-                into = pagerTargets,
-            )
-            translateListTargets(
-                targets = result.listTargets,
-                parentBounds = bounds,
-                pageShiftX = adjacentShiftX,
-                pageShiftY = adjacentShiftY,
-                into = listTargets,
-            )
-            translateTextInputTargets(
-                targets = result.textInputTargets,
-                parentBounds = bounds,
-                pageShiftX = adjacentShiftX,
-                pageShiftY = adjacentShiftY,
-                into = textInputTargets,
-            )
-        }
-
-        val composed = AxisBufferComposer.compose(
-            primary = anchorPageResult.buffer,
-            secondary = adjacentPageResult?.buffer,
-            axis = snapshot.axis,
-            offsetPx = snapshot.dragOffsetPx,
-        )
-        buffer.blit(
-            source = composed,
-            destX = bounds.left,
-            destY = bounds.top,
-        )
-    }
-
-    private fun renderList(
-        node: PixelListNode,
-        bounds: PixelRect,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) {
-        val viewportWidth = bounds.width.coerceAtLeast(1)
-        val viewportHeight = bounds.height.coerceAtLeast(1)
-        val itemConstraints = PixelConstraints(
-            maxWidth = viewportWidth,
-            maxHeight = viewportHeight,
-        )
-        val itemSizes = node.items.map { child -> measure(child, itemConstraints) }
-        val contentHeight = itemSizes.sumOf { size -> size.height } + (max(0, itemSizes.size - 1) * node.spacing)
-        val itemTopOffsets = IntArray(itemSizes.size)
-        var nextItemTop = 0
-        itemSizes.forEachIndexed { index, size ->
-            itemTopOffsets[index] = nextItemTop
-            nextItemTop += size.height + node.spacing
-        }
-        node.state.itemTopOffsetsPx = itemTopOffsets
-        node.state.itemHeightsPx = itemSizes.map { it.height }.toIntArray()
-        node.controller.sync(
-            state = node.state,
-            viewportHeightPx = viewportHeight,
-            contentHeightPx = contentHeight,
-        )
-
-        listTargets += PixelListTarget(
-            bounds = bounds,
-            viewportHeightPx = viewportHeight,
-            contentHeightPx = contentHeight,
-            state = node.state,
-            controller = node.controller,
-        )
-
-        // 列表先在独立局部缓冲中绘制，再整体贴回父缓冲。
-        // 这样既能复用现有节点渲染逻辑，也能天然得到视口裁剪效果。
-        val listBuffer = PixelBuffer(width = viewportWidth, height = viewportHeight).apply { clear() }
-        val listClickTargets = mutableListOf<PixelClickTarget>()
-        val listPagerTargets = mutableListOf<PixelPagerTarget>()
-        val nestedListTargets = mutableListOf<PixelListTarget>()
-        val listTextInputTargets = mutableListOf<PixelTextInputTarget>()
-        var cursorY = -node.state.scrollOffsetPx.roundToInt()
-
-        node.items.zip(itemSizes).forEach { (child, childSize) ->
-            val childBounds = PixelRect(
-                left = 0,
-                top = cursorY,
-                width = childSize.width,
-                height = childSize.height,
-            )
-            if (childBounds.bottom > 0 && childBounds.top < viewportHeight) {
-                renderNode(
-                    node = child,
-                    bounds = childBounds,
-                    constraints = PixelConstraints(
-                        maxWidth = viewportWidth,
-                        maxHeight = childSize.height,
-                    ),
-                    buffer = listBuffer,
-                    clickTargets = listClickTargets,
-                    pagerTargets = listPagerTargets,
-                    listTargets = nestedListTargets,
-                    textInputTargets = listTextInputTargets,
-                )
-            }
-            cursorY += childSize.height + node.spacing
-        }
-
-        translateTargets(
-            targets = listClickTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = clickTargets,
-        )
-        translatePagerTargets(
-            targets = listPagerTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = pagerTargets,
-        )
-        translateListTargets(
-            targets = nestedListTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = listTargets,
-        )
-        translateTextInputTargets(
-            targets = listTextInputTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = textInputTargets,
-        )
-
-        buffer.blit(
-            source = listBuffer,
-            destX = bounds.left,
-            destY = bounds.top,
-        )
-    }
-
-    private fun renderSingleChildScrollView(
-        node: PixelSingleChildScrollViewNode,
-        bounds: PixelRect,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) {
-        val viewportWidth = bounds.width.coerceAtLeast(1)
-        val viewportHeight = bounds.height.coerceAtLeast(1)
-        val childConstraints = PixelConstraints(
-            maxWidth = viewportWidth,
-            maxHeight = SCROLL_AXIS_UNBOUNDED_MAX,
-        )
-        val childSize = measure(node.child, childConstraints)
-        val contentHeight = childSize.height
-        node.state.itemTopOffsetsPx = intArrayOf(0)
-        node.state.itemHeightsPx = intArrayOf(childSize.height)
-        node.controller.sync(
-            state = node.state,
-            viewportHeightPx = viewportHeight,
-            contentHeightPx = contentHeight,
-        )
-
-        listTargets += PixelListTarget(
-            bounds = bounds,
-            viewportHeightPx = viewportHeight,
-            contentHeightPx = contentHeight,
-            state = node.state,
-            controller = node.controller,
-        )
-
-        val scrollBuffer = PixelBuffer(width = viewportWidth, height = viewportHeight).apply { clear() }
-        val scrollClickTargets = mutableListOf<PixelClickTarget>()
-        val scrollPagerTargets = mutableListOf<PixelPagerTarget>()
-        val nestedListTargets = mutableListOf<PixelListTarget>()
-        val scrollTextInputTargets = mutableListOf<PixelTextInputTarget>()
-        val childBounds = PixelRect(
-            left = 0,
-            top = -node.state.scrollOffsetPx.roundToInt(),
-            width = childSize.width,
-            height = childSize.height,
-        )
-
-        renderNode(
-            node = node.child,
-            bounds = childBounds,
-            constraints = childConstraints,
-            buffer = scrollBuffer,
-            clickTargets = scrollClickTargets,
-            pagerTargets = scrollPagerTargets,
-            listTargets = nestedListTargets,
-            textInputTargets = scrollTextInputTargets,
-        )
-
-        translateTargets(
-            targets = scrollClickTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = clickTargets,
-        )
-        translatePagerTargets(
-            targets = scrollPagerTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = pagerTargets,
-        )
-        translateListTargets(
-            targets = nestedListTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = listTargets,
-        )
-        translateTextInputTargets(
-            targets = scrollTextInputTargets,
-            parentBounds = bounds,
-            pageShiftX = 0,
-            pageShiftY = 0,
-            into = textInputTargets,
-        )
-
-        buffer.blit(
-            source = scrollBuffer,
-            destX = bounds.left,
-            destY = bounds.top,
-        )
-    }
-
-    private fun renderPagerPage(
-        page: LegacyRenderNode,
-        pageWidth: Int,
-        pageHeight: Int,
-    ): PixelRenderResult {
-        val pageBuffer = PixelBuffer(width = pageWidth, height = pageHeight).apply { clear() }
-        val pageClickTargets = mutableListOf<PixelClickTarget>()
-        val pagePagerTargets = mutableListOf<PixelPagerTarget>()
-        val pageListTargets = mutableListOf<PixelListTarget>()
-        val pageTextInputTargets = mutableListOf<PixelTextInputTarget>()
-        renderNode(
-            node = page,
-            bounds = PixelRect(left = 0, top = 0, width = pageWidth, height = pageHeight),
-            constraints = PixelConstraints(maxWidth = pageWidth, maxHeight = pageHeight),
-            buffer = pageBuffer,
-            clickTargets = pageClickTargets,
-            pagerTargets = pagePagerTargets,
-            listTargets = pageListTargets,
-            textInputTargets = pageTextInputTargets,
-        )
-        return PixelRenderResult(
-            buffer = pageBuffer,
-            clickTargets = pageClickTargets,
-            pagerTargets = pagePagerTargets,
-            listTargets = pageListTargets,
-            textInputTargets = pageTextInputTargets,
-        )
-    }
-
-    private fun translateTargets(
-        targets: List<PixelClickTarget>,
-        parentBounds: PixelRect,
-        pageShiftX: Int,
-        pageShiftY: Int,
-        into: MutableList<PixelClickTarget>,
-    ) {
-        targets.forEach { target ->
-            target.bounds
-                .translate(
-                    deltaX = parentBounds.left + pageShiftX,
-                    deltaY = parentBounds.top + pageShiftY,
-                )
-                .intersect(parentBounds)
-                ?.let { translatedBounds ->
-                    into += PixelClickTarget(
-                        bounds = translatedBounds,
-                        onClick = target.onClick,
-                    )
-                }
-        }
-    }
-
-    private fun translatePagerTargets(
-        targets: List<PixelPagerTarget>,
-        parentBounds: PixelRect,
-        pageShiftX: Int,
-        pageShiftY: Int,
-        into: MutableList<PixelPagerTarget>,
-    ) {
-        targets.forEach { target ->
-            target.bounds
-                .translate(
-                    deltaX = parentBounds.left + pageShiftX,
-                    deltaY = parentBounds.top + pageShiftY,
-                )
-                .intersect(parentBounds)
-                ?.let { translatedBounds ->
-                    into += target.copy(bounds = translatedBounds)
-                }
-        }
-    }
-
-    private fun translateListTargets(
-        targets: List<PixelListTarget>,
-        parentBounds: PixelRect,
-        pageShiftX: Int,
-        pageShiftY: Int,
-        into: MutableList<PixelListTarget>,
-    ) {
-        targets.forEach { target ->
-            target.bounds
-                .translate(
-                    deltaX = parentBounds.left + pageShiftX,
-                    deltaY = parentBounds.top + pageShiftY,
-                )
-                .intersect(parentBounds)
-                ?.let { translatedBounds ->
-                    into += target.copy(bounds = translatedBounds)
-                }
-        }
-    }
-
-    private fun translateTextInputTargets(
-        targets: List<PixelTextInputTarget>,
-        parentBounds: PixelRect,
-        pageShiftX: Int,
-        pageShiftY: Int,
-        into: MutableList<PixelTextInputTarget>,
-    ) {
-        targets.forEach { target ->
-            target.bounds
-                .translate(
-                    deltaX = parentBounds.left + pageShiftX,
-                    deltaY = parentBounds.top + pageShiftY,
-                )
-                .intersect(parentBounds)
-                ?.let { translatedBounds ->
-                    into += target.copy(bounds = translatedBounds)
-                }
         }
     }
 
