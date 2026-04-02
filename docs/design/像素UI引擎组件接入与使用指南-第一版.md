@@ -79,19 +79,19 @@ val hostSetup = createPixelHostSetup(
                 Container(
                     padding = EdgeInsets.all(4),
                     child = Column(
-                    spacing = 4,
-                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                    children = listOf(
-                        Text("COUNT $value"),
-                        SizedBox(
-                            height = 14,
-                            child = OutlinedButton(
-                                text = "CLICK",
-                                onPressed = { counter.value = value + 1 },
+                        spacing = 4,
+                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        children = listOf(
+                            Text("COUNT $value"),
+                            SizedBox(
+                                height = 14,
+                                child = OutlinedButton(
+                                    text = "CLICK",
+                                    onPressed = { counter.value = value + 1 },
+                                ),
                             ),
                         ),
                     ),
-                ),
                 )
             }
         },
@@ -136,19 +136,19 @@ val config = PixelHostSetupConfig(
         Container(
             padding = EdgeInsets.all(4),
             child = Column(
-            spacing = 4,
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            children = listOf(
-                Text("HELLO PIXEL"),
-                SizedBox(
-                    height = 14,
-                    child = OutlinedButton(
-                        text = "CLICK",
-                        onPressed = { /* ... */ },
+                spacing = 4,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                children = listOf(
+                    Text("HELLO PIXEL"),
+                    SizedBox(
+                        height = 14,
+                        child = OutlinedButton(
+                            text = "CLICK",
+                            onPressed = { /* ... */ },
+                        ),
                     ),
                 ),
             ),
-        ),
         )
     },
 )
@@ -261,7 +261,7 @@ Container(
 )
 ```
 
-比起直接在公开页面层大量写 `modifier = PixelModifier.Empty.fillMaxWidth().height(...)`，
+比起在公开页面层堆很多尺寸和拉伸兼容参数，
 这条路径更接近 Flutter 风格，也更适合作为后续长期 API。
 
 ### 局部上下文与局部状态
@@ -274,8 +274,6 @@ Container(
 不需要马上拆一个完整命名 `StatefulWidget`，当前可以直接用：
 
 ```kotlin
-var accent = false
-
 Column(
     spacing = 2,
     children = listOf(
@@ -515,10 +513,15 @@ Text(
 
 ```kotlin
 DecoratedBox(
-    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
     fillTone = PixelTone.OFF,
     borderTone = PixelTone.ACCENT,
-    child = Text("CARD"),
+    child = SizedBox(
+        width = 32,
+        height = 16,
+        child = Center(
+            child = Text("CARD"),
+        ),
+    ),
 )
 ```
 
@@ -587,13 +590,20 @@ Padding(
 
 ```kotlin
 Row(
-    modifier = PixelModifier.Empty.fillMaxWidth().height(18),
     spacing = 2,
     mainAxisAlignment = MainAxisAlignment.CENTER,
     crossAxisAlignment = CrossAxisAlignment.CENTER,
     children = listOf(
-        Text("LEFT"),
-        Text("RIGHT"),
+        SizedBox(
+            width = 18,
+            height = 18,
+            child = Center(child = Text("LEFT")),
+        ),
+        SizedBox(
+            width = 18,
+            height = 18,
+            child = Center(child = Text("RIGHT")),
+        ),
     ),
 )
 ```
@@ -602,19 +612,21 @@ Row(
 
 - `spacing`
 - 主轴排布 `START / CENTER / END`
-- 交叉轴对齐 `START / CENTER / END`
-- `Modifier.weight(...)`
+- 交叉轴对齐 `START / CENTER / END / STRETCH`
+- `Expanded / Flexible / Spacer`
 
 ### 4.5 按钮
 
 使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
 
 ```kotlin
-OutlinedButton(
-    text = "SUBMIT",
-    onPressed = { submitCount.value += 1 },
-    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-    enabled = true,
+SizedBox(
+    height = 14,
+    child = OutlinedButton(
+        text = "SUBMIT",
+        onPressed = { submitCount.value += 1 },
+        enabled = true,
+    ),
 )
 ```
 
@@ -681,7 +693,6 @@ PageView(
     onPageChanged = { page ->
         currentPage.value = page
     },
-    modifier = PixelModifier.Empty.fillMaxSize(),
     pages = listOf(
         Text("PAGE 1"),
         Text("PAGE 2"),
@@ -725,15 +736,30 @@ private val listState = listController.create()
 ListView(
     state = listState,
     controller = listController,
-    modifier = PixelModifier.Empty.fillMaxWidth().height(40),
     spacing = 3,
     items = List(8) { index ->
-        OutlinedButton(
-            text = "ITEM ${index + 1}",
-            onPressed = { tappedItem.value = index },
-            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+        SizedBox(
+            height = 14,
+            child = OutlinedButton(
+                text = "ITEM ${index + 1}",
+                onPressed = { tappedItem.value = index },
+            ),
         )
     },
+)
+```
+
+如果这一块需要明确控制视口高度，当前推荐把 `ListView` 放进外层 `SizedBox` 或 `Expanded`：
+
+```kotlin
+SizedBox(
+    height = 40,
+    child = ListView(
+        state = listState,
+        controller = listController,
+        spacing = 3,
+        items = listItems,
+    ),
 )
 ```
 
@@ -755,12 +781,13 @@ ListViewSeparated(
     itemCount = 5,
     state = listState,
     controller = listController,
-    modifier = PixelModifier.Empty.fillMaxWidth().height(40),
     itemBuilder = { index ->
-        OutlinedButton(
-            text = "ITEM ${index + 1}",
-            onPressed = { tappedItem.value = index },
-            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+        SizedBox(
+            height = 14,
+            child = OutlinedButton(
+                text = "ITEM ${index + 1}",
+                onPressed = { tappedItem.value = index },
+            ),
         )
     },
     separatorBuilder = {
@@ -788,11 +815,27 @@ private val scrollState = scrollController.create()
 SingleChildScrollView(
     state = scrollState,
     controller = scrollController,
-    modifier = PixelModifier.Empty.fillMaxSize().padding(4),
     child = Column(
-        modifier = PixelModifier.Empty.fillMaxWidth(),
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
         spacing = 4,
         children = longFormChildren,
+    ),
+)
+```
+
+如果页面需要统一留白，当前更推荐把它放到外层 `Container`：
+
+```kotlin
+Container(
+    padding = EdgeInsets.all(4),
+    child = SingleChildScrollView(
+        state = scrollState,
+        controller = scrollController,
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            spacing = 4,
+            children = longFormChildren,
+        ),
     ),
 )
 ```

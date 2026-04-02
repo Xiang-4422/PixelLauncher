@@ -183,7 +183,7 @@
 - `SizedBox(height = ...)`
 - `Expanded`
 
-它们现在已经可以替掉一部分页面层公开 `PixelModifier.fillMaxWidth()` 和 `fillMaxHeight()` 用法。
+它们现在已经可以替掉大部分页面层公开“手动拉伸和尺寸兼容参数”写法。
 
 旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前主要作为兼容层保留，不再建议新页面直接使用。
 
@@ -209,7 +209,7 @@
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
-- 公开层仍然有一部分 `PixelModifier` 兼容参数没有完全回收
+- 公开层仍然保留少量 `PixelModifier` 兼容参数，但主推荐路径已经基本切到 Flutter 风格布局组件
 - 还没有开始把 `:app` 页面迁进来
 
 ---
