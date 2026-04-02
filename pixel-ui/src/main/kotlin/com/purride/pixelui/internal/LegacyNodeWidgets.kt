@@ -30,8 +30,32 @@ internal interface LegacyNodeWidget : Widget {
     ): PixelNode
 }
 
+internal fun adaptLegacyWidget(widget: Widget): LegacyNodeWidget? {
+    return when (widget) {
+        is LegacyNodeWidget -> widget
+        is PixelNode -> StaticLegacyNodeWidget(widget)
+        else -> null
+    }
+}
+
 internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeData {
     return explicit ?: Theme.maybeOf(this) ?: PixelThemeData.Default
+}
+
+private data class StaticLegacyNodeWidget(
+    private val node: PixelNode,
+) : LegacyNodeWidget {
+    override val key: Any?
+        get() = node.key
+
+    override val childWidgets: List<Widget> = emptyList()
+
+    override fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode {
+        return node
+    }
 }
 
 internal fun PixelNode.withExtraModifier(extra: PixelModifier): PixelNode {

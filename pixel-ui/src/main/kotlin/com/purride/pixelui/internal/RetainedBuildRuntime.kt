@@ -135,13 +135,12 @@ private class BuildOwner(
 
     private fun inflateWidget(widget: Widget): Element {
         return when (widget) {
-            is PixelNode -> PixelNodeElement(widget)
             is InheritedNotifier<*> -> InheritedNotifierElement(widget)
             is InheritedWidget -> InheritedElement(widget)
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)
-            is LegacyNodeWidget -> LegacyAdapterElement(widget)
-            else -> error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
+            else -> adaptLegacyWidget(widget)?.let(::LegacyAdapterElement)
+                ?: error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
         }
     }
 
@@ -156,16 +155,6 @@ private class BuildOwner(
         val callback: com.purride.pixelui.VoidCallback,
         val elements: MutableSet<Element>,
     )
-}
-
-private class PixelNodeElement(
-    widget: PixelNode,
-) : Element(widget) {
-    override fun performRebuild() = Unit
-
-    override fun buildLegacyNode(): PixelNode {
-        return widget as PixelNode
-    }
 }
 
 private abstract class Element(
