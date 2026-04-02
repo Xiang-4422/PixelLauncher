@@ -123,3 +123,21 @@ internal data class PixelRenderResult(
     val listTargets: List<PixelListTarget>,
     val textInputTargets: List<PixelTextInputTarget>,
 )
+
+internal data class PixelRenderSession(
+    val buffer: PixelBuffer,
+    val clickTargets: MutableList<PixelClickTarget> = mutableListOf(),
+    val pagerTargets: MutableList<PixelPagerTarget> = mutableListOf(),
+    val listTargets: MutableList<PixelListTarget> = mutableListOf(),
+    val textInputTargets: MutableList<PixelTextInputTarget> = mutableListOf(),
+) {
+    fun toRenderResult(): PixelRenderResult {
+        return PixelRenderResult(
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
+        )
+    }
+}

@@ -1,7 +1,6 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 
 internal class PixelRenderRuntime(
@@ -34,6 +33,10 @@ internal class PixelRenderRuntime(
         viewportRenderSupport = viewportRenderSupport,
         renderNode = ::renderNode,
     )
+    private val rootRenderSupport = PixelRootRenderSupport(
+        measureNode = ::measure,
+        renderNode = ::renderNode,
+    )
 
     companion object {
         /**
@@ -49,39 +52,10 @@ internal class PixelRenderRuntime(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        val buffer = PixelBuffer(width = logicalWidth, height = logicalHeight)
-        buffer.clear()
-        val clickTargets = mutableListOf<PixelClickTarget>()
-        val pagerTargets = mutableListOf<PixelPagerTarget>()
-        val listTargets = mutableListOf<PixelListTarget>()
-        val textInputTargets = mutableListOf<PixelTextInputTarget>()
-        val rootConstraints = PixelConstraints(
-            maxWidth = logicalWidth,
-            maxHeight = logicalHeight,
-        )
-        val measuredRoot = measure(root, rootConstraints)
-        val rootBounds = PixelRect(
-            left = 0,
-            top = 0,
-            width = measuredRoot.width.coerceAtMost(logicalWidth),
-            height = measuredRoot.height.coerceAtMost(logicalHeight),
-        )
-        renderNode(
-            node = root,
-            bounds = rootBounds,
-            constraints = rootConstraints,
-            buffer = buffer,
-            clickTargets = clickTargets,
-            pagerTargets = pagerTargets,
-            listTargets = listTargets,
-            textInputTargets = textInputTargets,
-        )
-        return PixelRenderResult(
-            buffer = buffer,
-            clickTargets = clickTargets,
-            pagerTargets = pagerTargets,
-            listTargets = listTargets,
-            textInputTargets = textInputTargets,
+        return rootRenderSupport.renderRoot(
+            root = root,
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
         )
     }
 
@@ -97,7 +71,7 @@ internal class PixelRenderRuntime(
         node: LegacyRenderNode,
         bounds: PixelRect,
         constraints: PixelConstraints,
-        buffer: PixelBuffer,
+        buffer: com.purride.pixelcore.PixelBuffer,
         clickTargets: MutableList<PixelClickTarget>,
         pagerTargets: MutableList<PixelPagerTarget>,
         listTargets: MutableList<PixelListTarget>,
