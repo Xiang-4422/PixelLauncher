@@ -8,7 +8,7 @@ package com.purride.pixelui.internal
  */
 internal class BridgeAdapterElement(
     widget: BridgeWidget,
-) : Element(widget) {
+) : Element(widget), BridgeResolvableElement {
     private var children = emptyList<Element>()
 
     override fun performRebuild() {
@@ -27,7 +27,7 @@ internal class BridgeAdapterElement(
         children = nextChildren
     }
 
-    internal fun resolveBridgeNode(childNodes: List<BridgeRenderNode>): BridgeRenderNode {
+    override fun resolveBridgeNode(childNodes: List<BridgeRenderNode>): BridgeRenderNode {
         owner.clearListenableDependencies(this)
         return (widget as BridgeWidget).createBridgeNode(
             context = this,
