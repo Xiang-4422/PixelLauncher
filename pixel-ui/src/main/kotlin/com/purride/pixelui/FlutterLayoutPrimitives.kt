@@ -15,13 +15,27 @@ typealias Axis = PixelAxis
  *
  * 当前 runtime 只支持最小集合：
  * - `TOP_START`
+ * - `TOP_CENTER`
+ * - `TOP_END`
+ * - `CENTER_START`
  * - `CENTER`
+ * - `CENTER_END`
+ * - `BOTTOM_START`
+ * - `BOTTOM_CENTER`
+ * - `BOTTOM_END`
  *
- * 后续如果补 `Align`，再继续扩展更多方位。
+ * 当前直接对齐到最常用的 Flutter 方位集合。
  */
 enum class Alignment {
     TOP_START,
+    TOP_CENTER,
+    TOP_END,
+    CENTER_START,
     CENTER,
+    CENTER_END,
+    BOTTOM_START,
+    BOTTOM_CENTER,
+    BOTTOM_END,
 }
 
 enum class MainAxisAlignment {
@@ -48,7 +62,14 @@ enum class CrossAxisAlignment {
 internal fun Alignment.toPixelAlignment(): PixelAlignment {
     return when (this) {
         Alignment.TOP_START -> PixelAlignment.TOP_START
+        Alignment.TOP_CENTER -> PixelAlignment.TOP_CENTER
+        Alignment.TOP_END -> PixelAlignment.TOP_END
+        Alignment.CENTER_START -> PixelAlignment.CENTER_START
         Alignment.CENTER -> PixelAlignment.CENTER
+        Alignment.CENTER_END -> PixelAlignment.CENTER_END
+        Alignment.BOTTOM_START -> PixelAlignment.BOTTOM_START
+        Alignment.BOTTOM_CENTER -> PixelAlignment.BOTTOM_CENTER
+        Alignment.BOTTOM_END -> PixelAlignment.BOTTOM_END
     }
 }
 

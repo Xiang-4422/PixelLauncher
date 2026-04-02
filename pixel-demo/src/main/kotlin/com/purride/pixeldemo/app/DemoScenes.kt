@@ -1657,6 +1657,55 @@ object DemoScenes {
                                 ),
                             ),
                         ),
+                        SizedBox(
+                            height = 22,
+                            child = Row(
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Expanded(
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Align(
+                                                alignment = Alignment.TOP_CENTER,
+                                                child = SizedBox(
+                                                    width = 14,
+                                                    height = 8,
+                                                    child = DecoratedBox(
+                                                        fillTone = PixelTone.OFF,
+                                                        borderTone = PixelTone.ACCENT,
+                                                        child = Center(
+                                                            child = Text("TOP", style = TextStyle.Accent),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    Expanded(
+                                        child = DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            child = Align(
+                                                alignment = Alignment.BOTTOM_END,
+                                                child = SizedBox(
+                                                    width = 14,
+                                                    height = 8,
+                                                    child = DecoratedBox(
+                                                        fillTone = PixelTone.OFF,
+                                                        borderTone = PixelTone.ACCENT,
+                                                        child = Center(
+                                                            child = Text("END", style = TextStyle.Accent),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
                     ),
                 )
             }
