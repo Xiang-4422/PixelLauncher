@@ -154,6 +154,7 @@ val config = PixelHostSetupConfig(
 - 组件树通过 `setContent { ... }` 返回
 - 交互优先通过 `State.setState`、`ValueNotifier`、控制器回调修改状态
 - 需要局部上下文或局部短状态时，优先用 `Builder` / `StatefulBuilder`
+- 需要把一个 `Listenable` 作为子树环境向下广播时，优先用 `InheritedNotifier`
 - 重建应由 retained runtime 自动触发，不再把 `hostView.requestRender()` 当成页面主路径
 
 ### 当前推荐结构
@@ -255,6 +256,41 @@ Column(
 - `Builder` 只解决“局部读取上下文”
 - `StatefulBuilder` 只适合非常小的局部交互
 - 如果状态已经影响整块页面结构，还是应该升级成命名 `StatefulWidget`
+
+### 子树级通知环境
+
+如果某个局部状态需要：
+
+- 由上层统一持有
+- 向整棵子树广播
+- 子组件通过上下文直接订阅
+
+当前推荐用 `InheritedNotifier`：
+
+```kotlin
+class CounterScope(
+    notifier: ValueNotifier<Int>,
+    override val child: Widget,
+) : InheritedNotifier<ValueNotifier<Int>>(
+    notifier = notifier,
+    child = child,
+) {
+    companion object {
+        fun of(context: BuildContext): Int {
+            return context.dependOnInheritedWidgetOfExactType<CounterScope>()
+                ?.notifier
+                ?.value
+                ?: 0
+        }
+    }
+}
+```
+
+这种写法适合：
+
+- 局部表单状态
+- 局部筛选条件
+- 子树级分页/滚动联动
 
 如果页面已经开始出现大量重复的 `TextStyle / ButtonStyle / TextFieldStyle / Container` 视觉配置，
 当前推荐先收成轻量主题对象：
