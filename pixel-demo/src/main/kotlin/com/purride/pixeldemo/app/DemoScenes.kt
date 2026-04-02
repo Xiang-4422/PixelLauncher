@@ -71,6 +71,36 @@ object DemoScenes {
         val content: () -> Widget,
     )
 
+    private fun accentUiTheme(): ThemeData {
+        return ThemeData(
+            textStyle = TextStyle.Accent,
+            buttonStyle = ButtonStyle.Accent,
+            disabledButtonStyle = ButtonStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                textStyle = TextStyle(tone = PixelTone.OFF),
+            ),
+            textFieldStyle = TextFieldStyle(
+                borderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                textStyle = TextStyle.Accent,
+                placeholderStyle = TextStyle.Default,
+            ),
+            readOnlyTextFieldStyle = TextFieldStyle(
+                borderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                readOnlyBorderTone = PixelTone.ACCENT,
+                textStyle = TextStyle.Accent,
+                placeholderStyle = TextStyle.Default,
+            ),
+            containerStyle = ContainerStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                alignment = Alignment.CENTER,
+            ),
+        )
+    }
+
     fun create(
         sceneKind: DemoSceneKind,
         hostView: PixelHostView,
@@ -213,6 +243,7 @@ object DemoScenes {
         val primaryState = controller.create(initialText = "PIXEL")
         val secondaryState = controller.create()
         val readOnlyState = controller.create(initialText = "READ ONLY VALUE THAT SHOULD CLIP")
+        val accentTheme = accentUiTheme()
         var liveText = primaryState.text
         var submittedText = ""
 
@@ -249,55 +280,50 @@ object DemoScenes {
                                 hostView.requestRender()
                             },
                         ),
-                        TextField(
-                            state = secondaryState,
-                            controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                            placeholder = "TYPE SECONDARY",
-                            style = TextFieldStyle(
-                                borderTone = PixelTone.ON,
-                                focusedBorderTone = PixelTone.ACCENT,
-                                textStyle = TextStyle.Accent,
-                                placeholderStyle = TextStyle.Default,
+                        Theme(
+                            data = accentTheme,
+                            child = Column(
+                                spacing = 2,
+                                children = listOf(
+                                    TextField(
+                                        state = secondaryState,
+                                        controller = controller,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                        placeholder = "TYPE SECONDARY",
+                                        enabled = primaryState.text.isNotEmpty(),
+                                        textInputAction = TextInputAction.DONE,
+                                        onSubmitted = { text ->
+                                            submittedText = text
+                                            hostView.requestRender()
+                                        },
+                                    ),
+                                    TextField(
+                                        state = readOnlyState,
+                                        controller = controller,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                        placeholder = "READ ONLY",
+                                        readOnly = true,
+                                    ),
+                                    OutlinedButton(
+                                        text = "CLEAR SECONDARY",
+                                        onPressed = if (secondaryState.text.isNotEmpty()) {
+                                            {
+                                                controller.clear(secondaryState)
+                                                hostView.requestRender()
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    ),
+                                ),
                             ),
-                            enabled = primaryState.text.isNotEmpty(),
-                            textInputAction = TextInputAction.DONE,
-                            onSubmitted = { text ->
-                                submittedText = text
-                                hostView.requestRender()
-                            },
-                        ),
-                        TextField(
-                            state = readOnlyState,
-                            controller = controller,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                            placeholder = "READ ONLY",
-                            style = TextFieldStyle(
-                                borderTone = PixelTone.ON,
-                                focusedBorderTone = PixelTone.ACCENT,
-                                readOnlyBorderTone = PixelTone.ACCENT,
-                                textStyle = TextStyle.Default,
-                                placeholderStyle = TextStyle.Default,
-                            ),
-                            readOnly = true,
                         ),
                         OutlinedButton(
                             text = "FOCUS PRIMARY",
                             onPressed = {
                                 controller.requestFocus(primaryState)
                                 hostView.requestRender()
-                            },
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                        ),
-                        OutlinedButton(
-                            text = "CLEAR SECONDARY",
-                            onPressed = if (secondaryState.text.isNotEmpty()) {
-                                {
-                                    controller.clear(secondaryState)
-                                    hostView.requestRender()
-                                }
-                            } else {
-                                null
                             },
                             modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                         ),
@@ -866,6 +892,7 @@ object DemoScenes {
         val cityState = textController.create(initialText = "SHANGHAI")
         val listController = ScrollController()
         val listState = listController.create()
+        val accentTheme = accentUiTheme()
         var selectedLabel = "ITEM 1"
 
         return DemoScene(
@@ -881,45 +908,45 @@ object DemoScenes {
                         infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
                         infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
                         infoCard("SELECTED", selectedLabel),
-                        TextField(
-                            state = nameState,
-                            controller = textController,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                            placeholder = "TYPE NAME",
-                            style = TextFieldStyle.Default,
-                        ),
-                        TextField(
-                            state = cityState,
-                            controller = textController,
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                            placeholder = "TYPE CITY",
-                            style = TextFieldStyle(
-                                borderTone = PixelTone.ON,
-                                focusedBorderTone = PixelTone.ACCENT,
-                                textStyle = TextStyle.Accent,
-                                placeholderStyle = TextStyle.Default,
-                            ),
-                        ),
-                        Row(
-                            modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                            spacing = 2,
-                            children = listOf(
-                                OutlinedButton(
-                                    text = "SHOW 1",
-                                    onPressed = {
-                                        listController.showItem(listState, itemIndex = 0)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                ),
-                                OutlinedButton(
-                                    text = "SHOW 6",
-                                    onPressed = {
-                                        listController.showItem(listState, itemIndex = 5)
-                                        hostView.requestRender()
-                                    },
-                                    modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                    style = ButtonStyle.Accent,
+                        Theme(
+                            data = accentTheme,
+                            child = Column(
+                                spacing = 2,
+                                children = listOf(
+                                    TextField(
+                                        state = nameState,
+                                        controller = textController,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                        placeholder = "TYPE NAME",
+                                    ),
+                                    TextField(
+                                        state = cityState,
+                                        controller = textController,
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                        placeholder = "TYPE CITY",
+                                    ),
+                                    Row(
+                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                        spacing = 2,
+                                        children = listOf(
+                                            OutlinedButton(
+                                                text = "SHOW 1",
+                                                onPressed = {
+                                                    listController.showItem(listState, itemIndex = 0)
+                                                    hostView.requestRender()
+                                                },
+                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                            ),
+                                            OutlinedButton(
+                                                text = "SHOW 6",
+                                                onPressed = {
+                                                    listController.showItem(listState, itemIndex = 5)
+                                                    hostView.requestRender()
+                                                },
+                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                            ),
+                                        ),
+                                    ),
                                 ),
                             ),
                         ),
