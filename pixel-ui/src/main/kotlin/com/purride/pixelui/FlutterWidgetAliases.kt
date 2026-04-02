@@ -48,54 +48,83 @@ private fun applyThemeToNode(
 ): PixelNode {
     return when (node) {
         is PixelTextNode -> {
-            val resolvedStyle = when (node.style) {
-                TextStyle.Default -> theme.textStyle
-                TextStyle.Accent -> theme.accentTextStyle
-                else -> node.style
-            }
-            node.copy(style = resolvedStyle)
-        }
-
-        is PixelButtonNode -> {
-            val resolvedStyle = when (node.style) {
-                ButtonStyle.Default -> theme.buttonStyle
-                ButtonStyle.Accent -> theme.accentButtonStyle
-                else -> node.style
+            val resolvedStyle = if (node.styleLocked) {
+                node.style
+            } else {
+                when (node.style) {
+                    TextStyle.Default -> theme.textStyle
+                    TextStyle.Accent -> theme.accentTextStyle
+                    else -> node.style
+                }
             }
             node.copy(
                 style = resolvedStyle,
-                disabledStyle = theme.disabledButtonStyle,
+                styleLocked = true,
+            )
+        }
+
+        is PixelButtonNode -> {
+            val resolvedStyle = if (node.styleLocked) {
+                node.style
+            } else {
+                when (node.style) {
+                    ButtonStyle.Default -> theme.buttonStyle
+                    ButtonStyle.Accent -> theme.accentButtonStyle
+                    else -> node.style
+                }
+            }
+            val resolvedDisabledStyle = if (node.styleLocked) {
+                node.disabledStyle
+            } else {
+                theme.disabledButtonStyle
+            }
+            node.copy(
+                style = resolvedStyle,
+                disabledStyle = resolvedDisabledStyle,
+                styleLocked = true,
             )
         }
 
         is PixelTextFieldNode -> {
-            val resolvedStyle = when {
-                node.style != TextFieldStyle.Default -> node.style
-                !node.enabled -> theme.disabledTextFieldStyle
-                node.readOnly -> theme.readOnlyTextFieldStyle
-                else -> theme.textFieldStyle
+            val resolvedStyle = if (node.styleLocked) {
+                node.style
+            } else {
+                when {
+                    node.style != TextFieldStyle.Default -> node.style
+                    !node.enabled -> theme.disabledTextFieldStyle
+                    node.readOnly -> theme.readOnlyTextFieldStyle
+                    else -> theme.textFieldStyle
+                }
             }
-            node.copy(style = resolvedStyle)
+            node.copy(
+                style = resolvedStyle,
+                styleLocked = true,
+            )
         }
 
         is PixelSurfaceNode -> {
-            val resolvedStyle = when {
-                node.matchesThemeStyle(ContainerStyle.Default) -> theme.containerStyle
-                node.matchesThemeStyle(theme.accentContainerStyle) -> theme.accentContainerStyle
-                node.matchesThemeStyle(
-                    ContainerStyle(
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ACCENT,
-                        alignment = Alignment.CENTER,
-                    ),
-                ) -> theme.accentContainerStyle
-                else -> null
+            val resolvedStyle = if (node.styleLocked) {
+                null
+            } else {
+                when {
+                    node.matchesThemeStyle(ContainerStyle.Default) -> theme.containerStyle
+                    node.matchesThemeStyle(theme.accentContainerStyle) -> theme.accentContainerStyle
+                    node.matchesThemeStyle(
+                        ContainerStyle(
+                            fillTone = PixelTone.OFF,
+                            borderTone = PixelTone.ACCENT,
+                            alignment = Alignment.CENTER,
+                        ),
+                    ) -> theme.accentContainerStyle
+                    else -> null
+                }
             }
             node.copy(
                 child = node.child?.let { applyThemeToNode(it, theme) },
                 fillTone = resolvedStyle?.fillTone ?: node.fillTone,
                 borderTone = resolvedStyle?.borderTone ?: node.borderTone,
                 alignment = resolvedStyle?.alignment?.toPixelAlignment() ?: node.alignment,
+                styleLocked = true,
             )
         }
 

@@ -16,6 +16,7 @@ import com.purride.pixelui.Container
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelList
 import com.purride.pixelui.Align
@@ -597,6 +598,49 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 10))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 20))
+    }
+
+    @Test
+    fun localThemeOverridesHostThemeDefaults() {
+        val result = runtime.render(
+            root = Theme(
+                data = ThemeData(
+                    textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+                    buttonStyle = PixelButtonStyle(
+                        fillTone = PixelTone.OFF,
+                        borderTone = PixelTone.ACCENT,
+                        textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+                    ),
+                ),
+                child = Column(
+                    modifier = PixelModifier.Empty.size(24, 24),
+                    spacing = 2,
+                    children = listOf(
+                        OutlinedButton(
+                            text = "OUTER",
+                            onPressed = { },
+                            modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                        ),
+                        Theme(
+                            data = ThemeData(
+                                textStyle = TextStyle.Default,
+                                buttonStyle = ButtonStyle.Default,
+                            ),
+                            child = OutlinedButton(
+                                text = "INNER",
+                                onPressed = { },
+                                modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                            ),
+                        ),
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 24,
+            logicalHeight = 24,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 12))
     }
 
     @Test

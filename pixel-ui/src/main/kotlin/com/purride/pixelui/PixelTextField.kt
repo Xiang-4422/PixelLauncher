@@ -40,6 +40,7 @@ data class PixelTextFieldNode(
     val controller: PixelTextFieldController,
     val placeholder: String = "",
     val style: PixelTextFieldStyle = PixelTextFieldStyle.Default,
+    val styleLocked: Boolean = false,
     val enabled: Boolean = true,
     val readOnly: Boolean = false,
     val autofocus: Boolean = false,

@@ -40,6 +40,7 @@ data class PixelButtonNode(
     val text: String,
     val style: PixelButtonStyle = PixelButtonStyle.Default,
     val disabledStyle: PixelButtonStyle = PixelButtonStyle.Disabled,
+    val styleLocked: Boolean = false,
     val enabled: Boolean = true,
     val onClick: (() -> Unit)? = null,
 ) : PixelNode
