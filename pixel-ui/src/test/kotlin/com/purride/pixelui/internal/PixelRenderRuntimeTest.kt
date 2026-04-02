@@ -13,10 +13,13 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.Center
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Container
+import com.purride.pixelui.ContainerDirectional
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.AlignmentDirectional
+import com.purride.pixelui.AlignDirectional
 import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.FlexFit
@@ -1153,6 +1156,79 @@ class PixelRenderRuntimeTest {
         assertEquals(PixelTone.OFF.value, result.buffer.getPixel(5, 1))
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(6, 1))
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(9, 4))
+    }
+
+    @Test
+    fun flutterStyleAlignDirectionalResolvesStartByDirectionality() {
+        val ltr = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.LTR,
+                child = AlignDirectional(
+                    alignment = AlignmentDirectional.TOP_START,
+                    modifier = PixelModifier.Empty.size(10, 10),
+                    child = SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+        val rtl = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = AlignDirectional(
+                    alignment = AlignmentDirectional.TOP_START,
+                    modifier = PixelModifier.Empty.size(10, 10),
+                    child = SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, ltr.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.OFF.value, rtl.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT.value, rtl.buffer.getPixel(9, 0))
+    }
+
+    @Test
+    fun flutterStyleContainerDirectionalAlignsChildUsingDirectionality() {
+        val result = runtime.render(
+            root = Directionality(
+                textDirection = TextDirection.RTL,
+                child = ContainerDirectional(
+                    width = 12,
+                    height = 8,
+                    alignment = AlignmentDirectional.CENTER_START,
+                    child = SizedBox(
+                        width = 4,
+                        height = 4,
+                        child = DecoratedBox(
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(1, 2))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(8, 2))
     }
 
     @Test

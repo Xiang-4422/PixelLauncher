@@ -226,6 +226,24 @@ fun Center(
     )
 }
 
+fun AlignDirectional(
+    child: Widget,
+    alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
+    modifier: PixelModifier = PixelModifier.Empty,
+    key: Any? = null,
+): Widget {
+    return LegacySingleChildWidget(
+        key = key,
+        child = child,
+    ) { context, childNode ->
+        PixelBox(
+            children = listOf(childNode),
+            modifier = modifier.fillMaxSize(),
+            alignment = alignment.toPixelAlignment(Directionality.of(context)),
+        )
+    }
+}
+
 fun SizedBox(
     width: Int? = null,
     height: Int? = null,
@@ -424,6 +442,89 @@ fun Container(
             borderTone = resolvedStyle.borderTone,
             padding = 0,
             alignment = resolvedStyle.alignment.toPixelAlignment(),
+            key = key,
+        )
+        if (margin == null) {
+            baseNode
+        } else {
+            PixelBox(
+                children = listOf(baseNode),
+                modifier = PixelModifier.Empty.padding(
+                    left = margin.left,
+                    top = margin.top,
+                    right = margin.right,
+                    bottom = margin.bottom,
+                ),
+                alignment = PixelAlignment.TOP_START,
+            )
+        }
+    }
+}
+
+fun ContainerDirectional(
+    child: Widget? = null,
+    width: Int? = null,
+    height: Int? = null,
+    padding: EdgeInsets? = null,
+    margin: EdgeInsets? = null,
+    style: ContainerStyle? = null,
+    theme: ThemeData? = null,
+    modifier: PixelModifier = PixelModifier.Empty,
+    fillTone: PixelTone = PixelTone.OFF,
+    borderTone: PixelTone? = PixelTone.ON,
+    alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
+    key: Any? = null,
+): Widget {
+    return LegacyMultiChildWidget(
+        key = key,
+        children = child?.let(::listOf) ?: emptyList(),
+    ) { context, childNodes ->
+        val resolvedTheme = context.resolveTheme(theme)
+        val resolvedStyle = style ?: when (
+            ContainerStyle(
+                fillTone = fillTone,
+                borderTone = borderTone,
+                alignment = Alignment.CENTER,
+            )
+        ) {
+            ContainerStyle.Default -> resolvedTheme.containerStyle
+            resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
+            else -> ContainerStyle(
+                fillTone = fillTone,
+                borderTone = borderTone,
+                alignment = Alignment.CENTER,
+            )
+        }
+        val resolvedAlignment = alignment.toPixelAlignment(Directionality.of(context))
+        val paddedChild = childNodes.singleOrNull()?.let { childNode ->
+            if (padding == null) {
+                childNode
+            } else {
+                PixelBox(
+                    children = listOf(childNode),
+                    modifier = PixelModifier.Empty.padding(
+                        left = padding.left,
+                        top = padding.top,
+                        right = padding.right,
+                        bottom = padding.bottom,
+                    ),
+                    alignment = PixelAlignment.TOP_START,
+                )
+            }
+        }
+        val sizedModifier = when {
+            width != null && height != null -> modifier.size(width, height)
+            width != null -> modifier.width(width)
+            height != null -> modifier.height(height)
+            else -> modifier
+        }
+        val baseNode = PixelSurface(
+            child = paddedChild,
+            modifier = sizedModifier,
+            fillTone = resolvedStyle.fillTone,
+            borderTone = resolvedStyle.borderTone,
+            padding = 0,
+            alignment = resolvedAlignment,
             key = key,
         )
         if (margin == null) {

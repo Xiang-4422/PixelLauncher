@@ -39,6 +39,18 @@ enum class Alignment {
     BOTTOM_END,
 }
 
+enum class AlignmentDirectional {
+    TOP_START,
+    TOP_CENTER,
+    TOP_END,
+    CENTER_START,
+    CENTER,
+    CENTER_END,
+    BOTTOM_START,
+    BOTTOM_CENTER,
+    BOTTOM_END,
+}
+
 enum class MainAxisAlignment {
     START,
     CENTER,
@@ -90,6 +102,22 @@ internal fun Alignment.toPixelAlignment(): PixelAlignment {
         Alignment.BOTTOM_START -> PixelAlignment.BOTTOM_START
         Alignment.BOTTOM_CENTER -> PixelAlignment.BOTTOM_CENTER
         Alignment.BOTTOM_END -> PixelAlignment.BOTTOM_END
+    }
+}
+
+internal fun AlignmentDirectional.toPixelAlignment(
+    direction: TextDirection,
+): PixelAlignment {
+    return when (this) {
+        AlignmentDirectional.TOP_START -> if (direction == TextDirection.LTR) PixelAlignment.TOP_START else PixelAlignment.TOP_END
+        AlignmentDirectional.TOP_CENTER -> PixelAlignment.TOP_CENTER
+        AlignmentDirectional.TOP_END -> if (direction == TextDirection.LTR) PixelAlignment.TOP_END else PixelAlignment.TOP_START
+        AlignmentDirectional.CENTER_START -> if (direction == TextDirection.LTR) PixelAlignment.CENTER_START else PixelAlignment.CENTER_END
+        AlignmentDirectional.CENTER -> PixelAlignment.CENTER
+        AlignmentDirectional.CENTER_END -> if (direction == TextDirection.LTR) PixelAlignment.CENTER_END else PixelAlignment.CENTER_START
+        AlignmentDirectional.BOTTOM_START -> if (direction == TextDirection.LTR) PixelAlignment.BOTTOM_START else PixelAlignment.BOTTOM_END
+        AlignmentDirectional.BOTTOM_CENTER -> PixelAlignment.BOTTOM_CENTER
+        AlignmentDirectional.BOTTOM_END -> if (direction == TextDirection.LTR) PixelAlignment.BOTTOM_END else PixelAlignment.BOTTOM_START
     }
 }
 
