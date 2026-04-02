@@ -121,13 +121,11 @@ private data class FlexWrapperWidget(
 fun Padding(
     child: Widget,
     all: Int,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return Padding(
         child = child,
         padding = EdgeInsets.all(all),
-        modifier = modifier,
         key = key,
     )
 }
@@ -135,7 +133,6 @@ fun Padding(
 fun Padding(
     child: Widget,
     padding: EdgeInsets,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -144,7 +141,7 @@ fun Padding(
     ) { _, childNode ->
         PixelBox(
             children = listOf(childNode),
-            modifier = modifier.padding(
+            modifier = PixelModifier.Empty.padding(
                 left = padding.left,
                 top = padding.top,
                 right = padding.right,
@@ -159,7 +156,6 @@ fun Padding(
     child: Widget,
     horizontal: Int = 0,
     vertical: Int = 0,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return Padding(
@@ -168,7 +164,6 @@ fun Padding(
             horizontal = horizontal,
             vertical = vertical,
         ),
-        modifier = modifier,
         key = key,
     )
 }
@@ -176,7 +171,6 @@ fun Padding(
 fun PaddingDirectional(
     child: Widget,
     padding: EdgeInsetsDirectional,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -186,7 +180,7 @@ fun PaddingDirectional(
         val resolvedPadding = padding.resolve(Directionality.of(context))
         PixelBox(
             children = listOf(childNode),
-            modifier = modifier.padding(
+            modifier = PixelModifier.Empty.padding(
                 left = resolvedPadding.left,
                 top = resolvedPadding.top,
                 right = resolvedPadding.right,
@@ -203,7 +197,6 @@ fun Padding(
     top: Int = 0,
     right: Int = 0,
     bottom: Int = 0,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return Padding(
@@ -214,7 +207,6 @@ fun Padding(
             right = right,
             bottom = bottom,
         ),
-        modifier = modifier,
         key = key,
     )
 }
@@ -222,7 +214,6 @@ fun Padding(
 fun Align(
     child: Widget,
     alignment: Alignment = Alignment.CENTER,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -231,7 +222,7 @@ fun Align(
     ) { _, childNode ->
         PixelBox(
             children = listOf(childNode),
-            modifier = modifier.fillMaxSize(),
+            modifier = PixelModifier.Empty.fillMaxSize(),
             alignment = alignment.toPixelAlignment(),
         )
     }
@@ -239,13 +230,11 @@ fun Align(
 
 fun Center(
     child: Widget,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return Align(
         child = child,
         alignment = Alignment.CENTER,
-        modifier = modifier,
         key = key,
     )
 }
@@ -253,7 +242,6 @@ fun Center(
 fun AlignDirectional(
     child: Widget,
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -262,7 +250,7 @@ fun AlignDirectional(
     ) { context, childNode ->
         PixelBox(
             children = listOf(childNode),
-            modifier = modifier.fillMaxSize(),
+            modifier = PixelModifier.Empty.fillMaxSize(),
             alignment = alignment.toPixelAlignment(Directionality.of(context)),
         )
     }
@@ -272,7 +260,6 @@ fun SizedBox(
     width: Int? = null,
     height: Int? = null,
     child: Widget? = null,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacyMultiChildWidget(
@@ -280,10 +267,10 @@ fun SizedBox(
         children = child?.let(::listOf) ?: emptyList(),
     ) { _, childNodes ->
         val baseModifier = when {
-            width != null && height != null -> modifier.size(width, height)
-            width != null -> modifier.width(width)
-            height != null -> modifier.height(height)
-            else -> modifier
+            width != null && height != null -> PixelModifier.Empty.size(width, height)
+            width != null -> PixelModifier.Empty.width(width)
+            height != null -> PixelModifier.Empty.height(height)
+            else -> PixelModifier.Empty
         }
         PixelBox(
             children = childNodes,
@@ -335,7 +322,6 @@ fun Spacer(
 fun GestureDetector(
     child: Widget,
     onTap: () -> Unit,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -343,14 +329,13 @@ fun GestureDetector(
         child = child,
     ) { _, childNode ->
         childNode.withExtraModifier(
-            modifier.clickable(onTap),
+            PixelModifier.Empty.clickable(onTap),
         )
     }
 }
 
 fun Text(
     data: String,
-    modifier: PixelModifier = PixelModifier.Empty,
     style: TextStyle = TextStyle.Default,
     theme: ThemeData? = null,
     softWrap: Boolean = false,
@@ -370,7 +355,7 @@ fun Text(
         }
         PixelText(
             text = data,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             style = resolvedStyle,
             softWrap = softWrap,
             maxLines = maxLines,
@@ -384,7 +369,6 @@ fun Text(
 
 fun DecoratedBox(
     child: Widget? = null,
-    modifier: PixelModifier = PixelModifier.Empty,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
     padding: Int = 2,
@@ -397,7 +381,7 @@ fun DecoratedBox(
     ) { _, childNodes ->
         PixelSurface(
             child = childNodes.singleOrNull(),
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             fillTone = fillTone,
             borderTone = borderTone,
             padding = padding,
@@ -415,7 +399,6 @@ fun Container(
     margin: EdgeInsets? = null,
     style: ContainerStyle? = null,
     theme: ThemeData? = null,
-    modifier: PixelModifier = PixelModifier.Empty,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
     alignment: Alignment = Alignment.CENTER,
@@ -455,10 +438,10 @@ fun Container(
             }
         }
         val sizedModifier = when {
-            width != null && height != null -> modifier.size(width, height)
-            width != null -> modifier.width(width)
-            height != null -> modifier.height(height)
-            else -> modifier
+            width != null && height != null -> PixelModifier.Empty.size(width, height)
+            width != null -> PixelModifier.Empty.width(width)
+            height != null -> PixelModifier.Empty.height(height)
+            else -> PixelModifier.Empty
         }
         val baseNode = PixelSurface(
             child = paddedChild,
@@ -496,7 +479,6 @@ fun ContainerDirectional(
     marginDirectional: EdgeInsetsDirectional? = null,
     style: ContainerStyle? = null,
     theme: ThemeData? = null,
-    modifier: PixelModifier = PixelModifier.Empty,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
@@ -543,10 +525,10 @@ fun ContainerDirectional(
             }
         }
         val sizedModifier = when {
-            width != null && height != null -> modifier.size(width, height)
-            width != null -> modifier.width(width)
-            height != null -> modifier.height(height)
-            else -> modifier
+            width != null && height != null -> PixelModifier.Empty.size(width, height)
+            width != null -> PixelModifier.Empty.width(width)
+            height != null -> PixelModifier.Empty.height(height)
+            else -> PixelModifier.Empty
         }
         val baseNode = PixelSurface(
             child = paddedChild,
@@ -576,7 +558,6 @@ fun ContainerDirectional(
 
 fun Stack(
     children: List<Widget>,
-    modifier: PixelModifier = PixelModifier.Empty,
     alignment: Alignment = Alignment.TOP_START,
     key: Any? = null,
 ): Widget {
@@ -586,7 +567,7 @@ fun Stack(
     ) { _, childNodes ->
         PixelBox(
             children = childNodes,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             alignment = alignment.toPixelAlignment(),
             key = key,
         )
@@ -601,7 +582,6 @@ fun Positioned(
     bottom: Int? = null,
     width: Int? = null,
     height: Int? = null,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -610,7 +590,7 @@ fun Positioned(
     ) { _, childNode ->
         PixelPositioned(
             child = childNode,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             left = left,
             top = top,
             right = right,
@@ -630,7 +610,6 @@ fun PositionedDirectional(
     bottom: Int? = null,
     width: Int? = null,
     height: Int? = null,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return LegacySingleChildWidget(
@@ -644,7 +623,7 @@ fun PositionedDirectional(
         }
         PixelPositioned(
             child = childNode,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             left = resolvedLeft,
             top = top,
             right = resolvedRight,
@@ -662,7 +641,6 @@ fun PositionedFill(
     top: Int = 0,
     right: Int = 0,
     bottom: Int = 0,
-    modifier: PixelModifier = PixelModifier.Empty,
     key: Any? = null,
 ): Widget {
     return Positioned(
@@ -671,14 +649,12 @@ fun PositionedFill(
         top = top,
         right = right,
         bottom = bottom,
-        modifier = modifier,
         key = key,
     )
 }
 
 fun Row(
     children: List<Widget>,
-    modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
     mainAxisSize: MainAxisSize = MainAxisSize.MIN,
     mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
@@ -692,7 +668,7 @@ fun Row(
         val direction = Directionality.of(context)
         PixelRow(
             children = childNodes,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             spacing = spacing,
             mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
             mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
@@ -710,7 +686,6 @@ fun Row(
 
 fun Column(
     children: List<Widget>,
-    modifier: PixelModifier = PixelModifier.Empty,
     spacing: Int = 0,
     mainAxisSize: MainAxisSize = MainAxisSize.MIN,
     mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
@@ -724,7 +699,7 @@ fun Column(
         val direction = Directionality.of(context)
         PixelColumn(
             children = childNodes,
-            modifier = modifier,
+            modifier = PixelModifier.Empty,
             spacing = spacing,
             mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
             mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(

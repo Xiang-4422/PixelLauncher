@@ -5,10 +5,14 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelButton
+import com.purride.pixelui.PixelButtonNode
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBox
+import com.purride.pixelui.PixelBoxNode
 import com.purride.pixelui.PixelColumn
+import com.purride.pixelui.PixelColumnNode
 import com.purride.pixelui.PixelCrossAxisAlignment
+import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Center
 import com.purride.pixelui.CrossAxisAlignment
@@ -28,20 +32,29 @@ import com.purride.pixelui.Flexible
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PixelList
+import com.purride.pixelui.PixelListNode
 import com.purride.pixelui.Align
 import com.purride.pixelui.PixelMainAxisAlignment
 import com.purride.pixelui.PixelModifier
+import com.purride.pixelui.PixelNode
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelPager
+import com.purride.pixelui.PixelPagerNode
 import com.purride.pixelui.PixelRow
+import com.purride.pixelui.PixelRowNode
 import com.purride.pixelui.PixelSurface
+import com.purride.pixelui.PixelSurfaceNode
 import com.purride.pixelui.PixelText
+import com.purride.pixelui.PixelTextAlign
 import com.purride.pixelui.PixelTextField
+import com.purride.pixelui.PixelTextFieldNode
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelSingleChildScrollView
+import com.purride.pixelui.PixelSingleChildScrollViewNode
+import com.purride.pixelui.PixelTextNode
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PaddingDirectional
 import com.purride.pixelui.Positioned
@@ -55,11 +68,14 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextField
+import com.purride.pixelui.TextFieldStyle
+import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Theme
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
+import com.purride.pixelui.Widget
 import com.purride.pixelui.clickable
 import com.purride.pixelui.fillMaxSize
 import com.purride.pixelui.fillMaxWidth
@@ -71,11 +87,381 @@ import com.purride.pixelui.width
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
+import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelcore.PixelTone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
+private fun PixelNode.withTestModifier(extra: PixelModifier): PixelNode {
+    val merged = modifier.then(extra)
+    return when (this) {
+        is PixelTextNode -> copy(modifier = merged)
+        is PixelSurfaceNode -> copy(modifier = merged)
+        is PixelBoxNode -> copy(modifier = merged)
+        is PixelRowNode -> copy(modifier = merged)
+        is PixelColumnNode -> copy(modifier = merged)
+        is PixelPagerNode -> copy(modifier = merged)
+        is PixelListNode -> copy(modifier = merged)
+        is PixelSingleChildScrollViewNode -> copy(modifier = merged)
+        is PixelTextFieldNode -> copy(modifier = merged)
+        is PixelButtonNode -> copy(modifier = merged)
+        is com.purride.pixelui.node.CustomDraw -> copy(modifier = merged)
+        else -> this
+    }
+}
+
+private data class TestModifierWidget(
+    override val key: Any? = null,
+    val child: Widget,
+    val modifier: PixelModifier,
+) : LegacyNodeWidget {
+    override val childWidgets: List<Widget>
+        get() = listOf(child)
+
+    override fun createLegacyNode(
+        context: BuildContext,
+        childNodes: List<PixelNode>,
+    ): PixelNode {
+        return childNodes.single().withTestModifier(modifier)
+    }
+}
+
+private fun withLegacyModifier(
+    child: Widget,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget {
+    return if (modifier == PixelModifier.Empty) {
+        child
+    } else {
+        TestModifierWidget(
+            key = key,
+            child = child,
+            modifier = modifier,
+        )
+    }
+}
+
+private fun Padding(
+    child: Widget,
+    all: Int,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Padding(
+        child = child,
+        all = all,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Align(
+    child: Widget,
+    alignment: Alignment = Alignment.CENTER,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Align(
+        child = child,
+        alignment = alignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun AlignDirectional(
+    child: Widget,
+    alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.AlignDirectional(
+        child = child,
+        alignment = alignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun GestureDetector(
+    child: Widget,
+    onTap: () -> Unit,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.GestureDetector(
+        child = child,
+        onTap = onTap,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Text(
+    data: String,
+    modifier: PixelModifier,
+    style: TextStyle = TextStyle.Default,
+    theme: ThemeData? = null,
+    softWrap: Boolean = false,
+    maxLines: Int = 1,
+    overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
+    textAlign: TextAlign = TextAlign.START,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Text(
+        data = data,
+        style = style,
+        theme = theme,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        overflow = overflow,
+        textAlign = textAlign,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun DecoratedBox(
+    child: Widget? = null,
+    modifier: PixelModifier,
+    fillTone: PixelTone = PixelTone.OFF,
+    borderTone: PixelTone? = PixelTone.ON,
+    padding: Int = 2,
+    alignment: Alignment = Alignment.CENTER,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.DecoratedBox(
+        child = child,
+        fillTone = fillTone,
+        borderTone = borderTone,
+        padding = padding,
+        alignment = alignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Container(
+    child: Widget? = null,
+    width: Int? = null,
+    height: Int? = null,
+    padding: EdgeInsets? = null,
+    margin: EdgeInsets? = null,
+    style: ContainerStyle? = null,
+    theme: ThemeData? = null,
+    modifier: PixelModifier,
+    fillTone: PixelTone = PixelTone.OFF,
+    borderTone: PixelTone? = PixelTone.ON,
+    alignment: Alignment = Alignment.CENTER,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Container(
+        child = child,
+        width = width,
+        height = height,
+        padding = padding,
+        margin = margin,
+        style = style,
+        theme = theme,
+        fillTone = fillTone,
+        borderTone = borderTone,
+        alignment = alignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Stack(
+    children: List<Widget>,
+    modifier: PixelModifier,
+    alignment: Alignment = Alignment.TOP_START,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Stack(
+        children = children,
+        alignment = alignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Positioned(
+    child: Widget,
+    left: Int? = null,
+    top: Int? = null,
+    right: Int? = null,
+    bottom: Int? = null,
+    width: Int? = null,
+    height: Int? = null,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Positioned(
+        child = child,
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        width = width,
+        height = height,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun PositionedDirectional(
+    child: Widget,
+    start: Int? = null,
+    top: Int? = null,
+    end: Int? = null,
+    bottom: Int? = null,
+    width: Int? = null,
+    height: Int? = null,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.PositionedDirectional(
+        child = child,
+        start = start,
+        top = top,
+        end = end,
+        bottom = bottom,
+        width = width,
+        height = height,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun PositionedFill(
+    child: Widget,
+    left: Int = 0,
+    top: Int = 0,
+    right: Int = 0,
+    bottom: Int = 0,
+    modifier: PixelModifier,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.PositionedFill(
+        child = child,
+        left = left,
+        top = top,
+        right = right,
+        bottom = bottom,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Row(
+    children: List<Widget>,
+    modifier: PixelModifier,
+    spacing: Int = 0,
+    mainAxisSize: MainAxisSize = MainAxisSize.MIN,
+    mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
+    crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Row(
+        children = children,
+        spacing = spacing,
+        mainAxisSize = mainAxisSize,
+        mainAxisAlignment = mainAxisAlignment,
+        crossAxisAlignment = crossAxisAlignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun Column(
+    children: List<Widget>,
+    modifier: PixelModifier,
+    spacing: Int = 0,
+    mainAxisSize: MainAxisSize = MainAxisSize.MIN,
+    mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
+    crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.Column(
+        children = children,
+        spacing = spacing,
+        mainAxisSize = mainAxisSize,
+        mainAxisAlignment = mainAxisAlignment,
+        crossAxisAlignment = crossAxisAlignment,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun TextField(
+    state: PixelTextFieldState,
+    controller: PixelTextFieldController,
+    modifier: PixelModifier,
+    placeholder: String = "",
+    style: TextFieldStyle = TextFieldStyle.Default,
+    theme: ThemeData? = null,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    autofocus: Boolean = false,
+    textInputAction: TextInputAction = TextInputAction.DONE,
+    onChanged: ((String) -> Unit)? = null,
+    onSubmitted: ((String) -> Unit)? = null,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.TextField(
+        state = state,
+        controller = controller,
+        placeholder = placeholder,
+        style = style,
+        theme = theme,
+        enabled = enabled,
+        readOnly = readOnly,
+        autofocus = autofocus,
+        textInputAction = textInputAction,
+        onChanged = onChanged,
+        onSubmitted = onSubmitted,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
+
+private fun OutlinedButton(
+    text: String,
+    onPressed: (() -> Unit)?,
+    modifier: PixelModifier,
+    style: ButtonStyle = ButtonStyle.Default,
+    theme: ThemeData? = null,
+    enabled: Boolean = true,
+    key: Any? = null,
+): Widget = withLegacyModifier(
+    child = com.purride.pixelui.OutlinedButton(
+        text = text,
+        onPressed = onPressed,
+        style = style,
+        theme = theme,
+        enabled = enabled,
+        key = key,
+    ),
+    modifier = modifier,
+    key = key,
+)
 
 class PixelRenderRuntimeTest {
 
