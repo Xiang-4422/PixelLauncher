@@ -34,6 +34,16 @@ data class PixelButtonStyle(
     }
 }
 
+data class PixelButtonNode(
+    override val key: Any? = null,
+    override val modifier: PixelModifier = PixelModifier.Empty,
+    val text: String,
+    val style: PixelButtonStyle = PixelButtonStyle.Default,
+    val disabledStyle: PixelButtonStyle = PixelButtonStyle.Disabled,
+    val enabled: Boolean = true,
+    val onClick: (() -> Unit)? = null,
+) : PixelNode
+
 /**
  * 最小可用像素按钮组件。
  *
@@ -50,9 +60,22 @@ fun PixelButton(
     enabled: Boolean = true,
     key: Any? = null,
 ): PixelNode {
+    return PixelButtonNode(
+        key = key,
+        modifier = modifier,
+        text = text,
+        style = style,
+        disabledStyle = disabledStyle,
+        enabled = enabled,
+        onClick = onClick,
+    )
+}
+
+internal fun PixelButtonNode.toSurfaceNode(): PixelSurfaceNode {
     val isEnabled = enabled && onClick != null
     val resolvedStyle = if (isEnabled) style else disabledStyle
-    return PixelSurface(
+    return PixelSurfaceNode(
+        key = key,
         modifier = if (isEnabled) modifier.clickable { onClick?.invoke() } else modifier,
         fillTone = resolvedStyle.fillTone,
         borderTone = resolvedStyle.borderTone,
@@ -65,7 +88,6 @@ fun PixelButton(
                     style = resolvedStyle.textStyle,
                 ),
             ),
-        ),
-        key = key,
+        ) as PixelNode,
     )
 }

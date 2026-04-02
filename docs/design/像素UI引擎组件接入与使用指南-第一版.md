@@ -208,6 +208,28 @@ val pageTheme = ThemeData(
 - `containerStyle`
 - `accentContainerStyle`
 
+如果一整段子树都共享同一套默认样式，当前推荐直接用 `Theme(data, child)` 包起来，
+而不是给每个 `Text / Container / OutlinedButton / TextField` 都重复传一次 `theme`：
+
+```kotlin
+Theme(
+    data = pageTheme,
+    child = Column(
+        children = listOf(
+            Container(
+                width = 32,
+                height = 12,
+                child = Center(child = Text("THEMED")),
+            ),
+            OutlinedButton(
+                text = "CONFIRM",
+                onPressed = { hostView.requestRender() },
+            ),
+        ),
+    ),
+)
+```
+
 ---
 
 ## 4. 基础组件使用方式
@@ -227,7 +249,7 @@ Text(
 )
 ```
 
-如果页面已经有统一主题对象，也可以直接把默认文本样式交给 `ThemeData`：
+如果只是单个组件临时使用页面主题，也可以直接把默认文本样式交给 `ThemeData`：
 
 ```kotlin
 Text(
@@ -309,6 +331,8 @@ Container(
 如果传入 `theme = pageTheme`，并且没有显式再传 `style`，`Container` 会直接使用
 `ThemeData.containerStyle` 作为默认视觉样式。
 
+但更推荐的写法，还是把整段区域包到 `Theme(data, child)` 里，让容器自动吃到默认样式。
+
 如果需要表达容器外边距，当前 `Container` 也支持 `margin`：
 
 ```kotlin
@@ -387,6 +411,8 @@ OutlinedButton(
     theme = pageTheme,
 )
 ```
+
+如果是整段按钮区都共享同一套主题，优先使用上面的 `Theme(data, child)` 包装方式。
 
 当前按钮视觉风格用 `ButtonStyle` 控制：
 

@@ -8,6 +8,7 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelAlignment
 import com.purride.pixelui.PixelBoxNode
 import com.purride.pixelui.PixelClickableElement
+import com.purride.pixelui.PixelButtonNode
 import com.purride.pixelui.PixelColumnNode
 import com.purride.pixelui.PixelCrossAxisAlignment
 import com.purride.pixelui.PixelFillMaxHeightElement
@@ -29,6 +30,7 @@ import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelWeightElement
+import com.purride.pixelui.toSurfaceNode
 import com.purride.pixelui.node.CustomDraw
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
@@ -257,6 +259,11 @@ internal class PixelRenderRuntime(
                 )
             }
 
+            is PixelButtonNode -> measure(
+                node = node.toSurfaceNode(),
+                constraints = constraints,
+            )
+
             is PixelBoxNode -> {
                 val children = node.children.map { child -> measure(child, innerConstraints) }
                 PixelSize(
@@ -374,6 +381,17 @@ internal class PixelRenderRuntime(
 
             is PixelSurfaceNode -> renderSurface(
                 node = node,
+                bounds = paddedBounds,
+                constraints = innerConstraints,
+                buffer = buffer,
+                clickTargets = clickTargets,
+                pagerTargets = pagerTargets,
+                listTargets = listTargets,
+                textInputTargets = textInputTargets,
+            )
+
+            is PixelButtonNode -> renderNode(
+                node = node.toSurfaceNode(),
                 bounds = paddedBounds,
                 constraints = innerConstraints,
                 buffer = buffer,
