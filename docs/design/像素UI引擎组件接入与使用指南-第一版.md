@@ -776,6 +776,22 @@ Directionality(
 - `LTR` 下 `start -> left`、`end -> right`
 - `RTL` 下 `start -> right`、`end -> left`
 
+如果你希望对齐也跟着 `Directionality` 自动翻转，当前可以直接用 `AlignDirectional` 或 `ContainerDirectional`：
+
+```kotlin
+Directionality(
+    textDirection = TextDirection.RTL,
+    child = ContainerDirectional(
+        alignment = AlignmentDirectional.BOTTOM_START,
+        child = SizedBox(
+            width = 12,
+            height = 8,
+            child = Text("TAG"),
+        ),
+    ),
+)
+```
+
 ### 4.5 按钮
 
 使用 [OutlinedButton](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)：
