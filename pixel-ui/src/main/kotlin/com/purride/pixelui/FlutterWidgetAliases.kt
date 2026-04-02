@@ -224,10 +224,11 @@ fun Text(
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = if (theme != null && style == TextStyle.Default) {
-        theme.textStyle
-    } else {
-        style
+    val resolvedStyle = when {
+        theme == null -> style
+        style == TextStyle.Default -> theme.textStyle
+        style == TextStyle.Accent -> theme.accentTextStyle
+        else -> style
     }
     return PixelText(
         text = data,
@@ -274,7 +275,20 @@ fun Container(
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = style ?: theme?.containerStyle ?: ContainerStyle(
+    val resolvedStyle = style ?: theme?.let {
+        val defaultContainer = ContainerStyle(
+            fillTone = fillTone,
+            borderTone = borderTone,
+            alignment = alignment,
+        )
+        if (defaultContainer == ContainerStyle.Default) {
+            it.containerStyle
+        } else if (defaultContainer == it.accentContainerStyle) {
+            it.accentContainerStyle
+        } else {
+            defaultContainer
+        }
+    } ?: ContainerStyle(
         fillTone = fillTone,
         borderTone = borderTone,
         alignment = alignment,
@@ -497,10 +511,12 @@ fun TextField(
     onSubmitted: ((String) -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = if (theme != null && style == TextFieldStyle.Default) {
-        theme.textFieldStyle
-    } else {
-        style
+    val resolvedStyle = when {
+        theme == null -> style
+        style != TextFieldStyle.Default -> style
+        !enabled -> theme.disabledTextFieldStyle
+        readOnly -> theme.readOnlyTextFieldStyle
+        else -> theme.textFieldStyle
     }
     return PixelTextField(
         state = state,
@@ -527,10 +543,11 @@ fun OutlinedButton(
     enabled: Boolean = true,
     key: Any? = null,
 ): Widget {
-    val resolvedStyle = if (theme != null && style == ButtonStyle.Default) {
-        theme.buttonStyle
-    } else {
-        style
+    val resolvedStyle = when {
+        theme == null -> style
+        style == ButtonStyle.Default -> theme.buttonStyle
+        style == ButtonStyle.Accent -> theme.accentButtonStyle
+        else -> style
     }
     val resolvedDisabledStyle = theme?.disabledButtonStyle ?: PixelButtonStyle.Disabled
     return PixelButton(

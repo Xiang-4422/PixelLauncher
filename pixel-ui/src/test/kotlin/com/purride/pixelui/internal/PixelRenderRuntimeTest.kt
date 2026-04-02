@@ -37,6 +37,8 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Spacer
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextField
+import com.purride.pixelui.TextStyle
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
@@ -464,6 +466,76 @@ class PixelRenderRuntimeTest {
 
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
         assertTrue(collectOnPixels(result).isNotEmpty())
+    }
+
+    @Test
+    fun flutterStyleThemeDataFeedsAccentAndDisabledBranches() {
+        val themed = ThemeData(
+            accentTextStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            accentButtonStyle = PixelButtonStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            ),
+            disabledButtonStyle = PixelButtonStyle(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                textStyle = PixelTextStyle(tone = PixelTone.ACCENT),
+            ),
+        )
+
+        val result = runtime.render(
+            root = Column(
+                modifier = PixelModifier.Empty.size(24, 20),
+                spacing = 2,
+                children = listOf(
+                    Text(
+                        data = "ACCENT",
+                        style = TextStyle.Accent,
+                        theme = themed,
+                    ),
+                    OutlinedButton(
+                        text = "DISABLED",
+                        onPressed = null,
+                        modifier = PixelModifier.Empty.fillMaxWidth().height(10),
+                        theme = themed,
+                    ),
+                ),
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 24,
+            logicalHeight = 20,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 9))
+        assertTrue(collectOnPixels(result).isNotEmpty())
+    }
+
+    @Test
+    fun flutterStyleThemeDataFeedsReadOnlyTextFieldStyle() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "READ")
+        val themed = ThemeData(
+            readOnlyTextFieldStyle = PixelTextFieldStyle.Default.copy(
+                readOnlyBorderTone = PixelTone.ACCENT,
+                textStyle = PixelTextStyle.Accent,
+            ),
+        )
+
+        val result = runtime.render(
+            root = TextField(
+                state = state,
+                controller = controller,
+                modifier = PixelModifier.Empty.size(20, 10),
+                theme = themed,
+                readOnly = true,
+            ) as com.purride.pixelui.PixelNode,
+            logicalWidth = 20,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+        assertEquals(1, result.textInputTargets.size)
+        assertTrue(result.textInputTargets.first().readOnly)
     }
 
     @Test
