@@ -12,14 +12,16 @@ import com.purride.pixelcore.PixelTextRasterizer
 internal class BridgeRenderRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
-    private val legacyRenderRuntime = PixelRenderRuntime(textRasterizer = textRasterizer)
+    private val legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
+        textRasterizer = textRasterizer,
+    )
 
     fun render(
         root: BridgeRenderNode,
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        return legacyRenderRuntime.render(
+        return legacyTreeRenderer.render(
             root = root,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,

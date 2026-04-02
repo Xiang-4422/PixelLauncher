@@ -5,10 +5,10 @@ import com.purride.pixelcore.PixelTextRasterizer
 
 internal class PixelRenderRuntime(
     private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
-) {
+) : LegacyTreeRenderer {
     private val supportBundle = LegacyRenderSupportBundle(textRasterizer = textRasterizer)
 
-    fun render(
+    override fun render(
         root: LegacyRenderNode,
         logicalWidth: Int,
         logicalHeight: Int,
