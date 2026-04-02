@@ -16,26 +16,26 @@ import com.purride.pixelui.internal.legacy.PixelSurfaceNode
 import com.purride.pixelui.internal.legacy.PixelTextFieldNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
 
-internal fun adaptLegacyWidget(widget: Widget): LegacyNodeWidget? {
+internal fun adaptBridgeWidget(widget: Widget): BridgeWidget? {
     return when (widget) {
-        is LegacyNodeWidget -> widget
-        is PixelNode -> StaticLegacyNodeWidget(widget)
+        is BridgeWidget -> widget
+        is PixelNode -> StaticBridgeNodeWidget(widget)
         else -> null
     }
 }
 
-private data class StaticLegacyNodeWidget(
-    private val node: LegacyRenderNode,
-) : LegacyNodeWidget {
+private data class StaticBridgeNodeWidget(
+    private val node: BridgeRenderNode,
+) : BridgeWidget {
     override val key: Any?
         get() = node.key
 
     override val childWidgets: List<Widget> = emptyList()
 
-    override fun createLegacyNode(
+    override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<LegacyRenderNode>,
-    ): LegacyRenderNode {
+        childNodes: List<BridgeRenderNode>,
+    ): BridgeRenderNode {
         return node
     }
 }

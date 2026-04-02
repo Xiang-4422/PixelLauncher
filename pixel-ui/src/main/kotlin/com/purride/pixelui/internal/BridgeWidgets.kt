@@ -9,13 +9,13 @@ import com.purride.pixelui.internal.legacy.PixelFlexFit
 import com.purride.pixelui.internal.legacy.PixelModifier
 import com.purride.pixelui.internal.legacy.weight
 
-internal interface LegacyNodeWidget : Widget {
+internal interface BridgeWidget : Widget {
     val childWidgets: List<Widget>
 
-    fun createLegacyNode(
+    fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<LegacyRenderNode>,
-    ): LegacyRenderNode
+        childNodes: List<BridgeRenderNode>,
+    ): BridgeRenderNode
 }
 
 internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeData {
@@ -24,14 +24,14 @@ internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeDat
 
 internal data class LegacyLeafWidget(
     override val key: Any? = null,
-    private val factory: (BuildContext) -> LegacyRenderNode,
-) : LegacyNodeWidget {
+    private val factory: (BuildContext) -> BridgeRenderNode,
+) : BridgeWidget {
     override val childWidgets: List<Widget> = emptyList()
 
-    override fun createLegacyNode(
+    override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<LegacyRenderNode>,
-    ): LegacyRenderNode {
+        childNodes: List<BridgeRenderNode>,
+    ): BridgeRenderNode {
         return factory(context)
     }
 }
@@ -39,15 +39,15 @@ internal data class LegacyLeafWidget(
 internal data class LegacySingleChildWidget(
     override val key: Any? = null,
     val child: Widget,
-    private val factory: (BuildContext, LegacyRenderNode) -> LegacyRenderNode,
-) : LegacyNodeWidget {
+    private val factory: (BuildContext, BridgeRenderNode) -> BridgeRenderNode,
+) : BridgeWidget {
     override val childWidgets: List<Widget>
         get() = listOf(child)
 
-    override fun createLegacyNode(
+    override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<LegacyRenderNode>,
-    ): LegacyRenderNode {
+        childNodes: List<BridgeRenderNode>,
+    ): BridgeRenderNode {
         return factory(context, childNodes.single())
     }
 }
@@ -55,15 +55,15 @@ internal data class LegacySingleChildWidget(
 internal data class LegacyMultiChildWidget(
     override val key: Any? = null,
     val children: List<Widget>,
-    private val factory: (BuildContext, List<LegacyRenderNode>) -> LegacyRenderNode,
-) : LegacyNodeWidget {
+    private val factory: (BuildContext, List<BridgeRenderNode>) -> BridgeRenderNode,
+) : BridgeWidget {
     override val childWidgets: List<Widget>
         get() = children
 
-    override fun createLegacyNode(
+    override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<LegacyRenderNode>,
-    ): LegacyRenderNode {
+        childNodes: List<BridgeRenderNode>,
+    ): BridgeRenderNode {
         return factory(context, childNodes)
     }
 }
@@ -73,14 +73,14 @@ internal data class FlexWrapperWidget(
     val child: Widget,
     val flex: Int,
     val fit: FlexFit,
-) : LegacyNodeWidget {
+) : BridgeWidget {
     override val childWidgets: List<Widget>
         get() = listOf(child)
 
-    override fun createLegacyNode(
+    override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<LegacyRenderNode>,
-    ): LegacyRenderNode {
+        childNodes: List<BridgeRenderNode>,
+    ): BridgeRenderNode {
         return childNodes.single().withExtraModifier(
             PixelModifier.Empty.weight(
                 weight = flex.coerceAtLeast(1).toFloat(),

@@ -117,13 +117,13 @@ private data class TestModifierWidget(
     override val key: Any? = null,
     val child: Widget,
     val modifier: PixelModifier,
-) : LegacyNodeWidget {
+) : BridgeWidget {
     override val childWidgets: List<Widget>
         get() = listOf(child)
 
-    override fun createLegacyNode(
+    override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<PixelNode>,
+        childNodes: List<BridgeRenderNode>,
     ): PixelNode {
         return childNodes.single().withTestModifier(modifier)
     }
