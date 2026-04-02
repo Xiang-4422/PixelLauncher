@@ -12,15 +12,6 @@ import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import kotlin.reflect.KClass
 
-internal interface LegacyNodeWidget : Widget {
-    val childWidgets: List<Widget>
-
-    fun createLegacyNode(
-        context: BuildContext,
-        childNodes: List<PixelNode>,
-    ): PixelNode
-}
-
 internal class RetainedBuildRuntime(
     private val onVisualUpdate: () -> Unit,
 ) {
@@ -149,7 +140,7 @@ private class BuildOwner(
             is InheritedWidget -> InheritedElement(widget)
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)
-            is LegacyNodeWidget -> LegacyNodeElement(widget)
+            is LegacyNodeWidget -> LegacyAdapterElement(widget)
             else -> error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
         }
     }
@@ -440,7 +431,7 @@ private class InheritedNotifierElement(
     }
 }
 
-private class LegacyNodeElement(
+private class LegacyAdapterElement(
     widget: LegacyNodeWidget,
 ) : Element(widget) {
     private var children = emptyList<Element>()
