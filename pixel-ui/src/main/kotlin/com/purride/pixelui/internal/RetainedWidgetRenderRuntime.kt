@@ -23,6 +23,7 @@ internal class RetainedWidgetRenderRuntime(
         onVisualUpdate = onVisualUpdate,
         widgetAdapter = bridgeGraph.widgetAdapter,
     )
+    private val elementTreeRenderer = bridgeGraph.elementTreeRenderer
 
     fun render(
         root: Widget,
@@ -30,7 +31,7 @@ internal class RetainedWidgetRenderRuntime(
         logicalHeight: Int,
     ): PixelRenderResult {
         val elementRoot = buildRuntime.resolveElementTree(root)
-        return bridgeGraph.renderElementTree(
+        return elementTreeRenderer.render(
             root = elementRoot,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
