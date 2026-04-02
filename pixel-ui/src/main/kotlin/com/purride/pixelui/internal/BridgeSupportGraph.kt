@@ -16,6 +16,13 @@ internal class BridgeSupportGraph(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
     val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
+    val elementTreeRenderer: ElementTreeRenderer = ElementTreeRenderer { root, logicalWidth, logicalHeight ->
+        renderElementTree(
+            root = root,
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
+        )
+    }
 
     private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
 
