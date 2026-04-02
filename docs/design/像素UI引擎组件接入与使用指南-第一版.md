@@ -53,19 +53,20 @@ dependencies {
 
 一个最小可运行页面，当前需要这几步：
 
-1. 创建 `PixelHostView`
-2. 设置 `screenProfile`
-   或者优先设置 `profilePreference`
+1. 创建默认宿主装配 `createPixelHostSetup(...)`
+2. 设置 `profilePreference`
 3. 设置 `palette`
 4. 可选设置 `textRasterizer`
 5. 可选设置 `themeData`
 6. 用 `setContent { ... }` 提供组件树
-6. 如果页面里有 `TextField`，优先使用默认的 `PixelTextInputBridge`
 
 ### 最小示例
 
 ```kotlin
-val hostView = PixelHostView(this).apply {
+val hostSetup = createPixelHostSetup(this)
+val hostView = hostSetup.hostView
+
+hostView.apply {
     profilePreference = PixelHostProfilePreference(
         dotSizePx = 8,
     )
@@ -90,12 +91,13 @@ val hostView = PixelHostView(this).apply {
     }
 }
 
-setContentView(hostView)
+setContentView(hostSetup.rootView)
 ```
 
 关键类型：
 
 - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostView.kt)
+- [PixelHostSetup.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostSetup.kt)
 - [PixelHostProfilePreference.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelHostProfilePreference.kt)
 - [PixelThemeData.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelThemeData.kt)
 - [ScreenProfileFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/main/kotlin/com/purride/pixelcore/ScreenProfileFactory.kt)
@@ -123,17 +125,16 @@ class ExampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        hostView = PixelHostView(this).apply {
-            screenProfile = ScreenProfileFactory.create(
-                widthPx = resources.displayMetrics.widthPixels,
-                heightPx = resources.displayMetrics.heightPixels,
+        val hostSetup = createPixelHostSetup(this)
+        hostView = hostSetup.hostView.apply {
+            profilePreference = PixelHostProfilePreference(
                 dotSizePx = 8,
             )
             setPalette(PixelPalette.terminalGreen())
             setContent { renderScene() }
         }
 
-        setContentView(hostView)
+        setContentView(hostSetup.rootView)
     }
 
     private fun renderScene(): Widget {
@@ -638,19 +639,10 @@ SingleChildScrollView(
 最小接法：
 
 ```kotlin
-val hostView = PixelHostView(this)
-val textInputBridge = PixelTextInputBridge(
-    context = this,
-    hostView = hostView,
-)
-hostView.hostBridge = textInputBridge
+val hostSetup = createPixelHostSetup(this)
+val hostView = hostSetup.hostView
 
-setContentView(
-    FrameLayout(this).apply {
-        addView(hostView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
-        addView(textInputBridge.inputView, FrameLayout.LayoutParams(1, WRAP_CONTENT))
-    },
-)
+setContentView(hostSetup.rootView)
 ```
 
 如果后面要接更复杂的 IME 行为，仍然可以自定义实现 `PixelHostBridge`。  
