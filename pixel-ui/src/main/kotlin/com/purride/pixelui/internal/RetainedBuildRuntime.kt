@@ -4,7 +4,7 @@ import com.purride.pixelui.Widget
 
 internal class RetainedBuildRuntime(
     private val onVisualUpdate: () -> Unit,
-    private val widgetAdapter: (Widget) -> Element?,
+    private val widgetAdapter: WidgetAdapter,
 ) {
     private val buildOwner = BuildOwner(
         onVisualUpdate = onVisualUpdate,

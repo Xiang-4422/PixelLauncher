@@ -2,8 +2,6 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelui.Widget
-
 /**
  * bridge 层的统一装配入口。
  *
@@ -17,11 +15,9 @@ import com.purride.pixelui.Widget
 internal class BridgeSupportGraph(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
-    private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
+    val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
 
-    fun adaptWidget(widget: Widget): Element? {
-        return BridgeWidgetAdapterFactory.inflate(widget)
-    }
+    private val renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer)
 
     fun renderElementTree(
         root: Element?,
