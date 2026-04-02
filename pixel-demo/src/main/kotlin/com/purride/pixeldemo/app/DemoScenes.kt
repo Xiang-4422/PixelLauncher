@@ -68,6 +68,7 @@ object DemoScenes {
         val initialProfile: ScreenProfile,
         val initialPalette: PixelPalette,
         val initialTextRasterizer: PixelTextRasterizer,
+        val initialThemeData: ThemeData? = null,
         val content: () -> Widget,
     )
 
@@ -251,6 +252,7 @@ object DemoScenes {
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
+            initialThemeData = accentTheme,
             content = {
                 scrollableRoot(
                     state = scrollState,
@@ -280,42 +282,39 @@ object DemoScenes {
                                 hostView.requestRender()
                             },
                         ),
-                        Theme(
-                            data = accentTheme,
-                            child = Column(
-                                spacing = 2,
-                                children = listOf(
-                                    TextField(
-                                        state = secondaryState,
-                                        controller = controller,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                        placeholder = "TYPE SECONDARY",
-                                        enabled = primaryState.text.isNotEmpty(),
-                                        textInputAction = TextInputAction.DONE,
-                                        onSubmitted = { text ->
-                                            submittedText = text
+                        Column(
+                            spacing = 2,
+                            children = listOf(
+                                TextField(
+                                    state = secondaryState,
+                                    controller = controller,
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                    placeholder = "TYPE SECONDARY",
+                                    enabled = primaryState.text.isNotEmpty(),
+                                    textInputAction = TextInputAction.DONE,
+                                    onSubmitted = { text ->
+                                        submittedText = text
+                                        hostView.requestRender()
+                                    },
+                                ),
+                                TextField(
+                                    state = readOnlyState,
+                                    controller = controller,
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                    placeholder = "READ ONLY",
+                                    readOnly = true,
+                                ),
+                                OutlinedButton(
+                                    text = "CLEAR SECONDARY",
+                                    onPressed = if (secondaryState.text.isNotEmpty()) {
+                                        {
+                                            controller.clear(secondaryState)
                                             hostView.requestRender()
-                                        },
-                                    ),
-                                    TextField(
-                                        state = readOnlyState,
-                                        controller = controller,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                        placeholder = "READ ONLY",
-                                        readOnly = true,
-                                    ),
-                                    OutlinedButton(
-                                        text = "CLEAR SECONDARY",
-                                        onPressed = if (secondaryState.text.isNotEmpty()) {
-                                            {
-                                                controller.clear(secondaryState)
-                                                hostView.requestRender()
-                                            }
-                                        } else {
-                                            null
-                                        },
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                    ),
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
                                 ),
                             ),
                         ),
@@ -899,6 +898,7 @@ object DemoScenes {
             initialProfile = defaultProfile(),
             initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
             initialTextRasterizer = textRasterizers.default,
+            initialThemeData = accentTheme,
             content = {
                 Column(
                     modifier = PixelModifier.Empty.fillMaxSize().padding(4),
@@ -908,43 +908,40 @@ object DemoScenes {
                         infoCard("NAME", nameState.text.ifEmpty { "(EMPTY)" }, accent = nameState.isFocused),
                         infoCard("CITY", cityState.text.ifEmpty { "(EMPTY)" }, accent = cityState.isFocused),
                         infoCard("SELECTED", selectedLabel),
-                        Theme(
-                            data = accentTheme,
-                            child = Column(
-                                spacing = 2,
-                                children = listOf(
-                                    TextField(
-                                        state = nameState,
-                                        controller = textController,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                        placeholder = "TYPE NAME",
-                                    ),
-                                    TextField(
-                                        state = cityState,
-                                        controller = textController,
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(16),
-                                        placeholder = "TYPE CITY",
-                                    ),
-                                    Row(
-                                        modifier = PixelModifier.Empty.fillMaxWidth().height(14),
-                                        spacing = 2,
-                                        children = listOf(
-                                            OutlinedButton(
-                                                text = "SHOW 1",
-                                                onPressed = {
-                                                    listController.showItem(listState, itemIndex = 0)
-                                                    hostView.requestRender()
-                                                },
-                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                            ),
-                                            OutlinedButton(
-                                                text = "SHOW 6",
-                                                onPressed = {
-                                                    listController.showItem(listState, itemIndex = 5)
-                                                    hostView.requestRender()
-                                                },
-                                                modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
-                                            ),
+                        Column(
+                            spacing = 2,
+                            children = listOf(
+                                TextField(
+                                    state = nameState,
+                                    controller = textController,
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                    placeholder = "TYPE NAME",
+                                ),
+                                TextField(
+                                    state = cityState,
+                                    controller = textController,
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(16),
+                                    placeholder = "TYPE CITY",
+                                ),
+                                Row(
+                                    modifier = PixelModifier.Empty.fillMaxWidth().height(14),
+                                    spacing = 2,
+                                    children = listOf(
+                                        OutlinedButton(
+                                            text = "SHOW 1",
+                                            onPressed = {
+                                                listController.showItem(listState, itemIndex = 0)
+                                                hostView.requestRender()
+                                            },
+                                            modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
+                                        ),
+                                        OutlinedButton(
+                                            text = "SHOW 6",
+                                            onPressed = {
+                                                listController.showItem(listState, itemIndex = 5)
+                                                hostView.requestRender()
+                                            },
+                                            modifier = PixelModifier.Empty.weight(1f).fillMaxHeight(),
                                         ),
                                     ),
                                 ),
