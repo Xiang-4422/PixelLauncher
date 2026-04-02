@@ -615,6 +615,10 @@ Row(
 - 主轴排布 `START / CENTER / END / SPACE_BETWEEN / SPACE_AROUND / SPACE_EVENLY`
 - 交叉轴对齐 `START / CENTER / END / STRETCH`
 - `Expanded / Flexible / Spacer`
+- `Align` 常用方位：
+  - `TOP_START / TOP_CENTER / TOP_END`
+  - `CENTER_START / CENTER / CENTER_END`
+  - `BOTTOM_START / BOTTOM_CENTER / BOTTOM_END`
 
 如果你希望 `Row / Column` 主轴上直接吃满父级，而不是按内容自然包裹，当前可以直接写：
 
@@ -640,6 +644,19 @@ Row(
     children = listOf(
         SizedBox(width = 18, child = Text("LEFT")),
         SizedBox(width = 18, child = Text("RIGHT")),
+    ),
+)
+```
+
+对齐示例：
+
+```kotlin
+Align(
+    alignment = Alignment.BOTTOM_END,
+    child = SizedBox(
+        width = 18,
+        height = 8,
+        child = Text("TAG"),
     ),
 )
 ```

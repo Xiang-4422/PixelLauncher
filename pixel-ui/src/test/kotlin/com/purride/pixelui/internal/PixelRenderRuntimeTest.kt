@@ -850,6 +850,52 @@ class PixelRenderRuntimeTest {
     }
 
     @Test
+    fun flutterStyleAlignPlacesChildAtBottomEnd() {
+        val result = runtime.render(
+            root = Align(
+                alignment = Alignment.BOTTOM_END,
+                modifier = PixelModifier.Empty.size(10, 10),
+                child = SizedBox(
+                    width = 4,
+                    height = 4,
+                    child = DecoratedBox(
+                        fillTone = PixelTone.ACCENT,
+                        borderTone = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(4, 4))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(9, 9))
+    }
+
+    @Test
+    fun flutterStyleAlignPlacesChildAtCenterStart() {
+        val result = runtime.render(
+            root = Align(
+                alignment = Alignment.CENTER_START,
+                modifier = PixelModifier.Empty.size(10, 10),
+                child = SizedBox(
+                    width = 4,
+                    height = 4,
+                    child = DecoratedBox(
+                        fillTone = PixelTone.ON,
+                        borderTone = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 10,
+        )
+
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 5))
+        assertEquals(PixelTone.OFF.value, result.buffer.getPixel(6, 1))
+    }
+
+    @Test
     fun flutterStyleGestureDetectorExportsClickTarget() {
         var clicked = false
         val result = runtime.render(

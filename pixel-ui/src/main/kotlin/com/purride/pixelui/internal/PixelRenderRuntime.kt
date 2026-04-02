@@ -1660,19 +1660,74 @@ internal class PixelRenderRuntime(
         childSize: PixelSize,
         alignment: PixelAlignment,
     ): PixelRect {
+        val clampedWidth = childSize.width.coerceAtMost(outerBounds.width)
+        val clampedHeight = childSize.height.coerceAtMost(outerBounds.height)
+        val centeredLeft = outerBounds.left + ((outerBounds.width - childSize.width).coerceAtLeast(0) / 2)
+        val endLeft = outerBounds.left + (outerBounds.width - childSize.width).coerceAtLeast(0)
+        val centeredTop = outerBounds.top + ((outerBounds.height - childSize.height).coerceAtLeast(0) / 2)
+        val bottomTop = outerBounds.top + (outerBounds.height - childSize.height).coerceAtLeast(0)
         return when (alignment) {
             PixelAlignment.TOP_START -> PixelRect(
                 left = outerBounds.left,
                 top = outerBounds.top,
-                width = childSize.width.coerceAtMost(outerBounds.width),
-                height = childSize.height.coerceAtMost(outerBounds.height),
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.TOP_CENTER -> PixelRect(
+                left = centeredLeft,
+                top = outerBounds.top,
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.TOP_END -> PixelRect(
+                left = endLeft,
+                top = outerBounds.top,
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.CENTER_START -> PixelRect(
+                left = outerBounds.left,
+                top = centeredTop,
+                width = clampedWidth,
+                height = clampedHeight,
             )
 
             PixelAlignment.CENTER -> PixelRect(
-                left = outerBounds.left + ((outerBounds.width - childSize.width).coerceAtLeast(0) / 2),
-                top = outerBounds.top + ((outerBounds.height - childSize.height).coerceAtLeast(0) / 2),
-                width = childSize.width.coerceAtMost(outerBounds.width),
-                height = childSize.height.coerceAtMost(outerBounds.height),
+                left = centeredLeft,
+                top = centeredTop,
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.CENTER_END -> PixelRect(
+                left = endLeft,
+                top = centeredTop,
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.BOTTOM_START -> PixelRect(
+                left = outerBounds.left,
+                top = bottomTop,
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.BOTTOM_CENTER -> PixelRect(
+                left = centeredLeft,
+                top = bottomTop,
+                width = clampedWidth,
+                height = clampedHeight,
+            )
+
+            PixelAlignment.BOTTOM_END -> PixelRect(
+                left = endLeft,
+                top = bottomTop,
+                width = clampedWidth,
+                height = clampedHeight,
             )
         }
     }
