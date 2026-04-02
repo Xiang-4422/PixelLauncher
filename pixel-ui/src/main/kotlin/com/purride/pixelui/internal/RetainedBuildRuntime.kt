@@ -10,7 +10,7 @@ internal class RetainedBuildRuntime(
     fun resolveLegacyTree(root: Widget): LegacyRenderNode? {
         buildOwner.updateRootWidget(root)
         buildOwner.buildScope()
-        return buildOwner.rootElement?.createLegacyTree()
+        return LegacyTreeResolver.resolve(buildOwner.rootElement)
     }
 
     fun dispose() {
