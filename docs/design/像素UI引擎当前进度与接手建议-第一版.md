@@ -102,6 +102,7 @@
   - [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterWidgetAliases.kt)
   - [FlutterControllerAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/FlutterControllerAliases.kt)
 - 兼容层基础节点与场景
+  - 这一层当前只作为 retained runtime 过渡桥接使用，不再建议新页面继续直接依赖
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelNode.kt)
   - [PixelScene.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelScene.kt)
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/PixelModifier.kt)
