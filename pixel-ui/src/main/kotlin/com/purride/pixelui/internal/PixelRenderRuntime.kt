@@ -25,7 +25,6 @@ import com.purride.pixelui.internal.legacy.PixelMainAxisSize
 import com.purride.pixelui.internal.legacy.PixelModifier
 import com.purride.pixelui.internal.legacy.PixelModifierElement
 import com.purride.pixelui.internal.legacy.PixelListNode
-import com.purride.pixelui.internal.legacy.PixelNode
 import com.purride.pixelui.internal.legacy.PixelPaddingElement
 import com.purride.pixelui.internal.legacy.PixelPagerNode
 import com.purride.pixelui.internal.legacy.PixelPositionedNode
@@ -201,7 +200,7 @@ internal class PixelRenderRuntime(
         private const val SCROLL_AXIS_UNBOUNDED_MAX = 4096
     }
     fun render(
-        root: PixelNode,
+        root: LegacyRenderNode,
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
@@ -255,7 +254,7 @@ internal class PixelRenderRuntime(
         )
     }
 
-    private fun measure(node: PixelNode, constraints: PixelConstraints): PixelSize {
+    private fun measure(node: LegacyRenderNode, constraints: PixelConstraints): PixelSize {
         val modifierInfo = modifierInfo(node.modifier)
         val innerConstraints = constraints.shrink(
             paddingLeft = modifierInfo.paddingLeft,
@@ -388,7 +387,7 @@ internal class PixelRenderRuntime(
     }
 
     private fun renderNode(
-        node: PixelNode,
+        node: LegacyRenderNode,
         bounds: PixelRect,
         constraints: PixelConstraints,
         buffer: PixelBuffer,
@@ -1158,7 +1157,7 @@ internal class PixelRenderRuntime(
         return sizes
     }
 
-    private fun childWeight(node: PixelNode): Float {
+    private fun childWeight(node: LegacyRenderNode): Float {
         return node.modifier.elements
             .filterIsInstance<PixelWeightElement>()
             .lastOrNull()
@@ -1167,7 +1166,7 @@ internal class PixelRenderRuntime(
             ?: 0f
     }
 
-    private fun childFlexFit(node: PixelNode): PixelFlexFit {
+    private fun childFlexFit(node: LegacyRenderNode): PixelFlexFit {
         return node.modifier.elements
             .filterIsInstance<PixelWeightElement>()
             .lastOrNull()
@@ -1708,7 +1707,7 @@ internal class PixelRenderRuntime(
     }
 
     private fun renderPagerPage(
-        page: PixelNode,
+        page: LegacyRenderNode,
         pageWidth: Int,
         pageHeight: Int,
     ): PixelRenderResult {
