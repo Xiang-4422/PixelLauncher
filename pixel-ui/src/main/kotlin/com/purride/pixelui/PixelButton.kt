@@ -1,8 +1,11 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.internal.legacy.PixelBox
 import com.purride.pixelui.internal.legacy.PixelModifier
 import com.purride.pixelui.internal.legacy.PixelNode
+import com.purride.pixelui.internal.legacy.PixelSurfaceNode
+import com.purride.pixelui.internal.legacy.PixelText
 import com.purride.pixelui.internal.legacy.clickable
 import com.purride.pixelui.internal.legacy.fillMaxSize
 
