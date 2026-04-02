@@ -5,12 +5,12 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 
 /**
- * legacy renderer 当前阶段的内部 support graph。
+ * legacy renderer 当前阶段的默认 support bundle。
  *
- * 目的不是增加抽象层，而是把 support wiring 从 PixelRenderRuntime 主文件里拿出去，
- * 让主文件只剩一个稳定门面。
+ * 目的不是增加抽象层，而是把 support wiring 从 `PixelRenderRuntime` 主文件里拿出去，
+ * 让主文件只剩一个稳定 façade。
  */
-internal class PixelLegacyRenderSupportGraph(
+internal class LegacyRenderSupportBundle(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
     private val textRenderSupport = PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)

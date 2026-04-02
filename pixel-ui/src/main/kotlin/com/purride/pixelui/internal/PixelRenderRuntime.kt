@@ -6,14 +6,14 @@ import com.purride.pixelcore.PixelTextRasterizer
 internal class PixelRenderRuntime(
     private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) {
-    private val supportGraph = PixelLegacyRenderSupportGraph(textRasterizer = textRasterizer)
+    private val supportBundle = LegacyRenderSupportBundle(textRasterizer = textRasterizer)
 
     fun render(
         root: LegacyRenderNode,
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        return supportGraph.renderRoot(
+        return supportBundle.renderRoot(
             root = root,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
