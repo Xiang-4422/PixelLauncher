@@ -288,6 +288,7 @@ object AxisBufferComposer
 - `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回 bridge tree
 - `BuildOwner` 已经继续拆出 `ElementInflater / ElementChildUpdater / DirtyElementScheduler / ListenableDependencyRegistry / RootElementSlot`
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
+- runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
 - bridge 目录当前已经按 `runtime / resolve / elements / widgets / modifier` 收拢
 - 最终绘制仍然落到 legacy renderer

@@ -121,8 +121,9 @@
   - [RootElementSlot.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/retained/support/RootElementSlot.kt)
   - [InheritedLookupBinding.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/retained/support/InheritedLookupBinding.kt)
   - retained 目录当前已经按 `runtime / elements / support` 三组收拢
-  - [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/RetainedWidgetRenderRuntime.kt)
-  - [RetainedWidgetRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/RetainedWidgetRuntimeFactory.kt)
+  - [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/RetainedWidgetRenderRuntime.kt)
+  - [RetainedWidgetRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/RetainedWidgetRuntimeFactory.kt)
+  - runtime 目录当前已经按 `runtime / request / assembly / support / host` 五组收拢
   - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
   - [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt)
   - [BridgeWidgetAdapter.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidgetAdapter.kt)
@@ -149,7 +150,7 @@
   - [LegacySingleChildScrollWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/widgets/LegacySingleChildScrollWidgets.kt)
 - 兼容层基础节点与场景
   - 这一层当前只作为 retained runtime 过渡桥接使用，已经开始收为模块内部实现
-- 当前 retained 主链已经只面对 bridge 语义，不再直接从 `RetainedBuildRuntime` 输出 bridge tree；bridge 解析已经收敛到 [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt) 和 [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/RetainedWidgetRenderRuntime.kt)
+- 当前 retained 主链已经只面对 bridge 语义，不再直接从 `RetainedBuildRuntime` 输出 bridge tree；bridge 解析已经收敛到 [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt) 和 [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/RetainedWidgetRenderRuntime.kt)
   - 公开 Flutter 风格组件的旧节点适配逻辑，也已经从 [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/FlutterWidgetAliases.kt) 分离到 bridge/legacy support 文件，公开文件开始只保留 API 入口
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/PixelNode.kt)
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/PixelModifier.kt)
@@ -184,10 +185,10 @@
   - [LegacyRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyRenderSupportFactory.kt)
   - [LegacyTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyTreeRenderer.kt)
   - [LegacyTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyTreeRendererFactory.kt)
-  - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/RetainedRenderSupport.kt)
-  - [RetainedRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/RetainedRenderSupportFactory.kt)
-  - [WidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/WidgetRenderRuntime.kt)
-  - [WidgetRenderRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/WidgetRenderRuntimeFactory.kt)
+  - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupport.kt)
+  - [RetainedRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupportFactory.kt)
+  - [WidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/WidgetRenderRuntime.kt)
+  - [WidgetRenderRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/WidgetRenderRuntimeFactory.kt)
   - [BridgeTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeTreeRenderer.kt)
   - [PixelRootRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/PixelRootRenderSupport.kt)
   - [PixelNodeRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/PixelNodeRenderSupport.kt)
