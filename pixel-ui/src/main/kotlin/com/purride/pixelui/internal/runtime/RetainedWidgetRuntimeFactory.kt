@@ -18,14 +18,10 @@ internal object RetainedWidgetRuntimeFactory {
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
         onVisualUpdate: () -> Unit = { },
     ): WidgetRenderRuntime {
-        val assembly = createDefaultAssembly(
+        return createDefaultAssembly(
             textRasterizer = textRasterizer,
             onVisualUpdate = onVisualUpdate,
-        )
-        return RetainedWidgetRenderRuntime(
-            buildRuntime = assembly.buildRuntime,
-            elementTreeRenderer = assembly.elementTreeRenderer,
-        )
+        ).toRuntime()
     }
 
     /**

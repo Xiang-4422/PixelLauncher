@@ -8,4 +8,9 @@ package com.purride.pixelui.internal
  */
 internal data class WidgetRuntimeAssembly(
     val runtime: WidgetRenderRuntime,
-)
+) {
+    /**
+     * 返回当前 assembly 对应的宿主运行时。
+     */
+    fun toRuntime(): WidgetRenderRuntime = runtime
+}
