@@ -34,12 +34,9 @@ internal object RetainedWidgetRuntimeFactory {
         val renderSupport = RetainedRenderSupportFactory.createDefault(
             textRasterizer = textRasterizer,
         )
-        return RetainedWidgetRuntimeAssembly(
-            buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
-                onVisualUpdate = onVisualUpdate,
-                widgetAdapter = renderSupport.widgetAdapter,
-            ),
-            elementTreeRenderer = renderSupport.elementTreeRenderer,
+        return RetainedWidgetRuntimeAssemblyFactory.create(
+            onVisualUpdate = onVisualUpdate,
+            renderSupport = renderSupport,
         )
     }
 }
