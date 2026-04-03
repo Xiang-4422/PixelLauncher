@@ -21,10 +21,11 @@ internal class RetainedWidgetRenderRuntime(
     private val renderSupport: RetainedRenderSupport = RetainedRenderSupportFactory.createDefault(
         textRasterizer = textRasterizer,
     )
-    private val buildRuntime = RetainedBuildRuntime(
-        onVisualUpdate = onVisualUpdate,
-        widgetAdapter = renderSupport.widgetAdapter,
-    )
+    private val buildRuntime: ElementTreeBuildRuntime =
+        ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = onVisualUpdate,
+            widgetAdapter = renderSupport.widgetAdapter,
+        )
     private val elementTreeRenderer = renderSupport.elementTreeRenderer
 
     override fun render(
