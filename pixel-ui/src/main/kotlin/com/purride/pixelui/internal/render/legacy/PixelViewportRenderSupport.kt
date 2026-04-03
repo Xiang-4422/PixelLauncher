@@ -10,19 +10,11 @@ import com.purride.pixelui.internal.legacy.PixelSingleChildScrollViewNode
  * 负责 legacy viewport 节点的渲染调度。
  */
 internal class PixelViewportRenderSupport(
-    private val measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
-    private val renderNode: (
-        node: LegacyRenderNode,
-        bounds: PixelRect,
-        constraints: PixelConstraints,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) -> Unit,
+    callbacks: LegacyRenderCallbacks,
     private val scrollAxisUnboundedMax: Int,
 ) {
+    private val measureNode = callbacks.measureNode
+    private val renderNode = callbacks.renderNode
     private val sessionSupport = PixelViewportSessionSupport(renderNode = renderNode)
     private val pagerRenderSupport = PixelPagerRenderSupport(sessionSupport = sessionSupport)
     private val verticalScrollRenderSupport = PixelVerticalScrollRenderSupport(
