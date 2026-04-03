@@ -9,4 +9,14 @@ package com.purride.pixelui.internal
 internal data class RetainedWidgetRuntimeAssembly(
     val buildRuntime: ElementTreeBuildRuntime,
     val elementTreeRenderer: ElementTreeRenderer,
-)
+) {
+    /**
+     * 基于当前 assembly 生成 retained widget runtime。
+     */
+    fun toRuntime(): WidgetRenderRuntime {
+        return RetainedWidgetRenderRuntime(
+            buildRuntime = buildRuntime,
+            elementTreeRenderer = elementTreeRenderer,
+        )
+    }
+}

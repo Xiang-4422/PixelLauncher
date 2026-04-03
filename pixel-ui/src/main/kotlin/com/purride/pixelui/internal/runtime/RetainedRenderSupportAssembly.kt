@@ -9,4 +9,14 @@ package com.purride.pixelui.internal
 internal data class RetainedRenderSupportAssembly(
     val widgetAdapter: WidgetAdapter,
     val elementTreeRenderer: ElementTreeRenderer,
-)
+) {
+    /**
+     * 基于当前 assembly 生成默认 retained render support。
+     */
+    fun toRenderSupport(): RetainedRenderSupport {
+        return DefaultRetainedRenderSupport(
+            widgetAdapter = widgetAdapter,
+            elementTreeRenderer = elementTreeRenderer,
+        )
+    }
+}

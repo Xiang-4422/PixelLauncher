@@ -16,11 +16,9 @@ internal object RetainedRenderSupportFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): RetainedRenderSupport {
-        val assembly = createDefaultAssembly(textRasterizer = textRasterizer)
-        return DefaultRetainedRenderSupport(
-            widgetAdapter = assembly.widgetAdapter,
-            elementTreeRenderer = assembly.elementTreeRenderer,
-        )
+        return createDefaultAssembly(
+            textRasterizer = textRasterizer,
+        ).toRenderSupport()
     }
 
     /**

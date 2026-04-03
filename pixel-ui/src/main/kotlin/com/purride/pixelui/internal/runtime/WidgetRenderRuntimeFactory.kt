@@ -20,7 +20,7 @@ internal object WidgetRenderRuntimeFactory {
         return createDefaultAssembly(
             textRasterizer = textRasterizer,
             onVisualUpdate = onVisualUpdate,
-        ).runtime
+        ).toRuntime()
     }
 
     /**

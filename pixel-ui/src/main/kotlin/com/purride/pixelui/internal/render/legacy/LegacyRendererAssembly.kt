@@ -9,4 +9,9 @@ package com.purride.pixelui.internal
 internal data class LegacyRendererAssembly(
     val renderSupport: LegacyRenderSupport,
     val renderer: LegacyTreeRenderer,
-)
+) {
+    /**
+     * 返回当前 assembly 对应的 legacy renderer。
+     */
+    fun toRenderer(): LegacyTreeRenderer = renderer
+}
