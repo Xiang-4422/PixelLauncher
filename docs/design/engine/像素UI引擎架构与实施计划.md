@@ -479,6 +479,126 @@ object AxisBufferComposer
 
 这份顺序不是建议，而是当前阶段的执行顺序。
 
-如果需要把当前阶段拆成多人并行工作包，统一参考：
+---
 
-- [像素 UI 引擎执行计划与并行开发指南](./像素UI引擎执行计划与并行开发指南.md)
+## 10. 当前阶段具体后续工作
+
+当前阶段后续工作统一按下面四组推进，但由同一条主线持续推进，不再单独拆成并行执行文档。
+
+### 10.1 retained framework 收口
+
+目标：
+
+- 继续把 retained 主链收成真正清晰的 framework 层
+- 为后续 `RenderObject / PipelineOwner` 铺路
+
+范围：
+
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/retained`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime`
+- retained 相关测试
+
+完成定义：
+
+- retained/runtime 主链职责继续变薄
+- 目录和文档保持同步
+- retained 主链类和方法注释持续补齐
+
+### 10.2 bridge 继续压薄
+
+目标：
+
+- 继续把 bridge 收成最薄兼容层
+- 避免 bridge 演变成第二套 runtime
+
+范围：
+
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge`
+- bridge 相关测试与文档引用
+
+完成定义：
+
+- bridge 更像纯桥接执行层
+- 解析协议、运行协议、widget 兼容壳边界更清楚
+
+### 10.3 legacy renderer façade 继续收口
+
+目标：
+
+- 继续压薄当前 legacy renderer
+- 把大类继续拆成调度 + helper
+
+范围：
+
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy`
+
+完成定义：
+
+- `PixelRenderRuntime` 继续维持 façade 角色
+- support/assembly/helper 结构更稳定
+- legacy 目录继续只作为内部兼容层存在
+
+### 10.4 文档、测试、注释与验收
+
+目标：
+
+- 给前三条主线持续兜底
+- 防止结构变化快于文档和测试
+
+范围：
+
+- `docs/design/engine`
+- `pixel-ui/src/test`
+- `pixel-demo`
+
+完成定义：
+
+- 文档与目录结构同步
+- 关键场景回归持续可见
+- 注释覆盖不再只靠“碰到再补”
+
+---
+
+## 11. 当前阶段合入门槛
+
+每一轮主线改动都必须通过：
+
+```bash
+./gradlew :pixel-core:testDebugUnitTest :pixel-ui:testDebugUnitTest :pixel-engine:assembleDebug :pixel-demo:assembleDebug --no-daemon
+```
+
+真机回归门槛：
+
+```bash
+adb -s <device> install -r /Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-demo/build/outputs/apk/debug/pixel-demo-debug.apk
+adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
+```
+
+最低验收要求：
+
+- demo 菜单可启动
+- 文本页可打开
+- 输入页可打开
+- 列表/分页页可打开
+
+---
+
+## 12. 下一阶段目标
+
+当前这些工作做完后，下一阶段才进入：
+
+- `RenderObject`
+- `PipelineOwner`
+- layout / paint / hitTest 新协议
+- 新 renderer 承接最小组件集
+
+在这之前，不做：
+
+- `:app` 页面迁移
+- 删除整套 `legacy`
+- 一次性重写 `PageView / ListView / TextField`
+
+一句话说，当前阶段的目标不是“把新 renderer 一口气写完”，而是：
+
+> 把现在的中间态整理成可长期迭代、可安全替换后端的稳定架构。
