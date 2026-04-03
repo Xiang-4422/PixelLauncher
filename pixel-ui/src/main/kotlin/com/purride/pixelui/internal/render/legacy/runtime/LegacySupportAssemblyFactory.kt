@@ -28,42 +28,23 @@ internal object LegacySupportAssemblyFactory {
             measureNode = measureNode,
             renderNode = renderNode,
         )
-        val textRenderSupport = createTextRenderSupport(textRasterizer)
-        val textFieldRenderSupport = createTextFieldRenderSupport(
-            defaultTextRasterizer = textRasterizer,
-            textRenderSupport = textRenderSupport,
+        val textSupportAssembly = createTextSupportAssembly(
+            textRasterizer = textRasterizer,
         )
-        val layoutRenderSupport = createLayoutRenderSupport(
+        val structureSupportAssembly = createStructureSupportAssembly(
             callbacks = callbacks,
-        )
-        val viewportRenderSupport = createViewportRenderSupport(
-            callbacks = callbacks,
-            scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
-        )
-        val measureSupport = createMeasureSupport(
             measureNode = measureNode,
-            textRenderSupport = textRenderSupport,
-            textFieldRenderSupport = textFieldRenderSupport,
-            layoutRenderSupport = layoutRenderSupport,
-        )
-        val nodeRenderSupport = createNodeRenderSupport(
-            textRenderSupport = textRenderSupport,
-            textFieldRenderSupport = textFieldRenderSupport,
-            layoutRenderSupport = layoutRenderSupport,
-            viewportRenderSupport = viewportRenderSupport,
+            textSupportAssembly = textSupportAssembly,
             renderNode = renderNode,
         )
-        val rootRenderSupport = createRootRenderSupport(
-            callbacks = callbacks,
-        )
         return LegacySupportAssembly(
-            textRenderSupport = textRenderSupport,
-            textFieldRenderSupport = textFieldRenderSupport,
-            layoutRenderSupport = layoutRenderSupport,
-            viewportRenderSupport = viewportRenderSupport,
-            measureSupport = measureSupport,
-            nodeRenderSupport = nodeRenderSupport,
-            rootRenderSupport = rootRenderSupport,
+            textRenderSupport = textSupportAssembly.textRenderSupport,
+            textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
+            layoutRenderSupport = structureSupportAssembly.layoutRenderSupport,
+            viewportRenderSupport = structureSupportAssembly.viewportRenderSupport,
+            measureSupport = structureSupportAssembly.measureSupport,
+            nodeRenderSupport = structureSupportAssembly.nodeRenderSupport,
+            rootRenderSupport = structureSupportAssembly.rootRenderSupport,
         )
     }
 
@@ -96,6 +77,23 @@ internal object LegacySupportAssemblyFactory {
         textRasterizer: PixelTextRasterizer,
     ): PixelTextRenderSupport {
         return PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)
+    }
+
+    /**
+     * 创建文本相关 support 的默认装配结果。
+     */
+    private fun createTextSupportAssembly(
+        textRasterizer: PixelTextRasterizer,
+    ): LegacyTextSupportAssembly {
+        val textRenderSupport = createTextRenderSupport(textRasterizer)
+        val textFieldRenderSupport = createTextFieldRenderSupport(
+            defaultTextRasterizer = textRasterizer,
+            textRenderSupport = textRenderSupport,
+        )
+        return LegacyTextSupportAssembly(
+            textRenderSupport = textRenderSupport,
+            textFieldRenderSupport = textFieldRenderSupport,
+        )
     }
 
     /**
@@ -188,6 +186,56 @@ internal object LegacySupportAssemblyFactory {
     ): PixelRootRenderSupport {
         return PixelRootRenderSupport(
             callbacks = callbacks,
+        )
+    }
+
+    /**
+     * 创建文本之外其余 support 的默认装配结果。
+     */
+    private fun createStructureSupportAssembly(
+        callbacks: LegacyRenderCallbacks,
+        measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
+        textSupportAssembly: LegacyTextSupportAssembly,
+        renderNode: (
+            LegacyRenderNode,
+            PixelRect,
+            PixelConstraints,
+            com.purride.pixelcore.PixelBuffer,
+            MutableList<PixelClickTarget>,
+            MutableList<PixelPagerTarget>,
+            MutableList<PixelListTarget>,
+            MutableList<PixelTextInputTarget>,
+        ) -> Unit,
+    ): LegacyStructureSupportAssembly {
+        val layoutRenderSupport = createLayoutRenderSupport(
+            callbacks = callbacks,
+        )
+        val viewportRenderSupport = createViewportRenderSupport(
+            callbacks = callbacks,
+            scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
+        )
+        val measureSupport = createMeasureSupport(
+            measureNode = measureNode,
+            textRenderSupport = textSupportAssembly.textRenderSupport,
+            textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
+            layoutRenderSupport = layoutRenderSupport,
+        )
+        val nodeRenderSupport = createNodeRenderSupport(
+            textRenderSupport = textSupportAssembly.textRenderSupport,
+            textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
+            layoutRenderSupport = layoutRenderSupport,
+            viewportRenderSupport = viewportRenderSupport,
+            renderNode = renderNode,
+        )
+        val rootRenderSupport = createRootRenderSupport(
+            callbacks = callbacks,
+        )
+        return LegacyStructureSupportAssembly(
+            layoutRenderSupport = layoutRenderSupport,
+            viewportRenderSupport = viewportRenderSupport,
+            measureSupport = measureSupport,
+            nodeRenderSupport = nodeRenderSupport,
+            rootRenderSupport = rootRenderSupport,
         )
     }
 

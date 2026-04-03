@@ -341,7 +341,7 @@ object AxisBufferComposer
 
 1. retained build runtime：`BuildOwner / Element / Inherited / Stateful`
 2. `RetainedWidgetRenderRuntime`
-3. bridge：`BridgeRenderNode / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeAdapterElement / BridgeWidget / LegacyBridgeWidgets / BridgeElementTreeRenderer / BridgeRenderRuntime`
+3. bridge：`BridgeRenderNode / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeAdapterElement / BridgeWidget / LegacyLeafWidget / LegacySingleChildWidget / LegacyMultiChildWidget / BridgeElementTreeRenderer / BridgeRenderRuntime`
 4. legacy render façade：`PixelRenderRuntime + LegacyRenderSupportBundle`
 5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session，以及 `LegacyContainerWidgets / LegacyFlexLayoutWidgets / LegacyListWidgets / LegacySingleChildScrollWidgets / LegacyInputWidgets`
 6. demo 场景持续切到 retained 主链并维持验收稳定
