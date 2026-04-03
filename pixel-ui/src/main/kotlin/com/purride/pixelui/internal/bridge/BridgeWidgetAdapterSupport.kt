@@ -14,25 +14,3 @@ internal fun adaptBridgeWidget(widget: Widget): BridgeWidget? {
         else -> null
     }
 }
-
-/**
- * 把静态 legacy 节点包装成 bridge widget。
- */
-private data class StaticBridgeNodeWidget(
-    private val node: BridgeRenderNode,
-) : BridgeWidget {
-    override val key: Any?
-        get() = node.key
-
-    override val childWidgets: List<Widget> = emptyList()
-
-    /**
-     * 直接返回预先给定的 bridge render node。
-     */
-    override fun createBridgeNode(
-        context: BuildContext,
-        childNodes: BridgeNodeChildren,
-    ): BridgeRenderNode {
-        return node
-    }
-}
