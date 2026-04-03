@@ -288,6 +288,8 @@ object AxisBufferComposer
 - `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回 bridge tree
 - `BuildOwner` 已经继续拆出 `ElementInflater / ElementChildUpdater / DirtyElementScheduler / ListenableDependencyRegistry / RootElementSlot`
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
+- retained 目录当前已经按 `runtime / elements / support` 收拢
+- bridge 目录当前已经按 `runtime / resolve / elements / widgets / modifier` 收拢
 - 最终绘制仍然落到 legacy renderer
 - 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
 
@@ -338,9 +340,9 @@ object AxisBufferComposer
 
 1. retained build runtime：`BuildOwner / Element / Inherited / Stateful`
 2. `RetainedWidgetRenderRuntime`
-3. bridge：`BridgeRenderNode / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeAdapterElement / BridgeWidgets / BridgeNodeWidgets / BridgeElementTreeRenderer / BridgeRenderRuntime`
+3. bridge：`BridgeRenderNode / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeAdapterElement / BridgeWidget / LegacyBridgeWidgets / BridgeElementTreeRenderer / BridgeRenderRuntime`
 4. legacy render façade：`PixelRenderRuntime + LegacyRenderSupportBundle`
-5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session，以及 `LegacyLayoutWidgets / LegacyScrollWidgets / LegacyTextInputWidgets`
+5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session，以及 `LegacyContainerWidgets / LegacyFlexLayoutWidgets / LegacyListWidgets / LegacySingleChildScrollWidgets / LegacyInputWidgets`
 6. demo 场景持续切到 retained 主链并维持验收稳定
 
 ### Phase D. 新增 `:pixel-demo`
