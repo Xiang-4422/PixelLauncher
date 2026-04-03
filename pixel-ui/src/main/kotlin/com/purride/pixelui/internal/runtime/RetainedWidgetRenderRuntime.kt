@@ -20,7 +20,11 @@ internal class RetainedWidgetRenderRuntime(
      * 先解析 Widget 树，再渲染解析后的 element tree。
      */
     override fun render(request: WidgetRenderRequest): PixelRenderResult {
-        val elementRoot = buildRuntime.resolveElementTree(request.root)
+        val elementRoot = buildRuntime.resolveElementTree(
+            request = ElementTreeBuildRequest(
+                root = request.root,
+            ),
+        )
         return elementTreeRenderer.render(
             request = ElementTreeRenderRequest(
                 root = elementRoot,
