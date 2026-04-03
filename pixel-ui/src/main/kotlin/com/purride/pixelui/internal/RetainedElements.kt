@@ -118,19 +118,18 @@ internal abstract class Element(
 internal abstract class ComponentElement(
     widget: Widget,
 ) : Element(widget) {
-    protected var child: Element? = null
+    private val childSlot = SingleChildElementSlot()
 
     override fun performRebuild() {
-        val built = buildWidget()
-        child = owner.updateChild(
+        childSlot.update(
+            owner = owner,
             parent = this,
-            current = child,
-            newWidget = built,
+            newWidget = buildWidget(),
         )
     }
 
     override fun visitChildren(visitor: (Element) -> Unit) {
-        child?.let(visitor)
+        childSlot.visit(visitor)
     }
 
     protected abstract fun buildWidget(): Widget?
