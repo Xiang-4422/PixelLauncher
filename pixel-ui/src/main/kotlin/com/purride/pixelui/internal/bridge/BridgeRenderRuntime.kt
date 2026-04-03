@@ -9,15 +9,16 @@ package com.purride.pixelui.internal
 internal class BridgeRenderRuntime(
     private val legacyTreeRenderer: LegacyTreeRenderer,
 ) : BridgeTreeRenderer {
-    override fun render(
-        root: BridgeRenderNode,
-        logicalWidth: Int,
-        logicalHeight: Int,
-    ): PixelRenderResult {
+    /**
+     * 把 bridge 渲染请求转交给 legacy renderer。
+     */
+    override fun render(request: BridgeRenderRequest): PixelRenderResult {
         return legacyTreeRenderer.render(
-            root = root,
-            logicalWidth = logicalWidth,
-            logicalHeight = logicalHeight,
+            request = LegacyRenderRequest(
+                root = request.root,
+                logicalWidth = request.logicalWidth,
+                logicalHeight = request.logicalHeight,
+            ),
         )
     }
 }
