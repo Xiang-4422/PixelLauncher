@@ -16,11 +16,25 @@ internal object RetainedRenderSupportFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): RetainedRenderSupport {
+        val assembly = createDefaultAssembly(textRasterizer = textRasterizer)
         return DefaultRetainedRenderSupport(
+            widgetAdapter = assembly.widgetAdapter,
+            elementTreeRenderer = assembly.elementTreeRenderer,
+        )
+    }
+
+    /**
+     * 创建 retained render support 的默认装配结果。
+     */
+    fun createDefaultAssembly(
+        textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    ): RetainedRenderSupportAssembly {
+        val bridgeAssembly = BridgeRenderSupportFactory.createDefaultAssembly(
+            textRasterizer = textRasterizer,
+        )
+        return RetainedRenderSupportAssembly(
             widgetAdapter = BridgeWidgetAdapter,
-            elementTreeRenderer = BridgeRenderSupportFactory.createDefault(
-                textRasterizer = textRasterizer,
-            ),
+            elementTreeRenderer = bridgeAssembly.elementTreeRenderer,
         )
     }
 }

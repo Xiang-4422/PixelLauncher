@@ -16,12 +16,27 @@ internal object BridgeRenderSupportFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): ElementTreeRenderer {
-        return BridgeElementTreeRenderer(
-            bridgeTreeResolver = DefaultBridgeTreeResolver,
-            bridgeTreeRenderer = BridgeRenderRuntime(
-                legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
-                    textRasterizer = textRasterizer,
-                ),
+        return createDefaultAssembly(textRasterizer = textRasterizer).elementTreeRenderer
+    }
+
+    /**
+     * 创建 bridge 渲染支持的默认装配结果。
+     */
+    fun createDefaultAssembly(
+        textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    ): BridgeRenderSupportAssembly {
+        val bridgeTreeResolver = DefaultBridgeTreeResolver
+        val bridgeTreeRenderer = BridgeRenderRuntime(
+            legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
+                textRasterizer = textRasterizer,
+            ),
+        )
+        return BridgeRenderSupportAssembly(
+            bridgeTreeResolver = bridgeTreeResolver,
+            bridgeTreeRenderer = bridgeTreeRenderer,
+            elementTreeRenderer = BridgeElementTreeRenderer(
+                bridgeTreeResolver = bridgeTreeResolver,
+                bridgeTreeRenderer = bridgeTreeRenderer,
             ),
         )
     }
