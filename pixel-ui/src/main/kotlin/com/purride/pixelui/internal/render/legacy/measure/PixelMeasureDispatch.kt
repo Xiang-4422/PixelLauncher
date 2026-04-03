@@ -23,7 +23,7 @@ internal class PixelMeasureDispatch(
     private val measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
     private val textRenderSupport: PixelTextRenderSupport,
     private val textFieldRenderSupport: PixelTextFieldRenderSupport,
-    private val layoutRenderSupport: PixelLayoutRenderSupport,
+    private val layoutMeasureSupport: PixelLayoutMeasureSupport,
 ) {
     /**
      * 按节点类型测量内容尺寸，不包含外层 modifier padding/fill 处理。
@@ -72,19 +72,19 @@ internal class PixelMeasureDispatch(
 
             is PixelPositionedNode -> {
                 val childConstraints = PixelConstraints(
-                    maxWidth = layoutRenderSupport.measurePositionedMaxWidth(node, innerConstraints),
-                    maxHeight = layoutRenderSupport.measurePositionedMaxHeight(node, innerConstraints),
+                    maxWidth = layoutMeasureSupport.measurePositionedMaxWidth(node, innerConstraints),
+                    maxHeight = layoutMeasureSupport.measurePositionedMaxHeight(node, innerConstraints),
                 )
                 val childSize = measureNode(node.child, childConstraints)
                 PixelSize(
-                    width = layoutRenderSupport.measurePositionedWidth(node, innerConstraints, childSize),
-                    height = layoutRenderSupport.measurePositionedHeight(node, innerConstraints, childSize),
+                    width = layoutMeasureSupport.measurePositionedWidth(node, innerConstraints, childSize),
+                    height = layoutMeasureSupport.measurePositionedHeight(node, innerConstraints, childSize),
                 )
             }
 
             is PixelRowNode -> {
-                val children = layoutRenderSupport.measureRowChildrenForLayout(node, innerConstraints)
-                val childrenWidth = if (node.children.any { layoutRenderSupport.childWeightOf(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
+                val children = layoutMeasureSupport.measureRowChildren(node, innerConstraints)
+                val childrenWidth = if (node.children.any { layoutMeasureSupport.childWeightOf(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
                     innerConstraints.maxWidth
                 } else {
                     children.sumOf { it.width } + (max(0, children.size - 1) * node.spacing)
@@ -96,8 +96,8 @@ internal class PixelMeasureDispatch(
             }
 
             is PixelColumnNode -> {
-                val children = layoutRenderSupport.measureColumnChildrenForLayout(node, innerConstraints)
-                val childrenHeight = if (node.children.any { layoutRenderSupport.childWeightOf(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
+                val children = layoutMeasureSupport.measureColumnChildren(node, innerConstraints)
+                val childrenHeight = if (node.children.any { layoutMeasureSupport.childWeightOf(it) > 0f } || node.mainAxisSize == PixelMainAxisSize.MAX) {
                     innerConstraints.maxHeight
                 } else {
                     children.sumOf { it.height } + (max(0, children.size - 1) * node.spacing)
