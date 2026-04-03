@@ -13,34 +13,8 @@ import com.purride.pixelcore.PixelTextRasterizer
 internal class LegacyRenderSupportBundle(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) : LegacyRenderSupport {
-    private val textRenderSupport = PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)
-    private val textFieldRenderSupport = PixelTextFieldRenderSupport(
-        defaultTextRasterizer = textRasterizer,
-        textRenderSupport = textRenderSupport,
-    )
-    private val layoutRenderSupport = PixelLayoutRenderSupport(
-        measureNode = ::measure,
-        renderNode = ::renderNode,
-    )
-    private val viewportRenderSupport = PixelViewportRenderSupport(
-        measureNode = ::measure,
-        renderNode = ::renderNode,
-        scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
-    )
-    private val measureSupport = PixelMeasureSupport(
-        measureNode = ::measure,
-        textRenderSupport = textRenderSupport,
-        textFieldRenderSupport = textFieldRenderSupport,
-        layoutRenderSupport = layoutRenderSupport,
-    )
-    private val nodeRenderSupport = PixelNodeRenderSupport(
-        textRenderSupport = textRenderSupport,
-        textFieldRenderSupport = textFieldRenderSupport,
-        layoutRenderSupport = layoutRenderSupport,
-        viewportRenderSupport = viewportRenderSupport,
-        renderNode = ::renderNode,
-    )
-    private val rootRenderSupport = PixelRootRenderSupport(
+    private val assembly = LegacySupportAssemblyFactory.createDefault(
+        textRasterizer = textRasterizer,
         measureNode = ::measure,
         renderNode = ::renderNode,
     )
@@ -50,7 +24,7 @@ internal class LegacyRenderSupportBundle(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        return rootRenderSupport.renderRoot(
+        return assembly.rootRenderSupport.renderRoot(
             root = root,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
@@ -58,7 +32,7 @@ internal class LegacyRenderSupportBundle(
     }
 
     private fun measure(node: LegacyRenderNode, constraints: PixelConstraints): PixelSize {
-        return measureSupport.measure(
+        return assembly.measureSupport.measure(
             node = node,
             constraints = constraints,
             modifierInfo = PixelModifierSupport.resolve(node.modifier),
@@ -75,7 +49,7 @@ internal class LegacyRenderSupportBundle(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        nodeRenderSupport.render(
+        assembly.nodeRenderSupport.render(
             node = node,
             bounds = bounds,
             constraints = constraints,
@@ -85,12 +59,5 @@ internal class LegacyRenderSupportBundle(
             listTargets = listTargets,
             textInputTargets = textInputTargets,
         )
-    }
-
-    private companion object {
-        /**
-         * 纵向滚动容器在滚动轴上的“近似无界”测量上限。
-         */
-        private const val SCROLL_AXIS_UNBOUNDED_MAX = 4096
     }
 }
