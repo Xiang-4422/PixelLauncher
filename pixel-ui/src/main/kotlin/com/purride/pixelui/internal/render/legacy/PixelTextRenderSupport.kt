@@ -25,6 +25,11 @@ internal data class PixelTextLayout(
 internal class PixelTextRenderSupport(
     private val defaultTextRasterizer: PixelTextRasterizer,
 ) {
+    private val textLayoutSupport = PixelTextLayoutSupport()
+
+    /**
+     * 按当前文本布局结果把文本绘制到 buffer。
+     */
     fun renderText(
         node: PixelTextNode,
         bounds: PixelRect,
@@ -61,6 +66,9 @@ internal class PixelTextRenderSupport(
         }
     }
 
+    /**
+     * 计算 legacy 文本节点的布局结果。
+     */
     fun layoutText(
         node: PixelTextNode,
         maxWidth: Int,
@@ -79,7 +87,7 @@ internal class PixelTextRenderSupport(
             }
 
             if (node.softWrap && constrainedWidth > 0) {
-                appendWrappedLines(
+                textLayoutSupport.appendWrappedLines(
                     sourceLine = sourceLine,
                     maxWidth = constrainedWidth,
                     maxLines = effectiveMaxLines,
@@ -99,7 +107,7 @@ internal class PixelTextRenderSupport(
         val truncatedByLineCount = laidOutLines.size > effectiveMaxLines
         visibleLines.indices.forEach { index ->
             val shouldEllipsize = truncatedByLineCount && index == visibleLines.lastIndex
-            visibleLines[index] = fitTextToWidth(
+            visibleLines[index] = textLayoutSupport.fitTextToWidth(
                 text = visibleLines[index],
                 maxWidth = constrainedWidth,
                 overflow = node.overflow,
@@ -136,6 +144,9 @@ internal class PixelTextRenderSupport(
         )
     }
 
+    /**
+     * 判断指定对齐方式是否需要占满整行宽度。
+     */
     fun textAlignNeedsFullWidth(node: PixelTextNode): Boolean {
         return when (node.textAlign) {
             PixelTextAlign.CENTER -> true
@@ -144,106 +155,32 @@ internal class PixelTextRenderSupport(
         }
     }
 
+    /**
+     * 解析文本输入节点要使用的栅格器。
+     */
     fun resolveTextFieldRasterizer(node: PixelTextFieldNode): PixelTextRasterizer {
         return node.style.textStyle.textRasterizer ?: defaultTextRasterizer
     }
 
-    private fun resolveTextRasterizer(node: PixelTextNode): PixelTextRasterizer {
-        return node.style.textRasterizer ?: defaultTextRasterizer
-    }
-
-    private fun appendWrappedLines(
-        sourceLine: String,
-        maxWidth: Int,
-        maxLines: Int,
-        target: MutableList<String>,
-        rasterizer: PixelTextRasterizer,
-    ) {
-        if (target.size >= maxLines) {
-            return
-        }
-        if (sourceLine.isEmpty()) {
-            target += ""
-            return
-        }
-
-        var currentLine = StringBuilder()
-        sourceLine.forEach { character ->
-            val candidate = currentLine.toString() + character
-            if (rasterizer.measureText(candidate) <= maxWidth || currentLine.isEmpty()) {
-                currentLine.append(character)
-            } else {
-                target += currentLine.toString()
-                if (target.size >= maxLines) {
-                    return
-                }
-                currentLine = StringBuilder().append(character)
-            }
-        }
-
-        if (target.size < maxLines) {
-            target += currentLine.toString()
-        }
-    }
-
-    private fun fitTextToWidth(
+    /**
+     * 对外暴露文本裁剪能力，供文本输入等相邻 support 复用。
+     */
+    fun clipTextToWidth(
         text: String,
         maxWidth: Int,
-        overflow: PixelTextOverflow,
         rasterizer: PixelTextRasterizer,
-        forceEllipsis: Boolean,
     ): String {
-        if (maxWidth <= 0 || text.isEmpty()) {
-            return ""
-        }
-        if (rasterizer.measureText(text) <= maxWidth && !forceEllipsis) {
-            return text
-        }
-
-        if (overflow == PixelTextOverflow.ELLIPSIS || forceEllipsis) {
-            val ellipsis = "..."
-            if (rasterizer.measureText(ellipsis) > maxWidth) {
-                return clipTextToWidth(text, maxWidth, rasterizer)
-            }
-
-            val builder = StringBuilder(text)
-            while (builder.isNotEmpty() &&
-                rasterizer.measureText(builder.toString() + ellipsis) > maxWidth
-            ) {
-                builder.deleteCharAt(builder.lastIndex)
-            }
-            return if (builder.isEmpty()) {
-                clipTextToWidth(ellipsis, maxWidth, rasterizer)
-            } else {
-                builder.toString() + ellipsis
-            }
-        }
-
-        return clipTextToWidth(
+        return textLayoutSupport.clipTextToWidth(
             text = text,
             maxWidth = maxWidth,
             rasterizer = rasterizer,
         )
     }
 
-    fun clipTextToWidth(
-        text: String,
-        maxWidth: Int,
-        rasterizer: PixelTextRasterizer,
-    ): String {
-        if (maxWidth <= 0) {
-            return ""
-        }
-
-        val builder = StringBuilder()
-        text.forEach { character ->
-            val candidate = builder.toString() + character
-            if (rasterizer.measureText(candidate) <= maxWidth) {
-                builder.append(character)
-            } else {
-                return builder.toString()
-            }
-        }
-        return builder.toString()
+    /**
+     * 解析普通文本节点要使用的栅格器。
+     */
+    private fun resolveTextRasterizer(node: PixelTextNode): PixelTextRasterizer {
+        return node.style.textRasterizer ?: defaultTextRasterizer
     }
 }

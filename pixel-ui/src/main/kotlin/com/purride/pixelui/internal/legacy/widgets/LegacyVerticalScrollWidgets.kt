@@ -1,47 +1,17 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.legacy.PixelList
 import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelPager
 import com.purride.pixelui.internal.legacy.PixelSingleChildScrollView
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
-import com.purride.pixelui.state.PixelPagerController
-import com.purride.pixelui.state.PixelPagerState
 
-internal data class PageViewWidget(
-    val axis: Axis,
-    val controller: PixelPagerController,
-    val state: PixelPagerState,
-    val pages: List<Widget>,
-    val onPageChanged: ((Int) -> Unit)?,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        context.watch(controller)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = pages,
-        ) { _, childNodes ->
-            PixelPager(
-                axis = axis,
-                state = state,
-                controller = controller,
-                pages = childNodes,
-                modifier = PixelModifier.Empty,
-                onPageChanged = onPageChanged,
-                key = key,
-            )
-        }
-    }
-}
-
+/**
+ * Flutter 风格 `ListView` 的 legacy bridge widget。
+ */
 internal data class ListViewWidget(
     val items: List<Widget>,
     val state: PixelListState,
@@ -51,6 +21,9 @@ internal data class ListViewWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 在 build 时监听 controller，并桥接到 legacy list 节点。
+     */
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
         return LegacyMultiChildWidget(
@@ -69,6 +42,9 @@ internal data class ListViewWidget(
     }
 }
 
+/**
+ * Flutter 风格 `SingleChildScrollView` 的 legacy bridge widget。
+ */
 internal data class SingleChildScrollViewWidget(
     val child: Widget,
     val state: PixelListState,
@@ -77,6 +53,9 @@ internal data class SingleChildScrollViewWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 在 build 时监听 controller，并桥接到 legacy single child scroll 节点。
+     */
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
         return LegacySingleChildWidget(
