@@ -3,26 +3,19 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
-import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
-import com.purride.pixelui.MainAxisAlignment
-import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PixelContainerStyle
 import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
+import com.purride.pixelui.resolve
 import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.internal.legacy.PixelBox
-import com.purride.pixelui.internal.legacy.PixelClickableElement
-import com.purride.pixelui.internal.legacy.PixelColumn
 import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelPositioned
-import com.purride.pixelui.internal.legacy.PixelRow
 import com.purride.pixelui.internal.legacy.PixelSurface
 import com.purride.pixelui.internal.legacy.clickable
 import com.purride.pixelui.internal.legacy.fillMaxSize
@@ -30,12 +23,11 @@ import com.purride.pixelui.internal.legacy.height
 import com.purride.pixelui.internal.legacy.padding
 import com.purride.pixelui.internal.legacy.size
 import com.purride.pixelui.internal.legacy.width
-import com.purride.pixelui.resolve
 import com.purride.pixelui.internal.toPixelAlignment
-import com.purride.pixelui.internal.toPixelCrossAxisAlignment
-import com.purride.pixelui.internal.toPixelMainAxisAlignment
-import com.purride.pixelui.internal.toPixelMainAxisSize
 
+/**
+ * Flutter 风格 `Container` 的 bridge widget。
+ */
 internal data class ContainerWidget(
     val child: Widget?,
     val width: Int?,
@@ -51,6 +43,9 @@ internal data class ContainerWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 构建默认方向下的容器 bridge widget。
+     */
     override fun build(context: BuildContext): Widget {
         val resolvedTheme = context.resolveTheme(theme)
         val resolvedStyle = style ?: run {
@@ -118,6 +113,9 @@ internal data class ContainerWidget(
     }
 }
 
+/**
+ * Flutter 风格 `Padding` 的 bridge widget。
+ */
 internal data class PaddingWidget(
     val child: Widget,
     val padding: EdgeInsets,
@@ -125,6 +123,9 @@ internal data class PaddingWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 用额外 box 包裹 child 并施加 padding。
+     */
     override fun build(context: BuildContext): Widget {
         return LegacySingleChildWidget(
             key = key,
@@ -144,6 +145,9 @@ internal data class PaddingWidget(
     }
 }
 
+/**
+ * 方向性感知的 padding bridge widget。
+ */
 internal data class PaddingDirectionalWidget(
     val child: Widget,
     val padding: EdgeInsetsDirectional,
@@ -151,6 +155,9 @@ internal data class PaddingDirectionalWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 在 build 时按当前方向解析 padding。
+     */
     override fun build(context: BuildContext): Widget {
         val resolvedPadding = padding.resolve(Directionality.of(context))
         return PaddingWidget(
@@ -161,6 +168,9 @@ internal data class PaddingDirectionalWidget(
     }
 }
 
+/**
+ * Flutter 风格 `Align` 的 bridge widget。
+ */
 internal data class AlignWidget(
     val child: Widget,
     val alignment: Alignment,
@@ -168,6 +178,9 @@ internal data class AlignWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 用填满父级的 box 承接对齐。
+     */
     override fun build(context: BuildContext): Widget {
         return LegacySingleChildWidget(
             key = key,
@@ -182,6 +195,9 @@ internal data class AlignWidget(
     }
 }
 
+/**
+ * 方向性感知的 `Align` bridge widget。
+ */
 internal data class AlignDirectionalWidget(
     val child: Widget,
     val alignment: AlignmentDirectional,
@@ -189,6 +205,9 @@ internal data class AlignDirectionalWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 在 build 时按当前方向解析对齐。
+     */
     override fun build(context: BuildContext): Widget {
         return LegacySingleChildWidget(
             key = key,
@@ -203,6 +222,9 @@ internal data class AlignDirectionalWidget(
     }
 }
 
+/**
+ * Flutter 风格 `SizedBox` 的 bridge widget。
+ */
 internal data class SizedBoxWidget(
     val width: Int?,
     val height: Int?,
@@ -211,6 +233,9 @@ internal data class SizedBoxWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 用 box 和固定尺寸 modifier 承接尺寸约束。
+     */
     override fun build(context: BuildContext): Widget {
         return LegacyMultiChildWidget(
             key = key,
@@ -231,6 +256,9 @@ internal data class SizedBoxWidget(
     }
 }
 
+/**
+ * Flutter 风格 `GestureDetector` 的 bridge widget。
+ */
 internal data class GestureDetectorWidget(
     val child: Widget,
     val onTap: () -> Unit,
@@ -238,6 +266,9 @@ internal data class GestureDetectorWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 把点击语义折叠进 child 的 modifier。
+     */
     override fun build(context: BuildContext): Widget {
         return LegacySingleChildWidget(
             key = key,
@@ -248,6 +279,9 @@ internal data class GestureDetectorWidget(
     }
 }
 
+/**
+ * Flutter 风格 `DecoratedBox` 的 bridge widget。
+ */
 internal data class DecoratedBoxWidget(
     val child: Widget?,
     val fillTone: PixelTone,
@@ -258,6 +292,9 @@ internal data class DecoratedBoxWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 使用 pixel surface 承接装饰能力。
+     */
     override fun build(context: BuildContext): Widget {
         return LegacyMultiChildWidget(
             key = key,
@@ -276,6 +313,9 @@ internal data class DecoratedBoxWidget(
     }
 }
 
+/**
+ * 方向性感知的 `Container` bridge widget。
+ */
 internal data class ContainerDirectionalWidget(
     val child: Widget?,
     val width: Int?,
@@ -293,6 +333,9 @@ internal data class ContainerDirectionalWidget(
 ) : StatelessWidget(
     key = key,
 ) {
+    /**
+     * 在 build 时按当前方向解析 padding、margin 和 alignment。
+     */
     override fun build(context: BuildContext): Widget {
         val direction = Directionality.of(context)
         val resolvedTheme = context.resolveTheme(theme)
@@ -363,161 +406,6 @@ internal data class ContainerDirectionalWidget(
                     alignment = PixelAlignment.TOP_START,
                 )
             }
-        }
-    }
-}
-
-internal data class StackWidget(
-    val children: List<Widget>,
-    val alignment: Alignment,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        return LegacyMultiChildWidget(
-            key = key,
-            children = children,
-        ) { _, childNodes ->
-            PixelBox(
-                children = childNodes,
-                modifier = PixelModifier.Empty,
-                alignment = alignment.toPixelAlignment(),
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class PositionedWidget(
-    val child: Widget,
-    val left: Int?,
-    val top: Int?,
-    val right: Int?,
-    val bottom: Int?,
-    val width: Int?,
-    val height: Int?,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        return LegacySingleChildWidget(
-            key = key,
-            child = child,
-        ) { _, childNode ->
-            PixelPositioned(
-                child = childNode,
-                modifier = PixelModifier.Empty,
-                left = left,
-                top = top,
-                right = right,
-                bottom = bottom,
-                width = width,
-                height = height,
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class PositionedDirectionalWidget(
-    val child: Widget,
-    val start: Int?,
-    val top: Int?,
-    val end: Int?,
-    val bottom: Int?,
-    val width: Int?,
-    val height: Int?,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        val direction = Directionality.of(context)
-        val (resolvedLeft, resolvedRight) = when (direction) {
-            TextDirection.LTR -> start to end
-            TextDirection.RTL -> end to start
-        }
-        return PositionedWidget(
-            child = child,
-            left = resolvedLeft,
-            top = top,
-            right = resolvedRight,
-            bottom = bottom,
-            width = width,
-            height = height,
-            key = key,
-        )
-    }
-}
-
-internal data class RowWidget(
-    val children: List<Widget>,
-    val spacing: Int,
-    val mainAxisSize: MainAxisSize,
-    val mainAxisAlignment: MainAxisAlignment,
-    val crossAxisAlignment: CrossAxisAlignment,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        val direction = Directionality.of(context)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = children,
-        ) { _, childNodes ->
-            PixelRow(
-                children = childNodes,
-                modifier = PixelModifier.Empty,
-                spacing = spacing,
-                mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-                mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
-                    axis = Axis.HORIZONTAL,
-                    direction = direction,
-                ),
-                crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
-                    axis = Axis.HORIZONTAL,
-                    direction = direction,
-                ),
-                key = key,
-            )
-        }
-    }
-}
-
-internal data class ColumnWidget(
-    val children: List<Widget>,
-    val spacing: Int,
-    val mainAxisSize: MainAxisSize,
-    val mainAxisAlignment: MainAxisAlignment,
-    val crossAxisAlignment: CrossAxisAlignment,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): Widget {
-        val direction = Directionality.of(context)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = children,
-        ) { _, childNodes ->
-            PixelColumn(
-                children = childNodes,
-                modifier = PixelModifier.Empty,
-                spacing = spacing,
-                mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-                mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
-                    axis = Axis.VERTICAL,
-                    direction = direction,
-                ),
-                crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
-                    axis = Axis.VERTICAL,
-                    direction = direction,
-                ),
-                key = key,
-            )
         }
     }
 }
