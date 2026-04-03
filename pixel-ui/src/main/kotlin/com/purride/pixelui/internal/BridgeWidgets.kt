@@ -14,7 +14,7 @@ internal interface BridgeWidget : Widget {
 
     fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): BridgeRenderNode
 }
 
@@ -30,7 +30,7 @@ internal data class LegacyLeafWidget(
 
     override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): BridgeRenderNode {
         return factory(context)
     }
@@ -46,7 +46,7 @@ internal data class LegacySingleChildWidget(
 
     override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): BridgeRenderNode {
         return factory(context, childNodes.single())
     }
@@ -62,9 +62,9 @@ internal data class LegacyMultiChildWidget(
 
     override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): BridgeRenderNode {
-        return factory(context, childNodes)
+        return factory(context, childNodes.asList())
     }
 }
 
@@ -79,7 +79,7 @@ internal data class FlexWrapperWidget(
 
     override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): BridgeRenderNode {
         return childNodes.single().withExtraModifier(
             PixelModifier.Empty.weight(

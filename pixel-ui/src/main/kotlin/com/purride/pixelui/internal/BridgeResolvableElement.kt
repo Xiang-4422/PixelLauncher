@@ -7,5 +7,5 @@ package com.purride.pixelui.internal
  * 实现类，方便后续继续替换桥接实现。
  */
 internal interface BridgeResolvableElement {
-    fun resolveBridgeNode(childNodes: List<BridgeRenderNode>): BridgeRenderNode
+    fun resolveBridgeNode(childNodes: BridgeNodeChildren): BridgeRenderNode
 }

@@ -123,7 +123,7 @@ private data class TestModifierWidget(
 
     override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): PixelNode {
         return childNodes.single().withTestModifier(modifier)
     }

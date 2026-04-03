@@ -13,7 +13,7 @@ internal object DefaultBridgeTreeResolver : BridgeTreeResolving {
     private fun resolveElement(element: Element): BridgeRenderNode? {
         return when (element) {
             is BridgeResolvableElement -> {
-                val childNodes = childNodeCollector.collectAll(element)
+                val childNodes = BridgeNodeChildren(childNodeCollector.collectAll(element))
                 element.resolveBridgeNode(childNodes)
             }
             else -> childNodeCollector.collectFirst(element)
