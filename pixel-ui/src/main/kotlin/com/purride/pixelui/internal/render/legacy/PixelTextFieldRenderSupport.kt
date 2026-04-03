@@ -8,32 +8,26 @@ internal class PixelTextFieldRenderSupport(
     private val defaultTextRasterizer: PixelTextRasterizer,
     private val textRenderSupport: PixelTextRenderSupport,
 ) {
-    fun measure(node: PixelTextFieldNode): PixelSize {
-        val textRasterizer = textRenderSupport.resolveTextFieldRasterizer(node)
-        val displayText = node.state.text.ifEmpty { node.placeholder.ifEmpty { " " } }
-        val textWidth = textRasterizer.measureText(displayText)
-        val textHeight = textRasterizer.measureHeight(displayText)
-        return PixelSize(
-            width = textWidth + (node.style.padding * 2) + if (node.state.isFocused) 2 else 0,
-            height = textHeight + (node.style.padding * 2),
-        )
-    }
+    private val textFieldLayoutSupport = PixelTextFieldLayoutSupport(
+        defaultTextRasterizer = defaultTextRasterizer,
+        textRenderSupport = textRenderSupport,
+    )
 
+    /**
+     * 测量文本输入框尺寸。
+     */
+    fun measure(node: PixelTextFieldNode): PixelSize = textFieldLayoutSupport.measure(node)
+
+    /**
+     * 渲染文本输入框内容、光标和输入目标。
+     */
     fun render(
         node: PixelTextFieldNode,
         bounds: PixelRect,
         buffer: PixelBuffer,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val borderTone = if (!node.enabled) {
-            node.style.disabledBorderTone ?: node.style.borderTone
-        } else if (node.readOnly) {
-            node.style.readOnlyBorderTone ?: node.style.borderTone
-        } else if (node.state.isFocused) {
-            node.style.focusedBorderTone ?: node.style.borderTone
-        } else {
-            node.style.borderTone
-        }
+        val borderTone = textFieldLayoutSupport.resolveBorderTone(node)
         buffer.fillRect(
             left = bounds.left,
             top = bounds.top,
@@ -51,46 +45,19 @@ internal class PixelTextFieldRenderSupport(
             )
         }
 
-        val displayText = node.state.text.ifEmpty { node.placeholder }
-        val displayStyle = if (!node.enabled) {
-            if (node.state.text.isEmpty()) {
-                node.style.disabledPlaceholderStyle
-            } else {
-                node.style.disabledTextStyle
-            }
-        } else if (node.state.text.isEmpty()) {
-            node.style.placeholderStyle
-        } else {
-            node.style.textStyle
-        }
-        val displayRasterizer = displayStyle.textRasterizer ?: defaultTextRasterizer
-        val contentMaxWidth = (bounds.width - (node.style.padding * 2)).coerceAtLeast(0)
-        val visibleDisplayText = textRenderSupport.clipTextToWidth(
-            text = displayText,
-            maxWidth = contentMaxWidth,
-            rasterizer = displayRasterizer,
-        )
-        val textHeight = displayRasterizer.measureHeight(visibleDisplayText.ifEmpty { " " })
-        val textY = bounds.top + ((bounds.height - textHeight).coerceAtLeast(0) / 2)
-        val textX = bounds.left + node.style.padding
-        if (visibleDisplayText.isNotEmpty()) {
-            displayRasterizer.drawText(
+        val displayState = textFieldLayoutSupport.resolveDisplayState(node, bounds)
+        if (displayState.text.isNotEmpty()) {
+            displayState.rasterizer.drawText(
                 buffer = buffer,
-                text = visibleDisplayText,
-                x = textX,
-                y = textY,
-                value = displayStyle.tone.value,
+                text = displayState.text,
+                x = displayState.textX,
+                y = displayState.textY,
+                value = displayState.style.tone.value,
             )
         }
 
         if (node.enabled && !node.readOnly && node.state.isFocused) {
-            val visibleText = node.state.text.take(node.state.selectionStart.coerceAtMost(node.state.text.length))
-            val clippedVisibleText = textRenderSupport.clipTextToWidth(
-                text = visibleText,
-                maxWidth = contentMaxWidth,
-                rasterizer = node.style.textStyle.textRasterizer ?: defaultTextRasterizer,
-            )
-            val cursorX = textX + (node.style.textStyle.textRasterizer ?: defaultTextRasterizer).measureText(clippedVisibleText)
+            val cursorX = textFieldLayoutSupport.resolveCursorX(node, displayState)
             val cursorTop = bounds.top + node.style.padding
             val cursorHeight = (bounds.height - (node.style.padding * 2)).coerceAtLeast(1)
             buffer.fillRect(
