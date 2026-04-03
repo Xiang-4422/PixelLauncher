@@ -466,7 +466,7 @@ private fun OutlinedButton(
 
 class PixelRenderRuntimeTest {
 
-    private val runtime = RetainedWidgetRenderRuntime()
+    private val runtime = WidgetRenderRuntimeFactory.createDefault()
 
     @Test
     fun surfaceCentersChildWithinPadding() {
