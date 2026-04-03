@@ -10,18 +10,16 @@ import com.purride.pixelcore.PixelTextRasterizer
  * 不再直接构造具体的 bridge graph。
  */
 internal object RetainedRenderSupportFactory {
+    /**
+     * 创建 retained runtime 默认使用的支持集合。
+     */
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): RetainedRenderSupport {
         return DefaultRetainedRenderSupport(
             widgetAdapter = BridgeWidgetAdapter,
-            elementTreeRenderer = BridgeElementTreeRenderer(
-                bridgeTreeResolver = DefaultBridgeTreeResolver,
-                bridgeTreeRenderer = BridgeRenderRuntime(
-                    legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
-                        textRasterizer = textRasterizer,
-                    ),
-                ),
+            elementTreeRenderer = BridgeRenderSupportFactory.createDefault(
+                textRasterizer = textRasterizer,
             ),
         )
     }

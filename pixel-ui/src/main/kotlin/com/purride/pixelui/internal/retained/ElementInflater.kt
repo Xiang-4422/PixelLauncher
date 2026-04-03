@@ -10,6 +10,9 @@ import com.purride.pixelui.Widget
  * retained element 的构建协议。
  */
 internal interface ElementInflater {
+    /**
+     * 为一个 widget 创建对应的 retained element。
+     */
     fun inflate(widget: Widget): Element
 }
 
@@ -22,13 +25,18 @@ internal interface ElementInflater {
 internal class DefaultElementInflater(
     private val widgetAdapter: WidgetAdapter,
 ) : ElementInflater {
+    /**
+     * 优先解析 retained 内建 element，再把剩余 widget 交给外部 adapter。
+     */
     override fun inflate(widget: Widget): Element {
         return when (widget) {
             is InheritedNotifier<*> -> InheritedNotifierElement(widget)
             is InheritedWidget -> InheritedElement(widget)
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)
-            else -> widgetAdapter.adapt(widget)
+            else -> widgetAdapter.adapt(
+                request = WidgetAdaptRequest(widget = widget),
+            )
                 ?: error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
         }
     }
