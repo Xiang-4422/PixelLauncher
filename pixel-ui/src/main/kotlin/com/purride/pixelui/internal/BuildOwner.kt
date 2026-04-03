@@ -10,7 +10,7 @@ internal class BuildOwner(
     var rootElement: Element? = null
         private set
 
-    private val dirtyElements = linkedSetOf<Element>()
+    private val dirtyElementScheduler = DirtyElementScheduler()
     private val listenableRegistry = ListenableDependencyRegistry(
         requestVisualUpdate = ::requestVisualUpdate,
     )
@@ -24,20 +24,11 @@ internal class BuildOwner(
     }
 
     fun buildScope() {
-        while (true) {
-            val pending = dirtyElements.sortedBy { it.depth }
-            if (pending.isEmpty()) {
-                break
-            }
-            dirtyElements.clear()
-            pending.forEach { element ->
-                element.rebuildIfNeeded()
-            }
-        }
+        dirtyElementScheduler.buildScope()
     }
 
     fun scheduleBuildFor(element: Element) {
-        dirtyElements += element
+        dirtyElementScheduler.schedule(element)
         requestVisualUpdate()
     }
 
@@ -82,7 +73,7 @@ internal class BuildOwner(
         rootElement?.unmount()
         rootElement = null
         listenableRegistry.dispose()
-        dirtyElements.clear()
+        dirtyElementScheduler.clear()
     }
     private fun canUpdate(
         oldWidget: Widget,
