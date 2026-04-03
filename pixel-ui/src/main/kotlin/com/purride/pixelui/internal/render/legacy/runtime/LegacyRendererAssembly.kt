@@ -14,4 +14,11 @@ internal data class LegacyRendererAssembly(
      * 返回当前 assembly 对应的 legacy renderer。
      */
     fun toRenderer(): LegacyTreeRenderer = renderer
+
+    /**
+     * 通过当前 assembly 持有的 legacy renderer 执行一次渲染。
+     */
+    fun render(request: LegacyRenderRequest): PixelRenderResult {
+        return renderer.render(request)
+    }
 }
