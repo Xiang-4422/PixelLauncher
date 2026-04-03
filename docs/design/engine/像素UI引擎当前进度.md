@@ -154,6 +154,17 @@
 - 运行时与手势
   - [PixelRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelRenderRuntime.kt)
   - [LegacyRenderSupportBundle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyRenderSupportBundle.kt)
+  - [LegacyRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyRenderSupport.kt)
+  - [LegacyRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyRenderSupportFactory.kt)
+  - [LegacyTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyTreeRenderer.kt)
+  - [LegacyTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/LegacyTreeRendererFactory.kt)
+  - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedRenderSupport.kt)
+  - [RetainedRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/RetainedRenderSupportFactory.kt)
+  - [WidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/WidgetRenderRuntime.kt)
+  - [WidgetRenderRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/WidgetRenderRuntimeFactory.kt)
+  - [BridgeTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/BridgeTreeRenderer.kt)
+  - [BridgeTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/BridgeTreeRendererFactory.kt)
+  - [BridgeElementTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/BridgeElementTreeRendererFactory.kt)
   - [PixelRootRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelRootRenderSupport.kt)
   - [PixelNodeRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelNodeRenderSupport.kt)
   - [PixelLayoutRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/PixelLayoutRenderSupport.kt)
@@ -200,7 +211,7 @@
 - `Widget -> BuildOwner / Element tree` 已经成立
 - `StatefulWidget / InheritedWidget / InheritedNotifier / Builder / StatefulBuilder` 已经在真实 demo 页面里使用
 - `RetainedBuildRuntime` 当前只负责 retained element tree，本身不再直接产出 bridge tree
-- 最终绘制仍然通过 `RetainedWidgetRenderRuntime -> BridgeTreeResolver -> PixelRenderRuntime` 这条链路落到 legacy 渲染器
+- 最终绘制当前通过 `RetainedWidgetRenderRuntime -> RetainedRenderSupport -> BridgeElementTreeRenderer -> BridgeTreeResolver -> LegacyTreeRenderer -> PixelRenderRuntime` 这条链路落到 legacy 渲染器
 - 当前重构主线不是再补更多组件名字，而是继续把 retained 主链和 legacy render bridge 切得更干净
 
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
