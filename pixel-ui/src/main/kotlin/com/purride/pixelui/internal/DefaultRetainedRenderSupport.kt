@@ -1,7 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelTextRasterizer
 /**
  * retained runtime 默认支持集合。
  *
@@ -13,9 +11,7 @@ import com.purride.pixelcore.PixelTextRasterizer
  * element tree renderer 的具体拼装细节。
  */
 internal class DefaultRetainedRenderSupport(
-    textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    override val widgetAdapter: WidgetAdapter,
+    override val elementTreeRenderer: ElementTreeRenderer,
 ) : RetainedRenderSupport {
-    override val widgetAdapter: WidgetAdapter = BridgeWidgetAdapter
-    override val elementTreeRenderer: ElementTreeRenderer =
-        BridgeElementTreeRendererFactory.createDefault(textRasterizer = textRasterizer)
 }
