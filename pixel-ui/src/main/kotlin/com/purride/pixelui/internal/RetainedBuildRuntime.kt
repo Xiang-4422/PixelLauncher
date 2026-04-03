@@ -4,11 +4,11 @@ import com.purride.pixelui.Widget
 
 internal class RetainedBuildRuntime(
     private val onVisualUpdate: () -> Unit,
-    private val elementInflater: ElementInflater,
+    private val elementChildUpdater: ElementChildUpdater,
 ) : ElementTreeBuildRuntime {
     private val buildOwner = BuildOwner(
         onVisualUpdate = onVisualUpdate,
-        elementInflater = elementInflater,
+        elementChildUpdater = elementChildUpdater,
     )
 
     override fun resolveElementTree(root: Widget): Element? {
