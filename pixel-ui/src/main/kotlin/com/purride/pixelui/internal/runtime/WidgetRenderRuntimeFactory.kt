@@ -10,13 +10,30 @@ import com.purride.pixelcore.PixelTextRasterizer
  * 但宿主层只通过这层拿默认 runtime。
  */
 internal object WidgetRenderRuntimeFactory {
+    /**
+     * 创建宿主默认使用的 widget runtime。
+     */
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
         onVisualUpdate: () -> Unit = { },
     ): WidgetRenderRuntime {
+        return createDefaultAssembly(
+            textRasterizer = textRasterizer,
+            onVisualUpdate = onVisualUpdate,
+        ).runtime
+    }
+
+    /**
+     * 创建宿主默认使用的 widget runtime 装配结果。
+     */
+    fun createDefaultAssembly(
+        textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+        onVisualUpdate: () -> Unit = { },
+    ): WidgetRuntimeAssembly {
         return RetainedWidgetRuntimeFactory.createDefault(
             textRasterizer = textRasterizer,
             onVisualUpdate = onVisualUpdate,
         )
+            .let(::WidgetRuntimeAssembly)
     }
 }
