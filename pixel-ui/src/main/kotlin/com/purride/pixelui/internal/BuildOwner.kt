@@ -1,15 +1,11 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.InheritedNotifier
-import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.Listenable
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 
 internal class BuildOwner(
     private val onVisualUpdate: () -> Unit,
-    private val widgetAdapter: WidgetAdapter,
+    private val elementInflater: ElementInflater,
 ) {
     var rootElement: Element? = null
         private set
@@ -98,7 +94,7 @@ internal class BuildOwner(
             return current
         }
         current?.unmount()
-        return inflateWidget(newWidget).also { element ->
+        return elementInflater.inflate(newWidget).also { element ->
             element.mount(parent = parent, owner = this)
         }
     }
@@ -112,18 +108,6 @@ internal class BuildOwner(
         listenableCallbacks.clear()
         dirtyElements.clear()
     }
-
-    private fun inflateWidget(widget: Widget): Element {
-        return when (widget) {
-            is InheritedNotifier<*> -> InheritedNotifierElement(widget)
-            is InheritedWidget -> InheritedElement(widget)
-            is StatefulWidget -> StatefulElement(widget)
-            is StatelessWidget -> StatelessElement(widget)
-            else -> widgetAdapter.adapt(widget)
-                ?: error("当前 Widget 还没有接入 retained build runtime: ${widget::class.qualifiedName}")
-        }
-    }
-
     private fun canUpdate(
         oldWidget: Widget,
         newWidget: Widget,
