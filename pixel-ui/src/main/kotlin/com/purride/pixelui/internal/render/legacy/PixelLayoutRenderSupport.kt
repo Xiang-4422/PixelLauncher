@@ -20,6 +20,17 @@ internal class PixelLayoutRenderSupport(
     private val flexLayoutSupport = PixelFlexLayoutSupport(measureNode = measureNode)
     private val positionedLayoutSupport = PixelPositionedLayoutSupport()
     private val alignmentLayoutSupport = PixelAlignmentLayoutSupport()
+    private val surfaceRenderSupport = PixelSurfaceRenderSupport(
+        measureNode = measureNode,
+        renderNode = renderNode,
+        alignmentLayoutSupport = alignmentLayoutSupport,
+    )
+    private val stackRenderSupport = PixelStackRenderSupport(
+        measureNode = measureNode,
+        renderNode = renderNode,
+        alignmentLayoutSupport = alignmentLayoutSupport,
+        positionedLayoutSupport = positionedLayoutSupport,
+    )
 
     /**
      * 渲染 surface 节点及其内层对齐子项。
@@ -34,51 +45,15 @@ internal class PixelLayoutRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        buffer.fillRect(
-            left = bounds.left,
-            top = bounds.top,
-            rectWidth = bounds.width,
-            rectHeight = bounds.height,
-            value = node.fillTone.value,
-        )
-        node.borderTone?.let { tone ->
-            buffer.drawRect(
-                left = bounds.left,
-                top = bounds.top,
-                rectWidth = bounds.width,
-                rectHeight = bounds.height,
-                value = tone.value,
-            )
-        }
-
-        val child = node.child ?: return
-        val childConstraints = constraints.shrink(
-            paddingLeft = node.padding,
-            paddingTop = node.padding,
-            paddingRight = node.padding,
-            paddingBottom = node.padding,
-        )
-        val innerBounds = bounds.inset(
-            paddingLeft = node.padding,
-            paddingTop = node.padding,
-            paddingRight = node.padding,
-            paddingBottom = node.padding,
-        )
-        val childSize = measureNode(child, childConstraints)
-        val childBounds = alignmentLayoutSupport.alignedBounds(
-            outerBounds = innerBounds,
-            childSize = childSize,
-            alignment = node.alignment,
-        )
-        renderNode(
-            child,
-            childBounds,
-            childConstraints,
-            buffer,
-            clickTargets,
-            pagerTargets,
-            listTargets,
-            textInputTargets,
+        surfaceRenderSupport.render(
+            node = node,
+            bounds = bounds,
+            constraints = constraints,
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
     }
 
@@ -95,37 +70,16 @@ internal class PixelLayoutRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        node.children.forEach { child ->
-            if (child is PixelPositionedNode) {
-                renderPositionedChild(
-                    node = child,
-                    outerBounds = bounds,
-                    outerConstraints = constraints,
-                    buffer = buffer,
-                    clickTargets = clickTargets,
-                    pagerTargets = pagerTargets,
-                    listTargets = listTargets,
-                textInputTargets = textInputTargets,
-                )
-            } else {
-                val childSize = measureNode(child, constraints)
-                val childBounds = alignmentLayoutSupport.alignedBounds(
-                    outerBounds = bounds,
-                    childSize = childSize,
-                    alignment = node.alignment,
-                )
-                renderNode(
-                    child,
-                    childBounds,
-                    constraints,
-                    buffer,
-                    clickTargets,
-                    pagerTargets,
-                    listTargets,
-                    textInputTargets,
-                )
-            }
-        }
+        stackRenderSupport.renderBox(
+            node = node,
+            bounds = bounds,
+            constraints = constraints,
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
+        )
     }
 
     /**
@@ -291,51 +245,4 @@ internal class PixelLayoutRenderSupport(
      */
     fun childWeightOf(node: LegacyRenderNode): Float = flexLayoutSupport.childWeight(node)
 
-    /**
-     * 渲染 positioned 子节点。
-     */
-    private fun renderPositionedChild(
-        node: PixelPositionedNode,
-        outerBounds: PixelRect,
-        outerConstraints: PixelConstraints,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) {
-        val childConstraints = PixelConstraints(
-            maxWidth = positionedLayoutSupport.maxWidth(node, outerConstraints),
-            maxHeight = positionedLayoutSupport.maxHeight(node, outerConstraints),
-        )
-        val childSize = measureNode(node.child, childConstraints)
-        val width = positionedLayoutSupport.width(node, outerConstraints, childSize).coerceAtLeast(0)
-        val height = positionedLayoutSupport.height(node, outerConstraints, childSize).coerceAtLeast(0)
-        val left = when {
-            node.left != null -> outerBounds.left + node.left
-            node.right != null -> outerBounds.right - node.right - width
-            else -> outerBounds.left
-        }
-        val top = when {
-            node.top != null -> outerBounds.top + node.top
-            node.bottom != null -> outerBounds.bottom - node.bottom - height
-            else -> outerBounds.top
-        }
-        val childBounds = PixelRect(
-            left = left,
-            top = top,
-            width = width.coerceAtMost(outerBounds.right - left),
-            height = height.coerceAtMost(outerBounds.bottom - top),
-        )
-        renderNode(
-            node.child,
-            childBounds,
-            childConstraints,
-            buffer,
-            clickTargets,
-            pagerTargets,
-            listTargets,
-            textInputTargets,
-        )
-    }
 }
