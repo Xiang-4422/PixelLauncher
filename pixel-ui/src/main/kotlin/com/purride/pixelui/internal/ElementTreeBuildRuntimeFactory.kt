@@ -10,7 +10,9 @@ internal object ElementTreeBuildRuntimeFactory {
     ): ElementTreeBuildRuntime {
         return RetainedBuildRuntime(
             onVisualUpdate = onVisualUpdate,
-            widgetAdapter = widgetAdapter,
+            elementInflater = DefaultElementInflater(
+                widgetAdapter = widgetAdapter,
+            ),
         )
     }
 }
