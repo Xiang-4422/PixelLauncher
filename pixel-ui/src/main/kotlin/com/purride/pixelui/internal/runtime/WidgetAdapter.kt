@@ -9,5 +9,15 @@ import com.purride.pixelui.Widget
  * 上的桥接 element。后续如果替换 bridge 实现，build runtime 只需要依赖这层接口。
  */
 internal fun interface WidgetAdapter {
-    fun adapt(widget: Widget): Element?
+    /**
+     * 适配一个 widget，返回可挂到 retained tree 的 element。
+     */
+    fun adapt(request: WidgetAdaptRequest): Element?
+
+    /**
+     * 兼容旧的直接 widget 调用写法。
+     */
+    fun adapt(widget: Widget): Element? = adapt(
+        request = WidgetAdaptRequest(widget = widget),
+    )
 }

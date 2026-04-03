@@ -9,7 +9,10 @@ import com.purride.pixelui.Widget
  * 避免 bridge graph 再持有多余的装配名字。
  */
 internal object BridgeWidgetAdapter : WidgetAdapter {
-    override fun adapt(widget: Widget): Element? {
-        return adaptBridgeWidget(widget)?.let(::BridgeAdapterElement)
+    /**
+     * 把公开 widget 适配成 bridge element。
+     */
+    override fun adapt(request: WidgetAdaptRequest): Element? {
+        return adaptBridgeWidget(request.widget)?.let(::BridgeAdapterElement)
     }
 }
