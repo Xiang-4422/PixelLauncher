@@ -15,6 +15,7 @@ internal class PixelMeasureSupport(
         textFieldRenderSupport = textFieldRenderSupport,
         layoutRenderSupport = layoutRenderSupport,
     )
+    private val measureResultSupport = PixelMeasureResultSupport()
 
     /**
      * 测量节点最终尺寸。
@@ -34,17 +35,10 @@ internal class PixelMeasureSupport(
             node = node,
             innerConstraints = innerConstraints,
         )
-
-        val naturalWidth = contentSize.width + modifierInfo.paddingLeft + modifierInfo.paddingRight
-        val naturalHeight = contentSize.height + modifierInfo.paddingTop + modifierInfo.paddingBottom
-        val measuredWidth = modifierInfo.fixedWidth
-            ?: if (modifierInfo.fillMaxWidth) constraints.maxWidth else naturalWidth
-        val measuredHeight = modifierInfo.fixedHeight
-            ?: if (modifierInfo.fillMaxHeight) constraints.maxHeight else naturalHeight
-
-        return PixelSize(
-            width = measuredWidth.coerceIn(0, constraints.maxWidth),
-            height = measuredHeight.coerceIn(0, constraints.maxHeight),
+        return measureResultSupport.resolveMeasuredSize(
+            contentSize = contentSize,
+            constraints = constraints,
+            modifierInfo = modifierInfo,
         )
     }
 }

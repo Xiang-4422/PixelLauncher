@@ -1,7 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBuffer
-
 /**
  * 根渲染 support：负责一次完整渲染会话的组装。
  *
@@ -22,10 +20,10 @@ internal class PixelRootRenderSupport(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        val session = PixelRenderSession(
-            buffer = PixelBuffer(width = logicalWidth, height = logicalHeight),
+        val session = PixelRenderSessionFactory.create(
+            width = logicalWidth,
+            height = logicalHeight,
         )
-        session.buffer.clear()
         val rootConstraints = PixelConstraints(
             maxWidth = logicalWidth,
             maxHeight = logicalHeight,
