@@ -11,7 +11,9 @@ internal class BuildOwner(
         private set
 
     private val dirtyElements = linkedSetOf<Element>()
-    private val listenableCallbacks = mutableMapOf<Listenable, ListenerBinding>()
+    private val listenableRegistry = ListenableDependencyRegistry(
+        requestVisualUpdate = ::requestVisualUpdate,
+    )
 
     fun updateRootWidget(widget: Widget) {
         rootElement = updateChild(
@@ -47,37 +49,14 @@ internal class BuildOwner(
         element: Element,
         listenable: Listenable,
     ) {
-        val binding = listenableCallbacks.getOrPut(listenable) {
-            val callback = com.purride.pixelui.VoidCallback {
-                listenableCallbacks[listenable]
-                    ?.elements
-                    ?.toList()
-                    ?.forEach { dependent ->
-                        dependent.markNeedsBuild()
-                    }
-                requestVisualUpdate()
-            }
-            listenable.addListener(callback)
-            ListenerBinding(
-                callback = callback,
-                elements = linkedSetOf(),
-            )
-        }
-        if (binding.elements.add(element)) {
-            element.listenedObjects += listenable
-        }
+        listenableRegistry.register(
+            element = element,
+            listenable = listenable,
+        )
     }
 
     fun clearListenableDependencies(element: Element) {
-        element.listenedObjects.toList().forEach { listenable ->
-            val binding = listenableCallbacks[listenable] ?: return@forEach
-            binding.elements -= element
-            if (binding.elements.isEmpty()) {
-                listenable.removeListener(binding.callback)
-                listenableCallbacks -= listenable
-            }
-        }
-        element.listenedObjects.clear()
+        listenableRegistry.clear(element)
     }
 
     fun updateChild(
@@ -102,10 +81,7 @@ internal class BuildOwner(
     fun dispose() {
         rootElement?.unmount()
         rootElement = null
-        listenableCallbacks.forEach { (listenable, binding) ->
-            listenable.removeListener(binding.callback)
-        }
-        listenableCallbacks.clear()
+        listenableRegistry.dispose()
         dirtyElements.clear()
     }
     private fun canUpdate(
@@ -114,9 +90,4 @@ internal class BuildOwner(
     ): Boolean {
         return oldWidget::class == newWidget::class && oldWidget.key == newWidget.key
     }
-
-    private data class ListenerBinding(
-        val callback: com.purride.pixelui.VoidCallback,
-        val elements: MutableSet<Element>,
-    )
 }
