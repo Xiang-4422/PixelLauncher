@@ -278,7 +278,7 @@ object AxisBufferComposer
 1. `Widget`
 2. `RetainedBuildRuntime / BuildOwner / Element tree`
 3. `RetainedWidgetRenderRuntime`
-4. `bridge：DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeElementTreeRenderer / BridgeRenderRuntime`
+4. `bridge：BridgeRenderSupportFactory / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeElementTreeRenderer / BridgeRenderRuntime`
 5. `PixelRenderRuntime`
 
 这意味着：
@@ -286,7 +286,8 @@ object AxisBufferComposer
 - retained build tree 已经成立
 - 状态、环境和依赖登记已经在 retained 主链上
 - `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回 bridge tree
-- `BuildOwner` 已经继续拆出 `ElementInflater / ElementChildUpdater / DirtyElementScheduler / ListenableDependencyRegistry`
+- `BuildOwner` 已经继续拆出 `ElementInflater / ElementChildUpdater / DirtyElementScheduler / ListenableDependencyRegistry / RootElementSlot`
+- retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - 最终绘制仍然落到 legacy renderer
 - 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
 
