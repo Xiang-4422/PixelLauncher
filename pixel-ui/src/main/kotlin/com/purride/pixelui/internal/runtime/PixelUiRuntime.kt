@@ -20,18 +20,33 @@ internal class PixelUiRuntime(
         onVisualUpdate = onVisualUpdate,
     )
 
+    /**
+     * 渲染显式的 Widget runtime 请求。
+     */
+    fun render(request: WidgetRenderRequest): PixelRenderResult {
+        return runtime.render(request)
+    }
+
+    /**
+     * 渲染一棵 Widget 根树。
+     */
     fun render(
         root: Widget,
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        return runtime.render(
-            root = root,
-            logicalWidth = logicalWidth,
-            logicalHeight = logicalHeight,
+        return render(
+            request = WidgetRenderRequest(
+                root = root,
+                logicalWidth = logicalWidth,
+                logicalHeight = logicalHeight,
+            ),
         )
     }
 
+    /**
+     * 释放内部 Widget runtime。
+     */
     fun dispose() {
         runtime.dispose()
     }
