@@ -15,10 +15,12 @@ internal class PixelUiRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
 ) {
-    private val runtime: WidgetRenderRuntime = WidgetRenderRuntimeFactory.createDefault(
+    private val assembly = WidgetRenderRuntimeFactory.createDefaultAssembly(
         textRasterizer = textRasterizer,
         onVisualUpdate = onVisualUpdate,
     )
+    private val runtime: WidgetRenderRuntime
+        get() = assembly.runtime
 
     /**
      * 渲染显式的 Widget runtime 请求。
@@ -48,6 +50,6 @@ internal class PixelUiRuntime(
      * 释放内部 Widget runtime。
      */
     fun dispose() {
-        runtime.dispose()
+        assembly.runtime.dispose()
     }
 }
