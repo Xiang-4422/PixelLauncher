@@ -15,8 +15,11 @@ internal object RetainedRenderSupportFactory {
     ): RetainedRenderSupport {
         return DefaultRetainedRenderSupport(
             widgetAdapter = BridgeWidgetAdapter,
-            elementTreeRenderer = BridgeElementTreeRendererFactory.createDefault(
-                textRasterizer = textRasterizer,
+            elementTreeRenderer = BridgeElementTreeRenderer(
+                bridgeTreeResolver = DefaultBridgeTreeResolver,
+                bridgeTreeRenderer = BridgeTreeRendererFactory.createDefault(
+                    textRasterizer = textRasterizer,
+                ),
             ),
         )
     }
