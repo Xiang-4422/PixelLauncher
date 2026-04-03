@@ -3,8 +3,6 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
-import com.purride.pixelui.TextDirection
-import com.purride.pixelui.internal.legacy.PixelTextAlign
 import com.purride.pixelui.internal.legacy.PixelTextFieldNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
 
@@ -26,6 +24,7 @@ internal class PixelTextRenderSupport(
     private val defaultTextRasterizer: PixelTextRasterizer,
 ) {
     private val textLayoutSupport = PixelTextLayoutSupport()
+    private val textAlignmentSupport = PixelTextAlignmentSupport()
 
     /**
      * 按当前文本布局结果把文本绘制到 buffer。
@@ -42,18 +41,13 @@ internal class PixelTextRenderSupport(
         var cursorY = bounds.top
         layout.lines.forEach { line ->
             if (line.text.isNotEmpty()) {
-                val lineX = when (node.textAlign) {
-                    PixelTextAlign.START -> when (node.textDirection) {
-                        TextDirection.LTR -> bounds.left
-                        TextDirection.RTL -> bounds.left + (bounds.width - line.width).coerceAtLeast(0)
-                    }
-
-                    PixelTextAlign.CENTER -> bounds.left + ((bounds.width - line.width).coerceAtLeast(0) / 2)
-                    PixelTextAlign.END -> when (node.textDirection) {
-                        TextDirection.LTR -> bounds.left + (bounds.width - line.width).coerceAtLeast(0)
-                        TextDirection.RTL -> bounds.left
-                    }
-                }
+                val lineX = textAlignmentSupport.lineStartX(
+                    left = bounds.left,
+                    width = bounds.width,
+                    lineWidth = line.width,
+                    textAlign = node.textAlign,
+                    textDirection = node.textDirection,
+                )
                 layout.rasterizer.drawText(
                     buffer = buffer,
                     text = line.text,
@@ -148,11 +142,10 @@ internal class PixelTextRenderSupport(
      * 判断指定对齐方式是否需要占满整行宽度。
      */
     fun textAlignNeedsFullWidth(node: PixelTextNode): Boolean {
-        return when (node.textAlign) {
-            PixelTextAlign.CENTER -> true
-            PixelTextAlign.START -> node.textDirection == TextDirection.RTL
-            PixelTextAlign.END -> node.textDirection == TextDirection.LTR
-        }
+        return textAlignmentSupport.needsFullWidth(
+            textAlign = node.textAlign,
+            textDirection = node.textDirection,
+        )
     }
 
     /**
