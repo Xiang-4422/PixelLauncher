@@ -16,7 +16,9 @@ internal object BridgeRenderSupportFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): ElementTreeRenderer {
-        return createDefaultAssembly(textRasterizer = textRasterizer).elementTreeRenderer
+        return createDefaultAssembly(
+            textRasterizer = textRasterizer,
+        ).toElementTreeRenderer()
     }
 
     /**

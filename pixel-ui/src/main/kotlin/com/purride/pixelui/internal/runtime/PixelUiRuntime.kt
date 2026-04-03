@@ -19,14 +19,12 @@ internal class PixelUiRuntime(
         textRasterizer = textRasterizer,
         onVisualUpdate = onVisualUpdate,
     )
-    private val runtime: WidgetRenderRuntime
-        get() = assembly.runtime
 
     /**
      * 渲染显式的 Widget runtime 请求。
      */
     fun render(request: WidgetRenderRequest): PixelRenderResult {
-        return runtime.render(request)
+        return assembly.render(request)
     }
 
     /**
@@ -50,6 +48,6 @@ internal class PixelUiRuntime(
      * 释放内部 Widget runtime。
      */
     fun dispose() {
-        assembly.runtime.dispose()
+        assembly.dispose()
     }
 }

@@ -9,4 +9,11 @@ package com.purride.pixelui.internal
 internal data class RetainedWidgetRenderAssembly(
     val elementRoot: Element?,
     val renderRequest: ElementTreeRenderRequest,
-)
+) {
+    /**
+     * 使用给定的 element tree renderer 渲染当前 assembly。
+     */
+    fun renderWith(renderer: ElementTreeRenderer): PixelRenderResult {
+        return renderer.render(request = renderRequest)
+    }
+}

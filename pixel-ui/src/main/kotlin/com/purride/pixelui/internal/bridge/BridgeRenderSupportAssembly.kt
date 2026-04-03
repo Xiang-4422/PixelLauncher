@@ -10,4 +10,9 @@ internal data class BridgeRenderSupportAssembly(
     val bridgeTreeResolver: BridgeTreeResolving,
     val bridgeTreeRenderer: BridgeTreeRenderer,
     val elementTreeRenderer: ElementTreeRenderer,
-)
+) {
+    /**
+     * 返回当前 assembly 对应的 element tree renderer。
+     */
+    fun toElementTreeRenderer(): ElementTreeRenderer = elementTreeRenderer
+}
