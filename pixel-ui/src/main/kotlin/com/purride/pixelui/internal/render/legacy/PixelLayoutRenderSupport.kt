@@ -3,11 +3,9 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelui.internal.legacy.PixelBoxNode
 import com.purride.pixelui.internal.legacy.PixelColumnNode
-import com.purride.pixelui.internal.legacy.PixelCrossAxisAlignment
 import com.purride.pixelui.internal.legacy.PixelPositionedNode
 import com.purride.pixelui.internal.legacy.PixelRowNode
 import com.purride.pixelui.internal.legacy.PixelSurfaceNode
-import kotlin.math.max
 
 /**
  * 负责 legacy 容器类节点的布局测量与渲染调度。
@@ -30,6 +28,16 @@ internal class PixelLayoutRenderSupport(
         renderNode = renderNode,
         alignmentLayoutSupport = alignmentLayoutSupport,
         positionedLayoutSupport = positionedLayoutSupport,
+    )
+    private val rowRenderSupport = PixelRowRenderSupport(
+        flexLayoutSupport = flexLayoutSupport,
+        alignmentLayoutSupport = alignmentLayoutSupport,
+        renderNode = renderNode,
+    )
+    private val columnRenderSupport = PixelColumnRenderSupport(
+        flexLayoutSupport = flexLayoutSupport,
+        alignmentLayoutSupport = alignmentLayoutSupport,
+        renderNode = renderNode,
     )
 
     /**
@@ -95,45 +103,16 @@ internal class PixelLayoutRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val childSizes = flexLayoutSupport.measureRowChildren(node, constraints)
-        val contentWidth = childSizes.sumOf { it.width } + (max(0, node.children.size - 1) * node.spacing)
-        val horizontalMainAxis = alignmentLayoutSupport.mainAxisArrangement(
-            containerStart = bounds.left,
-            containerExtent = bounds.width,
-            contentExtent = contentWidth,
-            spacing = node.spacing,
-            childCount = childSizes.size,
-            alignment = node.mainAxisAlignment,
+        rowRenderSupport.render(
+            node = node,
+            bounds = bounds,
+            constraints = constraints,
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
-        var cursorX = horizontalMainAxis.start
-        node.children.zip(childSizes).forEach { (child, childSize) ->
-            val childHeight = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) bounds.height else childSize.height
-            val childBounds = PixelRect(
-                left = cursorX,
-                top = alignmentLayoutSupport.crossAxisStart(
-                    containerStart = bounds.top,
-                    containerExtent = bounds.height,
-                    childExtent = childHeight,
-                    alignment = node.crossAxisAlignment,
-                ),
-                width = childSize.width,
-                height = childHeight,
-            )
-            renderNode(
-                child,
-                childBounds,
-                PixelConstraints(
-                    maxWidth = childSize.width,
-                    maxHeight = bounds.height,
-                ),
-                buffer,
-                clickTargets,
-                pagerTargets,
-                listTargets,
-                textInputTargets,
-            )
-            cursorX += childSize.width + horizontalMainAxis.spacingAfterChild
-        }
     }
 
     /**
@@ -149,45 +128,16 @@ internal class PixelLayoutRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val childSizes = flexLayoutSupport.measureColumnChildren(node, constraints)
-        val contentHeight = childSizes.sumOf { it.height } + (max(0, node.children.size - 1) * node.spacing)
-        val verticalMainAxis = alignmentLayoutSupport.mainAxisArrangement(
-            containerStart = bounds.top,
-            containerExtent = bounds.height,
-            contentExtent = contentHeight,
-            spacing = node.spacing,
-            childCount = childSizes.size,
-            alignment = node.mainAxisAlignment,
+        columnRenderSupport.render(
+            node = node,
+            bounds = bounds,
+            constraints = constraints,
+            buffer = buffer,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
-        var cursorY = verticalMainAxis.start
-        node.children.zip(childSizes).forEach { (child, childSize) ->
-            val childWidth = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) bounds.width else childSize.width
-            val childBounds = PixelRect(
-                left = alignmentLayoutSupport.crossAxisStart(
-                    containerStart = bounds.left,
-                    containerExtent = bounds.width,
-                    childExtent = childWidth,
-                    alignment = node.crossAxisAlignment,
-                ),
-                top = cursorY,
-                width = childWidth,
-                height = childSize.height,
-            )
-            renderNode(
-                child,
-                childBounds,
-                PixelConstraints(
-                    maxWidth = bounds.width,
-                    maxHeight = childSize.height,
-                ),
-                buffer,
-                clickTargets,
-                pagerTargets,
-                listTargets,
-                textInputTargets,
-            )
-            cursorY += childSize.height + verticalMainAxis.spacingAfterChild
-        }
     }
 
     /**
