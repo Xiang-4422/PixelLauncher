@@ -42,26 +42,18 @@ internal class PixelNodeRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val modifierInfo = PixelModifierSupport.resolve(node.modifier)
-        modifierInfo.onClick?.let { onClick ->
+        val modifierContext = PixelNodeModifierContextFactory.create(
+            node = node,
+            bounds = bounds,
+            constraints = constraints,
+        )
+        modifierContext.modifierInfo.onClick?.let { onClick ->
             clickTargets += PixelClickTarget(bounds = bounds, onClick = onClick)
         }
-        val paddedBounds = bounds.inset(
-            paddingLeft = modifierInfo.paddingLeft,
-            paddingTop = modifierInfo.paddingTop,
-            paddingRight = modifierInfo.paddingRight,
-            paddingBottom = modifierInfo.paddingBottom,
-        )
-        val innerConstraints = constraints.shrink(
-            paddingLeft = modifierInfo.paddingLeft,
-            paddingTop = modifierInfo.paddingTop,
-            paddingRight = modifierInfo.paddingRight,
-            paddingBottom = modifierInfo.paddingBottom,
-        )
         nodeRenderDispatch.renderNodeByType(
             node = node,
-            paddedBounds = paddedBounds,
-            innerConstraints = innerConstraints,
+            paddedBounds = modifierContext.paddedBounds,
+            innerConstraints = modifierContext.innerConstraints,
             buffer = buffer,
             clickTargets = clickTargets,
             pagerTargets = pagerTargets,
