@@ -7,9 +7,8 @@ package com.purride.pixelui.internal
  * retained runtime 只依赖这个接口，不直接依赖 bridge graph 细节。
  */
 internal fun interface ElementTreeRenderer {
-    fun render(
-        root: Element?,
-        logicalWidth: Int,
-        logicalHeight: Int,
-    ): PixelRenderResult
+    /**
+     * 渲染已经解析好的 retained element tree 请求。
+     */
+    fun render(request: ElementTreeRenderRequest): PixelRenderResult
 }
