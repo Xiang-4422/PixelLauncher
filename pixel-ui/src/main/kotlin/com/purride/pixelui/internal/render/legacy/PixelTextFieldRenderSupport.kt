@@ -12,6 +12,10 @@ internal class PixelTextFieldRenderSupport(
         defaultTextRasterizer = defaultTextRasterizer,
         textRenderSupport = textRenderSupport,
     )
+    private val textFieldVisualSupport = PixelTextFieldVisualSupport(
+        textFieldLayoutSupport = textFieldLayoutSupport,
+    )
+    private val textFieldTargetExport = PixelTextFieldTargetExport()
 
     /**
      * 测量文本输入框尺寸。
@@ -27,59 +31,15 @@ internal class PixelTextFieldRenderSupport(
         buffer: PixelBuffer,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val borderTone = textFieldLayoutSupport.resolveBorderTone(node)
-        buffer.fillRect(
-            left = bounds.left,
-            top = bounds.top,
-            rectWidth = bounds.width,
-            rectHeight = bounds.height,
-            value = node.style.fillTone.value,
+        textFieldVisualSupport.render(
+            node = node,
+            bounds = bounds,
+            buffer = buffer,
         )
-        borderTone?.let { tone ->
-            buffer.drawRect(
-                left = bounds.left,
-                top = bounds.top,
-                rectWidth = bounds.width,
-                rectHeight = bounds.height,
-                value = tone.value,
-            )
-        }
-
-        val displayState = textFieldLayoutSupport.resolveDisplayState(node, bounds)
-        if (displayState.text.isNotEmpty()) {
-            displayState.rasterizer.drawText(
-                buffer = buffer,
-                text = displayState.text,
-                x = displayState.textX,
-                y = displayState.textY,
-                value = displayState.style.tone.value,
-            )
-        }
-
-        if (node.enabled && !node.readOnly && node.state.isFocused) {
-            val cursorX = textFieldLayoutSupport.resolveCursorX(node, displayState)
-            val cursorTop = bounds.top + node.style.padding
-            val cursorHeight = (bounds.height - (node.style.padding * 2)).coerceAtLeast(1)
-            buffer.fillRect(
-                left = cursorX.coerceAtMost(bounds.right - 1),
-                top = cursorTop,
-                rectWidth = 1,
-                rectHeight = cursorHeight,
-                value = node.style.cursorTone.value,
-            )
-        }
-
-        if (node.enabled) {
-            textInputTargets += PixelTextInputTarget(
-                bounds = bounds,
-                state = node.state,
-                controller = node.controller,
-                readOnly = node.readOnly,
-                autofocus = node.autofocus,
-                action = node.textInputAction,
-                onChanged = node.onChanged,
-                onSubmitted = node.onSubmitted,
-            )
-        }
+        textFieldTargetExport.export(
+            node = node,
+            bounds = bounds,
+            textInputTargets = textInputTargets,
+        )
     }
 }
