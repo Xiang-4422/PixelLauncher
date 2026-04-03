@@ -24,10 +24,10 @@ internal class PixelViewportSessionSupport(
         bounds: PixelRect = PixelRect(left = 0, top = 0, width = width, height = height),
         constraints: PixelConstraints = PixelConstraints(maxWidth = width, maxHeight = height),
     ): PixelRenderResult {
-        val session = PixelRenderSession(
-            buffer = PixelBuffer(width = width, height = height),
+        val session = PixelRenderSessionFactory.create(
+            width = width,
+            height = height,
         )
-        session.buffer.clear()
         renderNode(
             root,
             bounds,
