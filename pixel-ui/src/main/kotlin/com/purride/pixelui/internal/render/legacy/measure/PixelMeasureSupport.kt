@@ -7,13 +7,13 @@ internal class PixelMeasureSupport(
     private val measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
     private val textRenderSupport: PixelTextRenderSupport,
     private val textFieldRenderSupport: PixelTextFieldRenderSupport,
-    private val layoutRenderSupport: PixelLayoutRenderSupport,
+    private val layoutMeasureSupport: PixelLayoutMeasureSupport,
 ) {
     private val measureDispatch = PixelMeasureDispatch(
         measureNode = measureNode,
         textRenderSupport = textRenderSupport,
         textFieldRenderSupport = textFieldRenderSupport,
-        layoutRenderSupport = layoutRenderSupport,
+        layoutMeasureSupport = layoutMeasureSupport,
     )
     private val measureResultSupport = PixelMeasureResultSupport()
 

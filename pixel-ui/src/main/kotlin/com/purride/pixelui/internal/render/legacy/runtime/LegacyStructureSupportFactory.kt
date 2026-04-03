@@ -26,8 +26,44 @@ internal object LegacyStructureSupportFactory {
         ) -> Unit,
         scrollAxisUnboundedMax: Int,
     ): LegacyStructureSupportAssembly {
+        val flexLayoutSupport = PixelFlexLayoutSupport(measureNode = measureNode)
+        val positionedLayoutSupport = PixelPositionedLayoutSupport()
+        val alignmentLayoutSupport = PixelAlignmentLayoutSupport()
+        val surfaceRenderSupport = PixelSurfaceRenderSupport(
+            measureNode = measureNode,
+            renderNode = renderNode,
+            alignmentLayoutSupport = alignmentLayoutSupport,
+        )
+        val positionedRenderSupport = PixelPositionedRenderSupport(
+            measureNode = measureNode,
+            renderNode = renderNode,
+            positionedLayoutSupport = positionedLayoutSupport,
+        )
+        val stackRenderSupport = PixelStackRenderSupport(
+            measureNode = measureNode,
+            renderNode = renderNode,
+            alignmentLayoutSupport = alignmentLayoutSupport,
+            positionedRenderSupport = positionedRenderSupport,
+        )
+        val rowRenderSupport = PixelRowRenderSupport(
+            flexLayoutSupport = flexLayoutSupport,
+            alignmentLayoutSupport = alignmentLayoutSupport,
+            renderNode = renderNode,
+        )
+        val columnRenderSupport = PixelColumnRenderSupport(
+            flexLayoutSupport = flexLayoutSupport,
+            alignmentLayoutSupport = alignmentLayoutSupport,
+            renderNode = renderNode,
+        )
         val layoutRenderSupport = PixelLayoutRenderSupport(
-            callbacks = callbacks,
+            surfaceRenderSupport = surfaceRenderSupport,
+            stackRenderSupport = stackRenderSupport,
+            rowRenderSupport = rowRenderSupport,
+            columnRenderSupport = columnRenderSupport,
+        )
+        val layoutMeasureSupport = PixelLayoutMeasureSupport(
+            flexLayoutSupport = flexLayoutSupport,
+            positionedLayoutSupport = positionedLayoutSupport,
         )
         val viewportRenderSupport = PixelViewportRenderSupport(
             callbacks = callbacks,
@@ -37,7 +73,7 @@ internal object LegacyStructureSupportFactory {
             measureNode = measureNode,
             textRenderSupport = textSupportAssembly.textRenderSupport,
             textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
-            layoutRenderSupport = layoutRenderSupport,
+            layoutMeasureSupport = layoutMeasureSupport,
         )
         val nodeRenderSupport = PixelNodeRenderSupport(
             textRenderSupport = textSupportAssembly.textRenderSupport,
@@ -51,6 +87,7 @@ internal object LegacyStructureSupportFactory {
         )
         return LegacyStructureSupportAssembly(
             layoutRenderSupport = layoutRenderSupport,
+            layoutMeasureSupport = layoutMeasureSupport,
             viewportRenderSupport = viewportRenderSupport,
             measureSupport = measureSupport,
             nodeRenderSupport = nodeRenderSupport,
