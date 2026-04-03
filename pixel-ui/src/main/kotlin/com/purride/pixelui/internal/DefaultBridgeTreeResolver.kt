@@ -4,6 +4,8 @@ package com.purride.pixelui.internal
  * bridge 渲染树的默认解析器。
  */
 internal object DefaultBridgeTreeResolver : BridgeTreeResolving {
+    private val childNodeCollector = BridgeChildNodeCollector(::resolveElement)
+
     override fun resolve(root: Element?): BridgeRenderNode? {
         return root?.let(::resolveElement)
     }
@@ -11,28 +13,10 @@ internal object DefaultBridgeTreeResolver : BridgeTreeResolving {
     private fun resolveElement(element: Element): BridgeRenderNode? {
         return when (element) {
             is BridgeResolvableElement -> {
-                val childNodes = resolveChildren(element)
+                val childNodes = childNodeCollector.collectAll(element)
                 element.resolveBridgeNode(childNodes)
             }
-            else -> resolveFirstChild(element)
+            else -> childNodeCollector.collectFirst(element)
         }
-    }
-
-    private fun resolveChildren(element: Element): List<BridgeRenderNode> {
-        val result = mutableListOf<BridgeRenderNode>()
-        element.visitChildren { child ->
-            resolveElement(child)?.let(result::add)
-        }
-        return result
-    }
-
-    private fun resolveFirstChild(element: Element): BridgeRenderNode? {
-        var resolved: BridgeRenderNode? = null
-        element.visitChildren { child ->
-            if (resolved == null) {
-                resolved = resolveElement(child)
-            }
-        }
-        return resolved
     }
 }
