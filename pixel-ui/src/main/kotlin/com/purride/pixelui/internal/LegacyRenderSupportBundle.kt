@@ -12,7 +12,7 @@ import com.purride.pixelcore.PixelTextRasterizer
  */
 internal class LegacyRenderSupportBundle(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
-) {
+) : LegacyRenderSupport {
     private val textRenderSupport = PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)
     private val textFieldRenderSupport = PixelTextFieldRenderSupport(
         defaultTextRasterizer = textRasterizer,
@@ -45,7 +45,7 @@ internal class LegacyRenderSupportBundle(
         renderNode = ::renderNode,
     )
 
-    fun renderRoot(
+    override fun renderRoot(
         root: LegacyRenderNode,
         logicalWidth: Int,
         logicalHeight: Int,
