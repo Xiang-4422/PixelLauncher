@@ -19,15 +19,20 @@
 | `:app` | 稳定运行 | 现有 PixelLauncher 产品实现，本阶段不依赖新框架 |
 | `:pixel-core` | 可用 | 像素显示内核、字体底座、几何与轴向原语 |
 | `:pixel-ui` | 可用 | 最小通用组件、布局、分页、列表、输入、宿主桥接 |
+| `:pixel-engine` | 可用 | 面向业务接入的聚合模块，统一导出 `core + ui` |
 | `:pixel-demo` | 可用 | 框架验证宿主，负责真实设备上的能力验收 |
 
 当前依赖关系是：
 
 - `:pixel-demo -> :pixel-ui -> :pixel-core`
+- `:pixel-engine -> :pixel-ui -> :pixel-core`
 - `:app` 暂时独立，不依赖 `:pixel-core`
 - `:app` 暂时独立，不依赖 `:pixel-ui`
 
 这条边界当前已经落地，后续不要再把过渡兼容层塞回 `:app`。
+
+当前推荐业务侧优先依赖 `:pixel-engine`，而不是分别手动引入 `:pixel-core` 与 `:pixel-ui`。  
+保留 `core/ui` 两个源码模块，是为了维持编译期边界；`pixel-engine` 只负责简化接入。
 
 ---
 
