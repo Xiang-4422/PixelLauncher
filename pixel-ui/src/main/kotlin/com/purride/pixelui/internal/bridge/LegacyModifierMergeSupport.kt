@@ -1,14 +1,11 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.legacy.CustomDraw
 import com.purride.pixelui.internal.legacy.PixelBoxNode
 import com.purride.pixelui.internal.legacy.PixelButtonNode
 import com.purride.pixelui.internal.legacy.PixelColumnNode
 import com.purride.pixelui.internal.legacy.PixelListNode
 import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelNode
 import com.purride.pixelui.internal.legacy.PixelPagerNode
 import com.purride.pixelui.internal.legacy.PixelRowNode
 import com.purride.pixelui.internal.legacy.PixelSingleChildScrollViewNode
@@ -16,30 +13,9 @@ import com.purride.pixelui.internal.legacy.PixelSurfaceNode
 import com.purride.pixelui.internal.legacy.PixelTextFieldNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
 
-internal fun adaptBridgeWidget(widget: Widget): BridgeWidget? {
-    return when (widget) {
-        is BridgeWidget -> widget
-        is PixelNode -> StaticBridgeNodeWidget(widget)
-        else -> null
-    }
-}
-
-private data class StaticBridgeNodeWidget(
-    private val node: BridgeRenderNode,
-) : BridgeWidget {
-    override val key: Any?
-        get() = node.key
-
-    override val childWidgets: List<Widget> = emptyList()
-
-    override fun createBridgeNode(
-        context: BuildContext,
-        childNodes: BridgeNodeChildren,
-    ): BridgeRenderNode {
-        return node
-    }
-}
-
+/**
+ * 给 legacy render node 追加 modifier 的辅助逻辑。
+ */
 internal fun LegacyRenderNode.withExtraModifier(extra: PixelModifier): LegacyRenderNode {
     val merged = modifier.then(extra)
     return when (this) {
