@@ -225,39 +225,23 @@ internal open class InheritedElement(
 internal class InheritedNotifierElement(
     widget: InheritedNotifier<*>,
 ) : InheritedElement(widget) {
-    private var currentNotifier: Listenable? = null
-    private var callback: com.purride.pixelui.VoidCallback? = null
+    private val notifierBinding = InheritedNotifierBinding {
+        notifyDependents()
+        owner.requestVisualUpdate()
+    }
 
     override fun mount(parent: Element?, owner: BuildOwner) {
         super.mount(parent, owner)
-        bindNotifier((widget as InheritedNotifier<*>).notifier as? Listenable)
+        notifierBinding.bind((widget as InheritedNotifier<*>).notifier as? Listenable)
     }
 
     override fun update(newWidget: Widget) {
         val nextNotifier = (newWidget as InheritedNotifier<*>).notifier as? Listenable
         super.update(newWidget)
-        bindNotifier(nextNotifier)
+        notifierBinding.bind(nextNotifier)
     }
 
     override fun onUnmount() {
-        callback?.let { currentNotifier?.removeListener(it) }
-        currentNotifier = null
-        callback = null
-    }
-
-    private fun bindNotifier(notifier: Listenable?) {
-        if (currentNotifier === notifier) {
-            return
-        }
-        callback?.let { currentNotifier?.removeListener(it) }
-        currentNotifier = notifier
-        callback = notifier?.let {
-            com.purride.pixelui.VoidCallback {
-                notifyDependents()
-                owner.requestVisualUpdate()
-            }.also { listener ->
-                notifier.addListener(listener)
-            }
-        }
+        notifierBinding.clear()
     }
 }
