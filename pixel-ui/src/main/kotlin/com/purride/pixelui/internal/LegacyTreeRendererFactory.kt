@@ -12,6 +12,10 @@ internal object LegacyTreeRendererFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): LegacyTreeRenderer {
-        return PixelRenderRuntime(textRasterizer = textRasterizer)
+        return PixelRenderRuntime(
+            renderSupport = LegacyRenderSupportFactory.createDefault(
+                textRasterizer = textRasterizer,
+            ),
+        )
     }
 }

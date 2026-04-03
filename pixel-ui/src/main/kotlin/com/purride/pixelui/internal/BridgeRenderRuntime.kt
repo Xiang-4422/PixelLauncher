@@ -1,8 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelTextRasterizer
-
 /**
  * bridge 渲染运行时。
  *
@@ -10,12 +7,8 @@ import com.purride.pixelcore.PixelTextRasterizer
  * 不再承担 retained element tree 的解析职责。
  */
 internal class BridgeRenderRuntime(
-    textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    private val legacyTreeRenderer: LegacyTreeRenderer,
 ) : BridgeTreeRenderer {
-    private val legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
-        textRasterizer = textRasterizer,
-    )
-
     override fun render(
         root: BridgeRenderNode,
         logicalWidth: Int,

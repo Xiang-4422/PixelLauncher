@@ -13,6 +13,10 @@ internal object BridgeTreeRendererFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): BridgeTreeRenderer {
-        return BridgeRenderRuntime(textRasterizer = textRasterizer)
+        return BridgeRenderRuntime(
+            legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
+                textRasterizer = textRasterizer,
+            ),
+        )
     }
 }
