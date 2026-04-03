@@ -8,6 +8,7 @@ package com.purride.pixelui.internal
  */
 internal data class LegacyStructureSupportAssembly(
     val layoutRenderSupport: PixelLayoutRenderSupport,
+    val layoutMeasureSupport: PixelLayoutMeasureSupport,
     val viewportRenderSupport: PixelViewportRenderSupport,
     val measureSupport: PixelMeasureSupport,
     val nodeRenderSupport: PixelNodeRenderSupport,
