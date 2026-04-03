@@ -24,7 +24,7 @@ internal object LegacySupportAssemblyFactory {
             MutableList<PixelTextInputTarget>,
         ) -> Unit,
     ): LegacySupportAssembly {
-        val callbacks = createCallbacks(
+        val callbacks = LegacyRenderCallbacksFactory.create(
             measureNode = measureNode,
             renderNode = renderNode,
         )
@@ -46,28 +46,6 @@ internal object LegacySupportAssemblyFactory {
             measureSupport = structureSupportAssembly.measureSupport,
             nodeRenderSupport = structureSupportAssembly.nodeRenderSupport,
             rootRenderSupport = structureSupportAssembly.rootRenderSupport,
-        )
-    }
-
-    /**
-     * 创建 legacy render callbacks。
-     */
-    private fun createCallbacks(
-        measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
-        renderNode: (
-            LegacyRenderNode,
-            PixelRect,
-            PixelConstraints,
-            com.purride.pixelcore.PixelBuffer,
-            MutableList<PixelClickTarget>,
-            MutableList<PixelPagerTarget>,
-            MutableList<PixelListTarget>,
-            MutableList<PixelTextInputTarget>,
-        ) -> Unit,
-    ): LegacyRenderCallbacks {
-        return LegacyRenderCallbacks(
-            measureNode = measureNode,
-            renderNode = renderNode,
         )
     }
 
