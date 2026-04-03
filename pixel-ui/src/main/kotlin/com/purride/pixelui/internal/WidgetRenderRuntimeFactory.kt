@@ -14,9 +14,15 @@ internal object WidgetRenderRuntimeFactory {
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
         onVisualUpdate: () -> Unit = { },
     ): WidgetRenderRuntime {
-        return RetainedWidgetRenderRuntime(
+        val renderSupport = RetainedRenderSupportFactory.createDefault(
             textRasterizer = textRasterizer,
-            onVisualUpdate = onVisualUpdate,
+        )
+        return RetainedWidgetRenderRuntime(
+            buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+                onVisualUpdate = onVisualUpdate,
+                widgetAdapter = renderSupport.widgetAdapter,
+            ),
+            elementTreeRenderer = renderSupport.elementTreeRenderer,
         )
     }
 }

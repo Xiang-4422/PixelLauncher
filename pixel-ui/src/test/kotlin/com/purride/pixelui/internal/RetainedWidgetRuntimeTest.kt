@@ -26,7 +26,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun valueListenableBuilderUpdatesRenderedToneAfterNotifierChanges() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
         val tone = ValueNotifier(PixelTone.ON)
 
         val root = ValueListenableBuilder(
@@ -59,7 +59,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun statefulWidgetSetStateTriggersRetainedRebuild() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
         val root = ToggleToneWidget()
 
         val first = runtime.render(
@@ -80,7 +80,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun inheritedWidgetNotifiesDependentBuildsOnUpdate() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
 
         val first = runtime.render(
             root = ToneScope(
@@ -105,7 +105,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun mediaQueryAndDirectionalityPropagateThroughInheritedContext() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
         val screenProfile = ScreenProfile(
             logicalWidth = 6,
             logicalHeight = 4,
@@ -133,7 +133,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun inheritedNotifierMarksDependentsDirtyAfterNotifierChanges() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
         val count = ValueNotifier(0)
         val root = CounterScope(
             notifier = count,
@@ -159,7 +159,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun builderReadsLocalInheritedContext() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
 
         val result = runtime.render(
             root = ToneScope(
@@ -182,7 +182,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun statefulBuilderRebuildsLocalState() {
-        val runtime = RetainedWidgetRenderRuntime()
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
         var accent = false
 
         val root = StatefulBuilder { _, setState ->

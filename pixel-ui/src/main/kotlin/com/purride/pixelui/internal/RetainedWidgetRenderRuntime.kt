@@ -1,7 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.Widget
 
 /**
@@ -15,19 +13,9 @@ import com.purride.pixelui.Widget
  * Widget 解析职责。
  */
 internal class RetainedWidgetRenderRuntime(
-    textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
-    onVisualUpdate: () -> Unit = { },
+    private val buildRuntime: ElementTreeBuildRuntime,
+    private val elementTreeRenderer: ElementTreeRenderer,
 ) : WidgetRenderRuntime {
-    private val renderSupport: RetainedRenderSupport = RetainedRenderSupportFactory.createDefault(
-        textRasterizer = textRasterizer,
-    )
-    private val buildRuntime: ElementTreeBuildRuntime =
-        ElementTreeBuildRuntimeFactory.createDefault(
-            onVisualUpdate = onVisualUpdate,
-            widgetAdapter = renderSupport.widgetAdapter,
-        )
-    private val elementTreeRenderer = renderSupport.elementTreeRenderer
-
     override fun render(
         root: Widget,
         logicalWidth: Int,
