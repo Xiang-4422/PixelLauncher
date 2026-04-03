@@ -20,15 +20,18 @@ internal class PixelVerticalScrollRenderSupport(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) -> Unit,
     scrollAxisUnboundedMax: Int,
+    resultSupport: PixelViewportResultSupport,
 ) {
     private val listRenderSupport = PixelListRenderSupport(
         measureNode = measureNode,
         renderNode = renderNode,
+        resultSupport = resultSupport,
     )
     private val singleChildScrollRenderSupport = PixelSingleChildScrollRenderSupport(
         measureNode = measureNode,
         renderNode = renderNode,
         scrollAxisUnboundedMax = scrollAxisUnboundedMax,
+        resultSupport = resultSupport,
     )
 
     /**

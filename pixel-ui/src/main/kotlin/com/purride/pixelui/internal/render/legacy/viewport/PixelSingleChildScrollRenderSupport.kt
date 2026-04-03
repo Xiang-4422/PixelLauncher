@@ -20,6 +20,7 @@ internal class PixelSingleChildScrollRenderSupport(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) -> Unit,
     private val scrollAxisUnboundedMax: Int,
+    private val resultSupport: PixelViewportResultSupport,
 ) {
     /**
      * 渲染 single child scroll view 节点。
@@ -57,11 +58,10 @@ internal class PixelSingleChildScrollRenderSupport(
             controller = node.controller,
         )
 
-        val scrollBuffer = PixelBuffer(width = viewportWidth, height = viewportHeight).apply { clear() }
-        val scrollClickTargets = mutableListOf<PixelClickTarget>()
-        val scrollPagerTargets = mutableListOf<PixelPagerTarget>()
-        val nestedListTargets = mutableListOf<PixelListTarget>()
-        val scrollTextInputTargets = mutableListOf<PixelTextInputTarget>()
+        val scrollSession = PixelRenderSessionFactory.create(
+            width = viewportWidth,
+            height = viewportHeight,
+        )
         val childBounds = PixelRect(
             left = 0,
             top = -node.state.scrollOffsetPx.roundToInt(),
@@ -73,22 +73,24 @@ internal class PixelSingleChildScrollRenderSupport(
             node.child,
             childBounds,
             childConstraints,
-            scrollBuffer,
-            scrollClickTargets,
-            scrollPagerTargets,
-            nestedListTargets,
-            scrollTextInputTargets,
+            scrollSession.buffer,
+            scrollSession.clickTargets,
+            scrollSession.pagerTargets,
+            scrollSession.listTargets,
+            scrollSession.textInputTargets,
         )
 
-        PixelTargetTranslateSupport.translateClickTargets(scrollClickTargets, bounds, 0, 0, clickTargets)
-        PixelTargetTranslateSupport.translatePagerTargets(scrollPagerTargets, bounds, 0, 0, pagerTargets)
-        PixelTargetTranslateSupport.translateListTargets(nestedListTargets, bounds, 0, 0, listTargets)
-        PixelTargetTranslateSupport.translateTextInputTargets(scrollTextInputTargets, bounds, 0, 0, textInputTargets)
-
-        buffer.blit(
-            source = scrollBuffer,
-            destX = bounds.left,
-            destY = bounds.top,
+        val scrollResult = scrollSession.toRenderResult()
+        resultSupport.appendTranslatedTargets(
+            result = scrollResult,
+            bounds = bounds,
+            shiftX = 0,
+            shiftY = 0,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
+        resultSupport.blit(result = scrollResult, bounds = bounds, buffer = buffer)
     }
 }

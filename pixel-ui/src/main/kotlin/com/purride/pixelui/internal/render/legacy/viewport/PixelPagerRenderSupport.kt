@@ -10,6 +10,7 @@ import com.purride.pixelui.internal.legacy.PixelPagerNode
  */
 internal class PixelPagerRenderSupport(
     private val sessionSupport: PixelViewportSessionSupport,
+    private val resultSupport: PixelViewportResultSupport,
 ) {
     /**
      * 渲染 pager 节点。
@@ -67,16 +68,28 @@ internal class PixelPagerRenderSupport(
             PixelAxis.VERTICAL -> if (snapshot.dragOffsetPx > 0f) anchorShiftY - pageHeight else anchorShiftY + pageHeight
         }
 
-        PixelTargetTranslateSupport.translateClickTargets(anchorPageResult.clickTargets, bounds, anchorShiftX, anchorShiftY, clickTargets)
-        PixelTargetTranslateSupport.translatePagerTargets(anchorPageResult.pagerTargets, bounds, anchorShiftX, anchorShiftY, pagerTargets)
-        PixelTargetTranslateSupport.translateListTargets(anchorPageResult.listTargets, bounds, anchorShiftX, anchorShiftY, listTargets)
-        PixelTargetTranslateSupport.translateTextInputTargets(anchorPageResult.textInputTargets, bounds, anchorShiftX, anchorShiftY, textInputTargets)
+        resultSupport.appendTranslatedTargets(
+            result = anchorPageResult,
+            bounds = bounds,
+            shiftX = anchorShiftX,
+            shiftY = anchorShiftY,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
+        )
 
         adjacentPageResult?.let { result ->
-            PixelTargetTranslateSupport.translateClickTargets(result.clickTargets, bounds, adjacentShiftX, adjacentShiftY, clickTargets)
-            PixelTargetTranslateSupport.translatePagerTargets(result.pagerTargets, bounds, adjacentShiftX, adjacentShiftY, pagerTargets)
-            PixelTargetTranslateSupport.translateListTargets(result.listTargets, bounds, adjacentShiftX, adjacentShiftY, listTargets)
-            PixelTargetTranslateSupport.translateTextInputTargets(result.textInputTargets, bounds, adjacentShiftX, adjacentShiftY, textInputTargets)
+            resultSupport.appendTranslatedTargets(
+                result = result,
+                bounds = bounds,
+                shiftX = adjacentShiftX,
+                shiftY = adjacentShiftY,
+                clickTargets = clickTargets,
+                pagerTargets = pagerTargets,
+                listTargets = listTargets,
+                textInputTargets = textInputTargets,
+            )
         }
 
         val composed = AxisBufferComposer.compose(

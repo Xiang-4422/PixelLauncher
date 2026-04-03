@@ -20,6 +20,7 @@ internal class PixelListRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) -> Unit,
+    private val resultSupport: PixelViewportResultSupport,
 ) {
     /**
      * 渲染 list 节点。
@@ -63,11 +64,10 @@ internal class PixelListRenderSupport(
             controller = node.controller,
         )
 
-        val listBuffer = PixelBuffer(width = viewportWidth, height = viewportHeight).apply { clear() }
-        val listClickTargets = mutableListOf<PixelClickTarget>()
-        val listPagerTargets = mutableListOf<PixelPagerTarget>()
-        val nestedListTargets = mutableListOf<PixelListTarget>()
-        val listTextInputTargets = mutableListOf<PixelTextInputTarget>()
+        val listSession = PixelRenderSessionFactory.create(
+            width = viewportWidth,
+            height = viewportHeight,
+        )
         var cursorY = -node.state.scrollOffsetPx.roundToInt()
 
         node.items.zip(itemSizes).forEach { (child, childSize) ->
@@ -85,25 +85,27 @@ internal class PixelListRenderSupport(
                         maxWidth = viewportWidth,
                         maxHeight = childSize.height,
                     ),
-                    listBuffer,
-                    listClickTargets,
-                    listPagerTargets,
-                    nestedListTargets,
-                    listTextInputTargets,
+                    listSession.buffer,
+                    listSession.clickTargets,
+                    listSession.pagerTargets,
+                    listSession.listTargets,
+                    listSession.textInputTargets,
                 )
             }
             cursorY += childSize.height + node.spacing
         }
 
-        PixelTargetTranslateSupport.translateClickTargets(listClickTargets, bounds, 0, 0, clickTargets)
-        PixelTargetTranslateSupport.translatePagerTargets(listPagerTargets, bounds, 0, 0, pagerTargets)
-        PixelTargetTranslateSupport.translateListTargets(nestedListTargets, bounds, 0, 0, listTargets)
-        PixelTargetTranslateSupport.translateTextInputTargets(listTextInputTargets, bounds, 0, 0, textInputTargets)
-
-        buffer.blit(
-            source = listBuffer,
-            destX = bounds.left,
-            destY = bounds.top,
+        val listResult = listSession.toRenderResult()
+        resultSupport.appendTranslatedTargets(
+            result = listResult,
+            bounds = bounds,
+            shiftX = 0,
+            shiftY = 0,
+            clickTargets = clickTargets,
+            pagerTargets = pagerTargets,
+            listTargets = listTargets,
+            textInputTargets = textInputTargets,
         )
+        resultSupport.blit(result = listResult, bounds = bounds, buffer = buffer)
     }
 }
