@@ -9,22 +9,14 @@ package com.purride.pixelui.internal
 internal class BridgeAdapterElement(
     widget: BridgeWidget,
 ) : Element(widget), BridgeResolvableElement {
-    private var children = emptyList<Element>()
+    private val childSlot = MultiChildElementSlot()
 
     override fun performRebuild() {
-        val childWidgets = (widget as BridgeWidget).childWidgets
-        val nextChildren = ArrayList<Element>(childWidgets.size)
-        val maxCount = maxOf(children.size, childWidgets.size)
-        for (index in 0 until maxCount) {
-            val current = children.getOrNull(index)
-            val nextWidget = childWidgets.getOrNull(index)
-            owner.updateChild(
-                parent = this,
-                current = current,
-                newWidget = nextWidget,
-            )?.let(nextChildren::add)
-        }
-        children = nextChildren
+        childSlot.update(
+            owner = owner,
+            parent = this,
+            newWidgets = (widget as BridgeWidget).childWidgets,
+        )
     }
 
     override fun resolveBridgeNode(childNodes: List<BridgeRenderNode>): BridgeRenderNode {
@@ -36,6 +28,6 @@ internal class BridgeAdapterElement(
     }
 
     override fun visitChildren(visitor: (Element) -> Unit) {
-        children.forEach(visitor)
+        childSlot.visit(visitor)
     }
 }
