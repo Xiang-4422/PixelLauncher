@@ -21,7 +21,7 @@ internal class RetainedWidgetRenderRuntime(
      */
     override fun render(request: WidgetRenderRequest): PixelRenderResult {
         val assembly = createRenderAssembly(request)
-        return elementTreeRenderer.render(request = assembly.renderRequest)
+        return assembly.renderWith(renderer = elementTreeRenderer)
     }
 
     /**

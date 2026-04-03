@@ -13,4 +13,18 @@ internal data class WidgetRuntimeAssembly(
      * 返回当前 assembly 对应的宿主运行时。
      */
     fun toRuntime(): WidgetRenderRuntime = runtime
+
+    /**
+     * 通过当前 assembly 持有的宿主运行时执行一次渲染。
+     */
+    fun render(request: WidgetRenderRequest): PixelRenderResult {
+        return runtime.render(request)
+    }
+
+    /**
+     * 释放当前 assembly 持有的宿主运行时。
+     */
+    fun dispose() {
+        runtime.dispose()
+    }
 }
