@@ -2,7 +2,7 @@
 
 这份文档的目标很直接：
 
-> 让后续业务模块可以把 `pixel-ui` 当成一个可直接依赖的库来接入，而不是必须先读完全部源码。
+> 让后续业务模块可以把 `pixel-engine` 当成一个可直接依赖的库来接入，而不是必须先读完全部源码。
 
 当前这份指南基于仓库里的真实实现编写，适用于：
 
@@ -16,19 +16,21 @@
 
 ## 1. 当前推荐依赖方式
 
-如果新建一个业务模块，并希望直接搭建像素页面，当前推荐只依赖 `:pixel-ui`：
+如果新建一个业务模块，并希望直接搭建像素页面，当前推荐只依赖 `:pixel-engine`：
 
 ```kotlin
 dependencies {
-    implementation(project(":pixel-ui"))
+    implementation(project(":pixel-engine"))
 }
 ```
 
 原因是：
 
-- `pixel-ui` 已经通过 `api(project(":pixel-core"))` 暴露 `pixel-core`
+- `pixel-engine` 会统一导出 `pixel-ui` 和 `pixel-core`
 - 页面层通常不应该直接长期操作 `PixelBuffer`
 - 大多数业务页面只需要 `PixelHostView + Widget + 公开组件 + 状态控制器`
+
+如果你在做引擎内部开发，或者要分别约束底层与 UI 语义边界，仍然直接使用 `:pixel-core` 与 `:pixel-ui` 两个源码模块。
 
 只有在你明确要做以下事情时，才建议直接依赖 `:pixel-core`：
 
@@ -44,6 +46,7 @@ dependencies {
 
 参考文件：
 
+- [pixel-engine/build.gradle.kts](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-engine/build.gradle.kts)
 - [pixel-core/build.gradle.kts](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/build.gradle.kts)
 - [pixel-ui/build.gradle.kts](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/build.gradle.kts)
 
