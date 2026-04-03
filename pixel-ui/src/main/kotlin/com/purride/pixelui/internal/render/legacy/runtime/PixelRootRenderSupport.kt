@@ -9,8 +9,10 @@ package com.purride.pixelui.internal
 internal class PixelRootRenderSupport(
     callbacks: LegacyRenderCallbacks,
 ) {
-    private val measureNode = callbacks.measureNode
     private val renderNode = callbacks.renderNode
+    private val rootLayoutSupport = PixelRootLayoutSupport(
+        measureNode = callbacks.measureNode,
+    )
 
     /**
      * 渲染根节点并收集一次完整会话结果。
@@ -24,16 +26,13 @@ internal class PixelRootRenderSupport(
             width = logicalWidth,
             height = logicalHeight,
         )
-        val rootConstraints = PixelConstraints(
-            maxWidth = logicalWidth,
-            maxHeight = logicalHeight,
+        val rootConstraints = rootLayoutSupport.rootConstraints(
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
         )
-        val measuredRoot = measureNode(root, rootConstraints)
-        val rootBounds = PixelRect(
-            left = 0,
-            top = 0,
-            width = measuredRoot.width.coerceAtMost(logicalWidth),
-            height = measuredRoot.height.coerceAtMost(logicalHeight),
+        val rootBounds = rootLayoutSupport.rootBounds(
+            root = root,
+            constraints = rootConstraints,
         )
         renderNode(
             root,
