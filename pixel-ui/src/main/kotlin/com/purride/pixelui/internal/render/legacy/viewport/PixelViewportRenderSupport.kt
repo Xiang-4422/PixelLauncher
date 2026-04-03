@@ -16,11 +16,16 @@ internal class PixelViewportRenderSupport(
     private val measureNode = callbacks.measureNode
     private val renderNode = callbacks.renderNode
     private val sessionSupport = PixelViewportSessionSupport(renderNode = renderNode)
-    private val pagerRenderSupport = PixelPagerRenderSupport(sessionSupport = sessionSupport)
+    private val resultSupport = PixelViewportResultSupport()
+    private val pagerRenderSupport = PixelPagerRenderSupport(
+        sessionSupport = sessionSupport,
+        resultSupport = resultSupport,
+    )
     private val verticalScrollRenderSupport = PixelVerticalScrollRenderSupport(
         measureNode = measureNode,
         renderNode = renderNode,
         scrollAxisUnboundedMax = scrollAxisUnboundedMax,
+        resultSupport = resultSupport,
     )
 
     /**
