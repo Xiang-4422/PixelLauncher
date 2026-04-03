@@ -24,18 +24,20 @@ internal object LegacySupportAssemblyFactory {
             MutableList<PixelTextInputTarget>,
         ) -> Unit,
     ): LegacySupportAssembly {
+        val callbacks = LegacyRenderCallbacks(
+            measureNode = measureNode,
+            renderNode = renderNode,
+        )
         val textRenderSupport = PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)
         val textFieldRenderSupport = PixelTextFieldRenderSupport(
             defaultTextRasterizer = textRasterizer,
             textRenderSupport = textRenderSupport,
         )
         val layoutRenderSupport = PixelLayoutRenderSupport(
-            measureNode = measureNode,
-            renderNode = renderNode,
+            callbacks = callbacks,
         )
         val viewportRenderSupport = PixelViewportRenderSupport(
-            measureNode = measureNode,
-            renderNode = renderNode,
+            callbacks = callbacks,
             scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
         )
         val measureSupport = PixelMeasureSupport(
@@ -52,8 +54,7 @@ internal object LegacySupportAssemblyFactory {
             renderNode = renderNode,
         )
         val rootRenderSupport = PixelRootRenderSupport(
-            measureNode = measureNode,
-            renderNode = renderNode,
+            callbacks = callbacks,
         )
         return LegacySupportAssembly(
             textRenderSupport = textRenderSupport,

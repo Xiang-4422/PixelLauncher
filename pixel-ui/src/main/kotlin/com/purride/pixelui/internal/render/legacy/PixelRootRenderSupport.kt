@@ -9,18 +9,14 @@ import com.purride.pixelcore.PixelBuffer
  * 和 root bounds。
  */
 internal class PixelRootRenderSupport(
-    private val measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
-    private val renderNode: (
-        node: LegacyRenderNode,
-        bounds: PixelRect,
-        constraints: PixelConstraints,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) -> Unit,
+    callbacks: LegacyRenderCallbacks,
 ) {
+    private val measureNode = callbacks.measureNode
+    private val renderNode = callbacks.renderNode
+
+    /**
+     * 渲染根节点并收集一次完整会话结果。
+     */
     fun renderRoot(
         root: LegacyRenderNode,
         logicalWidth: Int,

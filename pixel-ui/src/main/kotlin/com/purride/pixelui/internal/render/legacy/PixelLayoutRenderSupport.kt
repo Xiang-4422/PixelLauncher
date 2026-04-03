@@ -13,18 +13,10 @@ import kotlin.math.max
  * 负责 legacy 容器类节点的布局测量与渲染调度。
  */
 internal class PixelLayoutRenderSupport(
-    private val measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
-    private val renderNode: (
-        node: LegacyRenderNode,
-        bounds: PixelRect,
-        constraints: PixelConstraints,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) -> Unit,
+    callbacks: LegacyRenderCallbacks,
 ) {
+    private val measureNode = callbacks.measureNode
+    private val renderNode = callbacks.renderNode
     private val flexLayoutSupport = PixelFlexLayoutSupport(measureNode = measureNode)
     private val positionedLayoutSupport = PixelPositionedLayoutSupport()
     private val alignmentLayoutSupport = PixelAlignmentLayoutSupport()
