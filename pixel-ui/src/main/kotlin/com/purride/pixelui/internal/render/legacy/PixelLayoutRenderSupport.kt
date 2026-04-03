@@ -1,18 +1,17 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBuffer
-import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.internal.legacy.PixelBoxNode
 import com.purride.pixelui.internal.legacy.PixelColumnNode
 import com.purride.pixelui.internal.legacy.PixelCrossAxisAlignment
-import com.purride.pixelui.internal.legacy.PixelFlexFit
-import com.purride.pixelui.internal.legacy.PixelMainAxisAlignment
 import com.purride.pixelui.internal.legacy.PixelPositionedNode
 import com.purride.pixelui.internal.legacy.PixelRowNode
 import com.purride.pixelui.internal.legacy.PixelSurfaceNode
-import com.purride.pixelui.internal.legacy.PixelWeightElement
 import kotlin.math.max
 
+/**
+ * 负责 legacy 容器类节点的布局测量与渲染调度。
+ */
 internal class PixelLayoutRenderSupport(
     private val measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
     private val renderNode: (
@@ -26,6 +25,13 @@ internal class PixelLayoutRenderSupport(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) -> Unit,
 ) {
+    private val flexLayoutSupport = PixelFlexLayoutSupport(measureNode = measureNode)
+    private val positionedLayoutSupport = PixelPositionedLayoutSupport()
+    private val alignmentLayoutSupport = PixelAlignmentLayoutSupport()
+
+    /**
+     * 渲染 surface 节点及其内层对齐子项。
+     */
     fun renderSurface(
         node: PixelSurfaceNode,
         bounds: PixelRect,
@@ -67,7 +73,7 @@ internal class PixelLayoutRenderSupport(
             paddingBottom = node.padding,
         )
         val childSize = measureNode(child, childConstraints)
-        val childBounds = alignedBounds(
+        val childBounds = alignmentLayoutSupport.alignedBounds(
             outerBounds = innerBounds,
             childSize = childSize,
             alignment = node.alignment,
@@ -84,6 +90,9 @@ internal class PixelLayoutRenderSupport(
         )
     }
 
+    /**
+     * 渲染 box/stack 节点。
+     */
     fun renderBox(
         node: PixelBoxNode,
         bounds: PixelRect,
@@ -104,11 +113,11 @@ internal class PixelLayoutRenderSupport(
                     clickTargets = clickTargets,
                     pagerTargets = pagerTargets,
                     listTargets = listTargets,
-                    textInputTargets = textInputTargets,
+                textInputTargets = textInputTargets,
                 )
             } else {
                 val childSize = measureNode(child, constraints)
-                val childBounds = alignedBounds(
+                val childBounds = alignmentLayoutSupport.alignedBounds(
                     outerBounds = bounds,
                     childSize = childSize,
                     alignment = node.alignment,
@@ -127,6 +136,9 @@ internal class PixelLayoutRenderSupport(
         }
     }
 
+    /**
+     * 渲染 row 节点。
+     */
     fun renderRow(
         node: PixelRowNode,
         bounds: PixelRect,
@@ -137,9 +149,9 @@ internal class PixelLayoutRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val childSizes = measureRowChildren(node, constraints)
+        val childSizes = flexLayoutSupport.measureRowChildren(node, constraints)
         val contentWidth = childSizes.sumOf { it.width } + (max(0, node.children.size - 1) * node.spacing)
-        val horizontalMainAxis = mainAxisArrangement(
+        val horizontalMainAxis = alignmentLayoutSupport.mainAxisArrangement(
             containerStart = bounds.left,
             containerExtent = bounds.width,
             contentExtent = contentWidth,
@@ -152,7 +164,7 @@ internal class PixelLayoutRenderSupport(
             val childHeight = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) bounds.height else childSize.height
             val childBounds = PixelRect(
                 left = cursorX,
-                top = crossAxisStart(
+                top = alignmentLayoutSupport.crossAxisStart(
                     containerStart = bounds.top,
                     containerExtent = bounds.height,
                     childExtent = childHeight,
@@ -178,6 +190,9 @@ internal class PixelLayoutRenderSupport(
         }
     }
 
+    /**
+     * 渲染 column 节点。
+     */
     fun renderColumn(
         node: PixelColumnNode,
         bounds: PixelRect,
@@ -188,9 +203,9 @@ internal class PixelLayoutRenderSupport(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
-        val childSizes = measureColumnChildren(node, constraints)
+        val childSizes = flexLayoutSupport.measureColumnChildren(node, constraints)
         val contentHeight = childSizes.sumOf { it.height } + (max(0, node.children.size - 1) * node.spacing)
-        val verticalMainAxis = mainAxisArrangement(
+        val verticalMainAxis = alignmentLayoutSupport.mainAxisArrangement(
             containerStart = bounds.top,
             containerExtent = bounds.height,
             contentExtent = contentHeight,
@@ -202,7 +217,7 @@ internal class PixelLayoutRenderSupport(
         node.children.zip(childSizes).forEach { (child, childSize) ->
             val childWidth = if (node.crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) bounds.width else childSize.width
             val childBounds = PixelRect(
-                left = crossAxisStart(
+                left = alignmentLayoutSupport.crossAxisStart(
                     containerStart = bounds.left,
                     containerExtent = bounds.width,
                     childExtent = childWidth,
@@ -229,40 +244,64 @@ internal class PixelLayoutRenderSupport(
         }
     }
 
+    /**
+     * 暴露 positioned 最大宽度计算，供 measure support 复用。
+     */
     fun measurePositionedMaxWidth(
         node: PixelPositionedNode,
         constraints: PixelConstraints,
-    ): Int = positionedMaxWidth(node, constraints)
+    ): Int = positionedLayoutSupport.maxWidth(node, constraints)
 
+    /**
+     * 暴露 positioned 最大高度计算，供 measure support 复用。
+     */
     fun measurePositionedMaxHeight(
         node: PixelPositionedNode,
         constraints: PixelConstraints,
-    ): Int = positionedMaxHeight(node, constraints)
+    ): Int = positionedLayoutSupport.maxHeight(node, constraints)
 
+    /**
+     * 暴露 positioned 最终宽度计算，供 measure support 复用。
+     */
     fun measurePositionedWidth(
         node: PixelPositionedNode,
         constraints: PixelConstraints,
         childSize: PixelSize,
-    ): Int = positionedWidth(node, constraints, childSize)
+    ): Int = positionedLayoutSupport.width(node, constraints, childSize)
 
+    /**
+     * 暴露 positioned 最终高度计算，供 measure support 复用。
+     */
     fun measurePositionedHeight(
         node: PixelPositionedNode,
         constraints: PixelConstraints,
         childSize: PixelSize,
-    ): Int = positionedHeight(node, constraints, childSize)
+    ): Int = positionedLayoutSupport.height(node, constraints, childSize)
 
+    /**
+     * 暴露 row 子项测量，供 measure support 复用。
+     */
     fun measureRowChildrenForLayout(
         node: PixelRowNode,
         constraints: PixelConstraints,
-    ): List<PixelSize> = measureRowChildren(node, constraints)
+    ): List<PixelSize> = flexLayoutSupport.measureRowChildren(node, constraints)
 
+    /**
+     * 暴露 column 子项测量，供 measure support 复用。
+     */
     fun measureColumnChildrenForLayout(
         node: PixelColumnNode,
         constraints: PixelConstraints,
-    ): List<PixelSize> = measureColumnChildren(node, constraints)
+    ): List<PixelSize> = flexLayoutSupport.measureColumnChildren(node, constraints)
 
-    fun childWeightOf(node: LegacyRenderNode): Float = childWeight(node)
+    /**
+     * 暴露子项权重解析，供 measure support 复用。
+     */
+    fun childWeightOf(node: LegacyRenderNode): Float = flexLayoutSupport.childWeight(node)
 
+    /**
+     * 渲染 positioned 子节点。
+     */
     private fun renderPositionedChild(
         node: PixelPositionedNode,
         outerBounds: PixelRect,
@@ -274,12 +313,12 @@ internal class PixelLayoutRenderSupport(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
         val childConstraints = PixelConstraints(
-            maxWidth = positionedMaxWidth(node, outerConstraints),
-            maxHeight = positionedMaxHeight(node, outerConstraints),
+            maxWidth = positionedLayoutSupport.maxWidth(node, outerConstraints),
+            maxHeight = positionedLayoutSupport.maxHeight(node, outerConstraints),
         )
         val childSize = measureNode(node.child, childConstraints)
-        val width = positionedWidth(node, outerConstraints, childSize).coerceAtLeast(0)
-        val height = positionedHeight(node, outerConstraints, childSize).coerceAtLeast(0)
+        val width = positionedLayoutSupport.width(node, outerConstraints, childSize).coerceAtLeast(0)
+        val height = positionedLayoutSupport.height(node, outerConstraints, childSize).coerceAtLeast(0)
         val left = when {
             node.left != null -> outerBounds.left + node.left
             node.right != null -> outerBounds.right - node.right - width
@@ -305,272 +344,6 @@ internal class PixelLayoutRenderSupport(
             pagerTargets,
             listTargets,
             textInputTargets,
-        )
-    }
-
-    private fun measureRowChildren(
-        node: PixelRowNode,
-        constraints: PixelConstraints,
-    ): List<PixelSize> {
-        val sizes = MutableList(node.children.size) { PixelSize(width = 0, height = 0) }
-        val spacingWidth = max(0, node.children.size - 1) * node.spacing
-        var occupiedWidth = 0
-        var totalWeight = 0f
-
-        node.children.forEachIndexed { index, child ->
-            val weight = childWeight(child)
-            if (weight > 0f) {
-                totalWeight += weight
-            } else {
-                val childSize = measureNode(child, constraints)
-                sizes[index] = childSize
-                occupiedWidth += childSize.width
-            }
-        }
-
-        val remainingWidth = (constraints.maxWidth - spacingWidth - occupiedWidth).coerceAtLeast(0)
-        if (totalWeight <= 0f) return sizes
-
-        var assignedWidth = 0
-        var weightedSeen = 0
-        val weightedCount = node.children.count { childWeight(it) > 0f }
-        node.children.forEachIndexed { index, child ->
-            val weight = childWeight(child)
-            if (weight <= 0f) return@forEachIndexed
-            val fit = childFlexFit(child)
-            weightedSeen += 1
-            val allocatedWidth = if (weightedSeen == weightedCount) {
-                remainingWidth - assignedWidth
-            } else {
-                ((remainingWidth * (weight / totalWeight)).toInt()).coerceAtLeast(0)
-            }
-            assignedWidth += allocatedWidth
-            val measured = measureNode(
-                child,
-                PixelConstraints(
-                    maxWidth = allocatedWidth,
-                    maxHeight = constraints.maxHeight,
-                ),
-            )
-            sizes[index] = PixelSize(
-                width = if (fit == PixelFlexFit.TIGHT) allocatedWidth else measured.width.coerceAtMost(allocatedWidth),
-                height = measured.height,
-            )
-        }
-        return sizes
-    }
-
-    private fun measureColumnChildren(
-        node: PixelColumnNode,
-        constraints: PixelConstraints,
-    ): List<PixelSize> {
-        val sizes = MutableList(node.children.size) { PixelSize(width = 0, height = 0) }
-        val spacingHeight = max(0, node.children.size - 1) * node.spacing
-        var occupiedHeight = 0
-        var totalWeight = 0f
-
-        node.children.forEachIndexed { index, child ->
-            val weight = childWeight(child)
-            if (weight > 0f) {
-                totalWeight += weight
-            } else {
-                val childSize = measureNode(child, constraints)
-                sizes[index] = childSize
-                occupiedHeight += childSize.height
-            }
-        }
-
-        val remainingHeight = (constraints.maxHeight - spacingHeight - occupiedHeight).coerceAtLeast(0)
-        if (totalWeight <= 0f) return sizes
-
-        var assignedHeight = 0
-        var weightedSeen = 0
-        val weightedCount = node.children.count { childWeight(it) > 0f }
-        node.children.forEachIndexed { index, child ->
-            val weight = childWeight(child)
-            if (weight <= 0f) return@forEachIndexed
-            val fit = childFlexFit(child)
-            weightedSeen += 1
-            val allocatedHeight = if (weightedSeen == weightedCount) {
-                remainingHeight - assignedHeight
-            } else {
-                ((remainingHeight * (weight / totalWeight)).toInt()).coerceAtLeast(0)
-            }
-            assignedHeight += allocatedHeight
-            val measured = measureNode(
-                child,
-                PixelConstraints(
-                    maxWidth = constraints.maxWidth,
-                    maxHeight = allocatedHeight,
-                ),
-            )
-            sizes[index] = PixelSize(
-                width = measured.width,
-                height = if (fit == PixelFlexFit.TIGHT) allocatedHeight else measured.height.coerceAtMost(allocatedHeight),
-            )
-        }
-        return sizes
-    }
-
-    private fun childWeight(node: LegacyRenderNode): Float {
-        return node.modifier.elements
-            .filterIsInstance<PixelWeightElement>()
-            .lastOrNull()
-            ?.weight
-            ?.coerceAtLeast(0f)
-            ?: 0f
-    }
-
-    private fun childFlexFit(node: LegacyRenderNode): PixelFlexFit {
-        return node.modifier.elements
-            .filterIsInstance<PixelWeightElement>()
-            .lastOrNull()
-            ?.fit
-            ?: PixelFlexFit.TIGHT
-    }
-
-    private fun crossAxisStart(
-        containerStart: Int,
-        containerExtent: Int,
-        childExtent: Int,
-        alignment: PixelCrossAxisAlignment,
-    ): Int {
-        val remaining = (containerExtent - childExtent).coerceAtLeast(0)
-        return when (alignment) {
-            PixelCrossAxisAlignment.START -> containerStart
-            PixelCrossAxisAlignment.CENTER -> containerStart + (remaining / 2)
-            PixelCrossAxisAlignment.END -> containerStart + remaining
-            PixelCrossAxisAlignment.STRETCH -> containerStart
-        }
-    }
-
-    private data class MainAxisArrangement(
-        val start: Int,
-        val spacingAfterChild: Int,
-    )
-
-    private fun mainAxisArrangement(
-        containerStart: Int,
-        containerExtent: Int,
-        contentExtent: Int,
-        spacing: Int,
-        childCount: Int,
-        alignment: PixelMainAxisAlignment,
-    ): MainAxisArrangement {
-        val remaining = (containerExtent - contentExtent).coerceAtLeast(0)
-        return when (alignment) {
-            PixelMainAxisAlignment.START -> MainAxisArrangement(containerStart, spacing)
-            PixelMainAxisAlignment.CENTER -> MainAxisArrangement(containerStart + (remaining / 2), spacing)
-            PixelMainAxisAlignment.END -> MainAxisArrangement(containerStart + remaining, spacing)
-            PixelMainAxisAlignment.SPACE_BETWEEN -> {
-                if (childCount <= 1) {
-                    MainAxisArrangement(containerStart, spacing)
-                } else {
-                    MainAxisArrangement(containerStart, spacing + (remaining / (childCount - 1)))
-                }
-            }
-            PixelMainAxisAlignment.SPACE_AROUND -> {
-                if (childCount <= 0) {
-                    MainAxisArrangement(containerStart, spacing)
-                } else {
-                    val unit = remaining / childCount
-                    MainAxisArrangement(containerStart + (unit / 2), spacing + unit)
-                }
-            }
-            PixelMainAxisAlignment.SPACE_EVENLY -> {
-                val slotCount = childCount + 1
-                val unit = if (slotCount <= 0) 0 else remaining / slotCount
-                MainAxisArrangement(containerStart + unit, spacing + unit)
-            }
-        }
-    }
-
-    private fun positionedMaxWidth(
-        node: PixelPositionedNode,
-        constraints: PixelConstraints,
-    ): Int {
-        return when {
-            node.width != null -> node.width
-            node.left != null && node.right != null -> (constraints.maxWidth - node.left - node.right).coerceAtLeast(0)
-            else -> constraints.maxWidth
-        }
-    }
-
-    private fun positionedMaxHeight(
-        node: PixelPositionedNode,
-        constraints: PixelConstraints,
-    ): Int {
-        return when {
-            node.height != null -> node.height
-            node.top != null && node.bottom != null -> (constraints.maxHeight - node.top - node.bottom).coerceAtLeast(0)
-            else -> constraints.maxHeight
-        }
-    }
-
-    private fun positionedWidth(
-        node: PixelPositionedNode,
-        constraints: PixelConstraints,
-        childSize: PixelSize,
-    ): Int {
-        return when {
-            node.width != null -> node.width
-            node.left != null && node.right != null -> (constraints.maxWidth - node.left - node.right).coerceAtLeast(0)
-            else -> childSize.width
-        }
-    }
-
-    private fun positionedHeight(
-        node: PixelPositionedNode,
-        constraints: PixelConstraints,
-        childSize: PixelSize,
-    ): Int {
-        return when {
-            node.height != null -> node.height
-            node.top != null && node.bottom != null -> (constraints.maxHeight - node.top - node.bottom).coerceAtLeast(0)
-            else -> childSize.height
-        }
-    }
-
-    private fun alignedBounds(
-        outerBounds: PixelRect,
-        childSize: PixelSize,
-        alignment: PixelAlignment,
-    ): PixelRect {
-        val clampedWidth = childSize.width.coerceAtMost(outerBounds.width)
-        val clampedHeight = childSize.height.coerceAtMost(outerBounds.height)
-        val centeredLeft = outerBounds.left + ((outerBounds.width - childSize.width).coerceAtLeast(0) / 2)
-        val endLeft = outerBounds.left + (outerBounds.width - childSize.width).coerceAtLeast(0)
-        val centeredTop = outerBounds.top + ((outerBounds.height - childSize.height).coerceAtLeast(0) / 2)
-        val endTop = outerBounds.top + (outerBounds.height - childSize.height).coerceAtLeast(0)
-
-        val left = when (alignment) {
-            PixelAlignment.TOP_START,
-            PixelAlignment.CENTER_START,
-            PixelAlignment.BOTTOM_START -> outerBounds.left
-            PixelAlignment.TOP_CENTER,
-            PixelAlignment.CENTER,
-            PixelAlignment.BOTTOM_CENTER -> centeredLeft
-            PixelAlignment.TOP_END,
-            PixelAlignment.CENTER_END,
-            PixelAlignment.BOTTOM_END -> endLeft
-        }
-        val top = when (alignment) {
-            PixelAlignment.TOP_START,
-            PixelAlignment.TOP_CENTER,
-            PixelAlignment.TOP_END -> outerBounds.top
-            PixelAlignment.CENTER_START,
-            PixelAlignment.CENTER,
-            PixelAlignment.CENTER_END -> centeredTop
-            PixelAlignment.BOTTOM_START,
-            PixelAlignment.BOTTOM_CENTER,
-            PixelAlignment.BOTTOM_END -> endTop
-        }
-
-        return PixelRect(
-            left = left,
-            top = top,
-            width = clampedWidth,
-            height = clampedHeight,
         )
     }
 }
