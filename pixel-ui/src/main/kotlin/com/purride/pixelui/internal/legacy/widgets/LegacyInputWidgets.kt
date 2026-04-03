@@ -1,59 +1,20 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.Directionality
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
-import com.purride.pixelui.PixelTextOverflow
-import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.StatelessWidget
-import com.purride.pixelui.TextAlign
+import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.legacy.PixelButton
 import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelText
 import com.purride.pixelui.internal.legacy.PixelTextField
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
-import com.purride.pixelui.internal.toPixelTextAlign
 
-internal data class TextWidget(
-    val data: String,
-    val style: PixelTextStyle,
-    val theme: com.purride.pixelui.PixelThemeData?,
-    val softWrap: Boolean,
-    val maxLines: Int,
-    val overflow: PixelTextOverflow,
-    val textAlign: TextAlign,
-    override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    override fun build(context: BuildContext): com.purride.pixelui.Widget {
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when (style) {
-            PixelTextStyle.Default -> resolvedTheme.textStyle
-            PixelTextStyle.Accent -> resolvedTheme.accentTextStyle
-            else -> style
-        }
-        return LegacyLeafWidget(
-            key = key,
-        ) {
-            PixelText(
-                text = data,
-                modifier = PixelModifier.Empty,
-                style = resolvedStyle,
-                softWrap = softWrap,
-                maxLines = maxLines,
-                overflow = overflow,
-                textAlign = textAlign.toPixelTextAlign(),
-                textDirection = Directionality.of(context),
-                key = key,
-            )
-        }
-    }
-}
-
+/**
+ * Flutter 风格 `TextField` 的 legacy bridge widget。
+ */
 internal data class TextFieldWidget(
     val state: PixelTextFieldState,
     val controller: PixelTextFieldController,
@@ -70,7 +31,10 @@ internal data class TextFieldWidget(
 ) : StatelessWidget(
     key = key,
 ) {
-    override fun build(context: BuildContext): com.purride.pixelui.Widget {
+    /**
+     * 在 build 时解析输入框样式并注册 controller 依赖。
+     */
+    override fun build(context: BuildContext): Widget {
         context.watch(controller)
         val resolvedTheme = context.resolveTheme(theme)
         val resolvedStyle = when {
@@ -100,6 +64,9 @@ internal data class TextFieldWidget(
     }
 }
 
+/**
+ * Flutter 风格 `OutlinedButton` 的 legacy bridge widget。
+ */
 internal data class OutlinedButtonWidget(
     val text: String,
     val onPressed: (() -> Unit)?,
@@ -110,7 +77,10 @@ internal data class OutlinedButtonWidget(
 ) : StatelessWidget(
     key = key,
 ) {
-    override fun build(context: BuildContext): com.purride.pixelui.Widget {
+    /**
+     * 在 build 时解析按钮样式并生成 legacy 按钮节点。
+     */
+    override fun build(context: BuildContext): Widget {
         val resolvedTheme = context.resolveTheme(theme)
         val resolvedStyle = when (style) {
             PixelButtonStyle.Default -> resolvedTheme.buttonStyle
