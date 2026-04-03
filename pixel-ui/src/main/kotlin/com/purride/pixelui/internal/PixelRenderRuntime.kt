@@ -1,15 +1,8 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelTextRasterizer
-
 internal class PixelRenderRuntime(
-    private val textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    private val renderSupport: LegacyRenderSupport,
 ) : LegacyTreeRenderer {
-    private val renderSupport = LegacyRenderSupportFactory.createDefault(
-        textRasterizer = textRasterizer,
-    )
-
     override fun render(
         root: LegacyRenderNode,
         logicalWidth: Int,
