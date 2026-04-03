@@ -16,6 +16,9 @@ internal class RetainedWidgetRenderRuntime(
     private val buildRuntime: ElementTreeBuildRuntime,
     private val elementTreeRenderer: ElementTreeRenderer,
 ) : WidgetRenderRuntime {
+    /**
+     * 先解析 Widget 树，再渲染解析后的 element tree。
+     */
     override fun render(
         root: Widget,
         logicalWidth: Int,
@@ -23,12 +26,17 @@ internal class RetainedWidgetRenderRuntime(
     ): PixelRenderResult {
         val elementRoot = buildRuntime.resolveElementTree(root)
         return elementTreeRenderer.render(
-            root = elementRoot,
-            logicalWidth = logicalWidth,
-            logicalHeight = logicalHeight,
+            request = ElementTreeRenderRequest(
+                root = elementRoot,
+                logicalWidth = logicalWidth,
+                logicalHeight = logicalHeight,
+            ),
         )
     }
 
+    /**
+     * 释放 retained build runtime 持有的 element tree 资源。
+     */
     override fun dispose() {
         buildRuntime.dispose()
     }
