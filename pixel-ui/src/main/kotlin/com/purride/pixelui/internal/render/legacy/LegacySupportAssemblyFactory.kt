@@ -24,36 +24,36 @@ internal object LegacySupportAssemblyFactory {
             MutableList<PixelTextInputTarget>,
         ) -> Unit,
     ): LegacySupportAssembly {
-        val callbacks = LegacyRenderCallbacks(
+        val callbacks = createCallbacks(
             measureNode = measureNode,
             renderNode = renderNode,
         )
-        val textRenderSupport = PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)
-        val textFieldRenderSupport = PixelTextFieldRenderSupport(
+        val textRenderSupport = createTextRenderSupport(textRasterizer)
+        val textFieldRenderSupport = createTextFieldRenderSupport(
             defaultTextRasterizer = textRasterizer,
             textRenderSupport = textRenderSupport,
         )
-        val layoutRenderSupport = PixelLayoutRenderSupport(
+        val layoutRenderSupport = createLayoutRenderSupport(
             callbacks = callbacks,
         )
-        val viewportRenderSupport = PixelViewportRenderSupport(
+        val viewportRenderSupport = createViewportRenderSupport(
             callbacks = callbacks,
             scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
         )
-        val measureSupport = PixelMeasureSupport(
+        val measureSupport = createMeasureSupport(
             measureNode = measureNode,
             textRenderSupport = textRenderSupport,
             textFieldRenderSupport = textFieldRenderSupport,
             layoutRenderSupport = layoutRenderSupport,
         )
-        val nodeRenderSupport = PixelNodeRenderSupport(
+        val nodeRenderSupport = createNodeRenderSupport(
             textRenderSupport = textRenderSupport,
             textFieldRenderSupport = textFieldRenderSupport,
             layoutRenderSupport = layoutRenderSupport,
             viewportRenderSupport = viewportRenderSupport,
             renderNode = renderNode,
         )
-        val rootRenderSupport = PixelRootRenderSupport(
+        val rootRenderSupport = createRootRenderSupport(
             callbacks = callbacks,
         )
         return LegacySupportAssembly(
@@ -64,6 +64,130 @@ internal object LegacySupportAssemblyFactory {
             measureSupport = measureSupport,
             nodeRenderSupport = nodeRenderSupport,
             rootRenderSupport = rootRenderSupport,
+        )
+    }
+
+    /**
+     * 创建 legacy render callbacks。
+     */
+    private fun createCallbacks(
+        measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
+        renderNode: (
+            LegacyRenderNode,
+            PixelRect,
+            PixelConstraints,
+            com.purride.pixelcore.PixelBuffer,
+            MutableList<PixelClickTarget>,
+            MutableList<PixelPagerTarget>,
+            MutableList<PixelListTarget>,
+            MutableList<PixelTextInputTarget>,
+        ) -> Unit,
+    ): LegacyRenderCallbacks {
+        return LegacyRenderCallbacks(
+            measureNode = measureNode,
+            renderNode = renderNode,
+        )
+    }
+
+    /**
+     * 创建默认文本渲染 support。
+     */
+    private fun createTextRenderSupport(
+        textRasterizer: PixelTextRasterizer,
+    ): PixelTextRenderSupport {
+        return PixelTextRenderSupport(defaultTextRasterizer = textRasterizer)
+    }
+
+    /**
+     * 创建默认文本输入渲染 support。
+     */
+    private fun createTextFieldRenderSupport(
+        defaultTextRasterizer: PixelTextRasterizer,
+        textRenderSupport: PixelTextRenderSupport,
+    ): PixelTextFieldRenderSupport {
+        return PixelTextFieldRenderSupport(
+            defaultTextRasterizer = defaultTextRasterizer,
+            textRenderSupport = textRenderSupport,
+        )
+    }
+
+    /**
+     * 创建默认布局渲染 support。
+     */
+    private fun createLayoutRenderSupport(
+        callbacks: LegacyRenderCallbacks,
+    ): PixelLayoutRenderSupport {
+        return PixelLayoutRenderSupport(
+            callbacks = callbacks,
+        )
+    }
+
+    /**
+     * 创建默认 viewport 渲染 support。
+     */
+    private fun createViewportRenderSupport(
+        callbacks: LegacyRenderCallbacks,
+        scrollAxisUnboundedMax: Int,
+    ): PixelViewportRenderSupport {
+        return PixelViewportRenderSupport(
+            callbacks = callbacks,
+            scrollAxisUnboundedMax = scrollAxisUnboundedMax,
+        )
+    }
+
+    /**
+     * 创建默认测量 support。
+     */
+    private fun createMeasureSupport(
+        measureNode: (LegacyRenderNode, PixelConstraints) -> PixelSize,
+        textRenderSupport: PixelTextRenderSupport,
+        textFieldRenderSupport: PixelTextFieldRenderSupport,
+        layoutRenderSupport: PixelLayoutRenderSupport,
+    ): PixelMeasureSupport {
+        return PixelMeasureSupport(
+            measureNode = measureNode,
+            textRenderSupport = textRenderSupport,
+            textFieldRenderSupport = textFieldRenderSupport,
+            layoutRenderSupport = layoutRenderSupport,
+        )
+    }
+
+    /**
+     * 创建默认节点渲染 support。
+     */
+    private fun createNodeRenderSupport(
+        textRenderSupport: PixelTextRenderSupport,
+        textFieldRenderSupport: PixelTextFieldRenderSupport,
+        layoutRenderSupport: PixelLayoutRenderSupport,
+        viewportRenderSupport: PixelViewportRenderSupport,
+        renderNode: (
+            LegacyRenderNode,
+            PixelRect,
+            PixelConstraints,
+            com.purride.pixelcore.PixelBuffer,
+            MutableList<PixelClickTarget>,
+            MutableList<PixelPagerTarget>,
+            MutableList<PixelListTarget>,
+            MutableList<PixelTextInputTarget>,
+        ) -> Unit,
+    ): PixelNodeRenderSupport {
+        return PixelNodeRenderSupport(
+            textRenderSupport = textRenderSupport,
+            textFieldRenderSupport = textFieldRenderSupport,
+            layoutRenderSupport = layoutRenderSupport,
+            viewportRenderSupport = viewportRenderSupport,
+            renderNode = renderNode,
+        )
+    }
+
+    /**
+     * 创建默认根渲染 support。
+     */
+    private fun createRootRenderSupport(
+        callbacks: LegacyRenderCallbacks,
+    ): PixelRootRenderSupport {
+        return PixelRootRenderSupport(
+            callbacks = callbacks,
         )
     }
 
