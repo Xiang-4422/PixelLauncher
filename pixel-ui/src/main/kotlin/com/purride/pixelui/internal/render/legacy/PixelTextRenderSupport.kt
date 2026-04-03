@@ -2,7 +2,6 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.internal.legacy.PixelTextFieldNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
 
@@ -25,6 +24,8 @@ internal class PixelTextRenderSupport(
 ) {
     private val textLayoutSupport = PixelTextLayoutSupport()
     private val textAlignmentSupport = PixelTextAlignmentSupport()
+    private val textLayoutAssembler = PixelTextLayoutAssembler()
+    private val textRasterizerResolver = PixelTextRasterizerResolver(defaultTextRasterizer)
 
     /**
      * 按当前文本布局结果把文本绘制到 buffer。
@@ -67,7 +68,7 @@ internal class PixelTextRenderSupport(
         node: PixelTextNode,
         maxWidth: Int,
     ): PixelTextLayout {
-        val rasterizer = resolveTextRasterizer(node)
+        val rasterizer = textRasterizerResolver.resolveText(node)
         val constrainedWidth = maxWidth.coerceAtLeast(0)
         val effectiveMaxLines = node.maxLines.coerceAtLeast(1)
         val lineHeight = rasterizer.measureHeight(" ")
@@ -110,28 +111,9 @@ internal class PixelTextRenderSupport(
             )
         }
 
-        val measuredLines = visibleLines.map { line ->
-            PixelTextLayoutLine(
-                text = line,
-                width = rasterizer.measureText(line),
-            )
-        }
-        val measuredWidth = measuredLines.maxOfOrNull { it.width } ?: 0
-        val width = if (constrainedWidth > 0) {
-            measuredWidth.coerceAtMost(constrainedWidth)
-        } else {
-            measuredWidth
-        }
-        val height = if (measuredLines.isEmpty()) {
-            0
-        } else {
-            (measuredLines.size * lineHeight) + ((measuredLines.size - 1) * lineSpacing)
-        }
-
-        return PixelTextLayout(
-            lines = measuredLines,
-            width = width,
-            height = height,
+        return textLayoutAssembler.assemble(
+            lines = visibleLines,
+            constrainedWidth = constrainedWidth,
             lineHeight = lineHeight,
             lineSpacing = lineSpacing,
             rasterizer = rasterizer,
@@ -152,7 +134,7 @@ internal class PixelTextRenderSupport(
      * 解析文本输入节点要使用的栅格器。
      */
     fun resolveTextFieldRasterizer(node: PixelTextFieldNode): PixelTextRasterizer {
-        return node.style.textStyle.textRasterizer ?: defaultTextRasterizer
+        return textRasterizerResolver.resolveTextField(node)
     }
 
     /**
@@ -168,12 +150,5 @@ internal class PixelTextRenderSupport(
             maxWidth = maxWidth,
             rasterizer = rasterizer,
         )
-    }
-
-    /**
-     * 解析普通文本节点要使用的栅格器。
-     */
-    private fun resolveTextRasterizer(node: PixelTextNode): PixelTextRasterizer {
-        return node.style.textRasterizer ?: defaultTextRasterizer
     }
 }
