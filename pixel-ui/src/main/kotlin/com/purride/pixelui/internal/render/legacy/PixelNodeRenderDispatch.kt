@@ -1,9 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBuffer
-import com.purride.pixelui.internal.legacy.CustomDraw
 import com.purride.pixelui.internal.legacy.PixelBoxNode
-import com.purride.pixelui.internal.legacy.PixelButtonNode
 import com.purride.pixelui.internal.legacy.PixelColumnNode
 import com.purride.pixelui.internal.legacy.PixelListNode
 import com.purride.pixelui.internal.legacy.PixelPagerNode
@@ -13,7 +11,6 @@ import com.purride.pixelui.internal.legacy.PixelSingleChildScrollViewNode
 import com.purride.pixelui.internal.legacy.PixelSurfaceNode
 import com.purride.pixelui.internal.legacy.PixelTextFieldNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
-import com.purride.pixelui.internal.legacy.toSurfaceNode
 
 /**
  * 负责把 legacy 节点类型分发到对应的 render support。
@@ -34,6 +31,8 @@ internal class PixelNodeRenderDispatch(
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) -> Unit,
 ) {
+    private val specialRenderDispatch = PixelNodeSpecialRenderDispatch(renderNode = renderNode)
+
     /**
      * 根据节点类型执行实际渲染。
      */
@@ -47,6 +46,20 @@ internal class PixelNodeRenderDispatch(
         listTargets: MutableList<PixelListTarget>,
         textInputTargets: MutableList<PixelTextInputTarget>,
     ) {
+        if (specialRenderDispatch.renderIfHandled(
+                node = node,
+                bounds = paddedBounds,
+                constraints = innerConstraints,
+                buffer = buffer,
+                clickTargets = clickTargets,
+                pagerTargets = pagerTargets,
+                listTargets = listTargets,
+                textInputTargets = textInputTargets,
+            )
+        ) {
+            return
+        }
+
         when (node) {
             is PixelTextNode -> textRenderSupport.renderText(
                 node = node,
@@ -63,17 +76,6 @@ internal class PixelNodeRenderDispatch(
                 pagerTargets = pagerTargets,
                 listTargets = listTargets,
                 textInputTargets = textInputTargets,
-            )
-
-            is PixelButtonNode -> renderNode(
-                node.toSurfaceNode(),
-                paddedBounds,
-                innerConstraints,
-                buffer,
-                clickTargets,
-                pagerTargets,
-                listTargets,
-                textInputTargets,
             )
 
             is PixelBoxNode -> layoutRenderSupport.renderBox(
@@ -147,8 +149,6 @@ internal class PixelNodeRenderDispatch(
                 buffer = buffer,
                 textInputTargets = textInputTargets,
             )
-
-            is CustomDraw -> Unit
         }
     }
 }
