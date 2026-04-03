@@ -278,7 +278,7 @@ object AxisBufferComposer
 1. `Widget`
 2. `RetainedBuildRuntime / BuildOwner / Element tree`
 3. `RetainedWidgetRenderRuntime`
-4. `bridge resolver + bridge widget adapter`
+4. `bridge：DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeElementTreeRenderer / BridgeRenderRuntime`
 5. `PixelRenderRuntime`
 
 这意味着：
@@ -286,6 +286,7 @@ object AxisBufferComposer
 - retained build tree 已经成立
 - 状态、环境和依赖登记已经在 retained 主链上
 - `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回 bridge tree
+- `BuildOwner` 已经继续拆出 `ElementInflater / ElementChildUpdater / DirtyElementScheduler / ListenableDependencyRegistry`
 - 最终绘制仍然落到 legacy renderer
 - 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
 
@@ -336,8 +337,8 @@ object AxisBufferComposer
 
 1. retained build runtime：`BuildOwner / Element / Inherited / Stateful`
 2. `RetainedWidgetRenderRuntime`
-3. bridge：`BridgeRenderNode / BridgeTreeResolver / BridgeWidgetAdapterFactory / BridgeAdapterElement / BridgeWidgets / BridgeNodeWidgets`
-4. legacy render façade：`PixelRenderRuntime`
+3. bridge：`BridgeRenderNode / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeAdapterElement / BridgeWidgets / BridgeNodeWidgets / BridgeElementTreeRenderer / BridgeRenderRuntime`
+4. legacy render façade：`PixelRenderRuntime + LegacyRenderSupportBundle`
 5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session，以及 `LegacyLayoutWidgets / LegacyScrollWidgets / LegacyTextInputWidgets`
 6. demo 场景持续切到 retained 主链并维持验收稳定
 
@@ -445,7 +446,7 @@ object AxisBufferComposer
 | 已完成 | `pixel-ui` 列表程序化定位首轮落地 | `ScrollController` 已支持基于运行时测量结果将指定项滚入视口，demo 已补跳转验证 |
 | 已完成 | `pixel-ui` 单子节点滚动容器 | 已具备 `PixelSingleChildScrollView`，可承载单一长子树并复用现有纵向滚动链路 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、单子节点滚动、横纵分页、纵向列表、表单与列表组合、分页与列表组合、点击反馈、混合文本风格验证与权重布局展示 |
-| 进行中 | retained/runtime 与 legacy bridge 收口 | 正在继续削弱 retained 主链对 legacy 细节的感知，并把 legacy renderer 收成 façade + support graph |
+| 进行中 | retained/runtime 与 legacy bridge 收口 | 正在继续削弱 retained 主链对 bridge/legacy 默认装配细节的感知，并把 `BuildOwner` 进一步收成 owner/scheduler |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
