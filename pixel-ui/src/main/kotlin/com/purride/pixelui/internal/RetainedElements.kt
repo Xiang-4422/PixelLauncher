@@ -147,29 +147,22 @@ internal class StatelessElement(
 internal class StatefulElement(
     widget: StatefulWidget,
 ) : ComponentElement(widget) {
-    private val state: State<StatefulWidget> = createAttachedState(widget)
-    private var dependenciesChanged = true
+    private val stateBinding = StateBinding(
+        widget = widget,
+        context = this,
+    )
 
     override fun update(newWidget: Widget) {
-        val oldWidget = widget as StatefulWidget
         super.update(newWidget)
-        @Suppress("UNCHECKED_CAST")
-        state.widget = newWidget as StatefulWidget
-        state.didUpdateWidget(oldWidget)
+        stateBinding.update(newWidget)
     }
 
     override fun buildWidget(): Widget {
-        state.context = this
-        if (dependenciesChanged) {
-            dependenciesChanged = false
-            state.didChangeDependencies()
-        }
-        return state.build(this)
+        return stateBinding.build(this)
     }
 
     override fun onUnmount() {
-        state.dispose()
-        state.detach()
+        stateBinding.dispose()
     }
 
     override fun markCurrentElementNeedsBuild() {
@@ -177,18 +170,8 @@ internal class StatefulElement(
     }
 
     fun markDependenciesChanged() {
-        dependenciesChanged = true
+        stateBinding.markDependenciesChanged()
         markNeedsBuild()
-    }
-
-    private fun createAttachedState(widget: StatefulWidget): State<StatefulWidget> {
-        @Suppress("UNCHECKED_CAST")
-        val createdState = widget.createState() as State<StatefulWidget>
-        createdState.widget = widget
-        createdState.context = this
-        createdState.attach()
-        createdState.initState()
-        return createdState
     }
 }
 
