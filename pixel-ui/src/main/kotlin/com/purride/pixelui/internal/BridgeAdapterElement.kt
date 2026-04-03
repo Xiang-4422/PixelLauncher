@@ -19,7 +19,7 @@ internal class BridgeAdapterElement(
         )
     }
 
-    override fun resolveBridgeNode(childNodes: List<BridgeRenderNode>): BridgeRenderNode {
+    override fun resolveBridgeNode(childNodes: BridgeNodeChildren): BridgeRenderNode {
         owner.clearListenableDependencies(this)
         return (widget as BridgeWidget).createBridgeNode(
             context = this,

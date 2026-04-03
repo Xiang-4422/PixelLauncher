@@ -34,7 +34,7 @@ private data class StaticBridgeNodeWidget(
 
     override fun createBridgeNode(
         context: BuildContext,
-        childNodes: List<BridgeRenderNode>,
+        childNodes: BridgeNodeChildren,
     ): BridgeRenderNode {
         return node
     }
