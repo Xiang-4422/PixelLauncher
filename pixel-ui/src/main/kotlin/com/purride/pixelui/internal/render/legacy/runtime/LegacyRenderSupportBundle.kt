@@ -1,7 +1,6 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 
 /**
@@ -13,11 +12,14 @@ import com.purride.pixelcore.PixelTextRasterizer
 internal class LegacyRenderSupportBundle(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) : LegacyRenderSupport {
+    private val nodeRuntimeSupport = LegacyNodeRuntimeSupport()
     private val assembly = LegacySupportAssemblyFactory.createDefault(
         textRasterizer = textRasterizer,
-        measureNode = ::measure,
-        renderNode = ::renderNode,
-    )
+        measureNode = nodeRuntimeSupport::measure,
+        renderNode = nodeRuntimeSupport::renderNode,
+    ).also { boundAssembly ->
+        nodeRuntimeSupport.bind(boundAssembly)
+    }
 
     override fun renderRoot(
         root: LegacyRenderNode,
@@ -28,36 +30,6 @@ internal class LegacyRenderSupportBundle(
             root = root,
             logicalWidth = logicalWidth,
             logicalHeight = logicalHeight,
-        )
-    }
-
-    private fun measure(node: LegacyRenderNode, constraints: PixelConstraints): PixelSize {
-        return assembly.measureSupport.measure(
-            node = node,
-            constraints = constraints,
-            modifierInfo = PixelModifierSupport.resolve(node.modifier),
-        )
-    }
-
-    private fun renderNode(
-        node: LegacyRenderNode,
-        bounds: PixelRect,
-        constraints: PixelConstraints,
-        buffer: PixelBuffer,
-        clickTargets: MutableList<PixelClickTarget>,
-        pagerTargets: MutableList<PixelPagerTarget>,
-        listTargets: MutableList<PixelListTarget>,
-        textInputTargets: MutableList<PixelTextInputTarget>,
-    ) {
-        assembly.nodeRenderSupport.render(
-            node = node,
-            bounds = bounds,
-            constraints = constraints,
-            buffer = buffer,
-            clickTargets = clickTargets,
-            pagerTargets = pagerTargets,
-            listTargets = listTargets,
-            textInputTargets = textInputTargets,
         )
     }
 }
