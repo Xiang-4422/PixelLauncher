@@ -14,7 +14,9 @@ internal object BridgeElementTreeRendererFactory {
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): ElementTreeRenderer {
         return BridgeElementTreeRenderer(
-            renderRuntime = BridgeRenderRuntime(textRasterizer = textRasterizer),
+            bridgeTreeRenderer = BridgeTreeRendererFactory.createDefault(
+                textRasterizer = textRasterizer,
+            ),
         )
     }
 }
