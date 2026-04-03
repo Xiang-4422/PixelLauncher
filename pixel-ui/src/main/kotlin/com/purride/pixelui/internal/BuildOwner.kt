@@ -5,7 +5,7 @@ import com.purride.pixelui.Widget
 
 internal class BuildOwner(
     private val onVisualUpdate: () -> Unit,
-    private val elementInflater: ElementInflater,
+    private val elementChildUpdater: ElementChildUpdater,
 ) {
     var rootElement: Element? = null
         private set
@@ -55,18 +55,12 @@ internal class BuildOwner(
         current: Element?,
         newWidget: Widget?,
     ): Element? {
-        if (newWidget == null) {
-            current?.unmount()
-            return null
-        }
-        if (current != null && canUpdate(current.widget, newWidget)) {
-            current.update(newWidget)
-            return current
-        }
-        current?.unmount()
-        return elementInflater.inflate(newWidget).also { element ->
-            element.mount(parent = parent, owner = this)
-        }
+        return elementChildUpdater.updateChild(
+            parent = parent,
+            current = current,
+            newWidget = newWidget,
+            owner = this,
+        )
     }
 
     fun dispose() {
@@ -74,11 +68,5 @@ internal class BuildOwner(
         rootElement = null
         listenableRegistry.dispose()
         dirtyElementScheduler.clear()
-    }
-    private fun canUpdate(
-        oldWidget: Widget,
-        newWidget: Widget,
-    ): Boolean {
-        return oldWidget::class == newWidget::class && oldWidget.key == newWidget.key
     }
 }
