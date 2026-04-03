@@ -195,7 +195,7 @@ internal class StatefulElement(
 internal open class InheritedElement(
     widget: InheritedWidget,
 ) : ComponentElement(widget) {
-    private val dependents = linkedSetOf<Element>()
+    private val dependencyRegistry = InheritedDependencyRegistry()
 
     override fun update(newWidget: Widget) {
         val oldWidget = widget as InheritedWidget
@@ -210,21 +210,15 @@ internal open class InheritedElement(
     }
 
     fun addDependent(element: Element) {
-        dependents += element
+        dependencyRegistry.add(element)
     }
 
     fun removeDependent(element: Element) {
-        dependents -= element
+        dependencyRegistry.remove(element)
     }
 
     protected fun notifyDependents() {
-        dependents.toList().forEach { dependent ->
-            if (dependent is StatefulElement) {
-                dependent.markDependenciesChanged()
-            } else {
-                dependent.markNeedsBuild()
-            }
-        }
+        dependencyRegistry.notifyDependents()
     }
 }
 
