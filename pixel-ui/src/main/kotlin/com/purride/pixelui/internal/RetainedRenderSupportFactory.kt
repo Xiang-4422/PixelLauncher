@@ -17,8 +17,10 @@ internal object RetainedRenderSupportFactory {
             widgetAdapter = BridgeWidgetAdapter,
             elementTreeRenderer = BridgeElementTreeRenderer(
                 bridgeTreeResolver = DefaultBridgeTreeResolver,
-                bridgeTreeRenderer = BridgeTreeRendererFactory.createDefault(
-                    textRasterizer = textRasterizer,
+                bridgeTreeRenderer = BridgeRenderRuntime(
+                    legacyTreeRenderer = LegacyTreeRendererFactory.createDefault(
+                        textRasterizer = textRasterizer,
+                    ),
                 ),
             ),
         )
