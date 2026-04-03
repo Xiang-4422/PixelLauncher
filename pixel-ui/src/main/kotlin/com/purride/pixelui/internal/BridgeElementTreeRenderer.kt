@@ -7,6 +7,7 @@ package com.purride.pixelui.internal
  * 输出最终像素结果。
  */
 internal class BridgeElementTreeRenderer(
+    private val bridgeTreeResolver: BridgeTreeResolving,
     private val bridgeTreeRenderer: BridgeTreeRenderer,
 ) : ElementTreeRenderer {
     override fun render(
@@ -14,7 +15,7 @@ internal class BridgeElementTreeRenderer(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
-        val bridgeRoot = BridgeTreeResolver.resolve(root)
+        val bridgeRoot = bridgeTreeResolver.resolve(root)
             ?: error("当前 Widget 树没有生成可渲染的 bridge node。")
         return bridgeTreeRenderer.render(
             root = bridgeRoot,
