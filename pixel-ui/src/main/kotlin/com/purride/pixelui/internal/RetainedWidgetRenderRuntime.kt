@@ -17,7 +17,7 @@ import com.purride.pixelui.Widget
 internal class RetainedWidgetRenderRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
-) {
+) : WidgetRenderRuntime {
     private val renderSupport: RetainedRenderSupport = RetainedRenderSupportFactory.createDefault(
         textRasterizer = textRasterizer,
     )
@@ -27,7 +27,7 @@ internal class RetainedWidgetRenderRuntime(
     )
     private val elementTreeRenderer = renderSupport.elementTreeRenderer
 
-    fun render(
+    override fun render(
         root: Widget,
         logicalWidth: Int,
         logicalHeight: Int,
@@ -40,7 +40,7 @@ internal class RetainedWidgetRenderRuntime(
         )
     }
 
-    fun dispose() {
+    override fun dispose() {
         buildRuntime.dispose()
     }
 }

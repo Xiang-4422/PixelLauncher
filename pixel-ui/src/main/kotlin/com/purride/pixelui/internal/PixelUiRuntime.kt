@@ -14,7 +14,7 @@ internal class PixelUiRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
 ) {
-    private val runtime = RetainedWidgetRenderRuntime(
+    private val runtime: WidgetRenderRuntime = WidgetRenderRuntimeFactory.createDefault(
         textRasterizer = textRasterizer,
         onVisualUpdate = onVisualUpdate,
     )
