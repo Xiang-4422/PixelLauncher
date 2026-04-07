@@ -15,7 +15,7 @@ internal class PixelUiRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
 ) {
-    private val assembly = WidgetRenderRuntimeFactory.createDefaultAssembly(
+    private val assembly = PixelUiRuntimeAssemblyFactory.createDefault(
         textRasterizer = textRasterizer,
         onVisualUpdate = onVisualUpdate,
     )
@@ -36,7 +36,7 @@ internal class PixelUiRuntime(
         logicalHeight: Int,
     ): PixelRenderResult {
         return render(
-            request = WidgetRenderRequest(
+            request = WidgetRenderRequestFactory.create(
                 root = root,
                 logicalWidth = logicalWidth,
                 logicalHeight = logicalHeight,

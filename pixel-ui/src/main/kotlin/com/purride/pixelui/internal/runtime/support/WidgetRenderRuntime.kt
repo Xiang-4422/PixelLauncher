@@ -22,7 +22,7 @@ internal interface WidgetRenderRuntime {
         logicalHeight: Int,
     ): PixelRenderResult {
         return render(
-            request = WidgetRenderRequest(
+            request = WidgetRenderRequestFactory.create(
                 root = root,
                 logicalWidth = logicalWidth,
                 logicalHeight = logicalHeight,
