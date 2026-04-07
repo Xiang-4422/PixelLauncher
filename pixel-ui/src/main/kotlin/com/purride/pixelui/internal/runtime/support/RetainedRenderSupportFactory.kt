@@ -27,12 +27,8 @@ internal object RetainedRenderSupportFactory {
     fun createDefaultAssembly(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): RetainedRenderSupportAssembly {
-        val bridgeAssembly = BridgeRenderSupportFactory.createDefaultAssembly(
+        return RetainedRenderSupportAssemblyFactory.createDefault(
             textRasterizer = textRasterizer,
-        )
-        return RetainedRenderSupportAssembly(
-            widgetAdapter = BridgeWidgetAdapter,
-            elementTreeRenderer = bridgeAssembly.elementTreeRenderer,
         )
     }
 }
