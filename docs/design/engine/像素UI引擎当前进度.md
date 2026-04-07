@@ -202,6 +202,7 @@
   - [LegacyViewportSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyViewportSupportAssembly.kt)
   - [LegacyNodeSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyNodeSupportFactory.kt)
   - [LegacyNodeSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyNodeSupportAssembly.kt)
+  - [LegacyStructureSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyStructureSupportAssembly.kt)
   - [LegacyTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyTreeRenderer.kt)
   - [LegacyTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyTreeRendererFactory.kt)
   - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupport.kt)

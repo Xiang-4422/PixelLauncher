@@ -43,12 +43,9 @@ internal object LegacyStructureSupportFactory {
             renderNode = renderNode,
         )
         return LegacyStructureSupportAssembly(
-            layoutRenderSupport = layoutSupportAssembly.layoutRenderSupport,
-            layoutMeasureSupport = layoutSupportAssembly.layoutMeasureSupport,
-            viewportRenderSupport = viewportSupportAssembly.viewportRenderSupport,
-            measureSupport = nodeSupportAssembly.measureSupport,
-            nodeRenderSupport = nodeSupportAssembly.nodeRenderSupport,
-            rootRenderSupport = nodeSupportAssembly.rootRenderSupport,
+            layoutSupportAssembly = layoutSupportAssembly,
+            viewportSupportAssembly = viewportSupportAssembly,
+            nodeSupportAssembly = nodeSupportAssembly,
         )
     }
 }

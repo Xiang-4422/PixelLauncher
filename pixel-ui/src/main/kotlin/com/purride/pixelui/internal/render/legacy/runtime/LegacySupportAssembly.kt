@@ -3,15 +3,52 @@ package com.purride.pixelui.internal
 /**
  * legacy support 内部 wiring 的装配结果。
  *
- * 这层把 text、text field、layout、viewport、measure、node render、root render
- * 这些协作对象对齐到一个 assembly，避免 bundle 初始化阶段继续分散构造细节。
+ * 这层把 text 和 structure 两段装配结果收拢到一起，
+ * 同时通过兼容 getter 继续向 bundle 暴露稳定的 support 入口。
  */
 internal data class LegacySupportAssembly(
-    val textRenderSupport: PixelTextRenderSupport,
-    val textFieldRenderSupport: PixelTextFieldRenderSupport,
-    val layoutRenderSupport: PixelLayoutRenderSupport,
-    val viewportRenderSupport: PixelViewportRenderSupport,
-    val measureSupport: PixelMeasureSupport,
-    val nodeRenderSupport: PixelNodeRenderSupport,
-    val rootRenderSupport: PixelRootRenderSupport,
-)
+    val textSupportAssembly: LegacyTextSupportAssembly,
+    val structureSupportAssembly: LegacyStructureSupportAssembly,
+) {
+    /**
+     * 对外暴露文本渲染 support，兼容当前调用侧。
+     */
+    val textRenderSupport: PixelTextRenderSupport
+        get() = textSupportAssembly.textRenderSupport
+
+    /**
+     * 对外暴露文本输入渲染 support，兼容当前调用侧。
+     */
+    val textFieldRenderSupport: PixelTextFieldRenderSupport
+        get() = textSupportAssembly.textFieldRenderSupport
+
+    /**
+     * 对外暴露布局渲染 support，兼容当前调用侧。
+     */
+    val layoutRenderSupport: PixelLayoutRenderSupport
+        get() = structureSupportAssembly.layoutRenderSupport
+
+    /**
+     * 对外暴露 viewport 渲染 support，兼容当前调用侧。
+     */
+    val viewportRenderSupport: PixelViewportRenderSupport
+        get() = structureSupportAssembly.viewportRenderSupport
+
+    /**
+     * 对外暴露节点测量 support，兼容当前调用侧。
+     */
+    val measureSupport: PixelMeasureSupport
+        get() = structureSupportAssembly.measureSupport
+
+    /**
+     * 对外暴露节点渲染 support，兼容当前调用侧。
+     */
+    val nodeRenderSupport: PixelNodeRenderSupport
+        get() = structureSupportAssembly.nodeRenderSupport
+
+    /**
+     * 对外暴露根渲染 support，兼容当前调用侧。
+     */
+    val rootRenderSupport: PixelRootRenderSupport
+        get() = structureSupportAssembly.rootRenderSupport
+}
