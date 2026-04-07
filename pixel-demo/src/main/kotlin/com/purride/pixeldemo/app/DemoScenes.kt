@@ -167,16 +167,34 @@ object DemoScenes {
                                 }
                             },
                             child = Container(
-                                width = 48,
-                                height = 22,
+                                width = 52,
+                                height = 26,
                                 padding = EdgeInsets.all(2),
                                 fillTone = if (accent) PixelTone.ACCENT else PixelTone.OFF,
                                 borderTone = PixelTone.ON,
                                 alignment = Alignment.CENTER,
-                                child = Text(
-                                    data = if (accent) "ACTIVE" else "PIPE",
-                                    style = if (accent) TextStyle.Default else TextStyle.Accent,
-                                    textAlign = TextAlign.CENTER,
+                                child = Column(
+                                    spacing = 1,
+                                    mainAxisSize = MainAxisSize.MIN,
+                                    mainAxisAlignment = MainAxisAlignment.CENTER,
+                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                    children = listOf(
+                                        Text(
+                                            data = if (accent) "ACTIVE" else "PIPE",
+                                            style = if (accent) TextStyle.Default else TextStyle.Accent,
+                                            textAlign = TextAlign.CENTER,
+                                        ),
+                                        Row(
+                                            spacing = 1,
+                                            mainAxisSize = MainAxisSize.MIN,
+                                            mainAxisAlignment = MainAxisAlignment.CENTER,
+                                            crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                            children = listOf(
+                                                Text("A"),
+                                                Text("B"),
+                                            ),
+                                        ),
+                                    ),
                                 ),
                             ),
                         )

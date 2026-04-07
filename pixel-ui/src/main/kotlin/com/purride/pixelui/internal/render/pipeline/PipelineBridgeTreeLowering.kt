@@ -3,12 +3,17 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.internal.legacy.PixelColumnNode
 import com.purride.pixelui.internal.legacy.PixelClickableElement
 import com.purride.pixelui.internal.legacy.PixelFillMaxHeightElement
 import com.purride.pixelui.internal.legacy.PixelFillMaxWidthElement
 import com.purride.pixelui.internal.legacy.PixelBoxNode
+import com.purride.pixelui.internal.legacy.PixelCrossAxisAlignment
+import com.purride.pixelui.internal.legacy.PixelMainAxisAlignment
+import com.purride.pixelui.internal.legacy.PixelMainAxisSize
 import com.purride.pixelui.internal.legacy.PixelModifier
 import com.purride.pixelui.internal.legacy.PixelPaddingElement
+import com.purride.pixelui.internal.legacy.PixelRowNode
 import com.purride.pixelui.internal.legacy.PixelSizeElement
 import com.purride.pixelui.internal.legacy.PixelSurfaceNode
 import com.purride.pixelui.internal.legacy.PixelTextNode
@@ -37,6 +42,8 @@ internal class PipelineBridgeTreeLowering(
             is PixelTextNode -> lowerText(node)
             is PixelSurfaceNode -> lowerSurface(node)
             is PixelBoxNode -> lowerBox(node)
+            is PixelRowNode -> lowerRow(node)
+            is PixelColumnNode -> lowerColumn(node)
             else -> null
         }
     }
@@ -128,6 +135,62 @@ internal class PipelineBridgeTreeLowering(
     }
 
     /**
+     * 把首批可支持的 row 节点降成最小 flex 对象。
+     */
+    private fun lowerRow(node: PixelRowNode): RenderBox? {
+        if (!isSupportedFlex(node.mainAxisSize, node.mainAxisAlignment, node.crossAxisAlignment)) {
+            return null
+        }
+        val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
+        val children = node.children.map { child -> lowerNode(child) ?: return null }
+        return RenderFlex(
+            direction = FlexDirection.HORIZONTAL,
+            children = children,
+            spacing = node.spacing,
+            mainAxisSize = node.mainAxisSize,
+            mainAxisAlignment = node.mainAxisAlignment,
+            crossAxisAlignment = node.crossAxisAlignment,
+            explicitWidth = modifierInfo.fixedWidth,
+            explicitHeight = modifierInfo.fixedHeight,
+            fillMaxWidth = modifierInfo.fillMaxWidth,
+            fillMaxHeight = modifierInfo.fillMaxHeight,
+            paddingLeft = modifierInfo.paddingLeft,
+            paddingTop = modifierInfo.paddingTop,
+            paddingRight = modifierInfo.paddingRight,
+            paddingBottom = modifierInfo.paddingBottom,
+            onClick = modifierInfo.onClick,
+        )
+    }
+
+    /**
+     * 把首批可支持的 column 节点降成最小 flex 对象。
+     */
+    private fun lowerColumn(node: PixelColumnNode): RenderBox? {
+        if (!isSupportedFlex(node.mainAxisSize, node.mainAxisAlignment, node.crossAxisAlignment)) {
+            return null
+        }
+        val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
+        val children = node.children.map { child -> lowerNode(child) ?: return null }
+        return RenderFlex(
+            direction = FlexDirection.VERTICAL,
+            children = children,
+            spacing = node.spacing,
+            mainAxisSize = node.mainAxisSize,
+            mainAxisAlignment = node.mainAxisAlignment,
+            crossAxisAlignment = node.crossAxisAlignment,
+            explicitWidth = modifierInfo.fixedWidth,
+            explicitHeight = modifierInfo.fixedHeight,
+            fillMaxWidth = modifierInfo.fillMaxWidth,
+            fillMaxHeight = modifierInfo.fillMaxHeight,
+            paddingLeft = modifierInfo.paddingLeft,
+            paddingTop = modifierInfo.paddingTop,
+            paddingRight = modifierInfo.paddingRight,
+            paddingBottom = modifierInfo.paddingBottom,
+            onClick = modifierInfo.onClick,
+        )
+    }
+
+    /**
      * 只接受第一版新 pipeline 明确支持的 modifier 集合。
      */
     private fun resolveSupportedModifierInfo(modifier: PixelModifier): PixelModifierInfo? {
@@ -142,6 +205,27 @@ internal class PipelineBridgeTreeLowering(
             return null
         }
         return PixelModifierSupport.resolve(modifier)
+    }
+
+    /**
+     * 第一版 flex 只接受基础排布语义，不接权重和更复杂的子布局。
+     */
+    private fun isSupportedFlex(
+        mainAxisSize: PixelMainAxisSize,
+        mainAxisAlignment: PixelMainAxisAlignment,
+        crossAxisAlignment: PixelCrossAxisAlignment,
+    ): Boolean {
+        return mainAxisSize in setOf(PixelMainAxisSize.MIN, PixelMainAxisSize.MAX) &&
+            mainAxisAlignment in setOf(
+                PixelMainAxisAlignment.START,
+                PixelMainAxisAlignment.CENTER,
+                PixelMainAxisAlignment.END,
+            ) &&
+            crossAxisAlignment in setOf(
+                PixelCrossAxisAlignment.START,
+                PixelCrossAxisAlignment.CENTER,
+                PixelCrossAxisAlignment.END,
+            )
     }
 
     /**
