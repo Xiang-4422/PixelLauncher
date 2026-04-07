@@ -8,7 +8,7 @@
 
 如果只看一句话，当前结论是：
 
-> 像素引擎已经从“架构设想”进入“最小可运行框架”阶段，`pixel-core`、`pixel-ui`、`pixel-demo` 已经形成闭环，但 `:app` 还没有开始迁移。
+> 像素引擎已经从“架构设想”进入“最小可运行框架”阶段，`pixel-core`、`pixel-ui`、`pixel-demo` 已经形成闭环，并且到了可以开始新渲染管线的节点，但 `:app` 还没有开始迁移。
 
 ---
 
@@ -129,6 +129,13 @@
   - [PixelUiRuntimeAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/PixelUiRuntimeAssemblyFactory.kt)
   - [WidgetRenderRequestFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/request/WidgetRenderRequestFactory.kt)
   - runtime 目录当前已经按 `runtime / request / assembly / support / host` 五组收拢
+  - 新渲染管线骨架已经启动：
+    - [PipelineOwner.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineOwner.kt)
+    - [RenderObject.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderObject.kt)
+    - [RenderSurface.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderSurface.kt)
+    - [RenderText.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderText.kt)
+    - [PipelineBridgeTreeLowering.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineBridgeTreeLowering.kt)
+    - [PipelineElementTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineElementTreeRenderer.kt)
   - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
   - [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt)
   - [BridgeWidgetAdapter.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidgetAdapter.kt)
@@ -342,7 +349,8 @@
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部的底层节点和兼容运行时里
-- legacy 渲染主链已经被拆成 support graph，但 retained runtime 和 legacy bridge 还没有彻底解耦
+- `legacy` 渲染后端已经被整理成更清楚的内部 fallback，但这条线继续做纯 `factory/assembly` 拆分的收益已经接近上限
+- 新渲染管线已经启动最小骨架，但当前覆盖仍只适合 `Text + Surface` 这类首批场景
 - 还没有开始把 `:app` 页面迁进来
 
 ---
@@ -379,14 +387,15 @@
 
 ### 5.2 正在进行
 
-- 把 `pixel-ui` 从“能跑”继续推进到“适合直接依赖开发”
-- 补齐组件说明、接入文档、约束说明
-- 稳定宿主接入方式和组件使用习惯
+- 启动最小新渲染管线骨架
+- 让 retained 主链具备“新 pipeline 优先、bridge/legacy fallback” 的整树级分流
+- 用 `pixel-demo` 新增验证页证明至少有一个真实场景已经不再依赖 `legacy renderer`
+- 持续同步注释、测试和实施计划，防止主线和文档再错位
 
 ### 5.3 尚未开始
 
 - `:app` 页面迁移
-- retained render object 树
+- `Row / Column` 等更完整的新布局协议
 - 更完整的主题与环境默认值系统
 - 懒加载列表
 - 列表虚拟化与更高级滚动物理
@@ -404,9 +413,9 @@
 
 当前最值得继续推进的方向有三条：
 
-- 继续切 retained 主链和 legacy render bridge：让 retained runtime 尽量只面对 bridge，而不再感知 legacy 细节
-- 继续压薄 legacy renderer：把 `PixelRenderRuntime` 收成更纯的 façade，让 support graph 成为唯一装配入口
-- 在 `pixel-demo` 上持续验收 retained 状态、环境、分页、列表、输入和方向性，不提前启动 `:app` 迁移
+- 启动并稳定最小 `RenderObject / PipelineOwner` 骨架
+- 打通 `Text + Surface` 首批新渲染链路，并保持整树 fallback 稳定
+- 在 `pixel-demo` 上持续验收新 pipeline 页面与现有 retained/bridge/legacy 兼容页面，不提前启动 `:app` 迁移
 
 ---
 
@@ -416,8 +425,8 @@
 
 更准确的说法是：
 
-> `pixel-core` 和 `pixel-ui` 已经形成了可运行、可测试、可继续演进的第一版基础框架；下一阶段的重点不是再讨论边界，而是把这套框架补成真正适合业务直接依赖的库。
+> `pixel-core` 和 `pixel-ui` 已经形成了可运行、可测试、可继续演进的第一版基础框架；最近一轮 `legacy` 内部整理已经把过渡后端收到了足够清楚的位置，接下来主线不再是继续拆 `factory/assembly`，而是开始落最小新渲染管线。
 
 更具体一点说，当前工程已经进入：
 
-> “retained runtime 重构中段”，短期主线是继续做架构收口，而不是启动业务页迁移。
+> “新渲染管线启动期”，短期主线是用 `Text + Surface` 先证明真实端到端替换已经开始，而不是启动业务页迁移或继续深挖 `legacy` 内部整理。

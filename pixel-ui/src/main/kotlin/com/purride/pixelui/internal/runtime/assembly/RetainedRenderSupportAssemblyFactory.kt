@@ -16,9 +16,16 @@ internal object RetainedRenderSupportAssemblyFactory {
         val bridgeAssembly = BridgeRenderSupportFactory.createDefaultAssembly(
             textRasterizer = textRasterizer,
         )
+        val pipelineRenderer = PipelineElementTreeRenderer(
+            bridgeTreeResolver = bridgeAssembly.bridgeTreeResolver,
+            defaultTextRasterizer = textRasterizer,
+        )
         return RetainedRenderSupportAssembly(
             widgetAdapter = BridgeWidgetAdapter,
-            elementTreeRenderer = bridgeAssembly.elementTreeRenderer,
+            elementTreeRenderer = CompositeElementTreeRenderer(
+                pipelineRenderer = pipelineRenderer,
+                fallbackRenderer = bridgeAssembly.elementTreeRenderer,
+            ),
         )
     }
 }
