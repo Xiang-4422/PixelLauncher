@@ -13,9 +13,22 @@ internal class PipelineElementTreeRenderer(
     private val bridgeTreeResolver: BridgeTreeResolving,
     defaultTextRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
 ) : ElementTreeRenderer {
+    private val capabilityChecker = PipelineTreeCapabilityChecker
     private val treeLowering = PipelineBridgeTreeLowering(
         defaultTextRasterizer = defaultTextRasterizer,
     )
+
+    /**
+     * 判断当前 element tree 是否能完整走新 pipeline。
+     */
+    fun canRender(request: ElementTreeRenderRequest): Boolean {
+        val bridgeRoot = bridgeTreeResolver.resolve(
+            request = BridgeTreeResolveRequest(
+                root = request.root,
+            ),
+        ) ?: return false
+        return capabilityChecker.canLower(bridgeRoot)
+    }
 
     /**
      * 尝试用新 pipeline 渲染当前 element tree；不支持时返回 null。
@@ -26,6 +39,9 @@ internal class PipelineElementTreeRenderer(
                 root = request.root,
             ),
         ) ?: return null
+        if (!capabilityChecker.canLower(bridgeRoot)) {
+            return null
+        }
         val renderRoot = treeLowering.lower(bridgeRoot) ?: return null
         return PipelineOwner(
             root = renderRoot,

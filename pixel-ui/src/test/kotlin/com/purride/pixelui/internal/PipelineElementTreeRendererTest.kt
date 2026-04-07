@@ -24,6 +24,7 @@ import com.purride.pixelui.internal.legacy.PixelTextAlign
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -213,7 +214,8 @@ class PipelineElementTreeRendererTest {
      */
     @Test
     fun pipelineElementTreeRendererReturnsNullForUnsupportedTree() {
-        val result = renderWithPipeline(
+        val renderer = createPipelineRenderer()
+        val result = withRenderRequest(
             root = SizedBox(
                 width = 24,
                 height = 12,
@@ -225,7 +227,10 @@ class PipelineElementTreeRendererTest {
             ),
             logicalWidth = 24,
             logicalHeight = 12,
-        )
+        ) { request ->
+            assertFalse(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
 
         assertNull(result)
     }
@@ -235,7 +240,8 @@ class PipelineElementTreeRendererTest {
      */
     @Test
     fun pipelineElementTreeRendererReturnsNullForWeightedRowTree() {
-        val result = renderWithPipeline(
+        val renderer = createPipelineRenderer()
+        val result = withRenderRequest(
             root = SizedBox(
                 width = 24,
                 height = 12,
@@ -253,7 +259,10 @@ class PipelineElementTreeRendererTest {
             ),
             logicalWidth = 24,
             logicalHeight = 12,
-        )
+        ) { request ->
+            assertFalse(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
 
         assertNull(result)
     }
@@ -263,7 +272,8 @@ class PipelineElementTreeRendererTest {
      */
     @Test
     fun pipelineElementTreeRendererRendersBasicFlexAlignments() {
-        val result = renderWithPipeline(
+        val renderer = createPipelineRenderer()
+        val result = withRenderRequest(
             root = SizedBox(
                 width = 28,
                 height = 16,
@@ -300,7 +310,10 @@ class PipelineElementTreeRendererTest {
             ),
             logicalWidth = 28,
             logicalHeight = 16,
-        )
+        ) { request ->
+            assertTrue(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
 
         assertNotNull(result)
         result ?: return
@@ -317,18 +330,32 @@ class PipelineElementTreeRendererTest {
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult? {
+        return withRenderRequest(
+            root = root,
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
+        ) { request ->
+            createPipelineRenderer().renderOrNull(request)
+        }
+    }
+
+    /**
+     * 在 build runtime 生命周期内构造并消费统一的 render request。
+     */
+    private fun <T> withRenderRequest(
+        root: Widget,
+        logicalWidth: Int,
+        logicalHeight: Int,
+        block: (ElementTreeRenderRequest) -> T,
+    ): T {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
             widgetAdapter = BridgeWidgetAdapter,
         )
         return try {
-            val elementRoot = buildRuntime.resolveElementTree(root)
-            PipelineElementTreeRenderer(
-                bridgeTreeResolver = DefaultBridgeTreeResolver,
-                defaultTextRasterizer = PixelBitmapFont.Default,
-            ).renderOrNull(
-                request = ElementTreeRenderRequest(
-                    root = elementRoot,
+            block(
+                ElementTreeRenderRequest(
+                    root = buildRuntime.resolveElementTree(root),
                     logicalWidth = logicalWidth,
                     logicalHeight = logicalHeight,
                 ),
@@ -336,6 +363,16 @@ class PipelineElementTreeRendererTest {
         } finally {
             buildRuntime.dispose()
         }
+    }
+
+    /**
+     * 创建测试统一使用的 pipeline renderer。
+     */
+    private fun createPipelineRenderer(): PipelineElementTreeRenderer {
+        return PipelineElementTreeRenderer(
+            bridgeTreeResolver = DefaultBridgeTreeResolver,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
     }
 
     /**
