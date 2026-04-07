@@ -27,16 +27,8 @@ internal object BridgeRenderSupportFactory {
     fun createDefaultAssembly(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): BridgeRenderSupportAssembly {
-        val runtimeAssembly = BridgeRuntimeAssemblyFactory.createDefault(
+        return BridgeRenderSupportAssemblyFactory.createDefault(
             textRasterizer = textRasterizer,
-        )
-        return BridgeRenderSupportAssembly(
-            bridgeTreeResolver = runtimeAssembly.bridgeTreeResolver,
-            bridgeTreeRenderer = runtimeAssembly.bridgeTreeRenderer,
-            elementTreeRenderer = BridgeElementTreeRenderer(
-                bridgeTreeResolver = runtimeAssembly.bridgeTreeResolver,
-                bridgeTreeRenderer = runtimeAssembly.bridgeTreeRenderer,
-            ),
         )
     }
 }
