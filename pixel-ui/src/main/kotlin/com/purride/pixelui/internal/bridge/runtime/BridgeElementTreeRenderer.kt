@@ -14,18 +14,10 @@ internal class BridgeElementTreeRenderer(
      * 把 retained element tree 解析成 bridge tree，再交给 bridge renderer。
      */
     override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
-        val bridgeRoot = bridgeTreeResolver.resolve(
-            request = BridgeTreeResolveRequest(
-                root = request.root,
-            ),
+        val assembly = BridgeRenderAssemblyFactory.create(
+            request = request,
+            bridgeTreeResolver = bridgeTreeResolver,
         )
-            ?: error("当前 Widget 树没有生成可渲染的 bridge node。")
-        return bridgeTreeRenderer.render(
-            request = BridgeRenderRequest(
-                root = bridgeRoot,
-                logicalWidth = request.logicalWidth,
-                logicalHeight = request.logicalHeight,
-            ),
-        )
+        return assembly.renderWith(renderer = bridgeTreeRenderer)
     }
 }
