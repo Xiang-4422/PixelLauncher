@@ -30,10 +30,11 @@ internal object WidgetRenderRuntimeFactory {
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
         onVisualUpdate: () -> Unit = { },
     ): WidgetRuntimeAssembly {
-        return RetainedWidgetRuntimeFactory.createDefault(
-            textRasterizer = textRasterizer,
-            onVisualUpdate = onVisualUpdate,
+        return WidgetRuntimeAssemblyFactory.create(
+            runtime = RetainedWidgetRuntimeFactory.createDefault(
+                textRasterizer = textRasterizer,
+                onVisualUpdate = onVisualUpdate,
+            ),
         )
-            .let(::WidgetRuntimeAssembly)
     }
 }
