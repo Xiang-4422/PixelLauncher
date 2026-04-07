@@ -34,29 +34,21 @@ internal object LegacyStructureSupportFactory {
             callbacks = callbacks,
             scrollAxisUnboundedMax = scrollAxisUnboundedMax,
         )
-        val measureSupport = PixelMeasureSupport(
-            measureNode = measureNode,
-            textRenderSupport = textSupportAssembly.textRenderSupport,
-            textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
-            layoutMeasureSupport = layoutSupportAssembly.layoutMeasureSupport,
-        )
-        val nodeRenderSupport = PixelNodeRenderSupport(
-            textRenderSupport = textSupportAssembly.textRenderSupport,
-            textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
-            layoutRenderSupport = layoutSupportAssembly.layoutRenderSupport,
-            viewportRenderSupport = viewportSupportAssembly.viewportRenderSupport,
-            renderNode = renderNode,
-        )
-        val rootRenderSupport = PixelRootRenderSupport(
+        val nodeSupportAssembly = LegacyNodeSupportFactory.createDefault(
             callbacks = callbacks,
+            textSupportAssembly = textSupportAssembly,
+            layoutSupportAssembly = layoutSupportAssembly,
+            viewportSupportAssembly = viewportSupportAssembly,
+            measureNode = measureNode,
+            renderNode = renderNode,
         )
         return LegacyStructureSupportAssembly(
             layoutRenderSupport = layoutSupportAssembly.layoutRenderSupport,
             layoutMeasureSupport = layoutSupportAssembly.layoutMeasureSupport,
             viewportRenderSupport = viewportSupportAssembly.viewportRenderSupport,
-            measureSupport = measureSupport,
-            nodeRenderSupport = nodeRenderSupport,
-            rootRenderSupport = rootRenderSupport,
+            measureSupport = nodeSupportAssembly.measureSupport,
+            nodeRenderSupport = nodeSupportAssembly.nodeRenderSupport,
+            rootRenderSupport = nodeSupportAssembly.rootRenderSupport,
         )
     }
 }
