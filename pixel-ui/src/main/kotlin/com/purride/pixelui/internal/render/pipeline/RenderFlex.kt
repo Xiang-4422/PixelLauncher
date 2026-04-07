@@ -55,11 +55,21 @@ internal class RenderFlex(
         val childConstraints = when (direction) {
             FlexDirection.HORIZONTAL -> RenderConstraints(
                 maxWidth = innerConstraints.maxWidth,
-                maxHeight = resolvedCrossAxisMax(innerConstraints.maxHeight),
+                minHeight = if (crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) {
+                    innerConstraints.maxHeight
+                } else {
+                    0
+                },
+                maxHeight = innerConstraints.maxHeight,
             )
 
             FlexDirection.VERTICAL -> RenderConstraints(
-                maxWidth = resolvedCrossAxisMax(innerConstraints.maxWidth),
+                minWidth = if (crossAxisAlignment == PixelCrossAxisAlignment.STRETCH) {
+                    innerConstraints.maxWidth
+                } else {
+                    0
+                },
+                maxWidth = innerConstraints.maxWidth,
                 maxHeight = innerConstraints.maxHeight,
             )
         }
@@ -122,20 +132,14 @@ internal class RenderFlex(
             FlexDirection.VERTICAL -> (size.width - paddingLeft - paddingRight).coerceAtLeast(0)
         }
 
-        val mainSpacing = resolveMainSpacing(
+        val mainAxisArrangement = resolveMainAxisArrangement(
             availableMainExtent = availableMainExtent,
             childrenMainExtent = childrenMainExtent,
-            baseSpacing = totalSpacing,
-            childCount = children.size,
-        )
-        val startOffset = resolveMainStartOffset(
-            availableMainExtent = availableMainExtent,
-            childrenMainExtent = childrenMainExtent,
-            appliedSpacing = mainSpacing,
+            baseSpacing = spacing,
             childCount = children.size,
         )
 
-        var cursor = startOffset
+        var cursor = mainAxisArrangement.start
         children.forEachIndexed { index, child ->
             val crossOffset = resolveCrossOffset(
                 availableCrossExtent = availableCrossExtent,
@@ -152,7 +156,7 @@ internal class RenderFlex(
                     y = paddingTop + cursor,
                 )
             }
-            cursor += mainExtentOf(child) + mainSpacing
+            cursor += mainExtentOf(child) + mainAxisArrangement.spacingAfterChild
         }
     }
 
@@ -246,60 +250,52 @@ internal class RenderFlex(
     }
 
     /**
-     * 解析交叉轴在 stretch 情况下对子节点允许的最大尺寸。
-     */
-    private fun resolvedCrossAxisMax(currentMax: Int): Int {
-        return currentMax.coerceAtLeast(0)
-    }
-
-    /**
      * 解析主轴起始偏移。
      */
-    private fun resolveMainStartOffset(
-        availableMainExtent: Int,
-        childrenMainExtent: Int,
-        appliedSpacing: Int,
-        childCount: Int,
-    ): Int {
-        val totalContentExtent = childrenMainExtent + (appliedSpacing * (childCount - 1).coerceAtLeast(0))
-        val freeMainExtent = (availableMainExtent - totalContentExtent).coerceAtLeast(0)
-        return when (mainAxisAlignment) {
-            PixelMainAxisAlignment.START,
-            PixelMainAxisAlignment.SPACE_BETWEEN,
-            -> 0
-
-            PixelMainAxisAlignment.CENTER,
-            PixelMainAxisAlignment.SPACE_AROUND,
-            PixelMainAxisAlignment.SPACE_EVENLY,
-            -> freeMainExtent / 2
-
-            PixelMainAxisAlignment.END -> freeMainExtent
-        }
-    }
-
-    /**
-     * 解析主轴间距。
-     */
-    private fun resolveMainSpacing(
+    private fun resolveMainAxisArrangement(
         availableMainExtent: Int,
         childrenMainExtent: Int,
         baseSpacing: Int,
         childCount: Int,
-    ): Int {
-        if (childCount <= 1) {
-            return 0
-        }
-        val freeMainExtent = (availableMainExtent - childrenMainExtent).coerceAtLeast(0)
+    ): FlexMainAxisArrangement {
+        val contentExtent = childrenMainExtent + (baseSpacing * (childCount - 1).coerceAtLeast(0))
+        val remaining = (availableMainExtent - contentExtent).coerceAtLeast(0)
         return when (mainAxisAlignment) {
-            PixelMainAxisAlignment.START,
-            PixelMainAxisAlignment.CENTER,
-            PixelMainAxisAlignment.END,
-            -> spacing
+            PixelMainAxisAlignment.START -> FlexMainAxisArrangement(start = 0, spacingAfterChild = baseSpacing)
+            PixelMainAxisAlignment.CENTER -> FlexMainAxisArrangement(start = remaining / 2, spacingAfterChild = baseSpacing)
+            PixelMainAxisAlignment.END -> FlexMainAxisArrangement(start = remaining, spacingAfterChild = baseSpacing)
+            PixelMainAxisAlignment.SPACE_BETWEEN -> {
+                if (childCount <= 1) {
+                    FlexMainAxisArrangement(start = 0, spacingAfterChild = baseSpacing)
+                } else {
+                    FlexMainAxisArrangement(
+                        start = 0,
+                        spacingAfterChild = baseSpacing + (remaining / (childCount - 1)),
+                    )
+                }
+            }
 
-            PixelMainAxisAlignment.SPACE_BETWEEN -> freeMainExtent / (childCount - 1)
-            PixelMainAxisAlignment.SPACE_AROUND -> freeMainExtent / childCount
-            PixelMainAxisAlignment.SPACE_EVENLY -> freeMainExtent / (childCount + 1)
-        }.coerceAtLeast(baseSpacing.takeIf { mainAxisAlignment == PixelMainAxisAlignment.START || mainAxisAlignment == PixelMainAxisAlignment.CENTER || mainAxisAlignment == PixelMainAxisAlignment.END } ?: 0)
+            PixelMainAxisAlignment.SPACE_AROUND -> {
+                if (childCount <= 0) {
+                    FlexMainAxisArrangement(start = 0, spacingAfterChild = baseSpacing)
+                } else {
+                    val unit = remaining / childCount
+                    FlexMainAxisArrangement(
+                        start = unit / 2,
+                        spacingAfterChild = baseSpacing + unit,
+                    )
+                }
+            }
+
+            PixelMainAxisAlignment.SPACE_EVENLY -> {
+                val slotCount = childCount + 1
+                val unit = if (slotCount <= 0) 0 else remaining / slotCount
+                FlexMainAxisArrangement(
+                    start = unit,
+                    spacingAfterChild = baseSpacing + unit,
+                )
+            }
+        }
     }
 
     /**
@@ -355,4 +351,12 @@ internal enum class FlexDirection {
 private data class ChildOffset(
     val x: Int = 0,
     val y: Int = 0,
+)
+
+/**
+ * 主轴排布结果。
+ */
+private data class FlexMainAxisArrangement(
+    val start: Int,
+    val spacingAfterChild: Int,
 )

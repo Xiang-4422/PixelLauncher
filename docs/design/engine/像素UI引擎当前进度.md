@@ -137,7 +137,7 @@
     - [RenderText.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderText.kt)
     - [PipelineBridgeTreeLowering.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineBridgeTreeLowering.kt)
     - [PipelineElementTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineElementTreeRenderer.kt)
-  - 首批 pipeline 支持能力已经从 `Text + Surface` 扩到最小 `Row / Column` 基础排布，但当前只覆盖 `START / CENTER / END` 这组基础对齐，不支持权重、`stretch` 和 `space-*` 排布
+  - 首批 pipeline 支持能力已经从 `Text + Surface` 扩到最小 `Row / Column` 排布，当前已覆盖 `START / CENTER / END / SPACE_*` 和 `stretch`，但仍不支持权重布局
   - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
   - [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt)
   - [BridgeWidgetAdapter.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidgetAdapter.kt)

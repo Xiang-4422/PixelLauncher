@@ -214,18 +214,13 @@ class PipelineElementTreeRendererTest {
     @Test
     fun pipelineElementTreeRendererReturnsNullForUnsupportedTree() {
         val result = renderWithPipeline(
-            root = Directionality(
-                textDirection = TextDirection.LTR,
-                child = SizedBox(
-                    width = 24,
-                    height = 12,
-                    child = Row(
-                        mainAxisAlignment = MainAxisAlignment.SPACE_EVENLY,
-                        children = listOf(
-                            Text("A"),
-                            Text("B"),
-                        ),
-                    ),
+            root = SizedBox(
+                width = 24,
+                height = 12,
+                child = Text(
+                    data = "A B C D E F",
+                    softWrap = true,
+                    maxLines = 2,
                 ),
             ),
             logicalWidth = 24,
@@ -261,6 +256,57 @@ class PipelineElementTreeRendererTest {
         )
 
         assertNull(result)
+    }
+
+    /**
+     * 首批支持的 row/column 基础排布应该能继续走新 pipeline。
+     */
+    @Test
+    fun pipelineElementTreeRendererRendersBasicFlexAlignments() {
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 28,
+                height = 16,
+                child = Column(
+                    mainAxisSize = MainAxisSize.MAX,
+                    mainAxisAlignment = MainAxisAlignment.SPACE_EVENLY,
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    children = listOf(
+                        Container(
+                            height = 3,
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                        Row(
+                            mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+                            crossAxisAlignment = CrossAxisAlignment.CENTER,
+                            children = listOf(
+                                Container(
+                                    width = 3,
+                                    height = 3,
+                                    fillTone = PixelTone.ACCENT,
+                                    borderTone = null,
+                                ),
+                                Container(
+                                    width = 3,
+                                    height = 3,
+                                    fillTone = PixelTone.ON,
+                                    borderTone = null,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 28,
+            logicalHeight = 16,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 3))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 10))
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(27, 10))
     }
 
     /**

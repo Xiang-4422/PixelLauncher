@@ -220,11 +220,15 @@ internal class PipelineBridgeTreeLowering(
                 PixelMainAxisAlignment.START,
                 PixelMainAxisAlignment.CENTER,
                 PixelMainAxisAlignment.END,
+                PixelMainAxisAlignment.SPACE_BETWEEN,
+                PixelMainAxisAlignment.SPACE_AROUND,
+                PixelMainAxisAlignment.SPACE_EVENLY,
             ) &&
             crossAxisAlignment in setOf(
                 PixelCrossAxisAlignment.START,
                 PixelCrossAxisAlignment.CENTER,
                 PixelCrossAxisAlignment.END,
+                PixelCrossAxisAlignment.STRETCH,
             )
     }
 
