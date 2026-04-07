@@ -22,12 +22,19 @@ internal class PipelineElementTreeRenderer(
      * 判断当前 element tree 是否能完整走新 pipeline。
      */
     fun canRender(request: ElementTreeRenderRequest): Boolean {
+        return inspect(request).supported
+    }
+
+    /**
+     * 返回当前 element tree 的 pipeline 能力检查结果。
+     */
+    fun inspect(request: ElementTreeRenderRequest): PipelineCapabilityReport {
         val bridgeRoot = bridgeTreeResolver.resolve(
             request = BridgeTreeResolveRequest(
                 root = request.root,
             ),
-        ) ?: return false
-        return capabilityChecker.canLower(bridgeRoot)
+        ) ?: return PipelineCapabilityReport.unsupported(PipelineUnsupportedReason.UNSUPPORTED_NODE_TYPE)
+        return capabilityChecker.inspect(bridgeRoot)
     }
 
     /**
@@ -39,7 +46,7 @@ internal class PipelineElementTreeRenderer(
                 root = request.root,
             ),
         ) ?: return null
-        if (!capabilityChecker.canLower(bridgeRoot)) {
+        if (!capabilityChecker.inspect(bridgeRoot).supported) {
             return null
         }
         val renderRoot = treeLowering.lower(bridgeRoot) ?: return null

@@ -231,6 +231,10 @@ class PipelineElementTreeRendererTest {
             logicalHeight = 12,
         ) { request ->
             assertFalse(renderer.canRender(request))
+            assertEquals(
+                PipelineUnsupportedReason.UNSUPPORTED_TEXT_LAYOUT,
+                renderer.inspect(request).reason,
+            )
             renderer.renderOrNull(request)
         }
 
@@ -263,6 +267,10 @@ class PipelineElementTreeRendererTest {
             logicalHeight = 12,
         ) { request ->
             assertFalse(renderer.canRender(request))
+            assertEquals(
+                PipelineUnsupportedReason.UNSUPPORTED_MODIFIER,
+                renderer.inspect(request).reason,
+            )
             renderer.renderOrNull(request)
         }
 
@@ -314,6 +322,7 @@ class PipelineElementTreeRendererTest {
             logicalHeight = 16,
         ) { request ->
             assertTrue(renderer.canRender(request))
+            assertEquals(null, renderer.inspect(request).reason)
             renderer.renderOrNull(request)
         }
 
@@ -351,6 +360,7 @@ class PipelineElementTreeRendererTest {
             logicalHeight = 10,
         ) { request ->
             assertTrue(renderer.canRender(request))
+            assertEquals(null, renderer.inspect(request).reason)
             renderer.renderOrNull(request)
         }
 
