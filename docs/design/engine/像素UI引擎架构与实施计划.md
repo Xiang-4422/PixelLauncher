@@ -547,6 +547,7 @@ object AxisBufferComposer
   - `Text`
   - `Container` / `DecoratedBox`
   - `Padding`
+  - `Align` / `Center`
   - `SizedBox`
   - `Align`
   - `Center`

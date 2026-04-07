@@ -4,11 +4,13 @@ import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.Align
 import com.purride.pixelui.Center
 import com.purride.pixelui.Container
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Row
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -320,6 +322,47 @@ class PipelineElementTreeRendererTest {
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 3))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 10))
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(27, 10))
+    }
+
+    /**
+     * `Align/Center + GestureDetector` 这条常用链路也应该能完整走 pipeline。
+     */
+    @Test
+    fun pipelineElementTreeRendererRendersAlignedClickableSurface() {
+        val renderer = createPipelineRenderer()
+        val result = withRenderRequest(
+            root = SizedBox(
+                width = 18,
+                height = 10,
+                child = Align(
+                    alignment = Alignment.BOTTOM_END,
+                    child = GestureDetector(
+                        onTap = { },
+                        child = Container(
+                            width = 4,
+                            height = 3,
+                            fillTone = PixelTone.ACCENT,
+                            borderTone = PixelTone.ON,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 18,
+            logicalHeight = 10,
+        ) { request ->
+            assertTrue(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(14, 7))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(15, 8))
+        assertEquals(1, result.clickTargets.size)
+        assertEquals(14, result.clickTargets.single().bounds.left)
+        assertEquals(7, result.clickTargets.single().bounds.top)
+        assertEquals(4, result.clickTargets.single().bounds.width)
+        assertEquals(3, result.clickTargets.single().bounds.height)
     }
 
     /**

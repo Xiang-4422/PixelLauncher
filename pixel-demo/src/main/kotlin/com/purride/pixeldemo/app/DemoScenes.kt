@@ -146,7 +146,7 @@ object DemoScenes {
     /**
      * 第一版新渲染管线验证页。
      *
-     * 这里刻意只使用首批受支持的 `Text + Surface` 相关组件，以及点击 modifier，
+     * 这里刻意只使用首批受支持的 `Text + Surface + Align + Flex` 相关组件，以及点击 modifier，
      * 用来验证新 pipeline 已经能端到端承接真实页面，而不是只停留在内部骨架。
      */
     private fun pipelineTextSurfaceScene(
@@ -160,38 +160,47 @@ object DemoScenes {
             content = {
                 Center(
                     child = StatefulBuilder { _, setState ->
-                        GestureDetector(
-                            onTap = {
-                                setState {
-                                    accent = !accent
-                                }
-                            },
-                            child = Container(
-                                width = 52,
-                                height = 26,
-                                padding = EdgeInsets.all(2),
-                                fillTone = if (accent) PixelTone.ACCENT else PixelTone.OFF,
-                                borderTone = PixelTone.ON,
-                                alignment = Alignment.CENTER,
-                                child = Column(
-                                    spacing = 1,
-                                    mainAxisSize = MainAxisSize.MIN,
-                                    mainAxisAlignment = MainAxisAlignment.CENTER,
-                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
-                                    children = listOf(
-                                        Text(
-                                            data = if (accent) "ACTIVE" else "PIPE",
-                                            style = if (accent) TextStyle.Default else TextStyle.Accent,
-                                            textAlign = TextAlign.CENTER,
-                                        ),
-                                        Row(
+                        SizedBox(
+                            width = 64,
+                            height = 32,
+                            child = Align(
+                                alignment = if (accent) Alignment.BOTTOM_END else Alignment.TOP_START,
+                                child = GestureDetector(
+                                    onTap = {
+                                        setState {
+                                            accent = !accent
+                                        }
+                                    },
+                                    child = Container(
+                                        width = 52,
+                                        height = 26,
+                                        padding = EdgeInsets.all(2),
+                                        fillTone = if (accent) PixelTone.ACCENT else PixelTone.OFF,
+                                        borderTone = PixelTone.ON,
+                                        alignment = Alignment.CENTER,
+                                        child = Column(
                                             spacing = 1,
                                             mainAxisSize = MainAxisSize.MIN,
                                             mainAxisAlignment = MainAxisAlignment.CENTER,
-                                            crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                             children = listOf(
-                                                Text("A"),
-                                                Text("B"),
+                                                Text(
+                                                    data = if (accent) "ACTIVE" else "PIPE",
+                                                    style = if (accent) TextStyle.Default else TextStyle.Accent,
+                                                    textAlign = TextAlign.CENTER,
+                                                ),
+                                                Row(
+                                                    mainAxisAlignment = if (accent) {
+                                                        MainAxisAlignment.SPACE_BETWEEN
+                                                    } else {
+                                                        MainAxisAlignment.CENTER
+                                                    },
+                                                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                                    children = listOf(
+                                                        Text("A"),
+                                                        Text("B"),
+                                                    ),
+                                                ),
                                             ),
                                         ),
                                     ),
