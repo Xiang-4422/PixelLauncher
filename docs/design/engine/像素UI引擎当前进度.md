@@ -144,6 +144,7 @@
   - [BridgeTreeResolveRequest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeTreeResolveRequest.kt)
   - [BridgeRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeRenderSupportFactory.kt)
   - [BridgeRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeRenderSupportAssemblyFactory.kt)
+  - [BridgeRenderAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeRenderAssemblyFactory.kt)
   - bridge 目录当前已经按 `runtime / resolve / elements / widgets / modifier` 五组收拢
   - [LegacyContainerWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/widgets/layout/LegacyContainerWidgets.kt)
   - [LegacyAlignmentWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/widgets/layout/LegacyAlignmentWidgets.kt)
