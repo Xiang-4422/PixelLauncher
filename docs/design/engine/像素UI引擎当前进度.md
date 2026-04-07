@@ -126,6 +126,8 @@
   - [RetainedWidgetRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/RetainedWidgetRuntimeFactory.kt)
   - [RetainedWidgetRuntimeAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/RetainedWidgetRuntimeAssemblyFactory.kt)
   - [WidgetRuntimeAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/WidgetRuntimeAssemblyFactory.kt)
+  - [PixelUiRuntimeAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/PixelUiRuntimeAssemblyFactory.kt)
+  - [WidgetRenderRequestFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/request/WidgetRenderRequestFactory.kt)
   - runtime 目录当前已经按 `runtime / request / assembly / support / host` 五组收拢
   - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
   - [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt)
