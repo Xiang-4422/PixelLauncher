@@ -40,6 +40,15 @@
 - 新增独立 `:pixel-demo` 作为框架验证宿主
 - 只有 demo 验证通过后，才开始迁移 Launcher
 
+当前实现层面仍然保持：
+
+- `retained build/runtime`
+- `runtime orchestration`
+- `bridge`
+- `legacy renderer`
+
+其中 `legacy renderer` 当前继续保留，但只作为内部可替换后端持续收口，不再承担公开 API 责任。
+
 这意味着当前阶段不是“边拆边迁”，而是“框架先自证，再迁应用”。
 
 ---
