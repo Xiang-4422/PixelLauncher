@@ -40,7 +40,7 @@ import kotlin.math.min
  * 当前宿主已经开始走 retained build runtime：
  * - 公开层交给 `Widget / StatefulWidget / InheritedWidget`
  * - 宿主负责维持 retained build tree
- * - 最后一步暂时仍把组件树翻译到 legacy pixel renderer
+ * - 渲染阶段优先尝试新 pipeline，不支持时整树回退到 bridge + legacy renderer
  */
 class PixelHostView @JvmOverloads constructor(
     context: Context,

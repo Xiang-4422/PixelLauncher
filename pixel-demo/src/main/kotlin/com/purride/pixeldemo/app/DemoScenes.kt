@@ -129,6 +129,7 @@ object DemoScenes {
         applyPreferredProfile: (ScreenProfile) -> Unit,
     ): DemoScene {
         return when (sceneKind) {
+            DemoSceneKind.PIPELINE_TEXT_SURFACE -> pipelineTextSurfaceScene(textRasterizers)
             DemoSceneKind.TEXT -> textScene(textRasterizers)
             DemoSceneKind.PALETTE -> paletteScene(hostView, textRasterizers, applyPreferredProfile)
             DemoSceneKind.TEXT_FIELD -> textFieldScene(textRasterizers)
@@ -140,6 +141,49 @@ object DemoScenes {
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
         }
+    }
+
+    /**
+     * 第一版新渲染管线验证页。
+     *
+     * 这里刻意只使用首批受支持的 `Text + Surface` 相关组件，以及点击 modifier，
+     * 用来验证新 pipeline 已经能端到端承接真实页面，而不是只停留在内部骨架。
+     */
+    private fun pipelineTextSurfaceScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        var accent = false
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.terminalGreen(),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                Center(
+                    child = StatefulBuilder { _, setState ->
+                        GestureDetector(
+                            onTap = {
+                                setState {
+                                    accent = !accent
+                                }
+                            },
+                            child = Container(
+                                width = 48,
+                                height = 22,
+                                padding = EdgeInsets.all(2),
+                                fillTone = if (accent) PixelTone.ACCENT else PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                alignment = Alignment.CENTER,
+                                child = Text(
+                                    data = if (accent) "ACTIVE" else "PIPE",
+                                    style = if (accent) TextStyle.Default else TextStyle.Accent,
+                                    textAlign = TextAlign.CENTER,
+                                ),
+                            ),
+                        )
+                    },
+                )
+            },
+        )
     }
 
     private fun textScene(

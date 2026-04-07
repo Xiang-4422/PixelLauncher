@@ -6,6 +6,7 @@ package com.purride.pixeldemo.app
 enum class DemoSceneKind(
     val menuLabel: String,
 ) {
+    PIPELINE_TEXT_SURFACE("新渲染管线"),
     TEXT("文本与字体"),
     PALETTE("调色板与像素形状"),
     TEXT_FIELD("文本输入"),

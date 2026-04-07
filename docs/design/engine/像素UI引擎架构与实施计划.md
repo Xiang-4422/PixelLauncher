@@ -481,10 +481,10 @@ object AxisBufferComposer
 
 如果从现在开始继续实现，推荐起手顺序固定为：
 
-1. 继续切 retained runtime 和 legacy render bridge 的边界
-2. 继续把 `PixelRenderRuntime` 压成 façade，把 support graph 做成唯一装配入口
-3. 在 `pixel-demo` 上持续验证 retained 状态、环境传播、分页、列表、输入和方向性
-4. 只有在 retained 主链稳定后，才讨论更重的主题系统、虚拟化列表和 `:app` 迁移
+1. 建最小 `RenderObject / PipelineOwner` 骨架
+2. 打通 `Text + Surface` 首批新渲染链路
+3. 保持 `bridge + legacy` 作为整树 fallback
+4. 继续用 `pixel-demo` 做验收
 
 这份顺序不是建议，而是当前阶段的执行顺序。
 
@@ -494,66 +494,99 @@ object AxisBufferComposer
 
 当前阶段后续工作统一按下面四组推进，但由同一条主线持续推进，不再单独拆成并行执行文档。
 
-### 10.1 retained framework 收口
+### 10.1 pipeline bootstrap
 
 目标：
 
-- 继续把 retained 主链收成真正清晰的 framework 层
-- 为后续 `RenderObject / PipelineOwner` 铺路
+- 落第一版最小新渲染管线
+- 先证明 `pixel-ui` 已经具备脱离 `legacy renderer` 出图的真实能力
 
 范围：
 
-- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/retained`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline`
+- pipeline 相关测试与 demo 场景
+- 与 pipeline 接入直接相关的 runtime glue
+
+完成定义：
+
+- 新增最小内部协议：
+  - `PipelineOwner`
+  - `RenderObject`
+  - `RenderBox`
+  - `RenderConstraints`
+  - `RenderSize`
+  - `PaintContext`
+  - `HitTestResult`
+- 第一批具体 render object 已落地：
+  - `RenderText`
+  - `RenderSurface`
+- `PaintContext` 直接基于 `PixelBuffer` 绘制，不复用 `legacy renderer` 的 render support
+
+### 10.2 retained -> pipeline lowering
+
+目标：
+
+- 把 retained element tree 接入新 pipeline
+- 第一版只做整树级分流，不做混合子树渲染
+
+范围：
+
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime`
-- retained 相关测试
-
-完成定义：
-
-- retained/runtime 主链职责继续变薄
-- 目录和文档保持同步
-- retained 主链类和方法注释持续补齐
-
-### 10.2 bridge 继续压薄
-
-目标：
-
-- 继续把 bridge 收成最薄兼容层
-- 避免 bridge 演变成第二套 runtime
-
-范围：
-
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge`
-- bridge 相关测试与文档引用
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline`
+- lowering 相关测试与文档引用
 
 完成定义：
 
-- bridge 更像纯桥接执行层
-- 解析协议、运行协议、widget 兼容壳边界更清楚
+- 新增 `PipelineElementTreeRenderer`
+- retained 主链改成：
+  - 先尝试新 pipeline renderer
+  - 任意不支持节点则整树回退到 `BridgeElementTreeRenderer`
+- 第一批结构性支持 widget 固定为：
+  - `Text`
+  - `Container` / `DecoratedBox`
+  - `Padding`
+  - `SizedBox`
+  - `Align`
+  - `Center`
+- 允许这些节点通过 modifier 形式携带最小 clickable / size / padding / fill 语义
+- 不做：
+  - `Row`
+  - `Column`
+  - `PageView`
+  - `ListView`
+  - `SingleChildScrollView`
+  - `TextField`
+  - mixed subtree pipeline/legacy 渲染
 
-### 10.3 legacy renderer façade 继续收口
+### 10.3 bridge/legacy fallback 维持
 
 目标：
 
-- 继续压薄当前 legacy renderer
-- 把大类继续拆成调度 + helper
+- 维持当前 fallback 链稳定可用
+- 不再把“继续拆 factory/assembly”当作主线进展
 
 范围：
 
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy`
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge`
 
 完成定义：
 
-- `PixelRenderRuntime` 继续维持 façade 角色
-- support/assembly/helper 结构更稳定
-- legacy 目录继续只作为内部兼容层存在
+- `legacy` 继续只作为内部 fallback 后端存在
+- `bridge` 继续只做最薄兼容层
+- 后续只在以下两种情况下修改这两层：
+  - 修复 bug
+  - 直接支撑新 pipeline 接入
+- 冻结纯 `assembly/factory` 型重构，避免继续投入低收益整理
 
 ### 10.4 文档、测试、注释与验收
 
 目标：
 
-- 给前三条主线持续兜底
-- 防止结构变化快于文档和测试
+- 给新 pipeline 主线持续兜底
+- 防止“代码已经转向，但文档还停在 legacy 收口”这种错位继续发生
 
 范围：
 
@@ -564,8 +597,9 @@ object AxisBufferComposer
 完成定义：
 
 - 文档与目录结构同步
-- 关键场景回归持续可见
+- 至少有一个 demo 场景完整走新 pipeline
 - 注释覆盖不再只靠“碰到再补”
+- pipeline 核心类和方法具备可读注释
 
 ---
 
@@ -587,27 +621,38 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 最低验收要求：
 
 - demo 菜单可启动
+- “新渲染管线”页面可打开
 - 文本页可打开
 - 输入页可打开
 - 列表/分页页可打开
+- 设备在线时，新渲染管线页面至少确认：
+  - 文本可见
+  - 容器背景与边框正确
+  - 点击命中不回退
 
 ---
 
 ## 12. 下一阶段目标
 
-当前这些工作做完后，下一阶段才进入：
+当前阶段完成定义不再是“继续把 legacy wiring 拆得更细”，而是：
 
-- `RenderObject`
-- `PipelineOwner`
-- layout / paint / hitTest 新协议
-- 新 renderer 承接最小组件集
+- 至少有一个真实 demo 场景不经过 `legacy renderer`
+- retained 主链已经具备新 pipeline 与旧 fallback 的整树级分流能力
+
+在这之后，下一阶段才进入：
+
+- 扩展 `RenderObject / PipelineOwner`
+- `Row / Column` 首批布局协议
+- 更完整的 lowering 能力
+- 新 renderer 承接更多基础组件集
 
 在这之前，不做：
 
 - `:app` 页面迁移
 - 删除整套 `legacy`
 - 一次性重写 `PageView / ListView / TextField`
+- 再把“继续拆 legacy factory/assembly”当成主要主线
 
 一句话说，当前阶段的目标不是“把新 renderer 一口气写完”，而是：
 
-> 把现在的中间态整理成可长期迭代、可安全替换后端的稳定架构。
+> 用一条真实可见的最小新渲染链路，证明后端替换已经开始，而不再只是整理过渡层。
