@@ -193,6 +193,7 @@
   - [LegacyTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/LegacyTreeRendererFactory.kt)
   - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupport.kt)
   - [RetainedRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupportFactory.kt)
+  - [RetainedRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/RetainedRenderSupportAssemblyFactory.kt)
   - [WidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/WidgetRenderRuntime.kt)
   - [WidgetRenderRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/WidgetRenderRuntimeFactory.kt)
   - [BridgeTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeTreeRenderer.kt)
