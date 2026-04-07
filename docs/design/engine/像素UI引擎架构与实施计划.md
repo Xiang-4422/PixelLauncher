@@ -539,6 +539,7 @@ object AxisBufferComposer
 完成定义：
 
 - 新增 `PipelineElementTreeRenderer`
+- 新增显式 capability checker，集中维护“哪些兼容节点树可以整树走新 pipeline”
 - retained 主链改成：
   - 先尝试新 pipeline renderer
   - 任意不支持节点则整树回退到 `BridgeElementTreeRenderer`
@@ -637,6 +638,7 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 
 - 至少有一个真实 demo 场景不经过 `legacy renderer`
 - retained 主链已经具备新 pipeline 与旧 fallback 的整树级分流能力
+- pipeline 支持边界已经由显式 capability checker 维护，而不是散落在 lowering 分支里
 
 在这之后，下一阶段才进入：
 

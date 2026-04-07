@@ -15,7 +15,10 @@ internal class CompositeElementTreeRenderer(
      * 优先尝试新 pipeline；失败时整树回退到旧渲染链。
      */
     override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
-        return pipelineRenderer.renderOrNull(request)
-            ?: fallbackRenderer.render(request)
+        return if (pipelineRenderer.canRender(request)) {
+            pipelineRenderer.render(request)
+        } else {
+            fallbackRenderer.render(request)
+        }
     }
 }

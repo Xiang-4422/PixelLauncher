@@ -52,7 +52,7 @@ internal class PipelineBridgeTreeLowering(
      * 把文本节点降成 `RenderText`。
      */
     private fun lowerText(node: PixelTextNode): RenderBox? {
-        if (node.softWrap || node.maxLines != 1 || node.overflow != PixelTextOverflow.CLIP || '\n' in node.text) {
+        if (!PipelineTreeCapabilityChecker.canLower(node)) {
             return null
         }
         val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
@@ -79,11 +79,11 @@ internal class PipelineBridgeTreeLowering(
      * 把表面节点降成 `RenderSurface`。
      */
     private fun lowerSurface(node: PixelSurfaceNode): RenderBox? {
-        val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
-        val child = node.child?.let(::lowerNode) ?: null
-        if (node.child != null && child == null) {
+        if (!PipelineTreeCapabilityChecker.canLower(node)) {
             return null
         }
+        val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
+        val child = node.child?.let(::lowerNode) ?: null
         return RenderSurface(
             child = child,
             fillTone = node.fillTone,
@@ -109,14 +109,11 @@ internal class PipelineBridgeTreeLowering(
      * 把单 child box 节点降成不绘制背景的 `RenderSurface`。
      */
     private fun lowerBox(node: PixelBoxNode): RenderBox? {
-        if (node.children.size > 1) {
+        if (!PipelineTreeCapabilityChecker.canLower(node)) {
             return null
         }
         val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
         val child = node.children.singleOrNull()?.let(::lowerNode)
-        if (node.children.singleOrNull() != null && child == null) {
-            return null
-        }
         return RenderSurface(
             child = child,
             fillTone = null,
@@ -138,7 +135,7 @@ internal class PipelineBridgeTreeLowering(
      * 把首批可支持的 row 节点降成最小 flex 对象。
      */
     private fun lowerRow(node: PixelRowNode): RenderBox? {
-        if (!isSupportedFlex(node.mainAxisSize, node.mainAxisAlignment, node.crossAxisAlignment)) {
+        if (!PipelineTreeCapabilityChecker.canLower(node)) {
             return null
         }
         val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
@@ -166,7 +163,7 @@ internal class PipelineBridgeTreeLowering(
      * 把首批可支持的 column 节点降成最小 flex 对象。
      */
     private fun lowerColumn(node: PixelColumnNode): RenderBox? {
-        if (!isSupportedFlex(node.mainAxisSize, node.mainAxisAlignment, node.crossAxisAlignment)) {
+        if (!PipelineTreeCapabilityChecker.canLower(node)) {
             return null
         }
         val modifierInfo = resolveSupportedModifierInfo(node.modifier) ?: return null
@@ -205,31 +202,6 @@ internal class PipelineBridgeTreeLowering(
             return null
         }
         return PixelModifierSupport.resolve(modifier)
-    }
-
-    /**
-     * 第一版 flex 只接受基础排布语义，不接权重和更复杂的子布局。
-     */
-    private fun isSupportedFlex(
-        mainAxisSize: PixelMainAxisSize,
-        mainAxisAlignment: PixelMainAxisAlignment,
-        crossAxisAlignment: PixelCrossAxisAlignment,
-    ): Boolean {
-        return mainAxisSize in setOf(PixelMainAxisSize.MIN, PixelMainAxisSize.MAX) &&
-            mainAxisAlignment in setOf(
-                PixelMainAxisAlignment.START,
-                PixelMainAxisAlignment.CENTER,
-                PixelMainAxisAlignment.END,
-                PixelMainAxisAlignment.SPACE_BETWEEN,
-                PixelMainAxisAlignment.SPACE_AROUND,
-                PixelMainAxisAlignment.SPACE_EVENLY,
-            ) &&
-            crossAxisAlignment in setOf(
-                PixelCrossAxisAlignment.START,
-                PixelCrossAxisAlignment.CENTER,
-                PixelCrossAxisAlignment.END,
-                PixelCrossAxisAlignment.STRETCH,
-            )
     }
 
     /**
