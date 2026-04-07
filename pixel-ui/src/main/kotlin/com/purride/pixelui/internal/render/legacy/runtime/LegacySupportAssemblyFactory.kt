@@ -39,13 +39,8 @@ internal object LegacySupportAssemblyFactory {
             scrollAxisUnboundedMax = SCROLL_AXIS_UNBOUNDED_MAX,
         )
         return LegacySupportAssembly(
-            textRenderSupport = textSupportAssembly.textRenderSupport,
-            textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
-            layoutRenderSupport = structureSupportAssembly.layoutRenderSupport,
-            viewportRenderSupport = structureSupportAssembly.viewportRenderSupport,
-            measureSupport = structureSupportAssembly.measureSupport,
-            nodeRenderSupport = structureSupportAssembly.nodeRenderSupport,
-            rootRenderSupport = structureSupportAssembly.rootRenderSupport,
+            textSupportAssembly = textSupportAssembly,
+            structureSupportAssembly = structureSupportAssembly,
         )
     }
 
