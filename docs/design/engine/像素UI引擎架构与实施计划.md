@@ -549,10 +549,9 @@ object AxisBufferComposer
   - `SizedBox`
   - `Align`
   - `Center`
+- 当前已额外支持最小 `Row / Column` 基础排布，但仅覆盖 `START / CENTER / END` 这组基础对齐，仍不支持 `Expanded / Flexible`、`stretch`、`space-*` 这类更复杂场景
 - 允许这些节点通过 modifier 形式携带最小 clickable / size / padding / fill 语义
 - 不做：
-  - `Row`
-  - `Column`
   - `PageView`
   - `ListView`
   - `SingleChildScrollView`

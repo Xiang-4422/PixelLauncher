@@ -8,7 +8,12 @@ import com.purride.pixelui.Center
 import com.purride.pixelui.Container
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.Expanded
 import com.purride.pixelui.Row
+import com.purride.pixelui.Column
+import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
@@ -164,19 +169,37 @@ class PipelineElementTreeRendererTest {
             root = Center(
                 child = Container(
                     width = 24,
-                    height = 12,
+                    height = 16,
                     padding = EdgeInsets.all(2),
                     fillTone = PixelTone.OFF,
                     borderTone = PixelTone.ACCENT,
                     alignment = Alignment.CENTER,
-                    child = Text(
-                        data = "PIPE",
-                        textAlign = TextAlign.CENTER,
+                    child = Column(
+                        spacing = 1,
+                        mainAxisSize = MainAxisSize.MIN,
+                        mainAxisAlignment = MainAxisAlignment.CENTER,
+                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                        children = listOf(
+                            Text(
+                                data = "PIPE",
+                                textAlign = TextAlign.CENTER,
+                            ),
+                            Row(
+                                spacing = 1,
+                                mainAxisSize = MainAxisSize.MIN,
+                                mainAxisAlignment = MainAxisAlignment.CENTER,
+                                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                children = listOf(
+                                    Text("A"),
+                                    Text("B"),
+                                ),
+                            ),
+                        ),
                     ),
                 ),
             ),
             logicalWidth = 24,
-            logicalHeight = 12,
+            logicalHeight = 16,
         )
 
         assertNotNull(result)
@@ -197,10 +220,39 @@ class PipelineElementTreeRendererTest {
                     width = 24,
                     height = 12,
                     child = Row(
+                        mainAxisAlignment = MainAxisAlignment.SPACE_EVENLY,
                         children = listOf(
                             Text("A"),
                             Text("B"),
                         ),
+                    ),
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 12,
+        )
+
+        assertNull(result)
+    }
+
+    /**
+     * 含权重 child 的 flex 树当前必须整树回退。
+     */
+    @Test
+    fun pipelineElementTreeRendererReturnsNullForWeightedRowTree() {
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 12,
+                child = Row(
+                    children = listOf(
+                        Expanded(
+                            child = Container(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                            ),
+                        ),
+                        Text("B"),
                     ),
                 ),
             ),
