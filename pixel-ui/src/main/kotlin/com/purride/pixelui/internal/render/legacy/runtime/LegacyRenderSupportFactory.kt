@@ -12,6 +12,8 @@ internal object LegacyRenderSupportFactory {
     fun createDefault(
         textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     ): LegacyRenderSupport {
-        return LegacyRenderSupportBundle(textRasterizer = textRasterizer)
+        return LegacyRenderSupportAssemblyFactory.createDefault(
+            textRasterizer = textRasterizer,
+        ).toRenderSupport()
     }
 }

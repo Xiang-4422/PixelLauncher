@@ -20,27 +20,11 @@ internal class RetainedWidgetRenderRuntime(
      * 先解析 Widget 树，再渲染解析后的 element tree。
      */
     override fun render(request: WidgetRenderRequest): PixelRenderResult {
-        val assembly = createRenderAssembly(request)
+        val assembly = RetainedWidgetRenderAssemblyFactory.create(
+            request = request,
+            buildRuntime = buildRuntime,
+        )
         return assembly.renderWith(renderer = elementTreeRenderer)
-    }
-
-    /**
-     * 为一次 widget 渲染构建 retained 中间装配结果。
-     */
-    private fun createRenderAssembly(request: WidgetRenderRequest): RetainedWidgetRenderAssembly {
-        val elementRoot = buildRuntime.resolveElementTree(
-            request = ElementTreeBuildRequest(
-                root = request.root,
-            ),
-        )
-        return RetainedWidgetRenderAssembly(
-            elementRoot = elementRoot,
-            renderRequest = ElementTreeRenderRequest(
-                root = elementRoot,
-                logicalWidth = request.logicalWidth,
-                logicalHeight = request.logicalHeight,
-            ),
-        )
     }
 
     /**
