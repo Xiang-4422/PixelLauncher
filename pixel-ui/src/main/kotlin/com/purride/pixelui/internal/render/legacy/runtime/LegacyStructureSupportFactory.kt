@@ -30,7 +30,7 @@ internal object LegacyStructureSupportFactory {
             measureNode = measureNode,
             renderNode = renderNode,
         )
-        val viewportRenderSupport = PixelViewportRenderSupport(
+        val viewportSupportAssembly = LegacyViewportSupportFactory.createDefault(
             callbacks = callbacks,
             scrollAxisUnboundedMax = scrollAxisUnboundedMax,
         )
@@ -44,7 +44,7 @@ internal object LegacyStructureSupportFactory {
             textRenderSupport = textSupportAssembly.textRenderSupport,
             textFieldRenderSupport = textSupportAssembly.textFieldRenderSupport,
             layoutRenderSupport = layoutSupportAssembly.layoutRenderSupport,
-            viewportRenderSupport = viewportRenderSupport,
+            viewportRenderSupport = viewportSupportAssembly.viewportRenderSupport,
             renderNode = renderNode,
         )
         val rootRenderSupport = PixelRootRenderSupport(
@@ -53,7 +53,7 @@ internal object LegacyStructureSupportFactory {
         return LegacyStructureSupportAssembly(
             layoutRenderSupport = layoutSupportAssembly.layoutRenderSupport,
             layoutMeasureSupport = layoutSupportAssembly.layoutMeasureSupport,
-            viewportRenderSupport = viewportRenderSupport,
+            viewportRenderSupport = viewportSupportAssembly.viewportRenderSupport,
             measureSupport = measureSupport,
             nodeRenderSupport = nodeRenderSupport,
             rootRenderSupport = rootRenderSupport,
