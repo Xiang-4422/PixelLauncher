@@ -126,6 +126,14 @@ internal abstract class Element(
     internal open fun visitChildren(visitor: (Element) -> Unit) = Unit
 
     /**
+     * 返回当前 element 对应的 render object。
+     *
+     * 只有 `RenderObjectElement` 会直接持有 render object；组合型 element
+     * 后续会通过子树继续向下查找。
+     */
+    open fun findRenderObject(): RenderObject? = null
+
+    /**
      * 执行当前 element 的实际重建。
      */
     protected abstract fun performRebuild()
@@ -155,6 +163,19 @@ internal abstract class ComponentElement(
      */
     override fun visitChildren(visitor: (Element) -> Unit) {
         childSlot.visit(visitor)
+    }
+
+    /**
+     * 组合型 element 自身没有 render object，向唯一子节点透传查找。
+     */
+    override fun findRenderObject(): RenderObject? {
+        var found: RenderObject? = null
+        childSlot.visit { child ->
+            if (found == null) {
+                found = child.findRenderObject()
+            }
+        }
+        return found
     }
 
     /**

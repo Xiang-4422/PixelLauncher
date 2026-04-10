@@ -481,10 +481,11 @@ object AxisBufferComposer
 
 如果从现在开始继续实现，推荐起手顺序固定为：
 
-1. 建最小 `RenderObject / PipelineOwner` 骨架
-2. 打通 `Text + Surface` 首批新渲染链路
-3. 保持 `bridge + legacy` 作为整树 fallback
-4. 继续用 `pixel-demo` 做验收
+1. 固定 Flutter 式 `Widget -> Element -> RenderObject` 基础协议
+2. 建最小 `RenderObject / PipelineOwner` 骨架
+3. 打通 `Text + Surface` 首批新渲染链路
+4. 保持 `bridge + legacy` 作为整树 fallback
+5. 继续用 `pixel-demo` 做验收
 
 这份顺序不是建议，而是当前阶段的执行顺序。
 
@@ -509,6 +510,7 @@ object AxisBufferComposer
 
 完成定义：
 
+- 新增内部 `RenderObjectWidget / RenderObjectElement` 协议，先固定 widget 配置如何创建/更新 render object
 - 新增最小内部协议：
   - `PipelineOwner`
   - `RenderObject`
@@ -645,8 +647,9 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 
 在这之后，下一阶段才进入：
 
+- 让更多基础组件直接成为 `RenderObjectWidget`
 - 扩展 `RenderObject / PipelineOwner`
-- `Row / Column` 首批布局协议
+- 补齐 `Row / Column / Align / Padding` 的长期 render object 形状
 - 更完整的 lowering 能力
 - 新 renderer 承接更多基础组件集
 
