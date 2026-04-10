@@ -15,42 +15,77 @@ import com.purride.pixelui.internal.legacy.PixelAlignment
  * 这样 `Text + Surface` 这条最小链就能先独立跑起来。
  */
 internal class RenderSurface(
-    private val child: RenderBox? = null,
-    private val fillTone: PixelTone? = null,
-    private val borderTone: PixelTone? = null,
-    private val alignment: PixelAlignment = PixelAlignment.TOP_START,
-    private val explicitWidth: Int? = null,
-    private val explicitHeight: Int? = null,
-    private val fillMaxWidth: Boolean = false,
-    private val fillMaxHeight: Boolean = false,
-    private val outerPaddingLeft: Int = 0,
-    private val outerPaddingTop: Int = 0,
-    private val outerPaddingRight: Int = 0,
-    private val outerPaddingBottom: Int = 0,
-    private val contentPaddingLeft: Int = 0,
-    private val contentPaddingTop: Int = 0,
-    private val contentPaddingRight: Int = 0,
-    private val contentPaddingBottom: Int = 0,
-    private val onClick: (() -> Unit)? = null,
-) : RenderBox() {
+    child: RenderBox? = null,
+    private var fillTone: PixelTone? = null,
+    private var borderTone: PixelTone? = null,
+    private var alignment: PixelAlignment = PixelAlignment.TOP_START,
+    private var explicitWidth: Int? = null,
+    private var explicitHeight: Int? = null,
+    private var fillMaxWidth: Boolean = false,
+    private var fillMaxHeight: Boolean = false,
+    private var outerPaddingLeft: Int = 0,
+    private var outerPaddingTop: Int = 0,
+    private var outerPaddingRight: Int = 0,
+    private var outerPaddingBottom: Int = 0,
+    private var contentPaddingLeft: Int = 0,
+    private var contentPaddingTop: Int = 0,
+    private var contentPaddingRight: Int = 0,
+    private var contentPaddingBottom: Int = 0,
+    private var onClick: (() -> Unit)? = null,
+) : SingleChildRenderObject() {
     private var childOffsetX = 0
     private var childOffsetY = 0
 
     init {
-        child?.parent = this
+        setRenderObjectChild(child)
     }
 
     /**
-     * 暴露唯一子节点给通用遍历。
+     * 更新当前 surface 配置，并触发布局与绘制刷新。
      */
-    override fun visitChildren(visitor: (RenderObject) -> Unit) {
-        child?.let(visitor)
+    fun updateSurface(
+        fillTone: PixelTone?,
+        borderTone: PixelTone?,
+        alignment: PixelAlignment,
+        explicitWidth: Int? = null,
+        explicitHeight: Int? = null,
+        fillMaxWidth: Boolean = false,
+        fillMaxHeight: Boolean = false,
+        outerPaddingLeft: Int = 0,
+        outerPaddingTop: Int = 0,
+        outerPaddingRight: Int = 0,
+        outerPaddingBottom: Int = 0,
+        contentPaddingLeft: Int = 0,
+        contentPaddingTop: Int = 0,
+        contentPaddingRight: Int = 0,
+        contentPaddingBottom: Int = 0,
+        onClick: (() -> Unit)? = null,
+    ) {
+        this.fillTone = fillTone
+        this.borderTone = borderTone
+        this.alignment = alignment
+        this.explicitWidth = explicitWidth
+        this.explicitHeight = explicitHeight
+        this.fillMaxWidth = fillMaxWidth
+        this.fillMaxHeight = fillMaxHeight
+        this.outerPaddingLeft = outerPaddingLeft
+        this.outerPaddingTop = outerPaddingTop
+        this.outerPaddingRight = outerPaddingRight
+        this.outerPaddingBottom = outerPaddingBottom
+        this.contentPaddingLeft = contentPaddingLeft
+        this.contentPaddingTop = contentPaddingTop
+        this.contentPaddingRight = contentPaddingRight
+        this.contentPaddingBottom = contentPaddingBottom
+        this.onClick = onClick
+        markNeedsLayout()
+        markNeedsPaint()
     }
 
     /**
      * 按给定约束测量表面尺寸和子节点布局。
      */
     override fun layout(constraints: RenderConstraints) {
+        val child = renderChild
         val horizontalInsets = outerPaddingLeft + outerPaddingRight + contentPaddingLeft + contentPaddingRight
         val verticalInsets = outerPaddingTop + outerPaddingBottom + contentPaddingTop + contentPaddingBottom
         child?.layout(
@@ -64,13 +99,15 @@ internal class RenderSurface(
 
         val childWidth = child?.size?.width ?: 0
         val childHeight = child?.size?.height ?: 0
+        val currentExplicitWidth = explicitWidth
+        val currentExplicitHeight = explicitHeight
         val measuredWidth = when {
-            explicitWidth != null -> explicitWidth
+            currentExplicitWidth != null -> currentExplicitWidth
             fillMaxWidth -> constraints.maxWidth
             else -> childWidth + horizontalInsets
         }
         val measuredHeight = when {
-            explicitHeight != null -> explicitHeight
+            currentExplicitHeight != null -> currentExplicitHeight
             fillMaxHeight -> constraints.maxHeight
             else -> childHeight + verticalInsets
         }
@@ -105,27 +142,30 @@ internal class RenderSurface(
         offsetX: Int,
         offsetY: Int,
     ) {
+        val child = renderChild
         val surfaceLeft = offsetX + outerPaddingLeft
         val surfaceTop = offsetY + outerPaddingTop
         val surfaceWidth = (size.width - outerPaddingLeft - outerPaddingRight).coerceAtLeast(0)
         val surfaceHeight = (size.height - outerPaddingTop - outerPaddingBottom).coerceAtLeast(0)
 
-        if (fillTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
+        val currentFillTone = fillTone
+        val currentBorderTone = borderTone
+        if (currentFillTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
             context.buffer.fillRect(
                 left = surfaceLeft,
                 top = surfaceTop,
                 rectWidth = surfaceWidth,
                 rectHeight = surfaceHeight,
-                value = fillTone.value,
+                value = currentFillTone.value,
             )
         }
-        if (borderTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
+        if (currentBorderTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
             context.buffer.drawRect(
                 left = surfaceLeft,
                 top = surfaceTop,
                 rectWidth = surfaceWidth,
                 rectHeight = surfaceHeight,
-                value = borderTone.value,
+                value = currentBorderTone.value,
             )
         }
         child?.paint(
@@ -146,7 +186,7 @@ internal class RenderSurface(
         if (localX !in 0 until size.width || localY !in 0 until size.height) {
             return
         }
-        child?.hitTest(
+        renderChild?.hitTest(
             localX = localX - childOffsetX,
             localY = localY - childOffsetY,
             result = result,
@@ -175,7 +215,7 @@ internal class RenderSurface(
                 onClick = clickHandler,
             )
         }
-        child?.collectClickTargets(
+        renderChild?.collectClickTargets(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
             targets = targets,
@@ -227,4 +267,10 @@ internal class RenderSurface(
             else -> 0
         }
     }
+
+    /**
+     * 读取当前 surface 可布局绘制的盒模型子节点。
+     */
+    private val renderChild: RenderBox?
+        get() = child as? RenderBox
 }
