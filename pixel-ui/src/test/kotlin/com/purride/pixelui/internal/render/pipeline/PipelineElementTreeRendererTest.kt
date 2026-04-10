@@ -12,6 +12,7 @@ import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.Row
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -447,6 +448,32 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * renderer 应该复用长期 `PipelineOwner`，同一个 render root 重复渲染时不重复 attach。
+     */
+    @Test
+    fun pipelineElementTreeRendererKeepsOwnerForStableRenderRoot() {
+        val renderBox = CountingPipelineRenderBox()
+        val renderer = createPipelineRenderer()
+
+        withRenderRequest(
+            root = FixedRenderObjectWidget(renderBox),
+            logicalWidth = 8,
+            logicalHeight = 6,
+        ) { request ->
+            renderer.render(request)
+            renderer.render(request)
+            assertEquals(1, renderBox.attachCount)
+            assertEquals(1, renderBox.layoutCount)
+            assertEquals(2, renderBox.paintCount)
+
+            renderBox.requestLayout()
+            renderer.render(request)
+            assertEquals(2, renderBox.layoutCount)
+            assertEquals(3, renderBox.paintCount)
+        }
+    }
+
+    /**
      * 用 build runtime + pipeline renderer 跑一棵测试树。
      */
     private fun renderWithPipeline(
@@ -494,6 +521,68 @@ class PipelineElementTreeRendererTest {
      */
     private fun createPipelineRenderer(): PipelineElementTreeRenderer {
         return PipelineElementTreeRenderer()
+    }
+
+    /**
+     * 测试用的固定 render object widget。
+     */
+    private class FixedRenderObjectWidget(
+        private val renderObject: RenderObject,
+    ) : RenderObjectWidget() {
+        /**
+         * 返回测试预置的 render object。
+         */
+        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+            return renderObject
+        }
+    }
+
+    /**
+     * 测试 renderer owner 复用的计数 render box。
+     */
+    private class CountingPipelineRenderBox : RenderBox() {
+        var attachCount = 0
+            private set
+        var layoutCount = 0
+            private set
+        var paintCount = 0
+            private set
+
+        /**
+         * 触发下一次 layout。
+         */
+        fun requestLayout() {
+            markNeedsLayout()
+        }
+
+        /**
+         * 记录 attach 次数。
+         */
+        override fun onAttach() {
+            attachCount += 1
+        }
+
+        /**
+         * 记录 layout 次数。
+         */
+        override fun layout(constraints: RenderConstraints) {
+            layoutCount += 1
+            size = RenderSize(
+                width = constraints.constrainWidth(1),
+                height = constraints.constrainHeight(1),
+            )
+        }
+
+        /**
+         * 记录 paint 次数。
+         */
+        override fun paint(
+            context: PaintContext,
+            offsetX: Int,
+            offsetY: Int,
+        ) {
+            paintCount += 1
+        }
     }
 
     /**

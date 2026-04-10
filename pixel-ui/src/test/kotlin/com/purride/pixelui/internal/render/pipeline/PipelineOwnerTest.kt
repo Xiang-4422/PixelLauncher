@@ -25,6 +25,20 @@ class PipelineOwnerTest {
     }
 
     /**
+     * 重复挂载同一个 root 应该保持 owner/root 关系，不重复 detach/attach。
+     */
+    @Test
+    fun attachRootSkipsWhenRootIsUnchanged() {
+        val root = CountingRenderBox()
+        val owner = PipelineOwner(root = root)
+
+        owner.attachRoot(root)
+
+        assertEquals(1, root.attachCount)
+        assertEquals(0, root.detachCount)
+    }
+
+    /**
      * owner 替换为空 root 时应该递归 detach 旧 render object 子树。
      */
     @Test
