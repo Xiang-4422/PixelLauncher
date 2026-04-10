@@ -133,3 +133,58 @@ internal class SingleChildRenderObjectElement(
         renderObjectWithChild.setRenderObjectChild(child?.findRenderObject())
     }
 }
+
+/**
+ * Flutter 风格多 child render object widget 的内部基础协议。
+ */
+internal abstract class MultiChildRenderObjectWidget(
+    val children: List<Widget>,
+    key: Any? = null,
+) : RenderObjectWidget(key = key) {
+    /**
+     * 创建多 child render object element。
+     */
+    override fun createElement(): RenderObjectElement {
+        return MultiChildRenderObjectElement(this)
+    }
+}
+
+/**
+ * 多 child render object widget 对应的 retained element。
+ */
+internal class MultiChildRenderObjectElement(
+    widget: MultiChildRenderObjectWidget,
+) : RenderObjectElement(widget) {
+    private val childSlot = MultiChildElementSlot()
+
+    /**
+     * 同步 widget 配置，并更新多个 child elements 与 render object children。
+     */
+    override fun performRebuild() {
+        super.performRebuild()
+        childSlot.update(
+            owner = owner,
+            parent = this,
+            newWidgets = (widget as MultiChildRenderObjectWidget).children,
+        )
+        syncRenderObjectChildren()
+    }
+
+    /**
+     * 遍历多个 child elements。
+     */
+    override fun visitChildren(visitor: (Element) -> Unit) {
+        childSlot.visit(visitor)
+    }
+
+    /**
+     * 把 child elements 找到的 render objects 挂接到当前 render object。
+     */
+    private fun syncRenderObjectChildren() {
+        val renderObjectWithChildren = renderObject as? RenderObjectWithChildren
+            ?: error("MultiChildRenderObjectWidget 必须创建 RenderObjectWithChildren。")
+        renderObjectWithChildren.setRenderObjectChildren(
+            children = childSlot.elements.mapNotNull(Element::findRenderObject),
+        )
+    }
+}

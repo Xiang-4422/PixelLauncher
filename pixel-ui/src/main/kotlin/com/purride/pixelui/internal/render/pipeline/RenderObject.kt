@@ -139,6 +139,16 @@ internal interface RenderObjectWithChild {
 }
 
 /**
+ * 可承接多个 render object 子节点的协议。
+ */
+internal interface RenderObjectWithChildren {
+    /**
+     * 替换当前 render object 的所有直接子节点。
+     */
+    fun setRenderObjectChildren(children: List<RenderObject>)
+}
+
+/**
  * 单 child render object 的基础实现。
  */
 internal abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
@@ -163,5 +173,32 @@ internal abstract class SingleChildRenderObject : RenderObjectWithChild, RenderB
      */
     override fun visitChildren(visitor: (RenderObject) -> Unit) {
         child?.let(visitor)
+    }
+}
+
+/**
+ * 多 child render object 的基础实现。
+ */
+internal abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox() {
+    protected var children: List<RenderObject> = emptyList()
+        private set
+
+    /**
+     * 替换所有直接子节点，并维护父子生命周期。
+     */
+    override fun setRenderObjectChildren(children: List<RenderObject>) {
+        val previous = this.children
+        previous.filterNot(children::contains).forEach(::dropChild)
+        children.filterNot(previous::contains).forEach(::adoptChild)
+        this.children = children
+        markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    /**
+     * 遍历所有直接子节点。
+     */
+    override fun visitChildren(visitor: (RenderObject) -> Unit) {
+        children.forEach(visitor)
     }
 }
