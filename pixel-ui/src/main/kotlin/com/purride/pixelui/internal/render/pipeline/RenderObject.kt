@@ -126,6 +126,15 @@ internal abstract class RenderBox : RenderObject() {
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
     ) = Unit
+
+    /**
+     * 导出当前子树里的文本输入目标。
+     */
+    open fun collectTextInputTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelTextInputTarget>,
+    ) = Unit
 }
 
 /**

@@ -11,26 +11,63 @@ import com.purride.pixelui.internal.legacy.PixelMainAxisSize
  * 不支持权重布局；一旦子节点里出现权重，lowering 会整树回退。
  */
 internal class RenderFlex(
-    private val direction: FlexDirection,
+    private var direction: FlexDirection,
     children: List<RenderBox>,
-    private val spacing: Int = 0,
-    private val mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
-    private val mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
-    private val crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
-    private val explicitWidth: Int? = null,
-    private val explicitHeight: Int? = null,
-    private val fillMaxWidth: Boolean = false,
-    private val fillMaxHeight: Boolean = false,
-    private val paddingLeft: Int = 0,
-    private val paddingTop: Int = 0,
-    private val paddingRight: Int = 0,
-    private val paddingBottom: Int = 0,
-    private val onClick: (() -> Unit)? = null,
+    private var spacing: Int = 0,
+    private var mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
+    private var mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
+    private var crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
+    private var explicitWidth: Int? = null,
+    private var explicitHeight: Int? = null,
+    private var fillMaxWidth: Boolean = false,
+    private var fillMaxHeight: Boolean = false,
+    private var paddingLeft: Int = 0,
+    private var paddingTop: Int = 0,
+    private var paddingRight: Int = 0,
+    private var paddingBottom: Int = 0,
+    private var onClick: (() -> Unit)? = null,
 ) : MultiChildRenderObject() {
     private val childOffsets = mutableListOf<ChildOffset>()
 
     init {
         setRenderObjectChildren(children)
+    }
+
+    /**
+     * 更新 flex 布局配置，并触发布局与绘制刷新。
+     */
+    fun updateFlex(
+        direction: FlexDirection,
+        spacing: Int = 0,
+        mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
+        mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
+        crossAxisAlignment: PixelCrossAxisAlignment = PixelCrossAxisAlignment.START,
+        explicitWidth: Int? = null,
+        explicitHeight: Int? = null,
+        fillMaxWidth: Boolean = false,
+        fillMaxHeight: Boolean = false,
+        paddingLeft: Int = 0,
+        paddingTop: Int = 0,
+        paddingRight: Int = 0,
+        paddingBottom: Int = 0,
+        onClick: (() -> Unit)? = null,
+    ) {
+        this.direction = direction
+        this.spacing = spacing
+        this.mainAxisSize = mainAxisSize
+        this.mainAxisAlignment = mainAxisAlignment
+        this.crossAxisAlignment = crossAxisAlignment
+        this.explicitWidth = explicitWidth
+        this.explicitHeight = explicitHeight
+        this.fillMaxWidth = fillMaxWidth
+        this.fillMaxHeight = fillMaxHeight
+        this.paddingLeft = paddingLeft
+        this.paddingTop = paddingTop
+        this.paddingRight = paddingRight
+        this.paddingBottom = paddingBottom
+        this.onClick = onClick
+        markNeedsLayout()
+        markNeedsPaint()
     }
 
     /**
@@ -74,12 +111,36 @@ internal class RenderFlex(
             )
         }
 
-        children.forEach { child ->
+        val weightedChildren = children.filterIsInstance<RenderFlexChild>()
+        val fixedChildren = children.filterNot { child -> child is RenderFlexChild }
+        fixedChildren.forEach { child ->
             child.layout(childConstraints)
         }
 
-        val childrenMainExtent = children.sumOf(::mainExtentOf)
+        val fixedChildrenMainExtent = fixedChildren.sumOf(::mainExtentOf)
         val totalSpacing = (spacing * (children.size - 1).coerceAtLeast(0)).coerceAtLeast(0)
+        val availableMainForWeights = when (direction) {
+            FlexDirection.HORIZONTAL -> innerConstraints.maxWidth
+            FlexDirection.VERTICAL -> innerConstraints.maxHeight
+        }
+        val remainingForWeights = (availableMainForWeights - fixedChildrenMainExtent - totalSpacing).coerceAtLeast(0)
+        val totalFlex = weightedChildren.sumOf { child -> child.flex.coerceAtLeast(1) }
+        weightedChildren.forEach { child ->
+            val allocatedMainExtent = if (totalFlex == 0) {
+                0
+            } else {
+                (remainingForWeights * child.flex.coerceAtLeast(1)) / totalFlex
+            }
+            child.layout(
+                constraints = createWeightedChildConstraints(
+                    base = childConstraints,
+                    allocatedMainExtent = allocatedMainExtent,
+                    fit = child.fit,
+                ),
+            )
+        }
+
+        val childrenMainExtent = children.sumOf(::mainExtentOf)
         val contentMainExtent = childrenMainExtent + totalSpacing
         val contentCrossExtent = children.maxOfOrNull(::crossExtentOf) ?: 0
 
@@ -235,6 +296,25 @@ internal class RenderFlex(
     }
 
     /**
+     * 导出当前 flex 子树里的文本输入目标。
+     */
+    override fun collectTextInputTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelTextInputTarget>,
+    ) {
+        val children = renderChildren
+        children.forEachIndexed { index, child ->
+            val childOffset = childOffsets[index]
+            child.collectTextInputTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
+    /**
      * 解析当前主轴尺寸对应的输出宽高。
      */
     private fun resolveMeasuredMainOrCross(
@@ -340,6 +420,31 @@ internal class RenderFlex(
     }
 
     /**
+     * 为带 flex parent data 的子节点创建主轴约束。
+     */
+    private fun createWeightedChildConstraints(
+        base: RenderConstraints,
+        allocatedMainExtent: Int,
+        fit: com.purride.pixelui.FlexFit,
+    ): RenderConstraints {
+        return when (direction) {
+            FlexDirection.HORIZONTAL -> RenderConstraints(
+                minWidth = if (fit == com.purride.pixelui.FlexFit.TIGHT) allocatedMainExtent else 0,
+                maxWidth = allocatedMainExtent,
+                minHeight = base.minHeight,
+                maxHeight = base.maxHeight,
+            )
+
+            FlexDirection.VERTICAL -> RenderConstraints(
+                minWidth = base.minWidth,
+                maxWidth = base.maxWidth,
+                minHeight = if (fit == com.purride.pixelui.FlexFit.TIGHT) allocatedMainExtent else 0,
+                maxHeight = allocatedMainExtent,
+            )
+        }
+    }
+
+    /**
      * 读取当前 flex 可布局的盒模型子节点。
      */
     private val renderChildren: List<RenderBox>
@@ -355,6 +460,92 @@ internal class RenderFlex(
         while (childOffsets.size > childCount) {
             childOffsets.removeAt(childOffsets.lastIndex)
         }
+    }
+}
+
+/**
+ * 承接 `Expanded / Flexible` parent data 的透明 flex child render object。
+ */
+internal class RenderFlexChild(
+    child: RenderBox? = null,
+    var flex: Int,
+    var fit: com.purride.pixelui.FlexFit,
+) : SingleChildRenderObject() {
+    init {
+        setRenderObjectChild(child)
+    }
+
+    /**
+     * 更新 flex parent data。
+     */
+    fun updateFlexData(
+        flex: Int,
+        fit: com.purride.pixelui.FlexFit,
+    ) {
+        this.flex = flex
+        this.fit = fit
+        markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    /**
+     * 使用父级分配的约束布局唯一子节点。
+     */
+    override fun layout(constraints: RenderConstraints) {
+        val renderChild = child as? RenderBox
+        renderChild?.layout(constraints)
+        size = RenderSize(
+            width = renderChild?.size?.width ?: constraints.minWidth,
+            height = renderChild?.size?.height ?: constraints.minHeight,
+        )
+    }
+
+    /**
+     * 绘制唯一子节点。
+     */
+    override fun paint(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        (child as? RenderBox)?.paint(
+            context = context,
+            offsetX = offsetX,
+            offsetY = offsetY,
+        )
+    }
+
+    /**
+     * 执行唯一子节点命中测试。
+     */
+    override fun hitTest(
+        localX: Int,
+        localY: Int,
+        result: HitTestResult,
+    ) {
+        (child as? RenderBox)?.hitTest(localX, localY, result)
+    }
+
+    /**
+     * 导出唯一子节点点击目标。
+     */
+    override fun collectClickTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelClickTarget>,
+    ) {
+        (child as? RenderBox)?.collectClickTargets(offsetX, offsetY, targets)
+    }
+
+    /**
+     * 导出唯一子节点文本输入目标。
+     */
+    override fun collectTextInputTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelTextInputTarget>,
+    ) {
+        (child as? RenderBox)?.collectTextInputTargets(offsetX, offsetY, targets)
     }
 }
 

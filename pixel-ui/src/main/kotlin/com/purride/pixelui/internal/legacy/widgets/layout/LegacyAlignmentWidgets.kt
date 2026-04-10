@@ -22,8 +22,6 @@ import com.purride.pixelui.internal.toPixelAlignment
 
 /**
  * Flutter 风格 `Padding` 的直接 render object widget。
- *
- * 它仍实现 `BridgeWidget`，用于尚未迁移的旧父节点 fallback。
  */
 internal data class PaddingWidget(
     override val child: Widget,
@@ -32,10 +30,7 @@ internal data class PaddingWidget(
 ) : SingleChildRenderObjectWidget(
     child = child,
     key = key,
-), BridgeWidget {
-    override val childWidgets: List<Widget>
-        get() = listOf(child)
-
+) {
     /**
      * 创建承接 padding 的 surface render object。
      */
@@ -66,25 +61,6 @@ internal data class PaddingWidget(
             contentPaddingTop = padding.top,
             contentPaddingRight = padding.right,
             contentPaddingBottom = padding.bottom,
-        )
-    }
-
-    /**
-     * fallback 到 bridge 时生成等价 legacy box 节点。
-     */
-    override fun createBridgeNode(
-        context: BuildContext,
-        childNodes: BridgeNodeChildren,
-    ): BridgeRenderNode {
-        return PixelBox(
-            children = childNodes.asList(),
-            modifier = PixelModifier.Empty.padding(
-                left = padding.left,
-                top = padding.top,
-                right = padding.right,
-                bottom = padding.bottom,
-            ),
-            alignment = PixelAlignment.TOP_START,
         )
     }
 }
@@ -122,10 +98,7 @@ internal data class AlignWidget(
 ) : SingleChildRenderObjectWidget(
     child = child,
     key = key,
-), BridgeWidget {
-    override val childWidgets: List<Widget>
-        get() = listOf(child)
-
+) {
     /**
      * 创建承接对齐的 surface render object。
      */
@@ -154,20 +127,6 @@ internal data class AlignWidget(
             fillMaxHeight = true,
         )
     }
-
-    /**
-     * fallback 到 bridge 时生成等价 legacy box 节点。
-     */
-    override fun createBridgeNode(
-        context: BuildContext,
-        childNodes: BridgeNodeChildren,
-    ): BridgeRenderNode {
-        return PixelBox(
-            children = childNodes.asList(),
-            modifier = PixelModifier.Empty.fillMaxSize(),
-            alignment = alignment.toPixelAlignment(),
-        )
-    }
 }
 
 /**
@@ -181,52 +140,76 @@ internal data class AlignDirectionalWidget(
     key = key,
 ) {
     /**
-     * 在 build 时按当前方向解析对齐。
+     * 在 build 时按当前方向解析对齐，并交给 direct AlignWidget。
      */
     override fun build(context: BuildContext): Widget {
-        return LegacySingleChildWidget(
-            key = key,
+        return AlignWidget(
             child = child,
-        ) { _, childNode ->
-            PixelBox(
-                children = listOf(childNode),
-                modifier = PixelModifier.Empty.fillMaxSize(),
-                alignment = alignment.toPixelAlignment(Directionality.of(context)),
-            )
+            alignment = alignment.toPixelAlignment(Directionality.of(context)).toPublicAlignment(),
+            key = key,
+        )
+    }
+
+    /**
+     * 把内部对齐值映射回公开对齐值。
+     */
+    private fun PixelAlignment.toPublicAlignment(): Alignment {
+        return when (this) {
+            PixelAlignment.TOP_START -> Alignment.TOP_START
+            PixelAlignment.TOP_CENTER -> Alignment.TOP_CENTER
+            PixelAlignment.TOP_END -> Alignment.TOP_END
+            PixelAlignment.CENTER_START -> Alignment.CENTER_START
+            PixelAlignment.CENTER -> Alignment.CENTER
+            PixelAlignment.CENTER_END -> Alignment.CENTER_END
+            PixelAlignment.BOTTOM_START -> Alignment.BOTTOM_START
+            PixelAlignment.BOTTOM_CENTER -> Alignment.BOTTOM_CENTER
+            PixelAlignment.BOTTOM_END -> Alignment.BOTTOM_END
         }
     }
 }
 
 /**
- * Flutter 风格 `SizedBox` 的 bridge widget。
+ * Flutter 风格 `SizedBox` 的直接 render object widget。
  */
 internal data class SizedBoxWidget(
     val width: Int?,
     val height: Int?,
-    val child: Widget?,
+    override val child: Widget?,
     override val key: Any? = null,
-) : StatelessWidget(
+) : SingleChildRenderObjectWidget(
+    child = child,
     key = key,
 ) {
     /**
-     * 用 box 和固定尺寸 modifier 承接尺寸约束。
+     * 创建承接固定尺寸的透明 surface。
      */
-    override fun build(context: BuildContext): Widget {
-        return LegacyMultiChildWidget(
-            key = key,
-            children = child?.let(::listOf) ?: emptyList(),
-        ) { _, childNodes ->
-            val baseModifier = when {
-                width != null && height != null -> PixelModifier.Empty.size(width, height)
-                width != null -> PixelModifier.Empty.width(width)
-                height != null -> PixelModifier.Empty.height(height)
-                else -> PixelModifier.Empty
-            }
-            PixelBox(
-                children = childNodes,
-                modifier = baseModifier,
-                alignment = PixelAlignment.TOP_START,
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = PixelAlignment.TOP_START,
+            explicitWidth = width,
+            explicitHeight = height,
+            tightChildWidth = width != null,
+            tightChildHeight = height != null,
+        )
+    }
+
+    /**
+     * 同步新的固定尺寸到既有 surface render object。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderSurface).updateSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = PixelAlignment.TOP_START,
+            explicitWidth = width,
+            explicitHeight = height,
+            tightChildWidth = width != null,
+            tightChildHeight = height != null,
+        )
     }
 }

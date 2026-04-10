@@ -517,6 +517,8 @@ object AxisBufferComposer
 - 公开 `Text` 的首批受支持配置改为直接创建 `RenderText`，pipeline renderer 优先消费 retained tree 上的 direct render root
 - 公开 `DecoratedBox` 改为直接创建 `RenderSurface`，首批 `DecoratedBox + Text` 子树不再依赖 bridge lowering
 - 公开 `Padding / Align / Center` 改为直接创建 `RenderSurface`，首批单 child 布局壳开始共享 render object 主链
+- 公开 `SizedBox / Container / GestureDetector / Row / Column / Stack / Positioned / Expanded / Flexible / Spacer / TextField / OutlinedButton` 改为 direct render object 或 direct widget 组合，不再保留这些 widget 的 bridge fallback
+- `RenderFlex` 新增基础 flex 权重分配，`RenderStack / RenderPositioned` 新增基础叠放与定位能力，pipeline result 开始导出 direct text input target
 - 新增最小内部协议：
   - `PipelineOwner`
   - `RenderObject`

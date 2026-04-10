@@ -138,7 +138,7 @@ internal class SingleChildRenderObjectElement(
  * Flutter 风格多 child render object widget 的内部基础协议。
  */
 internal abstract class MultiChildRenderObjectWidget(
-    val children: List<Widget>,
+    open val children: List<Widget>,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     /**
