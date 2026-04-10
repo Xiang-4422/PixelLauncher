@@ -9,6 +9,7 @@ import com.purride.pixelui.Directionality
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
+import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.State
@@ -217,6 +218,29 @@ class RetainedWidgetRuntimeTest {
         assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
     }
 
+    @Test
+    fun renderObjectWidgetCreatesAndUpdatesRenderObjectElement() {
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { },
+            widgetAdapter = BridgeWidgetAdapter,
+        )
+
+        try {
+            val firstRoot = buildRuntime.resolveElementTree(TestRenderWidget(label = "first"))
+            val firstRenderObject = firstRoot?.findRenderObject() as? TestRenderObject
+
+            val secondRoot = buildRuntime.resolveElementTree(TestRenderWidget(label = "second"))
+            val secondRenderObject = secondRoot?.findRenderObject() as? TestRenderObject
+
+            assertEquals(firstRoot, secondRoot)
+            assertEquals(firstRenderObject, secondRenderObject)
+            assertEquals("second", secondRenderObject?.label)
+            assertEquals(2, secondRenderObject?.updateCount)
+        } finally {
+            buildRuntime.dispose()
+        }
+    }
+
     private class ToggleToneWidget : StatefulWidget() {
         override fun createState(): State<out StatefulWidget> = ToggleToneState()
     }
@@ -315,5 +339,28 @@ class RetainedWidgetRuntimeTest {
                 borderTone = null,
             )
         }
+    }
+
+    private class TestRenderWidget(
+        private val label: String,
+    ) : RenderObjectWidget() {
+        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+            return TestRenderObject()
+        }
+
+        override fun updateRenderObject(
+            context: InternalBuildContext,
+            renderObject: RenderObject,
+        ) {
+            (renderObject as TestRenderObject).apply {
+                label = this@TestRenderWidget.label
+                updateCount += 1
+            }
+        }
+    }
+
+    private class TestRenderObject : RenderObject() {
+        var label: String = ""
+        var updateCount: Int = 0
     }
 }

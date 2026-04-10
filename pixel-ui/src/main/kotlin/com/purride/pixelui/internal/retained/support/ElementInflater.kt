@@ -32,6 +32,7 @@ internal class DefaultElementInflater(
         return when (widget) {
             is InheritedNotifier<*> -> InheritedNotifierElement(widget)
             is InheritedWidget -> InheritedElement(widget)
+            is RenderObjectWidget -> RenderObjectElement(widget)
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)
             else -> widgetAdapter.adapt(
