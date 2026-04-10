@@ -69,19 +69,20 @@
 `pixel-core` 已经有独立单测覆盖以下方向：
 
 - 屏幕与几何
-  - [ScreenProfileFactoryTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/ScreenProfileFactoryTest.kt)
-  - [PixelGridGeometryTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelGridGeometryTest.kt)
-  - [PixelGridGeometryResolverTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelGridGeometryResolverTest.kt)
+  - [ScreenProfileFactoryTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/screen/ScreenProfileFactoryTest.kt)
+  - [PixelGridGeometryTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/graphics/PixelGridGeometryTest.kt)
+  - [PixelGridGeometryResolverTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/graphics/PixelGridGeometryResolverTest.kt)
 - 帧与缓冲
-  - [FrameSwapBufferTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/FrameSwapBufferTest.kt)
+  - [FrameSwapBufferTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/animation/FrameSwapBufferTest.kt)
 - 字体
-  - [PixelBitmapFontTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelBitmapFontTest.kt)
-  - [PixelGlyphPackParserTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelGlyphPackParserTest.kt)
-  - [PixelFontEngineTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelFontEngineTest.kt)
-  - [PixelTextRasterizerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/PixelTextRasterizerTest.kt)
+  - [PixelBitmapFontTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/font/PixelBitmapFontTest.kt)
+  - [PixelGlyphPackParserTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/font/PixelGlyphPackParserTest.kt)
+  - [PixelFontEngineTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/font/PixelFontEngineTest.kt)
+  - [PixelTextRasterizerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/font/PixelTextRasterizerTest.kt)
 - 运动与合成
-  - [AxisMotionControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/AxisMotionControllerTest.kt)
-  - [AxisBufferComposerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/AxisBufferComposerTest.kt)
+  - [AxisMotionControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/animation/AxisMotionControllerTest.kt)
+  - [AxisBufferComposerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-core/src/test/kotlin/com/purride/pixelcore/animation/AxisBufferComposerTest.kt)
+  - pixel-core 测试目录当前已经按 `animation / font / graphics / screen` 四组收拢
 
 ### 2.3 当前边界判断
 
@@ -176,12 +177,12 @@
   - 这一层当前只作为 retained runtime 过渡桥接使用，已经开始收为模块内部实现
 - 当前 retained 主链已经只面对 bridge 语义，不再直接从 `RetainedBuildRuntime` 输出 bridge tree；bridge 解析已经收敛到 [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt) 和 [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/RetainedWidgetRenderRuntime.kt)
   - 公开 Flutter 风格组件的旧节点适配逻辑，也已经从 [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/FlutterWidgetAliases.kt) 分离到 bridge/legacy support 文件，公开文件开始只保留 API 入口
-  - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/PixelNode.kt)
-  - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/PixelModifier.kt)
-  - [CustomDraw.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/CustomDraw.kt)
+  - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelNode.kt)
+  - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/modifier/PixelModifier.kt)
+  - [CustomDraw.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/drawing/CustomDraw.kt)
 - 基础布局与内容组件
-  - [LegacyLayoutValues.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/LegacyLayoutValues.kt)
-  - [LegacyCoreNodes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/LegacyCoreNodes.kt)
+  - [LegacyLayoutValues.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/layout/LegacyLayoutValues.kt)
+  - [LegacyCoreNodes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/LegacyCoreNodes.kt)
   - [PixelTextOverflow.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/theme/PixelTextOverflow.kt)
   - [PixelButton.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/PixelButton.kt)
   - [PixelTextStyle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/theme/PixelTextStyle.kt)
@@ -190,10 +191,10 @@
   - [PixelPagerSnapshot.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerSnapshot.kt)
   - [PixelPagerController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerController.kt)
 - 列表与滚动
-  - [PixelList.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/PixelList.kt)
+  - [PixelList.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelList.kt)
   - [PixelListState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListState.kt)
   - [PixelListController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListController.kt)
-  - [PixelSingleChildScrollView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/PixelSingleChildScrollView.kt)
+  - [PixelSingleChildScrollView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelSingleChildScrollView.kt)
 - 文本输入
   - [PixelTextField.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/PixelTextField.kt)
   - [PixelTextFieldState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelTextFieldState.kt)
@@ -336,13 +337,15 @@
 
 `pixel-ui` 已经有独立测试覆盖：
 
-- [PixelPagerControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelPagerControllerTest.kt)
-- [PixelListControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelListControllerTest.kt)
-- [PixelTextFieldControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/PixelTextFieldControllerTest.kt)
-- [PixelRenderRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/PixelRenderRuntimeTest.kt)
-- [RetainedWidgetRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/RetainedWidgetRuntimeTest.kt)
-- [PagerGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/PagerGesturePolicyTest.kt)
-- [NestedScrollGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/NestedScrollGesturePolicyTest.kt)
+- [PixelPagerControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelPagerControllerTest.kt)
+- [PixelListControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelListControllerTest.kt)
+- [PixelTextFieldControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelTextFieldControllerTest.kt)
+- [PixelRenderRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/legacy/runtime/PixelRenderRuntimeTest.kt)
+- [RetainedWidgetRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/retained/RetainedWidgetRuntimeTest.kt)
+- [PipelineElementTreeRendererTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineElementTreeRendererTest.kt)
+- [PagerGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/legacy/viewport/PagerGesturePolicyTest.kt)
+- [NestedScrollGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/legacy/viewport/NestedScrollGesturePolicyTest.kt)
+- pixel-ui 测试目录当前已经按 `state / internal/render / internal/retained` 三组收拢
 
 ### 3.4 当前限制
 
