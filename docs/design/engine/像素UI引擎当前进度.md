@@ -148,7 +148,7 @@
   - pipeline 需要复用的 `PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等基础模型已经从 `internal/legacy` 抽到 `internal/model`，生产 direct pipeline 与 widget 层不再 import `internal.legacy`
   - 当前 pipeline 支持边界已经收口到 direct render object 主链；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView`，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
   - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline，默认 retained 运行时已经改成 pipeline-only，不再自动启用 bridge/legacy fallback
-  - bridge 目录已经从 `src/main` 移出，只保留在 `src/test` 作为 legacy renderer 测试夹具
+  - `internal/legacy`、`internal/render/legacy` 和测试侧旧 bridge 夹具已经删除，生产源码不再保留 legacy renderer 后端
   - 已经 direct pipeline 化的 widget 已经移出 legacy 目录：
   - [TextWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/TextWidgets.kt)
   - [InputWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/InputWidgets.kt)
@@ -160,19 +160,12 @@
   - [ListWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/scroll/ListWidgets.kt)
   - [PagerWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/scroll/PagerWidgets.kt)
   - [SingleChildScrollWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/scroll/SingleChildScrollWidgets.kt)
-  - legacy widget 目录已经清空；已替换的 direct widget 统一收在 `internal/widgets/content`、`internal/widgets/layout` 与 `internal/widgets/scroll`
-- 兼容层基础节点与场景
-  - 这一层当前只作为 retained runtime 过渡桥接使用，已经开始收为模块内部实现
-- 当前 retained 主链已经直接面对 direct render object tree，不再通过 bridge tree 作为默认中间表示
-  - 公开 Flutter 风格组件的旧节点适配逻辑，也已经从 [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/FlutterWidgetAliases.kt) 分离到 bridge/legacy support 文件，公开文件开始只保留 API 入口
-  - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelNode.kt)
+  - 已替换的 direct widget 统一收在 `internal/widgets/content`、`internal/widgets/layout` 与 `internal/widgets/scroll`
+- 当前 retained 主链已经直接面对 direct render object tree，不再通过 bridge tree 或 legacy node 作为默认中间表示
+  - 公开 Flutter 风格组件文件现在只装配 direct widget，不再保留旧节点适配逻辑
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model/PixelModifier.kt)
-  - [LegacyPixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/modifier/PixelModifier.kt)
-  - [CustomDraw.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/drawing/CustomDraw.kt)
 - 基础布局与内容组件
   - [PixelLayoutValues.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model/PixelLayoutValues.kt)
-  - [LegacyLayoutValues.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/layout/LegacyLayoutValues.kt)
-  - [LegacyCoreNodes.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/LegacyCoreNodes.kt)
   - [PixelTextOverflow.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/theme/PixelTextOverflow.kt)
   - [PixelButton.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/PixelButton.kt)
   - [PixelTextStyle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/theme/PixelTextStyle.kt)
@@ -181,10 +174,8 @@
   - [PixelPagerSnapshot.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerSnapshot.kt)
   - [PixelPagerController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelPagerController.kt)
 - 列表与滚动
-  - [PixelList.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelList.kt)
   - [PixelListState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListState.kt)
   - [PixelListController.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelListController.kt)
-  - [PixelSingleChildScrollView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelSingleChildScrollView.kt)
 - 文本输入
   - [PixelTextField.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/PixelTextField.kt)
   - [PixelTextFieldState.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/state/PixelTextFieldState.kt)
@@ -193,76 +184,13 @@
   - [PixelHostBridge.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/host/PixelHostBridge.kt)
   - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt)
 - 运行时与手势
-  - legacy runtime 目录当前已经按 `core / root / assembly / factory` 四组收拢
-  - [PixelRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/PixelRenderRuntime.kt)
-  - [LegacyRenderSupportBundle.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/assembly/LegacyRenderSupportBundle.kt)
-  - [LegacyNodeRuntimeSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/core/LegacyNodeRuntimeSupport.kt)
-  - [LegacyRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/core/LegacyRenderSupport.kt)
-  - [LegacyRenderCallbacksFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/factory/LegacyRenderCallbacksFactory.kt)
-  - [LegacyRenderCallbacks.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/core/LegacyRenderCallbacks.kt)
-  - [LegacyRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/factory/LegacyRenderSupportFactory.kt)
-  - [LegacyRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/factory/LegacyRenderSupportAssemblyFactory.kt)
-  - [LegacyLayoutSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/factory/LegacyLayoutSupportFactory.kt)
-  - [LegacyLayoutSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/assembly/LegacyLayoutSupportAssembly.kt)
-  - [LegacyViewportSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/factory/LegacyViewportSupportFactory.kt)
-  - [LegacyViewportSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/assembly/LegacyViewportSupportAssembly.kt)
-  - [LegacyNodeSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/factory/LegacyNodeSupportFactory.kt)
-  - [LegacyNodeSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/assembly/LegacyNodeSupportAssembly.kt)
-  - [LegacyStructureSupportAssembly.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/assembly/LegacyStructureSupportAssembly.kt)
-  - [LegacyTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/LegacyTreeRenderer.kt)
-  - [LegacyTreeRendererFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/LegacyTreeRendererFactory.kt)
+  - legacy runtime 与 bridge 测试夹具已经删除
   - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupport.kt)
   - [RetainedRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupportFactory.kt)
   - [RetainedRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/RetainedRenderSupportAssemblyFactory.kt)
   - [WidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/WidgetRenderRuntime.kt)
   - [WidgetRenderRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/WidgetRenderRuntimeFactory.kt)
-  - bridge runtime 中转壳已经删除，legacy 测试夹具直接通过测试源码里的 `DefaultBridgeTreeResolver + LegacyTreeRendererFactory` 显式 opt-in 旧链路
-  - [PixelRootRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/PixelRootRenderSupport.kt)
-  - [PixelRootLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/PixelRootLayoutSupport.kt)
-  - legacy node 目录当前已经按 `core / dispatch / modifier / target` 四组收拢
-  - [PixelNodeRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/core/PixelNodeRenderSupport.kt)
-  - [PixelNodeRenderDispatch.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/dispatch/PixelNodeRenderDispatch.kt)
-  - [PixelNodeSpecialRenderDispatch.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/dispatch/PixelNodeSpecialRenderDispatch.kt)
-  - [PixelNodeModifierContext.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/modifier/PixelNodeModifierContext.kt)
-  - legacy layout 目录当前已经按 `core / flex / stack / surface` 四组收拢
-  - [PixelLayoutRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/core/PixelLayoutRenderSupport.kt)
-  - [PixelLayoutMeasureSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/core/PixelLayoutMeasureSupport.kt)
-  - [PixelRowRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/flex/PixelRowRenderSupport.kt)
-  - [PixelColumnRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/flex/PixelColumnRenderSupport.kt)
-  - [PixelSurfaceRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/surface/PixelSurfaceRenderSupport.kt)
-  - [PixelStackRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/stack/PixelStackRenderSupport.kt)
-  - [PixelPositionedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/stack/PixelPositionedRenderSupport.kt)
-  - [PixelFlexLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/flex/PixelFlexLayoutSupport.kt)
-  - [PixelPositionedLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/stack/PixelPositionedLayoutSupport.kt)
-  - [PixelAlignmentLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/layout/core/PixelAlignmentLayoutSupport.kt)
-  - legacy viewport 目录当前已经按 `gesture / scroll / support` 三组收拢
-  - [PixelViewportRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/support/PixelViewportRenderSupport.kt)
-  - [PixelViewportSessionSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/support/PixelViewportSessionSupport.kt)
-  - [PixelViewportResultSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/support/PixelViewportResultSupport.kt)
-  - [PixelTargetTranslateSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/target/PixelTargetTranslateSupport.kt)
-  - legacy text 目录当前已经按 `core / field` 两组收拢
-  - [PixelTextRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/core/PixelTextRenderSupport.kt)
-  - [PixelTextLayoutAssembler.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/core/PixelTextLayoutAssembler.kt)
-  - [PixelTextRasterizerResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/core/PixelTextRasterizerResolver.kt)
-  - [PixelTextFieldVisualSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/field/PixelTextFieldVisualSupport.kt)
-  - [PixelTextFieldTargetExport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/field/PixelTextFieldTargetExport.kt)
-  - legacy measure 目录当前已经收进 `core`
-  - [PixelMeasureResultSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/measure/core/PixelMeasureResultSupport.kt)
-  - [PixelRenderSessionFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/core/PixelRenderSessionFactory.kt)
-  - [PixelTextAlignmentSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/core/PixelTextAlignmentSupport.kt)
-  - [PixelTextLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/core/PixelTextLayoutSupport.kt)
-  - [PixelTextFieldRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/field/PixelTextFieldRenderSupport.kt)
-  - [PixelTextFieldLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/text/field/PixelTextFieldLayoutSupport.kt)
-  - [PixelMeasureSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/measure/core/PixelMeasureSupport.kt)
-  - [PixelMeasureDispatch.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/measure/core/PixelMeasureDispatch.kt)
-  - [PixelModifierSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/node/modifier/PixelModifierSupport.kt)
-  - [PixelRenderPrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/core/PixelRenderPrimitives.kt)
-  - [PixelPagerRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/scroll/PixelPagerRenderSupport.kt)
-  - [PixelVerticalScrollRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/scroll/PixelVerticalScrollRenderSupport.kt)
-  - [PixelListRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/scroll/PixelListRenderSupport.kt)
-  - [PixelSingleChildScrollRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/scroll/PixelSingleChildScrollRenderSupport.kt)
-  - [PagerGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/gesture/PagerGesturePolicy.kt)
-  - [NestedScrollGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/viewport/gesture/NestedScrollGesturePolicy.kt)
+  - 新增运行时和手势能力后，应优先落在 `internal/render/pipeline`、`internal/widgets` 或 `state`，不再新增 legacy 后端文件
 
 ### 3.2 当前已验证场景
 
@@ -302,7 +230,7 @@
   - `ListenableDependencyRegistry`
 - `RetainedBuildRuntime` 当前只负责 retained element tree，本身不再直接产出 bridge tree
 - 默认绘制链路当前已经改成 `RetainedWidgetRenderRuntime -> RetainedRenderSupport -> PipelineElementTreeRenderer -> PipelineOwner`，不再自动接入 bridge/legacy fallback
-- 当前重构主线不是再补更多组件名字，而是继续把 production pipeline 对 legacy 模型和 legacy render support 的剩余依赖删掉
+- 当前重构主线不是再补更多组件名字，而是继续把 pipeline render object 的长期形态补稳，并防止旧后端重新进入生产源码
 
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
 
@@ -327,7 +255,7 @@
 
 它们现在已经可以替掉大部分页面层公开“手动拉伸和尺寸兼容参数”写法。
 
-旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前只作为 `pixel-ui` 模块内部兼容桥接保留，已经不再是建议依赖的公开页面 API。
+旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等节点式名称已经从生产源码删除，不再作为建议依赖的页面 API。
 
 ### 3.3 当前测试覆盖
 
@@ -336,11 +264,8 @@
 - [PixelPagerControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelPagerControllerTest.kt)
 - [PixelListControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelListControllerTest.kt)
 - [PixelTextFieldControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelTextFieldControllerTest.kt)
-- [PixelRenderRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/legacy/runtime/PixelRenderRuntimeTest.kt)
 - [RetainedWidgetRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/retained/RetainedWidgetRuntimeTest.kt)
 - [PipelineElementTreeRendererTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineElementTreeRendererTest.kt)
-- [PagerGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/legacy/viewport/gesture/PagerGesturePolicyTest.kt)
-- [NestedScrollGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/legacy/viewport/gesture/NestedScrollGesturePolicyTest.kt)
 - pixel-ui 测试目录当前已经按 `state / internal/render / internal/retained` 三组收拢
 
 ### 3.4 当前限制
@@ -355,7 +280,7 @@
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部的底层节点和兼容运行时里
-- `legacy` 渲染后端已经从默认运行时路径移出；后续只作为待删除的历史后端处理
+- `legacy` 渲染后端已经从生产源码删除；后续不能再把它作为 fallback 重新接入
 - 新渲染管线已经从最小 `Text + Surface` 骨架推进到基础布局、输入与滚动视口，但还没有达到完整 Flutter 级别的布局/手势/文本系统
 - 还没有开始把 `:app` 页面迁进来
 
@@ -393,9 +318,9 @@
 
 ### 5.2 正在进行
 
-- 启动最小新渲染管线骨架
-- 让 retained 主链默认直接进入新 pipeline，未接入组件不再静默走 bridge/legacy fallback
-- 用 `pixel-demo` 新增验证页证明至少有一个真实场景已经不再依赖 `legacy renderer`
+- 补稳 direct pipeline 核心架构
+- 继续补稳 retained 主链直接进入新 pipeline 后的布局、输入与滚动长期形态
+- 用 `pixel-demo` 持续证明真实场景不依赖旧后端
 - 持续同步注释、测试和实施计划，防止主线和文档再错位
 
 ### 5.3 尚未开始
@@ -419,9 +344,9 @@
 
 当前最值得继续推进的方向有三条：
 
-- 启动并稳定最小 `RenderObject / PipelineOwner` 骨架
-- 打通 `Text + Surface` 首批新渲染链路，并保持整树 fallback 稳定
-- 在 `pixel-demo` 上持续验收新 pipeline 页面与现有 retained/bridge/legacy 兼容页面，不提前启动 `:app` 迁移
+- 补稳 `RenderObject / PipelineOwner` 的长期职责边界
+- 继续扩展 direct pipeline 的基础布局、输入和滚动视口
+- 在 `pixel-demo` 上持续验收新 pipeline 页面，不提前启动 `:app` 迁移
 
 ---
 
@@ -431,8 +356,8 @@
 
 更准确的说法是：
 
-> `pixel-core` 和 `pixel-ui` 已经形成了可运行、可测试、可继续演进的第一版基础框架；最近一轮 `legacy` 内部整理已经把过渡后端收到了足够清楚的位置，接下来主线不再是继续拆 `factory/assembly`，而是开始落最小新渲染管线。
+> `pixel-core` 和 `pixel-ui` 已经形成了可运行、可测试、可继续演进的第一版基础框架；legacy 后端已经从生产源码删除，接下来主线不再是继续拆 `factory/assembly`，而是把 direct pipeline 的核心架构补成长期形态。
 
 更具体一点说，当前工程已经进入：
 
-> “新渲染管线启动期”，短期主线是用 `Text + Surface` 先证明真实端到端替换已经开始，而不是启动业务页迁移或继续深挖 `legacy` 内部整理。
+> “新渲染管线成长期”，短期主线是补稳 `RenderObject / PipelineOwner / RenderObjectWidget` 的长期设计，而不是启动业务页迁移或继续深挖 legacy 内部整理。

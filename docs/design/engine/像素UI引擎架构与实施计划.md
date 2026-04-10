@@ -40,14 +40,13 @@
 - 新增独立 `:pixel-demo` 作为框架验证宿主
 - 只有 demo 验证通过后，才开始迁移 Launcher
 
-当前实现层面仍然保持：
+当前实现层面保留：
 
 - `retained build/runtime`
 - `runtime orchestration`
-- `bridge`
-- `legacy renderer`
+- `direct render object pipeline`
 
-其中 `legacy renderer` 当前继续保留，但只作为内部可替换后端持续收口，不再承担公开 API 责任。
+`bridge` 与 `legacy renderer` 已经从生产源码删除，不再作为 fallback 或内部可替换后端保留。
 
 这意味着当前阶段不是“边拆边迁”，而是“框架先自证，再迁应用”。
 
@@ -275,7 +274,8 @@ object AxisBufferComposer
 当前执行口径是：
 
 - 页面层优先使用 Flutter 风格公开组件和控制器
-- `PixelNode`、`PixelModifier`、旧 `Pixel*` 公开组件名只保留在模块内部兼容层
+- `PixelNode` 与旧 `Pixel*` 节点式组件名已经从生产源码删除，页面层不再依赖旧节点 API
+- `PixelModifier` 只作为内部 pipeline 基础模型保留，不再作为旧节点系统入口
 - 不再继续扩展旧公开接口
 
 ### 4.3 `:pixel-ui` 当前运行时状态
@@ -298,10 +298,10 @@ object AxisBufferComposer
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
-- bridge 目录已经从 `src/main` 移出，只保留在 `src/test` 作为 legacy renderer 测试夹具
+- bridge 目录和 legacy renderer 已经从生产源码删除
 - 默认运行时已经改成 pipeline-only，不再自动装配 bridge/legacy fallback
 - pipeline 基础布局值与 modifier 已经抽到 `internal/model`，生产 direct pipeline 与 widget 层不再 import `internal.legacy`
-- 当前主线任务是继续删除 production pipeline 对 legacy render support 的剩余依赖，而不是启动 `:app` 迁移
+- 当前主线任务是继续补稳 direct pipeline 的核心架构，而不是启动 `:app` 迁移
 
 ---
 
@@ -350,7 +350,7 @@ object AxisBufferComposer
 
 1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
 2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderPagerViewport / RenderScrollViewport / PipelineOwner`
-3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经从 `internal/legacy` 抽到 `internal/model`，legacy 同名入口只保留为待删除兼容别名
+3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经收在 `internal/model`，legacy 同名入口已经随旧后端删除
 4. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，旧 scroll widget 目录已清空，下一步删除不再使用的 legacy render support 与 bridge adapter
 5. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已退出默认路径，后续按引用链逐步删除
 6. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
@@ -448,7 +448,7 @@ object AxisBufferComposer
 | 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
 | 已完成 | `:pixel-ui` Flutter 风格公开层 | 页面层主路径已转到 `Widget / BuildContext / Text / Container / Row / Column / PageView / ListView / TextField` |
 | 已完成 | retained build/runtime 首轮落地 | `BuildOwner / Element / Stateful / Inherited` 已成立，并已在 demo 真实使用 |
-| 已完成 | legacy renderer 主链拆分 | `PixelRenderRuntime` 已不再承担文本、输入、viewport、布局、测量的全部细节 |
+| 已完成 | legacy renderer 删除 | `internal/legacy`、`internal/render/legacy` 与旧 bridge 测试夹具已经删除，生产运行时只保留 direct pipeline |
 | 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `ListView`、`PixelListState`、`ScrollController`，并支持列表视口裁剪、触摸滚动与基础惯性滚动 |
 | 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动 |
 | 已完成 | `pixel-ui` 列表到分页滚动接力 | 列表滑到边界后，同一次纵向手势可直接接力给外层分页，无需抬手重新触发 |
@@ -459,7 +459,7 @@ object AxisBufferComposer
 | 已完成 | `pixel-ui` 列表程序化定位首轮落地 | `ScrollController` 已支持基于运行时测量结果将指定项滚入视口，demo 已补跳转验证 |
 | 已完成 | `pixel-ui` 单子节点滚动容器 | 已具备 `PixelSingleChildScrollView`，可承载单一长子树并复用现有纵向滚动链路 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、单子节点滚动、横纵分页、纵向列表、表单与列表组合、分页与列表组合、点击反馈、混合文本风格验证与权重布局展示 |
-| 进行中 | retained/runtime 与 legacy bridge 收口 | 正在继续削弱 retained 主链对 bridge/legacy 默认装配细节的感知，并把 `BuildOwner` 进一步收成 owner/scheduler |
+| 进行中 | direct pipeline 长期架构补齐 | 正在补稳 `RenderObject / PipelineOwner / RenderObjectWidget` 的长期形态，并防止旧 bridge/legacy fallback 回流 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
@@ -482,9 +482,9 @@ object AxisBufferComposer
 如果从现在开始继续实现，推荐起手顺序固定为：
 
 1. 固定 Flutter 式 `Widget -> Element -> RenderObject` 基础协议
-2. 建最小 `RenderObject / PipelineOwner` 骨架
-3. 打通 `Text + Surface` 首批新渲染链路
-4. 删除默认 bridge/legacy fallback，未接入 pipeline 的 widget 直接失败
+2. 补稳 `RenderObject / PipelineOwner` 的长期职责边界
+3. 继续扩展 direct pipeline 的基础布局、输入和滚动视口
+4. 保持 bridge/legacy fallback 删除状态，未接入 pipeline 的 widget 直接失败
 5. 继续用 `pixel-demo` 做验收
 
 这份顺序不是建议，而是当前阶段的执行顺序。
@@ -499,8 +499,8 @@ object AxisBufferComposer
 
 目标：
 
-- 落第一版最小新渲染管线
-- 先证明 `pixel-ui` 已经具备脱离 `legacy renderer` 出图的真实能力
+- 补稳第一版 direct pipeline 的核心架构
+- 继续证明 `pixel-ui` 已经具备脱离 legacy 后端出图的真实能力
 
 范围：
 
@@ -572,23 +572,21 @@ object AxisBufferComposer
 
 目标：
 
-- 删除默认 fallback 链路的剩余引用
+- 保持默认 fallback 链路已删除的状态
 - 不再把“继续拆 factory/assembly”当作主线进展
 
 范围：
 
-- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy`
-- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy`
-- `pixel-ui/src/test/kotlin/com/purride/pixelui/internal/bridge`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets`
+- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model`
 
 完成定义：
 
 - `legacy` 不再作为默认 fallback 后端存在
 - `bridge` 不再作为默认 fallback 层存在
-- legacy 中与 pipeline 共用的布局值、modifier 值只保留为指向 `internal/model` 的别名，后续删除 legacy renderer 时一并移除
-- 后续只在以下两种情况下修改这两层：
-  - 修复 bug
-  - 直接支撑新 pipeline 接入
+- `internal/legacy`、`internal/render/legacy` 和旧 bridge 测试夹具保持删除状态
+- 后续如果发现缺口，优先在 direct pipeline 或 `internal/model` 中补能力，不恢复旧后端
 - 冻结纯 `assembly/factory` 型重构，避免继续投入低收益整理
 
 ### 10.4 文档、测试、注释与验收
@@ -650,7 +648,7 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 - retained 主链已经默认直连新 pipeline，不再静默启用旧 fallback
 - pipeline 支持边界已经由 direct render object tree 自身决定，不再维护 bridge lowering capability checker
 - pipeline 缺少 render root 时会直接暴露不支持错误
-- pipeline 共享模型已经脱离 `internal.legacy`，legacy 同名模型退化为待删除别名层
+- pipeline 共享模型已经脱离 `internal.legacy`，legacy 同名模型别名层已经删除
 
 在这之后，下一阶段才进入：
 
@@ -662,9 +660,8 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 在这之前，不做：
 
 - `:app` 页面迁移
-- 删除整套 `legacy`
 - 再把“继续拆 legacy factory/assembly”当成主要主线
 
 一句话说，当前阶段的目标不是“把新 renderer 一口气写完”，而是：
 
-> 用一条真实可见的最小新渲染链路，证明后端替换已经开始，而不再只是整理过渡层。
+> 用真实 demo 和稳定测试继续扩大 direct pipeline 的基础能力，而不是回头维护旧过渡层。

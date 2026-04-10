@@ -33,8 +33,7 @@ import com.purride.pixelui.state.PixelTextFieldState
 /**
  * Flutter 风格公开别名层。
  *
- * 这一轮不再走“公开 Widget -> 直接强转 PixelNode”的路线，
- * 而是让公开组件先形成 retained build tree，再在最后一步翻译成 legacy node。
+ * 公开组件先形成 retained build tree，再由 direct render object pipeline 输出像素结果。
  */
 typealias TextStyle = PixelTextStyle
 typealias ButtonStyle = PixelButtonStyle

@@ -3,14 +3,11 @@ package com.purride.pixelui.internal
 import com.purride.pixelui.Widget
 
 /**
- * retained Widget 树到 legacy renderer 的过渡运行时。
+ * retained Widget 树到 pipeline renderer 的运行时。
  *
  * 当前阶段它显式负责两步：
  * 1. 用 retained build runtime 把 Widget 树解析成 retained element tree
- * 2. 再由 bridge 把结果交给纯 legacy renderer 输出像素结果
- *
- * 这样 `PixelRenderRuntime` 可以继续收敛成纯渲染器，不再同时承担
- * Widget 解析职责。
+ * 2. 再把 element tree 交给 pipeline renderer 输出像素结果
  */
 internal class RetainedWidgetRenderRuntime(
     private val buildRuntime: ElementTreeBuildRuntime,
