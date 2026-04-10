@@ -5,7 +5,6 @@ import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.TextDirection
-import com.purride.pixelui.internal.legacy.PixelTextAlign
 import kotlin.math.min
 
 /**

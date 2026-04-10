@@ -4,7 +4,6 @@ import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.Widget
-import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.internal.toPixelAlignment
 
 /**

@@ -300,7 +300,8 @@ object AxisBufferComposer
 - retained 目录当前已经按 `runtime / elements / support` 收拢
 - bridge 目录已经从 `src/main` 移出，只保留在 `src/test` 作为 legacy renderer 测试夹具
 - 默认运行时已经改成 pipeline-only，不再自动装配 bridge/legacy fallback
-- 当前主线任务是删除 retained 主链对 legacy 中间表示的剩余依赖，而不是启动 `:app` 迁移
+- pipeline 基础布局值与 modifier 已经抽到 `internal/model`，生产 direct pipeline 与 widget 层不再 import `internal.legacy`
+- 当前主线任务是继续删除 production pipeline 对 legacy render support 的剩余依赖，而不是启动 `:app` 迁移
 
 ---
 
@@ -349,9 +350,10 @@ object AxisBufferComposer
 
 1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
 2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderPagerViewport / RenderScrollViewport / PipelineOwner`
-3. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，旧 scroll widget 目录已清空，下一步删除不再使用的 legacy render support 与 bridge adapter
-4. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已退出默认路径，后续按引用链逐步删除
-5. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
+3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经从 `internal/legacy` 抽到 `internal/model`，legacy 同名入口只保留为待删除兼容别名
+4. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，旧 scroll widget 目录已清空，下一步删除不再使用的 legacy render support 与 bridge adapter
+5. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已退出默认路径，后续按引用链逐步删除
+6. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
 
 ### Phase D. 新增 `:pixel-demo`
 
@@ -517,6 +519,7 @@ object AxisBufferComposer
 - 公开 `Padding / Align / Center` 改为直接创建 `RenderSurface`，首批单 child 布局壳开始共享 render object 主链
 - 公开 `SizedBox / Container / GestureDetector / Row / Column / Stack / Positioned / Expanded / Flexible / Spacer / TextField / OutlinedButton` 改为 direct render object 或 direct widget 组合，不再保留这些 widget 的 bridge fallback
 - `RenderFlex` 新增基础 flex 权重分配，`RenderStack / RenderPositioned` 新增基础叠放与定位能力，pipeline result 开始导出 direct text input target
+- `internal/model` 承接 pipeline 与 direct widget 共享的基础布局枚举和 modifier 数据，避免生产 pipeline 继续依赖 `internal/legacy`
 - 新增最小内部协议：
   - `PipelineOwner`
   - `RenderObject`
@@ -548,6 +551,7 @@ object AxisBufferComposer
 - 新增 `PipelineElementTreeRenderer`
 - 删除旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering`
 - 生产 pipeline renderer 只接受 direct render object tree，不再从 bridge/legacy 中间树 lowering
+- direct pipeline render object 与 direct widget 层不得 import `internal.legacy`，如确实需要共享语义，先把语义抽到 `internal/model`
 - retained 主链改成：
   - 默认直接走新 pipeline renderer
   - 未接入 pipeline 的 widget 不再静默回退，直接暴露不支持错误
@@ -559,13 +563,9 @@ object AxisBufferComposer
   - `SizedBox`
   - `Align`
   - `Center`
-- 当前已额外支持最小 `Row / Column` 基础排布，并覆盖 `START / CENTER / END`、`SPACE_*` 与 `stretch`，但仍不支持 `Expanded / Flexible` 这类权重场景
+- 当前已额外支持最小 `Row / Column` 基础排布，并覆盖 `START / CENTER / END`、`SPACE_*`、`stretch` 与基础 flex 权重场景
 - 允许这些节点通过 modifier 形式携带最小 clickable / size / padding / fill 语义
 - 不做：
-  - `PageView`
-  - `ListView`
-  - `SingleChildScrollView`
-  - `TextField`
   - mixed subtree pipeline/legacy 渲染
 
 ### 10.3 bridge/legacy 删除收尾
@@ -585,6 +585,7 @@ object AxisBufferComposer
 
 - `legacy` 不再作为默认 fallback 后端存在
 - `bridge` 不再作为默认 fallback 层存在
+- legacy 中与 pipeline 共用的布局值、modifier 值只保留为指向 `internal/model` 的别名，后续删除 legacy renderer 时一并移除
 - 后续只在以下两种情况下修改这两层：
   - 修复 bug
   - 直接支撑新 pipeline 接入
@@ -649,19 +650,19 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 - retained 主链已经默认直连新 pipeline，不再静默启用旧 fallback
 - pipeline 支持边界已经由 direct render object tree 自身决定，不再维护 bridge lowering capability checker
 - pipeline 缺少 render root 时会直接暴露不支持错误
+- pipeline 共享模型已经脱离 `internal.legacy`，legacy 同名模型退化为待删除别名层
 
 在这之后，下一阶段才进入：
 
 - 让更多基础组件直接成为 `RenderObjectWidget`
 - 扩展 `RenderObject / PipelineOwner`
-- 补齐 `Row / Column / Align / Padding` 的长期 render object 形状
+- 补齐 `Row / Column / Align / Padding / PageView / ListView / TextField` 的长期 render object 形状
 - 新 renderer 承接更多基础组件集
 
 在这之前，不做：
 
 - `:app` 页面迁移
 - 删除整套 `legacy`
-- 一次性重写 `PageView / ListView / TextField`
 - 再把“继续拆 legacy factory/assembly”当成主要主线
 
 一句话说，当前阶段的目标不是“把新 renderer 一口气写完”，而是：

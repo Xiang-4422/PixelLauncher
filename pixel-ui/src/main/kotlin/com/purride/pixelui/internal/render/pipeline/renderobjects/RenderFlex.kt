@@ -1,9 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.internal.legacy.PixelCrossAxisAlignment
-import com.purride.pixelui.internal.legacy.PixelMainAxisAlignment
-import com.purride.pixelui.internal.legacy.PixelMainAxisSize
-
 /**
  * 新渲染管线里的最小弹性布局对象。
  *

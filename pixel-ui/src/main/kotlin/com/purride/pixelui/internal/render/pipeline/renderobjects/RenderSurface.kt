@@ -2,7 +2,6 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelTextInputAction
-import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 
