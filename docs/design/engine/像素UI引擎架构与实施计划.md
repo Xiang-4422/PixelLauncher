@@ -298,7 +298,7 @@ object AxisBufferComposer
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
-- bridge 目录当前已经按 `runtime / resolve / elements / widgets` 收拢；无引用的 legacy modifier 合并壳已删除
+- bridge 目录当前只剩 `resolve / elements / widgets`；默认运行时不再需要旧 `bridge/runtime` 中转壳
 - 默认运行时已经改成 pipeline-only，不再自动装配 bridge/legacy fallback
 - 当前主线任务是删除 retained 主链对 legacy 中间表示的剩余依赖，而不是启动 `:app` 迁移
 
