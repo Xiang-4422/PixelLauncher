@@ -266,6 +266,42 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * `Align + Padding + DecoratedBox + Text` 应该能完整走 direct render object 子树。
+     */
+    @Test
+    fun pipelineElementTreeRendererRendersDirectAlignedPaddingTreeWithoutBridgeResolver() {
+        val renderer = PipelineElementTreeRenderer(
+            bridgeTreeResolver = FailingBridgeTreeResolver,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
+        val result = withRenderRequest(
+            root = Align(
+                alignment = Alignment.TOP_START,
+                child = com.purride.pixelui.Padding(
+                    padding = EdgeInsets.all(1),
+                    child = DecoratedBox(
+                        fillTone = PixelTone.OFF,
+                        borderTone = PixelTone.ACCENT,
+                        padding = 1,
+                        alignment = Alignment.TOP_START,
+                        child = Text("PAD"),
+                    ),
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 10,
+        ) { request ->
+            assertTrue(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 1))
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+    }
+
+    /**
      * 只要树里出现首批不支持节点，就应该整树回退。
      */
     @Test

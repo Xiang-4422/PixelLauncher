@@ -81,6 +81,26 @@ internal class PipelineElementTreeRenderer(
      * 直接从 retained element tree 查找可挂载到 pipeline 的 render root。
      */
     private fun Element?.findPipelineRenderRoot(): RenderBox? {
-        return this?.findRenderObject() as? RenderBox
+        this ?: return null
+        if (containsBridgeElement()) {
+            return null
+        }
+        return findRenderObject() as? RenderBox
+    }
+
+    /**
+     * 判断当前 element 子树里是否仍包含 bridge element。
+     */
+    private fun Element.containsBridgeElement(): Boolean {
+        if (this is BridgeResolvableElement) {
+            return true
+        }
+        var found = false
+        visitChildren { child ->
+            if (!found && child.containsBridgeElement()) {
+                found = true
+            }
+        }
+        return found
     }
 }
