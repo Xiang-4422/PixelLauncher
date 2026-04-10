@@ -302,10 +302,10 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
-     * 只要树里出现首批不支持节点，就应该整树回退。
+     * Text 现在不再为了旧 softWrap 配置回退到 bridge。
      */
     @Test
-    fun pipelineElementTreeRendererReturnsNullForUnsupportedTree() {
+    fun pipelineElementTreeRendererRendersSoftWrapTextThroughDirectPipeline() {
         val renderer = createPipelineRenderer()
         val result = withRenderRequest(
             root = SizedBox(
@@ -320,22 +320,18 @@ class PipelineElementTreeRendererTest {
             logicalWidth = 24,
             logicalHeight = 12,
         ) { request ->
-            assertFalse(renderer.canRender(request))
-            assertEquals(
-                PipelineUnsupportedReason.UNSUPPORTED_TEXT_LAYOUT,
-                renderer.inspect(request).reason,
-            )
+            assertTrue(renderer.canRender(request))
             renderer.renderOrNull(request)
         }
 
-        assertNull(result)
+        assertNotNull(result)
     }
 
     /**
-     * 含权重 child 的 flex 树当前必须整树回退。
+     * 含权重 child 的 flex 树现在应该直接走 pipeline。
      */
     @Test
-    fun pipelineElementTreeRendererReturnsNullForWeightedRowTree() {
+    fun pipelineElementTreeRendererRendersWeightedRowTree() {
         val renderer = createPipelineRenderer()
         val result = withRenderRequest(
             root = SizedBox(
@@ -356,15 +352,11 @@ class PipelineElementTreeRendererTest {
             logicalWidth = 24,
             logicalHeight = 12,
         ) { request ->
-            assertFalse(renderer.canRender(request))
-            assertEquals(
-                PipelineUnsupportedReason.UNSUPPORTED_MODIFIER,
-                renderer.inspect(request).reason,
-            )
+            assertTrue(renderer.canRender(request))
             renderer.renderOrNull(request)
         }
 
-        assertNull(result)
+        assertNotNull(result)
     }
 
     /**

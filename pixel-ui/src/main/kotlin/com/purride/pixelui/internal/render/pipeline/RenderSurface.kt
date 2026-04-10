@@ -1,7 +1,10 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.internal.legacy.PixelAlignment
+import com.purride.pixelui.state.PixelTextFieldController
+import com.purride.pixelui.state.PixelTextFieldState
 
 /**
  * 新渲染管线里的最小表面对象。
@@ -32,6 +35,15 @@ internal class RenderSurface(
     private var contentPaddingRight: Int = 0,
     private var contentPaddingBottom: Int = 0,
     private var onClick: (() -> Unit)? = null,
+    private var tightChildWidth: Boolean = false,
+    private var tightChildHeight: Boolean = false,
+    private var textInputState: PixelTextFieldState? = null,
+    private var textInputController: PixelTextFieldController? = null,
+    private var textInputReadOnly: Boolean = false,
+    private var textInputAutofocus: Boolean = false,
+    private var textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
+    private var textInputOnChanged: ((String) -> Unit)? = null,
+    private var textInputOnSubmitted: ((String) -> Unit)? = null,
 ) : SingleChildRenderObject() {
     private var childOffsetX = 0
     private var childOffsetY = 0
@@ -60,6 +72,15 @@ internal class RenderSurface(
         contentPaddingRight: Int = 0,
         contentPaddingBottom: Int = 0,
         onClick: (() -> Unit)? = null,
+        tightChildWidth: Boolean = false,
+        tightChildHeight: Boolean = false,
+        textInputState: PixelTextFieldState? = null,
+        textInputController: PixelTextFieldController? = null,
+        textInputReadOnly: Boolean = false,
+        textInputAutofocus: Boolean = false,
+        textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
+        textInputOnChanged: ((String) -> Unit)? = null,
+        textInputOnSubmitted: ((String) -> Unit)? = null,
     ) {
         this.fillTone = fillTone
         this.borderTone = borderTone
@@ -77,6 +98,15 @@ internal class RenderSurface(
         this.contentPaddingRight = contentPaddingRight
         this.contentPaddingBottom = contentPaddingBottom
         this.onClick = onClick
+        this.tightChildWidth = tightChildWidth
+        this.tightChildHeight = tightChildHeight
+        this.textInputState = textInputState
+        this.textInputController = textInputController
+        this.textInputReadOnly = textInputReadOnly
+        this.textInputAutofocus = textInputAutofocus
+        this.textInputAction = textInputAction
+        this.textInputOnChanged = textInputOnChanged
+        this.textInputOnSubmitted = textInputOnSubmitted
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -86,28 +116,37 @@ internal class RenderSurface(
      */
     override fun layout(constraints: RenderConstraints) {
         val child = renderChild
+        val currentExplicitWidth = explicitWidth
+        val currentExplicitHeight = explicitHeight
         val horizontalInsets = outerPaddingLeft + outerPaddingRight + contentPaddingLeft + contentPaddingRight
         val verticalInsets = outerPaddingTop + outerPaddingBottom + contentPaddingTop + contentPaddingBottom
+        val childMaxWidth = when {
+            currentExplicitWidth != null -> (currentExplicitWidth - contentPaddingLeft - contentPaddingRight).coerceAtLeast(0)
+            else -> (constraints.maxWidth - horizontalInsets).coerceAtLeast(0)
+        }
+        val childMaxHeight = when {
+            currentExplicitHeight != null -> (currentExplicitHeight - contentPaddingTop - contentPaddingBottom).coerceAtLeast(0)
+            else -> (constraints.maxHeight - verticalInsets).coerceAtLeast(0)
+        }
+        val childConstraints = RenderConstraints(
+            minWidth = if (tightChildWidth) childMaxWidth else 0,
+            maxWidth = childMaxWidth,
+            minHeight = if (tightChildHeight) childMaxHeight else 0,
+            maxHeight = childMaxHeight,
+        )
         child?.layout(
-            constraints = constraints.inset(
-                left = horizontalInsets,
-                top = verticalInsets,
-                right = 0,
-                bottom = 0,
-            ),
+            constraints = childConstraints,
         )
 
         val childWidth = child?.size?.width ?: 0
         val childHeight = child?.size?.height ?: 0
-        val currentExplicitWidth = explicitWidth
-        val currentExplicitHeight = explicitHeight
         val measuredWidth = when {
-            currentExplicitWidth != null -> currentExplicitWidth
+            currentExplicitWidth != null -> currentExplicitWidth + outerPaddingLeft + outerPaddingRight
             fillMaxWidth -> constraints.maxWidth
             else -> childWidth + horizontalInsets
         }
         val measuredHeight = when {
-            currentExplicitHeight != null -> currentExplicitHeight
+            currentExplicitHeight != null -> currentExplicitHeight + outerPaddingTop + outerPaddingBottom
             fillMaxHeight -> constraints.maxHeight
             else -> childHeight + verticalInsets
         }
@@ -216,6 +255,40 @@ internal class RenderSurface(
             )
         }
         renderChild?.collectClickTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    /**
+     * 导出当前表面及其子树里的文本输入目标。
+     */
+    override fun collectTextInputTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelTextInputTarget>,
+    ) {
+        val state = textInputState
+        val controller = textInputController
+        if (state != null && controller != null) {
+            targets += PixelTextInputTarget(
+                bounds = PixelRect(
+                    left = offsetX,
+                    top = offsetY,
+                    width = size.width,
+                    height = size.height,
+                ),
+                state = state,
+                controller = controller,
+                readOnly = textInputReadOnly,
+                autofocus = textInputAutofocus,
+                action = textInputAction,
+                onChanged = textInputOnChanged,
+                onSubmitted = textInputOnSubmitted,
+            )
+        }
+        renderChild?.collectTextInputTargets(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
             targets = targets,

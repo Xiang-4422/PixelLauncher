@@ -46,6 +46,7 @@ import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.Theme
 import com.purride.pixelui.ThemeData
 import com.purride.pixelui.ContainerStyle
@@ -115,17 +116,53 @@ private fun PixelNode.withTestModifier(extra: PixelModifier): PixelNode {
 
 private data class TestModifierWidget(
     override val key: Any? = null,
-    val child: Widget,
+    override val child: Widget,
     val modifier: PixelModifier,
-) : BridgeWidget {
-    override val childWidgets: List<Widget>
-        get() = listOf(child)
+) : SingleChildRenderObjectWidget(
+    child = child,
+    key = key,
+) {
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        val modifierInfo = PixelModifierSupport.resolve(modifier)
+        return RenderSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = PixelAlignment.TOP_START,
+            explicitWidth = modifierInfo.fixedWidth,
+            explicitHeight = modifierInfo.fixedHeight,
+            fillMaxWidth = modifierInfo.fillMaxWidth,
+            fillMaxHeight = modifierInfo.fillMaxHeight,
+            contentPaddingLeft = modifierInfo.paddingLeft,
+            contentPaddingTop = modifierInfo.paddingTop,
+            contentPaddingRight = modifierInfo.paddingRight,
+            contentPaddingBottom = modifierInfo.paddingBottom,
+            onClick = modifierInfo.onClick,
+            tightChildWidth = modifierInfo.fixedWidth != null || modifierInfo.fillMaxWidth,
+            tightChildHeight = modifierInfo.fixedHeight != null || modifierInfo.fillMaxHeight,
+        )
+    }
 
-    override fun createBridgeNode(
-        context: BuildContext,
-        childNodes: BridgeNodeChildren,
-    ): PixelNode {
-        return childNodes.single().withTestModifier(modifier)
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        val modifierInfo = PixelModifierSupport.resolve(modifier)
+        (renderObject as RenderSurface).updateSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = PixelAlignment.TOP_START,
+            explicitWidth = modifierInfo.fixedWidth,
+            explicitHeight = modifierInfo.fixedHeight,
+            fillMaxWidth = modifierInfo.fillMaxWidth,
+            fillMaxHeight = modifierInfo.fillMaxHeight,
+            contentPaddingLeft = modifierInfo.paddingLeft,
+            contentPaddingTop = modifierInfo.paddingTop,
+            contentPaddingRight = modifierInfo.paddingRight,
+            contentPaddingBottom = modifierInfo.paddingBottom,
+            onClick = modifierInfo.onClick,
+            tightChildWidth = modifierInfo.fixedWidth != null || modifierInfo.fillMaxWidth,
+            tightChildHeight = modifierInfo.fixedHeight != null || modifierInfo.fillMaxHeight,
+        )
     }
 }
 

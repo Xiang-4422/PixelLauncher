@@ -72,6 +72,11 @@ internal class PipelineOwner(
             offsetY = 0,
             targets = session.clickTargets,
         )
+        root.collectTextInputTargets(
+            offsetX = 0,
+            offsetY = 0,
+            targets = session.textInputTargets,
+        )
         return session.toRenderResult()
     }
 

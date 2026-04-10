@@ -5,6 +5,7 @@ import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Directionality
+import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.StatelessWidget
@@ -12,48 +13,47 @@ import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.legacy.PixelAlignment
 import com.purride.pixelui.internal.legacy.PixelBox
-import com.purride.pixelui.internal.legacy.PixelColumn
 import com.purride.pixelui.internal.legacy.PixelModifier
 import com.purride.pixelui.internal.legacy.PixelPositioned
-import com.purride.pixelui.internal.legacy.PixelRow
 import com.purride.pixelui.internal.toPixelAlignment
 import com.purride.pixelui.internal.toPixelCrossAxisAlignment
 import com.purride.pixelui.internal.toPixelMainAxisAlignment
 import com.purride.pixelui.internal.toPixelMainAxisSize
 
 /**
- * Flutter 风格 `Stack` 的 bridge widget。
+ * Flutter 风格 `Stack` 的直接 render object widget。
  */
 internal data class StackWidget(
-    val children: List<Widget>,
+    override val children: List<Widget>,
     val alignment: Alignment,
     override val key: Any? = null,
-) : StatelessWidget(
+) : MultiChildRenderObjectWidget(
+    children = children,
     key = key,
 ) {
     /**
-     * 使用 pixel box 承接 stack 叠放语义。
+     * 创建 stack render object。
      */
-    override fun build(context: BuildContext): Widget {
-        return LegacyMultiChildWidget(
-            key = key,
-            children = children,
-        ) { _, childNodes ->
-            PixelBox(
-                children = childNodes,
-                modifier = PixelModifier.Empty,
-                alignment = alignment.toPixelAlignment(),
-                key = key,
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderStack(alignment = alignment.toPixelAlignment())
+    }
+
+    /**
+     * 同步新的 stack 对齐配置。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderStack).updateStack(alignment.toPixelAlignment())
     }
 }
 
 /**
- * Flutter 风格 `Positioned` 的 bridge widget。
+ * Flutter 风格 `Positioned` 的直接 render object widget。
  */
 internal data class PositionedWidget(
-    val child: Widget,
+    override val child: Widget,
     val left: Int?,
     val top: Int?,
     val right: Int?,
@@ -61,29 +61,39 @@ internal data class PositionedWidget(
     val width: Int?,
     val height: Int?,
     override val key: Any? = null,
-) : StatelessWidget(
+) : SingleChildRenderObjectWidget(
+    child = child,
     key = key,
 ) {
     /**
-     * 使用 pixel positioned 承接定位语义。
+     * 创建定位 render object。
      */
-    override fun build(context: BuildContext): Widget {
-        return LegacySingleChildWidget(
-            key = key,
-            child = child,
-        ) { _, childNode ->
-            PixelPositioned(
-                child = childNode,
-                modifier = PixelModifier.Empty,
-                left = left,
-                top = top,
-                right = right,
-                bottom = bottom,
-                width = width,
-                height = height,
-                key = key,
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderPositioned(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            width = width,
+            height = height,
+        )
+    }
+
+    /**
+     * 同步新的定位配置。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderPositioned).updatePosition(
+            left = left,
+            top = top,
+            right = right,
+            bottom = bottom,
+            width = width,
+            height = height,
+        )
     }
 }
 
@@ -125,83 +135,115 @@ internal data class PositionedDirectionalWidget(
 }
 
 /**
- * Flutter 风格 `Row` 的 bridge widget。
+ * Flutter 风格 `Row` 的直接 render object widget。
  */
 internal data class RowWidget(
-    val children: List<Widget>,
+    override val children: List<Widget>,
     val spacing: Int,
     val mainAxisSize: MainAxisSize,
     val mainAxisAlignment: MainAxisAlignment,
     val crossAxisAlignment: CrossAxisAlignment,
     override val key: Any? = null,
-) : StatelessWidget(
+) : MultiChildRenderObjectWidget(
+    children = children,
     key = key,
 ) {
     /**
-     * 使用 pixel row 承接横向弹性布局。
+     * 创建横向 flex render object。
      */
-    override fun build(context: BuildContext): Widget {
-        val direction = Directionality.of(context)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = children,
-        ) { _, childNodes ->
-            PixelRow(
-                children = childNodes,
-                modifier = PixelModifier.Empty,
-                spacing = spacing,
-                mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-                mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
-                    axis = Axis.HORIZONTAL,
-                    direction = direction,
-                ),
-                crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
-                    axis = Axis.HORIZONTAL,
-                    direction = direction,
-                ),
-                key = key,
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderFlex(
+            direction = FlexDirection.HORIZONTAL,
+            children = emptyList(),
+            spacing = spacing,
+            mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                axis = Axis.HORIZONTAL,
+                direction = Directionality.of(context),
+            ),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                axis = Axis.HORIZONTAL,
+                direction = Directionality.of(context),
+            ),
+        )
+    }
+
+    /**
+     * 同步新的 Row 配置到既有 flex render object。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderFlex).updateFlex(
+            direction = FlexDirection.HORIZONTAL,
+            spacing = spacing,
+            mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                axis = Axis.HORIZONTAL,
+                direction = Directionality.of(context),
+            ),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                axis = Axis.HORIZONTAL,
+                direction = Directionality.of(context),
+            ),
+        )
     }
 }
 
 /**
- * Flutter 风格 `Column` 的 bridge widget。
+ * Flutter 风格 `Column` 的直接 render object widget。
  */
 internal data class ColumnWidget(
-    val children: List<Widget>,
+    override val children: List<Widget>,
     val spacing: Int,
     val mainAxisSize: MainAxisSize,
     val mainAxisAlignment: MainAxisAlignment,
     val crossAxisAlignment: CrossAxisAlignment,
     override val key: Any? = null,
-) : StatelessWidget(
+) : MultiChildRenderObjectWidget(
+    children = children,
     key = key,
 ) {
     /**
-     * 使用 pixel column 承接纵向弹性布局。
+     * 创建纵向 flex render object。
      */
-    override fun build(context: BuildContext): Widget {
-        val direction = Directionality.of(context)
-        return LegacyMultiChildWidget(
-            key = key,
-            children = children,
-        ) { _, childNodes ->
-            PixelColumn(
-                children = childNodes,
-                modifier = PixelModifier.Empty,
-                spacing = spacing,
-                mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
-                mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
-                    axis = Axis.VERTICAL,
-                    direction = direction,
-                ),
-                crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
-                    axis = Axis.VERTICAL,
-                    direction = direction,
-                ),
-                key = key,
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderFlex(
+            direction = FlexDirection.VERTICAL,
+            children = emptyList(),
+            spacing = spacing,
+            mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                axis = Axis.VERTICAL,
+                direction = Directionality.of(context),
+            ),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                axis = Axis.VERTICAL,
+                direction = Directionality.of(context),
+            ),
+        )
+    }
+
+    /**
+     * 同步新的 Column 配置到既有 flex render object。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderFlex).updateFlex(
+            direction = FlexDirection.VERTICAL,
+            spacing = spacing,
+            mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
+            mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
+                axis = Axis.VERTICAL,
+                direction = Directionality.of(context),
+            ),
+            crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
+                axis = Axis.VERTICAL,
+                direction = Directionality.of(context),
+            ),
+        )
     }
 }

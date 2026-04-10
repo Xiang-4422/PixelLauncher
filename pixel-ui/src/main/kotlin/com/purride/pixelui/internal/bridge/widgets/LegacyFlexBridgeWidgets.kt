@@ -1,39 +1,41 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.BuildContext
 import com.purride.pixelui.FlexFit
+import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.Widget
-import com.purride.pixelui.internal.legacy.PixelFlexFit
-import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.weight
 
 /**
- * 把弹性布局语义折叠进 legacy modifier 的 bridge widget。
+ * `Expanded / Flexible` 的 direct render object widget。
  */
 internal data class FlexWrapperWidget(
     override val key: Any? = null,
-    val child: Widget,
+    override val child: Widget,
     val flex: Int,
     val fit: FlexFit,
-) : BridgeWidget {
-    override val childWidgets: List<Widget>
-        get() = listOf(child)
+) : SingleChildRenderObjectWidget(
+    child = child,
+    key = key,
+) {
+    /**
+     * 创建带 flex parent data 的透明 render object。
+     */
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderFlexChild(
+            flex = flex.coerceAtLeast(1),
+            fit = fit,
+        )
+    }
 
     /**
-     * 给唯一子节点附加 flex modifier。
+     * 同步新的 flex parent data。
      */
-    override fun createBridgeNode(
-        context: BuildContext,
-        childNodes: BridgeNodeChildren,
-    ): BridgeRenderNode {
-        return childNodes.single().withExtraModifier(
-            PixelModifier.Empty.weight(
-                weight = flex.coerceAtLeast(1).toFloat(),
-                fit = when (fit) {
-                    FlexFit.TIGHT -> PixelFlexFit.TIGHT
-                    FlexFit.LOOSE -> PixelFlexFit.LOOSE
-                },
-            ),
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderFlexChild).updateFlexData(
+            flex = flex.coerceAtLeast(1),
+            fit = fit,
         )
     }
 }

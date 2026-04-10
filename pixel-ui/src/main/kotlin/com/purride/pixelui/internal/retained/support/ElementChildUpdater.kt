@@ -42,6 +42,9 @@ internal class DefaultElementChildUpdater(
         current?.unmount()
         return elementInflater.inflate(newWidget).also { element ->
             element.mount(parent = parent, owner = owner)
+            // Direct render object parents need newly mounted component children to expose
+            // their render object before parent-child render object synchronization runs.
+            element.rebuildIfNeeded()
         }
     }
 
