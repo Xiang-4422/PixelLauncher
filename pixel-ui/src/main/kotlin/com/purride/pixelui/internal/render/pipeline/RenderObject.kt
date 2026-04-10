@@ -188,8 +188,8 @@ internal abstract class MultiChildRenderObject : RenderObjectWithChildren, Rende
      */
     override fun setRenderObjectChildren(children: List<RenderObject>) {
         val previous = this.children
-        previous.filterNot(children::contains).forEach(::dropChild)
-        children.filterNot(previous::contains).forEach(::adoptChild)
+        previous.filter { child -> children.none { it === child } }.forEach(::dropChild)
+        children.filter { child -> previous.none { it === child } }.forEach(::adoptChild)
         this.children = children
         markNeedsLayout()
         markNeedsPaint()
