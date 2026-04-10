@@ -10,14 +10,6 @@ import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.resolve
-import com.purride.pixelui.internal.legacy.PixelAlignment
-import com.purride.pixelui.internal.legacy.PixelBox
-import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.fillMaxSize
-import com.purride.pixelui.internal.legacy.height
-import com.purride.pixelui.internal.legacy.padding
-import com.purride.pixelui.internal.legacy.size
-import com.purride.pixelui.internal.legacy.width
 import com.purride.pixelui.internal.toPixelAlignment
 
 /**

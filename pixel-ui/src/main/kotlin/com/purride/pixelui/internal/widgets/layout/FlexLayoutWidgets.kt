@@ -11,10 +11,6 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
-import com.purride.pixelui.internal.legacy.PixelAlignment
-import com.purride.pixelui.internal.legacy.PixelBox
-import com.purride.pixelui.internal.legacy.PixelModifier
-import com.purride.pixelui.internal.legacy.PixelPositioned
 import com.purride.pixelui.internal.toPixelAlignment
 import com.purride.pixelui.internal.toPixelCrossAxisAlignment
 import com.purride.pixelui.internal.toPixelMainAxisAlignment

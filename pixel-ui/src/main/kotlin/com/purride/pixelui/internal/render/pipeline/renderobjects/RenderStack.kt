@@ -1,7 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.internal.legacy.PixelAlignment
-
 /**
  * 新渲染管线里的最小叠放布局对象。
  */

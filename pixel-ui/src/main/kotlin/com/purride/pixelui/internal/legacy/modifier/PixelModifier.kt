@@ -1,69 +1,60 @@
 package com.purride.pixelui.internal.legacy
 
 /**
- * 通用像素组件修饰器。
- *
- * 设计方向参考 Compose 的 Modifier，但当前阶段只做最小可运行能力：
- * 尺寸、填充、点击、权重。
+ * legacy 包里的修饰器兼容别名。
  */
-internal data class PixelModifier(
-    val elements: List<PixelModifierElement> = emptyList(),
-) {
-    fun then(element: PixelModifierElement): PixelModifier = copy(elements = elements + element)
-
-    fun then(other: PixelModifier): PixelModifier = copy(elements = elements + other.elements)
-
-    companion object {
-        val Empty = PixelModifier()
-    }
-}
+internal typealias PixelModifier = com.purride.pixelui.internal.PixelModifier
 
 /**
- * 修饰器元素标记接口。
- *
- * 后续尺寸、间距、点击、焦点、滚动等能力都会拆成独立 element，
- * 运行时再基于 element 类型做布局和事件能力注入。
+ * legacy 包里的修饰器元素兼容别名。
  */
-internal interface PixelModifierElement
+internal typealias PixelModifierElement = com.purride.pixelui.internal.PixelModifierElement
 
-internal data class PixelPaddingElement(
-    val left: Int,
-    val top: Int,
-    val right: Int,
-    val bottom: Int,
-) : PixelModifierElement
+/**
+ * legacy 包里的 padding 元素兼容别名。
+ */
+internal typealias PixelPaddingElement = com.purride.pixelui.internal.PixelPaddingElement
 
-internal data class PixelSizeElement(
-    val width: Int? = null,
-    val height: Int? = null,
-) : PixelModifierElement
+/**
+ * legacy 包里的尺寸元素兼容别名。
+ */
+internal typealias PixelSizeElement = com.purride.pixelui.internal.PixelSizeElement
 
-internal data class PixelFillMaxWidthElement(
-    val enabled: Boolean = true,
-) : PixelModifierElement
+/**
+ * legacy 包里的最大宽度填充元素兼容别名。
+ */
+internal typealias PixelFillMaxWidthElement = com.purride.pixelui.internal.PixelFillMaxWidthElement
 
-internal data class PixelFillMaxHeightElement(
-    val enabled: Boolean = true,
-) : PixelModifierElement
+/**
+ * legacy 包里的最大高度填充元素兼容别名。
+ */
+internal typealias PixelFillMaxHeightElement = com.purride.pixelui.internal.PixelFillMaxHeightElement
 
-internal data class PixelClickableElement(
-    val onClick: () -> Unit,
-) : PixelModifierElement
+/**
+ * legacy 包里的点击元素兼容别名。
+ */
+internal typealias PixelClickableElement = com.purride.pixelui.internal.PixelClickableElement
 
-internal data class PixelWeightElement(
-    val weight: Float,
-    val fit: PixelFlexFit = PixelFlexFit.TIGHT,
-) : PixelModifierElement
+/**
+ * legacy 包里的权重元素兼容别名。
+ */
+internal typealias PixelWeightElement = com.purride.pixelui.internal.PixelWeightElement
 
-internal enum class PixelFlexFit {
-    TIGHT,
-    LOOSE,
-}
+/**
+ * legacy 包里的 flex fit 兼容别名。
+ */
+internal typealias PixelFlexFit = com.purride.pixelui.internal.PixelFlexFit
 
+/**
+ * legacy padding 兼容入口。
+ */
 internal fun PixelModifier.padding(all: Int): PixelModifier {
     return then(PixelPaddingElement(left = all, top = all, right = all, bottom = all))
 }
 
+/**
+ * legacy 水平/垂直 padding 兼容入口。
+ */
 internal fun PixelModifier.padding(
     horizontal: Int = 0,
     vertical: Int = 0,
@@ -78,58 +69,73 @@ internal fun PixelModifier.padding(
     )
 }
 
+/**
+ * legacy 四边 padding 兼容入口。
+ */
 internal fun PixelModifier.padding(
     left: Int = 0,
     top: Int = 0,
     right: Int = 0,
     bottom: Int = 0,
 ): PixelModifier {
-    return then(
-        PixelPaddingElement(
-            left = left,
-            top = top,
-            right = right,
-            bottom = bottom,
-        ),
-    )
+    return then(PixelPaddingElement(left = left, top = top, right = right, bottom = bottom))
 }
 
+/**
+ * legacy 固定宽高兼容入口。
+ */
 internal fun PixelModifier.size(width: Int, height: Int): PixelModifier {
     return then(PixelSizeElement(width = width, height = height))
 }
 
+/**
+ * legacy 固定宽度兼容入口。
+ */
 internal fun PixelModifier.width(width: Int): PixelModifier {
     return then(PixelSizeElement(width = width))
 }
 
+/**
+ * legacy 固定高度兼容入口。
+ */
 internal fun PixelModifier.height(height: Int): PixelModifier {
     return then(PixelSizeElement(height = height))
 }
 
+/**
+ * legacy 最大宽度填充兼容入口。
+ */
 internal fun PixelModifier.fillMaxWidth(): PixelModifier {
     return then(PixelFillMaxWidthElement())
 }
 
+/**
+ * legacy 最大高度填充兼容入口。
+ */
 internal fun PixelModifier.fillMaxHeight(): PixelModifier {
     return then(PixelFillMaxHeightElement())
 }
 
+/**
+ * legacy 最大尺寸填充兼容入口。
+ */
 internal fun PixelModifier.fillMaxSize(): PixelModifier {
     return fillMaxWidth().fillMaxHeight()
 }
 
+/**
+ * legacy 点击兼容入口。
+ */
 internal fun PixelModifier.clickable(onClick: () -> Unit): PixelModifier {
     return then(PixelClickableElement(onClick))
 }
 
+/**
+ * legacy 权重兼容入口。
+ */
 internal fun PixelModifier.weight(
     weight: Float,
     fit: PixelFlexFit = PixelFlexFit.TIGHT,
 ): PixelModifier {
-    return then(
-        PixelWeightElement(
-            weight = weight.coerceAtLeast(0f),
-            fit = fit,
-        ),
-    )
+    return then(PixelWeightElement(weight = weight.coerceAtLeast(0f), fit = fit))
 }
