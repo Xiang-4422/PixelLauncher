@@ -2445,9 +2445,7 @@ class PixelRenderRuntimeTest {
 private fun createLegacyFallbackRuntime(): WidgetRenderRuntime {
     val bridgeTreeResolver = DefaultBridgeTreeResolver
     val legacyTreeRenderer = LegacyTreeRendererFactory.createDefault()
-    val pipelineRenderer = PipelineElementTreeRenderer(
-        bridgeTreeResolver = bridgeTreeResolver,
-    )
+    val pipelineRenderer = PipelineElementTreeRenderer()
     val renderSupport = RetainedRenderSupportAssembly(
         widgetAdapter = BridgeWidgetAdapter,
         elementTreeRenderer = object : ElementTreeRenderer {

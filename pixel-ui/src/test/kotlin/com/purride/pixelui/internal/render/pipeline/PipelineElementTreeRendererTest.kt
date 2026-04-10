@@ -217,10 +217,7 @@ class PipelineElementTreeRendererTest {
      */
     @Test
     fun pipelineElementTreeRendererRendersDirectRenderObjectRootWithoutBridgeResolver() {
-        val renderer = PipelineElementTreeRenderer(
-            bridgeTreeResolver = FailingBridgeTreeResolver,
-            defaultTextRasterizer = PixelBitmapFont.Default,
-        )
+        val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = Text("DIRECT"),
             logicalWidth = 32,
@@ -240,10 +237,7 @@ class PipelineElementTreeRendererTest {
      */
     @Test
     fun pipelineElementTreeRendererRendersDirectSurfaceTreeWithoutBridgeResolver() {
-        val renderer = PipelineElementTreeRenderer(
-            bridgeTreeResolver = FailingBridgeTreeResolver,
-            defaultTextRasterizer = PixelBitmapFont.Default,
-        )
+        val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = DecoratedBox(
                 fillTone = PixelTone.OFF,
@@ -270,10 +264,7 @@ class PipelineElementTreeRendererTest {
      */
     @Test
     fun pipelineElementTreeRendererRendersDirectAlignedPaddingTreeWithoutBridgeResolver() {
-        val renderer = PipelineElementTreeRenderer(
-            bridgeTreeResolver = FailingBridgeTreeResolver,
-            defaultTextRasterizer = PixelBitmapFont.Default,
-        )
+        val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = Align(
                 alignment = Alignment.TOP_START,
@@ -504,19 +495,7 @@ class PipelineElementTreeRendererTest {
      * 创建测试统一使用的 pipeline renderer。
      */
     private fun createPipelineRenderer(): PipelineElementTreeRenderer {
-        return PipelineElementTreeRenderer(
-            bridgeTreeResolver = DefaultBridgeTreeResolver,
-            defaultTextRasterizer = PixelBitmapFont.Default,
-        )
-    }
-
-    /**
-     * 用于验证 direct render object path 不依赖 bridge 解析器。
-     */
-    private object FailingBridgeTreeResolver : BridgeTreeResolving {
-        override fun resolve(request: BridgeTreeResolveRequest): BridgeRenderNode? {
-            error("direct render object path 不应该调用 bridge resolver")
-        }
+        return PipelineElementTreeRenderer()
     }
 
     /**

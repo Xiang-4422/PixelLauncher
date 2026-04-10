@@ -298,7 +298,7 @@ object AxisBufferComposer
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
-- bridge 目录当前只剩 `resolve / elements / widgets`；默认运行时不再需要旧 `bridge/runtime` 中转壳
+- bridge 目录已经从 `src/main` 移出，只保留在 `src/test` 作为 legacy renderer 测试夹具
 - 默认运行时已经改成 pipeline-only，不再自动装配 bridge/legacy fallback
 - 当前主线任务是删除 retained 主链对 legacy 中间表示的剩余依赖，而不是启动 `:app` 迁移
 
@@ -530,7 +530,7 @@ object AxisBufferComposer
   - `RenderSurface`
 - `PaintContext` 直接基于 `PixelBuffer` 绘制，不复用 `legacy renderer` 的 render support
 
-### 10.2 retained -> pipeline lowering
+### 10.2 retained -> pipeline direct render tree
 
 目标：
 
@@ -540,15 +540,14 @@ object AxisBufferComposer
 范围：
 
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime`
-- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge`
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline`
-- lowering 相关测试与文档引用
+- direct render object renderer 相关测试与文档引用
 
 完成定义：
 
 - 新增 `PipelineElementTreeRenderer`
-- 新增显式 capability checker，集中维护“哪些兼容节点树可以整树走新 pipeline”
-- capability checker 需要能提供明确回退原因，而不只是 `true / false`
+- 删除旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering`
+- 生产 pipeline renderer 只接受 direct render object tree，不再从 bridge/legacy 中间树 lowering
 - retained 主链改成：
   - 默认直接走新 pipeline renderer
   - 未接入 pipeline 的 widget 不再静默回退，直接暴露不支持错误
@@ -580,7 +579,7 @@ object AxisBufferComposer
 
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy`
 - `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy`
-- `pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge`
+- `pixel-ui/src/test/kotlin/com/purride/pixelui/internal/bridge`
 
 完成定义：
 
@@ -647,16 +646,15 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 当前阶段完成定义不再是“继续把 legacy wiring 拆得更细”，而是：
 
 - 至少有一个真实 demo 场景不经过 `legacy renderer`
-- retained 主链已经具备新 pipeline 与旧 fallback 的整树级分流能力
-- pipeline 支持边界已经由显式 capability checker 维护，而不是散落在 lowering 分支里
-- pipeline 回退原因已经可以被显式观测和测试覆盖
+- retained 主链已经默认直连新 pipeline，不再静默启用旧 fallback
+- pipeline 支持边界已经由 direct render object tree 自身决定，不再维护 bridge lowering capability checker
+- pipeline 缺少 render root 时会直接暴露不支持错误
 
 在这之后，下一阶段才进入：
 
 - 让更多基础组件直接成为 `RenderObjectWidget`
 - 扩展 `RenderObject / PipelineOwner`
 - 补齐 `Row / Column / Align / Padding` 的长期 render object 形状
-- 更完整的 lowering 能力
 - 新 renderer 承接更多基础组件集
 
 在这之前，不做：
