@@ -503,7 +503,7 @@ private fun OutlinedButton(
 
 class PixelRenderRuntimeTest {
 
-    private val runtime = WidgetRenderRuntimeFactory.createDefault()
+    private val runtime = createLegacyFallbackRuntime()
 
     @Test
     fun surfaceCentersChildWithinPadding() {
@@ -2434,4 +2434,33 @@ class PixelRenderRuntimeTest {
         }
         return false
     }
+}
+
+/**
+ * 为 legacy renderer 专用测试显式创建旧 bridge/legacy runtime。
+ *
+ * 默认 `WidgetRenderRuntimeFactory` 已经切到 pipeline-only；这组测试仍需要覆盖
+ * 历史 PixelNode renderer，因此在测试内部显式 opt-in 旧链路。
+ */
+private fun createLegacyFallbackRuntime(): WidgetRenderRuntime {
+    val bridgeAssembly = BridgeRenderSupportFactory.createDefaultAssembly()
+    val pipelineRenderer = PipelineElementTreeRenderer(
+        bridgeTreeResolver = bridgeAssembly.bridgeTreeResolver,
+    )
+    val renderSupport = RetainedRenderSupportAssembly(
+        widgetAdapter = BridgeWidgetAdapter,
+        elementTreeRenderer = object : ElementTreeRenderer {
+            /**
+             * 测试夹具先跑 direct pipeline，再显式回退到旧 bridge/legacy renderer。
+             */
+            override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
+                return pipelineRenderer.renderOrNull(request)
+                    ?: bridgeAssembly.elementTreeRenderer.render(request)
+            }
+        },
+    ).toRenderSupport()
+    return RetainedWidgetRuntimeAssemblyFactory.create(
+        onVisualUpdate = { },
+        renderSupport = renderSupport,
+    ).toRuntime()
 }

@@ -223,7 +223,7 @@ class RetainedWidgetRuntimeTest {
     fun renderObjectWidgetCreatesAndUpdatesRenderObjectElement() {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
-            widgetAdapter = BridgeWidgetAdapter,
+            widgetAdapter = UnsupportedWidgetAdapter,
         )
 
         try {
@@ -246,7 +246,7 @@ class RetainedWidgetRuntimeTest {
     fun singleChildRenderObjectWidgetConnectsChildRenderObject() {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
-            widgetAdapter = BridgeWidgetAdapter,
+            widgetAdapter = UnsupportedWidgetAdapter,
         )
 
         try {
@@ -282,7 +282,7 @@ class RetainedWidgetRuntimeTest {
     fun multiChildRenderObjectWidgetConnectsChildRenderObjects() {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
-            widgetAdapter = BridgeWidgetAdapter,
+            widgetAdapter = UnsupportedWidgetAdapter,
         )
 
         try {

@@ -145,14 +145,12 @@
     - [PipelineTreeCapabilityChecker.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/lowering/PipelineTreeCapabilityChecker.kt)
     - [PipelineBridgeTreeLowering.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/lowering/PipelineBridgeTreeLowering.kt)
   - 当前 pipeline 支持边界已经收口到显式 capability checker，并且能给出整树回退原因；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 的 direct render object 主链，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
-  - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline，不再保留这些 widget 的 bridge fallback
+  - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline，默认 retained 运行时已经改成 pipeline-only，不再自动启用 bridge/legacy fallback
   - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
   - [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt)
-  - [BridgeWidgetAdapter.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidgetAdapter.kt)
   - [BridgeAdapterElement.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/elements/BridgeAdapterElement.kt)
   - [BridgeWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidget.kt)
   - [StaticBridgeNodeWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/StaticBridgeNodeWidget.kt)
-  - [BridgeWidgetAdapterSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidgetAdapterSupport.kt)
   - [BridgeNodeBinding.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/elements/BridgeNodeBinding.kt)
   - [BridgeTreeResolveRequest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeTreeResolveRequest.kt)
   - [BridgeRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/factory/BridgeRenderSupportFactory.kt)
@@ -309,8 +307,8 @@
   - `DirtyElementScheduler`
   - `ListenableDependencyRegistry`
 - `RetainedBuildRuntime` 当前只负责 retained element tree，本身不再直接产出 bridge tree
-- 最终绘制当前通过 `RetainedWidgetRenderRuntime -> RetainedRenderSupport -> BridgeElementTreeRenderer -> DefaultBridgeTreeResolver -> LegacyTreeRenderer -> PixelRenderRuntime` 这条链路落到 legacy 渲染器
-- 当前重构主线不是再补更多组件名字，而是继续把 retained 主链和 legacy render bridge 切得更干净
+- 默认绘制链路当前已经改成 `RetainedWidgetRenderRuntime -> RetainedRenderSupport -> PipelineElementTreeRenderer -> PipelineOwner`，不再自动接入 bridge/legacy fallback
+- 当前重构主线不是再补更多组件名字，而是继续把 retained 主链对 legacy 中间表示的剩余依赖删掉
 
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
 
@@ -355,15 +353,15 @@
 
 当前 `pixel-ui` 仍然是“第一版可运行框架”，还不是完整产品级 UI 系统。当前限制包括：
 
-- 已经有 retained build tree，但最终绘制仍然落到 legacy `PixelNode + PixelRenderRuntime`
-- retained build tree 已经拆分出 `BuildOwner / Element` 层级，但还没有自己的 retained render object 树
+- retained build tree 默认已经能直接通过 pipeline render object tree 出图
+- retained build tree 已经拆分出 `BuildOwner / Element` 层级，并开始拥有自己的 retained render object 树
 - `ListView` 只有纵向单列，不是虚拟化列表
 - 列表当前没有回弹和吸附
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部的底层节点和兼容运行时里
-- `legacy` 渲染后端已经被整理成更清楚的内部 fallback，但这条线继续做纯 `factory/assembly` 拆分的收益已经接近上限
+- `legacy` 渲染后端已经从默认运行时路径移出；后续只作为待删除的历史后端处理
 - 新渲染管线已经启动最小骨架，但当前覆盖仍只适合 `Text + Surface` 这类首批场景
 - 还没有开始把 `:app` 页面迁进来
 
@@ -402,7 +400,7 @@
 ### 5.2 正在进行
 
 - 启动最小新渲染管线骨架
-- 让 retained 主链具备“新 pipeline 优先、bridge/legacy fallback” 的整树级分流
+- 让 retained 主链默认直接进入新 pipeline，未接入组件不再静默走 bridge/legacy fallback
 - 用 `pixel-demo` 新增验证页证明至少有一个真实场景已经不再依赖 `legacy renderer`
 - 持续同步注释、测试和实施计划，防止主线和文档再错位
 

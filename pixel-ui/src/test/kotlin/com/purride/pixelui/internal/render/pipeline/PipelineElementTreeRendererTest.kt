@@ -485,7 +485,7 @@ class PipelineElementTreeRendererTest {
     ): T {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
-            widgetAdapter = BridgeWidgetAdapter,
+            widgetAdapter = UnsupportedWidgetAdapter,
         )
         return try {
             block(
