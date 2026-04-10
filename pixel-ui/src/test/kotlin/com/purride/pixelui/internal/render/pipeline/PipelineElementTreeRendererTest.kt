@@ -215,7 +215,7 @@ class PipelineElementTreeRendererTest {
      * 直接持有 render object 的 widget 根节点应该能直接交给 pipeline。
      */
     @Test
-    fun pipelineElementTreeRendererRendersDirectRenderObjectRootWithoutBridgeResolver() {
+    fun pipelineElementTreeRendererRendersDirectRenderObjectRootThroughPipeline() {
         val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = Text("DIRECT"),
@@ -235,7 +235,7 @@ class PipelineElementTreeRendererTest {
      * 直接 `DecoratedBox + Text` 子树应该完整走 retained render object 主链。
      */
     @Test
-    fun pipelineElementTreeRendererRendersDirectSurfaceTreeWithoutBridgeResolver() {
+    fun pipelineElementTreeRendererRendersDirectSurfaceTreeThroughPipeline() {
         val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = DecoratedBox(
@@ -262,7 +262,7 @@ class PipelineElementTreeRendererTest {
      * `Align + Padding + DecoratedBox + Text` 应该能完整走 direct render object 子树。
      */
     @Test
-    fun pipelineElementTreeRendererRendersDirectAlignedPaddingTreeWithoutBridgeResolver() {
+    fun pipelineElementTreeRendererRendersDirectAlignedPaddingTreeThroughPipeline() {
         val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = Align(
@@ -292,7 +292,7 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
-     * Text 现在不再为了旧 softWrap 配置切换后端。
+     * Text 的 softWrap 配置应该继续走 direct pipeline。
      */
     @Test
     fun pipelineElementTreeRendererRendersSoftWrapTextThroughDirectPipeline() {

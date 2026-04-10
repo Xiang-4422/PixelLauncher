@@ -31,7 +31,7 @@
 用途：
 
 - 解释 `pixel-core / pixel-ui / pixel-demo / app` 的边界
-- 解释 retained runtime、legacy render bridge 和当前重构阶段
+- 解释 retained runtime、direct pipeline 和当前重构阶段
 - 解释新模块如何把 `pixel-ui` 当库接入
 
 ### product
