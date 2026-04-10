@@ -12,6 +12,29 @@ internal abstract class RenderObject {
     private var owner: PipelineOwner? = null
 
     /**
+     * 接收一个新的直接子 render object。
+     */
+    internal fun adoptChild(child: RenderObject) {
+        child.parent = this
+        owner?.let(child::attach)
+        markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    /**
+     * 移除一个既有直接子 render object。
+     */
+    internal fun dropChild(child: RenderObject) {
+        if (child.parent != this) {
+            return
+        }
+        child.detach()
+        child.parent = null
+        markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    /**
      * 把当前对象挂到指定 pipeline owner。
      */
     internal fun attach(nextOwner: PipelineOwner) {
@@ -103,4 +126,42 @@ internal abstract class RenderBox : RenderObject() {
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
     ) = Unit
+}
+
+/**
+ * 可承接单个 render object 子节点的协议。
+ */
+internal interface RenderObjectWithChild {
+    /**
+     * 替换当前 render object 的唯一子节点。
+     */
+    fun setRenderObjectChild(child: RenderObject?)
+}
+
+/**
+ * 单 child render object 的基础实现。
+ */
+internal abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
+    protected var child: RenderObject? = null
+        private set
+
+    /**
+     * 替换唯一子节点，并维护父子生命周期。
+     */
+    override fun setRenderObjectChild(child: RenderObject?) {
+        val previous = this.child
+        if (previous == child) {
+            return
+        }
+        previous?.let(::dropChild)
+        this.child = child
+        child?.let(::adoptChild)
+    }
+
+    /**
+     * 遍历唯一子节点。
+     */
+    override fun visitChildren(visitor: (RenderObject) -> Unit) {
+        child?.let(visitor)
+    }
 }
