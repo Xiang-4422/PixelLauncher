@@ -350,6 +350,7 @@ object AxisBufferComposer
 
 1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经接入 direct pipeline，源码统一收在 `internal/widgets`
 2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderPagerViewport / RenderScrollViewport / PipelineOwner`
+   `renderobjects` 当前按 `content / layout / viewport` 分组，不再把所有 render object 平铺在一个目录里。
 3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经收在 `internal/model`，legacy 同名入口已经随旧后端删除
 4. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，下一步继续补稳长期滚动协议
 5. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已从生产源码删除，后续保持删除状态
