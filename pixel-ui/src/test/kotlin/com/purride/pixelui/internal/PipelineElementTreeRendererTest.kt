@@ -7,6 +7,7 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.Align
 import com.purride.pixelui.Center
 import com.purride.pixelui.Container
+import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
@@ -231,6 +232,36 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+    }
+
+    /**
+     * 直接 `DecoratedBox + Text` 子树应该完整走 retained render object 主链。
+     */
+    @Test
+    fun pipelineElementTreeRendererRendersDirectSurfaceTreeWithoutBridgeResolver() {
+        val renderer = PipelineElementTreeRenderer(
+            bridgeTreeResolver = FailingBridgeTreeResolver,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
+        val result = withRenderRequest(
+            root = DecoratedBox(
+                fillTone = PixelTone.OFF,
+                borderTone = PixelTone.ACCENT,
+                padding = 1,
+                alignment = Alignment.TOP_START,
+                child = Text("SURFACE"),
+            ),
+            logicalWidth = 32,
+            logicalHeight = 8,
+        ) { request ->
+            assertTrue(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
         assertTrue(collectActivePixels(result.buffer).isNotEmpty())
     }
 

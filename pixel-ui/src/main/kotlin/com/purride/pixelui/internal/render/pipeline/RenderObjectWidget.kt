@@ -85,7 +85,7 @@ internal open class RenderObjectElement(
  * Flutter 风格单 child render object widget 的内部基础协议。
  */
 internal abstract class SingleChildRenderObjectWidget(
-    val child: Widget?,
+    open val child: Widget?,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     /**
