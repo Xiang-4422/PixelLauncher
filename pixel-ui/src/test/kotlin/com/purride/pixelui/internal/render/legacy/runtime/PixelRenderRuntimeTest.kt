@@ -2443,9 +2443,10 @@ class PixelRenderRuntimeTest {
  * 历史 PixelNode renderer，因此在测试内部显式 opt-in 旧链路。
  */
 private fun createLegacyFallbackRuntime(): WidgetRenderRuntime {
-    val bridgeAssembly = BridgeRenderSupportFactory.createDefaultAssembly()
+    val bridgeTreeResolver = DefaultBridgeTreeResolver
+    val legacyTreeRenderer = LegacyTreeRendererFactory.createDefault()
     val pipelineRenderer = PipelineElementTreeRenderer(
-        bridgeTreeResolver = bridgeAssembly.bridgeTreeResolver,
+        bridgeTreeResolver = bridgeTreeResolver,
     )
     val renderSupport = RetainedRenderSupportAssembly(
         widgetAdapter = BridgeWidgetAdapter,
@@ -2455,7 +2456,15 @@ private fun createLegacyFallbackRuntime(): WidgetRenderRuntime {
              */
             override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
                 return pipelineRenderer.renderOrNull(request)
-                    ?: bridgeAssembly.elementTreeRenderer.render(request)
+                    ?: legacyTreeRenderer.render(
+                        request = LegacyRenderRequest(
+                            root = bridgeTreeResolver.resolve(
+                                request = BridgeTreeResolveRequest(root = request.root),
+                            ) ?: error("legacy fallback 测试夹具无法解析 bridge tree。"),
+                            logicalWidth = request.logicalWidth,
+                            logicalHeight = request.logicalHeight,
+                        ),
+                    )
             }
         },
     ).toRenderSupport()
