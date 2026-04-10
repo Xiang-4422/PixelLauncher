@@ -98,6 +98,42 @@ internal class RenderStack(
     }
 
     /**
+     * 导出 stack 子树分页目标。
+     */
+    override fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) {
+        renderChildren.forEach { child ->
+            val childOffset = resolveChildOffset(child)
+            child.collectPagerTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
+    /**
+     * 导出 stack 子树列表滚动目标。
+     */
+    override fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) {
+        renderChildren.forEach { child ->
+            val childOffset = resolveChildOffset(child)
+            child.collectListTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
+    /**
      * 导出 stack 子树文本输入目标。
      */
     override fun collectTextInputTargets(
@@ -274,6 +310,36 @@ internal class RenderPositioned(
         targets: MutableList<PixelClickTarget>,
     ) {
         renderChild?.collectClickTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    /**
+     * 导出定位子节点分页目标。
+     */
+    override fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) {
+        renderChild?.collectPagerTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    /**
+     * 导出定位子节点列表滚动目标。
+     */
+    override fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) {
+        renderChild?.collectListTargets(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
             targets = targets,
