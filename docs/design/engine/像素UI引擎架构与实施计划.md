@@ -287,8 +287,7 @@ object AxisBufferComposer
 1. `Widget`
 2. `RetainedBuildRuntime / BuildOwner / Element tree`
 3. `RetainedWidgetRenderRuntime`
-4. `bridge：BridgeRenderSupportFactory / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeElementTreeRenderer / BridgeRenderRuntime`
-5. `PixelRenderRuntime`
+4. `PipelineElementTreeRenderer / PipelineOwner`
 
 这意味着：
 
@@ -300,8 +299,8 @@ object AxisBufferComposer
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
 - bridge 目录当前已经按 `runtime / resolve / elements / widgets` 收拢；无引用的 legacy modifier 合并壳已删除
-- 最终绘制仍然落到 legacy renderer
-- 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
+- 默认运行时已经改成 pipeline-only，不再自动装配 bridge/legacy fallback
+- 当前主线任务是删除 retained 主链对 legacy 中间表示的剩余依赖，而不是启动 `:app` 迁移
 
 ---
 
@@ -344,14 +343,14 @@ object AxisBufferComposer
 
 - `pixel-ui` 具备 retained build/runtime 与 Flutter 风格公开入口
 - `pixel-demo` 已经通过 retained 主链稳定跑在真实设备上
-- retained runtime 与 legacy render bridge 的职责边界持续收口
+- retained runtime 默认已经直接接入 pipeline renderer，legacy render bridge 退出默认路径
 
 当前阶段优先级：
 
 1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
 2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderPagerViewport / RenderScrollViewport / PipelineOwner`
 3. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，旧 scroll widget 目录已清空，下一步删除不再使用的 legacy render support 与 bridge adapter
-4. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 只在未替换组件仍依赖时保留，不再做纯兼容型重构
+4. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已退出默认路径，后续按引用链逐步删除
 5. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
 
 ### Phase D. 新增 `:pixel-demo`
@@ -483,7 +482,7 @@ object AxisBufferComposer
 1. 固定 Flutter 式 `Widget -> Element -> RenderObject` 基础协议
 2. 建最小 `RenderObject / PipelineOwner` 骨架
 3. 打通 `Text + Surface` 首批新渲染链路
-4. 保持 `bridge + legacy` 作为整树 fallback
+4. 删除默认 bridge/legacy fallback，未接入 pipeline 的 widget 直接失败
 5. 继续用 `pixel-demo` 做验收
 
 这份顺序不是建议，而是当前阶段的执行顺序。
@@ -551,8 +550,8 @@ object AxisBufferComposer
 - 新增显式 capability checker，集中维护“哪些兼容节点树可以整树走新 pipeline”
 - capability checker 需要能提供明确回退原因，而不只是 `true / false`
 - retained 主链改成：
-  - 先尝试新 pipeline renderer
-  - 任意不支持节点则整树回退到 `BridgeElementTreeRenderer`
+  - 默认直接走新 pipeline renderer
+  - 未接入 pipeline 的 widget 不再静默回退，直接暴露不支持错误
 - 第一批结构性支持 widget 固定为：
   - `Text`
   - `Container` / `DecoratedBox`
@@ -570,11 +569,11 @@ object AxisBufferComposer
   - `TextField`
   - mixed subtree pipeline/legacy 渲染
 
-### 10.3 bridge/legacy fallback 维持
+### 10.3 bridge/legacy 删除收尾
 
 目标：
 
-- 维持当前 fallback 链稳定可用
+- 删除默认 fallback 链路的剩余引用
 - 不再把“继续拆 factory/assembly”当作主线进展
 
 范围：
@@ -585,8 +584,8 @@ object AxisBufferComposer
 
 完成定义：
 
-- `legacy` 继续只作为内部 fallback 后端存在
-- `bridge` 继续只做最薄兼容层
+- `legacy` 不再作为默认 fallback 后端存在
+- `bridge` 不再作为默认 fallback 层存在
 - 后续只在以下两种情况下修改这两层：
   - 修复 bug
   - 直接支撑新 pipeline 接入

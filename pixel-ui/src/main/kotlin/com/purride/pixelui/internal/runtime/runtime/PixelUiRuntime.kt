@@ -7,9 +7,8 @@ import com.purride.pixelui.Widget
 /**
  * `pixel-ui` 对宿主层暴露的内部总运行时。
  *
- * 当前它由 retained build runtime、默认 retained support、新 pipeline renderer、
- * bridge fallback 和 legacy fallback 共同组成，但宿主只依赖这一层，不直接知道
- * 下游具体实现。
+ * 当前它由 retained build runtime、默认 retained support 和新 pipeline renderer
+ * 共同组成；默认路径不再自动回退到 bridge/legacy。
  */
 internal class PixelUiRuntime(
     textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,

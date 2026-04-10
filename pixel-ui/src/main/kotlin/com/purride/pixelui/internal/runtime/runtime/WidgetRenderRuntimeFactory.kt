@@ -6,8 +6,8 @@ import com.purride.pixelcore.PixelTextRasterizer
 /**
  * Widget 运行时的默认工厂。
  *
- * 当前默认实现仍然是 retained build runtime + bridge + legacy renderer 的组合，
- * 但宿主层只通过这层拿默认 runtime。
+ * 当前默认实现是 retained build runtime + pipeline renderer 的组合；默认路径不再
+ * 自动装配 bridge/legacy fallback。
  */
 internal object WidgetRenderRuntimeFactory {
     /**
