@@ -153,14 +153,12 @@
   - [BridgeWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidget.kt)
   - [StaticBridgeNodeWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/StaticBridgeNodeWidget.kt)
   - [BridgeWidgetAdapterSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidgetAdapterSupport.kt)
-  - [LegacyModifierMergeSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/modifier/LegacyModifierMergeSupport.kt)
-  - [LegacyModifierApplier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/modifier/LegacyModifierApplier.kt)
   - [BridgeNodeBinding.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/elements/BridgeNodeBinding.kt)
   - [BridgeTreeResolveRequest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeTreeResolveRequest.kt)
   - [BridgeRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeRenderSupportFactory.kt)
   - [BridgeRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeRenderSupportAssemblyFactory.kt)
   - [BridgeRenderAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/runtime/BridgeRenderAssemblyFactory.kt)
-  - bridge 目录当前已经按 `runtime / resolve / elements / widgets / modifier` 五组收拢
+  - bridge 目录当前已经按 `runtime / resolve / elements / widgets` 四组收拢；无引用的 legacy modifier 合并壳已删除
   - 已经 direct pipeline 化的 widget 已经移出 legacy 目录：
   - [TextWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/TextWidgets.kt)
   - [InputWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/InputWidgets.kt)

@@ -299,7 +299,7 @@ object AxisBufferComposer
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
-- bridge 目录当前已经按 `runtime / resolve / elements / widgets / modifier` 收拢
+- bridge 目录当前已经按 `runtime / resolve / elements / widgets` 收拢；无引用的 legacy modifier 合并壳已删除
 - 最终绘制仍然落到 legacy renderer
 - 当前主线任务是继续切 retained 主链和 legacy renderer 的边界，而不是启动 `:app` 迁移
 
