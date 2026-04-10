@@ -6,6 +6,7 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
+import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.resolve
@@ -20,34 +21,71 @@ import com.purride.pixelui.internal.legacy.width
 import com.purride.pixelui.internal.toPixelAlignment
 
 /**
- * Flutter 风格 `Padding` 的 bridge widget。
+ * Flutter 风格 `Padding` 的直接 render object widget。
+ *
+ * 它仍实现 `BridgeWidget`，用于尚未迁移的旧父节点 fallback。
  */
 internal data class PaddingWidget(
-    val child: Widget,
+    override val child: Widget,
     val padding: EdgeInsets,
     override val key: Any? = null,
-) : StatelessWidget(
+) : SingleChildRenderObjectWidget(
+    child = child,
     key = key,
-) {
+), BridgeWidget {
+    override val childWidgets: List<Widget>
+        get() = listOf(child)
+
     /**
-     * 用额外 box 包裹 child 并施加 padding。
+     * 创建承接 padding 的 surface render object。
      */
-    override fun build(context: BuildContext): Widget {
-        return LegacySingleChildWidget(
-            key = key,
-            child = child,
-        ) { _, childNode ->
-            PixelBox(
-                children = listOf(childNode),
-                modifier = PixelModifier.Empty.padding(
-                    left = padding.left,
-                    top = padding.top,
-                    right = padding.right,
-                    bottom = padding.bottom,
-                ),
-                alignment = PixelAlignment.TOP_START,
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = PixelAlignment.TOP_START,
+            contentPaddingLeft = padding.left,
+            contentPaddingTop = padding.top,
+            contentPaddingRight = padding.right,
+            contentPaddingBottom = padding.bottom,
+        )
+    }
+
+    /**
+     * 同步新的 padding 配置到既有 surface render object。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderSurface).updateSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = PixelAlignment.TOP_START,
+            contentPaddingLeft = padding.left,
+            contentPaddingTop = padding.top,
+            contentPaddingRight = padding.right,
+            contentPaddingBottom = padding.bottom,
+        )
+    }
+
+    /**
+     * fallback 到 bridge 时生成等价 legacy box 节点。
+     */
+    override fun createBridgeNode(
+        context: BuildContext,
+        childNodes: BridgeNodeChildren,
+    ): BridgeRenderNode {
+        return PixelBox(
+            children = childNodes.asList(),
+            modifier = PixelModifier.Empty.padding(
+                left = padding.left,
+                top = padding.top,
+                right = padding.right,
+                bottom = padding.bottom,
+            ),
+            alignment = PixelAlignment.TOP_START,
+        )
     }
 }
 
@@ -75,29 +113,60 @@ internal data class PaddingDirectionalWidget(
 }
 
 /**
- * Flutter 风格 `Align` 的 bridge widget。
+ * Flutter 风格 `Align` 的直接 render object widget。
  */
 internal data class AlignWidget(
-    val child: Widget,
+    override val child: Widget,
     val alignment: Alignment,
     override val key: Any? = null,
-) : StatelessWidget(
+) : SingleChildRenderObjectWidget(
+    child = child,
     key = key,
-) {
+), BridgeWidget {
+    override val childWidgets: List<Widget>
+        get() = listOf(child)
+
     /**
-     * 用填满父级的 box 承接对齐。
+     * 创建承接对齐的 surface render object。
      */
-    override fun build(context: BuildContext): Widget {
-        return LegacySingleChildWidget(
-            key = key,
-            child = child,
-        ) { _, childNode ->
-            PixelBox(
-                children = listOf(childNode),
-                modifier = PixelModifier.Empty.fillMaxSize(),
-                alignment = alignment.toPixelAlignment(),
-            )
-        }
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = alignment.toPixelAlignment(),
+            fillMaxWidth = true,
+            fillMaxHeight = true,
+        )
+    }
+
+    /**
+     * 同步新的对齐配置到既有 surface render object。
+     */
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderSurface).updateSurface(
+            fillTone = null,
+            borderTone = null,
+            alignment = alignment.toPixelAlignment(),
+            fillMaxWidth = true,
+            fillMaxHeight = true,
+        )
+    }
+
+    /**
+     * fallback 到 bridge 时生成等价 legacy box 节点。
+     */
+    override fun createBridgeNode(
+        context: BuildContext,
+        childNodes: BridgeNodeChildren,
+    ): BridgeRenderNode {
+        return PixelBox(
+            children = childNodes.asList(),
+            modifier = PixelModifier.Empty.fillMaxSize(),
+            alignment = alignment.toPixelAlignment(),
+        )
     }
 }
 
