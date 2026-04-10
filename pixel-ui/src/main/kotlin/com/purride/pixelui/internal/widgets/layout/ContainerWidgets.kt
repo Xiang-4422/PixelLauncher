@@ -145,19 +145,19 @@ internal data class ContainerDirectionalWidget(
     }
 
     /**
-     * 把内部对齐值映射回公开对齐值，避免 directional widget 直接持有 legacy node。
+     * 把内部对齐值映射回公开对齐值，避免 directional widget 直接持有 legacy 模型。
      */
-    private fun com.purride.pixelui.internal.legacy.PixelAlignment.toPublicAlignment(): Alignment {
+    private fun PixelAlignment.toPublicAlignment(): Alignment {
         return when (this) {
-            com.purride.pixelui.internal.legacy.PixelAlignment.TOP_START -> Alignment.TOP_START
-            com.purride.pixelui.internal.legacy.PixelAlignment.TOP_CENTER -> Alignment.TOP_CENTER
-            com.purride.pixelui.internal.legacy.PixelAlignment.TOP_END -> Alignment.TOP_END
-            com.purride.pixelui.internal.legacy.PixelAlignment.CENTER_START -> Alignment.CENTER_START
-            com.purride.pixelui.internal.legacy.PixelAlignment.CENTER -> Alignment.CENTER
-            com.purride.pixelui.internal.legacy.PixelAlignment.CENTER_END -> Alignment.CENTER_END
-            com.purride.pixelui.internal.legacy.PixelAlignment.BOTTOM_START -> Alignment.BOTTOM_START
-            com.purride.pixelui.internal.legacy.PixelAlignment.BOTTOM_CENTER -> Alignment.BOTTOM_CENTER
-            com.purride.pixelui.internal.legacy.PixelAlignment.BOTTOM_END -> Alignment.BOTTOM_END
+            PixelAlignment.TOP_START -> Alignment.TOP_START
+            PixelAlignment.TOP_CENTER -> Alignment.TOP_CENTER
+            PixelAlignment.TOP_END -> Alignment.TOP_END
+            PixelAlignment.CENTER_START -> Alignment.CENTER_START
+            PixelAlignment.CENTER -> Alignment.CENTER
+            PixelAlignment.CENTER_END -> Alignment.CENTER_END
+            PixelAlignment.BOTTOM_START -> Alignment.BOTTOM_START
+            PixelAlignment.BOTTOM_CENTER -> Alignment.BOTTOM_CENTER
+            PixelAlignment.BOTTOM_END -> Alignment.BOTTOM_END
         }
     }
 }
