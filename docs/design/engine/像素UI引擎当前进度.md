@@ -153,6 +153,7 @@
   - pipeline 需要复用的 `PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等基础模型已经收进 `internal/model`
   - 当前 pipeline 支持边界已经收口到 direct render object 主链；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView`，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
   - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline
+  - `PipelineElementTreeRenderer` 当前持有长期 `PipelineOwner`，同一 render root 重复渲染不会反复 attach/detach，render object 的 `markNeedsLayout` 能持续作用到下一次渲染
   - `internal/legacy`、`internal/render/legacy` 和测试侧旧 bridge 夹具已经删除，生产源码不再保留 legacy renderer 后端
   - 已经 direct pipeline 化的 widget 已经移出 legacy 目录：
   - [TextWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/TextWidgets.kt)
@@ -328,6 +329,7 @@
 
 - 补稳 direct pipeline 核心架构
 - `PipelineOwnerTest` 已补 attach/detach、脏 layout、挂载后 child adoption 的基础生命周期覆盖
+- `PipelineElementTreeRendererTest` 已补长期 owner 复用覆盖，避免同一 render root 每帧重复 attach
 - 继续补稳 retained 主链直接进入新 pipeline 后的布局、输入与滚动长期形态
 - 用 `pixel-demo` 持续证明真实场景不依赖旧后端
 - 持续同步注释、测试和实施计划，防止主线和文档再错位

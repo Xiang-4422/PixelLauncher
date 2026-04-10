@@ -20,6 +20,9 @@ internal class PipelineOwner(
      * 挂载当前 pipeline 的根对象。
      */
     fun attachRoot(root: RenderBox?) {
+        if (this.root === root) {
+            return
+        }
         this.root?.detach()
         this.root = root
         root?.attach(this)

@@ -6,7 +6,9 @@ package com.purride.pixelui.internal
  * 当前 renderer 只消费 direct `RenderObject` tree。未接入 render object 的 widget
  * 会直接失败，避免生产路径出现隐式后端切换。
  */
-internal class PipelineElementTreeRenderer : ElementTreeRenderer {
+internal class PipelineElementTreeRenderer(
+    private val owner: PipelineOwner = PipelineOwner(),
+) : ElementTreeRenderer {
     /**
      * 判断当前 element tree 是否能完整走新 pipeline。
      */
@@ -30,9 +32,8 @@ internal class PipelineElementTreeRenderer : ElementTreeRenderer {
      */
     fun renderOrNull(request: ElementTreeRenderRequest): PixelRenderResult? {
         val renderRoot = request.root.findPipelineRenderRoot() ?: return null
-        return PipelineOwner(
-            root = renderRoot,
-        ).render(
+        owner.attachRoot(renderRoot)
+        return owner.render(
             logicalWidth = request.logicalWidth,
             logicalHeight = request.logicalHeight,
         )
