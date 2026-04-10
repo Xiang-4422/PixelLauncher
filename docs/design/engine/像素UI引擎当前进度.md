@@ -137,8 +137,13 @@
     - [RenderObject.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/RenderObject.kt)
     - [RenderObjectWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/RenderObjectWidget.kt)
     - [PipelinePrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/PipelinePrimitives.kt)
+    - [PixelRenderPrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/PixelRenderPrimitives.kt)
+    - [PixelRenderSessionFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PixelRenderSessionFactory.kt)
     - [PixelLayoutValues.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model/PixelLayoutValues.kt)
+    - [PixelLayoutMappings.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model/PixelLayoutMappings.kt)
     - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model/PixelModifier.kt)
+    - [PagerGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/gesture/PagerGesturePolicy.kt)
+    - [NestedScrollGesturePolicy.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/gesture/NestedScrollGesturePolicy.kt)
     - [RenderFlex.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderFlex.kt)
     - [RenderPagerViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderPagerViewport.kt)
     - [RenderScrollViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderScrollViewport.kt)
@@ -266,6 +271,9 @@
 - [PixelTextFieldControllerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/state/PixelTextFieldControllerTest.kt)
 - [RetainedWidgetRuntimeTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/retained/RetainedWidgetRuntimeTest.kt)
 - [PipelineElementTreeRendererTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineElementTreeRendererTest.kt)
+- [PipelineOwnerTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineOwnerTest.kt)
+- [PagerGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/pipeline/gesture/PagerGesturePolicyTest.kt)
+- [NestedScrollGesturePolicyTest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/test/kotlin/com/purride/pixelui/internal/render/pipeline/gesture/NestedScrollGesturePolicyTest.kt)
 - pixel-ui 测试目录当前已经按 `state / internal/render / internal/retained` 三组收拢
 
 ### 3.4 当前限制
@@ -319,6 +327,7 @@
 ### 5.2 正在进行
 
 - 补稳 direct pipeline 核心架构
+- `PipelineOwnerTest` 已补 attach/detach、脏 layout、挂载后 child adoption 的基础生命周期覆盖
 - 继续补稳 retained 主链直接进入新 pipeline 后的布局、输入与滚动长期形态
 - 用 `pixel-demo` 持续证明真实场景不依赖旧后端
 - 持续同步注释、测试和实施计划，防止主线和文档再错位
