@@ -12,7 +12,7 @@ import com.purride.pixelui.internal.legacy.PixelMainAxisSize
  */
 internal class RenderFlex(
     private val direction: FlexDirection,
-    private val children: List<RenderBox>,
+    children: List<RenderBox>,
     private val spacing: Int = 0,
     private val mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
     private val mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
@@ -26,26 +26,26 @@ internal class RenderFlex(
     private val paddingRight: Int = 0,
     private val paddingBottom: Int = 0,
     private val onClick: (() -> Unit)? = null,
-) : RenderBox() {
-    private val childOffsets = MutableList(children.size) { ChildOffset() }
+) : MultiChildRenderObject() {
+    private val childOffsets = mutableListOf<ChildOffset>()
 
     init {
-        children.forEach { child ->
-            child.parent = this
-        }
+        setRenderObjectChildren(children)
     }
 
     /**
-     * 遍历所有直接子节点。
+     * 替换所有 flex 子节点，并同步偏移缓存长度。
      */
-    override fun visitChildren(visitor: (RenderObject) -> Unit) {
-        children.forEach(visitor)
+    override fun setRenderObjectChildren(children: List<RenderObject>) {
+        super.setRenderObjectChildren(children)
+        resizeChildOffsets(renderChildren.size)
     }
 
     /**
      * 在给定约束下完成最小 flex 布局。
      */
     override fun layout(constraints: RenderConstraints) {
+        val children = renderChildren
         val innerConstraints = constraints.inset(
             left = paddingLeft,
             top = paddingTop,
@@ -168,6 +168,7 @@ internal class RenderFlex(
         offsetX: Int,
         offsetY: Int,
     ) {
+        val children = renderChildren
         children.forEachIndexed { index, child ->
             val childOffset = childOffsets[index]
             child.paint(
@@ -189,6 +190,7 @@ internal class RenderFlex(
         if (localX !in 0 until size.width || localY !in 0 until size.height) {
             return
         }
+        val children = renderChildren
         children.forEachIndexed { index, child ->
             val childOffset = childOffsets[index]
             child.hitTest(
@@ -221,6 +223,7 @@ internal class RenderFlex(
                 onClick = clickHandler,
             )
         }
+        val children = renderChildren
         children.forEachIndexed { index, child ->
             val childOffset = childOffsets[index]
             child.collectClickTargets(
@@ -333,6 +336,24 @@ internal class RenderFlex(
         return when (direction) {
             FlexDirection.HORIZONTAL -> child.size.height
             FlexDirection.VERTICAL -> child.size.width
+        }
+    }
+
+    /**
+     * 读取当前 flex 可布局的盒模型子节点。
+     */
+    private val renderChildren: List<RenderBox>
+        get() = children.filterIsInstance<RenderBox>()
+
+    /**
+     * 调整子节点偏移缓存长度。
+     */
+    private fun resizeChildOffsets(childCount: Int) {
+        while (childOffsets.size < childCount) {
+            childOffsets += ChildOffset()
+        }
+        while (childOffsets.size > childCount) {
+            childOffsets.removeAt(childOffsets.lastIndex)
         }
     }
 }
