@@ -58,7 +58,7 @@ internal data class PaddingWidget(
 }
 
 /**
- * 方向性感知的 padding bridge widget。
+ * 方向性感知的 padding widget。
  */
 internal data class PaddingDirectionalWidget(
     val child: Widget,
@@ -122,7 +122,7 @@ internal data class AlignWidget(
 }
 
 /**
- * 方向性感知的 `Align` bridge widget。
+ * 方向性感知的 `Align` widget。
  */
 internal data class AlignDirectionalWidget(
     val child: Widget,

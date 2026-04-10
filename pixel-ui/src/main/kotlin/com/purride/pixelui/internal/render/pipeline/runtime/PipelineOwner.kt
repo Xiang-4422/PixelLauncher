@@ -42,7 +42,7 @@ internal class PipelineOwner(
     }
 
     /**
-     * 渲染当前根对象并导出与现有宿主兼容的像素结果。
+     * 渲染当前根对象并导出宿主需要的像素结果。
      */
     fun render(
         logicalWidth: Int,

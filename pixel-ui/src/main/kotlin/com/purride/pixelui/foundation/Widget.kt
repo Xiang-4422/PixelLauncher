@@ -6,8 +6,7 @@ package com.purride.pixelui
  * 当前开始把公开边界固定到 `Widget`，并让状态、主题、环境和自动重建
  * 真正建立在 retained build tree 上。
  *
- * 这一轮仍然允许内部暂时把最终组件树翻译到 legacy pixel renderer，
- * 但这个翻译层已经不再是公开 API 的一部分。
+ * 当前默认渲染链路会把 retained element tree 直接交给 render object pipeline。
  */
 interface Widget {
     /**

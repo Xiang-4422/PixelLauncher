@@ -101,7 +101,7 @@ internal data class PixelRect(
 }
 
 /**
- * legacy 迁出后仍保留给 pipeline 内部使用的最大尺寸约束。
+ * pipeline 内部使用的最大尺寸约束。
  */
 internal data class PixelConstraints(
     val maxWidth: Int,

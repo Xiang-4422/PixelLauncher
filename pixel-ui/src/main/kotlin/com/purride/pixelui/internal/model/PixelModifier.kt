@@ -3,8 +3,7 @@ package com.purride.pixelui.internal
 /**
  * 通用像素组件修饰器。
  *
- * 当前阶段保留尺寸、填充、点击、权重等最小布局语义，供 direct pipeline
- * widget 和 legacy 测试夹具共同复用。
+ * 当前阶段保留尺寸、填充、点击、权重等最小布局语义，供 direct pipeline widget 复用。
  */
 internal data class PixelModifier(
     val elements: List<PixelModifierElement> = emptyList(),
@@ -20,6 +19,9 @@ internal data class PixelModifier(
     fun then(other: PixelModifier): PixelModifier = copy(elements = elements + other.elements)
 
     companion object {
+        /**
+         * 空修饰器。
+         */
         val Empty = PixelModifier()
     }
 }

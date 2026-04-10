@@ -4,7 +4,7 @@ package com.purride.pixelui.internal
  * 新渲染管线里的最小弹性布局对象。
  *
  * 当前覆盖 `Row / Column` 的基础主轴排布、交叉轴对齐、spacing 和基础权重分配，
- * 直接服务 retained render object tree，不再依赖 bridge lowering。
+ * 直接服务 retained render object tree。
  */
 internal class RenderFlex(
     private var direction: FlexDirection,

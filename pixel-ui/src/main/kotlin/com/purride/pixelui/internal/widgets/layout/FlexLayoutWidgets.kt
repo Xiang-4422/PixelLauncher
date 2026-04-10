@@ -94,7 +94,7 @@ internal data class PositionedWidget(
 }
 
 /**
- * 方向性感知的 `Positioned` bridge widget。
+ * 方向性感知的 `Positioned` widget。
  */
 internal data class PositionedDirectionalWidget(
     val child: Widget,
