@@ -296,6 +296,44 @@ internal class RenderFlex(
     }
 
     /**
+     * 导出当前 flex 子树里的分页目标。
+     */
+    override fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) {
+        val children = renderChildren
+        children.forEachIndexed { index, child ->
+            val childOffset = childOffsets[index]
+            child.collectPagerTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
+    /**
+     * 导出当前 flex 子树里的列表滚动目标。
+     */
+    override fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) {
+        val children = renderChildren
+        children.forEachIndexed { index, child ->
+            val childOffset = childOffsets[index]
+            child.collectListTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
+    /**
      * 导出当前 flex 子树里的文本输入目标。
      */
     override fun collectTextInputTargets(
@@ -535,6 +573,28 @@ internal class RenderFlexChild(
         targets: MutableList<PixelClickTarget>,
     ) {
         (child as? RenderBox)?.collectClickTargets(offsetX, offsetY, targets)
+    }
+
+    /**
+     * 导出唯一子节点分页目标。
+     */
+    override fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) {
+        (child as? RenderBox)?.collectPagerTargets(offsetX, offsetY, targets)
+    }
+
+    /**
+     * 导出唯一子节点列表滚动目标。
+     */
+    override fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) {
+        (child as? RenderBox)?.collectListTargets(offsetX, offsetY, targets)
     }
 
     /**

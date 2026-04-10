@@ -348,9 +348,9 @@ object AxisBufferComposer
 
 当前阶段优先级：
 
-1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
-2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / PipelineOwner`
-3. scroll 替换链路：优先为 `PageView / ListView / SingleChildScrollView` 建立 direct render object，完成后删除 `legacy/widgets/scroll`
+1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / ListView / SingleChildScrollView` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
+2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderScrollViewport / PipelineOwner`
+3. scroll 替换链路：下一步优先为 `PageView` 建立 direct render object，完成后删除 `legacy/widgets/scroll`
 4. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 只在未替换组件仍依赖时保留，不再做纯兼容型重构
 5. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
 

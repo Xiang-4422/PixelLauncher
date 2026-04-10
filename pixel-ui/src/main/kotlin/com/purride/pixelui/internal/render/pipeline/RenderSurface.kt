@@ -262,6 +262,36 @@ internal class RenderSurface(
     }
 
     /**
+     * 导出当前表面子树里的分页目标。
+     */
+    override fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) {
+        renderChild?.collectPagerTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    /**
+     * 导出当前表面子树里的列表滚动目标。
+     */
+    override fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) {
+        renderChild?.collectListTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    /**
      * 导出当前表面及其子树里的文本输入目标。
      */
     override fun collectTextInputTargets(

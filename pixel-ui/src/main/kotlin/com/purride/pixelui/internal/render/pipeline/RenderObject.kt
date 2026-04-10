@@ -128,6 +128,24 @@ internal abstract class RenderBox : RenderObject() {
     ) = Unit
 
     /**
+     * 导出当前子树里的分页目标。
+     */
+    open fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) = Unit
+
+    /**
+     * 导出当前子树里的列表滚动目标。
+     */
+    open fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) = Unit
+
+    /**
      * 导出当前子树里的文本输入目标。
      */
     open fun collectTextInputTargets(
