@@ -9,7 +9,7 @@ class PixelBitmapFontTest {
     private val font = PixelBitmapFont()
 
     @Test
-    fun measureTextKeepsLegacyFiveBySevenSpacing() {
+    fun measureTextKeepsFiveBySevenBitmapSpacing() {
         assertEquals(5, font.measureText("A"))
         assertEquals(11, font.measureText("AA"))
         assertEquals(17, font.measureText("A A"))

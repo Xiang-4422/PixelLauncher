@@ -454,7 +454,7 @@ hostView.themeData = pageTheme
 
 ## 4. 基础组件使用方式
 
-当前对外主推的是 Flutter 风格公开组件名。旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等名称当前只在 `pixel-ui` 模块内部作为兼容桥接保留，新页面不应再直接依赖它们。
+当前对外只主推 Flutter 风格公开组件名。旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等节点式入口已经从生产源码删除，新页面不应再依赖旧节点 API。
 
 ### 4.1 文本
 
@@ -1058,7 +1058,7 @@ Container(
 
 ## 6. 文本输入接入方式
 
-`TextField` 当前不是自己实现完整 IME，而是通过宿主桥接。
+`TextField` 当前不是自己实现完整 IME，而是通过宿主输入桥接。这里的 `PixelHostBridge` 是宿主能力接口，不是旧渲染后端的 bridge 层。
 
 核心类型：
 

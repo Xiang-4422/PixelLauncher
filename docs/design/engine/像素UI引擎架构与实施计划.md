@@ -46,7 +46,7 @@
 - `runtime orchestration`
 - `direct render object pipeline`
 
-`bridge` 与 `legacy renderer` 已经从生产源码删除，不再作为 fallback 或内部可替换后端保留。
+旧 bridge 层与旧渲染后端已经从生产源码删除，不再作为 fallback 或内部可替换后端保留。
 
 这意味着当前阶段不是“边拆边迁”，而是“框架先自证，再迁应用”。
 
@@ -298,7 +298,7 @@ object AxisBufferComposer
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
-- bridge 目录和 legacy renderer 已经从生产源码删除
+- 旧 bridge 目录和旧渲染后端已经从生产源码删除
 - 默认运行时已经改成 pipeline-only，不再自动装配其他后端
 - pipeline 基础布局值与 modifier 已经收进 `internal/model`
 - 当前主线任务是继续补稳 direct pipeline 的核心架构，而不是启动 `:app` 迁移
@@ -351,9 +351,9 @@ object AxisBufferComposer
 1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经接入 direct pipeline，源码统一收在 `internal/widgets`
 2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderPagerViewport / RenderScrollViewport / PipelineOwner`
    `renderobjects` 当前按 `content / layout / viewport` 分组，不再把所有 render object 平铺在一个目录里。
-3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经收在 `internal/model`，legacy 同名入口已经随旧后端删除
+3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经收在 `internal/model`
 4. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，下一步继续补稳长期滚动协议
-5. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已从生产源码删除，后续保持删除状态
+5. 旧后端删除守卫：旧 resolver、旧 widget adapter 与旧 render support 已从生产源码删除，后续保持删除状态
 6. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
 
 ### Phase D. 新增 `:pixel-demo`
@@ -449,7 +449,7 @@ object AxisBufferComposer
 | 已完成 | `pixel-ui` 基础按钮组件 | 按钮已收敛为 `PixelButton` 与 `PixelButtonStyle`，demo 不再重复手写按钮结构 |
 | 已完成 | `:pixel-ui` Flutter 风格公开层 | 页面层主路径已转到 `Widget / BuildContext / Text / Container / Row / Column / PageView / ListView / TextField` |
 | 已完成 | retained build/runtime 首轮落地 | `BuildOwner / Element / Stateful / Inherited` 已成立，并已在 demo 真实使用 |
-| 已完成 | legacy renderer 删除 | `internal/legacy`、`internal/render/legacy` 与旧 bridge 测试夹具已经删除，生产运行时只保留 direct pipeline |
+| 已完成 | 旧渲染后端删除 | `internal/legacy`、`internal/render/legacy` 与旧 bridge 测试夹具已经删除，生产运行时只保留 direct pipeline |
 | 已完成 | `pixel-ui` 基础列表组件 | `pixel-ui` 已具备 `ListView`、`PixelListState`、`ScrollController`，并支持列表视口裁剪、触摸滚动与基础惯性滚动 |
 | 已完成 | `pixel-ui` 同轴复合手势仲裁 | 纵向 `Pager` 内部嵌套纵向 `List` 时，列表优先消费自身还能处理的拖动 |
 | 已完成 | `pixel-ui` 列表到分页滚动接力 | 列表滑到边界后，同一次纵向手势可直接接力给外层分页，无需抬手重新触发 |
@@ -460,7 +460,7 @@ object AxisBufferComposer
 | 已完成 | `pixel-ui` 列表程序化定位首轮落地 | `ScrollController` 已支持基于运行时测量结果将指定项滚入视口，demo 已补跳转验证 |
 | 已完成 | `pixel-ui` 单子节点滚动容器 | 已具备 `PixelSingleChildScrollView`，可承载单一长子树并复用现有纵向滚动链路 |
 | 已完成 | `:pixel-demo` 宿主 | Demo 已可编译，并覆盖文本、调色板、文本输入、单子节点滚动、横纵分页、纵向列表、表单与列表组合、分页与列表组合、点击反馈、混合文本风格验证与权重布局展示 |
-| 进行中 | direct pipeline 长期架构补齐 | 正在补稳 `RenderObject / PipelineOwner / RenderObjectWidget` 的长期形态，并防止旧 bridge/legacy fallback 回流 |
+| 进行中 | direct pipeline 长期架构补齐 | 正在补稳 `RenderObject / PipelineOwner / RenderObjectWidget` 的长期形态，并防止旧渲染后端回流 |
 | 未开始 | Launcher 迁移 | 在 demo 自证前不启动 |
 
 ---
@@ -485,7 +485,7 @@ object AxisBufferComposer
 1. 固定 Flutter 式 `Widget -> Element -> RenderObject` 基础协议
 2. 补稳 `RenderObject / PipelineOwner` 的长期职责边界
 3. 继续扩展 direct pipeline 的基础布局、输入和滚动视口
-4. 保持 bridge/legacy fallback 删除状态，未接入 pipeline 的 widget 直接失败
+4. 保持旧后端删除状态，未接入 pipeline 的 widget 直接失败
 5. 继续用 `pixel-demo` 做验收
 
 这份顺序不是建议，而是当前阶段的执行顺序。
@@ -501,7 +501,7 @@ object AxisBufferComposer
 目标：
 
 - 补稳第一版 direct pipeline 的核心架构
-- 继续证明 `pixel-ui` 已经具备脱离 legacy 后端出图的真实能力
+- 继续证明 `pixel-ui` 已经具备只通过 direct pipeline 出图的真实能力
 
 范围：
 
@@ -518,9 +518,9 @@ object AxisBufferComposer
 - 公开 `Text` 的首批受支持配置改为直接创建 `RenderText`，pipeline renderer 优先消费 retained tree 上的 direct render root
 - 公开 `DecoratedBox` 改为直接创建 `RenderSurface`，首批 `DecoratedBox + Text` 子树不再依赖 bridge lowering
 - 公开 `Padding / Align / Center` 改为直接创建 `RenderSurface`，首批单 child 布局壳开始共享 render object 主链
-- 公开 `SizedBox / Container / GestureDetector / Row / Column / Stack / Positioned / Expanded / Flexible / Spacer / TextField / OutlinedButton` 改为 direct render object 或 direct widget 组合，不再保留这些 widget 的 bridge fallback
+- 公开 `SizedBox / Container / GestureDetector / Row / Column / Stack / Positioned / Expanded / Flexible / Spacer / TextField / OutlinedButton` 改为 direct render object 或 direct widget 组合，不再保留其他渲染后端切换
 - `RenderFlex` 新增基础 flex 权重分配，`RenderStack / RenderPositioned` 新增基础叠放与定位能力，pipeline result 开始导出 direct text input target
-- `internal/model` 承接 pipeline 与 direct widget 共享的基础布局枚举和 modifier 数据，避免生产 pipeline 继续依赖 `internal/legacy`
+- `internal/model` 承接 pipeline 与 direct widget 共享的基础布局枚举和 modifier 数据，避免生产 pipeline 重新依赖旧后端包
 - `PipelineOwnerTest` 覆盖 root attach/detach、未脏重复渲染不重复 layout、挂载后 child adoption 自动 attach 与触发布局
 - `PipelineElementTreeRenderer` 持有长期 `PipelineOwner`，同一 render root 重复渲染不重复 attach，render object 脏标记可以持续传递到下一次 render
 - 新增最小内部协议：
@@ -534,7 +534,7 @@ object AxisBufferComposer
 - 第一批具体 render object 已落地：
   - `RenderText`
   - `RenderSurface`
-- `PaintContext` 直接基于 `PixelBuffer` 绘制，不复用 `legacy renderer` 的 render support
+- `PaintContext` 直接基于 `PixelBuffer` 绘制，不复用旧渲染后端的 render support
 
 ### 10.2 retained -> pipeline direct render tree
 
@@ -554,7 +554,7 @@ object AxisBufferComposer
 - 新增 `PipelineElementTreeRenderer`
 - 删除旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering`
 - 生产 pipeline renderer 只接受 direct render object tree，不再从旧中间树 lowering
-- direct pipeline render object 与 direct widget 层不得 import `internal.legacy`，如确实需要共享语义，先把语义抽到 `internal/model`
+- direct pipeline render object 与 direct widget 层不得重新引入旧后端包，如确实需要共享语义，先把语义抽到 `internal/model`
 - retained 主链改成：
   - 默认直接走新 pipeline renderer
   - 未接入 pipeline 的 widget 不再静默回退，直接暴露不支持错误
@@ -569,9 +569,9 @@ object AxisBufferComposer
 - 当前已额外支持最小 `Row / Column` 基础排布，并覆盖 `START / CENTER / END`、`SPACE_*`、`stretch` 与基础 flex 权重场景
 - 允许这些节点通过 modifier 形式携带最小 clickable / size / padding / fill 语义
 - 不做：
-  - mixed subtree pipeline/legacy 渲染
+  - mixed subtree 多后端渲染
 
-### 10.3 bridge/legacy 删除收尾
+### 10.3 旧后端删除守卫
 
 目标：
 
@@ -586,8 +586,8 @@ object AxisBufferComposer
 
 完成定义：
 
-- `legacy` 不再作为默认 fallback 后端存在
-- `bridge` 不再作为默认 fallback 层存在
+- 旧渲染后端不再作为默认 fallback 后端存在
+- 旧 bridge 层不再作为默认 fallback 层存在
 - `internal/legacy`、`internal/render/legacy` 和旧 bridge 测试夹具保持删除状态
 - 后续如果发现缺口，优先在 direct pipeline 或 `internal/model` 中补能力，不恢复旧后端
 - 冻结纯 `assembly/factory` 型重构，避免继续投入低收益整理
@@ -597,7 +597,7 @@ object AxisBufferComposer
 目标：
 
 - 给新 pipeline 主线持续兜底
-- 防止“代码已经转向，但文档还停在 legacy 收口”这种错位继续发生
+- 防止“代码已经转向，但文档还停在旧后端收口”这种错位继续发生
 
 范围：
 
@@ -645,13 +645,13 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 
 ## 12. 下一阶段目标
 
-当前阶段完成定义不再是“继续把 legacy wiring 拆得更细”，而是：
+当前阶段完成定义不再是“继续把旧 wiring 拆得更细”，而是：
 
-- 至少有一个真实 demo 场景不经过 `legacy renderer`
+- 真实 demo 场景稳定通过 direct pipeline 出图
 - retained 主链已经默认直连新 pipeline，不再静默启用旧 fallback
 - pipeline 支持边界已经由 direct render object tree 自身决定，不再维护 bridge lowering capability checker
 - pipeline 缺少 render root 时会直接暴露不支持错误
-- pipeline 共享模型已经脱离 `internal.legacy`，legacy 同名模型别名层已经删除
+- pipeline 共享模型已经收敛到 `internal/model`
 
 在这之后，下一阶段才进入：
 
@@ -663,7 +663,7 @@ adb -s <device> shell am start -n com.purride.pixeldemo/.app.DemoMenuActivity
 在这之前，不做：
 
 - `:app` 页面迁移
-- 再把“继续拆 legacy factory/assembly”当成主要主线
+- 再把“继续整理旧后端”当成主要主线
 
 一句话说，当前阶段的目标不是“把新 renderer 一口气写完”，而是：
 
