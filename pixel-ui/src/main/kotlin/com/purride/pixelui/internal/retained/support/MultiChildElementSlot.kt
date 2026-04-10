@@ -5,6 +5,15 @@ import com.purride.pixelui.Widget
 internal class MultiChildElementSlot {
     private var children = emptyList<Element>()
 
+    /**
+     * 当前 slot 内保留的 child elements。
+     */
+    val elements: List<Element>
+        get() = children
+
+    /**
+     * 按索引更新多 child element 列表。
+     */
     fun update(
         owner: BuildOwner,
         parent: Element,
@@ -24,6 +33,9 @@ internal class MultiChildElementSlot {
         children = nextChildren
     }
 
+    /**
+     * 遍历当前 child elements。
+     */
     fun visit(visitor: (Element) -> Unit) {
         children.forEach(visitor)
     }

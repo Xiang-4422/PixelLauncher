@@ -278,6 +278,53 @@ class RetainedWidgetRuntimeTest {
         }
     }
 
+    @Test
+    fun multiChildRenderObjectWidgetConnectsChildRenderObjects() {
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { },
+            widgetAdapter = BridgeWidgetAdapter,
+        )
+
+        try {
+            val firstRoot = buildRuntime.resolveElementTree(
+                TestMultiChildRenderWidget(
+                    label = "multi-first",
+                    children = listOf(
+                        TestRenderWidget(label = "first-a"),
+                        TestRenderWidget(label = "first-b"),
+                    ),
+                ),
+            )
+            val firstParentRenderObject = firstRoot?.findRenderObject() as? TestMultiChildRenderObject
+            val firstChildren = firstParentRenderObject?.renderChildren?.map { it as TestRenderObject }.orEmpty()
+
+            val secondRoot = buildRuntime.resolveElementTree(
+                TestMultiChildRenderWidget(
+                    label = "multi-second",
+                    children = listOf(
+                        TestRenderWidget(label = "second-a"),
+                        TestRenderWidget(label = "second-b"),
+                        TestRenderWidget(label = "second-c"),
+                    ),
+                ),
+            )
+            val secondParentRenderObject = secondRoot?.findRenderObject() as? TestMultiChildRenderObject
+            val secondChildren = secondParentRenderObject?.renderChildren?.map { it as TestRenderObject }.orEmpty()
+
+            assertSame(firstRoot, secondRoot)
+            assertSame(firstParentRenderObject, secondParentRenderObject)
+            assertEquals("multi-second", secondParentRenderObject?.label)
+            assertEquals(3, secondChildren.size)
+            assertSame(firstChildren[0], secondChildren[0])
+            assertSame(firstChildren[1], secondChildren[1])
+            assertEquals("second-a", secondChildren[0].label)
+            assertEquals("second-b", secondChildren[1].label)
+            assertEquals("second-c", secondChildren[2].label)
+        } finally {
+            buildRuntime.dispose()
+        }
+    }
+
     private class ToggleToneWidget : StatefulWidget() {
         override fun createState(): State<out StatefulWidget> = ToggleToneState()
     }
@@ -421,6 +468,38 @@ class RetainedWidgetRuntimeTest {
         var label: String = ""
         val renderChild: RenderObject?
             get() = child
+
+        override fun layout(constraints: RenderConstraints) {
+            size = RenderSize.Zero
+        }
+
+        override fun paint(
+            context: PaintContext,
+            offsetX: Int,
+            offsetY: Int,
+        ) = Unit
+    }
+
+    private class TestMultiChildRenderWidget(
+        private val label: String,
+        children: List<Widget>,
+    ) : MultiChildRenderObjectWidget(children = children) {
+        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+            return TestMultiChildRenderObject()
+        }
+
+        override fun updateRenderObject(
+            context: InternalBuildContext,
+            renderObject: RenderObject,
+        ) {
+            (renderObject as TestMultiChildRenderObject).label = label
+        }
+    }
+
+    private class TestMultiChildRenderObject : MultiChildRenderObject() {
+        var label: String = ""
+        val renderChildren: List<RenderObject>
+            get() = children
 
         override fun layout(constraints: RenderConstraints) {
             size = RenderSize.Zero
