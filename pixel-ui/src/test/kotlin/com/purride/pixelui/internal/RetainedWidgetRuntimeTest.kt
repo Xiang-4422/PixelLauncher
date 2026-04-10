@@ -21,6 +21,7 @@ import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.Widget
 import com.purride.pixelui.dependOnInheritedWidgetOfExactType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 class RetainedWidgetRuntimeTest {
@@ -241,6 +242,42 @@ class RetainedWidgetRuntimeTest {
         }
     }
 
+    @Test
+    fun singleChildRenderObjectWidgetConnectsChildRenderObject() {
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { },
+            widgetAdapter = BridgeWidgetAdapter,
+        )
+
+        try {
+            val firstRoot = buildRuntime.resolveElementTree(
+                TestSingleChildRenderWidget(
+                    label = "parent-first",
+                    child = TestRenderWidget(label = "child-first"),
+                ),
+            )
+            val firstParentRenderObject = firstRoot?.findRenderObject() as? TestSingleChildRenderObject
+            val firstChildRenderObject = firstParentRenderObject?.renderChild as? TestRenderObject
+
+            val secondRoot = buildRuntime.resolveElementTree(
+                TestSingleChildRenderWidget(
+                    label = "parent-second",
+                    child = TestRenderWidget(label = "child-second"),
+                ),
+            )
+            val secondParentRenderObject = secondRoot?.findRenderObject() as? TestSingleChildRenderObject
+            val secondChildRenderObject = secondParentRenderObject?.renderChild as? TestRenderObject
+
+            assertSame(firstRoot, secondRoot)
+            assertSame(firstParentRenderObject, secondParentRenderObject)
+            assertSame(firstChildRenderObject, secondChildRenderObject)
+            assertEquals("parent-second", secondParentRenderObject?.label)
+            assertEquals("child-second", secondChildRenderObject?.label)
+        } finally {
+            buildRuntime.dispose()
+        }
+    }
+
     private class ToggleToneWidget : StatefulWidget() {
         override fun createState(): State<out StatefulWidget> = ToggleToneState()
     }
@@ -362,5 +399,37 @@ class RetainedWidgetRuntimeTest {
     private class TestRenderObject : RenderObject() {
         var label: String = ""
         var updateCount: Int = 0
+    }
+
+    private class TestSingleChildRenderWidget(
+        private val label: String,
+        child: Widget,
+    ) : SingleChildRenderObjectWidget(child = child) {
+        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+            return TestSingleChildRenderObject()
+        }
+
+        override fun updateRenderObject(
+            context: InternalBuildContext,
+            renderObject: RenderObject,
+        ) {
+            (renderObject as TestSingleChildRenderObject).label = label
+        }
+    }
+
+    private class TestSingleChildRenderObject : SingleChildRenderObject() {
+        var label: String = ""
+        val renderChild: RenderObject?
+            get() = child
+
+        override fun layout(constraints: RenderConstraints) {
+            size = RenderSize.Zero
+        }
+
+        override fun paint(
+            context: PaintContext,
+            offsetX: Int,
+            offsetY: Int,
+        ) = Unit
     }
 }
