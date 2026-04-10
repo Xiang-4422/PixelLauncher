@@ -22,7 +22,18 @@ internal object DefaultBridgeTreeResolver : BridgeTreeResolving {
                 val childNodes = BridgeNodeChildren(childNodeCollector.collectAll(element))
                 element.resolveBridgeNode(childNodes)
             }
-            else -> childNodeCollector.collectFirst(element)
+
+            else -> {
+                val bridgeWidget = element.widget as? BridgeWidget
+                if (bridgeWidget != null) {
+                    bridgeWidget.createBridgeNode(
+                        context = element,
+                        childNodes = BridgeNodeChildren(childNodeCollector.collectAll(element)),
+                    )
+                } else {
+                    childNodeCollector.collectFirst(element)
+                }
+            }
         }
     }
 }

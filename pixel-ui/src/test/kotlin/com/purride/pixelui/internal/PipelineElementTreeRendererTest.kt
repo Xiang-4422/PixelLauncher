@@ -212,6 +212,29 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * 直接持有 render object 的 widget 根节点应该完全绕过 bridge resolver。
+     */
+    @Test
+    fun pipelineElementTreeRendererRendersDirectRenderObjectRootWithoutBridgeResolver() {
+        val renderer = PipelineElementTreeRenderer(
+            bridgeTreeResolver = FailingBridgeTreeResolver,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
+        val result = withRenderRequest(
+            root = Text("DIRECT"),
+            logicalWidth = 32,
+            logicalHeight = 8,
+        ) { request ->
+            assertTrue(renderer.canRender(request))
+            renderer.renderOrNull(request)
+        }
+
+        assertNotNull(result)
+        result ?: return
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+    }
+
+    /**
      * 只要树里出现首批不支持节点，就应该整树回退。
      */
     @Test
@@ -426,6 +449,15 @@ class PipelineElementTreeRendererTest {
             bridgeTreeResolver = DefaultBridgeTreeResolver,
             defaultTextRasterizer = PixelBitmapFont.Default,
         )
+    }
+
+    /**
+     * 用于验证 direct render object path 不依赖 bridge 解析器。
+     */
+    private object FailingBridgeTreeResolver : BridgeTreeResolving {
+        override fun resolve(request: BridgeTreeResolveRequest): BridgeRenderNode? {
+            error("direct render object path 不应该调用 bridge resolver")
+        }
     }
 
     /**

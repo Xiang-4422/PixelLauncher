@@ -12,12 +12,12 @@ import com.purride.pixelui.Widget
  * - RenderObject 负责 layout / paint / hitTest
  */
 internal abstract class RenderObjectWidget(
-    final override val key: Any? = null,
+    override val key: Any? = null,
 ) : Widget {
     /**
      * 为当前 widget 创建对应的 retained element。
      */
-    open fun createElement(): RenderObjectElement {
+    open fun createElement(): Element {
         return RenderObjectElement(this)
     }
 

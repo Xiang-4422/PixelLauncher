@@ -14,10 +14,10 @@ import kotlin.math.min
  * 第一版只覆盖单行文本、三种水平对齐，以及最基本的尺寸/填充/clickable 修饰。
  */
 internal class RenderText(
-    private val text: String,
-    private val style: PixelTextStyle,
-    private val textAlign: PixelTextAlign,
-    private val textDirection: TextDirection,
+    private var text: String,
+    private var style: PixelTextStyle,
+    private var textAlign: PixelTextAlign,
+    private var textDirection: TextDirection,
     private val defaultTextRasterizer: PixelTextRasterizer,
     private val explicitWidth: Int? = null,
     private val explicitHeight: Int? = null,
@@ -35,6 +35,31 @@ internal class RenderText(
     private var textHeight = 0
     private var drawTextX = 0
     private var drawTextY = 0
+
+    /**
+     * 用新的文本配置更新当前对象，并触发布局与绘制刷新。
+     */
+    fun updateText(
+        text: String,
+        style: PixelTextStyle,
+        textAlign: PixelTextAlign,
+        textDirection: TextDirection,
+    ) {
+        if (
+            this.text == text &&
+            this.style == style &&
+            this.textAlign == textAlign &&
+            this.textDirection == textDirection
+        ) {
+            return
+        }
+        this.text = text
+        this.style = style
+        this.textAlign = textAlign
+        this.textDirection = textDirection
+        markNeedsLayout()
+        markNeedsPaint()
+    }
 
     /**
      * 按给定约束测量文本对象。
