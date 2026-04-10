@@ -520,6 +520,7 @@ object AxisBufferComposer
 - 公开 `SizedBox / Container / GestureDetector / Row / Column / Stack / Positioned / Expanded / Flexible / Spacer / TextField / OutlinedButton` 改为 direct render object 或 direct widget 组合，不再保留这些 widget 的 bridge fallback
 - `RenderFlex` 新增基础 flex 权重分配，`RenderStack / RenderPositioned` 新增基础叠放与定位能力，pipeline result 开始导出 direct text input target
 - `internal/model` 承接 pipeline 与 direct widget 共享的基础布局枚举和 modifier 数据，避免生产 pipeline 继续依赖 `internal/legacy`
+- `PipelineOwnerTest` 覆盖 root attach/detach、未脏重复渲染不重复 layout、挂载后 child adoption 自动 attach 与触发布局
 - 新增最小内部协议：
   - `PipelineOwner`
   - `RenderObject`
