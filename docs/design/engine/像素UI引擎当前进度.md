@@ -130,17 +130,19 @@
   - [WidgetRenderRequestFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/request/WidgetRenderRequestFactory.kt)
   - runtime 目录当前已经按 `runtime / request / assembly / support / host` 五组收拢
   - 新渲染管线骨架已经启动：
-    - [PipelineOwner.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineOwner.kt)
-    - [RenderObject.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderObject.kt)
-    - [RenderObjectWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderObjectWidget.kt)
-    - [RenderFlex.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderFlex.kt)
-    - [RenderPagerViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderPagerViewport.kt)
-    - [RenderScrollViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderScrollViewport.kt)
-    - [RenderSurface.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderSurface.kt)
-    - [RenderText.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/RenderText.kt)
-    - [PipelineTreeCapabilityChecker.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineTreeCapabilityChecker.kt)
-    - [PipelineBridgeTreeLowering.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineBridgeTreeLowering.kt)
-    - [PipelineElementTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/PipelineElementTreeRenderer.kt)
+    - pipeline 目录当前已经按 `core / runtime / renderobjects / lowering` 四组收拢
+    - [PipelineOwner.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PipelineOwner.kt)
+    - [PipelineElementTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PipelineElementTreeRenderer.kt)
+    - [RenderObject.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/RenderObject.kt)
+    - [RenderObjectWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/RenderObjectWidget.kt)
+    - [PipelinePrimitives.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/PipelinePrimitives.kt)
+    - [RenderFlex.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderFlex.kt)
+    - [RenderPagerViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderPagerViewport.kt)
+    - [RenderScrollViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderScrollViewport.kt)
+    - [RenderSurface.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderSurface.kt)
+    - [RenderText.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderText.kt)
+    - [PipelineTreeCapabilityChecker.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/lowering/PipelineTreeCapabilityChecker.kt)
+    - [PipelineBridgeTreeLowering.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/lowering/PipelineBridgeTreeLowering.kt)
   - 当前 pipeline 支持边界已经收口到显式 capability checker，并且能给出整树回退原因；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 的 direct render object 主链，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
   - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline，不再保留这些 widget 的 bridge fallback
   - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
