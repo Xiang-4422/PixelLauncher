@@ -22,8 +22,6 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
-import com.purride.pixelui.internal.legacy.PixelAlignment
-import com.purride.pixelui.internal.legacy.PixelTextAlign
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
