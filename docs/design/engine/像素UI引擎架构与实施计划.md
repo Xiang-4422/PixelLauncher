@@ -514,6 +514,7 @@ object AxisBufferComposer
 - 新增内部 `SingleChildRenderObjectWidget / SingleChildRenderObjectElement` 协议，先固定单 child render object 的 element 复用和子节点挂接
 - 新增内部 `MultiChildRenderObjectWidget / MultiChildRenderObjectElement` 协议，先固定多 child render object 的 element 复用和子节点挂接
 - `RenderFlex` 改为继承 `MultiChildRenderObject`，不再私有手写 render child 生命周期
+- 公开 `Text` 的首批受支持配置改为直接创建 `RenderText`，pipeline renderer 优先消费 retained tree 上的 direct render root
 - 新增最小内部协议：
   - `PipelineOwner`
   - `RenderObject`

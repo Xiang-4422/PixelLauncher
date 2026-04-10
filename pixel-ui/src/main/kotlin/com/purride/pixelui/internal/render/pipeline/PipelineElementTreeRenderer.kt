@@ -29,6 +29,9 @@ internal class PipelineElementTreeRenderer(
      * 返回当前 element tree 的 pipeline 能力检查结果。
      */
     fun inspect(request: ElementTreeRenderRequest): PipelineCapabilityReport {
+        if (request.root.findPipelineRenderRoot() != null) {
+            return PipelineCapabilityReport.supported()
+        }
         val bridgeRoot = bridgeTreeResolver.resolve(
             request = BridgeTreeResolveRequest(
                 root = request.root,
@@ -41,6 +44,14 @@ internal class PipelineElementTreeRenderer(
      * 尝试用新 pipeline 渲染当前 element tree；不支持时返回 null。
      */
     fun renderOrNull(request: ElementTreeRenderRequest): PixelRenderResult? {
+        request.root.findPipelineRenderRoot()?.let { renderRoot ->
+            return PipelineOwner(
+                root = renderRoot,
+            ).render(
+                logicalWidth = request.logicalWidth,
+                logicalHeight = request.logicalHeight,
+            )
+        }
         val bridgeRoot = bridgeTreeResolver.resolve(
             request = BridgeTreeResolveRequest(
                 root = request.root,
@@ -64,5 +75,12 @@ internal class PipelineElementTreeRenderer(
     override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
         return renderOrNull(request)
             ?: error("当前 element tree 还不能完整走新渲染管线。")
+    }
+
+    /**
+     * 直接从 retained element tree 查找可挂载到 pipeline 的 render root。
+     */
+    private fun Element?.findPipelineRenderRoot(): RenderBox? {
+        return this?.findRenderObject() as? RenderBox
     }
 }
