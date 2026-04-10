@@ -348,12 +348,11 @@ object AxisBufferComposer
 
 当前阶段优先级：
 
-1. retained build runtime：`BuildOwner / Element / Inherited / Stateful`
-2. `RetainedWidgetRenderRuntime`
-3. bridge：`BridgeRenderNode / DefaultBridgeTreeResolver / BridgeWidgetAdapter / BridgeAdapterElement / BridgeWidget / LegacyLeafWidget / LegacySingleChildWidget / LegacyMultiChildWidget / BridgeElementTreeRenderer / BridgeRenderRuntime`
-4. legacy render façade：`PixelRenderRuntime + LegacyRenderSupportBundle`
-5. legacy render support graph：文本、输入、布局、viewport、测量、modifier、target translate、session，以及 `PixelLayoutMeasureSupport / PixelPositionedRenderSupport / PixelViewportResultSupport / LegacyContainerWidgets / LegacyFlexLayoutWidgets / LegacyListWidgets / LegacySingleChildScrollWidgets / LegacyInputWidgets`
-6. demo 场景持续切到 retained 主链并维持验收稳定
+1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
+2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / PipelineOwner`
+3. scroll 替换链路：优先为 `PageView / ListView / SingleChildScrollView` 建立 direct render object，完成后删除 `legacy/widgets/scroll`
+4. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 只在未替换组件仍依赖时保留，不再做纯兼容型重构
+5. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
 
 ### Phase D. 新增 `:pixel-demo`
 
