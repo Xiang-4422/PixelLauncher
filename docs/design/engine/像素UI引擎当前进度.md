@@ -131,7 +131,7 @@
   - [WidgetRenderRequestFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/request/WidgetRenderRequestFactory.kt)
   - runtime 目录当前已经按 `runtime / request / assembly / support / host` 五组收拢
   - 新渲染管线骨架已经启动：
-    - pipeline 目录当前已经按 `core / runtime / renderobjects / lowering` 四组收拢
+    - pipeline 目录当前已经按 `core / runtime / renderobjects` 三组收拢，旧 bridge lowering 目录已删除
     - [PipelineOwner.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PipelineOwner.kt)
     - [PipelineElementTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PipelineElementTreeRenderer.kt)
     - [RenderObject.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/RenderObject.kt)
@@ -142,18 +142,10 @@
     - [RenderScrollViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderScrollViewport.kt)
     - [RenderSurface.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderSurface.kt)
     - [RenderText.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderText.kt)
-    - [PipelineTreeCapabilityChecker.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/lowering/PipelineTreeCapabilityChecker.kt)
-    - [PipelineBridgeTreeLowering.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/lowering/PipelineBridgeTreeLowering.kt)
-  - 当前 pipeline 支持边界已经收口到显式 capability checker，并且能给出整树回退原因；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 的 direct render object 主链，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
+  - 旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering` 已删除，生产 pipeline renderer 只接受 direct `RenderObject` tree，不再从 bridge/legacy 中间树 lowering
+  - 当前 pipeline 支持边界已经收口到 direct render object 主链；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView`，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
   - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline，默认 retained 运行时已经改成 pipeline-only，不再自动启用 bridge/legacy fallback
-  - [BridgeRenderNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeRenderNode.kt)
-  - [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt)
-  - [BridgeAdapterElement.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/elements/BridgeAdapterElement.kt)
-  - [BridgeWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/BridgeWidget.kt)
-  - [StaticBridgeNodeWidget.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/widgets/StaticBridgeNodeWidget.kt)
-  - [BridgeNodeBinding.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/elements/BridgeNodeBinding.kt)
-  - [BridgeTreeResolveRequest.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/BridgeTreeResolveRequest.kt)
-  - bridge 目录当前只剩 `resolve / elements / widgets` 三组；默认运行时已经不再需要旧 `bridge/runtime` 中转壳
+  - bridge 目录已经从 `src/main` 移出，只保留在 `src/test` 作为 legacy renderer 测试夹具
   - 已经 direct pipeline 化的 widget 已经移出 legacy 目录：
   - [TextWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/TextWidgets.kt)
   - [InputWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/InputWidgets.kt)
@@ -168,7 +160,7 @@
   - legacy widget 目录已经清空；已替换的 direct widget 统一收在 `internal/widgets/content`、`internal/widgets/layout` 与 `internal/widgets/scroll`
 - 兼容层基础节点与场景
   - 这一层当前只作为 retained runtime 过渡桥接使用，已经开始收为模块内部实现
-- 当前 retained 主链已经只面对 bridge 语义，不再直接从 `RetainedBuildRuntime` 输出 bridge tree；bridge 解析已经收敛到 [DefaultBridgeTreeResolver.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/bridge/resolve/DefaultBridgeTreeResolver.kt) 和 [RetainedWidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/RetainedWidgetRenderRuntime.kt)
+- 当前 retained 主链已经直接面对 direct render object tree，不再通过 bridge tree 作为默认中间表示
   - 公开 Flutter 风格组件的旧节点适配逻辑，也已经从 [FlutterWidgetAliases.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/widgets/FlutterWidgetAliases.kt) 分离到 bridge/legacy support 文件，公开文件开始只保留 API 入口
   - [PixelNode.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/node/PixelNode.kt)
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/legacy/modifier/PixelModifier.kt)
@@ -219,7 +211,7 @@
   - [RetainedRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/RetainedRenderSupportAssemblyFactory.kt)
   - [WidgetRenderRuntime.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/WidgetRenderRuntime.kt)
   - [WidgetRenderRuntimeFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/runtime/WidgetRenderRuntimeFactory.kt)
-  - bridge runtime 中转壳已经删除，legacy 测试夹具直接通过 `DefaultBridgeTreeResolver + LegacyTreeRendererFactory` 显式 opt-in 旧链路
+  - bridge runtime 中转壳已经删除，legacy 测试夹具直接通过测试源码里的 `DefaultBridgeTreeResolver + LegacyTreeRendererFactory` 显式 opt-in 旧链路
   - [PixelRootRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/PixelRootRenderSupport.kt)
   - [PixelRootLayoutSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/legacy/runtime/root/PixelRootLayoutSupport.kt)
   - legacy node 目录当前已经按 `core / dispatch / modifier / target` 四组收拢

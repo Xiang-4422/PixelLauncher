@@ -1,8 +1,6 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.PixelThemeData
-import com.purride.pixelui.Theme
 import com.purride.pixelui.Widget
 
 /**
@@ -21,11 +19,4 @@ internal interface BridgeWidget : Widget {
         context: BuildContext,
         childNodes: BridgeNodeChildren,
     ): BridgeRenderNode
-}
-
-/**
- * 在 build 阶段解析当前上下文可见主题。
- */
-internal fun BuildContext.resolveTheme(explicit: PixelThemeData?): PixelThemeData {
-    return explicit ?: Theme.maybeOf(this) ?: PixelThemeData.Default
 }

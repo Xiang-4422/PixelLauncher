@@ -1,23 +1,12 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelTextRasterizer
-
 /**
  * 新渲染管线对 retained element tree 的渲染入口。
  *
- * 第一版先复用现有 bridge tree resolver，把“已能稳定解析的中间树”降成最小
- * `RenderObject` 树；如果整棵树无法完全识别，就返回 null 交给 fallback 路径。
+ * 当前 renderer 只消费 direct `RenderObject` tree，不再从 bridge/legacy 中间表示
+ * lowering。未接入 render object 的 widget 会直接失败，避免生产路径静默回退。
  */
-internal class PipelineElementTreeRenderer(
-    private val bridgeTreeResolver: BridgeTreeResolving,
-    defaultTextRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
-) : ElementTreeRenderer {
-    private val capabilityChecker = PipelineTreeCapabilityChecker
-    private val treeLowering = PipelineBridgeTreeLowering(
-        defaultTextRasterizer = defaultTextRasterizer,
-    )
-
+internal class PipelineElementTreeRenderer : ElementTreeRenderer {
     /**
      * 判断当前 element tree 是否能完整走新 pipeline。
      */
@@ -29,38 +18,18 @@ internal class PipelineElementTreeRenderer(
      * 返回当前 element tree 的 pipeline 能力检查结果。
      */
     fun inspect(request: ElementTreeRenderRequest): PipelineCapabilityReport {
-        if (request.root.findPipelineRenderRoot() != null) {
-            return PipelineCapabilityReport.supported()
+        return if (request.root.findPipelineRenderRoot() != null) {
+            PipelineCapabilityReport.supported()
+        } else {
+            PipelineCapabilityReport.unsupported(PipelineUnsupportedReason.MISSING_RENDER_OBJECT_ROOT)
         }
-        val bridgeRoot = bridgeTreeResolver.resolve(
-            request = BridgeTreeResolveRequest(
-                root = request.root,
-            ),
-        ) ?: return PipelineCapabilityReport.unsupported(PipelineUnsupportedReason.UNSUPPORTED_NODE_TYPE)
-        return capabilityChecker.inspect(bridgeRoot)
     }
 
     /**
-     * 尝试用新 pipeline 渲染当前 element tree；不支持时返回 null。
+     * 尝试用新 pipeline 渲染当前 element tree；未找到 direct render root 时返回 null。
      */
     fun renderOrNull(request: ElementTreeRenderRequest): PixelRenderResult? {
-        request.root.findPipelineRenderRoot()?.let { renderRoot ->
-            return PipelineOwner(
-                root = renderRoot,
-            ).render(
-                logicalWidth = request.logicalWidth,
-                logicalHeight = request.logicalHeight,
-            )
-        }
-        val bridgeRoot = bridgeTreeResolver.resolve(
-            request = BridgeTreeResolveRequest(
-                root = request.root,
-            ),
-        ) ?: return null
-        if (!capabilityChecker.inspect(bridgeRoot).supported) {
-            return null
-        }
-        val renderRoot = treeLowering.lower(bridgeRoot) ?: return null
+        val renderRoot = request.root.findPipelineRenderRoot() ?: return null
         return PipelineOwner(
             root = renderRoot,
         ).render(
@@ -82,25 +51,40 @@ internal class PipelineElementTreeRenderer(
      */
     private fun Element?.findPipelineRenderRoot(): RenderBox? {
         this ?: return null
-        if (containsBridgeElement()) {
-            return null
-        }
         return findRenderObject() as? RenderBox
     }
+}
 
-    /**
-     * 判断当前 element 子树里是否仍包含 bridge element。
-     */
-    private fun Element.containsBridgeElement(): Boolean {
-        if (this is BridgeResolvableElement) {
-            return true
+/**
+ * 描述 retained element tree 是否存在 direct pipeline render root。
+ */
+internal data class PipelineCapabilityReport(
+    val supported: Boolean,
+    val reason: PipelineUnsupportedReason? = null,
+) {
+    companion object {
+        /**
+         * 创建支持 direct pipeline 的检查结果。
+         */
+        fun supported(): PipelineCapabilityReport {
+            return PipelineCapabilityReport(supported = true)
         }
-        var found = false
-        visitChildren { child ->
-            if (!found && child.containsBridgeElement()) {
-                found = true
-            }
+
+        /**
+         * 创建不支持 direct pipeline 的检查结果。
+         */
+        fun unsupported(reason: PipelineUnsupportedReason): PipelineCapabilityReport {
+            return PipelineCapabilityReport(
+                supported = false,
+                reason = reason,
+            )
         }
-        return found
     }
+}
+
+/**
+ * 当前 direct pipeline 入口失败原因。
+ */
+internal enum class PipelineUnsupportedReason {
+    MISSING_RENDER_OBJECT_ROOT,
 }
