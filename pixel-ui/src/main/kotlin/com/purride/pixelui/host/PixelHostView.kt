@@ -40,7 +40,7 @@ import kotlin.math.min
  * 当前宿主已经开始走 retained build runtime：
  * - 公开层交给 `Widget / StatefulWidget / InheritedWidget`
  * - 宿主负责维持 retained build tree
- * - 渲染阶段默认直接进入新 pipeline，不再静默回退到 bridge + legacy renderer
+ * - 渲染阶段默认直接进入新 pipeline
  */
 class PixelHostView @JvmOverloads constructor(
     context: Context,
@@ -163,7 +163,7 @@ class PixelHostView @JvmOverloads constructor(
     }
 
     /**
-     * 兼容旧 runtime 的手动重绘入口。
+     * 手动重绘入口。
      *
      * 新公开主路径已经不再推荐页面层直接调用它；页面刷新应尽量走
      * `State.setState`、`Listenable`、控制器通知这三类 retained 机制。

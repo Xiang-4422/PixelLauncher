@@ -20,7 +20,7 @@ internal interface ElementInflater {
  * retained element 的默认构建实现。
  *
  * 这层负责把公开 Widget 解析成 retained element，不再让 `BuildOwner`
- * 自己识别所有 Widget 类型和 bridge adapter 细节。
+ * 自己识别所有 Widget 类型和额外 adapter 细节。
  */
 internal class DefaultElementInflater(
     private val widgetAdapter: WidgetAdapter,

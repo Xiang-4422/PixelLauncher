@@ -15,7 +15,7 @@ internal fun interface WidgetAdapter {
     fun adapt(request: WidgetAdaptRequest): Element?
 
     /**
-     * 兼容旧的直接 widget 调用写法。
+     * 直接适配单个 widget 的便捷入口。
      */
     fun adapt(widget: Widget): Element? = adapt(
         request = WidgetAdaptRequest(widget = widget),
@@ -25,8 +25,8 @@ internal fun interface WidgetAdapter {
 /**
  * 默认的严格 widget adapter。
  *
- * 它不做任何旧 bridge/legacy 兼容适配；未被 retained runtime 原生识别的 widget
- * 会在 `DefaultElementInflater` 中直接报错，避免新主线继续悄悄回退到旧链路。
+ * 它不做任何额外适配；未被 retained runtime 原生识别的 widget
+ * 会在 `DefaultElementInflater` 中直接报错。
  */
 internal object UnsupportedWidgetAdapter : WidgetAdapter {
     /**

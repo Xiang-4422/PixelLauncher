@@ -293,14 +293,14 @@ object AxisBufferComposer
 
 - retained build tree 已经成立
 - 状态、环境和依赖登记已经在 retained 主链上
-- `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回 bridge tree
+- `RetainedBuildRuntime` 当前只负责 retained element tree，不再直接返回渲染中间树
 - `BuildOwner` 已经继续拆出 `ElementInflater / ElementChildUpdater / DirtyElementScheduler / ListenableDependencyRegistry / RootElementSlot`
 - retained element 当前也已经按职责拆成 `Element / StatefulElements / InheritedElements`
 - runtime 目录当前已经按 `runtime / request / assembly / support / host` 收拢
 - retained 目录当前已经按 `runtime / elements / support` 收拢
 - bridge 目录和 legacy renderer 已经从生产源码删除
-- 默认运行时已经改成 pipeline-only，不再自动装配 bridge/legacy fallback
-- pipeline 基础布局值与 modifier 已经抽到 `internal/model`，生产 direct pipeline 与 widget 层不再 import `internal.legacy`
+- 默认运行时已经改成 pipeline-only，不再自动装配其他后端
+- pipeline 基础布局值与 modifier 已经收进 `internal/model`
 - 当前主线任务是继续补稳 direct pipeline 的核心架构，而不是启动 `:app` 迁移
 
 ---
@@ -344,15 +344,15 @@ object AxisBufferComposer
 
 - `pixel-ui` 具备 retained build/runtime 与 Flutter 风格公开入口
 - `pixel-demo` 已经通过 retained 主链稳定跑在真实设备上
-- retained runtime 默认已经直接接入 pipeline renderer，legacy render bridge 退出默认路径
+- retained runtime 默认已经直接接入 pipeline renderer
 
 当前阶段优先级：
 
-1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经从 legacy/bridge fallback 迁出，源码统一收在 `internal/widgets`
+1. direct pipeline widget：`Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已经接入 direct pipeline，源码统一收在 `internal/widgets`
 2. render object pipeline：继续补齐 `RenderObjectWidget / RenderObjectElement / RenderBox / RenderSurface / RenderText / RenderFlex / RenderStack / RenderPagerViewport / RenderScrollViewport / PipelineOwner`
 3. shared model 收口：`PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等 pipeline 共享模型已经收在 `internal/model`，legacy 同名入口已经随旧后端删除
-4. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，旧 scroll widget 目录已清空，下一步删除不再使用的 legacy render support 与 bridge adapter
-5. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已退出默认路径，后续按引用链逐步删除
+4. scroll 替换链路：`PageView / ListView / SingleChildScrollView` 已经建立 direct render object，下一步继续补稳长期滚动协议
+5. bridge/legacy 删除边界：bridge resolver、legacy widget adapter 与 legacy render support 已从生产源码删除，后续保持删除状态
 6. demo 与测试验收：每一阶段都保持 `pixel-demo` 可安装运行，并用单测覆盖新增 pipeline 行为
 
 ### Phase D. 新增 `:pixel-demo`
@@ -550,7 +550,7 @@ object AxisBufferComposer
 
 - 新增 `PipelineElementTreeRenderer`
 - 删除旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering`
-- 生产 pipeline renderer 只接受 direct render object tree，不再从 bridge/legacy 中间树 lowering
+- 生产 pipeline renderer 只接受 direct render object tree，不再从旧中间树 lowering
 - direct pipeline render object 与 direct widget 层不得 import `internal.legacy`，如确实需要共享语义，先把语义抽到 `internal/model`
 - retained 主链改成：
   - 默认直接走新 pipeline renderer

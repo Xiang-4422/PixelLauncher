@@ -211,7 +211,7 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
-     * 直接持有 render object 的 widget 根节点应该完全绕过 bridge resolver。
+     * 直接持有 render object 的 widget 根节点应该能直接交给 pipeline。
      */
     @Test
     fun pipelineElementTreeRendererRendersDirectRenderObjectRootWithoutBridgeResolver() {
@@ -291,7 +291,7 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
-     * Text 现在不再为了旧 softWrap 配置回退到 bridge。
+     * Text 现在不再为了旧 softWrap 配置切换后端。
      */
     @Test
     fun pipelineElementTreeRendererRendersSoftWrapTextThroughDirectPipeline() {

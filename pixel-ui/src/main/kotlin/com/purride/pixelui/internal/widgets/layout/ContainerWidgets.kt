@@ -145,7 +145,7 @@ internal data class ContainerDirectionalWidget(
     }
 
     /**
-     * 把内部对齐值映射回公开对齐值，避免 directional widget 直接持有 legacy 模型。
+     * 把内部对齐值映射回公开对齐值。
      */
     private fun PixelAlignment.toPublicAlignment(): Alignment {
         return when (this) {

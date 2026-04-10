@@ -3,8 +3,8 @@ package com.purride.pixelui.internal
 /**
  * 宿主侧默认 widget runtime 装配结果。
  *
- * 当前只有一个 runtime 实例，但单独抽成 assembly 以后，宿主层和默认工厂
- * 就不需要再关心它背后是 retained、bridge 还是 legacy 的哪种组合。
+ * 当前只有一个 runtime 实例，但单独抽成 assembly 以后，
+ * 宿主层和默认工厂不需要关心 retained runtime 的具体装配细节。
  */
 internal data class WidgetRuntimeAssembly(
     val runtime: WidgetRenderRuntime,

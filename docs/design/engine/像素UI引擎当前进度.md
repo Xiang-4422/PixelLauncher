@@ -131,7 +131,7 @@
   - [WidgetRenderRequestFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/request/WidgetRenderRequestFactory.kt)
   - runtime 目录当前已经按 `runtime / request / assembly / support / host` 五组收拢
   - 新渲染管线骨架已经启动：
-    - pipeline 目录当前已经按 `core / runtime / renderobjects` 三组收拢，旧 bridge lowering 目录已删除
+    - pipeline 目录当前已经按 `core / gesture / runtime / renderobjects` 四组收拢，旧 lowering 目录已删除
     - [PipelineOwner.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PipelineOwner.kt)
     - [PipelineElementTreeRenderer.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/runtime/PipelineElementTreeRenderer.kt)
     - [RenderObject.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/core/RenderObject.kt)
@@ -144,10 +144,10 @@
     - [RenderScrollViewport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderScrollViewport.kt)
     - [RenderSurface.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderSurface.kt)
     - [RenderText.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/RenderText.kt)
-  - 旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering` 已删除，生产 pipeline renderer 只接受 direct `RenderObject` tree，不再从 bridge/legacy 中间树 lowering
-  - pipeline 需要复用的 `PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等基础模型已经从 `internal/legacy` 抽到 `internal/model`，生产 direct pipeline 与 widget 层不再 import `internal.legacy`
+  - 旧 `PipelineTreeCapabilityChecker / PipelineBridgeTreeLowering` 已删除，生产 pipeline renderer 只接受 direct `RenderObject` tree，不再维护中间树 lowering
+  - pipeline 需要复用的 `PixelAlignment / PixelTextAlign / PixelModifier / PixelFlexFit` 等基础模型已经收进 `internal/model`
   - 当前 pipeline 支持边界已经收口到 direct render object 主链；首批支持能力已从 `Text + Surface` 扩到 `Align / Center / Padding / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView`，当前覆盖 `START / CENTER / END / SPACE_*`、`stretch`、基础 flex 权重、垂直滚动视口和分页视口
-  - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline，默认 retained 运行时已经改成 pipeline-only，不再自动启用 bridge/legacy fallback
+  - Flutter 式 `Widget -> Element -> RenderObject` 地基已经开始落地：`RenderObjectWidget` 负责创建/更新 render object，`RenderObjectElement` 负责持有并暴露 render object，`SingleChildRenderObjectWidget / MultiChildRenderObjectWidget` 已经承接 child render object 挂接；公开 `Text / DecoratedBox / Padding / Align / Center / SizedBox / Container / Row / Column / Stack / Positioned / TextField / OutlinedButton / PageView / ListView / SingleChildScrollView` 已改为 direct pipeline
   - `internal/legacy`、`internal/render/legacy` 和测试侧旧 bridge 夹具已经删除，生产源码不再保留 legacy renderer 后端
   - 已经 direct pipeline 化的 widget 已经移出 legacy 目录：
   - [TextWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/content/TextWidgets.kt)
@@ -161,7 +161,7 @@
   - [PagerWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/scroll/PagerWidgets.kt)
   - [SingleChildScrollWidgets.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/widgets/scroll/SingleChildScrollWidgets.kt)
   - 已替换的 direct widget 统一收在 `internal/widgets/content`、`internal/widgets/layout` 与 `internal/widgets/scroll`
-- 当前 retained 主链已经直接面对 direct render object tree，不再通过 bridge tree 或 legacy node 作为默认中间表示
+- 当前 retained 主链已经直接面对 direct render object tree，不再通过旧中间表示
   - 公开 Flutter 风格组件文件现在只装配 direct widget，不再保留旧节点适配逻辑
   - [PixelModifier.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/model/PixelModifier.kt)
 - 基础布局与内容组件
@@ -184,7 +184,7 @@
   - [PixelHostBridge.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/host/PixelHostBridge.kt)
   - [PixelHostView.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt)
 - 运行时与手势
-  - legacy runtime 与 bridge 测试夹具已经删除
+  - 旧 runtime 与旧测试夹具已经删除
   - [RetainedRenderSupport.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupport.kt)
   - [RetainedRenderSupportFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/support/RetainedRenderSupportFactory.kt)
   - [RetainedRenderSupportAssemblyFactory.kt](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/pixel-ui/src/main/kotlin/com/purride/pixelui/internal/runtime/assembly/RetainedRenderSupportAssemblyFactory.kt)
@@ -228,8 +228,8 @@
   - `ElementChildUpdater`
   - `DirtyElementScheduler`
   - `ListenableDependencyRegistry`
-- `RetainedBuildRuntime` 当前只负责 retained element tree，本身不再直接产出 bridge tree
-- 默认绘制链路当前已经改成 `RetainedWidgetRenderRuntime -> RetainedRenderSupport -> PipelineElementTreeRenderer -> PipelineOwner`，不再自动接入 bridge/legacy fallback
+- `RetainedBuildRuntime` 当前只负责 retained element tree，本身不再直接产出渲染中间树
+- 默认绘制链路当前已经改成 `RetainedWidgetRenderRuntime -> RetainedRenderSupport -> PipelineElementTreeRenderer -> PipelineOwner`
 - 当前重构主线不是再补更多组件名字，而是继续把 pipeline render object 的长期形态补稳，并防止旧后端重新进入生产源码
 
 当前 `pixel-demo` 主路径已经统一转到 Flutter 风格公开 API：
@@ -279,7 +279,7 @@
 - `TextField` 目前只支持单行输入
 - 文本当前还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
-- 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部的底层节点和兼容运行时里
+- 公开层主组件已经开始移除 `PixelModifier` 参数，页面层应优先使用 `Container / Padding / SizedBox / Expanded / Align / Stack` 这套 Flutter 风格布局入口；`PixelModifier` 当前主要只留在模块内部 pipeline 模型里
 - `legacy` 渲染后端已经从生产源码删除；后续不能再把它作为 fallback 重新接入
 - 新渲染管线已经从最小 `Text + Surface` 骨架推进到基础布局、输入与滚动视口，但还没有达到完整 Flutter 级别的布局/手势/文本系统
 - 还没有开始把 `:app` 页面迁进来

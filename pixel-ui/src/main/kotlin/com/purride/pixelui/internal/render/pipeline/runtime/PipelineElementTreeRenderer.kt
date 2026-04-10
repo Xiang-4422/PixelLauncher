@@ -3,8 +3,8 @@ package com.purride.pixelui.internal
 /**
  * 新渲染管线对 retained element tree 的渲染入口。
  *
- * 当前 renderer 只消费 direct `RenderObject` tree，不再从 bridge/legacy 中间表示
- * lowering。未接入 render object 的 widget 会直接失败，避免生产路径静默回退。
+ * 当前 renderer 只消费 direct `RenderObject` tree。未接入 render object 的 widget
+ * 会直接失败，避免生产路径出现隐式后端切换。
  */
 internal class PipelineElementTreeRenderer : ElementTreeRenderer {
     /**
@@ -39,7 +39,7 @@ internal class PipelineElementTreeRenderer : ElementTreeRenderer {
     }
 
     /**
-     * 用新 pipeline 渲染当前 element tree；若不支持则直接抛错交给上层 fallback。
+     * 用新 pipeline 渲染当前 element tree；若不支持则直接抛错。
      */
     override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
         return renderOrNull(request)
