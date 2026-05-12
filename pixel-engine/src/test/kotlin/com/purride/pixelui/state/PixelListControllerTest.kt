@@ -104,6 +104,44 @@ class PixelListControllerTest {
     }
 
     @Test
+    fun scrollItemIntoViewHandlesVariableItemHeightsAndSpacingOffsets() {
+        val state = controller.create(initialScrollOffsetPx = 0f)
+        state.itemTopOffsetsPx = intArrayOf(0, 10, 28, 44)
+        state.itemHeightsPx = intArrayOf(8, 16, 12, 20)
+
+        controller.sync(
+            state = state,
+            viewportHeightPx = 24,
+            contentHeightPx = 64,
+        )
+
+        controller.scrollItemIntoView(state, itemIndex = 2)
+        assertEquals(16f, state.scrollOffsetPx, 0.001f)
+
+        controller.scrollItemIntoView(state, itemIndex = 3)
+        assertEquals(40f, state.scrollOffsetPx, 0.001f)
+
+        controller.scrollItemIntoView(state, itemIndex = 1)
+        assertEquals(10f, state.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun scrollItemIntoViewIgnoresInvalidItemIndex() {
+        val state = controller.create(initialScrollOffsetPx = 8f)
+        state.itemTopOffsetsPx = intArrayOf(0, 12)
+        state.itemHeightsPx = intArrayOf(8, 8)
+
+        controller.sync(
+            state = state,
+            viewportHeightPx = 10,
+            contentHeightPx = 24,
+        )
+        controller.scrollItemIntoView(state, itemIndex = 4)
+
+        assertEquals(8f, state.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
     fun endDragStartsSettlingWhenVelocityIsLargeEnough() {
         val state = controller.create(initialScrollOffsetPx = 10f)
 
@@ -163,5 +201,28 @@ class PixelListControllerTest {
         assertEquals(60f, state.scrollOffsetPx, 0.001f)
         assertFalse(state.isSettling)
         assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
+
+    @Test
+    fun stepStopsSettlingWhenVelocityCrossesZero() {
+        val state = controller.create(initialScrollOffsetPx = 30f)
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = 60f,
+            viewportHeightPx = 20,
+            contentHeightPx = 100,
+        )
+
+        controller.step(
+            state = state,
+            deltaMs = 100,
+            viewportHeightPx = 20,
+            contentHeightPx = 100,
+        )
+
+        assertFalse(state.isSettling)
+        assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+        assertEquals(24f, state.scrollOffsetPx, 0.001f)
     }
 }

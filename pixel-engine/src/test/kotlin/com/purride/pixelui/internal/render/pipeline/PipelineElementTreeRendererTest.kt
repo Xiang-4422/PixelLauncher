@@ -2,6 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Align
@@ -22,6 +23,7 @@ import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
+import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.Widget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -45,6 +47,8 @@ class PipelineElementTreeRendererTest {
             style = com.purride.pixelui.PixelTextStyle.Default,
             textAlign = PixelTextAlign.CENTER,
             textDirection = TextDirection.LTR,
+            overflow = TextOverflow.CLIP,
+            maxLines = 1,
             defaultTextRasterizer = PixelBitmapFont.Default,
             occupyFullWidth = true,
         )
@@ -80,6 +84,8 @@ class PipelineElementTreeRendererTest {
                 style = com.purride.pixelui.PixelTextStyle.Default,
                 textAlign = PixelTextAlign.START,
                 textDirection = TextDirection.LTR,
+                overflow = TextOverflow.CLIP,
+                maxLines = 1,
                 defaultTextRasterizer = PixelBitmapFont.Default,
             ),
             fillTone = PixelTone.OFF,
@@ -138,6 +144,8 @@ class PipelineElementTreeRendererTest {
                     style = com.purride.pixelui.PixelTextStyle.Default,
                     textAlign = PixelTextAlign.START,
                     textDirection = TextDirection.LTR,
+                    overflow = TextOverflow.CLIP,
+                    maxLines = 1,
                     defaultTextRasterizer = PixelBitmapFont.Default,
                 ),
                 fillTone = PixelTone.OFF,
@@ -315,6 +323,62 @@ class PipelineElementTreeRendererTest {
         }
 
         assertNotNull(result)
+    }
+
+    /**
+     * 单行 ellipsis 应该在 render object 层统一处理，而不是依赖 demo 手写裁剪。
+     */
+    @Test
+    fun renderTextEllipsizesSingleLineTextWhenWidthIsConstrained() {
+        val rasterizer = CapturingRasterizer()
+        val renderText = RenderText(
+            text = "ABCDE",
+            style = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            overflow = TextOverflow.ELLIPSIS,
+            maxLines = 1,
+            defaultTextRasterizer = rasterizer,
+            explicitWidth = 4,
+            explicitHeight = 1,
+        )
+
+        renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 1))
+        renderText.paint(
+            context = PaintContext(buffer = PixelBuffer(width = 4, height = 1)),
+            offsetX = 0,
+            offsetY = 0,
+        )
+
+        assertEquals("A...", rasterizer.lastDrawnText)
+    }
+
+    /**
+     * CLIP 模式应该保持原始文本，只在绘制阶段裁剪可见区域。
+     */
+    @Test
+    fun renderTextClipKeepsOriginalSingleLineText() {
+        val rasterizer = CapturingRasterizer()
+        val renderText = RenderText(
+            text = "ABCDE",
+            style = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            overflow = TextOverflow.CLIP,
+            maxLines = 1,
+            defaultTextRasterizer = rasterizer,
+            explicitWidth = 4,
+            explicitHeight = 1,
+        )
+
+        renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 1))
+        renderText.paint(
+            context = PaintContext(buffer = PixelBuffer(width = 4, height = 1)),
+            offsetX = 0,
+            offsetY = 0,
+        )
+
+        assertEquals("ABCDE", rasterizer.lastDrawnText)
     }
 
     /**
@@ -582,6 +646,34 @@ class PipelineElementTreeRendererTest {
             offsetY: Int,
         ) {
             paintCount += 1
+        }
+    }
+
+    private class CapturingRasterizer : PixelTextRasterizer {
+        var lastDrawnText: String = ""
+            private set
+
+        override fun measureText(text: String): Int {
+            return text.length
+        }
+
+        override fun measureHeight(text: String): Int {
+            return 1
+        }
+
+        override fun drawText(
+            buffer: PixelBuffer,
+            text: String,
+            x: Int,
+            y: Int,
+            value: Byte,
+        ) {
+            lastDrawnText = text
+            text.forEachIndexed { index, _ ->
+                if (x + index in 0 until buffer.width && y in 0 until buffer.height) {
+                    buffer.setPixel(x = x + index, y = y, value = value)
+                }
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import com.purride.pixelui.Builder
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Container
+import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InheritedNotifier
@@ -12,6 +13,8 @@ import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
+import com.purride.pixelui.Theme
+import com.purride.pixelui.ThemeData
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulBuilder
 import com.purride.pixelui.StatefulWidget
@@ -131,6 +134,63 @@ class RetainedWidgetRuntimeTest {
         )
 
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 0))
+    }
+
+    @Test
+    fun hostThemeProvidesDefaultContainerStyleAndLocalThemeOverridesIt() {
+        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val screenProfile = ScreenProfile(logicalWidth = 4, logicalHeight = 4, dotSizePx = 8)
+
+        val hostThemeResult = runtime.render(
+            root = HostRootWidget(
+                screenProfile = screenProfile,
+                textDirection = TextDirection.LTR,
+                themeData = ThemeData(
+                    containerStyle = ContainerStyle.Default.copy(
+                        fillTone = PixelTone.ACCENT,
+                        borderTone = null,
+                    ),
+                ),
+                child = Container(
+                    width = 4,
+                    height = 4,
+                    style = ContainerStyle.Default,
+                ),
+            ),
+            logicalWidth = 4,
+            logicalHeight = 4,
+        )
+
+        val localThemeResult = runtime.render(
+            root = HostRootWidget(
+                screenProfile = screenProfile,
+                textDirection = TextDirection.LTR,
+                themeData = ThemeData(
+                    containerStyle = ContainerStyle.Default.copy(
+                        fillTone = PixelTone.ACCENT,
+                        borderTone = null,
+                    ),
+                ),
+                child = Theme(
+                    data = ThemeData(
+                        containerStyle = ContainerStyle.Default.copy(
+                            fillTone = PixelTone.ON,
+                            borderTone = null,
+                        ),
+                    ),
+                    child = Container(
+                        width = 4,
+                        height = 4,
+                        style = ContainerStyle.Default,
+                    ),
+                ),
+            ),
+            logicalWidth = 4,
+            logicalHeight = 4,
+        )
+
+        assertEquals(PixelTone.ACCENT.value, hostThemeResult.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON.value, localThemeResult.buffer.getPixel(1, 1))
     }
 
     @Test

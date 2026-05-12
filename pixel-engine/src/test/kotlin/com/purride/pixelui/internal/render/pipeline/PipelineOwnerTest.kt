@@ -55,6 +55,25 @@ class PipelineOwnerTest {
     }
 
     /**
+     * 替换 root 时应该 detach 旧树并 attach 新树，后续 render 只驱动新 root。
+     */
+    @Test
+    fun attachRootReplacementDetachesOldRootAndRendersNewRoot() {
+        val oldRoot = CountingRenderBox()
+        val newRoot = CountingRenderBox()
+        val owner = PipelineOwner(root = oldRoot)
+
+        owner.attachRoot(newRoot)
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+
+        assertEquals(1, oldRoot.detachCount)
+        assertEquals(1, newRoot.attachCount)
+        assertEquals(0, oldRoot.layoutCount)
+        assertEquals(1, newRoot.layoutCount)
+        assertEquals(1, newRoot.paintCount)
+    }
+
+    /**
      * 未标脏时重复 render 不应该重复 layout，但仍会绘制到新的输出 buffer。
      */
     @Test
@@ -92,6 +111,43 @@ class PipelineOwnerTest {
         assertSame(root, child.parent)
         assertEquals(2, root.layoutCount)
         assertEquals(1, child.layoutCount)
+    }
+
+    /**
+     * 已挂载 parent 移除 child 时应该 detach child，并触发 parent 下一次 layout。
+     */
+    @Test
+    fun droppedChildAfterAttachDetachesChildAndMarksParentDirty() {
+        val child = CountingRenderBox()
+        val root = CountingSingleChildRenderBox(child)
+        val owner = PipelineOwner(root = root)
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+
+        root.setRenderObjectChild(null)
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+
+        assertEquals(1, child.detachCount)
+        assertNull(child.parent)
+        assertEquals(2, root.layoutCount)
+    }
+
+    /**
+     * 只标记 paint dirty 时不应该重复 layout，但每次 render 都应该重新导出 targets。
+     */
+    @Test
+    fun paintDirtyDoesNotForceLayoutAndTargetsStayConsistent() {
+        val root = CountingRenderBox(clickable = true)
+        val owner = PipelineOwner(root = root)
+
+        val first = owner.render(logicalWidth = 8, logicalHeight = 6)
+        root.requestPaint()
+        val second = owner.render(logicalWidth = 8, logicalHeight = 6)
+
+        assertEquals(1, root.layoutCount)
+        assertEquals(2, root.paintCount)
+        assertEquals(1, first.clickTargets.size)
+        assertEquals(1, second.clickTargets.size)
+        assertEquals(first.clickTargets.single().bounds, second.clickTargets.single().bounds)
     }
 
     /**
@@ -159,7 +215,9 @@ class PipelineOwnerTest {
     /**
      * 测试用的可计数叶子 render box。
      */
-    private class CountingRenderBox : RenderBox() {
+    private class CountingRenderBox(
+        private val clickable: Boolean = false,
+    ) : RenderBox() {
         var attachCount = 0
             private set
         var detachCount = 0
@@ -174,6 +232,10 @@ class PipelineOwnerTest {
          */
         fun requestLayout() {
             markNeedsLayout()
+        }
+
+        fun requestPaint() {
+            markNeedsPaint()
         }
 
         /**
@@ -214,6 +276,25 @@ class PipelineOwnerTest {
                 x = offsetX,
                 y = offsetY,
                 value = 1,
+            )
+        }
+
+        override fun collectClickTargets(
+            offsetX: Int,
+            offsetY: Int,
+            targets: MutableList<PixelClickTarget>,
+        ) {
+            if (!clickable) {
+                return
+            }
+            targets += PixelClickTarget(
+                bounds = PixelRect(
+                    left = offsetX,
+                    top = offsetY,
+                    width = size.width,
+                    height = size.height,
+                ),
+                onClick = { },
             )
         }
     }

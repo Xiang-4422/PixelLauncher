@@ -137,8 +137,11 @@ object DemoScenes {
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(textRasterizers)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(textRasterizers)
             DemoSceneKind.LIST -> listScene(textRasterizers)
+            DemoSceneKind.SCROLL_STRESS -> scrollStressScene(textRasterizers)
             DemoSceneKind.FORM_AND_LIST -> formAndListScene(textRasterizers)
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
+            DemoSceneKind.ENVIRONMENT -> environmentScene(textRasterizers)
+            DemoSceneKind.LAUNCHER_LIKE -> launcherLikeScene(textRasterizers)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
         }
     }
@@ -1185,6 +1188,263 @@ object DemoScenes {
         )
     }
 
+    private fun scrollStressScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val controller = ScrollController()
+        val state = controller.create()
+        val selected = ValueNotifier("NONE")
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                ListenableBuilder(
+                    listenable = controller,
+                    builder = {
+                        ValueListenableBuilder(selected) { _, current ->
+                            Container(
+                                padding = EdgeInsets.all(4),
+                                child = Column(
+                                    spacing = 4,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        sectionTitle("SCROLL STRESS"),
+                                        infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.isSettling),
+                                        infoCard("SELECTED", current),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "SHOW 1",
+                                                            onPressed = { controller.showItem(state, 0) },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "SHOW 20",
+                                                            onPressed = { controller.showItem(state, 19) },
+                                                            style = ButtonStyle.Accent,
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 52,
+                                            child = ListViewBuilder(
+                                                itemCount = 20,
+                                                state = state,
+                                                controller = controller,
+                                                spacing = 2,
+                                                itemBuilder = { index ->
+                                                    val tall = index % 4 == 0
+                                                    SizedBox(
+                                                        height = if (tall) 22 else 14,
+                                                        child = OutlinedButton(
+                                                            text = "ROW ${index + 1} ${if (tall) "TALL" else "COMPACT"}",
+                                                            onPressed = { selected.value = "ROW ${index + 1}" },
+                                                            style = if (index % 3 == 0) ButtonStyle.Accent else ButtonStyle.Default,
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            )
+                        }
+                    },
+                )
+            },
+        )
+    }
+
+    private fun environmentScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val scrollController = ScrollController()
+        val scrollState = scrollController.create()
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = ThemeData(
+                textStyle = TextStyle.Accent,
+                containerStyle = ContainerStyle(
+                    fillTone = PixelTone.OFF,
+                    borderTone = PixelTone.ACCENT,
+                    alignment = Alignment.CENTER,
+                ),
+            ),
+            content = {
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
+                    children = listOf(
+                        sectionTitle("ENVIRONMENT"),
+                        EnvironmentInfoWidget(label = "HOST DEFAULT"),
+                        Directionality(
+                            textDirection = TextDirection.RTL,
+                            child = EnvironmentInfoWidget(label = "LOCAL RTL"),
+                        ),
+                        Theme(
+                            data = ThemeData(
+                                textStyle = TextStyle.Default,
+                                containerStyle = ContainerStyle(
+                                    fillTone = PixelTone.OFF,
+                                    borderTone = PixelTone.ON,
+                                    alignment = Alignment.CENTER,
+                                ),
+                            ),
+                            child = EnvironmentInfoWidget(label = "LOCAL THEME"),
+                        ),
+                        Directionality(
+                            textDirection = TextDirection.RTL,
+                            child = Theme(
+                                data = ThemeData(
+                                    textStyle = TextStyle.Accent,
+                                    buttonStyle = ButtonStyle.Accent,
+                                ),
+                                child = Column(
+                                    spacing = 2,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        EnvironmentInfoWidget(label = "NESTED BOTH"),
+                                        SizedBox(
+                                            height = 14,
+                                            child = OutlinedButton(
+                                                text = "THEMED ACTION",
+                                                onPressed = { },
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun launcherLikeScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val textController = TextEditingController()
+        val queryState = textController.create()
+        val listController = ScrollController()
+        val listState = listController.create()
+        val mode = ValueNotifier("HOME")
+        val apps = listOf(
+            "Calendar", "Camera", "Messages", "Music", "Maps", "Settings",
+            "Weather", "Clock", "Notes", "Terminal", "Browser", "Files",
+        )
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 96,
+                logicalHeight = 128,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.terminalGreen(),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = accentUiTheme(),
+            content = {
+                ListenableBuilder(textController) {
+                    ListenableBuilder(listController) {
+                        ValueListenableBuilder(mode) { _, currentMode ->
+                            val filteredApps = apps.filter { app ->
+                                app.contains(queryState.text, ignoreCase = true)
+                            }
+                            Container(
+                                padding = EdgeInsets.all(4),
+                                child = Column(
+                                    spacing = 4,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        sectionTitle("PIXEL LAUNCHER"),
+                                        Row(
+                                            spacing = 3,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                Expanded(child = infoCard("MODE", currentMode, accent = currentMode == "DRAWER")),
+                                                Expanded(child = infoCard("SCREEN", "42M")),
+                                            ),
+                                        ),
+                                        infoCard(
+                                            label = "STATUS",
+                                            value = "CALL 0 / SMS 2 / RAIN 30MIN WINDOW",
+                                            accent = true,
+                                        ),
+                                        SizedBox(
+                                            height = 16,
+                                            child = TextField(
+                                                state = queryState,
+                                                controller = textController,
+                                                placeholder = "SEARCH APP",
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "HOME",
+                                                            onPressed = { mode.value = "HOME" },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "DRAWER",
+                                                            onPressed = { mode.value = "DRAWER" },
+                                                            style = ButtonStyle.Accent,
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 46,
+                                            child = ListViewBuilder(
+                                                itemCount = filteredApps.size.coerceAtLeast(1),
+                                                state = listState,
+                                                controller = listController,
+                                                spacing = 2,
+                                                itemBuilder = { index ->
+                                                    val label = filteredApps.getOrNull(index) ?: "NO RESULTS"
+                                                    SizedBox(
+                                                        height = 13,
+                                                        child = OutlinedButton(
+                                                            text = label.uppercase(),
+                                                            onPressed = {
+                                                                mode.value = "OPEN $label"
+                                                            },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+            },
+        )
+    }
+
     private fun sectionTitle(
         text: String,
         textRasterizer: PixelTextRasterizer? = null,
@@ -1244,18 +1504,8 @@ object DemoScenes {
     ): Widget {
         val labelRasterizer = PixelBitmapFont.Default
         val resolvedValueRasterizer = valueRasterizer ?: PixelBitmapFont.Default
-        val trimmedLabel = trimSingleLineText(
-            text = label,
-            rasterizer = labelRasterizer,
-            maxWidth = 76,
-        )
-        val trimmedValue = trimSingleLineText(
-            text = value,
-            rasterizer = resolvedValueRasterizer,
-            maxWidth = 76,
-        )
-        val cardHeight = labelRasterizer.measureHeight(trimmedLabel) +
-            resolvedValueRasterizer.measureHeight(trimmedValue) +
+        val cardHeight = labelRasterizer.measureHeight(label) +
+            resolvedValueRasterizer.measureHeight(value) +
             8
 
         return Container(
@@ -1267,13 +1517,18 @@ object DemoScenes {
                 spacing = 2,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 children = listOf(
-                    Text(trimmedLabel, style = TextStyle.Accent),
                     Text(
-                        trimmedValue,
+                        data = label,
+                        style = TextStyle.Accent,
+                        overflow = TextOverflow.ELLIPSIS,
+                    ),
+                    Text(
+                        data = value,
                         style = TextStyle(
                             tone = if (accent) PixelTone.ACCENT else PixelTone.ON,
                             textRasterizer = valueRasterizer,
                         ),
+                        overflow = TextOverflow.ELLIPSIS,
                     ),
                 ),
             ),
@@ -1364,55 +1619,6 @@ object DemoScenes {
             dotSizePx = 8,
             pixelShape = pixelShape,
         )
-    }
-
-    /**
-     * 当前 demo 卡片先按单行文本做裁剪，避免中文或中英混排接上真实字形后直接溢出边框。
-     *
-     * 后续如果 pixel-engine UI layer 内核补了通用单行裁剪或多行换行能力，这里可以再回收。
-     */
-    private fun trimSingleLineText(
-        text: String,
-        rasterizer: PixelTextRasterizer,
-        maxWidth: Int,
-    ): String {
-        if (text.isEmpty() || maxWidth <= 0) {
-            return ""
-        }
-        if (rasterizer.measureText(text) <= maxWidth) {
-            return text
-        }
-
-        val ellipsis = "..."
-        val builder = StringBuilder(text.length)
-        text.forEach { character ->
-            val candidate = builder.toString() + character
-            if (rasterizer.measureText(candidate) > maxWidth) {
-                val safeText = builder.toString()
-                if (safeText.isEmpty()) {
-                    return ""
-                }
-                if (rasterizer.measureText(safeText) <= maxWidth &&
-                    rasterizer.measureText(safeText + ellipsis) <= maxWidth
-                ) {
-                    return safeText + ellipsis
-                }
-
-                val fallbackBuilder = StringBuilder(safeText)
-                while (fallbackBuilder.isNotEmpty() &&
-                    rasterizer.measureText(fallbackBuilder.toString() + ellipsis) > maxWidth
-                ) {
-                    fallbackBuilder.deleteCharAt(fallbackBuilder.lastIndex)
-                }
-                return if (fallbackBuilder.isEmpty()) {
-                    ""
-                } else {
-                    fallbackBuilder.toString() + ellipsis
-                }
-            }
-            builder.append(character)
-        }
-        return builder.toString()
     }
 
     /**

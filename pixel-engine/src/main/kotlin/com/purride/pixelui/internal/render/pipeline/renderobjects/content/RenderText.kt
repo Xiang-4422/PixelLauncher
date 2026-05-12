@@ -3,6 +3,7 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.TextDirection
 import kotlin.math.min
@@ -17,6 +18,8 @@ internal class RenderText(
     private var style: PixelTextStyle,
     private var textAlign: PixelTextAlign,
     private var textDirection: TextDirection,
+    private var overflow: PixelTextOverflow,
+    private var maxLines: Int,
     private val defaultTextRasterizer: PixelTextRasterizer,
     private val explicitWidth: Int? = null,
     private val explicitHeight: Int? = null,
@@ -32,6 +35,7 @@ internal class RenderText(
     private var rasterizer: PixelTextRasterizer = style.textRasterizer ?: defaultTextRasterizer
     private var textWidth = 0
     private var textHeight = 0
+    private var displayText = text
     private var drawTextX = 0
     private var drawTextY = 0
 
@@ -43,12 +47,16 @@ internal class RenderText(
         style: PixelTextStyle,
         textAlign: PixelTextAlign,
         textDirection: TextDirection,
+        overflow: PixelTextOverflow,
+        maxLines: Int,
     ) {
         if (
             this.text == text &&
             this.style == style &&
             this.textAlign == textAlign &&
-            this.textDirection == textDirection
+            this.textDirection == textDirection &&
+            this.overflow == overflow &&
+            this.maxLines == maxLines
         ) {
             return
         }
@@ -56,6 +64,8 @@ internal class RenderText(
         this.style = style
         this.textAlign = textAlign
         this.textDirection = textDirection
+        this.overflow = overflow
+        this.maxLines = maxLines
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -65,11 +75,16 @@ internal class RenderText(
      */
     override fun layout(constraints: RenderConstraints) {
         rasterizer = style.textRasterizer ?: defaultTextRasterizer
-        textWidth = rasterizer.measureText(text)
-        textHeight = rasterizer.measureHeight(text.ifEmpty { " " })
 
         val horizontalPadding = paddingLeft + paddingRight
         val verticalPadding = paddingTop + paddingBottom
+        val availableTextWidth = resolveAvailableTextWidth(
+            constraints = constraints,
+            horizontalPadding = horizontalPadding,
+        )
+        displayText = resolveDisplayText(availableWidth = availableTextWidth)
+        textWidth = rasterizer.measureText(displayText)
+        textHeight = rasterizer.measureHeight(displayText.ifEmpty { " " })
 
         val measuredWidth = when {
             explicitWidth != null -> explicitWidth
@@ -103,7 +118,7 @@ internal class RenderText(
         offsetX: Int,
         offsetY: Int,
     ) {
-        if (text.isEmpty()) {
+        if (displayText.isEmpty()) {
             return
         }
         val contentWidth = (size.width - paddingLeft - paddingRight).coerceAtLeast(0)
@@ -116,7 +131,7 @@ internal class RenderText(
         if (textWidth <= contentWidth && textHeight <= contentHeight) {
             rasterizer.drawText(
                 buffer = context.buffer,
-                text = text,
+                text = displayText,
                 x = destinationX,
                 y = destinationY,
                 value = style.tone.value,
@@ -130,7 +145,7 @@ internal class RenderText(
         )
         rasterizer.drawText(
             buffer = scratch,
-            text = text,
+            text = displayText,
             x = 0,
             y = 0,
             value = style.tone.value,
@@ -194,6 +209,51 @@ internal class RenderText(
             PixelTextAlign.END -> if (textDirection == TextDirection.RTL) 0 else freeWidth
             PixelTextAlign.START -> if (textDirection == TextDirection.RTL) freeWidth else 0
         }
+    }
+
+    private fun resolveAvailableTextWidth(
+        constraints: RenderConstraints,
+        horizontalPadding: Int,
+    ): Int {
+        val measuredWidth = when {
+            explicitWidth != null -> explicitWidth
+            fillMaxWidth || occupyFullWidth -> constraints.maxWidth
+            else -> constraints.maxWidth
+        }
+        return (constraints.constrainWidth(measuredWidth) - horizontalPadding).coerceAtLeast(0)
+    }
+
+    private fun resolveDisplayText(availableWidth: Int): String {
+        val singleLineText = text.lineSequence().firstOrNull().orEmpty()
+        if (maxLines <= 0 || availableWidth <= 0 || singleLineText.isEmpty()) {
+            return ""
+        }
+        if (overflow == PixelTextOverflow.CLIP || rasterizer.measureText(singleLineText) <= availableWidth) {
+            return singleLineText
+        }
+        return ellipsizeSingleLine(
+            text = singleLineText,
+            availableWidth = availableWidth,
+        )
+    }
+
+    private fun ellipsizeSingleLine(
+        text: String,
+        availableWidth: Int,
+    ): String {
+        val ellipsis = "..."
+        if (rasterizer.measureText(ellipsis) > availableWidth) {
+            return ""
+        }
+        val builder = StringBuilder()
+        text.forEach { character ->
+            val candidate = builder.toString() + character + ellipsis
+            if (rasterizer.measureText(candidate) > availableWidth) {
+                return builder.toString() + ellipsis
+            }
+            builder.append(character)
+        }
+        return builder.toString()
     }
 
     /**
