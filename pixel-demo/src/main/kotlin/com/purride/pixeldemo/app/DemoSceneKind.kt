@@ -19,5 +19,6 @@ enum class DemoSceneKind(
     PAGER_AND_LIST("分页与列表组合"),
     ENVIRONMENT("环境继承"),
     LAUNCHER_LIKE("Launcher 组合页"),
+    DRAWER_LIKE("Drawer 验收页"),
     LAYOUT_AND_CLICK("布局与点击"),
 }

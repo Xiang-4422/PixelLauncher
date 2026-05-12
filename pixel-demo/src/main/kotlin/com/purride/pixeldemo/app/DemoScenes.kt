@@ -142,6 +142,7 @@ object DemoScenes {
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
             DemoSceneKind.ENVIRONMENT -> environmentScene(textRasterizers)
             DemoSceneKind.LAUNCHER_LIKE -> launcherLikeScene(textRasterizers)
+            DemoSceneKind.DRAWER_LIKE -> drawerLikeScene(textRasterizers)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
         }
     }
@@ -1430,6 +1431,126 @@ object DemoScenes {
                                                             onPressed = {
                                                                 mode.value = "OPEN $label"
                                                             },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+            },
+        )
+    }
+
+    private fun drawerLikeScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val textController = TextEditingController()
+        val queryState = textController.create()
+        val listController = ScrollController()
+        val listState = listController.create()
+        val selectedApp = ValueNotifier("NONE")
+        val mockApps = listOf(
+            "Alarm", "Browser", "Calculator", "Calendar", "Camera", "Clock",
+            "Contacts", "Files", "Gallery", "Maps", "Messages", "Music",
+            "Notes", "Phone", "Photos", "Recorder", "Settings", "Terminal",
+            "Translator", "Weather", "WeChat", "YouTube", "Zen Mode", "Zero Mail",
+        )
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 96,
+                logicalHeight = 128,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = accentUiTheme(),
+            content = {
+                ListenableBuilder(textController) {
+                    ListenableBuilder(listController) {
+                        ValueListenableBuilder(selectedApp) { _, selected ->
+                            val query = queryState.text.trim()
+                            val filteredApps = mockApps.filter { app ->
+                                query.isEmpty() || app.contains(query, ignoreCase = true)
+                            }
+                            Container(
+                                padding = EdgeInsets.all(4),
+                                child = Column(
+                                    spacing = 4,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        sectionTitle("DRAWER GATE"),
+                                        infoCard("QUERY", query.ifEmpty { "(EMPTY)" }),
+                                        infoCard("RESULTS", filteredApps.size.toString(), accent = filteredApps.isEmpty()),
+                                        infoCard("SELECTED", selected),
+                                        SizedBox(
+                                            height = 16,
+                                            child = TextField(
+                                                state = queryState,
+                                                controller = textController,
+                                                placeholder = "TYPE TO FILTER",
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "TOP",
+                                                            onPressed = { listController.jumpToStart(listState) },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "MID",
+                                                            onPressed = {
+                                                                listController.showItem(
+                                                                    state = listState,
+                                                                    itemIndex = (filteredApps.size / 2).coerceAtLeast(0),
+                                                                )
+                                                            },
+                                                            style = ButtonStyle.Accent,
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "END",
+                                                            onPressed = { listController.jumpToEnd(listState) },
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 46,
+                                            child = ListViewBuilder(
+                                                itemCount = filteredApps.size.coerceAtLeast(1),
+                                                state = listState,
+                                                controller = listController,
+                                                spacing = 2,
+                                                itemBuilder = { index ->
+                                                    val label = filteredApps.getOrNull(index)
+                                                    SizedBox(
+                                                        height = 13,
+                                                        child = OutlinedButton(
+                                                            text = label?.uppercase() ?: "NO RESULTS",
+                                                            onPressed = label?.let { app ->
+                                                                { selectedApp.value = app }
+                                                            },
+                                                            style = if (label == selected) {
+                                                                ButtonStyle.Accent
+                                                            } else {
+                                                                ButtonStyle.Default
+                                                            },
+                                                            enabled = label != null,
                                                         ),
                                                     )
                                                 },
