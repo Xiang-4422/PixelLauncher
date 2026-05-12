@@ -80,7 +80,7 @@ import com.purride.pixelui.showItem
 /**
  * Demo scene 定义集合。
  *
- * 每个 scene 都通过 `pixel-ui` 的组件树搭建，避免再退回手写 renderer。
+ * 每个 scene 都通过 pixel-engine UI layer 的组件树搭建，避免再退回手写 renderer。
  */
 object DemoScenes {
 
@@ -1369,7 +1369,7 @@ object DemoScenes {
     /**
      * 当前 demo 卡片先按单行文本做裁剪，避免中文或中英混排接上真实字形后直接溢出边框。
      *
-     * 后续如果 `pixel-ui` 内核补了通用单行裁剪或多行换行能力，这里可以再回收。
+     * 后续如果 pixel-engine UI layer 内核补了通用单行裁剪或多行换行能力，这里可以再回收。
      */
     private fun trimSingleLineText(
         text: String,

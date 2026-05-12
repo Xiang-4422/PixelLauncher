@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
  * Demo 菜单页。
  *
  * 这里刻意使用原生 Android 控件做导航，只负责打开不同的框架验证页面。
- * 这样 demo 的复杂度不会反过来污染 `pixel-ui` 的首轮设计。
+ * 这样 demo 的复杂度不会反过来污染 pixel-engine UI layer 的首轮设计。
  */
 class DemoMenuActivity : AppCompatActivity() {
 

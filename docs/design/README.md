@@ -7,7 +7,7 @@
 - `engine/`：像素 UI 引擎的架构、进度和接入方式
 - `product/`：产品目标和模块设计
 
-如果你第一次进入项目，先读根目录 [README.md](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/README.md)，再回到这里按路径进入。
+如果你第一次进入项目，先读根目录 [README.md](/Users/xiangyu/StudioProjects/PixelLauncher/README.md)，再回到这里按路径进入。
 
 ## 1. 目录分类
 
@@ -30,9 +30,9 @@
 
 用途：
 
-- 解释 `pixel-core / pixel-ui / pixel-demo / app` 的边界
+- 解释 `pixel-engine / pixel-demo / app` 的边界
 - 解释 retained runtime、direct pipeline 和当前重构阶段
-- 解释新模块如何把 `pixel-ui` 当库接入
+- 解释新模块如何把 `pixel-engine` 当库接入
 
 ### product
 
@@ -63,7 +63,7 @@
 
 ### 新接手工程师
 
-1. 读 [README.md](/Users/jiuzhou/AndroidStudioProjects/PixelLauncher/README.md)
+1. 读 [README.md](/Users/xiangyu/StudioProjects/PixelLauncher/README.md)
 2. 读 [技术实现总览](./architecture/技术实现总览.md)
 3. 读 [像素 UI 引擎架构与实施计划](./engine/像素UI引擎架构与实施计划.md)
 4. 读 [像素 UI 引擎当前进度](./engine/像素UI引擎当前进度.md)
@@ -87,4 +87,4 @@
 - 技术真实实现变化，先更新 `architecture/` 和 `engine/`
 - 产品目标或模块职责变化，更新 `product/`
 - 不再新增临时任务单或一次性完成度清单；当前阶段统一维护 [像素 UI 引擎架构与实施计划](./engine/像素UI引擎架构与实施计划.md) 作为执行口径
-- 代码路径引用统一使用当前真实模块路径，例如 `app/src/main/kotlin/...`、`pixel-core/src/main/kotlin/...`、`pixel-ui/src/main/kotlin/...`
+- 代码路径引用统一使用当前真实模块路径，例如 `app/src/main/kotlin/...`、`pixel-engine/src/main/kotlin/...`
