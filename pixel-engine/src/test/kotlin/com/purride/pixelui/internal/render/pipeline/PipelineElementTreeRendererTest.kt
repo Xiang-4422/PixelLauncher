@@ -14,7 +14,10 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InternalBuildContext
+import com.purride.pixelui.ListViewBuilder
+import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Row
+import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.MainAxisAlignment
@@ -572,6 +575,46 @@ class PipelineElementTreeRendererTest {
         assertEquals(7, result.clickTargets.single().bounds.top)
         assertEquals(4, result.clickTargets.single().bounds.width)
         assertEquals(3, result.clickTargets.single().bounds.height)
+    }
+
+    /**
+     * 列表滚动后只应该导出可见 item 的点击目标。
+     */
+    @Test
+    fun listViewportExportsOnlyVisibleClickTargetsAfterScrollOffset() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 10f)
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 10,
+                child = ListViewBuilder(
+                    itemCount = 4,
+                    state = state,
+                    controller = controller,
+                    itemBuilder = { index ->
+                        SizedBox(
+                            height = 8,
+                            child = OutlinedButton(
+                                text = "ITEM $index",
+                                onPressed = { },
+                            ),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 10,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(2, result.clickTargets.size)
+        assertTrue(result.clickTargets.all { target ->
+            target.bounds.top in 0 until 10 &&
+                target.bounds.top + target.bounds.height <= 10
+        })
     }
 
     /**

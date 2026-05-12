@@ -277,20 +277,20 @@ internal class RenderListViewport(
     ) {
         val scratch = PixelBuffer(
             width = size.width,
-            height = state.contentHeightPx.coerceAtLeast(size.height),
+            height = size.height,
         )
-        renderChildren.forEachIndexed { index, child ->
+        visibleRenderChildren().forEach { (index, child) ->
             child.paint(
                 context = PaintContext(buffer = scratch),
                 offsetX = 0,
-                offsetY = childOffsets[index],
+                offsetY = childOffsets[index] - state.scrollOffsetPx.toInt(),
             )
         }
         context.buffer.blit(
             source = scratch,
             destX = offsetX,
             destY = offsetY,
-            sourceY = state.scrollOffsetPx.toInt(),
+            sourceY = 0,
             copyWidth = size.width,
             copyHeight = size.height,
         )
@@ -308,7 +308,7 @@ internal class RenderListViewport(
             return
         }
         val contentY = localY + state.scrollOffsetPx.toInt()
-        renderChildren.forEachIndexed { index, child ->
+        visibleRenderChildren().forEach { (index, child) ->
             child.hitTest(
                 localX = localX,
                 localY = contentY - childOffsets[index],
@@ -326,7 +326,7 @@ internal class RenderListViewport(
         targets: MutableList<PixelClickTarget>,
     ) {
         val collected = mutableListOf<PixelClickTarget>()
-        renderChildren.forEachIndexed { index, child ->
+        visibleRenderChildren().forEach { (index, child) ->
             child.collectClickTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
@@ -349,7 +349,7 @@ internal class RenderListViewport(
         targets: MutableList<PixelPagerTarget>,
     ) {
         val collected = mutableListOf<PixelPagerTarget>()
-        renderChildren.forEachIndexed { index, child ->
+        visibleRenderChildren().forEach { (index, child) ->
             child.collectPagerTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
@@ -379,7 +379,7 @@ internal class RenderListViewport(
             controller = controller,
         )
         val collected = mutableListOf<PixelListTarget>()
-        renderChildren.forEachIndexed { index, child ->
+        visibleRenderChildren().forEach { (index, child) ->
             child.collectListTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
@@ -402,7 +402,7 @@ internal class RenderListViewport(
         targets: MutableList<PixelTextInputTarget>,
     ) {
         val collected = mutableListOf<PixelTextInputTarget>()
-        renderChildren.forEachIndexed { index, child ->
+        visibleRenderChildren().forEach { (index, child) ->
             child.collectTextInputTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
@@ -421,6 +421,20 @@ internal class RenderListViewport(
      */
     private val renderChildren: List<RenderBox>
         get() = children.filterIsInstance<RenderBox>()
+
+    private fun visibleRenderChildren(): List<Pair<Int, RenderBox>> {
+        val viewportTop = state.scrollOffsetPx.toInt()
+        val viewportBottom = viewportTop + size.height
+        return renderChildren.mapIndexedNotNull { index, child ->
+            val childTop = childOffsets[index]
+            val childBottom = childTop + child.size.height
+            if (childBottom <= viewportTop || childTop >= viewportBottom) {
+                null
+            } else {
+                index to child
+            }
+        }
+    }
 
     /**
      * 调整列表项偏移缓存长度。
