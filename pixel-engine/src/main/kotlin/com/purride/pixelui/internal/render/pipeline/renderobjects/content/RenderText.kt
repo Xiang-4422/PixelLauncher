@@ -18,6 +18,7 @@ internal class RenderText(
     private var style: PixelTextStyle,
     private var textAlign: PixelTextAlign,
     private var textDirection: TextDirection,
+    private var softWrap: Boolean,
     private var overflow: PixelTextOverflow,
     private var maxLines: Int,
     private val defaultTextRasterizer: PixelTextRasterizer,
@@ -47,6 +48,7 @@ internal class RenderText(
         style: PixelTextStyle,
         textAlign: PixelTextAlign,
         textDirection: TextDirection,
+        softWrap: Boolean,
         overflow: PixelTextOverflow,
         maxLines: Int,
     ) {
@@ -55,6 +57,7 @@ internal class RenderText(
             this.style == style &&
             this.textAlign == textAlign &&
             this.textDirection == textDirection &&
+            this.softWrap == softWrap &&
             this.overflow == overflow &&
             this.maxLines == maxLines
         ) {
@@ -64,6 +67,7 @@ internal class RenderText(
         this.style = style
         this.textAlign = textAlign
         this.textDirection = textDirection
+        this.softWrap = softWrap
         this.overflow = overflow
         this.maxLines = maxLines
         markNeedsLayout()
@@ -224,8 +228,31 @@ internal class RenderText(
     }
 
     private fun resolveDisplayText(availableWidth: Int): String {
+        if (maxLines <= 0 || availableWidth <= 0 || text.isEmpty()) {
+            return ""
+        }
+        if (!softWrap) {
+            return resolveSingleLineText(availableWidth)
+        }
+
+        val wrappedLines = wrapTextByCharacter(availableWidth)
+        if (wrappedLines.isEmpty()) {
+            return ""
+        }
+        val truncated = wrappedLines.size > maxLines
+        val visibleLines = wrappedLines.take(maxLines).toMutableList()
+        if (truncated && overflow == PixelTextOverflow.ELLIPSIS && visibleLines.isNotEmpty()) {
+            visibleLines[visibleLines.lastIndex] = ellipsizeSingleLine(
+                text = visibleLines.last(),
+                availableWidth = availableWidth,
+            )
+        }
+        return visibleLines.joinToString(separator = "\n")
+    }
+
+    private fun resolveSingleLineText(availableWidth: Int): String {
         val singleLineText = text.lineSequence().firstOrNull().orEmpty()
-        if (maxLines <= 0 || availableWidth <= 0 || singleLineText.isEmpty()) {
+        if (singleLineText.isEmpty()) {
             return ""
         }
         if (overflow == PixelTextOverflow.CLIP || rasterizer.measureText(singleLineText) <= availableWidth) {
@@ -235,6 +262,29 @@ internal class RenderText(
             text = singleLineText,
             availableWidth = availableWidth,
         )
+    }
+
+    private fun wrapTextByCharacter(availableWidth: Int): List<String> {
+        val lines = mutableListOf<String>()
+        text.lines().forEach { paragraph ->
+            if (paragraph.isEmpty()) {
+                lines += ""
+                return@forEach
+            }
+            val builder = StringBuilder()
+            paragraph.forEach { character ->
+                val candidate = builder.toString() + character
+                if (builder.isNotEmpty() && rasterizer.measureText(candidate) > availableWidth) {
+                    lines += builder.toString()
+                    builder.clear()
+                }
+                builder.append(character)
+            }
+            if (builder.isNotEmpty()) {
+                lines += builder.toString()
+            }
+        }
+        return lines
     }
 
     private fun ellipsizeSingleLine(

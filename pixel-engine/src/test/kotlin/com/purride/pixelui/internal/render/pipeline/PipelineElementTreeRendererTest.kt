@@ -47,6 +47,7 @@ class PipelineElementTreeRendererTest {
             style = com.purride.pixelui.PixelTextStyle.Default,
             textAlign = PixelTextAlign.CENTER,
             textDirection = TextDirection.LTR,
+            softWrap = false,
             overflow = TextOverflow.CLIP,
             maxLines = 1,
             defaultTextRasterizer = PixelBitmapFont.Default,
@@ -84,6 +85,7 @@ class PipelineElementTreeRendererTest {
                 style = com.purride.pixelui.PixelTextStyle.Default,
                 textAlign = PixelTextAlign.START,
                 textDirection = TextDirection.LTR,
+                softWrap = false,
                 overflow = TextOverflow.CLIP,
                 maxLines = 1,
                 defaultTextRasterizer = PixelBitmapFont.Default,
@@ -144,6 +146,7 @@ class PipelineElementTreeRendererTest {
                     style = com.purride.pixelui.PixelTextStyle.Default,
                     textAlign = PixelTextAlign.START,
                     textDirection = TextDirection.LTR,
+                    softWrap = false,
                     overflow = TextOverflow.CLIP,
                     maxLines = 1,
                     defaultTextRasterizer = PixelBitmapFont.Default,
@@ -336,6 +339,7 @@ class PipelineElementTreeRendererTest {
             style = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
             textAlign = PixelTextAlign.START,
             textDirection = TextDirection.LTR,
+            softWrap = false,
             overflow = TextOverflow.ELLIPSIS,
             maxLines = 1,
             defaultTextRasterizer = rasterizer,
@@ -364,6 +368,7 @@ class PipelineElementTreeRendererTest {
             style = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
             textAlign = PixelTextAlign.START,
             textDirection = TextDirection.LTR,
+            softWrap = false,
             overflow = TextOverflow.CLIP,
             maxLines = 1,
             defaultTextRasterizer = rasterizer,
@@ -379,6 +384,64 @@ class PipelineElementTreeRendererTest {
         )
 
         assertEquals("ABCDE", rasterizer.lastDrawnText)
+    }
+
+    /**
+     * softWrap 开启后应该按字符测宽换行，并尊重 maxLines。
+     */
+    @Test
+    fun renderTextWrapsMixedTextByCharacterWhenSoftWrapIsEnabled() {
+        val rasterizer = CapturingRasterizer()
+        val renderText = RenderText(
+            text = "AB你好CD",
+            style = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            softWrap = true,
+            overflow = TextOverflow.CLIP,
+            maxLines = 3,
+            defaultTextRasterizer = rasterizer,
+            explicitWidth = 3,
+            explicitHeight = 3,
+        )
+
+        renderText.layout(RenderConstraints(maxWidth = 3, maxHeight = 3))
+        renderText.paint(
+            context = PaintContext(buffer = PixelBuffer(width = 3, height = 3)),
+            offsetX = 0,
+            offsetY = 0,
+        )
+
+        assertEquals("AB你\n好CD", rasterizer.lastDrawnText)
+    }
+
+    /**
+     * 多行 ellipsis 只作用于最后一个可见行。
+     */
+    @Test
+    fun renderTextEllipsizesLastVisibleLineWhenWrappedTextExceedsMaxLines() {
+        val rasterizer = CapturingRasterizer()
+        val renderText = RenderText(
+            text = "ABCDEFGHI",
+            style = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            softWrap = true,
+            overflow = TextOverflow.ELLIPSIS,
+            maxLines = 2,
+            defaultTextRasterizer = rasterizer,
+            explicitWidth = 4,
+            explicitHeight = 2,
+        )
+
+        renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 2))
+        renderText.paint(
+            context = PaintContext(buffer = PixelBuffer(width = 4, height = 2)),
+            offsetX = 0,
+            offsetY = 0,
+        )
+
+        assertEquals("ABCD\nE...", rasterizer.lastDrawnText)
     }
 
     /**

@@ -33,6 +33,7 @@ internal data class TextWidget(
             style = resolveTextStyle(context),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
+            softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
             defaultTextRasterizer = PixelBitmapFont.Default,
@@ -51,6 +52,7 @@ internal data class TextWidget(
             style = resolveTextStyle(context),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
+            softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
         )
