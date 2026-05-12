@@ -46,10 +46,11 @@ internal data class TextFieldWidget(
             else -> resolvedTheme.textFieldStyle
         }
         val text = state.text.ifEmpty { placeholder }
-        val textStyle = if (state.text.isEmpty()) {
-            resolvedStyle.placeholderStyle
-        } else {
-            resolvedStyle.textStyle
+        val textStyle = when {
+            !enabled && state.text.isEmpty() -> resolvedStyle.disabledPlaceholderStyle
+            !enabled -> resolvedStyle.disabledTextStyle
+            state.text.isEmpty() -> resolvedStyle.placeholderStyle
+            else -> resolvedStyle.textStyle
         }
         return TextInputSurfaceWidget(
             fillTone = resolvedStyle.fillTone,
@@ -75,7 +76,7 @@ internal data class TextFieldWidget(
                 theme = null,
                 softWrap = false,
                 maxLines = 1,
-                overflow = PixelTextOverflow.CLIP,
+                overflow = PixelTextOverflow.ELLIPSIS,
                 textAlign = TextAlign.START,
                 key = key?.let { "$it-text" },
             ),

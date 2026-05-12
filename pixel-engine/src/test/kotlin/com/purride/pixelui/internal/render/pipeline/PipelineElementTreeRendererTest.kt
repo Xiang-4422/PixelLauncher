@@ -26,7 +26,12 @@ import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
+import com.purride.pixelui.TextField
+import com.purride.pixelui.TextFieldStyle
+import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextOverflow
+import com.purride.pixelui.Theme
+import com.purride.pixelui.ThemeData
 import com.purride.pixelui.Widget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -615,6 +620,98 @@ class PipelineElementTreeRendererTest {
             target.bounds.top in 0 until 10 &&
                 target.bounds.top + target.bounds.height <= 10
         })
+    }
+
+    /**
+     * 空 TextField 的 placeholder 应该走统一 ellipsis 裁剪。
+     */
+    @Test
+    fun textFieldEllipsizesLongPlaceholder() {
+        val rasterizer = CapturingRasterizer()
+        val controller = TextEditingController()
+        val state = controller.create()
+
+        renderWithPipeline(
+            root = Theme(
+                data = ThemeData(
+                    textFieldStyle = TextFieldStyle.Default.copy(
+                        placeholderStyle = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
+                        padding = 0,
+                    ),
+                ),
+                child = SizedBox(
+                    width = 4,
+                    height = 3,
+                    child = TextField(
+                        state = state,
+                        controller = controller,
+                        placeholder = "ABCDE",
+                    ),
+                ),
+            ),
+            logicalWidth = 4,
+            logicalHeight = 3,
+        )
+
+        assertEquals("A...", rasterizer.lastDrawnText)
+    }
+
+    /**
+     * disabled/readOnly 应该使用各自主题状态边框。
+     */
+    @Test
+    fun textFieldUsesDisabledAndReadOnlyVisualStates() {
+        val controller = TextEditingController()
+        val disabledState = controller.create(initialText = "OFF")
+        val readOnlyState = controller.create(initialText = "LOCK")
+        val theme = ThemeData(
+            disabledTextFieldStyle = TextFieldStyle.Default.copy(
+                disabledBorderTone = PixelTone.ACCENT,
+                padding = 0,
+            ),
+            readOnlyTextFieldStyle = TextFieldStyle.Default.copy(
+                readOnlyBorderTone = PixelTone.ON,
+                padding = 0,
+            ),
+        )
+
+        val disabledResult = renderWithPipeline(
+            root = Theme(
+                data = theme,
+                child = SizedBox(
+                    width = 10,
+                    height = 4,
+                    child = TextField(
+                        state = disabledState,
+                        controller = controller,
+                        enabled = false,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 4,
+        )
+        val readOnlyResult = renderWithPipeline(
+            root = Theme(
+                data = theme,
+                child = SizedBox(
+                    width = 10,
+                    height = 4,
+                    child = TextField(
+                        state = readOnlyState,
+                        controller = controller,
+                        readOnly = true,
+                    ),
+                ),
+            ),
+            logicalWidth = 10,
+            logicalHeight = 4,
+        )
+
+        assertNotNull(disabledResult)
+        assertNotNull(readOnlyResult)
+        assertEquals(PixelTone.ACCENT.value, disabledResult?.buffer?.getPixel(0, 0))
+        assertEquals(PixelTone.ON.value, readOnlyResult?.buffer?.getPixel(0, 0))
     }
 
     /**

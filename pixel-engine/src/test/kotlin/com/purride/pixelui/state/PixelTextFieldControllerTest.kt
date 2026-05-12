@@ -84,4 +84,31 @@ class PixelTextFieldControllerTest {
         assertEquals(0, state.selectionStart)
         assertEquals(4, state.selectionEnd)
     }
+
+    @Test
+    fun createClampsInitialSelectionIntoTextRange() {
+        val state = controller.create(
+            initialText = "ABC",
+            selectionStart = -10,
+            selectionEnd = 99,
+        )
+
+        assertEquals(0, state.selectionStart)
+        assertEquals(3, state.selectionEnd)
+    }
+
+    @Test
+    fun updateTextClampsSelectionIntoNewTextRange() {
+        val state = controller.create(initialText = "LONG")
+
+        controller.updateText(
+            state = state,
+            text = "AB",
+            selectionStart = 8,
+            selectionEnd = 12,
+        )
+
+        assertEquals(2, state.selectionStart)
+        assertEquals(2, state.selectionEnd)
+    }
 }
