@@ -77,6 +77,10 @@
 - `Pager + List` 复合滚动仲裁
 - `TextField + Button + List` 组合页面
 - 权重布局、主轴排布、交叉轴对齐
+- 多行文本换行与单行 ellipsis
+- 列表可见区绘制与 target 裁剪
+- 单行输入框 placeholder 裁剪、disabled/readOnly 状态
+- Drawer-like 迁移前验收页
 
 Demo 入口：
 
@@ -89,10 +93,10 @@ Demo 入口：
 `pixel-engine` 仍然是第一版可运行框架，还不是完整产品级 UI 系统：
 
 - `:app` 页面还没有迁移
-- `ListView` 只有纵向单列，不是虚拟化列表
+- `ListView` 只有纵向单列，当前已限制绘制和 target 收集到可见区，但还不是真虚拟化列表
 - 列表当前没有完整回弹和吸附
 - `TextField` 目前只支持单行输入
-- 文本当前还不支持富文本和段落级样式
+- 文本已支持基础多行换行和最后一行 ellipsis，但还不支持富文本和段落级样式
 - 主题系统还比较轻，当前主要靠 `PixelPalette` 和 `PixelTextStyle`
 - 新渲染管线还没有达到完整 Flutter 级别的布局、手势、文本系统
 
@@ -108,12 +112,16 @@ Demo 入口：
 - 中文字形链路已打通到 demo
 - 核心组件和 runtime 已有单测
 - 生产源码已经不再保留旧渲染后端
+- `Text` 已支持字符级多行换行、`CLIP / ELLIPSIS` 和最后一行省略
+- `ListView` 已在绘制与 target 导出阶段跳过不可见 item
+- `TextField` 已补齐单行 placeholder ellipsis、disabled/readOnly 视觉状态和 selection 边界覆盖
+- `pixel-demo` 已新增滚动压力、环境继承、Launcher-like 和 Drawer-like 验收场景
 
 ### 正在进行
 
 - 补稳 direct pipeline 核心架构
 - 补稳 `RenderObject / PipelineOwner / RenderObjectWidget` 的长期职责边界
-- 继续扩展基础布局、输入和滚动视口
+- 继续扩展基础布局、输入和滚动视口的产品级边界
 - 用 `pixel-demo` 持续证明真实场景不依赖旧后端
 
 ### 尚未开始
@@ -121,7 +129,8 @@ Demo 入口：
 - `:app` 页面迁移
 - 懒加载列表
 - 列表虚拟化与更高级滚动物理
-- 更完整的主题与环境默认值系统
+- 多行输入、富文本和段落级样式
+- 更完整的主题 token 与环境默认值系统
 
 ## 5. 接手建议
 
@@ -134,9 +143,9 @@ Demo 入口：
 
 当前最值得继续推进的方向：
 
-- 补稳 `RenderObject / PipelineOwner` 的长期职责边界
-- 继续扩展 direct pipeline 的基础布局、输入和滚动视口
-- 在 `pixel-demo` 上持续验收新 pipeline 页面
+- 基于 Drawer-like demo 选择 `:app` 首个迁移页面
+- 继续补列表虚拟化、滚动物理和更完整主题 token
+- 在真实迁移前继续维持 `pixel-demo` gate 先行
 
 ## 6. 验证命令
 

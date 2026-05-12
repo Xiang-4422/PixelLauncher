@@ -127,6 +127,21 @@ setContentView(hostSetup.rootView)
 
 旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等节点式名称不再作为推荐页面 API。
 
+当前 `Text` 已支持：
+
+- 单行 `CLIP / ELLIPSIS`
+- `softWrap = true` 时的字符级多行换行
+- `maxLines` 限制
+- 超出 `maxLines` 时最后一行 ellipsis
+
+当前 `TextField` 仍是单行输入，但已经覆盖：
+
+- placeholder ellipsis
+- disabled/readOnly 视觉状态
+- selection clamp
+
+当前 `ListView` 仍是纵向单列，不做真正虚拟化；但绘制和 target 收集已经限制在可见 item 上。
+
 ## 5. 自定义底层能力
 
 只有在明确做这些事情时，才建议直接触碰 `com.purride.pixelcore`：
@@ -149,6 +164,8 @@ setContentView(hostSetup.rootView)
 2. 在 `pixel-engine/src/test/kotlin` 补覆盖
 3. 在 `pixel-demo` 增加可视化验收场景
 4. Demo 稳定后再讨论是否迁移 `:app`
+
+如果要准备迁移 Launcher 的 Drawer，先在 `pixel-demo` 里打开 Drawer-like 验收页，确认搜索输入、长列表、空结果、滚动定位和点击反馈都符合预期，再开始碰 `:app`。
 
 ## 7. 验证命令
 

@@ -138,15 +138,19 @@ Widget
 - retained runtime 已能进入 direct pipeline
 - 旧渲染后端已从生产源码删除
 - 核心状态、pipeline、字体、几何、滚动控制器已有单测
+- `Text` 已支持基础多行换行、`maxLines` 和最后一行 ellipsis
+- `ListView` 已在绘制和 target 收集阶段限制到可见 item
+- `TextField` 已补齐单行 placeholder、disabled/readOnly 与 selection 边界
+- `pixel-demo` 已有 Launcher-like 和 Drawer-like 迁移前 gate
 
 ## 7. 尚未完成
 
 - `:app` 页面迁移
 - 懒加载列表和虚拟化
 - 更完整的滚动物理
-- 多行输入和富文本
-- 更完整的主题与环境默认值系统
-- 更完整的布局协议与文本系统
+- 多行输入、富文本和段落级样式
+- 更完整的主题 token 与环境默认值系统
+- 更完整的布局协议、手势边界和性能策略
 
 ## 8. 开发规则
 
