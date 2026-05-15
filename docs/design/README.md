@@ -7,7 +7,7 @@
 - `engine/`：像素 UI 引擎的架构、进度和接入方式
 - `product/`：产品目标和模块设计
 
-如果你第一次进入项目，先读根目录 [README.md](/Users/xiangyu/StudioProjects/PixelLauncher/README.md)，再回到这里按路径进入。
+如果你第一次进入项目，先读根目录 [README.md](../../README.md)，再回到这里按路径进入。
 
 ## 1. 目录分类
 
@@ -63,7 +63,7 @@
 
 ### 新接手工程师
 
-1. 读 [README.md](/Users/xiangyu/StudioProjects/PixelLauncher/README.md)
+1. 读 [README.md](../../README.md)
 2. 读 [技术实现总览](./architecture/技术实现总览.md)
 3. 读 [像素 UI 引擎架构与实施计划](./engine/像素UI引擎架构与实施计划.md)
 4. 读 [像素 UI 引擎当前进度](./engine/像素UI引擎当前进度.md)

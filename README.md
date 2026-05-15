@@ -52,15 +52,15 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 
 - `app/src/main/kotlin/com/purride/pixellauncherv2/app`
   - 运行时编排入口
-  - 核心文件：[MainActivity.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)
+  - 核心文件：[MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)
 - `app/src/main/kotlin/com/purride/pixellauncherv2/launcher`
   - 状态机、页面布局、抽屉与设置页模型、搜索与列表交互
-  - 核心文件：[LauncherState.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt)
-  - 核心文件：[LauncherStateTransitions.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
+  - 核心文件：[LauncherState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt)
+  - 核心文件：[LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
 - `app/src/main/kotlin/com/purride/pixellauncherv2/render`
   - 像素字体、像素缓冲、页面绘制、主题、分辨率、动画
-  - 核心文件：[PixelRenderer.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
-  - 核心文件：[PixelDisplayView.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelDisplayView.kt)
+  - 核心文件：[PixelRenderer.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
+  - 核心文件：[PixelDisplayView.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelDisplayView.kt)
 - `app/src/main/kotlin/com/purride/pixellauncherv2/data`
   - 应用列表、设备状态、Usage Access、通信、定位、降雨预测、设置持久化
 - `app/src/main/kotlin/com/purride/pixellauncherv2/system`
@@ -79,8 +79,8 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 ### Home
 
 - 模式：`LauncherMode.HOME`
-- 布局：[HomeLayout.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/HomeLayout.kt)
-- 绘制：[PixelRenderer.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
+- 布局：[HomeLayout.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/HomeLayout.kt)
+- 绘制：[PixelRenderer.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
 
 当前 Home 会显示：
 
@@ -94,10 +94,10 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 ### Drawer
 
 - 模式：`LauncherMode.APP_DRAWER`
-- 布局：[AppListLayout.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/AppListLayout.kt)
-- 搜索与排序：[DrawerSearchSupport.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/DrawerSearchSupport.kt)
-- 列表基座：[TextListSupport.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/TextListSupport.kt)
-- 滚动物理：[DrawerVerticalScrollController.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/DrawerVerticalScrollController.kt)
+- 布局：[AppListLayout.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/AppListLayout.kt)
+- 搜索与排序：[DrawerSearchSupport.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/DrawerSearchSupport.kt)
+- 列表基座：[TextListSupport.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/TextListSupport.kt)
+- 滚动物理：[DrawerVerticalScrollController.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/DrawerVerticalScrollController.kt)
 
 当前 Drawer 的实现特征：
 
@@ -111,8 +111,8 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 ### Settings
 
 - 模式：`LauncherMode.SETTINGS`
-- 模型：[SettingsMenuModel.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuModel.kt)
-- 布局：[SettingsMenuLayout.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuLayout.kt)
+- 模型：[SettingsMenuModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuModel.kt)
+- 布局：[SettingsMenuLayout.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuLayout.kt)
 
 当前 Settings 的实现特征：
 
@@ -124,7 +124,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 ### Idle
 
 - 模式：`LauncherMode.IDLE`
-- 待机物理：[IdleFluidEngine.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/render/IdleFluidEngine.kt)
+- 待机物理：[IdleFluidEngine.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/IdleFluidEngine.kt)
 
 当前 Idle 主要仍是待机页和动效页，不是系统锁屏替代。
 
@@ -133,20 +133,20 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 当前已经接入的关键真实数据包括：
 
 - 应用列表：
-  - [PackageManagerAppRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/PackageManagerAppRepository.kt)
+  - [PackageManagerAppRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/PackageManagerAppRepository.kt)
 - 电池与充电状态：
-  - [DeviceStatusRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/DeviceStatusRepository.kt)
+  - [DeviceStatusRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/DeviceStatusRepository.kt)
 - 下一次闹钟：
-  - [NextAlarmRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/NextAlarmRepository.kt)
+  - [NextAlarmRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/NextAlarmRepository.kt)
 - 屏幕使用时间与打开次数：
-  - [ScreenUsageRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/ScreenUsageRepository.kt)
+  - [ScreenUsageRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/ScreenUsageRepository.kt)
 - 未接来电与未读短信：
-  - [CommunicationStatusRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/CommunicationStatusRepository.kt)
+  - [CommunicationStatusRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/CommunicationStatusRepository.kt)
 - 定位与降雨提醒：
-  - [DeviceLocationRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/DeviceLocationRepository.kt)
-  - [RainForecastRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/RainForecastRepository.kt)
+  - [DeviceLocationRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/DeviceLocationRepository.kt)
+  - [RainForecastRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/RainForecastRepository.kt)
 - 外观与交互偏好持久化：
-  - [FontSettingsRepository.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/data/FontSettingsRepository.kt)
+  - [FontSettingsRepository.kt](app/src/main/kotlin/com/purride/pixellauncherv2/data/FontSettingsRepository.kt)
 
 ## 6. 权限与系统能力
 
@@ -167,32 +167,103 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 
 Manifest 入口：
 
-- [AndroidManifest.xml](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/AndroidManifest.xml)
+- [AndroidManifest.xml](app/src/main/AndroidManifest.xml)
 
 ## 7. 开发与运行
+
+### 环境要求
+
+这个仓库提交了 Gradle Wrapper，clone 后不需要本机预装 Gradle。  
+但 Android 工程仍然需要本机具备 JDK 和 Android SDK，不能把这些机器级路径提交进仓库。
+
+推荐环境：
+
+- Android Studio，或独立安装的 Android SDK
+- JDK 21，Android Studio 自带的 JBR 21 也可以
+- Android SDK Platform `android-36`
+- Android SDK Platform `android-36.1`
+- 已接受 Android SDK licenses
+
+命令行环境需要能找到 Java：
+
+```bash
+java -version
+```
+
+如果系统提示找不到 Java，可以临时使用 Android Studio 自带 JBR：
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+`local.properties` 不应提交到 Git。首次用 Android Studio 打开项目时它会自动生成；命令行构建时也可以通过 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 指向本机 SDK。
+
+如果需要在命令行执行 `adb` / `installDebug`，还需要把 Android SDK 的 `platform-tools` 加入 `PATH`。macOS 默认 SDK 位置通常是：
+
+```bash
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$ANDROID_HOME/platform-tools:$PATH"
+```
+
+如果 SDK 平台缺失，可以用 Android Studio 的 SDK Manager 安装，也可以在已有 `sdkmanager` 的环境里执行：
+
+```bash
+sdkmanager "platforms;android-36" "platforms;android-36.1"
+sdkmanager --licenses
+```
 
 构建配置摘要：
 
 - `minSdk = 24`
 - `targetSdk = 36`
-- `Java = 11`
-- `applicationId = com.purride.pixellauncherv2`
+- Java source/target compatibility = `11`
+- Gradle runtime JDK = `21` 推荐
+- release `applicationId = com.purride.pixellauncherv2`
+- debug `applicationId = com.purride.pixellauncherv2.debug`
 
 配置入口：
 
-- [app/build.gradle.kts](/Users/xiangyu/StudioProjects/PixelLauncher/app/build.gradle.kts)
-- [settings.gradle.kts](/Users/xiangyu/StudioProjects/PixelLauncher/settings.gradle.kts)
+- [app/build.gradle.kts](app/build.gradle.kts)
+- [settings.gradle.kts](settings.gradle.kts)
 
 常用命令：
 
 ```bash
-bash ./gradlew :app:compileDebugKotlin
-bash ./gradlew test
-bash ./gradlew installDebug
+./gradlew assembleDebug
+./gradlew :app:compileDebugKotlin
+./gradlew installDebug
 adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 ```
 
-之所以用 `bash ./gradlew`，是因为当前仓库里的 `gradlew` 没有执行位，直接 `./gradlew` 可能跑不起来。
+测试命令：
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+注意：当前 `testDebugUnitTest` 仍有若干断言失败，不能作为 clone 后的绿色验收线；基础编译验收以 `./gradlew assembleDebug` 为准。
+
+### Android Studio 运行
+
+用 Android Studio 打开仓库根目录，等待 Gradle Sync 完成后，Run 配置下拉框应出现 `app`。  
+这个配置来自 [.run/app.run.xml](.run/app.run.xml)，会构建 `:app` 并直接启动 `com.purride.pixellauncherv2.app.MainActivity`。
+
+debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purride.pixellauncherv2.debug`。这样设备上即使已有不同签名的正式包 `com.purride.pixellauncherv2`，Android Studio 也可以直接安装并运行 debug 包。
+
+如果 Run 按钮不可用，优先检查：
+
+- Project SDK / Gradle JDK 是否是 JDK 21 或 Android Studio 自带 JBR 21
+- SDK Manager 是否已经安装 `Android API 36` 和 `Android API 36.1`
+- 是否打开的是仓库根目录，而不是 `app` 子目录
+- 是否已经完成 Gradle Sync
+
+如果 Android Studio 提示 `Please select Android SDK`：
+
+1. 打开 `File > Project Structure > Project`
+2. 将 `SDK` 选择为已安装的 Android SDK，例如 `Android API 36.1, extension level 20 Platform`
+3. `Gradle JDK` 仍然选择 JDK 21 或 Android Studio 自带 JBR 21
+4. Apply 后重新执行 Gradle Sync
 
 ## 8. 工程规范与修改原则
 
@@ -222,35 +293,35 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 当前文档已经按目录分类：
 
 - 索引入口：
-  - [docs/design/README.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/README.md)
+  - [docs/design/README.md](docs/design/README.md)
 - 当前真实实现：
-  - [docs/design/architecture/技术实现总览.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/architecture/技术实现总览.md)
-  - [docs/design/architecture/渲染实现原理.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/architecture/渲染实现原理.md)
+  - [docs/design/architecture/技术实现总览.md](docs/design/architecture/技术实现总览.md)
+  - [docs/design/architecture/渲染实现原理.md](docs/design/architecture/渲染实现原理.md)
 - 像素引擎：
-  - [docs/design/engine/像素UI引擎架构与实施计划.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/engine/像素UI引擎架构与实施计划.md)
-  - [docs/design/engine/像素UI引擎当前进度.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/engine/像素UI引擎当前进度.md)
-  - [docs/design/engine/像素UI引擎组件接入指南.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/engine/像素UI引擎组件接入指南.md)
+  - [docs/design/engine/像素UI引擎架构与实施计划.md](docs/design/engine/像素UI引擎架构与实施计划.md)
+  - [docs/design/engine/像素UI引擎当前进度.md](docs/design/engine/像素UI引擎当前进度.md)
+  - [docs/design/engine/像素UI引擎组件接入指南.md](docs/design/engine/像素UI引擎组件接入指南.md)
 - 产品目标与模块设计：
-  - [docs/design/product/产品总规约.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/产品总规约.md)
-  - [docs/design/product/主页设计.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/主页设计.md)
-  - [docs/design/product/应用抽屉设计.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/应用抽屉设计.md)
-  - [docs/design/product/待机页设计.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/待机页设计.md)
-  - [docs/design/product/设置信息架构.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/设置信息架构.md)
+  - [docs/design/product/产品总规约.md](docs/design/product/产品总规约.md)
+  - [docs/design/product/主页设计.md](docs/design/product/主页设计.md)
+  - [docs/design/product/应用抽屉设计.md](docs/design/product/应用抽屉设计.md)
+  - [docs/design/product/待机页设计.md](docs/design/product/待机页设计.md)
+  - [docs/design/product/设置信息架构.md](docs/design/product/设置信息架构.md)
 
 推荐阅读顺序：
 
-1. [docs/design/README.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/README.md)
-2. [docs/design/architecture/技术实现总览.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/architecture/技术实现总览.md)
-3. 如果涉及渲染、性能或 Idle 动画，读 [docs/design/architecture/渲染实现原理.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/architecture/渲染实现原理.md)
-4. 如果涉及像素引擎重构或新页面接入，读 [docs/design/engine/像素UI引擎架构与实施计划.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/engine/像素UI引擎架构与实施计划.md)
-5. 再读 [docs/design/product/产品总规约.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/产品总规约.md)
+1. [docs/design/README.md](docs/design/README.md)
+2. [docs/design/architecture/技术实现总览.md](docs/design/architecture/技术实现总览.md)
+3. 如果涉及渲染、性能或 Idle 动画，读 [docs/design/architecture/渲染实现原理.md](docs/design/architecture/渲染实现原理.md)
+4. 如果涉及像素引擎重构或新页面接入，读 [docs/design/engine/像素UI引擎架构与实施计划.md](docs/design/engine/像素UI引擎架构与实施计划.md)
+5. 再读 [docs/design/product/产品总规约.md](docs/design/product/产品总规约.md)
 
 模块文档：
 
-- [主页设计.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/主页设计.md)
-- [应用抽屉设计.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/应用抽屉设计.md)
-- [待机页设计.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/待机页设计.md)
-- [设置信息架构.md](/Users/xiangyu/StudioProjects/PixelLauncher/docs/design/product/设置信息架构.md)
+- [主页设计.md](docs/design/product/主页设计.md)
+- [应用抽屉设计.md](docs/design/product/应用抽屉设计.md)
+- [待机页设计.md](docs/design/product/待机页设计.md)
+- [设置信息架构.md](docs/design/product/设置信息架构.md)
 
 ## 10. 建议的接手顺序
 
@@ -258,9 +329,9 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 
 1. 先读本 `README`
 2. 再读技术总览
-3. 看 [MainActivity.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
-4. 看 [LauncherState.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt) 和 [LauncherStateTransitions.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
-5. 看 [TextListSupport.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/launcher/TextListSupport.kt) 和 [PixelRenderer.kt](/Users/xiangyu/StudioProjects/PixelLauncher/app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
+3. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
+4. 看 [LauncherState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
+5. 看 [TextListSupport.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/TextListSupport.kt) 和 [PixelRenderer.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
 6. 最后按需求进入具体 `Repository`、`Layout` 和模块文档
 
 ## 11. 当前状态一句话总结
