@@ -37,6 +37,9 @@ import com.purride.pixelui.PageController
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.PositionedDirectional
 import com.purride.pixelui.PositionedFill
+import com.purride.pixelui.PixelTextSpan
+import com.purride.pixelui.PixelThemeTokens
+import com.purride.pixelui.RichText
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.nextPage
 import com.purride.pixelui.previousPage
@@ -73,6 +76,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.ValueListenableBuilder
 import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.dependOnInheritedWidgetOfExactType
+import com.purride.pixelui.fling
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
@@ -137,12 +141,17 @@ object DemoScenes {
             DemoSceneKind.HORIZONTAL_PAGER -> horizontalPagerScene(textRasterizers)
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(textRasterizers)
             DemoSceneKind.LIST -> listScene(textRasterizers)
+            DemoSceneKind.VIRTUAL_LIST -> virtualListScene(textRasterizers)
             DemoSceneKind.SCROLL_STRESS -> scrollStressScene(textRasterizers)
             DemoSceneKind.FORM_AND_LIST -> formAndListScene(textRasterizers)
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
+            DemoSceneKind.TEXT_INPUT_MULTILINE -> textInputMultilineScene(textRasterizers)
+            DemoSceneKind.RICH_TEXT -> richTextScene(textRasterizers)
+            DemoSceneKind.THEME_STATES -> themeStatesScene(textRasterizers)
             DemoSceneKind.ENVIRONMENT -> environmentScene(textRasterizers)
             DemoSceneKind.LAUNCHER_LIKE -> launcherLikeScene(textRasterizers)
             DemoSceneKind.DRAWER_LIKE -> drawerLikeScene(textRasterizers)
+            DemoSceneKind.DRAWER_GATE_V2 -> drawerGateV2Scene(textRasterizers)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
         }
     }
@@ -966,6 +975,307 @@ object DemoScenes {
         )
     }
 
+    private fun virtualListScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val controller = ScrollController()
+        val state = controller.create()
+        val selected = ValueNotifier("NONE")
+        val itemCount = 1_000
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                ListenableBuilder(controller) {
+                    ValueListenableBuilder(selected) { _, current ->
+                        Container(
+                            padding = EdgeInsets.all(4),
+                            child = Column(
+                                spacing = 4,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    sectionTitle("VIRTUAL LIST"),
+                                    infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.isSettling),
+                                    infoCard("SELECTED", current),
+                                    SizedBox(
+                                        height = 14,
+                                        child = Row(
+                                            spacing = 2,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                Expanded(
+                                                    child = OutlinedButton(
+                                                        text = "TOP",
+                                                        onPressed = { controller.jumpToStart(state) },
+                                                    ),
+                                                ),
+                                                Expanded(
+                                                    child = OutlinedButton(
+                                                        text = "500",
+                                                        onPressed = { controller.showItem(state, 499) },
+                                                        style = ButtonStyle.Accent,
+                                                    ),
+                                                ),
+                                                Expanded(
+                                                    child = OutlinedButton(
+                                                        text = "END",
+                                                        onPressed = { controller.jumpToEnd(state) },
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "FLING DOWN",
+                                            onPressed = {
+                                                controller.fling(state, velocityPxPerSecond = -900f)
+                                            },
+                                            pressed = state.isSettling,
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 52,
+                                        child = ListViewBuilder(
+                                            itemCount = itemCount,
+                                            state = state,
+                                            controller = controller,
+                                            itemExtent = 13,
+                                            cacheExtent = 2,
+                                            spacing = 2,
+                                            itemBuilder = { index ->
+                                                val label = "ROW ${index + 1}"
+                                                SizedBox(
+                                                    height = 13,
+                                                    child = OutlinedButton(
+                                                        text = label,
+                                                        onPressed = { selected.value = label },
+                                                        selected = current == label,
+                                                    ),
+                                                )
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        )
+                    }
+                }
+            },
+        )
+    }
+
+    private fun textInputMultilineScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val scrollController = ScrollController()
+        val scrollState = scrollController.create()
+        val textController = TextEditingController()
+        val noteState = textController.create(initialText = "第一行\nSECOND LINE")
+        val submitted = ValueNotifier("")
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = accentUiTheme(),
+            content = {
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
+                    children = listOf(
+                        sectionTitle("MULTILINE INPUT"),
+                        ListenableBuilder(textController) {
+                            Column(
+                                spacing = 4,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    infoCard("LINES", noteState.text.lines().size.toString(), accent = noteState.isFocused),
+                                    ValueListenableBuilder(submitted) { _, value ->
+                                        infoCard("SUBMITTED", value.ifEmpty { "(NONE)" }, accent = value.isNotEmpty())
+                                    },
+                                    SizedBox(
+                                        height = 34,
+                                        child = TextField(
+                                            state = noteState,
+                                            controller = textController,
+                                            placeholder = "TYPE NOTE",
+                                            minLines = 2,
+                                            maxLines = 4,
+                                            textInputAction = TextInputAction.DONE,
+                                            onSubmitted = { text ->
+                                                submitted.value = text.take(24)
+                                            },
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "SELECT ALL",
+                                            onPressed = {
+                                                textController.selectAll(noteState)
+                                                textController.requestFocus(noteState)
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            )
+                        },
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun richTextScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val scrollController = ScrollController()
+        val scrollState = scrollController.create()
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
+                    children = listOf(
+                        sectionTitle("RICH TEXT"),
+                        SizedBox(
+                            height = 28,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ACCENT,
+                                padding = 2,
+                                alignment = Alignment.TOP_START,
+                                child = RichText(
+                                    spans = listOf(
+                                        PixelTextSpan("PIXEL ", TextStyle.Accent),
+                                        PixelTextSpan("ENGINE ", TextStyle.Default),
+                                        PixelTextSpan(
+                                            text = "富文本 MIXED WRAP",
+                                            style = TextStyle(
+                                                tone = PixelTone.ACCENT,
+                                                textRasterizer = textRasterizers.emphasis,
+                                            ),
+                                        ),
+                                    ),
+                                    softWrap = true,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.ELLIPSIS,
+                                ),
+                            ),
+                        ),
+                        infoCard("STYLE", "SPAN TONE SWITCH"),
+                        infoCard("WRAP", "CJK AND ASCII"),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun themeStatesScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val scrollController = ScrollController()
+        val scrollState = scrollController.create()
+        val textController = TextEditingController()
+        val inputState = textController.create(initialText = "FOCUSED")
+        val readOnlyState = textController.create(initialText = "READ ONLY")
+        val selected = ValueNotifier(false)
+        val stateTheme = ThemeData(
+            tokens = PixelThemeTokens(
+                textTone = PixelTone.ON,
+                accentTone = PixelTone.ACCENT,
+                borderTone = PixelTone.ON,
+                selectedBorderTone = PixelTone.ACCENT,
+                pressedBorderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                disabledBorderTone = PixelTone.ON,
+                readOnlyBorderTone = PixelTone.ACCENT,
+            ),
+        )
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = stateTheme,
+            content = {
+                scrollableRoot(
+                    state = scrollState,
+                    controller = scrollController,
+                    children = listOf(
+                        sectionTitle("THEME STATES"),
+                        ValueListenableBuilder(selected) { _, isSelected ->
+                            Column(
+                                spacing = 4,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "SELECTED ${if (isSelected) "ON" else "OFF"}",
+                                            onPressed = { selected.value = !isSelected },
+                                            selected = isSelected,
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "PRESSED STYLE",
+                                            onPressed = { },
+                                            pressed = true,
+                                        ),
+                                    ),
+                                    Container(
+                                        height = 20,
+                                        selected = isSelected,
+                                        pressed = !isSelected,
+                                        padding = EdgeInsets.all(3),
+                                        child = Text(if (isSelected) "CONTAINER SELECTED" else "CONTAINER PRESSED"),
+                                    ),
+                                    SizedBox(
+                                        height = 16,
+                                        child = TextField(
+                                            state = inputState,
+                                            controller = textController,
+                                            placeholder = "FOCUS ME",
+                                            autofocus = true,
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 16,
+                                        child = TextField(
+                                            state = readOnlyState,
+                                            controller = textController,
+                                            readOnly = true,
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 14,
+                                        child = OutlinedButton(
+                                            text = "DISABLED",
+                                            onPressed = null,
+                                        ),
+                                    ),
+                                ),
+                            )
+                        },
+                    ),
+                )
+            },
+        )
+    }
+
     private fun formAndListScene(
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
@@ -1550,6 +1860,180 @@ object DemoScenes {
                                                             } else {
                                                                 ButtonStyle.Default
                                                             },
+                                                            enabled = label != null,
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+            },
+        )
+    }
+
+    private fun drawerGateV2Scene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val textController = TextEditingController()
+        val queryState = textController.create()
+        val listController = ScrollController()
+        val listState = listController.create()
+        val selectedApp = ValueNotifier("NONE")
+        val prefixes = listOf(
+            "Alarm", "Browser", "Calendar", "Drive", "Editor", "Files",
+            "Gallery", "Health", "Inbox", "Journal", "Keyboard", "Launcher",
+            "Maps", "Notes", "Office", "Photos", "Reader", "Settings",
+            "Tasks", "Weather", "Wallet", "YouTube", "Zen",
+        )
+        val mockApps = List(180) { index ->
+            val letter = 'A' + (index % 26)
+            "$letter ${prefixes[index % prefixes.size]} ${index + 1}"
+        }.sorted()
+        val indexLetters = listOf("A", "M", "Z")
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 96,
+                logicalHeight = 128,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = ThemeData(
+                tokens = PixelThemeTokens(
+                    textTone = PixelTone.ON,
+                    accentTone = PixelTone.ACCENT,
+                    borderTone = PixelTone.ON,
+                    selectedBorderTone = PixelTone.ACCENT,
+                    focusedBorderTone = PixelTone.ACCENT,
+                    disabledBorderTone = PixelTone.ON,
+                    readOnlyBorderTone = PixelTone.ACCENT,
+                ),
+            ),
+            content = {
+                ListenableBuilder(textController) {
+                    ListenableBuilder(listController) {
+                        ValueListenableBuilder(selectedApp) { _, selected ->
+                            val query = queryState.text.trim()
+                            val filteredApps = mockApps.filter { app ->
+                                query.isEmpty() || app.contains(query, ignoreCase = true)
+                            }
+                            Container(
+                                padding = EdgeInsets.all(4),
+                                child = Column(
+                                    spacing = 3,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        sectionTitle("DRAWER GATE V2"),
+                                        Row(
+                                            spacing = 2,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                Expanded(
+                                                    child = infoCard(
+                                                        label = "RESULTS",
+                                                        value = filteredApps.size.toString(),
+                                                        accent = filteredApps.isEmpty(),
+                                                    ),
+                                                ),
+                                                Expanded(
+                                                    child = infoCard(
+                                                        label = "SELECTED",
+                                                        value = selected,
+                                                        accent = selected != "NONE",
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 16,
+                                            child = TextField(
+                                                state = queryState,
+                                                controller = textController,
+                                                placeholder = "SEARCH APP",
+                                                textInputAction = TextInputAction.SEARCH,
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "TOP",
+                                                            onPressed = { listController.jumpToStart(listState) },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "MID",
+                                                            onPressed = {
+                                                                listController.showItem(
+                                                                    state = listState,
+                                                                    itemIndex = (filteredApps.size / 2).coerceAtLeast(0),
+                                                                )
+                                                            },
+                                                            selected = true,
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "END",
+                                                            onPressed = { listController.jumpToEnd(listState) },
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = indexLetters.map { letter ->
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = letter,
+                                                            onPressed = {
+                                                                val index = filteredApps.indexOfFirst { app ->
+                                                                    app.startsWith(letter)
+                                                                }
+                                                                if (index >= 0) {
+                                                                    listController.showItem(listState, index)
+                                                                }
+                                                            },
+                                                            pressed = selected.startsWith(letter),
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 42,
+                                            child = ListViewBuilder(
+                                                itemCount = filteredApps.size.coerceAtLeast(1),
+                                                state = listState,
+                                                controller = listController,
+                                                itemExtent = 13,
+                                                cacheExtent = 2,
+                                                spacing = 2,
+                                                itemBuilder = { index ->
+                                                    val label = filteredApps.getOrNull(index)
+                                                    SizedBox(
+                                                        height = 13,
+                                                        child = OutlinedButton(
+                                                            text = label ?: "NO RESULTS",
+                                                            onPressed = label?.let { app ->
+                                                                { selectedApp.value = app }
+                                                            },
+                                                            selected = label == selected,
                                                             enabled = label != null,
                                                         ),
                                                     )
