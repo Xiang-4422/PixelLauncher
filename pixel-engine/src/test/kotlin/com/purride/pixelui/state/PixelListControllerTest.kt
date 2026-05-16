@@ -227,6 +227,52 @@ class PixelListControllerTest {
     }
 
     @Test
+    fun stepStopsSettlingInsideSnapEpsilonNearBoundary() {
+        val controller = PixelListController(
+            physics = PixelScrollPhysics(
+                decelerationPxPerSecondSquared = 2400f,
+                minFlingVelocityPxPerSecond = 12f,
+                snapEpsilonPx = 0.5f,
+            ),
+        )
+        val state = controller.create(initialScrollOffsetPx = 0.2f)
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = -20f,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+        controller.step(
+            state = state,
+            deltaMs = 1,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+
+        assertFalse(state.isSettling)
+        assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
+
+    @Test
+    fun endDragIgnoresVelocityBelowPhysicsThreshold() {
+        val controller = PixelListController(
+            physics = PixelScrollPhysics(minFlingVelocityPxPerSecond = 100f),
+        )
+        val state = controller.create(initialScrollOffsetPx = 10f)
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = -80f,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+
+        assertFalse(state.isSettling)
+        assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
+
+    @Test
     fun customPhysicsCanEnableResistedOverscrollDuringDrag() {
         val controller = PixelListController(
             physics = PixelScrollPhysics(
@@ -245,6 +291,27 @@ class PixelListControllerTest {
         )
 
         assertEquals(-4f, state.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun customPhysicsAppliesResistedOverscrollAtBottomBoundary() {
+        val controller = PixelListController(
+            physics = PixelScrollPhysics(
+                bounceEnabled = true,
+                bounceOverscrollLimitPx = 10f,
+                bounceResistance = 0.5f,
+            ),
+        )
+        val state = controller.create(initialScrollOffsetPx = 30f)
+
+        controller.dragBy(
+            state = state,
+            deltaPx = -8f,
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+
+        assertEquals(34f, state.scrollOffsetPx, 0.001f)
     }
 
     @Test

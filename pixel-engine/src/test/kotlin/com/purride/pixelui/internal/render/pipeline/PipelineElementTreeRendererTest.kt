@@ -8,6 +8,7 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.Align
 import com.purride.pixelui.Center
 import com.purride.pixelui.Container
+import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
@@ -848,6 +849,73 @@ class PipelineElementTreeRendererTest {
         result ?: return
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 4))
+    }
+
+    /**
+     * 显式 style 应该优先于状态样式和 theme token。
+     */
+    @Test
+    fun explicitContainerStyleOverridesStateAndTokenDefaults() {
+        val result = renderWithPipeline(
+            root = Theme(
+                data = ThemeData(
+                    tokens = PixelThemeTokens(
+                        selectedBorderTone = PixelTone.ACCENT,
+                        pressedBorderTone = PixelTone.ACCENT,
+                    ),
+                ),
+                child = Container(
+                    width = 8,
+                    height = 4,
+                    selected = true,
+                    pressed = true,
+                    style = ContainerStyle.Default.copy(
+                        fillTone = PixelTone.ON,
+                        borderTone = PixelTone.ON,
+                    ),
+                ),
+            ),
+            logicalWidth = 8,
+            logicalHeight = 4,
+        )
+
+        assertNotNull(result)
+        assertEquals(PixelTone.ON.value, result?.buffer?.getPixel(0, 0))
+        assertEquals(PixelTone.ON.value, result?.buffer?.getPixel(1, 1))
+    }
+
+    /**
+     * focused TextField 应该使用 token 提供的 focused 边框。
+     */
+    @Test
+    fun textFieldFocusedStateUsesThemeTokenBorder() {
+        val controller = TextEditingController()
+        val state = controller.create(initialText = "FOCUS")
+        state.isFocused = true
+
+        val result = renderWithPipeline(
+            root = Theme(
+                data = ThemeData(
+                    tokens = PixelThemeTokens(
+                        borderTone = PixelTone.ON,
+                        focusedBorderTone = PixelTone.ACCENT,
+                    ),
+                ),
+                child = SizedBox(
+                    width = 12,
+                    height = 4,
+                    child = TextField(
+                        state = state,
+                        controller = controller,
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 4,
+        )
+
+        assertNotNull(result)
+        assertEquals(PixelTone.ACCENT.value, result?.buffer?.getPixel(0, 0))
     }
 
     /**
