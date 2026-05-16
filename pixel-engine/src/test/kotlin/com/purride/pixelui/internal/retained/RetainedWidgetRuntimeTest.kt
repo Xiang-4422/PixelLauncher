@@ -303,6 +303,67 @@ class RetainedWidgetRuntimeTest {
     }
 
     @Test
+    fun buildRuntimeDiagnosticsExposeElementTreeAndDirtyQueue() {
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { },
+            widgetAdapter = UnsupportedWidgetAdapter,
+        )
+
+        try {
+            buildRuntime.resolveElementTree(
+                TestSingleChildRenderWidget(
+                    label = "parent",
+                    child = TestRenderWidget(label = "child"),
+                ),
+            )
+
+            val diagnostics = buildRuntime.collectDiagnostics()
+
+            assertEquals(true, diagnostics.hasRoot)
+            assertEquals(0, diagnostics.dirtyQueueDiagnostics.pendingElementCount)
+            assertEquals(true, diagnostics.dirtyQueueDiagnostics.scheduledCount >= 2)
+            assertEquals(true, diagnostics.dirtyQueueDiagnostics.rebuiltElementCount >= 2)
+            assertEquals("SingleChildRenderObjectElement", diagnostics.elementDiagnostics.first().name)
+            assertEquals("TestSingleChildRenderWidget", diagnostics.elementDiagnostics.first().widgetName)
+            assertEquals("TestSingleChildRenderObject", diagnostics.elementDiagnostics.first().renderObjectName)
+            assertEquals(
+                "TestRenderObject",
+                diagnostics.elementDiagnostics.single { it.widgetName == "TestRenderWidget" }.renderObjectName,
+            )
+        } finally {
+            buildRuntime.dispose()
+        }
+    }
+
+    @Test
+    fun repeatedSetStateCoalescesDirtyElementBeforeBuildScope() {
+        val visualUpdates = mutableListOf<Unit>()
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { visualUpdates += Unit },
+            widgetAdapter = UnsupportedWidgetAdapter,
+        )
+        val root = DiagnosticsStatefulWidget()
+
+        try {
+            buildRuntime.resolveElementTree(root)
+            val state = DiagnosticsStatefulWidget.latestState
+            val visualUpdatesBeforeSetState = visualUpdates.size
+            state.markTwice()
+            val beforeBuild = buildRuntime.collectDiagnostics()
+            buildRuntime.resolveElementTree(root)
+            val afterBuild = buildRuntime.collectDiagnostics()
+
+            assertEquals(1, beforeBuild.dirtyQueueDiagnostics.pendingElementCount)
+            assertEquals("StatefulElement", beforeBuild.dirtyQueueDiagnostics.pendingElementNames.single())
+            assertEquals(0, afterBuild.dirtyQueueDiagnostics.pendingElementCount)
+            assertEquals(2, state.buildCount)
+            assertEquals(true, visualUpdates.size >= visualUpdatesBeforeSetState + 2)
+        } finally {
+            buildRuntime.dispose()
+        }
+    }
+
+    @Test
     fun singleChildRenderObjectWidgetConnectsChildRenderObject() {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
@@ -405,6 +466,38 @@ class RetainedWidgetRuntimeTest {
                     fillTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
                     borderTone = null,
                 ),
+            )
+        }
+    }
+
+    private class DiagnosticsStatefulWidget : StatefulWidget() {
+        override fun createState(): State<out StatefulWidget> {
+            return DiagnosticsState().also { state ->
+                latestState = state
+            }
+        }
+
+        companion object {
+            lateinit var latestState: DiagnosticsState
+        }
+    }
+
+    private class DiagnosticsState : State<DiagnosticsStatefulWidget>() {
+        var buildCount = 0
+            private set
+
+        fun markTwice() {
+            setState { }
+            setState { }
+        }
+
+        override fun build(context: BuildContext): Widget {
+            buildCount += 1
+            return Container(
+                width = 4,
+                height = 4,
+                fillTone = PixelTone.ON,
+                borderTone = null,
             )
         }
     }

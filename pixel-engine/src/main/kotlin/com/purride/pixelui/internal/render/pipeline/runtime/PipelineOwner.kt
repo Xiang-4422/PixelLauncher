@@ -11,6 +11,10 @@ internal class PipelineOwner(
     private var root: RenderBox? = null
     private var needsLayout = true
     private var needsPaint = true
+    private var renderCount = 0
+    private var layoutPassCount = 0
+    private var paintPassCount = 0
+    private var lastTargetDiagnostics = TargetDiagnostics()
 
     init {
         attachRoot(root)
@@ -62,6 +66,7 @@ internal class PipelineOwner(
         )
         if (needsLayout) {
             root.layout(constraints)
+            layoutPassCount += 1
             needsLayout = false
         }
         root.paint(
@@ -69,6 +74,8 @@ internal class PipelineOwner(
             offsetX = 0,
             offsetY = 0,
         )
+        renderCount += 1
+        paintPassCount += 1
         needsPaint = false
         root.collectClickTargets(
             offsetX = 0,
@@ -89,6 +96,12 @@ internal class PipelineOwner(
             offsetX = 0,
             offsetY = 0,
             targets = session.textInputTargets,
+        )
+        lastTargetDiagnostics = TargetDiagnostics(
+            clickTargets = session.clickTargets.size,
+            pagerTargets = session.pagerTargets.size,
+            listTargets = session.listTargets.size,
+            textInputTargets = session.textInputTargets.size,
         )
         return session.toRenderResult()
     }
@@ -115,4 +128,42 @@ internal class PipelineOwner(
     fun collectDiagnostics(): List<RenderDiagnosticsNode> {
         return root?.collectDiagnostics().orEmpty()
     }
+
+    /**
+     * 返回当前 pipeline owner 的内部执行状态。
+     */
+    fun collectPipelineDiagnostics(): PipelineDiagnostics {
+        return PipelineDiagnostics(
+            hasRoot = root != null,
+            needsLayout = needsLayout,
+            needsPaint = needsPaint,
+            renderCount = renderCount,
+            layoutPassCount = layoutPassCount,
+            paintPassCount = paintPassCount,
+            targetDiagnostics = lastTargetDiagnostics,
+        )
+    }
 }
+
+/**
+ * Pipeline owner 调试快照。
+ */
+internal data class PipelineDiagnostics(
+    val hasRoot: Boolean,
+    val needsLayout: Boolean,
+    val needsPaint: Boolean,
+    val renderCount: Int,
+    val layoutPassCount: Int,
+    val paintPassCount: Int,
+    val targetDiagnostics: TargetDiagnostics,
+)
+
+/**
+ * 最近一次 render 导出的 target 数量。
+ */
+internal data class TargetDiagnostics(
+    val clickTargets: Int = 0,
+    val pagerTargets: Int = 0,
+    val listTargets: Int = 0,
+    val textInputTargets: Int = 0,
+)

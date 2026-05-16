@@ -10,12 +10,17 @@ package com.purride.pixelui.internal
  */
 internal class DirtyElementScheduler {
     private val dirtyElements = linkedSetOf<Element>()
+    private var scheduledCount = 0
+    private var buildScopeCount = 0
+    private var rebuiltElementCount = 0
 
     fun schedule(element: Element) {
         dirtyElements += element
+        scheduledCount += 1
     }
 
     fun buildScope() {
+        buildScopeCount += 1
         while (true) {
             val pending = dirtyElements.sortedBy { it.depth }
             if (pending.isEmpty()) {
@@ -24,6 +29,7 @@ internal class DirtyElementScheduler {
             dirtyElements.clear()
             pending.forEach { element ->
                 element.rebuildIfNeeded()
+                rebuiltElementCount += 1
             }
         }
     }
@@ -31,4 +37,27 @@ internal class DirtyElementScheduler {
     fun clear() {
         dirtyElements.clear()
     }
+
+    fun collectDiagnostics(): DirtyElementSchedulerDiagnostics {
+        return DirtyElementSchedulerDiagnostics(
+            pendingElementCount = dirtyElements.size,
+            pendingElementNames = dirtyElements
+                .sortedBy { it.depth }
+                .map { element -> element.javaClass.simpleName },
+            scheduledCount = scheduledCount,
+            buildScopeCount = buildScopeCount,
+            rebuiltElementCount = rebuiltElementCount,
+        )
+    }
 }
+
+/**
+ * Retained dirty queue 调试快照。
+ */
+internal data class DirtyElementSchedulerDiagnostics(
+    val pendingElementCount: Int,
+    val pendingElementNames: List<String>,
+    val scheduledCount: Int,
+    val buildScopeCount: Int,
+    val rebuiltElementCount: Int,
+)

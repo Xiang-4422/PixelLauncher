@@ -21,6 +21,11 @@ internal interface ElementTreeBuildRuntime {
     }
 
     /**
+     * 返回 retained build runtime 的内部诊断快照。
+     */
+    fun collectDiagnostics(): BuildOwnerDiagnostics
+
+    /**
      * 释放构建运行时持有的 retained element tree 资源。
      */
     fun dispose()

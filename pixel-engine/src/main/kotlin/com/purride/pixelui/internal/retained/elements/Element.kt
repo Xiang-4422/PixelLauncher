@@ -74,6 +74,30 @@ internal abstract class Element(
     }
 
     /**
+     * 返回当前 element subtree 的内部诊断快照。
+     */
+    internal fun collectDiagnostics(depth: Int = 0): List<ElementDiagnosticsNode> {
+        val children = mutableListOf<Element>()
+        visitChildren(children::add)
+        return buildList {
+            add(
+                ElementDiagnosticsNode(
+                    name = this@Element.javaClass.simpleName,
+                    widgetName = widget.javaClass.simpleName,
+                    depth = depth,
+                    childCount = children.size,
+                    isDirty = dirty,
+                    listenedObjectCount = listenedObjects.size,
+                    renderObjectName = findRenderObject()?.javaClass?.simpleName,
+                ),
+            )
+            children.forEach { child ->
+                addAll(child.collectDiagnostics(depth = depth + 1))
+            }
+        }
+    }
+
+    /**
      * 读取并登记对 inherited widget 的依赖。
      */
     override fun <T : InheritedWidget> dependOnInheritedWidgetOfExactType(type: KClass<T>): T? {
@@ -138,6 +162,19 @@ internal abstract class Element(
      */
     protected abstract fun performRebuild()
 }
+
+/**
+ * Retained element tree 调试快照节点。
+ */
+internal data class ElementDiagnosticsNode(
+    val name: String,
+    val widgetName: String,
+    val depth: Int,
+    val childCount: Int,
+    val isDirty: Boolean,
+    val listenedObjectCount: Int,
+    val renderObjectName: String?,
+)
 
 /**
  * 单 child 组件 element 的公共基类。

@@ -26,6 +26,10 @@ internal class RetainedBuildRuntime(
         return buildOwner.rootElement
     }
 
+    override fun collectDiagnostics(): BuildOwnerDiagnostics {
+        return buildOwner.collectDiagnostics()
+    }
+
     /**
      * 释放内部 `BuildOwner` 以及整棵 retained element tree。
      */

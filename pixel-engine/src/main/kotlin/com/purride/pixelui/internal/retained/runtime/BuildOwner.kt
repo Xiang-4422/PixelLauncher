@@ -98,4 +98,21 @@ internal class BuildOwner(
         listenableRegistry.dispose()
         dirtyElementScheduler.clear()
     }
+
+    fun collectDiagnostics(): BuildOwnerDiagnostics {
+        return BuildOwnerDiagnostics(
+            hasRoot = rootElement != null,
+            elementDiagnostics = rootElement?.collectDiagnostics().orEmpty(),
+            dirtyQueueDiagnostics = dirtyElementScheduler.collectDiagnostics(),
+        )
+    }
 }
+
+/**
+ * Retained build owner 调试快照。
+ */
+internal data class BuildOwnerDiagnostics(
+    val hasRoot: Boolean,
+    val elementDiagnostics: List<ElementDiagnosticsNode>,
+    val dirtyQueueDiagnostics: DirtyElementSchedulerDiagnostics,
+)

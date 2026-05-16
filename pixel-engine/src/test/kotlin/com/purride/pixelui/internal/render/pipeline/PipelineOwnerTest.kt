@@ -174,6 +174,36 @@ class PipelineOwnerTest {
     }
 
     /**
+     * pipeline diagnostics 应该记录 layout/paint 次数和最近一次 target 导出数量。
+     */
+    @Test
+    fun collectPipelineDiagnosticsReturnsRenderCountersAndTargets() {
+        val root = CountingRenderBox(clickable = true)
+        val owner = PipelineOwner(root = root)
+
+        val beforeRender = owner.collectPipelineDiagnostics()
+        val first = owner.render(logicalWidth = 8, logicalHeight = 6)
+        val afterFirstRender = owner.collectPipelineDiagnostics()
+        root.requestPaint()
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+        val afterSecondRender = owner.collectPipelineDiagnostics()
+
+        assertEquals(true, beforeRender.hasRoot)
+        assertEquals(true, beforeRender.needsLayout)
+        assertEquals(0, beforeRender.renderCount)
+        assertEquals(1, first.clickTargets.size)
+        assertEquals(false, afterFirstRender.needsLayout)
+        assertEquals(false, afterFirstRender.needsPaint)
+        assertEquals(1, afterFirstRender.renderCount)
+        assertEquals(1, afterFirstRender.layoutPassCount)
+        assertEquals(1, afterFirstRender.paintPassCount)
+        assertEquals(1, afterFirstRender.targetDiagnostics.clickTargets)
+        assertEquals(2, afterSecondRender.renderCount)
+        assertEquals(1, afterSecondRender.layoutPassCount)
+        assertEquals(2, afterSecondRender.paintPassCount)
+    }
+
+    /**
      * 测试用的可计数单 child render box。
      */
     private class CountingSingleChildRenderBox(
