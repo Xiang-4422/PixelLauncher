@@ -73,7 +73,9 @@ internal class RenderRichText(
             if (cursorY - offsetY >= contentHeight) {
                 return
             }
-            var cursorX = offsetX + resolveLineStartX(
+            var cursorX = offsetX + ParagraphLayoutSupport.resolveLineStartX(
+                textAlign = textAlign,
+                textDirection = textDirection,
                 availableWidth = contentWidth,
                 lineWidth = line.width,
             )
@@ -152,7 +154,7 @@ internal class RenderRichText(
         availableWidth: Int,
     ): List<RichCharacter> {
         val ellipsisStyle = characters.lastOrNull()?.style ?: PixelTextStyle.Default
-        val ellipsis = listOf('.', '.', '.').map { value ->
+        val ellipsis = ParagraphLayoutSupport.Ellipsis.map { value ->
             RichCharacter(value = value, style = ellipsisStyle)
         }
         if (measureWidth(ellipsis) > availableWidth) {
@@ -189,18 +191,6 @@ internal class RenderRichText(
             span.text.map { character ->
                 RichCharacter(value = character, style = span.style)
             }
-        }
-    }
-
-    private fun resolveLineStartX(
-        availableWidth: Int,
-        lineWidth: Int,
-    ): Int {
-        val freeWidth = (availableWidth - lineWidth).coerceAtLeast(0)
-        return when (textAlign) {
-            PixelTextAlign.CENTER -> freeWidth / 2
-            PixelTextAlign.END -> if (textDirection == TextDirection.RTL) 0 else freeWidth
-            PixelTextAlign.START -> if (textDirection == TextDirection.RTL) freeWidth else 0
         }
     }
 

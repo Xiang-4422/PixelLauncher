@@ -456,6 +456,44 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * paragraph helper 应该保留显式空行，并按字符测宽处理中英文混排。
+     */
+    @Test
+    fun paragraphLayoutSupportWrapsMixedTextAndKeepsEmptyLines() {
+        val rasterizer = CapturingRasterizer()
+
+        val lines = ParagraphLayoutSupport.resolvePlainTextLines(
+            text = "AB你好\n\nCD",
+            rasterizer = rasterizer,
+            availableWidth = 3,
+            softWrap = true,
+            overflow = TextOverflow.CLIP,
+            maxLines = 5,
+        )
+
+        assertEquals(listOf("AB你", "好", "", "CD"), lines)
+    }
+
+    /**
+     * paragraph helper 在宽度小于 ellipsis 时应该返回空文本，避免越界绘制。
+     */
+    @Test
+    fun paragraphLayoutSupportDropsEllipsisWhenWidthIsTooNarrow() {
+        val rasterizer = CapturingRasterizer()
+
+        val lines = ParagraphLayoutSupport.resolvePlainTextLines(
+            text = "ABCDE",
+            rasterizer = rasterizer,
+            availableWidth = 2,
+            softWrap = false,
+            overflow = TextOverflow.ELLIPSIS,
+            maxLines = 1,
+        )
+
+        assertEquals(emptyList<String>(), lines)
+    }
+
+    /**
      * 含权重 child 的 flex 树现在应该直接走 pipeline。
      */
     @Test
@@ -698,6 +736,44 @@ class PipelineElementTreeRendererTest {
         result ?: return
         assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
         assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 0))
+    }
+
+    /**
+     * RichText 应该跨 span 做字符级换行，并只在最后可见行追加 ellipsis。
+     */
+    @Test
+    fun richTextWrapsAcrossSpansAndEllipsizesLastVisibleLine() {
+        val rasterizer = CapturingRasterizer()
+        val result = renderWithPipeline(
+            root = RichText(
+                spans = listOf(
+                    PixelTextSpan(
+                        text = "AB",
+                        style = com.purride.pixelui.PixelTextStyle(
+                            tone = PixelTone.ON,
+                            textRasterizer = rasterizer,
+                        ),
+                    ),
+                    PixelTextSpan(
+                        text = "CDEF",
+                        style = com.purride.pixelui.PixelTextStyle(
+                            tone = PixelTone.ACCENT,
+                            textRasterizer = rasterizer,
+                        ),
+                    ),
+                ),
+                softWrap = true,
+                overflow = TextOverflow.ELLIPSIS,
+                maxLines = 1,
+            ),
+            logicalWidth = 4,
+            logicalHeight = 2,
+        )
+
+        assertNotNull(result)
+        assertEquals(listOf("A", "."), rasterizer.drawnTexts.distinct())
+        assertEquals(PixelTone.ON.value, result?.buffer?.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT.value, result?.buffer?.getPixel(1, 0))
     }
 
     /**
@@ -1007,6 +1083,7 @@ class PipelineElementTreeRendererTest {
     private class CapturingRasterizer : PixelTextRasterizer {
         var lastDrawnText: String = ""
             private set
+        val drawnTexts = mutableListOf<String>()
 
         override fun measureText(text: String): Int {
             return text.length
@@ -1024,6 +1101,7 @@ class PipelineElementTreeRendererTest {
             value: Byte,
         ) {
             lastDrawnText = text
+            drawnTexts += text
             text.forEachIndexed { index, _ ->
                 if (x + index in 0 until buffer.width && y in 0 until buffer.height) {
                     buffer.setPixel(x = x + index, y = y, value = value)

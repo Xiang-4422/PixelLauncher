@@ -9,9 +9,7 @@ import com.purride.pixelui.TextDirection
 import kotlin.math.min
 
 /**
- * 新渲染管线里的最小文本对象。
- *
- * 第一版只覆盖单行文本、三种水平对齐，以及最基本的尺寸/填充/clickable 修饰。
+ * 新渲染管线里的文本对象。
  */
 internal class RenderText(
     private var text: String,
@@ -86,7 +84,14 @@ internal class RenderText(
             constraints = constraints,
             horizontalPadding = horizontalPadding,
         )
-        displayText = resolveDisplayText(availableWidth = availableTextWidth)
+        displayText = ParagraphLayoutSupport.resolvePlainTextLines(
+            text = text,
+            rasterizer = rasterizer,
+            availableWidth = availableTextWidth,
+            softWrap = softWrap,
+            overflow = overflow,
+            maxLines = maxLines,
+        ).joinToString(separator = "\n")
         textWidth = rasterizer.measureText(displayText)
         textHeight = rasterizer.measureHeight(displayText.ifEmpty { " " })
 
@@ -107,7 +112,9 @@ internal class RenderText(
         )
 
         val contentWidth = (size.width - horizontalPadding).coerceAtLeast(0)
-        drawTextX = paddingLeft + resolveLineStartX(
+        drawTextX = paddingLeft + ParagraphLayoutSupport.resolveLineStartX(
+            textAlign = textAlign,
+            textDirection = textDirection,
             availableWidth = contentWidth,
             lineWidth = textWidth,
         )
@@ -200,21 +207,6 @@ internal class RenderText(
         )
     }
 
-    /**
-     * 解析单行文本的水平起点。
-     */
-    private fun resolveLineStartX(
-        availableWidth: Int,
-        lineWidth: Int,
-    ): Int {
-        val freeWidth = (availableWidth - lineWidth).coerceAtLeast(0)
-        return when (textAlign) {
-            PixelTextAlign.CENTER -> freeWidth / 2
-            PixelTextAlign.END -> if (textDirection == TextDirection.RTL) 0 else freeWidth
-            PixelTextAlign.START -> if (textDirection == TextDirection.RTL) freeWidth else 0
-        }
-    }
-
     private fun resolveAvailableTextWidth(
         constraints: RenderConstraints,
         horizontalPadding: Int,
@@ -225,85 +217,6 @@ internal class RenderText(
             else -> constraints.maxWidth
         }
         return (constraints.constrainWidth(measuredWidth) - horizontalPadding).coerceAtLeast(0)
-    }
-
-    private fun resolveDisplayText(availableWidth: Int): String {
-        if (maxLines <= 0 || availableWidth <= 0 || text.isEmpty()) {
-            return ""
-        }
-        if (!softWrap) {
-            return resolveSingleLineText(availableWidth)
-        }
-
-        val wrappedLines = wrapTextByCharacter(availableWidth)
-        if (wrappedLines.isEmpty()) {
-            return ""
-        }
-        val truncated = wrappedLines.size > maxLines
-        val visibleLines = wrappedLines.take(maxLines).toMutableList()
-        if (truncated && overflow == PixelTextOverflow.ELLIPSIS && visibleLines.isNotEmpty()) {
-            visibleLines[visibleLines.lastIndex] = ellipsizeSingleLine(
-                text = visibleLines.last(),
-                availableWidth = availableWidth,
-            )
-        }
-        return visibleLines.joinToString(separator = "\n")
-    }
-
-    private fun resolveSingleLineText(availableWidth: Int): String {
-        val singleLineText = text.lineSequence().firstOrNull().orEmpty()
-        if (singleLineText.isEmpty()) {
-            return ""
-        }
-        if (overflow == PixelTextOverflow.CLIP || rasterizer.measureText(singleLineText) <= availableWidth) {
-            return singleLineText
-        }
-        return ellipsizeSingleLine(
-            text = singleLineText,
-            availableWidth = availableWidth,
-        )
-    }
-
-    private fun wrapTextByCharacter(availableWidth: Int): List<String> {
-        val lines = mutableListOf<String>()
-        text.lines().forEach { paragraph ->
-            if (paragraph.isEmpty()) {
-                lines += ""
-                return@forEach
-            }
-            val builder = StringBuilder()
-            paragraph.forEach { character ->
-                val candidate = builder.toString() + character
-                if (builder.isNotEmpty() && rasterizer.measureText(candidate) > availableWidth) {
-                    lines += builder.toString()
-                    builder.clear()
-                }
-                builder.append(character)
-            }
-            if (builder.isNotEmpty()) {
-                lines += builder.toString()
-            }
-        }
-        return lines
-    }
-
-    private fun ellipsizeSingleLine(
-        text: String,
-        availableWidth: Int,
-    ): String {
-        val ellipsis = "..."
-        if (rasterizer.measureText(ellipsis) > availableWidth) {
-            return ""
-        }
-        val builder = StringBuilder()
-        text.forEach { character ->
-            val candidate = builder.toString() + character + ellipsis
-            if (rasterizer.measureText(candidate) > availableWidth) {
-                return builder.toString() + ellipsis
-            }
-            builder.append(character)
-        }
-        return builder.toString()
     }
 
     /**
