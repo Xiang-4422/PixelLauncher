@@ -72,7 +72,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
   - `pixelcore` package 承接像素缓冲、字体、几何、调色板和轴向原语
   - `pixelui` package 承接 Widget/runtime、布局、输入、分页、列表、滚动和宿主桥接
 - `pixel-demo/src/main/kotlin/com/purride/pixeldemo`
-  - 新引擎的真实设备验收宿主
+  - 新引擎的真实设备验收宿主，后续 engine 能力先在这里 gate
 
 ## 4. 当前页面与实现入口
 
@@ -246,8 +246,10 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 
 ### Android Studio 运行
 
-用 Android Studio 打开仓库根目录，等待 Gradle Sync 完成后，Run 配置下拉框应出现 `app`。  
-这个配置来自 [.run/app.run.xml](.run/app.run.xml)，会构建 `:app` 并直接启动 `com.purride.pixellauncherv2.app.MainActivity`。
+用 Android Studio 打开仓库根目录，等待 Gradle Sync 完成后，Run 配置下拉框应出现：
+
+- `app`：来自 [.run/app.run.xml](.run/app.run.xml)，会构建 `:app` 并直接启动 `com.purride.pixellauncherv2.app.MainActivity`
+- `pixel-demo`：来自 [.run/pixel-demo.run.xml](.run/pixel-demo.run.xml)，会构建 `:pixel-demo` 并启动 `com.purride.pixeldemo.app.DemoMenuActivity`
 
 debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purride.pixellauncherv2.debug`。这样设备上即使已有不同签名的正式包 `com.purride.pixellauncherv2`，Android Studio 也可以直接安装并运行 debug 包。
 
@@ -337,4 +339,4 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 ## 11. 当前状态一句话总结
 
 这个项目目前已经具备比较完整的像素 launcher 技术底盘：  
-状态机、像素渲染、文本列表基座、Home 真实数据接入和单页设置系统都已经建立，但 `MainActivity` 仍然承担较多编排职责，后续开发要继续往“状态 + 数据 + 渲染”分层收敛。
+状态机、像素渲染、文本列表基座、Home 真实数据接入和单页设置系统都已经建立；`pixel-engine` 已经具备可运行的 Widget/runtime/render/host 底座。当前主线先继续补稳 `pixel-engine` 和 `pixel-demo` gate，暂不继续推进新的 `:app` 页面迁移。

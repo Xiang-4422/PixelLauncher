@@ -6,7 +6,7 @@
 
 当前工程模块：
 
-- `:app`：现有 PixelLauncher 产品实现，暂时不依赖新引擎
+- `:app`：现有 PixelLauncher 产品实现，当前已有实验性 engine 接入；本轮不继续扩大页面迁移范围
 - `:pixel-engine`：像素显示内核、UI runtime、组件、布局、输入、滚动、宿主桥接
 - `:pixel-demo`：引擎验收宿主
 
@@ -22,7 +22,7 @@ include(":pixel-demo")
 
 ```text
 :pixel-demo -> :pixel-engine
-:app         -> 独立旧实现
+:app        -> :pixel-engine（已有实验性接入，后续主线暂不继续迁移）
 ```
 
 ## 2. `pixel-engine` 内部分层
@@ -145,36 +145,38 @@ Widget
 
 ## 5. 当前阶段目标
 
-短期主线不是启动 `:app` 页面迁移，而是把 `pixel-engine` 本身补稳：
+短期主线不是继续推进 `:app` 页面迁移，而是把 `pixel-engine` 本身补稳：
 
 - 补稳 `RenderObject / PipelineOwner / RenderObjectWidget` 长期职责
 - 扩展 direct pipeline 的基础布局能力
 - 补强输入、滚动和手势边界
 - 用 `pixel-demo` 验证真实场景
-- 保持 `:app` 独立，等 demo 稳定后再迁移业务页
+- 暂停扩大 `:app` 迁移面，等 engine/demo gate 更稳定后再迁移业务页
 
 ## 6. 已完成
 
 - 单模块 `:pixel-engine` 已承接原 core/UI 能力
 - `:pixel-demo` 依赖 `:pixel-engine`
-- `:app` 不依赖 `:pixel-engine`
+- `:app` 已有实验性 `:pixel-engine` 依赖，但当前不继续扩大迁移
 - core package 已具备像素显示底座
 - UI package 已具备最小组件体系
 - retained runtime 已能进入 direct pipeline
 - 旧渲染后端已从生产源码删除
 - 核心状态、pipeline、字体、几何、滚动控制器已有单测
 - `Text` 已支持基础多行换行、`maxLines` 和最后一行 ellipsis
-- `ListView` 已在绘制和 target 收集阶段限制到可见 item
-- `TextField` 已补齐单行 placeholder、disabled/readOnly 与 selection 边界
-- `pixel-demo` 已有 Launcher-like 和 Drawer-like 迁移前 gate
+- `ListViewBuilder(itemExtent)` 已支持固定高度 lazy viewport
+- `PixelScrollPhysics` 已提供 clamp/fling/bounce 参数基础
+- `TextField` 已补齐 placeholder、disabled/readOnly、多行 line config 与 selection 边界
+- `RichText`、`PixelTextSpan` 已支持基础富文本 span 样式切换
+- `PixelThemeTokens` 已支持 selected/pressed/focused/disabled/readOnly 等基础状态默认值
+- `pixel-demo` 已有 Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States 和 Drawer Gate V2 gate
 
 ## 7. 尚未完成
 
-- `:app` 页面迁移
-- 懒加载列表和虚拟化
-- 更完整的滚动物理
-- 多行输入、富文本和段落级样式
-- 更完整的主题 token 与环境默认值系统
+- 变高 item 虚拟化
+- 更完整的滚动物理、snap 和 nested scroll 策略
+- 段落级文本、字号/字距 token 和文本选择体验
+- 更完整的主题 token、组件默认值和局部覆盖系统
 - 更完整的布局协议、手势边界和性能策略
 
 ## 8. 开发规则
@@ -185,11 +187,11 @@ Widget
 2. 在 `pixel-engine` 内实现
 3. 补 `pixel-engine` 单测
 4. 在 `pixel-demo` 加真实场景
-5. 只有 demo 稳定后，才讨论 `:app` 迁移
+5. 只有 demo 稳定后，才讨论继续扩大 `:app` 迁移
 
 硬约束：
 
-- 不让 `:app` 直接依赖半成品引擎页面
+- 不继续扩大 `:app` 对半成品引擎页面的依赖
 - 不把 Launcher 业务语义塞进 `com.purride.pixelcore`
 - 不把系统服务读取塞进 `com.purride.pixelui`
 - 不恢复旧 legacy 渲染后端
