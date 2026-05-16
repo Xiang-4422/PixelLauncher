@@ -5,9 +5,7 @@ plugins {
 android {
     namespace = "com.purride.pixellauncherv2"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(36)
     }
 
     defaultConfig {
@@ -42,6 +40,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildToolsVersion = "36.0.0"
 }
 
 dependencies {

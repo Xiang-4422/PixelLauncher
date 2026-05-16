@@ -5,9 +5,7 @@ plugins {
 android {
     namespace = "com.purride.pixeldemo"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(36)
     }
 
     defaultConfig {
@@ -44,6 +42,7 @@ android {
             assets.srcDir("../app/src/main/assets")
         }
     }
+    buildToolsVersion = "36.0.0"
 }
 
 dependencies {
