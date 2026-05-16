@@ -51,3 +51,15 @@ fun ScrollController.jumpToEnd(state: PixelListState) {
         contentHeightPx = state.contentHeightPx,
     )
 }
+
+fun ScrollController.fling(
+    state: PixelListState,
+    velocityPxPerSecond: Float,
+) {
+    endDrag(
+        state = state,
+        velocityPxPerSecond = velocityPxPerSecond,
+        viewportHeightPx = state.viewportHeightPx,
+        contentHeightPx = state.contentHeightPx,
+    )
+}

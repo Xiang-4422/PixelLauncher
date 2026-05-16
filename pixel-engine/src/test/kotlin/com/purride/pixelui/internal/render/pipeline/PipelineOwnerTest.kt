@@ -151,6 +151,29 @@ class PipelineOwnerTest {
     }
 
     /**
+     * diagnostics 应该导出当前 render subtree 的层级、子节点数和布局尺寸。
+     */
+    @Test
+    fun collectDiagnosticsReturnsRenderTreeSnapshot() {
+        val child = CountingRenderBox()
+        val root = CountingSingleChildRenderBox(child)
+        val owner = PipelineOwner(root = root)
+
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+        val diagnostics = owner.collectDiagnostics()
+
+        assertEquals(2, diagnostics.size)
+        assertEquals("CountingSingleChildRenderBox", diagnostics[0].name)
+        assertEquals(0, diagnostics[0].depth)
+        assertEquals(1, diagnostics[0].childCount)
+        assertEquals(RenderSize(width = 4, height = 3), diagnostics[0].size)
+        assertEquals("CountingRenderBox", diagnostics[1].name)
+        assertEquals(1, diagnostics[1].depth)
+        assertEquals(0, diagnostics[1].childCount)
+        assertEquals(RenderSize(width = 2, height = 2), diagnostics[1].size)
+    }
+
+    /**
      * 测试用的可计数单 child render box。
      */
     private class CountingSingleChildRenderBox(

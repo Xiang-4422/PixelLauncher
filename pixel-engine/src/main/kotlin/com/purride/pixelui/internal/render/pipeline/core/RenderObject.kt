@@ -86,7 +86,40 @@ internal abstract class RenderObject {
      * 遍历当前对象的直接子节点。
      */
     protected open fun visitChildren(visitor: (RenderObject) -> Unit) = Unit
+
+    /**
+     * 收集当前 render subtree 的调试快照。
+     *
+     * 该入口只用于内部测试和诊断，不参与公开 API。
+     */
+    internal fun collectDiagnostics(depth: Int = 0): List<RenderDiagnosticsNode> {
+        val children = mutableListOf<RenderObject>()
+        visitChildren(children::add)
+        return buildList {
+            add(
+                RenderDiagnosticsNode(
+                    name = this@RenderObject.javaClass.simpleName,
+                    depth = depth,
+                    childCount = children.size,
+                    size = (this@RenderObject as? RenderBox)?.size,
+                ),
+            )
+            children.forEach { child ->
+                addAll(child.collectDiagnostics(depth = depth + 1))
+            }
+        }
+    }
 }
+
+/**
+ * Render tree 调试快照节点。
+ */
+internal data class RenderDiagnosticsNode(
+    val name: String,
+    val depth: Int,
+    val childCount: Int,
+    val size: RenderSize?,
+)
 
 /**
  * 新渲染管线里的基础盒模型对象。

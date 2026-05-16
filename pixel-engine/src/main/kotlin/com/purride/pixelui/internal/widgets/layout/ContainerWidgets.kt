@@ -29,6 +29,8 @@ internal data class ContainerWidget(
     val fillTone: PixelTone,
     val borderTone: PixelTone?,
     val alignment: Alignment,
+    val selected: Boolean,
+    val pressed: Boolean,
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(
     child = child,
@@ -91,10 +93,11 @@ internal data class ContainerWidget(
             borderTone = borderTone,
             alignment = alignment,
         )
-        return when (requestedStyle) {
-            PixelContainerStyle.Default -> resolvedTheme.containerStyle
-            resolvedTheme.accentContainerStyle -> resolvedTheme.accentContainerStyle
-            else -> requestedStyle
+        return when {
+            requestedStyle != PixelContainerStyle.Default -> requestedStyle
+            pressed -> resolvedTheme.resolvePressedContainerStyle()
+            selected -> resolvedTheme.resolveSelectedContainerStyle()
+            else -> resolvedTheme.resolveContainerStyle()
         }
     }
 }
@@ -115,6 +118,8 @@ internal data class ContainerDirectionalWidget(
     val fillTone: PixelTone,
     val borderTone: PixelTone?,
     val alignment: AlignmentDirectional,
+    val selected: Boolean,
+    val pressed: Boolean,
     override val key: Any? = null,
 ) : StatelessWidget(
     key = key,
@@ -140,6 +145,8 @@ internal data class ContainerDirectionalWidget(
             fillTone = fillTone,
             borderTone = borderTone,
             alignment = alignment.toPixelAlignment(direction).toPublicAlignment(),
+            selected = selected,
+            pressed = pressed,
             key = key,
         )
     }

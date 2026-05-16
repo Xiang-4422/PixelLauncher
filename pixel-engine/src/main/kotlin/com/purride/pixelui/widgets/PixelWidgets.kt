@@ -10,6 +10,7 @@ import com.purride.pixelui.internal.ContainerWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
+import com.purride.pixelui.internal.LazyListViewWidget
 import com.purride.pixelui.internal.ListViewWidget
 import com.purride.pixelui.internal.OutlinedButtonWidget
 import com.purride.pixelui.internal.PaddingDirectionalWidget
@@ -22,6 +23,7 @@ import com.purride.pixelui.internal.SingleChildScrollViewWidget
 import com.purride.pixelui.internal.SizedBoxWidget
 import com.purride.pixelui.internal.StackWidget
 import com.purride.pixelui.internal.TextFieldWidget
+import com.purride.pixelui.internal.RichTextWidget
 import com.purride.pixelui.internal.TextWidget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
@@ -212,6 +214,26 @@ fun Text(
     )
 }
 
+fun RichText(
+    spans: List<PixelTextSpan>,
+    theme: ThemeData? = null,
+    softWrap: Boolean = true,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
+    textAlign: TextAlign = TextAlign.START,
+    key: Any? = null,
+): Widget {
+    return RichTextWidget(
+        spans = spans,
+        theme = theme,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        overflow = overflow,
+        textAlign = textAlign,
+        key = key,
+    )
+}
+
 fun DecoratedBox(
     child: Widget? = null,
     fillTone: PixelTone = PixelTone.OFF,
@@ -241,6 +263,8 @@ fun Container(
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
     alignment: Alignment = Alignment.CENTER,
+    selected: Boolean = false,
+    pressed: Boolean = false,
     key: Any? = null,
 ): Widget {
     return ContainerWidget(
@@ -254,6 +278,8 @@ fun Container(
         fillTone = fillTone,
         borderTone = borderTone,
         alignment = alignment,
+        selected = selected,
+        pressed = pressed,
         key = key,
     )
 }
@@ -271,6 +297,8 @@ fun ContainerDirectional(
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
+    selected: Boolean = false,
+    pressed: Boolean = false,
     key: Any? = null,
 ): Widget {
     return ContainerDirectionalWidget(
@@ -286,6 +314,8 @@ fun ContainerDirectional(
         fillTone = fillTone,
         borderTone = borderTone,
         alignment = alignment,
+        selected = selected,
+        pressed = pressed,
         key = key,
     )
 }
@@ -455,8 +485,23 @@ fun ListViewBuilder(
     state: PixelListState,
     controller: PixelListController,
     spacing: Int = 0,
+    itemExtent: Int? = null,
+    cacheExtent: Int = 1,
     key: Any? = null,
 ): Widget {
+    val fixedItemExtent = itemExtent
+    if (fixedItemExtent != null) {
+        return LazyListViewWidget(
+            itemCount = itemCount,
+            itemBuilder = itemBuilder,
+            itemExtent = fixedItemExtent,
+            state = state,
+            controller = controller,
+            spacing = spacing,
+            cacheExtent = cacheExtent,
+            key = key,
+        )
+    }
     return ListView(
         items = List(itemCount) { index -> itemBuilder(index) },
         state = state,
@@ -514,6 +559,8 @@ fun TextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     autofocus: Boolean = false,
+    minLines: Int = 1,
+    maxLines: Int = 1,
     textInputAction: TextInputAction = TextInputAction.DONE,
     onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
@@ -528,6 +575,8 @@ fun TextField(
         enabled = enabled,
         readOnly = readOnly,
         autofocus = autofocus,
+        minLines = minLines,
+        maxLines = maxLines,
         textInputAction = textInputAction,
         onChanged = onChanged,
         onSubmitted = onSubmitted,
@@ -541,6 +590,8 @@ fun OutlinedButton(
     style: ButtonStyle = ButtonStyle.Default,
     theme: ThemeData? = null,
     enabled: Boolean = true,
+    selected: Boolean = false,
+    pressed: Boolean = false,
     key: Any? = null,
 ): Widget {
     return OutlinedButtonWidget(
@@ -549,6 +600,8 @@ fun OutlinedButton(
         style = style,
         theme = theme,
         enabled = enabled,
+        selected = selected,
+        pressed = pressed,
         key = key,
     )
 }

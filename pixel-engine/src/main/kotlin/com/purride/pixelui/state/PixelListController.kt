@@ -1,6 +1,7 @@
 package com.purride.pixelui.state
 
 import com.purride.pixelui.ChangeNotifier
+import com.purride.pixelui.PixelScrollPhysics
 
 /**
  * 通用列表控制器。
@@ -11,12 +12,9 @@ import com.purride.pixelui.ChangeNotifier
  *
  * 暂时不做惯性滚动、回弹或锚点定位，这些可以在后续迭代继续补。
  */
-class PixelListController : ChangeNotifier() {
-
-    companion object {
-        private const val SETTLE_DECELERATION_PX_PER_SECOND_SQUARED = 2400f
-        private const val MIN_SETTLE_VELOCITY_PX_PER_SECOND = 12f
-    }
+class PixelListController(
+    private val physics: PixelScrollPhysics = PixelScrollPhysics.Default,
+) : ChangeNotifier() {
 
     fun create(initialScrollOffsetPx: Float = 0f): PixelListState {
         return PixelListState(initialScrollOffsetPx = initialScrollOffsetPx)
@@ -33,7 +31,7 @@ class PixelListController : ChangeNotifier() {
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
-        state.scrollOffsetPx = state.scrollOffsetPx.coerceIn(0f, state.maxScrollOffsetPx)
+        state.scrollOffsetPx = coerceOffset(state.scrollOffsetPx, state.maxScrollOffsetPx)
         if (state.scrollOffsetPx <= 0f || state.scrollOffsetPx >= state.maxScrollOffsetPx) {
             if (state.isSettling) {
                 stopSettling(state)
@@ -56,7 +54,10 @@ class PixelListController : ChangeNotifier() {
         state.isDragging = true
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
-        state.scrollOffsetPx = (state.scrollOffsetPx - deltaPx).coerceIn(0f, state.maxScrollOffsetPx)
+        state.scrollOffsetPx = coerceDraggedOffset(
+            targetOffsetPx = state.scrollOffsetPx - deltaPx,
+            maxScrollOffsetPx = state.maxScrollOffsetPx,
+        )
         notifyListeners()
     }
 
@@ -103,7 +104,7 @@ class PixelListController : ChangeNotifier() {
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
-        state.scrollOffsetPx = targetOffsetPx.coerceIn(0f, state.maxScrollOffsetPx)
+        state.scrollOffsetPx = coerceOffset(targetOffsetPx, state.maxScrollOffsetPx)
         notifyListeners()
     }
 
@@ -121,7 +122,7 @@ class PixelListController : ChangeNotifier() {
         state.isDragging = false
 
         val canScroll = state.maxScrollOffsetPx > 0f
-        if (!canScroll || kotlin.math.abs(velocityPxPerSecond) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
+        if (!canScroll || kotlin.math.abs(velocityPxPerSecond) < physics.minFlingVelocityPxPerSecond) {
             stopSettling(state)
             return
         }
@@ -148,18 +149,24 @@ class PixelListController : ChangeNotifier() {
 
         val deltaSeconds = deltaMs / 1000f
         val velocity = state.scrollVelocityPxPerSecond
-        if (kotlin.math.abs(velocity) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
+        if (kotlin.math.abs(velocity) < physics.minFlingVelocityPxPerSecond) {
             stopSettling(state)
             return
         }
 
         state.scrollOffsetPx = (state.scrollOffsetPx - (velocity * deltaSeconds))
-            .coerceIn(0f, state.maxScrollOffsetPx)
+            .let { targetOffset ->
+                if (physics.bounceEnabled) {
+                    coerceDraggedOffset(targetOffset, state.maxScrollOffsetPx)
+                } else {
+                    coerceOffset(targetOffset, state.maxScrollOffsetPx)
+                }
+            }
 
         val deceleration = if (velocity > 0f) {
-            -SETTLE_DECELERATION_PX_PER_SECOND_SQUARED
+            -physics.decelerationPxPerSecondSquared
         } else {
-            SETTLE_DECELERATION_PX_PER_SECOND_SQUARED
+            physics.decelerationPxPerSecondSquared
         }
         val nextVelocity = velocity + (deceleration * deltaSeconds)
         state.scrollVelocityPxPerSecond = when {
@@ -172,7 +179,10 @@ class PixelListController : ChangeNotifier() {
             stopSettling(state)
             return
         }
-        if (kotlin.math.abs(state.scrollVelocityPxPerSecond) < MIN_SETTLE_VELOCITY_PX_PER_SECOND) {
+        if (kotlin.math.abs(state.scrollVelocityPxPerSecond) < physics.minFlingVelocityPxPerSecond ||
+            kotlin.math.abs(state.scrollOffsetPx) <= physics.snapEpsilonPx ||
+            kotlin.math.abs(state.scrollOffsetPx - state.maxScrollOffsetPx) <= physics.snapEpsilonPx
+        ) {
             stopSettling(state)
         }
         notifyListeners()
@@ -227,7 +237,35 @@ class PixelListController : ChangeNotifier() {
     }
 
     private fun stopSettling(state: PixelListState) {
+        state.scrollOffsetPx = coerceOffset(state.scrollOffsetPx, state.maxScrollOffsetPx)
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
+    }
+
+    private fun coerceOffset(
+        targetOffsetPx: Float,
+        maxScrollOffsetPx: Float,
+    ): Float {
+        return targetOffsetPx.coerceIn(0f, maxScrollOffsetPx)
+    }
+
+    private fun coerceDraggedOffset(
+        targetOffsetPx: Float,
+        maxScrollOffsetPx: Float,
+    ): Float {
+        if (!physics.bounceEnabled) {
+            return coerceOffset(targetOffsetPx, maxScrollOffsetPx)
+        }
+        val limit = physics.bounceOverscrollLimitPx.coerceAtLeast(0f)
+        if (limit == 0f) {
+            return coerceOffset(targetOffsetPx, maxScrollOffsetPx)
+        }
+        val bounded = targetOffsetPx.coerceIn(-limit, maxScrollOffsetPx + limit)
+        return when {
+            bounded < 0f -> bounded * physics.bounceResistance.coerceIn(0f, 1f)
+            bounded > maxScrollOffsetPx -> maxScrollOffsetPx +
+                ((bounded - maxScrollOffsetPx) * physics.bounceResistance.coerceIn(0f, 1f))
+            else -> bounded
+        }
     }
 }

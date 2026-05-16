@@ -225,4 +225,43 @@ class PixelListControllerTest {
         assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
         assertEquals(24f, state.scrollOffsetPx, 0.001f)
     }
+
+    @Test
+    fun customPhysicsCanEnableResistedOverscrollDuringDrag() {
+        val controller = PixelListController(
+            physics = PixelScrollPhysics(
+                bounceEnabled = true,
+                bounceOverscrollLimitPx = 10f,
+                bounceResistance = 0.5f,
+            ),
+        )
+        val state = controller.create()
+
+        controller.dragBy(
+            state = state,
+            deltaPx = 8f,
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+
+        assertEquals(-4f, state.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun flingExtensionStartsSettlingFromCachedViewportMetrics() {
+        val state = controller.create(initialScrollOffsetPx = 10f)
+
+        controller.sync(
+            state = state,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+        controller.fling(
+            state = state,
+            velocityPxPerSecond = -300f,
+        )
+
+        assertTrue(state.isSettling)
+        assertEquals(-300f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
 }

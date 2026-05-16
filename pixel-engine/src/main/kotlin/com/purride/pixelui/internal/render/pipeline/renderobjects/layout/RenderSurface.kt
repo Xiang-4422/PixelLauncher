@@ -40,6 +40,8 @@ internal class RenderSurface(
     private var textInputController: PixelTextFieldController? = null,
     private var textInputReadOnly: Boolean = false,
     private var textInputAutofocus: Boolean = false,
+    private var textInputMinLines: Int = 1,
+    private var textInputMaxLines: Int = 1,
     private var textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
     private var textInputOnChanged: ((String) -> Unit)? = null,
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
@@ -48,6 +50,8 @@ internal class RenderSurface(
     private var childOffsetY = 0
 
     init {
+        textInputMinLines = textInputMinLines.coerceAtLeast(1)
+        textInputMaxLines = textInputMaxLines.coerceAtLeast(textInputMinLines)
         setRenderObjectChild(child)
     }
 
@@ -77,6 +81,8 @@ internal class RenderSurface(
         textInputController: PixelTextFieldController? = null,
         textInputReadOnly: Boolean = false,
         textInputAutofocus: Boolean = false,
+        textInputMinLines: Int = 1,
+        textInputMaxLines: Int = 1,
         textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
@@ -103,6 +109,8 @@ internal class RenderSurface(
         this.textInputController = textInputController
         this.textInputReadOnly = textInputReadOnly
         this.textInputAutofocus = textInputAutofocus
+        this.textInputMinLines = textInputMinLines.coerceAtLeast(1)
+        this.textInputMaxLines = textInputMaxLines.coerceAtLeast(this.textInputMinLines)
         this.textInputAction = textInputAction
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted
@@ -312,6 +320,8 @@ internal class RenderSurface(
                 controller = controller,
                 readOnly = textInputReadOnly,
                 autofocus = textInputAutofocus,
+                minLines = textInputMinLines,
+                maxLines = textInputMaxLines,
                 action = textInputAction,
                 onChanged = textInputOnChanged,
                 onSubmitted = textInputOnSubmitted,

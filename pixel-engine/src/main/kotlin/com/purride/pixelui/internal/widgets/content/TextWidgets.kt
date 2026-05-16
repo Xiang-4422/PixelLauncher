@@ -5,6 +5,7 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.internal.toPixelTextAlign
@@ -64,9 +65,63 @@ internal data class TextWidget(
     private fun resolveTextStyle(context: BuildContext): PixelTextStyle {
         val resolvedTheme = context.resolveTheme(theme)
         return when (style) {
-            PixelTextStyle.Default -> resolvedTheme.textStyle
-            PixelTextStyle.Accent -> resolvedTheme.accentTextStyle
+            PixelTextStyle.Default -> resolvedTheme.resolveTextStyle()
+            PixelTextStyle.Accent -> resolvedTheme.resolveAccentTextStyle()
             else -> style
+        }
+    }
+}
+
+/**
+ * 富文本 render object widget。
+ */
+internal data class RichTextWidget(
+    val spans: List<PixelTextSpan>,
+    val theme: com.purride.pixelui.PixelThemeData?,
+    val softWrap: Boolean,
+    val maxLines: Int,
+    val overflow: PixelTextOverflow,
+    val textAlign: TextAlign,
+    override val key: Any? = null,
+) : RenderObjectWidget(
+    key = key,
+) {
+    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        return RenderRichText(
+            spans = resolveSpans(context),
+            textAlign = textAlign.toPixelTextAlign(),
+            textDirection = Directionality.of(context),
+            softWrap = softWrap,
+            overflow = overflow,
+            maxLines = maxLines,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
+    }
+
+    override fun updateRenderObject(
+        context: InternalBuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderRichText).updateRichText(
+            spans = resolveSpans(context),
+            textAlign = textAlign.toPixelTextAlign(),
+            textDirection = Directionality.of(context),
+            softWrap = softWrap,
+            overflow = overflow,
+            maxLines = maxLines,
+        )
+    }
+
+    private fun resolveSpans(context: BuildContext): List<PixelTextSpan> {
+        val resolvedTheme = context.resolveTheme(theme)
+        return spans.map { span ->
+            span.copy(
+                style = when (span.style) {
+                    PixelTextStyle.Default -> resolvedTheme.resolveTextStyle()
+                    PixelTextStyle.Accent -> resolvedTheme.resolveAccentTextStyle()
+                    else -> span.style
+                },
+            )
         }
     }
 }

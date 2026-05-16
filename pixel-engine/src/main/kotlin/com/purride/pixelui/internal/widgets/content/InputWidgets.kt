@@ -26,6 +26,8 @@ internal data class TextFieldWidget(
     val enabled: Boolean,
     val readOnly: Boolean,
     val autofocus: Boolean,
+    val minLines: Int,
+    val maxLines: Int,
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
@@ -41,10 +43,12 @@ internal data class TextFieldWidget(
         val resolvedTheme = context.resolveTheme(theme)
         val resolvedStyle = when {
             style != PixelTextFieldStyle.Default -> style
-            !enabled -> resolvedTheme.disabledTextFieldStyle
-            readOnly -> resolvedTheme.readOnlyTextFieldStyle
-            else -> resolvedTheme.textFieldStyle
+            !enabled -> resolvedTheme.resolveDisabledTextFieldStyle()
+            readOnly -> resolvedTheme.resolveReadOnlyTextFieldStyle()
+            else -> resolvedTheme.resolveTextFieldStyle()
         }
+        val safeMinLines = minLines.coerceAtLeast(1)
+        val safeMaxLines = maxLines.coerceAtLeast(safeMinLines)
         val text = state.text.ifEmpty { placeholder }
         val textStyle = when {
             !enabled && state.text.isEmpty() -> resolvedStyle.disabledPlaceholderStyle
@@ -66,6 +70,8 @@ internal data class TextFieldWidget(
             controller = controller,
             readOnly = readOnly,
             autofocus = autofocus,
+            minLines = safeMinLines,
+            maxLines = safeMaxLines,
             textInputAction = textInputAction,
             onChanged = onChanged,
             onSubmitted = onSubmitted,
@@ -74,9 +80,13 @@ internal data class TextFieldWidget(
                 data = text,
                 style = textStyle,
                 theme = null,
-                softWrap = false,
-                maxLines = 1,
-                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = safeMaxLines > 1,
+                maxLines = safeMaxLines,
+                overflow = if (safeMaxLines > 1) {
+                    PixelTextOverflow.CLIP
+                } else {
+                    PixelTextOverflow.ELLIPSIS
+                },
                 textAlign = TextAlign.START,
                 key = key?.let { "$it-text" },
             ),
@@ -97,6 +107,8 @@ private data class TextInputSurfaceWidget(
     val controller: PixelTextFieldController,
     val readOnly: Boolean,
     val autofocus: Boolean,
+    val minLines: Int,
+    val maxLines: Int,
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
@@ -121,6 +133,8 @@ private data class TextInputSurfaceWidget(
             textInputController = controller,
             textInputReadOnly = readOnly,
             textInputAutofocus = autofocus,
+            textInputMinLines = minLines,
+            textInputMaxLines = maxLines,
             textInputAction = textInputAction,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
@@ -146,6 +160,8 @@ private data class TextInputSurfaceWidget(
             textInputController = controller,
             textInputReadOnly = readOnly,
             textInputAutofocus = autofocus,
+            textInputMinLines = minLines,
+            textInputMaxLines = maxLines,
             textInputAction = textInputAction,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
@@ -162,6 +178,8 @@ internal data class OutlinedButtonWidget(
     val style: PixelButtonStyle,
     val theme: com.purride.pixelui.PixelThemeData?,
     val enabled: Boolean,
+    val selected: Boolean,
+    val pressed: Boolean,
     override val key: Any? = null,
 ) : StatelessWidget(
     key = key,
@@ -172,14 +190,13 @@ internal data class OutlinedButtonWidget(
     override fun build(context: BuildContext): Widget {
         val resolvedTheme = context.resolveTheme(theme)
         val effectiveEnabled = enabled && onPressed != null
-        val resolvedStyle = if (!effectiveEnabled) {
-            resolvedTheme.disabledButtonStyle
-        } else {
-            when (style) {
-                PixelButtonStyle.Default -> resolvedTheme.buttonStyle
-                PixelButtonStyle.Accent -> resolvedTheme.accentButtonStyle
-                else -> style
-            }
+        val resolvedStyle = when {
+            !effectiveEnabled -> resolvedTheme.resolveDisabledButtonStyle()
+            style == PixelButtonStyle.Accent -> resolvedTheme.resolveAccentButtonStyle()
+            style != PixelButtonStyle.Default -> style
+            pressed -> resolvedTheme.resolvePressedButtonStyle()
+            selected -> resolvedTheme.resolveSelectedButtonStyle()
+            else -> resolvedTheme.resolveButtonStyle()
         }
         val content = ButtonSurfaceWidget(
             fillTone = resolvedStyle.fillTone,

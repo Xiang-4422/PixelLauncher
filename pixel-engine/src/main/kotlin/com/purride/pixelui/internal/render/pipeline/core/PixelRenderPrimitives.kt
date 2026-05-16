@@ -162,6 +162,8 @@ internal data class PixelTextInputTarget(
     val controller: PixelTextFieldController,
     val readOnly: Boolean,
     val autofocus: Boolean,
+    val minLines: Int,
+    val maxLines: Int,
     val action: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,

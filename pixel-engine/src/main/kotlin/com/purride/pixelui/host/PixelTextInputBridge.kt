@@ -2,6 +2,7 @@ package com.purride.pixelui
 
 import android.content.Context
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.HapticFeedbackConstants
@@ -40,8 +41,10 @@ class PixelTextInputBridge(
             val isSubmitAction = actionId == EditorInfo.IME_ACTION_DONE ||
                 actionId == EditorInfo.IME_ACTION_NEXT ||
                 actionId == EditorInfo.IME_ACTION_GO ||
+                actionId == EditorInfo.IME_ACTION_SEARCH ||
                 actionId == EditorInfo.IME_ACTION_SEND
-            if (isEnterKey || isSubmitAction) {
+            val isSingleLineEnter = inputView.maxLines <= 1 && isEnterKey
+            if (isSingleLineEnter || isSubmitAction) {
                 hostView.submitFocusedTextInput()
                 true
             } else {
@@ -71,6 +74,7 @@ class PixelTextInputBridge(
     override fun showTextInput(request: PixelTextInputRequest) {
         syncingFromHost = true
         try {
+            configureLineMode(request)
             if (inputView.text?.toString() != request.text) {
                 inputView.setText(request.text)
             }
@@ -82,6 +86,7 @@ class PixelTextInputBridge(
                 PixelTextInputAction.DONE -> EditorInfo.IME_ACTION_DONE
                 PixelTextInputAction.NEXT -> EditorInfo.IME_ACTION_NEXT
                 PixelTextInputAction.GO -> EditorInfo.IME_ACTION_GO
+                PixelTextInputAction.SEARCH -> EditorInfo.IME_ACTION_SEARCH
                 PixelTextInputAction.SEND -> EditorInfo.IME_ACTION_SEND
             }
         } finally {
@@ -115,4 +120,20 @@ class PixelTextInputBridge(
     }
 
     override fun dispatchSystemAction(action: PixelSystemAction) = Unit
+
+    private fun configureLineMode(request: PixelTextInputRequest) {
+        val safeMinLines = request.minLines.coerceAtLeast(1)
+        val safeMaxLines = request.maxLines.coerceAtLeast(safeMinLines)
+        if (safeMaxLines > 1) {
+            inputView.setSingleLine(false)
+            inputView.setMinLines(safeMinLines)
+            inputView.setMaxLines(safeMaxLines)
+            inputView.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        } else {
+            inputView.setSingleLine()
+            inputView.setMinLines(1)
+            inputView.setMaxLines(1)
+            inputView.inputType = InputType.TYPE_CLASS_TEXT
+        }
+    }
 }

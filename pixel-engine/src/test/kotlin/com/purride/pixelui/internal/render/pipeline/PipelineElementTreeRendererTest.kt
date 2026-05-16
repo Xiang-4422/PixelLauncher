@@ -16,6 +16,9 @@ import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.PixelTextSpan
+import com.purride.pixelui.PixelThemeTokens
+import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Column
@@ -620,6 +623,155 @@ class PipelineElementTreeRendererTest {
             target.bounds.top in 0 until 10 &&
                 target.bounds.top + target.bounds.height <= 10
         })
+    }
+
+    /**
+     * 固定 itemExtent 的 ListViewBuilder 应该只 build 当前可见区和缓存区。
+     */
+    @Test
+    fun listViewBuilderWithItemExtentBuildsVisibleCacheWindowOnly() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 39f)
+        state.viewportHeightPx = 26
+        val builtItems = mutableListOf<Int>()
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 26,
+                child = ListViewBuilder(
+                    itemCount = 1_000,
+                    state = state,
+                    controller = controller,
+                    itemExtent = 10,
+                    cacheExtent = 1,
+                    spacing = 3,
+                    itemBuilder = { index ->
+                        builtItems += index
+                        SizedBox(
+                            height = 10,
+                            child = Text("ITEM $index"),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 26,
+        )
+
+        assertNotNull(result)
+        assertEquals(listOf(2, 3, 4, 5, 6), builtItems)
+        assertEquals(1_000, state.itemTopOffsetsPx.size)
+        assertEquals(12_997, state.contentHeightPx)
+    }
+
+    /**
+     * RichText 应该保持 span 样式切换，并在同一行绘制不同 tone。
+     */
+    @Test
+    fun richTextPaintsMultipleSpanTones() {
+        val rasterizer = CapturingRasterizer()
+        val result = renderWithPipeline(
+            root = RichText(
+                spans = listOf(
+                    PixelTextSpan(
+                        text = "A",
+                        style = com.purride.pixelui.PixelTextStyle(
+                            tone = PixelTone.ON,
+                            textRasterizer = rasterizer,
+                        ),
+                    ),
+                    PixelTextSpan(
+                        text = "B",
+                        style = com.purride.pixelui.PixelTextStyle(
+                            tone = PixelTone.ACCENT,
+                            textRasterizer = rasterizer,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 8,
+            logicalHeight = 2,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 0))
+    }
+
+    /**
+     * 多行 TextField 应该把 line config 导出给宿主 text input bridge。
+     */
+    @Test
+    fun textFieldExportsMultilineInputTargetConfig() {
+        val controller = TextEditingController()
+        val state = controller.create(initialText = "HELLO\nPIXEL")
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 12,
+                child = TextField(
+                    state = state,
+                    controller = controller,
+                    minLines = 2,
+                    maxLines = 3,
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 12,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(1, result.textInputTargets.size)
+        assertEquals(2, result.textInputTargets.single().minLines)
+        assertEquals(3, result.textInputTargets.single().maxLines)
+    }
+
+    /**
+     * theme tokens 应该在组件样式保持默认时提供状态样式。
+     */
+    @Test
+    fun themeTokensProvideSelectedContainerAndButtonStyles() {
+        val theme = ThemeData(
+            tokens = PixelThemeTokens(
+                borderTone = null,
+                selectedBorderTone = PixelTone.ACCENT,
+            ),
+        )
+
+        val result = renderWithPipeline(
+            root = Theme(
+                data = theme,
+                child = Column(
+                    children = listOf(
+                        SizedBox(
+                            width = 12,
+                            height = 4,
+                            child = Container(selected = true),
+                        ),
+                        SizedBox(
+                            width = 12,
+                            height = 4,
+                            child = OutlinedButton(
+                                text = "OK",
+                                onPressed = { },
+                                selected = true,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 8,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 4))
     }
 
     /**

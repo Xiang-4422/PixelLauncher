@@ -28,6 +28,8 @@ data class PixelTextInputRequest(
     val selectionStart: Int = text.length,
     val selectionEnd: Int = selectionStart,
     val readOnly: Boolean = false,
+    val minLines: Int = 1,
+    val maxLines: Int = 1,
     val action: PixelTextInputAction = PixelTextInputAction.DONE,
 )
 
@@ -40,6 +42,7 @@ enum class PixelTextInputAction {
     DONE,
     NEXT,
     GO,
+    SEARCH,
     SEND,
 }
 

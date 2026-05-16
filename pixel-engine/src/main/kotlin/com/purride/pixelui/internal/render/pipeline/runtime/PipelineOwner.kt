@@ -108,4 +108,11 @@ internal class PipelineOwner(
         )
         return result
     }
+
+    /**
+     * 返回当前 render tree 的内部诊断快照。
+     */
+    fun collectDiagnostics(): List<RenderDiagnosticsNode> {
+        return root?.collectDiagnostics().orEmpty()
+    }
 }
