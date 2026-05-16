@@ -148,6 +148,7 @@ object DemoScenes {
             DemoSceneKind.TEXT_INPUT_MULTILINE -> textInputMultilineScene(textRasterizers)
             DemoSceneKind.RICH_TEXT -> richTextScene(textRasterizers)
             DemoSceneKind.THEME_STATES -> themeStatesScene(textRasterizers)
+            DemoSceneKind.ENGINE_STABILITY_GATE -> engineStabilityGateScene(textRasterizers)
             DemoSceneKind.ENVIRONMENT -> environmentScene(textRasterizers)
             DemoSceneKind.LAUNCHER_LIKE -> launcherLikeScene(textRasterizers)
             DemoSceneKind.DRAWER_LIKE -> drawerLikeScene(textRasterizers)
@@ -1270,6 +1271,228 @@ object DemoScenes {
                                 ),
                             )
                         },
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun engineStabilityGateScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val scrollController = ScrollController()
+        val scrollState = scrollController.create()
+        val pagerController = PageController()
+        val pagerState = pagerController.create(
+            pageCount = 2,
+            currentPage = 0,
+            axis = Axis.VERTICAL,
+        )
+        val lazyController = ScrollController()
+        val lazyState = lazyController.create(initialScrollOffsetPx = 28f)
+        val innerScrollController = ScrollController()
+        val innerScrollState = innerScrollController.create()
+        val inputController = TextEditingController()
+        val inputState = inputController.create(initialText = "ENGINE\nREADY")
+        val selected = ValueNotifier("ROW 3")
+        val gateTheme = ThemeData(
+            tokens = PixelThemeTokens(
+                textTone = PixelTone.ON,
+                accentTone = PixelTone.ACCENT,
+                borderTone = PixelTone.ON,
+                selectedBorderTone = PixelTone.ACCENT,
+                pressedBorderTone = PixelTone.ACCENT,
+                focusedBorderTone = PixelTone.ACCENT,
+                readOnlyBorderTone = PixelTone.ACCENT,
+            ),
+        )
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            initialThemeData = gateTheme,
+            content = {
+                Theme(
+                    data = gateTheme,
+                    child = scrollableRoot(
+                        state = scrollState,
+                        controller = scrollController,
+                        children = listOf(
+                            sectionTitle("ENGINE STABILITY"),
+                            DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ACCENT,
+                                padding = 2,
+                                alignment = Alignment.TOP_START,
+                                child = RichText(
+                                    spans = listOf(
+                                        PixelTextSpan("LAYOUT ", TextStyle.Accent),
+                                        PixelTextSpan("LAZY LIST ", TextStyle.Default),
+                                        PixelTextSpan(
+                                            text = "富文本 INPUT THEME",
+                                            style = TextStyle(
+                                                tone = PixelTone.ACCENT,
+                                                textRasterizer = textRasterizers.emphasis,
+                                            ),
+                                        ),
+                                    ),
+                                    softWrap = true,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.ELLIPSIS,
+                                ),
+                            ),
+                            ValueListenableBuilder(selected) { _, current ->
+                                Column(
+                                    spacing = 4,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    children = listOf(
+                                        Row(
+                                            spacing = 3,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                Expanded(
+                                                    child = infoCard("SELECTED", current, accent = true),
+                                                ),
+                                                Expanded(
+                                                    child = Container(
+                                                        height = 18,
+                                                        selected = current.endsWith("3"),
+                                                        pressed = !current.endsWith("3"),
+                                                        padding = EdgeInsets.all(2),
+                                                        child = Text("STATE BOX"),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 46,
+                                            child = ListViewBuilder(
+                                                itemCount = 80,
+                                                state = lazyState,
+                                                controller = lazyController,
+                                                itemExtent = 12,
+                                                cacheExtent = 2,
+                                                spacing = 2,
+                                                itemBuilder = { index ->
+                                                    val label = "ROW ${index + 1}"
+                                                    SizedBox(
+                                                        height = 12,
+                                                        child = OutlinedButton(
+                                                            text = label,
+                                                            onPressed = { selected.value = label },
+                                                            selected = label == current,
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        ),
+                                        SizedBox(
+                                            height = 14,
+                                            child = Row(
+                                                spacing = 2,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "TOP",
+                                                            onPressed = { lazyController.jumpToStart(lazyState) },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "END",
+                                                            onPressed = { lazyController.jumpToEnd(lazyState) },
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = OutlinedButton(
+                                                            text = "FLING",
+                                                            onPressed = {
+                                                                lazyController.fling(
+                                                                    state = lazyState,
+                                                                    velocityPxPerSecond = -360f,
+                                                                )
+                                                            },
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                )
+                            },
+                            SizedBox(
+                                height = 32,
+                                child = TextField(
+                                    state = inputState,
+                                    controller = inputController,
+                                    placeholder = "MULTILINE",
+                                    minLines = 2,
+                                    maxLines = 3,
+                                    textInputAction = TextInputAction.DONE,
+                                ),
+                            ),
+                            SizedBox(
+                                height = 58,
+                                child = PageView(
+                                    axis = Axis.VERTICAL,
+                                    state = pagerState,
+                                    controller = pagerController,
+                                    pages = listOf(
+                                        DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ON,
+                                            padding = 2,
+                                            child = Column(
+                                                spacing = 3,
+                                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                children = listOf(
+                                                    Text("PAGER + LIST", style = TextStyle.Accent),
+                                                    infoCard("NESTED", "SCROLL HANDOFF", accent = true),
+                                                    SizedBox(
+                                                        height = 14,
+                                                        child = OutlinedButton(
+                                                            text = "NEXT PAGE",
+                                                            onPressed = { pagerController.nextPage(pagerState) },
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                        DecoratedBox(
+                                            fillTone = PixelTone.OFF,
+                                            borderTone = PixelTone.ACCENT,
+                                            padding = 2,
+                                            child = SingleChildScrollView(
+                                                state = innerScrollState,
+                                                controller = innerScrollController,
+                                                child = Column(
+                                                    spacing = 3,
+                                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                    children = listOf(
+                                                        Text("INNER SCROLL", style = TextStyle.Accent),
+                                                        infoCard("TEXT", "RICH + INPUT READY"),
+                                                        infoCard("THEME", "TOKENS ACTIVE", accent = true),
+                                                        SizedBox(
+                                                            height = 14,
+                                                            child = OutlinedButton(
+                                                                text = "PREV PAGE",
+                                                                onPressed = { pagerController.previousPage(pagerState) },
+                                                            ),
+                                                        ),
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
                     ),
                 )
             },

@@ -21,6 +21,7 @@ enum class DemoSceneKind(
     TEXT_INPUT_MULTILINE("多行输入"),
     RICH_TEXT("富文本"),
     THEME_STATES("主题状态"),
+    ENGINE_STABILITY_GATE("Engine 稳定性 Gate"),
     ENVIRONMENT("环境继承"),
     LAUNCHER_LIKE("Launcher 组合页"),
     DRAWER_LIKE("Drawer 验收页"),
