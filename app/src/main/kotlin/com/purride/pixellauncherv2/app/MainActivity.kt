@@ -23,6 +23,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -71,6 +72,7 @@ import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
+import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
@@ -146,6 +148,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var pixelFontEngine: PixelFontEngine
     private lateinit var pixelRenderer: PixelRenderer
     private lateinit var pixelFrameView: PixelFrameView
+    private lateinit var pixelEngineDrawerHost: PixelEngineDrawerHost
     private lateinit var idlePhysicsThread: HandlerThread
     private lateinit var idlePhysicsHandler: Handler
     private lateinit var drawerInputProxy: EditText
@@ -474,6 +477,17 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             isFocusableInTouchMode = true
             requestFocus()
         }
+        pixelEngineDrawerHost = PixelEngineDrawerHost(
+            context = this,
+            callbacks = PixelEngineDrawerHost.Callbacks(
+                onQueryChanged = ::onPixelEngineDrawerQueryChanged,
+                onSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
+                onAppPressed = ::onPixelEngineDrawerAppPressed,
+                onShowIndex = ::onPixelEngineDrawerShowIndex,
+            ),
+        ).apply {
+            rootView.visibility = View.GONE
+        }
         drawerInputProxy = EditText(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
             alpha = 0f
@@ -626,6 +640,13 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             )
             addView(drawerInputProxy)
             addView(smsDraftInputProxy)
+            addView(
+                pixelEngineDrawerHost.rootView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
         }
         setContentView(rootContainer)
         updateTextInputFocus()
@@ -1883,6 +1904,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
      */
     private fun renderCurrentFrame() {
+        if (renderPixelEngineDrawerFrameIfNeeded()) {
+            return
+        }
         if (usesGlIdleComposite()) {
             RenderPerfLogger.measure("main.render.idleStatic.total") {
                 renderIdleStaticFrame()
@@ -1938,6 +1962,29 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 )
             }
         }
+    }
+
+    private fun renderPixelEngineDrawerFrameIfNeeded(): Boolean {
+        if (!::pixelEngineDrawerHost.isInitialized) {
+            return false
+        }
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            pixelEngineDrawerHost.rootView.visibility = View.GONE
+            return false
+        }
+        if (animationState.drawerReveal != null || animationState.launchShutter != null) {
+            pixelEngineDrawerHost.rootView.visibility = View.GONE
+            return false
+        }
+        RenderPerfLogger.measure("main.render.pixelEngineDrawer.sync") {
+            pixelEngineDrawerHost.update(
+                state = state,
+                apps = currentDrawerApps(),
+                screenProfile = screenProfile,
+                pixelGapEnabled = pixelGapEnabled,
+            )
+        }
+        return true
     }
 
     private fun renderIdleStaticFrame() {
@@ -2194,6 +2241,93 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         return state.apps
     }
 
+    private fun onPixelEngineDrawerQueryChanged(query: String) {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return
+        }
+        val filteredQuery = DrawerAsciiInputSanitizer.filter(query)
+        if (filteredQuery == state.drawerQuery && state.isDrawerSearchFocused) {
+            return
+        }
+        recordInteraction()
+        settleDrawerMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.updateDrawerQuery(
+            state = state.copy(
+                isDrawerSearchFocused = true,
+                isDrawerRailSliding = false,
+            ),
+            query = filteredQuery,
+            visibleRows = visibleRows(),
+        )
+        if (filteredQuery.isNotBlank() && currentDrawerApps().size == 1) {
+            launchSelectedApp()
+            return
+        }
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+    }
+
+    private fun onPixelEngineDrawerSubmitSearch() {
+        if (state.mode != LauncherMode.APP_DRAWER || state.drawerQuery.isBlank()) {
+            return
+        }
+        settleDrawerMotionBeforeExplicitAction()
+        launchSelectedApp()
+    }
+
+    private fun onPixelEngineDrawerAppPressed(index: Int) {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return
+        }
+        recordInteraction()
+        val decision = DrawerContentTapResolver.resolve(state, index)
+        when (decision.action) {
+            DrawerContentTapAction.LAUNCH_SELECTED -> {
+                settleDrawerMotionBeforeExplicitAction()
+                launchAppAtIndex(decision.targetIndex ?: state.selectedIndex)
+            }
+
+            DrawerContentTapAction.SELECT_INDEX -> {
+                val targetIndex = decision.targetIndex ?: return
+                settleDrawerMotionBeforeExplicitAction()
+                state = LauncherStateTransitions.selectIndex(
+                    state = state,
+                    index = targetIndex,
+                    visibleRows = visibleRows(),
+                )
+                renderCurrentFrame()
+            }
+
+            DrawerContentTapAction.EXIT_SEARCH -> {
+                settleDrawerMotionBeforeExplicitAction()
+                state = LauncherStateTransitions.exitDrawerSearch(
+                    state = state,
+                    visibleRows = visibleRows(),
+                )
+                renderCurrentFrame()
+                startAnimationTickerIfNeeded()
+                updateDrawerInputFocus()
+            }
+
+            DrawerContentTapAction.NONE -> Unit
+        }
+    }
+
+    private fun onPixelEngineDrawerShowIndex(index: Int) {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return
+        }
+        recordInteraction()
+        settleDrawerMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.selectIndex(
+            state = state,
+            index = index,
+            visibleRows = visibleRows(),
+        )
+        renderCurrentFrame()
+        startAnimationTickerIfNeeded()
+    }
+
     private fun selectByRailLetter(letterIndex: Int) {
         val keepRailSliding = state.isDrawerRailSliding
         state = LauncherStateTransitions.selectByLetterIndex(
@@ -2298,6 +2432,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun updateTextInputFocus() {
         if (!::drawerInputProxy.isInitialized || !::pixelFrameView.isInitialized || !::smsDraftInputProxy.isInitialized) {
+            return
+        }
+        if (state.mode == LauncherMode.APP_DRAWER && ::pixelEngineDrawerHost.isInitialized) {
+            hideDrawerKeyboard()
+            if (drawerInputProxy.hasFocus()) {
+                drawerInputProxy.clearFocus()
+            }
+            if (smsDraftInputProxy.hasFocus()) {
+                smsDraftInputProxy.clearFocus()
+            }
             return
         }
         if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused) {

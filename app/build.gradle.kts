@@ -45,6 +45,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":pixel-engine"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
