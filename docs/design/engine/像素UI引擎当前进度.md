@@ -23,12 +23,13 @@
 - `:pixel-demo -> :pixel-engine`
 - `:app` 暂时独立，不依赖 `:pixel-engine`
 
-`pixel-engine` 内部保留两个 package 边界：
+`pixel-engine` 内部保留三个 package 边界：
 
 - `com.purride.pixelcore`：像素缓冲、调色板、显示几何、帧交换、字体底座、轴向位移与合成原语
 - `com.purride.pixelui`：Widget/runtime、布局、输入、分页、列表、滚动、宿主桥接
+- `com.purride.pixelengine`：模块 marker，标记单一 Gradle 模块统一承载 core 与 UI runtime
 
-这两个 package 是源码组织边界，不再是 Gradle 模块边界。
+这些 package 是源码组织边界，不再是 Gradle 模块边界；物理目录可以继续按职责整理，但公开 Kotlin package 需要保持稳定。
 
 ## 2. `pixel-engine` 已完成能力
 
@@ -44,8 +45,8 @@
 
 核心路径：
 
-- [pixel-engine/src/main/kotlin/com/purride/pixelcore](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore)
-- [pixel-engine/src/test/kotlin/com/purride/pixelcore](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/test/kotlin/com/purride/pixelcore)
+- [pixel-engine/src/main/kotlin/com/purride/pixelcore](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore)
+- [pixel-engine/src/test/kotlin/com/purride/pixelcore](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/test/kotlin/com/purride/pixelcore)
 
 ### 2.2 UI package
 
@@ -60,8 +61,8 @@
 
 核心路径：
 
-- [pixel-engine/src/main/kotlin/com/purride/pixelui](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui)
-- [pixel-engine/src/test/kotlin/com/purride/pixelui](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/test/kotlin/com/purride/pixelui)
+- [pixel-engine/src/main/kotlin/com/purride/pixelui](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui)
+- [pixel-engine/src/test/kotlin/com/purride/pixelui](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/test/kotlin/com/purride/pixelui)
 
 ### 2.3 已验证场景
 
@@ -84,9 +85,9 @@
 
 Demo 入口：
 
-- [DemoMenuActivity.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoMenuActivity.kt)
-- [DemoSceneActivity.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoSceneActivity.kt)
-- [DemoScenes.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt)
+- [DemoMenuActivity.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoMenuActivity.kt)
+- [DemoSceneActivity.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoSceneActivity.kt)
+- [DemoScenes.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-demo/src/main/kotlin/com/purride/pixeldemo/app/DemoScenes.kt)
 
 ## 3. 当前限制
 

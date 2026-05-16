@@ -27,11 +27,19 @@ include(":pixel-demo")
 
 ## 2. `pixel-engine` 内部分层
 
+当前 `:pixel-engine` 是单一 Gradle 模块，但源码按 package 保持三类目录：
+
+- `com.purride.pixelcore`：底层像素能力层
+- `com.purride.pixelui`：Widget/runtime/render/host 层
+- `com.purride.pixelengine`：模块 marker 层
+
+这些目录只用于源码组织和边界表达；公开 Kotlin package 继续保持稳定，不作为再次拆分 Gradle 模块的信号。
+
 ### 2.1 Core package
 
 路径：
 
-- [pixel-engine/src/main/kotlin/com/purride/pixelcore](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore)
+- [pixel-engine/src/main/kotlin/com/purride/pixelcore](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore)
 
 职责：
 
@@ -54,7 +62,7 @@ include(":pixel-demo")
 
 路径：
 
-- [pixel-engine/src/main/kotlin/com/purride/pixelui](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui)
+- [pixel-engine/src/main/kotlin/com/purride/pixelui](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui)
 
 职责：
 
@@ -74,6 +82,23 @@ include(":pixel-demo")
 - 真实系统服务读取
 - app 页面专属逻辑
 - 为迁移临时保留的旧渲染 fallback
+
+### 2.3 Engine marker package
+
+路径：
+
+- [pixel-engine/src/main/kotlin/com/purride/pixelengine](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelengine)
+
+职责：
+
+- 标记 `:pixel-engine` Gradle 模块统一承载 core 与 UI runtime
+- 给后续模块级文档、诊断或装配入口预留稳定命名空间
+
+禁止放入：
+
+- 具体像素缓冲、字体、几何等 core 实现
+- Widget、render object、宿主桥接等 UI 实现
+- Launcher 产品语义或页面逻辑
 
 ## 3. 当前公开主路径
 

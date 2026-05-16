@@ -25,8 +25,11 @@ dependencies {
 
 - `com.purride.pixelcore`：底层像素能力
 - `com.purride.pixelui`：UI runtime 与组件
+- `com.purride.pixelengine`：模块 marker
 
 页面层通常不应该直接长期操作 `PixelBuffer`。大多数业务页面只需要 `PixelHostView + Widget + 公开组件 + 状态控制器`。
+
+源码物理目录按职责组织，但公开 Kotlin package 保持稳定。后续接入方不应该依赖源码文件名或 internal 目录结构。
 
 ### 当前模块基础要求
 
@@ -36,8 +39,8 @@ dependencies {
 
 参考文件：
 
-- [pixel-engine/build.gradle.kts](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/build.gradle.kts)
-- [settings.gradle.kts](/Users/xiangyu/StudioProjects/PixelLauncher/settings.gradle.kts)
+- [pixel-engine/build.gradle.kts](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/build.gradle.kts)
+- [settings.gradle.kts](/Users/even/AndroidStudioProjects/PixelLauncher/settings.gradle.kts)
 
 ## 2. 最小接入链路
 
@@ -95,12 +98,12 @@ setContentView(hostSetup.rootView)
 
 关键类型：
 
-- [PixelHostView.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt)
-- [PixelHostSetup.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostSetup.kt)
-- [PixelHostProfilePreference.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostProfilePreference.kt)
-- [PixelThemeData.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/theme/PixelThemeData.kt)
-- [ScreenProfileFactory.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/screen/ScreenProfileFactory.kt)
-- [PixelPalette.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/theme/PixelPalette.kt)
+- [PixelHostView.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt)
+- [PixelHostSetup.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostSetup.kt)
+- [PixelHostProfilePreference.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostProfilePreference.kt)
+- [PixelThemeData.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/theme/PixelThemeData.kt)
+- [ScreenProfileFactory.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/screen/ScreenProfileFactory.kt)
+- [PixelPalette.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/theme/PixelPalette.kt)
 
 ## 3. 页面组织方式
 
@@ -152,9 +155,9 @@ setContentView(hostSetup.rootView)
 
 关键类型：
 
-- [PixelTextRasterizer.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/font/PixelTextRasterizer.kt)
-- [PixelGlyphPackAssetLoader.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/font/PixelGlyphPackAssetLoader.kt)
-- [PixelFontEngine.kt](/Users/xiangyu/StudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/font/PixelFontEngine.kt)
+- [PixelTextRasterizer.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/font/PixelTextRasterizer.kt)
+- [PixelGlyphPackAssetLoader.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/font/PixelGlyphPackAssetLoader.kt)
+- [PixelFontEngine.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/font/PixelFontEngine.kt)
 
 ## 6. 新组件接入流程
 
