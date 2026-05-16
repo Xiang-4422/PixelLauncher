@@ -104,7 +104,7 @@ Demo 入口：
 - `TextField` 已支持多行配置下发，但还没有组合输入、选择手柄和光标节拍
 - `RichText` 已支持 span tone 切换，但还不是完整段落/字号/字距系统
 - 主题 token 已接入基础状态，但还需要继续收敛组件级默认值和局部覆盖语义
-- 新渲染管线还没有达到完整 Flutter 级别的布局、手势、文本系统
+- 新渲染管线已有内部 diagnostics 和基础 target 裁剪回归，但还没有达到完整 Flutter 级别的布局、手势、文本系统
 
 旧渲染后端已经从生产源码删除；后续不要再把它作为 fallback 接回生产路径。
 
@@ -118,15 +118,17 @@ Demo 入口：
 - 核心组件和 runtime 已有单测
 - 生产源码已经不再保留旧渲染后端
 - `Text` 已支持字符级多行换行、`CLIP / ELLIPSIS` 和最后一行省略
+- `Text / RichText` 已收敛到内部 paragraph helper，统一基础换行、对齐和 ellipsis 规则
 - `ListViewBuilder(itemExtent)` 已支持固定高度 lazy viewport
 - `TextField` 已补齐 placeholder ellipsis、disabled/readOnly、多行 line config 与 selection 边界覆盖
+- Pipeline / retained runtime 已有 internal diagnostics，覆盖 render tree、element tree、dirty queue、layout/paint 计数和 target 数量
 - `RichText`、`PixelTextSpan`、`PixelScrollPhysics`、`PixelThemeTokens` 已作为向后兼容扩展加入
-- `pixel-demo` 已新增滚动压力、环境继承、Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States 和 Drawer Gate V2 验收场景
+- `pixel-demo` 已新增滚动压力、环境继承、Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States、Engine Stability Gate 和 Drawer Gate V2 验收场景
 
 ### 正在进行
 
-- 继续补稳 direct pipeline 核心架构、布局协议和 target 裁剪边界
-- 继续扩展 retained runtime 的 dirty/rebuild/diagnostics 可观测性
+- 继续补稳 direct pipeline 核心架构、布局协议和更复杂 target 裁剪边界
+- 继续扩展 diagnostics 到更完整的宿主调试和性能定位场景
 - 继续扩展输入、滚动和手势的产品级边界
 - 用 `pixel-demo` 持续证明真实场景不依赖旧后端
 
@@ -149,8 +151,8 @@ Demo 入口：
 
 当前最值得继续推进的方向：
 
-- 补强 pipeline diagnostics、布局裁剪和 retained runtime 可观测性
-- 继续补列表虚拟化、滚动物理、文本系统和更完整主题 token
+- 补强复杂布局裁剪、嵌套手势和 diagnostics 的宿主可视化入口
+- 继续补变高列表虚拟化、滚动物理、文本系统和更完整主题 token
 - 继续维持 `pixel-demo` gate 先行，暂不推进新的 `:app` 迁移
 
 ## 6. 验证命令

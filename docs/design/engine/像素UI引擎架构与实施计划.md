@@ -161,15 +161,17 @@ Widget
 - core package 已具备像素显示底座
 - UI package 已具备最小组件体系
 - retained runtime 已能进入 direct pipeline
+- Pipeline / retained runtime 已具备 internal diagnostics，覆盖 render tree、element tree、dirty queue、layout/paint 计数和 target 数量
 - 旧渲染后端已从生产源码删除
 - 核心状态、pipeline、字体、几何、滚动控制器已有单测
 - `Text` 已支持基础多行换行、`maxLines` 和最后一行 ellipsis
+- `Text / RichText` 已通过内部 paragraph helper 统一基础换行、对齐和 ellipsis 规则
 - `ListViewBuilder(itemExtent)` 已支持固定高度 lazy viewport
 - `PixelScrollPhysics` 已提供 clamp/fling/bounce 参数基础
 - `TextField` 已补齐 placeholder、disabled/readOnly、多行 line config 与 selection 边界
 - `RichText`、`PixelTextSpan` 已支持基础富文本 span 样式切换
 - `PixelThemeTokens` 已支持 selected/pressed/focused/disabled/readOnly 等基础状态默认值
-- `pixel-demo` 已有 Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States 和 Drawer Gate V2 gate
+- `pixel-demo` 已有 Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States、Engine Stability Gate 和 Drawer Gate V2 gate
 
 ## 7. 尚未完成
 

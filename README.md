@@ -73,6 +73,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
   - `pixelui` package 承接 Widget/runtime、布局、输入、分页、列表、滚动和宿主桥接
 - `pixel-demo/src/main/kotlin/com/purride/pixeldemo`
   - 新引擎的真实设备验收宿主，后续 engine 能力先在这里 gate
+  - 已包含 `ENGINE_STABILITY_GATE`，聚合验证布局、lazy list、富文本、多行输入、主题状态和嵌套滚动
 
 ## 4. 当前页面与实现入口
 
