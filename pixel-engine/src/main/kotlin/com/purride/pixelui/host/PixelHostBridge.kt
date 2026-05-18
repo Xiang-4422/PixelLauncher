@@ -30,8 +30,33 @@ data class PixelTextInputRequest(
     val readOnly: Boolean = false,
     val minLines: Int = 1,
     val maxLines: Int = 1,
+    val inputType: PixelInputType = PixelInputType.TEXT,
     val action: PixelTextInputAction = PixelTextInputAction.DONE,
 )
+
+/**
+ * 文本输入种类。
+ *
+ * 宿主侧的 PixelTextInputBridge 会把这个值映射到 Android EditorInfo 的
+ * InputType / variation 常量，让系统软键盘在不同语义下弹出对应面板。
+ *
+ * - [TEXT]: 普通文本（默认），允许多行受 minLines/maxLines 限制
+ * - [NUMBER]: 数字面板（含正负号 / 小数点）
+ * - [NUMBER_PASSWORD]: 数字密码（不显示原文）
+ * - [EMAIL]: 邮件地址，含 @ 键
+ * - [PHONE]: 电话号码
+ * - [URL]: URL，含 / 键
+ * - [PASSWORD]: 普通密码（不显示原文）
+ */
+enum class PixelInputType {
+    TEXT,
+    NUMBER,
+    NUMBER_PASSWORD,
+    EMAIL,
+    PHONE,
+    URL,
+    PASSWORD,
+}
 
 /**
  * 文本输入动作。

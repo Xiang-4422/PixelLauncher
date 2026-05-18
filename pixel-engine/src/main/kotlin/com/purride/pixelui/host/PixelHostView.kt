@@ -669,6 +669,7 @@ class PixelHostView @JvmOverloads constructor(
                 readOnly = target.readOnly,
                 minLines = target.minLines,
                 maxLines = target.maxLines,
+                inputType = target.inputType,
                 action = target.action,
             ),
         )

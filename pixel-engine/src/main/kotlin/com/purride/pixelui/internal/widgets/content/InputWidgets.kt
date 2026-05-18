@@ -2,6 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.PixelButtonStyle
+import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
@@ -27,6 +28,7 @@ internal data class TextFieldWidget(
     val autofocus: Boolean,
     val minLines: Int,
     val maxLines: Int,
+    val inputType: PixelInputType,
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
@@ -71,6 +73,7 @@ internal data class TextFieldWidget(
             autofocus = autofocus,
             minLines = safeMinLines,
             maxLines = safeMaxLines,
+            inputType = inputType,
             textInputAction = textInputAction,
             onChanged = onChanged,
             onSubmitted = onSubmitted,
@@ -108,6 +111,7 @@ private data class TextInputSurfaceWidget(
     val autofocus: Boolean,
     val minLines: Int,
     val maxLines: Int,
+    val inputType: PixelInputType,
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
@@ -134,6 +138,7 @@ private data class TextInputSurfaceWidget(
             textInputAutofocus = autofocus,
             textInputMinLines = minLines,
             textInputMaxLines = maxLines,
+            textInputType = inputType,
             textInputAction = textInputAction,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
@@ -161,6 +166,7 @@ private data class TextInputSurfaceWidget(
             textInputAutofocus = autofocus,
             textInputMinLines = minLines,
             textInputMaxLines = maxLines,
+            textInputType = inputType,
             textInputAction = textInputAction,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,

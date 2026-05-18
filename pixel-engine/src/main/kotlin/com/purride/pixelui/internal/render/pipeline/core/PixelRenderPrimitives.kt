@@ -164,6 +164,7 @@ internal data class PixelTextInputTarget(
     val autofocus: Boolean,
     val minLines: Int,
     val maxLines: Int,
+    val inputType: com.purride.pixelui.PixelInputType,
     val action: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,

@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
@@ -42,6 +43,7 @@ internal class RenderSurface(
     private var textInputAutofocus: Boolean = false,
     private var textInputMinLines: Int = 1,
     private var textInputMaxLines: Int = 1,
+    private var textInputType: PixelInputType = PixelInputType.TEXT,
     private var textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
     private var textInputOnChanged: ((String) -> Unit)? = null,
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
@@ -83,6 +85,7 @@ internal class RenderSurface(
         textInputAutofocus: Boolean = false,
         textInputMinLines: Int = 1,
         textInputMaxLines: Int = 1,
+        textInputType: PixelInputType = PixelInputType.TEXT,
         textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
@@ -114,6 +117,7 @@ internal class RenderSurface(
             this.textInputAutofocus == textInputAutofocus &&
             this.textInputMinLines == coercedMinLines &&
             this.textInputMaxLines == coercedMaxLines &&
+            this.textInputType == textInputType &&
             this.textInputAction == textInputAction &&
             this.textInputOnChanged == textInputOnChanged &&
             this.textInputOnSubmitted == textInputOnSubmitted
@@ -144,6 +148,7 @@ internal class RenderSurface(
         this.textInputAutofocus = textInputAutofocus
         this.textInputMinLines = coercedMinLines
         this.textInputMaxLines = coercedMaxLines
+        this.textInputType = textInputType
         this.textInputAction = textInputAction
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted
@@ -355,6 +360,7 @@ internal class RenderSurface(
                 autofocus = textInputAutofocus,
                 minLines = textInputMinLines,
                 maxLines = textInputMaxLines,
+                inputType = textInputType,
                 action = textInputAction,
                 onChanged = textInputOnChanged,
                 onSubmitted = textInputOnSubmitted,
