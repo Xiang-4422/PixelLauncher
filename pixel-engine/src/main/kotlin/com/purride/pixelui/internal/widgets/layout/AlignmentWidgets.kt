@@ -6,7 +6,6 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.resolve
@@ -26,7 +25,7 @@ internal data class PaddingWidget(
     /**
      * 创建承接 padding 的 surface render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = null,
             borderTone = null,
@@ -42,7 +41,7 @@ internal data class PaddingWidget(
      * 同步新的 padding 配置到既有 surface render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
@@ -94,7 +93,7 @@ internal data class AlignWidget(
     /**
      * 创建承接对齐的 surface render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = null,
             borderTone = null,
@@ -108,7 +107,7 @@ internal data class AlignWidget(
      * 同步新的对齐配置到既有 surface render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
@@ -175,7 +174,7 @@ internal data class SizedBoxWidget(
     /**
      * 创建承接固定尺寸的透明 surface。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = null,
             borderTone = null,
@@ -191,7 +190,7 @@ internal data class SizedBoxWidget(
      * 同步新的固定尺寸到既有 surface render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(

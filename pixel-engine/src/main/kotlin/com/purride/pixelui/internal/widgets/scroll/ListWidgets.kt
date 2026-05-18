@@ -1,7 +1,6 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
@@ -93,7 +92,7 @@ private data class ListViewportWidget(
     /**
      * 创建垂直列表视口 render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderListViewport(
             state = state,
             controller = controller,
@@ -105,7 +104,7 @@ private data class ListViewportWidget(
      * 同步列表视口配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderListViewport).updateListViewport(
@@ -132,7 +131,7 @@ private data class LazyListViewportWidget(
     children = children,
     key = key,
 ) {
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderLazyListViewport(
             firstItemIndex = firstItemIndex,
             itemCount = itemCount,
@@ -144,7 +143,7 @@ private data class LazyListViewportWidget(
     }
 
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderLazyListViewport).updateLazyListViewport(

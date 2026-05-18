@@ -5,7 +5,6 @@ import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Directionality
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.StatelessWidget
@@ -30,7 +29,7 @@ internal data class StackWidget(
     /**
      * 创建 stack render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderStack(alignment = alignment.toPixelAlignment())
     }
 
@@ -38,7 +37,7 @@ internal data class StackWidget(
      * 同步新的 stack 对齐配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderStack).updateStack(alignment.toPixelAlignment())
@@ -64,7 +63,7 @@ internal data class PositionedWidget(
     /**
      * 创建定位 render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderPositioned(
             left = left,
             top = top,
@@ -79,7 +78,7 @@ internal data class PositionedWidget(
      * 同步新的定位配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderPositioned).updatePosition(
@@ -147,7 +146,7 @@ internal data class RowWidget(
     /**
      * 创建横向 flex render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderFlex(
             direction = FlexDirection.HORIZONTAL,
             children = emptyList(),
@@ -168,7 +167,7 @@ internal data class RowWidget(
      * 同步新的 Row 配置到既有 flex render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderFlex).updateFlex(
@@ -204,7 +203,7 @@ internal data class ColumnWidget(
     /**
      * 创建纵向 flex render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderFlex(
             direction = FlexDirection.VERTICAL,
             children = emptyList(),
@@ -225,7 +224,7 @@ internal data class ColumnWidget(
      * 同步新的 Column 配置到既有 flex render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderFlex).updateFlex(

@@ -3,7 +3,6 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Directionality
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
@@ -28,7 +27,7 @@ internal data class TextWidget(
     /**
      * 创建文本 render object，直接接入新 pipeline。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderText(
             text = data,
             style = resolveTextStyle(context),
@@ -45,7 +44,7 @@ internal data class TextWidget(
      * 把新的 widget 配置同步到既有文本 render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderText).updateText(
@@ -86,7 +85,7 @@ internal data class RichTextWidget(
 ) : RenderObjectWidget(
     key = key,
 ) {
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderRichText(
             spans = resolveSpans(context),
             textAlign = textAlign.toPixelTextAlign(),
@@ -99,7 +98,7 @@ internal data class RichTextWidget(
     }
 
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderRichText).updateRichText(

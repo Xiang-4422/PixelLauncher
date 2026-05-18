@@ -14,7 +14,7 @@ import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
-import com.purride.pixelui.InternalBuildContext
+import com.purride.pixelui.BuildContext
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextSpan
@@ -1096,7 +1096,7 @@ class PipelineElementTreeRendererTest {
         /**
          * 返回测试预置的 render object。
          */
-        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        override fun createRenderObject(context: BuildContext): RenderObject {
             return renderObject
         }
     }

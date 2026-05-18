@@ -7,7 +7,6 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.PixelContainerStyle
 import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.StatelessWidget
@@ -39,7 +38,7 @@ internal data class ContainerWidget(
     /**
      * 创建直接承接尺寸、margin、padding、装饰和对齐的 surface render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         val resolvedStyle = resolveContainerStyle(context)
         return RenderSurface(
             fillTone = resolvedStyle.fillTone,
@@ -62,7 +61,7 @@ internal data class ContainerWidget(
      * 同步新的容器配置到既有 surface render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         val resolvedStyle = resolveContainerStyle(context)

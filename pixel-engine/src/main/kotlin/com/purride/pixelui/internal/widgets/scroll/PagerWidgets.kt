@@ -2,7 +2,6 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelPagerController
@@ -54,7 +53,7 @@ private data class PagerViewportWidget(
     /**
      * 创建分页视口 render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderPagerViewport(
             axis = axis,
             state = state,
@@ -67,7 +66,7 @@ private data class PagerViewportWidget(
      * 同步分页视口配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderPagerViewport).updatePagerViewport(

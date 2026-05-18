@@ -1,36 +1,50 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelui.InternalBuildContext
+import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Widget
 
 /**
- * Flutter 风格 render object widget 的内部基础协议。
+ * Flutter 风格 render object widget 公开基础协议。
  *
- * 它是未来长期主线里 `Widget -> Element -> RenderObject` 的关键连接点：
+ * 它是 `Widget -> Element -> RenderObject` 三层模型的关键连接点：
  * - Widget 只保存不可变配置
- * - Element 保存运行时生命周期
+ * - Element 保存运行时生命周期（internal，不暴露给扩展方）
  * - RenderObject 负责 layout / paint / hitTest
+ *
+ * 第三方实现自定义渲染原语时，应继承本类或其子类
+ * ([SingleChildRenderObjectWidget] / [MultiChildRenderObjectWidget])，
+ * 也可通过 `com.purride.pixelui.advanced` 别名（PixelRenderObjectWidget 等）
+ * 引用以获得更稳定的公开 API 表达。
  */
-internal abstract class RenderObjectWidget(
+abstract class RenderObjectWidget(
     override val key: Any? = null,
 ) : Widget {
     /**
      * 为当前 widget 创建对应的 retained element。
+     *
+     * 默认创建无 child 管理的 [RenderObjectElement]，单/多 child 子类会覆盖
+     * 返回对应的 element 子类。
      */
-    open fun createElement(): Element {
+    internal open fun createElement(): Element {
         return RenderObjectElement(this)
     }
 
     /**
      * 为当前 widget 创建对应的 render object。
+     *
+     * 第三方扩展实现：返回一个继承自 [RenderObject] / [RenderBox] /
+     * [SingleChildRenderObject] / [MultiChildRenderObject] 的实例。
      */
-    abstract fun createRenderObject(context: InternalBuildContext): RenderObject
+    abstract fun createRenderObject(context: BuildContext): RenderObject
 
     /**
      * 用新的 widget 配置更新既有 render object。
+     *
+     * 默认不做任何事；子类需要在 widget rebuild 时同步配置到 render object 字段时
+     * 覆写本方法（并在内部对每个字段做 equality 检查避免无谓的 markNeedsLayout）。
      */
     open fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) = Unit
 }
@@ -82,9 +96,12 @@ internal open class RenderObjectElement(
 }
 
 /**
- * Flutter 风格单 child render object widget 的内部基础协议。
+ * Flutter 风格单 child render object widget 公开基础协议。
+ *
+ * 子类需要 createRenderObject 返回一个继承 [RenderObjectWithChild] 的 RenderObject
+ * （通常是 [SingleChildRenderObject] 的子类）。
  */
-internal abstract class SingleChildRenderObjectWidget(
+abstract class SingleChildRenderObjectWidget(
     open val child: Widget?,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
@@ -135,9 +152,12 @@ internal class SingleChildRenderObjectElement(
 }
 
 /**
- * Flutter 风格多 child render object widget 的内部基础协议。
+ * Flutter 风格多 child render object widget 公开基础协议。
+ *
+ * 子类需要 createRenderObject 返回一个继承 [RenderObjectWithChildren] 的 RenderObject
+ * （通常是 [MultiChildRenderObject] 的子类）。
  */
-internal abstract class MultiChildRenderObjectWidget(
+abstract class MultiChildRenderObjectWidget(
     open val children: List<Widget>,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {

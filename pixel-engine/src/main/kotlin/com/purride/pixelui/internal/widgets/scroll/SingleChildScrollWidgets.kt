@@ -1,7 +1,6 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
@@ -47,7 +46,7 @@ private data class SingleChildScrollViewportWidget(
     /**
      * 创建单子节点滚动视口 render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSingleChildScrollViewport(
             state = state,
             controller = controller,
@@ -58,7 +57,7 @@ private data class SingleChildScrollViewportWidget(
      * 同步单子节点滚动视口配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSingleChildScrollViewport).updateScrollViewport(

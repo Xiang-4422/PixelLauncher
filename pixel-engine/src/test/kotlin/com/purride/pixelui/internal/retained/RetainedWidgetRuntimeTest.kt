@@ -10,7 +10,6 @@ import com.purride.pixelui.Directionality
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.Theme
@@ -584,12 +583,12 @@ class RetainedWidgetRuntimeTest {
     private class TestRenderWidget(
         private val label: String,
     ) : RenderObjectWidget() {
-        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        override fun createRenderObject(context: BuildContext): RenderObject {
             return TestRenderObject()
         }
 
         override fun updateRenderObject(
-            context: InternalBuildContext,
+            context: BuildContext,
             renderObject: RenderObject,
         ) {
             (renderObject as TestRenderObject).apply {
@@ -608,12 +607,12 @@ class RetainedWidgetRuntimeTest {
         private val label: String,
         child: Widget,
     ) : SingleChildRenderObjectWidget(child = child) {
-        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        override fun createRenderObject(context: BuildContext): RenderObject {
             return TestSingleChildRenderObject()
         }
 
         override fun updateRenderObject(
-            context: InternalBuildContext,
+            context: BuildContext,
             renderObject: RenderObject,
         ) {
             (renderObject as TestSingleChildRenderObject).label = label
@@ -640,12 +639,12 @@ class RetainedWidgetRuntimeTest {
         private val label: String,
         children: List<Widget>,
     ) : MultiChildRenderObjectWidget(children = children) {
-        override fun createRenderObject(context: InternalBuildContext): RenderObject {
+        override fun createRenderObject(context: BuildContext): RenderObject {
             return TestMultiChildRenderObject()
         }
 
         override fun updateRenderObject(
-            context: InternalBuildContext,
+            context: BuildContext,
             renderObject: RenderObject,
         ) {
             (renderObject as TestMultiChildRenderObject).label = label

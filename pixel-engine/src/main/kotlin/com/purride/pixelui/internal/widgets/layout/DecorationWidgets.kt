@@ -1,9 +1,14 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelui.BuildContext
+
+
 import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.Alignment
-import com.purride.pixelui.InternalBuildContext
+
 import com.purride.pixelui.Widget
+
 import com.purride.pixelui.internal.toPixelAlignment
 
 /**
@@ -20,7 +25,7 @@ internal data class GestureDetectorWidget(
     /**
      * 创建只承接点击语义的透明 surface。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = null,
             borderTone = null,
@@ -33,7 +38,7 @@ internal data class GestureDetectorWidget(
      * 同步新的点击回调到既有 surface render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
@@ -62,7 +67,7 @@ internal data class DecoratedBoxWidget(
     /**
      * 创建直接接入 pipeline 的 surface render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = fillTone,
             borderTone = borderTone,
@@ -80,7 +85,7 @@ internal data class DecoratedBoxWidget(
      * 同步新的装饰配置到既有 surface render object。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(

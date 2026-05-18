@@ -5,7 +5,7 @@ package com.purride.pixelui.internal
  *
  * 第一版只稳定 attach/detach、owner 协作、脏标记和子节点遍历协议。
  */
-internal abstract class RenderObject {
+abstract class RenderObject {
     var parent: RenderObject? = null
         internal set
 
@@ -124,7 +124,7 @@ internal data class RenderDiagnosticsNode(
 /**
  * 新渲染管线里的基础盒模型对象。
  */
-internal abstract class RenderBox : RenderObject() {
+abstract class RenderBox : RenderObject() {
     var size: RenderSize = RenderSize.Zero
         protected set
 
@@ -154,34 +154,34 @@ internal abstract class RenderBox : RenderObject() {
     /**
      * 导出当前子树里的点击目标。
      */
-    open fun collectClickTargets(
+    internal open fun collectClickTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
     ) = Unit
 
     /**
-     * 导出当前子树里的分页目标。
+     * 导出当前子树里的分页目标。框架内部使用，不暴露给外部扩展点。
      */
-    open fun collectPagerTargets(
+    internal open fun collectPagerTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelPagerTarget>,
     ) = Unit
 
     /**
-     * 导出当前子树里的列表滚动目标。
+     * 导出当前子树里的列表滚动目标。框架内部使用，不暴露给外部扩展点。
      */
-    open fun collectListTargets(
+    internal open fun collectListTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelListTarget>,
     ) = Unit
 
     /**
-     * 导出当前子树里的文本输入目标。
+     * 导出当前子树里的文本输入目标。框架内部使用，不暴露给外部扩展点。
      */
-    open fun collectTextInputTargets(
+    internal open fun collectTextInputTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelTextInputTarget>,
@@ -191,7 +191,7 @@ internal abstract class RenderBox : RenderObject() {
 /**
  * 可承接单个 render object 子节点的协议。
  */
-internal interface RenderObjectWithChild {
+interface RenderObjectWithChild {
     /**
      * 替换当前 render object 的唯一子节点。
      */
@@ -201,7 +201,7 @@ internal interface RenderObjectWithChild {
 /**
  * 可承接多个 render object 子节点的协议。
  */
-internal interface RenderObjectWithChildren {
+interface RenderObjectWithChildren {
     /**
      * 替换当前 render object 的所有直接子节点。
      */
@@ -211,7 +211,7 @@ internal interface RenderObjectWithChildren {
 /**
  * 单 child render object 的基础实现。
  */
-internal abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
+abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
     protected var child: RenderObject? = null
         private set
 
@@ -239,7 +239,7 @@ internal abstract class SingleChildRenderObject : RenderObjectWithChild, RenderB
 /**
  * 多 child render object 的基础实现。
  */
-internal abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox() {
+abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox() {
     protected var children: List<RenderObject> = emptyList()
         private set
 

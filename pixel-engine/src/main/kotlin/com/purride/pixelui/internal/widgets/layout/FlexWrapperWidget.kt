@@ -1,7 +1,11 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelui.BuildContext
+
+
+
 import com.purride.pixelui.FlexFit
-import com.purride.pixelui.InternalBuildContext
+
 import com.purride.pixelui.Widget
 
 /**
@@ -19,7 +23,7 @@ internal data class FlexWrapperWidget(
     /**
      * 创建带 flex parent data 的透明 render object。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderFlexChild(
             flex = flex.coerceAtLeast(1),
             fit = fit,
@@ -30,7 +34,7 @@ internal data class FlexWrapperWidget(
      * 同步新的 flex parent data。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderFlexChild).updateFlexData(

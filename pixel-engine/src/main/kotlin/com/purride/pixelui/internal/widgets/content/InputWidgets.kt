@@ -6,7 +6,6 @@ import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.Alignment
-import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.Widget
@@ -120,7 +119,7 @@ private data class TextInputSurfaceWidget(
     /**
      * 创建可导出 text input target 的 surface。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = fillTone,
             borderTone = borderTone,
@@ -145,7 +144,7 @@ private data class TextInputSurfaceWidget(
      * 同步 text input surface 配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
@@ -244,7 +243,7 @@ private data class ButtonSurfaceWidget(
     /**
      * 创建填满父级按钮区域的 surface。
      */
-    override fun createRenderObject(context: InternalBuildContext): RenderObject {
+    override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             fillTone = fillTone,
             borderTone = borderTone,
@@ -262,7 +261,7 @@ private data class ButtonSurfaceWidget(
      * 同步按钮 surface 配置。
      */
     override fun updateRenderObject(
-        context: InternalBuildContext,
+        context: BuildContext,
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
