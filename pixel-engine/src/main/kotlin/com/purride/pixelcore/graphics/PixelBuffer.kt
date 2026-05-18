@@ -102,11 +102,18 @@ class PixelBuffer(
             return
         }
 
+        val sourceStride = source.width
+        val destinationStride = width
         for (row in 0 until actualHeight) {
-            for (column in 0 until actualWidth) {
-                val value = source.getPixel(sourceStartX + column, sourceStartY + row)
-                setPixel(destinationStartX + column, destinationStartY + row, value)
-            }
+            val sourceOffset = (sourceStartY + row) * sourceStride + sourceStartX
+            val destinationOffset = (destinationStartY + row) * destinationStride + destinationStartX
+            System.arraycopy(
+                source.pixels,
+                sourceOffset,
+                pixels,
+                destinationOffset,
+                actualWidth,
+            )
         }
     }
 

@@ -205,9 +205,23 @@ class PixelFontEngine(
 ) {
     companion object {
         private const val MIN_WIDE_PAIR_VISUAL_GAP = 1
+        private const val MAX_CACHE_ENTRIES = 2048
+        private const val CACHE_INITIAL_CAPACITY = 64
+        private const val CACHE_LOAD_FACTOR = 0.75f
     }
 
-    private val glyphCache = linkedMapOf<GlyphKey, GlyphBitmap>()
+    /**
+     * 访问序 LinkedHashMap：getOrPut 后命中条目会被移到链尾，
+     * 真正实现 LRU 而非 FIFO 驱逐，让 CJK 等大字符集场景下高频字
+     * 不会被冷僻字挤出去。
+     */
+    private val glyphCache = LinkedHashMap<GlyphKey, GlyphBitmap>(
+        CACHE_INITIAL_CAPACITY,
+        CACHE_LOAD_FACTOR,
+        true,
+    )
+    private var glyphCacheHits: Long = 0L
+    private var glyphCacheMisses: Long = 0L
 
     fun measureText(text: String, style: GlyphStyle): Int {
         var totalWidth = 0
@@ -275,16 +289,35 @@ class PixelFontEngine(
 
     fun clearCache() {
         glyphCache.clear()
+        glyphCacheHits = 0L
+        glyphCacheMisses = 0L
         glyphProvider.clearCache()
+    }
+
+    /**
+     * 返回 glyph cache 的命中统计快照，主要给基线/perf 测试使用。
+     */
+    fun glyphCacheStats(): GlyphCacheStats {
+        return GlyphCacheStats(
+            size = glyphCache.size,
+            capacity = MAX_CACHE_ENTRIES,
+            hits = glyphCacheHits,
+            misses = glyphCacheMisses,
+        )
     }
 
     private fun glyphFor(character: Char, style: GlyphStyle): GlyphBitmap {
         val key = GlyphKey(character, style)
-        return glyphCache.getOrPut(key) {
-            glyphProvider.rasterizeGlyph(character, style)
-        }.also {
-            trimCacheIfNeeded()
+        val cached = glyphCache[key]
+        if (cached != null) {
+            glyphCacheHits += 1L
+            return cached
         }
+        glyphCacheMisses += 1L
+        val rasterized = glyphProvider.rasterizeGlyph(character, style)
+        glyphCache[key] = rasterized
+        trimCacheIfNeeded()
+        return rasterized
     }
 
     private fun interGlyphSpacing(left: GlyphBitmap?, right: GlyphBitmap?, style: GlyphStyle): Int {
@@ -331,8 +364,7 @@ class PixelFontEngine(
     }
 
     private fun trimCacheIfNeeded() {
-        val maxCacheEntries = 512
-        while (glyphCache.size > maxCacheEntries) {
+        while (glyphCache.size > MAX_CACHE_ENTRIES) {
             val iterator = glyphCache.entries.iterator()
             iterator.next()
             iterator.remove()
@@ -343,6 +375,19 @@ class PixelFontEngine(
         val character: Char,
         val style: GlyphStyle,
     )
+}
+
+/**
+ * glyph 缓存命中统计快照。
+ */
+data class GlyphCacheStats(
+    val size: Int,
+    val capacity: Int,
+    val hits: Long,
+    val misses: Long,
+) {
+    val total: Long get() = hits + misses
+    val hitRate: Double get() = if (total == 0L) 0.0 else hits.toDouble() / total.toDouble()
 }
 
 private fun requiresVisualGapProtection(character: Char, isWideGlyph: Boolean): Boolean {

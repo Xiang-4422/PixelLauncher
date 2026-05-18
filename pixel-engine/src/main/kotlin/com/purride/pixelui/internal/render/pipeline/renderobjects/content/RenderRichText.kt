@@ -124,24 +124,32 @@ internal class RenderRichText(
         return visible.map(::toLine)
     }
 
+    /**
+     * 单遍扫描完成字符级换行，按运行累加器判断溢出，
+     * 避免每加一字符就重新汇总整行宽度（旧实现 O(n²)）。
+     */
     private fun wrapCharacters(
         characters: List<RichCharacter>,
         availableWidth: Int,
     ): List<List<RichCharacter>> {
         val lines = mutableListOf<List<RichCharacter>>()
         val current = mutableListOf<RichCharacter>()
+        var currentWidth = 0
         characters.forEach { character ->
             if (character.value == '\n') {
                 lines += current.toList()
                 current.clear()
+                currentWidth = 0
                 return@forEach
             }
-            val candidate = current + character
-            if (current.isNotEmpty() && measureWidth(candidate) > availableWidth) {
+            val advance = measureChar(character)
+            if (current.isNotEmpty() && currentWidth + advance > availableWidth) {
                 lines += current.toList()
                 current.clear()
+                currentWidth = 0
             }
             current += character
+            currentWidth += advance
         }
         if (current.isNotEmpty()) {
             lines += current.toList()
@@ -149,6 +157,11 @@ internal class RenderRichText(
         return lines
     }
 
+    /**
+     * 在末尾追加省略号，必要时逐个剔除原尾字符直到整体宽度合规。
+     *
+     * 通过维护"已保留字符总宽 - 省略号宽"的运行累加器避免每次都 sum 全行。
+     */
     private fun ellipsize(
         characters: List<RichCharacter>,
         availableWidth: Int,
@@ -157,14 +170,28 @@ internal class RenderRichText(
         val ellipsis = ParagraphLayoutSupport.Ellipsis.map { value ->
             RichCharacter(value = value, style = ellipsisStyle)
         }
-        if (measureWidth(ellipsis) > availableWidth) {
+        val ellipsisWidth = measureWidth(ellipsis)
+        if (ellipsisWidth > availableWidth) {
             return emptyList()
         }
+        val charWidths = IntArray(characters.size) { measureChar(characters[it]) }
         val result = characters.toMutableList()
-        while (result.isNotEmpty() && measureWidth(result + ellipsis) > availableWidth) {
-            result.removeAt(result.lastIndex)
+        var combinedWidth = charWidths.sum() + ellipsisWidth
+        var lastIndex = result.lastIndex
+        while (lastIndex >= 0 && combinedWidth > availableWidth) {
+            combinedWidth -= charWidths[lastIndex]
+            result.removeAt(lastIndex)
+            lastIndex -= 1
         }
         return result + ellipsis
+    }
+
+    /**
+     * 单字符宽度查询。
+     */
+    private fun measureChar(character: RichCharacter): Int {
+        val rasterizer = character.style.textRasterizer ?: defaultTextRasterizer
+        return rasterizer.measureText(character.value.toString())
     }
 
     private fun toLine(characters: List<RichCharacter>): RichLine {
