@@ -8,21 +8,21 @@ package com.purride.pixelui
  * - `InheritedNotifier` 可感知 notifier 变化
  * - `ValueListenableBuilder` 这类组件可以直接监听值
  */
-fun interface VoidCallback {
-    fun invoke()
+public fun interface VoidCallback {
+    public fun invoke()
 }
 
-interface Listenable {
-    fun addListener(listener: VoidCallback)
+public interface Listenable {
+    public fun addListener(listener: VoidCallback)
 
-    fun removeListener(listener: VoidCallback)
+    public fun removeListener(listener: VoidCallback)
 }
 
-interface ValueListenable<T> : Listenable {
-    val value: T
+public interface ValueListenable<T> : Listenable {
+    public val value: T
 }
 
-open class ChangeNotifier : Listenable {
+public open class ChangeNotifier : Listenable {
     private val listeners = linkedSetOf<VoidCallback>()
 
     override fun addListener(listener: VoidCallback) {
@@ -40,7 +40,7 @@ open class ChangeNotifier : Listenable {
     }
 }
 
-class ValueNotifier<T>(
+public class ValueNotifier<T>(
     initialValue: T,
 ) : ChangeNotifier(), ValueListenable<T> {
     override var value: T = initialValue

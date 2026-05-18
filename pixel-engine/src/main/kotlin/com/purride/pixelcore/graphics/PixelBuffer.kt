@@ -9,31 +9,31 @@ import kotlin.math.min
  * 第一版依然采用最简单的单通道字节缓冲，每个逻辑像素只保存一个离散色阶值。
  * 这样既能保持内核层简单，也足够支撑当前 demo 的文字、表面、按钮和分页过渡。
  */
-class PixelBuffer(
-    val width: Int,
-    val height: Int,
-    val pixels: ByteArray = ByteArray(width * height),
+public class PixelBuffer(
+    public val width: Int,
+    public val height: Int,
+    public val pixels: ByteArray = ByteArray(width * height),
 ) {
 
-    fun clear(value: Byte = PixelTone.OFF.value) {
+    public fun clear(value: Byte = PixelTone.OFF.value) {
         pixels.fill(value)
     }
 
-    fun setPixel(x: Int, y: Int, value: Byte = PixelTone.ON.value) {
+    public fun setPixel(x: Int, y: Int, value: Byte = PixelTone.ON.value) {
         if (x !in 0 until width || y !in 0 until height) {
             return
         }
         pixels[(y * width) + x] = value
     }
 
-    fun getPixel(x: Int, y: Int): Byte {
+    public fun getPixel(x: Int, y: Int): Byte {
         if (x !in 0 until width || y !in 0 until height) {
             return PixelTone.OFF.value
         }
         return pixels[(y * width) + x]
     }
 
-    fun fillRect(
+    public fun fillRect(
         left: Int,
         top: Int,
         rectWidth: Int,
@@ -51,7 +51,7 @@ class PixelBuffer(
         }
     }
 
-    fun drawRect(
+    public fun drawRect(
         left: Int,
         top: Int,
         rectWidth: Int,
@@ -73,7 +73,7 @@ class PixelBuffer(
         }
     }
 
-    fun blit(
+    public fun blit(
         source: PixelBuffer,
         destX: Int,
         destY: Int,
@@ -117,7 +117,7 @@ class PixelBuffer(
         }
     }
 
-    fun copy(): PixelBuffer {
+    public fun copy(): PixelBuffer {
         return PixelBuffer(
             width = width,
             height = height,
@@ -132,7 +132,7 @@ class PixelBuffer(
  * 第一版只保留三个档位：背景关闭、主内容、强调色。
  * 这套离散值会映射到调色板中的真实颜色。
  */
-enum class PixelTone(val value: Byte) {
+public enum class PixelTone(public val value: Byte) {
     OFF(0),
     ON(1),
     ACCENT(2),

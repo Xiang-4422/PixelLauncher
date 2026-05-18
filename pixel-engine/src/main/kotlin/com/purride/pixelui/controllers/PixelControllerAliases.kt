@@ -10,6 +10,6 @@ import com.purride.pixelui.state.PixelTextFieldController
  * 当前阶段先统一对外命名，
  * 内部仍然复用已有 `Pixel*Controller` 实现，避免拆出第二套状态语义。
  */
-typealias PageController = PixelPagerController
-typealias ScrollController = PixelListController
-typealias TextEditingController = PixelTextFieldController
+public typealias PageController = PixelPagerController
+public typealias ScrollController = PixelListController
+public typealias TextEditingController = PixelTextFieldController

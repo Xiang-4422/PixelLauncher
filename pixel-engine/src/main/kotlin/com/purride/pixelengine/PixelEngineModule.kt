@@ -5,4 +5,4 @@ package com.purride.pixelengine
  *
  * The Gradle module owns both the low-level pixel core package and the UI runtime package.
  */
-object PixelEngineModule
+public object PixelEngineModule

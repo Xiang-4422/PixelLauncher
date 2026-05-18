@@ -37,15 +37,15 @@ import com.purride.pixelui.state.PixelTextFieldState
  *
  * 公开组件先形成 retained build tree，再由 direct render object pipeline 输出像素结果。
  */
-typealias TextStyle = PixelTextStyle
-typealias ButtonStyle = PixelButtonStyle
-typealias ContainerStyle = PixelContainerStyle
-typealias TextFieldStyle = PixelTextFieldStyle
-typealias TextOverflow = PixelTextOverflow
-typealias TextInputAction = PixelTextInputAction
-typealias ThemeData = PixelThemeData
+public typealias TextStyle = PixelTextStyle
+public typealias ButtonStyle = PixelButtonStyle
+public typealias ContainerStyle = PixelContainerStyle
+public typealias TextFieldStyle = PixelTextFieldStyle
+public typealias TextOverflow = PixelTextOverflow
+public typealias TextInputAction = PixelTextInputAction
+public typealias ThemeData = PixelThemeData
 
-fun Padding(
+public fun Padding(
     child: Widget,
     all: Int,
     key: Any? = null,
@@ -57,7 +57,7 @@ fun Padding(
     )
 }
 
-fun Padding(
+public fun Padding(
     child: Widget,
     padding: EdgeInsets,
     key: Any? = null,
@@ -65,7 +65,7 @@ fun Padding(
     return PaddingWidget(child = child, padding = padding, key = key)
 }
 
-fun Padding(
+public fun Padding(
     child: Widget,
     horizontal: Int = 0,
     vertical: Int = 0,
@@ -81,7 +81,7 @@ fun Padding(
     )
 }
 
-fun PaddingDirectional(
+public fun PaddingDirectional(
     child: Widget,
     padding: EdgeInsetsDirectional,
     key: Any? = null,
@@ -89,7 +89,7 @@ fun PaddingDirectional(
     return PaddingDirectionalWidget(child = child, padding = padding, key = key)
 }
 
-fun Align(
+public fun Align(
     child: Widget,
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
@@ -97,7 +97,7 @@ fun Align(
     return AlignWidget(child = child, alignment = alignment, key = key)
 }
 
-fun Center(
+public fun Center(
     child: Widget,
     key: Any? = null,
 ): Widget {
@@ -108,7 +108,7 @@ fun Center(
     )
 }
 
-fun AlignDirectional(
+public fun AlignDirectional(
     child: Widget,
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
     key: Any? = null,
@@ -116,7 +116,7 @@ fun AlignDirectional(
     return AlignDirectionalWidget(child = child, alignment = alignment, key = key)
 }
 
-fun SizedBox(
+public fun SizedBox(
     width: Int? = null,
     height: Int? = null,
     child: Widget? = null,
@@ -125,7 +125,7 @@ fun SizedBox(
     return SizedBoxWidget(width = width, height = height, child = child, key = key)
 }
 
-fun Expanded(
+public fun Expanded(
     child: Widget,
     flex: Int = 1,
     key: Any? = null,
@@ -138,7 +138,7 @@ fun Expanded(
     )
 }
 
-fun Flexible(
+public fun Flexible(
     child: Widget,
     flex: Int = 1,
     fit: FlexFit = FlexFit.LOOSE,
@@ -152,7 +152,7 @@ fun Flexible(
     )
 }
 
-fun Spacer(
+public fun Spacer(
     flex: Int = 1,
     key: Any? = null,
 ): Widget {
@@ -164,7 +164,7 @@ fun Spacer(
     )
 }
 
-fun GestureDetector(
+public fun GestureDetector(
     child: Widget,
     onTap: () -> Unit,
     key: Any? = null,
@@ -172,7 +172,7 @@ fun GestureDetector(
     return GestureDetectorWidget(child = child, onTap = onTap, key = key)
 }
 
-fun Text(
+public fun Text(
     data: String,
     style: TextStyle = TextStyle.Default,
     theme: ThemeData? = null,
@@ -194,7 +194,7 @@ fun Text(
     )
 }
 
-fun RichText(
+public fun RichText(
     spans: List<PixelTextSpan>,
     theme: ThemeData? = null,
     softWrap: Boolean = true,
@@ -214,7 +214,7 @@ fun RichText(
     )
 }
 
-fun DecoratedBox(
+public fun DecoratedBox(
     child: Widget? = null,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
@@ -232,7 +232,7 @@ fun DecoratedBox(
     )
 }
 
-fun Container(
+public fun Container(
     child: Widget? = null,
     width: Int? = null,
     height: Int? = null,
@@ -264,7 +264,7 @@ fun Container(
     )
 }
 
-fun ContainerDirectional(
+public fun ContainerDirectional(
     child: Widget? = null,
     width: Int? = null,
     height: Int? = null,
@@ -300,7 +300,7 @@ fun ContainerDirectional(
     )
 }
 
-fun Stack(
+public fun Stack(
     children: List<Widget>,
     alignment: Alignment = Alignment.TOP_START,
     key: Any? = null,
@@ -308,7 +308,7 @@ fun Stack(
     return StackWidget(children = children, alignment = alignment, key = key)
 }
 
-fun Positioned(
+public fun Positioned(
     child: Widget,
     left: Int? = null,
     top: Int? = null,
@@ -330,7 +330,7 @@ fun Positioned(
     )
 }
 
-fun PositionedDirectional(
+public fun PositionedDirectional(
     child: Widget,
     start: Int? = null,
     top: Int? = null,
@@ -352,7 +352,7 @@ fun PositionedDirectional(
     )
 }
 
-fun PositionedFill(
+public fun PositionedFill(
     child: Widget,
     left: Int = 0,
     top: Int = 0,
@@ -370,7 +370,7 @@ fun PositionedFill(
     )
 }
 
-fun Row(
+public fun Row(
     children: List<Widget>,
     spacing: Int = 0,
     mainAxisSize: MainAxisSize = MainAxisSize.MIN,
@@ -388,7 +388,7 @@ fun Row(
     )
 }
 
-fun Column(
+public fun Column(
     children: List<Widget>,
     spacing: Int = 0,
     mainAxisSize: MainAxisSize = MainAxisSize.MIN,
@@ -406,7 +406,7 @@ fun Column(
     )
 }
 
-fun PageView(
+public fun PageView(
     axis: Axis,
     controller: PixelPagerController,
     state: PixelPagerState,
@@ -424,7 +424,7 @@ fun PageView(
     )
 }
 
-fun PageViewBuilder(
+public fun PageViewBuilder(
     axis: Axis,
     controller: PixelPagerController,
     state: PixelPagerState,
@@ -443,7 +443,7 @@ fun PageViewBuilder(
     )
 }
 
-fun ListView(
+public fun ListView(
     items: List<Widget>,
     state: PixelListState,
     controller: PixelListController,
@@ -459,7 +459,7 @@ fun ListView(
     )
 }
 
-fun ListViewBuilder(
+public fun ListViewBuilder(
     itemCount: Int,
     itemBuilder: (Int) -> Widget,
     state: PixelListState,
@@ -491,7 +491,7 @@ fun ListViewBuilder(
     )
 }
 
-fun ListViewSeparated(
+public fun ListViewSeparated(
     itemCount: Int,
     itemBuilder: (Int) -> Widget,
     separatorBuilder: (Int) -> Widget,
@@ -516,7 +516,7 @@ fun ListViewSeparated(
     )
 }
 
-fun SingleChildScrollView(
+public fun SingleChildScrollView(
     child: Widget,
     state: PixelListState,
     controller: PixelListController,
@@ -530,7 +530,7 @@ fun SingleChildScrollView(
     )
 }
 
-fun TextField(
+public fun TextField(
     state: PixelTextFieldState,
     controller: PixelTextFieldController,
     placeholder: String = "",
@@ -566,7 +566,7 @@ fun TextField(
     )
 }
 
-fun OutlinedButton(
+public fun OutlinedButton(
     text: String,
     onPressed: (() -> Unit)?,
     style: ButtonStyle = ButtonStyle.Default,

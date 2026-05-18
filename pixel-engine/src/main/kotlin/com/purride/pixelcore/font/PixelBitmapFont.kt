@@ -7,9 +7,9 @@ package com.purride.pixelcore
  * 但内部已经改为复用 `PixelFontEngine`。这样后续无论切到真实字形包还是保留内置字体，
  * 上层都走同一条文本测量与绘制链路。
  */
-class PixelBitmapFont(
-    val glyphWidth: Int = 5,
-    val glyphHeight: Int = 7,
+public class PixelBitmapFont(
+    public val glyphWidth: Int = 5,
+    public val glyphHeight: Int = 7,
     private val letterSpacing: Int = 1,
     private val lineSpacing: Int = 2,
 ) : PixelTextRasterizer {
@@ -40,7 +40,7 @@ class PixelBitmapFont(
         ),
     )
 
-    val lineHeight: Int
+    public val lineHeight: Int
         get() = glyphHeight + lineSpacing
 
     override fun measureText(text: String): Int {
@@ -75,8 +75,8 @@ class PixelBitmapFont(
         }
     }
 
-    companion object {
-        val Default = PixelBitmapFont()
+    public companion object {
+        public val Default: PixelBitmapFont = PixelBitmapFont()
 
         private val GLYPHS = mapOf(
             ' ' to glyph("00000", "00000", "00000", "00000", "00000", "00000", "00000"),

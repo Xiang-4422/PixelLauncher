@@ -14,9 +14,9 @@ import com.purride.pixelui.ChangeNotifier
  * `controller.addListener { /* on changed */ }` 注册回调，或用
  * `controller.observe { ... }` 扩展拿到句柄方便后续 removeListener。
  */
-class PixelTextFieldController : ChangeNotifier() {
+public class PixelTextFieldController : ChangeNotifier() {
 
-    fun create(
+    public fun create(
         initialText: String = "",
         selectionStart: Int = initialText.length,
         selectionEnd: Int = selectionStart,
@@ -28,7 +28,7 @@ class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
-    fun updateText(
+    public fun updateText(
         state: PixelTextFieldState,
         text: String,
         selectionStart: Int = text.length,
@@ -40,7 +40,7 @@ class PixelTextFieldController : ChangeNotifier() {
         notifyListeners()
     }
 
-    fun setSelection(
+    public fun setSelection(
         state: PixelTextFieldState,
         selectionStart: Int,
         selectionEnd: Int = selectionStart,
@@ -50,11 +50,11 @@ class PixelTextFieldController : ChangeNotifier() {
         notifyListeners()
     }
 
-    fun clear(state: PixelTextFieldState) {
+    public fun clear(state: PixelTextFieldState) {
         updateText(state = state, text = "")
     }
 
-    fun selectAll(state: PixelTextFieldState) {
+    public fun selectAll(state: PixelTextFieldState) {
         setSelection(
             state = state,
             selectionStart = 0,
@@ -62,27 +62,27 @@ class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
-    fun focus(state: PixelTextFieldState) {
+    public fun focus(state: PixelTextFieldState) {
         state.isFocused = true
         state.focusRequested = false
         state.blurRequested = false
         notifyListeners()
     }
 
-    fun blur(state: PixelTextFieldState) {
+    public fun blur(state: PixelTextFieldState) {
         state.isFocused = false
         state.focusRequested = false
         state.blurRequested = false
         notifyListeners()
     }
 
-    fun requestFocus(state: PixelTextFieldState) {
+    public fun requestFocus(state: PixelTextFieldState) {
         state.focusRequested = true
         state.blurRequested = false
         notifyListeners()
     }
 
-    fun requestBlur(state: PixelTextFieldState) {
+    public fun requestBlur(state: PixelTextFieldState) {
         state.blurRequested = true
         state.focusRequested = false
         notifyListeners()

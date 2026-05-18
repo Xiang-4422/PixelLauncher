@@ -2,19 +2,19 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.ScreenProfile
 
-enum class TextDirection {
+public enum class TextDirection {
     LTR,
     RTL,
 }
 
-data class MediaQueryData(
+public data class MediaQueryData(
     val logicalWidth: Int,
     val logicalHeight: Int,
     val screenProfile: ScreenProfile,
 )
 
-class Theme(
-    val data: ThemeData,
+public class Theme(
+    public val data: ThemeData,
     override val child: Widget,
     override val key: Any? = null,
 ) : InheritedWidget(
@@ -25,19 +25,19 @@ class Theme(
         return data != (oldWidget as? Theme)?.data
     }
 
-    companion object {
-        fun maybeOf(context: BuildContext): ThemeData? {
+    public companion object {
+        public fun maybeOf(context: BuildContext): ThemeData? {
             return context.dependOnInheritedWidgetOfExactType<Theme>()?.data
         }
 
-        fun of(context: BuildContext): ThemeData {
+        public fun of(context: BuildContext): ThemeData {
             return maybeOf(context) ?: ThemeData.Default
         }
     }
 }
 
-class Directionality(
-    val textDirection: TextDirection,
+public class Directionality(
+    public val textDirection: TextDirection,
     override val child: Widget,
     override val key: Any? = null,
 ) : InheritedWidget(
@@ -48,19 +48,19 @@ class Directionality(
         return textDirection != (oldWidget as? Directionality)?.textDirection
     }
 
-    companion object {
-        fun maybeOf(context: BuildContext): TextDirection? {
+    public companion object {
+        public fun maybeOf(context: BuildContext): TextDirection? {
             return context.dependOnInheritedWidgetOfExactType<Directionality>()?.textDirection
         }
 
-        fun of(context: BuildContext): TextDirection {
+        public fun of(context: BuildContext): TextDirection {
             return maybeOf(context) ?: TextDirection.LTR
         }
     }
 }
 
-class MediaQuery(
-    val data: MediaQueryData,
+public class MediaQuery(
+    public val data: MediaQueryData,
     override val child: Widget,
     override val key: Any? = null,
 ) : InheritedWidget(
@@ -71,12 +71,12 @@ class MediaQuery(
         return data != (oldWidget as? MediaQuery)?.data
     }
 
-    companion object {
-        fun maybeOf(context: BuildContext): MediaQueryData? {
+    public companion object {
+        public fun maybeOf(context: BuildContext): MediaQueryData? {
             return context.dependOnInheritedWidgetOfExactType<MediaQuery>()?.data
         }
 
-        fun of(context: BuildContext): MediaQueryData {
+        public fun of(context: BuildContext): MediaQueryData {
             return maybeOf(context)
                 ?: error("当前上下文里没有 MediaQuery，宿主需要先包一层 MediaQuery。")
         }

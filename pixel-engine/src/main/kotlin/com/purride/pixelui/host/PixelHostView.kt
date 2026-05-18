@@ -44,14 +44,14 @@ import kotlin.math.min
  * - 宿主负责维持 retained build tree
  * - 渲染阶段默认直接进入新 pipeline
  */
-class PixelHostView @JvmOverloads constructor(
+public class PixelHostView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : View(context, attrs), PixelFrameView {
 
     override var interactionListener: PixelFrameView.InteractionListener? = null
 
-    var screenProfile: ScreenProfile = ScreenProfile(
+    public var screenProfile: ScreenProfile = ScreenProfile(
         logicalWidth = 96,
         logicalHeight = 96,
         dotSizePx = 8,
@@ -67,7 +67,7 @@ class PixelHostView @JvmOverloads constructor(
      * 当业务层只关心“点大小和像素形状”时，可以设置这个偏好，把真正的
      * 全屏 `ScreenProfile` 推导交给 `PixelHostView` 自己完成。
      */
-    var profilePreference: PixelHostProfilePreference? = null
+    public var profilePreference: PixelHostProfilePreference? = null
         set(value) {
             field = value
             updateScreenProfileFromPreference()
@@ -105,22 +105,22 @@ class PixelHostView @JvmOverloads constructor(
     private var activeListTarget: PixelListTarget? = null
     private var focusedTextInputTarget: PixelTextInputTarget? = null
 
-    var hostBridge: PixelHostBridge? = null
+    public var hostBridge: PixelHostBridge? = null
 
     /**
      * 分页拖动启动策略。由 PixelHostSetupConfig 注入；业务可换上自定义子类。
      */
-    var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
+    public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
 
     /**
      * 嵌套滚动手势仲裁策略。
      */
-    var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
+    public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
 
     /**
      * 列表/单子节点 ScrollView 的滚动物理参数。默认值适配常见 launcher 滑动手感。
      */
-    var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
+    public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
 
     /**
      * 帧调度器。默认走 Android Choreographer；测试可注入 ManualFrameScheduler
@@ -128,7 +128,7 @@ class PixelHostView @JvmOverloads constructor(
      * 触发重绘；scheduler 主要给业务侧动画引擎调用 `scheduleFrame { tNs -> ... }`
      * 拿到精确帧时间戳用。
      */
-    var frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default
+    public var frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default
 
     /**
      * 宿主级默认主题。
@@ -136,7 +136,7 @@ class PixelHostView @JvmOverloads constructor(
      * 当整页大部分组件共享同一套默认样式时，可以直接把主题挂在宿主上，
      * 避免每个场景最外层都再包一层 `Theme(data, child)`。
      */
-    var themeData: ThemeData? = null
+    public var themeData: ThemeData? = null
         set(value) {
             field = value
             invalidate()
@@ -148,7 +148,7 @@ class PixelHostView @JvmOverloads constructor(
      * 这层会进入根环境，供 `Directionality.of(context)`、方向性对齐、
      * 方向性边距和方向性定位统一消费。
      */
-    var textDirection: TextDirection = TextDirection.LTR
+    public var textDirection: TextDirection = TextDirection.LTR
         set(value) {
             field = value
             invalidate()
@@ -160,7 +160,7 @@ class PixelHostView @JvmOverloads constructor(
      * 默认继续使用内置位图字体，但 demo 或后续业务层可以在不改 runtime 的情况下
      * 注入另一套文本实现。
      */
-    var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
+    public var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
             field = value
             // 切换 runtime 前丢弃旧 runtime 的 main buffer 引用：旧池随旧 runtime
@@ -195,7 +195,7 @@ class PixelHostView @JvmOverloads constructor(
     /**
      * 设置宿主当前要渲染的根组件。
      */
-    fun setContent(provider: RootWidgetProvider) {
+    public fun setContent(provider: RootWidgetProvider) {
         contentProvider = provider
         postInvalidateOnAnimation()
     }
@@ -210,7 +210,7 @@ class PixelHostView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun updateFocusedTextInput(
+    public fun updateFocusedTextInput(
         text: String,
         selectionStart: Int = text.length,
         selectionEnd: Int = selectionStart,
@@ -229,7 +229,7 @@ class PixelHostView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun clearFocusedTextInput() {
+    public fun clearFocusedTextInput() {
         val target = focusedTextInputTarget ?: return
         target.controller.blur(target.state)
         focusedTextInputTarget = null
@@ -237,7 +237,7 @@ class PixelHostView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun submitFocusedTextInput() {
+    public fun submitFocusedTextInput() {
         val target = focusedTextInputTarget ?: return
         target.onSubmitted?.invoke(target.state.text)
         invalidate()

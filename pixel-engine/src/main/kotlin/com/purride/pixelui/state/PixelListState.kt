@@ -7,19 +7,19 @@ package com.purride.pixelui.state
  * `scrollOffsetPx` 表示内容顶部相对视口顶部已经向上滚动了多少像素。
  * 这样可以先把列表视口、裁剪和触摸拖动打通，再决定后续是否增加虚拟化窗口等能力。
  */
-class PixelListState(
+public class PixelListState(
     initialScrollOffsetPx: Float = 0f,
 ) {
-    var scrollOffsetPx: Float = initialScrollOffsetPx.coerceAtLeast(0f)
+    public var scrollOffsetPx: Float = initialScrollOffsetPx.coerceAtLeast(0f)
         internal set
 
-    var isDragging: Boolean = false
+    public var isDragging: Boolean = false
         internal set
 
-    var isSettling: Boolean = false
+    public var isSettling: Boolean = false
         internal set
 
-    var scrollVelocityPxPerSecond: Float = 0f
+    public var scrollVelocityPxPerSecond: Float = 0f
         internal set
 
     internal var maxScrollOffsetPx: Float = 0f

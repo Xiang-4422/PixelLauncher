@@ -8,7 +8,7 @@ import kotlin.math.abs
  * 这个状态只描述拖动与吸附过程本身，不知道“页数”“当前页”“目标页”。
  * 分页语义由 pixel-engine UI layer 在更上一层负责。
  */
-data class AxisMotionState(
+public data class AxisMotionState(
     val isDragging: Boolean = false,
     val dragOffsetPx: Float = 0f,
     val isSettling: Boolean = false,
@@ -17,12 +17,12 @@ data class AxisMotionState(
     val settleProgress: Float = 1f,
 )
 
-class AxisMotionController(
+public class AxisMotionController(
     private val settleDurationMs: Long = 240L,
 ) {
-    fun create(): AxisMotionState = AxisMotionState()
+    public fun create(): AxisMotionState = AxisMotionState()
 
-    fun startDrag(state: AxisMotionState): AxisMotionState {
+    public fun startDrag(state: AxisMotionState): AxisMotionState {
         return state.copy(
             isDragging = true,
             isSettling = false,
@@ -32,7 +32,7 @@ class AxisMotionController(
         )
     }
 
-    fun dragBy(
+    public fun dragBy(
         state: AxisMotionState,
         deltaPx: Float,
         minOffsetPx: Float,
@@ -45,7 +45,7 @@ class AxisMotionController(
         return state.copy(dragOffsetPx = nextOffset)
     }
 
-    fun settleTo(
+    public fun settleTo(
         state: AxisMotionState,
         targetOffsetPx: Float,
     ): AxisMotionState {
@@ -69,9 +69,9 @@ class AxisMotionController(
         }
     }
 
-    fun reset(): AxisMotionState = create()
+    public fun reset(): AxisMotionState = create()
 
-    fun step(state: AxisMotionState, deltaMs: Long): AxisMotionState {
+    public fun step(state: AxisMotionState, deltaMs: Long): AxisMotionState {
         if (!state.isSettling) {
             return state
         }
@@ -88,7 +88,7 @@ class AxisMotionController(
         }
     }
 
-    fun visualOffsetPx(state: AxisMotionState): Float {
+    public fun visualOffsetPx(state: AxisMotionState): Float {
         return when {
             state.isDragging -> state.dragOffsetPx
             state.isSettling -> lerp(
@@ -101,7 +101,7 @@ class AxisMotionController(
         }
     }
 
-    fun isActive(state: AxisMotionState): Boolean = state.isDragging || state.isSettling
+    public fun isActive(state: AxisMotionState): Boolean = state.isDragging || state.isSettling
 
     private fun lerp(start: Float, end: Float, progress: Float): Float {
         return start + ((end - start) * progress.coerceIn(0f, 1f))
@@ -113,7 +113,7 @@ class AxisMotionController(
         return 1f - (oneMinusT * oneMinusT * oneMinusT)
     }
 
-    companion object {
+    public companion object {
         private const val SETTLE_EPSILON_PX = 0.25f
     }
 }

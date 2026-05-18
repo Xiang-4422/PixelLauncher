@@ -8,7 +8,7 @@ import com.purride.pixelcore.PixelAxis
  * 渲染层只需要知道当前锚点页、相邻页以及当前可视偏移，
  * 不需要知道完整手势推导过程。
  */
-data class PixelPagerSnapshot(
+public data class PixelPagerSnapshot(
     val axis: PixelAxis,
     val anchorPage: Int,
     val adjacentPage: Int?,

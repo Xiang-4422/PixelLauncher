@@ -13,11 +13,11 @@ import com.purride.pixelcore.PixelAxis
  * 宿主可继承此类重写两个方法提供更激进/保守的策略，然后通过
  * `PixelHostSetupConfig.nestedScrollPolicy` 注入。
  */
-open class NestedScrollGesturePolicy {
+public open class NestedScrollGesturePolicy {
     /**
      * 判断外层分页是否应该把当前拖动让给内层列表。
      */
-    open fun shouldDeferPagerToList(
+    public open fun shouldDeferPagerToList(
         pagerAxis: PixelAxis,
         pagerWantsDrag: Boolean,
         listWantsDrag: Boolean,
@@ -32,7 +32,7 @@ open class NestedScrollGesturePolicy {
     /**
      * 判断列表到边界后，是否应该把同一次手势接力给外层分页。
      */
-    open fun shouldHandOffListToPager(
+    public open fun shouldHandOffListToPager(
         pagerAxis: PixelAxis,
         listCanConsumeDrag: Boolean,
         deltaPx: Float,
@@ -42,11 +42,11 @@ open class NestedScrollGesturePolicy {
             deltaPx != 0f
     }
 
-    companion object {
+    public companion object {
         /**
          * 默认策略实例。绝大多数宿主直接复用即可。
          */
         @JvmField
-        val Default: NestedScrollGesturePolicy = NestedScrollGesturePolicy()
+        public val Default: NestedScrollGesturePolicy = NestedScrollGesturePolicy()
     }
 }

@@ -8,7 +8,7 @@ import java.util.Locale
  * 默认按固定时间窗口汇总每个阶段的调用次数、平均耗时和最大耗时，
  * 便于快速判断瓶颈位于主线程整帧渲染、Idle 物理更新，还是 GL 上传/绘制阶段。
  */
-object RenderPerfLogger {
+public object RenderPerfLogger {
     private const val TAG = "RenderPerf"
     private const val REPORT_WINDOW_MS = 2_000L
     private const val enabled = true
@@ -16,14 +16,14 @@ object RenderPerfLogger {
     private val statsByStage = linkedMapOf<String, StageStats>()
     private var lastFlushUptimeMs = nowMs()
 
-    fun mark(event: String, detail: String) {
+    public fun mark(event: String, detail: String) {
         if (!enabled) {
             return
         }
         emit("$event | $detail")
     }
 
-    fun <T> measure(stage: String, block: () -> T): T {
+    public fun <T> measure(stage: String, block: () -> T): T {
         if (!enabled) {
             return block()
         }
@@ -35,7 +35,7 @@ object RenderPerfLogger {
         }
     }
 
-    fun record(stage: String, durationNs: Long) {
+    public fun record(stage: String, durationNs: Long) {
         if (!enabled) {
             return
         }

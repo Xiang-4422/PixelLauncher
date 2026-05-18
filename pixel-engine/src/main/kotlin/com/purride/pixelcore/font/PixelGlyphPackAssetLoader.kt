@@ -8,13 +8,13 @@ import android.content.Context
  * pixel-engine core layer 已经有纯 Kotlin 的字形包解析器，这一层只负责把某个 assets 目录里的
  * `manifest.json` 和 `glyphs.bin` 读出来，再交给解析器。
  */
-class PixelGlyphPackAssetLoader(
+public class PixelGlyphPackAssetLoader(
     private val context: Context,
 ) {
 
     private val cache = mutableMapOf<String, PixelGlyphPack>()
 
-    fun load(assetDirectory: String): PixelGlyphPack {
+    public fun load(assetDirectory: String): PixelGlyphPack {
         return cache.getOrPut(assetDirectory) {
             val manifest = context.assets.open("$assetDirectory/manifest.json")
                 .bufferedReader(Charsets.UTF_8)

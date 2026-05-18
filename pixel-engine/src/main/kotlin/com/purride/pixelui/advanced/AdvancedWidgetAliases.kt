@@ -67,7 +67,7 @@ import com.purride.pixelui.internal.SingleChildRenderObjectWidget as InternalSin
  * 不建议直接继承本类；除非确实只画一个不含 child 的叶节点（建议用更
  * 具体的 [PixelLeafRenderObjectWidget] 表达意图）。
  */
-typealias PixelRenderObjectWidget = InternalRenderObjectWidget
+public typealias PixelRenderObjectWidget = InternalRenderObjectWidget
 
 /**
  * 不含 child 的叶 render object widget。语义等价于 Flutter 的
@@ -76,19 +76,19 @@ typealias PixelRenderObjectWidget = InternalRenderObjectWidget
  * 当前实现复用了 [PixelRenderObjectWidget]，只在命名上做了语义标记，
  * 让自定义"叶节点"意图更明确。
  */
-typealias PixelLeafRenderObjectWidget = InternalRenderObjectWidget
+public typealias PixelLeafRenderObjectWidget = InternalRenderObjectWidget
 
 /**
  * 单 child render object widget 基类。对应 Flutter 的
  * SingleChildRenderObjectWidget。
  */
-typealias PixelSingleChildRenderObjectWidget = InternalSingleChildRenderObjectWidget
+public typealias PixelSingleChildRenderObjectWidget = InternalSingleChildRenderObjectWidget
 
 /**
  * 多 child render object widget 基类。对应 Flutter 的
  * MultiChildRenderObjectWidget。
  */
-typealias PixelMultiChildRenderObjectWidget = InternalMultiChildRenderObjectWidget
+public typealias PixelMultiChildRenderObjectWidget = InternalMultiChildRenderObjectWidget
 
 // ---------------- RenderObject 基类 ----------------
 
@@ -96,55 +96,55 @@ typealias PixelMultiChildRenderObjectWidget = InternalMultiChildRenderObjectWidg
  * 自定义渲染对象的根基类。继承本类（或 [PixelRenderBox]）即可参与
  * pixel-engine 的 layout / paint / hitTest 管线。
  */
-typealias PixelRenderObject = InternalRenderObject
+public typealias PixelRenderObject = InternalRenderObject
 
 /**
  * 自定义渲染对象的盒模型基类。提供 `size: PixelRenderSize` 字段和
  * `layout(constraints)` / `paint(context, offsetX, offsetY)` / `hitTest(...)`
  * 等入口。
  */
-typealias PixelRenderBox = InternalRenderBox
+public typealias PixelRenderBox = InternalRenderBox
 
 /**
  * 单 child render object 基类。配合 [PixelSingleChildRenderObjectWidget] 使用。
  */
-typealias PixelSingleChildRenderObject = InternalSingleChildRenderObject
+public typealias PixelSingleChildRenderObject = InternalSingleChildRenderObject
 
 /**
  * 多 child render object 基类。配合 [PixelMultiChildRenderObjectWidget] 使用。
  */
-typealias PixelMultiChildRenderObject = InternalMultiChildRenderObject
+public typealias PixelMultiChildRenderObject = InternalMultiChildRenderObject
 
 // ---------------- 几何/上下文 类型 ----------------
 
 /**
  * 布局阶段父节点下发的约束（minWidth/maxWidth/minHeight/maxHeight）。
  */
-typealias PixelRenderConstraints = com.purride.pixelui.internal.RenderConstraints
+public typealias PixelRenderConstraints = com.purride.pixelui.internal.RenderConstraints
 
 /**
  * 布局完成后 render object 自身的尺寸。
  */
-typealias PixelRenderSize = com.purride.pixelui.internal.RenderSize
+public typealias PixelRenderSize = com.purride.pixelui.internal.RenderSize
 
 /**
  * paint 阶段传入的上下文，含目标 buffer 与共享 buffer pool。
  */
-typealias PixelPaintContext = com.purride.pixelui.internal.PaintContext
+public typealias PixelPaintContext = com.purride.pixelui.internal.PaintContext
 
 /**
  * hitTest 收集的命中节点序列。
  */
-typealias PixelHitTestResult = com.purride.pixelui.internal.HitTestResult
+public typealias PixelHitTestResult = com.purride.pixelui.internal.HitTestResult
 
 // ---------------- 协议接口 ----------------
 
 /**
  * 单 child 协议——render object 需要实现这个接口才能挂接 single child widget。
  */
-typealias PixelRenderObjectWithChild = InternalRenderObjectWithChild
+public typealias PixelRenderObjectWithChild = InternalRenderObjectWithChild
 
 /**
  * 多 child 协议——render object 需要实现这个接口才能挂接 multi-child widget。
  */
-typealias PixelRenderObjectWithChildren = InternalRenderObjectWithChildren
+public typealias PixelRenderObjectWithChildren = InternalRenderObjectWithChildren

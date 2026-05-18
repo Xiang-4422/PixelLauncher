@@ -9,7 +9,7 @@ import java.io.InputStream
  * 这一层只描述“某个字形包里有哪些字、每个字占多高的单元格、默认前进宽度是多少”，
  * 不关心这些资源来自哪一个应用，也不关心具体由谁加载。
  */
-data class PixelGlyphPackManifest(
+public data class PixelGlyphPackManifest(
     val packId: String,
     val displayName: String,
     val cellHeight: Int,
@@ -23,7 +23,7 @@ data class PixelGlyphPackManifest(
  *
  * `packedPixels` 采用按位压缩格式，真正的位图需要在消费端按宽高解包。
  */
-data class PackedGlyphRecord(
+public data class PackedGlyphRecord(
     val codePoint: Int,
     val advanceWidth: Int,
     val width: Int,
@@ -33,7 +33,7 @@ data class PackedGlyphRecord(
 /**
  * 完整字形包。
  */
-data class PixelGlyphPack(
+public data class PixelGlyphPack(
     val manifest: PixelGlyphPackManifest,
     val glyphs: Map<Int, PackedGlyphRecord>,
 )
@@ -44,12 +44,12 @@ data class PixelGlyphPack(
  * 第一版保持纯 Kotlin/JVM 可测，不依赖 Android JSON 或资源加载器。
  * 上层只需要把 manifest 文本和二进制流喂进来即可。
  */
-object PixelGlyphPackParser {
+public object PixelGlyphPackParser {
 
     private const val MAGIC = 0x50474C59 // PGLY
     private const val VERSION = 1
 
-    fun parseManifest(json: String): PixelGlyphPackManifest {
+    public fun parseManifest(json: String): PixelGlyphPackManifest {
         return PixelGlyphPackManifest(
             packId = json.readString("packId"),
             displayName = json.readString("displayName"),
@@ -60,7 +60,7 @@ object PixelGlyphPackParser {
         )
     }
 
-    fun parseBinary(manifest: PixelGlyphPackManifest, inputStream: InputStream): PixelGlyphPack {
+    public fun parseBinary(manifest: PixelGlyphPackManifest, inputStream: InputStream): PixelGlyphPack {
         DataInputStream(inputStream).use { dataInput ->
             val magic = dataInput.readInt()
             require(magic == MAGIC) { "Unexpected glyph pack magic: $magic" }

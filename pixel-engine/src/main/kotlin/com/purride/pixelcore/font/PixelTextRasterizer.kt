@@ -10,13 +10,13 @@ package com.purride.pixelcore
  *
  * 这样上层不需要关心底层到底是内置位图字体、真实字形包，还是其他字体实现。
  */
-interface PixelTextRasterizer {
+public interface PixelTextRasterizer {
 
-    fun measureText(text: String): Int
+    public fun measureText(text: String): Int
 
-    fun measureHeight(text: String): Int
+    public fun measureHeight(text: String): Int
 
-    fun drawText(
+    public fun drawText(
         buffer: PixelBuffer,
         text: String,
         x: Int,
@@ -31,7 +31,7 @@ interface PixelTextRasterizer {
  * 当上层已经有 `PixelFontEngine + GlyphStyle` 组合时，可以通过这个适配器暴露成
  * `PixelTextRasterizer`，从而直接接入 pixel-engine UI layer。
  */
-class PixelStyledTextRasterizer(
+public class PixelStyledTextRasterizer(
     private val engine: PixelFontEngine,
     private val style: GlyphStyle,
     private val lineSpacing: Int = 0,

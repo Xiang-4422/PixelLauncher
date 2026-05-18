@@ -1,6 +1,6 @@
 package com.purride.pixelui
 
-enum class PixelTextOverflow {
+public enum class PixelTextOverflow {
     CLIP,
     ELLIPSIS,
 }

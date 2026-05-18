@@ -9,22 +9,22 @@ import com.purride.pixelui.state.PixelPagerState
  * 当前阶段这些能力先映射到现有控制器，
  * 让页面层优先使用统一的公开语言，而不是直接依赖底层方法名。
  */
-fun PageController.jumpToPage(
+public fun PageController.jumpToPage(
     state: PixelPagerState,
     page: Int,
 ) {
     syncToPage(state = state, targetPage = page)
 }
 
-fun PageController.nextPage(state: PixelPagerState) {
+public fun PageController.nextPage(state: PixelPagerState) {
     jumpToPage(state = state, page = state.currentPage + 1)
 }
 
-fun PageController.previousPage(state: PixelPagerState) {
+public fun PageController.previousPage(state: PixelPagerState) {
     jumpToPage(state = state, page = state.currentPage - 1)
 }
 
-fun ScrollController.showItem(
+public fun ScrollController.showItem(
     state: PixelListState,
     itemIndex: Int,
 ) {
@@ -34,7 +34,7 @@ fun ScrollController.showItem(
     )
 }
 
-fun ScrollController.jumpToStart(state: PixelListState) {
+public fun ScrollController.jumpToStart(state: PixelListState) {
     scrollTo(
         state = state,
         targetOffsetPx = 0f,
@@ -43,7 +43,7 @@ fun ScrollController.jumpToStart(state: PixelListState) {
     )
 }
 
-fun ScrollController.jumpToEnd(state: PixelListState) {
+public fun ScrollController.jumpToEnd(state: PixelListState) {
     scrollTo(
         state = state,
         targetOffsetPx = state.maxScrollOffsetPx,
@@ -52,7 +52,7 @@ fun ScrollController.jumpToEnd(state: PixelListState) {
     )
 }
 
-fun ScrollController.fling(
+public fun ScrollController.fling(
     state: PixelListState,
     velocityPxPerSecond: Float,
 ) {
@@ -76,7 +76,7 @@ fun ScrollController.fling(
  * // 解绑：controller.removeListener(handle)
  * ```
  */
-inline fun ChangeNotifier.observe(crossinline onChanged: () -> Unit): VoidCallback {
+public inline fun ChangeNotifier.observe(crossinline onChanged: () -> Unit): VoidCallback {
     val listener = VoidCallback { onChanged() }
     addListener(listener)
     return listener

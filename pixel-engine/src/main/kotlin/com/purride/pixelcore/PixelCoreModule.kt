@@ -8,4 +8,4 @@ package com.purride.pixelcore
  *
  * 它不负责任何产品页面语义，也不应该知道 HOME、DRAWER、SMS、IDLE 这类概念。
  */
-object PixelCoreModule
+public object PixelCoreModule

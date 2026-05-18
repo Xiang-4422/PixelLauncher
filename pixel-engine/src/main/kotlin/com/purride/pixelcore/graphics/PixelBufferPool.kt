@@ -10,7 +10,7 @@ package com.purride.pixelcore
  * 池按 (width, height) 分桶；每个桶最多保留 [maxBuffersPerKey] 个 buffer，
  * 防止内存无限增长。
  */
-class PixelBufferPool(
+public class PixelBufferPool(
     private val maxBuffersPerKey: Int = DEFAULT_MAX_BUFFERS_PER_KEY,
 ) {
     private val pools = HashMap<Long, ArrayDeque<PixelBuffer>>()
@@ -20,7 +20,7 @@ class PixelBufferPool(
     /**
      * 取一个指定尺寸的 buffer；命中时复用并清零，未命中时新建。
      */
-    fun acquire(width: Int, height: Int): PixelBuffer {
+    public fun acquire(width: Int, height: Int): PixelBuffer {
         val safeWidth = width.coerceAtLeast(0)
         val safeHeight = height.coerceAtLeast(0)
         val key = packKey(safeWidth, safeHeight)
@@ -38,7 +38,7 @@ class PixelBufferPool(
     /**
      * 把 buffer 归还到池。超过桶上限时直接丢弃。
      */
-    fun release(buffer: PixelBuffer) {
+    public fun release(buffer: PixelBuffer) {
         val key = packKey(buffer.width, buffer.height)
         val bucket = pools.getOrPut(key) { ArrayDeque() }
         if (bucket.size < maxBuffersPerKey) {
@@ -49,7 +49,7 @@ class PixelBufferPool(
     /**
      * 清空所有桶，主要用于 runtime dispose 或测试隔离。
      */
-    fun clear() {
+    public fun clear() {
         pools.clear()
         hits = 0L
         misses = 0L
@@ -58,7 +58,7 @@ class PixelBufferPool(
     /**
      * 返回缓存命中统计快照。
      */
-    fun stats(): PixelBufferPoolStats {
+    public fun stats(): PixelBufferPoolStats {
         return PixelBufferPoolStats(
             buckets = pools.size,
             cached = pools.values.sumOf { it.size },
@@ -71,7 +71,7 @@ class PixelBufferPool(
         return (width.toLong() shl 32) or (height.toLong() and 0xFFFFFFFFL)
     }
 
-    companion object {
+    public companion object {
         private const val DEFAULT_MAX_BUFFERS_PER_KEY = 4
     }
 }
@@ -79,7 +79,7 @@ class PixelBufferPool(
 /**
  * PixelBufferPool 的统计快照，供测试和 diagnostics 使用。
  */
-data class PixelBufferPoolStats(
+public data class PixelBufferPoolStats(
     val buckets: Int,
     val cached: Int,
     val hits: Long,

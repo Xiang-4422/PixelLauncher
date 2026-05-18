@@ -8,7 +8,7 @@ import com.purride.pixelcore.PixelTone
  * 第一版延续当前组件的最小风格模型：
  * 填充、边框、文本、占位文本和光标色都作为样式对象收敛。
  */
-data class PixelTextFieldStyle(
+public data class PixelTextFieldStyle(
     val fillTone: PixelTone = PixelTone.OFF,
     val borderTone: PixelTone? = PixelTone.ON,
     val focusedBorderTone: PixelTone? = PixelTone.ACCENT,
@@ -21,7 +21,7 @@ data class PixelTextFieldStyle(
     val cursorTone: PixelTone = PixelTone.ACCENT,
     val padding: Int = 2,
 ) {
-    companion object {
-        val Default = PixelTextFieldStyle()
+    public companion object {
+        public val Default: PixelTextFieldStyle = PixelTextFieldStyle()
     }
 }

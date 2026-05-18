@@ -5,7 +5,7 @@ package com.purride.pixelui
  *
  * 默认值保持既有列表滚动行为：夹紧边界、线性减速、没有回弹。
  */
-data class PixelScrollPhysics(
+public data class PixelScrollPhysics(
     val decelerationPxPerSecondSquared: Float = 2400f,
     val minFlingVelocityPxPerSecond: Float = 12f,
     val snapEpsilonPx: Float = 0.25f,
@@ -13,8 +13,8 @@ data class PixelScrollPhysics(
     val bounceOverscrollLimitPx: Float = 0f,
     val bounceResistance: Float = 0.5f,
 ) {
-    companion object {
-        val Clamp = PixelScrollPhysics()
-        val Default = Clamp
+    public companion object {
+        public val Clamp: PixelScrollPhysics = PixelScrollPhysics()
+        public val Default: PixelScrollPhysics = Clamp
     }
 }

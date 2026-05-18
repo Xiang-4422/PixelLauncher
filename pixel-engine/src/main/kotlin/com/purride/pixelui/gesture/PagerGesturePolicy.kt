@@ -11,7 +11,7 @@ import kotlin.math.abs
  * 重写 [shouldStartDrag] 提供更激进/保守的策略，然后通过
  * `PixelHostSetupConfig.pagerGesturePolicy` 注入。
  */
-open class PagerGesturePolicy {
+public open class PagerGesturePolicy {
     /**
      * 判断一次触摸位移是否应该升级成分页拖拽。
      *
@@ -21,7 +21,7 @@ open class PagerGesturePolicy {
      * @param touchSlopPx 系统 touchSlop（像素）
      * @param axisBias 主轴优先程度（默认 1.2）
      */
-    open fun shouldStartDrag(
+    public open fun shouldStartDrag(
         axis: PixelAxis,
         deltaX: Float,
         deltaY: Float,
@@ -36,13 +36,13 @@ open class PagerGesturePolicy {
         }
     }
 
-    companion object {
-        const val DEFAULT_AXIS_BIAS = 1.2f
+    public companion object {
+        public const val DEFAULT_AXIS_BIAS: Float = 1.2f
 
         /**
          * 默认策略实例。绝大多数宿主直接复用即可。
          */
         @JvmField
-        val Default: PagerGesturePolicy = PagerGesturePolicy()
+        public val Default: PagerGesturePolicy = PagerGesturePolicy()
     }
 }

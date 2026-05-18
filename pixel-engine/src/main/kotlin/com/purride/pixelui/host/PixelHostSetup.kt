@@ -17,7 +17,7 @@ import com.purride.pixelui.PixelScrollPhysics
  * 这层把 `PixelHostView`、默认文本输入桥接和根容器收在一起，
  * 让业务页面不需要每次都手写同一套 `FrameLayout + hidden EditText` 样板。
  */
-data class PixelHostSetup(
+public data class PixelHostSetup(
     val rootView: FrameLayout,
     val hostView: PixelHostView,
     val textInputBridge: PixelTextInputBridge,
@@ -29,7 +29,7 @@ data class PixelHostSetup(
  * 这层把业务页面最常见的宿主初始化项收成一个对象：
  * profile、调色板、文本栅格器、主题和根组件提供器都可以一次性带进来。
  */
-data class PixelHostSetupConfig(
+public data class PixelHostSetupConfig(
     val profilePreference: PixelHostProfilePreference? = null,
     val palette: PixelPalette? = null,
     val textRasterizer: PixelTextRasterizer? = null,
@@ -64,7 +64,7 @@ data class PixelHostSetupConfig(
  * 2. 连接默认的 `PixelTextInputBridge`
  * 3. 返回已经装好宿主视图和隐藏输入框的根容器
  */
-fun createPixelHostSetup(
+public fun createPixelHostSetup(
     context: Context,
     hostView: PixelHostView = PixelHostView(context),
     config: PixelHostSetupConfig = PixelHostSetupConfig(),

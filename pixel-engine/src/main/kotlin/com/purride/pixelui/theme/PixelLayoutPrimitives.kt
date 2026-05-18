@@ -8,7 +8,7 @@ import com.purride.pixelcore.PixelAxis
  * 当前阶段底层仍然直接复用 `PixelAxis`，
  * 所以这里先用类型别名稳定公开 API。
  */
-typealias Axis = PixelAxis
+public typealias Axis = PixelAxis
 
 /**
  * Flutter 风格的对齐枚举。
@@ -26,7 +26,7 @@ typealias Axis = PixelAxis
  *
  * 当前直接对齐到最常用的 Flutter 方位集合。
  */
-enum class Alignment {
+public enum class Alignment {
     TOP_START,
     TOP_CENTER,
     TOP_END,
@@ -38,7 +38,7 @@ enum class Alignment {
     BOTTOM_END,
 }
 
-enum class AlignmentDirectional {
+public enum class AlignmentDirectional {
     TOP_START,
     TOP_CENTER,
     TOP_END,
@@ -50,7 +50,7 @@ enum class AlignmentDirectional {
     BOTTOM_END,
 }
 
-enum class MainAxisAlignment {
+public enum class MainAxisAlignment {
     START,
     CENTER,
     END,
@@ -59,24 +59,24 @@ enum class MainAxisAlignment {
     SPACE_EVENLY,
 }
 
-enum class MainAxisSize {
+public enum class MainAxisSize {
     MIN,
     MAX,
 }
 
-enum class CrossAxisAlignment {
+public enum class CrossAxisAlignment {
     START,
     CENTER,
     END,
     STRETCH,
 }
 
-enum class FlexFit {
+public enum class FlexFit {
     TIGHT,
     LOOSE,
 }
 
-enum class TextAlign {
+public enum class TextAlign {
     START,
     CENTER,
     END,

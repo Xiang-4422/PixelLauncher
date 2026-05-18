@@ -15,12 +15,12 @@ import kotlin.math.abs
  * `controller.addListener { /* on changed */ }` 注册回调，或用
  * `controller.observe { ... }` 扩展拿到句柄方便后续 removeListener。
  */
-class PixelPagerController(
+public class PixelPagerController(
     private val distanceThresholdFraction: Float = 0.4f,
     private val velocityThresholdPagesPerSecond: Float = 0.35f,
     private val motionController: AxisMotionController = AxisMotionController(),
 ) : ChangeNotifier() {
-    fun create(
+    public fun create(
         pageCount: Int,
         currentPage: Int = 0,
         axis: PixelAxis = PixelAxis.HORIZONTAL,
@@ -35,7 +35,7 @@ class PixelPagerController(
         }
     }
 
-    fun sync(
+    public fun sync(
         state: PixelPagerState,
         axis: PixelAxis,
         pageCount: Int,
@@ -46,7 +46,7 @@ class PixelPagerController(
         state.settleTargetPage = state.settleTargetPage.coerceIn(0, state.pageCount - 1)
     }
 
-    fun syncToPage(state: PixelPagerState, targetPage: Int) {
+    public fun syncToPage(state: PixelPagerState, targetPage: Int) {
         val safeTargetPage = targetPage.coerceIn(0, state.pageCount - 1)
         state.currentPage = safeTargetPage
         state.settleTargetPage = safeTargetPage
@@ -54,13 +54,13 @@ class PixelPagerController(
         notifyListeners()
     }
 
-    fun startDrag(state: PixelPagerState) {
+    public fun startDrag(state: PixelPagerState) {
         state.settleTargetPage = state.currentPage
         state.motionState = motionController.startDrag(state.motionState)
         notifyListeners()
     }
 
-    fun dragBy(
+    public fun dragBy(
         state: PixelPagerState,
         deltaPx: Float,
         viewportSizePx: Int,
@@ -77,7 +77,7 @@ class PixelPagerController(
         notifyListeners()
     }
 
-    fun endDrag(
+    public fun endDrag(
         state: PixelPagerState,
         viewportSizePx: Int,
         velocityPxPerSecond: Float,
@@ -115,7 +115,7 @@ class PixelPagerController(
         notifyListeners()
     }
 
-    fun cancelDrag(state: PixelPagerState) {
+    public fun cancelDrag(state: PixelPagerState) {
         state.settleTargetPage = state.currentPage
         state.motionState = motionController.settleTo(
             state = state.motionState,
@@ -127,7 +127,7 @@ class PixelPagerController(
         notifyListeners()
     }
 
-    fun step(state: PixelPagerState, deltaMs: Long) {
+    public fun step(state: PixelPagerState, deltaMs: Long) {
         val wasSettling = state.motionState.isSettling
         state.motionState = motionController.step(state.motionState, deltaMs)
         if (wasSettling && !state.motionState.isSettling) {
@@ -137,7 +137,7 @@ class PixelPagerController(
         notifyListeners()
     }
 
-    fun snapshot(state: PixelPagerState): PixelPagerSnapshot {
+    public fun snapshot(state: PixelPagerState): PixelPagerSnapshot {
         val offsetPx = motionController.visualOffsetPx(state.motionState)
         val adjacentPage = when {
             offsetPx > DRAG_EPSILON_PX && state.currentPage > 0 -> state.currentPage - 1
@@ -153,7 +153,7 @@ class PixelPagerController(
         )
     }
 
-    fun isActive(state: PixelPagerState): Boolean = motionController.isActive(state.motionState)
+    public fun isActive(state: PixelPagerState): Boolean = motionController.isActive(state.motionState)
 
     private fun resolveDirection(
         offsetPx: Float,
@@ -174,7 +174,7 @@ class PixelPagerController(
         else -> 0
     }
 
-    companion object {
+    public companion object {
         private const val DRAG_EPSILON_PX = 0.5f
     }
 }

@@ -5,8 +5,8 @@ package com.purride.pixelui.internal
  *
  * 第一版只稳定 attach/detach、owner 协作、脏标记和子节点遍历协议。
  */
-abstract class RenderObject {
-    var parent: RenderObject? = null
+public abstract class RenderObject {
+    public var parent: RenderObject? = null
         internal set
 
     private var owner: PipelineOwner? = null
@@ -75,17 +75,17 @@ abstract class RenderObject {
     /**
      * 子类可选的 attach 扩展点。
      */
-    protected open fun onAttach() = Unit
+    protected open fun onAttach(): Unit = Unit
 
     /**
      * 子类可选的 detach 扩展点。
      */
-    protected open fun onDetach() = Unit
+    protected open fun onDetach(): Unit = Unit
 
     /**
      * 遍历当前对象的直接子节点。
      */
-    protected open fun visitChildren(visitor: (RenderObject) -> Unit) = Unit
+    protected open fun visitChildren(visitor: (RenderObject) -> Unit): Unit = Unit
 
     /**
      * 收集当前 render subtree 的调试快照。
@@ -124,19 +124,19 @@ internal data class RenderDiagnosticsNode(
 /**
  * 新渲染管线里的基础盒模型对象。
  */
-abstract class RenderBox : RenderObject() {
-    var size: RenderSize = RenderSize.Zero
+public abstract class RenderBox : RenderObject() {
+    public var size: RenderSize = RenderSize.Zero
         protected set
 
     /**
      * 在给定约束下执行布局。
      */
-    abstract fun layout(constraints: RenderConstraints)
+    public abstract fun layout(constraints: RenderConstraints)
 
     /**
      * 在指定偏移下把自己画到目标 buffer。
      */
-    abstract fun paint(
+    public abstract fun paint(
         context: PaintContext,
         offsetX: Int,
         offsetY: Int,
@@ -145,11 +145,11 @@ abstract class RenderBox : RenderObject() {
     /**
      * 执行局部坐标系下的命中测试。
      */
-    open fun hitTest(
+    public open fun hitTest(
         localX: Int,
         localY: Int,
         result: HitTestResult,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的点击目标。
@@ -191,27 +191,27 @@ abstract class RenderBox : RenderObject() {
 /**
  * 可承接单个 render object 子节点的协议。
  */
-interface RenderObjectWithChild {
+public interface RenderObjectWithChild {
     /**
      * 替换当前 render object 的唯一子节点。
      */
-    fun setRenderObjectChild(child: RenderObject?)
+    public fun setRenderObjectChild(child: RenderObject?)
 }
 
 /**
  * 可承接多个 render object 子节点的协议。
  */
-interface RenderObjectWithChildren {
+public interface RenderObjectWithChildren {
     /**
      * 替换当前 render object 的所有直接子节点。
      */
-    fun setRenderObjectChildren(children: List<RenderObject>)
+    public fun setRenderObjectChildren(children: List<RenderObject>)
 }
 
 /**
  * 单 child render object 的基础实现。
  */
-abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
+public abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
     protected var child: RenderObject? = null
         private set
 
@@ -239,7 +239,7 @@ abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
 /**
  * 多 child render object 的基础实现。
  */
-abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox() {
+public abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox() {
     protected var children: List<RenderObject> = emptyList()
         private set
 

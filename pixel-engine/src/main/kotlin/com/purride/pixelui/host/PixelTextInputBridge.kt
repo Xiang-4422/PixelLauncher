@@ -22,10 +22,10 @@ import android.widget.EditText
  * - 把隐藏输入框的文本变化回写到 `PixelHostView`
  * - 提供一个默认的 `PixelHostBridge` 实现
  */
-class PixelTextInputBridge(
+public class PixelTextInputBridge(
     context: Context,
     private val hostView: PixelHostView,
-    val inputView: EditText = EditText(context),
+    public val inputView: EditText = EditText(context),
 ) : PixelHostBridge {
 
     private val inputMethodManager = context.getSystemService(InputMethodManager::class.java)
@@ -119,7 +119,7 @@ class PixelTextInputBridge(
         hostView.requestRender()
     }
 
-    override fun dispatchSystemAction(action: PixelSystemAction) = Unit
+    override fun dispatchSystemAction(action: PixelSystemAction): Unit = Unit
 
     private fun configureLineMode(request: PixelTextInputRequest) {
         val safeMinLines = request.minLines.coerceAtLeast(1)

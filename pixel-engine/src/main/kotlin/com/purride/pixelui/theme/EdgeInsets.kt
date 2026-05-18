@@ -6,22 +6,22 @@ package com.purride.pixelui
  * 提供 `all / symmetric / only` 三种工厂方法，与公开 widget API 的
  * Padding/Container/Decoration 等组件直接对接，无需任何链式 modifier 包装。
  */
-data class EdgeInsets(
+public data class EdgeInsets(
     val left: Int,
     val top: Int,
     val right: Int,
     val bottom: Int,
 ) {
-    companion object {
-        fun all(value: Int): EdgeInsets {
+    public companion object {
+        public fun all(value: Int): EdgeInsets {
             return EdgeInsets(left = value, top = value, right = value, bottom = value)
         }
 
-        fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsets {
+        public fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsets {
             return EdgeInsets(left = horizontal, top = vertical, right = horizontal, bottom = vertical)
         }
 
-        fun only(
+        public fun only(
             left: Int = 0,
             top: Int = 0,
             right: Int = 0,
@@ -38,22 +38,22 @@ data class EdgeInsets(
  * 它不直接保存 `left/right`，而是保存 `start/end`，
  * 具体映射到哪一侧，由当前 `Directionality` 决定。
  */
-data class EdgeInsetsDirectional(
+public data class EdgeInsetsDirectional(
     val start: Int,
     val top: Int,
     val end: Int,
     val bottom: Int,
 ) {
-    companion object {
-        fun all(value: Int): EdgeInsetsDirectional {
+    public companion object {
+        public fun all(value: Int): EdgeInsetsDirectional {
             return EdgeInsetsDirectional(start = value, top = value, end = value, bottom = value)
         }
 
-        fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsetsDirectional {
+        public fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsetsDirectional {
             return EdgeInsetsDirectional(start = horizontal, top = vertical, end = horizontal, bottom = vertical)
         }
 
-        fun only(
+        public fun only(
             start: Int = 0,
             top: Int = 0,
             end: Int = 0,

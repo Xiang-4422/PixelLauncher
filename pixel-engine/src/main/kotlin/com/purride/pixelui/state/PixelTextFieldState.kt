@@ -10,21 +10,21 @@ package com.purride.pixelui.state
  *
  * 暂时不做组合输入、选择手柄和光标闪烁节拍，这些后续可以继续扩展。
  */
-class PixelTextFieldState(
+public class PixelTextFieldState(
     initialText: String = "",
     selectionStart: Int = initialText.length,
     selectionEnd: Int = selectionStart,
 ) {
-    var text: String = initialText
+    public var text: String = initialText
         internal set
 
-    var selectionStart: Int = selectionStart.coerceIn(0, initialText.length)
+    public var selectionStart: Int = selectionStart.coerceIn(0, initialText.length)
         internal set
 
-    var selectionEnd: Int = selectionEnd.coerceIn(this.selectionStart, initialText.length)
+    public var selectionEnd: Int = selectionEnd.coerceIn(this.selectionStart, initialText.length)
         internal set
 
-    var isFocused: Boolean = false
+    public var isFocused: Boolean = false
         internal set
 
     internal var focusRequested: Boolean = false

@@ -7,29 +7,29 @@ import android.view.View
  *
  * 这层只定义“像素帧如何提交给宿主 View”，不定义更高层的页面运行时。
  */
-interface PixelFrameView {
-    interface InteractionListener {
-        fun onLogicalTap(x: Int, y: Int)
-        fun onSwipeUp()
-        fun onSwipeDown()
-        fun onSwipeLeft()
-        fun onSwipeRight()
-        fun onLogicalDragStart(x: Int, y: Int): Boolean
-        fun onLogicalDragMove(x: Int, y: Int): Boolean
-        fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean
+public interface PixelFrameView {
+    public interface InteractionListener {
+        public fun onLogicalTap(x: Int, y: Int)
+        public fun onSwipeUp()
+        public fun onSwipeDown()
+        public fun onSwipeLeft()
+        public fun onSwipeRight()
+        public fun onLogicalDragStart(x: Int, y: Int): Boolean
+        public fun onLogicalDragMove(x: Int, y: Int): Boolean
+        public fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean
     }
 
-    var interactionListener: InteractionListener?
+    public var interactionListener: InteractionListener?
 
-    fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette)
+    public fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette)
 
-    fun setPalette(palette: PixelPalette)
+    public fun setPalette(palette: PixelPalette)
 
-    fun setPixelGapEnabled(enabled: Boolean) = Unit
+    public fun setPixelGapEnabled(enabled: Boolean): Unit = Unit
 
-    fun asView(): View
+    public fun asView(): View
 
-    fun onHostResume() = Unit
+    public fun onHostResume(): Unit = Unit
 
-    fun onHostPause() = Unit
+    public fun onHostPause(): Unit = Unit
 }

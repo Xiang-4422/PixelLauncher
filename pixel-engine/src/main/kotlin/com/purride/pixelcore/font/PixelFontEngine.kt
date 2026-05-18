@@ -6,7 +6,7 @@ package com.purride.pixelcore
  * 这里先保留和现有 Launcher 字体链路兼容的字段形状，方便后面把真实字形包接到
  * pixel-engine UI layer 或 demo 上时不需要重新设计一轮样式协议。
  */
-data class GlyphStyle(
+public data class GlyphStyle(
     val cellHeight: Int,
     val narrowAdvanceWidth: Int,
     val wideAdvanceWidth: Int,
@@ -22,12 +22,12 @@ data class GlyphStyle(
     val baseLetterSpacing: Int = 0,
 )
 
-enum class PixelFontWeight {
+public enum class PixelFontWeight {
     NORMAL,
     BOLD,
 }
 
-enum class PixelFontFamily {
+public enum class PixelFontFamily {
     DEFAULT,
     MONOSPACE,
 }
@@ -38,7 +38,7 @@ enum class PixelFontFamily {
  * `inkLeft/inkRight` 用来描述真实墨迹边界，后续在中英文或宽窄字符混排时，
  * 可以据此保证最小可视空列，而不是简单按字符分类硬编码。
  */
-data class GlyphMetrics(
+public data class GlyphMetrics(
     val advanceWidth: Int,
     val baselineOffset: Int,
     val isWideGlyph: Boolean,
@@ -47,23 +47,23 @@ data class GlyphMetrics(
     val inkRight: Int = advanceWidth - 1,
 )
 
-data class GlyphBitmap(
+public data class GlyphBitmap(
     val width: Int,
     val height: Int,
     val pixels: ByteArray,
     val metrics: GlyphMetrics,
 )
 
-interface GlyphSource {
-    fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap?
+public interface GlyphSource {
+    public fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap?
 
-    fun clearCache() = Unit
+    public fun clearCache(): Unit = Unit
 }
 
-interface GlyphProvider {
-    fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap
+public interface GlyphProvider {
+    public fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap
 
-    fun clearCache() = Unit
+    public fun clearCache(): Unit = Unit
 }
 
 /**
@@ -71,7 +71,7 @@ interface GlyphProvider {
  *
  * 上层可以把多个字形来源按优先级串起来，例如拉丁包、中文包、兜底空字形。
  */
-class CompositeGlyphProvider(
+public class CompositeGlyphProvider(
     private val sources: List<GlyphSource>,
 ) : GlyphProvider {
 
@@ -108,7 +108,7 @@ class CompositeGlyphProvider(
  *
  * 它只负责把压缩字形记录解包成像素矩阵，并缓存解包结果；不负责资源加载。
  */
-class BitmapGlyphSource(
+public class BitmapGlyphSource(
     private val packs: List<PixelGlyphPack>,
 ) : GlyphSource {
 
@@ -200,10 +200,10 @@ class BitmapGlyphSource(
  * 2. 按像素宽度裁剪文本
  * 3. 按真实字形位图绘制文本
  */
-class PixelFontEngine(
+public class PixelFontEngine(
     private val glyphProvider: GlyphProvider,
 ) {
-    companion object {
+    public companion object {
         private const val MIN_WIDE_PAIR_VISUAL_GAP = 1
         private const val MAX_CACHE_ENTRIES = 2048
         private const val CACHE_INITIAL_CAPACITY = 64
@@ -223,7 +223,7 @@ class PixelFontEngine(
     private var glyphCacheHits: Long = 0L
     private var glyphCacheMisses: Long = 0L
 
-    fun measureText(text: String, style: GlyphStyle): Int {
+    public fun measureText(text: String, style: GlyphStyle): Int {
         var totalWidth = 0
         var previousGlyph: GlyphBitmap? = null
         text.forEach { character ->
@@ -234,7 +234,7 @@ class PixelFontEngine(
         return totalWidth
     }
 
-    fun trimToWidth(text: String, style: GlyphStyle, maxWidth: Int): String {
+    public fun trimToWidth(text: String, style: GlyphStyle, maxWidth: Int): String {
         if (text.isEmpty() || maxWidth <= 0) {
             return ""
         }
@@ -255,7 +255,7 @@ class PixelFontEngine(
         return builder.toString()
     }
 
-    fun drawText(
+    public fun drawText(
         buffer: PixelBuffer,
         text: String,
         startX: Int,
@@ -287,7 +287,7 @@ class PixelFontEngine(
         }
     }
 
-    fun clearCache() {
+    public fun clearCache() {
         glyphCache.clear()
         glyphCacheHits = 0L
         glyphCacheMisses = 0L
@@ -297,7 +297,7 @@ class PixelFontEngine(
     /**
      * 返回 glyph cache 的命中统计快照，主要给基线/perf 测试使用。
      */
-    fun glyphCacheStats(): GlyphCacheStats {
+    public fun glyphCacheStats(): GlyphCacheStats {
         return GlyphCacheStats(
             size = glyphCache.size,
             capacity = MAX_CACHE_ENTRIES,
@@ -380,7 +380,7 @@ class PixelFontEngine(
 /**
  * glyph 缓存命中统计快照。
  */
-data class GlyphCacheStats(
+public data class GlyphCacheStats(
     val size: Int,
     val capacity: Int,
     val hits: Long,

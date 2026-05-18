@@ -6,16 +6,16 @@ package com.purride.pixelui
  * 引擎只负责内容区 UI，本接口把输入法、系统动作、震动和帧调度等
  * 宿主能力从 runtime 中隔离出来，避免通用模块直接依赖 Activity 细节。
  */
-interface PixelHostBridge {
-    fun showTextInput(request: PixelTextInputRequest)
+public interface PixelHostBridge {
+    public fun showTextInput(request: PixelTextInputRequest)
 
-    fun hideTextInput()
+    public fun hideTextInput()
 
-    fun performHapticFeedback(type: PixelHapticType)
+    public fun performHapticFeedback(type: PixelHapticType)
 
-    fun requestFrame()
+    public fun requestFrame()
 
-    fun dispatchSystemAction(action: PixelSystemAction)
+    public fun dispatchSystemAction(action: PixelSystemAction)
 }
 
 /**
@@ -23,7 +23,7 @@ interface PixelHostBridge {
  *
  * 第一版仍然走宿主隐藏输入框或等价桥接方案，不在 runtime 内重做 IME。
  */
-data class PixelTextInputRequest(
+public data class PixelTextInputRequest(
     val text: String,
     val selectionStart: Int = text.length,
     val selectionEnd: Int = selectionStart,
@@ -48,7 +48,7 @@ data class PixelTextInputRequest(
  * - [URL]: URL，含 / 键
  * - [PASSWORD]: 普通密码（不显示原文）
  */
-enum class PixelInputType {
+public enum class PixelInputType {
     TEXT,
     NUMBER,
     NUMBER_PASSWORD,
@@ -63,7 +63,7 @@ enum class PixelInputType {
  *
  * 第一版先只覆盖最常用的几种 IME 动作，页面层通过它表达“下一项”还是“提交完成”。
  */
-enum class PixelTextInputAction {
+public enum class PixelTextInputAction {
     DONE,
     NEXT,
     GO,
@@ -77,7 +77,7 @@ enum class PixelTextInputAction {
  * 这里只定义稳定的抽象入口，后续再按真实需求细化为打开 Intent、
  * 页面返回、权限引导等具体动作。
  */
-data class PixelSystemAction(
+public data class PixelSystemAction(
     val type: String,
     val payload: String? = null,
 )
@@ -85,7 +85,7 @@ data class PixelSystemAction(
 /**
  * 震动反馈类型。
  */
-enum class PixelHapticType {
+public enum class PixelHapticType {
     TAP,
     LONG_PRESS,
 }

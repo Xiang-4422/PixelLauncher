@@ -9,30 +9,30 @@ import com.purride.pixelcore.PixelAxis
  * 分页语义明确归 pixel-engine UI layer：
  * 当前页、页数、轴向，以及吸附过程中的目标页都由这里持有。
  */
-class PixelPagerState(
+public class PixelPagerState(
     axis: PixelAxis = PixelAxis.HORIZONTAL,
     currentPage: Int = 0,
     pageCount: Int = 1,
 ) {
-    var axis: PixelAxis = axis
+    public var axis: PixelAxis = axis
         internal set
 
-    var currentPage: Int = currentPage.coerceAtLeast(0)
+    public var currentPage: Int = currentPage.coerceAtLeast(0)
         internal set
 
-    var pageCount: Int = pageCount.coerceAtLeast(1)
+    public var pageCount: Int = pageCount.coerceAtLeast(1)
         internal set
 
-    var settleTargetPage: Int = this.currentPage
+    public var settleTargetPage: Int = this.currentPage
         internal set
 
     internal var lastDispatchedPage: Int = this.currentPage
 
     internal var motionState: AxisMotionState = AxisMotionState()
 
-    val isDragging: Boolean
+    public val isDragging: Boolean
         get() = motionState.isDragging
 
-    val isSettling: Boolean
+    public val isSettling: Boolean
         get() = motionState.isSettling
 }

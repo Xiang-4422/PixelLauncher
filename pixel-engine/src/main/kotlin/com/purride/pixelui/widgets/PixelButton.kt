@@ -13,20 +13,20 @@ import com.purride.pixelcore.PixelTone
  * 按钮尺寸、点击范围和布局仍由调用方通过 `modifier` 控制，
  * 这样可以保持基础组件足够轻，同时满足 demo 和后续页面组合需要。
  */
-data class PixelButtonStyle(
+public data class PixelButtonStyle(
     val fillTone: PixelTone = PixelTone.OFF,
     val borderTone: PixelTone? = PixelTone.ON,
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
     val alignment: Alignment = Alignment.CENTER,
 ) {
-    companion object {
-        val Default = PixelButtonStyle()
-        val Accent = PixelButtonStyle(
+    public companion object {
+        public val Default: PixelButtonStyle = PixelButtonStyle()
+        public val Accent: PixelButtonStyle = PixelButtonStyle(
             fillTone = PixelTone.OFF,
             borderTone = PixelTone.ACCENT,
             textStyle = PixelTextStyle.Accent,
         )
-        val Disabled = PixelButtonStyle(
+        public val Disabled: PixelButtonStyle = PixelButtonStyle(
             fillTone = PixelTone.OFF,
             borderTone = PixelTone.ON,
             textStyle = PixelTextStyle(tone = PixelTone.OFF),

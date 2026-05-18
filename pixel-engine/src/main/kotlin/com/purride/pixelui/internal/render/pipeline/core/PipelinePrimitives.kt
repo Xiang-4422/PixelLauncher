@@ -6,12 +6,12 @@ import com.purride.pixelcore.PixelBufferPool
 /**
  * 新渲染管线里的盒模型尺寸。
  */
-data class RenderSize(
+public data class RenderSize(
     val width: Int,
     val height: Int,
 ) {
-    companion object {
-        val Zero = RenderSize(width = 0, height = 0)
+    public companion object {
+        public val Zero: RenderSize = RenderSize(width = 0, height = 0)
     }
 }
 
@@ -20,7 +20,7 @@ data class RenderSize(
  *
  * 第一版先稳定最小盒模型协议：上下界宽高约束，以及若干常用收敛方法。
  */
-data class RenderConstraints(
+public data class RenderConstraints(
     val minWidth: Int = 0,
     val maxWidth: Int,
     val minHeight: Int = 0,
@@ -34,21 +34,21 @@ data class RenderConstraints(
     /**
      * 用当前约束收敛宽度。
      */
-    fun constrainWidth(width: Int): Int {
+    public fun constrainWidth(width: Int): Int {
         return width.coerceIn(minWidth, maxWidth)
     }
 
     /**
      * 用当前约束收敛高度。
      */
-    fun constrainHeight(height: Int): Int {
+    public fun constrainHeight(height: Int): Int {
         return height.coerceIn(minHeight, maxHeight)
     }
 
     /**
      * 把当前约束减去四向内边距，得到子节点可用约束。
      */
-    fun inset(
+    public fun inset(
         left: Int = 0,
         top: Int = 0,
         right: Int = 0,
@@ -75,7 +75,7 @@ data class RenderConstraints(
  * 单元测试构造 PaintContext 时可省略 [bufferPool]，会创建一个独立的
  * 新池子，保证测试隔离。
  */
-data class PaintContext(
+public data class PaintContext(
     val buffer: PixelBuffer,
     val bufferPool: PixelBufferPool = PixelBufferPool(),
 )
@@ -83,13 +83,13 @@ data class PaintContext(
 /**
  * 新渲染管线里的命中测试结果。
  */
-data class HitTestResult(
+public data class HitTestResult(
     val hits: MutableList<RenderObject> = mutableListOf(),
 ) {
     /**
      * 追加一个命中节点。
      */
-    fun add(target: RenderObject) {
+    public fun add(target: RenderObject) {
         hits += target
     }
 }

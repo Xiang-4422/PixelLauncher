@@ -8,13 +8,13 @@ package com.purride.pixelui
  *
  * 当前默认渲染链路会把 retained element tree 直接交给 render object pipeline。
  */
-interface Widget {
+public interface Widget {
     /**
      * 组件稳定标识。
      *
      * retained build tree 会用它作为节点复用的重要线索。
      */
-    val key: Any?
+    public val key: Any?
 }
 
 /**
@@ -24,4 +24,4 @@ interface Widget {
  * - `WidgetBuilder` 用在 retained tree 内部，带 `BuildContext`
  * - `RootWidgetProvider` 用在宿主入口，不依赖上下文
  */
-typealias RootWidgetProvider = () -> Widget
+public typealias RootWidgetProvider = () -> Widget

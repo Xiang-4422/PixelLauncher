@@ -16,7 +16,7 @@ import com.purride.pixelui.Widget
  * 也可通过 `com.purride.pixelui.advanced` 别名（PixelRenderObjectWidget 等）
  * 引用以获得更稳定的公开 API 表达。
  */
-abstract class RenderObjectWidget(
+public abstract class RenderObjectWidget(
     override val key: Any? = null,
 ) : Widget {
     /**
@@ -35,7 +35,7 @@ abstract class RenderObjectWidget(
      * 第三方扩展实现：返回一个继承自 [RenderObject] / [RenderBox] /
      * [SingleChildRenderObject] / [MultiChildRenderObject] 的实例。
      */
-    abstract fun createRenderObject(context: BuildContext): RenderObject
+    public abstract fun createRenderObject(context: BuildContext): RenderObject
 
     /**
      * 用新的 widget 配置更新既有 render object。
@@ -43,10 +43,10 @@ abstract class RenderObjectWidget(
      * 默认不做任何事；子类需要在 widget rebuild 时同步配置到 render object 字段时
      * 覆写本方法（并在内部对每个字段做 equality 检查避免无谓的 markNeedsLayout）。
      */
-    open fun updateRenderObject(
+    public open fun updateRenderObject(
         context: BuildContext,
         renderObject: RenderObject,
-    ) = Unit
+    ): Unit = Unit
 }
 
 /**
@@ -101,8 +101,8 @@ internal open class RenderObjectElement(
  * 子类需要 createRenderObject 返回一个继承 [RenderObjectWithChild] 的 RenderObject
  * （通常是 [SingleChildRenderObject] 的子类）。
  */
-abstract class SingleChildRenderObjectWidget(
-    open val child: Widget?,
+public abstract class SingleChildRenderObjectWidget(
+    public open val child: Widget?,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     /**
@@ -157,8 +157,8 @@ internal class SingleChildRenderObjectElement(
  * 子类需要 createRenderObject 返回一个继承 [RenderObjectWithChildren] 的 RenderObject
  * （通常是 [MultiChildRenderObject] 的子类）。
  */
-abstract class MultiChildRenderObjectWidget(
-    open val children: List<Widget>,
+public abstract class MultiChildRenderObjectWidget(
+    public open val children: List<Widget>,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     /**

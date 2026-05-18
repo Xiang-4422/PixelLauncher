@@ -8,14 +8,14 @@ import kotlin.math.roundToInt
  *
  * 它只负责把“当前缓冲”和“相邻缓冲”按偏移量拼成一帧，不关心这些缓冲为什么会相邻。
  */
-object AxisBufferComposer {
+public object AxisBufferComposer {
     /**
      * 判断当前配置是否真的需要合成（secondary 存在且偏移超过 epsilon）。
      *
      * 调用方可以据此决定是否预先从池里 acquire 出 `out` buffer，避免
      * 在 0 偏移帧上做无用功。
      */
-    fun isCompositionNeeded(secondary: PixelBuffer?, offsetPx: Float): Boolean {
+    public fun isCompositionNeeded(secondary: PixelBuffer?, offsetPx: Float): Boolean {
         return secondary != null && abs(offsetPx) >= COMPOSITION_EPSILON_PX
     }
 
@@ -27,7 +27,7 @@ object AxisBufferComposer {
      * （secondary 为空或偏移不足 epsilon）时，直接返回 primary，
      * 此时 [out] 不会被写入，仍由调用方负责归还。
      */
-    fun compose(
+    public fun compose(
         primary: PixelBuffer,
         secondary: PixelBuffer?,
         axis: PixelAxis,

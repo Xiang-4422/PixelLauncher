@@ -8,13 +8,13 @@ import com.purride.pixelcore.PixelTone
  * 当前先把 `Container` 最常用的三项视觉参数收进样式对象：
  * 填充色、边框色、内容对齐。
  */
-data class PixelContainerStyle(
+public data class PixelContainerStyle(
     val fillTone: PixelTone = PixelTone.OFF,
     val borderTone: PixelTone? = PixelTone.ON,
     val alignment: Alignment = Alignment.CENTER,
 ) {
-    companion object {
-        val Default = PixelContainerStyle()
+    public companion object {
+        public val Default: PixelContainerStyle = PixelContainerStyle()
     }
 }
 
@@ -24,7 +24,7 @@ data class PixelContainerStyle(
  * token 是组件样式没有显式指定时的下一层默认来源，用来把基础色阶和
  * 常见状态色集中起来，避免每个组件都内联自己的硬编码默认值。
  */
-data class PixelThemeTokens(
+public data class PixelThemeTokens(
     val textTone: PixelTone = PixelTone.ON,
     val accentTone: PixelTone = PixelTone.ACCENT,
     val mutedTone: PixelTone = PixelTone.OFF,
@@ -38,8 +38,8 @@ data class PixelThemeTokens(
     val readOnlyBorderTone: PixelTone? = PixelTone.ACCENT,
     val inputPadding: Int = 2,
 ) {
-    companion object {
-        val Default = PixelThemeTokens()
+    public companion object {
+        public val Default: PixelThemeTokens = PixelThemeTokens()
     }
 }
 
@@ -49,7 +49,7 @@ data class PixelThemeTokens(
  * 这一版不做完整的 Flutter `Theme` 继承体系，先把页面层最常重复传递的
  * 文本、按钮、输入框和容器默认样式收敛到一个对象里。
  */
-data class PixelThemeData(
+public data class PixelThemeData(
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
     val accentTextStyle: PixelTextStyle = PixelTextStyle.Accent,
     val buttonStyle: PixelButtonStyle = PixelButtonStyle.Default,
@@ -233,8 +233,8 @@ data class PixelThemeData(
         )
     }
 
-    companion object {
-        val Default = PixelThemeData()
+    public companion object {
+        public val Default: PixelThemeData = PixelThemeData()
     }
 }
 

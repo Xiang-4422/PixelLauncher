@@ -16,15 +16,15 @@ import com.purride.pixelui.PixelScrollPhysics
  * `controller.addListener { /* on changed */ }` 注册回调，或用
  * `controller.observe { ... }` 扩展拿到句柄方便后续 removeListener。
  */
-class PixelListController(
+public class PixelListController(
     private val physics: PixelScrollPhysics = PixelScrollPhysics.Default,
 ) : ChangeNotifier() {
 
-    fun create(initialScrollOffsetPx: Float = 0f): PixelListState {
+    public fun create(initialScrollOffsetPx: Float = 0f): PixelListState {
         return PixelListState(initialScrollOffsetPx = initialScrollOffsetPx)
     }
 
-    fun sync(
+    public fun sync(
         state: PixelListState,
         viewportHeightPx: Int,
         contentHeightPx: Int,
@@ -44,7 +44,7 @@ class PixelListController(
         notifyListeners()
     }
 
-    fun dragBy(
+    public fun dragBy(
         state: PixelListState,
         deltaPx: Float,
         viewportHeightPx: Int,
@@ -65,7 +65,7 @@ class PixelListController(
         notifyListeners()
     }
 
-    fun startDrag(state: PixelListState) {
+    public fun startDrag(state: PixelListState) {
         state.isDragging = true
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
@@ -79,7 +79,7 @@ class PixelListController(
      * - 手指向下拖动时，`deltaPx > 0`，列表只有在“顶部上方还有内容”时才能继续跟手下移
      * - 手指向上拖动时，`deltaPx < 0`，列表只有在“底部下方还有内容”时才能继续向上滚
      */
-    fun canConsumeDrag(
+    public fun canConsumeDrag(
         state: PixelListState,
         deltaPx: Float,
         viewportHeightPx: Int,
@@ -97,7 +97,7 @@ class PixelListController(
         }
     }
 
-    fun scrollTo(
+    public fun scrollTo(
         state: PixelListState,
         targetOffsetPx: Float,
         viewportHeightPx: Int,
@@ -112,7 +112,7 @@ class PixelListController(
         notifyListeners()
     }
 
-    fun endDrag(
+    public fun endDrag(
         state: PixelListState,
         velocityPxPerSecond: Float,
         viewportHeightPx: Int,
@@ -136,7 +136,7 @@ class PixelListController(
         notifyListeners()
     }
 
-    fun step(
+    public fun step(
         state: PixelListState,
         deltaMs: Long,
         viewportHeightPx: Int,
@@ -192,7 +192,7 @@ class PixelListController(
         notifyListeners()
     }
 
-    fun isActive(state: PixelListState): Boolean {
+    public fun isActive(state: PixelListState): Boolean {
         return state.isDragging || state.isSettling
     }
 
@@ -204,7 +204,7 @@ class PixelListController(
      * - 如果目标项在视口上方，则把该项顶部对齐到视口顶部
      * - 如果目标项在视口下方，则把该项底部拉回到视口底部
      */
-    fun scrollItemIntoView(
+    public fun scrollItemIntoView(
         state: PixelListState,
         itemIndex: Int,
     ) {

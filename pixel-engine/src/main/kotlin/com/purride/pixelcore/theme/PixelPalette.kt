@@ -7,7 +7,7 @@ import android.graphics.Color
  *
  * 内核层只关心“像素值如何映射到真实颜色”，不关心产品页面该选什么主题。
  */
-enum class PixelTheme {
+public enum class PixelTheme {
     GREEN_PHOSPHOR,
     AMBER_CRT,
     ICE_LCD,
@@ -15,16 +15,16 @@ enum class PixelTheme {
     NIGHT_MONO,
 }
 
-data class PixelPalette(
+public data class PixelPalette(
     val backgroundColor: Int,
     val pixelOnColor: Int,
     val pixelOffColor: Int,
     val accentColor: Int,
 ) {
-    companion object {
-        fun terminalGreen(): PixelPalette = fromTheme(PixelTheme.GREEN_PHOSPHOR)
+    public companion object {
+        public fun terminalGreen(): PixelPalette = fromTheme(PixelTheme.GREEN_PHOSPHOR)
 
-        fun fromTheme(theme: PixelTheme, isLowBattery: Boolean = false): PixelPalette {
+        public fun fromTheme(theme: PixelTheme, isLowBattery: Boolean = false): PixelPalette {
             return when (theme) {
                 PixelTheme.GREEN_PHOSPHOR -> PixelPalette(
                     backgroundColor = Color.rgb(0, 0, 0),

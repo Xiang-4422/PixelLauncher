@@ -4,7 +4,7 @@ import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
-data class PixelGridGeometry(
+public data class PixelGridGeometry(
     val cellSize: Float,
     val originX: Float,
     val originY: Float,
@@ -19,12 +19,12 @@ data class PixelGridGeometry(
  *
  * 同一套结果同时服务绘制和点击映射，避免不同层各自维护一套坐标规则。
  */
-object PixelGridGeometryResolver {
+public object PixelGridGeometryResolver {
     private const val DOT_INSET_RATIO = 0.16f
     private const val COMPACT_DOT_INSET_PX = 0.5f
     private const val COMPACT_CELL_SIZE_THRESHOLD_PX = 8f
 
-    fun resolve(
+    public fun resolve(
         viewWidth: Int,
         viewHeight: Int,
         profile: ScreenProfile,
@@ -69,7 +69,7 @@ object PixelGridGeometryResolver {
         )
     }
 
-    fun mapSurfaceToLogical(
+    public fun mapSurfaceToLogical(
         touchX: Float,
         touchY: Float,
         viewWidth: Int,

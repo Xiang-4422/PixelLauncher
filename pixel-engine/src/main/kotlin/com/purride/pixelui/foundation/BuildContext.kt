@@ -10,44 +10,44 @@ import kotlin.reflect.KClass
  * - 读取和订阅环境
  * - 监听外部 notifier
  */
-interface BuildContext {
-    val widget: Widget
+public interface BuildContext {
+    public val widget: Widget
 
-    fun <T : InheritedWidget> dependOnInheritedWidgetOfExactType(type: KClass<T>): T?
+    public fun <T : InheritedWidget> dependOnInheritedWidgetOfExactType(type: KClass<T>): T?
 
-    fun <T : InheritedWidget> getInheritedWidgetOfExactType(type: KClass<T>): T?
+    public fun <T : InheritedWidget> getInheritedWidgetOfExactType(type: KClass<T>): T?
 
-    fun watch(listenable: Listenable?)
+    public fun watch(listenable: Listenable?)
 }
 
-typealias WidgetBuilder = (BuildContext) -> Widget
-typealias StateSetter = (() -> Unit) -> Unit
+public typealias WidgetBuilder = (BuildContext) -> Widget
+public typealias StateSetter = (() -> Unit) -> Unit
 
-inline fun <reified T : InheritedWidget> BuildContext.dependOnInheritedWidgetOfExactType(): T? {
+public inline fun <reified T : InheritedWidget> BuildContext.dependOnInheritedWidgetOfExactType(): T? {
     return dependOnInheritedWidgetOfExactType(T::class)
 }
 
-inline fun <reified T : InheritedWidget> BuildContext.getInheritedWidgetOfExactType(): T? {
+public inline fun <reified T : InheritedWidget> BuildContext.getInheritedWidgetOfExactType(): T? {
     return getInheritedWidgetOfExactType(T::class)
 }
 
-abstract class StatelessWidget(
+public abstract class StatelessWidget(
     override val key: Any? = null,
 ) : Widget {
-    abstract fun build(context: BuildContext): Widget
+    public abstract fun build(context: BuildContext): Widget
 }
 
-abstract class StatefulWidget(
+public abstract class StatefulWidget(
     override val key: Any? = null,
 ) : Widget {
-    abstract fun createState(): State<out StatefulWidget>
+    public abstract fun createState(): State<out StatefulWidget>
 }
 
-abstract class State<T : StatefulWidget> {
-    lateinit var widget: T
+public abstract class State<T : StatefulWidget> {
+    public lateinit var widget: T
         internal set
 
-    lateinit var context: BuildContext
+    public lateinit var context: BuildContext
         internal set
 
     internal var mounted: Boolean = false
@@ -61,31 +61,31 @@ abstract class State<T : StatefulWidget> {
         mounted = false
     }
 
-    open fun initState() = Unit
+    public open fun initState(): Unit = Unit
 
-    open fun didChangeDependencies() = Unit
+    public open fun didChangeDependencies(): Unit = Unit
 
-    open fun didUpdateWidget(oldWidget: T) = Unit
+    public open fun didUpdateWidget(oldWidget: T): Unit = Unit
 
-    open fun dispose() = Unit
+    public open fun dispose(): Unit = Unit
 
-    abstract fun build(context: BuildContext): Widget
+    public abstract fun build(context: BuildContext): Widget
 
-    open fun setState(action: () -> Unit) {
+    public open fun setState(action: () -> Unit) {
         action()
         (context as? InternalBuildContext)?.markCurrentElementNeedsBuild()
     }
 }
 
-open class InheritedWidget(
-    open val child: Widget,
+public open class InheritedWidget(
+    public open val child: Widget,
     override val key: Any? = null,
 ) : Widget {
-    open fun updateShouldNotify(oldWidget: InheritedWidget): Boolean = true
+    public open fun updateShouldNotify(oldWidget: InheritedWidget): Boolean = true
 }
 
-open class InheritedNotifier<T : Listenable>(
-    val notifier: T?,
+public open class InheritedNotifier<T : Listenable>(
+    public val notifier: T?,
     override val child: Widget,
     override val key: Any? = null,
 ) : InheritedWidget(
@@ -102,7 +102,7 @@ internal interface InternalBuildContext : BuildContext {
     fun markCurrentElementNeedsBuild()
 }
 
-class ListenableBuilder(
+public class ListenableBuilder(
     private val listenable: Listenable,
     override val key: Any? = null,
     private val builder: (BuildContext) -> Widget,
@@ -115,7 +115,7 @@ class ListenableBuilder(
     }
 }
 
-class Builder(
+public class Builder(
     override val key: Any? = null,
     private val builder: WidgetBuilder,
 ) : StatelessWidget(
@@ -126,7 +126,7 @@ class Builder(
     }
 }
 
-class ValueListenableBuilder<T>(
+public class ValueListenableBuilder<T>(
     private val listenable: ValueListenable<T>,
     override val key: Any? = null,
     private val builder: (BuildContext, T) -> Widget,
@@ -139,7 +139,7 @@ class ValueListenableBuilder<T>(
     }
 }
 
-class StatefulBuilder(
+public class StatefulBuilder(
     override val key: Any? = null,
     private val builder: (BuildContext, StateSetter) -> Widget,
 ) : StatefulWidget(

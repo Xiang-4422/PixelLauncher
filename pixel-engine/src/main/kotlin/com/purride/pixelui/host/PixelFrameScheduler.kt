@@ -18,7 +18,7 @@ import android.view.Choreographer
  * 用户通过 [PixelHostSetupConfig.frameScheduler] 注入自定义实例。默认值
  * 走 Android Choreographer，对常规 Android 应用零迁移成本。
  */
-interface PixelFrameScheduler {
+public interface PixelFrameScheduler {
     /**
      * 注册一个一次性帧回调。回调会在下一次系统帧到来时被调用，
      * 参数是该帧的纳秒级时间戳（与 [System.nanoTime] 同基准但单调）。
@@ -26,13 +26,13 @@ interface PixelFrameScheduler {
      * 实现方需保证回调在 Android 主线程被触发（生产实现）或者
      * 在调用线程同步触发（manual 测试实现）。
      */
-    fun scheduleFrame(callback: (frameTimeNanos: Long) -> Unit)
+    public fun scheduleFrame(callback: (frameTimeNanos: Long) -> Unit)
 
-    companion object {
+    public companion object {
         /**
          * 默认实现，走 Android [Choreographer.postFrameCallback]。
          */
-        val Default: PixelFrameScheduler = ChoreographerFrameScheduler
+        public val Default: PixelFrameScheduler = ChoreographerFrameScheduler
     }
 }
 
@@ -64,7 +64,7 @@ internal object ChoreographerFrameScheduler : PixelFrameScheduler {
  * // 此时 scheduleFrame 注册的所有回调按序执行
  * ```
  */
-class ManualFrameScheduler : PixelFrameScheduler {
+public class ManualFrameScheduler : PixelFrameScheduler {
     private val pending = ArrayDeque<(Long) -> Unit>()
 
     override fun scheduleFrame(callback: (Long) -> Unit) {
@@ -74,7 +74,7 @@ class ManualFrameScheduler : PixelFrameScheduler {
     /**
      * 触发"下一帧"，按 FIFO 顺序执行已注册的所有回调。
      */
-    fun advanceFrame(frameTimeNanos: Long) {
+    public fun advanceFrame(frameTimeNanos: Long) {
         while (pending.isNotEmpty()) {
             val callback = pending.removeFirst()
             callback(frameTimeNanos)
@@ -84,12 +84,12 @@ class ManualFrameScheduler : PixelFrameScheduler {
     /**
      * 当前等待触发的回调数量。
      */
-    val pendingCount: Int get() = pending.size
+    public val pendingCount: Int get() = pending.size
 
     /**
      * 清空待触发队列，丢弃所有已注册的回调。
      */
-    fun clear() {
+    public fun clear() {
         pending.clear()
     }
 }
