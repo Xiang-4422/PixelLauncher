@@ -141,7 +141,10 @@ class RetainedWidgetRuntimeTest {
         val runtime = PixelUiRuntime()
         val screenProfile = ScreenProfile(logicalWidth = 4, logicalHeight = 4, dotSizePx = 8)
 
-        val hostThemeResult = runtime.render(
+        // PixelUiRuntime 复用同一个 buffer pool，跨 render 调用之间不能假设旧
+        // result.buffer 还是原内容（pool 可能把它回收给下一帧）。在每次 render
+        // 后立刻读出关心的像素值，再做断言。
+        val hostThemePixel = runtime.render(
             root = HostRootWidget(
                 screenProfile = screenProfile,
                 textDirection = TextDirection.LTR,
@@ -159,9 +162,9 @@ class RetainedWidgetRuntimeTest {
             ),
             logicalWidth = 4,
             logicalHeight = 4,
-        )
+        ).buffer.getPixel(1, 1)
 
-        val localThemeResult = runtime.render(
+        val localThemePixel = runtime.render(
             root = HostRootWidget(
                 screenProfile = screenProfile,
                 textDirection = TextDirection.LTR,
@@ -187,10 +190,10 @@ class RetainedWidgetRuntimeTest {
             ),
             logicalWidth = 4,
             logicalHeight = 4,
-        )
+        ).buffer.getPixel(1, 1)
 
-        assertEquals(PixelTone.ACCENT.value, hostThemeResult.buffer.getPixel(1, 1))
-        assertEquals(PixelTone.ON.value, localThemeResult.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT.value, hostThemePixel)
+        assertEquals(PixelTone.ON.value, localThemePixel)
     }
 
     @Test

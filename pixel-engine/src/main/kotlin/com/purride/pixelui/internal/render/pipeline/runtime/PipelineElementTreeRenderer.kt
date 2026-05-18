@@ -53,6 +53,13 @@ internal class PipelineElementTreeRenderer private constructor(
     }
 
     /**
+     * 把 owner 持有的 cached buffer 还回池。
+     */
+    override fun dispose() {
+        owner.dispose()
+    }
+
+    /**
      * 直接从 retained element tree 查找可挂载到 pipeline 的 render root。
      */
     private fun Element?.findPipelineRenderRoot(): RenderBox? {

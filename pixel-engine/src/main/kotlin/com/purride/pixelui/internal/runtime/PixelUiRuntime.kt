@@ -70,20 +70,20 @@ internal class PixelUiRuntime(
     }
 
     /**
-     * 把上一帧渲染结果的 main buffer 归还到池。宿主在用新一帧 result
-     * 覆盖 lastRenderResult 之前调用，可以让池真正实现循环复用。
-     *
-     * 传入 null 时是 no-op，方便宿主写 `lastRenderResult?.let(runtime::releaseRenderResult)`。
+     * 历史接口。当前 PipelineOwner 自己缓存上一帧结果并在下一帧脏的时候
+     * 自动把旧 buffer 还回池，宿主无需手动释放。保留这个方法只是为了让
+     * 旧调用方继续编译通过；调用本身是 no-op。
      */
+    @Suppress("UNUSED_PARAMETER")
     fun releaseRenderResult(result: PixelRenderResult?) {
-        result ?: return
-        bufferPool.release(result.buffer)
+        // intentionally no-op
     }
 
     /**
      * 释放内部 retained build runtime 和 buffer 池。
      */
     fun dispose() {
+        elementTreeRenderer.dispose()
         buildRuntime.dispose()
         bufferPool.clear()
     }

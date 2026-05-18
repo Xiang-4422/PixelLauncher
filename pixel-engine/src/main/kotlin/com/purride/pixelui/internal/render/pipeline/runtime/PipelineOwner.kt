@@ -18,7 +18,11 @@ internal class PipelineOwner(
     private var renderCount = 0
     private var layoutPassCount = 0
     private var paintPassCount = 0
+    private var cacheHits = 0
     private var lastTargetDiagnostics = TargetDiagnostics()
+    private var cachedResult: PixelRenderResult? = null
+    private var cachedLogicalWidth: Int = -1
+    private var cachedLogicalHeight: Int = -1
 
     init {
         attachRoot(root)
@@ -53,18 +57,48 @@ internal class PipelineOwner(
     }
 
     /**
+     * 把上一帧缓存的 result.buffer 归还到池，然后清空缓存。
+     */
+    private fun discardCachedResult() {
+        cachedResult?.let { bufferPool.release(it.buffer) }
+        cachedResult = null
+    }
+
+    /**
      * 渲染当前根对象并导出宿主需要的像素结果。
+     *
+     * 当 needsLayout / needsPaint 都为 false 且逻辑尺寸与上一帧一致时，
+     * 直接返回上一帧 cached PixelRenderResult，避免重复 layout/paint/target 收集。
+     * 这对静态场景（用户没操作、动画未激活）能完全省掉一帧的渲染工作。
      */
     fun render(
         logicalWidth: Int,
         logicalHeight: Int,
     ): PixelRenderResult {
+        val canReuseCache = !needsLayout && !needsPaint &&
+            cachedResult != null &&
+            cachedLogicalWidth == logicalWidth &&
+            cachedLogicalHeight == logicalHeight
+        if (canReuseCache) {
+            cacheHits += 1
+            return cachedResult!!
+        }
+        // 任何"需要重画"的情况都先把旧 cached buffer 还回池，避免错失复用。
+        discardCachedResult()
+        cachedLogicalWidth = logicalWidth
+        cachedLogicalHeight = logicalHeight
+
         val session = PixelRenderSessionFactory.create(
             width = logicalWidth,
             height = logicalHeight,
             bufferPool = bufferPool,
         )
-        val root = root ?: return session.toRenderResult()
+        val root = root
+        if (root == null) {
+            val emptyResult = session.toRenderResult()
+            cachedResult = emptyResult
+            return emptyResult
+        }
         val constraints = RenderConstraints(
             maxWidth = logicalWidth,
             maxHeight = logicalHeight,
@@ -108,7 +142,16 @@ internal class PipelineOwner(
             listTargets = session.listTargets.size,
             textInputTargets = session.textInputTargets.size,
         )
-        return session.toRenderResult()
+        val result = session.toRenderResult()
+        cachedResult = result
+        return result
+    }
+
+    /**
+     * 主动丢弃 cached result。runtime/host 在销毁阶段调用，把 buffer 还回池后再清空池。
+     */
+    fun dispose() {
+        discardCachedResult()
     }
 
     /**
@@ -145,6 +188,7 @@ internal class PipelineOwner(
             renderCount = renderCount,
             layoutPassCount = layoutPassCount,
             paintPassCount = paintPassCount,
+            cacheHits = cacheHits,
             targetDiagnostics = lastTargetDiagnostics,
         )
     }
@@ -160,6 +204,7 @@ internal data class PipelineDiagnostics(
     val renderCount: Int,
     val layoutPassCount: Int,
     val paintPassCount: Int,
+    val cacheHits: Int,
     val targetDiagnostics: TargetDiagnostics,
 )
 

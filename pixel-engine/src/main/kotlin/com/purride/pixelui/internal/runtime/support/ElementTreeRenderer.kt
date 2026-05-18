@@ -11,4 +11,10 @@ internal fun interface ElementTreeRenderer {
      * 渲染已经解析好的 retained element tree 请求。
      */
     fun render(request: ElementTreeRenderRequest): PixelRenderResult
+
+    /**
+     * 释放 renderer 内部资源，例如缓存的渲染结果和 buffer 池条目。
+     * 默认空实现，便于现有 SAM 实现继续编译。
+     */
+    fun dispose() = Unit
 }

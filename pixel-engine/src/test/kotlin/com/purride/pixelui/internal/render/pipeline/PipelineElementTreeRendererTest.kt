@@ -1025,14 +1025,15 @@ class PipelineElementTreeRendererTest {
         ) { request ->
             renderer.render(request)
             renderer.render(request)
+            // 第二次 render 命中 PipelineOwner 缓存，既不重新 layout 也不重新 paint。
             assertEquals(1, renderBox.attachCount)
             assertEquals(1, renderBox.layoutCount)
-            assertEquals(2, renderBox.paintCount)
+            assertEquals(1, renderBox.paintCount)
 
             renderBox.requestLayout()
             renderer.render(request)
             assertEquals(2, renderBox.layoutCount)
-            assertEquals(3, renderBox.paintCount)
+            assertEquals(2, renderBox.paintCount)
         }
     }
 

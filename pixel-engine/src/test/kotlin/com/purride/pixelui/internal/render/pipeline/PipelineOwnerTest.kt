@@ -74,7 +74,8 @@ class PipelineOwnerTest {
     }
 
     /**
-     * 未标脏时重复 render 不应该重复 layout，但仍会绘制到新的输出 buffer。
+     * 未标脏时重复 render 既不重复 layout，也不重复 paint：
+     * PipelineOwner 直接返回上一帧缓存的 PixelRenderResult。
      */
     @Test
     fun renderSkipsLayoutUntilRenderObjectMarksLayoutDirty() {
@@ -85,13 +86,13 @@ class PipelineOwnerTest {
         owner.render(logicalWidth = 8, logicalHeight = 6)
 
         assertEquals(1, root.layoutCount)
-        assertEquals(2, root.paintCount)
+        assertEquals(1, root.paintCount)
 
         root.requestLayout()
         owner.render(logicalWidth = 8, logicalHeight = 6)
 
         assertEquals(2, root.layoutCount)
-        assertEquals(3, root.paintCount)
+        assertEquals(2, root.paintCount)
     }
 
     /**
