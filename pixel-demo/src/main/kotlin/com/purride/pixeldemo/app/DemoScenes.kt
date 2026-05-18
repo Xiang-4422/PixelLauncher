@@ -81,6 +81,7 @@ import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelInputType
 import com.purride.pixeldemo.app.customrender.SpinningSquareWidget
 
 /**
@@ -157,6 +158,7 @@ object DemoScenes {
             DemoSceneKind.DRAWER_GATE_V2 -> drawerGateV2Scene(textRasterizers)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
             DemoSceneKind.CUSTOM_RENDER_OBJECT -> customRenderObjectScene(textRasterizers)
+            DemoSceneKind.IME_TYPES -> imeTypesScene(textRasterizers)
         }
     }
 
@@ -3388,6 +3390,87 @@ object DemoScenes {
                             ),
                         ),
                     ),
+                )
+            },
+        )
+    }
+
+    /**
+     * 输入键盘类型演示。
+     *
+     * 验证 Phase 4.1 落地的 [PixelInputType] 枚举能正确通过 PixelTextInputBridge
+     * 映射到 Android 的 InputType，触发对应键盘形态：
+     *
+     * | 枚举值            | 期望键盘      |
+     * |-------------------|---------------|
+     * | NUMBER            | 数字面板      |
+     * | NUMBER_PASSWORD   | 数字密码面板  |
+     * | EMAIL             | 含 @ 键盘     |
+     * | PHONE             | 电话拨号面板  |
+     * | URL               | 含 / 键盘     |
+     * | PASSWORD          | 密码（星号）  |
+     *
+     * 手测时必须在真机上安装 APK 验证（模拟器可能键盘形态不准确）。
+     */
+    private fun imeTypesScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val controller = TextEditingController()
+
+        data class InputRow(val label: String, val inputType: PixelInputType)
+
+        val rows = listOf(
+            InputRow("数字", PixelInputType.NUMBER),
+            InputRow("密码数字", PixelInputType.NUMBER_PASSWORD),
+            InputRow("邮箱", PixelInputType.EMAIL),
+            InputRow("电话", PixelInputType.PHONE),
+            InputRow("URL", PixelInputType.URL),
+            InputRow("密码", PixelInputType.PASSWORD),
+        )
+
+        val states = rows.map { row ->
+            row to controller.create(initialText = "")
+        }
+
+        val scrollController = ScrollController()
+        val scrollState = scrollController.create()
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                SingleChildScrollView(
+                    child = Column(
+                        children = listOf(
+                            Padding(
+                                child = Text("输入键盘类型验证", style = TextStyle.Default),
+                                padding = EdgeInsets.symmetric(horizontal = 8, vertical = 4),
+                            ),
+                        ) + states.map { (row, state) ->
+                            Padding(
+                                padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                                child = Row(
+                                    children = listOf(
+                                        SizedBox(
+                                            width = 40,
+                                            child = Text(row.label, style = TextStyle.Default),
+                                        ),
+                                        Expanded(
+                                            child = TextField(
+                                                state = state,
+                                                controller = controller,
+                                                placeholder = row.label,
+                                                inputType = row.inputType,
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            )
+                        },
+                    ),
+                    state = scrollState,
+                    controller = scrollController,
                 )
             },
         )

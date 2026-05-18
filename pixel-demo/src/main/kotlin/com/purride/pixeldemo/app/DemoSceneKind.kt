@@ -28,4 +28,5 @@ enum class DemoSceneKind(
     DRAWER_GATE_V2("Drawer Gate V2"),
     LAYOUT_AND_CLICK("布局与点击"),
     CUSTOM_RENDER_OBJECT("自定义 RenderObject"),
+    IME_TYPES("输入键盘类型"),
 }
