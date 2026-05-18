@@ -87,6 +87,39 @@ internal class RenderSurface(
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
     ) {
+        val coercedMinLines = textInputMinLines.coerceAtLeast(1)
+        val coercedMaxLines = textInputMaxLines.coerceAtLeast(coercedMinLines)
+        if (
+            this.fillTone == fillTone &&
+            this.borderTone == borderTone &&
+            this.alignment == alignment &&
+            this.explicitWidth == explicitWidth &&
+            this.explicitHeight == explicitHeight &&
+            this.fillMaxWidth == fillMaxWidth &&
+            this.fillMaxHeight == fillMaxHeight &&
+            this.outerPaddingLeft == outerPaddingLeft &&
+            this.outerPaddingTop == outerPaddingTop &&
+            this.outerPaddingRight == outerPaddingRight &&
+            this.outerPaddingBottom == outerPaddingBottom &&
+            this.contentPaddingLeft == contentPaddingLeft &&
+            this.contentPaddingTop == contentPaddingTop &&
+            this.contentPaddingRight == contentPaddingRight &&
+            this.contentPaddingBottom == contentPaddingBottom &&
+            this.onClick == onClick &&
+            this.tightChildWidth == tightChildWidth &&
+            this.tightChildHeight == tightChildHeight &&
+            this.textInputState === textInputState &&
+            this.textInputController === textInputController &&
+            this.textInputReadOnly == textInputReadOnly &&
+            this.textInputAutofocus == textInputAutofocus &&
+            this.textInputMinLines == coercedMinLines &&
+            this.textInputMaxLines == coercedMaxLines &&
+            this.textInputAction == textInputAction &&
+            this.textInputOnChanged == textInputOnChanged &&
+            this.textInputOnSubmitted == textInputOnSubmitted
+        ) {
+            return
+        }
         this.fillTone = fillTone
         this.borderTone = borderTone
         this.alignment = alignment
@@ -109,8 +142,8 @@ internal class RenderSurface(
         this.textInputController = textInputController
         this.textInputReadOnly = textInputReadOnly
         this.textInputAutofocus = textInputAutofocus
-        this.textInputMinLines = textInputMinLines.coerceAtLeast(1)
-        this.textInputMaxLines = textInputMaxLines.coerceAtLeast(this.textInputMinLines)
+        this.textInputMinLines = coercedMinLines
+        this.textInputMaxLines = coercedMaxLines
         this.textInputAction = textInputAction
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted

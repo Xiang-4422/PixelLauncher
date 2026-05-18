@@ -31,6 +31,14 @@ internal class RenderPagerViewport(
         controller: PixelPagerController,
         onPageChanged: ((Int) -> Unit)?,
     ) {
+        if (
+            this.axis == axis &&
+            this.state === state &&
+            this.controller === controller &&
+            this.onPageChanged == onPageChanged
+        ) {
+            return
+        }
         this.axis = axis
         this.state = state
         this.controller = controller

@@ -245,9 +245,15 @@ internal abstract class MultiChildRenderObject : RenderObjectWithChildren, Rende
 
     /**
      * 替换所有直接子节点，并维护父子生命周期。
+     *
+     * 当新列表与旧列表按引用逐项相等时跳过 dropChild/adoptChild 和脏标记，
+     * 避免重复 build 同样的 widget 树时无差别 markNeedsLayout/Paint。
      */
     override fun setRenderObjectChildren(children: List<RenderObject>) {
         val previous = this.children
+        if (isSameChildList(previous, children)) {
+            return
+        }
         previous.filter { child -> children.none { it === child } }.forEach(::dropChild)
         children.filter { child -> previous.none { it === child } }.forEach(::adoptChild)
         this.children = children
@@ -260,5 +266,20 @@ internal abstract class MultiChildRenderObject : RenderObjectWithChildren, Rende
      */
     override fun visitChildren(visitor: (RenderObject) -> Unit) {
         children.forEach(visitor)
+    }
+
+    private fun isSameChildList(
+        previous: List<RenderObject>,
+        next: List<RenderObject>,
+    ): Boolean {
+        if (previous.size != next.size) {
+            return false
+        }
+        for (index in previous.indices) {
+            if (previous[index] !== next[index]) {
+                return false
+            }
+        }
+        return true
     }
 }

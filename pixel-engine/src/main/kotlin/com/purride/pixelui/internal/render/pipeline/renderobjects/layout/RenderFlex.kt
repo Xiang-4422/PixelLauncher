@@ -48,6 +48,24 @@ internal class RenderFlex(
         paddingBottom: Int = 0,
         onClick: (() -> Unit)? = null,
     ) {
+        if (
+            this.direction == direction &&
+            this.spacing == spacing &&
+            this.mainAxisSize == mainAxisSize &&
+            this.mainAxisAlignment == mainAxisAlignment &&
+            this.crossAxisAlignment == crossAxisAlignment &&
+            this.explicitWidth == explicitWidth &&
+            this.explicitHeight == explicitHeight &&
+            this.fillMaxWidth == fillMaxWidth &&
+            this.fillMaxHeight == fillMaxHeight &&
+            this.paddingLeft == paddingLeft &&
+            this.paddingTop == paddingTop &&
+            this.paddingRight == paddingRight &&
+            this.paddingBottom == paddingBottom &&
+            this.onClick == onClick
+        ) {
+            return
+        }
         this.direction = direction
         this.spacing = spacing
         this.mainAxisSize = mainAxisSize

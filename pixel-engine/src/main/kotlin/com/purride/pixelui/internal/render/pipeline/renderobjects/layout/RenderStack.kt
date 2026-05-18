@@ -15,6 +15,9 @@ internal class RenderStack(
      * 更新 stack 对齐配置。
      */
     fun updateStack(alignment: PixelAlignment) {
+        if (this.alignment == alignment) {
+            return
+        }
         this.alignment = alignment
         markNeedsLayout()
         markNeedsPaint()
@@ -229,6 +232,16 @@ internal class RenderPositioned(
         width: Int?,
         height: Int?,
     ) {
+        if (
+            this.left == left &&
+            this.top == top &&
+            this.right == right &&
+            this.bottom == bottom &&
+            this.width == width &&
+            this.height == height
+        ) {
+            return
+        }
         this.left = left
         this.top = top
         this.right = right

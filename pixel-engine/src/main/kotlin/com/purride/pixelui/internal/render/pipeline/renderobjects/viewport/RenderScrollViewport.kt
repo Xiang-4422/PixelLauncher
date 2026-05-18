@@ -23,6 +23,9 @@ internal class RenderSingleChildScrollViewport(
         state: PixelListState,
         controller: PixelListController,
     ) {
+        if (this.state === state && this.controller === controller) {
+            return
+        }
         this.state = state
         this.controller = controller
         markNeedsLayout()
@@ -223,6 +226,13 @@ internal class RenderListViewport(
         controller: PixelListController,
         spacing: Int,
     ) {
+        if (
+            this.state === state &&
+            this.controller === controller &&
+            this.spacing == spacing
+        ) {
+            return
+        }
         this.state = state
         this.controller = controller
         this.spacing = spacing
@@ -478,6 +488,16 @@ internal class RenderLazyListViewport(
         controller: PixelListController,
         spacing: Int,
     ) {
+        if (
+            this.firstItemIndex == firstItemIndex &&
+            this.itemCount == itemCount &&
+            this.itemExtent == itemExtent &&
+            this.state === state &&
+            this.controller === controller &&
+            this.spacing == spacing
+        ) {
+            return
+        }
         this.firstItemIndex = firstItemIndex
         this.itemCount = itemCount
         this.itemExtent = itemExtent
