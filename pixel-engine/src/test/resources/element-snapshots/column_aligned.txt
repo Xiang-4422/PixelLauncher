@@ -1,0 +1,4 @@
+MultiChildRenderObjectElement(widget=ColumnWidget, children=3, listened=0, render=RenderFlex)
+  RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)
+  RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)
+  RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)

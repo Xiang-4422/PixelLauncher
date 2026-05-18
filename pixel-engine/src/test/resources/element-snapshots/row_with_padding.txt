@@ -1,0 +1,5 @@
+SingleChildRenderObjectElement(widget=PaddingWidget, children=1, listened=0, render=RenderSurface)
+  MultiChildRenderObjectElement(widget=RowWidget, children=3, listened=0, render=RenderFlex)
+    RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)
+    SingleChildRenderObjectElement(widget=SizedBoxWidget, children=0, listened=0, render=RenderSurface)
+    RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)

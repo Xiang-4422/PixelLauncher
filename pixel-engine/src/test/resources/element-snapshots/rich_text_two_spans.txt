@@ -1,0 +1,1 @@
+RenderObjectElement(widget=RichTextWidget, children=0, listened=0, render=RenderRichText)

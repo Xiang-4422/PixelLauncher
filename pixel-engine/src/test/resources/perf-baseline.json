@@ -1,0 +1,9 @@
+{
+  "capturedAtEpochMs": 1779069166545,
+  "jvmVersion": "21.0.10",
+  "renderAllocBytesAvg": 6235,
+  "renderAllocBytesMax": 20952,
+  "renderTimeNanosAvg": 55497,
+  "blitNanosAvg": 10555,
+  "richTextLayoutNanosByChars": {"100":254385,"500":537177,"1000":626389}
+}

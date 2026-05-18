@@ -1,0 +1,2 @@
+SingleChildRenderObjectElement(widget=AlignWidget, children=1, listened=0, render=RenderSurface)
+  RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)
