@@ -3,8 +3,8 @@ package com.purride.pixelui
 /**
  * Flutter 风格边距对象。
  *
- * 当前阶段先承接最常用的 `all / symmetric / only` 三种表达，
- * 让页面层少直接暴露 `PixelModifier.padding(...)`。
+ * 提供 `all / symmetric / only` 三种工厂方法，与公开 widget API 的
+ * Padding/Container/Decoration 等组件直接对接，无需任何链式 modifier 包装。
  */
 data class EdgeInsets(
     val left: Int,
