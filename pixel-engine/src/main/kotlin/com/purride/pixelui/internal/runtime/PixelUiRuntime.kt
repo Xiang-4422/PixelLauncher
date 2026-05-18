@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
+import com.purride.pixelcore.PixelBufferPool
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.Widget
 
@@ -25,7 +26,13 @@ internal class PixelUiRuntime(
     @Suppress("UNUSED_PARAMETER") textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
 ) {
-    private val elementTreeRenderer: ElementTreeRenderer = PipelineElementTreeRenderer()
+    /**
+     * 单 runtime 共享一个 PixelBuffer 池，避免每帧分配 main buffer 和各
+     * RenderObject 的 scratch buffer 给 GC。宿主在丢弃一帧渲染结果时
+     * 需要通过 [releaseRenderResult] 显式把 main buffer 还回。
+     */
+    private val bufferPool: PixelBufferPool = PixelBufferPool()
+    private val elementTreeRenderer: ElementTreeRenderer = PipelineElementTreeRenderer(bufferPool = bufferPool)
     private val buildRuntime: ElementTreeBuildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
         onVisualUpdate = onVisualUpdate,
         widgetAdapter = UnsupportedWidgetAdapter,
@@ -63,9 +70,21 @@ internal class PixelUiRuntime(
     }
 
     /**
-     * 释放内部 retained build runtime。
+     * 把上一帧渲染结果的 main buffer 归还到池。宿主在用新一帧 result
+     * 覆盖 lastRenderResult 之前调用，可以让池真正实现循环复用。
+     *
+     * 传入 null 时是 no-op，方便宿主写 `lastRenderResult?.let(runtime::releaseRenderResult)`。
+     */
+    fun releaseRenderResult(result: PixelRenderResult?) {
+        result ?: return
+        bufferPool.release(result.buffer)
+    }
+
+    /**
+     * 释放内部 retained build runtime 和 buffer 池。
      */
     fun dispose() {
         buildRuntime.dispose()
+        bufferPool.clear()
     }
 }

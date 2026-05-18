@@ -3,6 +3,7 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.AxisBufferComposer
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelBufferPool
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerSnapshot
 import com.purride.pixelui.state.PixelPagerState
@@ -71,19 +72,29 @@ internal class RenderPagerViewport(
         offsetY: Int,
     ) {
         val snapshot = controller.snapshot(state)
-        val primary = renderPage(snapshot.anchorPage) ?: return
-        val secondary = snapshot.adjacentPage?.let(::renderPage)
-        val composed = AxisBufferComposer.compose(
-            primary = primary,
-            secondary = secondary,
-            axis = snapshot.axis,
-            offsetPx = snapshot.dragOffsetPx,
-        )
-        context.buffer.blit(
-            source = composed,
-            destX = offsetX,
-            destY = offsetY,
-        )
+        val pool = context.bufferPool
+        val primary = renderPage(snapshot.anchorPage, pool) ?: return
+        val secondary = snapshot.adjacentPage?.let { renderPage(it, pool) }
+        val needsCompose = AxisBufferComposer.isCompositionNeeded(secondary, snapshot.dragOffsetPx)
+        val composeOut = if (needsCompose) pool.acquire(primary.width, primary.height) else null
+        try {
+            val composed = AxisBufferComposer.compose(
+                primary = primary,
+                secondary = secondary,
+                axis = snapshot.axis,
+                offsetPx = snapshot.dragOffsetPx,
+                out = composeOut,
+            )
+            context.buffer.blit(
+                source = composed,
+                destX = offsetX,
+                destY = offsetY,
+            )
+        } finally {
+            composeOut?.let { pool.release(it) }
+            pool.release(primary)
+            secondary?.let { pool.release(it) }
+        }
     }
 
     /**
@@ -212,13 +223,13 @@ internal class RenderPagerViewport(
     }
 
     /**
-     * 渲染指定页到独立缓冲。
+     * 渲染指定页到从池借出的独立缓冲。调用方必须在用完后释放回 [pool]。
      */
-    private fun renderPage(pageIndex: Int): PixelBuffer? {
+    private fun renderPage(pageIndex: Int, pool: PixelBufferPool): PixelBuffer? {
         val page = renderChildren.getOrNull(pageIndex) ?: return null
-        val pageBuffer = PixelBuffer(width = size.width, height = size.height)
+        val pageBuffer = pool.acquire(width = size.width, height = size.height)
         page.paint(
-            context = PaintContext(buffer = pageBuffer),
+            context = PaintContext(buffer = pageBuffer, bufferPool = pool),
             offsetX = 0,
             offsetY = 0,
         )

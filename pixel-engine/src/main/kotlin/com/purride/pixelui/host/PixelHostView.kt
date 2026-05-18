@@ -76,6 +76,14 @@ class PixelHostView @JvmOverloads constructor(
     )
     private var contentProvider: RootWidgetProvider? = null
     private var lastRenderResult: PixelRenderResult? = null
+
+    /**
+     * `lastRenderResult.buffer` 是否由本地 runtime 的 pool 拥有。
+     *
+     * `runtime.render` 返回时为 true（可释放回池），`submitFrame` 注入时为
+     * false（外部所有权，不能释放给池）。
+     */
+    private var lastRenderResultOwnedByRuntime: Boolean = false
     private var palette: PixelPalette = PixelPalette.terminalGreen()
     private var pixelGapEnabled: Boolean = true
     private var lastFrameUptimeMs: Long = 0L
@@ -130,6 +138,11 @@ class PixelHostView @JvmOverloads constructor(
     var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
             field = value
+            // 切换 runtime 前丢弃旧 runtime 的 main buffer 引用：旧池随旧 runtime
+            // dispose 一同释放，buffer 引用同时失效，不能再交给新 runtime 操作。
+            lastRenderResult = null
+            lastRenderResultOwnedByRuntime = false
+            runtime.dispose()
             runtime = PixelUiRuntime(
                 textRasterizer = value,
                 onVisualUpdate = { postInvalidateOnAnimation() },
@@ -208,6 +221,10 @@ class PixelHostView @JvmOverloads constructor(
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette) {
         this.screenProfile = screenProfile
         this.palette = palette
+        // 外部直接提交一帧前，先把之前 runtime 持有的 buffer 还回池。
+        if (lastRenderResultOwnedByRuntime) {
+            runtime.releaseRenderResult(lastRenderResult)
+        }
         lastRenderResult = PixelRenderResult(
             buffer = pixelBuffer,
             clickTargets = emptyList(),
@@ -215,6 +232,7 @@ class PixelHostView @JvmOverloads constructor(
             listTargets = emptyList(),
             textInputTargets = emptyList(),
         )
+        lastRenderResultOwnedByRuntime = false
         invalidate()
     }
 
@@ -245,11 +263,19 @@ class PixelHostView @JvmOverloads constructor(
                 child = rootWidget,
                 key = "host-root",
             )
+            // 用 runtime 渲染新一帧前先把上一帧 runtime 自己持有的 buffer 还给 pool，
+            // 让 main buffer 实现真正的循环复用而不是逐帧 new。
+            if (lastRenderResultOwnedByRuntime) {
+                runtime.releaseRenderResult(lastRenderResult)
+            }
+            lastRenderResult = null
             runtime.render(
                 root = wrappedRoot,
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
-            )
+            ).also {
+                lastRenderResultOwnedByRuntime = true
+            }
         } else {
             lastRenderResult
         }

@@ -150,25 +150,29 @@ internal class RenderText(
             return
         }
 
-        val scratch = PixelBuffer(
+        val scratch = context.bufferPool.acquire(
             width = textWidth.coerceAtLeast(1),
             height = textHeight.coerceAtLeast(1),
         )
-        rasterizer.drawText(
-            buffer = scratch,
-            text = displayText,
-            x = 0,
-            y = 0,
-            value = style.tone.value,
-        )
-        blitOpaqueText(
-            source = scratch,
-            destination = context.buffer,
-            destX = destinationX,
-            destY = destinationY,
-            copyWidth = min(contentWidth, scratch.width),
-            copyHeight = min(contentHeight, scratch.height),
-        )
+        try {
+            rasterizer.drawText(
+                buffer = scratch,
+                text = displayText,
+                x = 0,
+                y = 0,
+                value = style.tone.value,
+            )
+            blitOpaqueText(
+                source = scratch,
+                destination = context.buffer,
+                destX = destinationX,
+                destY = destinationY,
+                copyWidth = min(contentWidth, scratch.width),
+                copyHeight = min(contentHeight, scratch.height),
+            )
+        } finally {
+            context.bufferPool.release(scratch)
+        }
     }
 
     /**

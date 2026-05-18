@@ -1,12 +1,16 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelBufferPool
+
 /**
  * 新渲染管线的最小 owner。
  *
- * 第一版负责 root 挂载、layout、paint 和命中测试调度。
+ * 第一版负责 root 挂载、layout、paint 和命中测试调度，并把宿主提供的
+ * [PixelBufferPool] 注入到每帧 PaintContext，供 scratch buffer 借/还使用。
  */
 internal class PipelineOwner(
     root: RenderBox? = null,
+    private val bufferPool: PixelBufferPool = PixelBufferPool(),
 ) {
     private var root: RenderBox? = null
     private var needsLayout = true
@@ -58,6 +62,7 @@ internal class PipelineOwner(
         val session = PixelRenderSessionFactory.create(
             width = logicalWidth,
             height = logicalHeight,
+            bufferPool = bufferPool,
         )
         val root = root ?: return session.toRenderResult()
         val constraints = RenderConstraints(
@@ -70,7 +75,7 @@ internal class PipelineOwner(
             needsLayout = false
         }
         root.paint(
-            context = PaintContext(buffer = session.buffer),
+            context = PaintContext(buffer = session.buffer, bufferPool = bufferPool),
             offsetX = 0,
             offsetY = 0,
         )

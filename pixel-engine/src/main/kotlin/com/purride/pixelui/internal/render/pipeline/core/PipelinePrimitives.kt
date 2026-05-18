@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelBufferPool
 
 /**
  * 新渲染管线里的盒模型尺寸。
@@ -66,9 +67,17 @@ internal data class RenderConstraints(
 
 /**
  * 新渲染管线里的绘制上下文。
+ *
+ * 持有目标 buffer 与共享 buffer pool。需要 scratch buffer 的 RenderObject
+ * 子类应该从 [bufferPool] 借（acquire）、在 paint 结束前还（release），
+ * 而不是直接 new PixelBuffer。
+ *
+ * 单元测试构造 PaintContext 时可省略 [bufferPool]，会创建一个独立的
+ * 新池子，保证测试隔离。
  */
 internal data class PaintContext(
     val buffer: PixelBuffer,
+    val bufferPool: PixelBufferPool = PixelBufferPool(),
 )
 
 /**

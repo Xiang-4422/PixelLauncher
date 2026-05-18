@@ -1,0 +1,90 @@
+package com.purride.pixelcore
+
+/**
+ * PixelBuffer 池。
+ *
+ * pixel-engine 的渲染主线程为单线程（PixelHostView.onDraw），所以池不需要
+ * 跨线程同步。租用的 buffer 在 paint() 或 host 帧生命周期内归还，避免
+ * 每帧重新分配 width*height 字节的 ByteArray 给 GC。
+ *
+ * 池按 (width, height) 分桶；每个桶最多保留 [maxBuffersPerKey] 个 buffer，
+ * 防止内存无限增长。
+ */
+class PixelBufferPool(
+    private val maxBuffersPerKey: Int = DEFAULT_MAX_BUFFERS_PER_KEY,
+) {
+    private val pools = HashMap<Long, ArrayDeque<PixelBuffer>>()
+    private var hits: Long = 0L
+    private var misses: Long = 0L
+
+    /**
+     * 取一个指定尺寸的 buffer；命中时复用并清零，未命中时新建。
+     */
+    fun acquire(width: Int, height: Int): PixelBuffer {
+        val safeWidth = width.coerceAtLeast(0)
+        val safeHeight = height.coerceAtLeast(0)
+        val key = packKey(safeWidth, safeHeight)
+        val bucket = pools[key]
+        val cached = bucket?.removeLastOrNull()
+        if (cached != null) {
+            cached.clear()
+            hits += 1L
+            return cached
+        }
+        misses += 1L
+        return PixelBuffer(width = safeWidth, height = safeHeight)
+    }
+
+    /**
+     * 把 buffer 归还到池。超过桶上限时直接丢弃。
+     */
+    fun release(buffer: PixelBuffer) {
+        val key = packKey(buffer.width, buffer.height)
+        val bucket = pools.getOrPut(key) { ArrayDeque() }
+        if (bucket.size < maxBuffersPerKey) {
+            bucket.addLast(buffer)
+        }
+    }
+
+    /**
+     * 清空所有桶，主要用于 runtime dispose 或测试隔离。
+     */
+    fun clear() {
+        pools.clear()
+        hits = 0L
+        misses = 0L
+    }
+
+    /**
+     * 返回缓存命中统计快照。
+     */
+    fun stats(): PixelBufferPoolStats {
+        return PixelBufferPoolStats(
+            buckets = pools.size,
+            cached = pools.values.sumOf { it.size },
+            hits = hits,
+            misses = misses,
+        )
+    }
+
+    private fun packKey(width: Int, height: Int): Long {
+        return (width.toLong() shl 32) or (height.toLong() and 0xFFFFFFFFL)
+    }
+
+    companion object {
+        private const val DEFAULT_MAX_BUFFERS_PER_KEY = 4
+    }
+}
+
+/**
+ * PixelBufferPool 的统计快照，供测试和 diagnostics 使用。
+ */
+data class PixelBufferPoolStats(
+    val buckets: Int,
+    val cached: Int,
+    val hits: Long,
+    val misses: Long,
+) {
+    val total: Long get() = hits + misses
+    val hitRate: Double get() = if (total == 0L) 0.0 else hits.toDouble() / total.toDouble()
+}

@@ -1,14 +1,19 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelBufferPool
+
 /**
  * 新渲染管线对 retained element tree 的渲染入口。
  *
  * 当前 renderer 只消费 direct `RenderObject` tree。未接入 render object 的 widget
  * 会直接失败，避免生产路径出现隐式后端切换。
  */
-internal class PipelineElementTreeRenderer(
-    private val owner: PipelineOwner = PipelineOwner(),
+internal class PipelineElementTreeRenderer private constructor(
+    private val owner: PipelineOwner,
 ) : ElementTreeRenderer {
+    constructor(bufferPool: PixelBufferPool = PixelBufferPool()) : this(
+        owner = PipelineOwner(bufferPool = bufferPool),
+    )
     /**
      * 判断当前 element tree 是否能完整走新 pipeline。
      */

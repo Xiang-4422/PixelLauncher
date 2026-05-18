@@ -63,23 +63,25 @@ internal class RenderSingleChildScrollViewport(
         offsetY: Int,
     ) {
         val child = renderChild ?: return
-        val scratch = PixelBuffer(
-            width = size.width,
-            height = child.size.height.coerceAtLeast(size.height),
-        )
-        child.paint(
-            context = PaintContext(buffer = scratch),
-            offsetX = 0,
-            offsetY = 0,
-        )
-        context.buffer.blit(
-            source = scratch,
-            destX = offsetX,
-            destY = offsetY,
-            sourceY = state.scrollOffsetPx.toInt(),
-            copyWidth = size.width,
-            copyHeight = size.height,
-        )
+        val scratchHeight = child.size.height.coerceAtLeast(size.height)
+        val scratch = context.bufferPool.acquire(width = size.width, height = scratchHeight)
+        try {
+            child.paint(
+                context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                offsetX = 0,
+                offsetY = 0,
+            )
+            context.buffer.blit(
+                source = scratch,
+                destX = offsetX,
+                destY = offsetY,
+                sourceY = state.scrollOffsetPx.toInt(),
+                copyWidth = size.width,
+                copyHeight = size.height,
+            )
+        } finally {
+            context.bufferPool.release(scratch)
+        }
     }
 
     /**
@@ -275,25 +277,26 @@ internal class RenderListViewport(
         offsetX: Int,
         offsetY: Int,
     ) {
-        val scratch = PixelBuffer(
-            width = size.width,
-            height = size.height,
-        )
-        visibleRenderChildren().forEach { (index, child) ->
-            child.paint(
-                context = PaintContext(buffer = scratch),
-                offsetX = 0,
-                offsetY = childOffsets[index] - state.scrollOffsetPx.toInt(),
+        val scratch = context.bufferPool.acquire(width = size.width, height = size.height)
+        try {
+            visibleRenderChildren().forEach { (index, child) ->
+                child.paint(
+                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    offsetX = 0,
+                    offsetY = childOffsets[index] - state.scrollOffsetPx.toInt(),
+                )
+            }
+            context.buffer.blit(
+                source = scratch,
+                destX = offsetX,
+                destY = offsetY,
+                sourceY = 0,
+                copyWidth = size.width,
+                copyHeight = size.height,
             )
+        } finally {
+            context.bufferPool.release(scratch)
         }
-        context.buffer.blit(
-            source = scratch,
-            destX = offsetX,
-            destY = offsetY,
-            sourceY = 0,
-            copyWidth = size.width,
-            copyHeight = size.height,
-        )
     }
 
     /**
@@ -524,25 +527,26 @@ internal class RenderLazyListViewport(
         offsetX: Int,
         offsetY: Int,
     ) {
-        val scratch = PixelBuffer(
-            width = size.width,
-            height = size.height,
-        )
-        renderChildren.forEachIndexed { localIndex, child ->
-            val itemIndex = firstItemIndex + localIndex
-            child.paint(
-                context = PaintContext(buffer = scratch),
-                offsetX = 0,
-                offsetY = itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
+        val scratch = context.bufferPool.acquire(width = size.width, height = size.height)
+        try {
+            renderChildren.forEachIndexed { localIndex, child ->
+                val itemIndex = firstItemIndex + localIndex
+                child.paint(
+                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    offsetX = 0,
+                    offsetY = itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
+                )
+            }
+            context.buffer.blit(
+                source = scratch,
+                destX = offsetX,
+                destY = offsetY,
+                copyWidth = size.width,
+                copyHeight = size.height,
             )
+        } finally {
+            context.bufferPool.release(scratch)
         }
-        context.buffer.blit(
-            source = scratch,
-            destX = offsetX,
-            destY = offsetY,
-            copyWidth = size.width,
-            copyHeight = size.height,
-        )
     }
 
     override fun hitTest(

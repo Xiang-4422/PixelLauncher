@@ -88,7 +88,8 @@ class PerfBaselineTest {
         )
         val runtime = PixelUiRuntime(textRasterizer = PixelBitmapFont.Default)
         repeat(WARMUP_ITERATIONS) {
-            runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
+            val result = runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
+            runtime.releaseRenderResult(result)
         }
         runtime.dispose()
     }
@@ -105,7 +106,8 @@ class PerfBaselineTest {
             val samples = LongArray(iterations)
             for (i in 0 until iterations) {
                 val before = currentThreadAllocatedBytes(threadId)
-                runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
+                val result = runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
+                runtime.releaseRenderResult(result)
                 val after = currentThreadAllocatedBytes(threadId)
                 samples[i] = (after - before).coerceAtLeast(0L)
             }
@@ -127,7 +129,8 @@ class PerfBaselineTest {
         try {
             val start = System.nanoTime()
             repeat(iterations) {
-                runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
+                val result = runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
+                runtime.releaseRenderResult(result)
             }
             val end = System.nanoTime()
             return (end - start) / iterations.toLong().coerceAtLeast(1L)
@@ -170,7 +173,8 @@ class PerfBaselineTest {
         try {
             val start = System.nanoTime()
             repeat(iterations) {
-                runtime.render(root = widget, logicalWidth = 80, logicalHeight = 240)
+                val result = runtime.render(root = widget, logicalWidth = 80, logicalHeight = 240)
+                runtime.releaseRenderResult(result)
             }
             val end = System.nanoTime()
             return (end - start) / iterations.toLong().coerceAtLeast(1L)
