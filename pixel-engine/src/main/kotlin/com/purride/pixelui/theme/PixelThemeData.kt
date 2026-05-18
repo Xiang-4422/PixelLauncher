@@ -19,10 +19,32 @@ public data class PixelContainerStyle(
 }
 
 /**
- * 主题 token。
+ * 主题 token——pixel-engine 样式系统的唯一真相来源。
  *
- * token 是组件样式没有显式指定时的下一层默认来源，用来把基础色阶和
- * 常见状态色集中起来，避免每个组件都内联自己的硬编码默认值。
+ * 设计原则：
+ * - **tokens 优先**：所有 widget 的默认样式都从 tokens 派生（textTone /
+ *   accentTone / borderTone / disabledBorderTone 等），改一个 token 就能
+ *   全局变色，不需要逐个 widget 配置。
+ * - **可显式覆盖**：[PixelThemeData] 同时持有具体 style 对象作为可选覆盖：
+ *   只要某个 style 字段保持构造默认值，就走 tokens 推导；如果显式传了
+ *   不同的 style 对象，那个对象直接生效。
+ * - **典型用法**：
+ *   ```kotlin
+ *   // 改全局色阶：只动 tokens
+ *   val theme = PixelThemeData(
+ *       tokens = PixelThemeTokens.Default.copy(textTone = PixelTone.ACCENT),
+ *   )
+ *   // 单点定制按钮：覆盖 buttonStyle
+ *   val theme2 = PixelThemeData(
+ *       buttonStyle = PixelButtonStyle(fillTone = PixelTone.ACCENT, ...),
+ *   )
+ *   ```
+ *
+ * 字段语义按"基础色阶 + 状态色"两组组织：
+ * - 基础：textTone / accentTone / mutedTone / surfaceTone / borderTone
+ * - 状态：accentBorderTone / selectedBorderTone / pressedBorderTone /
+ *   focusedBorderTone / disabledBorderTone / readOnlyBorderTone
+ * - 输入间距：inputPadding
  */
 public data class PixelThemeTokens(
     val textTone: PixelTone = PixelTone.ON,
@@ -44,10 +66,42 @@ public data class PixelThemeTokens(
 }
 
 /**
- * 轻量主题入口。
+ * 主题入口对象。
  *
- * 这一版不做完整的 Flutter `Theme` 继承体系，先把页面层最常重复传递的
- * 文本、按钮、输入框和容器默认样式收敛到一个对象里。
+ * pixel-engine 的主题系统遵循"**tokens 是唯一真相来源**"原则。本类
+ * 持有的 16 个具体 style 字段（textStyle / buttonStyle / containerStyle
+ * 等）都是**可选的局部覆盖**：
+ *
+ * - 用户未显式传值时，每个 style 字段保持构造默认值（例如
+ *   `PixelTextStyle.Default`、`PixelButtonStyle.Default`）。`resolveXxx`
+ *   会检测出这是默认值，**改从 [tokens] 派生**对应样式。
+ * - 用户显式传入不同的 style 对象时，那个对象**直接生效**，跳过 tokens
+ *   推导。
+ *
+ * **推荐用法**：优先改 tokens 实现全局换肤，只在需要"某一类组件
+ * 与其他组件视觉显著不同"时才传 style 覆盖。
+ *
+ * ```kotlin
+ * // 全局换肤：所有 tone 跟着 accentTone 变
+ * val accentTheme = PixelThemeData(
+ *     tokens = PixelThemeTokens.Default.copy(
+ *         textTone = PixelTone.ACCENT,
+ *         borderTone = PixelTone.ACCENT,
+ *     ),
+ * )
+ *
+ * // 单 widget 覆盖：除按钮外其他样式都跟 tokens
+ * val accentButtonOnly = PixelThemeData(
+ *     buttonStyle = PixelButtonStyle(
+ *         fillTone = PixelTone.ACCENT,
+ *         borderTone = null,
+ *         textStyle = PixelTextStyle(tone = PixelTone.OFF),
+ *     ),
+ * )
+ * ```
+ *
+ * 局部修改 tokens 时可以用便利扩展 [withTokens]，比手写
+ * `theme.copy(tokens = theme.tokens.copy(...))` 更直观。
  */
 public data class PixelThemeData(
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
@@ -236,6 +290,26 @@ public data class PixelThemeData(
     public companion object {
         public val Default: PixelThemeData = PixelThemeData()
     }
+}
+
+/**
+ * 局部修改主题 tokens 的便利扩展。
+ *
+ * 等价于 `copy(tokens = tokens.transform())`，但读起来更顺：
+ *
+ * ```kotlin
+ * val accentTheme = PixelThemeData.Default.withTokens {
+ *     copy(textTone = PixelTone.ACCENT, borderTone = PixelTone.ACCENT)
+ * }
+ * ```
+ *
+ * 注意：本函数只动 [PixelThemeData.tokens]，不动 style 覆盖字段。
+ * 若 widget 已经被显式 style 覆盖，token 改动对它不生效——这是设计意图。
+ */
+public inline fun PixelThemeData.withTokens(
+    transform: PixelThemeTokens.() -> PixelThemeTokens,
+): PixelThemeData {
+    return copy(tokens = tokens.transform())
 }
 
 private fun PixelTextStyle.resolveTokenDefault(
