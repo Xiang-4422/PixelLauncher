@@ -30,4 +30,5 @@ enum class DemoSceneKind(
     CUSTOM_RENDER_OBJECT("自定义 RenderObject"),
     IME_TYPES("输入键盘类型"),
     GESTURE_TUNING("手势调参"),
+    FONT_SHOWCASE("字体切换"),
 }

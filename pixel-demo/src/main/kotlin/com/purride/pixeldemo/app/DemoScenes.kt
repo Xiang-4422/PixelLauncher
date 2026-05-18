@@ -165,6 +165,7 @@ object DemoScenes {
             DemoSceneKind.CUSTOM_RENDER_OBJECT -> customRenderObjectScene(textRasterizers)
             DemoSceneKind.IME_TYPES -> imeTypesScene(textRasterizers)
             DemoSceneKind.GESTURE_TUNING -> gestureTuningScene(textRasterizers)
+            DemoSceneKind.FONT_SHOWCASE -> fontShowcaseScene(hostView, textRasterizers)
         }
     }
 
@@ -3607,6 +3608,102 @@ object DemoScenes {
                                         },
                                     )
                                 },
+                            ),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    /**
+     * 字体切换演示。
+     *
+     * 三个按钮让用户在运行时切换 [PixelHostView.textRasterizer]：
+     * - **默认**：8px proportional Fusion Pixel（中英文混排）
+     * - **强调**：10px proportional Fusion Pixel（字号更大）
+     * - **紧凑**：内置 PixelBitmapFont(glyphWidth=4, glyphHeight=5)（最小字形）
+     *
+     * 验证 Phase 2B 修过的 buffer pool 切换正确性：切换后所有文本立刻
+     * 以新字体重绘，长段落正常换行，无残影。
+     */
+    private fun fontShowcaseScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val compactRasterizer = PixelBitmapFont(glyphWidth = 4, glyphHeight = 5)
+        val currentRasterizer = ValueNotifier<PixelTextRasterizer>(textRasterizers.default)
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                Column(
+                    children = listOf(
+                        // ── 切换按钮 ───────────────────────────────────────
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 4),
+                            child = Row(
+                                children = listOf(
+                                    OutlinedButton(
+                                        text = "默认",
+                                        onPressed = {
+                                            currentRasterizer.value = textRasterizers.default
+                                            hostView.textRasterizer = textRasterizers.default
+                                        },
+                                    ),
+                                    SizedBox(width = 2),
+                                    OutlinedButton(
+                                        text = "强调",
+                                        onPressed = {
+                                            currentRasterizer.value = textRasterizers.emphasis
+                                            hostView.textRasterizer = textRasterizers.emphasis
+                                        },
+                                    ),
+                                    SizedBox(width = 2),
+                                    OutlinedButton(
+                                        text = "紧凑",
+                                        onPressed = {
+                                            currentRasterizer.value = compactRasterizer
+                                            hostView.textRasterizer = compactRasterizer
+                                        },
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(height = 4),
+                        // ── 示例文本 ───────────────────────────────────────
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "HELLO 你好 PIXEL",
+                                style = TextStyle.Accent,
+                            ),
+                        ),
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "123 ABC.def",
+                                style = TextStyle.Default,
+                            ),
+                        ),
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "这是一段较长的中文段落，用于验证在不同字体下自动换行是否正常工作，以及中英文混排时字符间距是否合理。",
+                                style = TextStyle.Default,
+                                softWrap = true,
+                                maxLines = 6,
+                            ),
+                        ),
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "The quick brown fox jumps over the lazy dog.",
+                                style = TextStyle.Default,
+                                softWrap = true,
+                                maxLines = 3,
                             ),
                         ),
                     ),
