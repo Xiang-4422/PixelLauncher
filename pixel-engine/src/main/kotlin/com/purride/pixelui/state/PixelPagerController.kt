@@ -10,6 +10,10 @@ import kotlin.math.abs
  *
  * 它基于 pixel-engine core layer 提供的轴向位移原语，负责真正的分页语义：
  * 当前页、页数、翻页阈值、速度翻页和边界夹紧。
+ *
+ * 监听变化：本类继承 [ChangeNotifier]，可直接
+ * `controller.addListener { /* on changed */ }` 注册回调，或用
+ * `controller.observe { ... }` 扩展拿到句柄方便后续 removeListener。
  */
 class PixelPagerController(
     private val distanceThresholdFraction: Float = 0.4f,

@@ -9,6 +9,10 @@ import com.purride.pixelui.ChangeNotifier
  * - 创建状态
  * - 更新文本与选区
  * - 聚焦与失焦
+ *
+ * 监听变化：本类继承 [ChangeNotifier]，可直接
+ * `controller.addListener { /* on changed */ }` 注册回调，或用
+ * `controller.observe { ... }` 扩展拿到句柄方便后续 removeListener。
  */
 class PixelTextFieldController : ChangeNotifier() {
 

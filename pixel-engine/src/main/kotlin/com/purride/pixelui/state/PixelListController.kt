@@ -11,6 +11,10 @@ import com.purride.pixelui.PixelScrollPhysics
  * 2. 响应手指拖动更新滚动偏移
  *
  * 暂时不做惯性滚动、回弹或锚点定位，这些可以在后续迭代继续补。
+ *
+ * 监听变化：本类继承 [ChangeNotifier]，可直接
+ * `controller.addListener { /* on changed */ }` 注册回调，或用
+ * `controller.observe { ... }` 扩展拿到句柄方便后续 removeListener。
  */
 class PixelListController(
     private val physics: PixelScrollPhysics = PixelScrollPhysics.Default,
