@@ -29,4 +29,5 @@ enum class DemoSceneKind(
     LAYOUT_AND_CLICK("布局与点击"),
     CUSTOM_RENDER_OBJECT("自定义 RenderObject"),
     IME_TYPES("输入键盘类型"),
+    GESTURE_TUNING("手势调参"),
 }

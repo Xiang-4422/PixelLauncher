@@ -82,6 +82,9 @@ import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.PixelScrollPhysics
+import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixeldemo.app.gesture.TunablePagerGesturePolicy
 import com.purride.pixeldemo.app.customrender.SpinningSquareWidget
 
 /**
@@ -97,6 +100,8 @@ object DemoScenes {
         val initialTextRasterizer: PixelTextRasterizer,
         val initialThemeData: ThemeData? = null,
         val content: RootWidgetProvider,
+        /** 分页手势策略，null 时 Activity 使用默认策略。GESTURE_TUNING 场景注入可调参策略。 */
+        val pagerGesturePolicy: PagerGesturePolicy? = null,
     )
 
     private fun accentUiTheme(): ThemeData {
@@ -159,6 +164,7 @@ object DemoScenes {
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
             DemoSceneKind.CUSTOM_RENDER_OBJECT -> customRenderObjectScene(textRasterizers)
             DemoSceneKind.IME_TYPES -> imeTypesScene(textRasterizers)
+            DemoSceneKind.GESTURE_TUNING -> gestureTuningScene(textRasterizers)
         }
     }
 
@@ -3471,6 +3477,139 @@ object DemoScenes {
                     ),
                     state = scrollState,
                     controller = scrollController,
+                )
+            },
+        )
+    }
+
+    /**
+     * 手势调参演示。
+     *
+     * 验证 Phase 4.2 公开的 [PagerGesturePolicy] 可以被宿主注入并实时影响手势行为：
+     * - 上半部：两个按钮步进 axisBias（0.5..3.0），当前数值实时显示。
+     *   axisBias 越大，触发分页手势需要更明显的横向位移；越小越容易误触发。
+     * - 下半部：PagerView（3 页，横向）× 每页嵌套一个 ListView（8 条目）。
+     *   pagerGesturePolicy 通过 [DemoScene.pagerGesturePolicy] 传递到
+     *   DemoSceneActivity，注入 [PixelHostSetupConfig]，无需重建 Activity。
+     *
+     * 注意：axisBias 改变后不会立即反映到 Pager 的已激活拖拽（只影响后续手势）。
+     */
+    private fun gestureTuningScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val axisBias = ValueNotifier(PagerGesturePolicy.DEFAULT_AXIS_BIAS)
+        val policy = TunablePagerGesturePolicy { axisBias.value }
+
+        val pagerController = PageController()
+        val pagerState = pagerController.create(
+            pageCount = 3,
+            currentPage = 0,
+            axis = Axis.HORIZONTAL,
+        )
+
+        // 每个页面独享一个 scroll controller
+        val listControllers = List(3) { ScrollController() }
+        val listStates = listControllers.map { it.create() }
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            initialTextRasterizer = textRasterizers.default,
+            pagerGesturePolicy = policy,
+            content = {
+                Column(
+                    children = listOf(
+                        // ── axisBias 控制行 ──────────────────────────────────
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 4),
+                            child = Row(
+                                children = listOf(
+                                    Text("axisBias: ", style = TextStyle.Default),
+                                    ValueListenableBuilder(
+                                        listenable = axisBias,
+                                        builder = { _, v ->
+                                            Text(
+                                                "%.1f".format(v),
+                                                style = TextStyle.Accent,
+                                            )
+                                        },
+                                    ),
+                                    SizedBox(width = 4),
+                                    OutlinedButton(
+                                        text = "-",
+                                        onPressed = {
+                                            val next = (axisBias.value - 0.5f).coerceAtLeast(0.5f)
+                                            axisBias.value = next
+                                        },
+                                    ),
+                                    SizedBox(width = 2),
+                                    OutlinedButton(
+                                        text = "+",
+                                        onPressed = {
+                                            val next = (axisBias.value + 0.5f).coerceAtMost(3.0f)
+                                            axisBias.value = next
+                                        },
+                                    ),
+                                ),
+                            ),
+                        ),
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "调大 bias→难触发分页；调小 bias→容易触发分页",
+                                style = TextStyle.Default,
+                            ),
+                        ),
+                        SizedBox(height = 4),
+                        // ── Pager × 嵌套 ListView ──────────────────────────
+                        Expanded(
+                            child = ListenableBuilder(
+                                listenable = pagerController,
+                                builder = { _ ->
+                                    PageViewBuilder(
+                                        axis = Axis.HORIZONTAL,
+                                        state = pagerState,
+                                        controller = pagerController,
+                                        itemCount = 3,
+                                        itemBuilder = { pageIndex ->
+                                            val lc = listControllers[pageIndex]
+                                            val ls = listStates[pageIndex]
+                                            Column(
+                                                children = listOf(
+                                                    Padding(
+                                                        padding = EdgeInsets.all(4),
+                                                        child = Text(
+                                                            "Page ${pageIndex + 1}",
+                                                            style = TextStyle.Accent,
+                                                        ),
+                                                    ),
+                                                    Expanded(
+                                                        child = ListView(
+                                                            items = List(8) { i ->
+                                                                Padding(
+                                                                    padding = EdgeInsets.symmetric(
+                                                                        horizontal = 8,
+                                                                        vertical = 3,
+                                                                    ),
+                                                                    child = Text(
+                                                                        "P${pageIndex + 1} Item ${i + 1}",
+                                                                        style = TextStyle.Default,
+                                                                    ),
+                                                                )
+                                                            },
+                                                            state = ls,
+                                                            controller = lc,
+                                                            spacing = 1,
+                                                        ),
+                                                    ),
+                                                ),
+                                            )
+                                        },
+                                    )
+                                },
+                            ),
+                        ),
+                    ),
                 )
             },
         )

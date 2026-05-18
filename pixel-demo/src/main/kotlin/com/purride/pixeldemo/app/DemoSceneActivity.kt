@@ -6,6 +6,7 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.createPixelHostSetup
+import com.purride.pixelui.gesture.PagerGesturePolicy
 
 /**
  * 单个 demo scene 的宿主 Activity。
@@ -46,6 +47,7 @@ class DemoSceneActivity : AppCompatActivity() {
                 textRasterizer = scene.initialTextRasterizer,
                 themeData = scene.initialThemeData,
                 content = scene.content,
+                pagerGesturePolicy = scene.pagerGesturePolicy ?: PagerGesturePolicy.Default,
             ),
         )
         setContentView(hostSetup.rootView)
