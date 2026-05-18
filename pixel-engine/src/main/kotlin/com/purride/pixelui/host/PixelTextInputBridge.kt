@@ -136,43 +136,46 @@ public class PixelTextInputBridge(
         }
         inputView.inputType = resolveAndroidInputType(request.inputType, multiLine)
     }
+}
 
-    /**
-     * 把 [PixelInputType] 映射到 Android 的 InputType 位组合。
-     *
-     * 数字/邮件/电话/URL/密码这些专属类型的 IME 强制单行（即便上层
-     * 设置了 maxLines>1，多行数字键盘对实际产品意义不大）。
-     */
-    private fun resolveAndroidInputType(
-        pixelType: PixelInputType,
-        multiLine: Boolean,
-    ): Int {
-        return when (pixelType) {
-            PixelInputType.TEXT -> {
-                if (multiLine) {
-                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-                } else {
-                    InputType.TYPE_CLASS_TEXT
-                }
+/**
+ * 把 [PixelInputType] 映射到 Android 的 InputType 位组合。
+ *
+ * 数字/邮件/电话/URL/密码这些专属类型的 IME 强制单行（即便上层
+ * 设置了 maxLines>1，多行数字键盘对实际产品意义不大）。
+ *
+ * 提取为 internal top-level 函数方便单元测试直接调用，无需构造真实
+ * Android `EditText` 实例。
+ */
+internal fun resolveAndroidInputType(
+    pixelType: PixelInputType,
+    multiLine: Boolean,
+): Int {
+    return when (pixelType) {
+        PixelInputType.TEXT -> {
+            if (multiLine) {
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            } else {
+                InputType.TYPE_CLASS_TEXT
             }
-            PixelInputType.NUMBER -> {
-                InputType.TYPE_CLASS_NUMBER or
-                    InputType.TYPE_NUMBER_FLAG_SIGNED or
-                    InputType.TYPE_NUMBER_FLAG_DECIMAL
-            }
-            PixelInputType.NUMBER_PASSWORD -> {
-                InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            }
-            PixelInputType.EMAIL -> {
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            }
-            PixelInputType.PHONE -> InputType.TYPE_CLASS_PHONE
-            PixelInputType.URL -> {
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            }
-            PixelInputType.PASSWORD -> {
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            }
+        }
+        PixelInputType.NUMBER -> {
+            InputType.TYPE_CLASS_NUMBER or
+                InputType.TYPE_NUMBER_FLAG_SIGNED or
+                InputType.TYPE_NUMBER_FLAG_DECIMAL
+        }
+        PixelInputType.NUMBER_PASSWORD -> {
+            InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        }
+        PixelInputType.EMAIL -> {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        }
+        PixelInputType.PHONE -> InputType.TYPE_CLASS_PHONE
+        PixelInputType.URL -> {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        }
+        PixelInputType.PASSWORD -> {
+            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
     }
 }

@@ -126,7 +126,7 @@ public class PixelListController(
         state.isDragging = false
 
         val canScroll = state.maxScrollOffsetPx > 0f
-        if (!canScroll || kotlin.math.abs(velocityPxPerSecond) < physics.minFlingVelocityPxPerSecond) {
+        if (!canScroll || !velocityPxPerSecond.isFinite() || kotlin.math.abs(velocityPxPerSecond) < physics.minFlingVelocityPxPerSecond) {
             stopSettling(state)
             return
         }
