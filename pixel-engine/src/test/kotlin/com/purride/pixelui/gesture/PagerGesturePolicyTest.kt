@@ -1,4 +1,4 @@
-package com.purride.pixelui.internal
+package com.purride.pixelui.gesture
 
 import com.purride.pixelcore.PixelAxis
 import org.junit.Assert.assertFalse
@@ -15,7 +15,7 @@ class PagerGesturePolicyTest {
     @Test
     fun horizontalPagerStartsOnlyWhenHorizontalDragWins() {
         assertTrue(
-            PagerGesturePolicy.shouldStartDrag(
+            PagerGesturePolicy.Default.shouldStartDrag(
                 axis = PixelAxis.HORIZONTAL,
                 deltaX = 12f,
                 deltaY = 2f,
@@ -23,7 +23,7 @@ class PagerGesturePolicyTest {
             ),
         )
         assertFalse(
-            PagerGesturePolicy.shouldStartDrag(
+            PagerGesturePolicy.Default.shouldStartDrag(
                 axis = PixelAxis.HORIZONTAL,
                 deltaX = 5f,
                 deltaY = 8f,
@@ -38,7 +38,7 @@ class PagerGesturePolicyTest {
     @Test
     fun verticalPagerStartsOnlyWhenVerticalDragWins() {
         assertTrue(
-            PagerGesturePolicy.shouldStartDrag(
+            PagerGesturePolicy.Default.shouldStartDrag(
                 axis = PixelAxis.VERTICAL,
                 deltaX = 2f,
                 deltaY = 12f,
@@ -46,7 +46,7 @@ class PagerGesturePolicyTest {
             ),
         )
         assertFalse(
-            PagerGesturePolicy.shouldStartDrag(
+            PagerGesturePolicy.Default.shouldStartDrag(
                 axis = PixelAxis.VERTICAL,
                 deltaX = 8f,
                 deltaY = 5f,

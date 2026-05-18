@@ -22,8 +22,9 @@ import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelcore.ScreenProfileFactory
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
-import com.purride.pixelui.internal.NestedScrollGesturePolicy
-import com.purride.pixelui.internal.PagerGesturePolicy
+import com.purride.pixelui.gesture.NestedScrollGesturePolicy
+import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelListTarget
@@ -104,6 +105,21 @@ class PixelHostView @JvmOverloads constructor(
     private var focusedTextInputTarget: PixelTextInputTarget? = null
 
     var hostBridge: PixelHostBridge? = null
+
+    /**
+     * 分页拖动启动策略。由 PixelHostSetupConfig 注入；业务可换上自定义子类。
+     */
+    var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
+
+    /**
+     * 嵌套滚动手势仲裁策略。
+     */
+    var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
+
+    /**
+     * 列表/单子节点 ScrollView 的滚动物理参数。默认值适配常见 launcher 滑动手感。
+     */
+    var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
 
     /**
      * 宿主级默认主题。
@@ -386,7 +402,7 @@ class PixelHostView @JvmOverloads constructor(
 
                     val pagerTarget = candidatePagerTarget
                     if (pagerTarget != null &&
-                        NestedScrollGesturePolicy.shouldHandOffListToPager(
+                        nestedScrollPolicy.shouldHandOffListToPager(
                             pagerAxis = pagerTarget.axis,
                             listCanConsumeDrag = listCanConsumeDrag,
                             deltaPx = deltaPx,
@@ -414,7 +430,7 @@ class PixelHostView @JvmOverloads constructor(
                     return true
                 }
                 candidatePagerTarget?.let { target ->
-                    val pagerWantsDrag = PagerGesturePolicy.shouldStartDrag(
+                    val pagerWantsDrag = pagerGesturePolicy.shouldStartDrag(
                         axis = target.axis,
                         deltaX = rawDeltaX,
                         deltaY = rawDeltaY,
@@ -431,7 +447,7 @@ class PixelHostView @JvmOverloads constructor(
                             contentHeightPx = listTarget.contentHeightPx,
                         )
                     } ?: false
-                    val shouldDeferToList = NestedScrollGesturePolicy.shouldDeferPagerToList(
+                    val shouldDeferToList = nestedScrollPolicy.shouldDeferPagerToList(
                         pagerAxis = target.axis,
                         pagerWantsDrag = pagerWantsDrag,
                         listWantsDrag = listWantsDrag,

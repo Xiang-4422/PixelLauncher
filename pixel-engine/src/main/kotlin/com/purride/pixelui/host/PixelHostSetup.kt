@@ -6,6 +6,9 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixelui.gesture.NestedScrollGesturePolicy
+import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixelui.PixelScrollPhysics
 
 /**
  * 宿主级装配结果。
@@ -32,6 +35,19 @@ data class PixelHostSetupConfig(
     val themeData: ThemeData? = null,
     val textDirection: TextDirection = TextDirection.LTR,
     val content: RootWidgetProvider? = null,
+    /**
+     * 分页拖动启动策略。默认按主轴位移 > touchSlop 且 > 次轴位移 * 1.2 启动。
+     * 业务可继承 [PagerGesturePolicy] 重写 shouldStartDrag 提供更激进/保守策略。
+     */
+    val pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default,
+    /**
+     * Pager + List 嵌套时的手势仲裁策略。
+     */
+    val nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default,
+    /**
+     * 列表/单子节点 ScrollView 的滚动物理参数。
+     */
+    val scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default,
 )
 
 /**
@@ -57,6 +73,9 @@ fun createPixelHostSetup(
     config.textRasterizer?.let { hostView.textRasterizer = it }
     hostView.themeData = config.themeData
     hostView.textDirection = config.textDirection
+    hostView.pagerGesturePolicy = config.pagerGesturePolicy
+    hostView.nestedScrollPolicy = config.nestedScrollPolicy
+    hostView.scrollPhysics = config.scrollPhysics
     config.content?.let { hostView.setContent(it) }
     val rootView = FrameLayout(context).apply {
         addView(

@@ -1,4 +1,4 @@
-package com.purride.pixelui.internal
+package com.purride.pixelui.gesture
 
 import com.purride.pixelcore.PixelAxis
 import org.junit.Assert.assertFalse
@@ -15,7 +15,7 @@ class NestedScrollGesturePolicyTest {
     @Test
     fun verticalPagerDefersToConsumableListDrag() {
         assertTrue(
-            NestedScrollGesturePolicy.shouldDeferPagerToList(
+            NestedScrollGesturePolicy.Default.shouldDeferPagerToList(
                 pagerAxis = PixelAxis.VERTICAL,
                 pagerWantsDrag = true,
                 listWantsDrag = true,
@@ -23,7 +23,7 @@ class NestedScrollGesturePolicyTest {
             ),
         )
         assertFalse(
-            NestedScrollGesturePolicy.shouldDeferPagerToList(
+            NestedScrollGesturePolicy.Default.shouldDeferPagerToList(
                 pagerAxis = PixelAxis.HORIZONTAL,
                 pagerWantsDrag = true,
                 listWantsDrag = true,
@@ -38,14 +38,14 @@ class NestedScrollGesturePolicyTest {
     @Test
     fun listHandsOffToPagerAtBoundary() {
         assertTrue(
-            NestedScrollGesturePolicy.shouldHandOffListToPager(
+            NestedScrollGesturePolicy.Default.shouldHandOffListToPager(
                 pagerAxis = PixelAxis.VERTICAL,
                 listCanConsumeDrag = false,
                 deltaPx = 8f,
             ),
         )
         assertFalse(
-            NestedScrollGesturePolicy.shouldHandOffListToPager(
+            NestedScrollGesturePolicy.Default.shouldHandOffListToPager(
                 pagerAxis = PixelAxis.VERTICAL,
                 listCanConsumeDrag = true,
                 deltaPx = 8f,
