@@ -31,7 +31,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun valueListenableBuilderUpdatesRenderedToneAfterNotifierChanges() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
         val tone = ValueNotifier(PixelTone.ON)
 
         val root = ValueListenableBuilder(
@@ -64,7 +64,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun statefulWidgetSetStateTriggersRetainedRebuild() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
         val root = ToggleToneWidget()
 
         val first = runtime.render(
@@ -85,7 +85,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun inheritedWidgetNotifiesDependentBuildsOnUpdate() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
 
         val first = runtime.render(
             root = ToneScope(
@@ -110,7 +110,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun mediaQueryAndDirectionalityPropagateThroughInheritedContext() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
         val screenProfile = ScreenProfile(
             logicalWidth = 6,
             logicalHeight = 4,
@@ -138,7 +138,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun hostThemeProvidesDefaultContainerStyleAndLocalThemeOverridesIt() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
         val screenProfile = ScreenProfile(logicalWidth = 4, logicalHeight = 4, dotSizePx = 8)
 
         val hostThemeResult = runtime.render(
@@ -195,7 +195,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun inheritedNotifierMarksDependentsDirtyAfterNotifierChanges() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
         val count = ValueNotifier(0)
         val root = CounterScope(
             notifier = count,
@@ -221,7 +221,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun builderReadsLocalInheritedContext() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
 
         val result = runtime.render(
             root = ToneScope(
@@ -244,7 +244,7 @@ class RetainedWidgetRuntimeTest {
 
     @Test
     fun statefulBuilderRebuildsLocalState() {
-        val runtime = WidgetRenderRuntimeFactory.createDefault()
+        val runtime = PixelUiRuntime()
         var accent = false
 
         val root = StatefulBuilder { _, setState ->

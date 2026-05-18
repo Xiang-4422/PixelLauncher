@@ -5,25 +5,44 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.Widget
 
 /**
- * pixel-engine UI layer 对宿主层暴露的内部总运行时。
+ * pixel-engine UI layer 对宿主层暴露的内部运行时。
  *
- * 当前它由 retained build runtime、默认 retained support 和新 pipeline renderer
- * 共同组成；默认路径不再自动回退到其他后端。
+ * 它直接持有 retained build runtime 和新 pipeline renderer，渲染一帧的调用链为：
+ *
+ * ```
+ * PixelUiRuntime.render
+ *   -> ElementTreeBuildRuntime.resolveElementTree
+ *   -> ElementTreeRenderer.render
+ * ```
+ *
+ * 不再经过任何 Assembly / Factory 透传层。
+ *
+ * 当前 [textRasterizer] 参数被保留以兼容宿主侧调用约定，但默认 RenderText
+ * 链路目前仍在 widget 层硬编码 `PixelBitmapFont.Default`；后续阶段会把该入参
+ * 真正路由到默认 rasterizer。
  */
 internal class PixelUiRuntime(
-    textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    @Suppress("UNUSED_PARAMETER") textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
     onVisualUpdate: () -> Unit = { },
 ) {
-    private val assembly = PixelUiRuntimeAssemblyFactory.createDefault(
-        textRasterizer = textRasterizer,
+    private val elementTreeRenderer: ElementTreeRenderer = PipelineElementTreeRenderer()
+    private val buildRuntime: ElementTreeBuildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
         onVisualUpdate = onVisualUpdate,
+        widgetAdapter = UnsupportedWidgetAdapter,
     )
 
     /**
      * 渲染显式的 Widget runtime 请求。
      */
     fun render(request: WidgetRenderRequest): PixelRenderResult {
-        return assembly.render(request)
+        val root = buildRuntime.resolveElementTree(request.root)
+        return elementTreeRenderer.render(
+            request = ElementTreeRenderRequest(
+                root = root,
+                logicalWidth = request.logicalWidth,
+                logicalHeight = request.logicalHeight,
+            ),
+        )
     }
 
     /**
@@ -35,7 +54,7 @@ internal class PixelUiRuntime(
         logicalHeight: Int,
     ): PixelRenderResult {
         return render(
-            request = WidgetRenderRequestFactory.create(
+            request = WidgetRenderRequest(
                 root = root,
                 logicalWidth = logicalWidth,
                 logicalHeight = logicalHeight,
@@ -44,9 +63,9 @@ internal class PixelUiRuntime(
     }
 
     /**
-     * 释放内部 Widget runtime。
+     * 释放内部 retained build runtime。
      */
     fun dispose() {
-        assembly.dispose()
+        buildRuntime.dispose()
     }
 }
