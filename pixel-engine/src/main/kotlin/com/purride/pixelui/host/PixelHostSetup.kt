@@ -8,6 +8,7 @@ import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.PixelScrollPhysics
 
 /**
@@ -48,6 +49,11 @@ data class PixelHostSetupConfig(
      * 列表/单子节点 ScrollView 的滚动物理参数。
      */
     val scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default,
+    /**
+     * 帧调度器。默认走 Android Choreographer；测试或替代宿主可注入
+     * `ManualFrameScheduler` 或自定义实现。
+     */
+    val frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default,
 )
 
 /**
@@ -76,6 +82,7 @@ fun createPixelHostSetup(
     hostView.pagerGesturePolicy = config.pagerGesturePolicy
     hostView.nestedScrollPolicy = config.nestedScrollPolicy
     hostView.scrollPhysics = config.scrollPhysics
+    hostView.frameScheduler = config.frameScheduler
     config.content?.let { hostView.setContent(it) }
     val rootView = FrameLayout(context).apply {
         addView(

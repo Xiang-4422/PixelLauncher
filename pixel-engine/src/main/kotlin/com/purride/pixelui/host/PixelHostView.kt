@@ -24,6 +24,7 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
@@ -120,6 +121,14 @@ class PixelHostView @JvmOverloads constructor(
      * 列表/单子节点 ScrollView 的滚动物理参数。默认值适配常见 launcher 滑动手感。
      */
     var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
+
+    /**
+     * 帧调度器。默认走 Android Choreographer；测试可注入 ManualFrameScheduler
+     * 显式驱动帧时机。当前 PixelHostView 主路径仍依赖 View.postInvalidateOnAnimation
+     * 触发重绘；scheduler 主要给业务侧动画引擎调用 `scheduleFrame { tNs -> ... }`
+     * 拿到精确帧时间戳用。
+     */
+    var frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default
 
     /**
      * 宿主级默认主题。
