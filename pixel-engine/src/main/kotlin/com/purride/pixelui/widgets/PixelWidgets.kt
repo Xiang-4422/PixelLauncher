@@ -89,26 +89,6 @@ fun PaddingDirectional(
     return PaddingDirectionalWidget(child = child, padding = padding, key = key)
 }
 
-fun Padding(
-    child: Widget,
-    left: Int = 0,
-    top: Int = 0,
-    right: Int = 0,
-    bottom: Int = 0,
-    key: Any? = null,
-): Widget {
-    return Padding(
-        child = child,
-        padding = EdgeInsets.only(
-            left = left,
-            top = top,
-            right = right,
-            bottom = bottom,
-        ),
-        key = key,
-    )
-}
-
 fun Align(
     child: Widget,
     alignment: Alignment = Alignment.CENTER,
