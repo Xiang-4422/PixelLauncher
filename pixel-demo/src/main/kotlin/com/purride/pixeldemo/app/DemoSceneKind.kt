@@ -27,4 +27,5 @@ enum class DemoSceneKind(
     DRAWER_LIKE("Drawer 验收页"),
     DRAWER_GATE_V2("Drawer Gate V2"),
     LAYOUT_AND_CLICK("布局与点击"),
+    CUSTOM_RENDER_OBJECT("自定义 RenderObject"),
 }

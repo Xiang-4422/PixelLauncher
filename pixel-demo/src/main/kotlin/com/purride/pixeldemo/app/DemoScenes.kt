@@ -80,6 +80,8 @@ import com.purride.pixelui.fling
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
+import com.purride.pixelui.Padding
+import com.purride.pixeldemo.app.customrender.SpinningSquareWidget
 
 /**
  * Demo scene 定义集合。
@@ -154,6 +156,7 @@ object DemoScenes {
             DemoSceneKind.DRAWER_LIKE -> drawerLikeScene(textRasterizers)
             DemoSceneKind.DRAWER_GATE_V2 -> drawerGateV2Scene(textRasterizers)
             DemoSceneKind.LAYOUT_AND_CLICK -> layoutAndClickScene(textRasterizers)
+            DemoSceneKind.CUSTOM_RENDER_OBJECT -> customRenderObjectScene(textRasterizers)
         }
     }
 
@@ -3270,5 +3273,123 @@ object DemoScenes {
                 )
             }
         }
+    }
+
+    /**
+     * 自定义 RenderObject 扩展点演示。
+     *
+     * 用 [SpinningSquareWidget] 展示 `pixelui.advanced` 公开 API 的端到端链路：
+     * - 两个按钮步进 side 大小，验证 `markNeedsLayout` 触发增量重绘
+     * - 两个按钮切换方框颜色（ON/ACCENT），验证 `markNeedsPaint` 触发增量重绘
+     *
+     * 以上链路均通过 Widget → Element → RenderObject 的标准 rebuild 路径完成，
+     * 没有任何绕过 retained tree 的直接操作。
+     */
+    private fun customRenderObjectScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val side = ValueNotifier(16)
+        val tone = ValueNotifier(PixelTone.ON)
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.NIGHT_MONO),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                Column(
+                    children = listOf(
+                        // 标题
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 4),
+                            child = Text(
+                                "自定义 RenderObject",
+                                style = TextStyle.Default,
+                            ),
+                        ),
+                        // side 控制行
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Row(
+                                children = listOf(
+                                    Text("side: ", style = TextStyle.Default),
+                                    ValueListenableBuilder(
+                                        listenable = side,
+                                        builder = { _, value ->
+                                            Text("$value px", style = TextStyle.Accent)
+                                        },
+                                    ),
+                                    SizedBox(width = 4),
+                                    OutlinedButton(
+                                        text = "-",
+                                        onPressed = {
+                                            if (side.value > 4) side.value -= 4
+                                        },
+                                    ),
+                                    SizedBox(width = 2),
+                                    OutlinedButton(
+                                        text = "+",
+                                        onPressed = {
+                                            if (side.value < 48) side.value += 4
+                                        },
+                                    ),
+                                ),
+                            ),
+                        ),
+                        // tone 控制行
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Row(
+                                children = listOf(
+                                    Text("tone: ", style = TextStyle.Default),
+                                    OutlinedButton(
+                                        text = "ON",
+                                        onPressed = { tone.value = PixelTone.ON },
+                                    ),
+                                    SizedBox(width = 2),
+                                    OutlinedButton(
+                                        text = "ACC",
+                                        onPressed = { tone.value = PixelTone.ACCENT },
+                                    ),
+                                ),
+                            ),
+                        ),
+                        SizedBox(height = 8),
+                        // 方框预览
+                        Center(
+                            child = ValueListenableBuilder(
+                                listenable = side,
+                                builder = { _, sideValue ->
+                                    ListenableBuilder(
+                                        listenable = tone,
+                                        builder = { _ ->
+                                            SpinningSquareWidget(
+                                                side = sideValue,
+                                                tone = tone.value,
+                                            )
+                                        },
+                                    )
+                                },
+                            ),
+                        ),
+                        SizedBox(height = 8),
+                        // 说明文字
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "按 +/− 改变边长触发 markNeedsLayout；",
+                                style = TextStyle.Default,
+                            ),
+                        ),
+                        Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 2),
+                            child = Text(
+                                "切换颜色触发 markNeedsPaint。",
+                                style = TextStyle.Default,
+                            ),
+                        ),
+                    ),
+                )
+            },
+        )
     }
 }
