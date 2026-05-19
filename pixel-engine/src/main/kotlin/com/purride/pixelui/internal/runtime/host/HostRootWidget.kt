@@ -1,6 +1,8 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
@@ -20,12 +22,19 @@ internal data class HostRootWidget(
     val screenProfile: ScreenProfile,
     val textDirection: TextDirection,
     val themeData: ThemeData?,
+    val textRasterizer: PixelTextRasterizer,
     val child: Widget,
     override val key: Any? = null,
 ) : StatelessWidget(
     key = key,
 ) {
     override fun build(context: com.purride.pixelui.BuildContext): Widget {
+        val themedChild = themeData?.let { theme ->
+            Theme(
+                data = theme,
+                child = child,
+            )
+        } ?: child
         return MediaQuery(
             data = MediaQueryData(
                 logicalWidth = screenProfile.logicalWidth,
@@ -34,12 +43,10 @@ internal data class HostRootWidget(
             ),
             child = Directionality(
                 textDirection = textDirection,
-                child = themeData?.let { theme ->
-                    Theme(
-                        data = theme,
-                        child = child,
-                    )
-                } ?: child,
+                child = DefaultTextRasterizer(
+                    rasterizer = textRasterizer,
+                    child = themedChild,
+                ),
             ),
         )
     }

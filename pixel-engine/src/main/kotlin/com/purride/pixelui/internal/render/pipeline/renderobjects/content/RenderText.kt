@@ -19,7 +19,7 @@ internal class RenderText(
     private var softWrap: Boolean,
     private var overflow: PixelTextOverflow,
     private var maxLines: Int,
-    private val defaultTextRasterizer: PixelTextRasterizer,
+    private var defaultTextRasterizer: PixelTextRasterizer,
     private val explicitWidth: Int? = null,
     private val explicitHeight: Int? = null,
     private val occupyFullWidth: Boolean = false,
@@ -49,6 +49,7 @@ internal class RenderText(
         softWrap: Boolean,
         overflow: PixelTextOverflow,
         maxLines: Int,
+        defaultTextRasterizer: PixelTextRasterizer = this.defaultTextRasterizer,
     ) {
         if (
             this.text == text &&
@@ -57,7 +58,8 @@ internal class RenderText(
             this.textDirection == textDirection &&
             this.softWrap == softWrap &&
             this.overflow == overflow &&
-            this.maxLines == maxLines
+            this.maxLines == maxLines &&
+            this.defaultTextRasterizer === defaultTextRasterizer
         ) {
             return
         }
@@ -68,6 +70,7 @@ internal class RenderText(
         this.softWrap = softWrap
         this.overflow = overflow
         this.maxLines = maxLines
+        this.defaultTextRasterizer = defaultTextRasterizer
         markNeedsLayout()
         markNeedsPaint()
     }

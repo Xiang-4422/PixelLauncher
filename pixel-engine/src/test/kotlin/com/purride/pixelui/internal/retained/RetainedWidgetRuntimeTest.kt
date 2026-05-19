@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Builder
 import com.purride.pixelcore.ScreenProfile
@@ -147,6 +148,7 @@ class RetainedWidgetRuntimeTest {
             root = HostRootWidget(
                 screenProfile = screenProfile,
                 textDirection = TextDirection.LTR,
+                textRasterizer = PixelBitmapFont.Default,
                 themeData = ThemeData(
                     containerStyle = ContainerStyle.Default.copy(
                         fillTone = PixelTone.ACCENT,
@@ -167,6 +169,7 @@ class RetainedWidgetRuntimeTest {
             root = HostRootWidget(
                 screenProfile = screenProfile,
                 textDirection = TextDirection.LTR,
+                textRasterizer = PixelBitmapFont.Default,
                 themeData = ThemeData(
                     containerStyle = ContainerStyle.Default.copy(
                         fillTone = PixelTone.ACCENT,

@@ -1,9 +1,9 @@
 {
-  "capturedAtEpochMs": 1779069166545,
+  "capturedAtEpochMs": 1779151825411,
   "jvmVersion": "21.0.10",
-  "renderAllocBytesAvg": 6235,
-  "renderAllocBytesMax": 20952,
-  "renderTimeNanosAvg": 55497,
-  "blitNanosAvg": 10555,
-  "richTextLayoutNanosByChars": {"100":254385,"500":537177,"1000":626389}
+  "renderAllocBytesAvg": 1078,
+  "renderAllocBytesMax": 15648,
+  "renderTimeNanosAvg": 10560,
+  "blitNanosAvg": 678,
+  "richTextLayoutNanosByChars": {"100":58441,"500":114264,"1000":84883}
 }

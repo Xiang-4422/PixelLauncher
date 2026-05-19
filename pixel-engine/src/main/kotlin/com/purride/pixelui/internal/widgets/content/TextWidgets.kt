@@ -2,6 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
@@ -36,7 +37,7 @@ internal data class TextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
-            defaultTextRasterizer = PixelBitmapFont.Default,
+            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
         )
     }
 
@@ -55,6 +56,7 @@ internal data class TextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
+            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
         )
     }
 
@@ -93,7 +95,7 @@ internal data class RichTextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
-            defaultTextRasterizer = PixelBitmapFont.Default,
+            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
         )
     }
 
@@ -108,6 +110,7 @@ internal data class RichTextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
+            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
         )
     }
 

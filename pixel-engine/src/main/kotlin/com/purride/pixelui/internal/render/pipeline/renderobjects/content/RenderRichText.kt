@@ -18,7 +18,7 @@ internal class RenderRichText(
     private var softWrap: Boolean,
     private var overflow: PixelTextOverflow,
     private var maxLines: Int,
-    private val defaultTextRasterizer: PixelTextRasterizer,
+    private var defaultTextRasterizer: PixelTextRasterizer,
 ) : RenderBox() {
     private var lines: List<RichLine> = emptyList()
 
@@ -29,6 +29,7 @@ internal class RenderRichText(
         softWrap: Boolean,
         overflow: PixelTextOverflow,
         maxLines: Int,
+        defaultTextRasterizer: PixelTextRasterizer = this.defaultTextRasterizer,
     ) {
         if (
             this.spans == spans &&
@@ -36,7 +37,8 @@ internal class RenderRichText(
             this.textDirection == textDirection &&
             this.softWrap == softWrap &&
             this.overflow == overflow &&
-            this.maxLines == maxLines
+            this.maxLines == maxLines &&
+            this.defaultTextRasterizer === defaultTextRasterizer
         ) {
             return
         }
@@ -46,6 +48,7 @@ internal class RenderRichText(
         this.softWrap = softWrap
         this.overflow = overflow
         this.maxLines = maxLines
+        this.defaultTextRasterizer = defaultTextRasterizer
         markNeedsLayout()
         markNeedsPaint()
     }

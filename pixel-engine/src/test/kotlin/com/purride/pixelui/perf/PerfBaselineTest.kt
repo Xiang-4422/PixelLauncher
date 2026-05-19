@@ -1,6 +1,5 @@
 package com.purride.pixelui.perf
 
-import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelTextSpan
@@ -86,10 +85,9 @@ class PerfBaselineTest {
                 Text("CACHE", style = TextStyle.Accent),
             ),
         )
-        val runtime = PixelUiRuntime(textRasterizer = PixelBitmapFont.Default)
+        val runtime = PixelUiRuntime()
         repeat(WARMUP_ITERATIONS) {
             val result = runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
-            runtime.releaseRenderResult(result)
         }
         runtime.dispose()
     }
@@ -99,7 +97,7 @@ class PerfBaselineTest {
      */
     private fun measureRenderAllocBytes(iterations: Int, mode: AggregateMode): Long {
         val widget = standardRenderWidget()
-        val runtime = PixelUiRuntime(textRasterizer = PixelBitmapFont.Default)
+        val runtime = PixelUiRuntime()
         try {
             @Suppress("DEPRECATION")
             val threadId = Thread.currentThread().id
@@ -107,7 +105,6 @@ class PerfBaselineTest {
             for (i in 0 until iterations) {
                 val before = currentThreadAllocatedBytes(threadId)
                 val result = runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
-                runtime.releaseRenderResult(result)
                 val after = currentThreadAllocatedBytes(threadId)
                 samples[i] = (after - before).coerceAtLeast(0L)
             }
@@ -125,12 +122,11 @@ class PerfBaselineTest {
      */
     private fun measureRenderTimeNanos(iterations: Int): Long {
         val widget = standardRenderWidget()
-        val runtime = PixelUiRuntime(textRasterizer = PixelBitmapFont.Default)
+        val runtime = PixelUiRuntime()
         try {
             val start = System.nanoTime()
             repeat(iterations) {
                 val result = runtime.render(root = widget, logicalWidth = 64, logicalHeight = 16)
-                runtime.releaseRenderResult(result)
             }
             val end = System.nanoTime()
             return (end - start) / iterations.toLong().coerceAtLeast(1L)
@@ -169,12 +165,11 @@ class PerfBaselineTest {
             ),
             softWrap = true,
         )
-        val runtime = PixelUiRuntime(textRasterizer = PixelBitmapFont.Default)
+        val runtime = PixelUiRuntime()
         try {
             val start = System.nanoTime()
             repeat(iterations) {
                 val result = runtime.render(root = widget, logicalWidth = 80, logicalHeight = 240)
-                runtime.releaseRenderResult(result)
             }
             val end = System.nanoTime()
             return (end - start) / iterations.toLong().coerceAtLeast(1L)

@@ -1,6 +1,5 @@
 package com.purride.pixelui.regression
 
-import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
@@ -205,9 +204,7 @@ class EngineGoldenTest {
      * 把一个场景渲染成 ASCII 文本快照。
      */
     private fun renderToAscii(scene: Scene): String {
-        val runtime = PixelUiRuntime(
-            textRasterizer = PixelBitmapFont.Default,
-        )
+        val runtime = PixelUiRuntime()
         try {
             val result = runtime.render(
                 root = scene.build(),

@@ -162,16 +162,13 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
+            if (field === value) return
             field = value
-            // 切换 runtime 前丢弃旧 runtime 的 main buffer 引用：旧池随旧 runtime
-            // dispose 一同释放，buffer 引用同时失效，不能再交给新 runtime 操作。
-            lastRenderResult = null
-            lastRenderResultOwnedByRuntime = false
-            runtime.dispose()
-            runtime = PixelUiRuntime(
-                textRasterizer = value,
-                onVisualUpdate = { postInvalidateOnAnimation() },
-            )
+            // rasterizer 通过 DefaultTextRasterizer InheritedWidget 在
+            // HostRootWidget 里注入；只要触发一次 invalidate，下一帧 onDraw 重新
+            // 包装根 widget 时新 rasterizer 就会经过 retained build 流到所有
+            // TextWidget / RichTextWidget。runtime 与 buffer pool 复用，避免
+            // 切换字体时大块重建。
             invalidate()
         }
 
@@ -246,10 +243,8 @@ public class PixelHostView @JvmOverloads constructor(
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette) {
         this.screenProfile = screenProfile
         this.palette = palette
-        // 外部直接提交一帧前，先把之前 runtime 持有的 buffer 还回池。
-        if (lastRenderResultOwnedByRuntime) {
-            runtime.releaseRenderResult(lastRenderResult)
-        }
+        // PipelineOwner 自己持有上一帧并在下一帧脏时归还，外部直接 submitFrame
+        // 只需丢弃我们对它的引用即可。
         lastRenderResult = PixelRenderResult(
             buffer = pixelBuffer,
             clickTargets = emptyList(),
@@ -285,14 +280,12 @@ public class PixelHostView @JvmOverloads constructor(
                 screenProfile = screenProfile,
                 textDirection = textDirection,
                 themeData = themeData,
+                textRasterizer = textRasterizer,
                 child = rootWidget,
                 key = "host-root",
             )
-            // 用 runtime 渲染新一帧前先把上一帧 runtime 自己持有的 buffer 还给 pool，
-            // 让 main buffer 实现真正的循环复用而不是逐帧 new。
-            if (lastRenderResultOwnedByRuntime) {
-                runtime.releaseRenderResult(lastRenderResult)
-            }
+            // PipelineOwner 自己缓存上一帧 buffer 并在下一帧脏时归还池，
+            // 这里只需要清掉我们对它的引用。
             lastRenderResult = null
             runtime.render(
                 root = wrappedRoot,
