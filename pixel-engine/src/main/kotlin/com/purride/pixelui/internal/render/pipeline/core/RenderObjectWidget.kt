@@ -96,6 +96,18 @@ internal open class RenderObjectElement(
 }
 
 /**
+ * 不持有任何子节点的 leaf render object widget。
+ *
+ * 与 [RenderObjectWidget] 行为完全一致，但作为独立类型存在，让"叶节点"
+ * 意图在类型签名上自带语义（参考 Flutter 的 `LeafRenderObjectWidget`）。
+ * 第三方扩展可以通过 `com.purride.pixelui.advanced.PixelLeafRenderObjectWidget`
+ * 公开别名引用本类。
+ */
+public abstract class LeafRenderObjectWidget(
+    key: Any? = null,
+) : RenderObjectWidget(key = key)
+
+/**
  * Flutter 风格单 child render object widget 公开基础协议。
  *
  * 子类需要 createRenderObject 返回一个继承 [RenderObjectWithChild] 的 RenderObject

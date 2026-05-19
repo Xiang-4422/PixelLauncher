@@ -4,6 +4,7 @@ import com.purride.pixelui.internal.MultiChildRenderObject as InternalMultiChild
 import com.purride.pixelui.internal.MultiChildRenderObjectWidget as InternalMultiChildRenderObjectWidget
 import com.purride.pixelui.internal.RenderBox as InternalRenderBox
 import com.purride.pixelui.internal.RenderObject as InternalRenderObject
+import com.purride.pixelui.internal.LeafRenderObjectWidget as InternalLeafRenderObjectWidget
 import com.purride.pixelui.internal.RenderObjectWidget as InternalRenderObjectWidget
 import com.purride.pixelui.internal.RenderObjectWithChild as InternalRenderObjectWithChild
 import com.purride.pixelui.internal.RenderObjectWithChildren as InternalRenderObjectWithChildren
@@ -73,10 +74,10 @@ public typealias PixelRenderObjectWidget = InternalRenderObjectWidget
  * 不含 child 的叶 render object widget。语义等价于 Flutter 的
  * LeafRenderObjectWidget。
  *
- * 当前实现复用了 [PixelRenderObjectWidget]，只在命名上做了语义标记，
- * 让自定义"叶节点"意图更明确。
+ * 作为独立类型存在（继承自 [PixelRenderObjectWidget]），让"自定义叶节点"
+ * 意图在类型签名上自带语义。
  */
-public typealias PixelLeafRenderObjectWidget = InternalRenderObjectWidget
+public typealias PixelLeafRenderObjectWidget = InternalLeafRenderObjectWidget
 
 /**
  * 单 child render object widget 基类。对应 Flutter 的
