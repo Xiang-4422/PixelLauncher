@@ -1,8 +1,10 @@
 package com.purride.pixeldemo
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.purride.pixelui.PixelHostProfilePreference
+import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixeldemo.app.DemoTextRasterizers
@@ -18,13 +20,26 @@ class DemoActivity : AppCompatActivity() {
     private lateinit var hostView: PixelHostView
     private lateinit var nav: NavigatorImpl
 
+    // enabled 状态由 NavigatorImpl.updateBackCallback() 维护
+    private val backCallback = object : OnBackPressedCallback(enabled = false) {
+        override fun handleOnBackPressed() {
+            nav.pop()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val setup = createPixelHostSetup(context = this)
-        hostView = setup.hostView
+        onBackPressedDispatcher.addCallback(this, backCallback)
 
         val rasterizers = DemoTextRasterizers(this)
+        val setup = createPixelHostSetup(
+            context = this,
+            config = PixelHostSetupConfig(
+                profilePreference = PixelHostProfilePreference(dotSizePx = 12),
+                textRasterizer = rasterizers.default,
+            ),
+        )
+        hostView = setup.hostView
         nav = NavigatorImpl()
         val env = DemoEnv(
             hostView = hostView,
@@ -46,26 +61,38 @@ class DemoActivity : AppCompatActivity() {
         outState.putString(KEY_SCENE_ID, nav.currentScene.id)
     }
 
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun onBackPressed() {
-        if (nav.currentScene !== DemoMenuScene) {
-            nav.popToMenu()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
-        }
-    }
-
     private fun applyProfile(pref: PixelHostProfilePreference) {
         hostView.profilePreference = pref
     }
 
     private inner class NavigatorImpl : DemoNavigator {
         lateinit var env: DemoEnv
-        var currentScene: DemoScene = DemoMenuScene
+        private val stack = ArrayDeque<DemoScene>()
+
+        val currentScene: DemoScene get() = stack.lastOrNull() ?: DemoMenuScene
 
         override fun push(scene: DemoScene) {
-            currentScene = scene
+            stack.addLast(scene)
+            renderScene(scene)
+            updateBackCallback()
+        }
+
+        override fun pop(): Boolean {
+            if (stack.size <= 1) return false
+            stack.removeLast()
+            renderScene(stack.last())
+            updateBackCallback()
+            return true
+        }
+
+        override fun popToMenu() {
+            stack.clear()
+            stack.addLast(DemoMenuScene)
+            renderScene(DemoMenuScene)
+            updateBackCallback()
+        }
+
+        private fun renderScene(scene: DemoScene) {
             scene.initialProfile?.let { applyProfile(it) }
             scene.initialPalette?.let { hostView.setPalette(it) }
             scene.initialTheme?.let { hostView.themeData = it }
@@ -79,7 +106,9 @@ class DemoActivity : AppCompatActivity() {
             }
         }
 
-        override fun popToMenu() = push(DemoMenuScene)
+        private fun updateBackCallback() {
+            backCallback.isEnabled = stack.size > 1
+        }
     }
 
     companion object {

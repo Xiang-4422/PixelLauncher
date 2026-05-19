@@ -7,7 +7,7 @@
     <option name="DEPLOY_AS_INSTANT" value="false" />
     <option name="CLEAR_APP_STORAGE" value="false" />
     <option name="MODE" value="specific_activity" />
-    <option name="ACTIVITY_CLASS" value="com.purride.pixeldemo.app.DemoMenuActivity" />
+    <option name="ACTIVITY_CLASS" value="com.purride.pixeldemo.DemoActivity" />
     <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
     <option name="DEBUGGER_TYPE" value="Auto" />
     <method v="2">
