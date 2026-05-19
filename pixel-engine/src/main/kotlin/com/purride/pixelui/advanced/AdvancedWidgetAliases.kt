@@ -33,6 +33,11 @@ import com.purride.pixelui.internal.SingleChildRenderObjectWidget as InternalSin
  * - [PixelSingleChildRenderObject] —— 单 child 盒模型（实现 [PixelRenderObjectWithChild]）
  * - [PixelMultiChildRenderObject] —— 多 child 盒模型（实现 [PixelRenderObjectWithChildren]）
  *
+ * 稳定性分级：
+ * - Stable：会保持源码兼容，后续只做兼容扩展。
+ * - Experimental：可用于自定义组件，但子节点协议、paint context 或 hitTest
+ *   细节后续可能继续收敛；升级时请阅读 release notes。
+ *
  * 自定义示例：
  * ```kotlin
  * class MyDotWidget(val color: PixelTone) : PixelLeafRenderObjectWidget() {
@@ -65,6 +70,8 @@ import com.purride.pixelui.internal.SingleChildRenderObjectWidget as InternalSin
 /**
  * 通用 render object widget 基类，对应 Flutter 的 RenderObjectWidget。
  *
+ * 稳定性：Stable。作为 RenderObject widget 的公共根基类会保持源码兼容。
+ *
  * 不建议直接继承本类；除非确实只画一个不含 child 的叶节点（建议用更
  * 具体的 [PixelLeafRenderObjectWidget] 表达意图）。
  */
@@ -74,6 +81,8 @@ public typealias PixelRenderObjectWidget = InternalRenderObjectWidget
  * 不含 child 的叶 render object widget。语义等价于 Flutter 的
  * LeafRenderObjectWidget。
  *
+ * 稳定性：Stable。自定义无 child 叶节点的推荐入口。
+ *
  * 作为独立类型存在（继承自 [PixelRenderObjectWidget]），让"自定义叶节点"
  * 意图在类型签名上自带语义。
  */
@@ -82,12 +91,16 @@ public typealias PixelLeafRenderObjectWidget = InternalLeafRenderObjectWidget
 /**
  * 单 child render object widget 基类。对应 Flutter 的
  * SingleChildRenderObjectWidget。
+ *
+ * 稳定性：Stable。单 child widget 基类会保持源码兼容。
  */
 public typealias PixelSingleChildRenderObjectWidget = InternalSingleChildRenderObjectWidget
 
 /**
  * 多 child render object widget 基类。对应 Flutter 的
  * MultiChildRenderObjectWidget。
+ *
+ * 稳定性：Stable。多 child widget 基类会保持源码兼容。
  */
 public typealias PixelMultiChildRenderObjectWidget = InternalMultiChildRenderObjectWidget
 
@@ -96,6 +109,8 @@ public typealias PixelMultiChildRenderObjectWidget = InternalMultiChildRenderObj
 /**
  * 自定义渲染对象的根基类。继承本类（或 [PixelRenderBox]）即可参与
  * pixel-engine 的 layout / paint / hitTest 管线。
+ *
+ * 稳定性：Stable。RenderObject 根基类会保持源码兼容。
  */
 public typealias PixelRenderObject = InternalRenderObject
 
@@ -103,16 +118,22 @@ public typealias PixelRenderObject = InternalRenderObject
  * 自定义渲染对象的盒模型基类。提供 `size: PixelRenderSize` 字段和
  * `layout(constraints)` / `paint(context, offsetX, offsetY)` / `hitTest(...)`
  * 等入口。
+ *
+ * 稳定性：Stable。盒模型扩展的推荐基类。
  */
 public typealias PixelRenderBox = InternalRenderBox
 
 /**
  * 单 child render object 基类。配合 [PixelSingleChildRenderObjectWidget] 使用。
+ *
+ * 稳定性：Experimental。子节点挂接协议后续可能继续收敛。
  */
 public typealias PixelSingleChildRenderObject = InternalSingleChildRenderObject
 
 /**
  * 多 child render object 基类。配合 [PixelMultiChildRenderObjectWidget] 使用。
+ *
+ * 稳定性：Experimental。子节点列表协议后续可能继续收敛。
  */
 public typealias PixelMultiChildRenderObject = InternalMultiChildRenderObject
 
@@ -120,21 +141,29 @@ public typealias PixelMultiChildRenderObject = InternalMultiChildRenderObject
 
 /**
  * 布局阶段父节点下发的约束（minWidth/maxWidth/minHeight/maxHeight）。
+ *
+ * 稳定性：Stable。布局约束值对象会保持源码兼容。
  */
 public typealias PixelRenderConstraints = com.purride.pixelui.internal.RenderConstraints
 
 /**
  * 布局完成后 render object 自身的尺寸。
+ *
+ * 稳定性：Stable。布局尺寸值对象会保持源码兼容。
  */
 public typealias PixelRenderSize = com.purride.pixelui.internal.RenderSize
 
 /**
  * paint 阶段传入的上下文，含目标 buffer 与共享 buffer pool。
+ *
+ * 稳定性：Experimental。buffer pool 与 paint context 字段后续可能扩展。
  */
 public typealias PixelPaintContext = com.purride.pixelui.internal.PaintContext
 
 /**
  * hitTest 收集的命中节点序列。
+ *
+ * 稳定性：Experimental。hitTest API 仍可能随手势系统演进。
  */
 public typealias PixelHitTestResult = com.purride.pixelui.internal.HitTestResult
 
@@ -142,10 +171,14 @@ public typealias PixelHitTestResult = com.purride.pixelui.internal.HitTestResult
 
 /**
  * 单 child 协议——render object 需要实现这个接口才能挂接 single child widget。
+ *
+ * 稳定性：Experimental。协议类扩展点后续可能收敛。
  */
 public typealias PixelRenderObjectWithChild = InternalRenderObjectWithChild
 
 /**
  * 多 child 协议——render object 需要实现这个接口才能挂接 multi-child widget。
+ *
+ * 稳定性：Experimental。协议类扩展点后续可能收敛。
  */
 public typealias PixelRenderObjectWithChildren = InternalRenderObjectWithChildren
