@@ -31,4 +31,7 @@ enum class DemoSceneKind(
     IME_TYPES("输入键盘类型"),
     GESTURE_TUNING("手势调参"),
     FONT_SHOWCASE("字体切换"),
+    THEME_TOKENS("Token 主题调参"),
+    RTL_MIRROR("RTL 镜像对照"),
+    PALETTE_GRID("调色板总览"),
 }

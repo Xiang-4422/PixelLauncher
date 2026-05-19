@@ -19,18 +19,26 @@ pixel-engine 的主题系统遵循一条核心原则：
 调色板（`PixelPalette`）把这三个 tone 映射到具体 RGB。SDK 提供若干预设：
 
 ```kotlin
-PixelPalette.terminalGreen()   // 默认，CRT 绿
-PixelPalette.amberCrt()        // 复古琥珀
-PixelPalette.nokiaLcd()        // 单色 LCD
-PixelPalette.gameboy()         // 灰绿
-// 自定义：
+// 5 个内置主题预设：
+PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR)   // 默认 CRT 绿
+PixelPalette.fromTheme(PixelTheme.AMBER_CRT)        // 复古琥珀
+PixelPalette.fromTheme(PixelTheme.ICE_LCD)          // 冰蓝 LCD
+PixelPalette.fromTheme(PixelTheme.MONO_LCD)         // 纯单色 LCD
+PixelPalette.fromTheme(PixelTheme.NIGHT_MONO)       // 夜间单色
+
+// 便利别名：
+PixelPalette.terminalGreen()                        // = fromTheme(GREEN_PHOSPHOR)
+
+// 完全自定义：
 PixelPalette(
     backgroundColor = 0xFF000000.toInt(),
-    offColor = 0xFF222222.toInt(),
-    onColor = 0xFF66CC33.toInt(),
-    accentColor = 0xFFFFD000.toInt(),
+    pixelOffColor   = 0xFF222222.toInt(),
+    pixelOnColor    = 0xFF66CC33.toInt(),
+    accentColor     = 0xFFFFD000.toInt(),
 )
 ```
+
+`fromTheme` 还接受 `isLowBattery: Boolean` 入参，会自动降低 accent 亮度以省电。
 
 调色板在宿主层注入：
 

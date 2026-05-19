@@ -193,12 +193,13 @@ val setup = createPixelHostSetup(
 
 ```kotlin
 import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelTheme
 
 val setup = createPixelHostSetup(
     context = this,
     config = PixelHostSetupConfig(
-        palette = PixelPalette.amberCrt(),   // 琥珀色复古风
-        // 或：PixelPalette.terminalGreen() / .nokiaLcd() / 自定义
+        palette = PixelPalette.fromTheme(PixelTheme.AMBER_CRT),   // 复古琥珀
+        // 还可选：GREEN_PHOSPHOR / ICE_LCD / MONO_LCD / NIGHT_MONO，或自定义构造
         content = { /* ... */ },
     ),
 )

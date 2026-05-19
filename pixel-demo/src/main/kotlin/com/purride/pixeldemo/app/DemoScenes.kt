@@ -81,7 +81,10 @@ import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PaddingDirectional
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.Spacer
+import com.purride.pixelui.withTokens
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.gesture.PagerGesturePolicy
 import com.purride.pixeldemo.app.gesture.TunablePagerGesturePolicy
@@ -166,6 +169,9 @@ object DemoScenes {
             DemoSceneKind.IME_TYPES -> imeTypesScene(textRasterizers)
             DemoSceneKind.GESTURE_TUNING -> gestureTuningScene(textRasterizers)
             DemoSceneKind.FONT_SHOWCASE -> fontShowcaseScene(hostView, textRasterizers)
+            DemoSceneKind.THEME_TOKENS -> themeTokensScene(textRasterizers)
+            DemoSceneKind.RTL_MIRROR -> rtlMirrorScene(textRasterizers)
+            DemoSceneKind.PALETTE_GRID -> paletteGridScene(hostView, textRasterizers)
         }
     }
 
@@ -3704,6 +3710,273 @@ object DemoScenes {
                                 style = TextStyle.Default,
                                 softWrap = true,
                                 maxLines = 3,
+                            ),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  THEME_TOKENS：运行时切换 ThemeData.tokens 体验 withTokens API
+    // ──────────────────────────────────────────────────────────────────────
+    private fun themeTokensScene(textRasterizers: DemoTextRasterizers): DemoScene {
+        // 用 ValueNotifier 持有主题数据；按钮回调里 withTokens { copy(...) }。
+        val theme = ValueNotifier(ThemeData())
+
+        fun updateTokens(transform: PixelThemeTokens.() -> PixelThemeTokens) {
+            theme.value = theme.value.withTokens(transform)
+        }
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                ValueListenableBuilder(listenable = theme) { _, currentTheme ->
+                    // 用 Theme widget 把子树包成 currentTheme 的作用域。
+                    Theme(
+                        data = currentTheme,
+                        child = Padding(
+                            padding = EdgeInsets.symmetric(horizontal = 6, vertical = 6),
+                            child = Column(
+                                spacing = 4,
+                                children = listOf(
+                                    Text("TOKEN 主题调参 ↓", style = TextStyle.Accent),
+                                    // textTone 切换：ON ↔ ACCENT
+                                    Row(
+                                        spacing = 4,
+                                        children = listOf(
+                                            Text("textTone"),
+                                            Spacer(),
+                                            OutlinedButton(
+                                                text = "ON",
+                                                onPressed = {
+                                                    updateTokens { copy(textTone = PixelTone.ON) }
+                                                },
+                                            ),
+                                            OutlinedButton(
+                                                text = "ACCENT",
+                                                onPressed = {
+                                                    updateTokens { copy(textTone = PixelTone.ACCENT) }
+                                                },
+                                            ),
+                                        ),
+                                    ),
+                                    // accentBorderTone 切换
+                                    Row(
+                                        spacing = 4,
+                                        children = listOf(
+                                            Text("accentBorderTone"),
+                                            Spacer(),
+                                            OutlinedButton(
+                                                text = "ACCENT",
+                                                onPressed = {
+                                                    updateTokens { copy(accentBorderTone = PixelTone.ACCENT) }
+                                                },
+                                            ),
+                                            OutlinedButton(
+                                                text = "ON",
+                                                onPressed = {
+                                                    updateTokens { copy(accentBorderTone = PixelTone.ON) }
+                                                },
+                                            ),
+                                        ),
+                                    ),
+                                    SizedBox(height = 4),
+                                    // 样本预览：3 类 widget 都会因 token 变化跟着重绘
+                                    Text("默认文字"),
+                                    Text("强调文字", style = TextStyle.Accent),
+                                    OutlinedButton(text = "默认按钮", onPressed = {}),
+                                    OutlinedButton(text = "强调按钮", onPressed = {}, style = ButtonStyle.Accent),
+                                    Container(
+                                        width = 80,
+                                        height = 12,
+                                        borderTone = PixelTone.ON,
+                                        alignment = Alignment.CENTER,
+                                        child = Text("容器", style = TextStyle.Default),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    )
+                }
+            },
+        )
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  RTL_MIRROR：上下并排同一布局在 LTR / RTL 下的镜像对照
+    // ──────────────────────────────────────────────────────────────────────
+    private fun rtlMirrorScene(textRasterizers: DemoTextRasterizers): DemoScene {
+        // 示例子树：Row + PaddingDirectional + AlignDirectional + PositionedDirectional
+        fun sampleSubtree(): Widget {
+            return Column(
+                spacing = 2,
+                children = listOf(
+                    // Row START 对齐：LTR 下从左排，RTL 下从右排
+                    Container(
+                        width = 88,
+                        height = 14,
+                        borderTone = PixelTone.ON,
+                        child = Row(
+                            mainAxisAlignment = MainAxisAlignment.START,
+                            spacing = 2,
+                            children = listOf(
+                                Text("A"),
+                                Text("B"),
+                                Text("C"),
+                            ),
+                        ),
+                    ),
+                    // PaddingDirectional：start=8 在 LTR 表现为左 padding，RTL 表现为右
+                    Container(
+                        width = 88,
+                        height = 12,
+                        borderTone = PixelTone.ON,
+                        child = PaddingDirectional(
+                            child = Text("START 8"),
+                            padding = EdgeInsetsDirectional.only(start = 8),
+                        ),
+                    ),
+                    // AlignDirectional.CENTER_START
+                    Container(
+                        width = 88,
+                        height = 12,
+                        borderTone = PixelTone.ON,
+                        child = AlignDirectional(
+                            child = Text("CS"),
+                            alignment = AlignmentDirectional.CENTER_START,
+                        ),
+                    ),
+                    // PositionedDirectional + Stack：start=4 / top=2
+                    Stack(
+                        children = listOf(
+                            Container(
+                                width = 88,
+                                height = 16,
+                                borderTone = PixelTone.ON,
+                            ),
+                            PositionedDirectional(
+                                child = Text("POS-S"),
+                                start = 4,
+                                top = 2,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                Padding(
+                    padding = EdgeInsets.all(4),
+                    child = Column(
+                        spacing = 4,
+                        children = listOf(
+                            Text("LTR (left-to-right):", style = TextStyle.Accent),
+                            Directionality(
+                                textDirection = TextDirection.LTR,
+                                child = sampleSubtree(),
+                            ),
+                            SizedBox(height = 4),
+                            Text("RTL (right-to-left):", style = TextStyle.Accent),
+                            Directionality(
+                                textDirection = TextDirection.RTL,
+                                child = sampleSubtree(),
+                            ),
+                        ),
+                    ),
+                )
+            },
+        )
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  PALETTE_GRID：按钮网格切换全部 5 个 PixelTheme 预设，旁附 ListViewSeparated
+    // ──────────────────────────────────────────────────────────────────────
+    private fun paletteGridScene(
+        hostView: PixelHostView,
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val themes = listOf(
+            PixelTheme.GREEN_PHOSPHOR to "GREEN",
+            PixelTheme.AMBER_CRT to "AMBER",
+            PixelTheme.ICE_LCD to "ICE",
+            PixelTheme.MONO_LCD to "MONO",
+            PixelTheme.NIGHT_MONO to "NIGHT",
+        )
+        val controller = com.purride.pixelui.state.PixelListController()
+        val listState = controller.create()
+
+        return DemoScene(
+            initialProfile = defaultProfile(),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.GREEN_PHOSPHOR),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                Padding(
+                    padding = EdgeInsets.all(4),
+                    child = Column(
+                        spacing = 4,
+                        children = listOf(
+                            Text("调色板预设：", style = TextStyle.Accent),
+                            // 5 个主题按钮排成两行
+                            Row(
+                                spacing = 4,
+                                children = themes.take(3).map { (theme, label) ->
+                                    OutlinedButton(
+                                        text = label,
+                                        onPressed = {
+                                            hostView.setPalette(PixelPalette.fromTheme(theme))
+                                        },
+                                    )
+                                },
+                            ),
+                            Row(
+                                spacing = 4,
+                                children = themes.drop(3).map { (theme, label) ->
+                                    OutlinedButton(
+                                        text = label,
+                                        onPressed = {
+                                            hostView.setPalette(PixelPalette.fromTheme(theme))
+                                        },
+                                    )
+                                },
+                            ),
+                            SizedBox(height = 4),
+                            Text("当前 palette 下的 3 个 tone：", style = TextStyle.Accent),
+                            Row(
+                                spacing = 4,
+                                children = listOf(
+                                    Container(width = 24, height = 12, fillTone = PixelTone.OFF, alignment = Alignment.CENTER, child = Text("OFF")),
+                                    Container(width = 24, height = 12, fillTone = PixelTone.ON, alignment = Alignment.CENTER, child = Text("ON", style = TextStyle(tone = PixelTone.OFF))),
+                                    Container(width = 24, height = 12, fillTone = PixelTone.ACCENT, alignment = Alignment.CENTER, child = Text("ACC", style = TextStyle(tone = PixelTone.OFF))),
+                                ),
+                            ),
+                            SizedBox(height = 4),
+                            Text("ListViewSeparated 演示：", style = TextStyle.Accent),
+                            // ListViewSeparated 占满剩余高度
+                            Expanded(
+                                child = ListViewSeparated(
+                                    itemCount = themes.size,
+                                    itemBuilder = { i ->
+                                        val (_, label) = themes[i]
+                                        Padding(
+                                            padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
+                                            child = Text("PRESET $label"),
+                                        )
+                                    },
+                                    separatorBuilder = { _ ->
+                                        Container(width = null, height = 1, fillTone = PixelTone.ON)
+                                    },
+                                    state = listState,
+                                    controller = controller,
+                                ),
                             ),
                         ),
                     ),
