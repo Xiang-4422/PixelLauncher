@@ -1,116 +1,185 @@
-# pixel-engine Architecture
+# 引擎架构
 
-## What is pixel-engine?
+本文档介绍 pixel-engine 的内部结构。**作为 SDK 用户你不需要读懂它就能使用** —— 这里更适合好奇你"为什么这样能 work"、或者计划深度扩展 SDK 的读者。
 
-pixel-engine is a Flutter-style pixel-art UI SDK for Android. Instead of using the Android View system, it renders every pixel itself into a single `SurfaceView`/`Canvas`. Widgets are pure Kotlin data objects; the engine translates them into a retained element tree that drives layout, paint, and hit-test passes on a `PixelBuffer`.
+## 什么是 pixel-engine
 
-The design philosophy mirrors Flutter almost verbatim: widgets are immutable configuration, elements are the mutable runtime counterparts, and render objects are the low-level geometry/paint nodes.
+一个 Flutter 风格的像素艺术 UI SDK。不依赖 Android 的 View 系统，所有内容直接渲染到一个 `SurfaceView`。widget 是不可变的 Kotlin 数据对象；引擎把它们翻译成 retained element 树驱动 layout / paint / hit-test，输出到 `PixelBuffer`。
+
+设计上几乎 1:1 复刻 Flutter：widget 是不可变配置，element 是运行时实例，render object 处理底层几何与绘制。
 
 ---
 
-## Three-Layer Model
+## 三层模型
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Widget layer  (immutable configuration objects)        │
+│  Widget 层  （不可变配置对象）                          │
 │  Row, Column, Text, Padding, Container, PixelButton …   │
-│  Lives in: com.purride.pixelui.widgets.*                │
+│  对外公开：com.purride.pixelui.*                        │
 └───────────────────┬─────────────────────────────────────┘
                     │ BuildOwner.updateRootWidget()
                     ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Element layer  (mutable runtime tree)                  │
-│  StatefulElement, StatelessElement,                     │
-│  SingleChildRenderObjectElement, …                      │
-│  Lives in: com.purride.pixelui.internal.retained.*      │
+│  Element 层  （可变的运行时树）                         │
+│  StatefulElement / StatelessElement /                   │
+│  SingleChildRenderObjectElement …                       │
+│  内部实现：com.purride.pixelui.internal.retained.*      │
 └───────────────────┬─────────────────────────────────────┘
                     │ element.updateRenderObject()
                     ▼
 ┌─────────────────────────────────────────────────────────┐
-│  RenderObject layer  (layout + paint + hit-test)        │
-│  RenderBox, RenderText, RenderFlex, RenderStack, …      │
-│  Lives in: com.purride.pixelui.internal.render.*        │
+│  RenderObject 层  （layout + paint + hitTest）          │
+│  RenderBox, RenderText, RenderFlex, RenderStack …       │
+│  内部实现：com.purride.pixelui.internal.render.*        │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Widget layer
+### Widget 层
 
-Widgets are `data class`es (or `class`es for stateful widgets) that carry configuration only. Reconstructing a widget is cheap. The engine compares new widgets to old ones via `==` to decide whether a rebuild is needed.
+Widget 是 `data class`（或 `class`，对 stateful widget）。它只携带配置，构造是廉价的。引擎用 `==` 比较新老 widget 决定是否需要重建。
 
-### Element layer
+### Element 层
 
-Elements own the widget's lifecycle. A `StatefulElement` holds the `State<T>` object that persists across rebuilds. `BuildOwner` is the scheduler: it collects dirty elements, calls `rebuild()` in a single pass, and notifies the pipeline that paint is needed.
+Element 拥有 widget 的生命周期。`StatefulElement` 持有跨重建保留的 `State<T>` 对象。`BuildOwner` 是调度器：收集脏 element，单次扫描调用 `rebuild()`，通知管线该重绘了。
 
-### RenderObject layer
+### RenderObject 层
 
-`RenderBox` subclasses implement `layout(constraints)` and `paint(context, offsetX, offsetY)`. The pipeline runs `PipelineOwner.render()`, which walks the tree depth-first: layout first, paint second. Results land in a `PixelBuffer` (a packed `ByteArray` of palette indices).
+`RenderBox` 子类实现 `layout(constraints)` 和 `paint(context, offsetX, offsetY)`。管线 `PipelineOwner.render()` 深度优先遍历：先 layout，后 paint。结果落到 `PixelBuffer`（每像素是调色板索引的 `ByteArray`）。
 
 ---
 
-## Retained Build Pipeline
+## Retained Build 管线
 
 ```
 PixelUiRuntime.render(newWidget)
         │
         ▼
 BuildOwner.updateRootWidget(newWidget)
-   ├─ element.update(newWidget)   ← reconciles children recursively
-   └─ DirtyElementScheduler      ← collects State-marked dirty elements
+   ├─ element.update(newWidget)   ← 递归比较 child
+   └─ DirtyElementScheduler       ← 收集 State 标记脏的 element
         │
-        ▼ rebuild dirty elements
+        ▼ rebuild 脏 element
 BuildOwner.buildScope()
-   └─ element.rebuild() → build() → update children
+   └─ element.rebuild() → build() → 更新 child
         │
         ▼
 PipelineOwner.render()
    ├─ needsLayout? → RenderObject.layout(constraints)
-   │     (short-circuits when constraints + RO.== unchanged)
+   │     （constraints + RO.== 未变时短路）
    └─ needsPaint?  → RenderObject.paint(context, offset)
         │
         ▼
 PixelRenderResult  →  PixelHostView.onDraw()  →  Canvas.drawBitmap()
 ```
 
-`PixelUiRuntime` is the single public entry point in the host module. The `PixelHostView` (Android `View` subclass) wraps it, owns a `PixelFrameScheduler`, and calls `invalidate()` on each rendered frame.
+`PixelUiRuntime` 是宿主层唯一的内部入口。`PixelHostView`（Android `View` 子类）包装它、持有 `PixelFrameScheduler`，每帧绘制完调 `invalidate()`。
 
 ---
 
-## Performance Optimizations (Phase 2)
+## 性能优化（Phase 2）
 
 ### PixelBufferPool
 
-`PixelBufferPool` (`com.purride.pixelcore.graphics`) maintains a per-size `ConcurrentLinkedQueue<PixelBuffer>`. `acquire(w, h)` reuses a matching buffer; `release(buf)` clears and returns it. Per-frame `ByteArray` allocation drops from ~30 KB to near zero once the pool is warm.
+`PixelBufferPool`（在 `com.purride.pixelcore.graphics`）按尺寸维护 `ConcurrentLinkedQueue<PixelBuffer>`。`acquire(w, h)` 借用一个匹配的；`release(buf)` 清空后归还。池预热后，每帧 `ByteArray` 分配量从 ~30 KB 降到接近 0。
 
-### PipelineOwner frame caching
+### PipelineOwner 帧缓存
 
-`PipelineOwner` keeps `needsLayout` and `needsPaint` dirty flags. A subtree skips layout if the incoming `RenderConstraints` matches the cached value and `RenderObject.==` equality holds. A subtree skips paint if nothing beneath it called `markNeedsPaint()`.
+`PipelineOwner` 维护 `needsLayout` 和 `needsPaint` 两个脏标记。子树满足以下条件时 layout 阶段被跳过：传入的 `RenderConstraints` 与缓存值相等，且 `RenderObject.==` 等价。子树没人调用 `markNeedsPaint()` 则跳过 paint。
 
-### RenderObject equality short-circuit
+### RenderObject equality 短路
 
-Every `updateRenderObject` checks new vs. old field values before calling `markNeedsLayout` / `markNeedsPaint`. If nothing changed, neither flag is set, and both passes skip that subtree entirely.
+每个 `updateRenderObject` 都先比较新旧字段值，再决定要不要 `markNeedsLayout` / `markNeedsPaint`。零变化的 widget rebuild 不会触发任何 layout / paint。
 
 ### PixelBuffer.blit arraycopy
 
-`PixelBuffer.blit` uses `System.arraycopy` for horizontally-aligned source/dest regions (one call per row), falling back to the pixel loop only for clipped or scaled cases.
+`PixelBuffer.blit` 在源和目标横向对齐、无变形时按行调用 `System.arraycopy`（一次系统调用一行），只有裁剪 / 缩放等特殊情况才落回逐像素循环。
 
-### LRU glyph cache + RichText O(n) line-wrap
+### LRU glyph 缓存 + O(n) 文本换行
 
-`PixelFontEngine` uses a 2 048-entry LRU `LinkedHashMap` keyed on `(codePoint, glyphStyleHash)`. `RenderRichText.wrapCharacters` is a single linear scan with a `currentLineWidth` accumulator — no quadratic re-measurement.
+`PixelFontEngine` 用 2048 条容量的 LRU `LinkedHashMap`，键 `(codePoint, glyphStyleHash)`。`RenderRichText.wrapCharacters` 是单次线性扫描，用 `currentLineWidth` 累加器，没有二次回测。
+
+### 实测数据（Phase 0 → 当前）
+
+| 指标 | Phase 0 baseline | 当前 |
+|---|---|---|
+| 每帧分配字节 (avg) | 6235 | **1078** (-83%) |
+| 渲染时间 ns/帧 (avg) | 55497 | **10560** (-81%) |
+| blit 单次 ns | 10555 | **678** (-94%) |
+| RichText 1000 字 ns | 626389 | **84883** (-86%) |
 
 ---
 
-## Public API Boundaries
+## 公开 API 边界
 
-pixel-engine deliberately uses a **mostly-flat namespace** with a handful of dedicated sub-packages for concerns that benefit from grouping. The actual layout:
+pixel-engine 用 **以扁平命名空间为主、配少量子包** 的设计。实际布局：
 
-| Namespace | Contents | Notes |
+| 命名空间 | 内容 | 备注 |
 |---|---|---|
-| `com.purride.pixelui` (flat root) | All widgets (`Text`, `Row`, `Column`, `Padding`, `Stack`, `PixelButton`, …), theme types (`PixelThemeData`, `PixelThemeTokens`, `EdgeInsets`, `PixelTextStyle`, …), host types (`PixelHostView`, `PixelHostSetupConfig`, `PixelHostBridge`, …), framework root types (`Widget`, `BuildContext`, `Directionality`, `MediaQuery`, `DefaultTextRasterizer`, …) | Most public API lives here; users do `import com.purride.pixelui.Text` etc. |
-| `com.purride.pixelui.state` | Controllers (`PixelListController`, `PixelPagerController`, `PixelTextFieldController`) and their state types | Dedicated because controllers are stateful + listened to |
-| `com.purride.pixelui.gesture` | `PagerGesturePolicy`, `NestedScrollGesturePolicy` | Override these to customize gesture recognition |
-| `com.purride.pixelui.host` | `PixelFrameScheduler` (interface + `ManualFrameScheduler`) | Note: most host classes are in the flat root; only the frame scheduler is in this sub-package |
-| `com.purride.pixelui.advanced` | Extension points: `PixelLeafRenderObjectWidget`, `PixelRenderBox`, `PixelPaintContext`, `PixelRenderConstraints`, `PixelRenderSize`, … | Typealiases re-exporting selected internal types for custom RenderObject authoring |
+| `com.purride.pixelui` (扁平根) | 所有 widget（`Text`、`Row`、`Column`、`PixelButton`……）、主题类型（`PixelThemeData`、`EdgeInsets`、`PixelTextStyle`……）、宿主类型（`PixelHostView`、`PixelHostSetupConfig`、`PixelHostBridge`……）、框架基础类（`Widget`、`BuildContext`、`Directionality`、`MediaQuery`、`DefaultTextRasterizer`……）| 大部分公开 API 在这里 |
+| `com.purride.pixelui.state` | `PixelListController`、`PixelPagerController`、`PixelTextFieldController` 及对应 state | 控制器都是有状态、可订阅的 |
+| `com.purride.pixelui.gesture` | `PagerGesturePolicy`、`NestedScrollGesturePolicy` | 继承这些定制手势识别 |
+| `com.purride.pixelui.host` | `PixelFrameScheduler` 接口 + `ManualFrameScheduler` | 注意大部分 host 类在扁平根；只有帧调度器在子包 |
+| `com.purride.pixelui.advanced` | `PixelLeafRenderObjectWidget`、`PixelRenderBox`、`PixelPaintContext`、`PixelRenderConstraints`、`PixelRenderSize` | 通过 typealias 重新导出内部类型供自定义 RenderObject 使用 |
 
-The source-tree directories `host/`, `theme/`, `widgets/`, `foundation/` exist for code organization but **do not** define sub-packages — files inside them declare `package com.purride.pixelui` (flat). This is intentional: it keeps imports concise for the most common widget-building use cases.
+源码目录 `host/` / `theme/` / `widgets/` / `foundation/` 只是组织文件，**并不形成子包** —— 里面的文件声明 `package com.purride.pixelui`。这是有意为之，让常用 widget 的 import 保持简洁。
 
-Everything under `com.purride.pixelui.internal.*` is SDK-private. Do not import internal packages — the module is compiled with `explicitApi = Strict`, so internal declarations will not appear in IDE completions for external consumers.
+所有 `com.purride.pixelui.internal.*` 都是 SDK 私有。本模块用 `explicitApi = Strict` 编译，外部消费者的 IDE 自动完成里不会看到 internal 类型。
+
+---
+
+## 模块结构
+
+```
+pixel-engine/
+├── src/main/kotlin/com/purride/
+│   ├── pixelcore/           ← 纯绘图层（PixelBuffer / PixelPalette / 字体引擎），不依赖 Android UI
+│   └── pixelui/             ← 整个 SDK 的 widget / element / render object / 宿主
+│       ├── foundation/      ← 框架基础（Widget / BuildContext / ...）
+│       ├── widgets/         ← 公开 widget 工厂函数
+│       ├── theme/           ← 主题与样式
+│       ├── state/           ← 控制器
+│       ├── host/            ← Android 宿主集成（PixelHostView 等）
+│       ├── gesture/         ← 手势策略
+│       ├── advanced/        ← 扩展点公开门面
+│       └── internal/        ← 内部实现（element / runtime / render pipeline）
+├── src/test/kotlin/...      ← 单测（162+）
+└── src/test/resources/      ← golden buffer 快照 + perf baseline
+```
+
+---
+
+## 学习路径
+
+如果想深入 SDK 内部，建议顺序：
+
+1. `pixelcore/graphics/PixelBuffer.kt` —— 看懂最底层像素数据
+2. `pixelui/internal/render/pipeline/core/RenderObject.kt` —— 看 layout / paint 基类
+3. `pixelui/internal/retained/runtime/BuildOwner.kt` —— 看 retained build 调度
+4. `pixelui/internal/runtime/PixelUiRuntime.kt` —— 看顶层入口怎么把三层串起来
+5. `pixelui/host/PixelHostView.kt` —— 看 Android 集成端
+
+---
+
+## 与 Flutter 的对应关系
+
+| pixel-engine | Flutter |
+|---|---|
+| `Widget` | `Widget` |
+| `StatefulWidget` / `State` | 完全对应 |
+| `InheritedWidget` | 完全对应 |
+| `BuildOwner` | `BuildOwner` |
+| `Element` / `RenderObjectElement` | 完全对应 |
+| `RenderObject` / `RenderBox` | 完全对应 |
+| `PipelineOwner` | `PipelineOwner` |
+| `PixelBuffer` | 类似 `Canvas`，但只支持像素操作 |
+| `PixelHostView` | `View`（在 Flutter 里是 `FlutterView` / `RenderView`） |
+
+熟悉 Flutter 的开发者迁移 mental model 几乎零摩擦。
+
+---
+
+## 接下来
+
+- 想用 SDK 构建应用 → 回到 [README.md](README.md) → [GETTING_STARTED.md](GETTING_STARTED.md)
+- 想扩展 SDK 能力 → [EXTENDING.md](EXTENDING.md)

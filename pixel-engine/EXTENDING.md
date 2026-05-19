@@ -1,25 +1,35 @@
-# Extending pixel-engine
+# 扩展 pixel-engine
 
-This document shows how to add new capabilities to pixel-engine without modifying SDK internals. All extension points are in the `com.purride.pixelui.advanced` and `com.purride.pixelui.gesture` packages.
+当 SDK 内置的 widget / 手势 / 字体不够用时，你可以通过四类扩展点添加自己的能力，无需修改 SDK 源码。
+
+| 想做的事 | 用到的扩展点 |
+|---|---|
+| 自己画一个全新的可视化组件（圆环、波形图、像素小动画……） | `PixelLeafRenderObjectWidget` |
+| 调整翻页 / 列表的手势识别灵敏度 | `PagerGesturePolicy` / `NestedScrollGesturePolicy` |
+| 用自己的字体（ttf 离散化、自定义点阵） | `PixelTextRasterizer` |
+| 替换帧调度时钟（测试 / 重放 / 自定义 vsync） | `PixelFrameScheduler` |
+
+扩展点公开在两个 package：
+
+```kotlin
+import com.purride.pixelui.advanced.*    // RenderObject 家族
+import com.purride.pixelui.gesture.*      // 手势策略
+```
 
 ---
 
-## 1. Custom RenderObject
+## 1. 自定义 RenderObject
 
-Use `PixelLeafRenderObjectWidget` when you want to own the full layout + paint cycle for a self-contained piece of content.
+`PixelLeafRenderObjectWidget` 让你完全接管一块区域的布局和绘制。
 
-### Full example — `SpinningSquareWidget`
-
-From `pixel-demo/.../customrender/SpinningSquareWidget.kt`:
+### 完整例子：SpinningSquareWidget
 
 ```kotlin
-import com.purride.pixelui.advanced.*
 import com.purride.pixelcore.PixelTone
+import com.purride.pixelui.BuildContext
+import com.purride.pixelui.advanced.*
 
-/**
- * Widget: immutable configuration.
- * Create/update the render object from here.
- */
+/** Widget：不可变的配置，从这里创建 / 更新 render object。 */
 class SpinningSquareWidget(
     val side: Int,
     val tone: PixelTone,
@@ -30,29 +40,25 @@ class SpinningSquareWidget(
         SpinningSquareRender(side = side, tone = tone)
 
     override fun updateRenderObject(context: BuildContext, renderObject: PixelRenderObject) {
-        // Cast to the concrete type, then update fields.
         (renderObject as SpinningSquareRender).update(side = side, tone = tone)
     }
 }
 
-/**
- * RenderObject: owns the pixels.
- */
+/** RenderObject：实际写像素的对象。 */
 internal class SpinningSquareRender(
     private var side: Int,
     private var tone: PixelTone,
 ) : PixelRenderBox() {
 
     override fun layout(constraints: PixelRenderConstraints) {
-        // Clamp to constraints; record our size.
         size = PixelRenderSize(
-            width  = constraints.constrainWidth(side),
+            width = constraints.constrainWidth(side),
             height = constraints.constrainHeight(side),
         )
     }
 
     override fun paint(context: PixelPaintContext, offsetX: Int, offsetY: Int) {
-        // Draw a hollow border rectangle.
+        // 画一个空心方框
         for (y in 0 until size.height) {
             for (x in 0 until size.width) {
                 val edge = x == 0 || y == 0 || x == size.width - 1 || y == size.height - 1
@@ -61,56 +67,60 @@ internal class SpinningSquareRender(
         }
     }
 
-    /** Called by updateRenderObject. Marks dirty only when something actually changed. */
+    /** widget 配置变更时同步到 render object。务必做 equality 检查，避免无谓重绘。 */
     fun update(side: Int, tone: PixelTone) {
         val sizeChanged = this.side != side
         val toneChanged = this.tone != tone
-        if (!sizeChanged && !toneChanged) return     // equality short-circuit — avoid redundant passes
+        if (!sizeChanged && !toneChanged) return
         this.side = side
         this.tone = tone
-        if (sizeChanged) markNeedsLayout()           // layout changed → paint will follow automatically
+        if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }
 }
 ```
 
-### Key rules
+使用：
 
-| Rule | Why |
+```kotlin
+content = {
+    Center(child = SpinningSquareWidget(side = 16, tone = PixelTone.ACCENT))
+}
+```
+
+### 关键规则
+
+| 规则 | 原因 |
 |---|---|
-| Always equality-check before `markNeedsLayout` / `markNeedsPaint` | Skips redundant passes. Forgetting this means every rebuild triggers a full repaint even when nothing changed. |
-| `markNeedsLayout()` implies repaint | Calling it is enough; do not call both unless you only changed paint state. |
-| Keep `paint()` side-effect-free | It may be skipped or replayed. Write only to `context.buffer`. |
-| Do not allocate in `paint()` | Use `PixelBufferPool` if you need a scratch buffer; `context.buffer` is already pooled. |
+| 改字段前先 equality 检查，再 `markNeedsLayout` / `markNeedsPaint` | 防止 widget 重建时全树重绘 |
+| `markNeedsLayout()` 隐含会重绘，不需要再 `markNeedsPaint()` | layout 通过则 paint 自动跟进 |
+| `paint()` 中不要 allocate | hot path；用 `context.buffer` 直接写，不要 `new` 数组 |
+| 只在主线程调用 `markNeedsXxx` | retained build tree 不保证线程安全 |
 
-### Available base classes
+### 可用的扩展点类型（com.purride.pixelui.advanced）
 
-| Type alias (in `pixelui.advanced`) | Use when |
+| 类型 | 何时用 |
 |---|---|
-| `PixelLeafRenderObjectWidget` | Widget with no children, owns its own paint |
-| `PixelSingleChildRenderObjectWidget` | Widget that wraps one child (e.g., `Padding`) |
-| `PixelMultiChildRenderObjectWidget` | Widget that manages multiple children (e.g., `Row`) |
-| `PixelRenderBox` | RenderObject with a 2-D size; most widgets use this |
-| `PixelPaintContext` | Passed to `paint()`; gives access to the `PixelBuffer` |
-| `PixelRenderConstraints` | Incoming tight/loose constraints from the parent |
-| `PixelRenderSize` | The size your `layout()` commits to |
+| `PixelLeafRenderObjectWidget` | 无 child 的叶节点（最常见自定义场景） |
+| `PixelSingleChildRenderObjectWidget` | 包一个 child，自己控制其位置 / 尺寸（如 Padding） |
+| `PixelMultiChildRenderObjectWidget` | 持有多个 child（如 Row / Stack 的自定义版本） |
+| `PixelRenderBox` | 二维盒模型 render object 基类 |
+| `PixelPaintContext` | `paint()` 入参，提供 `buffer` 写像素 |
+| `PixelRenderConstraints` | `layout()` 入参，告诉你父级给的尺寸约束 |
+| `PixelRenderSize` | `layout()` 返回时设置的 `size` 字段 |
 
 ---
 
-## 2. Custom Gesture Policy
+## 2. 自定义手势策略
 
-Override `PagerGesturePolicy` or `NestedScrollGesturePolicy` to tune swipe recognition thresholds. Then inject your instance via `PixelHostSetupConfig`.
+继承 `PagerGesturePolicy` 或 `NestedScrollGesturePolicy`，通过 `PixelHostSetupConfig` 注入。
 
-### `PagerGesturePolicy` — example from GESTURE_TUNING demo
+### 例：可运行时调参的翻页策略
 
 ```kotlin
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelui.gesture.PagerGesturePolicy
 
-/**
- * A policy that reads axisBias from a live provider, so the user
- * can tune it at runtime with a slider.
- */
 class TunablePagerGesturePolicy(
     private val axisBiasProvider: () -> Float,
 ) : PagerGesturePolicy() {
@@ -123,71 +133,95 @@ class TunablePagerGesturePolicy(
         axisBias: Float,
     ): Boolean = super.shouldStartDrag(
         axis, deltaX, deltaY, touchSlopPx,
-        axisBias = axisBiasProvider(),   // swap in the live value
+        axisBias = axisBiasProvider(),   // 用运行时变量替代静态默认
     )
 }
 ```
 
-### Injection
+注入：
 
 ```kotlin
-val policy = TunablePagerGesturePolicy { axisBiasState.value }
+val policy = TunablePagerGesturePolicy { tunableAxisBias.value }
 
-pixelHostView.setup(
-    PixelHostSetupConfig(
+createPixelHostSetup(
+    context = this,
+    config = PixelHostSetupConfig(
         pagerGesturePolicy = policy,
-        // nestedScrollPolicy = ...,
-        // scrollPhysics = ...,
-    )
+        // 也可以同时覆盖：
+        // nestedScrollPolicy = MyNestedPolicy(),
+        // scrollPhysics = PixelScrollPhysics(...)
+    ),
 )
 ```
 
-`NestedScrollGesturePolicy` follows the same pattern — extend it and override `shouldChildScrollBeforeParent(...)`.
+`NestedScrollGesturePolicy` 模式相同：override `shouldChildScrollBeforeParent(...)`。
 
 ---
 
-## 3. Custom Text Rasterizer
+## 3. 自定义字体（PixelTextRasterizer）
 
-`PixelTextRasterizer` is the interface that converts a Unicode code point + style into a glyph bitmap.
+`PixelTextRasterizer` 把 Unicode code point + 字形样式转成像素 glyph。
+
+### 接口
 
 ```kotlin
 interface PixelTextRasterizer {
     fun rasterize(codePoint: Int, style: PixelGlyphStyle): PixelGlyph
+    fun measureText(text: String): Int
+    fun measureHeight(text: String): Int
 }
 ```
 
-### Using a built-in font
+### 用法 A：从字体资源包加载
+
+如果你有 `.pgp` 格式的字形资源包（pixel-engine 内置 5×7 / 6×8 等若干尺寸）：
 
 ```kotlin
-// Load a glyph-pack asset (pixel-engine ships several)
 val rasterizer = PixelGlyphPackAssetLoader(assets).load("fonts/mono5x7.pgp")
-pixelHostView.textRasterizer = rasterizer
+
+createPixelHostSetup(
+    context = this,
+    config = PixelHostSetupConfig(textRasterizer = rasterizer),
+)
 ```
 
-### Using PixelBitmapFont
-
-For a minimal ASCII-only font embedded in code:
+### 用法 B：从代码构造位图字体
 
 ```kotlin
 val compact = PixelBitmapFont(
-    glyphWidth  = 4,
+    glyphWidth = 4,
     glyphHeight = 5,
-    charSet     = PixelBitmapFont.ASCII_PRINTABLE,
-    bitmapData  = MY_BITMAP_BYTES,
+    charSet = PixelBitmapFont.ASCII_PRINTABLE,
+    bitmapData = MY_BITMAP_BYTES,    // 位图数据
 )
-pixelHostView.textRasterizer = compact
+
+hostView.textRasterizer = compact   // 也可以运行时切换
 ```
 
-Switching `hostView.textRasterizer` at runtime rebuilds the font engine and re-renders the current frame. The `PixelBufferPool` ensures the transition does not cause extra allocations.
+### 单个 widget 覆盖
+
+某段文字想用不同字体而不影响其它：
+
+```kotlin
+Text(
+    "BIG HEADER",
+    style = TextStyle(textRasterizer = bigFont),
+)
+```
+
+`textRasterizer` 在 `PixelTextStyle` 的字段优先级最高，会覆盖宿主默认。
 
 ---
 
-## 4. Custom FrameScheduler
+## 4. 自定义 PixelFrameScheduler
 
-`PixelFrameScheduler` decouples frame pacing from `Choreographer`. Useful for:
-- Test harnesses that drive frames manually
-- Record-and-replay tooling
-- Custom VSync sources
+`PixelFrameScheduler` 解耦了帧节奏与 Android `Choreographer`。常见自定义场景：
+
+- 测试：用 `ManualFrameScheduler` 同步驱动帧
+- 录制 / 重放：用自定义时间戳源
+- 替换 vsync 源（嵌入式 / 自渲染表面）
+
+### 接口
 
 ```kotlin
 interface PixelFrameScheduler {
@@ -195,29 +229,71 @@ interface PixelFrameScheduler {
 }
 ```
 
-The SDK ships `PixelFrameScheduler.Default` (backed by `Choreographer`) and `ManualFrameScheduler` for tests:
+### SDK 提供的实现
 
 ```kotlin
-// Production — already the default; shown for clarity
-PixelHostSetupConfig(frameScheduler = PixelFrameScheduler.Default)
+PixelFrameScheduler.Default          // 走 Android Choreographer
+ManualFrameScheduler()               // 测试：自己调 tick()
+```
 
-// Tests
-val manual = ManualFrameScheduler()
-val config = PixelHostSetupConfig(frameScheduler = manual)
+### 注入
+
+```kotlin
+createPixelHostSetup(
+    context = this,
+    config = PixelHostSetupConfig(
+        frameScheduler = MyCustomScheduler(),
+    ),
+)
+```
+
+测试场景：
+
+```kotlin
+val scheduler = ManualFrameScheduler()
+val config = PixelHostSetupConfig(frameScheduler = scheduler)
 // ...
-manual.tick(frameTimeNanos = 16_666_666L)  // advance one frame
+scheduler.tick(frameTimeNanos = 16_666_666L)   // 模拟一帧
 ```
 
 ---
 
-## 5. explicitApi Strict — what it means for extensions
+## 5. 编写自定义扩展时的最佳实践
 
-The module is compiled with `kotlin { explicitApi = ExplicitApiMode.Strict }`. This means:
+### markNeedsLayout / markNeedsPaint 时机
 
-- Every `class`, `fun`, and `val` you write in a file within the `pixel-engine` module must have an explicit visibility modifier (`public`, `internal`, or `private`).
-- If you are writing extension code **outside** the module (in your own app module), this rule does not apply to your code — only to SDK source files.
-- When subclassing `PagerGesturePolicy` or `PixelRenderBox` from your app module, you do not need to follow strict mode, but it is good practice to mark overrides `override` and top-level declarations with their intended visibility.
+- 字段改变时调用，**且只在改变时调用**
+- 用 `===` / `==` 比较新旧值，相同则提前 return
+- 一次 update 调一次 markNeedsXxx，不要循环里反复调
 
-### Common pitfall — `markNeedsLayout` timing
+### 类型可见性
 
-Call `markNeedsLayout()` / `markNeedsPaint()` **only from the main thread** (the same thread that drives `PixelUiRuntime.render()`). Calling them from a background thread without synchronization will corrupt the dirty-flag state.
+如果你在自己的 app 模块里写扩展，无需关心 explicitApi。但如果是把 pixel-engine 二次封装成自己的库，建议：
+
+```kotlin
+kotlin {
+    explicitApi = ExplicitApiMode.Strict
+}
+```
+
+确保你的公开 API 边界与 pixel-engine 一样严格。
+
+### 性能注意
+
+- `paint()` 是热路径，每帧调用一次或多次。避免：
+  - 在 `paint()` 内创建对象（`String`、`List`、`ByteArray`）
+  - 在 `paint()` 内做日志 / 反射 / lambda 调用
+- 需要 scratch buffer 时通过 `PixelBufferPool.acquire(w, h)` 借用，用完 `release` 还回
+- 像素写入循环里直接调 `buffer.setPixel(x, y, tone.value)` 或 `buffer.fillRect(...)`，不要包装
+
+### 错误处理
+
+- 不要在 `paint()` 抛异常，会让一帧绘制崩溃且 SDK 不会处理
+- 边界检查（坐标越界等）在你自己代码里 guard 住，传给 `PixelBuffer.setPixel` 之前夹紧
+
+---
+
+## 接下来
+
+- 想看 SDK 内部如何用这些扩展点 → 参考 `pixel-demo` 的 `CUSTOM_RENDER_OBJECT` 和 `GESTURE_TUNING` 场景源码
+- 想了解 SDK 整体架构 → [ARCHITECTURE.md](ARCHITECTURE.md)

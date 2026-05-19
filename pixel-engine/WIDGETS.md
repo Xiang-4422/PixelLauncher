@@ -1,0 +1,487 @@
+# Widget 目录
+
+pixel-engine 内置 widget 按职责分组。每个 widget 都是 `Widget` 接口的实例，可以自由嵌套组合。本文档列出公开 widget 的签名与典型用法。
+
+> **import：** 所有 widget 都在 `com.purride.pixelui` 包，统一 `import com.purride.pixelui.*` 即可。
+
+## 目录
+
+- [布局类](#布局类)：`Row` / `Column` / `Stack` / `Padding` / `SizedBox` / `Align` / `Center` / `Expanded` / `Flexible` / `Spacer`
+- [内容类](#内容类)：`Text` / `RichText` / `Container` / `DecoratedBox`
+- [按钮](#按钮)：`OutlinedButton`
+- [输入](#输入)：`TextField`
+- [滚动 / 翻页](#滚动--翻页)：`ListView` / `ListViewBuilder` / `ListViewSeparated` / `SingleChildScrollView` / `PageView` / `PageViewBuilder`
+- [手势](#手势)：`GestureDetector`
+- [定位](#定位)：`Positioned` / `PositionedFill` / `PositionedDirectional`
+- [状态辅助 widget](#状态辅助-widget)：`Builder` / `StatefulBuilder` / `ListenableBuilder` / `ValueListenableBuilder`
+
+---
+
+## 布局类
+
+### `Row` / `Column`
+
+线性排列子节点。`Row` 水平、`Column` 垂直。
+
+```kotlin
+Row(
+    children: List<Widget>,
+    spacing: Int = 0,
+    mainAxisAlignment: MainAxisAlignment = MainAxisAlignment.START,
+    crossAxisAlignment: CrossAxisAlignment = CrossAxisAlignment.START,
+    mainAxisSize: MainAxisSize = MainAxisSize.MAX,
+)
+
+Column(/* 同上 */)
+```
+
+- `spacing` —— 相邻 child 之间的间距（像素）
+- `mainAxisAlignment` —— 主轴上的对齐：`START` / `CENTER` / `END` / `SPACE_BETWEEN` / `SPACE_AROUND` / `SPACE_EVENLY`
+- `crossAxisAlignment` —— 交叉轴对齐：`START` / `CENTER` / `END` / `STRETCH`
+
+### `Stack`
+
+层叠排列。后加入的 child 在上层。配合 `Positioned` 控制每个 child 的偏移。
+
+```kotlin
+Stack(
+    children = listOf(
+        Container(/* 背景 */),
+        Positioned(top = 4, left = 4, child = Text("OVERLAY")),
+    ),
+)
+```
+
+### `Padding`
+
+为 child 添加内边距。三种重载：
+
+```kotlin
+Padding(child, all = 4)                                   // 四边相等
+Padding(child, padding = EdgeInsets.symmetric(horizontal = 2, vertical = 4))
+Padding(child, horizontal = 4, vertical = 2)              // 对称简写
+```
+
+### `SizedBox`
+
+固定尺寸的空盒（占位 / 间隔）：
+
+```kotlin
+SizedBox(width = 10, height = 10)
+SizedBox(height = 4)        // 仅在 Column 中做垂直间距
+```
+
+### `Align` / `Center`
+
+把 child 在自身可用区域内对齐。`Center` 等价于 `Align(alignment = Alignment.CENTER)`。
+
+```kotlin
+Center(child = Text("HELLO"))
+Align(child = Text("HELLO"), alignment = Alignment.TOP_END)
+```
+
+### `Expanded` / `Flexible` / `Spacer`
+
+在 `Row` / `Column` 中按 flex 因子分配剩余空间：
+
+```kotlin
+Row(children = listOf(
+    Text("LEFT"),
+    Spacer(),               // 占满中间所有剩余空间
+    Text("RIGHT"),
+))
+
+Column(children = listOf(
+    Text("HEADER"),
+    Expanded(child = ListView(/* ... */)),  // 占满 Column 剩余高度
+    Text("FOOTER"),
+))
+```
+
+- `Expanded` = `Flexible` + `fit = FlexFit.TIGHT`（强制填满 flex 分配）
+- `Flexible` 默认 `fit = LOOSE`（最大可达到 flex 分配，但允许更小）
+- `Spacer` = `Expanded(child = SizedBox())`
+
+---
+
+## 内容类
+
+### `Text`
+
+显示一行或多行文本。
+
+```kotlin
+Text(
+    data: String,
+    style: TextStyle = TextStyle.Default,
+    textAlign: TextAlign = TextAlign.START,
+    softWrap: Boolean = true,
+    maxLines: Int = 1,
+    overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
+)
+```
+
+样式：
+- `TextStyle.Default` —— 用主题 tokens 派生默认 tone
+- `TextStyle.Accent` —— 强调色 tone
+- `TextStyle(tone = PixelTone.OFF)` —— 自定义
+
+多行：
+```kotlin
+Text(
+    "LONG PARAGRAPH ...",
+    softWrap = true,
+    maxLines = 4,
+    overflow = PixelTextOverflow.ELLIPSIS,
+)
+```
+
+### `RichText`
+
+带多 span 样式的富文本。
+
+```kotlin
+RichText(
+    spans = listOf(
+        PixelTextSpan(text = "NORMAL "),
+        PixelTextSpan(text = "ACCENT", style = TextStyle.Accent),
+    ),
+)
+```
+
+### `Container`
+
+带可选填充 / 边框 / 对齐 / 尺寸的容器。
+
+```kotlin
+Container(
+    child = Text("INSIDE"),
+    width = 40,
+    height = 16,
+    fillTone = PixelTone.OFF,
+    borderTone = PixelTone.ON,
+    alignment = Alignment.CENTER,
+    padding = EdgeInsets.all(2),
+)
+```
+
+`ContainerDirectional` 接受 `paddingDirectional`（START/END），其余等价。
+
+### `DecoratedBox`
+
+只做装饰（填充 + 边框），不参与尺寸约束。可包 / 不包 child：
+
+```kotlin
+DecoratedBox(
+    child = Text("BORDERED"),
+    fillTone = PixelTone.OFF,
+    borderTone = PixelTone.ACCENT,
+)
+```
+
+---
+
+## 按钮
+
+### `OutlinedButton`
+
+像素风边框按钮。
+
+```kotlin
+OutlinedButton(
+    text: String,
+    onPressed: (() -> Unit)?,
+    style: ButtonStyle = ButtonStyle.Default,
+    theme: ThemeData? = null,
+    enabled: Boolean = true,
+    selected: Boolean = false,
+    pressed: Boolean = false,
+)
+```
+
+- `onPressed = null` 等价于禁用态（不响应点击）
+- `style` —— `ButtonStyle.Default` / `ButtonStyle.Accent` / 自定义 `ButtonStyle(...)`
+- `selected` —— 用于双状态切换（如 toggle / radio）
+- `enabled = false` —— 显式禁用（应用 `theme.disabledButtonStyle`）
+
+```kotlin
+OutlinedButton(
+    text = "DELETE",
+    onPressed = if (canDelete) ::doDelete else null,
+    style = ButtonStyle.Accent,
+)
+```
+
+---
+
+## 输入
+
+### `TextField`
+
+像素风文本输入框。需要先创建 `PixelTextFieldController` 和 `state`，详见 [STATE.md](STATE.md)。
+
+```kotlin
+private val tfController = PixelTextFieldController()
+private val tfState = tfController.create()
+
+TextField(
+    state = tfState,
+    controller = tfController,
+    placeholder = "ENTER NAME",
+    inputType = PixelInputType.TEXT,
+    imeAction = PixelTextInputAction.DONE,
+    onSubmitted = { value -> /* ... */ },
+)
+```
+
+- `inputType` —— `TEXT` / `NUMBER` / `NUMBER_PASSWORD` / `EMAIL` / `PHONE` / `URL` / `PASSWORD`
+- `imeAction` —— 系统软键盘 action 按钮：`DONE` / `NEXT` / `SEND` / `SEARCH` / `GO`
+
+---
+
+## 滚动 / 翻页
+
+### `ListView`
+
+固定 items 列表（已知所有 child）：
+
+```kotlin
+ListView(
+    items = listOf(Text("A"), Text("B"), Text("C")),
+    state = listState,
+    controller = listController,
+    spacing = 2,
+)
+```
+
+### `ListViewBuilder`
+
+lazy 渲染的列表（按需构造可见 item）：
+
+```kotlin
+ListViewBuilder(
+    itemCount = 100,
+    itemBuilder = { index -> Text("ITEM $index") },
+    state = listState,
+    controller = listController,
+    spacing = 2,
+    itemExtent = 12,    // 固定高度则填这里，加速 layout
+    cacheExtent = 1,    // 可见区上下额外预渲染的页数
+)
+```
+
+### `ListViewSeparated`
+
+在 items 之间插入分隔 widget：
+
+```kotlin
+ListViewSeparated(
+    itemCount = 20,
+    itemBuilder = { i -> Text("ROW $i") },
+    separatorBuilder = { _ -> DecoratedBox(fillTone = PixelTone.ON) },
+    state = listState,
+    controller = listController,
+)
+```
+
+### `SingleChildScrollView`
+
+整个 child 作为一块滚动区域：
+
+```kotlin
+SingleChildScrollView(
+    child = Column(children = veryLongList),
+    state = listState,
+    controller = listController,
+)
+```
+
+### `PageView` / `PageViewBuilder`
+
+整页翻页（水平 / 垂直）。需要 `PixelPagerController` + `PixelPagerState`：
+
+```kotlin
+private val pagerController = PixelPagerController()
+private val pagerState = pagerController.create(pageCount = 3)
+
+PageViewBuilder(
+    axis = Axis.HORIZONTAL,
+    controller = pagerController,
+    state = pagerState,
+    itemCount = 3,
+    itemBuilder = { i -> Center(child = Text("PAGE $i")) },
+    onPageChanged = { newPage -> /* ... */ },
+)
+```
+
+---
+
+## 手势
+
+### `GestureDetector`
+
+包装 child 让它响应触摸事件：
+
+```kotlin
+GestureDetector(
+    child = Container(/* ... */),
+    onTap = { /* 单击 */ },
+    onLongPress = null,
+    onDoubleTap = null,
+)
+```
+
+---
+
+## 定位
+
+只在 `Stack` 的 children 列表中使用。
+
+### `Positioned`
+
+```kotlin
+Positioned(
+    child = Text("FLOAT"),
+    left = 10,
+    top = 4,
+    right = null,
+    bottom = null,
+    width = null,
+    height = null,
+)
+```
+
+- `left` + `right` 都给值 → 宽度被两边约束
+- 只给一边 + `width` → 固定宽度
+- `PositionedDirectional` —— 用 `start` / `end` 而非 `left` / `right`（自动适配 RTL）
+
+### `PositionedFill`
+
+填满父 `Stack`，等价于 `Positioned(left=0, top=0, right=0, bottom=0, child)`：
+
+```kotlin
+PositionedFill(child = Container(fillTone = PixelTone.OFF))
+```
+
+---
+
+## 状态辅助 widget
+
+### `Builder`
+
+延迟构建子树，让 child 能拿到自己的 `BuildContext`：
+
+```kotlin
+Builder { context ->
+    val theme = Theme.of(context)
+    Text("DPI: ${MediaQuery.of(context).logicalWidth}", style = theme.resolveTextStyle())
+}
+```
+
+### `StatefulBuilder`
+
+最轻量的局部 state holder：
+
+```kotlin
+StatefulBuilder { context, setState ->
+    var count = 0
+    Column(children = listOf(
+        Text("$count"),
+        OutlinedButton(text = "+1", onPressed = { setState { count++ } }),
+    ))
+}
+```
+
+> ⚠️ 注意：`StatefulBuilder` 的 lambda 在每次重建都会执行。把状态变量放在 lambda 内只对最简单的 demo 适用——真实业务请用 `ValueNotifier` 或 `StatefulWidget`。
+
+### `ListenableBuilder`
+
+订阅一个 `Listenable`，每当它通知就重建 child：
+
+```kotlin
+ListenableBuilder(listenable = myListController) {
+    Text("CURRENT OFFSET: ${listState.scrollOffsetPx}")
+}
+```
+
+### `ValueListenableBuilder<T>`
+
+订阅 `ValueListenable<T>`，每次值变化就重建并把新值传给 builder：
+
+```kotlin
+val counter = ValueNotifier(0)
+
+ValueListenableBuilder(listenable = counter) { _, value ->
+    Text("$value")
+}
+```
+
+---
+
+## 状态化 widget（自定义 `StatefulWidget`）
+
+`StatefulBuilder` 不够时，自己继承 `StatefulWidget`：
+
+```kotlin
+class Counter(override val key: Any? = null) : StatefulWidget(key = key) {
+    override fun createState(): State<Counter> = CounterState()
+}
+
+private class CounterState : State<Counter>() {
+    private var count = 0
+
+    override fun build(context: BuildContext): Widget = Column(
+        children = listOf(
+            Text("$count"),
+            OutlinedButton(text = "+1", onPressed = { setState { count++ } }),
+        ),
+    )
+}
+
+// 使用
+Counter()
+```
+
+这是和 Flutter 完全一致的模型，可以利用 `initState` / `dispose` / `didChangeDependencies` / `didUpdateWidget` 生命周期回调。
+
+---
+
+## InheritedWidget
+
+跨子树共享数据，并在数据变化时只重建依赖的子树：
+
+```kotlin
+class UserScope(
+    val userName: String,
+    override val child: Widget,
+) : InheritedWidget(child = child) {
+    override fun updateShouldNotify(old: InheritedWidget): Boolean =
+        userName != (old as? UserScope)?.userName
+
+    companion object {
+        fun of(context: BuildContext): String =
+            context.dependOnInheritedWidgetOfExactType<UserScope>()?.userName ?: "ANON"
+    }
+}
+
+// 在树顶部注入：
+UserScope(
+    userName = "ALICE",
+    child = MyApp(),
+)
+
+// 子节点读取：
+Builder { context ->
+    Text("HI ${UserScope.of(context)}")
+}
+```
+
+SDK 内置的 `Theme` / `Directionality` / `MediaQuery` / `DefaultTextRasterizer` 都是 `InheritedWidget` 子类。
+
+---
+
+## 接下来
+
+- 主题与颜色系统 → [THEME.md](THEME.md)
+- Controller 详细用法 → [STATE.md](STATE.md)
+- 自定义渲染对象 → [EXTENDING.md](EXTENDING.md)
