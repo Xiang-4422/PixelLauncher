@@ -1348,6 +1348,7 @@ object DemoScenes {
                                 spacing = 4,
                                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                 children = listOf(
+                                    infoCard("MATRIX", "BUTTON CONTAINER INPUT", accent = true),
                                     SizedBox(
                                         height = 14,
                                         child = OutlinedButton(
