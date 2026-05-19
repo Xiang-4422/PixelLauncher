@@ -31,6 +31,7 @@ import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.HostRootWidget
+import com.purride.pixelui.internal.NestedScrollSession
 import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
 import kotlin.math.max
@@ -91,11 +92,32 @@ public class PixelHostView @JvmOverloads constructor(
     private var lastPagerLogicalY = 0
     private var lastListLogicalY = 0
     private var touchMoved = false
-    private var candidatePagerTarget: PixelPagerTarget? = null
-    private var activePagerTarget: PixelPagerTarget? = null
-    private var candidateListTarget: PixelListTarget? = null
-    private var activeListTarget: PixelListTarget? = null
-    private var focusedTextInputTarget: PixelTextInputTarget? = null
+    private val nestedScrollSession = NestedScrollSession()
+    private var candidatePagerTarget: PixelPagerTarget?
+        get() = nestedScrollSession.candidatePagerTarget
+        set(value) {
+            nestedScrollSession.candidatePagerTarget = value
+        }
+    private var activePagerTarget: PixelPagerTarget?
+        get() = nestedScrollSession.activePagerTarget
+        set(value) {
+            nestedScrollSession.activePagerTarget = value
+        }
+    private var candidateListTarget: PixelListTarget?
+        get() = nestedScrollSession.candidateListTarget
+        set(value) {
+            nestedScrollSession.candidateListTarget = value
+        }
+    private var activeListTarget: PixelListTarget?
+        get() = nestedScrollSession.activeListTarget
+        set(value) {
+            nestedScrollSession.activeListTarget = value
+        }
+    private var focusedTextInputTarget: PixelTextInputTarget?
+        get() = nestedScrollSession.focusedTextInputTarget
+        set(value) {
+            nestedScrollSession.focusedTextInputTarget = value
+        }
 
     public var hostBridge: PixelHostBridge? = null
 
@@ -221,7 +243,7 @@ public class PixelHostView @JvmOverloads constructor(
     public fun clearFocusedTextInput() {
         val target = focusedTextInputTarget ?: return
         target.controller.blur(target.state)
-        focusedTextInputTarget = null
+        nestedScrollSession.clearTextInputOwner()
         hostBridge?.hideTextInput()
         invalidate()
     }
@@ -667,7 +689,7 @@ public class PixelHostView @JvmOverloads constructor(
             }
         }
         target.controller.focus(target.state)
-        focusedTextInputTarget = target
+        nestedScrollSession.markTextInputOwner(target)
         hostBridge?.showTextInput(
             PixelTextInputRequest(
                 text = target.state.text,
