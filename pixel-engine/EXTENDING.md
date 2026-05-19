@@ -104,8 +104,8 @@ Override `PagerGesturePolicy` or `NestedScrollGesturePolicy` to tune swipe recog
 ### `PagerGesturePolicy` — example from GESTURE_TUNING demo
 
 ```kotlin
+import com.purride.pixelcore.PixelAxis
 import com.purride.pixelui.gesture.PagerGesturePolicy
-import com.purride.pixelui.gesture.ScrollAxis
 
 /**
  * A policy that reads axisBias from a live provider, so the user
@@ -116,7 +116,7 @@ class TunablePagerGesturePolicy(
 ) : PagerGesturePolicy() {
 
     override fun shouldStartDrag(
-        axis: ScrollAxis,
+        axis: PixelAxis,
         deltaX: Float,
         deltaY: Float,
         touchSlopPx: Float,

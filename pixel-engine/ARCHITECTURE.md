@@ -101,13 +101,16 @@ Every `updateRenderObject` checks new vs. old field values before calling `markN
 
 ## Public API Boundaries
 
-| Package | Contents |
-|---|---|
-| `com.purride.pixelui.widgets` | All built-in widgets (`Text`, `Row`, `Column`, `Padding`, `Stack`, …) |
-| `com.purride.pixelui.state` | Controller classes (`PixelListController`, `PixelPagerController`, `PixelTextFieldController`) |
-| `com.purride.pixelui.theme` | `PixelThemeData`, `PixelThemeTokens`, `PixelThemeProvider` |
-| `com.purride.pixelui.host` | `PixelHostView`, `PixelHostSetupConfig`, `PixelFrameScheduler` |
-| `com.purride.pixelui.gesture` | `PagerGesturePolicy`, `NestedScrollGesturePolicy`, `PixelScrollPhysics` |
-| `com.purride.pixelui.advanced` | Extension points: `PixelLeafRenderObjectWidget`, `PixelRenderBox`, `PixelPaintContext`, … |
+pixel-engine deliberately uses a **mostly-flat namespace** with a handful of dedicated sub-packages for concerns that benefit from grouping. The actual layout:
+
+| Namespace | Contents | Notes |
+|---|---|---|
+| `com.purride.pixelui` (flat root) | All widgets (`Text`, `Row`, `Column`, `Padding`, `Stack`, `PixelButton`, …), theme types (`PixelThemeData`, `PixelThemeTokens`, `EdgeInsets`, `PixelTextStyle`, …), host types (`PixelHostView`, `PixelHostSetupConfig`, `PixelHostBridge`, …), framework root types (`Widget`, `BuildContext`, `Directionality`, `MediaQuery`, `DefaultTextRasterizer`, …) | Most public API lives here; users do `import com.purride.pixelui.Text` etc. |
+| `com.purride.pixelui.state` | Controllers (`PixelListController`, `PixelPagerController`, `PixelTextFieldController`) and their state types | Dedicated because controllers are stateful + listened to |
+| `com.purride.pixelui.gesture` | `PagerGesturePolicy`, `NestedScrollGesturePolicy` | Override these to customize gesture recognition |
+| `com.purride.pixelui.host` | `PixelFrameScheduler` (interface + `ManualFrameScheduler`) | Note: most host classes are in the flat root; only the frame scheduler is in this sub-package |
+| `com.purride.pixelui.advanced` | Extension points: `PixelLeafRenderObjectWidget`, `PixelRenderBox`, `PixelPaintContext`, `PixelRenderConstraints`, `PixelRenderSize`, … | Typealiases re-exporting selected internal types for custom RenderObject authoring |
+
+The source-tree directories `host/`, `theme/`, `widgets/`, `foundation/` exist for code organization but **do not** define sub-packages — files inside them declare `package com.purride.pixelui` (flat). This is intentional: it keeps imports concise for the most common widget-building use cases.
 
 Everything under `com.purride.pixelui.internal.*` is SDK-private. Do not import internal packages — the module is compiled with `explicitApi = Strict`, so internal declarations will not appear in IDE completions for external consumers.
