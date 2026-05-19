@@ -9,9 +9,73 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
 
-/**
- * 把公开文本对齐值转换成 pipeline 内部文本对齐值。
- */
+// ╭─────────────────────────────────────────────────────────────────────╮
+// │  内部布局枚举                                                       │
+// │                                                                     │
+// │  与 public 层的 [Alignment] / [MainAxisAlignment] / [CrossAxis...]  │
+// │  / [TextAlign] / [MainAxisSize] / [FlexFit] 一一对应，存在的意义    │
+// │  是保持 pipeline 与 public API 解耦：public 类型保持稳定形状（API   │
+// │  约束），internal 类型可以随渲染需要演进。映射在文件下半部分。      │
+// ╰─────────────────────────────────────────────────────────────────────╯
+
+/** 像素 UI 内部布局对齐方式。 */
+internal enum class PixelAlignment {
+    TOP_START,
+    TOP_CENTER,
+    TOP_END,
+    CENTER_START,
+    CENTER,
+    CENTER_END,
+    BOTTOM_START,
+    BOTTOM_CENTER,
+    BOTTOM_END,
+}
+
+/** `Row/Column` 的交叉轴对齐方式。 */
+internal enum class PixelCrossAxisAlignment {
+    START,
+    CENTER,
+    END,
+    STRETCH,
+}
+
+/** `Row/Column` 的主轴排布方式。 */
+internal enum class PixelMainAxisAlignment {
+    START,
+    CENTER,
+    END,
+    SPACE_BETWEEN,
+    SPACE_AROUND,
+    SPACE_EVENLY,
+}
+
+/** `Row/Column` 的主轴尺寸策略。 */
+internal enum class PixelMainAxisSize {
+    MIN,
+    MAX,
+}
+
+/** 像素文本对齐方式。 */
+internal enum class PixelTextAlign {
+    START,
+    CENTER,
+    END,
+}
+
+/** flex 权重 child 在分配槽位里的尺寸策略。 */
+internal enum class PixelFlexFit {
+    TIGHT,
+    LOOSE,
+}
+
+// ╭─────────────────────────────────────────────────────────────────────╮
+// │  公开 -> 内部映射                                                   │
+// │                                                                     │
+// │  RTL 时方向性对齐 / 水平主轴对齐 / 垂直交叉轴对齐会镜像翻转          │
+// │  START <-> END，由测试 PixelLayoutMappingsRTLTest 覆盖。            │
+// ╰─────────────────────────────────────────────────────────────────────╯
+
+/** 把公开文本对齐值转换成 pipeline 内部文本对齐值。 */
 internal fun TextAlign.toPixelTextAlign(): PixelTextAlign {
     return when (this) {
         TextAlign.START -> PixelTextAlign.START
@@ -20,9 +84,7 @@ internal fun TextAlign.toPixelTextAlign(): PixelTextAlign {
     }
 }
 
-/**
- * 把公开对齐值转换成 pipeline 内部对齐值。
- */
+/** 把公开对齐值转换成 pipeline 内部对齐值。 */
 internal fun Alignment.toPixelAlignment(): PixelAlignment {
     return when (this) {
         Alignment.TOP_START -> PixelAlignment.TOP_START
@@ -37,9 +99,7 @@ internal fun Alignment.toPixelAlignment(): PixelAlignment {
     }
 }
 
-/**
- * 按文本方向把公开方向性对齐值转换成 pipeline 内部对齐值。
- */
+/** 按文本方向把公开方向性对齐值转换成 pipeline 内部对齐值。 */
 internal fun AlignmentDirectional.toPixelAlignment(
     direction: TextDirection,
 ): PixelAlignment {
@@ -56,9 +116,7 @@ internal fun AlignmentDirectional.toPixelAlignment(
     }
 }
 
-/**
- * 把公开主轴排布值转换成 pipeline 内部主轴排布值。
- */
+/** 把公开主轴排布值转换成 pipeline 内部主轴排布值。 */
 internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignment {
     return when (this) {
         MainAxisAlignment.START -> PixelMainAxisAlignment.START
@@ -70,9 +128,7 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignmen
     }
 }
 
-/**
- * 按轴向和文本方向把公开主轴排布值转换成 pipeline 内部主轴排布值。
- */
+/** 按轴向和文本方向把公开主轴排布值转换成 pipeline 内部主轴排布值。 */
 internal fun MainAxisAlignment.toPixelMainAxisAlignment(
     axis: Axis,
     direction: TextDirection,
@@ -91,9 +147,7 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(
     }
 }
 
-/**
- * 把公开主轴尺寸策略转换成 pipeline 内部主轴尺寸策略。
- */
+/** 把公开主轴尺寸策略转换成 pipeline 内部主轴尺寸策略。 */
 internal fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
     return when (this) {
         MainAxisSize.MIN -> PixelMainAxisSize.MIN
@@ -101,9 +155,7 @@ internal fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
     }
 }
 
-/**
- * 把公开交叉轴对齐值转换成 pipeline 内部交叉轴对齐值。
- */
+/** 把公开交叉轴对齐值转换成 pipeline 内部交叉轴对齐值。 */
 internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlignment {
     return when (this) {
         CrossAxisAlignment.START -> PixelCrossAxisAlignment.START
@@ -113,9 +165,7 @@ internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlign
     }
 }
 
-/**
- * 按轴向和文本方向把公开交叉轴对齐值转换成 pipeline 内部交叉轴对齐值。
- */
+/** 按轴向和文本方向把公开交叉轴对齐值转换成 pipeline 内部交叉轴对齐值。 */
 internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(
     axis: Axis,
     direction: TextDirection,
