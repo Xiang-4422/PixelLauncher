@@ -1,4 +1,4 @@
-package com.purride.pixeldemo.app.customrender
+package com.purride.pixeldemo.showcase.extension
 
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.BuildContext
@@ -65,9 +65,6 @@ internal class HollowSquareRender(
         }
     }
 
-    /**
-     * 从 widget rebuild 路径更新属性，做 equality 短路避免无谓的重绘。
-     */
     fun update(side: Int, tone: PixelTone) {
         val sizeChanged = this.side != side
         val toneChanged = this.tone != tone
