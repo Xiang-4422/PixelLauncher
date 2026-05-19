@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.TextDirection
 import kotlin.math.min
@@ -34,6 +35,7 @@ internal class RenderText(
     private var rasterizer: PixelTextRasterizer = style.textRasterizer ?: defaultTextRasterizer
     private var textWidth = 0
     private var textHeight = 0
+    private var paragraphLayout: PixelParagraphLayout = PixelParagraphLayout(lines = emptyList())
     private var displayText = text
     private var drawTextX = 0
     private var drawTextY = 0
@@ -87,16 +89,23 @@ internal class RenderText(
             constraints = constraints,
             horizontalPadding = horizontalPadding,
         )
-        displayText = ParagraphLayoutSupport.resolvePlainTextLines(
-            text = text,
-            rasterizer = rasterizer,
+        paragraphLayout = PixelParagraphLayouter.layout(
+            input = PixelParagraphInput(
+                spans = listOf(PixelTextSpan(text = text, style = style)),
+                textAlign = textAlign,
+                textDirection = textDirection,
+                softWrap = softWrap,
+                overflow = overflow,
+                maxLines = maxLines,
+                defaultTextRasterizer = rasterizer,
+            ),
             availableWidth = availableTextWidth,
-            softWrap = softWrap,
-            overflow = overflow,
-            maxLines = maxLines,
-        ).joinToString(separator = "\n")
-        textWidth = rasterizer.measureText(displayText)
-        textHeight = rasterizer.measureHeight(displayText.ifEmpty { " " })
+        )
+        textWidth = paragraphLayout.width
+        textHeight = paragraphLayout.height
+        displayText = paragraphLayout.lines.joinToString(separator = "\n") { line ->
+            line.runs.joinToString(separator = "") { run -> run.text }
+        }
 
         val measuredWidth = when {
             explicitWidth != null -> explicitWidth
@@ -132,7 +141,7 @@ internal class RenderText(
         offsetX: Int,
         offsetY: Int,
     ) {
-        if (displayText.isEmpty()) {
+        if (paragraphLayout.lines.isEmpty()) {
             return
         }
         val contentWidth = (size.width - paddingLeft - paddingRight).coerceAtLeast(0)
@@ -140,13 +149,12 @@ internal class RenderText(
         if (contentWidth == 0 || contentHeight == 0) {
             return
         }
-        val destinationX = offsetX + drawTextX
         val destinationY = offsetY + drawTextY
         if (textWidth <= contentWidth && textHeight <= contentHeight) {
             rasterizer.drawText(
                 buffer = context.buffer,
                 text = displayText,
-                x = destinationX,
+                x = offsetX + drawTextX,
                 y = destinationY,
                 value = style.tone.value,
             )
@@ -168,7 +176,7 @@ internal class RenderText(
             blitOpaqueText(
                 source = scratch,
                 destination = context.buffer,
-                destX = destinationX,
+                destX = offsetX + drawTextX,
                 destY = destinationY,
                 copyWidth = min(contentWidth, scratch.width),
                 copyHeight = min(contentHeight, scratch.height),
