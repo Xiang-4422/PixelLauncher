@@ -8,13 +8,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PixelDemo">
         <activity
-            android:name=".app.DemoSceneActivity"
-            android:exported="false"
-            tools:ignore="Instantiatable" />
-        <activity
-            android:name=".app.DemoMenuActivity"
+            android:name=".DemoActivity"
             android:exported="true"
-            tools:ignore="Instantiatable">
+            android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
