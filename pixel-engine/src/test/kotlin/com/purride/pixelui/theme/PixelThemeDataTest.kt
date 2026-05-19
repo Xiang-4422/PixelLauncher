@@ -93,4 +93,26 @@ class PixelThemeDataTest {
         // textTone 改成了 ACCENT，与 accentBorderTone 默认值相同——但这里验证的是"其他 token 不变"
         assertNotEquals(PixelTone.OFF, theme.tokens.textTone)
     }
+
+    @Test
+    fun `tokens drive button container and text field state styles`() {
+        val theme = ThemeData(
+            tokens = defaultTheme.tokens.copy(
+                selectedBorderTone = PixelTone.ACCENT,
+                pressedBorderTone = PixelTone.ON,
+                focusedBorderTone = PixelTone.ACCENT,
+                disabledBorderTone = PixelTone.OFF,
+                readOnlyBorderTone = PixelTone.ON,
+            ),
+        )
+
+        assertEquals(PixelTone.ACCENT, theme.resolveSelectedButtonStyle().borderTone)
+        assertEquals(PixelTone.ON, theme.resolvePressedButtonStyle().borderTone)
+        assertEquals(PixelTone.OFF, theme.resolveDisabledButtonStyle().borderTone)
+        assertEquals(PixelTone.ACCENT, theme.resolveSelectedContainerStyle().borderTone)
+        assertEquals(PixelTone.ON, theme.resolvePressedContainerStyle().borderTone)
+        assertEquals(PixelTone.ACCENT, theme.resolveTextFieldStyle().focusedBorderTone)
+        assertEquals(PixelTone.OFF, theme.resolveDisabledTextFieldStyle().disabledBorderTone)
+        assertEquals(PixelTone.ON, theme.resolveReadOnlyTextFieldStyle().readOnlyBorderTone)
+    }
 }
