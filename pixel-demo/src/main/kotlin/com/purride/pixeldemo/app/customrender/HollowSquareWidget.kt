@@ -16,28 +16,28 @@ import com.purride.pixelui.advanced.PixelRenderSize
  * 时通过 [markNeedsLayout] / [markNeedsPaint] 触发增量重绘，验证
  * Widget → Element → RenderObject 更新链路正常工作。
  */
-class SpinningSquareWidget(
+class HollowSquareWidget(
     val side: Int,
     val tone: PixelTone,
     override val key: Any? = null,
 ) : PixelLeafRenderObjectWidget(key = key) {
 
     override fun createRenderObject(context: BuildContext): PixelRenderObject =
-        SpinningSquareRender(side = side, tone = tone)
+        HollowSquareRender(side = side, tone = tone)
 
     override fun updateRenderObject(context: BuildContext, renderObject: PixelRenderObject) {
-        (renderObject as SpinningSquareRender).update(side = side, tone = tone)
+        (renderObject as HollowSquareRender).update(side = side, tone = tone)
     }
 }
 
 /**
- * [SpinningSquareWidget] 对应的 render object。
+ * [HollowSquareWidget] 对应的 render object。
  *
  * layout：把自身尺寸收敛到 [side] × [side]（受外部约束夹紧）。
  * paint：只画方框四条边的像素（空心矩形），用 [tone] 颜色值。
  * update：equality 短路——属性未变不触发任何脏标记。
  */
-internal class SpinningSquareRender(
+internal class HollowSquareRender(
     private var side: Int,
     private var tone: PixelTone,
 ) : PixelRenderBox() {

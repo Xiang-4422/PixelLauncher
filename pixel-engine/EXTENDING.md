@@ -22,7 +22,7 @@ import com.purride.pixelui.gesture.*      // 手势策略
 
 `PixelLeafRenderObjectWidget` 让你完全接管一块区域的布局和绘制。
 
-### 完整例子：SpinningSquareWidget
+### 完整例子：HollowSquareWidget
 
 ```kotlin
 import com.purride.pixelcore.PixelTone
@@ -30,22 +30,22 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.advanced.*
 
 /** Widget：不可变的配置，从这里创建 / 更新 render object。 */
-class SpinningSquareWidget(
+class HollowSquareWidget(
     val side: Int,
     val tone: PixelTone,
     override val key: Any? = null,
 ) : PixelLeafRenderObjectWidget(key = key) {
 
     override fun createRenderObject(context: BuildContext): PixelRenderObject =
-        SpinningSquareRender(side = side, tone = tone)
+        HollowSquareRender(side = side, tone = tone)
 
     override fun updateRenderObject(context: BuildContext, renderObject: PixelRenderObject) {
-        (renderObject as SpinningSquareRender).update(side = side, tone = tone)
+        (renderObject as HollowSquareRender).update(side = side, tone = tone)
     }
 }
 
 /** RenderObject：实际写像素的对象。 */
-internal class SpinningSquareRender(
+internal class HollowSquareRender(
     private var side: Int,
     private var tone: PixelTone,
 ) : PixelRenderBox() {
@@ -84,7 +84,7 @@ internal class SpinningSquareRender(
 
 ```kotlin
 content = {
-    Center(child = SpinningSquareWidget(side = 16, tone = PixelTone.ACCENT))
+    Center(child = HollowSquareWidget(side = 16, tone = PixelTone.ACCENT))
 }
 ```
 

@@ -85,10 +85,9 @@ import com.purride.pixelui.PaddingDirectional
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.Spacer
 import com.purride.pixelui.withTokens
-import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.gesture.PagerGesturePolicy
 import com.purride.pixeldemo.app.gesture.TunablePagerGesturePolicy
-import com.purride.pixeldemo.app.customrender.SpinningSquareWidget
+import com.purride.pixeldemo.app.customrender.HollowSquareWidget
 
 /**
  * Demo scene 定义集合。
@@ -3293,7 +3292,7 @@ object DemoScenes {
     /**
      * 自定义 RenderObject 扩展点演示。
      *
-     * 用 [SpinningSquareWidget] 展示 `pixelui.advanced` 公开 API 的端到端链路：
+     * 用 [HollowSquareWidget] 展示 `pixelui.advanced` 公开 API 的端到端链路：
      * - 两个按钮步进 side 大小，验证 `markNeedsLayout` 触发增量重绘
      * - 两个按钮切换方框颜色（ON/ACCENT），验证 `markNeedsPaint` 触发增量重绘
      *
@@ -3377,7 +3376,7 @@ object DemoScenes {
                                     ListenableBuilder(
                                         listenable = tone,
                                         builder = { _ ->
-                                            SpinningSquareWidget(
+                                            HollowSquareWidget(
                                                 side = sideValue,
                                                 tone = tone.value,
                                             )
@@ -3638,7 +3637,6 @@ object DemoScenes {
         textRasterizers: DemoTextRasterizers,
     ): DemoScene {
         val compactRasterizer = PixelBitmapFont(glyphWidth = 4, glyphHeight = 5)
-        val currentRasterizer = ValueNotifier<PixelTextRasterizer>(textRasterizers.default)
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -3654,26 +3652,17 @@ object DemoScenes {
                                 children = listOf(
                                     OutlinedButton(
                                         text = "默认",
-                                        onPressed = {
-                                            currentRasterizer.value = textRasterizers.default
-                                            hostView.textRasterizer = textRasterizers.default
-                                        },
+                                        onPressed = { hostView.textRasterizer = textRasterizers.default },
                                     ),
                                     SizedBox(width = 2),
                                     OutlinedButton(
                                         text = "强调",
-                                        onPressed = {
-                                            currentRasterizer.value = textRasterizers.emphasis
-                                            hostView.textRasterizer = textRasterizers.emphasis
-                                        },
+                                        onPressed = { hostView.textRasterizer = textRasterizers.emphasis },
                                     ),
                                     SizedBox(width = 2),
                                     OutlinedButton(
                                         text = "紧凑",
-                                        onPressed = {
-                                            currentRasterizer.value = compactRasterizer
-                                            hostView.textRasterizer = compactRasterizer
-                                        },
+                                        onPressed = { hostView.textRasterizer = compactRasterizer },
                                     ),
                                 ),
                             ),
@@ -3789,14 +3778,8 @@ object DemoScenes {
                                     Text("默认文字"),
                                     Text("强调文字", style = TextStyle.Accent),
                                     OutlinedButton(text = "默认按钮", onPressed = {}),
+                                    // 强调按钮：边框 tone 由 accentBorderTone token 派生
                                     OutlinedButton(text = "强调按钮", onPressed = {}, style = ButtonStyle.Accent),
-                                    Container(
-                                        width = 80,
-                                        height = 12,
-                                        borderTone = PixelTone.ON,
-                                        alignment = Alignment.CENTER,
-                                        child = Text("容器", style = TextStyle.Default),
-                                    ),
                                 ),
                             ),
                         ),
@@ -3911,8 +3894,8 @@ object DemoScenes {
             PixelTheme.MONO_LCD to "MONO",
             PixelTheme.NIGHT_MONO to "NIGHT",
         )
-        val controller = com.purride.pixelui.state.PixelListController()
-        val listState = controller.create()
+        val listController = ScrollController()
+        val listState = listController.create()
 
         return DemoScene(
             initialProfile = defaultProfile(),
@@ -3975,7 +3958,7 @@ object DemoScenes {
                                         Container(width = null, height = 1, fillTone = PixelTone.ON)
                                     },
                                     state = listState,
-                                    controller = controller,
+                                    controller = listController,
                                 ),
                             ),
                         ),
