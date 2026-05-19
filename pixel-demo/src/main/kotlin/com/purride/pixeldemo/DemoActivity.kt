@@ -2,7 +2,6 @@ package com.purride.pixeldemo
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.createPixelHostSetup
@@ -57,11 +56,8 @@ class DemoActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyProfile(profile: ScreenProfile) {
-        hostView.profilePreference = PixelHostProfilePreference(
-            dotSizePx = profile.dotSizePx,
-            pixelShape = profile.pixelShape,
-        )
+    private fun applyProfile(pref: PixelHostProfilePreference) {
+        hostView.profilePreference = pref
     }
 
     private inner class NavigatorImpl : DemoNavigator {

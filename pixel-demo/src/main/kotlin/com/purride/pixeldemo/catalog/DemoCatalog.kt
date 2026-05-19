@@ -1,5 +1,9 @@
 package com.purride.pixeldemo.catalog
 
+import com.purride.pixeldemo.showcase.extension.CustomPagerPolicyScene
+import com.purride.pixeldemo.showcase.extension.CustomRasterizerScene
+import com.purride.pixeldemo.showcase.extension.CustomRenderObjectScene
+import com.purride.pixeldemo.showcase.extension.PerfOverlayScene
 import com.purride.pixeldemo.showcase.foundation.AlignSizingScene
 import com.purride.pixeldemo.showcase.foundation.ContainerDecorationScene
 import com.purride.pixeldemo.showcase.foundation.HelloPixelScene
@@ -20,6 +24,10 @@ import com.purride.pixeldemo.showcase.scroll.PagerHorizontalScene
 import com.purride.pixeldemo.showcase.scroll.PagerVerticalScene
 import com.purride.pixeldemo.showcase.scroll.ScrollControllerCommandsScene
 import com.purride.pixeldemo.showcase.scroll.SingleChildScrollScene
+import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
+import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
+import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
+import com.purride.pixeldemo.showcase.theme.ThemeTokensScene
 
 object DemoCatalog {
     val sections: List<DemoSection> = listOf(
@@ -56,6 +64,24 @@ object DemoCatalog {
                 PagerVerticalScene,
                 ScrollControllerCommandsScene,
                 PageControllerCommandsScene,
+            ),
+        ),
+        DemoSection(
+            title = "Theme",
+            scenes = listOf(
+                PaletteToggleScene,
+                ThemeTokensScene,
+                ThemeStateMatrixScene,
+                RtlMirrorScene,
+            ),
+        ),
+        DemoSection(
+            title = "Extension",
+            scenes = listOf(
+                CustomRenderObjectScene,
+                CustomPagerPolicyScene,
+                CustomRasterizerScene,
+                PerfOverlayScene,
             ),
         ),
     )
