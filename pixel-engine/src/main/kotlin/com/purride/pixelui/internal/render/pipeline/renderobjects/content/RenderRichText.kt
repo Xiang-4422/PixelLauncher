@@ -94,18 +94,30 @@ internal class RenderRichText(
                 if (cursorX - offsetX >= contentWidth) {
                     return@forEach
                 }
-                val rasterizer = run.style.textRasterizer ?: defaultTextRasterizer
-                run.text.forEach { character ->
-                    val text = character.toString()
-                    rasterizer.drawText(
+                if (run.style.letterSpacing > 0 || run.style.fontScale > 1 || run.style.lineHeight != null) {
+                    PixelParagraphPainter.drawRun(
                         buffer = context.buffer,
-                        text = text,
+                        run = run,
+                        defaultTextRasterizer = defaultTextRasterizer,
                         x = cursorX,
                         y = cursorY,
-                        value = run.style.tone.value,
                     )
-                    cursorX += rasterizer.measureText(text)
+                } else {
+                    val rasterizer = run.style.textRasterizer ?: defaultTextRasterizer
+                    run.text.forEach { character ->
+                        val text = character.toString()
+                        rasterizer.drawText(
+                            buffer = context.buffer,
+                            text = text,
+                            x = cursorX,
+                            y = cursorY,
+                            value = run.style.tone.value,
+                        )
+                        cursorX += rasterizer.measureText(text)
+                    }
+                    return@forEach
                 }
+                cursorX += run.width
             }
             cursorY += line.height
         }

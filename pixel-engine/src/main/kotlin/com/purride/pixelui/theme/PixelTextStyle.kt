@@ -13,6 +13,9 @@ public data class PixelTextStyle(
     val tone: PixelTone = PixelTone.ON,
     val textRasterizer: PixelTextRasterizer? = null,
     val lineSpacing: Int = 0,
+    val letterSpacing: Int = 0,
+    val lineHeight: Int? = null,
+    val fontScale: Int = 1,
 ) {
     public companion object {
         public val Default: PixelTextStyle = PixelTextStyle()

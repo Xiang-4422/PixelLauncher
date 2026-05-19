@@ -186,7 +186,11 @@ internal object PixelParagraphLayouter {
         }
         val height = characters.maxOfOrNull { character ->
             val rasterizer = character.style.textRasterizer ?: defaultTextRasterizer
-            rasterizer.measureHeight(character.value.toString().ifEmpty { " " }) + character.style.lineSpacing
+            character.style.lineHeight ?: (
+                rasterizer.measureHeight(character.value.toString().ifEmpty { " " }) *
+                    character.style.safeFontScale() +
+                    character.style.lineSpacing
+                )
         } ?: defaultTextRasterizer.measureHeight(" ")
         return PixelParagraphLine(
             runs = runs,
@@ -200,11 +204,14 @@ internal object PixelParagraphLayouter {
         defaultTextRasterizer: PixelTextRasterizer,
     ): PixelParagraphRun {
         val text = toString()
-        val rasterizer = style.textRasterizer ?: defaultTextRasterizer
         return PixelParagraphRun(
             text = text,
             style = style,
-            width = rasterizer.measureText(text),
+            width = measureStyledText(
+                text = text,
+                style = style,
+                defaultTextRasterizer = defaultTextRasterizer,
+            ),
         )
     }
 
@@ -225,7 +232,35 @@ internal object PixelParagraphLayouter {
         defaultTextRasterizer: PixelTextRasterizer,
     ): Int {
         val rasterizer = character.style.textRasterizer ?: defaultTextRasterizer
-        return rasterizer.measureText(character.value.toString())
+        return (rasterizer.measureText(character.value.toString()) * character.style.safeFontScale()) +
+            character.style.letterSpacing.coerceAtLeast(0)
+    }
+
+    private fun measureStyledText(
+        text: String,
+        style: PixelTextStyle,
+        defaultTextRasterizer: PixelTextRasterizer,
+    ): Int {
+        if (text.isEmpty()) {
+            return 0
+        }
+        val rasterizer = style.textRasterizer ?: defaultTextRasterizer
+        if (style.usesPlainRasterizer()) {
+            return rasterizer.measureText(text)
+        }
+        val scale = style.safeFontScale()
+        val spacing = style.letterSpacing.coerceAtLeast(0)
+        return text.sumOf { character ->
+            (rasterizer.measureText(character.toString()) * scale) + spacing
+        }
+    }
+
+    private fun PixelTextStyle.safeFontScale(): Int {
+        return fontScale.coerceAtLeast(1)
+    }
+
+    private fun PixelTextStyle.usesPlainRasterizer(): Boolean {
+        return letterSpacing <= 0 && fontScale <= 1
     }
 
     private fun flattenSpans(spans: List<PixelTextSpan>): List<ParagraphCharacter> {

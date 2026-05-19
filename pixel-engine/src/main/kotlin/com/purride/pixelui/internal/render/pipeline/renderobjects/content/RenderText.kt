@@ -151,12 +151,10 @@ internal class RenderText(
         }
         val destinationY = offsetY + drawTextY
         if (textWidth <= contentWidth && textHeight <= contentHeight) {
-            rasterizer.drawText(
+            drawTextLayout(
                 buffer = context.buffer,
-                text = displayText,
-                x = offsetX + drawTextX,
+                x = if (style.usesPlainRasterizer()) offsetX + drawTextX else offsetX + paddingLeft,
                 y = destinationY,
-                value = style.tone.value,
             )
             return
         }
@@ -166,13 +164,7 @@ internal class RenderText(
             height = textHeight.coerceAtLeast(1),
         )
         try {
-            rasterizer.drawText(
-                buffer = scratch,
-                text = displayText,
-                x = 0,
-                y = 0,
-                value = style.tone.value,
-            )
+            drawTextLayout(buffer = scratch, x = 0, y = 0)
             blitOpaqueText(
                 source = scratch,
                 destination = context.buffer,
@@ -184,6 +176,47 @@ internal class RenderText(
         } finally {
             context.bufferPool.release(scratch)
         }
+    }
+
+    private fun drawTextLayout(
+        buffer: PixelBuffer,
+        x: Int,
+        y: Int,
+    ) {
+        if (style.usesPlainRasterizer()) {
+            rasterizer.drawText(
+                buffer = buffer,
+                text = displayText,
+                x = x,
+                y = y,
+                value = style.tone.value,
+            )
+            return
+        }
+        var cursorY = y
+        paragraphLayout.lines.forEach { line ->
+            var cursorX = x + ParagraphLayoutSupport.resolveLineStartX(
+                textAlign = textAlign,
+                textDirection = textDirection,
+                availableWidth = size.width - paddingLeft - paddingRight,
+                lineWidth = line.width,
+            )
+            line.runs.forEach { run ->
+                PixelParagraphPainter.drawRun(
+                    buffer = buffer,
+                    run = run,
+                    defaultTextRasterizer = rasterizer,
+                    x = cursorX,
+                    y = cursorY,
+                )
+                cursorX += run.width
+            }
+            cursorY += line.height
+        }
+    }
+
+    private fun PixelTextStyle.usesPlainRasterizer(): Boolean {
+        return letterSpacing <= 0 && fontScale <= 1 && lineHeight == null
     }
 
     /**
