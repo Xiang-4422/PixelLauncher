@@ -688,6 +688,271 @@ internal class RenderLazyListViewport(
 }
 
 /**
+ * 显式估算高度的变高 lazy 垂直列表视口。
+ */
+internal class RenderVariableLazyListViewport(
+    children: List<RenderBox> = emptyList(),
+    private var firstItemIndex: Int,
+    private var itemCount: Int,
+    private var estimatedItemExtent: Int,
+    private var state: PixelListState,
+    private var controller: PixelListController,
+    private var spacing: Int = 0,
+) : MultiChildRenderObject() {
+    init {
+        setRenderObjectChildren(children)
+    }
+
+    fun updateVariableLazyListViewport(
+        firstItemIndex: Int,
+        itemCount: Int,
+        estimatedItemExtent: Int,
+        state: PixelListState,
+        controller: PixelListController,
+        spacing: Int,
+    ) {
+        if (
+            this.firstItemIndex == firstItemIndex &&
+            this.itemCount == itemCount &&
+            this.estimatedItemExtent == estimatedItemExtent &&
+            this.state === state &&
+            this.controller === controller &&
+            this.spacing == spacing
+        ) {
+            return
+        }
+        this.firstItemIndex = firstItemIndex
+        this.itemCount = itemCount
+        this.estimatedItemExtent = estimatedItemExtent
+        this.state = state
+        this.controller = controller
+        this.spacing = spacing
+        markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    override fun layout(constraints: RenderConstraints) {
+        state.ensureMeasuredItemCapacity(itemCount)
+        val childConstraints = RenderConstraints(
+            minWidth = 0,
+            maxWidth = constraints.maxWidth,
+            minHeight = 0,
+            maxHeight = constraints.maxHeight,
+        )
+        renderChildren.forEachIndexed { localIndex, child ->
+            child.layout(childConstraints)
+            val itemIndex = firstItemIndex + localIndex
+            if (itemIndex in state.measuredItemHeightsPx.indices) {
+                state.measuredItemHeightsPx[itemIndex] = child.size.height.coerceAtLeast(1)
+            }
+        }
+        size = RenderSize(
+            width = constraints.maxWidth,
+            height = constraints.maxHeight,
+        )
+        val safeItemCount = itemCount.coerceAtLeast(0)
+        val safeEstimate = estimatedItemExtent.coerceAtLeast(1)
+        val safeSpacing = spacing.coerceAtLeast(0)
+        val contentHeight = variableItemContentHeightPx(
+            state = state,
+            itemCount = safeItemCount,
+            estimatedItemExtent = safeEstimate,
+            spacing = safeSpacing,
+        )
+        controller.sync(
+            state = state,
+            viewportHeightPx = size.height,
+            contentHeightPx = contentHeight,
+        )
+        state.itemTopOffsetsPx = IntArray(safeItemCount) { index ->
+            variableItemTopPx(
+                state = state,
+                itemIndex = index,
+                estimatedItemExtent = safeEstimate,
+                spacing = safeSpacing,
+            )
+        }
+        state.itemHeightsPx = IntArray(safeItemCount) { index ->
+            variableItemHeightPx(
+                state = state,
+                itemIndex = index,
+                estimatedItemExtent = safeEstimate,
+            )
+        }
+    }
+
+    override fun paint(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        val scratch = context.bufferPool.acquire(width = size.width, height = size.height)
+        try {
+            renderChildren.forEachIndexed { localIndex, child ->
+                val itemIndex = firstItemIndex + localIndex
+                child.paint(
+                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    offsetX = 0,
+                    offsetY = variableItemTopPx(
+                        state = state,
+                        itemIndex = itemIndex,
+                        estimatedItemExtent = estimatedItemExtent,
+                        spacing = spacing,
+                    ) - state.scrollOffsetPx.toInt(),
+                )
+            }
+            context.buffer.blit(
+                source = scratch,
+                destX = offsetX,
+                destY = offsetY,
+                copyWidth = size.width,
+                copyHeight = size.height,
+            )
+        } finally {
+            context.bufferPool.release(scratch)
+        }
+    }
+
+    override fun hitTest(
+        localX: Int,
+        localY: Int,
+        result: HitTestResult,
+    ) {
+        if (!viewportBounds().contains(localX, localY)) {
+            return
+        }
+        val contentY = localY + state.scrollOffsetPx.toInt()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.hitTest(
+                localX = localX,
+                localY = contentY - variableItemTopPx(
+                    state = state,
+                    itemIndex = itemIndex,
+                    estimatedItemExtent = estimatedItemExtent,
+                    spacing = spacing,
+                ),
+                result = result,
+            )
+        }
+    }
+
+    override fun collectClickTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelClickTarget>,
+    ) {
+        val collected = mutableListOf<PixelClickTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.collectClickTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + variableItemTopPx(
+                    state = state,
+                    itemIndex = itemIndex,
+                    estimatedItemExtent = estimatedItemExtent,
+                    spacing = spacing,
+                ) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    override fun collectPagerTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelPagerTarget>,
+    ) {
+        val collected = mutableListOf<PixelPagerTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.collectPagerTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + variableItemTopPx(
+                    state = state,
+                    itemIndex = itemIndex,
+                    estimatedItemExtent = estimatedItemExtent,
+                    spacing = spacing,
+                ) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    override fun collectListTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelListTarget>,
+    ) {
+        targets += PixelListTarget(
+            bounds = globalBounds(offsetX, offsetY),
+            viewportHeightPx = size.height,
+            contentHeightPx = state.contentHeightPx,
+            state = state,
+            controller = controller,
+        )
+        val collected = mutableListOf<PixelListTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.collectListTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + variableItemTopPx(
+                    state = state,
+                    itemIndex = itemIndex,
+                    estimatedItemExtent = estimatedItemExtent,
+                    spacing = spacing,
+                ) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    override fun collectTextInputTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelTextInputTarget>,
+    ) {
+        val collected = mutableListOf<PixelTextInputTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.collectTextInputTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + variableItemTopPx(
+                    state = state,
+                    itemIndex = itemIndex,
+                    estimatedItemExtent = estimatedItemExtent,
+                    spacing = spacing,
+                ) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    private val renderChildren: List<RenderBox>
+        get() = children.filterIsInstance<RenderBox>()
+}
+
+/**
  * 固定 item/separator 高度的 lazy 垂直分隔列表视口。
  *
  * children 使用 virtual index：偶数是真实 item，奇数是 separator。对外同步给

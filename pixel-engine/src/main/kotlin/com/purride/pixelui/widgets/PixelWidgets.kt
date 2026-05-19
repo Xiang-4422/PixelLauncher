@@ -26,6 +26,7 @@ import com.purride.pixelui.internal.StackWidget
 import com.purride.pixelui.internal.TextFieldWidget
 import com.purride.pixelui.internal.RichTextWidget
 import com.purride.pixelui.internal.TextWidget
+import com.purride.pixelui.internal.VariableLazyListViewWidget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -467,6 +468,7 @@ public fun ListViewBuilder(
     controller: PixelListController,
     spacing: Int = 0,
     itemExtent: Int? = null,
+    estimatedItemExtent: Int? = null,
     cacheExtent: Int = 1,
     key: Any? = null,
 ): Widget {
@@ -476,6 +478,19 @@ public fun ListViewBuilder(
             itemCount = itemCount,
             itemBuilder = itemBuilder,
             itemExtent = fixedItemExtent,
+            state = state,
+            controller = controller,
+            spacing = spacing,
+            cacheExtent = cacheExtent,
+            key = key,
+        )
+    }
+    val estimatedExtent = estimatedItemExtent
+    if (estimatedExtent != null && estimatedExtent > 0) {
+        return VariableLazyListViewWidget(
+            itemCount = itemCount,
+            itemBuilder = itemBuilder,
+            estimatedItemExtent = estimatedExtent,
             state = state,
             controller = controller,
             spacing = spacing,

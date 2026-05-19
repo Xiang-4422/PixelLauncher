@@ -34,4 +34,11 @@ public class PixelListState(
      */
     internal var itemTopOffsetsPx: IntArray = intArrayOf()
     internal var itemHeightsPx: IntArray = intArrayOf()
+
+    /**
+     * 变高 lazy list 的内部测量缓存。
+     *
+     * 0 表示该 item 尚未测量；render layout 会在真实子节点完成布局后回写。
+     */
+    internal var measuredItemHeightsPx: IntArray = intArrayOf()
 }

@@ -77,6 +77,48 @@ internal data class LazyListViewWidget(
 }
 
 /**
+ * 显式估算 item 高度的变高 lazy `ListViewBuilder`。
+ */
+internal data class VariableLazyListViewWidget(
+    val itemCount: Int,
+    val itemBuilder: (Int) -> Widget,
+    val estimatedItemExtent: Int,
+    val state: PixelListState,
+    val controller: PixelListController,
+    val spacing: Int,
+    val cacheExtent: Int,
+    override val key: Any? = null,
+) : StatelessWidget(
+    key = key,
+) {
+    override fun build(context: BuildContext): Widget {
+        context.watch(controller)
+        state.ensureMeasuredItemCapacity(itemCount)
+        val range = VariableLazyListRange.resolve(
+            itemCount = itemCount,
+            state = state,
+            estimatedItemExtent = estimatedItemExtent,
+            spacing = spacing,
+            scrollOffsetPx = state.scrollOffsetPx,
+            viewportHeightPx = state.viewportHeightPx,
+            cacheExtent = cacheExtent,
+        )
+        return VariableLazyListViewportWidget(
+            children = List(range.count) { offset ->
+                itemBuilder(range.firstIndex + offset)
+            },
+            firstItemIndex = range.firstIndex,
+            itemCount = itemCount,
+            estimatedItemExtent = estimatedItemExtent,
+            state = state,
+            controller = controller,
+            spacing = spacing,
+            key = key,
+        )
+    }
+}
+
+/**
  * 固定 item 与 separator 高度的 lazy `ListViewSeparatedBuilder`。
  */
 internal data class LazySeparatedListViewWidget(
@@ -196,6 +238,48 @@ private data class LazyListViewportWidget(
             firstItemIndex = firstItemIndex,
             itemCount = itemCount,
             itemExtent = itemExtent,
+            state = state,
+            controller = controller,
+            spacing = spacing,
+        )
+    }
+}
+
+/**
+ * 变高 lazy list 对应的 render object widget。
+ */
+private data class VariableLazyListViewportWidget(
+    override val children: List<Widget>,
+    val firstItemIndex: Int,
+    val itemCount: Int,
+    val estimatedItemExtent: Int,
+    val state: PixelListState,
+    val controller: PixelListController,
+    val spacing: Int,
+    override val key: Any? = null,
+) : MultiChildRenderObjectWidget(
+    children = children,
+    key = key,
+) {
+    override fun createRenderObject(context: BuildContext): RenderObject {
+        return RenderVariableLazyListViewport(
+            firstItemIndex = firstItemIndex,
+            itemCount = itemCount,
+            estimatedItemExtent = estimatedItemExtent,
+            state = state,
+            controller = controller,
+            spacing = spacing,
+        )
+    }
+
+    override fun updateRenderObject(
+        context: BuildContext,
+        renderObject: RenderObject,
+    ) {
+        (renderObject as RenderVariableLazyListViewport).updateVariableLazyListViewport(
+            firstItemIndex = firstItemIndex,
+            itemCount = itemCount,
+            estimatedItemExtent = estimatedItemExtent,
             state = state,
             controller = controller,
             spacing = spacing,
@@ -340,6 +424,129 @@ private data class LazySeparatedListRange(
             )
         }
     }
+}
+
+private data class VariableLazyListRange(
+    val firstIndex: Int,
+    val count: Int,
+) {
+    companion object {
+        fun resolve(
+            itemCount: Int,
+            state: PixelListState,
+            estimatedItemExtent: Int,
+            spacing: Int,
+            scrollOffsetPx: Float,
+            viewportHeightPx: Int,
+            cacheExtent: Int,
+        ): VariableLazyListRange {
+            val safeEstimate = estimatedItemExtent.coerceAtLeast(1)
+            if (itemCount <= 0) {
+                return VariableLazyListRange(firstIndex = 0, count = 0)
+            }
+            val safeSpacing = spacing.coerceAtLeast(0)
+            val safeCache = cacheExtent.coerceAtLeast(0)
+            val effectiveViewportHeight = if (viewportHeightPx > 0) {
+                viewportHeightPx
+            } else {
+                safeEstimate * (safeCache + 8)
+            }
+            val cachePx = safeEstimate * safeCache
+            val windowTop = (scrollOffsetPx.toInt() - cachePx).coerceAtLeast(0)
+            val windowBottom = scrollOffsetPx.toInt() + effectiveViewportHeight + cachePx
+
+            var first = 0
+            while (
+                first < itemCount - 1 &&
+                variableItemBottomPx(state, first, safeEstimate, safeSpacing) <= windowTop
+            ) {
+                first += 1
+            }
+
+            var last = first
+            while (
+                last < itemCount - 1 &&
+                variableItemTopPx(state, last, safeEstimate, safeSpacing) < windowBottom
+            ) {
+                last += 1
+            }
+            if (
+                variableItemTopPx(state, last, safeEstimate, safeSpacing) >= windowBottom &&
+                last > first
+            ) {
+                last -= 1
+            }
+            return VariableLazyListRange(
+                firstIndex = first,
+                count = last - first + 1,
+            )
+        }
+    }
+}
+
+internal fun PixelListState.ensureMeasuredItemCapacity(itemCount: Int) {
+    val safeItemCount = itemCount.coerceAtLeast(0)
+    if (measuredItemHeightsPx.size == safeItemCount) {
+        return
+    }
+    val previous = measuredItemHeightsPx
+    measuredItemHeightsPx = IntArray(safeItemCount) { index ->
+        previous.getOrNull(index) ?: 0
+    }
+}
+
+internal fun variableItemTopPx(
+    state: PixelListState,
+    itemIndex: Int,
+    estimatedItemExtent: Int,
+    spacing: Int,
+): Int {
+    val safeSpacing = spacing.coerceAtLeast(0)
+    var top = 0
+    for (index in 0 until itemIndex.coerceAtLeast(0)) {
+        top += variableItemHeightPx(state, index, estimatedItemExtent)
+        top += safeSpacing
+    }
+    return top
+}
+
+internal fun variableItemBottomPx(
+    state: PixelListState,
+    itemIndex: Int,
+    estimatedItemExtent: Int,
+    spacing: Int,
+): Int {
+    return variableItemTopPx(state, itemIndex, estimatedItemExtent, spacing) +
+        variableItemHeightPx(state, itemIndex, estimatedItemExtent)
+}
+
+internal fun variableItemContentHeightPx(
+    state: PixelListState,
+    itemCount: Int,
+    estimatedItemExtent: Int,
+    spacing: Int,
+): Int {
+    if (itemCount <= 0) {
+        return 0
+    }
+    var height = 0
+    val safeSpacing = spacing.coerceAtLeast(0)
+    repeat(itemCount) { index ->
+        height += variableItemHeightPx(state, index, estimatedItemExtent)
+        if (index < itemCount - 1) {
+            height += safeSpacing
+        }
+    }
+    return height
+}
+
+internal fun variableItemHeightPx(
+    state: PixelListState,
+    itemIndex: Int,
+    estimatedItemExtent: Int,
+): Int {
+    val measured = state.measuredItemHeightsPx.getOrNull(itemIndex) ?: 0
+    return if (measured > 0) measured else estimatedItemExtent.coerceAtLeast(1)
 }
 
 internal fun separatedVirtualCount(itemCount: Int): Int {
