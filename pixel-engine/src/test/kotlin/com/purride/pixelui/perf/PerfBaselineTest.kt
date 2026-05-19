@@ -22,11 +22,11 @@ import java.lang.management.ManagementFactory
  *
  * 写入位置：src/test/resources/perf-baseline.json
  *
- * 重新生成基线：设置环境变量 REGEN_PERF_BASELINE=1。
+ * 重新生成基线：设置环境变量 REGEN_PERF_BASELINE=1，文件会被覆盖。
  *
- * 默认模式下：如果磁盘上已有 baseline 文件，就把当前一轮采样附加到 history
- * 数组里，方便观察一段时间的趋势；如果没有 baseline 就只跑一次不落盘，
- * 避免 CI 静默修改基线。
+ * 默认模式下：**永远不落盘**，只在 stdout 打印当前样本，方便开发者
+ * 肉眼对比磁盘 baseline。这样跨平台 / 跨 JDK 跑测试都不会污染 tracked
+ * 文件。要把当前样本固化为新基线时显式 REGEN_PERF_BASELINE=1 即可。
  */
 class PerfBaselineTest {
 
@@ -43,13 +43,13 @@ class PerfBaselineTest {
 
     @Test
     fun captureBaseline() {
+        val regen = System.getenv("REGEN_PERF_BASELINE") == "1"
+
         if (!isAllocationTrackingAvailable()) {
-            // 该 JVM 不支持线程级分配统计——跳过 baseline，但记录原因。
-            val report = "skipped: ThreadMXBean.getThreadAllocatedBytes 不可用，可能在该 JVM 上没有 com.sun.management 扩展"
-            writeReport(report)
+            // 该 JVM 不支持线程级分配统计——只 println 不写盘，避免污染 tracked baseline。
+            println("[PerfBaseline] skipped: ThreadMXBean.getThreadAllocatedBytes 不可用，可能在该 JVM 上没有 com.sun.management 扩展")
             return
         }
-        val regen = System.getenv("REGEN_PERF_BASELINE") == "1"
 
         warmup()
         val sample = BaselineSample(
@@ -64,15 +64,17 @@ class PerfBaselineTest {
             ),
         )
 
-        val baselineFile = File(BASELINE_PATH)
-        baselineFile.parentFile?.mkdirs()
-
-        if (regen || !baselineFile.exists()) {
-            writeReport(buildJson(sample = sample))
+        val json = buildJson(sample = sample)
+        if (regen) {
+            // 显式 regen 模式：覆盖落盘，作为下一轮 baseline。
+            val baselineFile = File(BASELINE_PATH)
+            baselineFile.parentFile?.mkdirs()
+            writeReport(json)
+            println("[PerfBaseline] REGEN：已写入 $BASELINE_PATH")
             return
         }
-        // 已有 baseline：把当前样本只打印到 stdout，不修改磁盘文件，避免 CI 静默改 baseline。
-        println("[PerfBaseline] 当前样本（不写盘）：${buildJson(sample = sample)}")
+        // 默认：永不落盘，只 println，方便开发者对比磁盘 baseline。
+        println("[PerfBaseline] 当前样本（不写盘）：$json")
     }
 
     /**

@@ -35,6 +35,7 @@ ListViewBuilder(
     itemBuilder = { i -> Text("ITEM $i") },
     state = state,
     controller = controller,
+    itemExtent = 8,   // 长列表必传：启用 lazy 渲染（详见 WIDGETS.md）
 )
 ```
 

@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
 
 ## 步骤 5：可滚动列表
 
-`ListViewBuilder` 提供 lazy 渲染的滚动列表。需要把 `controller`（行为）和 `state`（状态）一同传入：
+`ListViewBuilder` 提供按需构造的滚动列表。需要把 `controller`（行为）和 `state`（状态）一同传入：
 
 ```kotlin
 private val listController = PixelListController()
@@ -156,9 +156,12 @@ content = {
         },
         state = listState,
         controller = listController,
+        itemExtent = 8,    // 长列表必传：单 item 像素高度，启用真正的 lazy 渲染
     )
 }
 ```
+
+> ⚠️ **关于 lazy 渲染**：`ListViewBuilder` **只有传 `itemExtent`（每 item 固定高度）时才走 lazy 路径**，仅构造可见区 + cacheExtent 范围内的 item。如果不传 `itemExtent`，会一次性构造全部 itemCount 个 widget，长列表（> 几十条）会卡顿。详见 [WIDGETS.md](WIDGETS.md#listviewbuilder)。
 
 `PixelListController` 让你能编程式滚动（如 `controller.scrollItemIntoView(state, index)`）。详见 [STATE.md](STATE.md)。
 
@@ -219,8 +222,8 @@ val setup = createPixelHostSetup(
 **Q：为什么字体是固定的位图？能用 ttf 吗？**
 A：默认走内置位图字体（5×7 像素），保证完全像素化。你可以通过自定义 `PixelTextRasterizer` 把 ttf 离散化到像素网格里——见 [EXTENDING.md](EXTENDING.md) 的「自定义字体栅格器」一节。
 
-**Q：能在 SurfaceView 之外绘制吗？比如 Compose 里嵌一块？**
-A：当前 `PixelHostView` 是 Android `View` 子类，可以放在任何 ViewGroup 里。Compose 中用 `AndroidView` 包装即可。
+**Q：能嵌到普通 ViewGroup / Compose 里吗？**
+A：`PixelHostView` 是 `android.view.View` 子类，可以放在任何 ViewGroup 里。Compose 中用 `AndroidView` 包装即可。
 
 **Q：状态在 Activity 重建时怎么保留？**
 A：把 `ValueNotifier` / Controller 放进 `ViewModel`，或用 `onSaveInstanceState` 序列化关键值。SDK 自身不持有跨配置存活状态。

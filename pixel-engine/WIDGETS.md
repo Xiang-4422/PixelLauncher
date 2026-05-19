@@ -256,7 +256,7 @@ ListView(
 
 ### `ListViewBuilder`
 
-lazy 渲染的列表（按需构造可见 item）：
+按 index 构造列表（带可选 lazy 渲染）：
 
 ```kotlin
 ListViewBuilder(
@@ -265,10 +265,14 @@ ListViewBuilder(
     state = listState,
     controller = listController,
     spacing = 2,
-    itemExtent = 12,    // 固定高度则填这里，加速 layout
+    itemExtent = 12,    // 必传以启用 lazy 渲染（每 item 固定高度，单位像素）
     cacheExtent = 1,    // 可见区上下额外预渲染的页数
 )
 ```
+
+> ⚠️ **lazy 与 eager 的分界**：`itemExtent` **必须传入**才会走 lazy 路径（只构造可见区 + `cacheExtent` 范围内的 item）。**不传 `itemExtent` 时回退到 eager 路径**：一次性调 `itemBuilder` 构造所有 `itemCount` 个 widget，等同于 `ListView(items = List(itemCount) { itemBuilder(it) }, ...)`。长列表（> 几十条）必须传 `itemExtent`，否则首屏构造代价等于全部 itemCount。
+>
+> 如果你的 item 高度不固定，把它们构造好用 `ListView(items = ...)` 即可；否则评估能否近似一个 `itemExtent` 来享受 lazy 收益。
 
 ### `ListViewSeparated`
 

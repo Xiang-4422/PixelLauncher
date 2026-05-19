@@ -4,7 +4,7 @@
 
 ## 什么是 pixel-engine
 
-一个 Flutter 风格的像素艺术 UI SDK。不依赖 Android 的 View 系统，所有内容直接渲染到一个 `SurfaceView`。widget 是不可变的 Kotlin 数据对象；引擎把它们翻译成 retained element 树驱动 layout / paint / hit-test，输出到 `PixelBuffer`。
+一个 Flutter 风格的像素艺术 UI SDK。它**不依赖** Android 的 View 树管理 UI，但**通过**一个继承自 `android.view.View` 的 `PixelHostView` 作为宿主——把所有内容渲染到 `PixelBuffer`（packed `ByteArray`），然后在 `onDraw(Canvas)` 里把整块 buffer 画上去。widget 是不可变的 Kotlin 数据对象；引擎把它们翻译成 retained element 树驱动 layout / paint / hit-test。
 
 设计上几乎 1:1 复刻 Flutter：widget 是不可变配置，element 是运行时实例，render object 处理底层几何与绘制。
 

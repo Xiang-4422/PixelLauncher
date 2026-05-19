@@ -2,7 +2,7 @@
 
 **像素风 Android UI SDK** —— 用 Flutter 风格的声明式 API 构建完全像素化的 Android 应用。
 
-pixel-engine 不依赖 Android View 树，所有内容直接绘制在单个 `SurfaceView` 上：每个屏幕像素都是你定义的、点对点可控的"逻辑像素方块"。这让你能为复古游戏、单色 / 双色界面、像素艺术工具、e-ink 风设备等场景搭建从字体到手势都纯像素化的 UI。
+pixel-engine 不依赖 Android View 树，所有内容由一个继承自 `android.view.View` 的 `PixelHostView` 直接通过 `Canvas` 绘制：每个屏幕像素都是你定义的、点对点可控的"逻辑像素方块"。这让你能为复古游戏、单色 / 双色界面、像素艺术工具、e-ink 风设备等场景搭建从字体到手势都纯像素化的 UI。
 
 ---
 
