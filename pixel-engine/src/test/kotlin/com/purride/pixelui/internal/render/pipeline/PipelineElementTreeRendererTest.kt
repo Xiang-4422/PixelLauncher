@@ -809,6 +809,95 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * estimatedItemExtent 的 ListViewBuilder 应该走变高 lazy 路径，并只 build 可见窗口。
+     */
+    @Test
+    fun listViewBuilderWithEstimatedItemExtentBuildsVariableVisibleWindowOnly() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 25f)
+        state.viewportHeightPx = 20
+        val builtItems = mutableListOf<Int>()
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 20,
+                child = ListViewBuilder(
+                    itemCount = 1_000,
+                    state = state,
+                    controller = controller,
+                    estimatedItemExtent = 10,
+                    cacheExtent = 1,
+                    spacing = 1,
+                    itemBuilder = { index ->
+                        builtItems += index
+                        SizedBox(
+                            height = 6 + (index % 3) * 2,
+                            child = Text("ITEM $index"),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 20,
+        )
+
+        assertNotNull(result)
+        assertEquals(listOf(1, 2, 3, 4), builtItems)
+        assertEquals(1_000, state.itemTopOffsetsPx.size)
+        assertEquals(1_000, state.itemHeightsPx.size)
+        assertEquals(8, state.itemHeightsPx[1])
+        assertEquals(10, state.itemHeightsPx[5])
+        assertTrue(state.contentHeightPx > 9_000)
+    }
+
+    /**
+     * 变高 lazy list 应该按估算和已测高度支持真实 item index 定位。
+     */
+    @Test
+    fun listViewBuilderWithEstimatedItemExtentScrollsMeasuredAndUnmeasuredItems() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 7f)
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 10,
+                child = ListViewBuilder(
+                    itemCount = 50,
+                    state = state,
+                    controller = controller,
+                    estimatedItemExtent = 9,
+                    cacheExtent = 0,
+                    spacing = 1,
+                    itemBuilder = { index ->
+                        SizedBox(
+                            height = if (index % 2 == 0) 6 else 12,
+                            child = OutlinedButton(
+                                text = "ITEM $index",
+                                onPressed = { },
+                            ),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 10,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertTrue(result.clickTargets.all { target ->
+            target.bounds.top in 0 until 10 &&
+                target.bounds.top + target.bounds.height <= 10
+        })
+
+        controller.scrollItemIntoView(state = state, itemIndex = 25)
+        assertTrue(state.scrollOffsetPx > 0f)
+        assertTrue(state.scrollOffsetPx <= state.maxScrollOffsetPx)
+    }
+
+    /**
      * RichText 应该保持 span 样式切换，并在同一行绘制不同 tone。
      */
     @Test
