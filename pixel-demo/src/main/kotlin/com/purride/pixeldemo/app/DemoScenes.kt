@@ -1283,6 +1283,25 @@ object DemoScenes {
                             ),
                         ),
                         infoCard("STYLE", "SPAN TONE SWITCH"),
+                        SizedBox(
+                            height = 20,
+                            child = DecoratedBox(
+                                fillTone = PixelTone.OFF,
+                                borderTone = PixelTone.ON,
+                                padding = 2,
+                                alignment = Alignment.TOP_START,
+                                child = Text(
+                                    data = "SCALED TYPE",
+                                    style = TextStyle(
+                                        tone = PixelTone.ACCENT,
+                                        letterSpacing = 1,
+                                        lineHeight = 12,
+                                        fontScale = 2,
+                                    ),
+                                    overflow = TextOverflow.CLIP,
+                                ),
+                            ),
+                        ),
                         infoCard("WRAP", "CJK AND ASCII"),
                     ),
                 )
