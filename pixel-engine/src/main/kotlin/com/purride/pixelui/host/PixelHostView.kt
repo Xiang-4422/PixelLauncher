@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -24,6 +23,7 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixelui.host.PixelHostFrameLoop
 import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
@@ -81,7 +81,7 @@ public class PixelHostView @JvmOverloads constructor(
     private var lastRenderResult: PixelRenderResult? = null
     private var palette: PixelPalette = PixelPalette.terminalGreen()
     private var pixelGapEnabled: Boolean = true
-    private var lastFrameUptimeMs: Long = 0L
+    private val frameLoop = PixelHostFrameLoop()
     private var velocityTracker: VelocityTracker? = null
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private var touchDownX = 0f
@@ -283,7 +283,7 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val frameDeltaMs = consumeFrameDeltaMs()
+        val frameDeltaMs = frameLoop.consumeFrameDeltaMs()
         stepActivePagers(frameDeltaMs)
         stepActiveLists(frameDeltaMs)
         val provider = contentProvider
@@ -604,13 +604,6 @@ public class PixelHostView @JvmOverloads constructor(
             dotSizePx = preference.dotSizePx,
             pixelShape = preference.pixelShape,
         )
-    }
-
-    private fun consumeFrameDeltaMs(): Long {
-        val now = SystemClock.uptimeMillis()
-        val deltaMs = if (lastFrameUptimeMs == 0L) 16L else (now - lastFrameUptimeMs).coerceAtLeast(1L)
-        lastFrameUptimeMs = now
-        return deltaMs
     }
 
     private fun stepActivePagers(deltaMs: Long) {
