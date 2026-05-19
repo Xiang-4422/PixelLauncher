@@ -458,6 +458,34 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * PixelTextStyle 的 lineHeight/fontScale/letterSpacing 应该进入 paragraph 测量。
+     */
+    @Test
+    fun renderTextAppliesParagraphStyleMetrics() {
+        val rasterizer = CapturingRasterizer()
+        val renderText = RenderText(
+            text = "AB",
+            style = com.purride.pixelui.PixelTextStyle(
+                textRasterizer = rasterizer,
+                letterSpacing = 1,
+                lineHeight = 3,
+                fontScale = 2,
+            ),
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            softWrap = false,
+            overflow = TextOverflow.CLIP,
+            maxLines = 1,
+            defaultTextRasterizer = rasterizer,
+        )
+
+        renderText.layout(RenderConstraints(maxWidth = 20, maxHeight = 10))
+
+        assertEquals(6, renderText.size.width)
+        assertEquals(3, renderText.size.height)
+    }
+
+    /**
      * paragraph helper 应该保留显式空行，并按字符测宽处理中英文混排。
      */
     @Test
