@@ -16,6 +16,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.ListViewBuilder
+import com.purride.pixelui.ListViewSeparatedBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelThemeTokens
@@ -702,6 +703,109 @@ class PipelineElementTreeRendererTest {
         assertEquals(listOf(2, 3, 4, 5, 6), builtItems)
         assertEquals(1_000, state.itemTopOffsetsPx.size)
         assertEquals(12_997, state.contentHeightPx)
+    }
+
+    /**
+     * 固定 item/separator 高度的 ListViewSeparatedBuilder 应该只 build 可见窗口。
+     */
+    @Test
+    fun listViewSeparatedBuilderBuildsVisibleCacheWindowOnly() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 39f)
+        state.viewportHeightPx = 26
+        val builtItems = mutableListOf<Int>()
+        val builtSeparators = mutableListOf<Int>()
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 26,
+                child = ListViewSeparatedBuilder(
+                    itemCount = 1_000,
+                    state = state,
+                    controller = controller,
+                    itemExtent = 10,
+                    separatorExtent = 2,
+                    cacheExtent = 1,
+                    itemBuilder = { index ->
+                        builtItems += index
+                        SizedBox(
+                            height = 10,
+                            child = Text("ITEM $index"),
+                        )
+                    },
+                    separatorBuilder = { index ->
+                        builtSeparators += index
+                        SizedBox(
+                            height = 2,
+                            child = DecoratedBox(fillTone = PixelTone.ON),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 26,
+        )
+
+        assertNotNull(result)
+        assertEquals(listOf(2, 3, 4, 5, 6), builtItems)
+        assertEquals(listOf(2, 3, 4, 5), builtSeparators)
+        assertEquals(1_000, state.itemTopOffsetsPx.size)
+        assertEquals(0, state.itemTopOffsetsPx[0])
+        assertEquals(12, state.itemTopOffsetsPx[1])
+        assertEquals(11_998, state.contentHeightPx)
+    }
+
+    /**
+     * separated lazy list 的 target 应该被 viewport 裁剪，并且定位使用真实 item index。
+     */
+    @Test
+    fun listViewSeparatedBuilderClipsTargetsAndScrollsRealItemIndex() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 7f)
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 24,
+                height = 10,
+                child = ListViewSeparatedBuilder(
+                    itemCount = 20,
+                    state = state,
+                    controller = controller,
+                    itemExtent = 8,
+                    separatorExtent = 2,
+                    cacheExtent = 0,
+                    itemBuilder = { index ->
+                        SizedBox(
+                            height = 8,
+                            child = OutlinedButton(
+                                text = "ITEM $index",
+                                onPressed = { },
+                            ),
+                        )
+                    },
+                    separatorBuilder = {
+                        SizedBox(
+                            height = 2,
+                            child = DecoratedBox(fillTone = PixelTone.ACCENT),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 24,
+            logicalHeight = 10,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(2, result.clickTargets.size)
+        assertTrue(result.clickTargets.all { target ->
+            target.bounds.top in 0 until 10 &&
+                target.bounds.top + target.bounds.height <= 10
+        })
+
+        controller.scrollItemIntoView(state = state, itemIndex = 10)
+        assertEquals(98f, state.scrollOffsetPx)
     }
 
     /**

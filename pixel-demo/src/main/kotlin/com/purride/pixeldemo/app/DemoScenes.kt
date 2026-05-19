@@ -27,7 +27,7 @@ import com.purride.pixelui.Flexible
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListView
 import com.purride.pixelui.ListViewBuilder
-import com.purride.pixelui.ListViewSeparated
+import com.purride.pixelui.ListViewSeparatedBuilder
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
@@ -3942,15 +3942,15 @@ object DemoScenes {
                                 ),
                             ),
                             SizedBox(height = 4),
-                            Text("ListViewSeparated 演示：", style = TextStyle.Accent),
-                            // ListViewSeparated 占满剩余高度
+                            Text("ListViewSeparatedBuilder 演示：", style = TextStyle.Accent),
+                            // ListViewSeparatedBuilder 占满剩余高度
                             Expanded(
-                                child = ListViewSeparated(
+                                child = ListViewSeparatedBuilder(
                                     itemCount = themes.size,
                                     itemBuilder = { i ->
                                         val (_, label) = themes[i]
                                         Padding(
-                                            padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
+                                            horizontal = 4,
                                             child = Text("PRESET $label"),
                                         )
                                     },
@@ -3959,6 +3959,8 @@ object DemoScenes {
                                     },
                                     state = listState,
                                     controller = listController,
+                                    itemExtent = 10,
+                                    separatorExtent = 1,
                                 ),
                             ),
                         ),

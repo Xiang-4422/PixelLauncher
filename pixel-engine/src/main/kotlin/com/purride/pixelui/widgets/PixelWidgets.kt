@@ -11,6 +11,7 @@ import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
 import com.purride.pixelui.internal.LazyListViewWidget
+import com.purride.pixelui.internal.LazySeparatedListViewWidget
 import com.purride.pixelui.internal.ListViewWidget
 import com.purride.pixelui.internal.OutlinedButtonWidget
 import com.purride.pixelui.internal.PaddingDirectionalWidget
@@ -512,6 +513,30 @@ public fun ListViewSeparated(
         state = state,
         controller = controller,
         spacing = 0,
+        key = key,
+    )
+}
+
+public fun ListViewSeparatedBuilder(
+    itemCount: Int,
+    itemBuilder: (Int) -> Widget,
+    separatorBuilder: (Int) -> Widget,
+    state: PixelListState,
+    controller: PixelListController,
+    itemExtent: Int,
+    separatorExtent: Int,
+    cacheExtent: Int = 1,
+    key: Any? = null,
+): Widget {
+    return LazySeparatedListViewWidget(
+        itemCount = itemCount,
+        itemBuilder = itemBuilder,
+        separatorBuilder = separatorBuilder,
+        itemExtent = itemExtent,
+        separatorExtent = separatorExtent,
+        state = state,
+        controller = controller,
+        cacheExtent = cacheExtent,
         key = key,
     )
 }
