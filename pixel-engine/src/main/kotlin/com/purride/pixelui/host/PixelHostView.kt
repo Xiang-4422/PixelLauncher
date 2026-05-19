@@ -78,14 +78,6 @@ public class PixelHostView @JvmOverloads constructor(
     )
     private var contentProvider: RootWidgetProvider? = null
     private var lastRenderResult: PixelRenderResult? = null
-
-    /**
-     * `lastRenderResult.buffer` 是否由本地 runtime 的 pool 拥有。
-     *
-     * `runtime.render` 返回时为 true（可释放回池），`submitFrame` 注入时为
-     * false（外部所有权，不能释放给池）。
-     */
-    private var lastRenderResultOwnedByRuntime: Boolean = false
     private var palette: PixelPalette = PixelPalette.terminalGreen()
     private var pixelGapEnabled: Boolean = true
     private var lastFrameUptimeMs: Long = 0L
@@ -252,7 +244,6 @@ public class PixelHostView @JvmOverloads constructor(
             listTargets = emptyList(),
             textInputTargets = emptyList(),
         )
-        lastRenderResultOwnedByRuntime = false
         invalidate()
     }
 
@@ -291,9 +282,7 @@ public class PixelHostView @JvmOverloads constructor(
                 root = wrappedRoot,
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
-            ).also {
-                lastRenderResultOwnedByRuntime = true
-            }
+            )
         } else {
             lastRenderResult
         }

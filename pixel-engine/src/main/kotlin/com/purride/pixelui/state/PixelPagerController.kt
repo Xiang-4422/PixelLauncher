@@ -86,10 +86,12 @@ public class PixelPagerController(
         val distanceThreshold = safeViewportSizePx * distanceThresholdFraction
         val velocityThreshold = safeViewportSizePx * velocityThresholdPagesPerSecond
         val offsetPx = motionController.visualOffsetPx(state.motionState)
+        // 非有限速度（NaN / Infinity）显式归零，避免依赖 IEEE 754 比较语义。
+        val sanitizedVelocity = if (velocityPxPerSecond.isFinite()) velocityPxPerSecond else 0f
         val direction = resolveDirection(
             offsetPx = offsetPx,
             distanceThreshold = distanceThreshold,
-            velocityPxPerSecond = velocityPxPerSecond,
+            velocityPxPerSecond = sanitizedVelocity,
             velocityThreshold = velocityThreshold,
         )
         val targetPage = when {

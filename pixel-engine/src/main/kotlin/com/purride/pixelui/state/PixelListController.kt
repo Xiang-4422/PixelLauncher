@@ -2,6 +2,7 @@ package com.purride.pixelui.state
 
 import com.purride.pixelui.ChangeNotifier
 import com.purride.pixelui.PixelScrollPhysics
+import kotlin.math.abs
 
 /**
  * 通用列表控制器。
@@ -126,7 +127,7 @@ public class PixelListController(
         state.isDragging = false
 
         val canScroll = state.maxScrollOffsetPx > 0f
-        if (!canScroll || !velocityPxPerSecond.isFinite() || kotlin.math.abs(velocityPxPerSecond) < physics.minFlingVelocityPxPerSecond) {
+        if (!canScroll || !velocityPxPerSecond.isFinite() || abs(velocityPxPerSecond) < physics.minFlingVelocityPxPerSecond) {
             stopSettling(state)
             return
         }
@@ -153,7 +154,7 @@ public class PixelListController(
 
         val deltaSeconds = deltaMs / 1000f
         val velocity = state.scrollVelocityPxPerSecond
-        if (kotlin.math.abs(velocity) < physics.minFlingVelocityPxPerSecond) {
+        if (abs(velocity) < physics.minFlingVelocityPxPerSecond) {
             stopSettling(state)
             return
         }
@@ -183,9 +184,9 @@ public class PixelListController(
             stopSettling(state)
             return
         }
-        if (kotlin.math.abs(state.scrollVelocityPxPerSecond) < physics.minFlingVelocityPxPerSecond ||
-            kotlin.math.abs(state.scrollOffsetPx) <= physics.snapEpsilonPx ||
-            kotlin.math.abs(state.scrollOffsetPx - state.maxScrollOffsetPx) <= physics.snapEpsilonPx
+        if (abs(state.scrollVelocityPxPerSecond) < physics.minFlingVelocityPxPerSecond ||
+            abs(state.scrollOffsetPx) <= physics.snapEpsilonPx ||
+            abs(state.scrollOffsetPx - state.maxScrollOffsetPx) <= physics.snapEpsilonPx
         ) {
             stopSettling(state)
         }
