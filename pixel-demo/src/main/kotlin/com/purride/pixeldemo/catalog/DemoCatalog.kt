@@ -24,6 +24,9 @@ import com.purride.pixeldemo.showcase.scroll.PagerHorizontalScene
 import com.purride.pixeldemo.showcase.scroll.PagerVerticalScene
 import com.purride.pixeldemo.showcase.scroll.ScrollControllerCommandsScene
 import com.purride.pixeldemo.showcase.scroll.SingleChildScrollScene
+import com.purride.pixeldemo.showcase.integration.ConfigChangePreserveScene
+import com.purride.pixeldemo.showcase.integration.EmptyLoadingErrorScene
+import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
 import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
 import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
@@ -82,6 +85,14 @@ object DemoCatalog {
                 CustomPagerPolicyScene,
                 CustomRasterizerScene,
                 PerfOverlayScene,
+            ),
+        ),
+        DemoSection(
+            title = "Integration",
+            scenes = listOf(
+                HostHotSwapScene,
+                ConfigChangePreserveScene,
+                EmptyLoadingErrorScene,
             ),
         ),
     )
