@@ -88,12 +88,13 @@ class HelloPixelActivity : AppCompatActivity() {
 
 | 文档 | 适合你想…… |
 |---|---|
-| [GETTING_STARTED.md](GETTING_STARTED.md) | 跟着教程把 SDK 接入到一个真实 Activity，覆盖按钮 / 文字 / 列表 / 主题 |
-| [WIDGETS.md](WIDGETS.md) | 查 SDK 全部内置 widget 目录与签名 |
-| [THEME.md](THEME.md) | 学怎么用 token + 主题做全局换肤 / 单点覆盖 |
-| [STATE.md](STATE.md) | 学怎么管理列表滚动 / 翻页 / 输入框等状态 |
-| [EXTENDING.md](EXTENDING.md) | 自己写 `RenderObject` / 手势策略 / 字体栅格器 / 帧调度 |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 了解内部三层模型与渲染管线（可选）|
+| [快速入门](docs/快速入门.md) | 跟着教程把 SDK 接入到一个真实 Activity，覆盖按钮 / 文字 / 列表 / 主题 |
+| [组件目录](docs/组件目录.md) | 查 SDK 全部内置 widget 目录与签名 |
+| [主题系统](docs/主题系统.md) | 学怎么用 token + 主题做全局换肤 / 单点覆盖 |
+| [状态管理](docs/状态管理.md) | 学怎么管理列表滚动 / 翻页 / 输入框等状态 |
+| [扩展开发](docs/扩展开发.md) | 自己写 `RenderObject` / 手势策略 / 字体栅格器 / 帧调度 |
+| [架构说明](docs/架构说明.md) | 了解内部三层模型与渲染管线（可选）|
+| [接手任务清单](docs/接手任务清单.md) | 维护者接手后的迭代任务与优先级 |
 
 ---
 
