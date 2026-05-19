@@ -19,6 +19,7 @@ enum class DemoSceneKind(
     SCROLL_STRESS("滚动压力"),
     FORM_AND_LIST("表单与列表组合"),
     PAGER_AND_LIST("分页与列表组合"),
+    GESTURE_STRESS("嵌套手势压力"),
     TEXT_INPUT_MULTILINE("多行输入"),
     RICH_TEXT("富文本"),
     THEME_STATES("主题状态"),

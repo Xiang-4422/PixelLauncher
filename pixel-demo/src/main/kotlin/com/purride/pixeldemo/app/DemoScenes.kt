@@ -156,6 +156,7 @@ object DemoScenes {
             DemoSceneKind.SCROLL_STRESS -> scrollStressScene(textRasterizers)
             DemoSceneKind.FORM_AND_LIST -> formAndListScene(textRasterizers)
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
+            DemoSceneKind.GESTURE_STRESS -> gestureStressScene(textRasterizers)
             DemoSceneKind.TEXT_INPUT_MULTILINE -> textInputMultilineScene(textRasterizers)
             DemoSceneKind.RICH_TEXT -> richTextScene(textRasterizers)
             DemoSceneKind.THEME_STATES -> themeStatesScene(textRasterizers)
@@ -1923,6 +1924,84 @@ object DemoScenes {
                             )
                         }
                     },
+                )
+            },
+        )
+    }
+
+    private fun gestureStressScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val pagerController = PageController()
+        val pagerState = pagerController.create(pageCount = 2, axis = Axis.VERTICAL)
+        val listController = ScrollController()
+        val listState = listController.create()
+        val inputController = TextEditingController()
+        val inputState = inputController.create(initialText = "TYPE")
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.MONO_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                PageView(
+                    axis = Axis.VERTICAL,
+                    state = pagerState,
+                    controller = pagerController,
+                    pages = listOf(
+                        pagerPage(
+                            title = "GESTURE PAGE",
+                            tone = PixelTone.ACCENT,
+                            onPrimaryAction = { pagerController.nextPage(pagerState) },
+                            primaryActionLabel = "OPEN STRESS",
+                        ),
+                        Container(
+                            padding = EdgeInsets.all(4),
+                            child = Column(
+                                spacing = 4,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    Text("LIST + INPUT", style = TextStyle.Accent),
+                                    SizedBox(
+                                        height = 16,
+                                        child = TextField(
+                                            state = inputState,
+                                            controller = inputController,
+                                            placeholder = "FOCUS",
+                                            maxLines = 1,
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 60,
+                                        child = ListViewBuilder(
+                                            itemCount = 40,
+                                            state = listState,
+                                            controller = listController,
+                                            itemExtent = 12,
+                                            spacing = 2,
+                                            cacheExtent = 2,
+                                            itemBuilder = { index ->
+                                                SizedBox(
+                                                    height = 12,
+                                                    child = OutlinedButton(
+                                                        text = "ROW ${index + 1}",
+                                                        onPressed = {
+                                                            inputController.updateText(inputState, "ROW ${index + 1}")
+                                                        },
+                                                        style = if (index % 3 == 0) ButtonStyle.Accent else ButtonStyle.Default,
+                                                    ),
+                                                )
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
                 )
             },
         )
