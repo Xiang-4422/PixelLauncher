@@ -152,6 +152,7 @@ object DemoScenes {
             DemoSceneKind.VERTICAL_PAGER -> verticalPagerScene(textRasterizers)
             DemoSceneKind.LIST -> listScene(textRasterizers)
             DemoSceneKind.VIRTUAL_LIST -> virtualListScene(textRasterizers)
+            DemoSceneKind.VARIABLE_HEIGHT_LIST -> variableHeightListScene(textRasterizers)
             DemoSceneKind.SCROLL_STRESS -> scrollStressScene(textRasterizers)
             DemoSceneKind.FORM_AND_LIST -> formAndListScene(textRasterizers)
             DemoSceneKind.PAGER_AND_LIST -> pagerAndListScene(textRasterizers)
@@ -1076,6 +1077,95 @@ object DemoScenes {
                                                         text = label,
                                                         onPressed = { selected.value = label },
                                                         selected = current == label,
+                                                    ),
+                                                )
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        )
+                    }
+                }
+            },
+        )
+    }
+
+    private fun variableHeightListScene(
+        textRasterizers: DemoTextRasterizers,
+    ): DemoScene {
+        val controller = ScrollController()
+        val state = controller.create()
+        val selected = ValueNotifier("NONE")
+        val itemCount = 1_000
+
+        return DemoScene(
+            initialProfile = ScreenProfile(
+                logicalWidth = 84,
+                logicalHeight = 112,
+                dotSizePx = 8,
+            ),
+            initialPalette = PixelPalette.fromTheme(PixelTheme.ICE_LCD),
+            initialTextRasterizer = textRasterizers.default,
+            content = {
+                ListenableBuilder(controller) {
+                    ValueListenableBuilder(selected) { _, current ->
+                        Container(
+                            padding = EdgeInsets.all(4),
+                            child = Column(
+                                spacing = 4,
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                children = listOf(
+                                    sectionTitle("VARIABLE LIST"),
+                                    infoCard("OFFSET", state.scrollOffsetPx.toInt().toString(), accent = state.isSettling),
+                                    infoCard("SELECTED", current),
+                                    SizedBox(
+                                        height = 14,
+                                        child = Row(
+                                            spacing = 2,
+                                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                            children = listOf(
+                                                Expanded(
+                                                    child = OutlinedButton(
+                                                        text = "TOP",
+                                                        onPressed = { controller.jumpToStart(state) },
+                                                    ),
+                                                ),
+                                                Expanded(
+                                                    child = OutlinedButton(
+                                                        text = "750",
+                                                        onPressed = { controller.showItem(state, 749) },
+                                                        style = ButtonStyle.Accent,
+                                                    ),
+                                                ),
+                                                Expanded(
+                                                    child = OutlinedButton(
+                                                        text = "END",
+                                                        onPressed = { controller.jumpToEnd(state) },
+                                                    ),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                    SizedBox(
+                                        height = 52,
+                                        child = ListViewBuilder(
+                                            itemCount = itemCount,
+                                            state = state,
+                                            controller = controller,
+                                            estimatedItemExtent = 12,
+                                            cacheExtent = 2,
+                                            spacing = 2,
+                                            itemBuilder = { index ->
+                                                val tall = index % 5 == 0
+                                                val label = if (tall) "TALL ${index + 1}" else "ROW ${index + 1}"
+                                                SizedBox(
+                                                    height = if (tall) 18 else 10,
+                                                    child = OutlinedButton(
+                                                        text = label,
+                                                        onPressed = { selected.value = label },
+                                                        selected = current == label,
+                                                        style = if (tall) ButtonStyle.Accent else ButtonStyle.Default,
                                                     ),
                                                 )
                                             },
