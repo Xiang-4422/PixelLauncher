@@ -17,7 +17,7 @@
 
 | 文档 | 用途 |
 |---|---|
-| [接手任务清单](接手任务清单.md) | 当前迭代任务、优先级、历史决策和接手建议 |
+| [演进路线](演进路线.md) | SDK 演进方向、当前迭代任务、优先级、历史决策和接手建议 |
 
 ## 设计文档
 
@@ -26,3 +26,4 @@
 | [变高列表虚拟化](设计/变高列表虚拟化.md) | `ListViewBuilder(estimatedItemExtent)` 的兼容 lazy 设计 |
 | [文本系统 v2](设计/文本系统-v2.md) | internal paragraph model、文本测量和 ellipsis 统一设计 |
 | [滚动手势 v2](设计/滚动手势-v2.md) | nested scroll session、handoff 和 scroll physics 语义设计 |
+| [动画方向](动画方向.md) | 像素动画的取向、明确不做的能力、分层路线和开放问题 |
