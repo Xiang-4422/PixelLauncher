@@ -6,6 +6,7 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
+import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -21,7 +22,13 @@ fun DemoScaffold(
             child = Column(
                 children = listOf(
                     Text(title, style = TextStyle.Accent),
-                    Text(description, style = TextStyle.Default, softWrap = true),
+                    Text(
+                        description,
+                        style = TextStyle.Default,
+                        softWrap = false,
+                        maxLines = 1,
+                        overflow = PixelTextOverflow.ELLIPSIS,
+                    ),
                 ),
                 spacing = 1,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
