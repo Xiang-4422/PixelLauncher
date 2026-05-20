@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelTone
 
 /**
@@ -198,21 +199,29 @@ public data class PixelThemeData(
     val pressedContainerStyle: PixelContainerStyle = PixelContainerStyle.Default,
     val tokens: PixelThemeTokens = PixelThemeTokens.Default,
 ) {
-    internal fun resolveTextStyle(): PixelTextStyle {
-        return textStyle.resolveTokenDefault(
+    public fun resolveTextStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelTextStyle {
+        val base = textStyle.resolveTokenDefault(
             PixelTextStyle(tone = tokens.textTone),
             PixelTextStyle.Default,
         )
+        if (colorMode == PixelColorMode.Mono) return base
+        val color = base.color ?: tokens.textColor
+            ?: error("PixelThemeTokens.textColor must be set in Color mode")
+        return base.copy(color = color)
     }
 
-    internal fun resolveAccentTextStyle(): PixelTextStyle {
-        return accentTextStyle.resolveTokenDefault(
+    public fun resolveAccentTextStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelTextStyle {
+        val base = accentTextStyle.resolveTokenDefault(
             PixelTextStyle(tone = tokens.accentTone),
             PixelTextStyle.Accent,
         )
+        if (colorMode == PixelColorMode.Mono) return base
+        val color = base.color ?: tokens.accentColor
+            ?: error("PixelThemeTokens.accentColor must be set in Color mode")
+        return base.copy(color = color)
     }
 
-    internal fun resolveButtonStyle(): PixelButtonStyle {
+    public fun resolveButtonStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelButtonStyle {
         return buttonStyle.resolveTokenDefault(
             PixelButtonStyle(
                 fillTone = tokens.surfaceTone,
@@ -223,7 +232,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveAccentButtonStyle(): PixelButtonStyle {
+    public fun resolveAccentButtonStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelButtonStyle {
         return accentButtonStyle.resolveTokenDefault(
             PixelButtonStyle(
                 fillTone = tokens.surfaceTone,
@@ -234,7 +243,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveSelectedButtonStyle(): PixelButtonStyle {
+    public fun resolveSelectedButtonStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelButtonStyle {
         return selectedButtonStyle.resolveTokenDefault(
             PixelButtonStyle(
                 fillTone = tokens.surfaceTone,
@@ -245,7 +254,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolvePressedButtonStyle(): PixelButtonStyle {
+    public fun resolvePressedButtonStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelButtonStyle {
         return pressedButtonStyle.resolveTokenDefault(
             PixelButtonStyle(
                 fillTone = tokens.surfaceTone,
@@ -256,7 +265,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveDisabledButtonStyle(): PixelButtonStyle {
+    public fun resolveDisabledButtonStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelButtonStyle {
         return disabledButtonStyle.resolveTokenDefault(
             PixelButtonStyle(
                 fillTone = tokens.surfaceTone,
@@ -267,7 +276,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveTextFieldStyle(): PixelTextFieldStyle {
+    public fun resolveTextFieldStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelTextFieldStyle {
         return textFieldStyle.resolveTokenDefault(
             tokenTextFieldStyle(
                 borderTone = tokens.borderTone,
@@ -278,7 +287,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveReadOnlyTextFieldStyle(): PixelTextFieldStyle {
+    public fun resolveReadOnlyTextFieldStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelTextFieldStyle {
         return readOnlyTextFieldStyle.resolveTokenDefault(
             tokenTextFieldStyle(
                 borderTone = tokens.borderTone,
@@ -290,7 +299,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveDisabledTextFieldStyle(): PixelTextFieldStyle {
+    public fun resolveDisabledTextFieldStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelTextFieldStyle {
         return disabledTextFieldStyle.resolveTokenDefault(
             tokenTextFieldStyle(
                 borderTone = tokens.disabledBorderTone,
@@ -307,7 +316,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveContainerStyle(): PixelContainerStyle {
+    public fun resolveContainerStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelContainerStyle {
         return containerStyle.resolveTokenDefault(
             PixelContainerStyle(
                 fillTone = tokens.surfaceTone,
@@ -318,7 +327,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveAccentContainerStyle(): PixelContainerStyle {
+    public fun resolveAccentContainerStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelContainerStyle {
         return accentContainerStyle.resolveTokenDefault(
             PixelContainerStyle(
                 fillTone = tokens.surfaceTone,
@@ -333,7 +342,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolveSelectedContainerStyle(): PixelContainerStyle {
+    public fun resolveSelectedContainerStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelContainerStyle {
         return selectedContainerStyle.resolveTokenDefault(
             PixelContainerStyle(
                 fillTone = tokens.surfaceTone,
@@ -344,7 +353,7 @@ public data class PixelThemeData(
         )
     }
 
-    internal fun resolvePressedContainerStyle(): PixelContainerStyle {
+    public fun resolvePressedContainerStyle(colorMode: PixelColorMode = PixelColorMode.Mono): PixelContainerStyle {
         return pressedContainerStyle.resolveTokenDefault(
             PixelContainerStyle(
                 fillTone = tokens.surfaceTone,

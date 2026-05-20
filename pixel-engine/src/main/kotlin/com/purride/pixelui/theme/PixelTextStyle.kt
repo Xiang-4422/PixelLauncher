@@ -1,5 +1,6 @@
 package com.purride.pixelui
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.PixelTone
 
@@ -16,6 +17,7 @@ public data class PixelTextStyle(
     val letterSpacing: Int = 0,
     val lineHeight: Int? = null,
     val fontScale: Int = 1,
+    val color: PixelColor? = null,
 ) {
     public companion object {
         public val Default: PixelTextStyle = PixelTextStyle()
