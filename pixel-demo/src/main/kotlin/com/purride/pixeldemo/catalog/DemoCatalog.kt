@@ -11,6 +11,11 @@ import com.purride.pixeldemo.showcase.extension.CustomScrollPhysicsScene
 import com.purride.pixeldemo.showcase.extension.ManualFrameStepperScene
 import com.purride.pixeldemo.showcase.extension.NestedScrollPolicyScene
 import com.purride.pixeldemo.showcase.stress.StressAnimationFloodScene
+import com.purride.pixeldemo.showcase.templates.TplCalculatorScene
+import com.purride.pixeldemo.showcase.templates.TplChatScene
+import com.purride.pixeldemo.showcase.templates.TplFileBrowserScene
+import com.purride.pixeldemo.showcase.templates.TplPlayerHudScene
+import com.purride.pixeldemo.showcase.templates.TplSettingsScene
 import com.purride.pixeldemo.showcase.stress.StressDeepTreeScene
 import com.purride.pixeldemo.showcase.stress.StressGestureStormScene
 import com.purride.pixeldemo.showcase.stress.StressListScaleScene
@@ -114,6 +119,16 @@ object DemoCatalog {
                 ManualFrameStepperScene,
                 CustomScrollPhysicsScene,
                 NestedScrollPolicyScene,
+            ),
+        ),
+        DemoSection(
+            title = "Templates",
+            scenes = listOf(
+                TplSettingsScene,
+                TplCalculatorScene,
+                TplFileBrowserScene,
+                TplChatScene,
+                TplPlayerHudScene,
             ),
         ),
         DemoSection(
