@@ -1,11 +1,17 @@
 package com.purride.pixeldemo
 
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.purride.pixelui.PixelHapticType
+import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
+import com.purride.pixelui.PixelSystemAction
+import com.purride.pixelui.PixelTextInputRequest
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixeldemo.app.DemoTextRasterizers
 import com.purride.pixeldemo.catalog.DemoCatalog
@@ -40,6 +46,34 @@ class DemoActivity : AppCompatActivity() {
             ),
         )
         hostView = setup.hostView
+        val originalBridge = hostView.hostBridge
+        hostView.hostBridge = object : PixelHostBridge {
+            override fun showTextInput(request: PixelTextInputRequest) {
+                originalBridge?.showTextInput(request)
+            }
+            override fun hideTextInput() {
+                originalBridge?.hideTextInput()
+            }
+            override fun performHapticFeedback(type: PixelHapticType) {
+                val constant = when (type) {
+                    PixelHapticType.TAP -> HapticFeedbackConstants.VIRTUAL_KEY
+                    PixelHapticType.LONG_PRESS -> HapticFeedbackConstants.LONG_PRESS
+                }
+                hostView.performHapticFeedback(constant)
+                originalBridge?.performHapticFeedback(type)
+            }
+            override fun requestFrame() {
+                originalBridge?.requestFrame()
+            }
+            override fun dispatchSystemAction(action: PixelSystemAction) {
+                val payload = action.payload?.let { " payload=$it" }.orEmpty()
+                Toast.makeText(
+                    this@DemoActivity,
+                    "SystemAction: ${action.type}$payload",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
         nav = NavigatorImpl()
         val env = DemoEnv(
             hostView = hostView,

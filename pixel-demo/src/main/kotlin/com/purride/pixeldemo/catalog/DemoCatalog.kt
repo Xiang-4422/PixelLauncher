@@ -1,8 +1,15 @@
 package com.purride.pixeldemo.catalog
 
+import com.purride.pixeldemo.showcase.composition.MasterDetailScene
+import com.purride.pixeldemo.showcase.composition.ModalOverlayScene
+import com.purride.pixeldemo.showcase.composition.NestedPagerInListScene
+import com.purride.pixeldemo.showcase.composition.StickyBottomBarScene
 import com.purride.pixeldemo.showcase.extension.CustomPagerPolicyScene
 import com.purride.pixeldemo.showcase.extension.CustomRasterizerScene
 import com.purride.pixeldemo.showcase.extension.CustomRenderObjectScene
+import com.purride.pixeldemo.showcase.extension.CustomScrollPhysicsScene
+import com.purride.pixeldemo.showcase.extension.ManualFrameStepperScene
+import com.purride.pixeldemo.showcase.extension.NestedScrollPolicyScene
 import com.purride.pixeldemo.showcase.stress.StressAnimationFloodScene
 import com.purride.pixeldemo.showcase.stress.StressDeepTreeScene
 import com.purride.pixeldemo.showcase.stress.StressGestureStormScene
@@ -33,7 +40,9 @@ import com.purride.pixeldemo.showcase.scroll.ScrollControllerCommandsScene
 import com.purride.pixeldemo.showcase.scroll.SingleChildScrollScene
 import com.purride.pixeldemo.showcase.integration.ConfigChangePreserveScene
 import com.purride.pixeldemo.showcase.integration.EmptyLoadingErrorScene
+import com.purride.pixeldemo.showcase.integration.HapticFeedbackScene
 import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
+import com.purride.pixeldemo.showcase.integration.SystemActionDispatchScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
 import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
 import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
@@ -88,11 +97,23 @@ object DemoCatalog {
             ),
         ),
         DemoSection(
+            title = "Composition",
+            scenes = listOf(
+                NestedPagerInListScene,
+                StickyBottomBarScene,
+                MasterDetailScene,
+                ModalOverlayScene,
+            ),
+        ),
+        DemoSection(
             title = "Extension",
             scenes = listOf(
                 CustomRenderObjectScene,
                 CustomPagerPolicyScene,
                 CustomRasterizerScene,
+                ManualFrameStepperScene,
+                CustomScrollPhysicsScene,
+                NestedScrollPolicyScene,
             ),
         ),
         DemoSection(
@@ -112,6 +133,8 @@ object DemoCatalog {
                 HostHotSwapScene,
                 ConfigChangePreserveScene,
                 EmptyLoadingErrorScene,
+                HapticFeedbackScene,
+                SystemActionDispatchScene,
             ),
         ),
     )
