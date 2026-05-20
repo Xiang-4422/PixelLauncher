@@ -27,3 +27,4 @@
 | [文本系统 v2](设计/文本系统-v2.md) | internal paragraph model、文本测量和 ellipsis 统一设计 |
 | [滚动手势 v2](设计/滚动手势-v2.md) | nested scroll session、handoff 和 scroll physics 语义设计 |
 | [动画方向](动画方向.md) | 像素动画的取向、明确不做的能力、分层路线和开放问题 |
+| [色彩演进](色彩演进.md) | 彩色模式 / 单色模式并存的设计方向、API 影响和落地分层 |
