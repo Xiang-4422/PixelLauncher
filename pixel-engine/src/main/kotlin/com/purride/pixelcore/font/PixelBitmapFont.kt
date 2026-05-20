@@ -54,7 +54,7 @@ public class PixelBitmapFont(
     }
 
     override fun drawText(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         text: String,
         x: Int,
         y: Int,

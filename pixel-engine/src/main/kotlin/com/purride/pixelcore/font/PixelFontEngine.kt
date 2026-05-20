@@ -256,7 +256,7 @@ public class PixelFontEngine(
     }
 
     public fun drawText(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         text: String,
         startX: Int,
         startY: Int,
@@ -348,7 +348,7 @@ public class PixelFontEngine(
     }
 
     private fun drawGlyph(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         glyph: GlyphBitmap,
         startX: Int,
         startY: Int,
@@ -357,7 +357,7 @@ public class PixelFontEngine(
         for (y in 0 until glyph.height) {
             for (x in 0 until glyph.width) {
                 if (glyph.pixels[(y * glyph.width) + x].toInt() == 1) {
-                    buffer.setPixel(startX + x, startY + y, value)
+                    buffer.setPixelByte(startX + x, startY + y, value)
                 }
             }
         }

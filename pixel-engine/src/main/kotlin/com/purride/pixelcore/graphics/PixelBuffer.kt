@@ -1,129 +1,26 @@
 package com.purride.pixelcore
 
-import kotlin.math.max
-import kotlin.math.min
-
 /**
- * 像素帧缓冲。
+ * 像素帧缓冲——sealed interface。
  *
- * 第一版依然采用最简单的单通道字节缓冲，每个逻辑像素只保存一个离散色阶值。
- * 这样既能保持内核层简单，也足够支撑当前 demo 的文字、表面、按钮和分页过渡。
+ * Phase A 将原来的 class 拆为双实现：
+ * - [MonoPixelBuffer]：单通道 ByteArray，每像素一个 [PixelTone] 离散值（原有路径）。
+ * - [ColorPixelBuffer]：四通道 IntArray，每像素 ARGB 32-bit（Phase A.3 新增）。
+ *
+ * 接口只暴露两种实现共用的最小协议，像素级读写由各自子类提供类型安全的 API。
  */
-public class PixelBuffer(
-    public val width: Int,
-    public val height: Int,
-    public val pixels: ByteArray = ByteArray(width * height),
-) {
+public sealed interface PixelBuffer {
+    public val width: Int
+    public val height: Int
 
-    public fun clear(value: Byte = PixelTone.OFF.value) {
-        pixels.fill(value)
-    }
+    public fun clear()
 
-    public fun setPixel(x: Int, y: Int, value: Byte = PixelTone.ON.value) {
-        if (x !in 0 until width || y !in 0 until height) {
-            return
-        }
-        pixels[(y * width) + x] = value
-    }
-
-    public fun getPixel(x: Int, y: Int): Byte {
-        if (x !in 0 until width || y !in 0 until height) {
-            return PixelTone.OFF.value
-        }
-        return pixels[(y * width) + x]
-    }
-
-    public fun fillRect(
-        left: Int,
-        top: Int,
-        rectWidth: Int,
-        rectHeight: Int,
-        value: Byte,
-    ) {
-        val startX = left.coerceIn(0, width)
-        val startY = top.coerceIn(0, height)
-        val endX = (left + rectWidth).coerceIn(startX, width)
-        val endY = (top + rectHeight).coerceIn(startY, height)
-        for (y in startY until endY) {
-            for (x in startX until endX) {
-                setPixel(x, y, value)
-            }
-        }
-    }
-
-    public fun drawRect(
-        left: Int,
-        top: Int,
-        rectWidth: Int,
-        rectHeight: Int,
-        value: Byte,
-    ) {
-        if (rectWidth <= 0 || rectHeight <= 0) {
-            return
-        }
-        val right = left + rectWidth - 1
-        val bottom = top + rectHeight - 1
-        for (x in left..right) {
-            setPixel(x, top, value)
-            setPixel(x, bottom, value)
-        }
-        for (y in top..bottom) {
-            setPixel(left, y, value)
-            setPixel(right, y, value)
-        }
-    }
-
-    public fun blit(
-        source: PixelBuffer,
-        destX: Int,
-        destY: Int,
-        sourceX: Int = 0,
-        sourceY: Int = 0,
-        copyWidth: Int = source.width,
-        copyHeight: Int = source.height,
-    ) {
-        val safeSourceX = sourceX.coerceIn(0, source.width)
-        val safeSourceY = sourceY.coerceIn(0, source.height)
-        val safeCopyWidth = min(copyWidth, source.width - safeSourceX)
-        val safeCopyHeight = min(copyHeight, source.height - safeSourceY)
-        if (safeCopyWidth <= 0 || safeCopyHeight <= 0) {
-            return
-        }
-
-        val destinationStartX = max(0, destX)
-        val destinationStartY = max(0, destY)
-        val sourceStartX = safeSourceX + max(0, -destX)
-        val sourceStartY = safeSourceY + max(0, -destY)
-        val destinationEndX = min(width, destX + safeCopyWidth)
-        val destinationEndY = min(height, destY + safeCopyHeight)
-        val actualWidth = destinationEndX - destinationStartX
-        val actualHeight = destinationEndY - destinationStartY
-        if (actualWidth <= 0 || actualHeight <= 0) {
-            return
-        }
-
-        val sourceStride = source.width
-        val destinationStride = width
-        for (row in 0 until actualHeight) {
-            val sourceOffset = (sourceStartY + row) * sourceStride + sourceStartX
-            val destinationOffset = (destinationStartY + row) * destinationStride + destinationStartX
-            System.arraycopy(
-                source.pixels,
-                sourceOffset,
-                pixels,
-                destinationOffset,
-                actualWidth,
-            )
-        }
-    }
-
-    public fun copy(): PixelBuffer {
-        return PixelBuffer(
-            width = width,
-            height = height,
-            pixels = pixels.copyOf(),
-        )
-    }
+    /**
+     * 把 [source] buffer 的内容复制到当前 buffer 的 ([destX], [destY]) 位置。
+     *
+     * 跨类型 blit（Mono → Color 或反向）会抛 [UnsupportedOperationException]。
+     */
+    public fun blit(source: PixelBuffer, destX: Int, destY: Int)
 }
 
 /**

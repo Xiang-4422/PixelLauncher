@@ -1,6 +1,6 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelTextStyle
@@ -8,7 +8,7 @@ import com.purride.pixelui.PixelTextStyle
 internal object PixelParagraphPainter {
 
     fun drawRun(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         run: PixelParagraphRun,
         defaultTextRasterizer: PixelTextRasterizer,
         x: Int,
@@ -31,7 +31,7 @@ internal object PixelParagraphPainter {
             val glyphText = character.toString()
             val glyphWidth = rasterizer.measureText(glyphText).coerceAtLeast(1)
             val glyphHeight = rasterizer.measureHeight(glyphText.ifEmpty { " " }).coerceAtLeast(1)
-            val scratch = PixelBuffer(width = glyphWidth, height = glyphHeight)
+            val scratch = MonoPixelBuffer(width = glyphWidth, height = glyphHeight)
             rasterizer.drawText(
                 buffer = scratch,
                 text = glyphText,
@@ -56,24 +56,22 @@ internal object PixelParagraphPainter {
     }
 
     private fun blitScaledGlyph(
-        source: PixelBuffer,
-        destination: PixelBuffer,
+        source: MonoPixelBuffer,
+        destination: MonoPixelBuffer,
         destX: Int,
         destY: Int,
         scale: Int,
     ) {
         for (row in 0 until source.height) {
             for (column in 0 until source.width) {
-                val value = source.getPixel(column, row)
-                if (value == PixelTone.OFF.value) {
-                    continue
-                }
+                val tone = source.getPixel(column, row)
+                if (tone == PixelTone.OFF) continue
                 repeat(scale) { scaleY ->
                     repeat(scale) { scaleX ->
                         destination.setPixel(
                             x = destX + column * scale + scaleX,
                             y = destY + row * scale + scaleY,
-                            value = value,
+                            tone = tone,
                         )
                     }
                 }

@@ -16,7 +16,7 @@ internal object PixelRenderSessionFactory {
         bufferPool: PixelBufferPool,
     ): PixelRenderSession {
         return PixelRenderSession(
-            buffer = bufferPool.acquire(width = width, height = height),
+            buffer = bufferPool.acquireMono(width = width, height = height),
         )
     }
 }

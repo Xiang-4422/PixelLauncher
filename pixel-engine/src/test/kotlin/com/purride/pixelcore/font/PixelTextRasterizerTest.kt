@@ -40,7 +40,7 @@ class PixelTextRasterizerTest {
             style = style,
             lineSpacing = 2,
         )
-        val buffer = PixelBuffer(width = 20, height = 20)
+        val buffer = MonoPixelBuffer(width = 20, height = 20)
 
         rasterizer.drawText(
             buffer = buffer,
@@ -49,7 +49,7 @@ class PixelTextRasterizerTest {
             y = 0,
         )
 
-        assertTrue((0 until style.cellHeight).all { y -> buffer.getPixel(0, y) != PixelTone.OFF.value })
+        assertTrue((0 until style.cellHeight).all { y -> buffer.getPixel(0, y) != PixelTone.OFF })
     }
 
     private class FillGlyphProvider : GlyphProvider {

@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
@@ -74,7 +75,7 @@ internal class RenderSingleChildScrollViewport(
                 offsetX = 0,
                 offsetY = 0,
             )
-            context.buffer.blit(
+            (context.buffer as MonoPixelBuffer).blit(
                 source = scratch,
                 destX = offsetX,
                 destY = offsetY,
@@ -296,7 +297,7 @@ internal class RenderListViewport(
                     offsetY = childOffsets[index] - state.scrollOffsetPx.toInt(),
                 )
             }
-            context.buffer.blit(
+            (context.buffer as MonoPixelBuffer).blit(
                 source = scratch,
                 destX = offsetX,
                 destY = offsetY,
@@ -557,7 +558,7 @@ internal class RenderLazyListViewport(
                     offsetY = itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 )
             }
-            context.buffer.blit(
+            (context.buffer as MonoPixelBuffer).blit(
                 source = scratch,
                 destX = offsetX,
                 destY = offsetY,
@@ -801,7 +802,7 @@ internal class RenderVariableLazyListViewport(
                     ) - state.scrollOffsetPx.toInt(),
                 )
             }
-            context.buffer.blit(
+            (context.buffer as MonoPixelBuffer).blit(
                 source = scratch,
                 destX = offsetX,
                 destY = offsetY,
@@ -1058,7 +1059,7 @@ internal class RenderLazySeparatedListViewport(
                     ) - state.scrollOffsetPx.toInt(),
                 )
             }
-            context.buffer.blit(
+            (context.buffer as MonoPixelBuffer).blit(
                 source = scratch,
                 destX = offsetX,
                 destY = offsetY,

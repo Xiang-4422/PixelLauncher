@@ -11,6 +11,8 @@ import android.view.View
 import android.view.ViewConfiguration
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
+import com.purride.pixelcore.ColorPixelBuffer
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelFrameView
 import com.purride.pixelcore.PixelGridGeometryResolver
@@ -723,6 +725,13 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     private fun drawBuffer(canvas: Canvas, buffer: PixelBuffer) {
+        when (buffer) {
+            is MonoPixelBuffer -> drawMonoBuffer(canvas, buffer)
+            is ColorPixelBuffer -> TODO("Color buffer rendering not yet implemented (Phase D)")
+        }
+    }
+
+    private fun drawMonoBuffer(canvas: Canvas, buffer: MonoPixelBuffer) {
         canvas.drawColor(palette.backgroundColor)
         val geometry = PixelGridGeometryResolver.resolve(
             viewWidth = width,
@@ -742,9 +751,9 @@ public class PixelHostView @JvmOverloads constructor(
                 val right = left + geometry.dotSize
                 val bottom = top + geometry.dotSize
                 val paint = when (buffer.getPixel(x, y)) {
-                    PixelTone.ON.value -> onPaint
-                    PixelTone.ACCENT.value -> accentPaint
-                    else -> offPaint
+                    PixelTone.ON -> onPaint
+                    PixelTone.ACCENT -> accentPaint
+                    PixelTone.OFF -> offPaint
                 }
 
                 when (screenProfile.pixelShape) {

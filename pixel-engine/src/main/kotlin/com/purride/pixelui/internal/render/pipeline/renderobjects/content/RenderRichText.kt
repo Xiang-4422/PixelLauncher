@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
@@ -77,6 +78,7 @@ internal class RenderRichText(
         offsetX: Int,
         offsetY: Int,
     ) {
+        val monoBuffer = context.buffer as MonoPixelBuffer
         var cursorY = offsetY
         val contentWidth = size.width
         val contentHeight = size.height
@@ -96,7 +98,7 @@ internal class RenderRichText(
                 }
                 if (run.style.letterSpacing > 0 || run.style.fontScale > 1 || run.style.lineHeight != null) {
                     PixelParagraphPainter.drawRun(
-                        buffer = context.buffer,
+                        buffer = monoBuffer,
                         run = run,
                         defaultTextRasterizer = defaultTextRasterizer,
                         x = cursorX,
@@ -107,7 +109,7 @@ internal class RenderRichText(
                     run.text.forEach { character ->
                         val text = character.toString()
                         rasterizer.drawText(
-                            buffer = context.buffer,
+                            buffer = monoBuffer,
                             text = text,
                             x = cursorX,
                             y = cursorY,

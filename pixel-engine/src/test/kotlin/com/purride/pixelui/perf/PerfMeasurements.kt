@@ -1,6 +1,6 @@
 package com.purride.pixelui.perf
 
-import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.RichText
@@ -126,13 +126,13 @@ internal object PerfMeasurements {
     }
 
     private fun measureBlitNanos(iterations: Int): Long {
-        val source = PixelBuffer(width = 32, height = 32)
+        val source = MonoPixelBuffer(width = 32, height = 32)
         for (y in 0 until source.height) {
             for (x in 0 until source.width) {
-                source.setPixel(x, y, PixelTone.ON.value)
+                source.setPixel(x, y, PixelTone.ON)
             }
         }
-        val dest = PixelBuffer(width = 64, height = 64)
+        val dest = MonoPixelBuffer(width = 64, height = 64)
         val start = System.nanoTime()
         repeat(iterations) {
             dest.blit(source = source, destX = 0, destY = 0)

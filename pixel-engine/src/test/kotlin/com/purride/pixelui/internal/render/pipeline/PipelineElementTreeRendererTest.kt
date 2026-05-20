@@ -1,7 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
@@ -73,7 +73,7 @@ class PipelineElementTreeRendererTest {
                 maxHeight = 7,
             ),
         )
-        val buffer = PixelBuffer(width = 12, height = 7).also { it.clear() }
+        val buffer = MonoPixelBuffer(width = 12, height = 7).also { it.clear() }
         renderText.paint(
             context = PaintContext(buffer = buffer),
             offsetX = 0,
@@ -121,7 +121,7 @@ class PipelineElementTreeRendererTest {
                 maxHeight = 8,
             ),
         )
-        val buffer = PixelBuffer(width = 12, height = 8).also { it.clear() }
+        val buffer = MonoPixelBuffer(width = 12, height = 8).also { it.clear() }
         renderSurface.paint(
             context = PaintContext(buffer = buffer),
             offsetX = 0,
@@ -136,10 +136,10 @@ class PipelineElementTreeRendererTest {
 
         val textPixels = collectPixelsWithTone(
             buffer = buffer,
-            tone = PixelTone.ON.value,
+            tone = PixelTone.ON,
         )
-        assertEquals(PixelTone.ACCENT.value, buffer.getPixel(0, 0))
-        assertEquals(PixelTone.OFF.value, buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT, buffer.getPixel(0, 0))
+        assertEquals(PixelTone.OFF, buffer.getPixel(1, 1))
         assertTrue(textPixels.isNotEmpty())
         assertTrue(textPixels.minOf { it.first } >= 2)
         assertEquals(1, clickTargets.size)
@@ -182,8 +182,8 @@ class PipelineElementTreeRendererTest {
             logicalHeight = 8,
         )
 
-        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
-        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
+        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
         assertEquals(1, result.clickTargets.size)
     }
 
@@ -231,8 +231,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
-        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
+        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
     }
 
     /**
@@ -252,7 +252,7 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
     }
 
     /**
@@ -278,8 +278,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
-        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
+        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
     }
 
     /**
@@ -311,8 +311,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 1))
-        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
     }
 
     /**
@@ -362,7 +362,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 1))
         renderText.paint(
-            context = PaintContext(buffer = PixelBuffer(width = 4, height = 1)),
+            context = PaintContext(buffer = MonoPixelBuffer(width = 4, height = 1)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -391,7 +391,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 1))
         renderText.paint(
-            context = PaintContext(buffer = PixelBuffer(width = 4, height = 1)),
+            context = PaintContext(buffer = MonoPixelBuffer(width = 4, height = 1)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -420,7 +420,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 3, maxHeight = 3))
         renderText.paint(
-            context = PaintContext(buffer = PixelBuffer(width = 3, height = 3)),
+            context = PaintContext(buffer = MonoPixelBuffer(width = 3, height = 3)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -449,7 +449,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 2))
         renderText.paint(
-            context = PaintContext(buffer = PixelBuffer(width = 4, height = 2)),
+            context = PaintContext(buffer = MonoPixelBuffer(width = 4, height = 2)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -606,9 +606,9 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 3))
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 10))
-        assertEquals(PixelTone.ON.value, result.buffer.getPixel(27, 10))
+        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(1, 3))
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 10))
+        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(27, 10))
     }
 
     /**
@@ -644,8 +644,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ON.value, result.buffer.getPixel(14, 7))
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(15, 8))
+        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(14, 7))
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(15, 8))
         assertEquals(1, result.clickTargets.size)
         assertEquals(14, result.clickTargets.single().bounds.left)
         assertEquals(7, result.clickTargets.single().bounds.top)
@@ -956,8 +956,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ON.value, result.buffer.getPixel(0, 0))
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(1, 0))
+        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(1, 0))
     }
 
     /**
@@ -994,8 +994,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         assertEquals(listOf("A", "."), rasterizer.drawnTexts.distinct())
-        assertEquals(PixelTone.ON.value, result?.buffer?.getPixel(0, 0))
-        assertEquals(PixelTone.ACCENT.value, result?.buffer?.getPixel(1, 0))
+        assertEquals(PixelTone.ON, (result?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT, (result?.buffer as? MonoPixelBuffer)?.getPixel(1, 0))
     }
 
     /**
@@ -1068,8 +1068,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 0))
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(0, 4))
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 4))
     }
 
     /**
@@ -1101,8 +1101,8 @@ class PipelineElementTreeRendererTest {
         )
 
         assertNotNull(result)
-        assertEquals(PixelTone.ON.value, result?.buffer?.getPixel(0, 0))
-        assertEquals(PixelTone.ON.value, result?.buffer?.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (result?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
+        assertEquals(PixelTone.ON, (result?.buffer as? MonoPixelBuffer)?.getPixel(1, 1))
     }
 
     /**
@@ -1136,7 +1136,7 @@ class PipelineElementTreeRendererTest {
         )
 
         assertNotNull(result)
-        assertEquals(PixelTone.ACCENT.value, result?.buffer?.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT, (result?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
     }
 
     /**
@@ -1227,8 +1227,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(disabledResult)
         assertNotNull(readOnlyResult)
-        assertEquals(PixelTone.ACCENT.value, disabledResult?.buffer?.getPixel(0, 0))
-        assertEquals(PixelTone.ON.value, readOnlyResult?.buffer?.getPixel(0, 0))
+        assertEquals(PixelTone.ACCENT, (disabledResult?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
+        assertEquals(PixelTone.ON, (readOnlyResult?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
     }
 
     /**
@@ -1384,7 +1384,7 @@ class PipelineElementTreeRendererTest {
         }
 
         override fun drawText(
-            buffer: PixelBuffer,
+            buffer: MonoPixelBuffer,
             text: String,
             x: Int,
             y: Int,
@@ -1392,9 +1392,10 @@ class PipelineElementTreeRendererTest {
         ) {
             lastDrawnText = text
             drawnTexts += text
+            val tone = PixelTone.entries.firstOrNull { it.value == value } ?: PixelTone.ON
             text.forEachIndexed { index, _ ->
                 if (x + index in 0 until buffer.width && y in 0 until buffer.height) {
-                    buffer.setPixel(x = x + index, y = y, value = value)
+                    buffer.setPixel(x = x + index, y = y, tone = tone)
                 }
             }
         }
@@ -1403,7 +1404,7 @@ class PipelineElementTreeRendererTest {
     /**
      * 收集 buffer 里所有非背景像素，方便断言布局和绘制结果。
      */
-    private fun collectActivePixels(buffer: PixelBuffer): List<Pair<Int, Int>> {
+    private fun collectActivePixels(buffer: MonoPixelBuffer): List<Pair<Int, Int>> {
         return collectPixelsWithTone(
             buffer = buffer,
             tone = null,
@@ -1414,8 +1415,8 @@ class PipelineElementTreeRendererTest {
      * 收集 buffer 里指定 tone 的像素；tone 为空时收集所有非背景像素。
      */
     private fun collectPixelsWithTone(
-        buffer: PixelBuffer,
-        tone: Byte?,
+        buffer: MonoPixelBuffer,
+        tone: PixelTone?,
     ): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until buffer.height) {
@@ -1424,7 +1425,7 @@ class PipelineElementTreeRendererTest {
                 val matched = if (tone != null) {
                     value == tone
                 } else {
-                    value != PixelTone.OFF.value
+                    value != PixelTone.OFF
                 }
                 if (matched) {
                     pixels += x to y

@@ -38,7 +38,7 @@ public object AxisBufferComposer {
             return primary
         }
 
-        val target = out ?: PixelBuffer(width = primary.width, height = primary.height)
+        val target = out ?: MonoPixelBuffer(width = primary.width, height = primary.height)
         target.clear()
 
         when (axis) {

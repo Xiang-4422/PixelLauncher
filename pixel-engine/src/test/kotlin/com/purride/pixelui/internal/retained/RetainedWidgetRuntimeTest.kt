@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Builder
@@ -50,7 +51,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
 
         tone.value = PixelTone.ACCENT
 
@@ -59,7 +60,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
     }
 
     @Test
@@ -72,7 +73,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
         first.clickTargets.single().onClick.invoke()
 
         val second = runtime.render(
@@ -80,7 +81,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
     }
 
     @Test
@@ -95,7 +96,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
 
         val second = runtime.render(
             root = ToneScope(
@@ -105,7 +106,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
     }
 
     @Test
@@ -133,7 +134,7 @@ class RetainedWidgetRuntimeTest {
             logicalHeight = 4,
         )
 
-        assertEquals(PixelTone.ACCENT.value, result.buffer.getPixel(5, 0))
+        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(5, 0))
     }
 
     @Test
@@ -163,7 +164,7 @@ class RetainedWidgetRuntimeTest {
             ),
             logicalWidth = 4,
             logicalHeight = 4,
-        ).buffer.getPixel(1, 1)
+        ).let { (it.buffer as MonoPixelBuffer).getPixel(1, 1) }
 
         val localThemePixel = runtime.render(
             root = HostRootWidget(
@@ -192,10 +193,10 @@ class RetainedWidgetRuntimeTest {
             ),
             logicalWidth = 4,
             logicalHeight = 4,
-        ).buffer.getPixel(1, 1)
+        ).let { (it.buffer as MonoPixelBuffer).getPixel(1, 1) }
 
-        assertEquals(PixelTone.ACCENT.value, hostThemePixel)
-        assertEquals(PixelTone.ON.value, localThemePixel)
+        assertEquals(PixelTone.ACCENT, hostThemePixel)
+        assertEquals(PixelTone.ON, localThemePixel)
     }
 
     @Test
@@ -212,7 +213,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
 
         count.value = 1
 
@@ -221,7 +222,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
     }
 
     @Test
@@ -244,7 +245,7 @@ class RetainedWidgetRuntimeTest {
             logicalHeight = 4,
         )
 
-        assertEquals(PixelTone.ON.value, result.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(1, 1))
     }
 
     @Test
@@ -273,7 +274,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ON.value, first.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
         first.clickTargets.single().onClick.invoke()
 
         val second = runtime.render(
@@ -281,7 +282,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ACCENT.value, second.buffer.getPixel(1, 1))
+        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
     }
 
     @Test

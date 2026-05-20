@@ -1,6 +1,6 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
@@ -149,17 +149,19 @@ internal class RenderText(
         if (contentWidth == 0 || contentHeight == 0) {
             return
         }
+        // Phase A: context.buffer は常に MonoPixelBuffer（Mono モードのみ）
+        val monoDestination = context.buffer as MonoPixelBuffer
         val destinationY = offsetY + drawTextY
         if (textWidth <= contentWidth && textHeight <= contentHeight) {
             drawTextLayout(
-                buffer = context.buffer,
+                buffer = monoDestination,
                 x = if (style.usesPlainRasterizer()) offsetX + drawTextX else offsetX + paddingLeft,
                 y = destinationY,
             )
             return
         }
 
-        val scratch = context.bufferPool.acquire(
+        val scratch = context.bufferPool.acquireMono(
             width = textWidth.coerceAtLeast(1),
             height = textHeight.coerceAtLeast(1),
         )
@@ -167,7 +169,7 @@ internal class RenderText(
             drawTextLayout(buffer = scratch, x = 0, y = 0)
             blitOpaqueText(
                 source = scratch,
-                destination = context.buffer,
+                destination = monoDestination,
                 destX = offsetX + drawTextX,
                 destY = destinationY,
                 copyWidth = min(contentWidth, scratch.width),
@@ -179,7 +181,7 @@ internal class RenderText(
     }
 
     private fun drawTextLayout(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         x: Int,
         y: Int,
     ) {
@@ -271,8 +273,8 @@ internal class RenderText(
      * 只把文本 scratch buffer 里非背景像素拷到目标 buffer，避免裁剪路径抹掉底色。
      */
     private fun blitOpaqueText(
-        source: PixelBuffer,
-        destination: PixelBuffer,
+        source: MonoPixelBuffer,
+        destination: MonoPixelBuffer,
         destX: Int,
         destY: Int,
         copyWidth: Int,
@@ -280,14 +282,12 @@ internal class RenderText(
     ) {
         for (row in 0 until copyHeight) {
             for (column in 0 until copyWidth) {
-                val value = source.getPixel(column, row)
-                if (value == PixelTone.OFF.value) {
-                    continue
-                }
+                val tone = source.getPixel(column, row)
+                if (tone == PixelTone.OFF) continue
                 destination.setPixel(
                     x = destX + column,
                     y = destY + row,
-                    value = value,
+                    tone = tone,
                 )
             }
         }

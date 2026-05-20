@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextInputAction
@@ -234,22 +235,24 @@ internal class RenderSurface(
 
         val currentFillTone = fillTone
         val currentBorderTone = borderTone
+        // Phase A: 仅 Mono 模式，直接 cast；Phase C 将替换为 context.setTone()。
+        val monoBuffer = context.buffer as MonoPixelBuffer
         if (currentFillTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
-            context.buffer.fillRect(
+            monoBuffer.fillRect(
                 left = surfaceLeft,
                 top = surfaceTop,
                 rectWidth = surfaceWidth,
                 rectHeight = surfaceHeight,
-                value = currentFillTone.value,
+                tone = currentFillTone,
             )
         }
         if (currentBorderTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
-            context.buffer.drawRect(
+            monoBuffer.drawRect(
                 left = surfaceLeft,
                 top = surfaceTop,
                 rectWidth = surfaceWidth,
                 rectHeight = surfaceHeight,
-                value = currentBorderTone.value,
+                tone = currentBorderTone,
             )
         }
         child?.paint(

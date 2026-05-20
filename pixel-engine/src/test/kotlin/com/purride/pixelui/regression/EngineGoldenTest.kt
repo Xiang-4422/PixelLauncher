@@ -1,6 +1,6 @@
 package com.purride.pixelui.regression
 
-import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Center
@@ -220,23 +220,24 @@ class EngineGoldenTest {
     /**
      * 把 PixelBuffer 转成可读字符画，便于人工 diff 和 golden 文件 review。
      */
-    private fun bufferToAscii(buffer: PixelBuffer): String {
+    private fun bufferToAscii(buffer: com.purride.pixelcore.PixelBuffer): String {
+        val mono = buffer as MonoPixelBuffer
         val builder = StringBuilder()
-        builder.append("size=").append(buffer.width).append('x').append(buffer.height).append('\n')
-        for (y in 0 until buffer.height) {
-            for (x in 0 until buffer.width) {
-                builder.append(toneChar(buffer.getPixel(x, y)))
+        builder.append("size=").append(mono.width).append('x').append(mono.height).append('\n')
+        for (y in 0 until mono.height) {
+            for (x in 0 until mono.width) {
+                builder.append(toneChar(mono.getPixel(x, y)))
             }
             builder.append('\n')
         }
         return builder.toString()
     }
 
-    private fun toneChar(value: Byte): Char {
+    private fun toneChar(value: PixelTone): Char {
         return when (value) {
-            PixelTone.ON.value -> '#'
-            PixelTone.ACCENT.value -> '*'
-            else -> '.'
+            PixelTone.ON -> '#'
+            PixelTone.ACCENT -> '*'
+            PixelTone.OFF -> '.'
         }
     }
 

@@ -17,7 +17,7 @@ public interface PixelTextRasterizer {
     public fun measureHeight(text: String): Int
 
     public fun drawText(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         text: String,
         x: Int,
         y: Int,
@@ -51,7 +51,7 @@ public class PixelStyledTextRasterizer(
     }
 
     override fun drawText(
-        buffer: PixelBuffer,
+        buffer: MonoPixelBuffer,
         text: String,
         x: Int,
         y: Int,

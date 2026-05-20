@@ -84,7 +84,7 @@ internal class RenderPagerViewport(
         val primary = renderPage(snapshot.anchorPage, pool) ?: return
         val secondary = snapshot.adjacentPage?.let { renderPage(it, pool) }
         val needsCompose = AxisBufferComposer.isCompositionNeeded(secondary, snapshot.dragOffsetPx)
-        val composeOut = if (needsCompose) pool.acquire(primary.width, primary.height) else null
+        val composeOut = if (needsCompose) pool.acquireMono(primary.width, primary.height) else null
         try {
             val composed = AxisBufferComposer.compose(
                 primary = primary,
@@ -235,7 +235,7 @@ internal class RenderPagerViewport(
      */
     private fun renderPage(pageIndex: Int, pool: PixelBufferPool): PixelBuffer? {
         val page = renderChildren.getOrNull(pageIndex) ?: return null
-        val pageBuffer = pool.acquire(width = size.width, height = size.height)
+        val pageBuffer = pool.acquireMono(width = size.width, height = size.height)
         page.paint(
             context = PaintContext(buffer = pageBuffer, bufferPool = pool),
             offsetX = 0,
