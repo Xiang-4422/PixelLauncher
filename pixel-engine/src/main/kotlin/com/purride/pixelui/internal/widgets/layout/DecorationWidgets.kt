@@ -2,7 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
 
-
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 
 import com.purride.pixelui.Alignment
@@ -57,6 +57,8 @@ internal data class DecoratedBoxWidget(
     override val child: Widget?,
     val fillTone: PixelTone,
     val borderTone: PixelTone?,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
     val padding: Int,
     val alignment: Alignment,
     override val key: Any? = null,
@@ -71,6 +73,8 @@ internal data class DecoratedBoxWidget(
         return RenderSurface(
             fillTone = fillTone,
             borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
             fillMaxWidth = child == null,
             fillMaxHeight = child == null,
@@ -91,6 +95,8 @@ internal data class DecoratedBoxWidget(
         (renderObject as RenderSurface).updateSurface(
             fillTone = fillTone,
             borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
             fillMaxWidth = child == null,
             fillMaxHeight = child == null,

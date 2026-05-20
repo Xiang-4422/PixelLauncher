@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.internal.AlignDirectionalWidget
 import com.purride.pixelui.internal.AlignWidget
@@ -177,6 +178,7 @@ public fun GestureDetector(
 public fun Text(
     data: String,
     style: TextStyle = TextStyle.Default,
+    color: PixelColor? = null,
     theme: ThemeData? = null,
     softWrap: Boolean = false,
     maxLines: Int = 1,
@@ -187,6 +189,7 @@ public fun Text(
     return TextWidget(
         data = data,
         style = style,
+        color = color,
         theme = theme,
         softWrap = softWrap,
         maxLines = maxLines,
@@ -220,6 +223,8 @@ public fun DecoratedBox(
     child: Widget? = null,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
     padding: Int = 2,
     alignment: Alignment = Alignment.CENTER,
     key: Any? = null,
@@ -228,6 +233,8 @@ public fun DecoratedBox(
         child = child,
         fillTone = fillTone,
         borderTone = borderTone,
+        fillColor = fillColor,
+        borderColor = borderColor,
         padding = padding,
         alignment = alignment,
         key = key,
@@ -244,6 +251,8 @@ public fun Container(
     theme: ThemeData? = null,
     fillTone: PixelTone = PixelTone.OFF,
     borderTone: PixelTone? = PixelTone.ON,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
     alignment: Alignment = Alignment.CENTER,
     selected: Boolean = false,
     pressed: Boolean = false,
@@ -259,6 +268,8 @@ public fun Container(
         theme = theme,
         fillTone = fillTone,
         borderTone = borderTone,
+        fillColor = fillColor,
+        borderColor = borderColor,
         alignment = alignment,
         selected = selected,
         pressed = pressed,

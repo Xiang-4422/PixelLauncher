@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
@@ -16,6 +17,7 @@ import com.purride.pixelui.internal.toPixelTextAlign
 internal data class TextWidget(
     val data: String,
     val style: PixelTextStyle,
+    val color: PixelColor? = null,
     val theme: com.purride.pixelui.PixelThemeData?,
     val softWrap: Boolean,
     val maxLines: Int,
@@ -61,15 +63,16 @@ internal data class TextWidget(
     }
 
     /**
-     * 解析当前上下文下的最终文本样式。
+     * 解析当前上下文下的最终文本样式，并应用显式颜色覆盖。
      */
     private fun resolveTextStyle(context: BuildContext): PixelTextStyle {
         val resolvedTheme = context.resolveTheme(theme)
-        return when (style) {
+        val base = when (style) {
             PixelTextStyle.Default -> resolvedTheme.resolveTextStyle()
             PixelTextStyle.Accent -> resolvedTheme.resolveAccentTextStyle()
             else -> style
         }
+        return if (color != null) base.copy(color = color) else base
     }
 }
 

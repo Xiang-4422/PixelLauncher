@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
@@ -27,6 +28,8 @@ internal data class ContainerWidget(
     val theme: PixelThemeData?,
     val fillTone: PixelTone,
     val borderTone: PixelTone?,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
     val alignment: Alignment,
     val selected: Boolean,
     val pressed: Boolean,
@@ -43,6 +46,8 @@ internal data class ContainerWidget(
         return RenderSurface(
             fillTone = resolvedStyle.fillTone,
             borderTone = resolvedStyle.borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = resolvedStyle.alignment.toPixelAlignment(),
             explicitWidth = width,
             explicitHeight = height,
@@ -68,6 +73,8 @@ internal data class ContainerWidget(
         (renderObject as RenderSurface).updateSurface(
             fillTone = resolvedStyle.fillTone,
             borderTone = resolvedStyle.borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = resolvedStyle.alignment.toPixelAlignment(),
             explicitWidth = width,
             explicitHeight = height,
