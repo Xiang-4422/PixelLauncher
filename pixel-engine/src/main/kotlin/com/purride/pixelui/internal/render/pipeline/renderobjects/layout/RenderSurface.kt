@@ -1,6 +1,9 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.ColorPixelBuffer
 import com.purride.pixelcore.MonoPixelBuffer
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextInputAction
@@ -22,6 +25,8 @@ internal class RenderSurface(
     child: RenderBox? = null,
     private var fillTone: PixelTone? = null,
     private var borderTone: PixelTone? = null,
+    private var fillColor: PixelColor? = null,
+    private var borderColor: PixelColor? = null,
     private var alignment: PixelAlignment = PixelAlignment.TOP_START,
     private var explicitWidth: Int? = null,
     private var explicitHeight: Int? = null,
@@ -64,6 +69,8 @@ internal class RenderSurface(
     fun updateSurface(
         fillTone: PixelTone?,
         borderTone: PixelTone?,
+        fillColor: PixelColor? = null,
+        borderColor: PixelColor? = null,
         alignment: PixelAlignment,
         explicitWidth: Int? = null,
         explicitHeight: Int? = null,
@@ -96,6 +103,8 @@ internal class RenderSurface(
         if (
             this.fillTone == fillTone &&
             this.borderTone == borderTone &&
+            this.fillColor == fillColor &&
+            this.borderColor == borderColor &&
             this.alignment == alignment &&
             this.explicitWidth == explicitWidth &&
             this.explicitHeight == explicitHeight &&
@@ -127,6 +136,8 @@ internal class RenderSurface(
         }
         this.fillTone = fillTone
         this.borderTone = borderTone
+        this.fillColor = fillColor
+        this.borderColor = borderColor
         this.alignment = alignment
         this.explicitWidth = explicitWidth
         this.explicitHeight = explicitHeight
@@ -233,27 +244,27 @@ internal class RenderSurface(
         val surfaceWidth = (size.width - outerPaddingLeft - outerPaddingRight).coerceAtLeast(0)
         val surfaceHeight = (size.height - outerPaddingTop - outerPaddingBottom).coerceAtLeast(0)
 
-        val currentFillTone = fillTone
-        val currentBorderTone = borderTone
-        // Phase A: 仅 Mono 模式，直接 cast；Phase C 将替换为 context.setTone()。
-        val monoBuffer = context.buffer as MonoPixelBuffer
-        if (currentFillTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
-            monoBuffer.fillRect(
-                left = surfaceLeft,
-                top = surfaceTop,
-                rectWidth = surfaceWidth,
-                rectHeight = surfaceHeight,
-                tone = currentFillTone,
-            )
-        }
-        if (currentBorderTone != null && surfaceWidth > 0 && surfaceHeight > 0) {
-            monoBuffer.drawRect(
-                left = surfaceLeft,
-                top = surfaceTop,
-                rectWidth = surfaceWidth,
-                rectHeight = surfaceHeight,
-                tone = currentBorderTone,
-            )
+        if (surfaceWidth > 0 && surfaceHeight > 0) {
+            when {
+                context.colorMode == PixelColorMode.Color -> {
+                    val colorBuffer = context.buffer as ColorPixelBuffer
+                    fillColor?.let {
+                        colorBuffer.fillRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
+                    }
+                    borderColor?.let {
+                        colorBuffer.drawRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
+                    }
+                }
+                else -> {
+                    val monoBuffer = context.buffer as MonoPixelBuffer
+                    fillTone?.let {
+                        monoBuffer.fillRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
+                    }
+                    borderTone?.let {
+                        monoBuffer.drawRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
+                    }
+                }
+            }
         }
         child?.paint(
             context = context,

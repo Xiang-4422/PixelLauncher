@@ -1,6 +1,9 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.ColorPixelBuffer
 import com.purride.pixelcore.MonoPixelBuffer
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
@@ -149,13 +152,38 @@ internal class RenderText(
         if (contentWidth == 0 || contentHeight == 0) {
             return
         }
-        // Phase A: context.buffer は常に MonoPixelBuffer（Mono モードのみ）
-        val monoDestination = context.buffer as MonoPixelBuffer
         val destinationY = offsetY + drawTextY
+        val destX = if (style.usesPlainRasterizer()) offsetX + drawTextX else offsetX + paddingLeft
+
+        if (context.colorMode == PixelColorMode.Color) {
+            val colorBuffer = context.buffer as ColorPixelBuffer
+            val textColor = style.color ?: PixelColor.fromRgb(255, 255, 255)
+            val scratch = context.bufferPool.acquireMono(
+                width = textWidth.coerceAtLeast(1),
+                height = textHeight.coerceAtLeast(1),
+            )
+            try {
+                drawTextLayout(buffer = scratch, x = 0, y = 0)
+                blitColorizedText(
+                    source = scratch,
+                    destination = colorBuffer,
+                    destX = destX,
+                    destY = destinationY,
+                    copyWidth = min(contentWidth, scratch.width),
+                    copyHeight = min(contentHeight, scratch.height),
+                    color = textColor,
+                )
+            } finally {
+                context.bufferPool.release(scratch)
+            }
+            return
+        }
+
+        val monoDestination = context.buffer as MonoPixelBuffer
         if (textWidth <= contentWidth && textHeight <= contentHeight) {
             drawTextLayout(
                 buffer = monoDestination,
-                x = if (style.usesPlainRasterizer()) offsetX + drawTextX else offsetX + paddingLeft,
+                x = destX,
                 y = destinationY,
             )
             return
@@ -267,6 +295,24 @@ internal class RenderText(
             else -> constraints.maxWidth
         }
         return (constraints.constrainWidth(measuredWidth) - horizontalPadding).coerceAtLeast(0)
+    }
+
+    private fun blitColorizedText(
+        source: MonoPixelBuffer,
+        destination: ColorPixelBuffer,
+        destX: Int,
+        destY: Int,
+        copyWidth: Int,
+        copyHeight: Int,
+        color: PixelColor,
+    ) {
+        for (row in 0 until copyHeight) {
+            for (column in 0 until copyWidth) {
+                if (source.getPixel(column, row) != PixelTone.OFF) {
+                    destination.setPixel(x = destX + column, y = destY + row, color = color)
+                }
+            }
+        }
     }
 
     /**

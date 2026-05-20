@@ -23,6 +23,39 @@ public class ColorPixelBuffer(
         return PixelColor(pixels[(y * width) + x])
     }
 
+    public fun fillRect(left: Int, top: Int, rectWidth: Int, rectHeight: Int, color: PixelColor) {
+        val startX = left.coerceIn(0, width)
+        val startY = top.coerceIn(0, height)
+        val endX = (left + rectWidth).coerceIn(startX, width)
+        val endY = (top + rectHeight).coerceIn(startY, height)
+        val argb = color.argb
+        for (y in startY until endY) {
+            val base = y * width
+            for (x in startX until endX) {
+                pixels[base + x] = argb
+            }
+        }
+    }
+
+    public fun drawRect(left: Int, top: Int, rectWidth: Int, rectHeight: Int, color: PixelColor) {
+        if (rectWidth <= 0 || rectHeight <= 0) return
+        val right = left + rectWidth - 1
+        val bottom = top + rectHeight - 1
+        val argb = color.argb
+        for (x in left..right) {
+            if (x in 0 until width) {
+                if (top in 0 until height) pixels[top * width + x] = argb
+                if (bottom in 0 until height) pixels[bottom * width + x] = argb
+            }
+        }
+        for (y in top..bottom) {
+            if (y in 0 until height) {
+                if (left in 0 until width) pixels[y * width + left] = argb
+                if (right in 0 until width) pixels[y * width + right] = argb
+            }
+        }
+    }
+
     override fun clear() {
         pixels.fill(PixelColor.Transparent.argb)
     }
