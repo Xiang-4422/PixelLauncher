@@ -1,5 +1,6 @@
 package com.purride.pixelui
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 
 /**
@@ -59,9 +60,76 @@ public data class PixelThemeTokens(
     val disabledBorderTone: PixelTone? = PixelTone.ON,
     val readOnlyBorderTone: PixelTone? = PixelTone.ACCENT,
     val inputPadding: Int = 2,
+    val textColor: PixelColor? = null,
+    val accentColor: PixelColor? = null,
+    val mutedColor: PixelColor? = null,
+    val surfaceColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
+    val accentBorderColor: PixelColor? = null,
+    val selectedBorderColor: PixelColor? = null,
+    val pressedBorderColor: PixelColor? = null,
+    val focusedBorderColor: PixelColor? = null,
+    val disabledBorderColor: PixelColor? = null,
+    val readOnlyBorderColor: PixelColor? = null,
 ) {
     public companion object {
         public val Default: PixelThemeTokens = PixelThemeTokens()
+
+        public val Dark: PixelThemeTokens = PixelThemeTokens(
+            textColor = PixelColor.fromRgb(220, 220, 220),
+            accentColor = PixelColor.fromRgb(255, 165, 0),
+            mutedColor = PixelColor.fromRgb(80, 80, 80),
+            surfaceColor = PixelColor.fromRgb(24, 24, 24),
+            borderColor = PixelColor.fromRgb(160, 160, 160),
+            accentBorderColor = PixelColor.fromRgb(255, 165, 0),
+            selectedBorderColor = PixelColor.fromRgb(255, 200, 50),
+            pressedBorderColor = PixelColor.fromRgb(200, 120, 0),
+            focusedBorderColor = PixelColor.fromRgb(255, 165, 0),
+            disabledBorderColor = PixelColor.fromRgb(80, 80, 80),
+            readOnlyBorderColor = PixelColor.fromRgb(140, 140, 140),
+        )
+
+        public val Light: PixelThemeTokens = PixelThemeTokens(
+            textColor = PixelColor.fromRgb(30, 30, 30),
+            accentColor = PixelColor.fromRgb(0, 100, 200),
+            mutedColor = PixelColor.fromRgb(180, 180, 180),
+            surfaceColor = PixelColor.fromRgb(245, 245, 245),
+            borderColor = PixelColor.fromRgb(80, 80, 80),
+            accentBorderColor = PixelColor.fromRgb(0, 100, 200),
+            selectedBorderColor = PixelColor.fromRgb(0, 140, 255),
+            pressedBorderColor = PixelColor.fromRgb(0, 70, 150),
+            focusedBorderColor = PixelColor.fromRgb(0, 100, 200),
+            disabledBorderColor = PixelColor.fromRgb(180, 180, 180),
+            readOnlyBorderColor = PixelColor.fromRgb(120, 120, 120),
+        )
+
+        public val Ocean: PixelThemeTokens = PixelThemeTokens(
+            textColor = PixelColor.fromRgb(200, 240, 255),
+            accentColor = PixelColor.fromRgb(0, 210, 180),
+            mutedColor = PixelColor.fromRgb(40, 80, 100),
+            surfaceColor = PixelColor.fromRgb(10, 30, 50),
+            borderColor = PixelColor.fromRgb(60, 160, 180),
+            accentBorderColor = PixelColor.fromRgb(0, 210, 180),
+            selectedBorderColor = PixelColor.fromRgb(100, 230, 200),
+            pressedBorderColor = PixelColor.fromRgb(0, 160, 140),
+            focusedBorderColor = PixelColor.fromRgb(0, 210, 180),
+            disabledBorderColor = PixelColor.fromRgb(40, 80, 100),
+            readOnlyBorderColor = PixelColor.fromRgb(80, 140, 160),
+        )
+
+        public val Amber: PixelThemeTokens = PixelThemeTokens(
+            textColor = PixelColor.fromRgb(255, 240, 200),
+            accentColor = PixelColor.fromRgb(255, 200, 0),
+            mutedColor = PixelColor.fromRgb(80, 60, 20),
+            surfaceColor = PixelColor.fromRgb(30, 20, 5),
+            borderColor = PixelColor.fromRgb(180, 140, 40),
+            accentBorderColor = PixelColor.fromRgb(255, 200, 0),
+            selectedBorderColor = PixelColor.fromRgb(255, 220, 80),
+            pressedBorderColor = PixelColor.fromRgb(200, 150, 0),
+            focusedBorderColor = PixelColor.fromRgb(255, 200, 0),
+            disabledBorderColor = PixelColor.fromRgb(80, 60, 20),
+            readOnlyBorderColor = PixelColor.fromRgb(140, 110, 40),
+        )
     }
 }
 
