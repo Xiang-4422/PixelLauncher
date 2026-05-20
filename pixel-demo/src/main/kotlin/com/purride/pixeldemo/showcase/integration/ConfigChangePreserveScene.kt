@@ -30,7 +30,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object ConfigChangePreserveScene : DemoScene {
     override val id = "config_change_preserve"
     override val title = "配置变更保留"
-    override val description = "旋转屏幕后，列表位置 / Pager 页码 / TextField 内容全部保留"
+    override val description = "旋转后三处状态全部保留"
 
     override fun build(env: DemoEnv): Widget = ConfigChangePreserveWidget()
 }

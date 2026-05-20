@@ -42,19 +42,22 @@ private class PaletteToggleWidget(
         private var shapeIdx = 0
 
         override fun build(context: BuildContext): Widget {
-            val themeControls = themes.mapIndexed { i, t ->
-                OutlinedButton(
-                    text = t.name.take(5),
-                    onPressed = {
-                        setState { themeIdx = i }
-                        widget.env.hostView.setPalette(PixelPalette.fromTheme(themes[i]))
-                    },
-                    selected = i == themeIdx,
-                )
-            }
+            // 主题按钮拆成 3+2 两行，避免 5 个按钮单行溢出
+            fun themeBtn(i: Int, t: PixelTheme) = OutlinedButton(
+                text = t.name.take(4),
+                onPressed = {
+                    setState { themeIdx = i }
+                    widget.env.hostView.setPalette(PixelPalette.fromTheme(themes[i]))
+                },
+                selected = i == themeIdx,
+            )
+            val themeRow1 = themes.take(3).mapIndexed { i, t -> themeBtn(i, t) }
+            val themeRow2 = themes.drop(3).mapIndexed { i, t -> themeBtn(3 + i, t) }
+
+            // 形状按钮缩写为 3 字符，3 个按钮单行可容纳
             val shapeControls = shapes.mapIndexed { i, s ->
                 OutlinedButton(
-                    text = s.name,
+                    text = s.name.take(3),
                     onPressed = {
                         setState { shapeIdx = i }
                         widget.env.applyPreferredProfile(
@@ -81,7 +84,9 @@ private class PaletteToggleWidget(
                     ),
                     SizedBox(height = 2),
                     Text("PixelTheme", style = TextStyle.Default),
-                    Row(children = themeControls, spacing = 2),
+                    Row(children = themeRow1, spacing = 2),
+                    SizedBox(height = 2),
+                    Row(children = themeRow2, spacing = 2),
                     SizedBox(height = 2),
                     Text("PixelShape", style = TextStyle.Default),
                     Row(children = shapeControls, spacing = 2),

@@ -29,7 +29,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object AlignSizingScene : DemoScene {
     override val id = "align_sizing"
     override val title = "对齐与尺寸"
-    override val description = "9 种布局原语：Padding / Align / Center / SizedBox / Expanded / Flexible / Spacer"
+    override val description = "演示 9 种核心布局原语"
 
     override fun build(env: DemoEnv): Widget = AlignSizingWidget()
 }

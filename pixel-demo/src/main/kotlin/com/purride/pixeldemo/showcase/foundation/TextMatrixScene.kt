@@ -44,19 +44,24 @@ private class TextMatrixWidget(override val key: Any? = null) : StatefulWidget(k
         private var alignIdx = 0
 
         override fun build(context: BuildContext): Widget {
+            // 标签独占一行，按钮放第二行，避免宽屏溢出
             fun controlRow(label: String, options: List<String>, selected: Int, onSelect: (Int) -> Unit) =
-                Row(
+                Column(
                     children = listOf(
                         Text(label, style = TextStyle.Default),
-                        SizedBox(width = 4),
-                    ) + options.mapIndexed { i, opt ->
-                        OutlinedButton(
-                            text = opt,
-                            onPressed = { setState { onSelect(i) } },
-                            selected = i == selected,
-                        )
-                    },
-                    spacing = 2,
+                        Row(
+                            children = options.mapIndexed { i, opt ->
+                                OutlinedButton(
+                                    text = opt,
+                                    onPressed = { setState { onSelect(i) } },
+                                    selected = i == selected,
+                                )
+                            },
+                            spacing = 2,
+                        ),
+                    ),
+                    spacing = 1,
+                    crossAxisAlignment = CrossAxisAlignment.START,
                 )
 
             val controls = Column(

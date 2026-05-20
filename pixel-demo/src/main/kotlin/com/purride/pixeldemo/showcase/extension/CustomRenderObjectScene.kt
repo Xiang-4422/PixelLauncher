@@ -21,7 +21,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object CustomRenderObjectScene : DemoScene {
     override val id = "custom_render_object"
     override val title = "自定义 RenderObject"
-    override val description = "复用 HollowSquareWidget 演示 PixelLeafRenderObjectWidget 扩展点"
+    override val description = "PixelLeafRenderObjectWidget 扩展点演示"
 
     override fun build(env: DemoEnv): Widget = CustomRenderObjectWidget()
 }
