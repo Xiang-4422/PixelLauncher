@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelPalette
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
@@ -54,6 +55,10 @@ public data class PixelHostSetupConfig(
      * `ManualFrameScheduler` 或自定义实现。
      */
     val frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default,
+    /**
+     * 颜色模式。构造后不可变更，决定整个 view 树用 Mono 还是 Color 路径渲染。
+     */
+    val colorMode: PixelColorMode = PixelColorMode.Mono,
 )
 
 /**
@@ -83,6 +88,7 @@ public fun createPixelHostSetup(
     hostView.nestedScrollPolicy = config.nestedScrollPolicy
     hostView.scrollPhysics = config.scrollPhysics
     hostView.frameScheduler = config.frameScheduler
+    hostView.colorMode = config.colorMode
     config.content?.let { hostView.setContent(it) }
     val rootView = FrameLayout(context).apply {
         addView(

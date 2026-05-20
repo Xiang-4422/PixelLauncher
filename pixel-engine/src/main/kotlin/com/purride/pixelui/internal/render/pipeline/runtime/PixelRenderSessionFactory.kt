@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBufferPool
+import com.purride.pixelcore.PixelColorMode
 
 /**
  * 创建 direct pipeline 渲染会话。
@@ -14,9 +15,12 @@ internal object PixelRenderSessionFactory {
         width: Int,
         height: Int,
         bufferPool: PixelBufferPool,
+        colorMode: PixelColorMode = PixelColorMode.Mono,
     ): PixelRenderSession {
-        return PixelRenderSession(
-            buffer = bufferPool.acquireMono(width = width, height = height),
-        )
+        val buffer = when (colorMode) {
+            PixelColorMode.Mono -> bufferPool.acquireMono(width = width, height = height)
+            PixelColorMode.Color -> bufferPool.acquireColor(width = width, height = height)
+        }
+        return PixelRenderSession(buffer = buffer)
     }
 }

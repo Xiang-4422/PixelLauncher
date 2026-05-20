@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBufferPool
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelui.Widget
 
 /**
@@ -43,6 +44,7 @@ internal class PixelUiRuntime(
                 root = root,
                 logicalWidth = request.logicalWidth,
                 logicalHeight = request.logicalHeight,
+                colorMode = request.colorMode,
             ),
         )
     }
@@ -54,12 +56,14 @@ internal class PixelUiRuntime(
         root: Widget,
         logicalWidth: Int,
         logicalHeight: Int,
+        colorMode: PixelColorMode = PixelColorMode.Mono,
     ): PixelRenderResult {
         return render(
             request = WidgetRenderRequest(
                 root = root,
                 logicalWidth = logicalWidth,
                 logicalHeight = logicalHeight,
+                colorMode = colorMode,
             ),
         )
     }

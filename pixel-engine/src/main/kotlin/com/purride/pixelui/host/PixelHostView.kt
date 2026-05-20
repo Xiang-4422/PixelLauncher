@@ -14,6 +14,7 @@ import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.ColorPixelBuffer
 import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelFrameView
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.PixelPalette
@@ -176,6 +177,11 @@ public class PixelHostView @JvmOverloads constructor(
      * 默认继续使用内置位图字体，但 demo 或后续业务层可以在不改 runtime 的情况下
      * 注入另一套文本实现。
      */
+    /**
+     * 颜色模式。构造后不可变更，决定整个 view 树用 Mono 还是 Color 路径渲染。
+     */
+    public var colorMode: PixelColorMode = PixelColorMode.Mono
+
     public var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
             if (field === value) return
@@ -296,6 +302,7 @@ public class PixelHostView @JvmOverloads constructor(
                 textDirection = textDirection,
                 themeData = themeData,
                 textRasterizer = textRasterizer,
+                colorMode = colorMode,
                 child = rootWidget,
                 key = "host-root",
             )
@@ -306,6 +313,7 @@ public class PixelHostView @JvmOverloads constructor(
                 root = wrappedRoot,
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
+                colorMode = colorMode,
             )
         } else {
             lastRenderResult

@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBufferPool
+import com.purride.pixelcore.PixelColorMode
 
 /**
  * 新渲染管线对 retained element tree 的渲染入口。
@@ -41,6 +42,7 @@ internal class PipelineElementTreeRenderer private constructor(
         return owner.render(
             logicalWidth = request.logicalWidth,
             logicalHeight = request.logicalHeight,
+            colorMode = request.colorMode,
         )
     }
 

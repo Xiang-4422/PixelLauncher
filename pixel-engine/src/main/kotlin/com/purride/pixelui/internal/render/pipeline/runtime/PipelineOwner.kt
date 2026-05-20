@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBufferPool
+import com.purride.pixelcore.PixelColorMode
 
 /**
  * 新渲染管线的最小 owner。
@@ -23,6 +24,7 @@ internal class PipelineOwner(
     private var cachedResult: PixelRenderResult? = null
     private var cachedLogicalWidth: Int = -1
     private var cachedLogicalHeight: Int = -1
+    private var cachedColorMode: PixelColorMode = PixelColorMode.Mono
 
     init {
         attachRoot(root)
@@ -74,11 +76,13 @@ internal class PipelineOwner(
     fun render(
         logicalWidth: Int,
         logicalHeight: Int,
+        colorMode: PixelColorMode = PixelColorMode.Mono,
     ): PixelRenderResult {
         val canReuseCache = !needsLayout && !needsPaint &&
             cachedResult != null &&
             cachedLogicalWidth == logicalWidth &&
-            cachedLogicalHeight == logicalHeight
+            cachedLogicalHeight == logicalHeight &&
+            cachedColorMode == colorMode
         if (canReuseCache) {
             cacheHits += 1
             return cachedResult!!
@@ -87,11 +91,13 @@ internal class PipelineOwner(
         discardCachedResult()
         cachedLogicalWidth = logicalWidth
         cachedLogicalHeight = logicalHeight
+        cachedColorMode = colorMode
 
         val session = PixelRenderSessionFactory.create(
             width = logicalWidth,
             height = logicalHeight,
             bufferPool = bufferPool,
+            colorMode = colorMode,
         )
         val root = root
         if (root == null) {
@@ -109,7 +115,7 @@ internal class PipelineOwner(
             needsLayout = false
         }
         root.paint(
-            context = PaintContext(buffer = session.buffer, bufferPool = bufferPool),
+            context = PaintContext(buffer = session.buffer, bufferPool = bufferPool, colorMode = colorMode),
             offsetX = 0,
             offsetY = 0,
         )

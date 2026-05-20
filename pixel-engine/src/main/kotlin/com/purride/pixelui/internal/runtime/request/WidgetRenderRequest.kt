@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelui.Widget
 
 /**
@@ -9,4 +10,5 @@ internal data class WidgetRenderRequest(
     val root: Widget,
     val logicalWidth: Int,
     val logicalHeight: Int,
+    val colorMode: PixelColorMode = PixelColorMode.Mono,
 )
