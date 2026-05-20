@@ -1,9 +1,11 @@
 package com.purride.pixelui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -210,6 +212,8 @@ public class PixelHostView @JvmOverloads constructor(
         isFilterBitmap = false
     }
     private val reusableDiamondPath = Path()
+    private var reusableColorBitmap: Bitmap? = null
+    private val reusableDestRect = Rect()
 
     /**
      * 设置宿主当前要渲染的根组件。
@@ -735,8 +739,54 @@ public class PixelHostView @JvmOverloads constructor(
     private fun drawBuffer(canvas: Canvas, buffer: PixelBuffer) {
         when (buffer) {
             is MonoPixelBuffer -> drawMonoBuffer(canvas, buffer)
-            is ColorPixelBuffer -> TODO("Color buffer rendering not yet implemented (Phase D)")
+            is ColorPixelBuffer -> drawColorBuffer(canvas, buffer)
         }
+    }
+
+    private fun drawColorBuffer(canvas: Canvas, buffer: ColorPixelBuffer) {
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = width,
+            viewHeight = height,
+            profile = screenProfile,
+            pixelGapEnabled = false,
+        ) ?: return
+
+        val bitmapWidth = buffer.width
+        val bitmapHeight = buffer.height
+        val existing = reusableColorBitmap
+        val bitmap = if (
+            existing != null &&
+            existing.width == bitmapWidth &&
+            existing.height == bitmapHeight
+        ) {
+            existing
+        } else {
+            existing?.recycle()
+            Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888).also {
+                reusableColorBitmap = it
+            }
+        }
+
+        bitmap.setPixels(
+            buffer.pixels,
+            0,
+            buffer.width,
+            0,
+            0,
+            buffer.width,
+            buffer.height,
+        )
+
+        val gridWidth = (bitmapWidth * geometry.cellSize).toInt()
+        val gridHeight = (bitmapHeight * geometry.cellSize).toInt()
+        reusableDestRect.set(
+            geometry.originX.toInt(),
+            geometry.originY.toInt(),
+            geometry.originX.toInt() + gridWidth,
+            geometry.originY.toInt() + gridHeight,
+        )
+        canvas.drawColor(palette.backgroundColor)
+        canvas.drawBitmap(bitmap, null, reusableDestRect, null)
     }
 
     private fun drawMonoBuffer(canvas: Canvas, buffer: MonoPixelBuffer) {
