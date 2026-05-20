@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.DefaultTextRasterizer
@@ -23,6 +24,7 @@ internal data class HostRootWidget(
     val textDirection: TextDirection,
     val themeData: ThemeData?,
     val textRasterizer: PixelTextRasterizer,
+    val colorMode: PixelColorMode = PixelColorMode.Mono,
     val child: Widget,
     override val key: Any? = null,
 ) : StatelessWidget(
@@ -45,7 +47,10 @@ internal data class HostRootWidget(
                 textDirection = textDirection,
                 child = DefaultTextRasterizer(
                     rasterizer = textRasterizer,
-                    child = themedChild,
+                    child = PixelColorModeProvider(
+                        colorMode = colorMode,
+                        child = themedChild,
+                    ),
                 ),
             ),
         )
