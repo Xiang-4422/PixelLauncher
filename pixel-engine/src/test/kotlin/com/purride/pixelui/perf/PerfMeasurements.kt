@@ -1,6 +1,8 @@
 package com.purride.pixelui.perf
 
+import com.purride.pixelcore.ColorPixelBuffer
 import com.purride.pixelcore.MonoPixelBuffer
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.RichText
@@ -16,6 +18,7 @@ internal data class PerfSample(
     val renderAllocBytesMax: Long,
     val renderTimeNanosAvg: Long,
     val blitNanosAvg: Long,
+    val colorBlitNanosAvg: Long,
     val richTextLayoutNanosByChars: Map<Int, Long>,
 )
 
@@ -33,6 +36,9 @@ internal object PerfMeasurements {
             },
             blitNanosAvg = medianLongSample(BLIT_SAMPLES) {
                 measureBlitNanos(iterations = BLIT_ITERATIONS)
+            },
+            colorBlitNanosAvg = medianLongSample(BLIT_SAMPLES) {
+                measureColorBlitNanos(iterations = BLIT_ITERATIONS)
             },
             richTextLayoutNanosByChars = mapOf(
                 100 to medianLongSample(RICH_TEXT_SAMPLES) {
@@ -66,6 +72,7 @@ internal object PerfMeasurements {
             append("  \"renderAllocBytesMax\": ").append(sample.renderAllocBytesMax).append(",\n")
             append("  \"renderTimeNanosAvg\": ").append(sample.renderTimeNanosAvg).append(",\n")
             append("  \"blitNanosAvg\": ").append(sample.blitNanosAvg).append(",\n")
+            append("  \"colorBlitNanosAvg\": ").append(sample.colorBlitNanosAvg).append(",\n")
             append("  \"richTextLayoutNanosByChars\": {").append(richTextEntries).append("}\n")
             append("}\n")
         }
@@ -133,6 +140,23 @@ internal object PerfMeasurements {
             }
         }
         val dest = MonoPixelBuffer(width = 64, height = 64)
+        val start = System.nanoTime()
+        repeat(iterations) {
+            dest.blit(source = source, destX = 0, destY = 0)
+        }
+        val end = System.nanoTime()
+        return (end - start) / iterations.toLong().coerceAtLeast(1L)
+    }
+
+    private fun measureColorBlitNanos(iterations: Int): Long {
+        val source = ColorPixelBuffer(width = 32, height = 32)
+        val fillColor = PixelColor.fromRgb(255, 128, 0)
+        for (y in 0 until source.height) {
+            for (x in 0 until source.width) {
+                source.setPixel(x, y, fillColor)
+            }
+        }
+        val dest = ColorPixelBuffer(width = 64, height = 64)
         val start = System.nanoTime()
         repeat(iterations) {
             dest.blit(source = source, destX = 0, destY = 0)

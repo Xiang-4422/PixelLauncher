@@ -73,6 +73,7 @@ class PerfRegressionTest {
             renderAllocBytesMax = requiredLong(text = text, key = "renderAllocBytesMax"),
             renderTimeNanosAvg = requiredLong(text = text, key = "renderTimeNanosAvg"),
             blitNanosAvg = requiredLong(text = text, key = "blitNanosAvg"),
+            colorBlitNanosAvg = optionalLong(text = text, key = "colorBlitNanosAvg") ?: 0L,
             richTextLayoutNanosByChars = parseRichTextMap(text = text),
         )
     }
@@ -82,6 +83,11 @@ class PerfRegressionTest {
         val match = pattern.find(text)
         requireNotNull(match) { "Missing perf baseline key: $key" }
         return match.groupValues[1].toLong()
+    }
+
+    private fun optionalLong(text: String, key: String): Long? {
+        val pattern = Regex("\"$key\"\\s*:\\s*(\\d+)")
+        return pattern.find(text)?.groupValues?.get(1)?.toLong()
     }
 
     private fun parseRichTextMap(text: String): Map<Int, Long> {
