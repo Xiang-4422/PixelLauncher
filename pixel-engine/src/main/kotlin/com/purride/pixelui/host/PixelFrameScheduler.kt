@@ -72,11 +72,14 @@ public class ManualFrameScheduler : PixelFrameScheduler {
     }
 
     /**
-     * 触发"下一帧"，按 FIFO 顺序执行已注册的所有回调。
+     * 触发"下一帧"，按 FIFO 顺序执行调用前已注册的回调。
+     *
+     * 回调内新注册的帧回调不会在本次触发，需要再调一次 advanceFrame（与真实 Choreographer 行为一致）。
      */
     public fun advanceFrame(frameTimeNanos: Long) {
-        while (pending.isNotEmpty()) {
-            val callback = pending.removeFirst()
+        val toFire = pending.toList()
+        pending.clear()
+        for (callback in toFire) {
             callback(frameTimeNanos)
         }
     }

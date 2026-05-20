@@ -37,6 +37,7 @@ class ManualFrameSchedulerTest {
 
     /**
      * 回调中 scheduleFrame 出的下一帧不会在本轮 advanceFrame 中触发，需要再调一次 advanceFrame。
+     * 与真实 Choreographer 行为一致：每次 postFrameCallback 只在下一个 vsync 触发。
      */
     @Test
     fun callbacksScheduledDuringAdvanceFrameWaitForNextAdvance() {
@@ -50,9 +51,11 @@ class ManualFrameSchedulerTest {
 
         scheduler.advanceFrame(frameTimeNanos = 1_000L)
         assertTrue(firstFired)
-        assertTrue("Newly-scheduled callback should still fire in same advanceFrame", secondFired)
-        // 注：实现选择"持续抽空队列直到为空"作为同一帧的语义，
-        // 所以同 frame 内 schedule 的回调也会在本次 advanceFrame 触发。
+        assertTrue("Newly-scheduled callback must wait for next advanceFrame", !secondFired)
+        assertEquals(1, scheduler.pendingCount)
+
+        scheduler.advanceFrame(frameTimeNanos = 2_000L)
+        assertTrue(secondFired)
     }
 
     /**
