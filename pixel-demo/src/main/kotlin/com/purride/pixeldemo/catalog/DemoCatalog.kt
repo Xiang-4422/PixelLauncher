@@ -3,7 +3,12 @@ package com.purride.pixeldemo.catalog
 import com.purride.pixeldemo.showcase.extension.CustomPagerPolicyScene
 import com.purride.pixeldemo.showcase.extension.CustomRasterizerScene
 import com.purride.pixeldemo.showcase.extension.CustomRenderObjectScene
-import com.purride.pixeldemo.showcase.extension.PerfOverlayScene
+import com.purride.pixeldemo.showcase.stress.StressAnimationFloodScene
+import com.purride.pixeldemo.showcase.stress.StressDeepTreeScene
+import com.purride.pixeldemo.showcase.stress.StressGestureStormScene
+import com.purride.pixeldemo.showcase.stress.StressListScaleScene
+import com.purride.pixeldemo.showcase.stress.StressRebuildStormScene
+import com.purride.pixeldemo.showcase.stress.StressTextHeavyScene
 import com.purride.pixeldemo.showcase.foundation.AlignSizingScene
 import com.purride.pixeldemo.showcase.foundation.ContainerDecorationScene
 import com.purride.pixeldemo.showcase.foundation.DirectionalVariantsScene
@@ -88,7 +93,17 @@ object DemoCatalog {
                 CustomRenderObjectScene,
                 CustomPagerPolicyScene,
                 CustomRasterizerScene,
-                PerfOverlayScene,
+            ),
+        ),
+        DemoSection(
+            title = "Stress",
+            scenes = listOf(
+                StressListScaleScene,
+                StressRebuildStormScene,
+                StressDeepTreeScene,
+                StressAnimationFloodScene,
+                StressGestureStormScene,
+                StressTextHeavyScene,
             ),
         ),
         DemoSection(
