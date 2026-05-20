@@ -1,13 +1,16 @@
 package com.purride.pixeldemo.showcase.animation
 
 import com.purride.pixelcore.PixelTone
-import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Positioned
@@ -19,6 +22,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.Curves
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.widgets.animated.AnimatedContainer
@@ -32,11 +36,29 @@ import kotlin.time.Duration.Companion.milliseconds
 object ImplicitAnimationsScene : DemoScene {
     override val id = "implicit_animations"
     override val title = "Implicit Animations"
-    override val description = "Layer 2：AnimatedContainer / AnimatedOpacity / AnimatedSwitcher / AnimatedPositioned"
+    override val description = "可展开通知列表：AnimatedContainer + AnimatedOpacity + AnimatedSwitcher 协同"
 
     override fun build(env: DemoEnv): Widget =
         ImplicitAnimationsWidget(frameScheduler = env.hostView.frameScheduler)
 }
+
+private data class Notification(
+    val id: String,
+    val title: String,
+    val detail: String,
+    val read: Boolean = false,
+)
+
+private val INITIAL_NOTIFICATIONS = listOf(
+    Notification("n1", "BUILD OK", "pixel-engine:assembleDebug passed in 11s", read = false),
+    Notification("n2", "TEST PASS", "30 of 30 unit tests green. No regressions.", read = false),
+    Notification("n3", "DEPLOY", "Demo APK pushed to device. Ready to test.", read = true),
+    Notification("n4", "LINT WARN", "2 unused imports in AnimationCoreScene.kt", read = false),
+)
+
+// badge positions: left edge when unread > 0, right edge (hidden) when all read
+private const val BADGE_VISIBLE_LEFT = 0
+private const val BADGE_HIDDEN_LEFT = 140   // off-screen right
 
 private class ImplicitAnimationsWidget(
     private val frameScheduler: PixelFrameScheduler,
@@ -46,127 +68,191 @@ private class ImplicitAnimationsWidget(
 
     inner class ImplicitAnimationsState : State<ImplicitAnimationsWidget>() {
         private lateinit var vsync: PixelTickerProvider
-
-        // AnimatedContainer state
-        private var containerExpanded = false
-
-        // AnimatedOpacity state
-        private var visible = true
-
-        // AnimatedSwitcher state
-        private var switcherPage = 0
-
-        // AnimatedPositioned state
-        private var positionRight = false
+        private var notifications = INITIAL_NOTIFICATIONS
+        private var expandedId: String? = null
 
         override fun initState() {
             vsync = PixelTickerProvider(widget.frameScheduler)
         }
 
+        private fun toggleExpand(id: String) {
+            setState {
+                expandedId = if (expandedId == id) null else id
+                notifications = notifications.map {
+                    if (it.id == id) it.copy(read = true) else it
+                }
+            }
+        }
+
+        private fun markAllRead() {
+            setState {
+                notifications = notifications.map { it.copy(read = true) }
+                expandedId = null
+            }
+        }
+
+        private fun reset() {
+            setState {
+                notifications = INITIAL_NOTIFICATIONS
+                expandedId = null
+            }
+        }
+
         override fun build(context: BuildContext): Widget {
-            return Padding(
-                all = 8,
-                child = Column(
-                    crossAxisAlignment = CrossAxisAlignment.START,
-                    spacing = 12,
-                    children = listOf(
-                        // ── AnimatedContainer ──────────────────────────────────
-                        Text("AnimatedContainer", style = TextStyle.Accent),
-                        AnimatedContainer(
-                            duration = 400.milliseconds,
-                            vsync = vsync,
-                            width = if (containerExpanded) 80 else 20,
-                            height = 16,
-                            borderTone = if (containerExpanded) PixelTone.ACCENT else PixelTone.ON,
-                        ),
-                        OutlinedButton(
-                            text = if (containerExpanded) "Shrink" else "Expand",
-                            onPressed = { setState { containerExpanded = !containerExpanded } },
-                        ),
+            val unread = notifications.count { !it.read }
 
-                        SizedBox(height = 4),
+            return Column(
+                mainAxisSize = MainAxisSize.MAX,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                children = listOf(
+                    // ── header ───────────────────────────────────────────────
+                    notificationHeader(unread),
 
-                        // ── AnimatedOpacity ────────────────────────────────────
-                        Text("AnimatedOpacity", style = TextStyle.Accent),
-                        AnimatedOpacity(
-                            opacity = if (visible) 1f else 0f,
-                            duration = 500.milliseconds,
-                            vsync = vsync,
-                            child = Container(
-                                width = 40,
-                                height = 16,
-                                fillTone = PixelTone.ON,
-                                borderTone = PixelTone.ACCENT,
-                            ),
-                        ),
-                        OutlinedButton(
-                            text = if (visible) "Hide" else "Show",
-                            onPressed = { setState { visible = !visible } },
-                        ),
-
-                        SizedBox(height = 4),
-
-                        // ── AnimatedSwitcher ───────────────────────────────────
-                        Text("AnimatedSwitcher", style = TextStyle.Accent),
-                        AnimatedSwitcher(
-                            duration = 300.milliseconds,
-                            vsync = vsync,
-                            child = when (switcherPage) {
-                                0 -> Container(
-                                    key = "page-a",
-                                    width = 40, height = 16,
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
-                                    child = Center(child = Text("A", style = TextStyle.Default)),
-                                )
-                                else -> Container(
-                                    key = "page-b",
-                                    width = 40, height = 16,
-                                    fillTone = PixelTone.ACCENT,
-                                    borderTone = PixelTone.ON,
-                                    child = Center(child = Text("B", style = TextStyle.Default)),
-                                )
+                    // ── notification rows ─────────────────────────────────────
+                    Expanded(
+                        child = Column(
+                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                            spacing = 1,
+                            children = notifications.map { notif ->
+                                notificationRow(notif)
                             },
                         ),
-                        OutlinedButton(
-                            text = "Switch (page ${switcherPage + 1})",
-                            onPressed = { setState { switcherPage = 1 - switcherPage } },
+                    ),
+
+                    // ── footer controls ──────────────────────────────────────
+                    Padding(
+                        child = Row(
+                            spacing = 4,
+                            children = listOf(
+                                OutlinedButton(
+                                    text = "MARK ALL READ",
+                                    onPressed = if (unread > 0) ::markAllRead else null,
+                                ),
+                                OutlinedButton(
+                                    text = "RESET",
+                                    onPressed = ::reset,
+                                ),
+                            ),
                         ),
+                        horizontal = 4,
+                        vertical = 4,
+                    ),
+                ),
+            )
+        }
 
-                        SizedBox(height = 4),
-
-                        // ── AnimatedPositioned ─────────────────────────────────
-                        Text("AnimatedPositioned", style = TextStyle.Accent),
-                        SizedBox(
-                            width = 96,
-                            height = 24,
-                            child = Stack(
-                                children = listOf(
-                                    Positioned(
-                                        left = 0, top = 0, right = 0, bottom = 0,
-                                        child = Container(
-                                            borderTone = PixelTone.ON,
-                                        ),
-                                    ),
-                                    AnimatedPositioned(
-                                        duration = 400.milliseconds,
-                                        vsync = vsync,
-                                        left = if (positionRight) 60 else 4,
-                                        top = 4,
-                                        child = Container(
-                                            width = 20, height = 16,
-                                            fillTone = PixelTone.ACCENT,
-                                            borderTone = null,
-                                        ),
+        private fun notificationHeader(unread: Int): Widget {
+            return Padding(
+                child = Stack(
+                    children = listOf(
+                        Row(
+                            mainAxisSize = MainAxisSize.MAX,
+                            mainAxisAlignment = MainAxisAlignment.START,
+                            children = listOf(
+                                Text("NOTIFICATIONS", style = TextStyle.Accent),
+                                Expanded(child = SizedBox()),
+                            ),
+                        ),
+                        // Animated badge slides in from right when there are unreads
+                        AnimatedPositioned(
+                            duration = 300.milliseconds,
+                            vsync = vsync,
+                            curve = Curves.EaseOut,
+                            right = if (unread > 0) 0 else -20,
+                            top = 0,
+                            child = AnimatedSwitcher(
+                                key = "badge",
+                                duration = 200.milliseconds,
+                                vsync = vsync,
+                                child = Container(
+                                    key = "badge-$unread",
+                                    width = 16, height = 8,
+                                    fillTone = PixelTone.ACCENT,
+                                    borderTone = null,
+                                    child = Center(
+                                        child = Text("$unread", style = TextStyle.Default),
                                     ),
                                 ),
                             ),
                         ),
-                        OutlinedButton(
-                            text = if (positionRight) "Move Left" else "Move Right",
-                            onPressed = { setState { positionRight = !positionRight } },
+                    ),
+                ),
+                horizontal = 4,
+                vertical = 3,
+            )
+        }
+
+        private fun notificationRow(notif: Notification): Widget {
+            val isExpanded = expandedId == notif.id
+            val isRead = notif.read
+
+            return GestureDetector(
+                onTap = { toggleExpand(notif.id) },
+                child = Padding(
+                    child = Column(
+                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        children = listOf(
+                            // row header: indicator + title + read state
+                            Row(
+                                mainAxisSize = MainAxisSize.MAX,
+                                spacing = 3,
+                                children = listOf(
+                                    // unread dot (animated opacity: visible when unread)
+                                    AnimatedOpacity(
+                                        opacity = if (isRead) 0f else 1f,
+                                        duration = 400.milliseconds,
+                                        vsync = vsync,
+                                        child = Container(
+                                            width = 4, height = 4,
+                                            fillTone = PixelTone.ACCENT,
+                                            borderTone = null,
+                                        ),
+                                    ),
+                                    // expand indicator via AnimatedSwitcher
+                                    AnimatedSwitcher(
+                                        key = "ind-${notif.id}",
+                                        duration = 150.milliseconds,
+                                        vsync = vsync,
+                                        child = Text(
+                                            if (isExpanded) "▼" else "▶",
+                                            key = if (isExpanded) "open" else "shut",
+                                            style = TextStyle.Default,
+                                        ),
+                                    ),
+                                    Expanded(
+                                        child = Text(
+                                            notif.title,
+                                            style = if (isRead) TextStyle.Default else TextStyle.Accent,
+                                        ),
+                                    ),
+                                ),
+                            ),
+                            // expandable detail body
+                            AnimatedContainer(
+                                duration = 300.milliseconds,
+                                vsync = vsync,
+                                curve = Curves.EaseOut,
+                                height = if (isExpanded) 20 else 0,
+                                child = AnimatedOpacity(
+                                    opacity = if (isExpanded) 1f else 0f,
+                                    duration = 250.milliseconds,
+                                    vsync = vsync,
+                                    child = Padding(
+                                        child = Text(
+                                            notif.detail,
+                                            style = TextStyle.Default,
+                                            softWrap = true,
+                                            maxLines = 2,
+                                        ),
+                                        horizontal = 8,
+                                        vertical = 2,
+                                    ),
+                                ),
+                            ),
                         ),
                     ),
+                    horizontal = 4,
+                    vertical = 2,
                 ),
             )
         }
