@@ -1,30 +1,36 @@
 # pixel-engine 文档目录
 
-这里集中放置 `pixel-engine` 的开发者文档和维护者文档。模块根目录只保留 [README](../README.md) 作为 SDK 入口说明。
+这里集中放置 `pixel-engine` 的所有文档，按读者角色分三类。模块根目录只保留 [README](../README.md) 作为 SDK 入口说明。
 
-## SDK 使用文档
+## 使用说明（对外 SDK 使用者）
 
-| 文档 | 用途 |
-|---|---|
-| [快速入门](快速入门.md) | 从 Activity 接入 `pixel-engine`，覆盖基础布局、状态、列表和主题 |
-| [组件目录](组件目录.md) | 查看公开 widget、参数签名和典型用法 |
-| [主题系统](主题系统.md) | 理解 `ThemeData`、tokens、组件 style 和覆盖优先级 |
-| [状态管理](状态管理.md) | 使用列表、分页、输入框 controller 和 state |
-| [扩展开发](扩展开发.md) | 自定义 `RenderObject`、字体栅格器、手势策略和帧调度 |
-| [架构说明](架构说明.md) | 理解 Widget / Element / RenderObject 三层模型和渲染管线 |
-
-## 维护者文档
+写给使用 `pixel-engine` 构建像素化应用的开发者。
 
 | 文档 | 用途 |
 |---|---|
-| [演进路线](演进路线.md) | SDK 演进方向、当前迭代任务、优先级、历史决策和接手建议 |
+| [快速入门](使用说明/快速入门.md) | 从 Activity 接入 `pixel-engine`，覆盖基础布局、状态、列表和主题 |
+| [组件目录](使用说明/组件目录.md) | 查看公开 widget、参数签名和典型用法 |
+| [主题系统](使用说明/主题系统.md) | 理解 `ThemeData`、tokens、组件 style 和覆盖优先级 |
+| [状态管理](使用说明/状态管理.md) | 使用列表、分页、输入框 controller 和 state |
+| [扩展开发](使用说明/扩展开发.md) | 自定义 `RenderObject`、字体栅格器、手势策略和帧调度 |
 
-## 设计文档
+## 实现说明（SDK 维护者了解现状）
+
+写给维护 `pixel-engine` 源码的开发者，描述当前已落地的内部架构与关键设计。
 
 | 文档 | 用途 |
 |---|---|
-| [变高列表虚拟化](设计/变高列表虚拟化.md) | `ListViewBuilder(estimatedItemExtent)` 的兼容 lazy 设计 |
-| [文本系统 v2](设计/文本系统-v2.md) | internal paragraph model、文本测量和 ellipsis 统一设计 |
-| [滚动手势 v2](设计/滚动手势-v2.md) | nested scroll session、handoff 和 scroll physics 语义设计 |
-| [动画方向](动画方向.md) | 像素动画的取向、明确不做的能力、分层路线和开放问题 |
-| [色彩演进](色彩演进.md) | 彩色模式 / 单色模式并存的设计方向、API 影响和落地分层 |
+| [架构说明](实现说明/架构说明.md) | Widget / Element / RenderObject 三层模型和渲染管线 |
+| [变高列表虚拟化](实现说明/变高列表虚拟化.md) | `ListViewBuilder(estimatedItemExtent)` 的兼容 lazy 设计 |
+| [文本系统 v2](实现说明/文本系统-v2.md) | internal paragraph model、文本测量和 ellipsis 统一设计 |
+| [滚动手势 v2](实现说明/滚动手势-v2.md) | nested scroll session、handoff 和 scroll physics 语义设计 |
+
+## 演进规划（SDK 维护者了解未来）
+
+写给规划 `pixel-engine` 下一阶段的开发者，描述未开发能力的方向、约束和待决问题。
+
+| 文档 | 用途 |
+|---|---|
+| [演进路线](演进规划/演进路线.md) | SDK 演进方向、当前迭代任务、优先级、历史决策和接手建议 |
+| [动画方向](演进规划/动画方向.md) | 像素动画的取向、明确不做的能力、分层路线和开放问题 |
+| [色彩演进](演进规划/色彩演进.md) | 彩色模式 / 单色模式并存的设计方向、API 影响和落地分层 |
