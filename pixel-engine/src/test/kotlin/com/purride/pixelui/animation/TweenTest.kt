@@ -1,5 +1,6 @@
 package com.purride.pixelui.animation
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.EdgeInsets
 import org.junit.Assert.assertEquals
@@ -87,6 +88,35 @@ class TweenTest {
         val tween = PixelToneTween(PixelTone.OFF, PixelTone.ACCENT)
         val values = listOf(0f, 0.1f, 0.25f, 0.49f, 0.5f, 0.75f, 1f).map { tween.lerp(it) }
         assertTrue(values.none { it == PixelTone.ON })
+    }
+
+    @Test
+    fun pixelColorTweenBoundaries() {
+        val black = PixelColor.fromRgb(0, 0, 0)
+        val white = PixelColor.fromRgb(255, 255, 255)
+        val tween = PixelColorTween(black, white)
+        assertEquals(black, tween.lerp(0f))
+        assertEquals(white, tween.lerp(1f))
+    }
+
+    @Test
+    fun pixelColorTweenMidpoint() {
+        val black = PixelColor.fromRgb(0, 0, 0)
+        val white = PixelColor.fromRgb(255, 255, 255)
+        val tween = PixelColorTween(black, white)
+        val mid = tween.lerp(0.5f)
+        assertEquals(128, mid.red)
+        assertEquals(128, mid.green)
+        assertEquals(128, mid.blue)
+        assertEquals(255, mid.alpha)
+    }
+
+    @Test
+    fun pixelColorTweenAlphaChannel() {
+        val transparent = PixelColor.fromArgb(0, 255, 0, 0)
+        val opaque = PixelColor.fromArgb(255, 255, 0, 0)
+        val tween = PixelColorTween(transparent, opaque)
+        assertEquals(128, tween.lerp(0.5f).alpha)
     }
 
     private fun assertTrue(b: Boolean) = org.junit.Assert.assertTrue(b)

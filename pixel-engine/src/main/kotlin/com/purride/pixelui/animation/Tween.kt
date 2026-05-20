@@ -1,5 +1,6 @@
 package com.purride.pixelui.animation
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.EdgeInsets
 import kotlin.math.roundToInt
@@ -39,4 +40,13 @@ public class OffsetTween(begin: IntOffset, end: IntOffset) : Tween<IntOffset>(be
 
 public class PixelToneTween(begin: PixelTone, end: PixelTone) : Tween<PixelTone>(begin, end) {
     override fun lerp(t: Float): PixelTone = if (t < 0.5f) begin else end
+}
+
+public class PixelColorTween(begin: PixelColor, end: PixelColor) : Tween<PixelColor>(begin, end) {
+    override fun lerp(t: Float): PixelColor = PixelColor.fromArgb(
+        a = lerpInt(begin.alpha, end.alpha, t),
+        r = lerpInt(begin.red, end.red, t),
+        g = lerpInt(begin.green, end.green, t),
+        b = lerpInt(begin.blue, end.blue, t),
+    )
 }
