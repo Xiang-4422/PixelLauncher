@@ -48,6 +48,7 @@ import com.purride.pixeldemo.showcase.integration.EmptyLoadingErrorScene
 import com.purride.pixeldemo.showcase.integration.HapticFeedbackScene
 import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
 import com.purride.pixeldemo.showcase.integration.SystemActionDispatchScene
+import com.purride.pixeldemo.showcase.animation.AnimationCoreScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
 import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
 import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
@@ -150,6 +151,12 @@ object DemoCatalog {
                 EmptyLoadingErrorScene,
                 HapticFeedbackScene,
                 SystemActionDispatchScene,
+            ),
+        ),
+        DemoSection(
+            title = "Animation",
+            scenes = listOf(
+                AnimationCoreScene,
             ),
         ),
     )
