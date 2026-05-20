@@ -596,6 +596,8 @@ public fun TextField(
     textInputAction: TextInputAction = TextInputAction.DONE,
     onChanged: ((String) -> Unit)? = null,
     onSubmitted: ((String) -> Unit)? = null,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
     key: Any? = null,
 ): Widget {
     return TextFieldWidget(
@@ -613,6 +615,8 @@ public fun TextField(
         textInputAction = textInputAction,
         onChanged = onChanged,
         onSubmitted = onSubmitted,
+        fillColor = fillColor,
+        borderColor = borderColor,
         key = key,
     )
 }
@@ -625,6 +629,8 @@ public fun OutlinedButton(
     enabled: Boolean = true,
     selected: Boolean = false,
     pressed: Boolean = false,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
     key: Any? = null,
 ): Widget {
     return OutlinedButtonWidget(
@@ -635,6 +641,8 @@ public fun OutlinedButton(
         enabled = enabled,
         selected = selected,
         pressed = pressed,
+        fillColor = fillColor,
+        borderColor = borderColor,
         key = key,
     )
 }

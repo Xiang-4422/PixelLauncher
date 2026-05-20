@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelInputType
@@ -32,6 +33,8 @@ internal data class TextFieldWidget(
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
     override val key: Any? = null,
 ) : StatelessWidget(
     key = key,
@@ -65,6 +68,8 @@ internal data class TextFieldWidget(
                 state.isFocused -> resolvedStyle.focusedBorderTone
                 else -> resolvedStyle.borderTone
             },
+            fillColor = fillColor,
+            borderColor = borderColor,
             padding = resolvedStyle.padding,
             alignment = Alignment.CENTER_START,
             state = state,
@@ -103,6 +108,8 @@ private data class TextInputSurfaceWidget(
     override val child: Widget?,
     val fillTone: com.purride.pixelcore.PixelTone,
     val borderTone: com.purride.pixelcore.PixelTone?,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
     val padding: Int,
     val alignment: Alignment,
     val state: PixelTextFieldState,
@@ -127,6 +134,8 @@ private data class TextInputSurfaceWidget(
         return RenderSurface(
             fillTone = fillTone,
             borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
             contentPaddingLeft = padding,
             contentPaddingTop = padding,
@@ -155,6 +164,8 @@ private data class TextInputSurfaceWidget(
         (renderObject as RenderSurface).updateSurface(
             fillTone = fillTone,
             borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
             contentPaddingLeft = padding,
             contentPaddingTop = padding,
@@ -185,6 +196,8 @@ internal data class OutlinedButtonWidget(
     val enabled: Boolean,
     val selected: Boolean,
     val pressed: Boolean,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
     override val key: Any? = null,
 ) : StatelessWidget(
     key = key,
@@ -206,6 +219,8 @@ internal data class OutlinedButtonWidget(
         val content = ButtonSurfaceWidget(
             fillTone = resolvedStyle.fillTone,
             borderTone = resolvedStyle.borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             padding = 1,
             alignment = resolvedStyle.alignment,
             key = key,
@@ -239,6 +254,8 @@ private data class ButtonSurfaceWidget(
     override val child: Widget?,
     val fillTone: com.purride.pixelcore.PixelTone,
     val borderTone: com.purride.pixelcore.PixelTone?,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
     val padding: Int,
     val alignment: Alignment,
     override val key: Any? = null,
@@ -253,6 +270,8 @@ private data class ButtonSurfaceWidget(
         return RenderSurface(
             fillTone = fillTone,
             borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
             fillMaxWidth = false,
             fillMaxHeight = false,
@@ -273,6 +292,8 @@ private data class ButtonSurfaceWidget(
         (renderObject as RenderSurface).updateSurface(
             fillTone = fillTone,
             borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
             fillMaxWidth = false,
             fillMaxHeight = false,
