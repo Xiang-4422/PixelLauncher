@@ -13,10 +13,8 @@ import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
-import com.purride.pixelui.Positioned
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
-import com.purride.pixelui.Stack
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
@@ -27,7 +25,6 @@ import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.widgets.animated.AnimatedContainer
 import com.purride.pixelui.widgets.animated.AnimatedOpacity
-import com.purride.pixelui.widgets.animated.AnimatedPositioned
 import com.purride.pixelui.widgets.animated.AnimatedSwitcher
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
@@ -50,15 +47,11 @@ private data class Notification(
 )
 
 private val INITIAL_NOTIFICATIONS = listOf(
-    Notification("n1", "BUILD OK", "pixel-engine:assembleDebug passed in 11s", read = false),
-    Notification("n2", "TEST PASS", "30 of 30 unit tests green. No regressions.", read = false),
-    Notification("n3", "DEPLOY", "Demo APK pushed to device. Ready to test.", read = true),
-    Notification("n4", "LINT WARN", "2 unused imports in AnimationCoreScene.kt", read = false),
+    Notification("n1", "BUILD OK", "pixel-engine:assembleDebug passed in 11s"),
+    Notification("n2", "TEST PASS", "30 of 30 unit tests green, no regressions"),
+    Notification("n3", "DEPLOY", "Demo APK pushed to device, ready to test", read = true),
+    Notification("n4", "LINT WARN", "2 unused imports in AnimationCoreScene.kt"),
 )
-
-// badge positions: left edge when unread > 0, right edge (hidden) when all read
-private const val BADGE_VISIBLE_LEFT = 0
-private const val BADGE_HIDDEN_LEFT = 140   // off-screen right
 
 private class ImplicitAnimationsWidget(
     private val frameScheduler: PixelFrameScheduler,
@@ -105,8 +98,38 @@ private class ImplicitAnimationsWidget(
                 mainAxisSize = MainAxisSize.MAX,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 children = listOf(
-                    // ── header ───────────────────────────────────────────────
-                    notificationHeader(unread),
+                    // ── header (Row, NOT Stack — Stack fills maxHeight) ───────
+                    Padding(
+                        child = Row(
+                            mainAxisSize = MainAxisSize.MAX,
+                            children = listOf(
+                                Text("NOTIFICATIONS", style = TextStyle.Accent),
+                                Expanded(child = SizedBox()),
+                                // badge: AnimatedOpacity + AnimatedSwitcher for count
+                                AnimatedOpacity(
+                                    opacity = if (unread > 0) 1f else 0f,
+                                    duration = 300.milliseconds,
+                                    vsync = vsync,
+                                    child = AnimatedSwitcher(
+                                        key = "badge",
+                                        duration = 200.milliseconds,
+                                        vsync = vsync,
+                                        child = Container(
+                                            key = "badge-$unread",
+                                            width = 14, height = 8,
+                                            fillTone = PixelTone.ACCENT,
+                                            borderTone = null,
+                                            child = Center(
+                                                child = Text("$unread", style = TextStyle.Default),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                        horizontal = 4,
+                        vertical = 3,
+                    ),
 
                     // ── notification rows ─────────────────────────────────────
                     Expanded(
@@ -119,7 +142,7 @@ private class ImplicitAnimationsWidget(
                         ),
                     ),
 
-                    // ── footer controls ──────────────────────────────────────
+                    // ── footer controls ───────────────────────────────────────
                     Padding(
                         child = Row(
                             spacing = 4,
@@ -141,47 +164,6 @@ private class ImplicitAnimationsWidget(
             )
         }
 
-        private fun notificationHeader(unread: Int): Widget {
-            return Padding(
-                child = Stack(
-                    children = listOf(
-                        Row(
-                            mainAxisSize = MainAxisSize.MAX,
-                            mainAxisAlignment = MainAxisAlignment.START,
-                            children = listOf(
-                                Text("NOTIFICATIONS", style = TextStyle.Accent),
-                                Expanded(child = SizedBox()),
-                            ),
-                        ),
-                        // Animated badge slides in from right when there are unreads
-                        AnimatedPositioned(
-                            duration = 300.milliseconds,
-                            vsync = vsync,
-                            curve = Curves.EaseOut,
-                            right = if (unread > 0) 0 else -20,
-                            top = 0,
-                            child = AnimatedSwitcher(
-                                key = "badge",
-                                duration = 200.milliseconds,
-                                vsync = vsync,
-                                child = Container(
-                                    key = "badge-$unread",
-                                    width = 16, height = 8,
-                                    fillTone = PixelTone.ACCENT,
-                                    borderTone = null,
-                                    child = Center(
-                                        child = Text("$unread", style = TextStyle.Default),
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-                horizontal = 4,
-                vertical = 3,
-            )
-        }
-
         private fun notificationRow(notif: Notification): Widget {
             val isExpanded = expandedId == notif.id
             val isRead = notif.read
@@ -192,12 +174,12 @@ private class ImplicitAnimationsWidget(
                     child = Column(
                         crossAxisAlignment = CrossAxisAlignment.STRETCH,
                         children = listOf(
-                            // row header: indicator + title + read state
+                            // header row: unread dot + expand arrow + title
                             Row(
                                 mainAxisSize = MainAxisSize.MAX,
                                 spacing = 3,
                                 children = listOf(
-                                    // unread dot (animated opacity: visible when unread)
+                                    // unread dot fades out when read
                                     AnimatedOpacity(
                                         opacity = if (isRead) 0f else 1f,
                                         duration = 400.milliseconds,
@@ -208,13 +190,13 @@ private class ImplicitAnimationsWidget(
                                             borderTone = null,
                                         ),
                                     ),
-                                    // expand indicator via AnimatedSwitcher
+                                    // ▶/▼ indicator switches via AnimatedSwitcher
                                     AnimatedSwitcher(
                                         key = "ind-${notif.id}",
                                         duration = 150.milliseconds,
                                         vsync = vsync,
                                         child = Text(
-                                            if (isExpanded) "▼" else "▶",
+                                            if (isExpanded) "v" else ">",
                                             key = if (isExpanded) "open" else "shut",
                                             style = TextStyle.Default,
                                         ),
@@ -227,16 +209,15 @@ private class ImplicitAnimationsWidget(
                                     ),
                                 ),
                             ),
-                            // expandable detail body
-                            AnimatedContainer(
-                                duration = 300.milliseconds,
-                                vsync = vsync,
-                                curve = Curves.EaseOut,
-                                height = if (isExpanded) 20 else 0,
+                            // expandable detail — AnimatedOpacity over fixed height SizedBox
+                            // avoids AnimatedContainer(height=0) overflow issue
+                            SizedBox(
+                                height = 18,
                                 child = AnimatedOpacity(
                                     opacity = if (isExpanded) 1f else 0f,
-                                    duration = 250.milliseconds,
+                                    duration = 300.milliseconds,
                                     vsync = vsync,
+                                    curve = Curves.EaseOut,
                                     child = Padding(
                                         child = Text(
                                             notif.detail,
@@ -248,6 +229,15 @@ private class ImplicitAnimationsWidget(
                                         vertical = 2,
                                     ),
                                 ),
+                            ),
+                            // width bar: AnimatedContainer shows reading progress
+                            AnimatedContainer(
+                                duration = 350.milliseconds,
+                                vsync = vsync,
+                                curve = Curves.EaseOut,
+                                width = if (isRead) 120 else 0,
+                                height = 2,
+                                borderTone = if (isExpanded) PixelTone.ACCENT else PixelTone.ON,
                             ),
                         ),
                     ),
