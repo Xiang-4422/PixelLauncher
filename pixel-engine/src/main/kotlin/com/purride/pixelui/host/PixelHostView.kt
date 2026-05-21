@@ -3,9 +3,12 @@ package com.purride.pixelui
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RadialGradient
 import android.graphics.Rect
+import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -36,6 +39,7 @@ import com.purride.pixelui.internal.HostRootWidget
 import com.purride.pixelui.internal.NestedScrollSession
 import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
+import kotlin.math.hypot
 import kotlin.math.min
 
 /**
@@ -68,11 +72,41 @@ public class PixelHostView @JvmOverloads constructor(
         }
 
     /**
-     * 画布背景色。像素网格绘制在它之上。
+     * 画布背景色。像素网格绘制在它之上（也是屏幕外 bezel 的颜色）。
      */
     public var backgroundColor: PixelColor = PixelColor.Black
         set(value) {
             field = value
+            invalidate()
+        }
+
+    /**
+     * 像素格栅色：
+     * - 间隙开启时作为所有"熄灭"像素点的填色（B 方案），让格点矩阵可见
+     * - 间隙关闭时作为内容区底色，区分屏幕 panel 与外部 bezel（A 方案）
+     * 默认 #111111（极深灰），比 bezel 稍亮，不影响显眼颜色的对比度。
+     */
+    public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** 是否启用暗角效果（Vignette）。 */
+    public var vignetteEnabled: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 暗角强度，0.0 = 无，1.0 = 最强（默认 0.6）。
+     * 修改此值会使缓存 shader 失效。
+     */
+    public var vignetteStrength: Float = 0.6f
+        set(value) {
+            field = value.coerceIn(0f, 1f)
+            cachedVignetteShader = null
             invalidate()
         }
 
@@ -137,6 +171,13 @@ public class PixelHostView @JvmOverloads constructor(
     private val reusableDiamondPath = Path()
     private var reusableBitmap: Bitmap? = null
     private val reusableDestRect = Rect()
+    // Vignette — lazily built RadialGradient, invalidated when geometry or strength changes
+    private val vignettePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private var cachedVignetteShader: RadialGradient? = null
+    private var cachedVignetteCx = Float.NaN
+    private var cachedVignetteCy = Float.NaN
+    private var cachedVignetteRadius = Float.NaN
+    private var cachedVignetteAlpha = -1
 
     public fun setContent(provider: RootWidgetProvider) {
         contentProvider = provider
@@ -581,12 +622,13 @@ public class PixelHostView @JvmOverloads constructor(
     /**
      * 把 ARGB PixelBuffer 渲染成 Android Canvas。
      *
-     * 通过 Bitmap.setPixels 把 IntArray 直接写入 Bitmap，
-     * 再用 canvas.drawBitmap 缩放到逻辑像素网格区域。
+     * 两条路径：
+     * - 间隙开启：逐格绘制，熄灭格用 [pixelGridColor]（格点矩阵可见），点亮格用自身颜色
+     * - 间隙关闭：先填充内容区底色，再用 Bitmap.setPixels + drawBitmap 快速绘制
+     *
+     * 两条路径完成后，若 [vignetteEnabled] 则叠加暗角。
      */
     private fun drawBuffer(canvas: Canvas, buffer: PixelBuffer) {
-        // cellSize is the same with or without gap; resolve with the actual setting so
-        // dotInset / dotSize are populated correctly for drawPixelShapes.
         val geometry = PixelGridGeometryResolver.resolve(
             viewWidth = width,
             viewHeight = height,
@@ -597,49 +639,78 @@ public class PixelHostView @JvmOverloads constructor(
 
         val bw = buffer.width
         val bh = buffer.height
-        val existing = reusableBitmap
-        val bitmap = if (existing != null && existing.width == bw && existing.height == bh) {
-            existing
+
+        if (pixelGapEnabled) {
+            // Gap path — draw every cell as a shaped dot.
+            // Canvas was already cleared to backgroundColor by onDraw().
+            drawPixelShapes(canvas, buffer, geometry)
         } else {
-            existing?.recycle()
-            Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888).also { reusableBitmap = it }
+            // No-gap path — bitmap fast path.
+            val existing = reusableBitmap
+            val bitmap = if (existing != null && existing.width == bw && existing.height == bh) {
+                existing
+            } else {
+                existing?.recycle()
+                Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888).also { reusableBitmap = it }
+            }
+            bitmap.setPixels(buffer.pixels, 0, bw, 0, 0, bw, bh)
+
+            val gridWidth = (bw * geometry.cellSize).toInt()
+            val gridHeight = (bh * geometry.cellSize).toInt()
+            reusableDestRect.set(
+                geometry.originX.toInt(),
+                geometry.originY.toInt(),
+                geometry.originX.toInt() + gridWidth,
+                geometry.originY.toInt() + gridHeight,
+            )
+            // Fill content area with pixelGridColor so transparent pixels aren't bare-black
+            fillContentArea(canvas, geometry)
+            canvas.drawBitmap(bitmap, null, reusableDestRect, null)
         }
 
-        bitmap.setPixels(buffer.pixels, 0, bw, 0, 0, bw, bh)
-
-        val gridWidth = (bw * geometry.cellSize).toInt()
-        val gridHeight = (bh * geometry.cellSize).toInt()
-        reusableDestRect.set(
-            geometry.originX.toInt(),
-            geometry.originY.toInt(),
-            geometry.originX.toInt() + gridWidth,
-            geometry.originY.toInt() + gridHeight,
-        )
-        canvas.drawBitmap(bitmap, null, reusableDestRect, null)
-
-        // When gap is enabled, redraw each dot at its inset size/shape so gaps are visible.
-        // This applies to all pixel shapes including SQUARE.
-        if (pixelGapEnabled) {
-            drawPixelShapes(canvas, buffer, geometry)
+        if (vignetteEnabled) {
+            drawVignette(canvas, geometry)
         }
     }
 
+    /** 用 [pixelGridColor] 填充逻辑像素内容区（screen panel 底色）。 */
+    private fun fillContentArea(canvas: Canvas, geometry: com.purride.pixelcore.PixelGridGeometry) {
+        if (pixelGridColor.argb == backgroundColor.argb) return
+        reusablePaint.color = pixelGridColor.argb
+        canvas.drawRect(
+            geometry.originX,
+            geometry.originY,
+            geometry.originX + geometry.contentWidth,
+            geometry.originY + geometry.contentHeight,
+            reusablePaint,
+        )
+    }
+
     /**
-     * Render per-dot shapes (circle/diamond) for non-square pixel shapes with gap enabled.
+     * 逐格绘制像素点（gap 路径专用）。
+     *
+     * - 点亮格（alpha > 0）：以自身颜色绘制
+     * - 熄灭格（alpha == 0）：以 [pixelGridColor] 绘制（格点矩阵可见）
+     *   当 [pixelGridColor] == [backgroundColor] 时跳过熄灭格（等同旧行为）
+     *
+     * Canvas 在调用前已由 [onDraw] 清为 [backgroundColor]；此处不再重绘背景。
      */
     private fun drawPixelShapes(canvas: Canvas, buffer: PixelBuffer, geometry: com.purride.pixelcore.PixelGridGeometry) {
-        // Draw background again (gaps between dots show backgroundColor)
-        canvas.drawColor(backgroundColor.argb)
+        val showDeadPixels = pixelGridColor.argb != backgroundColor.argb
+        val shape = screenProfile.pixelShape
         for (y in 0 until buffer.height) {
             for (x in 0 until buffer.width) {
                 val pixel = buffer.getPixel(x, y)
-                if (pixel.alpha == 0) continue
+                val isLit = pixel.alpha > 0
+                if (!isLit && !showDeadPixels) continue
+
                 val left = geometry.originX + x * geometry.cellSize + geometry.dotInset
                 val top = geometry.originY + y * geometry.cellSize + geometry.dotInset
                 val right = left + geometry.dotSize
                 val bottom = top + geometry.dotSize
-                reusablePaint.color = pixel.argb
-                when (screenProfile.pixelShape) {
+                reusablePaint.color = if (isLit) pixel.argb else pixelGridColor.argb
+
+                when (shape) {
                     PixelShape.CIRCLE -> {
                         val centerX = (left + right) / 2f
                         val centerY = (top + bottom) / 2f
@@ -657,12 +728,49 @@ public class PixelHostView @JvmOverloads constructor(
                         reusableDiamondPath.close()
                         canvas.drawPath(reusableDiamondPath, reusablePaint)
                     }
-                    else -> {
-                        canvas.drawRect(left, top, right, bottom, reusablePaint)
-                    }
+                    else -> canvas.drawRect(left, top, right, bottom, reusablePaint)
                 }
             }
         }
+    }
+
+    /**
+     * 暗角叠层：以内容区中心为圆心的径向渐变（透明→黑），覆盖在像素区上方。
+     * Shader 按几何和强度缓存，避免每帧重建。
+     */
+    private fun drawVignette(canvas: Canvas, geometry: com.purride.pixelcore.PixelGridGeometry) {
+        val cx = geometry.originX + geometry.contentWidth / 2f
+        val cy = geometry.originY + geometry.contentHeight / 2f
+        // Radius covers all four corners from center
+        val radius = hypot(geometry.contentWidth / 2f, geometry.contentHeight / 2f)
+        val alpha = (vignetteStrength * 220).toInt()
+
+        if (cachedVignetteShader == null ||
+            cachedVignetteCx != cx ||
+            cachedVignetteCy != cy ||
+            cachedVignetteRadius != radius ||
+            cachedVignetteAlpha != alpha
+        ) {
+            cachedVignetteShader = RadialGradient(
+                cx, cy, radius,
+                intArrayOf(Color.TRANSPARENT, Color.TRANSPARENT, Color.argb(alpha, 0, 0, 0)),
+                floatArrayOf(0f, 0.45f, 1f),
+                Shader.TileMode.CLAMP,
+            )
+            cachedVignetteCx = cx
+            cachedVignetteCy = cy
+            cachedVignetteRadius = radius
+            cachedVignetteAlpha = alpha
+        }
+
+        vignettePaint.shader = cachedVignetteShader
+        canvas.drawRect(
+            geometry.originX,
+            geometry.originY,
+            geometry.originX + geometry.contentWidth,
+            geometry.originY + geometry.contentHeight,
+            vignettePaint,
+        )
     }
 
     private fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
