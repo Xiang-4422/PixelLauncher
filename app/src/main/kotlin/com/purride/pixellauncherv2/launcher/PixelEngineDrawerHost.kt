@@ -5,10 +5,8 @@ import android.view.View
 import android.widget.FrameLayout
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfile
-import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelShape as EnginePixelShape
-import com.purride.pixelcore.PixelTheme as EnginePixelTheme
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Center
@@ -22,7 +20,6 @@ import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
-import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SizedBox
@@ -32,7 +29,6 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
-import com.purride.pixelui.ThemeData
 import com.purride.pixelui.Widget
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.jumpToEnd
@@ -59,7 +55,6 @@ internal class PixelEngineDrawerHost(
     val setup: PixelHostSetup = createPixelHostSetup(
         context = context,
         config = PixelHostSetupConfig(
-            themeData = drawerTheme(),
             content = { buildDrawer() },
         ),
     )
@@ -79,7 +74,6 @@ internal class PixelEngineDrawerHost(
             query = state.drawerQuery,
             searchFocused = state.isDrawerSearchFocused,
             selectedIndex = state.selectedIndex.coerceIn(0, apps.lastIndex.coerceAtLeast(0)),
-            selectedTheme = state.selectedTheme.name,
             lowBattery = state.batteryLevel <= LOW_BATTERY_THRESHOLD && !state.isCharging,
         )
         rootView.visibility = if (model.active) View.VISIBLE else View.GONE
@@ -88,12 +82,6 @@ internal class PixelEngineDrawerHost(
             pixelShape = screenProfile.pixelShape.toEngineShape(),
         )
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
-        setup.hostView.setPalette(
-            PixelPalette.fromTheme(
-                theme = EnginePixelTheme.valueOf(model.selectedTheme),
-                isLowBattery = model.lowBattery,
-            ),
-        )
         syncQueryState()
         if (model.active && model.selectedIndex != lastSelectedIndex) {
             listController.showItem(listState, model.selectedIndex)
@@ -124,8 +112,8 @@ internal class PixelEngineDrawerHost(
         val apps = model.apps
         val selectedLabel = apps.getOrNull(model.selectedIndex)?.label ?: "NONE"
         return Container(
-            fillTone = PixelTone.OFF,
-            borderTone = null,
+            fillColor = PixelColor.Transparent,
+            borderColor = null,
             padding = EdgeInsets.all(4),
             child = Column(
                 spacing = 3,
@@ -177,6 +165,7 @@ internal class PixelEngineDrawerHost(
                             spacing = 2,
                             itemBuilder = { index ->
                                 val app = apps.getOrNull(index)
+                                val isSelected = index == model.selectedIndex && app != null
                                 SizedBox(
                                     height = ROW_HEIGHT,
                                     child = OutlinedButton(
@@ -184,7 +173,7 @@ internal class PixelEngineDrawerHost(
                                         onPressed = app?.let {
                                             { callbacks.onAppPressed(index) }
                                         },
-                                        selected = index == model.selectedIndex && app != null,
+                                        borderColor = if (isSelected) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                                         enabled = app != null,
                                     ),
                                 )
@@ -219,7 +208,7 @@ internal class PixelEngineDrawerHost(
                                     callbacks.onShowIndex(index)
                                 }
                             },
-                            style = ButtonStyle.Accent,
+                            borderColor = PixelColor.fromRgb(200, 100, 0),
                         ),
                     ),
                     Expanded(
@@ -234,12 +223,14 @@ internal class PixelEngineDrawerHost(
     }
 
     private fun alphaIndex(apps: List<AppEntry>): Widget {
+        val selectedLetter = apps.getOrNull(model.selectedIndex)?.label?.firstOrNull()?.uppercaseChar()
         return SizedBox(
             height = 14,
             child = Row(
                 spacing = 2,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 children = INDEX_LETTERS.map { letter ->
+                    val isActive = selectedLetter?.let { letter.firstOrNull() == it } == true
                     Expanded(
                         child = OutlinedButton(
                             text = letter,
@@ -253,9 +244,7 @@ internal class PixelEngineDrawerHost(
                                     callbacks.onShowIndex(index)
                                 }
                             },
-                            pressed = apps.getOrNull(model.selectedIndex)
-                                ?.label
-                                ?.startsWith(letter, ignoreCase = true) == true,
+                            borderColor = if (isActive) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                         ),
                     )
                 },
@@ -266,13 +255,13 @@ internal class PixelEngineDrawerHost(
     private fun sectionTitle(): Widget {
         return Container(
             height = 18,
-            fillTone = PixelTone.OFF,
-            borderTone = PixelTone.ACCENT,
+            fillColor = PixelColor.Transparent,
+            borderColor = PixelColor.fromRgb(200, 100, 0),
             padding = EdgeInsets.all(3),
             child = Center(
                 child = Text(
                     data = "APP DRAWER",
-                    style = TextStyle.Accent,
+                    style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                     overflow = TextOverflow.ELLIPSIS,
                 ),
             ),
@@ -286,8 +275,8 @@ internal class PixelEngineDrawerHost(
     ): Widget {
         return Container(
             height = 20,
-            fillTone = PixelTone.OFF,
-            borderTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
+            fillColor = PixelColor.Transparent,
+            borderColor = if (accent) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
             padding = EdgeInsets.all(2),
             alignment = Alignment.TOP_START,
             child = Column(
@@ -296,7 +285,7 @@ internal class PixelEngineDrawerHost(
                 children = listOf(
                     Text(
                         data = label,
-                        style = TextStyle.Accent,
+                        style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                         overflow = TextOverflow.ELLIPSIS,
                     ),
                     Text(
@@ -321,7 +310,6 @@ internal class PixelEngineDrawerHost(
         val query: String = "",
         val searchFocused: Boolean = false,
         val selectedIndex: Int = 0,
-        val selectedTheme: String = EnginePixelTheme.GREEN_PHOSPHOR.name,
         val lowBattery: Boolean = false,
     )
 
@@ -329,21 +317,6 @@ internal class PixelEngineDrawerHost(
         private const val ROW_HEIGHT = 13
         private const val LOW_BATTERY_THRESHOLD = 15
         private val INDEX_LETTERS = listOf("A", "M", "Z")
-
-        private fun drawerTheme(): ThemeData {
-            return ThemeData(
-                tokens = PixelThemeTokens(
-                    textTone = PixelTone.ON,
-                    accentTone = PixelTone.ACCENT,
-                    borderTone = PixelTone.ON,
-                    selectedBorderTone = PixelTone.ACCENT,
-                    pressedBorderTone = PixelTone.ACCENT,
-                    focusedBorderTone = PixelTone.ACCENT,
-                    disabledBorderTone = PixelTone.ON,
-                    readOnlyBorderTone = PixelTone.ACCENT,
-                ),
-            )
-        }
 
         private fun PixelShape.toEngineShape(): EnginePixelShape {
             return EnginePixelShape.valueOf(name)
