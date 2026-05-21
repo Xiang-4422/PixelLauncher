@@ -545,11 +545,13 @@ public class PixelHostView @JvmOverloads constructor(
      * 再用 canvas.drawBitmap 缩放到逻辑像素网格区域。
      */
     private fun drawBuffer(canvas: Canvas, buffer: PixelBuffer) {
+        // cellSize is the same with or without gap; resolve with the actual setting so
+        // dotInset / dotSize are populated correctly for drawPixelShapes.
         val geometry = PixelGridGeometryResolver.resolve(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
-            pixelGapEnabled = false,
+            pixelGapEnabled = pixelGapEnabled,
         ) ?: return
 
         val bw = buffer.width
@@ -574,8 +576,9 @@ public class PixelHostView @JvmOverloads constructor(
         )
         canvas.drawBitmap(bitmap, null, reusableDestRect, null)
 
-        // Draw pixel gap overlay when enabled (per-dot shapes).
-        if (pixelGapEnabled && screenProfile.pixelShape != PixelShape.SQUARE) {
+        // When gap is enabled, redraw each dot at its inset size/shape so gaps are visible.
+        // This applies to all pixel shapes including SQUARE.
+        if (pixelGapEnabled) {
             drawPixelShapes(canvas, buffer, geometry)
         }
     }
