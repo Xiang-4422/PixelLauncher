@@ -18,14 +18,9 @@ class FrameSwapBufferTest {
         val swapBuffer = FrameSwapBuffer()
         val profile = ScreenProfileFactory.create(widthPx = 100, heightPx = 100)
         val first = swapBuffer.offer(
-            pixelBuffer = MonoPixelBuffer(width = 8, height = 8),
+            pixelBuffer = PixelBuffer(width = 8, height = 8),
             screenProfile = profile,
-            palette = PixelPalette(
-                backgroundColor = 0x000000,
-                pixelOnColor = 0x00FF00,
-                pixelOffColor = 0x001100,
-                accentColor = 0x99FF99,
-            ),
+            backgroundColor = PixelColor.Black,
         )
 
         val consumedFirst = swapBuffer.consumeLatest(afterSequence = 0L)

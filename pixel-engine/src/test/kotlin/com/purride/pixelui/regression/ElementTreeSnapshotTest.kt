@@ -1,6 +1,6 @@
 package com.purride.pixelui.regression
 
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -78,15 +78,14 @@ class ElementTreeSnapshotTest {
                 width = 28,
                 height = 12,
                 padding = EdgeInsets.all(2),
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ON,
+                borderColor = PixelColor.White,
                 alignment = Alignment.CENTER,
             )
         },
         Scene(name = "stack_with_positioned") {
             Stack(
                 children = listOf(
-                    Container(width = 30, height = 20, borderTone = PixelTone.ON),
+                    Container(width = 30, height = 20, borderColor = PixelColor.White),
                     Positioned(child = Text("NW"), left = 2, top = 2),
                     Positioned(child = Text("SE"), right = 2, bottom = 2),
                 ),
@@ -95,8 +94,7 @@ class ElementTreeSnapshotTest {
         Scene(name = "decorated_box") {
             DecoratedBox(
                 child = Text("CORE"),
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ACCENT,
+                borderColor = PixelColor.fromRgb(200, 100, 0),
                 padding = 3,
             )
         },
@@ -106,7 +104,7 @@ class ElementTreeSnapshotTest {
                     child = Text("TAP"),
                     width = 22,
                     height = 9,
-                    borderTone = PixelTone.ON,
+                    borderColor = PixelColor.White,
                 ),
                 onTap = { /* no-op for structure-only baseline */ },
             )
@@ -114,7 +112,7 @@ class ElementTreeSnapshotTest {
         Scene(name = "rich_text_two_spans") {
             RichText(
                 spans = listOf(
-                    PixelTextSpan(text = "RED ", style = TextStyle.Accent),
+                    PixelTextSpan(text = "RED ", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                     PixelTextSpan(text = "BLUE", style = TextStyle.Default),
                 ),
             )
@@ -124,7 +122,7 @@ class ElementTreeSnapshotTest {
                 child = Padding(
                     child = Column(
                         children = listOf(
-                            Text("TITLE", style = TextStyle.Accent),
+                            Text("TITLE", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                             SizedBox(height = 2),
                             Row(
                                 children = listOf(
@@ -144,7 +142,7 @@ class ElementTreeSnapshotTest {
                 ),
                 width = 48,
                 height = 22,
-                borderTone = PixelTone.ON,
+                borderColor = PixelColor.White,
                 alignment = Alignment.TOP_START,
             )
         },

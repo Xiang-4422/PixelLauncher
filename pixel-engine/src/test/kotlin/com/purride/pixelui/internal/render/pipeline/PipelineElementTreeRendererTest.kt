@@ -1,14 +1,13 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.MonoPixelBuffer
+import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Align
 import com.purride.pixelui.Center
 import com.purride.pixelui.Container
-import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
@@ -19,7 +18,6 @@ import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparatedBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextSpan
-import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
@@ -35,8 +33,6 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextOverflow
-import com.purride.pixelui.Theme
-import com.purride.pixelui.ThemeData
 import com.purride.pixelui.Widget
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -73,7 +69,7 @@ class PipelineElementTreeRendererTest {
                 maxHeight = 7,
             ),
         )
-        val buffer = MonoPixelBuffer(width = 12, height = 7).also { it.clear() }
+        val buffer = PixelBuffer(width = 12, height = 7).also { it.clear() }
         renderText.paint(
             context = PaintContext(buffer = buffer),
             offsetX = 0,
@@ -103,8 +99,7 @@ class PipelineElementTreeRendererTest {
                 maxLines = 1,
                 defaultTextRasterizer = PixelBitmapFont.Default,
             ),
-            fillTone = PixelTone.OFF,
-            borderTone = PixelTone.ACCENT,
+            borderColor = PixelColor.fromRgb(200, 100, 0),
             alignment = PixelAlignment.TOP_START,
             explicitWidth = 12,
             explicitHeight = 8,
@@ -121,7 +116,7 @@ class PipelineElementTreeRendererTest {
                 maxHeight = 8,
             ),
         )
-        val buffer = MonoPixelBuffer(width = 12, height = 8).also { it.clear() }
+        val buffer = PixelBuffer(width = 12, height = 8).also { it.clear() }
         renderSurface.paint(
             context = PaintContext(buffer = buffer),
             offsetX = 0,
@@ -136,10 +131,10 @@ class PipelineElementTreeRendererTest {
 
         val textPixels = collectPixelsWithTone(
             buffer = buffer,
-            tone = PixelTone.ON,
+            color = PixelColor.White,
         )
-        assertEquals(PixelTone.ACCENT, buffer.getPixel(0, 0))
-        assertEquals(PixelTone.OFF, buffer.getPixel(1, 1))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), buffer.getPixel(0, 0))
+        assertEquals(PixelColor.Transparent, buffer.getPixel(1, 1))
         assertTrue(textPixels.isNotEmpty())
         assertTrue(textPixels.minOf { it.first } >= 2)
         assertEquals(1, clickTargets.size)
@@ -164,8 +159,7 @@ class PipelineElementTreeRendererTest {
                     maxLines = 1,
                     defaultTextRasterizer = PixelBitmapFont.Default,
                 ),
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ON,
+                borderColor = PixelColor.White,
                 alignment = PixelAlignment.TOP_START,
                 explicitWidth = 10,
                 explicitHeight = 8,
@@ -182,8 +176,8 @@ class PipelineElementTreeRendererTest {
             logicalHeight = 8,
         )
 
-        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
-        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
+        assertEquals(PixelColor.White, result.buffer.getPixel(0, 0))
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
         assertEquals(1, result.clickTargets.size)
     }
 
@@ -198,8 +192,7 @@ class PipelineElementTreeRendererTest {
                     width = 24,
                     height = 16,
                     padding = EdgeInsets.all(2),
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ACCENT,
+                    borderColor = PixelColor.fromRgb(200, 100, 0),
                     alignment = Alignment.CENTER,
                     child = Column(
                         spacing = 1,
@@ -231,8 +224,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
-        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(0, 0))
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
     }
 
     /**
@@ -252,7 +245,7 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
     }
 
     /**
@@ -263,8 +256,7 @@ class PipelineElementTreeRendererTest {
         val renderer = PipelineElementTreeRenderer()
         val result = withRenderRequest(
             root = DecoratedBox(
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ACCENT,
+                borderColor = PixelColor.fromRgb(200, 100, 0),
                 padding = 1,
                 alignment = Alignment.TOP_START,
                 child = Text("SURFACE"),
@@ -278,8 +270,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
-        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(0, 0))
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
     }
 
     /**
@@ -294,8 +286,7 @@ class PipelineElementTreeRendererTest {
                 child = com.purride.pixelui.Padding(
                     padding = EdgeInsets.all(1),
                     child = DecoratedBox(
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ACCENT,
+                        borderColor = PixelColor.fromRgb(200, 100, 0),
                         padding = 1,
                         alignment = Alignment.TOP_START,
                         child = Text("PAD"),
@@ -311,8 +302,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(1, 1))
-        assertTrue(collectActivePixels(result.buffer as MonoPixelBuffer).isNotEmpty())
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(1, 1))
+        assertTrue(collectActivePixels(result.buffer).isNotEmpty())
     }
 
     /**
@@ -362,7 +353,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 1))
         renderText.paint(
-            context = PaintContext(buffer = MonoPixelBuffer(width = 4, height = 1)),
+            context = PaintContext(buffer = PixelBuffer(width = 4, height = 1)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -391,7 +382,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 1))
         renderText.paint(
-            context = PaintContext(buffer = MonoPixelBuffer(width = 4, height = 1)),
+            context = PaintContext(buffer = PixelBuffer(width = 4, height = 1)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -420,7 +411,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 3, maxHeight = 3))
         renderText.paint(
-            context = PaintContext(buffer = MonoPixelBuffer(width = 3, height = 3)),
+            context = PaintContext(buffer = PixelBuffer(width = 3, height = 3)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -449,7 +440,7 @@ class PipelineElementTreeRendererTest {
 
         renderText.layout(RenderConstraints(maxWidth = 4, maxHeight = 2))
         renderText.paint(
-            context = PaintContext(buffer = MonoPixelBuffer(width = 4, height = 2)),
+            context = PaintContext(buffer = PixelBuffer(width = 4, height = 2)),
             offsetX = 0,
             offsetY = 0,
         )
@@ -537,8 +528,7 @@ class PipelineElementTreeRendererTest {
                     children = listOf(
                         Expanded(
                             child = Container(
-                                fillTone = PixelTone.OFF,
-                                borderTone = PixelTone.ON,
+                                borderColor = PixelColor.White,
                             ),
                         ),
                         Text("B"),
@@ -572,8 +562,8 @@ class PipelineElementTreeRendererTest {
                     children = listOf(
                         Container(
                             height = 3,
-                            fillTone = PixelTone.ON,
-                            borderTone = null,
+                            fillColor = PixelColor.White,
+                            borderColor = null,
                         ),
                         Row(
                             mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
@@ -582,14 +572,14 @@ class PipelineElementTreeRendererTest {
                                 Container(
                                     width = 3,
                                     height = 3,
-                                    fillTone = PixelTone.ACCENT,
-                                    borderTone = null,
+                                    fillColor = PixelColor.fromRgb(200, 100, 0),
+                                    borderColor = null,
                                 ),
                                 Container(
                                     width = 3,
                                     height = 3,
-                                    fillTone = PixelTone.ON,
-                                    borderTone = null,
+                                    fillColor = PixelColor.White,
+                                    borderColor = null,
                                 ),
                             ),
                         ),
@@ -606,9 +596,9 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(1, 3))
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 10))
-        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(27, 10))
+        assertEquals(PixelColor.White, result.buffer.getPixel(1, 3))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(0, 10))
+        assertEquals(PixelColor.White, result.buffer.getPixel(27, 10))
     }
 
     /**
@@ -628,8 +618,8 @@ class PipelineElementTreeRendererTest {
                         child = Container(
                             width = 4,
                             height = 3,
-                            fillTone = PixelTone.ACCENT,
-                            borderTone = PixelTone.ON,
+                            fillColor = PixelColor.fromRgb(200, 100, 0),
+                            borderColor = PixelColor.White,
                         ),
                     ),
                 ),
@@ -644,8 +634,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(14, 7))
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(15, 8))
+        assertEquals(PixelColor.White, result.buffer.getPixel(14, 7))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(15, 8))
         assertEquals(1, result.clickTargets.size)
         assertEquals(14, result.clickTargets.single().bounds.left)
         assertEquals(7, result.clickTargets.single().bounds.top)
@@ -766,7 +756,7 @@ class PipelineElementTreeRendererTest {
                         builtSeparators += index
                         SizedBox(
                             height = 2,
-                            child = DecoratedBox(fillTone = PixelTone.ON),
+                            child = DecoratedBox(fillColor = PixelColor.White),
                         )
                     },
                 ),
@@ -815,7 +805,7 @@ class PipelineElementTreeRendererTest {
                     separatorBuilder = {
                         SizedBox(
                             height = 2,
-                            child = DecoratedBox(fillTone = PixelTone.ACCENT),
+                            child = DecoratedBox(fillColor = PixelColor.fromRgb(200, 100, 0)),
                         )
                     },
                 ),
@@ -937,14 +927,14 @@ class PipelineElementTreeRendererTest {
                     PixelTextSpan(
                         text = "A",
                         style = com.purride.pixelui.PixelTextStyle(
-                            tone = PixelTone.ON,
+                            color = PixelColor.White,
                             textRasterizer = rasterizer,
                         ),
                     ),
                     PixelTextSpan(
                         text = "B",
                         style = com.purride.pixelui.PixelTextStyle(
-                            tone = PixelTone.ACCENT,
+                            color = PixelColor.fromRgb(200, 100, 0),
                             textRasterizer = rasterizer,
                         ),
                     ),
@@ -956,8 +946,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(1, 0))
+        assertEquals(PixelColor.White, result.buffer.getPixel(0, 0))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(1, 0))
     }
 
     /**
@@ -972,14 +962,14 @@ class PipelineElementTreeRendererTest {
                     PixelTextSpan(
                         text = "AB",
                         style = com.purride.pixelui.PixelTextStyle(
-                            tone = PixelTone.ON,
+                            color = PixelColor.White,
                             textRasterizer = rasterizer,
                         ),
                     ),
                     PixelTextSpan(
                         text = "CDEF",
                         style = com.purride.pixelui.PixelTextStyle(
-                            tone = PixelTone.ACCENT,
+                            color = PixelColor.fromRgb(200, 100, 0),
                             textRasterizer = rasterizer,
                         ),
                     ),
@@ -994,8 +984,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         assertEquals(listOf("A", "."), rasterizer.drawnTexts.distinct())
-        assertEquals(PixelTone.ON, (result?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
-        assertEquals(PixelTone.ACCENT, (result?.buffer as? MonoPixelBuffer)?.getPixel(1, 0))
+        assertEquals(PixelColor.White, result?.buffer?.getPixel(0, 0))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result?.buffer?.getPixel(1, 0))
     }
 
     /**
@@ -1029,35 +1019,28 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
-     * theme tokens 应该在组件样式保持默认时提供状态样式。
+     * Container/OutlinedButton 使用显式 borderColor 时应在角落像素上呈现该颜色。
+     * （替换原 themeTokensProvideSelectedContainerAndButtonStyles：Theme/ThemeData/PixelThemeTokens 已删除）
      */
     @Test
-    fun themeTokensProvideSelectedContainerAndButtonStyles() {
-        val theme = ThemeData(
-            tokens = PixelThemeTokens(
-                borderTone = null,
-                selectedBorderTone = PixelTone.ACCENT,
-            ),
-        )
-
+    fun containerAndOutlinedButtonRenderExplicitBorderColors() {
         val result = renderWithPipeline(
-            root = Theme(
-                data = theme,
-                child = Column(
-                    children = listOf(
-                        SizedBox(
-                            width = 12,
-                            height = 4,
-                            child = Container(selected = true),
+            root = Column(
+                children = listOf(
+                    SizedBox(
+                        width = 12,
+                        height = 4,
+                        child = Container(
+                            borderColor = PixelColor.fromRgb(200, 100, 0),
                         ),
-                        SizedBox(
-                            width = 12,
-                            height = 4,
-                            child = OutlinedButton(
-                                text = "OK",
-                                onPressed = { },
-                                selected = true,
-                            ),
+                    ),
+                    SizedBox(
+                        width = 12,
+                        height = 4,
+                        child = OutlinedButton(
+                            text = "OK",
+                            onPressed = { },
+                            borderColor = PixelColor.fromRgb(200, 100, 0),
                         ),
                     ),
                 ),
@@ -1068,66 +1051,51 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(result)
         result ?: return
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 0))
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(0, 4))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(0, 0))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(0, 4))
     }
 
     /**
-     * 显式 style 应该优先于状态样式和 theme token。
+     * Container 使用显式 fillColor/borderColor 时应在对应像素上呈现该颜色。
+     * （替换原 explicitContainerStyleOverridesStateAndTokenDefaults：ContainerStyle/Theme 已删除）
      */
     @Test
-    fun explicitContainerStyleOverridesStateAndTokenDefaults() {
+    fun containerExplicitColorsRenderCorrectly() {
         val result = renderWithPipeline(
-            root = Theme(
-                data = ThemeData(
-                    tokens = PixelThemeTokens(
-                        selectedBorderTone = PixelTone.ACCENT,
-                        pressedBorderTone = PixelTone.ACCENT,
-                    ),
-                ),
-                child = Container(
-                    width = 8,
-                    height = 4,
-                    selected = true,
-                    pressed = true,
-                    style = ContainerStyle.Default.copy(
-                        fillTone = PixelTone.ON,
-                        borderTone = PixelTone.ON,
-                    ),
-                ),
+            root = Container(
+                width = 8,
+                height = 4,
+                fillColor = PixelColor.White,
+                borderColor = PixelColor.White,
             ),
             logicalWidth = 8,
             logicalHeight = 4,
         )
 
         assertNotNull(result)
-        assertEquals(PixelTone.ON, (result?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
-        assertEquals(PixelTone.ON, (result?.buffer as? MonoPixelBuffer)?.getPixel(1, 1))
+        assertEquals(PixelColor.White, result?.buffer?.getPixel(0, 0))
+        assertEquals(PixelColor.White, result?.buffer?.getPixel(1, 1))
     }
 
     /**
-     * focused TextField 应该使用 token 提供的 focused 边框。
+     * TextField focused 时应用 style.focusedBorderColor 渲染边框。
+     * （替换原 textFieldFocusedStateUsesThemeTokenBorder：Theme/ThemeData 已删除）
      */
     @Test
-    fun textFieldFocusedStateUsesThemeTokenBorder() {
+    fun textFieldFocusedStateUsesStyleFocusedBorderColor() {
         val controller = TextEditingController()
         val state = controller.create(initialText = "FOCUS")
         state.isFocused = true
 
         val result = renderWithPipeline(
-            root = Theme(
-                data = ThemeData(
-                    tokens = PixelThemeTokens(
-                        borderTone = PixelTone.ON,
-                        focusedBorderTone = PixelTone.ACCENT,
-                    ),
-                ),
-                child = SizedBox(
-                    width = 12,
-                    height = 4,
-                    child = TextField(
-                        state = state,
-                        controller = controller,
+            root = SizedBox(
+                width = 12,
+                height = 4,
+                child = TextField(
+                    state = state,
+                    controller = controller,
+                    style = TextFieldStyle.Default.copy(
+                        focusedBorderColor = PixelColor.fromRgb(200, 100, 0),
                     ),
                 ),
             ),
@@ -1136,7 +1104,7 @@ class PipelineElementTreeRendererTest {
         )
 
         assertNotNull(result)
-        assertEquals(PixelTone.ACCENT, (result?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result?.buffer?.getPixel(0, 0))
     }
 
     /**
@@ -1149,20 +1117,16 @@ class PipelineElementTreeRendererTest {
         val state = controller.create()
 
         renderWithPipeline(
-            root = Theme(
-                data = ThemeData(
-                    textFieldStyle = TextFieldStyle.Default.copy(
+            root = SizedBox(
+                width = 4,
+                height = 3,
+                child = TextField(
+                    state = state,
+                    controller = controller,
+                    placeholder = "ABCDE",
+                    style = TextFieldStyle.Default.copy(
                         placeholderStyle = com.purride.pixelui.PixelTextStyle(textRasterizer = rasterizer),
                         padding = 0,
-                    ),
-                ),
-                child = SizedBox(
-                    width = 4,
-                    height = 3,
-                    child = TextField(
-                        state = state,
-                        controller = controller,
-                        placeholder = "ABCDE",
                     ),
                 ),
             ),
@@ -1174,51 +1138,43 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
-     * disabled/readOnly 应该使用各自主题状态边框。
+     * disabled/readOnly TextField 应使用 style.disabledBorderColor/readOnlyBorderColor 渲染边框。
+     * （原 textFieldUsesDisabledAndReadOnlyVisualStates：Theme/ThemeData 已删除，style 直接传入）
      */
     @Test
     fun textFieldUsesDisabledAndReadOnlyVisualStates() {
         val controller = TextEditingController()
         val disabledState = controller.create(initialText = "OFF")
         val readOnlyState = controller.create(initialText = "LOCK")
-        val theme = ThemeData(
-            disabledTextFieldStyle = TextFieldStyle.Default.copy(
-                disabledBorderTone = PixelTone.ACCENT,
-                padding = 0,
-            ),
-            readOnlyTextFieldStyle = TextFieldStyle.Default.copy(
-                readOnlyBorderTone = PixelTone.ON,
-                padding = 0,
-            ),
+        val style = TextFieldStyle.Default.copy(
+            disabledBorderColor = PixelColor.fromRgb(200, 100, 0),
+            readOnlyBorderColor = PixelColor.White,
+            padding = 0,
         )
 
         val disabledResult = renderWithPipeline(
-            root = Theme(
-                data = theme,
-                child = SizedBox(
-                    width = 10,
-                    height = 4,
-                    child = TextField(
-                        state = disabledState,
-                        controller = controller,
-                        enabled = false,
-                    ),
+            root = SizedBox(
+                width = 10,
+                height = 4,
+                child = TextField(
+                    state = disabledState,
+                    controller = controller,
+                    style = style,
+                    enabled = false,
                 ),
             ),
             logicalWidth = 10,
             logicalHeight = 4,
         )
         val readOnlyResult = renderWithPipeline(
-            root = Theme(
-                data = theme,
-                child = SizedBox(
-                    width = 10,
-                    height = 4,
-                    child = TextField(
-                        state = readOnlyState,
-                        controller = controller,
-                        readOnly = true,
-                    ),
+            root = SizedBox(
+                width = 10,
+                height = 4,
+                child = TextField(
+                    state = readOnlyState,
+                    controller = controller,
+                    style = style,
+                    readOnly = true,
                 ),
             ),
             logicalWidth = 10,
@@ -1227,8 +1183,8 @@ class PipelineElementTreeRendererTest {
 
         assertNotNull(disabledResult)
         assertNotNull(readOnlyResult)
-        assertEquals(PixelTone.ACCENT, (disabledResult?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
-        assertEquals(PixelTone.ON, (readOnlyResult?.buffer as? MonoPixelBuffer)?.getPixel(0, 0))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), disabledResult?.buffer?.getPixel(0, 0))
+        assertEquals(PixelColor.White, readOnlyResult?.buffer?.getPixel(0, 0))
     }
 
     /**
@@ -1384,18 +1340,17 @@ class PipelineElementTreeRendererTest {
         }
 
         override fun drawText(
-            buffer: MonoPixelBuffer,
+            buffer: PixelBuffer,
             text: String,
             x: Int,
             y: Int,
-            value: Byte,
+            color: PixelColor,
         ) {
             lastDrawnText = text
             drawnTexts += text
-            val tone = PixelTone.entries.firstOrNull { it.value == value } ?: PixelTone.ON
             text.forEachIndexed { index, _ ->
                 if (x + index in 0 until buffer.width && y in 0 until buffer.height) {
-                    buffer.setPixel(x = x + index, y = y, tone = tone)
+                    buffer.setPixel(x = x + index, y = y, color = color)
                 }
             }
         }
@@ -1404,28 +1359,28 @@ class PipelineElementTreeRendererTest {
     /**
      * 收集 buffer 里所有非背景像素，方便断言布局和绘制结果。
      */
-    private fun collectActivePixels(buffer: MonoPixelBuffer): List<Pair<Int, Int>> {
+    private fun collectActivePixels(buffer: PixelBuffer): List<Pair<Int, Int>> {
         return collectPixelsWithTone(
             buffer = buffer,
-            tone = null,
+            color = null,
         )
     }
 
     /**
-     * 收集 buffer 里指定 tone 的像素；tone 为空时收集所有非背景像素。
+     * 收集 buffer 里指定颜色的像素；color 为空时收集所有非透明像素。
      */
     private fun collectPixelsWithTone(
-        buffer: MonoPixelBuffer,
-        tone: PixelTone?,
+        buffer: PixelBuffer,
+        color: PixelColor?,
     ): List<Pair<Int, Int>> {
         val pixels = mutableListOf<Pair<Int, Int>>()
         for (y in 0 until buffer.height) {
             for (x in 0 until buffer.width) {
                 val value = buffer.getPixel(x, y)
-                val matched = if (tone != null) {
-                    value == tone
+                val matched = if (color != null) {
+                    value == color
                 } else {
-                    value != PixelTone.OFF
+                    value != PixelColor.Transparent
                 }
                 if (matched) {
                     pixels += x to y

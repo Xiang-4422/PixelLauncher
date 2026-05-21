@@ -1,13 +1,13 @@
 package com.purride.pixelui.widgets.animated
 
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.animation.EdgeInsetsTween
 import com.purride.pixelui.animation.IntTween
 import com.purride.pixelui.animation.PixelAnimationController
 import com.purride.pixelui.animation.PixelAnimationStatus
+import com.purride.pixelui.animation.PixelColorTween
 import com.purride.pixelui.animation.PixelTickerProvider
-import com.purride.pixelui.animation.PixelToneTween
 import com.purride.pixelui.host.ManualFrameScheduler
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -36,23 +36,25 @@ class AnimatedContainerTest {
     }
 
     @Test
-    fun borderToneSwitchesAtHalfway() {
-        val tween = PixelToneTween(begin = PixelTone.ON, end = PixelTone.ACCENT)
-        assertEquals(PixelTone.ON, tween.lerp(0.49f))
-        assertEquals(PixelTone.ACCENT, tween.lerp(0.5f))
+    fun borderColorTweenInterpolates() {
+        val tween = PixelColorTween(begin = PixelColor.Black, end = PixelColor.White)
+        val mid = tween.lerp(0.5f)
+        assertEquals(128, mid.red)
+        assertEquals(128, mid.green)
+        assertEquals(128, mid.blue)
     }
 
     @Test
     fun multiplePropertiesWithOneController() {
         val ctrl = PixelAnimationController(duration = 300.milliseconds, vsync = vsync)
         val widthTween = IntTween(begin = 0, end = 100)
-        val toneTween = PixelToneTween(begin = PixelTone.OFF, end = PixelTone.ON)
+        val colorTween = PixelColorTween(begin = PixelColor.Transparent, end = PixelColor.White)
         ctrl.forward()
         advance(0L)
         advance(300_000_000L)
         // Both tweens at t=1
         assertEquals(100, widthTween.lerp(ctrl.value))
-        assertEquals(PixelTone.ON, toneTween.lerp(ctrl.value))
+        assertEquals(PixelColor.White, colorTween.lerp(ctrl.value))
     }
 
     @Test

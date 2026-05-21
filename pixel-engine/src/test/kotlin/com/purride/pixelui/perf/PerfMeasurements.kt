@@ -1,9 +1,7 @@
 package com.purride.pixelui.perf
 
-import com.purride.pixelcore.ColorPixelBuffer
-import com.purride.pixelcore.MonoPixelBuffer
+import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
@@ -82,7 +80,7 @@ internal object PerfMeasurements {
         val widget = Row(
             children = listOf(
                 Text("WARMUP", style = TextStyle.Default),
-                Text("CACHE", style = TextStyle.Accent),
+                Text("CACHE", style = TextStyle.Default),
             ),
         )
         val runtime = PixelUiRuntime()
@@ -133,13 +131,13 @@ internal object PerfMeasurements {
     }
 
     private fun measureBlitNanos(iterations: Int): Long {
-        val source = MonoPixelBuffer(width = 32, height = 32)
+        val source = PixelBuffer(width = 32, height = 32)
         for (y in 0 until source.height) {
             for (x in 0 until source.width) {
-                source.setPixel(x, y, PixelTone.ON)
+                source.setPixel(x, y, PixelColor.White)
             }
         }
-        val dest = MonoPixelBuffer(width = 64, height = 64)
+        val dest = PixelBuffer(width = 64, height = 64)
         val start = System.nanoTime()
         repeat(iterations) {
             dest.blit(source = source, destX = 0, destY = 0)
@@ -149,14 +147,14 @@ internal object PerfMeasurements {
     }
 
     private fun measureColorBlitNanos(iterations: Int): Long {
-        val source = ColorPixelBuffer(width = 32, height = 32)
+        val source = PixelBuffer(width = 32, height = 32)
         val fillColor = PixelColor.fromRgb(255, 128, 0)
         for (y in 0 until source.height) {
             for (x in 0 until source.width) {
                 source.setPixel(x, y, fillColor)
             }
         }
-        val dest = ColorPixelBuffer(width = 64, height = 64)
+        val dest = PixelBuffer(width = 64, height = 64)
         val start = System.nanoTime()
         repeat(iterations) {
             dest.blit(source = source, destX = 0, destY = 0)
@@ -190,7 +188,7 @@ internal object PerfMeasurements {
         return Row(
             children = listOf(
                 Text("LEFT", style = TextStyle.Default),
-                Text("RIGHT", style = TextStyle.Accent),
+                Text("RIGHT", style = TextStyle.Default),
             ),
         )
     }

@@ -1,7 +1,6 @@
 package com.purride.pixelui.regression
 
-import com.purride.pixelcore.MonoPixelBuffer
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -88,15 +87,14 @@ class EngineGoldenTest {
                 width = 28,
                 height = 12,
                 padding = EdgeInsets.all(2),
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ON,
+                borderColor = PixelColor.White,
                 alignment = Alignment.CENTER,
             )
         },
         Scene(name = "stack_with_positioned", width = 30, height = 20) {
             Stack(
                 children = listOf(
-                    Container(width = 30, height = 20, borderTone = PixelTone.ON),
+                    Container(width = 30, height = 20, borderColor = PixelColor.White),
                     Positioned(child = Text("NW"), left = 2, top = 2),
                     Positioned(child = Text("SE"), right = 2, bottom = 2),
                 ),
@@ -105,8 +103,7 @@ class EngineGoldenTest {
         Scene(name = "decorated_box", width = 40, height = 14) {
             DecoratedBox(
                 child = Text("CORE"),
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ACCENT,
+                borderColor = PixelColor.fromRgb(200, 100, 0),
                 padding = 3,
             )
         },
@@ -116,7 +113,7 @@ class EngineGoldenTest {
                     child = Text("TAP"),
                     width = 22,
                     height = 9,
-                    borderTone = PixelTone.ON,
+                    borderColor = PixelColor.White,
                 ),
                 onTap = { /* no-op for render-only baseline */ },
             )
@@ -124,7 +121,7 @@ class EngineGoldenTest {
         Scene(name = "rich_text_two_spans", width = 40, height = 9) {
             RichText(
                 spans = listOf(
-                    PixelTextSpan(text = "RED ", style = TextStyle.Accent),
+                    PixelTextSpan(text = "RED ", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                     PixelTextSpan(text = "BLUE", style = TextStyle.Default),
                 ),
             )
@@ -134,7 +131,7 @@ class EngineGoldenTest {
                 child = Padding(
                     child = Column(
                         children = listOf(
-                            Text("TITLE", style = TextStyle.Accent),
+                            Text("TITLE", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                             SizedBox(height = 2),
                             Row(
                                 children = listOf(
@@ -154,7 +151,7 @@ class EngineGoldenTest {
                 ),
                 width = 48,
                 height = 22,
-                borderTone = PixelTone.ON,
+                borderColor = PixelColor.White,
                 alignment = Alignment.TOP_START,
             )
         },
@@ -219,25 +216,32 @@ class EngineGoldenTest {
 
     /**
      * 把 PixelBuffer 转成可读字符画，便于人工 diff 和 golden 文件 review。
+     * 亮度 ≥ 200 → '#'，亮度 ≥ 50 → '*'，完全透明 → '.'。
      */
     private fun bufferToAscii(buffer: com.purride.pixelcore.PixelBuffer): String {
-        val mono = buffer as MonoPixelBuffer
         val builder = StringBuilder()
-        builder.append("size=").append(mono.width).append('x').append(mono.height).append('\n')
-        for (y in 0 until mono.height) {
-            for (x in 0 until mono.width) {
-                builder.append(toneChar(mono.getPixel(x, y)))
+        builder.append("size=").append(buffer.width).append('x').append(buffer.height).append('\n')
+        for (y in 0 until buffer.height) {
+            for (x in 0 until buffer.width) {
+                builder.append(colorChar(buffer.getPixel(x, y)))
             }
             builder.append('\n')
         }
         return builder.toString()
     }
 
-    private fun toneChar(value: PixelTone): Char {
-        return when (value) {
-            PixelTone.ON -> '#'
-            PixelTone.ACCENT -> '*'
-            PixelTone.OFF -> '.'
+    private fun colorChar(color: PixelColor): Char {
+        val argb = color.argb
+        val a = (argb ushr 24) and 0xFF
+        if (a == 0) return '.'
+        val r = (argb ushr 16) and 0xFF
+        val g = (argb ushr 8) and 0xFF
+        val b = argb and 0xFF
+        val brightness = (r * 299 + g * 587 + b * 114) / 1000
+        return when {
+            brightness >= 200 -> '#'
+            brightness >= 50 -> '*'
+            else -> '.'
         }
     }
 

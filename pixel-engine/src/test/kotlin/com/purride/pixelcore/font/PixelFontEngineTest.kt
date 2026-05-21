@@ -109,7 +109,7 @@ class PixelFontEngineTest {
     fun drawTextLeavesBlankColumnBetweenAdjacentCjkGlyphs() {
         val glyphProvider = CountingGlyphProvider()
         val pixelFontEngine = PixelFontEngine(glyphProvider)
-        val buffer = MonoPixelBuffer(width = 40, height = 20)
+        val buffer = PixelBuffer(width = 40, height = 20)
 
         pixelFontEngine.drawText(
             buffer = buffer,
@@ -121,16 +121,16 @@ class PixelFontEngineTest {
         )
 
         for (y in 0 until appLabelStyle.cellHeight) {
-            assertEquals(PixelTone.OFF, buffer.getPixel(16, y))
+            assertEquals(PixelColor.Transparent, buffer.getPixel(16, y))
         }
-        assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelTone.OFF })
+        assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelColor.Transparent })
     }
 
     @Test
     fun drawTextLeavesBlankColumnBetweenWideAndNarrowGlyphs() {
         val glyphProvider = CountingGlyphProvider()
         val pixelFontEngine = PixelFontEngine(glyphProvider)
-        val buffer = MonoPixelBuffer(width = 40, height = 20)
+        val buffer = PixelBuffer(width = 40, height = 20)
 
         pixelFontEngine.drawText(
             buffer = buffer,
@@ -142,9 +142,9 @@ class PixelFontEngineTest {
         )
 
         for (y in 0 until appLabelStyle.cellHeight) {
-            assertEquals(PixelTone.OFF, buffer.getPixel(16, y))
+            assertEquals(PixelColor.Transparent, buffer.getPixel(16, y))
         }
-        assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelTone.OFF })
+        assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelColor.Transparent })
     }
 
     private class CountingGlyphProvider : GlyphProvider {

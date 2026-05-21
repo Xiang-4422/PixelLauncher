@@ -24,17 +24,18 @@ class PixelBitmapFontTest {
 
     @Test
     fun drawTextSupportsMultilineAndLowercaseFallback() {
-        val buffer = MonoPixelBuffer(width = 24, height = 20)
+        val buffer = PixelBuffer(width = 24, height = 20)
 
         font.drawText(
             buffer = buffer,
             text = "a\n?",
             x = 0,
             y = 0,
+            color = PixelColor.White,
         )
 
-        assertTrue((0 until 7).any { y -> buffer.getPixel(0, y) != PixelTone.OFF })
-        assertTrue((9 until 16).any { y -> buffer.getPixel(0, y) != PixelTone.OFF })
+        assertTrue((0 until 7).any { y -> buffer.getPixel(0, y) != PixelColor.Transparent })
+        assertTrue((9 until 16).any { y -> buffer.getPixel(0, y) != PixelColor.Transparent })
     }
 
     @Test
@@ -45,19 +46,20 @@ class PixelBitmapFontTest {
             letterSpacing = 1,
             lineSpacing = 1,
         )
-        val buffer = MonoPixelBuffer(width = 16, height = 8)
+        val buffer = PixelBuffer(width = 16, height = 8)
 
         compactFont.drawText(
             buffer = buffer,
             text = "AB",
             x = 0,
             y = 0,
+            color = PixelColor.White,
         )
 
         assertEquals(9, compactFont.measureText("AB"))
         assertEquals(5, compactFont.measureHeight("AB"))
         assertTrue((0 until buffer.height).any { y ->
-            (0 until buffer.width).any { x -> buffer.getPixel(x, y) != PixelTone.OFF }
+            (0 until buffer.width).any { x -> buffer.getPixel(x, y) != PixelColor.Transparent }
         })
     }
 }

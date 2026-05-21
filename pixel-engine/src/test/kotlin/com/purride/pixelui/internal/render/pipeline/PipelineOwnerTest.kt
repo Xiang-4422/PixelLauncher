@@ -1,7 +1,6 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.MonoPixelBuffer
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -328,10 +327,10 @@ class PipelineOwnerTest {
             offsetY: Int,
         ) {
             paintCount += 1
-            (context.buffer as MonoPixelBuffer).setPixel(
+            context.buffer.setPixel(
                 x = offsetX,
                 y = offsetY,
-                tone = PixelTone.ON,
+                color = PixelColor.White,
             )
         }
 

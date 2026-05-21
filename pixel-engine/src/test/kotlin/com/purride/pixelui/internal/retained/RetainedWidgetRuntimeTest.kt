@@ -1,21 +1,16 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.MonoPixelBuffer
-import com.purride.pixelcore.PixelBitmapFont
-import com.purride.pixelcore.PixelTone
-import com.purride.pixelui.Builder
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.ScreenProfile
+import com.purride.pixelui.Builder
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Container
-import com.purride.pixelui.ContainerStyle
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
-import com.purride.pixelui.Theme
-import com.purride.pixelui.ThemeData
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulBuilder
 import com.purride.pixelui.StatefulWidget
@@ -33,7 +28,7 @@ class RetainedWidgetRuntimeTest {
     @Test
     fun valueListenableBuilderUpdatesRenderedToneAfterNotifierChanges() {
         val runtime = PixelUiRuntime()
-        val tone = ValueNotifier(PixelTone.ON)
+        val tone = ValueNotifier(PixelColor.White)
 
         val root = ValueListenableBuilder(
             listenable = tone,
@@ -41,8 +36,8 @@ class RetainedWidgetRuntimeTest {
             Container(
                 width = 4,
                 height = 4,
-                fillTone = currentTone,
-                borderTone = null,
+                fillColor = currentTone,
+                borderColor = null,
             )
         }
 
@@ -51,16 +46,16 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.White, first.buffer.getPixel(1, 1))
 
-        tone.value = PixelTone.ACCENT
+        tone.value = PixelColor.fromRgb(200, 100, 0)
 
         val second = runtime.render(
             root = root,
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), second.buffer.getPixel(1, 1))
     }
 
     @Test
@@ -73,7 +68,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.White, first.buffer.getPixel(1, 1))
         first.clickTargets.single().onClick.invoke()
 
         val second = runtime.render(
@@ -81,7 +76,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), second.buffer.getPixel(1, 1))
     }
 
     @Test
@@ -90,23 +85,23 @@ class RetainedWidgetRuntimeTest {
 
         val first = runtime.render(
             root = ToneScope(
-                tone = PixelTone.ON,
+                tone = PixelColor.White,
                 child = ToneConsumerWidget(),
             ),
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.White, first.buffer.getPixel(1, 1))
 
         val second = runtime.render(
             root = ToneScope(
-                tone = PixelTone.ACCENT,
+                tone = PixelColor.fromRgb(200, 100, 0),
                 child = ToneConsumerWidget(),
             ),
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), second.buffer.getPixel(1, 1))
     }
 
     @Test
@@ -134,69 +129,39 @@ class RetainedWidgetRuntimeTest {
             logicalHeight = 4,
         )
 
-        assertEquals(PixelTone.ACCENT, (result.buffer as MonoPixelBuffer).getPixel(5, 0))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(5, 0))
     }
 
     @Test
-    fun hostThemeProvidesDefaultContainerStyleAndLocalThemeOverridesIt() {
+    fun containerExplicitFillColorRendersToPixelBuffer() {
+        // 替换原 hostThemeProvidesDefaultContainerStyleAndLocalThemeOverridesIt 测试。
+        // Theme/ThemeData/ContainerStyle 已在纯色彩化重构中删除，改测直接传入 fillColor 的语义。
         val runtime = PixelUiRuntime()
-        val screenProfile = ScreenProfile(logicalWidth = 4, logicalHeight = 4, dotSizePx = 8)
 
-        // PixelUiRuntime 复用同一个 buffer pool，跨 render 调用之间不能假设旧
-        // result.buffer 还是原内容（pool 可能把它回收给下一帧）。在每次 render
-        // 后立刻读出关心的像素值，再做断言。
-        val hostThemePixel = runtime.render(
-            root = HostRootWidget(
-                screenProfile = screenProfile,
-                textDirection = TextDirection.LTR,
-                textRasterizer = PixelBitmapFont.Default,
-                themeData = ThemeData(
-                    containerStyle = ContainerStyle.Default.copy(
-                        fillTone = PixelTone.ACCENT,
-                        borderTone = null,
-                    ),
-                ),
-                child = Container(
-                    width = 4,
-                    height = 4,
-                    style = ContainerStyle.Default,
-                ),
+        val accentPixel = runtime.render(
+            root = Container(
+                width = 4,
+                height = 4,
+                fillColor = PixelColor.fromRgb(200, 100, 0),
+                borderColor = null,
             ),
             logicalWidth = 4,
             logicalHeight = 4,
-        ).let { (it.buffer as MonoPixelBuffer).getPixel(1, 1) }
+        ).buffer.getPixel(1, 1)
 
-        val localThemePixel = runtime.render(
-            root = HostRootWidget(
-                screenProfile = screenProfile,
-                textDirection = TextDirection.LTR,
-                textRasterizer = PixelBitmapFont.Default,
-                themeData = ThemeData(
-                    containerStyle = ContainerStyle.Default.copy(
-                        fillTone = PixelTone.ACCENT,
-                        borderTone = null,
-                    ),
-                ),
-                child = Theme(
-                    data = ThemeData(
-                        containerStyle = ContainerStyle.Default.copy(
-                            fillTone = PixelTone.ON,
-                            borderTone = null,
-                        ),
-                    ),
-                    child = Container(
-                        width = 4,
-                        height = 4,
-                        style = ContainerStyle.Default,
-                    ),
-                ),
+        val whitePixel = runtime.render(
+            root = Container(
+                width = 4,
+                height = 4,
+                fillColor = PixelColor.White,
+                borderColor = null,
             ),
             logicalWidth = 4,
             logicalHeight = 4,
-        ).let { (it.buffer as MonoPixelBuffer).getPixel(1, 1) }
+        ).buffer.getPixel(1, 1)
 
-        assertEquals(PixelTone.ACCENT, hostThemePixel)
-        assertEquals(PixelTone.ON, localThemePixel)
+        assertEquals(PixelColor.fromRgb(200, 100, 0), accentPixel)
+        assertEquals(PixelColor.White, whitePixel)
     }
 
     @Test
@@ -213,7 +178,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.White, first.buffer.getPixel(1, 1))
 
         count.value = 1
 
@@ -222,7 +187,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 4,
             logicalHeight = 4,
         )
-        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), second.buffer.getPixel(1, 1))
     }
 
     @Test
@@ -231,13 +196,13 @@ class RetainedWidgetRuntimeTest {
 
         val result = runtime.render(
             root = ToneScope(
-                tone = PixelTone.ON,
+                tone = PixelColor.White,
                 child = Builder { context ->
                     Container(
                         width = 4,
                         height = 4,
-                        fillTone = ToneScope.of(context),
-                        borderTone = null,
+                        fillColor = ToneScope.of(context),
+                        borderColor = null,
                     )
                 },
             ),
@@ -245,7 +210,7 @@ class RetainedWidgetRuntimeTest {
             logicalHeight = 4,
         )
 
-        assertEquals(PixelTone.ON, (result.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.White, result.buffer.getPixel(1, 1))
     }
 
     @Test
@@ -263,8 +228,8 @@ class RetainedWidgetRuntimeTest {
                 child = Container(
                     width = 6,
                     height = 6,
-                    fillTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
-                    borderTone = null,
+                    fillColor = if (accent) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
+                    borderColor = null,
                 ),
             )
         }
@@ -274,7 +239,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ON, (first.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.White, first.buffer.getPixel(1, 1))
         first.clickTargets.single().onClick.invoke()
 
         val second = runtime.render(
@@ -282,7 +247,7 @@ class RetainedWidgetRuntimeTest {
             logicalWidth = 6,
             logicalHeight = 6,
         )
-        assertEquals(PixelTone.ACCENT, (second.buffer as MonoPixelBuffer).getPixel(1, 1))
+        assertEquals(PixelColor.fromRgb(200, 100, 0), second.buffer.getPixel(1, 1))
     }
 
     @Test
@@ -469,8 +434,8 @@ class RetainedWidgetRuntimeTest {
                 child = Container(
                     width = 6,
                     height = 6,
-                    fillTone = if (accent) PixelTone.ACCENT else PixelTone.ON,
-                    borderTone = null,
+                    fillColor = if (accent) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
+                    borderColor = null,
                 ),
             )
         }
@@ -502,14 +467,14 @@ class RetainedWidgetRuntimeTest {
             return Container(
                 width = 4,
                 height = 4,
-                fillTone = PixelTone.ON,
-                borderTone = null,
+                fillColor = PixelColor.White,
+                borderColor = null,
             )
         }
     }
 
     private class ToneScope(
-        val tone: PixelTone,
+        val tone: PixelColor,
         override val child: Widget,
     ) : InheritedWidget(child) {
         override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
@@ -517,7 +482,7 @@ class RetainedWidgetRuntimeTest {
         }
 
         companion object {
-            fun of(context: BuildContext): PixelTone {
+            fun of(context: BuildContext): PixelColor {
                 return context.dependOnInheritedWidgetOfExactType<ToneScope>()?.tone
                     ?: error("ToneScope 未注入")
             }
@@ -546,8 +511,8 @@ class RetainedWidgetRuntimeTest {
             return Container(
                 width = 4,
                 height = 4,
-                fillTone = ToneScope.of(context),
-                borderTone = null,
+                fillColor = ToneScope.of(context),
+                borderColor = null,
             )
         }
     }
@@ -559,12 +524,12 @@ class RetainedWidgetRuntimeTest {
             return Container(
                 width = mediaQuery.logicalWidth,
                 height = 1,
-                fillTone = if (direction == TextDirection.RTL) {
-                    PixelTone.ACCENT
+                fillColor = if (direction == TextDirection.RTL) {
+                    PixelColor.fromRgb(200, 100, 0)
                 } else {
-                    PixelTone.ON
+                    PixelColor.White
                 },
-                borderTone = null,
+                borderColor = null,
             )
         }
     }
@@ -574,12 +539,12 @@ class RetainedWidgetRuntimeTest {
             return Container(
                 width = 4,
                 height = 4,
-                fillTone = if (CounterScope.of(context) > 0) {
-                    PixelTone.ACCENT
+                fillColor = if (CounterScope.of(context) > 0) {
+                    PixelColor.fromRgb(200, 100, 0)
                 } else {
-                    PixelTone.ON
+                    PixelColor.White
                 },
-                borderTone = null,
+                borderColor = null,
             )
         }
     }

@@ -5,13 +5,16 @@ import org.junit.Test
 
 class AxisBufferComposerTest {
 
+    private val colorA = PixelColor.White
+    private val colorB = PixelColor.fromRgb(200, 100, 0)
+
     @Test
     fun composeHorizontalSlidesSecondaryIntoViewFromRight() {
-        val primary = MonoPixelBuffer(width = 4, height = 2).apply {
-            fillRect(0, 0, 4, 2, PixelTone.ON)
+        val primary = PixelBuffer(width = 4, height = 2).apply {
+            fillRect(0, 0, 4, 2, colorA)
         }
-        val secondary = MonoPixelBuffer(width = 4, height = 2).apply {
-            fillRect(0, 0, 4, 2, PixelTone.ACCENT)
+        val secondary = PixelBuffer(width = 4, height = 2).apply {
+            fillRect(0, 0, 4, 2, colorB)
         }
 
         val composed = AxisBufferComposer.compose(
@@ -19,21 +22,21 @@ class AxisBufferComposerTest {
             secondary = secondary,
             axis = PixelAxis.HORIZONTAL,
             offsetPx = -2f,
-        ) as MonoPixelBuffer
+        )
 
-        assertEquals(PixelTone.ON, composed.getPixel(0, 0))
-        assertEquals(PixelTone.ON, composed.getPixel(1, 0))
-        assertEquals(PixelTone.ACCENT, composed.getPixel(2, 0))
-        assertEquals(PixelTone.ACCENT, composed.getPixel(3, 0))
+        assertEquals(colorA, composed.getPixel(0, 0))
+        assertEquals(colorA, composed.getPixel(1, 0))
+        assertEquals(colorB, composed.getPixel(2, 0))
+        assertEquals(colorB, composed.getPixel(3, 0))
     }
 
     @Test
     fun composeVerticalSlidesSecondaryIntoViewFromBottom() {
-        val primary = MonoPixelBuffer(width = 2, height = 4).apply {
-            fillRect(0, 0, 2, 4, PixelTone.ON)
+        val primary = PixelBuffer(width = 2, height = 4).apply {
+            fillRect(0, 0, 2, 4, colorA)
         }
-        val secondary = MonoPixelBuffer(width = 2, height = 4).apply {
-            fillRect(0, 0, 2, 4, PixelTone.ACCENT)
+        val secondary = PixelBuffer(width = 2, height = 4).apply {
+            fillRect(0, 0, 2, 4, colorB)
         }
 
         val composed = AxisBufferComposer.compose(
@@ -41,11 +44,11 @@ class AxisBufferComposerTest {
             secondary = secondary,
             axis = PixelAxis.VERTICAL,
             offsetPx = -2f,
-        ) as MonoPixelBuffer
+        )
 
-        assertEquals(PixelTone.ON, composed.getPixel(0, 0))
-        assertEquals(PixelTone.ON, composed.getPixel(0, 1))
-        assertEquals(PixelTone.ACCENT, composed.getPixel(0, 2))
-        assertEquals(PixelTone.ACCENT, composed.getPixel(0, 3))
+        assertEquals(colorA, composed.getPixel(0, 0))
+        assertEquals(colorA, composed.getPixel(0, 1))
+        assertEquals(colorB, composed.getPixel(0, 2))
+        assertEquals(colorB, composed.getPixel(0, 3))
     }
 }
