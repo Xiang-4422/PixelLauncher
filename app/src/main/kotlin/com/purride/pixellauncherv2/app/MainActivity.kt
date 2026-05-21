@@ -75,6 +75,7 @@ import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
 import com.purride.pixellauncherv2.launcher.PixelEngineHomeHost
 import com.purride.pixellauncherv2.launcher.PixelEngineSettingsHost
+import com.purride.pixellauncherv2.launcher.PixelEngineMiscHost
 import com.purride.pixellauncherv2.launcher.PixelEngineSmsHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -150,6 +151,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // Phase 6: SMS screens host
     private lateinit var pixelEngineSmsHost: PixelEngineSmsHost
+
+    // Phase 7: DIAGNOSTICS + IDLE host
+    private lateinit var pixelEngineMiscHost: PixelEngineMiscHost
 
     private lateinit var appRepository: AppRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
@@ -541,6 +545,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         ).apply {
             rootView.visibility = View.GONE
         }
+        // Phase 7: DIAGNOSTICS + IDLE host
+        pixelEngineMiscHost = PixelEngineMiscHost(context = this).apply {
+            rootView.visibility = View.GONE
+        }
         drawerInputProxy = EditText(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
             alpha = 0f
@@ -719,6 +727,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             // Phase 6: SMS overlay (above all other engine hosts)
             addView(
                 pixelEngineSmsHost.rootView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
+            // Phase 7: DIAGNOSTICS + IDLE overlay (topmost engine host)
+            addView(
+                pixelEngineMiscHost.rootView,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2005,6 +2021,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
      */
     private fun renderCurrentFrame() {
+        if (renderPixelEngineMiscFrameIfNeeded()) {
+            return
+        }
         if (renderPixelEngineSmsFrameIfNeeded()) {
             return
         }
@@ -2073,6 +2092,25 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
         }
     }
+
+    // Begin Phase 7 ─────────────────────────────────────────────────────────
+
+    private fun renderPixelEngineMiscFrameIfNeeded(): Boolean {
+        if (!::pixelEngineMiscHost.isInitialized) return false
+        if (state.mode !in PixelEngineMiscHost.MISC_MODES) {
+            pixelEngineMiscHost.rootView.visibility = View.GONE
+            return false
+        }
+        pixelEngineMiscHost.update(
+            state         = launcherViewModel.state.value,
+            theme         = launcherViewModel.currentTheme.value,
+            screenProfile = screenProfile,
+            chargeTick    = animationState.headerChargeTick,
+        )
+        return true
+    }
+
+    // End Phase 7 ─────────────────────────────────────────────────────────────
 
     // Begin Phase 6 ─────────────────────────────────────────────────────────
 
