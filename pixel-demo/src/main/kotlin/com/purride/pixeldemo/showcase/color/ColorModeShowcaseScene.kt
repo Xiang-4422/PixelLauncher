@@ -2,10 +2,8 @@ package com.purride.pixeldemo.showcase.color
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelColorMode
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
-import com.purride.pixelui.Center
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
@@ -13,19 +11,16 @@ import com.purride.pixelui.ListenableBuilder
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
-import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
-import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelAnimationController
 import com.purride.pixelui.animation.PixelColorTween
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.PixelFrameScheduler
-import com.purride.pixelui.internal.colorMode
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import kotlin.time.Duration.Companion.seconds
@@ -34,6 +29,7 @@ object ColorModeShowcaseScene : DemoScene {
     override val id = "color_mode_showcase"
     override val title = "Color Mode"
     override val description = "彩色模式：PixelColor 填充/边框/文本 + PixelColorTween 补间动画"
+    override val colorMode = PixelColorMode.Color
 
     override fun build(env: DemoEnv): Widget =
         ColorModeShowcaseWidget(frameScheduler = env.hostView.frameScheduler)
@@ -71,20 +67,16 @@ private class ColorModeShowcaseState : State<ColorModeShowcaseWidget>() {
     }
 
     override fun build(context: BuildContext): Widget {
-        val isColorMode = context.colorMode() == PixelColorMode.Color
         return Column(
             mainAxisAlignment = MainAxisAlignment.CENTER,
             crossAxisAlignment = CrossAxisAlignment.CENTER,
-            children = listOf(
-                if (isColorMode) buildColorContent() else buildMonoNotice(),
-            ),
+            children = listOf(buildColorContent()),
         )
     }
 
     private fun buildColorContent(): Widget {
         return ListenableBuilder(listenable = controller) { _ ->
-            val t = controller.value
-            val animColor = colorTween.lerp(t)
+            val animColor = colorTween.lerp(controller.value)
             Column(
                 mainAxisSize = MainAxisSize.MIN,
                 crossAxisAlignment = CrossAxisAlignment.CENTER,
@@ -130,18 +122,6 @@ private class ColorModeShowcaseState : State<ColorModeShowcaseWidget>() {
             borderColor = PixelColor.fromRgb(200, 200, 200),
             alignment = Alignment.CENTER,
             child = Text(data = label, color = PixelColor.fromRgb(255, 255, 255)),
-        )
-    }
-
-    private fun buildMonoNotice(): Widget {
-        return Center(
-            child = Padding(
-                all = 4,
-                child = Text(
-                    data = "SET COLOR MODE",
-                    style = TextStyle(tone = PixelTone.ACCENT),
-                ),
-            ),
         )
     }
 }

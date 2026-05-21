@@ -1,5 +1,6 @@
 package com.purride.pixeldemo.catalog
 
+import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelPalette
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.ThemeData
@@ -11,6 +12,7 @@ interface DemoScene {
     val id: String
     val title: String
     val description: String
+    val colorMode: PixelColorMode get() = PixelColorMode.Mono
     val initialProfile: PixelHostProfilePreference? get() = null
     val initialPalette: PixelPalette? get() = null
     val initialTheme: ThemeData? get() = null

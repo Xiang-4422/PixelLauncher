@@ -127,6 +127,7 @@ class DemoActivity : AppCompatActivity() {
         }
 
         private fun renderScene(scene: DemoScene) {
+            hostView.colorMode = scene.colorMode
             scene.initialProfile?.let { applyProfile(it) }
             scene.initialPalette?.let { hostView.setPalette(it) }
             scene.initialTheme?.let { hostView.themeData = it }
