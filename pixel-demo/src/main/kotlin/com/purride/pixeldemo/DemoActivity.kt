@@ -117,7 +117,10 @@ class DemoActivity : AppCompatActivity() {
     private fun applySettings(settings: DemoAppSettings) {
         currentSettings = settings
         nav.env.currentSettings = settings
-        applySettingsToView(settings)
+        // applySettingsToView 只改 hostView 的属性，但 HostRootWidget 是在 setContent
+        // 调用时捕获 themeData 的，直接改属性对已渲染的树无效。
+        // 必须重新调用 setContent（通过 refreshCurrentScene）来让新的 themeData 生效。
+        nav.refreshCurrentScene()
     }
 
     private fun applySettingsToView(settings: DemoAppSettings) {
@@ -167,6 +170,10 @@ class DemoActivity : AppCompatActivity() {
             stack.addLast(DemoHomeScene)
             renderScene(DemoHomeScene)
             updateBackCallback()
+        }
+
+        fun refreshCurrentScene() {
+            stack.lastOrNull()?.let { renderScene(it) }
         }
 
         private fun renderScene(scene: DemoScene) {
