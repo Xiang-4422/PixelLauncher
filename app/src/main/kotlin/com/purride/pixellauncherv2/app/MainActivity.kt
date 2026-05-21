@@ -112,6 +112,12 @@ import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.util.TerminalStatusProvider
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
+import com.purride.pixellauncherv2.viewmodel.LauncherViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -129,6 +135,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private val timeTextProvider = TimeTextProvider()
     private val throttleClickHelper = ThrottleClickHelper()
     private val terminalStatusProvider = TerminalStatusProvider()
+
+    // Phase 0: ViewModel layer (runs alongside old renderer; replaces old callbacks incrementally)
+    private lateinit var launcherViewModel: LauncherViewModel
 
     private lateinit var appRepository: AppRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
@@ -687,6 +696,22 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
             if (newWidth > 0 && newHeight > 0 && (newWidth != oldWidth || newHeight != oldHeight)) {
                 updateScreenProfile(newWidth, newHeight)
+            }
+        }
+
+        // Phase 0: create ViewModel and observe its StateFlow alongside the old renderer.
+        // No rendering is driven by the ViewModel yet — that happens in Phase 1+.
+        launcherViewModel = ViewModelProvider(this)[LauncherViewModel::class.java]
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launcherViewModel.state.collect { vmState ->
+                    Log.d(
+                        TAG_VM,
+                        "state: battery=${vmState.batteryLevel}% charging=${vmState.isCharging}" +
+                            " missedCalls=${vmState.missedCallCount} unreadSms=${vmState.unreadSmsCount}" +
+                            " theme=${vmState.selectedTheme}",
+                    )
+                }
             }
         }
 
@@ -4417,5 +4442,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
         const val smsScrollLogTag = "SmsScroll"
         const val smsIntentLogTag = "SmsIntent"
+        const val TAG_VM = "MainActivity/VM"
     }
 }

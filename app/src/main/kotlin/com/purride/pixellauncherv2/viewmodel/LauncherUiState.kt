@@ -1,0 +1,103 @@
+package com.purride.pixellauncherv2.viewmodel
+
+import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.data.SmsThreadSummary
+import com.purride.pixellauncherv2.data.UnreadSmsEntry
+import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.DrawerFocus
+import com.purride.pixellauncherv2.launcher.DrawerListAlignment
+import com.purride.pixellauncherv2.launcher.HomeContextCard
+import com.purride.pixellauncherv2.launcher.LauncherMode
+import com.purride.pixellauncherv2.launcher.SmsPermissionState
+import com.purride.pixellauncherv2.render.PixelFontCatalog
+import com.purride.pixellauncherv2.render.PixelFontSize
+import com.purride.pixellauncherv2.render.PixelFontStyle
+import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.render.ScreenProfileFactory
+
+/**
+ * 重写后的 Launcher UI 状态快照。
+ *
+ * 与旧 [com.purride.pixellauncherv2.launcher.LauncherState] 相比，移除了以下字段：
+ * - `idleFluidState`（IDLE 物理引擎已废弃，将在新版本重新实现）
+ * - `chargeIdleEffect`（IDLE 相关）
+ * - `isIdlePageEnabled`（IDLE 相关）
+ *
+ * 外观/字体类型目前仍引用旧 render 层类型，将在 Phase 1 后逐步迁移至 pixel-engine 类型。
+ */
+data class LauncherUiState(
+    // ── App Drawer ────────────────────────────────────────────────────────────
+    val apps: List<AppEntry> = emptyList(),
+    val drawerVisibleApps: List<AppEntry> = emptyList(),
+    val drawerQuery: String = "",
+    val isDrawerSearchFocused: Boolean = false,
+    val isDrawerRailSliding: Boolean = false,
+    val selectedIndex: Int = 0,
+    val listStartIndex: Int = 0,
+    val drawerPageIndex: Int = 0,
+    val drawerFocus: DrawerFocus = DrawerFocus.LIST,
+    val isLoading: Boolean = true,
+
+    // ── Time ──────────────────────────────────────────────────────────────────
+    val currentTimeText: String = "",
+    val currentDateText: String = "",
+    val currentWeekdayText: String = "",
+
+    // ── Navigation ────────────────────────────────────────────────────────────
+    val mode: LauncherMode = LauncherMode.HOME,
+    val returnMode: LauncherMode = LauncherMode.HOME,
+
+    // ── Settings screen ───────────────────────────────────────────────────────
+    val settingsSelectedIndex: Int = 0,
+    val settingsListStartIndex: Int = 0,
+
+    // ── SMS ───────────────────────────────────────────────────────────────────
+    val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
+    val smsSelectedIndex: Int = 0,
+    val smsListStartIndex: Int = 0,
+    val smsThreads: List<SmsThreadSummary> = emptyList(),
+    val smsThreadSelectedIndex: Int = 0,
+    val smsThreadListStartIndex: Int = 0,
+    val smsCurrentThreadId: Long? = null,
+    val smsCurrentAddress: String = "",
+    val smsMessages: List<SmsMessageEntry> = emptyList(),
+    val smsDraftText: String = "",
+    val isDefaultSmsApp: Boolean = false,
+    val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
+
+    // ── Appearance (old render types; migrated to pixel-engine in Phase 1+) ───
+    val selectedFontSize: PixelFontSize = PixelFontCatalog.defaultFontSize,
+    val selectedFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle,
+    val selectedPixelShape: PixelShape = PixelShape.SQUARE,
+    val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
+    val isPixelGapEnabled: Boolean = true,
+    val selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR,
+
+    // ── UI behaviour ──────────────────────────────────────────────────────────
+    val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
+    val openDrawerInSearchMode: Boolean = false,
+
+    // ── Device status ─────────────────────────────────────────────────────────
+    val batteryLevel: Int = 100,
+    val isCharging: Boolean = false,
+
+    // ── Usage / stats ─────────────────────────────────────────────────────────
+    val recentApps: List<String> = emptyList(),
+    val lastInteractionUptimeMs: Long = 0L,
+    val launchCount: Int = 0,
+    val lastLaunchPackageName: String? = null,
+
+    // ── Status bar rows ───────────────────────────────────────────────────────
+    val terminalStatusText: String = "",
+    val nextAlarmText: String = "--:--",
+    val missedCallCount: Int = 0,
+    val unreadSmsCount: Int = 0,
+    val rainHintText: String = "",
+    val screenUsageTimeText: String = "--:--",
+    val screenOpenCountText: String = "--",
+
+    // ── Home context card ─────────────────────────────────────────────────────
+    val quoteText: String = "BREATHE, FOCUS ON ONE THING, AND LET THE REST WAIT.",
+    val homeContextCard: HomeContextCard = HomeContextCard.QUOTE,
+)
