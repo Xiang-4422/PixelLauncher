@@ -73,6 +73,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
+import com.purride.pixellauncherv2.launcher.PixelEngineHomeHost
 import com.purride.pixellauncherv2.launcher.PixelEngineSettingsHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -142,6 +143,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // Phase 3: settings screen host
     private lateinit var pixelEngineSettingsHost: PixelEngineSettingsHost
+
+    // Phase 4: home screen host
+    private lateinit var pixelEngineHomeHost: PixelEngineHomeHost
 
     private lateinit var appRepository: AppRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
@@ -510,6 +514,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         ).apply {
             rootView.visibility = View.GONE
         }
+        // Phase 4: home host
+        pixelEngineHomeHost = PixelEngineHomeHost(
+            context = this,
+            callbacks = PixelEngineHomeHost.Callbacks(
+                onOpenContacts = ::onHomeOpenContacts,
+                onOpenSms = ::onHomeOpenSms,
+            ),
+        ).apply {
+            rootView.visibility = View.GONE
+        }
         drawerInputProxy = EditText(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
             alpha = 0f
@@ -662,6 +676,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             )
             addView(drawerInputProxy)
             addView(smsDraftInputProxy)
+            // Phase 4: home overlay (below drawer and settings in Z-order)
+            addView(
+                pixelEngineHomeHost.rootView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
             addView(
                 pixelEngineDrawerHost.rootView,
                 FrameLayout.LayoutParams(
@@ -1964,6 +1986,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (renderPixelEngineSettingsFrameIfNeeded()) {
             return
         }
+        if (renderPixelEngineHomeFrameIfNeeded()) {
+            return
+        }
         if (usesGlIdleComposite()) {
             RenderPerfLogger.measure("main.render.idleStatic.total") {
                 renderIdleStaticFrame()
@@ -2150,6 +2175,44 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     // End Phase 3 ──────────────────────────────────────────────────────────────
+
+    // Phase 4 ─────────────────────────────────────────────────────────────────
+
+    private fun renderPixelEngineHomeFrameIfNeeded(): Boolean {
+        if (!::pixelEngineHomeHost.isInitialized) return false
+        if (state.mode != LauncherMode.HOME) {
+            pixelEngineHomeHost.rootView.visibility = View.GONE
+            return false
+        }
+        pixelEngineHomeHost.update(
+            state         = launcherViewModel.state.value,
+            theme         = launcherViewModel.currentTheme.value,
+            screenProfile = screenProfile,
+            chargeTick    = animationState.headerChargeTick,
+        )
+        return true
+    }
+
+    /** CONTACT 按钮：打开通讯录（先尝试原生通讯录 app，fallback 到通讯录内容 URI）。 */
+    private fun onHomeOpenContacts() {
+        launchFirstAvailableIntent(
+            Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_APP_CONTACTS)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+            Intent(Intent.ACTION_VIEW).apply {
+                data = ContactsContract.Contacts.CONTENT_URI
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }
+
+    /** SMS 按钮：进入短信模块。 */
+    private fun onHomeOpenSms() {
+        openSmsModule(forceRefresh = true, unreadOnly = false)
+    }
+
+    // End Phase 4 ──────────────────────────────────────────────────────────────
 
     private fun renderIdleStaticFrame() {
         val pixelBuffer = RenderPerfLogger.measure("main.render.idleStatic.compose") {
@@ -4225,6 +4288,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (::pixelEngineDrawerHost.isInitialized) {
             pixelEngineDrawerHost.setup.hostView.backgroundColor = theme.backgroundColor
             pixelEngineDrawerHost.setup.hostView.pixelGridColor  = theme.pixelGridColor
+        }
+        if (::pixelEngineHomeHost.isInitialized) {
+            pixelEngineHomeHost.setup.hostView.backgroundColor = theme.backgroundColor
+            pixelEngineHomeHost.setup.hostView.pixelGridColor  = theme.pixelGridColor
         }
     }
 
