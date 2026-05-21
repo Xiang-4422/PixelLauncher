@@ -7,14 +7,16 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelShape as EnginePixelShape
+import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixelui.Alignment
-import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelHostProfilePreference
@@ -38,8 +40,8 @@ import com.purride.pixelui.showItem
 /**
  * 首个由 pixel-engine 承接的 Launcher 页面宿主。
  *
- * 这层只负责 App Drawer 的 widget 组合和状态桥接；Home/SMS/Settings 仍保留
- * 旧渲染路径，避免把旧 renderer 作为 pixel-engine 的 fallback 接进去。
+ * Phase 5 更新：颜色从 LauncherTheme 注入（删除硬编码橙色）；
+ * DrawerListAlignment 控制列表项文字的水平对齐方式。
  */
 internal class PixelEngineDrawerHost(
     context: Context,
@@ -67,6 +69,8 @@ internal class PixelEngineDrawerHost(
         apps: List<AppEntry>,
         screenProfile: ScreenProfile,
         pixelGapEnabled: Boolean,
+        theme: LauncherTheme = LauncherThemes.GREEN_PHOSPHOR,       // Phase 5
+        alignment: DrawerListAlignment = DrawerListAlignment.LEFT,   // Phase 5
     ) {
         model = Model(
             active = state.mode == LauncherMode.APP_DRAWER,
@@ -75,13 +79,24 @@ internal class PixelEngineDrawerHost(
             searchFocused = state.isDrawerSearchFocused,
             selectedIndex = state.selectedIndex.coerceIn(0, apps.lastIndex.coerceAtLeast(0)),
             lowBattery = state.batteryLevel <= LOW_BATTERY_THRESHOLD && !state.isCharging,
+            accentColor  = theme.accentColor,
+            primaryColor = theme.primaryColor,
+            alignment    = alignment,
         )
         rootView.visibility = if (model.active) View.VISIBLE else View.GONE
+
         setup.hostView.profilePreference = PixelHostProfilePreference(
             dotSizePx = screenProfile.dotSizePx,
             pixelShape = screenProfile.pixelShape.toEngineShape(),
         )
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
+
+        // Phase 5: 每帧同步主题颜色（active 时）
+        if (model.active) {
+            setup.hostView.backgroundColor = theme.backgroundColor
+            setup.hostView.pixelGridColor  = theme.pixelGridColor
+        }
+
         syncQueryState()
         if (model.active && model.selectedIndex != lastSelectedIndex) {
             listController.showItem(listState, model.selectedIndex)
@@ -166,16 +181,11 @@ internal class PixelEngineDrawerHost(
                             itemBuilder = { index ->
                                 val app = apps.getOrNull(index)
                                 val isSelected = index == model.selectedIndex && app != null
-                                SizedBox(
-                                    height = ROW_HEIGHT,
-                                    child = OutlinedButton(
-                                        text = app?.label?.uppercase() ?: "NO RESULTS",
-                                        onPressed = app?.let {
-                                            { callbacks.onAppPressed(index) }
-                                        },
-                                        borderColor = if (isSelected) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
-                                        enabled = app != null,
-                                    ),
+                                appListItem(
+                                    label = app?.label?.uppercase() ?: "NO RESULTS",
+                                    selected = isSelected,
+                                    enabled = app != null,
+                                    onTap = app?.let { { callbacks.onAppPressed(index) } },
                                 )
                             },
                         ),
@@ -183,6 +193,38 @@ internal class PixelEngineDrawerHost(
                 ),
             ),
         )
+    }
+
+    /** 单个 app 列表项：主题色边框 + 文字按 DrawerListAlignment 水平对齐。 */
+    private fun appListItem(
+        label: String,
+        selected: Boolean,
+        enabled: Boolean,
+        onTap: (() -> Unit)?,
+    ): Widget {
+        val item = Container(
+            height = ROW_HEIGHT,
+            fillColor = PixelColor.Transparent,
+            borderColor = if (selected) model.accentColor else model.primaryColor,
+            padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+            alignment = when (model.alignment) {
+                DrawerListAlignment.LEFT   -> Alignment.CENTER_START
+                DrawerListAlignment.CENTER -> Alignment.CENTER
+                DrawerListAlignment.RIGHT  -> Alignment.CENTER_END
+            },
+            child = Text(
+                label,
+                style = TextStyle(
+                    color = if (enabled) model.primaryColor else model.primaryColor,
+                ),
+                overflow = TextOverflow.ELLIPSIS,
+            ),
+        )
+        return if (onTap != null) {
+            GestureDetector(onTap = onTap, child = item)
+        } else {
+            item
+        }
     }
 
     private fun drawerActions(apps: List<AppEntry>): Widget {
@@ -196,6 +238,7 @@ internal class PixelEngineDrawerHost(
                         child = OutlinedButton(
                             text = "TOP",
                             onPressed = { listController.jumpToStart(listState) },
+                            borderColor = model.primaryColor,
                         ),
                     ),
                     Expanded(
@@ -208,13 +251,14 @@ internal class PixelEngineDrawerHost(
                                     callbacks.onShowIndex(index)
                                 }
                             },
-                            borderColor = PixelColor.fromRgb(200, 100, 0),
+                            borderColor = model.accentColor,
                         ),
                     ),
                     Expanded(
                         child = OutlinedButton(
                             text = "END",
                             onPressed = { listController.jumpToEnd(listState) },
+                            borderColor = model.primaryColor,
                         ),
                     ),
                 ),
@@ -244,7 +288,7 @@ internal class PixelEngineDrawerHost(
                                     callbacks.onShowIndex(index)
                                 }
                             },
-                            borderColor = if (isActive) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
+                            borderColor = if (isActive) model.accentColor else model.primaryColor,
                         ),
                     )
                 },
@@ -256,12 +300,12 @@ internal class PixelEngineDrawerHost(
         return Container(
             height = 18,
             fillColor = PixelColor.Transparent,
-            borderColor = PixelColor.fromRgb(200, 100, 0),
+            borderColor = model.accentColor,
             padding = EdgeInsets.all(3),
             child = Center(
                 child = Text(
                     data = "APP DRAWER",
-                    style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
+                    style = TextStyle(color = model.accentColor),
                     overflow = TextOverflow.ELLIPSIS,
                 ),
             ),
@@ -276,7 +320,7 @@ internal class PixelEngineDrawerHost(
         return Container(
             height = 20,
             fillColor = PixelColor.Transparent,
-            borderColor = if (accent) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
+            borderColor = if (accent) model.accentColor else model.primaryColor,
             padding = EdgeInsets.all(2),
             alignment = Alignment.TOP_START,
             child = Column(
@@ -285,11 +329,12 @@ internal class PixelEngineDrawerHost(
                 children = listOf(
                     Text(
                         data = label,
-                        style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
+                        style = TextStyle(color = model.accentColor),
                         overflow = TextOverflow.ELLIPSIS,
                     ),
                     Text(
                         data = value,
+                        style = TextStyle(color = model.primaryColor),
                         overflow = TextOverflow.ELLIPSIS,
                     ),
                 ),
@@ -311,6 +356,10 @@ internal class PixelEngineDrawerHost(
         val searchFocused: Boolean = false,
         val selectedIndex: Int = 0,
         val lowBattery: Boolean = false,
+        // Phase 5: 主题颜色 + 对齐
+        val accentColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
+        val primaryColor: PixelColor = PixelColor.White,
+        val alignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     )
 
     companion object {

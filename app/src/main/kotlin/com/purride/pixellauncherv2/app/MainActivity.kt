@@ -2060,10 +2060,12 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
         RenderPerfLogger.measure("main.render.pixelEngineDrawer.sync") {
             pixelEngineDrawerHost.update(
-                state = state,
-                apps = currentDrawerApps(),
-                screenProfile = screenProfile,
+                state           = state,
+                apps            = currentDrawerApps(),
+                screenProfile   = screenProfile,
                 pixelGapEnabled = pixelGapEnabled,
+                theme           = launcherViewModel.currentTheme.value,   // Phase 5
+                alignment       = state.drawerListAlignment,               // Phase 5
             )
         }
         return true
@@ -4285,10 +4287,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      * Phase 3+ 创建新 HostView 后也在此处接线。
      */
     private fun applyThemeToEngineViews(theme: com.purride.pixellauncherv2.ui.theme.LauncherTheme) {
-        if (::pixelEngineDrawerHost.isInitialized) {
-            pixelEngineDrawerHost.setup.hostView.backgroundColor = theme.backgroundColor
-            pixelEngineDrawerHost.setup.hostView.pixelGridColor  = theme.pixelGridColor
-        }
+        // Drawer colors are now synced per-frame inside PixelEngineDrawerHost.update() (Phase 5).
+        // Home/Settings/SMS/Misc colors are synced per-frame inside their respective hosts.
+        // This method is kept for any future host that needs eager theme application on change.
         if (::pixelEngineHomeHost.isInitialized) {
             pixelEngineHomeHost.setup.hostView.backgroundColor = theme.backgroundColor
             pixelEngineHomeHost.setup.hostView.pixelGridColor  = theme.pixelGridColor
