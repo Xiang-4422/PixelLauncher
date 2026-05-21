@@ -39,7 +39,12 @@ private class SettingsWidget(
     inner class SettingsState : State<SettingsWidget>() {
         private val scrollState = PixelListState()
         private val scrollController = ScrollController()
-        private var settings: DemoAppSettings = widget.env.currentSettings
+        private lateinit var settings: DemoAppSettings
+
+        override fun initState() {
+            super.initState()
+            settings = widget.env.currentSettings
+        }
 
         private fun update(newSettings: DemoAppSettings) {
             setState { settings = newSettings }
