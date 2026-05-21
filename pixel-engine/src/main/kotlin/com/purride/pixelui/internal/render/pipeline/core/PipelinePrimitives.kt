@@ -1,12 +1,8 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.ColorPixelBuffer
-import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelBufferPool
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelcore.PixelColorMode
-import com.purride.pixelcore.PixelTone
 
 /**
  * 新渲染管线里的盒模型尺寸。
@@ -83,24 +79,17 @@ public data class RenderConstraints(
 public class PaintContext(
     public val buffer: PixelBuffer,
     public val bufferPool: PixelBufferPool = PixelBufferPool(),
-    public val colorMode: PixelColorMode = PixelColorMode.Mono,
 ) {
-    public fun setTone(x: Int, y: Int, tone: PixelTone) {
-        when (val buf = buffer) {
-            is MonoPixelBuffer -> buf.setPixel(x, y, tone)
-            is ColorPixelBuffer -> {
-                // Color 模式不应调用 setTone，但 release 模式静默忽略
-            }
-        }
+    public fun setColor(x: Int, y: Int, color: PixelColor) {
+        buffer.setPixel(x, y, color)
     }
 
-    public fun setColor(x: Int, y: Int, color: PixelColor) {
-        when (val buf = buffer) {
-            is ColorPixelBuffer -> buf.setPixel(x, y, color)
-            is MonoPixelBuffer -> {
-                // Mono 模式不应调用 setColor，但 release 模式静默忽略
-            }
-        }
+    public fun fillRect(x: Int, y: Int, w: Int, h: Int, color: PixelColor) {
+        buffer.fillRect(x, y, w, h, color)
+    }
+
+    public fun drawRect(x: Int, y: Int, w: Int, h: Int, color: PixelColor) {
+        buffer.drawRect(x, y, w, h, color)
     }
 }
 

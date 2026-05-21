@@ -1,6 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
@@ -8,8 +7,6 @@ import com.purride.pixelui.TextDirection
 
 /**
  * 新渲染管线里的富文本对象。
- *
- * 第一版采用字符级换行和 span 样式切换，保持与 `RenderText` 的基础行为一致。
  */
 internal class RenderRichText(
     private var spans: List<PixelTextSpan>,
@@ -78,14 +75,12 @@ internal class RenderRichText(
         offsetX: Int,
         offsetY: Int,
     ) {
-        val monoBuffer = context.buffer as MonoPixelBuffer
+        val buffer = context.buffer
         var cursorY = offsetY
         val contentWidth = size.width
         val contentHeight = size.height
         paragraphLayout.lines.forEach { line ->
-            if (cursorY - offsetY >= contentHeight) {
-                return
-            }
+            if (cursorY - offsetY >= contentHeight) return
             var cursorX = offsetX + ParagraphLayoutSupport.resolveLineStartX(
                 textAlign = textAlign,
                 textDirection = textDirection,
@@ -93,12 +88,10 @@ internal class RenderRichText(
                 lineWidth = line.width,
             )
             line.runs.forEach { run ->
-                if (cursorX - offsetX >= contentWidth) {
-                    return@forEach
-                }
+                if (cursorX - offsetX >= contentWidth) return@forEach
                 if (run.style.letterSpacing > 0 || run.style.fontScale > 1 || run.style.lineHeight != null) {
                     PixelParagraphPainter.drawRun(
-                        buffer = monoBuffer,
+                        buffer = buffer,
                         run = run,
                         defaultTextRasterizer = defaultTextRasterizer,
                         x = cursorX,
@@ -106,15 +99,10 @@ internal class RenderRichText(
                     )
                 } else {
                     val rasterizer = run.style.textRasterizer ?: defaultTextRasterizer
+                    val color = run.style.color
                     run.text.forEach { character ->
                         val text = character.toString()
-                        rasterizer.drawText(
-                            buffer = monoBuffer,
-                            text = text,
-                            x = cursorX,
-                            y = cursorY,
-                            value = run.style.tone.value,
-                        )
+                        rasterizer.drawText(buffer = buffer, text = text, x = cursorX, y = cursorY, color = color)
                         cursorX += rasterizer.measureText(text)
                     }
                     return@forEach

@@ -1,6 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
@@ -75,13 +74,14 @@ internal class RenderSingleChildScrollViewport(
                 offsetX = 0,
                 offsetY = 0,
             )
-            (context.buffer as MonoPixelBuffer).blit(
+            context.buffer.blitRegion(
                 source = scratch,
-                destX = offsetX,
-                destY = offsetY,
+                sourceX = 0,
                 sourceY = state.scrollOffsetPx.toInt(),
                 copyWidth = size.width,
                 copyHeight = size.height,
+                destX = offsetX,
+                destY = offsetY,
             )
         } finally {
             context.bufferPool.release(scratch)
@@ -297,13 +297,14 @@ internal class RenderListViewport(
                     offsetY = childOffsets[index] - state.scrollOffsetPx.toInt(),
                 )
             }
-            (context.buffer as MonoPixelBuffer).blit(
+            context.buffer.blitRegion(
                 source = scratch,
-                destX = offsetX,
-                destY = offsetY,
+                sourceX = 0,
                 sourceY = 0,
                 copyWidth = size.width,
                 copyHeight = size.height,
+                destX = offsetX,
+                destY = offsetY,
             )
         } finally {
             context.bufferPool.release(scratch)
@@ -558,12 +559,14 @@ internal class RenderLazyListViewport(
                     offsetY = itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 )
             }
-            (context.buffer as MonoPixelBuffer).blit(
+            context.buffer.blitRegion(
                 source = scratch,
-                destX = offsetX,
-                destY = offsetY,
+                sourceX = 0,
+                sourceY = 0,
                 copyWidth = size.width,
                 copyHeight = size.height,
+                destX = offsetX,
+                destY = offsetY,
             )
         } finally {
             context.bufferPool.release(scratch)
@@ -802,12 +805,14 @@ internal class RenderVariableLazyListViewport(
                     ) - state.scrollOffsetPx.toInt(),
                 )
             }
-            (context.buffer as MonoPixelBuffer).blit(
+            context.buffer.blitRegion(
                 source = scratch,
-                destX = offsetX,
-                destY = offsetY,
+                sourceX = 0,
+                sourceY = 0,
                 copyWidth = size.width,
                 copyHeight = size.height,
+                destX = offsetX,
+                destY = offsetY,
             )
         } finally {
             context.bufferPool.release(scratch)
@@ -1059,12 +1064,14 @@ internal class RenderLazySeparatedListViewport(
                     ) - state.scrollOffsetPx.toInt(),
                 )
             }
-            (context.buffer as MonoPixelBuffer).blit(
+            context.buffer.blitRegion(
                 source = scratch,
-                destX = offsetX,
-                destY = offsetY,
+                sourceX = 0,
+                sourceY = 0,
                 copyWidth = size.width,
                 copyHeight = size.height,
+                destX = offsetX,
+                destY = offsetY,
             )
         } finally {
             context.bufferPool.release(scratch)

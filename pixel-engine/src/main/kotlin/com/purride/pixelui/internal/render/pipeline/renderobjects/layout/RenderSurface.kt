@@ -1,10 +1,6 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.ColorPixelBuffer
-import com.purride.pixelcore.MonoPixelBuffer
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelcore.PixelColorMode
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.state.PixelTextFieldController
@@ -13,18 +9,10 @@ import com.purride.pixelui.state.PixelTextFieldState
 /**
  * 新渲染管线里的最小表面对象。
  *
- * 第一版同时承担：
- * - 背景/边框绘制
- * - 单 child 承接
- * - 尺寸、填满、padding、alignment
- * - 点击目标导出
- *
- * 这样 `Text + Surface` 这条最小链就能先独立跑起来。
+ * 负责背景/边框绘制、单 child 承接、尺寸/padding/alignment、点击目标导出。
  */
 internal class RenderSurface(
     child: RenderBox? = null,
-    private var fillTone: PixelTone? = null,
-    private var borderTone: PixelTone? = null,
     private var fillColor: PixelColor? = null,
     private var borderColor: PixelColor? = null,
     private var alignment: PixelAlignment = PixelAlignment.TOP_START,
@@ -67,8 +55,6 @@ internal class RenderSurface(
      * 更新当前 surface 配置，并触发布局与绘制刷新。
      */
     fun updateSurface(
-        fillTone: PixelTone?,
-        borderTone: PixelTone?,
         fillColor: PixelColor? = null,
         borderColor: PixelColor? = null,
         alignment: PixelAlignment,
@@ -101,8 +87,6 @@ internal class RenderSurface(
         val coercedMinLines = textInputMinLines.coerceAtLeast(1)
         val coercedMaxLines = textInputMaxLines.coerceAtLeast(coercedMinLines)
         if (
-            this.fillTone == fillTone &&
-            this.borderTone == borderTone &&
             this.fillColor == fillColor &&
             this.borderColor == borderColor &&
             this.alignment == alignment &&
@@ -134,8 +118,6 @@ internal class RenderSurface(
         ) {
             return
         }
-        this.fillTone = fillTone
-        this.borderTone = borderTone
         this.fillColor = fillColor
         this.borderColor = borderColor
         this.alignment = alignment
@@ -191,9 +173,7 @@ internal class RenderSurface(
             minHeight = if (tightChildHeight) childMaxHeight else 0,
             maxHeight = childMaxHeight,
         )
-        child?.layout(
-            constraints = childConstraints,
-        )
+        child?.layout(constraints = childConstraints)
 
         val childWidth = child?.size?.width ?: 0
         val childHeight = child?.size?.height ?: 0
@@ -245,26 +225,8 @@ internal class RenderSurface(
         val surfaceHeight = (size.height - outerPaddingTop - outerPaddingBottom).coerceAtLeast(0)
 
         if (surfaceWidth > 0 && surfaceHeight > 0) {
-            when {
-                context.colorMode == PixelColorMode.Color -> {
-                    val colorBuffer = context.buffer as ColorPixelBuffer
-                    fillColor?.let {
-                        colorBuffer.fillRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
-                    }
-                    borderColor?.let {
-                        colorBuffer.drawRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
-                    }
-                }
-                else -> {
-                    val monoBuffer = context.buffer as MonoPixelBuffer
-                    fillTone?.let {
-                        monoBuffer.fillRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
-                    }
-                    borderTone?.let {
-                        monoBuffer.drawRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it)
-                    }
-                }
-            }
+            fillColor?.let { context.fillRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it) }
+            borderColor?.let { context.drawRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it) }
         }
         child?.paint(
             context = context,
@@ -387,13 +349,7 @@ internal class RenderSurface(
         )
     }
 
-    /**
-     * 解析子节点在当前内容区里的水平偏移。
-     */
-    private fun resolveChildOffsetX(
-        availableWidth: Int,
-        childWidth: Int,
-    ): Int {
+    private fun resolveChildOffsetX(availableWidth: Int, childWidth: Int): Int {
         val freeWidth = (availableWidth - childWidth).coerceAtLeast(0)
         return when (alignment) {
             PixelAlignment.TOP_CENTER,
@@ -410,13 +366,7 @@ internal class RenderSurface(
         }
     }
 
-    /**
-     * 解析子节点在当前内容区里的垂直偏移。
-     */
-    private fun resolveChildOffsetY(
-        availableHeight: Int,
-        childHeight: Int,
-    ): Int {
+    private fun resolveChildOffsetY(availableHeight: Int, childHeight: Int): Int {
         val freeHeight = (availableHeight - childHeight).coerceAtLeast(0)
         return when (alignment) {
             PixelAlignment.CENTER_START,
@@ -433,9 +383,6 @@ internal class RenderSurface(
         }
     }
 
-    /**
-     * 读取当前 surface 可布局绘制的盒模型子节点。
-     */
     private val renderChild: RenderBox?
         get() = child as? RenderBox
 }

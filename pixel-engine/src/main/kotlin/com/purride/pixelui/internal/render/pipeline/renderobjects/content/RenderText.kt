@@ -1,10 +1,7 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.ColorPixelBuffer
-import com.purride.pixelcore.MonoPixelBuffer
+import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelcore.PixelColorMode
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
@@ -43,9 +40,6 @@ internal class RenderText(
     private var drawTextX = 0
     private var drawTextY = 0
 
-    /**
-     * 用新的文本配置更新当前对象，并触发布局与绘制刷新。
-     */
     fun updateText(
         text: String,
         style: PixelTextStyle,
@@ -80,9 +74,6 @@ internal class RenderText(
         markNeedsPaint()
     }
 
-    /**
-     * 按给定约束测量文本对象。
-     */
     override fun layout(constraints: RenderConstraints) {
         rasterizer = style.textRasterizer ?: defaultTextRasterizer
 
@@ -136,68 +127,35 @@ internal class RenderText(
         drawTextY = paddingTop
     }
 
-    /**
-     * 把文本绘制到目标 buffer。
-     */
     override fun paint(
         context: PaintContext,
         offsetX: Int,
         offsetY: Int,
     ) {
-        if (paragraphLayout.lines.isEmpty()) {
-            return
-        }
+        if (paragraphLayout.lines.isEmpty()) return
         val contentWidth = (size.width - paddingLeft - paddingRight).coerceAtLeast(0)
         val contentHeight = (size.height - paddingTop - paddingBottom).coerceAtLeast(0)
-        if (contentWidth == 0 || contentHeight == 0) {
-            return
-        }
+        if (contentWidth == 0 || contentHeight == 0) return
+
         val destinationY = offsetY + drawTextY
         val destX = if (style.usesPlainRasterizer()) offsetX + drawTextX else offsetX + paddingLeft
 
-        if (context.colorMode == PixelColorMode.Color) {
-            val colorBuffer = context.buffer as ColorPixelBuffer
-            val textColor = style.color ?: PixelColor.fromRgb(255, 255, 255)
-            val scratch = context.bufferPool.acquireMono(
-                width = textWidth.coerceAtLeast(1),
-                height = textHeight.coerceAtLeast(1),
-            )
-            try {
-                drawTextLayout(buffer = scratch, x = 0, y = 0)
-                blitColorizedText(
-                    source = scratch,
-                    destination = colorBuffer,
-                    destX = destX,
-                    destY = destinationY,
-                    copyWidth = min(contentWidth, scratch.width),
-                    copyHeight = min(contentHeight, scratch.height),
-                    color = textColor,
-                )
-            } finally {
-                context.bufferPool.release(scratch)
-            }
-            return
-        }
-
-        val monoDestination = context.buffer as MonoPixelBuffer
         if (textWidth <= contentWidth && textHeight <= contentHeight) {
-            drawTextLayout(
-                buffer = monoDestination,
-                x = destX,
-                y = destinationY,
-            )
+            // Fast path: text fits — draw directly into the main buffer.
+            drawTextLayout(buffer = context.buffer, x = destX, y = destinationY)
             return
         }
 
-        val scratch = context.bufferPool.acquireMono(
+        // Slow path: text needs cropping — use a scratch buffer.
+        val scratch = context.bufferPool.acquire(
             width = textWidth.coerceAtLeast(1),
             height = textHeight.coerceAtLeast(1),
         )
         try {
             drawTextLayout(buffer = scratch, x = 0, y = 0)
-            blitOpaqueText(
+            blitText(
                 source = scratch,
-                destination = monoDestination,
+                destination = context.buffer,
                 destX = offsetX + drawTextX,
                 destY = destinationY,
                 copyWidth = min(contentWidth, scratch.width),
@@ -208,19 +166,10 @@ internal class RenderText(
         }
     }
 
-    private fun drawTextLayout(
-        buffer: MonoPixelBuffer,
-        x: Int,
-        y: Int,
-    ) {
+    private fun drawTextLayout(buffer: PixelBuffer, x: Int, y: Int) {
+        val textColor = style.color
         if (style.usesPlainRasterizer()) {
-            rasterizer.drawText(
-                buffer = buffer,
-                text = displayText,
-                x = x,
-                y = y,
-                value = style.tone.value,
-            )
+            rasterizer.drawText(buffer = buffer, text = displayText, x = x, y = y, color = textColor)
             return
         }
         var cursorY = y
@@ -250,24 +199,31 @@ internal class RenderText(
     }
 
     /**
-     * 执行文本对象的命中测试。
+     * 只把 scratch buffer 里非透明像素拷到目标 buffer，避免覆盖底色。
      */
-    override fun hitTest(
-        localX: Int,
-        localY: Int,
-        result: HitTestResult,
+    private fun blitText(
+        source: PixelBuffer,
+        destination: PixelBuffer,
+        destX: Int,
+        destY: Int,
+        copyWidth: Int,
+        copyHeight: Int,
     ) {
-        if (localX !in 0 until size.width || localY !in 0 until size.height) {
-            return
-        }
-        if (onClick != null) {
-            result.add(this)
+        for (row in 0 until copyHeight) {
+            for (column in 0 until copyWidth) {
+                val pixel = source.getPixel(column, row)
+                if (pixel.alpha > 0) {
+                    destination.setPixel(x = destX + column, y = destY + row, color = pixel)
+                }
+            }
         }
     }
 
-    /**
-     * 导出文本对象的点击目标。
-     */
+    override fun hitTest(localX: Int, localY: Int, result: HitTestResult) {
+        if (localX !in 0 until size.width || localY !in 0 until size.height) return
+        if (onClick != null) result.add(this)
+    }
+
     override fun collectClickTargets(
         offsetX: Int,
         offsetY: Int,
@@ -275,67 +231,17 @@ internal class RenderText(
     ) {
         onClick ?: return
         targets += PixelClickTarget(
-            bounds = PixelRect(
-                left = offsetX,
-                top = offsetY,
-                width = size.width,
-                height = size.height,
-            ),
+            bounds = PixelRect(left = offsetX, top = offsetY, width = size.width, height = size.height),
             onClick = onClick,
         )
     }
 
-    private fun resolveAvailableTextWidth(
-        constraints: RenderConstraints,
-        horizontalPadding: Int,
-    ): Int {
+    private fun resolveAvailableTextWidth(constraints: RenderConstraints, horizontalPadding: Int): Int {
         val measuredWidth = when {
             explicitWidth != null -> explicitWidth
             fillMaxWidth || occupyFullWidth -> constraints.maxWidth
             else -> constraints.maxWidth
         }
         return (constraints.constrainWidth(measuredWidth) - horizontalPadding).coerceAtLeast(0)
-    }
-
-    private fun blitColorizedText(
-        source: MonoPixelBuffer,
-        destination: ColorPixelBuffer,
-        destX: Int,
-        destY: Int,
-        copyWidth: Int,
-        copyHeight: Int,
-        color: PixelColor,
-    ) {
-        for (row in 0 until copyHeight) {
-            for (column in 0 until copyWidth) {
-                if (source.getPixel(column, row) != PixelTone.OFF) {
-                    destination.setPixel(x = destX + column, y = destY + row, color = color)
-                }
-            }
-        }
-    }
-
-    /**
-     * 只把文本 scratch buffer 里非背景像素拷到目标 buffer，避免裁剪路径抹掉底色。
-     */
-    private fun blitOpaqueText(
-        source: MonoPixelBuffer,
-        destination: MonoPixelBuffer,
-        destX: Int,
-        destY: Int,
-        copyWidth: Int,
-        copyHeight: Int,
-    ) {
-        for (row in 0 until copyHeight) {
-            for (column in 0 until copyWidth) {
-                val tone = source.getPixel(column, row)
-                if (tone == PixelTone.OFF) continue
-                destination.setPixel(
-                    x = destX + column,
-                    y = destY + row,
-                    tone = tone,
-                )
-            }
-        }
     }
 }

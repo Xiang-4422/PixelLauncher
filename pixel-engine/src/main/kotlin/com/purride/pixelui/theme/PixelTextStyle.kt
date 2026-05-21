@@ -2,25 +2,21 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixelcore.PixelTone
 
 /**
  * 像素文本样式。
  *
- * 第一版先稳定文本色阶和文本栅格器两项能力。
- * 后续如果要补字号、字距、文本 token 或主题样式，可以继续沿这个对象扩展。
+ * 颜色通过 [color] 直接指定；引擎只做一件事——把 widget 树渲染成 ARGB 像素网格。
  */
 public data class PixelTextStyle(
-    val tone: PixelTone = PixelTone.ON,
+    val color: PixelColor = PixelColor.fromRgb(255, 255, 255),
     val textRasterizer: PixelTextRasterizer? = null,
     val lineSpacing: Int = 0,
     val letterSpacing: Int = 0,
     val lineHeight: Int? = null,
     val fontScale: Int = 1,
-    val color: PixelColor? = null,
 ) {
     public companion object {
         public val Default: PixelTextStyle = PixelTextStyle()
-        public val Accent: PixelTextStyle = PixelTextStyle(tone = PixelTone.ACCENT)
     }
 }
