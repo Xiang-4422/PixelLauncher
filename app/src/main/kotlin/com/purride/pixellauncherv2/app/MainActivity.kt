@@ -699,8 +699,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
         }
 
-        // Phase 0: create ViewModel and observe its StateFlow alongside the old renderer.
-        // No rendering is driven by the ViewModel yet — that happens in Phase 1+.
+        // Phase 0+: create ViewModel and observe its StateFlow alongside the old renderer.
         launcherViewModel = ViewModelProvider(this)[LauncherViewModel::class.java]
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -711,6 +710,15 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                             " missedCalls=${vmState.missedCallCount} unreadSms=${vmState.unreadSmsCount}" +
                             " theme=${vmState.selectedTheme}",
                     )
+                }
+            }
+        }
+        // Phase 1: apply LauncherTheme colours to the engine HostView (drawer).
+        // Other engine HostViews created in Phase 3+ will be wired here too.
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launcherViewModel.currentTheme.collect { theme ->
+                    applyThemeToEngineViews(theme)
                 }
             }
         }
@@ -4075,6 +4083,17 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         )
         if (::pixelFrameView.isInitialized) {
             pixelFrameView.setPalette(palette)
+        }
+    }
+
+    /**
+     * Phase 1: 将 [LauncherTheme] 颜色应用到所有 pixel-engine HostView。
+     * Phase 3+ 创建新 HostView 后也在此处接线。
+     */
+    private fun applyThemeToEngineViews(theme: com.purride.pixellauncherv2.ui.theme.LauncherTheme) {
+        if (::pixelEngineDrawerHost.isInitialized) {
+            pixelEngineDrawerHost.setup.hostView.backgroundColor = theme.backgroundColor
+            pixelEngineDrawerHost.setup.hostView.pixelGridColor  = theme.pixelGridColor
         }
     }
 

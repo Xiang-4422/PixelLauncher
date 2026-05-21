@@ -8,10 +8,15 @@ import com.purride.pixellauncherv2.data.CommunicationStatusRepository
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -38,6 +43,11 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     private val _state = MutableStateFlow(buildInitialState())
     val state: StateFlow<LauncherUiState> = _state.asStateFlow()
+
+    /** 当前主题颜色方案（由 [state.selectedTheme] 派生）。 */
+    val currentTheme: StateFlow<LauncherTheme> = _state
+        .map { LauncherThemes.from(it.selectedTheme) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, LauncherThemes.from(_state.value.selectedTheme))
 
     init {
         startDeviceStatus()
