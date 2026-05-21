@@ -75,6 +75,7 @@ import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
 import com.purride.pixellauncherv2.launcher.PixelEngineHomeHost
 import com.purride.pixellauncherv2.launcher.PixelEngineSettingsHost
+import com.purride.pixellauncherv2.launcher.PixelEngineSmsHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
@@ -146,6 +147,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // Phase 4: home screen host
     private lateinit var pixelEngineHomeHost: PixelEngineHomeHost
+
+    // Phase 6: SMS screens host
+    private lateinit var pixelEngineSmsHost: PixelEngineSmsHost
 
     private lateinit var appRepository: AppRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
@@ -524,6 +528,19 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         ).apply {
             rootView.visibility = View.GONE
         }
+        // Phase 6: SMS host
+        pixelEngineSmsHost = PixelEngineSmsHost(
+            context = this,
+            callbacks = PixelEngineSmsHost.Callbacks(
+                onRequestSmsRole = ::onSmsRequestRole,
+                onOpenThread = ::onSmsOpenThread,
+                onSelectSmsIndex = ::onSmsSelectIndex,
+                onDraftChanged = ::onSmsDraftChanged,
+                onSendDraft = ::onSmsSendDraft,
+            ),
+        ).apply {
+            rootView.visibility = View.GONE
+        }
         drawerInputProxy = EditText(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
             alpha = 0f
@@ -694,6 +711,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             // Phase 3: settings overlay (above drawer in Z-order)
             addView(
                 pixelEngineSettingsHost.rootView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
+            // Phase 6: SMS overlay (above all other engine hosts)
+            addView(
+                pixelEngineSmsHost.rootView,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1980,6 +2005,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
      */
     private fun renderCurrentFrame() {
+        if (renderPixelEngineSmsFrameIfNeeded()) {
+            return
+        }
         if (renderPixelEngineDrawerFrameIfNeeded()) {
             return
         }
@@ -2045,6 +2073,45 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
         }
     }
+
+    // Begin Phase 6 ─────────────────────────────────────────────────────────
+
+    private fun renderPixelEngineSmsFrameIfNeeded(): Boolean {
+        if (!::pixelEngineSmsHost.isInitialized) return false
+        if (state.mode !in PixelEngineSmsHost.SMS_MODES) {
+            pixelEngineSmsHost.rootView.visibility = View.GONE
+            return false
+        }
+        pixelEngineSmsHost.update(
+            state         = launcherViewModel.state.value,
+            theme         = launcherViewModel.currentTheme.value,
+            screenProfile = screenProfile,
+            chargeTick    = animationState.headerChargeTick,
+        )
+        return true
+    }
+
+    private fun onSmsRequestRole() {
+        maybeRequestDefaultSmsRole()
+    }
+
+    private fun onSmsOpenThread(threadId: Long, address: String) {
+        openSmsThread(threadId = threadId, address = address)
+    }
+
+    private fun onSmsSelectIndex(index: Int) {
+        state = state.copy(smsSelectedIndex = index)
+    }
+
+    private fun onSmsDraftChanged(text: String) {
+        state = LauncherStateTransitions.updateSmsDraftText(state = state, smsDraftText = text)
+    }
+
+    private fun onSmsSendDraft() {
+        sendSmsDraft()
+    }
+
+    // End Phase 6 ─────────────────────────────────────────────────────────────
 
     private fun renderPixelEngineDrawerFrameIfNeeded(): Boolean {
         if (!::pixelEngineDrawerHost.isInitialized) {

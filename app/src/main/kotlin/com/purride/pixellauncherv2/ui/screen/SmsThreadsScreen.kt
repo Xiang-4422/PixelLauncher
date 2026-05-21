@@ -1,0 +1,124 @@
+package com.purride.pixellauncherv2.ui.screen
+
+import com.purride.pixelui.Column
+import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.ListViewBuilder
+import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Row
+import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Text
+import com.purride.pixelui.TextOverflow
+import com.purride.pixelui.TextStyle
+import com.purride.pixelui.Widget
+import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListState
+import com.purride.pixellauncherv2.data.SmsThreadSummary
+import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.widget.LauncherHeader
+import com.purride.pixellauncherv2.util.SmsTimeFormatter
+import com.purride.pixellauncherv2.viewmodel.LauncherUiState
+
+/**
+ * SMS_THREADS 屏幕：会话列表。
+ *
+ * 每行显示：
+ * - 顶部行：联系人地址（accent 色，左对齐）+ 时间（dim 色，右对齐）
+ * - 底部行：片段预览（dim 色，末尾截断）
+ */
+fun SmsThreadsScreen(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    chargeTick: Int,
+    listState: PixelListState,
+    listController: PixelListController,
+    onOpenThread: (threadId: Long, address: String) -> Unit,
+): Widget = Column(
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    mainAxisSize = MainAxisSize.MAX,
+    spacing = 0,
+    children = listOf(
+        LauncherHeader(
+            timeText = uiState.currentTimeText.ifEmpty { "--:--" },
+            screenTitle = "SMS",
+            batteryLevel = uiState.batteryLevel,
+            isCharging = uiState.isCharging,
+            chargeTick = chargeTick,
+            theme = theme,
+        ),
+        Expanded(
+            child = if (uiState.smsThreads.isEmpty()) {
+                Column(
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    mainAxisSize = MainAxisSize.MAX,
+                    mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
+                    spacing = 0,
+                    children = listOf(
+                        Text(
+                            "NO MESSAGES",
+                            style = TextStyle(color = theme.dimColor),
+                            textAlign = com.purride.pixelui.TextAlign.CENTER,
+                        ),
+                    ),
+                )
+            } else {
+                ListViewBuilder(
+                    itemCount = uiState.smsThreads.size,
+                    state = listState,
+                    controller = listController,
+                    itemExtent = THREAD_ROW_HEIGHT,
+                    spacing = 1,
+                    itemBuilder = { index ->
+                        val thread = uiState.smsThreads[index]
+                        buildThreadRow(thread, theme, onOpenThread)
+                    },
+                )
+            },
+        ),
+    ),
+)
+
+private fun buildThreadRow(
+    thread: SmsThreadSummary,
+    theme: LauncherTheme,
+    onOpenThread: (threadId: Long, address: String) -> Unit,
+): Widget = GestureDetector(
+    onTap = { onOpenThread(thread.threadId, thread.address) },
+    child = Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        mainAxisSize = MainAxisSize.MIN,
+        spacing = 1,
+        children = listOf(
+            Row(
+                spacing = 2,
+                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                children = listOf(
+                    Text(
+                        thread.address.uppercase(),
+                        style = TextStyle(color = theme.accentColor),
+                        overflow = TextOverflow.ELLIPSIS,
+                    ),
+                    Expanded(child = SizedBox(width = 0, height = 0)),
+                    Text(
+                        SmsTimeFormatter.format(thread.dateMillis),
+                        style = TextStyle(color = theme.dimColor),
+                    ),
+                ),
+            ),
+            Text(
+                buildSnippetLabel(thread),
+                style = TextStyle(color = theme.dimColor),
+                overflow = TextOverflow.ELLIPSIS,
+            ),
+        ),
+    ),
+)
+
+private fun buildSnippetLabel(thread: SmsThreadSummary): String {
+    val prefix = if (thread.unreadCount > 0) "NEW ${thread.unreadCount}  " else ""
+    return prefix + thread.snippet.trim()
+}
+
+/** 每行高度：顶部文字行 + 底部片段行 + 行间距 = 约 22px */
+private const val THREAD_ROW_HEIGHT = 22
