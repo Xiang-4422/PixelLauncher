@@ -1,0 +1,37 @@
+package com.purride.pixellauncherv2.launcher
+
+/**
+ * 聚合所有 Launcher 屏幕回调的数据类。
+ *
+ * Phase 8 — LauncherRootHost 使用此类替代原来分散在五个 Host 中的 Callbacks 类型。
+ */
+data class LauncherCallbacks(
+    // ── HOME ──────────────────────────────────────────────────────────────────
+    /** 用户点击 CONTACT 按钮 → 打开通讯录 */
+    val onOpenContacts: () -> Unit,
+    /** 用户点击 SMS 按钮 → 进入短信模块 */
+    val onOpenSms: () -> Unit,
+
+    // ── APP_DRAWER ────────────────────────────────────────────────────────────
+    val onDrawerQueryChanged: (String) -> Unit,
+    val onDrawerSubmitSearch: () -> Unit,
+    val onDrawerAppPressed: (Int) -> Unit,
+    val onDrawerShowIndex: (Int) -> Unit,
+
+    // ── SETTINGS ──────────────────────────────────────────────────────────────
+    val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,
+
+    // ── SMS ───────────────────────────────────────────────────────────────────
+    val onRequestSmsRole: () -> Unit,
+    val onOpenThread: (threadId: Long, address: String) -> Unit,
+    val onSelectSmsIndex: (Int) -> Unit,
+    val onDraftChanged: (String) -> Unit,
+    val onSendDraft: () -> Unit,
+
+    // ── Navigation ────────────────────────────────────────────────────────────
+    /**
+     * 主页面 Pager 翻页回调（HOME=0 / APP_DRAWER=1 / SETTINGS=2）。
+     * 仅在用户手势驱动翻页时触发；外部调用 jumpToPage 不触发此回调。
+     */
+    val onMainPageChanged: (LauncherMode) -> Unit,
+)

@@ -75,6 +75,8 @@ import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
 import com.purride.pixellauncherv2.launcher.PixelEngineHomeHost
 import com.purride.pixellauncherv2.launcher.PixelEngineSettingsHost
+import com.purride.pixellauncherv2.launcher.LauncherCallbacks
+import com.purride.pixellauncherv2.launcher.LauncherRootHost
 import com.purride.pixellauncherv2.launcher.PixelEngineMiscHost
 import com.purride.pixellauncherv2.launcher.PixelEngineSmsHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
@@ -154,6 +156,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // Phase 7: DIAGNOSTICS + IDLE host
     private lateinit var pixelEngineMiscHost: PixelEngineMiscHost
+
+    // Phase 8: unified root host (replaces the 5 hosts above after wiring)
+    private lateinit var launcherRootHost: LauncherRootHost
 
     private lateinit var appRepository: AppRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
@@ -549,6 +554,25 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         pixelEngineMiscHost = PixelEngineMiscHost(context = this).apply {
             rootView.visibility = View.GONE
         }
+        // Phase 8: unified root host
+        launcherRootHost = LauncherRootHost(
+            context = this,
+            callbacks = LauncherCallbacks(
+                onOpenContacts       = ::onHomeOpenContacts,
+                onOpenSms            = ::onHomeOpenSms,
+                onDrawerQueryChanged = ::onPixelEngineDrawerQueryChanged,
+                onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
+                onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
+                onDrawerShowIndex    = ::onPixelEngineDrawerShowIndex,
+                onSettingsItemAction = ::onSettingsItemAction,
+                onRequestSmsRole     = ::onSmsRequestRole,
+                onOpenThread         = ::onSmsOpenThread,
+                onSelectSmsIndex     = ::onSmsSelectIndex,
+                onDraftChanged       = ::onSmsDraftChanged,
+                onSendDraft          = ::onSmsSendDraft,
+                onMainPageChanged    = ::onMainPageChanged,
+            ),
+        )
         drawerInputProxy = EditText(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
             alpha = 0f
@@ -735,6 +759,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             // Phase 7: DIAGNOSTICS + IDLE overlay (topmost engine host)
             addView(
                 pixelEngineMiscHost.rootView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
+            // Phase 8: unified root host (above all individual hosts; will replace them all)
+            addView(
+                launcherRootHost.rootView,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -2021,6 +2053,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
      */
     private fun renderCurrentFrame() {
+        if (renderLauncherRootFrameIfNeeded()) {
+            return
+        }
         if (renderPixelEngineMiscFrameIfNeeded()) {
             return
         }
@@ -2092,6 +2127,31 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
         }
     }
+
+    // Begin Phase 8 ─────────────────────────────────────────────────────────
+
+    private fun renderLauncherRootFrameIfNeeded(): Boolean {
+        if (!::launcherRootHost.isInitialized) return false
+        launcherRootHost.update(
+            state           = launcherViewModel.state.value,
+            theme           = launcherViewModel.currentTheme.value,
+            screenProfile   = screenProfile,
+            chargeTick      = animationState.headerChargeTick,
+            pixelGapEnabled = pixelGapEnabled,
+        )
+        return true
+    }
+
+    /** 主页 Pager 手势翻页回调 — 同步旧 state + ViewModel state 的 mode 字段。 */
+    private fun onMainPageChanged(mode: LauncherMode) {
+        if (state.mode == mode) return
+        state = state.copy(mode = mode)
+        launcherViewModel.update { copy(mode = mode) }
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    // End Phase 8 ─────────────────────────────────────────────────────────────
 
     // Begin Phase 7 ─────────────────────────────────────────────────────────
 
