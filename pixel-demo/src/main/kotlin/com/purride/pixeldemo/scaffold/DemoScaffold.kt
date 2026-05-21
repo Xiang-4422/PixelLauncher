@@ -10,6 +10,7 @@ import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelcore.PixelColor
 
 fun DemoScaffold(
     title: String,
@@ -21,7 +22,7 @@ fun DemoScaffold(
         Padding(
             child = Column(
                 children = listOf(
-                    Text(title, style = TextStyle.Accent),
+                    Text(title, style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                     Text(
                         description,
                         style = TextStyle.Default,

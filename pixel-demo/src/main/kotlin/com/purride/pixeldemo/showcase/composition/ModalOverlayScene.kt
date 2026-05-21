@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.composition
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -47,7 +48,7 @@ private class ModalOverlayWidget(override val key: Any? = null) : StatefulWidget
                         child = Center(
                             child = Column(
                                 children = listOf(
-                                    Text("Modal dismissed: $dismissedTimes 次", style = TextStyle.Accent),
+                                    Text("Modal dismissed: $dismissedTimes 次", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 4),
                                     Text("点击下方 OPEN 唤起模态弹窗", style = TextStyle.Default, softWrap = true),
                                 ),
@@ -77,12 +78,12 @@ private class ModalOverlayWidget(override val key: Any? = null) : StatefulWidget
 
             val dialog = Container(
                 width = 160, height = 90,
-                fillTone = PixelTone.ON,
-                borderTone = PixelTone.ACCENT,
+                fillColor = PixelColor.White,
+                borderColor = PixelColor.fromRgb(200, 100, 0),
                 child = Padding(
                     child = Column(
                         children = listOf(
-                            Text("MODAL", style = TextStyle.Accent),
+                            Text("MODAL", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                             SizedBox(height = 2),
                             Text("点击遮罩外部关闭", style = TextStyle.Default, softWrap = true),
                             Expanded(child = SizedBox()),
@@ -121,8 +122,8 @@ private class ModalOverlayWidget(override val key: Any? = null) : StatefulWidget
                                 }
                             },
                             child = Container(
-                                fillTone = PixelTone.OFF,
-                                borderTone = null,
+                                fillColor = PixelColor.Transparent,
+                                borderColor = null,
                             ),
                         ),
                     ),

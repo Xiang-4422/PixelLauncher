@@ -27,6 +27,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object NestedScrollPolicyScene : DemoScene {
     override val id = "nested_scroll_policy"
@@ -91,13 +92,13 @@ private class NestedScrollPolicyWidget(
                             widget.env.hostView.nestedScrollPolicy = p.second
                         }
                     },
-                    selected = i == idx,
+                    borderColor = if (i == idx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
                 children = listOf(
                     Padding(
-                        child = Text("纵向 Pager 内嵌纵向 List", style = TextStyle.Accent),
+                        child = Text("纵向 Pager 内嵌纵向 List", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         horizontal = 4, vertical = 2,
                     ),
                     Expanded(
@@ -109,7 +110,7 @@ private class NestedScrollPolicyWidget(
                             itemBuilder = { pageIdx ->
                                 Column(
                                     children = listOf(
-                                        Center(child = Text("PAGE $pageIdx", style = TextStyle.Accent)),
+                                        Center(child = Text("PAGE $pageIdx", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))),
                                         SizedBox(height = 2),
                                         Expanded(
                                             child = ListViewBuilder(

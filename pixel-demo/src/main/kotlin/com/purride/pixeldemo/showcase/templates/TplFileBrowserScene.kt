@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.templates
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -79,8 +80,8 @@ private class TplFileBrowserWidget(override val key: Any? = null) : StatefulWidg
             return Column(
                 children = listOf(
                     Container(
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                         child = Padding(
                             child = Row(
                                 children = listOf(
@@ -90,7 +91,7 @@ private class TplFileBrowserWidget(override val key: Any? = null) : StatefulWidg
                                     ),
                                     SizedBox(width = 4),
                                     Expanded(
-                                        child = Text(crumb, style = TextStyle.Accent, softWrap = true),
+                                        child = Text(crumb, style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)), softWrap = true),
                                     ),
                                 ),
                                 spacing = 2,
@@ -103,7 +104,7 @@ private class TplFileBrowserWidget(override val key: Any? = null) : StatefulWidg
                             Padding(
                                 child = Column(
                                     children = listOf(
-                                        Text("文件: ${node.name}", style = TextStyle.Accent),
+                                        Text("文件: ${node.name}", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                         SizedBox(height = 4),
                                         Text("(叶节点，无下级)", style = TextStyle.Default),
                                     ),
@@ -127,13 +128,13 @@ private class TplFileBrowserWidget(override val key: Any? = null) : StatefulWidg
                                                 children = listOf(
                                                     Text(
                                                         if (isDir) "[DIR]" else "[FILE]",
-                                                        style = if (isDir) TextStyle.Accent else TextStyle.Default,
+                                                        style = if (isDir) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                                     ),
                                                     SizedBox(width = 4),
                                                     Expanded(
                                                         child = Text(child.name, style = TextStyle.Default),
                                                     ),
-                                                    if (isDir) Text(">", style = TextStyle.Accent)
+                                                    if (isDir) Text(">", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))
                                                     else Text("·", style = TextStyle.Default),
                                                 ),
                                                 spacing = 2,

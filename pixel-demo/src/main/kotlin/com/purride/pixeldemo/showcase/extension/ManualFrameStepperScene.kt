@@ -1,8 +1,9 @@
 package com.purride.pixeldemo.showcase.extension
+import com.purride.pixelcore.PixelColor
 
 import com.purride.pixelcore.AxisMotionController
 import com.purride.pixelcore.AxisMotionState
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -81,7 +82,7 @@ private class ManualFrameStepperWidget(override val key: Any? = null) : Stateful
                     Padding(
                         child = Column(
                             children = listOf(
-                                Text("Frame: $frameIndex", style = TextStyle.Accent),
+                                Text("Frame: $frameIndex", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                 Text("Offset: $offset px", style = TextStyle.Default),
                                 Text("Pending callbacks: ${scheduler.pendingCount}", style = TextStyle.Default),
                             ),
@@ -97,14 +98,14 @@ private class ManualFrameStepperWidget(override val key: Any? = null) : Stateful
                                     Container(
                                         width = TRACK_WIDTH,
                                         height = DOT_SIZE + 4,
-                                        fillTone = PixelTone.OFF,
-                                        borderTone = PixelTone.ON,
+                                        fillColor = PixelColor.Transparent,
+                                        borderColor = PixelColor.White,
                                     ),
                                     Positioned(
                                         left = offset, top = 2,
                                         child = Container(
                                             width = DOT_SIZE, height = DOT_SIZE,
-                                            fillTone = PixelTone.ACCENT, borderTone = null,
+                                            fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null,
                                         ),
                                     ),
                                 ),

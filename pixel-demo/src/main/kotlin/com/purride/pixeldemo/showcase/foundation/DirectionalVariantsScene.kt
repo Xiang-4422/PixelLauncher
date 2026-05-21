@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.AlignDirectional
 import com.purride.pixelui.AlignmentDirectional
 import com.purride.pixelui.BuildContext
@@ -39,14 +40,14 @@ object DirectionalVariantsScene : DemoScene {
     override fun build(env: DemoEnv): Widget = DirectionalVariantsWidget(env)
 }
 
-private fun rowLabel(label: String): Widget = Text(label, style = TextStyle.Accent)
+private fun rowLabel(label: String): Widget = Text(label, style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))
 
 private fun frame(child: Widget, height: Int = 28): Widget =
     Container(
         width = 200,
         height = height,
-        fillTone = PixelTone.OFF,
-        borderTone = PixelTone.ON,
+        fillColor = PixelColor.Transparent,
+        borderColor = PixelColor.White,
         child = child,
     )
 
@@ -64,7 +65,7 @@ private class DirectionalVariantsWidget(
         override fun build(context: BuildContext): Widget {
             val dirLabel = if (isRtl) "RTL" else "LTR"
 
-            val dot = Container(width = 10, height = 10, fillTone = PixelTone.ACCENT, borderTone = null)
+            val dot = Container(width = 10, height = 10, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null)
 
             val rows: List<Widget> = listOf(
                 Text("当前方向: $dirLabel  — 在 RTL 下 start↔end 自动镜像", style = TextStyle.Default, softWrap = true),
@@ -105,8 +106,8 @@ private class DirectionalVariantsWidget(
                 ContainerDirectional(
                     width = 200,
                     height = 28,
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ON,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.White,
                     paddingDirectional = EdgeInsetsDirectional(start = 16, top = 4, end = 2, bottom = 4),
                     alignment = AlignmentDirectional.CENTER_START,
                     child = Text("start=16", style = TextStyle.Default),
@@ -152,7 +153,7 @@ private class DirectionalVariantsWidget(
                                         setState { isRtl = false }
                                         widget.env.hostView.textDirection = TextDirection.LTR
                                     },
-                                    selected = !isRtl,
+                                    borderColor = if (!isRtl) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                                 ),
                                 OutlinedButton(
                                     "RTL",
@@ -160,7 +161,7 @@ private class DirectionalVariantsWidget(
                                         setState { isRtl = true }
                                         widget.env.hostView.textDirection = TextDirection.RTL
                                     },
-                                    selected = isRtl,
+                                    borderColor = if (isRtl) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                                 ),
                             ),
                             spacing = 2,

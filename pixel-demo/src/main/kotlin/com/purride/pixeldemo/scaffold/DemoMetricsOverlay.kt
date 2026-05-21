@@ -10,6 +10,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelcore.PixelColor
 
 fun DemoMetricsOverlay(extraSampler: (() -> String)? = null): Widget =
     DemoMetricsOverlayWidget(extraSampler = extraSampler)
@@ -64,7 +65,7 @@ private class DemoMetricsOverlayWidget(
 
         override fun build(context: BuildContext): Widget {
             val children = mutableListOf<Widget>(
-                Text("FPS: $fps", style = TextStyle.Accent),
+                Text("FPS: $fps", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 SizedBox(width = 8),
                 Text("Heap: ${heapKb} KB", style = TextStyle.Default),
             )

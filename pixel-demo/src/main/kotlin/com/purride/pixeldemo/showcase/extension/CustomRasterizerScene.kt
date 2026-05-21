@@ -17,6 +17,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object CustomRasterizerScene : DemoScene {
     override val id = "custom_rasterizer"
@@ -46,7 +47,7 @@ private class CustomRasterizerWidget(
                             child = Padding(
                                 child = Column(
                                     children = listOf(
-                                        Text("Rasterizer: $label", style = TextStyle.Accent),
+                                        Text("Rasterizer: $label", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                         SizedBox(height = 4),
                                         Text("Hello World — 栅格文字渲染", style = TextStyle.Default),
                                         SizedBox(height = 2),
@@ -68,8 +69,8 @@ private class CustomRasterizerWidget(
                     SizedBox(height = 2),
                     Row(
                         children = listOf(
-                            OutlinedButton("8px default", onPressed = { setState { useEmphasis = false } }, selected = !useEmphasis),
-                            OutlinedButton("10px emphasis", onPressed = { setState { useEmphasis = true } }, selected = useEmphasis),
+                            OutlinedButton("8px default", onPressed = { setState { useEmphasis = false } }, borderColor = if (!useEmphasis) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
+                            OutlinedButton("10px emphasis", onPressed = { setState { useEmphasis = true } }, borderColor = if (useEmphasis) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
                         ),
                         spacing = 2,
                     ),

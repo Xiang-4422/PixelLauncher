@@ -19,6 +19,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object HapticFeedbackScene : DemoScene {
     override val id = "haptic_feedback"
@@ -49,7 +50,7 @@ private class HapticFeedbackWidget(
                         child = Center(
                             child = Column(
                                 children = listOf(
-                                    Text("最近触发: $lastFired", style = TextStyle.Accent),
+                                    Text("最近触发: $lastFired", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 4),
                                     Text("点击下方按钮触发对应 PixelHapticType", style = TextStyle.Default, softWrap = true),
                                     Text("需在真机上能感受到不同震动", style = TextStyle.Default, softWrap = true),

@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.stress
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -48,14 +49,14 @@ private class StressDeepTreeWidget(override val key: Any? = null) : StatefulWidg
             val depth = tiers[tierIndex]
             val leaf = Container(
                 width = 20, height = 20,
-                fillTone = PixelTone.ACCENT, borderTone = null,
+                fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null,
             )
             val nested = nestPadding(depth, leaf)
             val controls = tiers.mapIndexed { i, n ->
                 OutlinedButton(
                     text = "N=$n",
                     onPressed = { setState { tierIndex = i } },
-                    selected = i == tierIndex,
+                    borderColor = if (i == tierIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(

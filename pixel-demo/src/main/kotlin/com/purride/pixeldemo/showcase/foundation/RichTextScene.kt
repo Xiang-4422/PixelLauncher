@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.Center
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.RichText
@@ -18,13 +19,13 @@ object RichTextScene : DemoScene {
         child = RichText(
             spans = listOf(
                 PixelTextSpan(text = "Hello, ", style = TextStyle.Default),
-                PixelTextSpan(text = "PIXEL", style = TextStyle.Accent),
+                PixelTextSpan(text = "PIXEL", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 PixelTextSpan(text = " world! ", style = TextStyle.Default),
-                PixelTextSpan(text = "这是富文本", style = TextStyle.Accent),
+                PixelTextSpan(text = "这是富文本", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 PixelTextSpan(text = "，支持", style = TextStyle.Default),
                 PixelTextSpan(
                     text = "自定义 tone",
-                    style = TextStyle.Default.copy(tone = PixelTone.ON),
+                    style = TextStyle.Default.copy(color = PixelColor.White),
                 ),
                 PixelTextSpan(text = " 混排。", style = TextStyle.Default),
             ),

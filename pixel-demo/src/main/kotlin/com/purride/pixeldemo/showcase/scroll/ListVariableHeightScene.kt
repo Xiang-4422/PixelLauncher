@@ -19,6 +19,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object ListVariableHeightScene : DemoScene {
     override val id = "list_variable_height"
@@ -44,7 +45,7 @@ private class ListVariableHeightWidget(override val key: Any? = null) : Stateful
                 OutlinedButton(
                     text = "${n / 1000}k",
                     onPressed = { setState { countIdx = i } },
-                    selected = i == countIdx,
+                    borderColor = if (i == countIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(

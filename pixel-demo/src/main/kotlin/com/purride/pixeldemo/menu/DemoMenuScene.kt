@@ -19,6 +19,7 @@ import com.purride.pixeldemo.catalog.DemoCatalog
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.catalog.DemoSection
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object DemoMenuScene : DemoScene {
     override val id = "menu"
@@ -75,7 +76,7 @@ private class MenuWidget(
 
         private fun sectionHeader(section: DemoSection): Widget =
             Padding(
-                child = Text(section.title.uppercase(), style = TextStyle.Accent),
+                child = Text(section.title.uppercase(), style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 horizontal = 0,
                 vertical = 2,
             )

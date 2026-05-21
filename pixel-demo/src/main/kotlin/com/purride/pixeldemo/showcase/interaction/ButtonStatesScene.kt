@@ -1,5 +1,6 @@
 package com.purride.pixeldemo.showcase.interaction
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Column
@@ -22,15 +23,14 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object ButtonStatesScene : DemoScene {
     override val id = "button_states"
     override val title = "按钮状态矩阵"
-    override val description = "Default / Accent / disabled / selected / pressed 五种状态"
+    override val description = "Default / Accent / disabled / active 四种视觉状态"
 
     override fun build(env: DemoEnv): Widget = ButtonStatesWidget()
 }
 
-private val stateSpecs = listOf(
-    Triple("Default", false, false),
-    Triple("Selected", false, true),
-    Triple("Pressed", false, false),
+private val accentStyle = ButtonStyle(
+    borderColor = PixelColor.fromRgb(200, 100, 0),
+    textStyle = com.purride.pixelui.TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
 )
 
 private class ButtonStatesWidget(override val key: Any? = null) : StatefulWidget(key = key) {
@@ -39,10 +39,10 @@ private class ButtonStatesWidget(override val key: Any? = null) : StatefulWidget
     class ButtonStatesState : State<ButtonStatesWidget>() {
         private val scrollState = PixelListState()
         private val scrollCtrl = ScrollController()
-        private var styleIdx = 0
+        private var useAccent = false
 
         override fun build(context: BuildContext): Widget {
-            val style = if (styleIdx == 0) ButtonStyle.Default else ButtonStyle.Accent
+            val style = if (useAccent) accentStyle else ButtonStyle.Default
 
             return SingleChildScrollView(
                 state = scrollState,
@@ -50,26 +50,31 @@ private class ButtonStatesWidget(override val key: Any? = null) : StatefulWidget
                 child = Padding(
                     child = Column(
                         children = listOf(
+                            Text("单次渲染示例", style = TextStyle.Default),
+                            SizedBox(height = 4),
                             Row(
                                 children = listOf(
-                                    OutlinedButton("Default", onPressed = {}, style = style),
-                                    OutlinedButton("Accent", onPressed = {}, style = ButtonStyle.Accent),
+                                    OutlinedButton("Default", onPressed = {}),
+                                    OutlinedButton("Active", onPressed = {}, borderColor = PixelColor.fromRgb(200, 100, 0)),
                                     OutlinedButton("Disabled", onPressed = {}, enabled = false),
                                 ),
                                 spacing = 4,
                             ),
+                            SizedBox(height = 8),
+                            Text("切换样式", style = TextStyle.Default),
                             SizedBox(height = 4),
                             Row(
                                 children = listOf(
-                                    OutlinedButton("Selected", onPressed = {}, style = style, selected = true),
-                                    OutlinedButton("Pressed", onPressed = {}, style = style, pressed = true),
+                                    OutlinedButton("Style A", onPressed = {}, style = style),
+                                    OutlinedButton("Style B", onPressed = {}, style = style, fillColor = PixelColor.fromRgb(30, 30, 30)),
                                 ),
                                 spacing = 4,
                             ),
                             SizedBox(height = 8),
                             OutlinedButton(
-                                text = "STYLE: ${if (styleIdx == 0) "Default" else "Accent"}",
-                                onPressed = { setState { styleIdx = 1 - styleIdx } },
+                                text = "STYLE: ${if (useAccent) "Accent" else "Default"}",
+                                onPressed = { setState { useAccent = !useAccent } },
+                                borderColor = if (useAccent) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                             ),
                         ),
                         spacing = 2,

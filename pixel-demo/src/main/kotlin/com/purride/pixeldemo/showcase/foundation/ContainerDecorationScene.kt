@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
 import com.purride.pixelui.Column
@@ -41,7 +42,7 @@ private class ContainerDecorationWidget(override val key: Any? = null) : Statefu
         private val scrollController = ScrollController()
 
         override fun build(context: BuildContext): Widget {
-            fun label(text: String) = Text(text, style = TextStyle.Accent)
+            fun label(text: String) = Text(text, style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))
             fun note(text: String) = Text(text, style = TextStyle.Default, softWrap = true)
 
             val rows: List<Widget> = listOf(
@@ -49,8 +50,8 @@ private class ContainerDecorationWidget(override val key: Any? = null) : Statefu
                 Container(
                     width = 80,
                     height = 30,
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ON,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.White,
                     padding = EdgeInsets(left = 4, top = 2, right = 4, bottom = 2),
                     alignment = Alignment.CENTER_START,
                     child = Text("fillTone=OFF, border=ON", style = TextStyle.Default),
@@ -58,34 +59,34 @@ private class ContainerDecorationWidget(override val key: Any? = null) : Statefu
                 Container(
                     width = 80,
                     height = 30,
-                    fillTone = PixelTone.ON,
-                    borderTone = PixelTone.ACCENT,
+                    fillColor = PixelColor.White,
+                    borderColor = PixelColor.fromRgb(200, 100, 0),
                     padding = EdgeInsets(left = 4, top = 2, right = 4, bottom = 2),
                     alignment = Alignment.CENTER,
-                    child = Text("fill=ON, border=ACCENT", style = TextStyle.Accent),
+                    child = Text("fill=ON, border=ACCENT", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 ),
                 SizedBox(height = 4),
                 label("DecoratedBox — 无尺寸约束"),
                 note("宽高由 child 决定，borderTone/fillTone 仅装饰"),
                 DecoratedBox(
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ON,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.White,
                     padding = 4,
                     child = Text("DecoratedBox child", style = TextStyle.Default),
                 ),
                 DecoratedBox(
-                    fillTone = PixelTone.ACCENT,
-                    borderTone = null,
+                    fillColor = PixelColor.fromRgb(200, 100, 0),
+                    borderColor = null,
                     padding = 4,
-                    child = Text("fill=ACCENT, no border", style = TextStyle.Accent),
+                    child = Text("fill=ACCENT, no border", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 ),
                 SizedBox(height = 4),
                 label("ContainerDirectional — LTR / RTL 对称"),
                 ContainerDirectional(
                     width = 120,
                     height = 28,
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ON,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.White,
                     paddingDirectional = EdgeInsetsDirectional(start = 8, end = 2, top = 2, bottom = 2),
                     alignment = AlignmentDirectional.CENTER_START,
                     child = Text("paddingStart=8", style = TextStyle.Default),
@@ -93,11 +94,11 @@ private class ContainerDecorationWidget(override val key: Any? = null) : Statefu
                 ContainerDirectional(
                     width = 120,
                     height = 28,
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ACCENT,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.fromRgb(200, 100, 0),
                     paddingDirectional = EdgeInsetsDirectional(start = 2, end = 8, top = 2, bottom = 2),
                     alignment = AlignmentDirectional.CENTER_END,
-                    child = Text("paddingEnd=8", style = TextStyle.Accent),
+                    child = Text("paddingEnd=8", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 ),
             )
 

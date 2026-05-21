@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.composition
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -56,7 +57,7 @@ private class StickyBottomBarWidget(override val key: Any? = null) : StatefulWid
                                 Padding(
                                     child = Text(
                                         if (i < 30) "Item $i" else "Sent #${i - 30}",
-                                        style = if (i >= 30) TextStyle.Accent else TextStyle.Default,
+                                        style = if (i >= 30) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                     ),
                                     all = 3,
                                 )
@@ -64,8 +65,8 @@ private class StickyBottomBarWidget(override val key: Any? = null) : StatefulWid
                         ),
                     ),
                     Container(
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                         child = Padding(
                             child = Row(
                                 children = listOf(

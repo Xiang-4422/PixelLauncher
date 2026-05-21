@@ -17,6 +17,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object TextFieldBasicsScene : DemoScene {
     override val id = "text_field_basics"
@@ -43,14 +44,14 @@ private class TextFieldBasicsWidget(override val key: Any? = null) : StatefulWid
             child = Padding(
                 child = Column(
                     children = listOf(
-                        Text("单行输入", style = TextStyle.Accent),
+                        Text("单行输入", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         TextField(
                             state = singleState,
                             controller = singleCtrl,
                             placeholder = "请输入文字…",
                         ),
                         Text("当前值: ${singleState.text}", style = TextStyle.Default),
-                        Text("多行输入 (maxLines=4)", style = TextStyle.Accent),
+                        Text("多行输入 (maxLines=4)", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         TextField(
                             state = multiState,
                             controller = multiCtrl,

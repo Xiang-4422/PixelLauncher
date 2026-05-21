@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.templates
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -45,7 +46,7 @@ private class TplSettingsWidget(override val key: Any? = null) : StatefulWidget(
 
         override fun build(context: BuildContext): Widget {
             fun groupTitle(text: String) = Padding(
-                child = Text(text, style = TextStyle.Accent),
+                child = Text(text, style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 horizontal = 4, vertical = 3,
             )
 
@@ -53,15 +54,15 @@ private class TplSettingsWidget(override val key: Any? = null) : StatefulWidget(
                 GestureDetector(
                     onTap = onToggle,
                     child = Container(
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                         child = Padding(
                             child = Row(
                                 children = listOf(
                                     Expanded(child = Text(label, style = TextStyle.Default)),
                                     Text(
                                         if (value) "[ON]" else "[OFF]",
-                                        style = if (value) TextStyle.Accent else TextStyle.Default,
+                                        style = if (value) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                     ),
                                 ),
                                 spacing = 2,
@@ -76,12 +77,12 @@ private class TplSettingsWidget(override val key: Any? = null) : StatefulWidget(
                     OutlinedButton(
                         text = opt,
                         onPressed = { onSelect(i) },
-                        selected = i == idx,
+                        borderColor = if (i == idx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                     )
                 }
                 return Container(
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ON,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.White,
                     child = Padding(
                         child = Column(
                             children = listOf(
@@ -120,8 +121,8 @@ private class TplSettingsWidget(override val key: Any? = null) : StatefulWidget(
 
                 groupTitle("关于"),
                 Container(
-                    fillTone = PixelTone.OFF,
-                    borderTone = PixelTone.ON,
+                    fillColor = PixelColor.Transparent,
+                    borderColor = PixelColor.White,
                     child = Padding(
                         child = Column(
                             children = listOf(

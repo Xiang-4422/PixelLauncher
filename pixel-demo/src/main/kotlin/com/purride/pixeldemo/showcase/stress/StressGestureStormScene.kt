@@ -1,7 +1,8 @@
 package com.purride.pixeldemo.showcase.stress
+import com.purride.pixelcore.PixelColor
 
 import com.purride.pixelcore.PixelAxis
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.Axis
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
@@ -54,8 +55,8 @@ private class StressGestureStormWidget(override val key: Any? = null) : Stateful
                         onTap = { setState { tapCount++ } },
                         child = Container(
                             width = 30, height = 20,
-                            fillTone = if (i % 2 == 0) PixelTone.ON else PixelTone.ACCENT,
-                            borderTone = PixelTone.ON,
+                            fillColor = if (i % 2 == 0) PixelColor.White else PixelColor.fromRgb(200, 100, 0),
+                            borderColor = PixelColor.White,
                             child = Center(child = Text("T$i", style = TextStyle.Default)),
                         ),
                     )
@@ -68,32 +69,32 @@ private class StressGestureStormWidget(override val key: Any? = null) : Stateful
                     DemoMetricsOverlay(extraSampler = { "taps=$tapCount" }),
                     SizedBox(height = 1),
                     Padding(
-                        child = Text("Pager (横滑)", style = TextStyle.Accent),
+                        child = Text("Pager (横滑)", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         horizontal = 4,
                     ),
                     Container(
                         height = 40,
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                         child = PageViewBuilder(
                             axis = Axis.HORIZONTAL,
                             controller = pagerCtrl,
                             state = pagerState,
                             itemCount = 20,
                             itemBuilder = { i ->
-                                Center(child = Text("PAGE $i", style = TextStyle.Accent))
+                                Center(child = Text("PAGE $i", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))))
                             },
                         ),
                     ),
                     SizedBox(height = 2),
                     Padding(
-                        child = Text("Tap grid", style = TextStyle.Accent),
+                        child = Text("Tap grid", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         horizontal = 4,
                     ),
                     Padding(child = tapGrid, horizontal = 4, vertical = 2),
                     SizedBox(height = 2),
                     Padding(
-                        child = Text("List (竖滑)", style = TextStyle.Accent),
+                        child = Text("List (竖滑)", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         horizontal = 4,
                     ),
                     Expanded(
@@ -105,7 +106,7 @@ private class StressGestureStormWidget(override val key: Any? = null) : Stateful
                                 Padding(
                                     child = Text(
                                         "Row $i",
-                                        style = if (i % 5 == 0) TextStyle.Accent else TextStyle.Default,
+                                        style = if (i % 5 == 0) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                     ),
                                     all = 2,
                                 )

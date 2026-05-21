@@ -18,6 +18,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.catalog.DemoSection
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 class DemoCategoryScene(val section: DemoSection) : DemoScene {
     override val id = "cat_${section.title.lowercase()}"
@@ -69,7 +70,7 @@ private class CategoryWidget(
                             Text(scene.title, style = TextStyle.Default),
                             Text(
                                 scene.description,
-                                style = TextStyle.Accent,
+                                style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                             ),
                         ),
                         spacing = 1,

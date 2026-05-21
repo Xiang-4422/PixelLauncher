@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.extension
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -27,7 +28,7 @@ object CustomRenderObjectScene : DemoScene {
 }
 
 private val sideOptions = listOf(20, 40, 60)
-private val toneOptions = listOf(PixelTone.ON, PixelTone.ACCENT, PixelTone.OFF)
+private val toneOptions = listOf(PixelColor.White, PixelColor.fromRgb(200, 100, 0), PixelColor.Transparent)
 private val toneLabels = listOf("ON", "ACCENT", "OFF")
 
 private class CustomRenderObjectWidget(override val key: Any? = null) : StatefulWidget(key = key) {
@@ -39,10 +40,10 @@ private class CustomRenderObjectWidget(override val key: Any? = null) : Stateful
 
         override fun build(context: BuildContext): Widget {
             val sideControls = sideOptions.mapIndexed { i, s ->
-                OutlinedButton("${s}px", onPressed = { setState { sideIdx = i } }, selected = i == sideIdx)
+                OutlinedButton("${s}px", onPressed = { setState { sideIdx = i } }, borderColor = if (i == sideIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White)
             }
             val toneControls = toneOptions.mapIndexed { i, _ ->
-                OutlinedButton(toneLabels[i], onPressed = { setState { toneIdx = i } }, selected = i == toneIdx)
+                OutlinedButton(toneLabels[i], onPressed = { setState { toneIdx = i } }, borderColor = if (i == toneIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White)
             }
             return Column(
                 children = listOf(
@@ -50,7 +51,7 @@ private class CustomRenderObjectWidget(override val key: Any? = null) : Stateful
                         child = Center(
                             child = HollowSquareWidget(
                                 side = sideOptions[sideIdx],
-                                tone = toneOptions[toneIdx],
+                                color = toneOptions[toneIdx],
                             ),
                         ),
                     ),

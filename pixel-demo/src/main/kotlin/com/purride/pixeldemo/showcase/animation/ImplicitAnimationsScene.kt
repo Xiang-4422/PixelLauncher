@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.animation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -103,7 +104,7 @@ private class ImplicitAnimationsWidget(
                         child = Row(
                             mainAxisSize = MainAxisSize.MAX,
                             children = listOf(
-                                Text("NOTIFICATIONS", style = TextStyle.Accent),
+                                Text("NOTIFICATIONS", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                 Expanded(child = SizedBox()),
                                 // badge: AnimatedOpacity + AnimatedSwitcher for count
                                 AnimatedOpacity(
@@ -117,8 +118,8 @@ private class ImplicitAnimationsWidget(
                                         child = Container(
                                             key = "badge-$unread",
                                             width = 14, height = 8,
-                                            fillTone = PixelTone.ACCENT,
-                                            borderTone = null,
+                                            fillColor = PixelColor.fromRgb(200, 100, 0),
+                                            borderColor = null,
                                             child = Center(
                                                 child = Text("$unread", style = TextStyle.Default),
                                             ),
@@ -186,8 +187,8 @@ private class ImplicitAnimationsWidget(
                                         vsync = vsync,
                                         child = Container(
                                             width = 4, height = 4,
-                                            fillTone = PixelTone.ACCENT,
-                                            borderTone = null,
+                                            fillColor = PixelColor.fromRgb(200, 100, 0),
+                                            borderColor = null,
                                         ),
                                     ),
                                     // ▶/▼ indicator switches via AnimatedSwitcher
@@ -204,7 +205,7 @@ private class ImplicitAnimationsWidget(
                                     Expanded(
                                         child = Text(
                                             notif.title,
-                                            style = if (isRead) TextStyle.Default else TextStyle.Accent,
+                                            style = if (isRead) TextStyle.Default else TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                                         ),
                                     ),
                                 ),
@@ -237,7 +238,7 @@ private class ImplicitAnimationsWidget(
                                 curve = Curves.EaseOut,
                                 width = if (isRead) 120 else 0,
                                 height = 2,
-                                borderTone = if (isExpanded) PixelTone.ACCENT else PixelTone.ON,
+                                borderColor = if (isExpanded) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                             ),
                         ),
                     ),

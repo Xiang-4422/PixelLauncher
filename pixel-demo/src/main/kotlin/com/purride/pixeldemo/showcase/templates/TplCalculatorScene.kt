@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.templates
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -103,7 +104,7 @@ private class TplCalculatorWidget(override val key: Any? = null) : StatefulWidge
                 child = OutlinedButton(
                     text = label,
                     onPressed = onTap,
-                    selected = accent,
+                    borderColor = if (accent) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 ),
             )
 
@@ -182,15 +183,15 @@ private class TplCalculatorWidget(override val key: Any? = null) : StatefulWidge
                 child = Column(
                     children = listOf(
                         Container(
-                            fillTone = PixelTone.ON,
-                            borderTone = PixelTone.ACCENT,
+                            fillColor = PixelColor.White,
+                            borderColor = PixelColor.fromRgb(200, 100, 0),
                             child = Padding(
                                 child = Row(
                                     children = listOf(
                                         Expanded(
                                             child = Text(
                                                 display,
-                                                style = TextStyle.Accent,
+                                                style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                                                 textAlign = com.purride.pixelui.TextAlign.END,
                                             ),
                                         ),

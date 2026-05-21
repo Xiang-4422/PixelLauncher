@@ -1,6 +1,6 @@
 package com.purride.pixeldemo.showcase.extension
 
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.advanced.PixelLeafRenderObjectWidget
 import com.purride.pixelui.advanced.PixelPaintContext
@@ -18,15 +18,15 @@ import com.purride.pixelui.advanced.PixelRenderSize
  */
 class HollowSquareWidget(
     val side: Int,
-    val tone: PixelTone,
+    val color: PixelColor,
     override val key: Any? = null,
 ) : PixelLeafRenderObjectWidget(key = key) {
 
     override fun createRenderObject(context: BuildContext): PixelRenderObject =
-        HollowSquareRender(side = side, tone = tone)
+        HollowSquareRender(side = side, color = color)
 
     override fun updateRenderObject(context: BuildContext, renderObject: PixelRenderObject) {
-        (renderObject as HollowSquareRender).update(side = side, tone = tone)
+        (renderObject as HollowSquareRender).update(side = side, color = color)
     }
 }
 
@@ -34,12 +34,12 @@ class HollowSquareWidget(
  * [HollowSquareWidget] 对应的 render object。
  *
  * layout：把自身尺寸收敛到 [side] × [side]（受外部约束夹紧）。
- * paint：只画方框四条边的像素（空心矩形），用 [tone] 颜色值。
+ * paint：只画方框四条边的像素（空心矩形），用 [color] 颜色值。
  * update：equality 短路——属性未变不触发任何脏标记。
  */
 internal class HollowSquareRender(
     private var side: Int,
-    private var tone: PixelTone,
+    private var color: PixelColor,
 ) : PixelRenderBox() {
 
     override fun layout(constraints: PixelRenderConstraints) {
@@ -54,21 +54,21 @@ internal class HollowSquareRender(
         val h = size.height
         if (w <= 0 || h <= 0) return
         for (x in 0 until w) {
-            context.setTone(offsetX + x, offsetY, tone)
-            context.setTone(offsetX + x, offsetY + h - 1, tone)
+            context.buffer.setPixel(offsetX + x, offsetY, color)
+            context.buffer.setPixel(offsetX + x, offsetY + h - 1, color)
         }
         for (y in 1 until h - 1) {
-            context.setTone(offsetX, offsetY + y, tone)
-            context.setTone(offsetX + w - 1, offsetY + y, tone)
+            context.buffer.setPixel(offsetX, offsetY + y, color)
+            context.buffer.setPixel(offsetX + w - 1, offsetY + y, color)
         }
     }
 
-    fun update(side: Int, tone: PixelTone) {
+    fun update(side: Int, color: PixelColor) {
         val sizeChanged = this.side != side
-        val toneChanged = this.tone != tone
-        if (!sizeChanged && !toneChanged) return
+        val colorChanged = this.color != color
+        if (!sizeChanged && !colorChanged) return
         this.side = side
-        this.tone = tone
+        this.color = color
         if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }

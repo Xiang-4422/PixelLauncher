@@ -1,8 +1,7 @@
 package com.purride.pixeldemo.showcase.theme
 
-import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelShape
-import com.purride.pixelcore.PixelTheme
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
@@ -23,48 +22,33 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 
 object PaletteToggleScene : DemoScene {
     override val id = "palette_toggle"
-    override val title = "调色板与像素形状"
-    override val description = "切换 PixelTheme 全枚举 + PixelShape 全枚举"
+    override val title = "像素形状"
+    override val description = "切换 PixelShape 全枚举，观察不同点阵渲染风格"
 
-    override fun build(env: DemoEnv): Widget = PaletteToggleWidget(env)
+    override fun build(env: DemoEnv): Widget = ShapeToggleWidget(env)
 }
 
-private class PaletteToggleWidget(
+private class ShapeToggleWidget(
     private val env: DemoEnv,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
-    override fun createState(): State<out StatefulWidget> = PaletteToggleState()
+    override fun createState(): State<out StatefulWidget> = ShapeToggleState()
 
-    inner class PaletteToggleState : State<PaletteToggleWidget>() {
-        private val themes = PixelTheme.entries
+    inner class ShapeToggleState : State<ShapeToggleWidget>() {
         private val shapes = PixelShape.entries
-        private var themeIdx = 0
         private var shapeIdx = 0
 
         override fun build(context: BuildContext): Widget {
-            // 主题按钮拆成 3+2 两行，避免 5 个按钮单行溢出
-            fun themeBtn(i: Int, t: PixelTheme) = OutlinedButton(
-                text = t.name.take(4),
-                onPressed = {
-                    setState { themeIdx = i }
-                    widget.env.hostView.setPalette(PixelPalette.fromTheme(themes[i]))
-                },
-                selected = i == themeIdx,
-            )
-            val themeRow1 = themes.take(3).mapIndexed { i, t -> themeBtn(i, t) }
-            val themeRow2 = themes.drop(3).mapIndexed { i, t -> themeBtn(3 + i, t) }
-
-            // 形状按钮缩写为 3 字符，3 个按钮单行可容纳
             val shapeControls = shapes.mapIndexed { i, s ->
                 OutlinedButton(
                     text = s.name.take(3),
                     onPressed = {
                         setState { shapeIdx = i }
                         widget.env.applyPreferredProfile(
-                            PixelHostProfilePreference(dotSizePx = 4, pixelShape = shapes[i]),
+                            PixelHostProfilePreference(dotSizePx = 12, pixelShape = shapes[i]),
                         )
                     },
-                    selected = i == shapeIdx,
+                    borderColor = if (i == shapeIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
@@ -73,8 +57,8 @@ private class PaletteToggleWidget(
                         child = Padding(
                             child = Column(
                                 children = listOf(
-                                    Text("Theme: ${themes[themeIdx].name}", style = TextStyle.Accent),
-                                    Text("Shape: ${shapes[shapeIdx].name}", style = TextStyle.Default),
+                                    Text("Shape: ${shapes[shapeIdx].name}", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
+                                    Text("像素形状演示", style = TextStyle.Default),
                                 ),
                                 spacing = 4,
                                 crossAxisAlignment = CrossAxisAlignment.CENTER,
@@ -82,11 +66,6 @@ private class PaletteToggleWidget(
                             all = 8,
                         ),
                     ),
-                    SizedBox(height = 2),
-                    Text("PixelTheme", style = TextStyle.Default),
-                    Row(children = themeRow1, spacing = 2),
-                    SizedBox(height = 2),
-                    Row(children = themeRow2, spacing = 2),
                     SizedBox(height = 2),
                     Text("PixelShape", style = TextStyle.Default),
                     Row(children = shapeControls, spacing = 2),

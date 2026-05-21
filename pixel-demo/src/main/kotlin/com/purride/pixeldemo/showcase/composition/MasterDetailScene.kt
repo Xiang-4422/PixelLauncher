@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.composition
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -56,8 +57,8 @@ private class MasterDetailWidget(override val key: Any? = null) : StatefulWidget
                 children = listOf(
                     Container(
                         width = 70,
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                         child = ListViewBuilder(
                             state = listState,
                             controller = listCtrl,
@@ -68,7 +69,7 @@ private class MasterDetailWidget(override val key: Any? = null) : StatefulWidget
                                     child = Padding(
                                         child = Text(
                                             items[i].first,
-                                            style = if (i == selected) TextStyle.Accent else TextStyle.Default,
+                                            style = if (i == selected) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                         ),
                                         all = 3,
                                     ),
@@ -80,7 +81,7 @@ private class MasterDetailWidget(override val key: Any? = null) : StatefulWidget
                         child = Padding(
                             child = Column(
                                 children = listOf(
-                                    Text(title, style = TextStyle.Accent),
+                                    Text(title, style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 2),
                                     Text(body, style = TextStyle.Default, softWrap = true),
                                     SizedBox(height = 4),

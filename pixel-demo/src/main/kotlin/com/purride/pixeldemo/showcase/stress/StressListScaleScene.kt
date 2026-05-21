@@ -22,6 +22,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoMetricsOverlay
+import com.purride.pixelcore.PixelColor
 
 object StressListScaleScene : DemoScene {
     override val id = "stress_list_scale"
@@ -47,7 +48,7 @@ private class StressListScaleWidget(override val key: Any? = null) : StatefulWid
                 OutlinedButton(
                     text = if (n >= 1000) "${n / 1000}k" else "$n",
                     onPressed = { setState { tierIndex = i } },
-                    selected = i == tierIndex,
+                    borderColor = if (i == tierIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
@@ -64,7 +65,7 @@ private class StressListScaleWidget(override val key: Any? = null) : StatefulWid
                                     child = Center(
                                         child = Text(
                                             "Item $i",
-                                            style = if (i % 10 == 0) TextStyle.Accent else TextStyle.Default,
+                                            style = if (i % 10 == 0) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                         ),
                                     ),
                                     all = 2,

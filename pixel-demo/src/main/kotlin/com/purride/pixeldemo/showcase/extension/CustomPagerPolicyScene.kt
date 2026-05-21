@@ -22,6 +22,7 @@ import com.purride.pixelui.gesture.PagerGesturePolicy
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object CustomPagerPolicyScene : DemoScene {
     override val id = "custom_pager_policy"
@@ -55,12 +56,12 @@ private class CustomPagerPolicyWidget(
                         setState { biasIdx = i }
                         widget.onBiasChange(biasOptions[i])
                     },
-                    selected = i == biasIdx,
+                    borderColor = if (i == biasIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
                 children = listOf(
-                    Text("axisBias=${biasOptions[biasIdx]}", style = TextStyle.Accent),
+                    Text("axisBias=${biasOptions[biasIdx]}", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                     Text("bias 越大 → 越难误触发分页手势", style = TextStyle.Default, softWrap = true),
                     SizedBox(height = 4),
                     Expanded(
@@ -69,7 +70,7 @@ private class CustomPagerPolicyWidget(
                             controller = pagerController,
                             state = pagerState,
                             itemCount = 5,
-                            itemBuilder = { i -> Center(child = Text("Page $i", style = TextStyle.Accent)) },
+                            itemBuilder = { i -> Center(child = Text("Page $i", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))) },
                         ),
                     ),
                     SizedBox(height = 2),

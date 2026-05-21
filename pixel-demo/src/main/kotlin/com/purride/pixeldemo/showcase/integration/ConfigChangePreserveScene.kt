@@ -26,6 +26,7 @@ import com.purride.pixelcore.PixelAxis
 import com.purride.pixelui.Axis
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object ConfigChangePreserveScene : DemoScene {
     override val id = "config_change_preserve"
@@ -66,7 +67,7 @@ private class ConfigChangePreserveWidget(override val key: Any? = null) : Statef
                             state = pagerState,
                             itemCount = 10,
                             itemBuilder = { i ->
-                                Center(child = Text("Page $i", style = TextStyle.Accent))
+                                Center(child = Text("Page $i", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))))
                             },
                         ),
                     ),

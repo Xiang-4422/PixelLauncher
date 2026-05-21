@@ -22,6 +22,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoMetricsOverlay
+import com.purride.pixelcore.PixelColor
 
 object StressTextHeavyScene : DemoScene {
     override val id = "stress_text_heavy"
@@ -34,7 +35,7 @@ object StressTextHeavyScene : DemoScene {
 private val tiers = listOf(100, 500, 2000)
 
 private fun buildSpans(spanCount: Int): List<PixelTextSpan> {
-    val styles = listOf(PixelTextStyle.Default, PixelTextStyle.Accent)
+    val styles = listOf(PixelTextStyle.Default, PixelTextStyle(color = PixelColor.fromRgb(200, 100, 0)))
     val words = listOf("pixel ", "engine ", "render ", "stress ", "text ", "span ", "lorem ", "ipsum ")
     return List(spanCount) { i ->
         PixelTextSpan(text = words[i % words.size], style = styles[i % styles.size])
@@ -56,7 +57,7 @@ private class StressTextHeavyWidget(override val key: Any? = null) : StatefulWid
                 OutlinedButton(
                     text = "$c",
                     onPressed = { setState { tierIndex = i } },
-                    selected = i == tierIndex,
+                    borderColor = if (i == tierIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(

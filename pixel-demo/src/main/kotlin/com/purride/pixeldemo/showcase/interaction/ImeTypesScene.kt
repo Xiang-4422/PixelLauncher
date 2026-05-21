@@ -19,6 +19,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object ImeTypesScene : DemoScene {
     override val id = "ime_types"
@@ -44,7 +45,7 @@ private class ImeTypesWidget(override val key: Any? = null) : StatefulWidget(key
 
         override fun build(context: BuildContext): Widget {
             val items = mutableListOf<Widget>()
-            items += Text("PixelInputType", style = TextStyle.Accent)
+            items += Text("PixelInputType", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))
             inputTypes.forEachIndexed { i, type ->
                 items += Text(type.name, style = TextStyle.Default)
                 items += TextField(
@@ -54,7 +55,7 @@ private class ImeTypesWidget(override val key: Any? = null) : StatefulWidget(key
                     inputType = type,
                 )
             }
-            items += Text("TextInputAction", style = TextStyle.Accent)
+            items += Text("TextInputAction", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))
             inputActions.forEachIndexed { i, action ->
                 items += Text(action.name, style = TextStyle.Default)
                 items += TextField(

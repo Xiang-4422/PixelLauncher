@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.scroll
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -46,7 +47,7 @@ private class ListSeparatedWidget(override val key: Any? = null) : StatefulWidge
                 OutlinedButton(
                     text = "${n / 1000}k",
                     onPressed = { setState { countIdx = i } },
-                    selected = i == countIdx,
+                    borderColor = if (i == countIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
@@ -62,7 +63,7 @@ private class ListSeparatedWidget(override val key: Any? = null) : StatefulWidge
                                 )
                             },
                             separatorBuilder = { _ ->
-                                Container(height = 1, fillTone = PixelTone.ON, borderTone = null)
+                                Container(height = 1, fillColor = PixelColor.White, borderColor = null)
                             },
                             state = scrollState,
                             controller = scrollController,

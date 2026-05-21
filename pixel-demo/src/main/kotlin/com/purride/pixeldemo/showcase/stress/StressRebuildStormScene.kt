@@ -20,6 +20,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoMetricsOverlay
+import com.purride.pixelcore.PixelColor
 
 object StressRebuildStormScene : DemoScene {
     override val id = "stress_rebuild_storm"
@@ -85,7 +86,7 @@ private class StressRebuildStormWidget(override val key: Any? = null) : Stateful
                 OutlinedButton(
                     text = m.name,
                     onPressed = { setState { mode = m } },
-                    selected = m == mode,
+                    borderColor = if (m == mode) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
@@ -96,7 +97,7 @@ private class StressRebuildStormWidget(override val key: Any? = null) : Stateful
                         child = Center(
                             child = Column(
                                 children = listOf(
-                                    Text("Tree tick: $tick", style = TextStyle.Accent),
+                                    Text("Tree tick: $tick", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 2),
                                     LeafTicker(),
                                     SizedBox(height = 2),

@@ -20,6 +20,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object TextInputHostCommandsScene : DemoScene {
     override val id = "text_input_host_commands"
@@ -57,7 +58,7 @@ private class TextInputHostCommandsWidget(
                             autofocus = false,
                         ),
                         SizedBox(height = 8),
-                        Text("上次命令: $lastCommand", style = TextStyle.Accent),
+                        Text("上次命令: $lastCommand", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         SizedBox(height = 4),
                         Row(
                             children = listOf(

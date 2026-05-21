@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
@@ -45,8 +46,8 @@ private class StackPositionedWidget(override val key: Any? = null) : StatefulWid
             val base = Container(
                 width = 160,
                 height = 100,
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ON,
+                fillColor = PixelColor.Transparent,
+                borderColor = PixelColor.White,
                 child = Center(child = Text("BASE", style = TextStyle.Default)),
             )
 
@@ -56,19 +57,19 @@ private class StackPositionedWidget(override val key: Any? = null) : StatefulWid
                         base,
                         Positioned(
                             left = 0, top = 0,
-                            child = Container(width = 12, height = 12, fillTone = PixelTone.ACCENT, borderTone = null),
+                            child = Container(width = 12, height = 12, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null),
                         ),
                         Positioned(
                             right = 0, top = 0,
-                            child = Container(width = 12, height = 12, fillTone = PixelTone.ACCENT, borderTone = null),
+                            child = Container(width = 12, height = 12, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null),
                         ),
                         Positioned(
                             left = 0, bottom = 0,
-                            child = Container(width = 12, height = 12, fillTone = PixelTone.ACCENT, borderTone = null),
+                            child = Container(width = 12, height = 12, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null),
                         ),
                         Positioned(
                             right = 0, bottom = 0,
-                            child = Container(width = 12, height = 12, fillTone = PixelTone.ACCENT, borderTone = null),
+                            child = Container(width = 12, height = 12, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null),
                         ),
                     ),
                 )
@@ -79,9 +80,9 @@ private class StackPositionedWidget(override val key: Any? = null) : StatefulWid
                         Positioned(
                             left = 30, top = 30, right = 30, bottom = 30,
                             child = Container(
-                                fillTone = PixelTone.ON,
-                                borderTone = PixelTone.ACCENT,
-                                child = Center(child = Text("DIALOG", style = TextStyle.Accent)),
+                                fillColor = PixelColor.White,
+                                borderColor = PixelColor.fromRgb(200, 100, 0),
+                                child = Center(child = Text("DIALOG", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)))),
                             ),
                         ),
                     ),
@@ -91,8 +92,8 @@ private class StackPositionedWidget(override val key: Any? = null) : StatefulWid
                         base,
                         PositionedFill(
                             child = Container(
-                                fillTone = PixelTone.ACCENT,
-                                borderTone = PixelTone.ON,
+                                fillColor = PixelColor.fromRgb(200, 100, 0),
+                                borderColor = PixelColor.White,
                                 child = Center(child = Text("FILL", style = TextStyle.Default)),
                             ),
                         ),
@@ -104,7 +105,7 @@ private class StackPositionedWidget(override val key: Any? = null) : StatefulWid
                 OutlinedButton(
                     text = label,
                     onPressed = { setState { modeIndex = i } },
-                    selected = i == modeIndex,
+                    borderColor = if (i == modeIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
 

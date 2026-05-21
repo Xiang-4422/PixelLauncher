@@ -1,6 +1,6 @@
 package com.purride.pixeldemo.showcase.theme
 
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -9,8 +9,6 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
-import com.purride.pixelui.PixelThemeData
-import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
@@ -18,37 +16,43 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
-import com.purride.pixelui.withTokens
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 
 object ThemeTokensScene : DemoScene {
     override val id = "theme_tokens"
-    override val title = "主题 token 调参"
-    override val description = "切换 tone / spacing 维度，观察 ThemeData.withTokens 效果"
+    override val title = "颜色方案"
+    override val description = "切换显式颜色方案，观察 PixelColor 直接驱动渲染效果"
 
-    override fun build(env: DemoEnv): Widget = ThemeTokensWidget()
+    override fun build(env: DemoEnv): Widget = ColorSchemeWidget()
 }
 
-private val tokenVariants = listOf(
-    "Default" to PixelThemeData(),
-    "Accent Text" to PixelThemeData().withTokens { copy(textTone = PixelTone.ACCENT) },
-    "Off Surface" to PixelThemeData().withTokens { copy(surfaceTone = PixelTone.ON) },
+private data class ColorScheme(
+    val label: String,
+    val primary: PixelColor,
+    val accent: PixelColor,
+    val surface: PixelColor,
 )
 
-private class ThemeTokensWidget(override val key: Any? = null) : StatefulWidget(key = key) {
-    override fun createState(): State<out StatefulWidget> = ThemeTokensState()
+private val schemes = listOf(
+    ColorScheme("Default", PixelColor.White, PixelColor.fromRgb(200, 100, 0), PixelColor.Transparent),
+    ColorScheme("Ocean", PixelColor.fromRgb(0, 200, 255), PixelColor.fromRgb(0, 100, 200), PixelColor.Transparent),
+    ColorScheme("Amber", PixelColor.fromRgb(255, 200, 0), PixelColor.fromRgb(200, 100, 0), PixelColor.Transparent),
+)
 
-    class ThemeTokensState : State<ThemeTokensWidget>() {
-        private var variantIdx = 0
+private class ColorSchemeWidget(override val key: Any? = null) : StatefulWidget(key = key) {
+    override fun createState(): State<out StatefulWidget> = ColorSchemeState()
+
+    class ColorSchemeState : State<ColorSchemeWidget>() {
+        private var schemeIdx = 0
 
         override fun build(context: BuildContext): Widget {
-            val (label, theme) = tokenVariants[variantIdx]
-            val controls = tokenVariants.mapIndexed { i, (name, _) ->
+            val scheme = schemes[schemeIdx]
+            val controls = schemes.mapIndexed { i, s ->
                 OutlinedButton(
-                    text = name,
-                    onPressed = { setState { variantIdx = i } },
-                    selected = i == variantIdx,
+                    text = s.label,
+                    onPressed = { setState { schemeIdx = i } },
+                    borderColor = if (i == schemeIdx) scheme.accent else scheme.primary,
                 )
             }
             return Column(
@@ -57,21 +61,24 @@ private class ThemeTokensWidget(override val key: Any? = null) : StatefulWidget(
                         child = Padding(
                             child = Column(
                                 children = listOf(
-                                    Text("Variant: $label", style = TextStyle.Accent),
+                                    Text("Scheme: ${scheme.label}", style = TextStyle(color = scheme.primary)),
                                     SizedBox(height = 4),
-                                    Text("普通文本", style = TextStyle.Default, theme = theme),
-                                    Text("强调文本", style = TextStyle.Accent, theme = theme),
+                                    Text("主色文本", style = TextStyle(color = scheme.primary)),
+                                    Text("强调文本", style = TextStyle(color = scheme.accent)),
                                     SizedBox(height = 4),
                                     Container(
                                         width = 60,
                                         height = 20,
-                                        fillTone = PixelTone.OFF,
-                                        borderTone = PixelTone.ON,
-                                        theme = theme,
-                                        child = Text("Box", style = TextStyle.Default, theme = theme),
+                                        fillColor = scheme.surface,
+                                        borderColor = scheme.primary,
+                                        child = Text("Box", style = TextStyle(color = scheme.primary)),
                                     ),
                                     SizedBox(height = 4),
-                                    OutlinedButton("按钮", onPressed = {}, theme = theme),
+                                    OutlinedButton(
+                                        "按钮",
+                                        onPressed = {},
+                                        borderColor = scheme.accent,
+                                    ),
                                 ),
                                 spacing = 2,
                                 crossAxisAlignment = CrossAxisAlignment.START,

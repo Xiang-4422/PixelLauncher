@@ -18,6 +18,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object TextMatrixScene : DemoScene {
     override val id = "text_matrix"
@@ -54,7 +55,7 @@ private class TextMatrixWidget(override val key: Any? = null) : StatefulWidget(k
                                 OutlinedButton(
                                     text = opt,
                                     onPressed = { setState { onSelect(i) } },
-                                    selected = i == selected,
+                                    borderColor = if (i == selected) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                                 )
                             },
                             spacing = 2,

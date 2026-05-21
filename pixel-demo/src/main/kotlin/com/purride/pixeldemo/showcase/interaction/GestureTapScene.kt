@@ -17,6 +17,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object GestureTapScene : DemoScene {
     override val id = "gesture_tap"
@@ -36,7 +37,7 @@ private class GestureTapWidget(override val key: Any? = null) : StatefulWidget(k
         override fun build(context: BuildContext): Widget = Center(
             child = Column(
                 children = listOf(
-                    Text("事件: $lastEvent", style = TextStyle.Accent),
+                    Text("事件: $lastEvent", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                     SizedBox(height = 4),
                     Text("点击次数: $tapCount", style = TextStyle.Default),
                     SizedBox(height = 8),

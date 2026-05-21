@@ -25,6 +25,7 @@ import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import kotlin.random.Random
+import com.purride.pixelcore.PixelColor
 
 object PageControllerCommandsScene : DemoScene {
     override val id = "page_controller_commands"
@@ -51,7 +52,7 @@ private class PageControllerCommandsWidget(override val key: Any? = null) : Stat
                         state = pagerState,
                         itemCount = pageCount,
                         itemBuilder = { i ->
-                            Center(child = Text("Page $i / ${pageCount - 1}", style = TextStyle.Accent))
+                            Center(child = Text("Page $i / ${pageCount - 1}", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))))
                         },
                     ),
                 ),

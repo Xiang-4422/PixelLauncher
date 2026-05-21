@@ -21,6 +21,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object CustomScrollPhysicsScene : DemoScene {
     override val id = "custom_scroll_physics"
@@ -80,13 +81,13 @@ private class CustomScrollPhysicsWidget(
                             widget.env.hostView.scrollPhysics = p.physics
                         }
                     },
-                    selected = i == idx,
+                    borderColor = if (i == idx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
                 children = listOf(
                     Padding(
-                        child = Text("当前: ${current.label}", style = TextStyle.Accent),
+                        child = Text("当前: ${current.label}", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                         all = 4,
                     ),
                     Expanded(
@@ -98,7 +99,7 @@ private class CustomScrollPhysicsWidget(
                                 Padding(
                                     child = Text(
                                         "Item $i",
-                                        style = if (i % 5 == 0) TextStyle.Accent else TextStyle.Default,
+                                        style = if (i % 5 == 0) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                     ),
                                     all = 3,
                                 )

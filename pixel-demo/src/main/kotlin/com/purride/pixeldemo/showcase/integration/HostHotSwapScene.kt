@@ -17,6 +17,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoScaffold
+import com.purride.pixelcore.PixelColor
 
 object HostHotSwapScene : DemoScene {
     override val id = "host_hot_swap"
@@ -54,7 +55,7 @@ private class HostHotSwapWidget(
                         child = Center(
                             child = Column(
                                 children = listOf(
-                                    Text("替换次数: $swapCount", style = TextStyle.Accent),
+                                    Text("替换次数: $swapCount", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 4),
                                     Text("点击下方按钮调用 hostView.setContent，", style = TextStyle.Default, softWrap = true),
                                     Text("整棵 widget 树将被热替换", style = TextStyle.Default, softWrap = true),

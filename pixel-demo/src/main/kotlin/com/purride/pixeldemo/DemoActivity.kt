@@ -5,11 +5,7 @@ import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import com.purride.pixelcore.PixelColorMode
-import com.purride.pixelcore.PixelPalette
 import com.purride.pixelui.PixelHapticType
-import com.purride.pixelui.PixelThemeData
-import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetupConfig
@@ -25,7 +21,6 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoNavigator
 import com.purride.pixeldemo.scaffold.DemoScaffold
 import com.purride.pixeldemo.settings.DemoAppSettings
-import com.purride.pixeldemo.settings.DemoColorTheme
 
 class DemoActivity : AppCompatActivity() {
 
@@ -123,19 +118,6 @@ class DemoActivity : AppCompatActivity() {
     }
 
     private fun applySettingsToView(settings: DemoAppSettings) {
-        hostView.colorMode = settings.colorMode
-        if (settings.colorMode == PixelColorMode.Mono) {
-            hostView.setPalette(PixelPalette.fromTheme(settings.monoTheme))
-            hostView.themeData = null
-        } else {
-            val tokens = when (settings.colorTheme) {
-                DemoColorTheme.DARK -> PixelThemeTokens.Dark
-                DemoColorTheme.LIGHT -> PixelThemeTokens.Light
-                DemoColorTheme.OCEAN -> PixelThemeTokens.Ocean
-                DemoColorTheme.AMBER -> PixelThemeTokens.Amber
-            }
-            hostView.themeData = PixelThemeData(tokens = tokens)
-        }
         hostView.profilePreference = PixelHostProfilePreference(
             dotSizePx = settings.dotSizePx,
             pixelShape = settings.pixelShape,
@@ -175,11 +157,8 @@ class DemoActivity : AppCompatActivity() {
             // 先用全局设置铺底
             applySettingsToView(currentSettings)
 
-            // scene 级别覆盖（colorMode override 的场景需要单独处理主题）
-            scene.colorMode?.let { hostView.colorMode = it }
+            // scene 级别覆盖
             scene.initialProfile?.let { applyProfile(it) }
-            scene.initialPalette?.let { hostView.setPalette(it) }
-            scene.initialTheme?.let { hostView.themeData = it }
             scene.pagerGesturePolicy?.let { hostView.pagerGesturePolicy = it }
 
             if (scene.isFullScreen) {

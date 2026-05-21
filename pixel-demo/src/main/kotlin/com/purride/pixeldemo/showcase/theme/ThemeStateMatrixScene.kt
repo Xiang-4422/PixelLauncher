@@ -23,6 +23,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object ThemeStateMatrixScene : DemoScene {
     override val id = "theme_state_matrix"
@@ -47,7 +48,7 @@ private class ThemeStateMatrixWidget(override val key: Any? = null) : StatefulWi
         override fun build(context: BuildContext): Widget {
             val subjects = listOf("Button", "TextField")
             val controls = subjects.mapIndexed { i, s ->
-                OutlinedButton(s, onPressed = { setState { subjectIdx = i } }, selected = i == subjectIdx)
+                OutlinedButton(s, onPressed = { setState { subjectIdx = i } }, borderColor = if (i == subjectIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White)
             }
 
             val content: Widget = when (subjectIdx) {
@@ -75,10 +76,10 @@ private class ThemeStateMatrixWidget(override val key: Any? = null) : StatefulWi
         private fun buttonMatrix(): Widget = Column(
             children = listOf(
                 row("Default", OutlinedButton("Default", onPressed = {}, style = ButtonStyle.Default)),
-                row("Accent", OutlinedButton("Accent", onPressed = {}, style = ButtonStyle.Accent)),
+                row("Accent", OutlinedButton("Accent", onPressed = {}, borderColor = PixelColor.fromRgb(200, 100, 0))),
                 row("Disabled", OutlinedButton("Disabled", onPressed = {}, enabled = false)),
-                row("Selected", OutlinedButton("Selected", onPressed = {}, selected = true)),
-                row("Pressed", OutlinedButton("Pressed", onPressed = {}, pressed = true)),
+                row("Selected", OutlinedButton("Selected", onPressed = {}, borderColor = PixelColor.fromRgb(200, 100, 0))),
+                row("Pressed", OutlinedButton("Pressed", onPressed = {})),
             ),
             spacing = 4,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,

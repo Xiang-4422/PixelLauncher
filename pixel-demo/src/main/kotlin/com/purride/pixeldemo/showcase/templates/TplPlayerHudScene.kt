@@ -1,9 +1,10 @@
 package com.purride.pixeldemo.showcase.templates
+import com.purride.pixelcore.PixelColor
 
 import android.view.Choreographer
 import com.purride.pixelcore.AxisMotionController
 import com.purride.pixelcore.AxisMotionState
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -114,20 +115,20 @@ private class TplPlayerHudWidget(override val key: Any? = null) : StatefulWidget
 
             val cover = Container(
                 width = 60, height = 60,
-                fillTone = PixelTone.ACCENT,
-                borderTone = PixelTone.ON,
+                fillColor = PixelColor.fromRgb(200, 100, 0),
+                borderColor = PixelColor.White,
                 child = Center(child = Text("♪", style = TextStyle.Default)),
             )
 
             val lyricView = Container(
-                fillTone = PixelTone.OFF,
-                borderTone = PixelTone.ON,
+                fillColor = PixelColor.Transparent,
+                borderColor = PixelColor.White,
                 child = Padding(
                     child = Column(
                         children = lyrics.mapIndexed { i, line ->
                             Text(
                                 line,
-                                style = if (i == activeLine) TextStyle.Accent else TextStyle.Default,
+                                style = if (i == activeLine) TextStyle(color = PixelColor.fromRgb(200, 100, 0)) else TextStyle.Default,
                                 softWrap = false,
                                 maxLines = 1,
                             )
@@ -144,14 +145,14 @@ private class TplPlayerHudWidget(override val key: Any? = null) : StatefulWidget
                     Container(
                         width = PROGRESS_WIDTH,
                         height = PROGRESS_DOT + 2,
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                     ),
                     Positioned(
                         left = progressX, top = 1,
                         child = Container(
                             width = PROGRESS_DOT, height = PROGRESS_DOT,
-                            fillTone = PixelTone.ACCENT, borderTone = null,
+                            fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null,
                         ),
                     ),
                 ),
@@ -168,7 +169,7 @@ private class TplPlayerHudWidget(override val key: Any? = null) : StatefulWidget
                     OutlinedButton(
                         if (playing) "❚❚" else "▶",
                         onPressed = { setState { playing = !playing } },
-                        selected = playing,
+                        borderColor = if (playing) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                     ),
                     OutlinedButton("▶▶", onPressed = {
                         setState {
@@ -191,7 +192,7 @@ private class TplPlayerHudWidget(override val key: Any? = null) : StatefulWidget
                                 Expanded(
                                     child = Column(
                                         children = listOf(
-                                            Text("Pixel Lullaby", style = TextStyle.Accent),
+                                            Text("Pixel Lullaby", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                             Text("by pixel-engine", style = TextStyle.Default),
                                             SizedBox(height = 2),
                                             Text("line ${activeLine + 1}/${lyrics.size}", style = TextStyle.Default),

@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.Align
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
@@ -41,14 +42,14 @@ private class AlignSizingWidget(override val key: Any? = null) : StatefulWidget(
         private val scrollState = PixelListState()
         private val scrollController = ScrollController()
 
-        private fun marker() = Container(width = 6, height = 6, fillTone = PixelTone.ACCENT, borderTone = null)
+        private fun marker() = Container(width = 6, height = 6, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null)
 
         private fun box(label: String, child: Widget): Widget = Column(
             children = listOf(
                 Text(label, style = TextStyle.Default),
                 SizedBox(
                     height = 40,
-                    child = Container(fillTone = PixelTone.OFF, borderTone = PixelTone.ON, child = child),
+                    child = Container(fillColor = PixelColor.Transparent, borderColor = PixelColor.White, child = child),
                 ),
             ),
             spacing = 1,
@@ -67,7 +68,7 @@ private class AlignSizingWidget(override val key: Any? = null) : StatefulWidget(
                     "Expanded",
                     Row(
                         children = listOf(
-                            Expanded(child = Container(fillTone = PixelTone.ACCENT, borderTone = null)),
+                            Expanded(child = Container(fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null)),
                             SizedBox(width = 8),
                         ),
                         mainAxisSize = MainAxisSize.MAX,
@@ -77,7 +78,7 @@ private class AlignSizingWidget(override val key: Any? = null) : StatefulWidget(
                     "Flexible(loose)",
                     Row(
                         children = listOf(
-                            Flexible(child = Container(width = 100, fillTone = PixelTone.ACCENT, borderTone = null)),
+                            Flexible(child = Container(width = 100, fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null)),
                             SizedBox(width = 8),
                         ),
                         mainAxisSize = MainAxisSize.MAX,

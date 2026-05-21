@@ -19,6 +19,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object SystemActionDispatchScene : DemoScene {
     override val id = "system_action_dispatch"
@@ -62,7 +63,7 @@ private class SystemActionDispatchWidget(
                         child = Center(
                             child = Column(
                                 children = listOf(
-                                    Text("最近派发: $lastDispatched", style = TextStyle.Accent),
+                                    Text("最近派发: $lastDispatched", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 4),
                                     Text("点击按钮派发自定义 PixelSystemAction，", style = TextStyle.Default, softWrap = true),
                                     Text("宿主 Activity 用 Toast 响应", style = TextStyle.Default, softWrap = true),

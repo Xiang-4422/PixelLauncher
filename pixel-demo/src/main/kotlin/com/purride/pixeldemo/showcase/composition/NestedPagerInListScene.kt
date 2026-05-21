@@ -1,4 +1,5 @@
 package com.purride.pixeldemo.showcase.composition
+import com.purride.pixelcore.PixelColor
 
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelui.Axis
@@ -20,7 +21,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixeldemo.catalog.DemoScene
@@ -52,19 +53,19 @@ private class NestedPagerInListWidget(override val key: Any? = null) : StatefulW
                     Padding(
                         child = Column(
                             children = listOf(
-                                Text("Row $row · 横滑切卡片", style = TextStyle.Accent),
+                                Text("Row $row · 横滑切卡片", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                 SizedBox(height = 2),
                                 Container(
                                     height = 40,
-                                    fillTone = PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
+                                    fillColor = PixelColor.Transparent,
+                                    borderColor = PixelColor.White,
                                     child = PageViewBuilder(
                                         axis = Axis.HORIZONTAL,
                                         controller = pagerCtrls[row],
                                         state = pagerStates[row],
                                         itemCount = 5,
                                         itemBuilder = { p ->
-                                            Center(child = Text("R$row · P$p", style = TextStyle.Accent))
+                                            Center(child = Text("R$row · P$p", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))))
                                         },
                                     ),
                                 ),

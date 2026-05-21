@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.templates
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -77,8 +78,8 @@ private class TplChatWidget(override val key: Any? = null) : StatefulWidget(key 
                             itemBuilder = { i ->
                                 val m = messages[i]
                                 val bubble = Container(
-                                    fillTone = if (m.fromMe) PixelTone.ACCENT else PixelTone.OFF,
-                                    borderTone = PixelTone.ON,
+                                    fillColor = if (m.fromMe) PixelColor.fromRgb(200, 100, 0) else PixelColor.Transparent,
+                                    borderColor = PixelColor.White,
                                     child = Padding(
                                         child = Text(
                                             m.text,
@@ -99,8 +100,8 @@ private class TplChatWidget(override val key: Any? = null) : StatefulWidget(key 
                         ),
                     ),
                     Container(
-                        fillTone = PixelTone.OFF,
-                        borderTone = PixelTone.ON,
+                        fillColor = PixelColor.Transparent,
+                        borderColor = PixelColor.White,
                         child = Padding(
                             child = Row(
                                 children = listOf(

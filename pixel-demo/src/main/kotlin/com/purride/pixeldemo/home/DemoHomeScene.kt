@@ -21,6 +21,7 @@ import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.catalog.DemoSection
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.settings.DemoSettingsScene
+import com.purride.pixelcore.PixelColor
 
 object DemoHomeScene : DemoScene {
     override val id = "home"
@@ -55,7 +56,7 @@ private class HomeWidget(
 
         private fun header(): Widget =
             Padding(
-                child = Text("PIXEL DEMO", style = TextStyle.Accent),
+                child = Text("PIXEL DEMO", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                 horizontal = 4,
                 vertical = 3,
             )
@@ -91,7 +92,7 @@ private class HomeWidget(
                             Text(section.title.uppercase(), style = TextStyle.Default),
                             Text(
                                 "${section.scenes.size} scenes",
-                                style = TextStyle.Accent,
+                                style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                             ),
                         ),
                         spacing = 1,
@@ -106,7 +107,7 @@ private class HomeWidget(
             GestureDetector(
                 onTap = { widget.env.navigator.push(DemoSettingsScene) },
                 child = Padding(
-                    child = Text("SETTINGS", style = TextStyle.Accent),
+                    child = Text("SETTINGS", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                     horizontal = 4,
                     vertical = 3,
                 ),

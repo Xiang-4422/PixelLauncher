@@ -1,4 +1,5 @@
 package com.purride.pixeldemo.showcase.integration
+import com.purride.pixelcore.PixelColor
 
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
@@ -16,7 +17,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.ValueListenableBuilder
 import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.Widget
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 
@@ -52,11 +53,11 @@ private class EmptyLoadingErrorWidget(override val key: Any? = null) : com.purri
                 Row(
                     children = listOf(
                         OutlinedButton("Empty", onPressed = { stateNotifier.value = ContentState.EMPTY },
-                            selected = stateNotifier.value == ContentState.EMPTY),
+                            borderColor = if (stateNotifier.value == ContentState.EMPTY) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
                         OutlinedButton("Loading", onPressed = { stateNotifier.value = ContentState.LOADING },
-                            selected = stateNotifier.value == ContentState.LOADING),
+                            borderColor = if (stateNotifier.value == ContentState.LOADING) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
                         OutlinedButton("Error", onPressed = { stateNotifier.value = ContentState.ERROR },
-                            selected = stateNotifier.value == ContentState.ERROR),
+                            borderColor = if (stateNotifier.value == ContentState.ERROR) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
                     ),
                     spacing = 2,
                 ),
@@ -70,7 +71,7 @@ private class EmptyLoadingErrorWidget(override val key: Any? = null) : com.purri
 private fun emptyView(): Widget = Center(
     child = Column(
         children = listOf(
-            Text("暂无内容", style = TextStyle.Accent),
+            Text("暂无内容", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
             SizedBox(height = 4),
             Text("这里什么都没有", style = TextStyle.Default),
         ),
@@ -85,8 +86,8 @@ private fun loadingView(): Widget = Padding(
             Container(
                 width = null,
                 height = 12,
-                fillTone = PixelTone.OFF,
-                borderTone = null,
+                fillColor = PixelColor.Transparent,
+                borderColor = null,
             )
         },
         spacing = 4,
@@ -98,7 +99,7 @@ private fun loadingView(): Widget = Padding(
 private fun errorView(notifier: ValueNotifier<ContentState>): Widget = Center(
     child = Column(
         children = listOf(
-            Text("加载失败", style = TextStyle.Accent),
+            Text("加载失败", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
             SizedBox(height = 2),
             Text("网络异常，请检查连接后重试", style = TextStyle.Default, softWrap = true),
             SizedBox(height = 4),

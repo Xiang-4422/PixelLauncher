@@ -2,6 +2,7 @@ package com.purride.pixeldemo.scaffold
 
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Widget
+import com.purride.pixelcore.PixelColor
 
 fun segmentedControl(
     options: List<String>,
@@ -11,6 +12,6 @@ fun segmentedControl(
     OutlinedButton(
         text = label,
         onPressed = { onSelect(index) },
-        selected = index == selectedIndex,
+        borderColor = if (index == selectedIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
     )
 }

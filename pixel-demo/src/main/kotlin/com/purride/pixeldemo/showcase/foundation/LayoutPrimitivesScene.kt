@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
@@ -27,7 +28,7 @@ object LayoutPrimitivesScene : DemoScene {
     override fun build(env: DemoEnv): Widget = LayoutWidget()
 }
 
-private val blockTones = listOf(PixelTone.ON, PixelTone.ACCENT, PixelTone.ON, PixelTone.ACCENT, PixelTone.ON)
+private val blockTones = listOf(PixelColor.White, PixelColor.fromRgb(200, 100, 0), PixelColor.White, PixelColor.fromRgb(200, 100, 0), PixelColor.White)
 private val modeLabels = listOf("ROW", "COLUMN", "STACK")
 
 private class LayoutWidget(override val key: Any? = null) : StatefulWidget(key = key) {
@@ -38,7 +39,7 @@ private class LayoutWidget(override val key: Any? = null) : StatefulWidget(key =
 
         override fun build(context: BuildContext): Widget {
             val blocks = blockTones.map { tone ->
-                Container(width = 20, height = 20, fillTone = tone, borderTone = null)
+                Container(width = 20, height = 20, fillColor = tone, borderColor = null)
             }
             val content: Widget = when (modeIndex) {
                 0 -> Row(
@@ -57,7 +58,7 @@ private class LayoutWidget(override val key: Any? = null) : StatefulWidget(key =
                 OutlinedButton(
                     text = label,
                     onPressed = { setState { modeIndex = i } },
-                    selected = i == modeIndex,
+                    borderColor = if (i == modeIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(

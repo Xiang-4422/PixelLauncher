@@ -1,9 +1,10 @@
 package com.purride.pixeldemo.showcase.stress
+import com.purride.pixelcore.PixelColor
 
 import android.view.Choreographer
 import com.purride.pixelcore.AxisMotionController
 import com.purride.pixelcore.AxisMotionState
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -105,7 +106,7 @@ private class StressAnimationFloodWidget(override val key: Any? = null) : Statef
                             reset(n)
                         }
                     },
-                    selected = i == tierIndex,
+                    borderColor = if (i == tierIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
@@ -125,14 +126,14 @@ private class StressAnimationFloodWidget(override val key: Any? = null) : Statef
                                             Container(
                                                 width = TRACK_WIDTH,
                                                 height = DOT_SIZE + 2,
-                                                fillTone = PixelTone.OFF,
-                                                borderTone = PixelTone.ON,
+                                                fillColor = PixelColor.Transparent,
+                                                borderColor = PixelColor.White,
                                             ),
                                             Positioned(
                                                 left = offset, top = 1,
                                                 child = Container(
                                                     width = DOT_SIZE, height = DOT_SIZE,
-                                                    fillTone = PixelTone.ACCENT, borderTone = null,
+                                                    fillColor = PixelColor.fromRgb(200, 100, 0), borderColor = null,
                                                 ),
                                             ),
                                         ),

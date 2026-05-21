@@ -21,6 +21,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object PagerVerticalScene : DemoScene {
     override val id = "pager_vertical"
@@ -51,7 +52,7 @@ private class PagerVerticalWidget(override val key: Any? = null) : StatefulWidge
                             pagerState = PixelPagerState(axis = PixelAxis.VERTICAL, pageCount = pageCountOptions[i])
                         }
                     },
-                    selected = i == countIdx,
+                    borderColor = if (i == countIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
             }
             return Column(
@@ -63,7 +64,7 @@ private class PagerVerticalWidget(override val key: Any? = null) : StatefulWidge
                             state = pagerState,
                             itemCount = count,
                             itemBuilder = { i ->
-                                Center(child = Text("Page $i", style = TextStyle.Accent))
+                                Center(child = Text("Page $i", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))))
                             },
                         ),
                     ),

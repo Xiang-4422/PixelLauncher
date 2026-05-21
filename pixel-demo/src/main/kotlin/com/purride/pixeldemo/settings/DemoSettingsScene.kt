@@ -1,8 +1,7 @@
 package com.purride.pixeldemo.settings
 
-import com.purride.pixelcore.PixelColorMode
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelShape
-import com.purride.pixelcore.PixelTheme
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -60,27 +59,6 @@ private class SettingsWidget(
                     child = Column(
                         children = listOf(
                             sectionHeader("DISPLAY"),
-                            settingRow(
-                                label = "COLOR MODE",
-                                children = listOf(
-                                    optionBtn("MONO", s.colorMode == PixelColorMode.Mono) {
-                                        update(s.copy(colorMode = PixelColorMode.Mono))
-                                    },
-                                    optionBtn("COLOR", s.colorMode == PixelColorMode.Color) {
-                                        update(s.copy(colorMode = PixelColorMode.Color))
-                                    },
-                                ),
-                            ),
-                            settingRow(
-                                label = "MONO THEME",
-                                children = themeOptions(s),
-                            ),
-                            settingRow(
-                                label = "COLOR THEME",
-                                children = colorThemeOptions(s),
-                            ),
-                            SizedBox(height = 4),
-                            sectionHeader("PIXEL"),
                             settingRow(
                                 label = "SHAPE",
                                 children = listOf(
@@ -147,42 +125,9 @@ private class SettingsWidget(
             )
         }
 
-        private fun colorThemeOptions(s: DemoAppSettings): List<Widget> = listOf(
-            optionBtn("DARK", s.colorTheme == DemoColorTheme.DARK) {
-                update(s.copy(colorTheme = DemoColorTheme.DARK))
-            },
-            optionBtn("LIGHT", s.colorTheme == DemoColorTheme.LIGHT) {
-                update(s.copy(colorTheme = DemoColorTheme.LIGHT))
-            },
-            optionBtn("OCEAN", s.colorTheme == DemoColorTheme.OCEAN) {
-                update(s.copy(colorTheme = DemoColorTheme.OCEAN))
-            },
-            optionBtn("AMBER", s.colorTheme == DemoColorTheme.AMBER) {
-                update(s.copy(colorTheme = DemoColorTheme.AMBER))
-            },
-        )
-
-        private fun themeOptions(s: DemoAppSettings): List<Widget> = listOf(
-            optionBtn("GRN", s.monoTheme == PixelTheme.GREEN_PHOSPHOR) {
-                update(s.copy(monoTheme = PixelTheme.GREEN_PHOSPHOR))
-            },
-            optionBtn("AMB", s.monoTheme == PixelTheme.AMBER_CRT) {
-                update(s.copy(monoTheme = PixelTheme.AMBER_CRT))
-            },
-            optionBtn("ICE", s.monoTheme == PixelTheme.ICE_LCD) {
-                update(s.copy(monoTheme = PixelTheme.ICE_LCD))
-            },
-            optionBtn("LCD", s.monoTheme == PixelTheme.MONO_LCD) {
-                update(s.copy(monoTheme = PixelTheme.MONO_LCD))
-            },
-            optionBtn("NGT", s.monoTheme == PixelTheme.NIGHT_MONO) {
-                update(s.copy(monoTheme = PixelTheme.NIGHT_MONO))
-            },
-        )
-
         private fun sectionHeader(label: String): Widget =
             Padding(
-                child = Text(label, style = TextStyle.Accent),
+                child = Text(label, style = TextStyle.Default),
                 horizontal = 0,
                 vertical = 2,
             )
@@ -207,7 +152,7 @@ private class SettingsWidget(
             OutlinedButton(
                 text = text,
                 onPressed = onTap,
-                selected = selected,
+                borderColor = if (selected) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
             )
     }
 }

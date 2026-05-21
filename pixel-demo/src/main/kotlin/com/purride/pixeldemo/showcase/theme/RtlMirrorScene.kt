@@ -17,6 +17,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import com.purride.pixelcore.PixelColor
 
 object RtlMirrorScene : DemoScene {
     override val id = "rtl_mirror"
@@ -43,7 +44,7 @@ private class RtlMirrorWidget(
                         child = Padding(
                             child = Column(
                                 children = listOf(
-                                    Text("方向: $dirLabel", style = TextStyle.Accent),
+                                    Text("方向: $dirLabel", style = TextStyle(color = PixelColor.fromRgb(200, 100, 0))),
                                     SizedBox(height = 4),
                                     Text("左对齐文本 Left-aligned text", style = TextStyle.Default),
                                     SizedBox(height = 2),
@@ -70,11 +71,11 @@ private class RtlMirrorWidget(
                             OutlinedButton("LTR", onPressed = {
                                 setState { isRtl = false }
                                 widget.env.hostView.textDirection = TextDirection.LTR
-                            }, selected = !isRtl),
+                            }, borderColor = if (!isRtl) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
                             OutlinedButton("RTL", onPressed = {
                                 setState { isRtl = true }
                                 widget.env.hostView.textDirection = TextDirection.RTL
-                            }, selected = isRtl),
+                            }, borderColor = if (isRtl) PixelColor.fromRgb(200, 100, 0) else PixelColor.White),
                         ),
                         spacing = 2,
                     ),

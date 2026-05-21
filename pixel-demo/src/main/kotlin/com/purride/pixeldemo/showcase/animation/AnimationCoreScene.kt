@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.animation
+import com.purride.pixelcore.PixelColor
 
-import com.purride.pixelcore.PixelTone
+
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -112,7 +113,7 @@ private class AnimationCoreWidget(
                                         children = listOf(
                                             Text(
                                                 "t=${"%.2f".format(t)}  $statusLabel",
-                                                style = TextStyle.Accent,
+                                                style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
                                             ),
                                         ),
                                     ),
@@ -138,16 +139,16 @@ private class AnimationCoreWidget(
                                                         Positioned(
                                                             left = 0, top = 2, right = 0, bottom = 2,
                                                             child = Container(
-                                                                fillTone = PixelTone.OFF,
-                                                                borderTone = PixelTone.ON,
+                                                                fillColor = PixelColor.Transparent,
+                                                                borderColor = PixelColor.White,
                                                             ),
                                                         ),
                                                         Positioned(
                                                             left = dotOffset, top = 0,
                                                             child = Container(
                                                                 width = DOT_W, height = 6,
-                                                                fillTone = PixelTone.ACCENT,
-                                                                borderTone = null,
+                                                                fillColor = PixelColor.fromRgb(200, 100, 0),
+                                                                borderColor = null,
                                                             ),
                                                         ),
                                                     ),
@@ -198,7 +199,7 @@ private class AnimationCoreWidget(
                                         OutlinedButton(
                                             text = "${dur.inWholeMilliseconds}ms",
                                             onPressed = { setDuration(i) },
-                                            selected = i == durationIndex,
+                                            borderColor = if (i == durationIndex) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                                         )
                                     },
                                 ),
