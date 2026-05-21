@@ -73,6 +73,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
+import com.purride.pixellauncherv2.launcher.PixelEngineSettingsHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
@@ -136,8 +137,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private val throttleClickHelper = ThrottleClickHelper()
     private val terminalStatusProvider = TerminalStatusProvider()
 
-    // Phase 0: ViewModel layer (runs alongside old renderer; replaces old callbacks incrementally)
+    // Phase 0+: ViewModel layer (runs alongside old renderer; replaces old callbacks incrementally)
     private lateinit var launcherViewModel: LauncherViewModel
+
+    // Phase 3: settings screen host
+    private lateinit var pixelEngineSettingsHost: PixelEngineSettingsHost
 
     private lateinit var appRepository: AppRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
@@ -497,6 +501,15 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         ).apply {
             rootView.visibility = View.GONE
         }
+        // Phase 3: settings host
+        pixelEngineSettingsHost = PixelEngineSettingsHost(
+            context = this,
+            callbacks = PixelEngineSettingsHost.Callbacks(
+                onItemAction = ::onSettingsItemAction,
+            ),
+        ).apply {
+            rootView.visibility = View.GONE
+        }
         drawerInputProxy = EditText(this).apply {
             layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
             alpha = 0f
@@ -651,6 +664,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             addView(smsDraftInputProxy)
             addView(
                 pixelEngineDrawerHost.rootView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
+            // Phase 3: settings overlay (above drawer in Z-order)
+            addView(
+                pixelEngineSettingsHost.rootView,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1940,6 +1961,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (renderPixelEngineDrawerFrameIfNeeded()) {
             return
         }
+        if (renderPixelEngineSettingsFrameIfNeeded()) {
+            return
+        }
         if (usesGlIdleComposite()) {
             RenderPerfLogger.measure("main.render.idleStatic.total") {
                 renderIdleStaticFrame()
@@ -2019,6 +2043,113 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
         return true
     }
+
+    // Phase 3 ─────────────────────────────────────────────────────────────────
+
+    private fun renderPixelEngineSettingsFrameIfNeeded(): Boolean {
+        if (!::pixelEngineSettingsHost.isInitialized) return false
+        if (state.mode != LauncherMode.SETTINGS) {
+            pixelEngineSettingsHost.rootView.visibility = View.GONE
+            return false
+        }
+        pixelEngineSettingsHost.update(
+            state  = launcherViewModel.state.value,
+            theme  = launcherViewModel.currentTheme.value,
+            screenProfile = screenProfile,
+        )
+        return true
+    }
+
+    /**
+     * 新 SETTINGS 屏幕的行动作回调。
+     *
+     * 同时更新旧 [state] + [launcherViewModel]，确保两条渲染路径的数据保持同步。
+     */
+    private fun onSettingsItemAction(item: SettingsMenuItem, direction: Int) {
+        val s = state
+        when (item) {
+            SettingsMenuItem.FONT_SIZE -> applyAppearance(
+                fontSize = SettingsMenuModel.nextFontSize(s.selectedFontSize, direction),
+                fontStyle = s.selectedFontStyle,
+                newPixelShape = s.selectedPixelShape,
+                newDotSizePx = s.selectedDotSizePx,
+                newPixelGapEnabled = s.isPixelGapEnabled,
+                newTheme = s.selectedTheme,
+            )
+            SettingsMenuItem.FONT_STYLE -> applyAppearance(
+                fontSize = s.selectedFontSize,
+                fontStyle = SettingsMenuModel.nextFontStyle(s.selectedFontStyle, direction),
+                newPixelShape = s.selectedPixelShape,
+                newDotSizePx = s.selectedDotSizePx,
+                newPixelGapEnabled = s.isPixelGapEnabled,
+                newTheme = s.selectedTheme,
+            )
+            SettingsMenuItem.RESOLUTION -> applyAppearance(
+                fontSize = s.selectedFontSize,
+                fontStyle = s.selectedFontStyle,
+                newPixelShape = s.selectedPixelShape,
+                newDotSizePx = SettingsMenuModel.nextResolution(s.selectedDotSizePx, direction, screenProfile),
+                newPixelGapEnabled = s.isPixelGapEnabled,
+                newTheme = s.selectedTheme,
+            )
+            SettingsMenuItem.PIXEL_GAP -> {
+                val nextGap = SettingsMenuModel.toggle(s.isPixelGapEnabled)
+                applyAppearance(
+                    fontSize = s.selectedFontSize,
+                    fontStyle = s.selectedFontStyle,
+                    newPixelShape = if (nextGap) s.selectedPixelShape else PixelShape.SQUARE,
+                    newDotSizePx = s.selectedDotSizePx,
+                    newPixelGapEnabled = nextGap,
+                    newTheme = s.selectedTheme,
+                )
+            }
+            SettingsMenuItem.STYLE -> applyAppearance(
+                fontSize = s.selectedFontSize,
+                fontStyle = s.selectedFontStyle,
+                newPixelShape = SettingsMenuModel.nextStyle(s.selectedPixelShape, direction),
+                newDotSizePx = s.selectedDotSizePx,
+                newPixelGapEnabled = s.isPixelGapEnabled,
+                newTheme = s.selectedTheme,
+            )
+            SettingsMenuItem.THEME -> applyAppearance(
+                fontSize = s.selectedFontSize,
+                fontStyle = s.selectedFontStyle,
+                newPixelShape = s.selectedPixelShape,
+                newDotSizePx = s.selectedDotSizePx,
+                newPixelGapEnabled = s.isPixelGapEnabled,
+                newTheme = SettingsMenuModel.nextTheme(s.selectedTheme, direction),
+            )
+            SettingsMenuItem.APP_LIST_ALIGNMENT -> applyUiBehavior(
+                drawerListAlignment = SettingsMenuModel.nextDrawerListAlignment(s.drawerListAlignment, direction),
+                isIdlePageEnabled = s.isIdlePageEnabled,
+                openDrawerInSearchMode = s.openDrawerInSearchMode,
+                chargeIdleEffect = s.chargeIdleEffect,
+            )
+            SettingsMenuItem.DRAWER_AUTO_SEARCH -> applyUiBehavior(
+                drawerListAlignment = s.drawerListAlignment,
+                isIdlePageEnabled = s.isIdlePageEnabled,
+                openDrawerInSearchMode = SettingsMenuModel.toggle(s.openDrawerInSearchMode),
+                chargeIdleEffect = s.chargeIdleEffect,
+            )
+            else -> return  // IDLE_PAGE, ADVANCED: no-op in new settings screen
+        }
+        // Sync appearance fields to ViewModel so the settings screen reflects changes immediately
+        val updated = state  // applyAppearance / applyUiBehavior already updated state
+        launcherViewModel.update {
+            copy(
+                selectedFontSize = updated.selectedFontSize,
+                selectedFontStyle = updated.selectedFontStyle,
+                selectedPixelShape = updated.selectedPixelShape,
+                selectedDotSizePx = updated.selectedDotSizePx,
+                isPixelGapEnabled = updated.isPixelGapEnabled,
+                selectedTheme = updated.selectedTheme,
+                drawerListAlignment = updated.drawerListAlignment,
+                openDrawerInSearchMode = updated.openDrawerInSearchMode,
+            )
+        }
+    }
+
+    // End Phase 3 ──────────────────────────────────────────────────────────────
 
     private fun renderIdleStaticFrame() {
         val pixelBuffer = RenderPerfLogger.measure("main.render.idleStatic.compose") {
