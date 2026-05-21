@@ -72,13 +72,8 @@ import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
-import com.purride.pixellauncherv2.launcher.PixelEngineDrawerHost
-import com.purride.pixellauncherv2.launcher.PixelEngineHomeHost
-import com.purride.pixellauncherv2.launcher.PixelEngineSettingsHost
 import com.purride.pixellauncherv2.launcher.LauncherCallbacks
 import com.purride.pixellauncherv2.launcher.LauncherRootHost
-import com.purride.pixellauncherv2.launcher.PixelEngineMiscHost
-import com.purride.pixellauncherv2.launcher.PixelEngineSmsHost
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
@@ -145,19 +140,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     // Phase 0+: ViewModel layer (runs alongside old renderer; replaces old callbacks incrementally)
     private lateinit var launcherViewModel: LauncherViewModel
 
-    // Phase 3: settings screen host
-    private lateinit var pixelEngineSettingsHost: PixelEngineSettingsHost
-
-    // Phase 4: home screen host
-    private lateinit var pixelEngineHomeHost: PixelEngineHomeHost
-
-    // Phase 6: SMS screens host
-    private lateinit var pixelEngineSmsHost: PixelEngineSmsHost
-
-    // Phase 7: DIAGNOSTICS + IDLE host
-    private lateinit var pixelEngineMiscHost: PixelEngineMiscHost
-
-    // Phase 8: unified root host (replaces the 5 hosts above after wiring)
+    // Phase 8: unified root host (replaces Phases 3–7 individual hosts)
     private lateinit var launcherRootHost: LauncherRootHost
 
     private lateinit var appRepository: AppRepository
@@ -178,7 +161,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var pixelFontEngine: PixelFontEngine
     private lateinit var pixelRenderer: PixelRenderer
     private lateinit var pixelFrameView: PixelFrameView
-    private lateinit var pixelEngineDrawerHost: PixelEngineDrawerHost
     private lateinit var idlePhysicsThread: HandlerThread
     private lateinit var idlePhysicsHandler: Handler
     private lateinit var drawerInputProxy: EditText
@@ -507,54 +489,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             isFocusableInTouchMode = true
             requestFocus()
         }
-        pixelEngineDrawerHost = PixelEngineDrawerHost(
-            context = this,
-            callbacks = PixelEngineDrawerHost.Callbacks(
-                onQueryChanged = ::onPixelEngineDrawerQueryChanged,
-                onSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
-                onAppPressed = ::onPixelEngineDrawerAppPressed,
-                onShowIndex = ::onPixelEngineDrawerShowIndex,
-            ),
-        ).apply {
-            rootView.visibility = View.GONE
-        }
-        // Phase 3: settings host
-        pixelEngineSettingsHost = PixelEngineSettingsHost(
-            context = this,
-            callbacks = PixelEngineSettingsHost.Callbacks(
-                onItemAction = ::onSettingsItemAction,
-            ),
-        ).apply {
-            rootView.visibility = View.GONE
-        }
-        // Phase 4: home host
-        pixelEngineHomeHost = PixelEngineHomeHost(
-            context = this,
-            callbacks = PixelEngineHomeHost.Callbacks(
-                onOpenContacts = ::onHomeOpenContacts,
-                onOpenSms = ::onHomeOpenSms,
-            ),
-        ).apply {
-            rootView.visibility = View.GONE
-        }
-        // Phase 6: SMS host
-        pixelEngineSmsHost = PixelEngineSmsHost(
-            context = this,
-            callbacks = PixelEngineSmsHost.Callbacks(
-                onRequestSmsRole = ::onSmsRequestRole,
-                onOpenThread = ::onSmsOpenThread,
-                onSelectSmsIndex = ::onSmsSelectIndex,
-                onDraftChanged = ::onSmsDraftChanged,
-                onSendDraft = ::onSmsSendDraft,
-            ),
-        ).apply {
-            rootView.visibility = View.GONE
-        }
-        // Phase 7: DIAGNOSTICS + IDLE host
-        pixelEngineMiscHost = PixelEngineMiscHost(context = this).apply {
-            rootView.visibility = View.GONE
-        }
-        // Phase 8: unified root host
+        // Phase 8: unified root host (single host for all 9 modes)
         launcherRootHost = LauncherRootHost(
             context = this,
             callbacks = LauncherCallbacks(
@@ -725,46 +660,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             )
             addView(drawerInputProxy)
             addView(smsDraftInputProxy)
-            // Phase 4: home overlay (below drawer and settings in Z-order)
-            addView(
-                pixelEngineHomeHost.rootView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            addView(
-                pixelEngineDrawerHost.rootView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            // Phase 3: settings overlay (above drawer in Z-order)
-            addView(
-                pixelEngineSettingsHost.rootView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            // Phase 6: SMS overlay (above all other engine hosts)
-            addView(
-                pixelEngineSmsHost.rootView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            // Phase 7: DIAGNOSTICS + IDLE overlay (topmost engine host)
-            addView(
-                pixelEngineMiscHost.rootView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            // Phase 8: unified root host (above all individual hosts; will replace them all)
+            // Phase 8: unified root host (single engine overlay for all modes)
             addView(
                 launcherRootHost.rootView,
                 FrameLayout.LayoutParams(
@@ -2056,21 +1952,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (renderLauncherRootFrameIfNeeded()) {
             return
         }
-        if (renderPixelEngineMiscFrameIfNeeded()) {
-            return
-        }
-        if (renderPixelEngineSmsFrameIfNeeded()) {
-            return
-        }
-        if (renderPixelEngineDrawerFrameIfNeeded()) {
-            return
-        }
-        if (renderPixelEngineSettingsFrameIfNeeded()) {
-            return
-        }
-        if (renderPixelEngineHomeFrameIfNeeded()) {
-            return
-        }
         if (usesGlIdleComposite()) {
             RenderPerfLogger.measure("main.render.idleStatic.total") {
                 renderIdleStaticFrame()
@@ -2153,41 +2034,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // End Phase 8 ─────────────────────────────────────────────────────────────
 
-    // Begin Phase 7 ─────────────────────────────────────────────────────────
-
-    private fun renderPixelEngineMiscFrameIfNeeded(): Boolean {
-        if (!::pixelEngineMiscHost.isInitialized) return false
-        if (state.mode !in PixelEngineMiscHost.MISC_MODES) {
-            pixelEngineMiscHost.rootView.visibility = View.GONE
-            return false
-        }
-        pixelEngineMiscHost.update(
-            state         = launcherViewModel.state.value,
-            theme         = launcherViewModel.currentTheme.value,
-            screenProfile = screenProfile,
-            chargeTick    = animationState.headerChargeTick,
-        )
-        return true
-    }
-
-    // End Phase 7 ─────────────────────────────────────────────────────────────
-
-    // Begin Phase 6 ─────────────────────────────────────────────────────────
-
-    private fun renderPixelEngineSmsFrameIfNeeded(): Boolean {
-        if (!::pixelEngineSmsHost.isInitialized) return false
-        if (state.mode !in PixelEngineSmsHost.SMS_MODES) {
-            pixelEngineSmsHost.rootView.visibility = View.GONE
-            return false
-        }
-        pixelEngineSmsHost.update(
-            state         = launcherViewModel.state.value,
-            theme         = launcherViewModel.currentTheme.value,
-            screenProfile = screenProfile,
-            chargeTick    = animationState.headerChargeTick,
-        )
-        return true
-    }
+    // ── SMS callbacks (called from LauncherCallbacks) ─────────────────────────
 
     private fun onSmsRequestRole() {
         maybeRequestDefaultSmsRole()
@@ -2209,51 +2056,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         sendSmsDraft()
     }
 
-    // End Phase 6 ─────────────────────────────────────────────────────────────
-
-    private fun renderPixelEngineDrawerFrameIfNeeded(): Boolean {
-        if (!::pixelEngineDrawerHost.isInitialized) {
-            return false
-        }
-        if (state.mode != LauncherMode.APP_DRAWER) {
-            pixelEngineDrawerHost.rootView.visibility = View.GONE
-            return false
-        }
-        if (animationState.drawerReveal != null || animationState.launchShutter != null) {
-            pixelEngineDrawerHost.rootView.visibility = View.GONE
-            return false
-        }
-        RenderPerfLogger.measure("main.render.pixelEngineDrawer.sync") {
-            pixelEngineDrawerHost.update(
-                state           = state,
-                apps            = currentDrawerApps(),
-                screenProfile   = screenProfile,
-                pixelGapEnabled = pixelGapEnabled,
-                theme           = launcherViewModel.currentTheme.value,   // Phase 5
-                alignment       = state.drawerListAlignment,               // Phase 5
-            )
-        }
-        return true
-    }
-
-    // Phase 3 ─────────────────────────────────────────────────────────────────
-
-    private fun renderPixelEngineSettingsFrameIfNeeded(): Boolean {
-        if (!::pixelEngineSettingsHost.isInitialized) return false
-        if (state.mode != LauncherMode.SETTINGS) {
-            pixelEngineSettingsHost.rootView.visibility = View.GONE
-            return false
-        }
-        pixelEngineSettingsHost.update(
-            state  = launcherViewModel.state.value,
-            theme  = launcherViewModel.currentTheme.value,
-            screenProfile = screenProfile,
-        )
-        return true
-    }
+    // ── SETTINGS callback (called from LauncherCallbacks) ─────────────────────
 
     /**
-     * 新 SETTINGS 屏幕的行动作回调。
+     * SETTINGS 屏幕行动作回调。
      *
      * 同时更新旧 [state] + [launcherViewModel]，确保两条渲染路径的数据保持同步。
      */
@@ -2341,24 +2147,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
     }
 
-    // End Phase 3 ──────────────────────────────────────────────────────────────
-
-    // Phase 4 ─────────────────────────────────────────────────────────────────
-
-    private fun renderPixelEngineHomeFrameIfNeeded(): Boolean {
-        if (!::pixelEngineHomeHost.isInitialized) return false
-        if (state.mode != LauncherMode.HOME) {
-            pixelEngineHomeHost.rootView.visibility = View.GONE
-            return false
-        }
-        pixelEngineHomeHost.update(
-            state         = launcherViewModel.state.value,
-            theme         = launcherViewModel.currentTheme.value,
-            screenProfile = screenProfile,
-            chargeTick    = animationState.headerChargeTick,
-        )
-        return true
-    }
+    // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
 
     /** CONTACT 按钮：打开通讯录（先尝试原生通讯录 app，fallback 到通讯录内容 URI）。 */
     private fun onHomeOpenContacts() {
@@ -2828,7 +2617,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         if (!::drawerInputProxy.isInitialized || !::pixelFrameView.isInitialized || !::smsDraftInputProxy.isInitialized) {
             return
         }
-        if (state.mode == LauncherMode.APP_DRAWER && ::pixelEngineDrawerHost.isInitialized) {
+        if (state.mode == LauncherMode.APP_DRAWER) {
+            // LauncherRootHost's engine TextField manages drawer keyboard; hide legacy proxy
             hideDrawerKeyboard()
             if (drawerInputProxy.hasFocus()) {
                 drawerInputProxy.clearFocus()
@@ -4448,17 +4238,12 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     /**
-     * Phase 1: 将 [LauncherTheme] 颜色应用到所有 pixel-engine HostView。
-     * Phase 3+ 创建新 HostView 后也在此处接线。
+     * 将 [LauncherTheme] 颜色应用到 pixel-engine HostView。
+     * LauncherRootHost 在每帧 [renderLauncherRootFrameIfNeeded] 中同步颜色，
+     * 此方法仅保留作为主题切换时的触发点（当前为空实现）。
      */
     private fun applyThemeToEngineViews(theme: com.purride.pixellauncherv2.ui.theme.LauncherTheme) {
-        // Drawer colors are now synced per-frame inside PixelEngineDrawerHost.update() (Phase 5).
-        // Home/Settings/SMS/Misc colors are synced per-frame inside their respective hosts.
-        // This method is kept for any future host that needs eager theme application on change.
-        if (::pixelEngineHomeHost.isInitialized) {
-            pixelEngineHomeHost.setup.hostView.backgroundColor = theme.backgroundColor
-            pixelEngineHomeHost.setup.hostView.pixelGridColor  = theme.pixelGridColor
-        }
+        // Colors are synced per-frame inside LauncherRootHost.update() — no eager sync needed.
     }
 
     private fun recordInteraction() {
