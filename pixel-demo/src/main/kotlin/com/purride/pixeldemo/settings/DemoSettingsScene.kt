@@ -116,6 +116,17 @@ private class SettingsWidget(
                                     update(settings.copy(pixelGapRatio = ratio))
                                 },
                             ),
+                            settingRow(
+                                label = "VIGNETTE",
+                                children = listOf(
+                                    optionBtn("ON", s.vignetteEnabled) {
+                                        update(s.copy(vignetteEnabled = true))
+                                    },
+                                    optionBtn("OFF", !s.vignetteEnabled) {
+                                        update(s.copy(vignetteEnabled = false))
+                                    },
+                                ),
+                            ),
                             SizedBox(height = 4),
                             sectionHeader("FONT"),
                             settingRow(
