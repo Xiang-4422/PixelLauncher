@@ -122,7 +122,7 @@ class DemoActivity : AppCompatActivity() {
             dotSizePx = settings.dotSizePx,
             pixelShape = settings.pixelShape,
         )
-        hostView.setPixelGapEnabled(settings.pixelGapEnabled)
+        hostView.setPixelGapRatio(settings.pixelGapRatio)
         hostView.textRasterizer = rasterizers.getRasterizer(settings.fontSizePx, settings.fontStyle)
     }
 

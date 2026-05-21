@@ -11,6 +11,7 @@ import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
+import com.purride.pixelui.Slider
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
@@ -20,6 +21,18 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
+import kotlin.math.roundToInt
+
+// Dot-size slider range: 4 px … 24 px
+private const val DOT_MIN_PX = 4
+private const val DOT_MAX_PX = 24
+private const val DOT_RANGE_F = (DOT_MAX_PX - DOT_MIN_PX).toFloat()
+
+private fun dotSizeToPct(px: Int): Float =
+    ((px - DOT_MIN_PX) / DOT_RANGE_F).coerceIn(0f, 1f)
+
+private fun pctToDotSize(pct: Float): Int =
+    (DOT_MIN_PX + pct * DOT_RANGE_F).roundToInt().coerceIn(DOT_MIN_PX, DOT_MAX_PX)
 
 object DemoSettingsScene : DemoScene {
     override val id = "settings"
@@ -40,9 +53,14 @@ private class SettingsWidget(
         private val scrollController = ScrollController()
         private lateinit var settings: DemoAppSettings
 
+        // Slider draft for dot size — follows the thumb while dragging;
+        // the committed dotSizePx only updates on release.
+        private var dotSizeSliderValue: Float = 0f
+
         override fun initState() {
             super.initState()
             settings = widget.env.currentSettings
+            dotSizeSliderValue = dotSizeToPct(settings.dotSizePx)
         }
 
         private fun update(newSettings: DemoAppSettings) {
@@ -52,6 +70,8 @@ private class SettingsWidget(
 
         override fun build(context: BuildContext): Widget {
             val s = settings
+            val previewDotSizePx = pctToDotSize(dotSizeSliderValue)
+            val gapPct = (s.pixelGapRatio * 100).roundToInt()
             return SingleChildScrollView(
                 state = scrollState,
                 controller = scrollController,
@@ -73,24 +93,28 @@ private class SettingsWidget(
                                     },
                                 ),
                             ),
-                            settingRow(
-                                label = "DOT SIZE",
-                                children = listOf(8, 10, 12, 16).map { px ->
-                                    optionBtn("$px", s.dotSizePx == px) {
-                                        update(s.copy(dotSizePx = px))
-                                    }
+                            // DOT SIZE — commits on release, thumb follows drag visually
+                            sliderRow(
+                                label = "DOT SIZE  ${previewDotSizePx}PX",
+                                value = dotSizeSliderValue,
+                                onDrag = { ratio ->
+                                    setState { dotSizeSliderValue = ratio }
+                                },
+                                onRelease = { ratio ->
+                                    dotSizeSliderValue = ratio
+                                    update(settings.copy(dotSizePx = pctToDotSize(ratio)))
                                 },
                             ),
-                            settingRow(
-                                label = "PIXEL GAP",
-                                children = listOf(
-                                    optionBtn("ON", s.pixelGapEnabled) {
-                                        update(s.copy(pixelGapEnabled = true))
-                                    },
-                                    optionBtn("OFF", !s.pixelGapEnabled) {
-                                        update(s.copy(pixelGapEnabled = false))
-                                    },
-                                ),
+                            // PIXEL GAP — takes effect in real time while dragging
+                            sliderRow(
+                                label = "PIXEL GAP  $gapPct%",
+                                value = s.pixelGapRatio,
+                                onDrag = { ratio ->
+                                    update(settings.copy(pixelGapRatio = ratio))
+                                },
+                                onRelease = { ratio ->
+                                    update(settings.copy(pixelGapRatio = ratio))
+                                },
                             ),
                             SizedBox(height = 4),
                             sectionHeader("FONT"),
@@ -143,6 +167,27 @@ private class SettingsWidget(
                     spacing = 0,
                     mainAxisSize = MainAxisSize.MIN,
                     crossAxisAlignment = CrossAxisAlignment.START,
+                ),
+                horizontal = 0,
+                vertical = 3,
+            )
+
+        private fun sliderRow(
+            label: String,
+            value: Float,
+            onDrag: (Float) -> Unit,
+            onRelease: (Float) -> Unit,
+        ): Widget =
+            Padding(
+                child = Column(
+                    children = listOf(
+                        Text(label, style = TextStyle.Default),
+                        SizedBox(height = 2),
+                        Slider(value = value, onDrag = onDrag, onRelease = onRelease),
+                    ),
+                    spacing = 0,
+                    mainAxisSize = MainAxisSize.MIN,
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 ),
                 horizontal = 0,
                 vertical = 3,
