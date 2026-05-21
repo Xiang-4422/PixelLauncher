@@ -11,6 +11,7 @@ import com.purride.pixelcore.PixelGlyphPack
 import com.purride.pixelcore.PixelGlyphPackAssetLoader
 import com.purride.pixelcore.PixelStyledTextRasterizer
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixeldemo.settings.DemoFontStyle
 
 /**
  * Demo 文本栅格器仓库。
@@ -48,6 +49,22 @@ class DemoTextRasterizers(
             zhHansAssetDirectory = "glyphpacks/fusion_pixel_10px_proportional_zh_hans",
             lineSpacing = 1,
         )
+    }
+
+    private val rasterizerCache = mutableMapOf<Pair<Int, DemoFontStyle>, PixelTextRasterizer>()
+
+    fun getRasterizer(sizePx: Int, style: DemoFontStyle): PixelTextRasterizer {
+        return rasterizerCache.getOrPut(sizePx to style) {
+            val styleName = when (style) {
+                DemoFontStyle.PROPORTIONAL -> "proportional"
+                DemoFontStyle.MONOSPACED -> "monospaced"
+            }
+            fusionRasterizer(
+                latinAssetDirectory = "glyphpacks/fusion_pixel_${sizePx}px_${styleName}_latin",
+                zhHansAssetDirectory = "glyphpacks/fusion_pixel_${sizePx}px_${styleName}_zh_hans",
+                lineSpacing = 1,
+            )
+        }
     }
 
     private fun fusionRasterizer(

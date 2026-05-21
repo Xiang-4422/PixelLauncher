@@ -5,6 +5,7 @@ import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.purride.pixelcore.PixelPalette
 import com.purride.pixelui.PixelHapticType
 import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelHostProfilePreference
@@ -16,17 +17,19 @@ import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixeldemo.app.DemoTextRasterizers
 import com.purride.pixeldemo.catalog.DemoCatalog
 import com.purride.pixeldemo.catalog.DemoScene
-import com.purride.pixeldemo.menu.DemoMenuScene
+import com.purride.pixeldemo.home.DemoHomeScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoNavigator
 import com.purride.pixeldemo.scaffold.DemoScaffold
+import com.purride.pixeldemo.settings.DemoAppSettings
 
 class DemoActivity : AppCompatActivity() {
 
     private lateinit var hostView: PixelHostView
+    private lateinit var rasterizers: DemoTextRasterizers
     private lateinit var nav: NavigatorImpl
+    private var currentSettings = DemoAppSettings()
 
-    // enabled 状态由 NavigatorImpl.updateBackCallback() 维护
     private val backCallback = object : OnBackPressedCallback(enabled = false) {
         override fun handleOnBackPressed() {
             nav.pop()
@@ -37,15 +40,21 @@ class DemoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         onBackPressedDispatcher.addCallback(this, backCallback)
 
-        val rasterizers = DemoTextRasterizers(this)
+        rasterizers = DemoTextRasterizers(this)
+        val initSettings = DemoAppSettings()
         val setup = createPixelHostSetup(
             context = this,
             config = PixelHostSetupConfig(
-                profilePreference = PixelHostProfilePreference(dotSizePx = 12),
-                textRasterizer = rasterizers.default,
+                profilePreference = PixelHostProfilePreference(
+                    dotSizePx = initSettings.dotSizePx,
+                    pixelShape = initSettings.pixelShape,
+                ),
+                textRasterizer = rasterizers.getRasterizer(initSettings.fontSizePx, initSettings.fontStyle),
             ),
         )
         hostView = setup.hostView
+        applySettingsToView(initSettings)
+
         val originalBridge = hostView.hostBridge
         hostView.hostBridge = object : PixelHostBridge {
             override fun showTextInput(request: PixelTextInputRequest) {
@@ -80,11 +89,13 @@ class DemoActivity : AppCompatActivity() {
             rasterizers = rasterizers,
             applyPreferredProfile = ::applyProfile,
             navigator = nav,
+            currentSettings = currentSettings,
+            applySettings = ::applySettings,
         )
         nav.env = env
 
         val savedId = savedInstanceState?.getString(KEY_SCENE_ID)
-        val startScene = savedId?.let { DemoCatalog.findById(it) } ?: DemoMenuScene
+        val startScene = savedId?.let { DemoCatalog.findById(it) } ?: DemoHomeScene
         nav.push(startScene)
 
         setContentView(setup.rootView)
@@ -99,11 +110,28 @@ class DemoActivity : AppCompatActivity() {
         hostView.profilePreference = pref
     }
 
+    private fun applySettings(settings: DemoAppSettings) {
+        currentSettings = settings
+        nav.env.currentSettings = settings
+        applySettingsToView(settings)
+    }
+
+    private fun applySettingsToView(settings: DemoAppSettings) {
+        hostView.colorMode = settings.colorMode
+        hostView.setPalette(PixelPalette.fromTheme(settings.monoTheme))
+        hostView.profilePreference = PixelHostProfilePreference(
+            dotSizePx = settings.dotSizePx,
+            pixelShape = settings.pixelShape,
+        )
+        hostView.setPixelGapEnabled(settings.pixelGapEnabled)
+        hostView.textRasterizer = rasterizers.getRasterizer(settings.fontSizePx, settings.fontStyle)
+    }
+
     private inner class NavigatorImpl : DemoNavigator {
         lateinit var env: DemoEnv
         private val stack = ArrayDeque<DemoScene>()
 
-        val currentScene: DemoScene get() = stack.lastOrNull() ?: DemoMenuScene
+        val currentScene: DemoScene get() = stack.lastOrNull() ?: DemoHomeScene
 
         override fun push(scene: DemoScene) {
             stack.addLast(scene)
@@ -121,23 +149,46 @@ class DemoActivity : AppCompatActivity() {
 
         override fun popToMenu() {
             stack.clear()
-            stack.addLast(DemoMenuScene)
-            renderScene(DemoMenuScene)
+            stack.addLast(DemoHomeScene)
+            renderScene(DemoHomeScene)
             updateBackCallback()
         }
 
         private fun renderScene(scene: DemoScene) {
-            hostView.colorMode = scene.colorMode
+            // 全局设置优先，scene 级别的 override 覆盖在后
+            val effectiveColorMode = scene.colorMode ?: currentSettings.colorMode
+            hostView.colorMode = effectiveColorMode
+            if (scene.colorMode == null) {
+                hostView.setPalette(PixelPalette.fromTheme(currentSettings.monoTheme))
+            }
+            applyProfile(
+                PixelHostProfilePreference(
+                    dotSizePx = currentSettings.dotSizePx,
+                    pixelShape = currentSettings.pixelShape,
+                ),
+            )
+            hostView.setPixelGapEnabled(currentSettings.pixelGapEnabled)
+            hostView.textRasterizer = rasterizers.getRasterizer(
+                currentSettings.fontSizePx,
+                currentSettings.fontStyle,
+            )
+
+            // scene 级别覆盖
             scene.initialProfile?.let { applyProfile(it) }
             scene.initialPalette?.let { hostView.setPalette(it) }
             scene.initialTheme?.let { hostView.themeData = it }
             scene.pagerGesturePolicy?.let { hostView.pagerGesturePolicy = it }
-            hostView.setContent {
-                DemoScaffold(
-                    title = scene.title,
-                    description = scene.description,
-                    body = scene.build(env),
-                )
+
+            if (scene.isFullScreen) {
+                hostView.setContent { scene.build(env) }
+            } else {
+                hostView.setContent {
+                    DemoScaffold(
+                        title = scene.title,
+                        description = scene.description,
+                        body = scene.build(env),
+                    )
+                }
             }
         }
 

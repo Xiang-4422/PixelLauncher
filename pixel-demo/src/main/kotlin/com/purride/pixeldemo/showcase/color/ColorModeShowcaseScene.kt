@@ -29,7 +29,7 @@ object ColorModeShowcaseScene : DemoScene {
     override val id = "color_mode_showcase"
     override val title = "Color Mode"
     override val description = "彩色模式：PixelColor 填充/边框/文本 + PixelColorTween 补间动画"
-    override val colorMode = PixelColorMode.Color
+    override val colorMode: PixelColorMode = PixelColorMode.Color
 
     override fun build(env: DemoEnv): Widget =
         ColorModeShowcaseWidget(frameScheduler = env.hostView.frameScheduler)

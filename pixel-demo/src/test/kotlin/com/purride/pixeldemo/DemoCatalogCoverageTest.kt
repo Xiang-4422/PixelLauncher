@@ -12,8 +12,8 @@ class DemoCatalogCoverageTest {
     @Test
     fun catalogContainsExpectedSectionCount() {
         assertEquals(
-            "Expected 9 sections (foundation/interaction/scroll/theme/composition/templates/extension/stress/integration)",
-            9,
+            "Expected 11 sections",
+            11,
             DemoCatalog.sections.size,
         )
     }
@@ -22,8 +22,8 @@ class DemoCatalogCoverageTest {
     fun catalogContainsExpectedSceneCount() {
         val total = DemoCatalog.sections.sumOf { it.scenes.size }
         assertEquals(
-            "Expected 52 scenes total",
-            52,
+            "Expected 55 scenes total",
+            55,
             total,
         )
     }
