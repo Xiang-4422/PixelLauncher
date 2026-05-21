@@ -53,15 +53,13 @@ internal class HollowSquareRender(
         val w = size.width
         val h = size.height
         if (w <= 0 || h <= 0) return
-        val colorValue = tone.value
-        val buf = context.buffer
         for (x in 0 until w) {
-            buf.setPixel(offsetX + x, offsetY, colorValue)
-            buf.setPixel(offsetX + x, offsetY + h - 1, colorValue)
+            context.setTone(offsetX + x, offsetY, tone)
+            context.setTone(offsetX + x, offsetY + h - 1, tone)
         }
         for (y in 1 until h - 1) {
-            buf.setPixel(offsetX, offsetY + y, colorValue)
-            buf.setPixel(offsetX + w - 1, offsetY + y, colorValue)
+            context.setTone(offsetX, offsetY + y, tone)
+            context.setTone(offsetX + w - 1, offsetY + y, tone)
         }
     }
 

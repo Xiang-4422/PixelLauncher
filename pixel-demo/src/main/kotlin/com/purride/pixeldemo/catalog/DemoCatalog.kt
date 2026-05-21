@@ -50,6 +50,7 @@ import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
 import com.purride.pixeldemo.showcase.integration.SystemActionDispatchScene
 import com.purride.pixeldemo.showcase.animation.AnimationCoreScene
 import com.purride.pixeldemo.showcase.animation.ImplicitAnimationsScene
+import com.purride.pixeldemo.showcase.color.ColorModeShowcaseScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
 import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
 import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
@@ -159,6 +160,12 @@ object DemoCatalog {
             scenes = listOf(
                 AnimationCoreScene,
                 ImplicitAnimationsScene,
+            ),
+        ),
+        DemoSection(
+            title = "Color Mode",
+            scenes = listOf(
+                ColorModeShowcaseScene,
             ),
         ),
     )
