@@ -9,7 +9,7 @@ public data class FramePayload(
     val sequence: Long,
     val pixelBuffer: PixelBuffer,
     val screenProfile: ScreenProfile,
-    val palette: PixelPalette,
+    val backgroundColor: PixelColor,
 )
 
 public class FrameSwapBuffer {
@@ -20,14 +20,14 @@ public class FrameSwapBuffer {
     public fun offer(
         pixelBuffer: PixelBuffer,
         screenProfile: ScreenProfile,
-        palette: PixelPalette,
+        backgroundColor: PixelColor,
     ): FramePayload {
         latestSequence += 1L
         val payload = FramePayload(
             sequence = latestSequence,
             pixelBuffer = pixelBuffer,
             screenProfile = screenProfile,
-            palette = palette,
+            backgroundColor = backgroundColor,
         )
         latestFrame = payload
         return payload

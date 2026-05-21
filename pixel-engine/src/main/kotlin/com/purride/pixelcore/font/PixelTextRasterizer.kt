@@ -17,11 +17,11 @@ public interface PixelTextRasterizer {
     public fun measureHeight(text: String): Int
 
     public fun drawText(
-        buffer: MonoPixelBuffer,
+        buffer: PixelBuffer,
         text: String,
         x: Int,
         y: Int,
-        value: Byte = PixelTone.ON.value,
+        color: PixelColor = PixelColor.fromRgb(255, 255, 255),
     )
 }
 
@@ -51,11 +51,11 @@ public class PixelStyledTextRasterizer(
     }
 
     override fun drawText(
-        buffer: MonoPixelBuffer,
+        buffer: PixelBuffer,
         text: String,
         x: Int,
         y: Int,
-        value: Byte,
+        color: PixelColor,
     ) {
         var cursorY = y
         text.lines().forEach { line ->
@@ -65,7 +65,7 @@ public class PixelStyledTextRasterizer(
                 startX = x,
                 startY = cursorY,
                 maxWidth = Int.MAX_VALUE,
-                value = value,
+                color = color,
                 style = style,
             )
             cursorY += lineHeight

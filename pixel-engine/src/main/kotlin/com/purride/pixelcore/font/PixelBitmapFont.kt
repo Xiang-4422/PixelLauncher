@@ -54,11 +54,11 @@ public class PixelBitmapFont(
     }
 
     override fun drawText(
-        buffer: MonoPixelBuffer,
+        buffer: PixelBuffer,
         text: String,
         x: Int,
         y: Int,
-        value: Byte,
+        color: PixelColor,
     ) {
         var cursorY = y
         text.lines().forEach { line ->
@@ -68,7 +68,7 @@ public class PixelBitmapFont(
                 startX = x,
                 startY = cursorY,
                 maxWidth = Int.MAX_VALUE,
-                value = value,
+                color = color,
                 style = glyphStyle,
             )
             cursorY += lineHeight

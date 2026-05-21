@@ -5,7 +5,7 @@ import android.view.View
 /**
  * 像素帧宿主契约。
  *
- * 这层只定义“像素帧如何提交给宿主 View”，不定义更高层的页面运行时。
+ * 这层只定义"像素帧如何提交给宿主 View"，不定义更高层的页面运行时。
  */
 public interface PixelFrameView {
     public interface InteractionListener {
@@ -21,9 +21,7 @@ public interface PixelFrameView {
 
     public var interactionListener: InteractionListener?
 
-    public fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, palette: PixelPalette)
-
-    public fun setPalette(palette: PixelPalette)
+    public fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, backgroundColor: PixelColor)
 
     public fun setPixelGapEnabled(enabled: Boolean): Unit = Unit
 

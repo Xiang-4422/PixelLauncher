@@ -256,12 +256,12 @@ public class PixelFontEngine(
     }
 
     public fun drawText(
-        buffer: MonoPixelBuffer,
+        buffer: PixelBuffer,
         text: String,
         startX: Int,
         startY: Int,
         maxWidth: Int,
-        value: Byte = PixelTone.ON.value,
+        color: PixelColor = PixelColor.fromRgb(255, 255, 255),
         style: GlyphStyle,
     ) {
         if (text.isEmpty() || maxWidth <= 0) {
@@ -278,7 +278,7 @@ public class PixelFontEngine(
                 glyph = glyph,
                 startX = cursorX,
                 startY = startY,
-                value = value,
+                color = color,
             )
             val nextGlyph = renderableText.getOrNull(index + 1)?.let { nextCharacter ->
                 glyphFor(nextCharacter, style)
@@ -348,16 +348,16 @@ public class PixelFontEngine(
     }
 
     private fun drawGlyph(
-        buffer: MonoPixelBuffer,
+        buffer: PixelBuffer,
         glyph: GlyphBitmap,
         startX: Int,
         startY: Int,
-        value: Byte,
+        color: PixelColor,
     ) {
         for (y in 0 until glyph.height) {
             for (x in 0 until glyph.width) {
                 if (glyph.pixels[(y * glyph.width) + x].toInt() == 1) {
-                    buffer.setPixelByte(startX + x, startY + y, value)
+                    buffer.setPixel(startX + x, startY + y, color)
                 }
             }
         }

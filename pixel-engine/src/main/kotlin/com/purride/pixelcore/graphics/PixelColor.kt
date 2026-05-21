@@ -30,5 +30,7 @@ public value class PixelColor(public val argb: Int) {
         public fun fromRgb(r: Int, g: Int, b: Int): PixelColor = fromArgb(0xFF, r, g, b)
 
         public val Transparent: PixelColor = PixelColor(0)
+        public val Black: PixelColor = fromRgb(0, 0, 0)
+        public val White: PixelColor = fromRgb(255, 255, 255)
     }
 }
