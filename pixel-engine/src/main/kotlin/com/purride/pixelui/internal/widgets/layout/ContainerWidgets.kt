@@ -1,15 +1,12 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
-import com.purride.pixelui.PixelContainerStyle
-import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.resolve
@@ -24,31 +21,19 @@ internal data class ContainerWidget(
     val height: Int?,
     val padding: EdgeInsets?,
     val margin: EdgeInsets?,
-    val style: PixelContainerStyle?,
-    val theme: PixelThemeData?,
-    val fillTone: PixelTone,
-    val borderTone: PixelTone?,
     val fillColor: PixelColor? = null,
     val borderColor: PixelColor? = null,
-    val alignment: Alignment,
-    val selected: Boolean,
-    val pressed: Boolean,
+    val alignment: Alignment = Alignment.CENTER,
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(
     child = child,
     key = key,
 ) {
-    /**
-     * 创建直接承接尺寸、margin、padding、装饰和对齐的 surface render object。
-     */
     override fun createRenderObject(context: BuildContext): RenderObject {
-        val resolvedStyle = resolveContainerStyle(context)
         return RenderSurface(
-            fillTone = resolvedStyle.fillTone,
-            borderTone = resolvedStyle.borderTone,
             fillColor = fillColor,
             borderColor = borderColor,
-            alignment = resolvedStyle.alignment.toPixelAlignment(),
+            alignment = alignment.toPixelAlignment(),
             explicitWidth = width,
             explicitHeight = height,
             outerPaddingLeft = margin?.left ?: 0,
@@ -62,20 +47,11 @@ internal data class ContainerWidget(
         )
     }
 
-    /**
-     * 同步新的容器配置到既有 surface render object。
-     */
-    override fun updateRenderObject(
-        context: BuildContext,
-        renderObject: RenderObject,
-    ) {
-        val resolvedStyle = resolveContainerStyle(context)
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderSurface).updateSurface(
-            fillTone = resolvedStyle.fillTone,
-            borderTone = resolvedStyle.borderTone,
             fillColor = fillColor,
             borderColor = borderColor,
-            alignment = resolvedStyle.alignment.toPixelAlignment(),
+            alignment = alignment.toPixelAlignment(),
             explicitWidth = width,
             explicitHeight = height,
             outerPaddingLeft = margin?.left ?: 0,
@@ -87,24 +63,6 @@ internal data class ContainerWidget(
             contentPaddingRight = padding?.right ?: 0,
             contentPaddingBottom = padding?.bottom ?: 0,
         )
-    }
-
-    /**
-     * 解析当前上下文下的最终容器样式。
-     */
-    private fun resolveContainerStyle(context: BuildContext): PixelContainerStyle {
-        val resolvedTheme = context.resolveTheme(theme)
-        val requestedStyle = style ?: PixelContainerStyle(
-            fillTone = fillTone,
-            borderTone = borderTone,
-            alignment = alignment,
-        )
-        return when {
-            requestedStyle != PixelContainerStyle.Default -> requestedStyle
-            pressed -> resolvedTheme.resolvePressedContainerStyle()
-            selected -> resolvedTheme.resolveSelectedContainerStyle()
-            else -> resolvedTheme.resolveContainerStyle()
-        }
     }
 }
 
@@ -119,47 +77,28 @@ internal data class ContainerDirectionalWidget(
     val paddingDirectional: EdgeInsetsDirectional?,
     val margin: EdgeInsets?,
     val marginDirectional: EdgeInsetsDirectional?,
-    val style: PixelContainerStyle?,
-    val theme: PixelThemeData?,
-    val fillTone: PixelTone,
-    val borderTone: PixelTone?,
-    val alignment: AlignmentDirectional,
-    val selected: Boolean,
-    val pressed: Boolean,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = null,
+    val alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
     override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    /**
-     * 在 build 时解析方向性配置，并交给 direct ContainerWidget。
-     */
+) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         val direction = Directionality.of(context)
         val resolvedPadding = paddingDirectional?.resolve(direction) ?: padding
         val resolvedMargin = marginDirectional?.resolve(direction) ?: margin
-        val resolvedStyle = style?.copy(
-            alignment = alignment.toPixelAlignment(direction).toPublicAlignment(),
-        )
         return ContainerWidget(
             child = child,
             width = width,
             height = height,
             padding = resolvedPadding,
             margin = resolvedMargin,
-            style = resolvedStyle,
-            theme = theme,
-            fillTone = fillTone,
-            borderTone = borderTone,
+            fillColor = fillColor,
+            borderColor = borderColor,
             alignment = alignment.toPixelAlignment(direction).toPublicAlignment(),
-            selected = selected,
-            pressed = pressed,
             key = key,
         )
     }
 
-    /**
-     * 把内部对齐值映射回公开对齐值。
-     */
     private fun PixelAlignment.toPublicAlignment(): Alignment {
         return when (this) {
             PixelAlignment.TOP_START -> Alignment.TOP_START

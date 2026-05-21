@@ -4,8 +4,7 @@ import android.content.Context
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
-import com.purride.pixelcore.PixelColorMode
-import com.purride.pixelcore.PixelPalette
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
@@ -27,14 +26,13 @@ public data class PixelHostSetup(
 /**
  * 默认宿主配置。
  *
- * 这层把业务页面最常见的宿主初始化项收成一个对象：
- * profile、调色板、文本栅格器、主题和根组件提供器都可以一次性带进来。
+ * 引擎只做一件事：把 widget 树渲染成 ARGB 像素网格。
+ * 背景色通过 [backgroundColor] 控制；不再有 palette / themeData / colorMode 概念。
  */
 public data class PixelHostSetupConfig(
     val profilePreference: PixelHostProfilePreference? = null,
-    val palette: PixelPalette? = null,
+    val backgroundColor: PixelColor = PixelColor.Black,
     val textRasterizer: PixelTextRasterizer? = null,
-    val themeData: ThemeData? = null,
     val textDirection: TextDirection = TextDirection.LTR,
     val content: RootWidgetProvider? = null,
     /**
@@ -55,10 +53,6 @@ public data class PixelHostSetupConfig(
      * `ManualFrameScheduler` 或自定义实现。
      */
     val frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default,
-    /**
-     * 颜色模式。构造后不可变更，决定整个 view 树用 Mono 还是 Color 路径渲染。
-     */
-    val colorMode: PixelColorMode = PixelColorMode.Mono,
 )
 
 /**
@@ -80,15 +74,13 @@ public fun createPixelHostSetup(
     )
     hostView.hostBridge = textInputBridge
     config.profilePreference?.let { hostView.profilePreference = it }
-    config.palette?.let { hostView.setPalette(it) }
     config.textRasterizer?.let { hostView.textRasterizer = it }
-    hostView.themeData = config.themeData
+    hostView.backgroundColor = config.backgroundColor
     hostView.textDirection = config.textDirection
     hostView.pagerGesturePolicy = config.pagerGesturePolicy
     hostView.nestedScrollPolicy = config.nestedScrollPolicy
     hostView.scrollPhysics = config.scrollPhysics
     hostView.frameScheduler = config.frameScheduler
-    hostView.colorMode = config.colorMode
     config.content?.let { hostView.setContent(it) }
     val rootView = FrameLayout(context).apply {
         addView(

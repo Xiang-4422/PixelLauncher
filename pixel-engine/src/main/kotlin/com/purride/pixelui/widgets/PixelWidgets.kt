@@ -2,7 +2,6 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelcore.PixelTone
 import com.purride.pixelui.internal.AlignDirectionalWidget
 import com.purride.pixelui.internal.AlignWidget
 import com.purride.pixelui.internal.ColumnWidget
@@ -42,11 +41,9 @@ import com.purride.pixelui.state.PixelTextFieldState
  */
 public typealias TextStyle = PixelTextStyle
 public typealias ButtonStyle = PixelButtonStyle
-public typealias ContainerStyle = PixelContainerStyle
 public typealias TextFieldStyle = PixelTextFieldStyle
 public typealias TextOverflow = PixelTextOverflow
 public typealias TextInputAction = PixelTextInputAction
-public typealias ThemeData = PixelThemeData
 
 public fun Padding(
     child: Widget,
@@ -179,7 +176,6 @@ public fun Text(
     data: String,
     style: TextStyle = TextStyle.Default,
     color: PixelColor? = null,
-    theme: ThemeData? = null,
     softWrap: Boolean = false,
     maxLines: Int = 1,
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
@@ -190,7 +186,6 @@ public fun Text(
         data = data,
         style = style,
         color = color,
-        theme = theme,
         softWrap = softWrap,
         maxLines = maxLines,
         overflow = overflow,
@@ -201,7 +196,6 @@ public fun Text(
 
 public fun RichText(
     spans: List<PixelTextSpan>,
-    theme: ThemeData? = null,
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     overflow: PixelTextOverflow = PixelTextOverflow.CLIP,
@@ -210,7 +204,6 @@ public fun RichText(
 ): Widget {
     return RichTextWidget(
         spans = spans,
-        theme = theme,
         softWrap = softWrap,
         maxLines = maxLines,
         overflow = overflow,
@@ -221,8 +214,6 @@ public fun RichText(
 
 public fun DecoratedBox(
     child: Widget? = null,
-    fillTone: PixelTone = PixelTone.OFF,
-    borderTone: PixelTone? = PixelTone.ON,
     fillColor: PixelColor? = null,
     borderColor: PixelColor? = null,
     padding: Int = 2,
@@ -231,8 +222,6 @@ public fun DecoratedBox(
 ): Widget {
     return DecoratedBoxWidget(
         child = child,
-        fillTone = fillTone,
-        borderTone = borderTone,
         fillColor = fillColor,
         borderColor = borderColor,
         padding = padding,
@@ -247,15 +236,9 @@ public fun Container(
     height: Int? = null,
     padding: EdgeInsets? = null,
     margin: EdgeInsets? = null,
-    style: ContainerStyle? = null,
-    theme: ThemeData? = null,
-    fillTone: PixelTone = PixelTone.OFF,
-    borderTone: PixelTone? = PixelTone.ON,
     fillColor: PixelColor? = null,
     borderColor: PixelColor? = null,
     alignment: Alignment = Alignment.CENTER,
-    selected: Boolean = false,
-    pressed: Boolean = false,
     key: Any? = null,
 ): Widget {
     return ContainerWidget(
@@ -264,15 +247,9 @@ public fun Container(
         height = height,
         padding = padding,
         margin = margin,
-        style = style,
-        theme = theme,
-        fillTone = fillTone,
-        borderTone = borderTone,
         fillColor = fillColor,
         borderColor = borderColor,
         alignment = alignment,
-        selected = selected,
-        pressed = pressed,
         key = key,
     )
 }
@@ -285,13 +262,9 @@ public fun ContainerDirectional(
     paddingDirectional: EdgeInsetsDirectional? = null,
     margin: EdgeInsets? = null,
     marginDirectional: EdgeInsetsDirectional? = null,
-    style: ContainerStyle? = null,
-    theme: ThemeData? = null,
-    fillTone: PixelTone = PixelTone.OFF,
-    borderTone: PixelTone? = PixelTone.ON,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
     alignment: AlignmentDirectional = AlignmentDirectional.CENTER,
-    selected: Boolean = false,
-    pressed: Boolean = false,
     key: Any? = null,
 ): Widget {
     return ContainerDirectionalWidget(
@@ -302,13 +275,9 @@ public fun ContainerDirectional(
         paddingDirectional = paddingDirectional,
         margin = margin,
         marginDirectional = marginDirectional,
-        style = style,
-        theme = theme,
-        fillTone = fillTone,
-        borderTone = borderTone,
+        fillColor = fillColor,
+        borderColor = borderColor,
         alignment = alignment,
-        selected = selected,
-        pressed = pressed,
         key = key,
     )
 }
@@ -586,7 +555,6 @@ public fun TextField(
     controller: PixelTextFieldController,
     placeholder: String = "",
     style: TextFieldStyle = TextFieldStyle.Default,
-    theme: ThemeData? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     autofocus: Boolean = false,
@@ -605,7 +573,6 @@ public fun TextField(
         controller = controller,
         placeholder = placeholder,
         style = style,
-        theme = theme,
         enabled = enabled,
         readOnly = readOnly,
         autofocus = autofocus,
@@ -625,10 +592,7 @@ public fun OutlinedButton(
     text: String,
     onPressed: (() -> Unit)?,
     style: ButtonStyle = ButtonStyle.Default,
-    theme: ThemeData? = null,
     enabled: Boolean = true,
-    selected: Boolean = false,
-    pressed: Boolean = false,
     fillColor: PixelColor? = null,
     borderColor: PixelColor? = null,
     key: Any? = null,
@@ -637,10 +601,7 @@ public fun OutlinedButton(
         text = text,
         onPressed = onPressed,
         style = style,
-        theme = theme,
         enabled = enabled,
-        selected = selected,
-        pressed = pressed,
         fillColor = fillColor,
         borderColor = borderColor,
         key = key,

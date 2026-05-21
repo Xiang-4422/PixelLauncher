@@ -18,22 +18,16 @@ internal data class TextWidget(
     val data: String,
     val style: PixelTextStyle,
     val color: PixelColor? = null,
-    val theme: com.purride.pixelui.PixelThemeData?,
     val softWrap: Boolean,
     val maxLines: Int,
     val overflow: PixelTextOverflow,
     val textAlign: TextAlign,
     override val key: Any? = null,
-) : RenderObjectWidget(
-    key = key,
-) {
-    /**
-     * 创建文本 render object，直接接入新 pipeline。
-     */
+) : RenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderText(
             text = data,
-            style = resolveTextStyle(context),
+            style = resolveStyle(),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -43,16 +37,10 @@ internal data class TextWidget(
         )
     }
 
-    /**
-     * 把新的 widget 配置同步到既有文本 render object。
-     */
-    override fun updateRenderObject(
-        context: BuildContext,
-        renderObject: RenderObject,
-    ) {
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderText).updateText(
             text = data,
-            style = resolveTextStyle(context),
+            style = resolveStyle(),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -62,17 +50,8 @@ internal data class TextWidget(
         )
     }
 
-    /**
-     * 解析当前上下文下的最终文本样式，并应用显式颜色覆盖。
-     */
-    private fun resolveTextStyle(context: BuildContext): PixelTextStyle {
-        val resolvedTheme = context.resolveTheme(theme)
-        val base = when (style) {
-            PixelTextStyle.Default -> resolvedTheme.resolveTextStyle()
-            PixelTextStyle.Accent -> resolvedTheme.resolveAccentTextStyle()
-            else -> style
-        }
-        return if (color != null) base.copy(color = color) else base
+    private fun resolveStyle(): PixelTextStyle {
+        return if (color != null) style.copy(color = color) else style
     }
 }
 
@@ -81,18 +60,15 @@ internal data class TextWidget(
  */
 internal data class RichTextWidget(
     val spans: List<PixelTextSpan>,
-    val theme: com.purride.pixelui.PixelThemeData?,
     val softWrap: Boolean,
     val maxLines: Int,
     val overflow: PixelTextOverflow,
     val textAlign: TextAlign,
     override val key: Any? = null,
-) : RenderObjectWidget(
-    key = key,
-) {
+) : RenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderRichText(
-            spans = resolveSpans(context),
+            spans = spans,
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -102,12 +78,9 @@ internal data class RichTextWidget(
         )
     }
 
-    override fun updateRenderObject(
-        context: BuildContext,
-        renderObject: RenderObject,
-    ) {
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderRichText).updateRichText(
-            spans = resolveSpans(context),
+            spans = spans,
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -115,18 +88,5 @@ internal data class RichTextWidget(
             maxLines = maxLines,
             defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
         )
-    }
-
-    private fun resolveSpans(context: BuildContext): List<PixelTextSpan> {
-        val resolvedTheme = context.resolveTheme(theme)
-        return spans.map { span ->
-            span.copy(
-                style = when (span.style) {
-                    PixelTextStyle.Default -> resolvedTheme.resolveTextStyle()
-                    PixelTextStyle.Accent -> resolvedTheme.resolveAccentTextStyle()
-                    else -> span.style
-                },
-            )
-        }
     }
 }

@@ -1,6 +1,6 @@
 package com.purride.pixelui.widgets.animated
 
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Container
 import com.purride.pixelui.EdgeInsets
@@ -14,8 +14,8 @@ import com.purride.pixelui.animation.EdgeInsetsTween
 import com.purride.pixelui.animation.IntTween
 import com.purride.pixelui.animation.PixelAnimationController
 import com.purride.pixelui.animation.PixelAnimationStatus
+import com.purride.pixelui.animation.PixelColorTween
 import com.purride.pixelui.animation.PixelTickerProvider
-import com.purride.pixelui.animation.PixelToneTween
 import kotlin.time.Duration
 
 public fun AnimatedContainer(
@@ -26,7 +26,7 @@ public fun AnimatedContainer(
     height: Int? = null,
     padding: EdgeInsets? = null,
     margin: EdgeInsets? = null,
-    borderTone: PixelTone? = null,
+    borderColor: PixelColor? = null,
     onEnd: (() -> Unit)? = null,
     key: Any? = null,
     child: Widget? = null,
@@ -38,7 +38,7 @@ public fun AnimatedContainer(
     height = height,
     padding = padding,
     margin = margin,
-    borderTone = borderTone,
+    borderColor = borderColor,
     onEnd = onEnd,
     child = child,
     key = key,
@@ -52,7 +52,7 @@ private class AnimatedContainerWidget(
     val height: Int?,
     val padding: EdgeInsets?,
     val margin: EdgeInsets?,
-    val borderTone: PixelTone?,
+    val borderColor: PixelColor?,
     val onEnd: (() -> Unit)?,
     val child: Widget?,
     override val key: Any?,
@@ -68,7 +68,7 @@ private class AnimatedContainerState : State<AnimatedContainerWidget>() {
     private var heightTween: IntTween? = null
     private var paddingTween: EdgeInsetsTween? = null
     private var marginTween: EdgeInsetsTween? = null
-    private var borderToneTween: PixelToneTween? = null
+    private var borderColorTween: PixelColorTween? = null
 
     override fun initState() {
         controller = PixelAnimationController(duration = widget.duration, vsync = widget.vsync)
@@ -80,7 +80,7 @@ private class AnimatedContainerState : State<AnimatedContainerWidget>() {
         widget.height?.let { heightTween = IntTween(it, it) }
         widget.padding?.let { paddingTween = EdgeInsetsTween(it, it) }
         widget.margin?.let { marginTween = EdgeInsetsTween(it, it) }
-        widget.borderTone?.let { borderToneTween = PixelToneTween(it, it) }
+        widget.borderColor?.let { borderColorTween = PixelColorTween(it, it) }
     }
 
     override fun didUpdateWidget(oldWidget: AnimatedContainerWidget) {
@@ -108,10 +108,10 @@ private class AnimatedContainerState : State<AnimatedContainerWidget>() {
             marginTween = if (newMargin != null && from != null) EdgeInsetsTween(from, newMargin) else null
             needsAnimation = true
         }
-        if (widget.borderTone != oldWidget.borderTone) {
-            val newTone = widget.borderTone
-            val from = borderToneTween?.lerp(curved.value) ?: oldWidget.borderTone ?: newTone
-            borderToneTween = if (newTone != null && from != null) PixelToneTween(from, newTone) else null
+        if (widget.borderColor != oldWidget.borderColor) {
+            val newColor = widget.borderColor
+            val from = borderColorTween?.lerp(curved.value) ?: oldWidget.borderColor ?: newColor
+            borderColorTween = if (newColor != null && from != null) PixelColorTween(from, newColor) else null
             needsAnimation = true
         }
         if (needsAnimation) {
@@ -131,7 +131,7 @@ private class AnimatedContainerState : State<AnimatedContainerWidget>() {
             height = heightTween?.lerp(t) ?: widget.height,
             padding = paddingTween?.lerp(t) ?: widget.padding,
             margin = marginTween?.lerp(t) ?: widget.margin,
-            borderTone = borderToneTween?.lerp(t) ?: widget.borderTone,
+            borderColor = borderColorTween?.lerp(t) ?: widget.borderColor,
             child = widget.child,
         )
     }

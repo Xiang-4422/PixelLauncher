@@ -1,13 +1,13 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
-import com.purride.pixelui.Alignment
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.Widget
@@ -23,7 +23,6 @@ internal data class TextFieldWidget(
     val controller: PixelTextFieldController,
     val placeholder: String,
     val style: PixelTextFieldStyle,
-    val theme: com.purride.pixelui.PixelThemeData?,
     val enabled: Boolean,
     val readOnly: Boolean,
     val autofocus: Boolean,
@@ -36,41 +35,34 @@ internal data class TextFieldWidget(
     val fillColor: PixelColor? = null,
     val borderColor: PixelColor? = null,
     override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    /**
-     * 在 build 时解析输入框样式并组合成 direct surface/text 子树。
-     */
+) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
-        val resolvedTheme = context.resolveTheme(theme)
-        val resolvedStyle = when {
-            style != PixelTextFieldStyle.Default -> style
-            !enabled -> resolvedTheme.resolveDisabledTextFieldStyle()
-            readOnly -> resolvedTheme.resolveReadOnlyTextFieldStyle()
-            else -> resolvedTheme.resolveTextFieldStyle()
+        val effectiveStyle = when {
+            !enabled -> PixelTextFieldStyle(
+                fillColor = style.fillColor,
+                borderColor = style.disabledBorderColor,
+                textStyle = style.disabledTextStyle,
+                placeholderStyle = style.disabledPlaceholderStyle,
+                padding = style.padding,
+            )
+            readOnly -> style.copy(borderColor = style.readOnlyBorderColor)
+            state.isFocused -> style.copy(borderColor = style.focusedBorderColor)
+            else -> style
         }
         val safeMinLines = minLines.coerceAtLeast(1)
         val safeMaxLines = maxLines.coerceAtLeast(safeMinLines)
         val text = state.text.ifEmpty { placeholder }
         val textStyle = when {
-            !enabled && state.text.isEmpty() -> resolvedStyle.disabledPlaceholderStyle
-            !enabled -> resolvedStyle.disabledTextStyle
-            state.text.isEmpty() -> resolvedStyle.placeholderStyle
-            else -> resolvedStyle.textStyle
+            !enabled && state.text.isEmpty() -> effectiveStyle.placeholderStyle
+            !enabled -> effectiveStyle.textStyle
+            state.text.isEmpty() -> style.placeholderStyle
+            else -> style.textStyle
         }
         return TextInputSurfaceWidget(
-            fillTone = resolvedStyle.fillTone,
-            borderTone = when {
-                !enabled -> resolvedStyle.disabledBorderTone
-                readOnly -> resolvedStyle.readOnlyBorderTone
-                state.isFocused -> resolvedStyle.focusedBorderTone
-                else -> resolvedStyle.borderTone
-            },
-            fillColor = fillColor,
-            borderColor = borderColor,
-            padding = resolvedStyle.padding,
+            fillColor = fillColor ?: effectiveStyle.fillColor,
+            borderColor = borderColor ?: effectiveStyle.borderColor,
+            padding = style.padding,
             alignment = Alignment.CENTER_START,
             state = state,
             controller = controller,
@@ -86,14 +78,9 @@ internal data class TextFieldWidget(
             child = TextWidget(
                 data = text,
                 style = textStyle,
-                theme = null,
                 softWrap = safeMaxLines > 1,
                 maxLines = safeMaxLines,
-                overflow = if (safeMaxLines > 1) {
-                    PixelTextOverflow.CLIP
-                } else {
-                    PixelTextOverflow.ELLIPSIS
-                },
+                overflow = if (safeMaxLines > 1) PixelTextOverflow.CLIP else PixelTextOverflow.ELLIPSIS,
                 textAlign = TextAlign.START,
                 key = key?.let { "$it-text" },
             ),
@@ -106,8 +93,6 @@ internal data class TextFieldWidget(
  */
 private data class TextInputSurfaceWidget(
     override val child: Widget?,
-    val fillTone: com.purride.pixelcore.PixelTone,
-    val borderTone: com.purride.pixelcore.PixelTone?,
     val fillColor: PixelColor? = null,
     val borderColor: PixelColor? = null,
     val padding: Int,
@@ -123,17 +108,9 @@ private data class TextInputSurfaceWidget(
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
     override val key: Any? = null,
-) : SingleChildRenderObjectWidget(
-    child = child,
-    key = key,
-) {
-    /**
-     * 创建可导出 text input target 的 surface。
-     */
+) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
-            fillTone = fillTone,
-            borderTone = borderTone,
             fillColor = fillColor,
             borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
@@ -154,16 +131,8 @@ private data class TextInputSurfaceWidget(
         )
     }
 
-    /**
-     * 同步 text input surface 配置。
-     */
-    override fun updateRenderObject(
-        context: BuildContext,
-        renderObject: RenderObject,
-    ) {
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderSurface).updateSurface(
-            fillTone = fillTone,
-            borderTone = borderTone,
             fillColor = fillColor,
             borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
@@ -192,42 +161,24 @@ internal data class OutlinedButtonWidget(
     val text: String,
     val onPressed: (() -> Unit)?,
     val style: PixelButtonStyle,
-    val theme: com.purride.pixelui.PixelThemeData?,
     val enabled: Boolean,
-    val selected: Boolean,
-    val pressed: Boolean,
     val fillColor: PixelColor? = null,
     val borderColor: PixelColor? = null,
     override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
-    /**
-     * 在 build 时解析按钮样式，并组合成 direct gesture/surface/text 子树。
-     */
+) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
-        val resolvedTheme = context.resolveTheme(theme)
         val effectiveEnabled = enabled && onPressed != null
-        val resolvedStyle = when {
-            !effectiveEnabled -> resolvedTheme.resolveDisabledButtonStyle()
-            style == PixelButtonStyle.Accent -> resolvedTheme.resolveAccentButtonStyle()
-            style != PixelButtonStyle.Default -> style
-            pressed -> resolvedTheme.resolvePressedButtonStyle()
-            selected -> resolvedTheme.resolveSelectedButtonStyle()
-            else -> resolvedTheme.resolveButtonStyle()
-        }
+        val effectiveFill = fillColor ?: style.fillColor
+        val effectiveBorder = borderColor ?: style.borderColor
         val content = ButtonSurfaceWidget(
-            fillTone = resolvedStyle.fillTone,
-            borderTone = resolvedStyle.borderTone,
-            fillColor = fillColor,
-            borderColor = borderColor,
+            fillColor = effectiveFill,
+            borderColor = effectiveBorder,
             padding = 1,
-            alignment = resolvedStyle.alignment,
+            alignment = style.alignment,
             key = key,
             child = TextWidget(
                 data = text,
-                style = resolvedStyle.textStyle,
-                theme = null,
+                style = style.textStyle,
                 softWrap = false,
                 maxLines = 1,
                 overflow = PixelTextOverflow.CLIP,
@@ -236,11 +187,7 @@ internal data class OutlinedButtonWidget(
             ),
         )
         return if (effectiveEnabled) {
-            GestureDetectorWidget(
-                child = content,
-                onTap = onPressed ?: {},
-                key = key,
-            )
+            GestureDetectorWidget(child = content, onTap = onPressed ?: {}, key = key)
         } else {
             content
         }
@@ -248,33 +195,21 @@ internal data class OutlinedButtonWidget(
 }
 
 /**
- * OutlinedButton 使用的 direct surface，默认填满父级分配的按钮区域。
+ * OutlinedButton 使用的 direct surface。
  */
 private data class ButtonSurfaceWidget(
     override val child: Widget?,
-    val fillTone: com.purride.pixelcore.PixelTone,
-    val borderTone: com.purride.pixelcore.PixelTone?,
     val fillColor: PixelColor? = null,
     val borderColor: PixelColor? = null,
     val padding: Int,
     val alignment: Alignment,
     override val key: Any? = null,
-) : SingleChildRenderObjectWidget(
-    child = child,
-    key = key,
-) {
-    /**
-     * 创建填满父级按钮区域的 surface。
-     */
+) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
-            fillTone = fillTone,
-            borderTone = borderTone,
             fillColor = fillColor,
             borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
-            fillMaxWidth = false,
-            fillMaxHeight = false,
             contentPaddingLeft = padding,
             contentPaddingTop = padding,
             contentPaddingRight = padding,
@@ -282,21 +217,11 @@ private data class ButtonSurfaceWidget(
         )
     }
 
-    /**
-     * 同步按钮 surface 配置。
-     */
-    override fun updateRenderObject(
-        context: BuildContext,
-        renderObject: RenderObject,
-    ) {
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderSurface).updateSurface(
-            fillTone = fillTone,
-            borderTone = borderTone,
             fillColor = fillColor,
             borderColor = borderColor,
             alignment = alignment.toPixelAlignment(),
-            fillMaxWidth = false,
-            fillMaxHeight = false,
             contentPaddingLeft = padding,
             contentPaddingTop = padding,
             contentPaddingRight = padding,

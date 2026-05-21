@@ -27,8 +27,6 @@ internal data class PaddingWidget(
      */
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
-            fillTone = null,
-            borderTone = null,
             alignment = PixelAlignment.TOP_START,
             contentPaddingLeft = padding.left,
             contentPaddingTop = padding.top,
@@ -45,8 +43,6 @@ internal data class PaddingWidget(
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
-            fillTone = null,
-            borderTone = null,
             alignment = PixelAlignment.TOP_START,
             contentPaddingLeft = padding.left,
             contentPaddingTop = padding.top,
@@ -95,8 +91,6 @@ internal data class AlignWidget(
      */
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
-            fillTone = null,
-            borderTone = null,
             alignment = alignment.toPixelAlignment(),
             fillMaxWidth = true,
             fillMaxHeight = true,
@@ -111,8 +105,6 @@ internal data class AlignWidget(
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
-            fillTone = null,
-            borderTone = null,
             alignment = alignment.toPixelAlignment(),
             fillMaxWidth = true,
             fillMaxHeight = true,
@@ -176,8 +168,6 @@ internal data class SizedBoxWidget(
      */
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
-            fillTone = null,
-            borderTone = null,
             alignment = PixelAlignment.TOP_START,
             explicitWidth = width,
             explicitHeight = height,
@@ -194,8 +184,6 @@ internal data class SizedBoxWidget(
         renderObject: RenderObject,
     ) {
         (renderObject as RenderSurface).updateSurface(
-            fillTone = null,
-            borderTone = null,
             alignment = PixelAlignment.TOP_START,
             explicitWidth = width,
             explicitHeight = height,

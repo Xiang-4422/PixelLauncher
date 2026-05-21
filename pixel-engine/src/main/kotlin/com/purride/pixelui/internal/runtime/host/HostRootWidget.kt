@@ -1,6 +1,5 @@
 package com.purride.pixelui.internal
 
-import com.purride.pixelcore.PixelColorMode
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.DefaultTextRasterizer
@@ -9,34 +8,21 @@ import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
-import com.purride.pixelui.Theme
-import com.purride.pixelui.ThemeData
 import com.purride.pixelui.Widget
 
 /**
  * 宿主级根环境包装。
  *
- * 现在 `PixelHostView` 不再在 `onDraw()` 里手工拼装一串环境组件，
- * 而是统一交给这个 root widget，方便后续继续扩展宿主级环境。
+ * 注入 MediaQuery、Directionality 和默认文本栅格器，供 widget 树中任意节点消费。
  */
 internal data class HostRootWidget(
     val screenProfile: ScreenProfile,
     val textDirection: TextDirection,
-    val themeData: ThemeData?,
     val textRasterizer: PixelTextRasterizer,
-    val colorMode: PixelColorMode = PixelColorMode.Mono,
     val child: Widget,
     override val key: Any? = null,
-) : StatelessWidget(
-    key = key,
-) {
+) : StatelessWidget(key = key) {
     override fun build(context: com.purride.pixelui.BuildContext): Widget {
-        val themedChild = themeData?.let { theme ->
-            Theme(
-                data = theme,
-                child = child,
-            )
-        } ?: child
         return MediaQuery(
             data = MediaQueryData(
                 logicalWidth = screenProfile.logicalWidth,
@@ -47,10 +33,7 @@ internal data class HostRootWidget(
                 textDirection = textDirection,
                 child = DefaultTextRasterizer(
                     rasterizer = textRasterizer,
-                    child = PixelColorModeProvider(
-                        colorMode = colorMode,
-                        child = themedChild,
-                    ),
+                    child = child,
                 ),
             ),
         )

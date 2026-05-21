@@ -1,24 +1,23 @@
 package com.purride.pixelui
 
-import com.purride.pixelcore.PixelTone
+import com.purride.pixelcore.PixelColor
 
 /**
  * 文本输入样式。
  *
- * 第一版延续当前组件的最小风格模型：
- * 填充、边框、文本、占位文本和光标色都作为样式对象收敛。
+ * 颜色直接用 [PixelColor] 指定；引擎只做像素渲染，不再区分 tone / colorMode。
  */
 public data class PixelTextFieldStyle(
-    val fillTone: PixelTone = PixelTone.OFF,
-    val borderTone: PixelTone? = PixelTone.ON,
-    val focusedBorderTone: PixelTone? = PixelTone.ACCENT,
-    val disabledBorderTone: PixelTone? = PixelTone.ON,
-    val readOnlyBorderTone: PixelTone? = PixelTone.ACCENT,
+    val fillColor: PixelColor? = null,
+    val borderColor: PixelColor? = PixelColor.fromRgb(255, 255, 255),
+    val focusedBorderColor: PixelColor? = PixelColor.fromRgb(255, 255, 0),
+    val disabledBorderColor: PixelColor? = PixelColor.fromRgb(100, 100, 100),
+    val readOnlyBorderColor: PixelColor? = PixelColor.fromRgb(255, 255, 0),
     val textStyle: PixelTextStyle = PixelTextStyle.Default,
-    val placeholderStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.ACCENT),
-    val disabledTextStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.OFF),
-    val disabledPlaceholderStyle: PixelTextStyle = PixelTextStyle(tone = PixelTone.OFF),
-    val cursorTone: PixelTone = PixelTone.ACCENT,
+    val placeholderStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(160, 160, 160)),
+    val disabledTextStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(80, 80, 80)),
+    val disabledPlaceholderStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(80, 80, 80)),
+    val cursorColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
     val padding: Int = 2,
 ) {
     public companion object {
