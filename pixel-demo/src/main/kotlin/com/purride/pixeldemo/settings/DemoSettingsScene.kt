@@ -75,6 +75,10 @@ private class SettingsWidget(
                                 label = "MONO THEME",
                                 children = themeOptions(s),
                             ),
+                            settingRow(
+                                label = "COLOR THEME",
+                                children = colorThemeOptions(s),
+                            ),
                             SizedBox(height = 4),
                             sectionHeader("PIXEL"),
                             settingRow(
@@ -142,6 +146,21 @@ private class SettingsWidget(
                 ),
             )
         }
+
+        private fun colorThemeOptions(s: DemoAppSettings): List<Widget> = listOf(
+            optionBtn("DARK", s.colorTheme == DemoColorTheme.DARK) {
+                update(s.copy(colorTheme = DemoColorTheme.DARK))
+            },
+            optionBtn("LIGHT", s.colorTheme == DemoColorTheme.LIGHT) {
+                update(s.copy(colorTheme = DemoColorTheme.LIGHT))
+            },
+            optionBtn("OCEAN", s.colorTheme == DemoColorTheme.OCEAN) {
+                update(s.copy(colorTheme = DemoColorTheme.OCEAN))
+            },
+            optionBtn("AMBER", s.colorTheme == DemoColorTheme.AMBER) {
+                update(s.copy(colorTheme = DemoColorTheme.AMBER))
+            },
+        )
 
         private fun themeOptions(s: DemoAppSettings): List<Widget> = listOf(
             optionBtn("GRN", s.monoTheme == PixelTheme.GREEN_PHOSPHOR) {
