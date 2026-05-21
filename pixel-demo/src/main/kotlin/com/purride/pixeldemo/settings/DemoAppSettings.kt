@@ -11,7 +11,6 @@ data class DemoAppSettings(
     val pixelShape: PixelShape = PixelShape.SQUARE,
     val dotSizePx: Int = 12,
     val pixelGapRatio: Float = 0.6f,
-    val vignetteEnabled: Boolean = false,
     val fontSizePx: Int = 8,
     val fontStyle: DemoFontStyle = DemoFontStyle.PROPORTIONAL,
 )

@@ -123,7 +123,6 @@ class DemoActivity : AppCompatActivity() {
             pixelShape = settings.pixelShape,
         )
         hostView.setPixelGapRatio(settings.pixelGapRatio)
-        hostView.vignetteEnabled = settings.vignetteEnabled
         hostView.textRasterizer = rasterizers.getRasterizer(settings.fontSizePx, settings.fontStyle)
     }
 

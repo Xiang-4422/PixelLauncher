@@ -3,12 +3,9 @@ package com.purride.pixelui
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.RadialGradient
 import android.graphics.Rect
-import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.VelocityTracker
@@ -39,7 +36,6 @@ import com.purride.pixelui.internal.HostRootWidget
 import com.purride.pixelui.internal.NestedScrollSession
 import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
-import kotlin.math.hypot
 import kotlin.math.min
 
 /**
@@ -89,24 +85,6 @@ public class PixelHostView @JvmOverloads constructor(
     public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
         set(value) {
             field = value
-            invalidate()
-        }
-
-    /** 是否启用暗角效果（Vignette）。 */
-    public var vignetteEnabled: Boolean = false
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    /**
-     * 暗角强度，0.0 = 无，1.0 = 最强（默认 0.6）。
-     * 修改此值会使缓存 shader 失效。
-     */
-    public var vignetteStrength: Float = 0.6f
-        set(value) {
-            field = value.coerceIn(0f, 1f)
-            cachedVignetteShader = null
             invalidate()
         }
 
@@ -171,13 +149,6 @@ public class PixelHostView @JvmOverloads constructor(
     private val reusableDiamondPath = Path()
     private var reusableBitmap: Bitmap? = null
     private val reusableDestRect = Rect()
-    // Vignette — lazily built RadialGradient, invalidated when geometry or strength changes
-    private val vignettePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private var cachedVignetteShader: RadialGradient? = null
-    private var cachedVignetteCx = Float.NaN
-    private var cachedVignetteCy = Float.NaN
-    private var cachedVignetteRadius = Float.NaN
-    private var cachedVignetteAlpha = -1
 
     public fun setContent(provider: RootWidgetProvider) {
         contentProvider = provider
@@ -668,9 +639,6 @@ public class PixelHostView @JvmOverloads constructor(
             canvas.drawBitmap(bitmap, null, reusableDestRect, null)
         }
 
-        if (vignetteEnabled) {
-            drawVignette(canvas, geometry)
-        }
     }
 
     /** 用 [pixelGridColor] 填充逻辑像素内容区（screen panel 底色）。 */
@@ -732,45 +700,6 @@ public class PixelHostView @JvmOverloads constructor(
                 }
             }
         }
-    }
-
-    /**
-     * 暗角叠层：以内容区中心为圆心的径向渐变（透明→黑），覆盖在像素区上方。
-     * Shader 按几何和强度缓存，避免每帧重建。
-     */
-    private fun drawVignette(canvas: Canvas, geometry: com.purride.pixelcore.PixelGridGeometry) {
-        val cx = geometry.originX + geometry.contentWidth / 2f
-        val cy = geometry.originY + geometry.contentHeight / 2f
-        // Radius covers all four corners from center
-        val radius = hypot(geometry.contentWidth / 2f, geometry.contentHeight / 2f)
-        val alpha = (vignetteStrength * 220).toInt()
-
-        if (cachedVignetteShader == null ||
-            cachedVignetteCx != cx ||
-            cachedVignetteCy != cy ||
-            cachedVignetteRadius != radius ||
-            cachedVignetteAlpha != alpha
-        ) {
-            cachedVignetteShader = RadialGradient(
-                cx, cy, radius,
-                intArrayOf(Color.TRANSPARENT, Color.TRANSPARENT, Color.argb(alpha, 0, 0, 0)),
-                floatArrayOf(0f, 0.45f, 1f),
-                Shader.TileMode.CLAMP,
-            )
-            cachedVignetteCx = cx
-            cachedVignetteCy = cy
-            cachedVignetteRadius = radius
-            cachedVignetteAlpha = alpha
-        }
-
-        vignettePaint.shader = cachedVignetteShader
-        canvas.drawRect(
-            geometry.originX,
-            geometry.originY,
-            geometry.originX + geometry.contentWidth,
-            geometry.originY + geometry.contentHeight,
-            vignettePaint,
-        )
     }
 
     private fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
