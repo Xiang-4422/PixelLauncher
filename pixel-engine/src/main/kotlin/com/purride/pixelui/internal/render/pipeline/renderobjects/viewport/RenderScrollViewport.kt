@@ -197,6 +197,24 @@ internal class RenderSingleChildScrollViewport(
         }
     }
 
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val collected = mutableListOf<PixelSliderTarget>()
+        renderChild?.collectSliderTargets(
+            offsetX = offsetX,
+            offsetY = offsetY - state.scrollOffsetPx.toInt(),
+            targets = collected,
+        )
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
     /**
      * 读取当前可绘制的盒模型子节点。
      */
@@ -419,6 +437,26 @@ internal class RenderListViewport(
         val collected = mutableListOf<PixelTextInputTarget>()
         visibleRenderChildren().forEach { (index, child) ->
             child.collectTextInputTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val collected = mutableListOf<PixelSliderTarget>()
+        visibleRenderChildren().forEach { (index, child) ->
+            child.collectSliderTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
                 targets = collected,
@@ -671,6 +709,27 @@ internal class RenderLazyListViewport(
         renderChildren.forEachIndexed { localIndex, child ->
             val itemIndex = firstItemIndex + localIndex
             child.collectTextInputTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val collected = mutableListOf<PixelSliderTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.collectSliderTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
@@ -954,6 +1013,32 @@ internal class RenderVariableLazyListViewport(
         }
     }
 
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val collected = mutableListOf<PixelSliderTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            child.collectSliderTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + variableItemTopPx(
+                    state = state,
+                    itemIndex = itemIndex,
+                    estimatedItemExtent = estimatedItemExtent,
+                    spacing = spacing,
+                ) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
     private val renderChildren: List<RenderBox>
         get() = children.filterIsInstance<RenderBox>()
 }
@@ -1192,6 +1277,31 @@ internal class RenderLazySeparatedListViewport(
         renderChildren.forEachIndexed { localIndex, child ->
             val virtualIndex = firstVirtualIndex + localIndex
             child.collectTextInputTargets(
+                offsetX = offsetX,
+                offsetY = offsetY + virtualTopPx(
+                    virtualIndex = virtualIndex,
+                    itemExtent = itemExtent,
+                    separatorExtent = separatorExtent,
+                ) - state.scrollOffsetPx.toInt(),
+                targets = collected,
+            )
+        }
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val collected = mutableListOf<PixelSliderTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val virtualIndex = firstVirtualIndex + localIndex
+            child.collectSliderTargets(
                 offsetX = offsetX,
                 offsetY = offsetY + virtualTopPx(
                     virtualIndex = virtualIndex,

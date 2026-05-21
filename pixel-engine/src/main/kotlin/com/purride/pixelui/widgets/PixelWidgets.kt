@@ -14,6 +14,7 @@ import com.purride.pixelui.internal.LazyListViewWidget
 import com.purride.pixelui.internal.LazySeparatedListViewWidget
 import com.purride.pixelui.internal.ListViewWidget
 import com.purride.pixelui.internal.OutlinedButtonWidget
+import com.purride.pixelui.internal.SliderWidget
 import com.purride.pixelui.internal.PaddingDirectionalWidget
 import com.purride.pixelui.internal.PaddingWidget
 import com.purride.pixelui.internal.PageViewWidget
@@ -587,6 +588,31 @@ public fun TextField(
         key = key,
     )
 }
+
+/**
+ * 像素风水平滑块。
+ *
+ * @param value      当前位置，0.0（左端）..1.0（右端）
+ * @param onDrag     手指拖动时实时调用（适合需要即时反馈的场景，如 gap 大小）
+ * @param onRelease  手指抬起时调用（适合代价较高的场景，如 dot 尺寸）
+ * @param activeColor 填充区颜色，默认橙色
+ * @param trackColor  轨道/边框颜色，默认白色
+ */
+public fun Slider(
+    value: Float,
+    onDrag: (Float) -> Unit = {},
+    onRelease: (Float) -> Unit = {},
+    activeColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
+    trackColor: PixelColor = PixelColor.White,
+    key: Any? = null,
+): Widget = SliderWidget(
+    value = value,
+    onDrag = onDrag,
+    onRelease = onRelease,
+    activeColor = activeColor,
+    trackColor = trackColor,
+    key = key,
+)
 
 public fun OutlinedButton(
     text: String,

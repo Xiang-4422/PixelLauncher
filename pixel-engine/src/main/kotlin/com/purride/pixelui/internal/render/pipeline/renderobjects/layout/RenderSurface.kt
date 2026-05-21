@@ -349,6 +349,18 @@ internal class RenderSurface(
         )
     }
 
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        renderChild?.collectSliderTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
     private fun resolveChildOffsetX(availableWidth: Int, childWidth: Int): Int {
         val freeWidth = (availableWidth - childWidth).coerceAtLeast(0)
         return when (alignment) {

@@ -154,6 +154,15 @@ internal data class PixelListTarget(
 )
 
 /**
+ * 滑块命中目标。onDrag 在手指移动时调用（值 0..1），onRelease 在抬手时调用。
+ */
+internal data class PixelSliderTarget(
+    val bounds: PixelRect,
+    val onDrag: (Float) -> Unit,
+    val onRelease: (Float) -> Unit,
+)
+
+/**
  * 文本输入命中目标。
  */
 internal data class PixelTextInputTarget(
@@ -179,6 +188,7 @@ internal data class PixelRenderResult(
     val pagerTargets: List<PixelPagerTarget>,
     val listTargets: List<PixelListTarget>,
     val textInputTargets: List<PixelTextInputTarget>,
+    val sliderTargets: List<PixelSliderTarget>,
 )
 
 /**
@@ -190,6 +200,7 @@ internal data class PixelRenderSession(
     val pagerTargets: MutableList<PixelPagerTarget> = mutableListOf(),
     val listTargets: MutableList<PixelListTarget> = mutableListOf(),
     val textInputTargets: MutableList<PixelTextInputTarget> = mutableListOf(),
+    val sliderTargets: MutableList<PixelSliderTarget> = mutableListOf(),
 ) {
     /**
      * 固化当前会话为对外渲染结果。
@@ -201,6 +212,7 @@ internal data class PixelRenderSession(
             pagerTargets = pagerTargets,
             listTargets = listTargets,
             textInputTargets = textInputTargets,
+            sliderTargets = sliderTargets,
         )
     }
 }

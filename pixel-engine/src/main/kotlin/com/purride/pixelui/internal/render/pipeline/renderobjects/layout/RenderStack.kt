@@ -152,6 +152,21 @@ internal class RenderStack(
         }
     }
 
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        renderChildren.forEach { child ->
+            val childOffset = resolveChildOffset(child)
+            child.collectSliderTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
     /**
      * 解析子节点在 stack 内的偏移。
      */
@@ -366,6 +381,18 @@ internal class RenderPositioned(
         targets: MutableList<PixelTextInputTarget>,
     ) {
         renderChild?.collectTextInputTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        renderChild?.collectSliderTargets(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
             targets = targets,

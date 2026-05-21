@@ -186,6 +186,15 @@ public abstract class RenderBox : RenderObject() {
         offsetY: Int,
         targets: MutableList<PixelTextInputTarget>,
     ) = Unit
+
+    /**
+     * 导出当前子树里的滑块目标。框架内部使用，不暴露给外部扩展点。
+     */
+    internal open fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) = Unit
 }
 
 /**

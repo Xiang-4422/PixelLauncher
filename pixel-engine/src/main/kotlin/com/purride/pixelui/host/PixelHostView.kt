@@ -30,6 +30,7 @@ import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelListTarget
+import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.HostRootWidget
 import com.purride.pixelui.internal.NestedScrollSession
@@ -79,6 +80,8 @@ public class PixelHostView @JvmOverloads constructor(
     private var contentProvider: RootWidgetProvider? = null
     private var lastRenderResult: PixelRenderResult? = null
     private var pixelGapEnabled: Boolean = true
+    private var pixelGapRatio: Float = 1.0f
+    private var activeSliderTarget: PixelSliderTarget? = null
     private val frameLoop = PixelHostFrameLoop()
     private var velocityTracker: VelocityTracker? = null
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
@@ -182,12 +185,22 @@ public class PixelHostView @JvmOverloads constructor(
             pagerTargets = emptyList(),
             listTargets = emptyList(),
             textInputTargets = emptyList(),
+            sliderTargets = emptyList(),
         )
         invalidate()
     }
 
     override fun setPixelGapEnabled(enabled: Boolean) {
         pixelGapEnabled = enabled
+        invalidate()
+    }
+
+    /**
+     * 设置像素间隙大小比例（0.0 = 无间隙，1.0 = 最大间隙）。
+     * 当 [setPixelGapEnabled] 为 false 时本值无效。
+     */
+    public fun setPixelGapRatio(ratio: Float) {
+        pixelGapRatio = ratio.coerceIn(0f, 1f)
         invalidate()
     }
 
@@ -256,12 +269,19 @@ public class PixelHostView @JvmOverloads constructor(
                 lastPagerLogicalX = logicalPoint.first
                 lastPagerLogicalY = logicalPoint.second
                 lastListLogicalY = logicalPoint.second
-                candidatePagerTarget = lastRenderResult
-                    ?.pagerTargets
+                activeSliderTarget = lastRenderResult
+                    ?.sliderTargets
                     ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-                candidateListTarget = lastRenderResult
-                    ?.listTargets
-                    ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                candidatePagerTarget = if (activeSliderTarget == null) {
+                    lastRenderResult
+                        ?.pagerTargets
+                        ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                } else null
+                candidateListTarget = if (activeSliderTarget == null) {
+                    lastRenderResult
+                        ?.listTargets
+                        ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
+                } else null
                 val textInputTarget = lastRenderResult
                     ?.textInputTargets
                     ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
@@ -279,6 +299,14 @@ public class PixelHostView @JvmOverloads constructor(
                 val rawDeltaX = event.x - touchDownX
                 val rawDeltaY = event.y - touchDownY
                 if (abs(rawDeltaX) > touchSlop || abs(rawDeltaY) > touchSlop) touchMoved = true
+
+                activeSliderTarget?.let { target ->
+                    val localX = logicalPoint.first - target.bounds.left
+                    val ratio = (localX.toFloat() / target.bounds.width).coerceIn(0f, 1f)
+                    target.onDrag(ratio)
+                    invalidate()
+                    return true
+                }
 
                 activePagerTarget?.let { target ->
                     val deltaPx = when (target.axis) {
@@ -369,6 +397,16 @@ public class PixelHostView @JvmOverloads constructor(
                 velocityTracker?.computeCurrentVelocity(1000)
                 val logicalPoint = mapTouchToLogical(event.x, event.y)
 
+                activeSliderTarget?.let { target ->
+                    val localX = if (logicalPoint != null) logicalPoint.first - target.bounds.left
+                                 else target.bounds.width / 2
+                    val ratio = (localX.toFloat() / target.bounds.width).coerceIn(0f, 1f)
+                    target.onRelease(ratio)
+                    activeSliderTarget = null
+                    invalidate()
+                    return true
+                }
+
                 activePagerTarget?.let { target ->
                     val velocityPxPerSecond = rawVelocityToLogical(velocityTracker, target.axis)
                     target.controller.endDrag(target.state, pagerViewportSize(target), velocityPxPerSecond)
@@ -409,6 +447,7 @@ public class PixelHostView @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_CANCEL -> {
+                activeSliderTarget = null
                 activePagerTarget?.let { target ->
                     target.controller.cancelDrag(target.state)
                     invalidate()
@@ -530,6 +569,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewHeight = height,
             profile = screenProfile,
             pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
         ) ?: return 0f
         val rawVelocity = when (axis) {
             PixelAxis.HORIZONTAL -> velocityTracker?.xVelocity ?: 0f
@@ -552,6 +592,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewHeight = height,
             profile = screenProfile,
             pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
         ) ?: return
 
         val bw = buffer.width
@@ -632,6 +673,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewHeight = height,
             profile = screenProfile,
             pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
         )
     }
 }

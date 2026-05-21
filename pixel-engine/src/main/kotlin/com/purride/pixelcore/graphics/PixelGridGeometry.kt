@@ -24,11 +24,16 @@ public object PixelGridGeometryResolver {
     private const val COMPACT_DOT_INSET_PX = 0.5f
     private const val COMPACT_CELL_SIZE_THRESHOLD_PX = 8f
 
+    /**
+     * @param pixelGapRatio  间隙大小比例，0.0 = 无间隙，1.0 = 最大间隙（默认 1.0）。
+     *   当 [pixelGapEnabled] 为 false 或本值 ≤ 0 时，dotInset 均为 0。
+     */
     public fun resolve(
         viewWidth: Int,
         viewHeight: Int,
         profile: ScreenProfile,
         pixelGapEnabled: Boolean = true,
+        pixelGapRatio: Float = 1.0f,
     ): PixelGridGeometry? {
         if (viewWidth <= 0 || viewHeight <= 0) {
             return null
@@ -49,13 +54,15 @@ public object PixelGridGeometryResolver {
         val contentHeight = cellSize * profile.logicalHeight
         val originX = floor((viewWidth - contentWidth) / 2f)
         val originY = floor((viewHeight - contentHeight) / 2f)
-        val dotInset = if (!pixelGapEnabled) {
+        val effectiveRatio = pixelGapRatio.coerceIn(0f, 1f)
+        val dotInset = if (!pixelGapEnabled || effectiveRatio <= 0f) {
             0f
         } else {
-            when {
+            val maxInset = when {
                 cellSize <= COMPACT_CELL_SIZE_THRESHOLD_PX -> COMPACT_DOT_INSET_PX
                 else -> max(1f, floor(cellSize * DOT_INSET_RATIO))
             }
+            maxInset * effectiveRatio
         }
         val dotSize = max(1f, cellSize - (dotInset * 2f))
         return PixelGridGeometry(
@@ -76,12 +83,14 @@ public object PixelGridGeometryResolver {
         viewHeight: Int,
         profile: ScreenProfile,
         pixelGapEnabled: Boolean = true,
+        pixelGapRatio: Float = 1.0f,
     ): Pair<Int, Int>? {
         val geometry = resolve(
             viewWidth = viewWidth,
             viewHeight = viewHeight,
             profile = profile,
             pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
         ) ?: return null
 
         val localX = touchX - geometry.originX

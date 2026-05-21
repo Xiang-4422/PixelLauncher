@@ -366,6 +366,22 @@ internal class RenderFlex(
         }
     }
 
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val children = renderChildren
+        children.forEachIndexed { index, child ->
+            val childOffset = childOffsets[index]
+            child.collectSliderTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
     /**
      * 解析当前主轴尺寸对应的输出宽高。
      */
@@ -620,6 +636,14 @@ internal class RenderFlexChild(
         targets: MutableList<PixelTextInputTarget>,
     ) {
         (child as? RenderBox)?.collectTextInputTargets(offsetX, offsetY, targets)
+    }
+
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        (child as? RenderBox)?.collectSliderTargets(offsetX, offsetY, targets)
     }
 }
 

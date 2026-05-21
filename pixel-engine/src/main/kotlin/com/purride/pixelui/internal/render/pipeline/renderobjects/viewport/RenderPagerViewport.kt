@@ -230,6 +230,26 @@ internal class RenderPagerViewport(
         }
     }
 
+    override fun collectSliderTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSliderTarget>,
+    ) {
+        val collected = mutableListOf<PixelSliderTarget>()
+        collectVisiblePageTargets(
+            offsetX = offsetX,
+            offsetY = offsetY,
+            collect = { child, childOffsetX, childOffsetY ->
+                child.collectSliderTargets(childOffsetX, childOffsetY, collected)
+            },
+        )
+        collected.mapNotNullTo(targets) { target ->
+            target.bounds.intersect(globalBounds(offsetX, offsetY))?.let { bounds ->
+                target.copy(bounds = bounds)
+            }
+        }
+    }
+
     /**
      * 渲染指定页到从池借出的独立缓冲。调用方必须在用完后释放回 [pool]。
      */
