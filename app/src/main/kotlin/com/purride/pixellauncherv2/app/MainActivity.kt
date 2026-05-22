@@ -78,8 +78,8 @@ import java.util.concurrent.Executors
 /**
  * 启动器运行时的总编排入口。
  *
- * 它持有各类仓库，把 Android 输入转换成 [LauncherState] 变化，驱动动画 ticker，
- * 并要求 [PixelRenderer] 把当前状态重新绘制到 [PixelFrameView]。
+ * 持有各类仓库，把 Android 输入转换成 [LauncherState] 变化，驱动充电动画 ticker，
+ * 并通过 [LauncherRootHost] 把最新状态提交给 pixel-engine 渲染。
  */
 class MainActivity : AppCompatActivity() {
 
@@ -89,7 +89,6 @@ class MainActivity : AppCompatActivity() {
     private val throttleClickHelper = ThrottleClickHelper()
     private val terminalStatusProvider = TerminalStatusProvider()
 
-    // Phase 0+: ViewModel layer (runs alongside old renderer; replaces old callbacks incrementally)
     private lateinit var launcherViewModel: LauncherViewModel
 
     // Phase 8: unified root host (replaces Phases 3–7 individual hosts)
