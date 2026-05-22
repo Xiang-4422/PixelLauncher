@@ -15,18 +15,12 @@ import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.provider.Telephony
-import android.text.Editable
-import android.text.InputFilter
-import android.text.InputType
-import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -71,23 +65,14 @@ import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
-import com.purride.pixellauncherv2.render.GlyphStyle
-import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.LauncherAnimationState
-import com.purride.pixellauncherv2.render.PixelFrameView
-import com.purride.pixellauncherv2.render.PixelGlDisplayView
-import com.purride.pixellauncherv2.render.PixelDisplayView
-import com.purride.pixellauncherv2.render.PixelFontEngine
+import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelFontSize
 import com.purride.pixellauncherv2.render.PixelFontStyle
-import com.purride.pixellauncherv2.render.PixelFontResolver
-import com.purride.pixellauncherv2.render.PixelPalette
-import com.purride.pixellauncherv2.render.RenderPerfLogger
-import com.purride.pixellauncherv2.render.PixelRenderer
-import com.purride.pixellauncherv2.render.PixelShape
-import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.ScreenProfile
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.util.TerminalStatusProvider
@@ -109,7 +94,7 @@ import java.util.concurrent.Executors
  * 它持有各类仓库，把 Android 输入转换成 [LauncherState] 变化，驱动动画 ticker，
  * 并要求 [PixelRenderer] 把当前状态重新绘制到 [PixelFrameView]。
  */
-class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
+class MainActivity : AppCompatActivity() {
 
     private val backgroundExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -134,19 +119,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var smsRepository: SmsRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var rainForecastRepository: RainForecastRepository
-    private lateinit var pixelFontResolver: PixelFontResolver
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
-    private lateinit var pixelFontEngine: PixelFontEngine
-    private lateinit var pixelRenderer: PixelRenderer
-    private lateinit var pixelFrameView: PixelFrameView
-    private lateinit var drawerInputProxy: EditText
-    private lateinit var smsDraftInputProxy: EditText
-
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
-    private var palette: PixelPalette = PixelPalette.terminalGreen()
-    private var pixelShape: PixelShape = PixelShape.SQUARE
-    private var dotSizePx: Int = ScreenProfileFactory.defaultDotSizePx
     private var pixelGapEnabled: Boolean = true
     private var selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR
     private var state = LauncherState()
@@ -154,8 +129,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var loadGeneration = 0
     private var launchPending = false
     private var launchRunnable: Runnable? = null
-    private var syncingDrawerInputProxyText = false
-    private var syncingSmsDraftInputProxyText = false
     private var interactionTickerLastUptimeMs: Long = 0L
     private var usageAccessPromptShown = false
     private var homeDataPermissionPromptShown = false
@@ -242,16 +215,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         smsRepository = SmsRepository(applicationContext)
         deviceLocationRepository = DeviceLocationRepository(applicationContext)
         rainForecastRepository = RainForecastRepository()
-        pixelFontResolver = PixelFontResolver(applicationContext)
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
-        val resolvedPixelFont = pixelFontResolver.createFont(
-            appearanceSettings.fontSize,
-            appearanceSettings.fontStyle,
-        )
-        pixelFontEngine = resolvedPixelFont.engine
-        pixelShape = appearanceSettings.pixelShape
-        dotSizePx = appearanceSettings.dotSizePx
         pixelGapEnabled = appearanceSettings.pixelGapEnabled
         selectedTheme = appearanceSettings.theme
         state = LauncherStateTransitions.updateAppearance(
@@ -280,28 +245,16 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         )
         refreshDerivedUiState(render = false)
 
-        pixelRenderer = PixelRenderer(pixelFontEngine)
         appLauncher = AndroidAppLauncher(this)
         windowModeController = WindowModeController(window)
         windowModeController.hideSystemBars()
-        updatePalette()
         val metrics = resources.displayMetrics
         screenProfile = ScreenProfileFactory.create(
             widthPx = metrics.widthPixels,
             heightPx = metrics.heightPixels,
-            dotSizePx = dotSizePx,
-            pixelShape = pixelShape,
+            dotSizePx = appearanceSettings.dotSizePx,
+            pixelShape = appearanceSettings.pixelShape,
         )
-        pixelFrameView = createPixelFrameView().apply {
-            interactionListener = this@MainActivity
-            setPalette(palette)
-            setPixelGapEnabled(pixelGapEnabled)
-        }
-        pixelFrameView.asView().apply {
-            isFocusable = true
-            isFocusableInTouchMode = true
-            requestFocus()
-        }
         // Phase 8: unified root host (single host for all 9 modes)
         launcherRootHost = LauncherRootHost(
             context = this,
@@ -321,158 +274,11 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 onMainPageChanged    = ::onMainPageChanged,
             ),
         )
-        drawerInputProxy = EditText(this).apply {
-            layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
-            alpha = 0f
-            background = null
-            setSingleLine(true)
-            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_ACTION_NONE
-            inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
-                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            filters = arrayOf(InputFilter { source, start, end, _, _, _ ->
-                if (source == null) {
-                    return@InputFilter null
-                }
-                val filtered = DrawerAsciiInputSanitizer.filter(source.subSequence(start, end).toString())
-                if (filtered.length == end - start) {
-                    null
-                } else {
-                    filtered
-                }
-            })
-            isFocusable = true
-            isFocusableInTouchMode = true
-            setText(state.drawerQuery)
-            setSelection(text?.length ?: 0)
-            setOnKeyListener { _, keyCode, event ->
-                if (event.action != KeyEvent.ACTION_DOWN || state.mode != LauncherMode.APP_DRAWER) {
-                    return@setOnKeyListener false
-                }
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_UP,
-                    KeyEvent.KEYCODE_DPAD_DOWN,
-                    KeyEvent.KEYCODE_DPAD_LEFT,
-                    KeyEvent.KEYCODE_DPAD_RIGHT,
-                    KeyEvent.KEYCODE_DPAD_CENTER,
-                    KeyEvent.KEYCODE_ENTER,
-                    KeyEvent.KEYCODE_NUMPAD_ENTER,
-                    KeyEvent.KEYCODE_SPACE -> onKeyDown(keyCode, event)
-
-                    else -> false
-                }
-            }
-            setOnEditorActionListener { _, _, event ->
-                if (state.mode != LauncherMode.APP_DRAWER || state.drawerQuery.isBlank()) {
-                    return@setOnEditorActionListener false
-                }
-                val isEnterAction = event == null ||
-                    event.action == KeyEvent.ACTION_DOWN &&
-                    (event.keyCode == KeyEvent.KEYCODE_ENTER || event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)
-                if (!isEnterAction) {
-                    return@setOnEditorActionListener false
-                }
-                launchAppAtIndex(0)
-                true
-            }
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-
-                override fun afterTextChanged(s: Editable?) {
-                    if (syncingDrawerInputProxyText || state.mode != LauncherMode.APP_DRAWER) {
-                        return
-                    }
-                    val query = s?.toString().orEmpty()
-                    val filteredQuery = DrawerAsciiInputSanitizer.filter(query)
-                    if (filteredQuery != query) {
-                        syncingDrawerInputProxyText = true
-                        setText(filteredQuery)
-                        setSelection(filteredQuery.length)
-                        syncingDrawerInputProxyText = false
-                        return
-                    }
-                    if (query == state.drawerQuery) {
-                        return
-                    }
-                    recordInteraction()
-                    val focusedState = if (state.isDrawerSearchFocused && !state.isDrawerRailSliding) {
-                        state
-                    } else {
-                        state.copy(
-                            isDrawerSearchFocused = true,
-                            isDrawerRailSliding = false,
-                        )
-                    }
-                    settleDrawerMotionBeforeExplicitAction()
-                    state = LauncherStateTransitions.updateDrawerQuery(
-                        state = focusedState,
-                        query = query,
-                        visibleRows = visibleRows(),
-                    )
-                    if (query.isNotBlank() && currentDrawerApps().size == 1) {
-                        launchSelectedApp()
-                        return
-                    }
-                    renderCurrentFrame()
-                    startAnimationTickerIfNeeded()
-                }
-            })
-        }
-        smsDraftInputProxy = EditText(this).apply {
-            layoutParams = FrameLayout.LayoutParams(1, 1, Gravity.TOP or Gravity.START)
-            alpha = 0f
-            background = null
-            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_ACTION_SEND
-            inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
-                InputType.TYPE_TEXT_FLAG_AUTO_CORRECT
-            setSingleLine(true)
-            setOnEditorActionListener { _, actionId, event ->
-                val isEnterKey = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN
-                if (actionId == EditorInfo.IME_ACTION_SEND || isEnterKey) {
-                    sendSmsDraft()
-                    true
-                } else {
-                    false
-                }
-            }
-            addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
-
-                override fun afterTextChanged(editable: Editable?) {
-                    if (syncingSmsDraftInputProxyText) {
-                        return
-                    }
-                    val draft = editable?.toString().orEmpty()
-                    if (draft == state.smsDraftText) {
-                        return
-                    }
-                    state = LauncherStateTransitions.updateSmsDraftText(
-                        state = state,
-                        smsDraftText = draft,
-                    )
-                    renderCurrentFrame()
-                }
-            })
-        }
         val rootContainer = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
-            addView(
-                pixelFrameView.asView(),
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            addView(drawerInputProxy)
-            addView(smsDraftInputProxy)
             // Phase 8: unified root host (single engine overlay for all modes)
             addView(
                 launcherRootHost.rootView,
@@ -513,7 +319,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 }
             }
         })
-        pixelFrameView.asView().addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+        launcherRootHost.rootView.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             val newWidth = right - left
             val newHeight = bottom - top
             val oldWidth = oldRight - oldLeft
@@ -538,16 +344,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 }
             }
         }
-        // Phase 1: apply LauncherTheme colours to the engine HostView (drawer).
-        // Other engine HostViews created in Phase 3+ will be wired here too.
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launcherViewModel.currentTheme.collect { theme ->
-                    applyThemeToEngineViews(theme)
-                }
-            }
-        }
-
         renderCurrentFrame()
         handleLaunchIntent(intent)
         suppressActivityAnimations()
@@ -558,9 +354,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      */
     override fun onResume() {
         super.onResume()
-        if (::pixelFrameView.isInitialized) {
-            pixelFrameView.onHostResume()
-        }
         windowModeController.hideSystemBars()
         startClockTicker()
         deviceStatusRepository.start(::onDeviceStatusChanged)
@@ -617,12 +410,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     override fun onPause() {
         hideDrawerKeyboard()
         resetDrawerVerticalGesture()
-        if (::drawerInputProxy.isInitialized) {
-            drawerInputProxy.clearFocus()
-        }
-        if (::smsDraftInputProxy.isInitialized) {
-            smsDraftInputProxy.clearFocus()
-        }
         mainHandler.removeCallbacks(clockTicker)
         mainHandler.removeCallbacks(animationTicker)
         mainHandler.removeCallbacks(interactionTicker)
@@ -636,9 +423,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         communicationStatusRepository.stop()
         smsRepository.stop()
         suppressActivityAnimations()
-        if (::pixelFrameView.isInitialized) {
-            pixelFrameView.onHostPause()
-        }
         super.onPause()
     }
 
@@ -681,7 +465,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
         backgroundExecutor.shutdownNow()
-        pixelFontEngine.clearCache()
         super.onDestroy()
     }
 
@@ -817,7 +600,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
-                            focusSmsDraftInput()
+                            Unit // engine TextField handles SMS draft focus
                         } else {
                             sendSmsDraft()
                         }
@@ -857,46 +640,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
         updateTextInputFocus()
-    }
-
-    /**
-     * Interaction callbacks from PixelFrameView.InteractionListener.
-     * The engine host (LauncherRootHost) overlays the frame view and handles all touch;
-     * these methods are never called in practice.
-     */
-    override fun onLogicalTap(x: Int, y: Int) = Unit
-    override fun onLogicalDragStart(x: Int, y: Int): Boolean = false
-    override fun onLogicalDragMove(x: Int, y: Int): Boolean = false
-    override fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean = false
-
-    override fun onSwipeUp() {
-        if (launchPending || animationState.bootSequence != null) {
-            return
-        }
-        if (wakeIfIdle()) {
-            return
-        }
-        recordInteraction()
-    }
-
-    override fun onSwipeDown() {
-        if (launchPending || animationState.bootSequence != null) {
-            return
-        }
-        if (wakeIfIdle()) {
-            return
-        }
-        recordInteraction()
-    }
-
-    override fun onSwipeLeft() {
-        if (launchPending || animationState.bootSequence != null) return
-        wakeIfIdle()
-    }
-
-    override fun onSwipeRight() {
-        if (launchPending || animationState.bootSequence != null) return
-        wakeIfIdle()
     }
 
     /**
@@ -1171,28 +914,12 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
     }
 
-    private fun createPixelFrameView(): PixelFrameView {
-        val activityManager = getSystemService(ActivityManager::class.java)
-        val supportsGles2 = (activityManager?.deviceConfigurationInfo?.reqGlEsVersion ?: 0) >= REQUIRED_GLES_VERSION
-        if (!supportsGles2) {
-            RenderPerfLogger.mark("frameView", "backend=canvas reason=no_gles2")
-            return PixelDisplayView(this)
-        }
-        return runCatching {
-            RenderPerfLogger.mark("frameView", "backend=gl")
-            PixelGlDisplayView(this)
-        }.getOrElse {
-            RenderPerfLogger.mark("frameView", "backend=canvas reason=gl_init_failed")
-            PixelDisplayView(this)
-        }
-    }
-
     private fun updateScreenProfile(widthPx: Int, heightPx: Int): Boolean {
         val newProfile = ScreenProfileFactory.create(
             widthPx = widthPx,
             heightPx = heightPx,
-            dotSizePx = dotSizePx,
-            pixelShape = pixelShape,
+            dotSizePx = state.selectedDotSizePx,
+            pixelShape = state.selectedPixelShape,
         )
         if (newProfile == screenProfile) {
             return false
@@ -1357,125 +1084,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         updateDrawerInputFocus()
     }
 
-    private fun syncDrawerInputProxyText() {
-        if (!::drawerInputProxy.isInitialized) {
-            return
-        }
-        val targetQuery = state.drawerQuery
-        val currentText = drawerInputProxy.text?.toString().orEmpty()
-        if (currentText == targetQuery) {
-            return
-        }
-        syncingDrawerInputProxyText = true
-        drawerInputProxy.setText(targetQuery)
-        drawerInputProxy.setSelection(targetQuery.length)
-        syncingDrawerInputProxyText = false
-    }
-
-    private fun showDrawerKeyboard() {
-        if (!::drawerInputProxy.isInitialized) {
-            return
-        }
-        drawerInputProxy.post {
-            if (state.mode != LauncherMode.APP_DRAWER || !state.isDrawerSearchFocused) {
-                return@post
-            }
-            if (!drawerInputProxy.hasFocus()) {
-                drawerInputProxy.requestFocus()
-            }
-            drawerInputProxy.setSelection(drawerInputProxy.text?.length ?: 0)
-            val inputManager = getSystemService(InputMethodManager::class.java) ?: return@post
-            inputManager.showSoftInput(drawerInputProxy, InputMethodManager.SHOW_IMPLICIT)
-        }
-    }
-
     private fun hideDrawerKeyboard() {
-        if (!::drawerInputProxy.isInitialized) {
-            return
-        }
         val inputManager = getSystemService(InputMethodManager::class.java) ?: return
-        inputManager.hideSoftInputFromWindow(drawerInputProxy.windowToken, 0)
-        if (::smsDraftInputProxy.isInitialized) {
-            inputManager.hideSoftInputFromWindow(smsDraftInputProxy.windowToken, 0)
-        }
-    }
-
-    private fun syncSmsDraftInputProxyText() {
-        if (!::smsDraftInputProxy.isInitialized) {
-            return
-        }
-        val targetDraft = state.smsDraftText
-        val currentText = smsDraftInputProxy.text?.toString().orEmpty()
-        if (currentText == targetDraft) {
-            return
-        }
-        syncingSmsDraftInputProxyText = true
-        smsDraftInputProxy.setText(targetDraft)
-        smsDraftInputProxy.setSelection(targetDraft.length)
-        syncingSmsDraftInputProxyText = false
-    }
-
-    private fun showSmsDraftKeyboard() {
-        if (!::smsDraftInputProxy.isInitialized) {
-            return
-        }
-        smsDraftInputProxy.post {
-            if (state.mode != LauncherMode.SMS_THREAD_DETAIL || state.smsPermissionState != SmsPermissionState.READY) {
-                return@post
-            }
-            syncSmsDraftInputProxyText()
-            if (!smsDraftInputProxy.hasFocus()) {
-                smsDraftInputProxy.requestFocus()
-            }
-            smsDraftInputProxy.setSelection(smsDraftInputProxy.text?.length ?: 0)
-            val inputManager = getSystemService(InputMethodManager::class.java) ?: return@post
-            inputManager.showSoftInput(smsDraftInputProxy, InputMethodManager.SHOW_IMPLICIT)
-        }
-    }
-
-    private fun focusSmsDraftInput() {
-        if (!::smsDraftInputProxy.isInitialized) {
-            return
-        }
-        syncSmsDraftInputProxyText()
-        showSmsDraftKeyboard()
+        inputManager.hideSoftInputFromWindow(window.decorView.windowToken, 0)
     }
 
     private fun updateTextInputFocus() {
-        if (!::drawerInputProxy.isInitialized || !::pixelFrameView.isInitialized || !::smsDraftInputProxy.isInitialized) {
-            return
-        }
-        if (state.mode == LauncherMode.APP_DRAWER) {
-            // LauncherRootHost's engine TextField manages drawer keyboard; hide legacy proxy
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
             hideDrawerKeyboard()
-            if (drawerInputProxy.hasFocus()) {
-                drawerInputProxy.clearFocus()
-            }
-            if (smsDraftInputProxy.hasFocus()) {
-                smsDraftInputProxy.clearFocus()
-            }
-            return
-        }
-        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused) {
-            syncDrawerInputProxyText()
-            showDrawerKeyboard()
-            if (smsDraftInputProxy.hasFocus()) {
-                smsDraftInputProxy.clearFocus()
-            }
-        } else if (state.mode == LauncherMode.SMS_THREAD_DETAIL && smsDraftInputProxy.hasFocus()) {
-            showSmsDraftKeyboard()
-            if (drawerInputProxy.hasFocus()) {
-                drawerInputProxy.clearFocus()
-            }
-        } else {
-            hideDrawerKeyboard()
-            if (drawerInputProxy.hasFocus()) {
-                drawerInputProxy.clearFocus()
-            }
-            if (smsDraftInputProxy.hasFocus()) {
-                smsDraftInputProxy.clearFocus()
-            }
-            pixelFrameView.asView().requestFocus()
         }
     }
 
@@ -1506,7 +1122,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     state = state,
                     visibleRows = visibleRows(),
                 )
-                syncDrawerInputProxyText()
                 renderCurrentFrame()
                 return true
             }
@@ -1517,7 +1132,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     state = state,
                     visibleRows = visibleRows(),
                 )
-                syncDrawerInputProxyText()
                 renderCurrentFrame()
                 startAnimationTickerIfNeeded()
                 updateDrawerInputFocus()
@@ -1552,7 +1166,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             text = filteredText,
             visibleRows = visibleRows(),
         )
-        syncDrawerInputProxyText()
         renderCurrentFrame()
         return true
     }
@@ -1648,7 +1261,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             smsIntentLogTag,
             "openSmsThread afterMode=${state.mode} currentThread=${state.smsCurrentThreadId} address=${state.smsCurrentAddress}",
         )
-        syncSmsDraftInputProxyText()
         renderCurrentFrame()
         updateTextInputFocus()
         refreshSmsThreadDetail(
@@ -1867,7 +1479,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         address = sentEntry.address,
                         messages = nextMessages,
                     )
-                    syncSmsDraftInputProxyText()
                     renderCurrentFrame()
                     refreshSmsThreads(render = false)
                     refreshCommunicationStatus(render = false)
@@ -2119,15 +1730,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         return state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
     }
 
-    private fun shouldAnimateHomeMarquee(): Boolean {
-        if (state.mode != LauncherMode.HOME || state.homeContextCard != HomeContextCard.QUOTE) {
-            return false
-        }
-        val quote = state.quoteText.ifBlank { return false }
-        val homeLayout = HomeLayout.metrics(screenProfile)
-        val quoteWidth = pixelFontEngine.measureText(quote, GlyphStyle.UI_SMALL_10)
-        return quoteWidth > homeLayout.innerWidth
-    }
+    private fun shouldAnimateHomeMarquee(): Boolean = false
 
     private fun shouldAnimateHeaderCharge(): Boolean {
         if (!state.isCharging || state.batteryLevel >= 100) {
@@ -2157,18 +1760,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
     ) {
-        if (::pixelFontEngine.isInitialized) {
-            pixelFontEngine.clearCache()
-        }
-
-        val resolvedPixelFont = pixelFontResolver.createFont(fontSize, fontStyle)
-        pixelFontEngine = resolvedPixelFont.engine
-        pixelRenderer = PixelRenderer(pixelFontEngine)
-        pixelShape = newPixelShape
-        dotSizePx = newDotSizePx
         pixelGapEnabled = newPixelGapEnabled
         selectedTheme = newTheme
-        pixelFrameView.setPixelGapEnabled(newPixelGapEnabled)
         fontSettingsRepository.setAppearanceSettings(
             fontSize = fontSize,
             fontStyle = fontStyle,
@@ -2187,9 +1780,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             selectedTheme = newTheme,
         )
 
-        val displayView = pixelFrameView.asView()
-        val widthPx = displayView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
-        val heightPx = displayView.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+        val widthPx = launcherRootHost.rootView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val heightPx = launcherRootHost.rootView.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
         val screenProfileChanged = updateScreenProfile(widthPx, heightPx)
         refreshDerivedUiState(render = !screenProfileChanged)
     }
@@ -2420,29 +2012,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             state = state,
             terminalStatusText = terminalStatusProvider.buildStatus(state),
         )
-        updatePalette()
         if (render) {
             renderCurrentFrame()
         }
-    }
-
-    private fun updatePalette() {
-        palette = PixelPalette.fromTheme(
-            theme = selectedTheme,
-            isLowBattery = state.batteryLevel <= LOW_BATTERY_THRESHOLD,
-        )
-        if (::pixelFrameView.isInitialized) {
-            pixelFrameView.setPalette(palette)
-        }
-    }
-
-    /**
-     * 将 [LauncherTheme] 颜色应用到 pixel-engine HostView。
-     * LauncherRootHost 在每帧 [renderLauncherRootFrameIfNeeded] 中同步颜色，
-     * 此方法仅保留作为主题切换时的触发点（当前为空实现）。
-     */
-    private fun applyThemeToEngineViews(theme: com.purride.pixellauncherv2.ui.theme.LauncherTheme) {
-        // Colors are synced per-frame inside LauncherRootHost.update() — no eager sync needed.
     }
 
     private fun recordInteraction() {
@@ -2503,7 +2075,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     companion object {
-        const val REQUIRED_GLES_VERSION = 0x20000
         const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
         const val interactionFrameDelayMs: Long = 16L
