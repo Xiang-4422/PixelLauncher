@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
@@ -38,8 +37,6 @@ import com.purride.pixellauncherv2.data.CommunicationStatusRepository
 import com.purride.pixellauncherv2.data.DeviceLocationRepository
 import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
-import com.purride.pixellauncherv2.data.DeviceMotionRepository
-import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.GeoPoint
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
@@ -85,12 +82,8 @@ import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.HorizontalPageController
 import com.purride.pixellauncherv2.render.HorizontalPageSnapshot
 import com.purride.pixellauncherv2.render.HorizontalPageState
-import com.purride.pixellauncherv2.render.IdleMaskFrame
-import com.purride.pixellauncherv2.render.LauncherAnimationState
-import com.purride.pixellauncherv2.render.IdleFluidState
-import com.purride.pixellauncherv2.render.IdleSimulationProfile
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
-import com.purride.pixellauncherv2.render.ChargeIdleEffectRegistry
+import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.render.PixelFrameView
 import com.purride.pixellauncherv2.render.PixelGlDisplayView
 import com.purride.pixellauncherv2.render.PixelDisplayView
@@ -105,10 +98,7 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
-import com.purride.pixellauncherv2.render.IdleFluidEngine
-import com.purride.pixellauncherv2.render.IdleFluidTuning
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
-import com.purride.pixellauncherv2.system.ScreenGravityMapper
 import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.util.TerminalStatusProvider
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
@@ -154,15 +144,12 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private lateinit var smsRepository: SmsRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var rainForecastRepository: RainForecastRepository
-    private lateinit var deviceMotionRepository: DeviceMotionRepository
     private lateinit var pixelFontResolver: PixelFontResolver
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
     private lateinit var pixelFontEngine: PixelFontEngine
     private lateinit var pixelRenderer: PixelRenderer
     private lateinit var pixelFrameView: PixelFrameView
-    private lateinit var idlePhysicsThread: HandlerThread
-    private lateinit var idlePhysicsHandler: Handler
     private lateinit var drawerInputProxy: EditText
     private lateinit var smsDraftInputProxy: EditText
 
@@ -177,33 +164,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var loadGeneration = 0
     private var launchPending = false
     private var launchRunnable: Runnable? = null
-    private val idleFluidEngine = IdleFluidEngine(tuning = IdleFluidTuning.default())
-    private var motionSnapshot = DeviceMotionSnapshot()
-    private var idlePhysicsAccumulatorMs: Long = 0L
-    private var idlePhysicsLastTickUptimeMs: Long = 0L
-    private var idlePhysicsRunning = false
-    private var idlePhysicsState = state.idleFluidState
-    @Volatile
-    private var idleGravityX: Float = 0f
-    @Volatile
-    private var idleGravityY: Float = DeviceMotionSnapshot.staticGravityMagnitude
-    @Volatile
-    private var idleBatteryLevelSnapshot: Int = state.batteryLevel
-    @Volatile
-    private var idleLogicalWidthSnapshot: Int = screenProfile.logicalWidth
-    @Volatile
-    private var idleLogicalHeightSnapshot: Int = screenProfile.logicalHeight
-    @Volatile
-    private var idleSimulationWidthSnapshot: Int = screenProfile.logicalWidth
-    @Volatile
-    private var idleSimulationHeightSnapshot: Int = screenProfile.logicalHeight
-    @Volatile
-    private var idleChargeIdleEffectSnapshot: ChargeIdleEffect = state.chargeIdleEffect
-    private var idlePhysicsSyncedBatteryLevel: Int = Int.MIN_VALUE
-    private var idlePhysicsSyncedSimulationWidth: Int = -1
-    private var idlePhysicsSyncedSimulationHeight: Int = -1
-    private var idleMaskSequence: Long = 0L
-    private var idleChargeMaskFrame: IdleMaskFrame? = null
     private var syncingDrawerInputProxyText = false
     private var syncingSmsDraftInputProxyText = false
     private var drawerRailDragLastY: Int = 0
@@ -348,60 +308,9 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         val idleForMs = SystemClock.uptimeMillis() - state.lastInteractionUptimeMs
         if (idleForMs >= IDLE_TIMEOUT_MS) {
             state = LauncherStateTransitions.showIdle(state)
-            syncIdleFluidWithBattery()
-            startIdlePhysics()
             renderCurrentFrame()
         } else {
             scheduleIdleCheck()
-        }
-    }
-
-    private val idlePhysicsTicker = object : Runnable {
-        override fun run() {
-            if (!idlePhysicsRunning) {
-                return
-            }
-            val now = SystemClock.uptimeMillis()
-            if (idlePhysicsLastTickUptimeMs <= 0L) {
-                idlePhysicsLastTickUptimeMs = now
-            }
-            val frameDelta = (now - idlePhysicsLastTickUptimeMs).coerceIn(0L, idleMaxAccumulationMs)
-            idlePhysicsLastTickUptimeMs = now
-            idlePhysicsAccumulatorMs = (idlePhysicsAccumulatorMs + frameDelta)
-                .coerceAtMost(idleFixedStepMs * idleMaxCatchUpSteps)
-
-            var steps = 0
-            RenderPerfLogger.measure("idle.physics.tick") {
-                while (idlePhysicsAccumulatorMs >= idleFixedStepMs && steps < idleMaxCatchUpSteps) {
-                    val stepNow = now - idlePhysicsAccumulatorMs + idleFixedStepMs
-                    if (shouldUseChargeIdleEffectOnPhysics()) {
-                        stepChargeIdleEffectOnPhysics(stepNow)
-                    } else {
-                        stepIdleFluidOnPhysics(stepNow)
-                    }
-                    idlePhysicsAccumulatorMs -= idleFixedStepMs
-                    steps += 1
-                }
-            }
-            if (steps > 1) {
-                RenderPerfLogger.record("idle.physics.catchup", 0L)
-            }
-            if (steps >= idleMaxCatchUpSteps && idlePhysicsAccumulatorMs >= idleFixedStepMs) {
-                RenderPerfLogger.record("idle.physics.catchup.saturated", 0L)
-                idlePhysicsAccumulatorMs = 0L
-            }
-            if (steps > 0) {
-                if (usesGlIdleComposite()) {
-                    RenderPerfLogger.measure("idle.mask.submit") {
-                        pixelFrameView.submitIdleMask(currentIdleDynamicMaskFrame())
-                    }
-                } else {
-                    dispatchIdleStateToMain(currentIdleRenderState())
-                }
-            }
-            if (idlePhysicsRunning) {
-                idlePhysicsHandler.postDelayed(this, idleTickerDelayMs)
-            }
         }
     }
 
@@ -424,7 +333,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         smsRepository = SmsRepository(applicationContext)
         deviceLocationRepository = DeviceLocationRepository(applicationContext)
         rainForecastRepository = RainForecastRepository()
-        deviceMotionRepository = DeviceMotionRepository(applicationContext)
         pixelFontResolver = PixelFontResolver(applicationContext)
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
@@ -467,9 +375,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         appLauncher = AndroidAppLauncher(this)
         windowModeController = WindowModeController(window)
         windowModeController.hideSystemBars()
-        idlePhysicsThread = HandlerThread("IdlePhysics")
-        idlePhysicsThread.start()
-        idlePhysicsHandler = Handler(idlePhysicsThread.looper)
         updatePalette()
         val metrics = resources.displayMetrics
         screenProfile = ScreenProfileFactory.create(
@@ -478,7 +383,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             dotSizePx = dotSizePx,
             pixelShape = pixelShape,
         )
-        syncIdleFluidWithBattery()
         pixelFrameView = createPixelFrameView().apply {
             interactionListener = this@MainActivity
             setPalette(palette)
@@ -823,7 +727,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         nextAlarmRepository.stop()
         communicationStatusRepository.stop()
         smsRepository.stop()
-        stopIdlePhysics()
         suppressActivityAnimations()
         if (::pixelFrameView.isInitialized) {
             pixelFrameView.onHostPause()
@@ -869,12 +772,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
-        if (::idlePhysicsHandler.isInitialized) {
-            idlePhysicsHandler.removeCallbacksAndMessages(null)
-        }
-        if (::idlePhysicsThread.isInitialized) {
-            idlePhysicsThread.quitSafely()
-        }
         backgroundExecutor.shutdownNow()
         pixelFontEngine.clearCache()
         super.onDestroy()
@@ -2106,9 +2003,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // End Phase 4 ──────────────────────────────────────────────────────────────
 
-    /** IDLE mode is now engine-rendered (IdleScreen in LauncherRootHost); GL composite path is permanently disabled. */
-    private fun usesGlIdleComposite(): Boolean = false
-
     private fun createPixelFrameView(): PixelFrameView {
         val activityManager = getSystemService(ActivityManager::class.java)
         val supportsGles2 = (activityManager?.deviceConfigurationInfo?.reqGlEsVersion ?: 0) >= REQUIRED_GLES_VERSION
@@ -2145,7 +2039,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             state = state,
             visibleRows = settingsVisibleRows(),
         )
-        syncIdleFluidWithBattery()
         renderCurrentFrame()
         return true
     }
@@ -2296,7 +2189,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             isDrawerSearchFocused = shouldFocusSearchOnEntry,
             isDrawerRailSliding = false,
         )
-        stopIdlePhysics()
         if (previousMode != LauncherMode.APP_DRAWER) {
             animationState = animationState.startDrawerReveal()
             startAnimationTickerIfNeeded()
@@ -2628,7 +2520,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             state = state,
             visibleRows = settingsVisibleRows(),
         )
-        stopIdlePhysics()
         renderCurrentFrame()
         updateDrawerInputFocus()
         scheduleIdleCheck()
@@ -3900,7 +3791,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
         )
-        idleChargeIdleEffectSnapshot = chargeIdleEffect
         if (!isIdlePageEnabled && state.mode == LauncherMode.IDLE) {
             wakeFromIdle()
             return
@@ -3911,12 +3801,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun onDeviceStatusChanged(deviceStatus: DeviceStatus) {
-        val wasCharging = state.isCharging
         state = LauncherStateTransitions.updateDeviceStatus(state, deviceStatus)
-        syncIdleFluidWithBattery()
-        if (state.mode == LauncherMode.IDLE && wasCharging != state.isCharging) {
-            requestIdleChargeEffectRefresh()
-        }
         refreshDerivedUiState(render = true)
         startAnimationTickerIfNeeded()
     }
@@ -4155,7 +4040,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         state = LauncherStateTransitions.hideIdle(
             LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis()),
         )
-        stopIdlePhysics()
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
         updateDrawerInputFocus()
@@ -4178,8 +4062,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 returnMode = state.mode,
             )
         }
-        syncIdleFluidWithBattery()
-        startIdlePhysics()
         renderCurrentFrame()
         updateDrawerInputFocus()
     }
@@ -4191,278 +4073,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             val delay = (IDLE_TIMEOUT_MS - idleForMs).coerceAtLeast(0L)
             mainHandler.postDelayed(idleRunnable, delay)
         }
-    }
-
-    private fun startIdlePhysics() {
-        if (state.mode != LauncherMode.IDLE || !::idlePhysicsHandler.isInitialized) {
-            return
-        }
-        val simulationProfile = currentIdleSimulationProfile()
-        idleBatteryLevelSnapshot = state.batteryLevel
-        idleLogicalWidthSnapshot = screenProfile.logicalWidth
-        idleLogicalHeightSnapshot = screenProfile.logicalHeight
-        idleSimulationWidthSnapshot = simulationProfile.width
-        idleSimulationHeightSnapshot = simulationProfile.height
-        idleChargeIdleEffectSnapshot = state.chargeIdleEffect
-        idleGravityX = motionSnapshot.gravityX
-        idleGravityY = motionSnapshot.gravityY
-        idlePhysicsRunning = true
-        idlePhysicsSyncedBatteryLevel = Int.MIN_VALUE
-        idlePhysicsSyncedSimulationWidth = -1
-        idlePhysicsSyncedSimulationHeight = -1
-        idlePhysicsState = state.idleFluidState
-        idleChargeMaskFrame = null
-        idlePhysicsAccumulatorMs = idleFixedStepMs
-        idlePhysicsLastTickUptimeMs = SystemClock.uptimeMillis()
-        idlePhysicsHandler.removeCallbacksAndMessages(null)
-        if (::pixelFrameView.isInitialized) {
-            pixelFrameView.setIdleContinuousRendering(usesGlIdleComposite())
-            RenderPerfLogger.mark(
-                "idle.renderMode",
-                "continuous=${usesGlIdleComposite()} backend=${pixelFrameView.javaClass.simpleName}",
-            )
-        }
-        idlePhysicsHandler.post(idlePhysicsTicker)
-        deviceMotionRepository.start(::onMotionSnapshot)
-    }
-
-    private fun stopIdlePhysics() {
-        idlePhysicsRunning = false
-        deviceMotionRepository.stop()
-        if (::idlePhysicsHandler.isInitialized) {
-            idlePhysicsHandler.removeCallbacksAndMessages(null)
-        }
-        idlePhysicsAccumulatorMs = 0L
-        idlePhysicsLastTickUptimeMs = 0L
-        idlePhysicsSyncedBatteryLevel = Int.MIN_VALUE
-        idlePhysicsSyncedSimulationWidth = -1
-        idlePhysicsSyncedSimulationHeight = -1
-        idleChargeMaskFrame = null
-        if (::pixelFrameView.isInitialized) {
-            pixelFrameView.submitIdleMask(null)
-            pixelFrameView.setIdleContinuousRendering(false)
-            RenderPerfLogger.mark(
-                "idle.renderMode",
-                "continuous=false backend=${pixelFrameView.javaClass.simpleName}",
-            )
-        }
-    }
-
-    private fun onMotionSnapshot(snapshot: DeviceMotionSnapshot) {
-        val (screenGravityX, screenGravityY) = ScreenGravityMapper.mapToScreen(
-            rawGravityX = snapshot.gravityX,
-            rawGravityY = snapshot.gravityY,
-            rawGravityZ = snapshot.gravityZ,
-            rotation = display?.rotation ?: 0,
-        )
-        val (screenLinearAccelX, screenLinearAccelY) = ScreenGravityMapper.mapToScreen(
-            rawGravityX = snapshot.linearAccelX,
-            rawGravityY = snapshot.linearAccelY,
-            rawGravityZ = snapshot.linearAccelZ,
-            rotation = display?.rotation ?: 0,
-        )
-        val now = SystemClock.uptimeMillis()
-        motionSnapshot = snapshot.copy(
-            gravityX = screenGravityX,
-            gravityY = screenGravityY,
-            linearAccelX = screenLinearAccelX,
-            linearAccelY = screenLinearAccelY,
-        )
-        idleGravityX = screenGravityX
-        idleGravityY = screenGravityY
-        if (idlePhysicsRunning && ::idlePhysicsHandler.isInitialized) {
-            idlePhysicsHandler.post {
-                if (!idlePhysicsRunning) {
-                    return@post
-                }
-                idlePhysicsState = idleFluidEngine.applyDisturbance(
-                    state = idlePhysicsState,
-                    accelX = screenLinearAccelX,
-                    accelY = screenLinearAccelY,
-                    nowUptimeMs = now,
-                )
-            }
-        }
-    }
-
-    private fun stepIdleFluidOnPhysics(nowUptimeMs: Long) {
-        if (!idlePhysicsRunning) {
-            return
-        }
-        idleChargeMaskFrame = null
-        val batteryLevel = idleBatteryLevelSnapshot
-        val simulationWidth = idleSimulationWidthSnapshot.coerceAtLeast(1)
-        val simulationHeight = idleSimulationHeightSnapshot.coerceAtLeast(1)
-        if (idlePhysicsSyncedBatteryLevel != batteryLevel ||
-            idlePhysicsSyncedSimulationWidth != simulationWidth ||
-            idlePhysicsSyncedSimulationHeight != simulationHeight
-        ) {
-            idlePhysicsState = RenderPerfLogger.measure("idle.physics.syncToBattery") {
-                idleFluidEngine.syncToBattery(
-                    state = idlePhysicsState,
-                    batteryLevel = batteryLevel,
-                    simulationWidth = simulationWidth,
-                    simulationHeight = simulationHeight,
-                    gravityX = idleGravityX,
-                    gravityY = idleGravityY,
-                    nowUptimeMs = nowUptimeMs,
-                )
-            }
-            idlePhysicsSyncedBatteryLevel = batteryLevel
-            idlePhysicsSyncedSimulationWidth = simulationWidth
-            idlePhysicsSyncedSimulationHeight = simulationHeight
-        }
-        idlePhysicsState = RenderPerfLogger.measure("idle.physics.step") {
-            idleFluidEngine.step(
-                state = idlePhysicsState,
-                simulationWidth = simulationWidth,
-                simulationHeight = simulationHeight,
-                gravityX = idleGravityX,
-                gravityY = idleGravityY,
-                deltaSeconds = idleFixedStepSeconds,
-                nowUptimeMs = nowUptimeMs,
-            )
-        }
-    }
-
-    private fun stepChargeIdleEffectOnPhysics(nowUptimeMs: Long) {
-        idleChargeMaskFrame = buildChargeIdleMaskFrame(nowUptimeMs)
-    }
-
-    private fun buildIdleMaskFrame(physicsState: IdleFluidState): IdleMaskFrame {
-        val frame = RenderPerfLogger.measure("idle.mask.encode") {
-            idleMaskSequence += 1L
-            val sourceMask = physicsState.litMask
-            val encodedMask = ByteArray(sourceMask.size)
-            sourceMask.forEachIndexed { index, isLit ->
-                encodedMask[index] = if (isLit) 0x7F else 0x00
-            }
-            IdleMaskFrame(
-                sequence = idleMaskSequence,
-                width = physicsState.width.coerceAtLeast(1),
-                height = physicsState.height.coerceAtLeast(1),
-                mask = encodedMask,
-            )
-        }
-        return pixelRenderer.carveIdleTimeCutout(
-            frame = frame,
-            currentTimeText = state.currentTimeText,
-            screenProfile = screenProfile,
-        )
-    }
-
-    private fun dispatchIdleStateToMain(physicsState: IdleFluidState) {
-        val renderState = physicsState.copy(
-            coverageField = FloatArray(0),
-            litMask = physicsState.litMask.copyOf(),
-        )
-        mainHandler.post {
-            if (!idlePhysicsRunning || state.mode != LauncherMode.IDLE) {
-                return@post
-            }
-            state = state.copy(idleFluidState = renderState)
-            renderCurrentFrame()
-        }
-    }
-
-    private fun buildChargeIdleMaskFrame(nowUptimeMs: Long): IdleMaskFrame? {
-        idleMaskSequence += 1L
-        val frame = ChargeIdleEffectRegistry.rendererFor(idleChargeIdleEffectSnapshot).render(
-            width = idleLogicalWidthSnapshot.coerceAtLeast(1),
-            height = idleLogicalHeightSnapshot.coerceAtLeast(1),
-            batteryLevel = idleBatteryLevelSnapshot,
-            isCharging = true,
-            gravityX = idleGravityX,
-            gravityY = idleGravityY,
-            nowUptimeMs = nowUptimeMs,
-            sequence = idleMaskSequence,
-        ) ?: return null
-        return pixelRenderer.carveIdleTimeCutout(
-            frame = frame,
-            currentTimeText = state.currentTimeText,
-            screenProfile = screenProfile,
-        )
-    }
-
-    private fun currentIdleDynamicMaskFrame(): IdleMaskFrame? {
-        return if (shouldUseChargeIdleEffectOnPhysics()) {
-            idleChargeMaskFrame
-        } else {
-            buildIdleMaskFrame(idlePhysicsState)
-        }
-    }
-
-    private fun currentIdleRenderState(): IdleFluidState {
-        if (!shouldUseChargeIdleEffectOnPhysics()) {
-            return idlePhysicsState
-        }
-        val frame = idleChargeMaskFrame ?: return IdleFluidState()
-        return IdleFluidState(
-            width = frame.width,
-            height = frame.height,
-            litMask = BooleanArray(frame.mask.size) { index -> frame.mask[index].toInt() != 0 },
-        )
-    }
-
-    private fun syncIdleFluidWithBattery() {
-        val simulationProfile = currentIdleSimulationProfile()
-        idleBatteryLevelSnapshot = state.batteryLevel
-        idleLogicalWidthSnapshot = screenProfile.logicalWidth
-        idleLogicalHeightSnapshot = screenProfile.logicalHeight
-        idleSimulationWidthSnapshot = simulationProfile.width
-        idleSimulationHeightSnapshot = simulationProfile.height
-        idleChargeIdleEffectSnapshot = state.chargeIdleEffect
-        if (idlePhysicsRunning && ::idlePhysicsHandler.isInitialized) {
-            idlePhysicsHandler.post {
-                idlePhysicsSyncedBatteryLevel = Int.MIN_VALUE
-                idlePhysicsSyncedSimulationWidth = -1
-                idlePhysicsSyncedSimulationHeight = -1
-            }
-            return
-        }
-        state = state.copy(
-            idleFluidState = idleFluidEngine.syncToBattery(
-                state = state.idleFluidState,
-                batteryLevel = state.batteryLevel,
-                simulationWidth = simulationProfile.width,
-                simulationHeight = simulationProfile.height,
-                gravityX = motionSnapshot.gravityX,
-                gravityY = motionSnapshot.gravityY,
-                nowUptimeMs = SystemClock.uptimeMillis(),
-            ),
-        )
-        idlePhysicsState = state.idleFluidState
-    }
-
-    private fun shouldUseChargeIdleEffectOnPhysics(): Boolean {
-        return false
-    }
-
-    private fun requestIdleChargeEffectRefresh() {
-        if (!idlePhysicsRunning || !::idlePhysicsHandler.isInitialized || state.mode != LauncherMode.IDLE) {
-            return
-        }
-        idleBatteryLevelSnapshot = state.batteryLevel
-        idleLogicalWidthSnapshot = screenProfile.logicalWidth
-        idleLogicalHeightSnapshot = screenProfile.logicalHeight
-        idleChargeIdleEffectSnapshot = state.chargeIdleEffect
-        idlePhysicsHandler.post {
-            if (!idlePhysicsRunning || state.mode != LauncherMode.IDLE) {
-                return@post
-            }
-            if (usesGlIdleComposite()) {
-                pixelFrameView.submitIdleMask(buildIdleMaskFrame(idlePhysicsState))
-            } else {
-                dispatchIdleStateToMain(idlePhysicsState)
-            }
-        }
-    }
-
-    private fun currentIdleSimulationProfile(): IdleSimulationProfile {
-        return IdleSimulationProfile.fromLogicalSize(
-            logicalWidth = screenProfile.logicalWidth,
-            logicalHeight = screenProfile.logicalHeight,
-        )
     }
 
     @Suppress("DEPRECATION")
@@ -4487,11 +4097,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val drawerBoundaryVelocityEpsilonPx = 0.01f
         const val interactionFrameDelayMs: Long = 16L
         const val interactionMaxFrameDeltaMs: Long = 64L
-        const val idleFixedStepMs: Long = 16L
-        const val idleFixedStepSeconds: Float = idleFixedStepMs / 1000f
-        const val idleTickerDelayMs: Long = 16L
-        const val idleMaxCatchUpSteps: Int = 2
-        const val idleMaxAccumulationMs: Long = idleFixedStepMs * idleMaxCatchUpSteps
         const val homeDataPermissionRequestCode = 1001
         const val smsPermissionRequestCode = 1002
         const val smsRoleRequestCode = 1003
