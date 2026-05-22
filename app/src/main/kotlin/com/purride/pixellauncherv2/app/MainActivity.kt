@@ -54,12 +54,7 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
-import com.purride.pixellauncherv2.launcher.DrawerDirectionalSettlePolicy
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
-import com.purride.pixellauncherv2.launcher.DrawerRailDragMapper
-import com.purride.pixellauncherv2.launcher.DrawerSettleTarget
-import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollController
-import com.purride.pixellauncherv2.launcher.DrawerVerticalScrollThresholds
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.HomeFixedInfoModel
 import com.purride.pixellauncherv2.launcher.HomeFixedInfoRowType
@@ -76,8 +71,6 @@ import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
-import com.purride.pixellauncherv2.launcher.TextListRuntimeState
-import com.purride.pixellauncherv2.launcher.TextListSupport
 import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.LauncherAnimationState
@@ -163,37 +156,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var launchRunnable: Runnable? = null
     private var syncingDrawerInputProxyText = false
     private var syncingSmsDraftInputProxyText = false
-    private var drawerRailDragLastY: Int = 0
-    private var drawerRailDragAccumulatorPx: Float = 0f
-    private var drawerRailPixelsPerApp: Float = 1f
-    private var drawerListDragTracking = false
-    private var drawerListDragConsumed = false
-    private var drawerListDragStartX = 0
-    private var drawerListDragStartY = 0
-    private var drawerListDragLastY = 0
-    private var drawerListDragLastUptimeMs: Long = 0L
-    private var drawerListDragVelocityPxPerSecond: Float = 0f
-    private var drawerListScrollResidualOffsetPx: Float = 0f
-    private var drawerListScrollVelocityPxPerSecond: Float = 0f
-    private var drawerListScrollAnimating = false
-    private var drawerSettleTarget: DrawerSettleTarget? = null
-    private var settingsListDragTracking = false
-    private var settingsListDragConsumed = false
-    private var settingsListDragStartX = 0
-    private var settingsListDragStartY = 0
-    private var settingsListDragLastY = 0
-    private var settingsListDragLastUptimeMs: Long = 0L
-    private var settingsListDragVelocityPxPerSecond: Float = 0f
-    private var settingsListScrollResidualOffsetPx: Float = 0f
-    private var settingsListScrollVelocityPxPerSecond: Float = 0f
-    private var settingsListScrollAnimating = false
-    private var settingsSettleTarget: DrawerSettleTarget? = null
-    private var smsBodyDragTracking = false
-    private var smsBodyDragConsumed = false
-    private var smsBodyDragStartX = 0
-    private var smsBodyDragStartY = 0
-    private var smsBodyDragLastY = 0
-    private var smsBodyScrollOffsetPx: Float = 0f
     private var interactionTickerLastUptimeMs: Long = 0L
     private var usageAccessPromptShown = false
     private var homeDataPermissionPromptShown = false
@@ -238,20 +200,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                 interactionTickerLastUptimeMs = 0L
                 return
             }
-            val now = SystemClock.uptimeMillis()
-            val deltaMs = if (interactionTickerLastUptimeMs <= 0L) {
-                interactionFrameDelayMs
-            } else {
-                (now - interactionTickerLastUptimeMs).coerceIn(1L, interactionMaxFrameDeltaMs)
-            }
-            interactionTickerLastUptimeMs = now
-
-            if (shouldAnimateDrawerListScroll()) {
-                stepDrawerVerticalListAnimation(deltaMs)
-            }
-            if (shouldAnimateSettingsListScroll()) {
-                stepSettingsVerticalListAnimation(deltaMs)
-            }
+            interactionTickerLastUptimeMs = SystemClock.uptimeMillis()
             renderCurrentFrame()
             if (shouldRunInteractionTicker()) {
                 mainHandler.postDelayed(this, interactionFrameDelayMs)
@@ -768,7 +717,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         settleSettingsMotionBeforeExplicitAction()
                         moveSmsThreadSelection(-1)
                     }
-                    LauncherMode.SMS_THREAD_DETAIL -> scrollSmsDetailBy(-smsBodyLineHeight())
+                    LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> {
                         moveSmsSelection(-1)
                     }
@@ -794,7 +743,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                         settleSettingsMotionBeforeExplicitAction()
                         moveSmsThreadSelection(1)
                     }
-                    LauncherMode.SMS_THREAD_DETAIL -> scrollSmsDetailBy(smsBodyLineHeight())
+                    LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> {
                         moveSmsSelection(1)
                     }
@@ -1408,12 +1357,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         updateDrawerInputFocus()
     }
 
-    private fun resolveRailPixelsPerApp(appCount: Int): Float {
-        val safeCount = appCount.coerceAtLeast(1)
-        val railHeight = AppListLayout.metrics(screenProfile).railHeight.coerceAtLeast(1)
-        return (railHeight.toFloat() / safeCount.toFloat()).coerceAtLeast(1f)
-    }
-
     private fun syncDrawerInputProxyText() {
         if (!::drawerInputProxy.isInitialized) {
             return
@@ -1616,7 +1559,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun openSettingsMenu() {
         settleDrawerMotionBeforeExplicitAction()
-        stopSettingsVerticalListAnimation(resetOffset = true)
         state = LauncherStateTransitions.showSettings(
             state = state,
             visibleRows = settingsVisibleRows(),
@@ -1670,7 +1612,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun closeSmsModule() {
-        smsBodyScrollOffsetPx = 0f
         smsThreadsUnreadOnly = true
         state = LauncherStateTransitions.hideSmsThreads(state)
         renderCurrentFrame()
@@ -1695,7 +1636,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             smsIntentLogTag,
             "openSmsThread threadId=$threadId address=$address draftLength=${prefilledDraft.length} beforeMode=${state.mode}",
         )
-        smsBodyScrollOffsetPx = 0f
         state = LauncherStateTransitions.showSmsThreadDetail(
             state = LauncherStateTransitions.updateSmsDraftText(
                 state = state,
@@ -1726,7 +1666,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     private fun closeSmsThreadDetail() {
-        smsBodyScrollOffsetPx = 0f
         state = LauncherStateTransitions.hideSmsThreadDetail(state)
         renderCurrentFrame()
         updateTextInputFocus()
@@ -2123,438 +2062,17 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         renderCurrentFrame()
     }
 
-    private fun shouldShowDrawerScrollableList(): Boolean {
-        if (state.mode != LauncherMode.APP_DRAWER) {
-            return false
-        }
-        return TextListSupport.hasScrollableContent(
-            rowCount = currentDrawerApps().size,
-            viewport = AppListLayout.metrics(screenProfile).textList.viewport,
-        )
-    }
-
-    private fun isPointInDrawerScrollableListArea(x: Int, y: Int): Boolean {
-        if (x !in 0 until screenProfile.logicalWidth) {
-            return false
-        }
-        val metrics = AppListLayout.metrics(screenProfile)
-        if (!state.isDrawerSearchFocused && x >= metrics.hiddenRailLeft) {
-            return false
-        }
-        if (y < metrics.listStartY) {
-            return false
-        }
-        return y < metrics.listStartY + metrics.railHeight
-    }
-
-
-    private fun drawerListScrollThresholds(): DrawerVerticalScrollThresholds {
-        val rowHeight = AppListLayout.metrics(screenProfile).rowHeight.toFloat()
-        return DrawerVerticalScrollThresholds(
-            upwardStepPx = rowHeight,
-            downwardStepPx = rowHeight,
-        )
-    }
-
-    private fun settingsListScrollThresholds(): DrawerVerticalScrollThresholds {
-        val rowHeight = when (state.mode) {
-            LauncherMode.SMS_INBOX -> SettingsMenuLayout.largeTextMetrics(screenProfile).rowHeight.toFloat()
-            LauncherMode.SMS_THREADS -> SmsLayout.threadListMetrics(screenProfile).rowHeight.toFloat()
-            else -> SettingsMenuLayout.metrics(screenProfile).rowHeight.toFloat()
-        }
-        return DrawerVerticalScrollThresholds(
-            upwardStepPx = rowHeight,
-            downwardStepPx = rowHeight,
-        )
-    }
-
     private fun smsInboxVisibleRows(): Int {
         return SettingsMenuLayout.largeTextMetrics(screenProfile).visibleRows
     }
 
-    private fun settingsMaxStartIndex(): Int {
-        val rowCount = when (state.mode) {
-            LauncherMode.SETTINGS -> SettingsMenuModel.rows(state).size
-            LauncherMode.SMS_INBOX -> state.unreadSmsEntries.size
-            LauncherMode.SMS_THREADS -> state.smsThreads.size
-            else -> SettingsMenuModel.rows(state).size
-        }
-        val visibleRows = when (state.mode) {
-            LauncherMode.SETTINGS -> settingsVisibleRows()
-            LauncherMode.SMS_INBOX -> smsInboxVisibleRows()
-            LauncherMode.SMS_THREADS -> smsThreadsVisibleRows()
-            else -> settingsVisibleRows()
-        }
-        return (rowCount - visibleRows).coerceAtLeast(0)
-    }
+    private fun settleSettingsMotionBeforeExplicitAction() = Unit
 
-    private fun canScrollSettingsInDirection(direction: Int): Boolean {
-        return when {
-            direction > 0 -> state.settingsListStartIndex < settingsMaxStartIndex()
-            direction < 0 -> state.settingsListStartIndex > 0
-            else -> false
-        }
-    }
+    private fun stopDrawerVerticalListAnimation(resetOffset: Boolean) = Unit
 
-    private fun shouldShowSettingsScrollableList(): Boolean {
-        if (
-            state.mode != LauncherMode.SETTINGS &&
-            state.mode != LauncherMode.SMS_INBOX &&
-            state.mode != LauncherMode.SMS_THREADS
-        ) {
-            return false
-        }
-        return TextListSupport.hasScrollableContent(
-            rowCount = when (state.mode) {
-                LauncherMode.SETTINGS -> SettingsMenuModel.rows(state).size
-                LauncherMode.SMS_THREADS -> state.smsThreads.size
-                else -> state.unreadSmsEntries.size
-            },
-            viewport = when (state.mode) {
-                LauncherMode.SMS_INBOX -> SettingsMenuLayout.largeTextMetrics(screenProfile).textList.viewport
-                LauncherMode.SMS_THREADS -> SmsLayout.threadListMetrics(screenProfile).textList.viewport
-                else -> SettingsMenuLayout.metrics(screenProfile).textList.viewport
-            },
-        )
-    }
+    private fun resetDrawerVerticalGesture() = Unit
 
-    private fun isPointInSettingsScrollableListArea(x: Int, y: Int): Boolean {
-        if (x !in 0 until screenProfile.logicalWidth) {
-            return false
-        }
-        return when (state.mode) {
-            LauncherMode.SMS_INBOX -> {
-                val metrics = SettingsMenuLayout.largeTextMetrics(screenProfile)
-                y in metrics.firstRowY until metrics.panelBottom
-            }
-            LauncherMode.SMS_THREADS -> {
-                val metrics = SmsLayout.threadListMetrics(screenProfile)
-                y in metrics.textList.viewport.top until metrics.panelBottom
-            }
-            else -> {
-                val metrics = SettingsMenuLayout.metrics(screenProfile)
-                y in metrics.firstRowY until metrics.panelBottom
-            }
-        }
-    }
-
-    private fun isSettingsAtListStart(): Boolean {
-        return when (state.mode) {
-            LauncherMode.SMS_INBOX -> state.smsListStartIndex <= 0
-            LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex <= 0
-            else -> state.settingsListStartIndex <= 0
-        }
-    }
-
-    private fun isSettingsAtListEnd(): Boolean {
-        return when (state.mode) {
-            LauncherMode.SMS_INBOX -> state.smsListStartIndex >= settingsMaxStartIndex()
-            LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex >= settingsMaxStartIndex()
-            else -> state.settingsListStartIndex >= settingsMaxStartIndex()
-        }
-    }
-
-    private fun isOutwardSettingsBoundaryDelta(deltaY: Float): Boolean {
-        if (deltaY == 0f || !shouldShowSettingsScrollableList()) {
-            return false
-        }
-        return (deltaY > 0f && isSettingsAtListStart()) ||
-            (deltaY < 0f && isSettingsAtListEnd())
-    }
-
-    private fun clampSettingsMotionAtListBounds() {
-        if (!shouldShowSettingsScrollableList()) {
-            stopSettingsVerticalListAnimation(resetOffset = true)
-            return
-        }
-        val atStart = isSettingsAtListStart()
-        val atEnd = isSettingsAtListEnd()
-        val outwardResidual =
-            (settingsListScrollResidualOffsetPx > drawerBoundaryEpsilonPx && atStart) ||
-                (settingsListScrollResidualOffsetPx < -drawerBoundaryEpsilonPx && atEnd)
-        val outwardVelocity =
-            (settingsListScrollVelocityPxPerSecond > drawerBoundaryVelocityEpsilonPx && atStart) ||
-                (settingsListScrollVelocityPxPerSecond < -drawerBoundaryVelocityEpsilonPx && atEnd)
-        val invalidSettleTarget = settingsSettleTarget?.let { target -> !canScrollSettingsInDirection(target.direction) } == true
-        if (outwardResidual || outwardVelocity || invalidSettleTarget) {
-            stopSettingsVerticalListAnimation(resetOffset = true)
-            return
-        }
-        if (!settingsListScrollAnimating && kotlin.math.abs(settingsListScrollResidualOffsetPx) <= drawerBoundaryEpsilonPx) {
-            settingsListScrollResidualOffsetPx = 0f
-        }
-    }
-
-    private fun applySettingsVerticalStepDelta(stepDelta: Int, renderAfter: Boolean = true) {
-        if (stepDelta == 0) {
-            return
-        }
-        var remaining = stepDelta
-        while (remaining != 0) {
-            val direction = if (remaining > 0) 1 else -1
-            val previousListStartIndex = when (state.mode) {
-                LauncherMode.SMS_INBOX -> state.smsListStartIndex
-                LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex
-                else -> state.settingsListStartIndex
-            }
-            state = when (state.mode) {
-                LauncherMode.SMS_INBOX -> LauncherStateTransitions.scrollSmsWindow(
-                    state = state,
-                    delta = direction,
-                    visibleRows = smsInboxVisibleRows(),
-                )
-                LauncherMode.SMS_THREADS -> LauncherStateTransitions.scrollSmsThreadWindow(
-                    state = state,
-                    delta = direction,
-                    visibleRows = smsThreadsVisibleRows(),
-                )
-                else -> LauncherStateTransitions.scrollSettingsWindow(
-                    state = state,
-                    delta = direction,
-                    visibleRows = settingsVisibleRows(),
-                )
-            }
-            val currentListStartIndex = when (state.mode) {
-                LauncherMode.SMS_INBOX -> state.smsListStartIndex
-                LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex
-                else -> state.settingsListStartIndex
-            }
-            if (currentListStartIndex == previousListStartIndex) {
-                settingsListScrollResidualOffsetPx = 0f
-                settingsListScrollVelocityPxPerSecond = 0f
-                settingsListScrollAnimating = false
-                break
-            }
-            remaining -= direction
-        }
-        if (renderAfter) {
-            renderCurrentFrame()
-            startAnimationTickerIfNeeded()
-        }
-    }
-
-    private fun stepSettingsVerticalListAnimation(deltaMs: Long) {
-        clampSettingsMotionAtListBounds()
-        if (!settingsListScrollAnimating) {
-            return
-        }
-        val animationStep = DrawerVerticalScrollController.stepAnimation(
-            residualOffsetPx = settingsListScrollResidualOffsetPx,
-            velocityPxPerSecond = settingsListScrollVelocityPxPerSecond,
-            thresholds = settingsListScrollThresholds(),
-            deltaMs = deltaMs,
-            settleTarget = settingsSettleTarget,
-        )
-        settingsListScrollResidualOffsetPx = animationStep.residualOffsetPx
-        settingsListScrollVelocityPxPerSecond = animationStep.nextVelocityPxPerSecond
-        settingsSettleTarget = animationStep.settleTarget
-        settingsListScrollAnimating = animationStep.isAnimating
-        if (animationStep.stepDelta != 0) {
-            applySettingsVerticalStepDelta(animationStep.stepDelta, renderAfter = false)
-        }
-        clampSettingsMotionAtListBounds()
-    }
-
-    private fun stopSettingsVerticalListAnimation(resetOffset: Boolean) {
-        settingsListScrollAnimating = false
-        settingsListScrollVelocityPxPerSecond = 0f
-        settingsSettleTarget = null
-        if (resetOffset) {
-            settingsListScrollResidualOffsetPx = 0f
-        }
-    }
-
-    private fun resetSettingsVerticalDragTracking() {
-        settingsListDragTracking = false
-        settingsListDragConsumed = false
-        settingsListDragVelocityPxPerSecond = 0f
-        settingsListDragLastUptimeMs = 0L
-    }
-
-    private fun settleSettingsMotionBeforeExplicitAction() {
-        val settledState = TextListSupport.settleBeforeExplicitAction(
-            TextListRuntimeState(
-                selectedIndex = when (state.mode) {
-                    LauncherMode.SMS_INBOX -> state.smsSelectedIndex
-                    LauncherMode.SMS_THREADS -> state.smsThreadSelectedIndex
-                    else -> state.settingsSelectedIndex
-                },
-                listStartIndex = when (state.mode) {
-                    LauncherMode.SMS_INBOX -> state.smsListStartIndex
-                    LauncherMode.SMS_THREADS -> state.smsThreadListStartIndex
-                    else -> state.settingsListStartIndex
-                },
-                residualOffsetPx = settingsListScrollResidualOffsetPx,
-                velocityPxPerSecond = settingsListScrollVelocityPxPerSecond,
-                settleTarget = settingsSettleTarget,
-                isDragging = settingsListDragTracking || settingsListDragConsumed,
-                isAnimating = settingsListScrollAnimating,
-            ),
-        )
-        resetSettingsVerticalDragTracking()
-        settingsListScrollAnimating = settledState.isAnimating
-        settingsListScrollResidualOffsetPx = settledState.residualOffsetPx
-        settingsListScrollVelocityPxPerSecond = settledState.velocityPxPerSecond
-        settingsSettleTarget = null
-    }
-
-    private fun drawerListLastIndex(): Int {
-        return currentDrawerApps().lastIndex
-    }
-
-    private fun canMoveInDirection(direction: Int): Boolean {
-        val apps = currentDrawerApps()
-        if (apps.isEmpty()) {
-            return false
-        }
-        val pageSize = visibleRows().coerceAtLeast(1)
-        val currentTopIndex = state.listStartIndex.coerceIn(0, apps.lastIndex)
-        val maxTopIndex = (apps.size - pageSize).coerceAtLeast(0)
-        return when {
-            direction > 0 -> currentTopIndex < maxTopIndex
-            direction < 0 -> currentTopIndex > 0
-            else -> false
-        }
-    }
-
-    private fun isDrawerAtListStart(): Boolean {
-        val apps = currentDrawerApps()
-        if (apps.isEmpty()) {
-            return true
-        }
-        return state.listStartIndex <= 0
-    }
-
-    private fun isDrawerAtListEnd(): Boolean {
-        val apps = currentDrawerApps()
-        if (apps.isEmpty()) {
-            return true
-        }
-        val pageSize = visibleRows().coerceAtLeast(1)
-        val maxTopIndex = (apps.size - pageSize).coerceAtLeast(0)
-        return state.listStartIndex >= maxTopIndex
-    }
-
-    private fun isOutwardBoundaryDelta(deltaY: Float): Boolean {
-        if (deltaY == 0f || !shouldShowDrawerScrollableList()) {
-            return false
-        }
-        return (deltaY > 0f && isDrawerAtListStart()) ||
-            (deltaY < 0f && isDrawerAtListEnd())
-    }
-
-    private fun clampDrawerMotionAtListBounds() {
-        if (!shouldShowDrawerScrollableList()) {
-            stopDrawerVerticalListAnimation(resetOffset = true)
-            return
-        }
-        val atStart = isDrawerAtListStart()
-        val atEnd = isDrawerAtListEnd()
-        val outwardResidual =
-            (drawerListScrollResidualOffsetPx > drawerBoundaryEpsilonPx && atStart) ||
-                (drawerListScrollResidualOffsetPx < -drawerBoundaryEpsilonPx && atEnd)
-        val outwardVelocity =
-            (drawerListScrollVelocityPxPerSecond > drawerBoundaryVelocityEpsilonPx && atStart) ||
-                (drawerListScrollVelocityPxPerSecond < -drawerBoundaryVelocityEpsilonPx && atEnd)
-        val invalidSettleTarget = drawerSettleTarget?.let { !canMoveInDirection(it.direction) } == true
-        if (outwardResidual || outwardVelocity || invalidSettleTarget) {
-            stopDrawerVerticalListAnimation(resetOffset = true)
-            return
-        }
-        if (!drawerListScrollAnimating && kotlin.math.abs(drawerListScrollResidualOffsetPx) <= drawerBoundaryEpsilonPx) {
-            drawerListScrollResidualOffsetPx = 0f
-        }
-    }
-
-    private fun applyDrawerVerticalStepDelta(stepDelta: Int, renderAfter: Boolean = true) {
-        if (stepDelta == 0) {
-            return
-        }
-        var remaining = stepDelta
-        while (remaining != 0) {
-            val direction = if (remaining > 0) 1 else -1
-            val previousListStartIndex = state.listStartIndex
-            state = LauncherStateTransitions.scrollDrawerWindow(
-                state = state,
-                delta = direction,
-                visibleRows = visibleRows(),
-            )
-            if (state.listStartIndex == previousListStartIndex) {
-                drawerListScrollResidualOffsetPx = 0f
-                drawerListScrollVelocityPxPerSecond = 0f
-                drawerSettleTarget = null
-                drawerListScrollAnimating = false
-                break
-            }
-            remaining -= direction
-        }
-        if (renderAfter) {
-            renderCurrentFrame()
-            startAnimationTickerIfNeeded()
-        }
-    }
-
-    private fun stepDrawerVerticalListAnimation(deltaMs: Long) {
-        clampDrawerMotionAtListBounds()
-        if (!drawerListScrollAnimating) {
-            return
-        }
-        val animationStep = DrawerVerticalScrollController.stepAnimation(
-            residualOffsetPx = drawerListScrollResidualOffsetPx,
-            velocityPxPerSecond = drawerListScrollVelocityPxPerSecond,
-            thresholds = drawerListScrollThresholds(),
-            deltaMs = deltaMs,
-            settleTarget = drawerSettleTarget,
-        )
-        drawerListScrollResidualOffsetPx = animationStep.residualOffsetPx
-        drawerListScrollVelocityPxPerSecond = animationStep.nextVelocityPxPerSecond
-        drawerSettleTarget = animationStep.settleTarget
-        drawerListScrollAnimating = animationStep.isAnimating
-        if (animationStep.stepDelta != 0) {
-            applyDrawerVerticalStepDelta(animationStep.stepDelta, renderAfter = false)
-        }
-        clampDrawerMotionAtListBounds()
-    }
-
-    private fun stopDrawerVerticalListAnimation(resetOffset: Boolean) {
-        drawerListScrollAnimating = false
-        drawerListScrollVelocityPxPerSecond = 0f
-        drawerSettleTarget = null
-        if (resetOffset) {
-            drawerListScrollResidualOffsetPx = 0f
-        }
-    }
-
-    private fun resetDrawerVerticalDragTracking() {
-        drawerListDragTracking = false
-        drawerListDragConsumed = false
-        drawerListDragVelocityPxPerSecond = 0f
-        drawerListDragLastUptimeMs = 0L
-    }
-
-    private fun resetDrawerVerticalGesture() {
-        resetDrawerVerticalDragTracking()
-        stopDrawerVerticalListAnimation(resetOffset = true)
-    }
-
-    private fun settleDrawerMotionBeforeExplicitAction() {
-        val settledState = TextListSupport.settleBeforeExplicitAction(
-            TextListRuntimeState(
-                selectedIndex = state.selectedIndex,
-                listStartIndex = state.listStartIndex,
-                residualOffsetPx = drawerListScrollResidualOffsetPx,
-                velocityPxPerSecond = drawerListScrollVelocityPxPerSecond,
-                settleTarget = drawerSettleTarget,
-                isDragging = drawerListDragTracking || drawerListDragConsumed,
-                isAnimating = drawerListScrollAnimating,
-            ),
-        )
-        resetDrawerVerticalDragTracking()
-        drawerListScrollAnimating = settledState.isAnimating
-        drawerListScrollResidualOffsetPx = settledState.residualOffsetPx
-        drawerListScrollVelocityPxPerSecond = settledState.velocityPxPerSecond
-        drawerSettleTarget = null
-    }
+    private fun settleDrawerMotionBeforeExplicitAction() = Unit
 
     private fun startClockTicker() {
         mainHandler.removeCallbacks(clockTicker)
@@ -2595,21 +2113,10 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             shouldAnimateDrawerCursor()
     }
 
-    private fun shouldRunInteractionTicker(): Boolean {
-        return shouldAnimateDrawerListScroll() ||
-            shouldAnimateSettingsListScroll()
-    }
+    private fun shouldRunInteractionTicker(): Boolean = false
 
     private fun shouldAnimateDrawerCursor(): Boolean {
         return state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
-    }
-
-    private fun shouldAnimateDrawerListScroll(): Boolean {
-        return state.mode == LauncherMode.APP_DRAWER && drawerListScrollAnimating
-    }
-
-    private fun shouldAnimateSettingsListScroll(): Boolean {
-        return state.mode == LauncherMode.SETTINGS && settingsListScrollAnimating
     }
 
     private fun shouldAnimateHomeMarquee(): Boolean {
@@ -2640,138 +2147,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         }
     }
 
-    private fun isPointInSmsBodyArea(x: Int, y: Int): Boolean {
-        if (state.mode != LauncherMode.SMS_INBOX && state.mode != LauncherMode.SMS_THREAD_DETAIL) {
-            return false
-        }
-        return x in 0 until screenProfile.logicalWidth &&
-            y in smsBodyTopY() until smsBodyBottomExclusiveY()
-    }
-
-    private fun smsBodyTopY(): Int {
-        return if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
-            SmsLayout.detailMetrics(screenProfile).bodyTop
-        } else {
-            SettingsMenuLayout.largeTextMetrics(screenProfile).firstRowY + GlyphStyle.APP_LABEL_16.cellHeight + 2
-        }
-    }
-
-    private fun smsBodyBottomExclusiveY(): Int {
-        return if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
-            SmsLayout.detailMetrics(screenProfile).bodyBottomExclusive
-        } else {
-            screenProfile.logicalHeight - 2
-        }
-    }
-
-    private fun smsBodyLineHeight(): Int = GlyphStyle.APP_LABEL_16.cellHeight + 2
-
-    private fun smsBodyCanScroll(): Boolean = smsBodyMaxScrollPx() > 0
-
-    private fun smsBodyMaxScrollPx(): Int {
-        if (state.mode == LauncherMode.SMS_THREAD_DETAIL) {
-            val availableHeight = (smsBodyBottomExclusiveY() - smsBodyTopY()).coerceAtLeast(0)
-            return (measureSmsThreadDetailContentHeight() - availableHeight).coerceAtLeast(0)
-        }
-        val entry = state.unreadSmsEntries.getOrNull(state.smsSelectedIndex) ?: return 0
-        val availableHeight = (smsBodyBottomExclusiveY() - smsBodyTopY()).coerceAtLeast(0)
-        val body = entry.body
-            .replace("\r", "")
-            .ifBlank { "(EMPTY)" }
-            .uppercase()
-        val lines = wrapSmsBodyLines(body)
-        val contentHeight = lines.size * smsBodyLineHeight()
-        return (contentHeight - availableHeight).coerceAtLeast(0)
-    }
-
-    private fun wrapSmsBodyLines(text: String): List<String> {
-        val maxWidth = SettingsMenuLayout.largeTextMetrics(screenProfile).rowMaxTextWidth
-        val safeWidth = maxWidth.coerceAtLeast(GlyphStyle.APP_LABEL_16.narrowAdvanceWidth)
-        return wrapSmsLinesToWidth(text = text, maxWidth = safeWidth)
-    }
-
-    private fun wrapSmsLinesToWidth(text: String, maxWidth: Int): List<String> {
-        val safeWidth = maxWidth.coerceAtLeast(GlyphStyle.APP_LABEL_16.narrowAdvanceWidth)
-        val normalized = text.replace('\t', ' ')
-        val lines = mutableListOf<String>()
-        normalized.split('\n').forEach { rawLine ->
-            if (rawLine.isEmpty()) {
-                lines += ""
-                return@forEach
-            }
-            var current = StringBuilder()
-            rawLine.forEach { ch ->
-                val candidate = current.toString() + ch
-                if (pixelFontEngine.measureText(candidate, GlyphStyle.APP_LABEL_16) <= safeWidth || current.isEmpty()) {
-                    current.append(ch)
-                } else {
-                    lines += current.toString()
-                    current = StringBuilder().append(ch)
-                }
-            }
-            lines += current.toString()
-        }
-        return lines
-    }
-
-    private fun scrollSmsDetailBy(deltaPx: Int) {
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL || deltaPx == 0) {
-            return
-        }
-        val previousOffset = smsBodyScrollOffsetPx
-        smsBodyScrollOffsetPx = (smsBodyScrollOffsetPx + deltaPx.toFloat())
-            .coerceIn(0f, smsBodyMaxScrollPx().toFloat())
-        Log.d(
-            smsScrollLogTag,
-            "key-scroll deltaPx=$deltaPx from=$previousOffset to=$smsBodyScrollOffsetPx max=${smsBodyMaxScrollPx()}",
-        )
-        renderCurrentFrame()
-    }
-
-    private fun isPointInSmsComposeArea(x: Int, y: Int): Boolean {
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
-            return false
-        }
-        val metrics = SmsLayout.detailMetrics(screenProfile)
-        return x in 0 until screenProfile.logicalWidth &&
-            y in metrics.composeTop until metrics.composeBottomExclusive
-    }
-
-    private fun isPointInSmsComposeSendArea(x: Int, y: Int): Boolean {
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
-            return false
-        }
-        val metrics = SmsLayout.detailMetrics(screenProfile)
-        val sendLabel = if (state.smsPermissionState == SmsPermissionState.READY) "SEND" else "DEFAULT"
-        val sendWidth = pixelFontEngine.measureText(sendLabel, GlyphStyle.UI_SMALL_10)
-        val sendX = (metrics.composeSendRight - sendWidth).coerceAtLeast(metrics.composeTextLeft)
-        return x in sendX until metrics.composeSendRight &&
-            y in metrics.composeTop until metrics.composeBottomExclusive
-    }
-
-    private fun measureSmsThreadDetailContentHeight(): Int {
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
-            return 0
-        }
-        val metrics = SmsLayout.detailMetrics(screenProfile)
-        val lineGap = 1
-        var height = 0
-        state.smsMessages.forEach { message ->
-            height += GlyphStyle.UI_SMALL_10.cellHeight + lineGap
-            val bodyLines = wrapSmsLinesToWidth(
-                text = message.body.replace("\r", "").ifBlank { "(EMPTY)" }.uppercase(),
-                maxWidth = metrics.textWidth,
-            )
-            height += bodyLines.size * (GlyphStyle.APP_LABEL_16.cellHeight + lineGap)
-            height += 2
-        }
-        return height
-    }
-
-    private fun resetSmsBodyDragTracking() {
-        smsBodyDragTracking = false
-        smsBodyDragConsumed = false
-    }
+    private fun scrollSmsDetailBy(deltaPx: Int) = Unit
 
     private fun applyAppearance(
         fontSize: PixelFontSize,
@@ -3130,13 +2506,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val REQUIRED_GLES_VERSION = 0x20000
         const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
-        const val drawerListDragStartThresholdPx = 2
-        const val drawerListDragAxisBias = 1.1f
-        const val drawerListFlingStartVelocityPxPerSecond = 24f
-        const val drawerBoundaryEpsilonPx = 0.25f
-        const val drawerBoundaryVelocityEpsilonPx = 0.01f
         const val interactionFrameDelayMs: Long = 16L
-        const val interactionMaxFrameDeltaMs: Long = 64L
         const val homeDataPermissionRequestCode = 1001
         const val smsPermissionRequestCode = 1002
         const val smsRoleRequestCode = 1003
@@ -3145,7 +2515,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val rainLocationPromptText = "LOC"
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
-        const val smsScrollLogTag = "SmsScroll"
         const val smsIntentLogTag = "SmsIntent"
         const val TAG_VM = "MainActivity/VM"
     }
