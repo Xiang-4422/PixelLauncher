@@ -49,12 +49,6 @@ import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
-import com.purride.pixellauncherv2.launcher.HomeContextCard
-import com.purride.pixellauncherv2.launcher.HomeFixedInfoModel
-import com.purride.pixellauncherv2.launcher.HomeFixedInfoRowType
-import com.purride.pixellauncherv2.launcher.HomeLayout
-import com.purride.pixellauncherv2.launcher.HomeLayoutMetrics
-import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
