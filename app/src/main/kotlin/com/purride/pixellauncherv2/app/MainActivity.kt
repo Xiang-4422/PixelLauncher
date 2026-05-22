@@ -450,7 +450,7 @@ class MainActivity : AppCompatActivity() {
      * 统一处理硬件按键导航，包括 pager、设置页、抽屉搜索和应用启动。
      */
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (launchPending || animationState.bootSequence != null) {
+        if (launchPending) {
             return true
         }
         if (wakeIfIdle()) {
@@ -597,7 +597,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateHomeFromHardwareKey() {
-        if (launchPending || animationState.bootSequence != null) {
+        if (launchPending) {
             return
         }
         recordInteraction()
@@ -679,7 +679,6 @@ class MainActivity : AppCompatActivity() {
         }
         settleDrawerMotionBeforeExplicitAction()
         launchPending = true
-        animationState = animationState.startLaunchShutter()
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
         val pendingRunnable = Runnable {
@@ -935,7 +934,6 @@ class MainActivity : AppCompatActivity() {
             isDrawerRailSliding = false,
         )
         if (previousMode != LauncherMode.APP_DRAWER) {
-            animationState = animationState.startDrawerReveal()
             startAnimationTickerIfNeeded()
         }
         renderCurrentFrame()
@@ -1660,7 +1658,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shouldRunDecorationTicker(): Boolean {
-        return animationState.hasActiveAnimations || shouldAnimateHeaderCharge()
+        return shouldAnimateHeaderCharge()
     }
 
     private fun shouldAnimateHeaderCharge(): Boolean {
