@@ -123,7 +123,6 @@ class MainActivity : AppCompatActivity() {
     private var loadGeneration = 0
     private var launchPending = false
     private var launchRunnable: Runnable? = null
-    private var interactionTickerLastUptimeMs: Long = 0L
     private var usageAccessPromptShown = false
     private var homeDataPermissionPromptShown = false
     private var smsRolePromptDismissedThisSession = false
@@ -157,22 +156,6 @@ class MainActivity : AppCompatActivity() {
             renderCurrentFrame()
             if (shouldRunDecorationTicker()) {
                 mainHandler.postDelayed(this, LauncherAnimationState.frameDelayMs)
-            }
-        }
-    }
-
-    private val interactionTicker = object : Runnable {
-        override fun run() {
-            if (!shouldRunInteractionTicker()) {
-                interactionTickerLastUptimeMs = 0L
-                return
-            }
-            interactionTickerLastUptimeMs = SystemClock.uptimeMillis()
-            renderCurrentFrame()
-            if (shouldRunInteractionTicker()) {
-                mainHandler.postDelayed(this, interactionFrameDelayMs)
-            } else {
-                interactionTickerLastUptimeMs = 0L
             }
         }
     }
@@ -406,9 +389,7 @@ class MainActivity : AppCompatActivity() {
         resetDrawerVerticalGesture()
         mainHandler.removeCallbacks(clockTicker)
         mainHandler.removeCallbacks(animationTicker)
-        mainHandler.removeCallbacks(interactionTicker)
         mainHandler.removeCallbacks(idleRunnable)
-        interactionTickerLastUptimeMs = 0L
         launchRunnable?.let(mainHandler::removeCallbacks)
         launchRunnable = null
         launchPending = false
@@ -1677,42 +1658,17 @@ class MainActivity : AppCompatActivity() {
         mainHandler.postDelayed(animationTicker, LauncherAnimationState.frameDelayMs)
     }
 
-    private fun startInteractionTicker() {
-        if (interactionTickerLastUptimeMs <= 0L) {
-            interactionTickerLastUptimeMs = SystemClock.uptimeMillis()
-        }
-        mainHandler.removeCallbacks(interactionTicker)
-        mainHandler.postDelayed(interactionTicker, interactionFrameDelayMs)
-    }
-
     private fun startAnimationTickerIfNeeded() {
         if (shouldRunDecorationTicker()) {
             startDecorationTicker()
         } else {
             mainHandler.removeCallbacks(animationTicker)
         }
-        if (shouldRunInteractionTicker()) {
-            startInteractionTicker()
-        } else {
-            mainHandler.removeCallbacks(interactionTicker)
-            interactionTickerLastUptimeMs = 0L
-        }
     }
 
     private fun shouldRunDecorationTicker(): Boolean {
-        return animationState.hasActiveAnimations ||
-            shouldAnimateHeaderCharge() ||
-            shouldAnimateHomeMarquee() ||
-            shouldAnimateDrawerCursor()
+        return animationState.hasActiveAnimations || shouldAnimateHeaderCharge()
     }
-
-    private fun shouldRunInteractionTicker(): Boolean = false
-
-    private fun shouldAnimateDrawerCursor(): Boolean {
-        return state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
-    }
-
-    private fun shouldAnimateHomeMarquee(): Boolean = false
 
     private fun shouldAnimateHeaderCharge(): Boolean {
         if (!state.isCharging || state.batteryLevel >= 100) {
@@ -2045,7 +2001,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
-        const val interactionFrameDelayMs: Long = 16L
         const val homeDataPermissionRequestCode = 1001
         const val smsPermissionRequestCode = 1002
         const val smsRoleRequestCode = 1003
