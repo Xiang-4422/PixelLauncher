@@ -79,9 +79,6 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.TextListRuntimeState
 import com.purride.pixellauncherv2.launcher.TextListSupport
 import com.purride.pixellauncherv2.render.GlyphStyle
-import com.purride.pixellauncherv2.render.HorizontalPageController
-import com.purride.pixellauncherv2.render.HorizontalPageSnapshot
-import com.purride.pixellauncherv2.render.HorizontalPageState
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.render.PixelFrameView
@@ -197,23 +194,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     private var smsBodyDragStartY = 0
     private var smsBodyDragLastY = 0
     private var smsBodyScrollOffsetPx: Float = 0f
-    private val horizontalPageController = HorizontalPageController()
-    private var horizontalPageState: HorizontalPageState = horizontalPageController.create(
-        pageCount = pagerPageCount,
-        currentIndex = pagerHomeIndex,
-    )
-    private var smsPageState: HorizontalPageState = horizontalPageController.create(
-        pageCount = 1,
-        currentIndex = 0,
-    )
-    private var pagerDragTracking = false
-    private var pagerDragConsumed = false
-    private var pagerDragLastX = 0
-    private var pagerDragLastY = 0
-    private var pagerDragStartX = 0
-    private var pagerDragStartY = 0
-    private var pagerDragLastUptimeMs: Long = 0L
-    private var pagerDragVelocityPxPerSecond: Float = 0f
     private var interactionTickerLastUptimeMs: Long = 0L
     private var usageAccessPromptShown = false
     private var homeDataPermissionPromptShown = false
@@ -271,26 +251,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             }
             if (shouldAnimateSettingsListScroll()) {
                 stepSettingsVerticalListAnimation(deltaMs)
-            }
-            val wasPagerSettling = horizontalPageState.isSettling
-            horizontalPageState = horizontalPageController.step(
-                state = horizontalPageState,
-                deltaMs = deltaMs,
-            )
-            if (wasPagerSettling && !horizontalPageState.isSettling && isPagerMode(state.mode)) {
-                applyPagerSettledMode(horizontalPageState.currentIndex)
-            }
-            val wasSmsSettling = smsPageState.isSettling
-            smsPageState = horizontalPageController.step(
-                state = smsPageState,
-                deltaMs = deltaMs,
-            )
-            if (wasSmsSettling && !smsPageState.isSettling && state.mode == LauncherMode.SMS_INBOX) {
-                state = LauncherStateTransitions.selectSmsIndex(
-                    state = state,
-                    index = smsPageState.currentIndex,
-                    visibleRows = smsInboxVisibleRows(),
-                )
             }
             renderCurrentFrame()
             if (shouldRunInteractionTicker()) {
@@ -707,7 +667,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      */
     override fun onPause() {
         hideDrawerKeyboard()
-        resetPagerDragTracking()
         resetDrawerVerticalGesture()
         if (::drawerInputProxy.isInitialized) {
             drawerInputProxy.clearFocus()
@@ -811,7 +770,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> scrollSmsDetailBy(-smsBodyLineHeight())
                     LauncherMode.SMS_INBOX -> {
-                        animateSmsPageBy(-1)
+                        moveSmsSelection(-1)
                     }
                     LauncherMode.SETTINGS -> {
                         settleSettingsMotionBeforeExplicitAction()
@@ -837,7 +796,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> scrollSmsDetailBy(smsBodyLineHeight())
                     LauncherMode.SMS_INBOX -> {
-                        animateSmsPageBy(1)
+                        moveSmsSelection(1)
                     }
                     LauncherMode.SETTINGS -> {
                         settleSettingsMotionBeforeExplicitAction()
@@ -861,7 +820,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREADS,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.SMS_INBOX -> animateSmsPageBy(-1)
+                    LauncherMode.SMS_INBOX -> moveSmsSelection(-1)
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
                         pageDrawer(-1)
@@ -882,7 +841,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREADS,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.SMS_INBOX -> animateSmsPageBy(1)
+                    LauncherMode.SMS_INBOX -> moveSmsSelection(1)
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
                         pageDrawer(1)
@@ -952,725 +911,14 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     /**
-     * 把逻辑点击事件路由到当前页面，依赖布局层 hit-test，而不是 Android 原生控件树。
+     * Interaction callbacks from PixelFrameView.InteractionListener.
+     * The engine host (LauncherRootHost) overlays the frame view and handles all touch;
+     * these methods are never called in practice.
      */
-    override fun onLogicalTap(x: Int, y: Int) {
-        if (launchPending || animationState.bootSequence != null) {
-            return
-        }
-        if (wakeIfIdle()) {
-            return
-        }
-        recordInteraction()
-        when (state.mode) {
-            LauncherMode.APP_DRAWER -> {
-                val tappedHeader = AppListLayout.hitTestDrawerHeaderSearchArea(
-                    screenProfile = screenProfile,
-                    logicalX = x,
-                    logicalY = y,
-                )
-                if (tappedHeader) {
-                    settleDrawerMotionBeforeExplicitAction()
-                    if (!state.isDrawerSearchFocused) {
-                        state = state.copy(
-                            isDrawerSearchFocused = true,
-                            isDrawerRailSliding = false,
-                        )
-                        renderCurrentFrame()
-                        startAnimationTickerIfNeeded()
-                        updateDrawerInputFocus()
-                    }
-                    return
-                }
-                val canTapResultList = !state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()
-                val tappedIndex = if (canTapResultList) {
-                    AppListLayout.hitTestAppIndex(
-                        screenProfile = screenProfile,
-                        state = state,
-                        logicalX = x,
-                        logicalY = y,
-                        drawerListScrollOffsetPx = drawerListScrollResidualOffsetPx.toInt(),
-                    )
-                } else {
-                    null
-                }
-                val decision = DrawerContentTapResolver.resolve(state, tappedIndex)
-                when (decision.action) {
-                    DrawerContentTapAction.LAUNCH_SELECTED -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        launchAppAtIndex(decision.targetIndex ?: state.selectedIndex)
-                    }
-
-                    DrawerContentTapAction.SELECT_INDEX -> {
-                        val targetIndex = decision.targetIndex ?: return
-                        settleDrawerMotionBeforeExplicitAction()
-                        state = LauncherStateTransitions.selectIndex(
-                            state = state,
-                            index = targetIndex,
-                            visibleRows = visibleRows(),
-                        )
-                        renderCurrentFrame()
-                    }
-
-                    DrawerContentTapAction.EXIT_SEARCH -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        state = LauncherStateTransitions.exitDrawerSearch(
-                            state = state,
-                            visibleRows = visibleRows(),
-                        )
-                        renderCurrentFrame()
-                        startAnimationTickerIfNeeded()
-                        updateDrawerInputFocus()
-                    }
-
-                    DrawerContentTapAction.NONE -> Unit
-                }
-            }
-
-            LauncherMode.SETTINGS -> {
-                val rows = SettingsMenuModel.rows(state)
-                val tappedRow = SettingsMenuLayout.hitTestRow(
-                    screenProfile = screenProfile,
-                    logicalX = x,
-                    logicalY = y,
-                    rowCount = rows.size,
-                    listStartIndex = state.settingsListStartIndex,
-                    scrollOffsetPx = settingsListScrollResidualOffsetPx.toInt(),
-                ) ?: return
-
-                settleSettingsMotionBeforeExplicitAction()
-                state = LauncherStateTransitions.selectSettingsIndex(
-                    state = state,
-                    index = tappedRow,
-                    visibleRows = settingsVisibleRows(),
-                )
-                activateSelectedSetting()
-            }
-
-            LauncherMode.SMS_ROLE_PROMPT -> {
-                ensureSmsReadAccessAndRole()
-            }
-
-            LauncherMode.SMS_THREADS -> {
-                val tappedRow = SmsLayout.hitTestThreadRow(
-                    screenProfile = screenProfile,
-                    logicalX = x,
-                    logicalY = y,
-                    rowCount = state.smsThreads.size,
-                    listStartIndex = state.smsThreadListStartIndex,
-                    scrollOffsetPx = settingsListScrollResidualOffsetPx.toInt(),
-                ) ?: return
-                settleSettingsMotionBeforeExplicitAction()
-                state = LauncherStateTransitions.selectSmsThreadIndex(
-                    state = state,
-                    index = tappedRow,
-                    visibleRows = smsThreadsVisibleRows(),
-                )
-                openSelectedSmsThread()
-            }
-
-            LauncherMode.SMS_THREAD_DETAIL -> {
-                if (isPointInSmsComposeSendArea(x, y)) {
-                    sendSmsDraft()
-                    return
-                }
-                if (isPointInSmsComposeArea(x, y)) {
-                    focusSmsDraftInput()
-                    return
-                }
-            }
-
-            LauncherMode.SMS_INBOX -> {
-                if (y < LauncherHeaderLayout.contentTop) {
-                    return
-                }
-                launchSelectedUnreadSms()
-            }
-
-            LauncherMode.HOME -> {
-                handleHomeTap(x, y)
-            }
-
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.IDLE -> Unit
-        }
-    }
-
-    private fun handleHomeTap(x: Int, y: Int) {
-        val layout = HomeLayout.metrics(
-            screenProfile = screenProfile,
-            contactButtonWidth = pixelFontEngine.measureText("CONTACT", GlyphStyle.UI_SMALL_10),
-            smsButtonWidth = pixelFontEngine.measureText("SMS", GlyphStyle.UI_SMALL_10),
-        )
-        if (x !in layout.innerLeft..layout.innerRight) {
-            return
-        }
-
-        if (y in layout.dateY until (layout.dateY + GlyphStyle.UI_SMALL_10.cellHeight)) {
-            launchFirstAvailableIntent(
-                Intent(Intent.ACTION_MAIN).apply {
-                    addCategory(Intent.CATEGORY_APP_CALENDAR)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
-                Intent(Intent.ACTION_VIEW).apply {
-                    data = CalendarContract.CONTENT_URI
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
-            )
-            return
-        }
-
-        if (y in layout.buttonY until (layout.buttonY + GlyphStyle.UI_SMALL_10.cellHeight)) {
-            when (x) {
-                in layout.contactButtonLeft..layout.contactButtonRight -> launchFirstAvailableIntent(
-                    Intent(Intent.ACTION_MAIN).apply {
-                        addCategory(Intent.CATEGORY_APP_CONTACTS)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    },
-                    Intent(Intent.ACTION_VIEW).apply {
-                        data = ContactsContract.Contacts.CONTENT_URI
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    },
-                )
-
-                in layout.smsButtonLeft..layout.smsButtonRight -> openSmsModule(forceRefresh = true, unreadOnly = false)
-            }
-            return
-        }
-
-        val rowHeight = layout.fixedInfoRowHeight
-        val rowIndex = ((y - layout.fixedInfoStartY) / rowHeight).takeIf { y >= layout.fixedInfoStartY } ?: return
-        val row = HomeFixedInfoModel.rows(state).getOrNull(rowIndex) ?: return
-        when (row.type) {
-            HomeFixedInfoRowType.ALARM -> launchSystemIntent(
-                Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
-            )
-
-            HomeFixedInfoRowType.COMMUNICATION -> handleHomeDynamicInfoTap(x, y, layout, rowIndex)
-
-            HomeFixedInfoRowType.USAGE -> launchFirstAvailableIntent(
-                Intent(Intent.ACTION_MAIN).apply {
-                    setClassName(
-                        "com.google.android.apps.wellbeing",
-                        "com.google.android.apps.wellbeing.settings.TopLevelSettingsActivity",
-                    )
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
-                Intent(Settings.ACTION_APP_USAGE_SETTINGS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
-            )
-
-            HomeFixedInfoRowType.WEATHER -> Unit
-        }
-    }
-
-    private fun handleHomeDynamicInfoTap(x: Int, y: Int, layout: HomeLayoutMetrics, rowIndex: Int) {
-        val rowTop = layout.fixedInfoStartY + (layout.fixedInfoRowHeight * rowIndex)
-        if (y !in rowTop until (rowTop + GlyphStyle.UI_SMALL_10.cellHeight)
-        ) {
-            return
-        }
-
-        val segments = HomeFixedInfoModel.communicationSegments(state)
-        if (segments.isEmpty()) {
-            return
-        }
-
-        var currentX = layout.innerLeft
-        segments.forEachIndexed { index, segment ->
-            val width = pixelFontEngine.measureText(segment, GlyphStyle.UI_SMALL_10)
-            if (x in currentX until (currentX + width)) {
-                when {
-                    segment.startsWith("CALL ") -> launchSystemIntent(
-                        Intent(Intent.ACTION_DIAL).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        },
-                    )
-
-                    segment.startsWith("SMS ") -> openSmsModule(forceRefresh = true, unreadOnly = false)
-                }
-                return
-            }
-            currentX += width
-            if (index < segments.lastIndex) {
-                currentX += pixelFontEngine.measureText("  ", GlyphStyle.UI_SMALL_10)
-            }
-        }
-    }
-
-    private fun launchSystemIntent(intent: Intent) {
-        val resolved = intent.resolveActivity(packageManager) ?: return
-        try {
-            startActivity(intent)
-            overridePendingTransition(0, 0)
-        } catch (_: SecurityException) {
-            return
-        } catch (_: ActivityNotFoundException) {
-            return
-        }
-    }
-
-    private fun launchFirstAvailableIntent(vararg intents: Intent) {
-        intents.forEach { candidate ->
-            if (candidate.resolveActivity(packageManager) == null) {
-                return@forEach
-            }
-            try {
-                startActivity(candidate)
-                overridePendingTransition(0, 0)
-                return
-            } catch (_: SecurityException) {
-                return@forEach
-            } catch (_: ActivityNotFoundException) {
-                return@forEach
-            }
-        }
-    }
-
-    /**
-     * 根据当前命中的交互区域，启动抽屉、设置页或横向 pager 的拖动流程。
-     */
-    override fun onLogicalDragStart(x: Int, y: Int): Boolean {
-        if (launchPending || animationState.bootSequence != null) {
-            return false
-        }
-        if (wakeIfIdle()) {
-            return true
-        }
-        resetPagerDragTracking()
-        resetDrawerVerticalDragTracking()
-        resetSettingsVerticalDragTracking()
-        resetSmsBodyDragTracking()
-
-        if (state.mode == LauncherMode.APP_DRAWER) {
-            val railHit = !state.isDrawerSearchFocused &&
-                AppListLayout.hitTestIndexRailLetter(
-                    screenProfile = screenProfile,
-                    logicalX = x,
-                    logicalY = y,
-                ) != null
-            if (railHit) {
-                recordInteraction()
-                settleDrawerMotionBeforeExplicitAction()
-                state = state.copy(isDrawerRailSliding = true)
-                drawerRailDragLastY = y
-                drawerRailDragAccumulatorPx = 0f
-                drawerRailPixelsPerApp = resolveRailPixelsPerApp(currentDrawerApps().size)
-                renderCurrentFrame()
-                startAnimationTickerIfNeeded()
-                updateDrawerInputFocus()
-                return true
-            }
-        }
-
-        if (state.mode == LauncherMode.APP_DRAWER &&
-            shouldShowDrawerScrollableList() &&
-            isPointInDrawerScrollableListArea(x, y)
-        ) {
-            drawerListDragTracking = true
-            drawerListDragConsumed = false
-            drawerListDragStartX = x
-            drawerListDragStartY = y
-            drawerListDragLastY = y
-            drawerListDragLastUptimeMs = SystemClock.uptimeMillis()
-            drawerListDragVelocityPxPerSecond = 0f
-            stopDrawerVerticalListAnimation(resetOffset = false)
-        }
-
-        if ((state.mode == LauncherMode.SETTINGS || state.mode == LauncherMode.SMS_THREADS) &&
-            shouldShowSettingsScrollableList() &&
-            isPointInSettingsScrollableListArea(x, y)
-        ) {
-            settingsListDragTracking = true
-            settingsListDragConsumed = false
-            settingsListDragStartX = x
-            settingsListDragStartY = y
-            settingsListDragLastY = y
-            settingsListDragLastUptimeMs = SystemClock.uptimeMillis()
-            settingsListDragVelocityPxPerSecond = 0f
-            stopSettingsVerticalListAnimation(resetOffset = false)
-        }
-
-        if ((state.mode == LauncherMode.SMS_INBOX || state.mode == LauncherMode.SMS_THREAD_DETAIL) &&
-            isPointInSmsBodyArea(x, y) &&
-            smsBodyCanScroll()
-        ) {
-            smsBodyDragTracking = true
-            smsBodyDragConsumed = false
-            smsBodyDragStartX = x
-            smsBodyDragStartY = y
-            smsBodyDragLastY = y
-            Log.d(
-                smsScrollLogTag,
-                "start mode=${state.mode} x=$x y=$y offset=${smsBodyScrollOffsetPx} max=${smsBodyMaxScrollPx()}",
-            )
-        }
-
-        if (canHandlePagerNavigation() || state.mode == LauncherMode.SMS_INBOX) {
-            pagerDragTracking = true
-            pagerDragConsumed = false
-            pagerDragStartX = x
-            pagerDragStartY = y
-            pagerDragLastX = x
-            pagerDragLastY = y
-            pagerDragLastUptimeMs = SystemClock.uptimeMillis()
-            pagerDragVelocityPxPerSecond = 0f
-        }
-        return false
-    }
-
-    /**
-     * 推进当前拖动目标，把拖动位移转换成列表滚动、rail 快速定位或横向分页移动。
-     */
-    override fun onLogicalDragMove(x: Int, y: Int): Boolean {
-        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
-            recordInteraction()
-            val deltaY = y - drawerRailDragLastY
-            drawerRailDragLastY = y
-            if (deltaY == 0) {
-                return true
-            }
-            val dragResult = DrawerRailDragMapper.consumeDrag(
-                accumulatedPx = drawerRailDragAccumulatorPx,
-                deltaPx = deltaY.toFloat(),
-                pixelsPerApp = drawerRailPixelsPerApp,
-            )
-            drawerRailDragAccumulatorPx = dragResult.accumulatedPx
-
-            var moved = false
-            val stepDirection = when {
-                dragResult.stepDelta > 0 -> 1
-                dragResult.stepDelta < 0 -> -1
-                else -> 0
-            }
-            repeat(kotlin.math.abs(dragResult.stepDelta)) {
-                state = LauncherStateTransitions.moveSelection(
-                    state = state,
-                    delta = stepDirection,
-                    visibleRows = visibleRows(),
-                )
-                moved = true
-            }
-            if (moved) {
-                renderCurrentFrame()
-                startAnimationTickerIfNeeded()
-            }
-            return true
-        }
-
-        if (drawerListDragTracking) {
-            val totalDx = x - drawerListDragStartX
-            val totalDy = y - drawerListDragStartY
-            if (!drawerListDragConsumed) {
-                if (kotlin.math.abs(totalDy) >= drawerListDragStartThresholdPx &&
-                    kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) * drawerListDragAxisBias
-                ) {
-                    drawerListDragConsumed = true
-                    resetPagerDragTracking()
-                }
-            }
-
-            if (drawerListDragConsumed) {
-                recordInteraction()
-                val now = SystemClock.uptimeMillis()
-                val deltaY = y - drawerListDragLastY
-                val elapsedMs = (now - drawerListDragLastUptimeMs).coerceAtLeast(1L)
-                drawerListDragLastY = y
-                drawerListDragLastUptimeMs = now
-                if (deltaY != 0) {
-                    if (isOutwardBoundaryDelta(deltaY.toFloat())) {
-                        val hadMotion = drawerListScrollResidualOffsetPx != 0f ||
-                            drawerListScrollVelocityPxPerSecond != 0f ||
-                            drawerListScrollAnimating
-                        stopDrawerVerticalListAnimation(resetOffset = true)
-                        drawerListDragVelocityPxPerSecond = 0f
-                        if (hadMotion) {
-                            renderCurrentFrame()
-                            startAnimationTickerIfNeeded()
-                        }
-                        return true
-                    }
-                    val thresholds = drawerListScrollThresholds()
-                    val dragResult = DrawerVerticalScrollController.consumeDrag(
-                        residualOffsetPx = drawerListScrollResidualOffsetPx,
-                        deltaPx = deltaY.toFloat(),
-                        thresholds = thresholds,
-                    )
-                    drawerListScrollResidualOffsetPx = dragResult.residualOffsetPx
-                    drawerListDragVelocityPxPerSecond = (deltaY.toFloat() * 1000f) / elapsedMs.toFloat()
-                    drawerSettleTarget = null
-                    clampDrawerMotionAtListBounds()
-                    if (dragResult.stepDelta != 0) {
-                        applyDrawerVerticalStepDelta(dragResult.stepDelta)
-                    } else {
-                        renderCurrentFrame()
-                        startAnimationTickerIfNeeded()
-                    }
-                }
-                return true
-            }
-        }
-
-        if (settingsListDragTracking) {
-            val totalDx = x - settingsListDragStartX
-            val totalDy = y - settingsListDragStartY
-            if (!settingsListDragConsumed) {
-                if (kotlin.math.abs(totalDy) >= drawerListDragStartThresholdPx &&
-                    kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) * drawerListDragAxisBias
-                ) {
-                    settingsListDragConsumed = true
-                    resetPagerDragTracking()
-                }
-            }
-
-            if (settingsListDragConsumed) {
-                recordInteraction()
-                val now = SystemClock.uptimeMillis()
-                val deltaY = y - settingsListDragLastY
-                val elapsedMs = (now - settingsListDragLastUptimeMs).coerceAtLeast(1L)
-                settingsListDragLastY = y
-                settingsListDragLastUptimeMs = now
-                if (deltaY != 0) {
-                    if (isOutwardSettingsBoundaryDelta(deltaY.toFloat())) {
-                        val hadMotion = settingsListScrollResidualOffsetPx != 0f ||
-                            settingsListScrollVelocityPxPerSecond != 0f ||
-                            settingsListScrollAnimating
-                        stopSettingsVerticalListAnimation(resetOffset = true)
-                        settingsListDragVelocityPxPerSecond = 0f
-                        if (hadMotion) {
-                            renderCurrentFrame()
-                            startAnimationTickerIfNeeded()
-                        }
-                        return true
-                    }
-                    val thresholds = settingsListScrollThresholds()
-                    val dragResult = DrawerVerticalScrollController.consumeDrag(
-                        residualOffsetPx = settingsListScrollResidualOffsetPx,
-                        deltaPx = deltaY.toFloat(),
-                        thresholds = thresholds,
-                    )
-                    settingsListScrollResidualOffsetPx = dragResult.residualOffsetPx
-                    settingsListDragVelocityPxPerSecond = (deltaY.toFloat() * 1000f) / elapsedMs.toFloat()
-                    settingsSettleTarget = null
-                    clampSettingsMotionAtListBounds()
-                    if (dragResult.stepDelta != 0) {
-                        applySettingsVerticalStepDelta(dragResult.stepDelta)
-                    } else {
-                        renderCurrentFrame()
-                        startAnimationTickerIfNeeded()
-                    }
-                }
-                return true
-            }
-        }
-
-        if (smsBodyDragTracking) {
-            val totalDx = x - smsBodyDragStartX
-            val totalDy = y - smsBodyDragStartY
-            if (!smsBodyDragConsumed) {
-                if (kotlin.math.abs(totalDy) >= drawerListDragStartThresholdPx &&
-                    kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) * drawerListDragAxisBias
-                ) {
-                    smsBodyDragConsumed = true
-                    resetPagerDragTracking()
-                }
-            }
-
-            if (smsBodyDragConsumed) {
-                recordInteraction()
-                val deltaY = y - smsBodyDragLastY
-                smsBodyDragLastY = y
-                if (deltaY != 0) {
-                    val previousOffset = smsBodyScrollOffsetPx
-                    smsBodyScrollOffsetPx = (smsBodyScrollOffsetPx - deltaY.toFloat())
-                        .coerceIn(0f, smsBodyMaxScrollPx().toFloat())
-                    Log.d(
-                        smsScrollLogTag,
-                        "move mode=${state.mode} deltaY=$deltaY from=$previousOffset to=$smsBodyScrollOffsetPx max=${smsBodyMaxScrollPx()} startY=$smsBodyDragStartY currentY=$y",
-                    )
-                    renderCurrentFrame()
-                }
-                return true
-            }
-        }
-
-        if (!pagerDragTracking || (!canHandlePagerNavigation() && state.mode != LauncherMode.SMS_INBOX)) {
-            return false
-        }
-
-        val now = SystemClock.uptimeMillis()
-        val deltaX = x - pagerDragLastX
-        val deltaY = y - pagerDragLastY
-        pagerDragLastX = x
-        pagerDragLastY = y
-
-        if (!pagerDragConsumed) {
-            val totalDx = x - pagerDragStartX
-            val totalDy = y - pagerDragStartY
-            if (kotlin.math.abs(totalDx) < pagerDragStartThresholdPx) {
-                return false
-            }
-            if (kotlin.math.abs(totalDx) <= kotlin.math.abs(totalDy) * pagerDragAxisBias) {
-                return false
-            }
-            val currentPageIndex = when (state.mode) {
-                LauncherMode.SMS_INBOX -> state.smsSelectedIndex
-                else -> pagerIndexForMode(state.mode)
-            } ?: return false
-            if (state.mode == LauncherMode.APP_DRAWER) {
-                settleDrawerMotionBeforeExplicitAction()
-            } else if (state.mode == LauncherMode.SETTINGS) {
-                settleSettingsMotionBeforeExplicitAction()
-            }
-            if (state.mode == LauncherMode.SMS_INBOX) {
-                smsPageState = horizontalPageController.syncToIndex(
-                    state = smsPageState.copy(pageCount = state.unreadSmsEntries.size.coerceAtLeast(1)),
-                    targetIndex = currentPageIndex,
-                )
-                smsPageState = horizontalPageController.startDrag(smsPageState)
-            } else {
-                horizontalPageState = horizontalPageController.syncToIndex(
-                    state = horizontalPageState,
-                    targetIndex = currentPageIndex,
-                )
-                horizontalPageState = horizontalPageController.startDrag(horizontalPageState)
-            }
-            pagerDragConsumed = true
-        }
-        if (!pagerDragConsumed) {
-            return false
-        }
-
-        recordInteraction()
-        if (state.mode == LauncherMode.SMS_INBOX) {
-            smsPageState = horizontalPageController.dragBy(
-                state = smsPageState,
-                deltaPx = deltaX.toFloat(),
-                pageWidth = screenProfile.logicalWidth,
-            )
-        } else {
-            horizontalPageState = horizontalPageController.dragBy(
-                state = horizontalPageState,
-                deltaPx = deltaX.toFloat(),
-                pageWidth = screenProfile.logicalWidth,
-            )
-        }
-        val elapsedMs = (now - pagerDragLastUptimeMs).coerceAtLeast(1L)
-        if (deltaX != 0) {
-            pagerDragVelocityPxPerSecond = (deltaX.toFloat() * 1000f) / elapsedMs.toFloat()
-        }
-        pagerDragLastUptimeMs = now
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
-        return true
-    }
-
-    /**
-     * 结束当前拖动；如果手势已被消费，则把残余速度交给共享 settle 逻辑继续处理。
-     */
-    override fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean {
-        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
-            recordInteraction()
-            state = state.copy(isDrawerRailSliding = false)
-            drawerRailDragLastY = y
-            drawerRailDragAccumulatorPx = 0f
-            drawerRailPixelsPerApp = 1f
-            renderCurrentFrame()
-            startAnimationTickerIfNeeded()
-            updateDrawerInputFocus()
-            return true
-        }
-
-        if (drawerListDragTracking) {
-            val consumed = drawerListDragConsumed
-            if (consumed) {
-                recordInteraction()
-                val releaseVelocity = if (cancelled) 0f else drawerListDragVelocityPxPerSecond
-                val releaseState = DrawerVerticalScrollController.release(
-                    residualOffsetPx = drawerListScrollResidualOffsetPx,
-                    velocityPxPerSecond = releaseVelocity,
-                    thresholds = drawerListScrollThresholds(),
-                )
-                drawerListScrollResidualOffsetPx = releaseState.residualOffsetPx
-                drawerListScrollVelocityPxPerSecond = releaseState.nextVelocityPxPerSecond
-                drawerSettleTarget = releaseState.settleTarget
-                drawerListScrollAnimating = releaseState.isAnimating
-                clampDrawerMotionAtListBounds()
-                renderCurrentFrame()
-                startAnimationTickerIfNeeded()
-            }
-            resetDrawerVerticalDragTracking()
-            if (!consumed) {
-                drawerSettleTarget = null
-            }
-            if (consumed) {
-                return true
-            }
-        }
-
-        if (settingsListDragTracking) {
-            val consumed = settingsListDragConsumed
-            if (consumed) {
-                recordInteraction()
-                val releaseVelocity = if (cancelled) 0f else settingsListDragVelocityPxPerSecond
-                val releaseState = DrawerVerticalScrollController.release(
-                    residualOffsetPx = settingsListScrollResidualOffsetPx,
-                    velocityPxPerSecond = releaseVelocity,
-                    thresholds = settingsListScrollThresholds(),
-                )
-                settingsListScrollResidualOffsetPx = releaseState.residualOffsetPx
-                settingsListScrollVelocityPxPerSecond = releaseState.nextVelocityPxPerSecond
-                settingsSettleTarget = releaseState.settleTarget
-                settingsListScrollAnimating = releaseState.isAnimating
-                clampSettingsMotionAtListBounds()
-                renderCurrentFrame()
-                startAnimationTickerIfNeeded()
-            }
-            resetSettingsVerticalDragTracking()
-            if (!consumed) {
-                settingsSettleTarget = null
-            }
-            if (consumed) {
-                return true
-            }
-        }
-
-        if (smsBodyDragTracking) {
-            val consumed = smsBodyDragConsumed
-            resetSmsBodyDragTracking()
-            if (consumed) {
-                return true
-            }
-        }
-
-        if (!pagerDragTracking) {
-            return false
-        }
-        val consumed = pagerDragConsumed
-        if (consumed) {
-            recordInteraction()
-            if (state.mode == LauncherMode.SMS_INBOX) {
-                smsPageState = horizontalPageController.endDrag(
-                    state = smsPageState,
-                    pageWidth = screenProfile.logicalWidth,
-                    velocityPxPerSecond = if (cancelled) 0f else pagerDragVelocityPxPerSecond,
-                )
-            } else {
-                horizontalPageState = horizontalPageController.endDrag(
-                    state = horizontalPageState,
-                    pageWidth = screenProfile.logicalWidth,
-                    velocityPxPerSecond = if (cancelled) 0f else pagerDragVelocityPxPerSecond,
-                )
-            }
-            renderCurrentFrame()
-            startAnimationTickerIfNeeded()
-        }
-        resetPagerDragTracking()
-        return consumed
-    }
+    override fun onLogicalTap(x: Int, y: Int) = Unit
+    override fun onLogicalDragStart(x: Int, y: Int): Boolean = false
+    override fun onLogicalDragMove(x: Int, y: Int): Boolean = false
+    override fun onLogicalDragEnd(x: Int, y: Int, cancelled: Boolean): Boolean = false
 
     override fun onSwipeUp() {
         if (launchPending || animationState.bootSequence != null) {
@@ -1693,63 +941,13 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
     }
 
     override fun onSwipeLeft() {
-        if (launchPending || animationState.bootSequence != null) {
-            return
-        }
-        if (wakeIfIdle()) {
-            return
-        }
-        recordInteraction()
-        if (state.mode == LauncherMode.APP_DRAWER) {
-            settleDrawerMotionBeforeExplicitAction()
-        }
-        if (state.mode == LauncherMode.SMS_INBOX && animateSmsPageBy(1)) {
-            return
-        }
-        if (animatePagerBy(deltaPages = -1)) {
-            return
-        }
-        when (state.mode) {
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.HOME,
-            LauncherMode.APP_DRAWER,
-            LauncherMode.SETTINGS,
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.SMS_INBOX,
-            LauncherMode.IDLE -> Unit
-        }
+        if (launchPending || animationState.bootSequence != null) return
+        wakeIfIdle()
     }
 
     override fun onSwipeRight() {
-        if (launchPending || animationState.bootSequence != null) {
-            return
-        }
-        if (wakeIfIdle()) {
-            return
-        }
-        recordInteraction()
-        if (state.mode == LauncherMode.APP_DRAWER) {
-            settleDrawerMotionBeforeExplicitAction()
-        }
-        if (state.mode == LauncherMode.SMS_INBOX && animateSmsPageBy(-1)) {
-            return
-        }
-        if (animatePagerBy(deltaPages = 1)) {
-            return
-        }
-        when (state.mode) {
-            LauncherMode.DIAGNOSTICS -> closeDiagnostics()
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL -> Unit
-            LauncherMode.SETTINGS,
-            LauncherMode.SMS_INBOX,
-            LauncherMode.HOME,
-            LauncherMode.APP_DRAWER,
-            LauncherMode.IDLE -> Unit
-        }
+        if (launchPending || animationState.bootSequence != null) return
+        wakeIfIdle()
     }
 
     /**
@@ -2003,6 +1201,27 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // End Phase 4 ──────────────────────────────────────────────────────────────
 
+    /** 尝试依次启动多个 Intent，成功即返回。 */
+    private fun launchFirstAvailableIntent(vararg intents: Intent) {
+        intents.forEach { intent ->
+            try {
+                startActivity(intent)
+                return
+            } catch (_: ActivityNotFoundException) {
+                return@forEach
+            }
+        }
+    }
+
+    /** 启动一个系统 Intent（catch ActivityNotFoundException 防崩溃）。 */
+    private fun launchSystemIntent(intent: Intent) {
+        try {
+            startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            // no-op
+        }
+    }
+
     private fun createPixelFrameView(): PixelFrameView {
         val activityManager = getSystemService(ActivityManager::class.java)
         val supportsGles2 = (activityManager?.deviceConfigurationInfo?.reqGlEsVersion ?: 0) >= REQUIRED_GLES_VERSION
@@ -2049,124 +1268,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun settingsVisibleRows(): Int {
         return SettingsMenuLayout.metrics(screenProfile).textList.viewport.visibleRows
-    }
-
-    private fun pagerIndexForMode(mode: LauncherMode): Int? {
-        return when (mode) {
-            LauncherMode.SETTINGS -> pagerSettingsIndex
-            LauncherMode.HOME -> pagerHomeIndex
-            LauncherMode.APP_DRAWER -> pagerAppsIndex
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.SMS_INBOX,
-            LauncherMode.IDLE -> null
-        }
-    }
-
-    private fun pagerModeForIndex(index: Int): LauncherMode? {
-        return when (index) {
-            pagerSettingsIndex -> LauncherMode.SETTINGS
-            pagerHomeIndex -> LauncherMode.HOME
-            pagerAppsIndex -> LauncherMode.APP_DRAWER
-            else -> null
-        }
-    }
-
-    private fun isPagerMode(mode: LauncherMode): Boolean {
-        return pagerIndexForMode(mode) != null
-    }
-
-    private fun canHandlePagerNavigation(): Boolean {
-        if (!isPagerMode(state.mode)) {
-            return false
-        }
-        if (state.mode == LauncherMode.APP_DRAWER && state.isDrawerRailSliding) {
-            return false
-        }
-        return true
-    }
-
-    /**
-     * 在横向 pager settle 完成后，应用对应页面模式并同步页面相关状态。
-     */
-    private fun applyPagerSettledMode(pageIndex: Int) {
-        val targetMode = pagerModeForIndex(pageIndex) ?: return
-        if (state.mode == targetMode) {
-            return
-        }
-        settleDrawerMotionBeforeExplicitAction()
-        if (targetMode != LauncherMode.SETTINGS) {
-            stopSettingsVerticalListAnimation(resetOffset = true)
-        }
-        val drawerRows = AppListLayout.metrics(screenProfile).visibleRows
-        state = when (targetMode) {
-            LauncherMode.HOME -> LauncherStateTransitions.showHome(state)
-            LauncherMode.SETTINGS -> LauncherStateTransitions.showSettings(
-                state = state,
-                visibleRows = settingsVisibleRows(),
-            )
-            LauncherMode.APP_DRAWER -> LauncherStateTransitions.showAppDrawer(
-                state = LauncherStateTransitions.clearDrawerQuery(
-                    state = state,
-                    visibleRows = drawerRows,
-                ),
-                visibleRows = drawerRows,
-            ).copy(
-                isDrawerSearchFocused = state.openDrawerInSearchMode,
-                isDrawerRailSliding = false,
-            )
-
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.SMS_INBOX,
-            LauncherMode.IDLE -> state
-        }
-        updateDrawerInputFocus()
-        scheduleIdleCheck()
-    }
-
-    /**
-     * 执行一次编程式横向分页切换，并先取消与之冲突的抽屉或设置页纵向滚动。
-     */
-    private fun animatePagerBy(deltaPages: Int): Boolean {
-        if (!canHandlePagerNavigation()) {
-            return false
-        }
-        if (state.mode == LauncherMode.APP_DRAWER) {
-            settleDrawerMotionBeforeExplicitAction()
-        } else if (state.mode == LauncherMode.SETTINGS) {
-            settleSettingsMotionBeforeExplicitAction()
-        }
-        val currentIndex = pagerIndexForMode(state.mode) ?: return false
-        horizontalPageState = horizontalPageController.syncToIndex(
-            state = horizontalPageState,
-            targetIndex = currentIndex,
-        )
-        horizontalPageState = horizontalPageController.startDrag(horizontalPageState)
-        horizontalPageState = horizontalPageController.dragBy(
-            state = horizontalPageState,
-            deltaPx = if (deltaPages > 0) screenProfile.logicalWidth.toFloat() else -screenProfile.logicalWidth.toFloat(),
-            pageWidth = screenProfile.logicalWidth,
-        )
-        horizontalPageState = horizontalPageController.endDrag(
-            state = horizontalPageState,
-            pageWidth = screenProfile.logicalWidth,
-            velocityPxPerSecond = 0f,
-        )
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
-        return true
-    }
-
-    private fun resetPagerDragTracking() {
-        pagerDragTracking = false
-        pagerDragConsumed = false
-        pagerDragVelocityPxPerSecond = 0f
-        pagerDragLastUptimeMs = 0L
     }
 
     /**
@@ -2842,29 +1943,15 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             entries = unreadSmsRepository.readUnreadMessages(),
             visibleRows = smsInboxVisibleRows(),
         )
-        smsBodyScrollOffsetPx = 0f
-        smsPageState = horizontalPageController.create(
-            pageCount = state.unreadSmsEntries.size.coerceAtLeast(1),
-            currentIndex = state.smsSelectedIndex,
-        )
         state = LauncherStateTransitions.showUnreadSmsInbox(
             state = state,
             visibleRows = smsInboxVisibleRows(),
-        )
-        smsPageState = horizontalPageController.syncToIndex(
-            state = smsPageState,
-            targetIndex = state.smsSelectedIndex,
         )
         renderCurrentFrame()
         updateDrawerInputFocus()
     }
 
     private fun closeUnreadSmsInbox() {
-        smsPageState = horizontalPageController.syncToIndex(
-            state = smsPageState,
-            targetIndex = state.smsSelectedIndex,
-        )
-        smsBodyScrollOffsetPx = 0f
         state = LauncherStateTransitions.hideUnreadSmsInbox(state)
         renderCurrentFrame()
         updateDrawerInputFocus()
@@ -2877,46 +1964,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             delta = delta,
             visibleRows = smsInboxVisibleRows(),
         )
-        smsBodyScrollOffsetPx = 0f
-        smsPageState = horizontalPageController.syncToIndex(
-            state = smsPageState.copy(pageCount = state.unreadSmsEntries.size.coerceAtLeast(1)),
-            targetIndex = state.smsSelectedIndex,
-        )
         renderCurrentFrame()
-    }
-
-    private fun animateSmsPageBy(delta: Int): Boolean {
-        if (state.mode != LauncherMode.SMS_INBOX || delta == 0) {
-            return false
-        }
-        val pageCount = state.unreadSmsEntries.size
-        if (pageCount <= 1) {
-            return false
-        }
-        smsPageState = horizontalPageController.syncToIndex(
-            state = smsPageState.copy(pageCount = pageCount),
-            targetIndex = state.smsSelectedIndex,
-        )
-        val currentIndex = smsPageState.currentIndex
-        val targetIndex = (currentIndex + delta).coerceIn(0, pageCount - 1)
-        if (targetIndex == currentIndex) {
-            return false
-        }
-        smsBodyScrollOffsetPx = 0f
-        smsPageState = horizontalPageController.startDrag(smsPageState)
-        smsPageState = horizontalPageController.dragBy(
-            state = smsPageState,
-            deltaPx = if (targetIndex > currentIndex) -screenProfile.logicalWidth.toFloat() else screenProfile.logicalWidth.toFloat(),
-            pageWidth = screenProfile.logicalWidth,
-        )
-        smsPageState = horizontalPageController.endDrag(
-            state = smsPageState,
-            pageWidth = screenProfile.logicalWidth,
-            velocityPxPerSecond = 0f,
-        )
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
-        return true
     }
 
     private fun launchSelectedUnreadSms() {
@@ -3549,9 +2597,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun shouldRunInteractionTicker(): Boolean {
         return shouldAnimateDrawerListScroll() ||
-            shouldAnimateSettingsListScroll() ||
-            horizontalPageState.isSettling ||
-            smsPageState.isSettling
+            shouldAnimateSettingsListScroll()
     }
 
     private fun shouldAnimateDrawerCursor(): Boolean {
@@ -4084,12 +3130,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
         const val REQUIRED_GLES_VERSION = 0x20000
         const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
-        const val pagerSettingsIndex = 0
-        const val pagerHomeIndex = 1
-        const val pagerAppsIndex = 2
-        const val pagerPageCount = 3
-        const val pagerDragStartThresholdPx = 2
-        const val pagerDragAxisBias = 1.1f
         const val drawerListDragStartThresholdPx = 2
         const val drawerListDragAxisBias = 1.1f
         const val drawerListFlingStartVelocityPxPerSecond = 24f
