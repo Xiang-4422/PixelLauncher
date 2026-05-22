@@ -1,7 +1,6 @@
 package com.purride.pixellauncherv2.app
 
 import android.Manifest
-import android.app.ActivityManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,12 +10,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
-import android.provider.AlarmClock
-import android.provider.CalendarContract
 import android.provider.ContactsContract
-import android.provider.Telephony
 import android.util.Log
-import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -38,10 +33,8 @@ import com.purride.pixellauncherv2.data.NextAlarmRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
-import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsRepository
 import com.purride.pixellauncherv2.data.SmsSendRequest
-import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.data.UnreadSmsRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
