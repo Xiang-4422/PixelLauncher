@@ -6,7 +6,6 @@ import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
-import com.purride.pixellauncherv2.render.IdleFluidState
 import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
@@ -67,7 +66,6 @@ data class LauncherState(
     val screenOpenCountText: String = "--",
     val quoteText: String = "BREATHE, FOCUS ON ONE THING, AND LET THE REST WAIT.",
     val homeContextCard: HomeContextCard = HomeContextCard.QUOTE,
-    val idleFluidState: IdleFluidState = IdleFluidState(),
 )
 
 enum class HomeContextCard {
