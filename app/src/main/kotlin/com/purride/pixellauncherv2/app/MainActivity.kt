@@ -1949,70 +1949,7 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
      * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
      */
     private fun renderCurrentFrame() {
-        if (renderLauncherRootFrameIfNeeded()) {
-            return
-        }
-        if (usesGlIdleComposite()) {
-            RenderPerfLogger.measure("main.render.idleStatic.total") {
-                renderIdleStaticFrame()
-            }
-            return
-        }
-        RenderPerfLogger.measure("main.render.full.${state.mode.name}.total") {
-            syncPagerIndexToMode()
-            val pagerSnapshot = activePagerSnapshot()
-            val smsPageSnapshot = activeSmsPageSnapshot()
-            if (
-                state.mode == LauncherMode.SMS_ROLE_PROMPT ||
-                state.mode == LauncherMode.SMS_THREADS ||
-                state.mode == LauncherMode.SMS_THREAD_DETAIL ||
-                state.mode == LauncherMode.SMS_INBOX
-            ) {
-                Log.d(
-                    smsIntentLogTag,
-                    "renderCurrentFrame mode=${state.mode} pagerActive=${pagerSnapshot != null} " +
-                        "smsPagerActive=${smsPageSnapshot != null} currentThread=${state.smsCurrentThreadId} " +
-                        "threads=${state.smsThreads.size} messages=${state.smsMessages.size}",
-                )
-            }
-            val pixelBuffer = RenderPerfLogger.measure("main.render.full.${state.mode.name}.compose") {
-                pixelRenderer.render(
-                    state = state,
-                    screenProfile = screenProfile,
-                    animationState = animationState,
-                    pagerSnapshot = pagerSnapshot,
-                    smsPageSnapshot = smsPageSnapshot,
-                    smsBodyScrollOffsetPx = smsBodyScrollOffsetPx.toInt(),
-                    drawerListScrollOffsetPx = if (state.mode == LauncherMode.APP_DRAWER) {
-                        drawerListScrollResidualOffsetPx.toInt()
-                    } else {
-                        0
-                    },
-                    settingsListScrollOffsetPx = if (
-                        state.mode == LauncherMode.SETTINGS ||
-                        state.mode == LauncherMode.SMS_INBOX ||
-                        state.mode == LauncherMode.SMS_THREADS
-                    ) {
-                        settingsListScrollResidualOffsetPx.toInt()
-                    } else {
-                        0
-                    },
-                )
-            }
-            RenderPerfLogger.measure("main.render.full.${state.mode.name}.submit") {
-                pixelFrameView.submitFrame(
-                    pixelBuffer = pixelBuffer,
-                    screenProfile = screenProfile,
-                    palette = palette,
-                )
-            }
-        }
-    }
-
-    // Begin Phase 8 ─────────────────────────────────────────────────────────
-
-    private fun renderLauncherRootFrameIfNeeded(): Boolean {
-        if (!::launcherRootHost.isInitialized) return false
+        if (!::launcherRootHost.isInitialized) return
         launcherRootHost.update(
             state           = launcherViewModel.state.value,
             theme           = launcherViewModel.currentTheme.value,
@@ -2020,7 +1957,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
             chargeTick      = animationState.headerChargeTick,
             pixelGapEnabled = pixelGapEnabled,
         )
-        return true
     }
 
     /** 主页 Pager 手势翻页回调 — 同步旧 state + ViewModel state 的 mode 字段。 */
@@ -2170,25 +2106,8 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     // End Phase 4 ──────────────────────────────────────────────────────────────
 
-    private fun renderIdleStaticFrame() {
-        val pixelBuffer = RenderPerfLogger.measure("main.render.idleStatic.compose") {
-            pixelRenderer.renderIdleStatic(
-                state = state,
-                screenProfile = screenProfile,
-            )
-        }
-        RenderPerfLogger.measure("main.render.idleStatic.submit") {
-            pixelFrameView.submitFrame(
-                pixelBuffer = pixelBuffer,
-                screenProfile = screenProfile,
-                palette = palette,
-            )
-        }
-    }
-
-    private fun usesGlIdleComposite(): Boolean {
-        return state.mode == LauncherMode.IDLE && pixelFrameView is PixelGlDisplayView
-    }
+    /** IDLE mode is now engine-rendered (IdleScreen in LauncherRootHost); GL composite path is permanently disabled. */
+    private fun usesGlIdleComposite(): Boolean = false
 
     private fun createPixelFrameView(): PixelFrameView {
         val activityManager = getSystemService(ActivityManager::class.java)
@@ -2237,33 +2156,6 @@ class MainActivity : AppCompatActivity(), PixelFrameView.InteractionListener {
 
     private fun settingsVisibleRows(): Int {
         return SettingsMenuLayout.metrics(screenProfile).textList.viewport.visibleRows
-    }
-
-    private fun syncPagerIndexToMode() {
-        val modeIndex = pagerIndexForMode(state.mode) ?: return
-        if (horizontalPageController.isActive(horizontalPageState)) {
-            return
-        }
-        horizontalPageState = horizontalPageController.syncToIndex(
-            state = horizontalPageState,
-            targetIndex = modeIndex,
-        )
-    }
-
-    private fun activePagerSnapshot(): HorizontalPageSnapshot? {
-        // 短信/Idle 这类非 pager 页面进入后，不应再继续复用旧的分页快照，
-        // 否则 UI 会短暂甚至持续显示 HOME/SETTINGS/DRAWER。
-        if (!isPagerMode(state.mode) || !horizontalPageController.isActive(horizontalPageState)) {
-            return null
-        }
-        return horizontalPageController.snapshot(horizontalPageState)
-    }
-
-    private fun activeSmsPageSnapshot(): HorizontalPageSnapshot? {
-        if (state.mode != LauncherMode.SMS_INBOX || !horizontalPageController.isActive(smsPageState)) {
-            return null
-        }
-        return horizontalPageController.snapshot(smsPageState)
     }
 
     private fun pagerIndexForMode(mode: LauncherMode): Int? {
