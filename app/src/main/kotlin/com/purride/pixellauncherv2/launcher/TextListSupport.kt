@@ -15,16 +15,6 @@ data class TextListLayoutMetrics(
     val viewport: TextListViewport,
 )
 
-data class TextListRuntimeState(
-    val selectedIndex: Int,
-    val listStartIndex: Int,
-    val residualOffsetPx: Float,
-    val velocityPxPerSecond: Float,
-    val settleTarget: DrawerSettleTarget?,
-    val isDragging: Boolean,
-    val isAnimating: Boolean,
-)
-
 object TextListSupport {
 
     /**
@@ -97,16 +87,4 @@ object TextListSupport {
         return rowCount > viewport.visibleRows
     }
 
-    /**
-     * 在点击、按键、切页等显式操作前，统一清掉残余滚动状态。
-     */
-    fun settleBeforeExplicitAction(state: TextListRuntimeState): TextListRuntimeState {
-        return state.copy(
-            isDragging = false,
-            isAnimating = false,
-            residualOffsetPx = 0f,
-            velocityPxPerSecond = 0f,
-            settleTarget = null,
-        )
-    }
 }

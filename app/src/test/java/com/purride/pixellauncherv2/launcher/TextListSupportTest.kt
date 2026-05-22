@@ -47,33 +47,6 @@ class TextListSupportTest {
     }
 
     @Test
-    fun settleBeforeExplicitActionClearsMotionButKeepsIndices() {
-        val settled = TextListSupport.settleBeforeExplicitAction(
-            TextListRuntimeState(
-                selectedIndex = 7,
-                listStartIndex = 5,
-                residualOffsetPx = -6f,
-                velocityPxPerSecond = 180f,
-                settleTarget = DrawerSettleTarget(
-                    direction = 1,
-                    targetResidualPx = -14f,
-                    completionStepDelta = 1,
-                ),
-                isDragging = true,
-                isAnimating = true,
-            ),
-        )
-
-        assertEquals(7, settled.selectedIndex)
-        assertEquals(5, settled.listStartIndex)
-        assertEquals(0f, settled.residualOffsetPx)
-        assertEquals(0f, settled.velocityPxPerSecond)
-        assertEquals(null, settled.settleTarget)
-        assertFalse(settled.isDragging)
-        assertFalse(settled.isAnimating)
-    }
-
-    @Test
     fun scrollableContentRequiresMoreRowsThanViewport() {
         val viewport = TextListViewport(
             top = 10,
