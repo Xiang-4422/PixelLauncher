@@ -1066,18 +1066,6 @@ class MainActivity : AppCompatActivity() {
         startAnimationTickerIfNeeded()
     }
 
-    private fun selectByRailLetter(letterIndex: Int) {
-        val keepRailSliding = state.isDrawerRailSliding
-        state = LauncherStateTransitions.selectByLetterIndex(
-            state = state,
-            letterIndex = letterIndex,
-            visibleRows = visibleRows(),
-        ).copy(isDrawerRailSliding = keepRailSliding)
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
-        updateDrawerInputFocus()
-    }
-
     private fun hideDrawerKeyboard() {
         val inputManager = getSystemService(InputMethodManager::class.java) ?: return
         inputManager.hideSoftInputFromWindow(window.decorView.windowToken, 0)
@@ -2038,20 +2026,6 @@ class MainActivity : AppCompatActivity() {
         return state.isIdlePageEnabled &&
             !launchPending &&
             (state.mode == LauncherMode.HOME || state.mode == LauncherMode.APP_DRAWER)
-    }
-
-    private fun enterIdleChargePreview() {
-        if (!state.isIdlePageEnabled) {
-            return
-        }
-        if (state.mode != LauncherMode.IDLE) {
-            state = state.copy(
-                mode = LauncherMode.IDLE,
-                returnMode = state.mode,
-            )
-        }
-        renderCurrentFrame()
-        updateDrawerInputFocus()
     }
 
     private fun scheduleIdleCheck() {
