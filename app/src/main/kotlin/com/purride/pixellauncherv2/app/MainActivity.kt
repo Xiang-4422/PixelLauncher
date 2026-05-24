@@ -62,10 +62,12 @@ import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.WindowModeController
+import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.util.TerminalStatusProvider
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
 import com.purride.pixellauncherv2.viewmodel.LauncherViewModel
+import com.purride.pixellauncherv2.viewmodel.toLauncherUiState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -436,11 +438,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_HOME) {
-            if (event.action == KeyEvent.ACTION_DOWN) {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            if (event.keyCode == KeyEvent.KEYCODE_HOME) {
                 navigateHomeFromHardwareKey()
+                return true
             }
-            return true
+            if (onKeyDown(event.keyCode, event)) {
+                return true
+            }
         }
         return super.dispatchKeyEvent(event)
     }
@@ -703,22 +708,50 @@ class MainActivity : AppCompatActivity() {
      */
     private fun renderCurrentFrame() {
         if (!::launcherRootHost.isInitialized) return
+        val uiState = state.toLauncherUiState()
         launcherRootHost.update(
-            state           = launcherViewModel.state.value,
-            theme           = launcherViewModel.currentTheme.value,
+            state           = uiState,
+            theme           = LauncherThemes.from(uiState.selectedTheme),
             screenProfile   = screenProfile,
             chargeTick      = animationState.headerChargeTick,
-            pixelGapEnabled = pixelGapEnabled,
+            pixelGapEnabled = uiState.isPixelGapEnabled,
         )
     }
 
     /** 主页 Pager 手势翻页回调 — 同步旧 state + ViewModel state 的 mode 字段。 */
     private fun onMainPageChanged(mode: LauncherMode) {
         if (state.mode == mode) return
-        state = state.copy(mode = mode)
+        state = when (mode) {
+            LauncherMode.HOME -> LauncherStateTransitions.showHome(state)
+            LauncherMode.APP_DRAWER -> {
+                val previousMode = state.mode
+                val shouldFocusSearchOnEntry = previousMode != LauncherMode.APP_DRAWER && state.openDrawerInSearchMode
+                val drawerState = if (previousMode != LauncherMode.APP_DRAWER) {
+                    LauncherStateTransitions.clearDrawerQuery(
+                        state = state,
+                        visibleRows = visibleRows(),
+                    )
+                } else {
+                    state
+                }
+                LauncherStateTransitions.showAppDrawer(
+                    state = drawerState,
+                    visibleRows = visibleRows(),
+                ).copy(
+                    isDrawerSearchFocused = shouldFocusSearchOnEntry,
+                    isDrawerRailSliding = false,
+                )
+            }
+            LauncherMode.SETTINGS -> LauncherStateTransitions.showSettings(
+                state = state,
+                visibleRows = settingsVisibleRows(),
+            )
+            else -> state.copy(mode = mode)
+        }
         launcherViewModel.update { copy(mode = mode) }
         renderCurrentFrame()
         updateTextInputFocus()
+        scheduleIdleCheck()
     }
 
     // End Phase 8 ─────────────────────────────────────────────────────────────
@@ -968,10 +1001,6 @@ class MainActivity : AppCompatActivity() {
             query = filteredQuery,
             visibleRows = visibleRows(),
         )
-        if (filteredQuery.isNotBlank() && currentDrawerApps().size == 1) {
-            launchSelectedApp()
-            return
-        }
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
     }
@@ -1043,7 +1072,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTextInputFocus() {
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL) {
+        val drawerWantsTextInput = state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL && !drawerWantsTextInput) {
             hideDrawerKeyboard()
         }
     }

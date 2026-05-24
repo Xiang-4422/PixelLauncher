@@ -9,7 +9,6 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Axis
-import com.purride.pixelui.Center
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
@@ -17,11 +16,10 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
-import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
-import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageController
 import com.purride.pixelui.PageView
+import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
@@ -30,6 +28,7 @@ import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
@@ -38,7 +37,6 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
-import com.purride.pixelui.jumpToStart
 import com.purride.pixelui.showItem
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
@@ -48,8 +46,10 @@ import com.purride.pixellauncherv2.ui.screen.SmsInboxScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadsScreen
+import com.purride.pixellauncherv2.ui.text.LauncherTextRasterizers
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
+import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -72,6 +72,7 @@ internal class LauncherRootHost(
     private var chargeTick: Int = 0
     private var screenProfile: ScreenProfile = ScreenProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
     private var pixelGapEnabled: Boolean = true
+    private val textRasterizers = LauncherTextRasterizers(context)
 
     // ── Main pager: HOME=0, APP_DRAWER=1, SETTINGS=2 ─────────────────────────
     private val mainPagerController = PageController()
@@ -103,6 +104,10 @@ internal class LauncherRootHost(
     val setup: PixelHostSetup = createPixelHostSetup(
         context = context,
         config = PixelHostSetupConfig(
+            textRasterizer = textRasterizers.getRasterizer(
+                uiState.selectedFontSize,
+                uiState.selectedFontStyle,
+            ),
             content = { buildRoot() },
         ),
     )
@@ -133,6 +138,10 @@ internal class LauncherRootHost(
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
         setup.hostView.backgroundColor = theme.backgroundColor
         setup.hostView.pixelGridColor  = theme.pixelGridColor
+        setup.hostView.textRasterizer = textRasterizers.getRasterizer(
+            state.selectedFontSize,
+            state.selectedFontStyle,
+        )
 
         // ── Sync main pager ───────────────────────────────────────────────────
         val targetMainPage = modeToMainPage(state.mode)
@@ -248,26 +257,35 @@ internal class LauncherRootHost(
 
     // ── Main pager ────────────────────────────────────────────────────────────
 
-    private fun buildMainPager(): Widget = PageView(
-        axis = Axis.HORIZONTAL,
-        controller = mainPagerController,
-        state = mainPagerState,
-        pages = listOf(
-            buildHomePage(),
-            buildDrawerPage(),
-            buildSettingsPage(),
+    private fun buildMainPager(): Widget = Column(
+        mainAxisSize = MainAxisSize.MAX,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        spacing = 0,
+        children = listOf(
+            buildSharedStatusBar(),
+            Expanded(
+                child = PageView(
+                    axis = Axis.HORIZONTAL,
+                    controller = mainPagerController,
+                    state = mainPagerState,
+                    pages = listOf(
+                        buildHomePage(),
+                        buildDrawerPage(),
+                        buildSettingsPage(),
+                    ),
+                    onPageChanged = { page ->
+                        MAIN_PAGE_MODES.getOrNull(page)?.let { mode ->
+                            callbacks.onMainPageChanged(mode)
+                        }
+                    },
+                ),
+            ),
         ),
-        onPageChanged = { page ->
-            MAIN_PAGE_MODES.getOrNull(page)?.let { mode ->
-                callbacks.onMainPageChanged(mode)
-            }
-        },
     )
 
     private fun buildHomePage(): Widget = HomeScreen(
         uiState = uiState,
         theme = theme,
-        chargeTick = chargeTick,
         onOpenContacts = callbacks.onOpenContacts,
         onOpenSms = callbacks.onOpenSms,
     )
@@ -278,6 +296,44 @@ internal class LauncherRootHost(
         onItemAction = callbacks.onSettingsItemAction,
     )
 
+    private fun buildSharedStatusBar(): Widget =
+        if (uiState.mode == LauncherMode.APP_DRAWER) {
+            Padding(
+                horizontal = 2,
+                vertical = 1,
+                child = SizedBox(
+                    height = drawerTextFieldHeight(),
+                    child = TextField(
+                        state = drawerQueryState,
+                        controller = drawerTextController,
+                        placeholder = "SEARCH APP",
+                        autofocus = uiState.isDrawerSearchFocused,
+                        textInputAction = TextInputAction.SEARCH,
+                        style = TextFieldStyle(
+                            borderColor = null,
+                            focusedBorderColor = null,
+                            textStyle = TextStyle(color = theme.primaryColor),
+                            placeholderStyle = TextStyle(color = theme.dimColor),
+                        ),
+                        onChanged = callbacks.onDrawerQueryChanged,
+                        onSubmitted = { callbacks.onDrawerSubmitSearch() },
+                    ),
+                ),
+            )
+        } else {
+            LauncherHeader(
+                timeText = uiState.currentTimeText.ifEmpty { "--:--" },
+                screenTitle = when (uiState.mode) {
+                    LauncherMode.SETTINGS -> "SETTINGS"
+                    else -> "HOME"
+                },
+                batteryLevel = uiState.batteryLevel,
+                isCharging = uiState.isCharging,
+                chargeTick = chargeTick,
+                theme = theme,
+            )
+        }
+
     // ── APP_DRAWER content ────────────────────────────────────────────────────
 
     private fun buildDrawerPage(): Widget {
@@ -285,64 +341,27 @@ internal class LauncherRootHost(
         val selectedIndex = uiState.selectedIndex.coerceIn(
             0, apps.lastIndex.coerceAtLeast(0),
         )
-        val selectedLabel = apps.getOrNull(selectedIndex)?.label ?: "NONE"
-        return Container(
-            fillColor = PixelColor.Transparent,
-            borderColor = null,
-            padding = EdgeInsets.all(4),
-            child = Column(
-                spacing = 3,
-                crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                children = listOf(
-                    drawerSectionTitle(),
-                    Row(
-                        spacing = 2,
-                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                        children = listOf(
-                            Expanded(
-                                child = drawerInfoCard(
-                                    label = "RESULTS",
-                                    value = apps.size.toString(),
-                                    accent = apps.isEmpty(),
-                                ),
-                            ),
-                            Expanded(
-                                child = drawerInfoCard(
-                                    label = "SELECTED",
-                                    value = selectedLabel.uppercase(),
-                                    accent = apps.isNotEmpty(),
-                                ),
-                            ),
-                        ),
-                    ),
-                    SizedBox(
-                        height = 16,
-                        child = TextField(
-                            state = drawerQueryState,
-                            controller = drawerTextController,
-                            placeholder = "SEARCH APP",
-                            autofocus = uiState.isDrawerSearchFocused,
-                            textInputAction = TextInputAction.SEARCH,
-                            onChanged = callbacks.onDrawerQueryChanged,
-                            onSubmitted = { callbacks.onDrawerSubmitSearch() },
-                        ),
-                    ),
-                    drawerActions(apps),
-                    drawerAlphaIndex(apps),
-                    SizedBox(
-                        height = 54,
+        return Column(
+            spacing = 0,
+            mainAxisSize = MainAxisSize.MAX,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            children = listOf(
+                Expanded(
+                    child = Padding(
+                        horizontal = 2,
+                        vertical = 2,
                         child = ListViewBuilder(
                             itemCount = apps.size.coerceAtLeast(1),
                             state = drawerListState,
                             controller = drawerListController,
-                            itemExtent = DRAWER_ROW_HEIGHT,
-                            cacheExtent = 2,
-                            spacing = 2,
+                            itemExtent = drawerRowHeight(),
+                            cacheExtent = 4,
+                            spacing = 1,
                             itemBuilder = { index ->
                                 val app = apps.getOrNull(index)
                                 val isSelected = index == selectedIndex && app != null
                                 drawerListItem(
-                                    label = app?.label?.uppercase() ?: "NO RESULTS",
+                                    label = app?.label?.uppercase() ?: if (uiState.isLoading) "LOADING" else "NO RESULTS",
                                     selected = isSelected,
                                     enabled = app != null,
                                     onTap = app?.let { { callbacks.onDrawerAppPressed(index) } },
@@ -355,138 +374,42 @@ internal class LauncherRootHost(
         )
     }
 
+    private fun drawerTextFieldHeight(): Int = uiState.selectedFontSize.px + 6
+
+    private fun drawerRowHeight(): Int = uiState.selectedFontSize.px + 5
+
     private fun drawerListItem(
         label: String,
         selected: Boolean,
         enabled: Boolean,
         onTap: (() -> Unit)?,
     ): Widget {
-        val item = Container(
-            height = DRAWER_ROW_HEIGHT,
-            fillColor = PixelColor.Transparent,
-            borderColor = if (selected) theme.accentColor else theme.primaryColor,
-            padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
-            alignment = when (uiState.drawerListAlignment) {
-                DrawerListAlignment.LEFT   -> Alignment.CENTER_START
-                DrawerListAlignment.CENTER -> Alignment.CENTER
-                DrawerListAlignment.RIGHT  -> Alignment.CENTER_END
-            },
-            child = Text(
-                label,
-                style = TextStyle(color = if (enabled) theme.primaryColor else theme.primaryColor),
-                overflow = TextOverflow.ELLIPSIS,
+        val item = Row(
+            mainAxisSize = MainAxisSize.MAX,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            children = listOf(
+                Expanded(
+                    child = Container(
+                        height = drawerRowHeight(),
+                        fillColor = PixelColor.Transparent,
+                        borderColor = if (selected) theme.accentColor else null,
+                        padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+                        alignment = when (uiState.drawerListAlignment) {
+                            DrawerListAlignment.LEFT   -> Alignment.CENTER_START
+                            DrawerListAlignment.CENTER -> Alignment.CENTER
+                            DrawerListAlignment.RIGHT  -> Alignment.CENTER_END
+                        },
+                        child = Text(
+                            label,
+                            style = TextStyle(color = if (enabled) theme.primaryColor else theme.dimColor),
+                            overflow = TextOverflow.ELLIPSIS,
+                        ),
+                    ),
+                ),
             ),
         )
         return if (onTap != null) GestureDetector(onTap = onTap, child = item) else item
     }
-
-    private fun drawerActions(apps: List<AppEntry>): Widget = SizedBox(
-        height = 14,
-        child = Row(
-            spacing = 2,
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            children = listOf(
-                Expanded(
-                    child = OutlinedButton(
-                        text = "TOP",
-                        onPressed = { drawerListController.jumpToStart(drawerListState) },
-                        borderColor = theme.primaryColor,
-                    ),
-                ),
-                Expanded(
-                    child = OutlinedButton(
-                        text = "MID",
-                        onPressed = {
-                            val index = (apps.size / 2).coerceAtLeast(0)
-                            if (apps.isNotEmpty()) {
-                                drawerListController.showItem(drawerListState, index)
-                                callbacks.onDrawerShowIndex(index)
-                            }
-                        },
-                        borderColor = theme.accentColor,
-                    ),
-                ),
-                Expanded(
-                    child = OutlinedButton(
-                        text = "END",
-                        onPressed = { drawerListController.jumpToEnd(drawerListState) },
-                        borderColor = theme.primaryColor,
-                    ),
-                ),
-            ),
-        ),
-    )
-
-    private fun drawerAlphaIndex(apps: List<AppEntry>): Widget {
-        val selectedLetter = apps.getOrNull(
-            uiState.selectedIndex.coerceIn(0, apps.lastIndex.coerceAtLeast(0)),
-        )?.label?.firstOrNull()?.uppercaseChar()
-        return SizedBox(
-            height = 14,
-            child = Row(
-                spacing = 2,
-                crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                children = INDEX_LETTERS.map { letter ->
-                    val isActive = selectedLetter?.let { letter.firstOrNull() == it } == true
-                    Expanded(
-                        child = OutlinedButton(
-                            text = letter,
-                            onPressed = {
-                                val index = apps.indexOfFirst { app ->
-                                    app.label.startsWith(letter, ignoreCase = true) ||
-                                        app.englishLabel.startsWith(letter, ignoreCase = true)
-                                }
-                                if (index >= 0) {
-                                    drawerListController.showItem(drawerListState, index)
-                                    callbacks.onDrawerShowIndex(index)
-                                }
-                            },
-                            borderColor = if (isActive) theme.accentColor else theme.primaryColor,
-                        ),
-                    )
-                },
-            ),
-        )
-    }
-
-    private fun drawerSectionTitle(): Widget = Container(
-        height = 18,
-        fillColor = PixelColor.Transparent,
-        borderColor = theme.accentColor,
-        padding = EdgeInsets.all(3),
-        child = Center(
-            child = Text(
-                data = "APP DRAWER",
-                style = TextStyle(color = theme.accentColor),
-                overflow = TextOverflow.ELLIPSIS,
-            ),
-        ),
-    )
-
-    private fun drawerInfoCard(label: String, value: String, accent: Boolean): Widget =
-        Container(
-            height = 20,
-            fillColor = PixelColor.Transparent,
-            borderColor = if (accent) theme.accentColor else theme.primaryColor,
-            padding = EdgeInsets.all(2),
-            alignment = Alignment.TOP_START,
-            child = Column(
-                spacing = 1,
-                crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                children = listOf(
-                    Text(
-                        data = label,
-                        style = TextStyle(color = theme.accentColor),
-                        overflow = TextOverflow.ELLIPSIS,
-                    ),
-                    Text(
-                        data = value,
-                        style = TextStyle(color = theme.primaryColor),
-                        overflow = TextOverflow.ELLIPSIS,
-                    ),
-                ),
-            ),
-        )
 
     // ── Sync helpers ──────────────────────────────────────────────────────────
 
@@ -532,10 +455,6 @@ internal class LauncherRootHost(
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
         )
-
-        private const val DRAWER_ROW_HEIGHT = 13
-        private val INDEX_LETTERS = listOf("A", "M", "Z")
-
         fun modeToMainPage(mode: LauncherMode): Int? = MAIN_PAGE_MODES.indexOf(mode).takeIf { it >= 0 }
 
         private fun PixelShape.toEngineShape(): EnginePixelShape =

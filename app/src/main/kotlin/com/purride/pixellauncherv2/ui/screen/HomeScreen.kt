@@ -15,28 +15,24 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
  * HOME 屏幕（pixel-engine 渲染）。
  *
  * 结构：
- *  - LauncherHeader（时间 / HOME 标题 / 电量分隔线）
  *  - 固定信息区（日期、天气、闹钟、通信状态、屏幕使用统计）
  *  - Expanded 弹性空白
  *  - 底栏：CONTACT 按钮（左）/ SMS 按钮（右）
  *
  * @param uiState        当前 UI 状态快照
  * @param theme          当前颜色主题
- * @param chargeTick     充电动画帧计数，来自 LauncherAnimationState.headerChargeTick
  * @param onOpenContacts 点击 CONTACT → 打开通讯录
  * @param onOpenSms      点击 SMS → 进入短信模块
  */
 class HomeScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
-    private val chargeTick: Int,
     private val onOpenContacts: () -> Unit,
     private val onOpenSms: () -> Unit,
     override val key: Any? = null,
@@ -55,14 +51,6 @@ class HomeScreen(
                 mainAxisSize = MainAxisSize.MAX,
                 spacing = 0,
                 children = listOf(
-                    LauncherHeader(
-                        timeText = s.currentTimeText.ifEmpty { "--:--" },
-                        screenTitle = "HOME",
-                        batteryLevel = s.batteryLevel,
-                        isCharging = s.isCharging,
-                        chargeTick = widget.chargeTick,
-                        theme = t,
-                    ),
                     Padding(
                         horizontal = 2,
                         vertical = 2,

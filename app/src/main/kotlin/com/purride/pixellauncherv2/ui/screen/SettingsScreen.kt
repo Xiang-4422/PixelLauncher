@@ -22,7 +22,6 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.SettingsMenuRow
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -61,14 +60,6 @@ class SettingsScreen(
                 mainAxisSize = MainAxisSize.MAX,
                 spacing = 0,
                 children = listOf(
-                    LauncherHeader(
-                        timeText = widget.uiState.currentTimeText.ifEmpty { "--:--" },
-                        screenTitle = "SETTINGS",
-                        batteryLevel = widget.uiState.batteryLevel,
-                        isCharging = widget.uiState.isCharging,
-                        chargeTick = 0,
-                        theme = t,
-                    ),
                     Expanded(
                         child = ListViewBuilder(
                             state = listState,
