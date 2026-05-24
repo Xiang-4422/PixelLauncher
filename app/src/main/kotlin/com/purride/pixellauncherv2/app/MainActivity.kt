@@ -235,7 +235,6 @@ class MainActivity : AppCompatActivity() {
                 onDrawerQueryChanged = ::onPixelEngineDrawerQueryChanged,
                 onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
                 onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
-                onDrawerShowIndex    = ::onPixelEngineDrawerShowIndex,
                 onSettingsItemAction = ::onSettingsItemAction,
                 onRequestSmsRole     = ::onSmsRequestRole,
                 onOpenThread         = ::onSmsOpenThread,
@@ -460,14 +459,25 @@ class MainActivity : AppCompatActivity() {
         if (wakeIfIdle()) {
             return true
         }
+        if (state.mode == LauncherMode.HOME ||
+            state.mode == LauncherMode.APP_DRAWER ||
+            state.mode == LauncherMode.SETTINGS
+        ) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER -> return false
+            }
+        }
         recordInteraction()
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP -> {
                 when (state.mode) {
-                    LauncherMode.APP_DRAWER -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        moveSelection(-1)
-                    }
+                    LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
                         moveSmsThreadSelection(-1)
@@ -476,10 +486,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_INBOX -> {
                         moveSmsSelection(-1)
                     }
-                    LauncherMode.SETTINGS -> {
-                        settleSettingsMotionBeforeExplicitAction()
-                        moveSettingsSelection(-1)
-                    }
+                    LauncherMode.SETTINGS -> Unit
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
                     LauncherMode.IDLE,
@@ -490,10 +497,7 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_DPAD_DOWN -> {
                 when (state.mode) {
-                    LauncherMode.APP_DRAWER -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        moveSelection(1)
-                    }
+                    LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
                         moveSmsThreadSelection(1)
@@ -502,11 +506,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_INBOX -> {
                         moveSmsSelection(1)
                     }
-                    LauncherMode.SETTINGS -> {
-                        settleSettingsMotionBeforeExplicitAction()
-                        moveSettingsSelection(1)
-                    }
-                    LauncherMode.HOME -> showAppDrawer()
+                    LauncherMode.SETTINGS -> Unit
+                    LauncherMode.HOME -> Unit
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE,
                     LauncherMode.SMS_ROLE_PROMPT -> Unit
@@ -516,19 +517,13 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> {
-                        settleSettingsMotionBeforeExplicitAction()
-                        changeSettingValue(-1)
-                    }
+                    LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREADS,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> moveSmsSelection(-1)
-                    LauncherMode.APP_DRAWER -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        pageDrawer(-1)
-                    }
+                    LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -537,19 +532,13 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> {
-                        settleSettingsMotionBeforeExplicitAction()
-                        changeSettingValue(1)
-                    }
+                    LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREADS,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> moveSmsSelection(1)
-                    LauncherMode.APP_DRAWER -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        pageDrawer(1)
-                    }
+                    LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -558,13 +547,9 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_DPAD_CENTER,
             KeyEvent.KEYCODE_ENTER,
-            KeyEvent.KEYCODE_NUMPAD_ENTER,
-            KeyEvent.KEYCODE_SPACE -> {
+            KeyEvent.KEYCODE_NUMPAD_ENTER -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> {
-                        settleSettingsMotionBeforeExplicitAction()
-                        activateSelectedSetting()
-                    }
+                    LauncherMode.SETTINGS -> Unit
                     LauncherMode.SMS_ROLE_PROMPT -> ensureSmsReadAccessAndRole()
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
@@ -582,15 +567,8 @@ class MainActivity : AppCompatActivity() {
                         launchSelectedUnreadSms()
                     }
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
-                    LauncherMode.HOME -> showAppDrawer()
-                    LauncherMode.APP_DRAWER -> {
-                        settleDrawerMotionBeforeExplicitAction()
-                        if (state.drawerQuery.isNotBlank()) {
-                            launchAppAtIndex(0)
-                        } else {
-                            launchSelectedApp()
-                        }
-                    }
+                    LauncherMode.HOME -> Unit
+                    LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.IDLE -> Unit
                 }
                 true
@@ -653,15 +631,6 @@ class MainActivity : AppCompatActivity() {
                 refreshDerivedUiState(render = true)
             }
         }
-    }
-
-    private fun moveSelection(delta: Int) {
-        state = LauncherStateTransitions.moveSelection(
-            state = state,
-            delta = delta,
-            visibleRows = visibleRows(),
-        )
-        renderCurrentFrame()
     }
 
     private fun launchSelectedApp() {
@@ -1049,21 +1018,6 @@ class MainActivity : AppCompatActivity() {
 
             DrawerContentTapAction.NONE -> Unit
         }
-    }
-
-    private fun onPixelEngineDrawerShowIndex(index: Int) {
-        if (state.mode != LauncherMode.APP_DRAWER) {
-            return
-        }
-        recordInteraction()
-        settleDrawerMotionBeforeExplicitAction()
-        state = LauncherStateTransitions.selectIndex(
-            state = state,
-            index = index,
-            visibleRows = visibleRows(),
-        )
-        renderCurrentFrame()
-        startAnimationTickerIfNeeded()
     }
 
     private fun hideDrawerKeyboard() {
@@ -1510,34 +1464,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun moveSettingsSelection(delta: Int) {
-        state = LauncherStateTransitions.moveSettingsSelection(
-            state = state,
-            delta = delta,
-            visibleRows = settingsVisibleRows(),
-        )
-        renderCurrentFrame()
-    }
-
-    private fun activateSelectedSetting() {
-        activateSettingItem(SettingsMenuModel.selectedItem(state))
-    }
-
-    private fun activateSettingItem(item: SettingsMenuItem) {
-        when (item) {
-            SettingsMenuItem.FONT_SIZE -> changeSettingValue(1)
-            SettingsMenuItem.FONT_STYLE -> changeSettingValue(1)
-            SettingsMenuItem.RESOLUTION -> changeSettingValue(1)
-            SettingsMenuItem.PIXEL_GAP -> changeSettingValue(1)
-            SettingsMenuItem.STYLE -> changeSettingValue(1)
-            SettingsMenuItem.THEME -> changeSettingValue(1)
-            SettingsMenuItem.APP_LIST_ALIGNMENT -> changeSettingValue(1)
-            SettingsMenuItem.IDLE_PAGE -> changeSettingValue(1)
-            SettingsMenuItem.DRAWER_AUTO_SEARCH -> changeSettingValue(1)
-            SettingsMenuItem.ADVANCED -> Unit
-        }
-    }
-
     private fun changeSettingValue(direction: Int) {
         when (SettingsMenuModel.selectedItem(state)) {
             SettingsMenuItem.FONT_SIZE -> {
@@ -1645,15 +1571,6 @@ class MainActivity : AppCompatActivity() {
 
             SettingsMenuItem.ADVANCED -> Unit
         }
-    }
-
-    private fun pageDrawer(direction: Int) {
-        state = LauncherStateTransitions.pageSelection(
-            state = state,
-            direction = direction,
-            visibleRows = visibleRows(),
-        )
-        renderCurrentFrame()
     }
 
     private fun smsInboxVisibleRows(): Int {

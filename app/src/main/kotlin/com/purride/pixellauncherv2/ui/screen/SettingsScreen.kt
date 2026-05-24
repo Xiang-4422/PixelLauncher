@@ -52,7 +52,6 @@ class SettingsScreen(
 
         override fun build(context: BuildContext): Widget {
             val rows = widget.uiState.toSettingsRows()
-            val selectedIndex = widget.uiState.settingsSelectedIndex.coerceIn(0, rows.lastIndex.coerceAtLeast(0))
             val t = widget.theme
 
             return Column(
@@ -68,7 +67,7 @@ class SettingsScreen(
                             itemExtent = ROW_HEIGHT,
                             spacing = 1,
                             itemBuilder = { index ->
-                                buildRow(rows[index], index == selectedIndex, t)
+                                buildRow(rows[index], t)
                             },
                         ),
                     ),
@@ -78,13 +77,11 @@ class SettingsScreen(
 
         private fun buildRow(
             row: SettingsMenuRow,
-            selected: Boolean,
             t: LauncherTheme,
         ): Widget {
-            val borderColor = if (selected) t.accentColor else null
             val rowPadding = EdgeInsets.symmetric(horizontal = 2, vertical = 1)
             return Container(
-                borderColor = borderColor,
+                borderColor = null,
                 padding = rowPadding,
                 child = Row(
                     spacing = 2,

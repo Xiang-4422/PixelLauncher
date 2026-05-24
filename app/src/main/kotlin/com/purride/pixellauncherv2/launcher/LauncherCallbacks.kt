@@ -16,7 +16,6 @@ data class LauncherCallbacks(
     val onDrawerQueryChanged: (String) -> Unit,
     val onDrawerSubmitSearch: () -> Unit,
     val onDrawerAppPressed: (Int) -> Unit,
-    val onDrawerShowIndex: (Int) -> Unit,
 
     // ── SETTINGS ──────────────────────────────────────────────────────────────
     val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,

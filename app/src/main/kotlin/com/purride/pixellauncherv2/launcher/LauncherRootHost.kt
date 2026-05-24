@@ -83,7 +83,6 @@ internal class LauncherRootHost(
     private val drawerQueryState = drawerTextController.create()
     private val drawerListController = ScrollController()
     private val drawerListState = drawerListController.create()
-    private var drawerLastSelectedIndex = -1
 
     // ── SMS_THREADS list ──────────────────────────────────────────────────────
     private val threadListController = ScrollController()
@@ -151,15 +150,6 @@ internal class LauncherRootHost(
 
         // ── Sync drawer ───────────────────────────────────────────────────────
         syncDrawerQueryState()
-        val selectedIndex = state.selectedIndex.coerceIn(
-            0, (drawerApps().size - 1).coerceAtLeast(0),
-        )
-        if (state.mode == LauncherMode.APP_DRAWER &&
-            selectedIndex != drawerLastSelectedIndex
-        ) {
-            drawerListController.showItem(drawerListState, selectedIndex)
-            drawerLastSelectedIndex = selectedIndex
-        }
 
         // ── Sync SMS inbox pager page count ───────────────────────────────────
         val needed = state.unreadSmsEntries.size.coerceAtLeast(1)
@@ -338,9 +328,6 @@ internal class LauncherRootHost(
 
     private fun buildDrawerPage(): Widget {
         val apps = drawerApps()
-        val selectedIndex = uiState.selectedIndex.coerceIn(
-            0, apps.lastIndex.coerceAtLeast(0),
-        )
         return Column(
             spacing = 0,
             mainAxisSize = MainAxisSize.MAX,
@@ -359,10 +346,8 @@ internal class LauncherRootHost(
                             spacing = 1,
                             itemBuilder = { index ->
                                 val app = apps.getOrNull(index)
-                                val isSelected = index == selectedIndex && app != null
                                 drawerListItem(
                                     label = app?.label?.uppercase() ?: if (uiState.isLoading) "LOADING" else "NO RESULTS",
-                                    selected = isSelected,
                                     enabled = app != null,
                                     onTap = app?.let { { callbacks.onDrawerAppPressed(index) } },
                                 )
@@ -380,7 +365,6 @@ internal class LauncherRootHost(
 
     private fun drawerListItem(
         label: String,
-        selected: Boolean,
         enabled: Boolean,
         onTap: (() -> Unit)?,
     ): Widget {
@@ -392,7 +376,7 @@ internal class LauncherRootHost(
                     child = Container(
                         height = drawerRowHeight(),
                         fillColor = PixelColor.Transparent,
-                        borderColor = if (selected) theme.accentColor else null,
+                        borderColor = null,
                         padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
                         alignment = when (uiState.drawerListAlignment) {
                             DrawerListAlignment.LEFT   -> Alignment.CENTER_START
