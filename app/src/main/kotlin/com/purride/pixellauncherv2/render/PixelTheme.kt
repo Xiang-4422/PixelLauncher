@@ -1,9 +1,9 @@
 package com.purride.pixellauncherv2.render
 
-enum class PixelTheme {
-    GREEN_PHOSPHOR,
-    AMBER_CRT,
-    ICE_LCD,
-    MONO_LCD,
-    NIGHT_MONO,
+enum class PixelTheme(
+    val fileName: String,
+    val displayLabel: String,
+) {
+    DAY("day.json", "DAY"),
+    NIGHT("night.json", "NIGHT"),
 }

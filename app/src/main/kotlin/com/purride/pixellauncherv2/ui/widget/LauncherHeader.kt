@@ -7,8 +7,13 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextField
+import com.purride.pixelui.TextFieldStyle
+import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 
 /**
@@ -27,7 +32,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
  * @param batteryLevel 电量百分比 0–100
  * @param isCharging  是否正在充电
  * @param chargeTick  动画帧计数，传 0 表示静态（无充电动画）
- * @param theme       当前颜色主题（提供 primaryColor / accentColor）
+ * @param theme       当前颜色主题（提供 statusBar token）
  */
 fun LauncherHeader(
     timeText: String,
@@ -40,9 +45,9 @@ fun LauncherHeader(
     children = listOf(
         Row(
             children = listOf(
-                Text(timeText, style = TextStyle(color = theme.primaryColor)),
+                Text(timeText, style = TextStyle(color = theme.statusBar.text)),
                 Expanded(child = SizedBox(width = 0, height = 0)),
-                Text(screenTitle, style = TextStyle(color = theme.primaryColor)),
+                Text(screenTitle, style = TextStyle(color = theme.statusBar.text)),
             ),
             spacing = 0,
         ),
@@ -50,8 +55,63 @@ fun LauncherHeader(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
-            primaryColor = theme.primaryColor,
-            accentColor = theme.accentColor,
+            primaryColor = theme.statusBar.divider,
+            accentColor = theme.statusBar.charging,
+        ),
+    ),
+    spacing = 0,
+    mainAxisSize = MainAxisSize.MIN,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+)
+
+/**
+ * 同一套 Launcher 状态栏的搜索态。
+ *
+ * 外层结构必须和 [LauncherHeader] 保持一致：一行内容 + 一条 BatteryDivider。
+ * 这样 HOME / DRAWER / SETTINGS 之间切换时，状态栏尺寸不会跳变。
+ */
+fun LauncherSearchHeader(
+    state: PixelTextFieldState,
+    controller: TextEditingController,
+    placeholder: String,
+    autofocus: Boolean,
+    batteryLevel: Int,
+    isCharging: Boolean,
+    chargeTick: Int,
+    theme: LauncherTheme,
+    onChanged: (String) -> Unit,
+    onSubmitted: () -> Unit,
+): Widget = Column(
+    children = listOf(
+        Row(
+            children = listOf(
+                Expanded(
+                    child = TextField(
+                        state = state,
+                        controller = controller,
+                        placeholder = placeholder,
+                        autofocus = autofocus,
+                        textInputAction = TextInputAction.SEARCH,
+                        style = TextFieldStyle(
+                            borderColor = null,
+                            focusedBorderColor = null,
+                            textStyle = TextStyle(color = theme.statusBar.searchText),
+                            placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
+                            padding = 0,
+                        ),
+                        onChanged = onChanged,
+                        onSubmitted = { onSubmitted() },
+                    ),
+                ),
+            ),
+            spacing = 0,
+        ),
+        BatteryDividerWidget(
+            batteryLevel = batteryLevel,
+            isCharging = isCharging,
+            chargeTick = chargeTick,
+            primaryColor = theme.statusBar.divider,
+            accentColor = theme.statusBar.charging,
         ),
     ),
     spacing = 0,

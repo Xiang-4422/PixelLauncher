@@ -72,7 +72,8 @@ data class LauncherUiState(
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
-    val selectedTheme: PixelTheme = PixelTheme.GREEN_PHOSPHOR,
+    val pixelGapRatio: Float = 1f,
+    val selectedTheme: PixelTheme = PixelTheme.DAY,
 
     // ── UI behaviour ──────────────────────────────────────────────────────────
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,

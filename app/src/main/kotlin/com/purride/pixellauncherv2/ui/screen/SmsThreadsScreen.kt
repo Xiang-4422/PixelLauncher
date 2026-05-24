@@ -57,7 +57,7 @@ fun SmsThreadsScreen(
                     children = listOf(
                         Text(
                             "NO MESSAGES",
-                            style = TextStyle(color = theme.dimColor),
+                            style = TextStyle(color = theme.sms.timestamp),
                             textAlign = com.purride.pixelui.TextAlign.CENTER,
                         ),
                     ),
@@ -96,19 +96,19 @@ private fun buildThreadRow(
                 children = listOf(
                     Text(
                         thread.address.uppercase(),
-                        style = TextStyle(color = theme.accentColor),
+                        style = TextStyle(color = theme.sms.sender),
                         overflow = TextOverflow.ELLIPSIS,
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
                     Text(
                         SmsTimeFormatter.format(thread.dateMillis),
-                        style = TextStyle(color = theme.dimColor),
+                        style = TextStyle(color = theme.sms.timestamp),
                     ),
                 ),
             ),
             Text(
                 buildSnippetLabel(thread),
-                style = TextStyle(color = theme.dimColor),
+                style = TextStyle(color = theme.text.muted),
                 overflow = TextOverflow.ELLIPSIS,
             ),
         ),

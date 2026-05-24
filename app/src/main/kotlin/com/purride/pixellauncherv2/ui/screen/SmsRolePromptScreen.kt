@@ -28,14 +28,14 @@ fun SmsRolePromptScreen(
         crossAxisAlignment = CrossAxisAlignment.CENTER,
         spacing = 2,
         children = listOf(
-            Text("SET PIXEL LAUNCHER", style = TextStyle(color = theme.primaryColor)),
-            Text("AS DEFAULT SMS APP", style = TextStyle(color = theme.primaryColor)),
-            Text("TO RECEIVE AND REPLY", style = TextStyle(color = theme.primaryColor)),
+            Text("SET PIXEL LAUNCHER", style = TextStyle(color = theme.text.primary)),
+            Text("AS DEFAULT SMS APP", style = TextStyle(color = theme.text.primary)),
+            Text("TO RECEIVE AND REPLY", style = TextStyle(color = theme.text.primary)),
             SizedBox(height = 4),
             OutlinedButton(
                 text = "CONTINUE",
                 onPressed = onRequestRole,
-                borderColor = theme.accentColor,
+                borderColor = theme.button.border,
             ),
         ),
     ),

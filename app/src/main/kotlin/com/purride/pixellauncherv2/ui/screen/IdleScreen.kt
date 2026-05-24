@@ -27,11 +27,11 @@ fun IdleScreen(
         children = listOf(
             Text(
                 uiState.currentTimeText.ifEmpty { "--:--" },
-                style = TextStyle(color = theme.primaryColor),
+                style = TextStyle(color = theme.text.primary),
             ),
             Text(
                 uiState.currentDateText.ifBlank { "--- --- --" },
-                style = TextStyle(color = theme.dimColor),
+                style = TextStyle(color = theme.text.muted),
             ),
         ),
     ),

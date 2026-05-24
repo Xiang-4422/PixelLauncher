@@ -64,7 +64,7 @@ fun SmsThreadDetailScreen(
                     children = listOf(
                         Text(
                             "NO MESSAGES",
-                            style = TextStyle(color = theme.dimColor),
+                            style = TextStyle(color = theme.sms.timestamp),
                             textAlign = com.purride.pixelui.TextAlign.CENTER,
                         ),
                     ),
@@ -90,18 +90,18 @@ fun SmsThreadDetailScreen(
                                     children = listOf(
                                         Text(
                                             if (isOut) "OUT" else "IN",
-                                            style = TextStyle(color = theme.accentColor),
+                                            style = TextStyle(color = theme.sms.sender),
                                         ),
                                         Expanded(child = SizedBox(width = 0, height = 0)),
                                         Text(
                                             SmsTimeFormatter.format(msg.dateMillis),
-                                            style = TextStyle(color = theme.dimColor),
+                                            style = TextStyle(color = theme.sms.timestamp),
                                         ),
                                     ),
                                 ),
                                 Text(
                                     msg.body,
-                                    style = TextStyle(color = theme.primaryColor),
+                                    style = TextStyle(color = theme.sms.body),
                                     overflow = TextOverflow.ELLIPSIS,
                                 ),
                             ),
@@ -131,7 +131,7 @@ fun SmsThreadDetailScreen(
                 OutlinedButton(
                     text = "SEND",
                     onPressed = onSendDraft,
-                    borderColor = theme.accentColor,
+                    borderColor = theme.sms.draftBorder,
                 ),
             ),
         ),

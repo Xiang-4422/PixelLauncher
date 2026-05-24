@@ -67,7 +67,7 @@ fun SmsInboxScreen(
                         children = listOf(
                             Text(
                                 "NO UNREAD MESSAGES",
-                                style = TextStyle(color = theme.dimColor),
+                                style = TextStyle(color = theme.sms.timestamp),
                                 textAlign = com.purride.pixelui.TextAlign.CENTER,
                             ),
                         ),
@@ -111,11 +111,11 @@ private fun buildInboxPage(
             children = listOf(
                 Text(
                     entry.address.uppercase(),
-                    style = TextStyle(color = theme.accentColor),
+                    style = TextStyle(color = theme.sms.sender),
                 ),
                 Text(
                     entry.body,
-                    style = TextStyle(color = theme.primaryColor),
+                    style = TextStyle(color = theme.sms.body),
                     softWrap = true,
                     maxLines = Int.MAX_VALUE,
                 ),

@@ -46,8 +46,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     /** 当前主题颜色方案（由 [state.selectedTheme] 派生）。 */
     val currentTheme: StateFlow<LauncherTheme> = _state
-        .map { LauncherThemes.from(it.selectedTheme) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, LauncherThemes.from(_state.value.selectedTheme))
+        .map { LauncherThemes.fallbackFrom(it.selectedTheme) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, LauncherThemes.fallbackFrom(_state.value.selectedTheme))
 
     init {
         startDeviceStatus()
@@ -68,6 +68,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             selectedPixelShape = appearance.pixelShape,
             selectedDotSizePx = appearance.dotSizePx,
             isPixelGapEnabled = appearance.pixelGapEnabled,
+            pixelGapRatio = appearance.pixelGapRatio,
             selectedTheme = appearance.theme,
             drawerListAlignment = behavior.drawerListAlignment,
             openDrawerInSearchMode = behavior.openDrawerInSearchMode,

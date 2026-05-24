@@ -28,17 +28,15 @@ import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
-import com.purride.pixelui.TextFieldStyle
-import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
-import com.purride.pixelui.TextField
 import com.purride.pixelui.Widget
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
@@ -50,6 +48,7 @@ import com.purride.pixellauncherv2.ui.text.LauncherTextRasterizers
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
+import com.purride.pixellauncherv2.ui.widget.LauncherSearchHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -68,10 +67,11 @@ internal class LauncherRootHost(
 ) {
     // ── Mutable model fields ──────────────────────────────────────────────────
     private var uiState: LauncherUiState = LauncherUiState()
-    private var theme: LauncherTheme = LauncherThemes.GREEN_PHOSPHOR
+    private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY)
     private var chargeTick: Int = 0
     private var screenProfile: ScreenProfile = ScreenProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
     private var pixelGapEnabled: Boolean = true
+    private var pixelGapRatio: Float = 1f
     private val textRasterizers = LauncherTextRasterizers(context)
 
     // ── Main pager: HOME=0, APP_DRAWER=1, SETTINGS=2 ─────────────────────────
@@ -122,21 +122,24 @@ internal class LauncherRootHost(
         theme: LauncherTheme,
         screenProfile: ScreenProfile,
         chargeTick: Int,
-        pixelGapEnabled: Boolean = state.isPixelGapEnabled,
+        pixelGapEnabled: Boolean = state.pixelGapRatio > 0f,
+        pixelGapRatio: Float = state.pixelGapRatio,
     ) {
         uiState = state
         this.theme = theme
         this.chargeTick = chargeTick
         this.screenProfile = screenProfile
         this.pixelGapEnabled = pixelGapEnabled
+        this.pixelGapRatio = pixelGapRatio.coerceIn(0f, 1f)
 
         setup.hostView.profilePreference = PixelHostProfilePreference(
             dotSizePx = screenProfile.dotSizePx,
             pixelShape = screenProfile.pixelShape.toEngineShape(),
         )
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
-        setup.hostView.backgroundColor = theme.backgroundColor
-        setup.hostView.pixelGridColor  = theme.pixelGridColor
+        setup.hostView.setPixelGapRatio(this.pixelGapRatio)
+        setup.hostView.backgroundColor = theme.surface.appBackground
+        setup.hostView.pixelGridColor  = theme.surface.pixelGrid
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
             state.selectedFontSize,
             state.selectedFontStyle,
@@ -284,31 +287,23 @@ internal class LauncherRootHost(
         uiState = uiState,
         theme = theme,
         onItemAction = callbacks.onSettingsItemAction,
+        onItemRatioChanged = callbacks.onSettingsItemRatioChanged,
+        onPreviewChanged = callbacks.onSettingsPreviewChanged,
     )
 
     private fun buildSharedStatusBar(): Widget =
         if (uiState.mode == LauncherMode.APP_DRAWER) {
-            Padding(
-                horizontal = 2,
-                vertical = 1,
-                child = SizedBox(
-                    height = drawerTextFieldHeight(),
-                    child = TextField(
-                        state = drawerQueryState,
-                        controller = drawerTextController,
-                        placeholder = "SEARCH APP",
-                        autofocus = uiState.isDrawerSearchFocused,
-                        textInputAction = TextInputAction.SEARCH,
-                        style = TextFieldStyle(
-                            borderColor = null,
-                            focusedBorderColor = null,
-                            textStyle = TextStyle(color = theme.primaryColor),
-                            placeholderStyle = TextStyle(color = theme.dimColor),
-                        ),
-                        onChanged = callbacks.onDrawerQueryChanged,
-                        onSubmitted = { callbacks.onDrawerSubmitSearch() },
-                    ),
-                ),
+            LauncherSearchHeader(
+                state = drawerQueryState,
+                controller = drawerTextController,
+                placeholder = "SEARCH APP",
+                autofocus = uiState.isDrawerSearchFocused,
+                batteryLevel = uiState.batteryLevel,
+                isCharging = uiState.isCharging,
+                chargeTick = chargeTick,
+                theme = theme,
+                onChanged = callbacks.onDrawerQueryChanged,
+                onSubmitted = callbacks.onDrawerSubmitSearch,
             )
         } else {
             LauncherHeader(
@@ -359,8 +354,6 @@ internal class LauncherRootHost(
         )
     }
 
-    private fun drawerTextFieldHeight(): Int = uiState.selectedFontSize.px + 6
-
     private fun drawerRowHeight(): Int = uiState.selectedFontSize.px + 5
 
     private fun drawerListItem(
@@ -385,7 +378,7 @@ internal class LauncherRootHost(
                         },
                         child = Text(
                             label,
-                            style = TextStyle(color = if (enabled) theme.primaryColor else theme.dimColor),
+                            style = TextStyle(color = if (enabled) theme.drawer.itemText else theme.drawer.itemTextMuted),
                             overflow = TextOverflow.ELLIPSIS,
                         ),
                     ),

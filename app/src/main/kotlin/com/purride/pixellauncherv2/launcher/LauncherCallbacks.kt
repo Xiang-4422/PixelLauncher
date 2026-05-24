@@ -19,6 +19,8 @@ data class LauncherCallbacks(
 
     // ── SETTINGS ──────────────────────────────────────────────────────────────
     val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,
+    val onSettingsItemRatioChanged: (SettingsMenuItem, Float) -> Unit,
+    val onSettingsPreviewChanged: () -> Unit,
 
     // ── SMS ───────────────────────────────────────────────────────────────────
     val onRequestSmsRole: () -> Unit,

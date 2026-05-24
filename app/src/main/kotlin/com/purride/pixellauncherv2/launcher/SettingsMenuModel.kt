@@ -14,6 +14,7 @@ enum class SettingsMenuItem {
     FONT_STYLE,
     RESOLUTION,
     PIXEL_GAP,
+    PIXEL_GAP_SIZE,
     STYLE,
     THEME,
     APP_LIST_ALIGNMENT,
@@ -60,9 +61,9 @@ object SettingsMenuModel {
             ))
             add(
             SettingsMenuRow(
-                item = SettingsMenuItem.PIXEL_GAP,
-                title = "PIXEL GAP",
-                value = onOffLabel(state.isPixelGapEnabled),
+                item = SettingsMenuItem.PIXEL_GAP_SIZE,
+                title = "GAP SIZE",
+                value = pixelGapSizeLabel(state.pixelGapRatio),
             ))
             if (state.isPixelGapEnabled) {
                 add(
@@ -124,6 +125,37 @@ object SettingsMenuModel {
         return resolutionOptions[nextIndex]
     }
 
+    fun fontSizeRatio(size: PixelFontSize): Float =
+        ratioForIndex(fontSizeOptions.indexOf(size).takeIf { it >= 0 } ?: 0, fontSizeOptions.size)
+
+    fun fontSizeAtRatio(ratio: Float): PixelFontSize =
+        fontSizeOptions[indexForRatio(ratio, fontSizeOptions.size)]
+
+    fun resolutionRatio(current: Int, screenProfile: ScreenProfile? = null): Float {
+        val options = ScreenProfileFactory.resolutionOptions(screenProfile)
+        val index = options.indexOf(current).takeIf { it >= 0 } ?: 0
+        return ratioForIndex(index, options.size)
+    }
+
+    fun resolutionAtRatio(ratio: Float, screenProfile: ScreenProfile? = null): Int {
+        val options = ScreenProfileFactory.resolutionOptions(screenProfile)
+        return options[indexForRatio(ratio, options.size)]
+    }
+
+    fun nextPixelGapRatio(current: Float, direction: Int): Float {
+        val currentIndex = pixelGapRatioOptions.indices.minByOrNull { index ->
+            kotlin.math.abs(pixelGapRatioOptions[index] - current)
+        } ?: 0
+        return pixelGapRatioOptions[wrapIndex(currentIndex + direction, pixelGapRatioOptions.size)]
+    }
+
+    fun pixelGapRatioSnap(ratio: Float): Float {
+        val index = pixelGapRatioOptions.indices.minByOrNull { candidate ->
+            kotlin.math.abs(pixelGapRatioOptions[candidate] - ratio.coerceIn(0f, 1f))
+        } ?: 0
+        return pixelGapRatioOptions[index]
+    }
+
     fun nextTheme(current: PixelTheme, direction: Int): PixelTheme {
         val currentIndex = themeOptions.indexOf(current).takeIf { it >= 0 } ?: 0
         val nextIndex = wrapIndex(currentIndex + direction, themeOptions.size)
@@ -139,13 +171,7 @@ object SettingsMenuModel {
     }
 
     fun themeLabel(theme: PixelTheme): String {
-        return when (theme) {
-            PixelTheme.GREEN_PHOSPHOR -> "GREEN"
-            PixelTheme.AMBER_CRT -> "AMBER"
-            PixelTheme.ICE_LCD -> "ICE"
-            PixelTheme.MONO_LCD -> "MONO"
-            PixelTheme.NIGHT_MONO -> "NIGHT"
-        }
+        return theme.displayLabel
     }
 
     fun nextDrawerListAlignment(current: DrawerListAlignment, direction: Int): DrawerListAlignment {
@@ -185,6 +211,10 @@ object SettingsMenuModel {
         return if (value) "ON" else "OFF"
     }
 
+    fun pixelGapSizeLabel(ratio: Float): String {
+        return "${(ratio.coerceIn(0f, 1f) * 100).toInt()}%"
+    }
+
     fun resolutionLabel(dotSizePx: Int, screenProfile: ScreenProfile? = null): String {
         return "${dotSizePx}PX"
     }
@@ -203,4 +233,17 @@ object SettingsMenuModel {
         val mod = index % size
         return if (mod < 0) mod + size else mod
     }
+
+    private fun ratioForIndex(index: Int, size: Int): Float {
+        if (size <= 1) return 0f
+        return index.coerceIn(0, size - 1).toFloat() / (size - 1).toFloat()
+    }
+
+    private fun indexForRatio(ratio: Float, size: Int): Int {
+        if (size <= 1) return 0
+        return kotlin.math.round(ratio.coerceIn(0f, 1f) * (size - 1)).toInt()
+            .coerceIn(0, size - 1)
+    }
+
+    private val pixelGapRatioOptions = listOf(0f, 0.25f, 0.5f, 0.75f, 1f)
 }

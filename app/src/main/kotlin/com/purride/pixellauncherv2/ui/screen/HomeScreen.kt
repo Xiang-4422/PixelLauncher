@@ -71,13 +71,13 @@ class HomeScreen(
                                 OutlinedButton(
                                     text = "CONTACT",
                                     onPressed = widget.onOpenContacts,
-                                    borderColor = t.accentColor,
+                                    borderColor = t.button.border,
                                 ),
                                 Expanded(child = SizedBox(width = 0, height = 0)),
                                 OutlinedButton(
                                     text = "SMS",
                                     onPressed = widget.onOpenSms,
-                                    borderColor = t.accentColor,
+                                    borderColor = t.button.border,
                                 ),
                             ),
                         ),
@@ -92,12 +92,12 @@ class HomeScreen(
                 add(
                     Text(
                         s.currentDateText.ifBlank { "--- --- --" },
-                        style = TextStyle(color = t.primaryColor),
+                        style = TextStyle(color = t.text.primary),
                     ),
                 )
                 // Info rows (dim color): weather, alarm (conditional), comms (conditional), usage
                 s.toHomeInfoRows().forEach { line ->
-                    add(Text(line, style = TextStyle(color = t.dimColor)))
+                    add(Text(line, style = TextStyle(color = t.text.secondary)))
                 }
             }
     }

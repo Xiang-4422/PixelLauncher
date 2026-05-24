@@ -57,13 +57,13 @@ fun DiagnosticsScreen(
                             children = listOf(
                                 Text(
                                     line.title,
-                                    style = TextStyle(color = theme.dimColor),
+                                    style = TextStyle(color = theme.text.muted),
                                     overflow = TextOverflow.ELLIPSIS,
                                 ),
                                 Expanded(child = SizedBox(width = 0, height = 0)),
                                 Text(
                                     line.value,
-                                    style = TextStyle(color = theme.primaryColor),
+                                    style = TextStyle(color = theme.text.primary),
                                     overflow = TextOverflow.ELLIPSIS,
                                 ),
                             ),
