@@ -33,11 +33,49 @@ public class PixelTextFieldController : ChangeNotifier() {
         text: String,
         selectionStart: Int = text.length,
         selectionEnd: Int = selectionStart,
+        compositionStart: Int = -1,
+        compositionEnd: Int = -1,
     ) {
         state.text = text
         state.selectionStart = selectionStart.coerceIn(0, text.length)
         state.selectionEnd = selectionEnd.coerceIn(state.selectionStart, text.length)
+        applyComposition(state, compositionStart, compositionEnd)
         notifyListeners()
+    }
+
+    /**
+     * 更新 IME composition 区段。`start < 0` 或 `end <= start` 都视作"无 composing"。
+     * 范围会被 clamp 到当前 [PixelTextFieldState.text] 长度内。
+     */
+    public fun updateComposition(
+        state: PixelTextFieldState,
+        compositionStart: Int,
+        compositionEnd: Int,
+    ) {
+        applyComposition(state, compositionStart, compositionEnd)
+        notifyListeners()
+    }
+
+    private fun applyComposition(
+        state: PixelTextFieldState,
+        compositionStart: Int,
+        compositionEnd: Int,
+    ) {
+        if (compositionStart < 0 || compositionEnd <= compositionStart) {
+            state.compositionStart = -1
+            state.compositionEnd = -1
+            return
+        }
+        val length = state.text.length
+        val clampedStart = compositionStart.coerceIn(0, length)
+        val clampedEnd = compositionEnd.coerceIn(clampedStart, length)
+        if (clampedStart >= clampedEnd) {
+            state.compositionStart = -1
+            state.compositionEnd = -1
+            return
+        }
+        state.compositionStart = clampedStart
+        state.compositionEnd = clampedEnd
     }
 
     public fun setSelection(

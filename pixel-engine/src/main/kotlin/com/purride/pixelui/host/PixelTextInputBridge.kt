@@ -6,6 +6,7 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.HapticFeedbackConstants
+import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -61,10 +62,14 @@ public class PixelTextInputBridge(
                     if (syncingFromHost) {
                         return
                     }
+                    val compositionStart = s?.let { BaseInputConnection.getComposingSpanStart(it) } ?: -1
+                    val compositionEnd = s?.let { BaseInputConnection.getComposingSpanEnd(it) } ?: -1
                     hostView.updateFocusedTextInput(
                         text = s?.toString().orEmpty(),
                         selectionStart = inputView.selectionStart.coerceAtLeast(0),
                         selectionEnd = inputView.selectionEnd.coerceAtLeast(0),
+                        compositionStart = compositionStart,
+                        compositionEnd = compositionEnd,
                     )
                 }
             },

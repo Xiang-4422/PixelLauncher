@@ -43,6 +43,7 @@ internal class RenderSurface(
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
     private var textInputCursorColor: PixelColor? = null,
     private var textInputSelectionColor: PixelColor? = null,
+    private var textInputCompositionColor: PixelColor? = null,
 ) : SingleChildRenderObject() {
     private var childOffsetX = 0
     private var childOffsetY = 0
@@ -87,6 +88,7 @@ internal class RenderSurface(
         textInputOnSubmitted: ((String) -> Unit)? = null,
         textInputCursorColor: PixelColor? = null,
         textInputSelectionColor: PixelColor? = null,
+        textInputCompositionColor: PixelColor? = null,
     ) {
         val coercedMinLines = textInputMinLines.coerceAtLeast(1)
         val coercedMaxLines = textInputMaxLines.coerceAtLeast(coercedMinLines)
@@ -120,7 +122,8 @@ internal class RenderSurface(
             this.textInputOnChanged == textInputOnChanged &&
             this.textInputOnSubmitted == textInputOnSubmitted &&
             this.textInputCursorColor == textInputCursorColor &&
-            this.textInputSelectionColor == textInputSelectionColor
+            this.textInputSelectionColor == textInputSelectionColor &&
+            this.textInputCompositionColor == textInputCompositionColor
         ) {
             return
         }
@@ -154,6 +157,7 @@ internal class RenderSurface(
         this.textInputOnSubmitted = textInputOnSubmitted
         this.textInputCursorColor = textInputCursorColor
         this.textInputSelectionColor = textInputSelectionColor
+        this.textInputCompositionColor = textInputCompositionColor
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -243,6 +247,7 @@ internal class RenderSurface(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
         )
+        paintTextInputComposition(context, child, offsetX, offsetY)
         paintTextInputCursor(context, child, offsetX, offsetY)
     }
 
@@ -277,6 +282,49 @@ internal class RenderSurface(
         val cursorHeight = child.size.height
         if (cursorHeight <= 0) return
         context.fillRect(cursorX, cursorBaseY, 1, cursorHeight, cursorColor)
+    }
+
+    /**
+     * 文本输入聚焦时为 IME composition 区段绘制 1px 下划线。
+     *
+     * V2 行为：
+     *  - 仅在 `state.isFocused == true`、`textInputCompositionColor` 非空、
+     *    `state.compositionStart >= 0 && state.compositionStart < state.compositionEnd`
+     *    且 composition 范围都在 text 内时绘制
+     *  - X 范围按字符比例近似（与 selection 同口径），底边在 child 文本下一行
+     *  - 多行场景当前 V1 单行处理：整段在一行下方画一条线
+     *  - 不参与 layout / 命中测试
+     */
+    private fun paintTextInputComposition(
+        context: PaintContext,
+        child: RenderBox?,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        val state = textInputState ?: return
+        val underlineColor = textInputCompositionColor ?: return
+        if (!state.isFocused) return
+        child ?: return
+        val text = state.text
+        if (text.isEmpty()) return
+        val length = text.length
+        val start = state.compositionStart
+        val end = state.compositionEnd
+        if (start < 0 || end <= start || start >= length) return
+        val safeStart = start.coerceIn(0, length)
+        val safeEnd = end.coerceIn(safeStart, length)
+        if (safeStart >= safeEnd) return
+        val textWidth = child.size.width
+        if (textWidth <= 0) return
+        val textHeight = child.size.height
+        if (textHeight <= 0) return
+        val baseX = offsetX + childOffsetX
+        val baseY = offsetY + childOffsetY
+        val startX = baseX + (safeStart.toLong() * textWidth / length).toInt()
+        val endX = baseX + (safeEnd.toLong() * textWidth / length).toInt()
+        val width = (endX - startX).coerceAtLeast(1)
+        val underlineY = baseY + textHeight - 1
+        context.fillRect(startX, underlineY, width, 1, underlineColor)
     }
 
     /**

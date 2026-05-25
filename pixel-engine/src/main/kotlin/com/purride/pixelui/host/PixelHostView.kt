@@ -170,6 +170,8 @@ public class PixelHostView @JvmOverloads constructor(
         text: String,
         selectionStart: Int = text.length,
         selectionEnd: Int = selectionStart,
+        compositionStart: Int = -1,
+        compositionEnd: Int = -1,
     ) {
         val target = focusedTextInputTarget ?: return
         if (target.readOnly) return
@@ -178,6 +180,8 @@ public class PixelHostView @JvmOverloads constructor(
             text = text,
             selectionStart = selectionStart,
             selectionEnd = selectionEnd,
+            compositionStart = compositionStart,
+            compositionEnd = compositionEnd,
         )
         target.onChanged?.invoke(text)
         invalidate()

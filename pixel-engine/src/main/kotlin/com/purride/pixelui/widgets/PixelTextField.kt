@@ -23,6 +23,11 @@ public data class PixelTextFieldStyle(
      * 默认与 cursorColor 同色，业务可改成主题强调色。
      */
     val selectionColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    /**
+     * IME composition 区段下方的 1px 下划线颜色。仅在 state.compositionStart
+     * < compositionEnd 且 widget 聚焦时绘制。默认与 cursorColor 同色。
+     */
+    val compositionColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
     val padding: Int = 2,
 ) {
     public companion object {
