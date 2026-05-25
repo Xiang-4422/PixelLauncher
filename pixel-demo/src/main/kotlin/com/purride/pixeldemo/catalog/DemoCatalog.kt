@@ -53,6 +53,7 @@ import com.purride.pixeldemo.showcase.integration.HapticFeedbackScene
 import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
 import com.purride.pixeldemo.showcase.integration.SystemActionDispatchScene
 import com.purride.pixeldemo.showcase.animation.AnimationCoreScene
+import com.purride.pixeldemo.showcase.animation.AnimationLayer3Scene
 import com.purride.pixeldemo.showcase.animation.ImplicitAnimationsScene
 import com.purride.pixeldemo.header.HeaderPreviewScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
@@ -168,6 +169,7 @@ object DemoCatalog {
             scenes = listOf(
                 AnimationCoreScene,
                 ImplicitAnimationsScene,
+                AnimationLayer3Scene,
             ),
         ),
         DemoSection(
