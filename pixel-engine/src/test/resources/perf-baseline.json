@@ -1,9 +1,11 @@
 {
-  "capturedAtEpochMs": 1779151825411,
+  "capturedAtEpochMs": 1779699890761,
   "jvmVersion": "21.0.10",
-  "renderAllocBytesAvg": 1078,
-  "renderAllocBytesMax": 15648,
-  "renderTimeNanosAvg": 10560,
-  "blitNanosAvg": 678,
-  "richTextLayoutNanosByChars": {"100":58441,"500":114264,"1000":84883}
+  "renderAllocBytesAvg": 1130,
+  "renderAllocBytesMax": 15568,
+  "renderTimeNanosAvg": 8870,
+  "blitNanosAvg": 156,
+  "colorBlitNanosAvg": 118,
+  "richTextLayoutNanosByChars": {"100":27060,"500":30672,"1000":55937},
+  "variableLazyListNanosByItemCount": {"1000":757264,"5000":11477791}
 }

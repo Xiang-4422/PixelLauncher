@@ -54,6 +54,15 @@ class PerfRegressionTest {
                 multiplier = TIME_MULTIPLIER,
             )
         }
+        baseline.variableLazyListNanosByItemCount.forEach { (itemCount, baselineNanos) ->
+            val currentNanos = current.variableLazyListNanosByItemCount[itemCount] ?: return@forEach
+            assertWithinThreshold(
+                name = "variableLazyListNanosByItemCount[$itemCount]",
+                baseline = baselineNanos,
+                current = currentNanos,
+                multiplier = TIME_MULTIPLIER,
+            )
+        }
     }
 
     private fun readBaselineOrSkip(): PerfSample {
@@ -74,7 +83,8 @@ class PerfRegressionTest {
             renderTimeNanosAvg = requiredLong(text = text, key = "renderTimeNanosAvg"),
             blitNanosAvg = requiredLong(text = text, key = "blitNanosAvg"),
             colorBlitNanosAvg = optionalLong(text = text, key = "colorBlitNanosAvg") ?: 0L,
-            richTextLayoutNanosByChars = parseRichTextMap(text = text),
+            richTextLayoutNanosByChars = parseMapBlock(text = text, key = "richTextLayoutNanosByChars"),
+            variableLazyListNanosByItemCount = parseMapBlock(text = text, key = "variableLazyListNanosByItemCount"),
         )
     }
 
@@ -90,8 +100,8 @@ class PerfRegressionTest {
         return pattern.find(text)?.groupValues?.get(1)?.toLong()
     }
 
-    private fun parseRichTextMap(text: String): Map<Int, Long> {
-        val block = Regex("\"richTextLayoutNanosByChars\"\\s*:\\s*\\{([^}]*)}")
+    private fun parseMapBlock(text: String, key: String): Map<Int, Long> {
+        val block = Regex("\"$key\"\\s*:\\s*\\{([^}]*)}")
             .find(text)
             ?.groupValues
             ?.get(1)

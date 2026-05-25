@@ -2,13 +2,17 @@ package com.purride.pixelui.perf
 
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.ListViewBuilder
+import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
+import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.PixelUiRuntime
+import com.purride.pixelui.state.PixelListController
 import java.lang.management.ManagementFactory
 
 internal data class PerfSample(
@@ -18,6 +22,7 @@ internal data class PerfSample(
     val blitNanosAvg: Long,
     val colorBlitNanosAvg: Long,
     val richTextLayoutNanosByChars: Map<Int, Long>,
+    val variableLazyListNanosByItemCount: Map<Int, Long>,
 )
 
 internal object PerfMeasurements {
@@ -49,6 +54,20 @@ internal object PerfMeasurements {
                     measureRichTextLayoutNanos(charCount = 1000, iterations = RICH_TEXT_ITERATIONS)
                 },
             ),
+            variableLazyListNanosByItemCount = mapOf(
+                1_000 to medianLongSample(VARIABLE_LIST_SAMPLES) {
+                    measureVariableLazyListRenderNanos(
+                        itemCount = 1_000,
+                        iterations = VARIABLE_LIST_ITERATIONS,
+                    )
+                },
+                5_000 to medianLongSample(VARIABLE_LIST_SAMPLES) {
+                    measureVariableLazyListRenderNanos(
+                        itemCount = 5_000,
+                        iterations = VARIABLE_LIST_ITERATIONS,
+                    )
+                },
+            ),
         )
     }
 
@@ -62,6 +81,11 @@ internal object PerfMeasurements {
             .joinToString(separator = ",") { (chars, nanos) ->
                 "\"$chars\":$nanos"
             }
+        val variableListEntries = sample.variableLazyListNanosByItemCount.entries
+            .sortedBy { it.key }
+            .joinToString(separator = ",") { (itemCount, nanos) ->
+                "\"$itemCount\":$nanos"
+            }
         return buildString {
             append("{\n")
             append("  \"capturedAtEpochMs\": ").append(System.currentTimeMillis()).append(",\n")
@@ -71,7 +95,8 @@ internal object PerfMeasurements {
             append("  \"renderTimeNanosAvg\": ").append(sample.renderTimeNanosAvg).append(",\n")
             append("  \"blitNanosAvg\": ").append(sample.blitNanosAvg).append(",\n")
             append("  \"colorBlitNanosAvg\": ").append(sample.colorBlitNanosAvg).append(",\n")
-            append("  \"richTextLayoutNanosByChars\": {").append(richTextEntries).append("}\n")
+            append("  \"richTextLayoutNanosByChars\": {").append(richTextEntries).append("},\n")
+            append("  \"variableLazyListNanosByItemCount\": {").append(variableListEntries).append("}\n")
             append("}\n")
         }
     }
@@ -193,6 +218,48 @@ internal object PerfMeasurements {
         )
     }
 
+    /**
+     * 变高 lazy list 端到端渲染耗时。
+     *
+     * 每次迭代都重建 controller + state，避免命中第二帧 measuredItemHeightsPx
+     * 缓存命中的"快路径"，更接近"首屏渲染 N item 列表"的成本曲线。
+     * 视口固定 32x96；item 真实高度按 index 在 6/8/10/12 间循环，触发变高
+     * 测量逻辑而不是固定高度快路径。
+     */
+    private fun measureVariableLazyListRenderNanos(itemCount: Int, iterations: Int): Long {
+        val runtime = PixelUiRuntime()
+        try {
+            val start = System.nanoTime()
+            repeat(iterations) {
+                val controller = PixelListController()
+                val state = controller.create()
+                val widget = SizedBox(
+                    width = 32,
+                    height = 96,
+                    child = ListViewBuilder(
+                        itemCount = itemCount,
+                        state = state,
+                        controller = controller,
+                        estimatedItemExtent = 8,
+                        cacheExtent = 1,
+                        spacing = 0,
+                        itemBuilder = { index ->
+                            SizedBox(
+                                height = 6 + (index % 4) * 2,
+                                child = OutlinedButton(text = "X", onPressed = { }),
+                            )
+                        },
+                    ),
+                )
+                runtime.render(root = widget, logicalWidth = 32, logicalHeight = 96)
+            }
+            val end = System.nanoTime()
+            return (end - start) / iterations.toLong().coerceAtLeast(1L)
+        } finally {
+            runtime.dispose()
+        }
+    }
+
     private fun medianLongSample(count: Int, sample: () -> Long): Long {
         val values = LongArray(count.coerceAtLeast(1)) {
             sample()
@@ -245,4 +312,6 @@ internal object PerfMeasurements {
     private const val RENDER_TIME_SAMPLES = 5
     private const val BLIT_SAMPLES = 5
     private const val RICH_TEXT_SAMPLES = 5
+    private const val VARIABLE_LIST_ITERATIONS = 3
+    private const val VARIABLE_LIST_SAMPLES = 3
 }
