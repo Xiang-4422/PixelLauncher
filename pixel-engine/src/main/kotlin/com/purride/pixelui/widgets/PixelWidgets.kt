@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.internal.AlignDirectionalWidget
 import com.purride.pixelui.internal.AlignWidget
@@ -10,6 +11,7 @@ import com.purride.pixelui.internal.ContainerWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
+import com.purride.pixelui.internal.ImageWidget
 import com.purride.pixelui.internal.LazyListViewWidget
 import com.purride.pixelui.internal.LazySeparatedListViewWidget
 import com.purride.pixelui.internal.ListViewWidget
@@ -171,6 +173,22 @@ public fun GestureDetector(
     key: Any? = null,
 ): Widget {
     return GestureDetectorWidget(child = child, onTap = onTap, key = key)
+}
+
+/**
+ * 把不可变 [PixelBitmap] 1:1 blit 到目标 buffer。
+ *
+ * Layout：intrinsic 尺寸 = bitmap (width, height)，再按父约束 clamp；
+ * Paint：行级 [System.arraycopy]，超出 layout size 自动裁剪，不缩放。
+ *
+ * 缩放需求由调用方在构造 [PixelBitmap] 前完成（如
+ * [android.graphics.Bitmap.createScaledBitmap]）。
+ */
+public fun Image(
+    bitmap: PixelBitmap,
+    key: Any? = null,
+): Widget {
+    return ImageWidget(bitmap = bitmap, key = key)
 }
 
 public fun Text(
