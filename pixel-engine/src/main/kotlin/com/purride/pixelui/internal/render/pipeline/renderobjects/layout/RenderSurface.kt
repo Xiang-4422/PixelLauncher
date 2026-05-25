@@ -41,6 +41,7 @@ internal class RenderSurface(
     private var textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
     private var textInputOnChanged: ((String) -> Unit)? = null,
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
+    private var textInputCursorColor: PixelColor? = null,
 ) : SingleChildRenderObject() {
     private var childOffsetX = 0
     private var childOffsetY = 0
@@ -83,6 +84,7 @@ internal class RenderSurface(
         textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
+        textInputCursorColor: PixelColor? = null,
     ) {
         val coercedMinLines = textInputMinLines.coerceAtLeast(1)
         val coercedMaxLines = textInputMaxLines.coerceAtLeast(coercedMinLines)
@@ -114,7 +116,8 @@ internal class RenderSurface(
             this.textInputType == textInputType &&
             this.textInputAction == textInputAction &&
             this.textInputOnChanged == textInputOnChanged &&
-            this.textInputOnSubmitted == textInputOnSubmitted
+            this.textInputOnSubmitted == textInputOnSubmitted &&
+            this.textInputCursorColor == textInputCursorColor
         ) {
             return
         }
@@ -146,6 +149,7 @@ internal class RenderSurface(
         this.textInputAction = textInputAction
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted
+        this.textInputCursorColor = textInputCursorColor
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -233,6 +237,39 @@ internal class RenderSurface(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
         )
+        paintTextInputCursor(context, child, offsetX, offsetY)
+    }
+
+    /**
+     * 在文本输入聚焦时绘制 1px 光标。
+     *
+     * V1 行为：
+     *  - 仅在 `textInputState?.isFocused == true` 且 [textInputCursorColor] 非空时绘制
+     *  - 空文本：光标画在内容区起点（child 左缘）
+     *  - 非空文本：光标画在文字末端（child 左缘 + 文本宽度）
+     *  - 光标高度 = child 当前测量高度
+     *  - 不闪烁；不参与 layout（不改 size）；不影响命中测试
+     *
+     * V2 待补：闪烁节拍、selection 范围高亮、IME composition 下划线。
+     */
+    private fun paintTextInputCursor(
+        context: PaintContext,
+        child: RenderBox?,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        val state = textInputState ?: return
+        val cursorColor = textInputCursorColor ?: return
+        if (!state.isFocused) return
+        child ?: return
+        val cursorBaseX = offsetX + childOffsetX
+        val cursorBaseY = offsetY + childOffsetY
+        // 空文本：cursor 在内容区起点；非空：在文字末端。
+        // 文字宽度近似 = child.size.width（当文本非空时，child 即为渲染过的 RenderText）。
+        val cursorX = if (state.text.isEmpty()) cursorBaseX else cursorBaseX + child.size.width
+        val cursorHeight = child.size.height
+        if (cursorHeight <= 0) return
+        context.fillRect(cursorX, cursorBaseY, 1, cursorHeight, cursorColor)
     }
 
     /**

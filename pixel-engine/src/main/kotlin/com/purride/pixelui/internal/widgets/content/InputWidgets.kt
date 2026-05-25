@@ -74,6 +74,7 @@ internal data class TextFieldWidget(
             textInputAction = textInputAction,
             onChanged = onChanged,
             onSubmitted = onSubmitted,
+            cursorColor = if (enabled && !readOnly) style.cursorColor else null,
             key = key,
             child = TextWidget(
                 data = text,
@@ -107,6 +108,7 @@ private data class TextInputSurfaceWidget(
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
+    val cursorColor: PixelColor?,
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
@@ -128,6 +130,7 @@ private data class TextInputSurfaceWidget(
             textInputAction = textInputAction,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
+            textInputCursorColor = cursorColor,
         )
     }
 
@@ -150,6 +153,7 @@ private data class TextInputSurfaceWidget(
             textInputAction = textInputAction,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
+            textInputCursorColor = cursorColor,
         )
     }
 }
