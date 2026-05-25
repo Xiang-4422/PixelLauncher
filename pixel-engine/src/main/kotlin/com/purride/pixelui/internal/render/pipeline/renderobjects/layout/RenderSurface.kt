@@ -42,6 +42,7 @@ internal class RenderSurface(
     private var textInputOnChanged: ((String) -> Unit)? = null,
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
     private var textInputCursorColor: PixelColor? = null,
+    private var textInputSelectionColor: PixelColor? = null,
 ) : SingleChildRenderObject() {
     private var childOffsetX = 0
     private var childOffsetY = 0
@@ -85,6 +86,7 @@ internal class RenderSurface(
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
         textInputCursorColor: PixelColor? = null,
+        textInputSelectionColor: PixelColor? = null,
     ) {
         val coercedMinLines = textInputMinLines.coerceAtLeast(1)
         val coercedMaxLines = textInputMaxLines.coerceAtLeast(coercedMinLines)
@@ -117,7 +119,8 @@ internal class RenderSurface(
             this.textInputAction == textInputAction &&
             this.textInputOnChanged == textInputOnChanged &&
             this.textInputOnSubmitted == textInputOnSubmitted &&
-            this.textInputCursorColor == textInputCursorColor
+            this.textInputCursorColor == textInputCursorColor &&
+            this.textInputSelectionColor == textInputSelectionColor
         ) {
             return
         }
@@ -150,6 +153,7 @@ internal class RenderSurface(
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted
         this.textInputCursorColor = textInputCursorColor
+        this.textInputSelectionColor = textInputSelectionColor
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -232,6 +236,8 @@ internal class RenderSurface(
             fillColor?.let { context.fillRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it) }
             borderColor?.let { context.drawRect(surfaceLeft, surfaceTop, surfaceWidth, surfaceHeight, it) }
         }
+        // 选区高亮先画，光标后画（光标盖在选区端点上更显眼）。
+        paintTextInputSelection(context, child, offsetX, offsetY)
         child?.paint(
             context = context,
             offsetX = offsetX + childOffsetX,
@@ -250,7 +256,8 @@ internal class RenderSurface(
      *  - 光标高度 = child 当前测量高度
      *  - 不闪烁；不参与 layout（不改 size）；不影响命中测试
      *
-     * V2 待补：闪烁节拍、selection 范围高亮、IME composition 下划线。
+     * V2 待补：闪烁节拍、IME composition 下划线（selection 已在
+     * [paintTextInputSelection] 落地）。
      */
     private fun paintTextInputCursor(
         context: PaintContext,
@@ -270,6 +277,47 @@ internal class RenderSurface(
         val cursorHeight = child.size.height
         if (cursorHeight <= 0) return
         context.fillRect(cursorX, cursorBaseY, 1, cursorHeight, cursorColor)
+    }
+
+    /**
+     * 文本输入聚焦时绘制非空选区的高亮填充。
+     *
+     * V2 行为：
+     *  - 仅在 `textInputState?.isFocused == true`、selection 非空
+     *    （selectionStart < selectionEnd 且都在 text 范围内）且
+     *    [textInputSelectionColor] 非空时绘制
+     *  - X 位置按"文本宽度按字符数线性分摊"近似：
+     *    `selStartX = textLeft + (selectionStart / text.length) * child.size.width`
+     *    比例字体下会有像素级偏差，但当前 pixel 字体接近 monospace，可接受
+     *  - 多行：当前 V1 单行模型，按一行内整段高亮处理
+     *  - 不参与 layout / 命中测试
+     */
+    private fun paintTextInputSelection(
+        context: PaintContext,
+        child: RenderBox?,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        val state = textInputState ?: return
+        val highlight = textInputSelectionColor ?: return
+        if (!state.isFocused) return
+        child ?: return
+        val text = state.text
+        if (text.isEmpty()) return
+        val length = text.length
+        val start = state.selectionStart.coerceIn(0, length)
+        val end = state.selectionEnd.coerceIn(start, length)
+        if (start >= end) return
+        val textWidth = child.size.width
+        if (textWidth <= 0) return
+        val textHeight = child.size.height
+        if (textHeight <= 0) return
+        val baseX = offsetX + childOffsetX
+        val baseY = offsetY + childOffsetY
+        val startX = baseX + (start.toLong() * textWidth / length).toInt()
+        val endX = baseX + (end.toLong() * textWidth / length).toInt()
+        val width = (endX - startX).coerceAtLeast(1)
+        context.fillRect(startX, baseY, width, textHeight, highlight)
     }
 
     /**

@@ -18,6 +18,11 @@ public data class PixelTextFieldStyle(
     val disabledTextStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(80, 80, 80)),
     val disabledPlaceholderStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(80, 80, 80)),
     val cursorColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    /**
+     * 非空 selection（selectionStart != selectionEnd）下选区的填充色。
+     * 默认与 cursorColor 同色，业务可改成主题强调色。
+     */
+    val selectionColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
     val padding: Int = 2,
 ) {
     public companion object {
