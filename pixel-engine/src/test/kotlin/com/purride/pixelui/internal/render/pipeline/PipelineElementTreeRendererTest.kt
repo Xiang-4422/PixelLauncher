@@ -916,6 +916,76 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * 变高 lazy list 中可见 item 的真实高度发生变化后，第二次渲染必须把新的
+     * 测量结果回写进 measuredItemHeightsPx，contentHeight / maxScrollOffsetPx /
+     * 点击目标裁剪都跟随更新；不能保留旧高度对应的脏 offset。
+     *
+     * 用 3 个 item 全部塞进视口，确保高度变化前后全部 item 都被测量；这样可以
+     * 严格验证 measured[0..2]、contentHeight 与 maxScrollOffsetPx 的变化。
+     */
+    @Test
+    fun listViewBuilderWithEstimatedItemExtentReflectsRuntimeHeightChanges() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 0f)
+        var itemHeight = 6
+
+        fun render(): PixelRenderResult? {
+            return renderWithPipeline(
+                root = SizedBox(
+                    width = 24,
+                    height = 60,
+                    child = ListViewBuilder(
+                        itemCount = 3,
+                        state = state,
+                        controller = controller,
+                        estimatedItemExtent = 6,
+                        cacheExtent = 0,
+                        spacing = 0,
+                        itemBuilder = { _ ->
+                            SizedBox(
+                                height = itemHeight,
+                                child = OutlinedButton(text = "X", onPressed = { }),
+                            )
+                        },
+                    ),
+                ),
+                logicalWidth = 24,
+                logicalHeight = 60,
+            )
+        }
+
+        val first = render()
+        assertNotNull(first)
+        first ?: return
+        // 3 个 item 全部可见，每个高 6 → contentHeight 18
+        assertEquals(6, state.measuredItemHeightsPx[0])
+        assertEquals(6, state.measuredItemHeightsPx[2])
+        assertEquals(18, state.contentHeightPx)
+        // viewport 60 > content 18 → 没有可滚距离
+        assertEquals(0f, state.maxScrollOffsetPx, 0.001f)
+
+        // 模拟运行时高度变化：item 高度从 6 涨到 24（总高度 72 > viewport 60）
+        itemHeight = 24
+        val second = render()
+        assertNotNull(second)
+        second ?: return
+
+        // measuredItemHeightsPx 已经被新高度覆盖（不是脏数据残留）
+        assertEquals(24, state.measuredItemHeightsPx[0])
+        assertEquals(24, state.measuredItemHeightsPx[1])
+        assertEquals(24, state.measuredItemHeightsPx[2])
+        // contentHeight 跟随增长到 72
+        assertEquals(72, state.contentHeightPx)
+        // maxScrollOffsetPx 从 0 跟随到 12（72 - 60）
+        assertEquals(12f, state.maxScrollOffsetPx, 0.001f)
+        // 点击目标仍然被新的视口约束裁剪
+        assertTrue(second.clickTargets.all { target ->
+            target.bounds.top in 0 until 60 &&
+                target.bounds.top + target.bounds.height <= 60
+        })
+    }
+
+    /**
      * RichText 应该保持 span 样式切换，并在同一行绘制不同 tone。
      */
     @Test
