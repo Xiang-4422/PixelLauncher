@@ -47,6 +47,7 @@ import com.purride.pixeldemo.showcase.scroll.PagerVerticalScene
 import com.purride.pixeldemo.showcase.scroll.ScrollControllerCommandsScene
 import com.purride.pixeldemo.showcase.scroll.SingleChildScrollScene
 import com.purride.pixeldemo.showcase.integration.ConfigChangePreserveScene
+import com.purride.pixeldemo.showcase.integration.DebugOverlayScene
 import com.purride.pixeldemo.showcase.integration.EmptyLoadingErrorScene
 import com.purride.pixeldemo.showcase.integration.HapticFeedbackScene
 import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
@@ -159,6 +160,7 @@ object DemoCatalog {
                 EmptyLoadingErrorScene,
                 HapticFeedbackScene,
                 SystemActionDispatchScene,
+                DebugOverlayScene,
             ),
         ),
         DemoSection(

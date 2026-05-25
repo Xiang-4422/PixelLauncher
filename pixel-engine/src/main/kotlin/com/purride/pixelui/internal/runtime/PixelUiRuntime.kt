@@ -49,4 +49,35 @@ internal class PixelUiRuntime(
         buildRuntime.dispose()
         bufferPool.clear()
     }
+
+    /**
+     * 把当前 retained element tree 序列化成可读的 ASCII 缩进字符串。
+     *
+     * 给运行时调试用：调用 [PixelHostView.dumpElementTree] 时会下沉到这里。
+     * 若还没渲染过一帧，返回简单的 "<no root>"。
+     */
+    fun dumpElementTree(): String {
+        val diagnostics = buildRuntime.collectDiagnostics()
+        if (!diagnostics.hasRoot || diagnostics.elementDiagnostics.isEmpty()) {
+            return "<no root>"
+        }
+        return buildString {
+            for (node in diagnostics.elementDiagnostics) {
+                repeat(node.depth) { append("  ") }
+                append(node.name)
+                append(" [widget=")
+                append(node.widgetName)
+                node.renderObjectName?.let {
+                    append(" render=")
+                    append(it)
+                }
+                if (node.isDirty) append(" *dirty*")
+                if (node.listenedObjectCount > 0) {
+                    append(" listens=")
+                    append(node.listenedObjectCount)
+                }
+                append("]\n")
+            }
+        }.trimEnd()
+    }
 }

@@ -141,6 +141,15 @@ public class PixelHostView @JvmOverloads constructor(
             invalidate()
         }
 
+    /**
+     * 调试观察者：非 null 时 PixelHostView 在每次 `onDraw` 末尾构造一次
+     * [PixelHostFrameStats] 并回调。null 时不分配（保持热路径零分配）。
+     *
+     * 典型用法：把 [ValueNotifier]&lt;PixelHostFrameStats?&gt;::value 推进去，
+     * 然后在 widget 树用 [ValueListenableBuilder] + [PixelDebugOverlay] 显示。
+     */
+    public var frameStatsObserver: ((PixelHostFrameStats) -> Unit)? = null
+
     private val reusablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         isAntiAlias = false
@@ -218,9 +227,20 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun asView(): View = this
 
+    /**
+     * 把当前 retained element tree 序列化成 ASCII 缩进的字符串，
+     * 用于运行时调试 / log dump。仅当至少渲染过一帧后返回非空内容。
+     *
+     * 该 API 在主线程调用，不应在生产热路径上频繁调用。
+     */
+    public fun dumpElementTree(): String {
+        return runtime.dumpElementTree()
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val frameDeltaMs = frameLoop.consumeFrameDeltaMs()
+        frameLoop.beginPaint()
         stepActivePagers(frameDeltaMs)
         stepActiveLists(frameDeltaMs)
         val provider = contentProvider
@@ -244,16 +264,19 @@ public class PixelHostView @JvmOverloads constructor(
         }
 
         canvas.drawColor(backgroundColor.argb)
-        if (renderResult == null) return
-        lastRenderResult = renderResult
-        dispatchPageChanged(renderResult.pagerTargets)
-        syncRequestedTextInputFocus(renderResult.textInputTargets)
-        drawBuffer(canvas, renderResult.buffer)
-        if (renderResult.pagerTargets.any { it.controller.isActive(it.state) } ||
-            renderResult.listTargets.any { it.controller.isActive(it.state) }
-        ) {
-            postInvalidateOnAnimation()
+        if (renderResult != null) {
+            lastRenderResult = renderResult
+            dispatchPageChanged(renderResult.pagerTargets)
+            syncRequestedTextInputFocus(renderResult.textInputTargets)
+            drawBuffer(canvas, renderResult.buffer)
+            if (renderResult.pagerTargets.any { it.controller.isActive(it.state) } ||
+                renderResult.listTargets.any { it.controller.isActive(it.state) }
+            ) {
+                postInvalidateOnAnimation()
+            }
         }
+        frameLoop.endPaint()
+        frameStatsObserver?.invoke(frameLoop.snapshotStats())
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

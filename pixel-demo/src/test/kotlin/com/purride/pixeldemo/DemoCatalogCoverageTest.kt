@@ -22,8 +22,8 @@ class DemoCatalogCoverageTest {
     fun catalogContainsExpectedSceneCount() {
         val total = DemoCatalog.sections.sumOf { it.scenes.size }
         assertEquals(
-            "Expected 58 scenes total",
-            58,
+            "Expected 59 scenes total",
+            59,
             total,
         )
     }
