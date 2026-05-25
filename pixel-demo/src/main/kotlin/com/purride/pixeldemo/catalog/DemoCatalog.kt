@@ -1,5 +1,6 @@
 package com.purride.pixeldemo.catalog
 
+import com.purride.pixeldemo.showcase.composition.AsyncBuilderScene
 import com.purride.pixeldemo.showcase.composition.MasterDetailScene
 import com.purride.pixeldemo.showcase.composition.ModalOverlayScene
 import com.purride.pixeldemo.showcase.composition.NestedPagerInListScene
@@ -115,6 +116,7 @@ object DemoCatalog {
                 StickyBottomBarScene,
                 MasterDetailScene,
                 ModalOverlayScene,
+                AsyncBuilderScene,
             ),
         ),
         DemoSection(
