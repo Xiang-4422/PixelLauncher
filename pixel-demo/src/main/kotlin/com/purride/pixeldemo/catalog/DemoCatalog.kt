@@ -28,6 +28,7 @@ import com.purride.pixeldemo.showcase.foundation.HelloPixelScene
 import com.purride.pixeldemo.showcase.foundation.ImageBlitScene
 import com.purride.pixeldemo.showcase.foundation.LayoutPrimitivesScene
 import com.purride.pixeldemo.showcase.foundation.RichTextScene
+import com.purride.pixeldemo.showcase.foundation.ShapePrimitivesScene
 import com.purride.pixeldemo.showcase.foundation.StackPositionedScene
 import com.purride.pixeldemo.showcase.foundation.TextMatrixScene
 import com.purride.pixeldemo.showcase.interaction.ButtonStatesScene
@@ -71,6 +72,7 @@ object DemoCatalog {
                 RichTextScene,
                 ContainerDecorationScene,
                 ImageBlitScene,
+                ShapePrimitivesScene,
             ),
         ),
         DemoSection(

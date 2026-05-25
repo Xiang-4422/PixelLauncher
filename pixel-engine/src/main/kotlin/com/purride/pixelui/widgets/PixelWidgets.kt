@@ -10,9 +10,11 @@ import com.purride.pixelui.internal.ContainerDirectionalWidget
 import com.purride.pixelui.internal.ContainerWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
+import com.purride.pixelui.internal.CircleWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
 import com.purride.pixelui.internal.ImageWidget
 import com.purride.pixelui.internal.LazyListViewWidget
+import com.purride.pixelui.internal.LineWidget
 import com.purride.pixelui.internal.LazySeparatedListViewWidget
 import com.purride.pixelui.internal.ListViewWidget
 import com.purride.pixelui.internal.OutlinedButtonWidget
@@ -173,6 +175,51 @@ public fun GestureDetector(
     key: Any? = null,
 ): Widget {
     return GestureDetectorWidget(child = child, onTap = onTap, key = key)
+}
+
+/**
+ * 直线 widget（Bresenham 算法）。
+ *
+ * 端点坐标 ([startX], [startY]) → ([endX], [endY]) 相对 widget 左上角。
+ * Layout intrinsic 尺寸 = `(max(startX, endX) + 1, max(startY, endY) + 1)`，
+ * 父约束更紧时被 clamp。
+ */
+public fun Line(
+    startX: Int,
+    startY: Int,
+    endX: Int,
+    endY: Int,
+    color: PixelColor,
+    key: Any? = null,
+): Widget {
+    return LineWidget(
+        startX = startX,
+        startY = startY,
+        endX = endX,
+        endY = endY,
+        color = color,
+        key = key,
+    )
+}
+
+/**
+ * 圆形 widget。
+ *
+ * Layout intrinsic 尺寸 = `(2 * radius + 1, 2 * radius + 1)`，父约束更紧时
+ * 被 clamp。圆心 = 当前 layout box 中点。
+ *
+ * - [filled] = true：逐 scanline 填充（默认）。
+ * - [filled] = false：中点圆轮廓算法，单像素线宽。
+ *
+ * 非矩形容器场景（如 radio dot、状态指示）适用；矩形容器请直接用 [Container]。
+ */
+public fun Circle(
+    radius: Int,
+    color: PixelColor,
+    filled: Boolean = true,
+    key: Any? = null,
+): Widget {
+    return CircleWidget(radius = radius, color = color, filled = filled, key = key)
 }
 
 /**
