@@ -226,6 +226,21 @@ public class PixelListController(
             else -> state.scrollOffsetPx
         }
 
+        // 变高 lazy list 远端定位：如果目标项尚未被真实测量，本次只能按 estimated
+        // 高度算 offset，下一帧测量到位后还需要再校正一次。把意图存进 state，由
+        // RenderVariableLazyListViewport.layout() 在测量完成后重入。
+        state.pendingScrollIntoViewItemIndex = if (
+            itemIndex in state.measuredItemHeightsPx.indices &&
+            state.measuredItemHeightsPx[itemIndex] > 0
+        ) {
+            null
+        } else if (itemIndex in state.measuredItemHeightsPx.indices) {
+            itemIndex
+        } else {
+            // 非变高路径（measuredItemHeightsPx 为空）不需要二次微调
+            null
+        }
+
         scrollTo(
             state = state,
             targetOffsetPx = targetOffsetPx,

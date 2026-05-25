@@ -41,4 +41,14 @@ public class PixelListState(
      * 0 表示该 item 尚未测量；render layout 会在真实子节点完成布局后回写。
      */
     internal var measuredItemHeightsPx: IntArray = intArrayOf()
+
+    /**
+     * 变高 lazy list 的"远端目标项尚未测量，等下一帧重测后微调"标记。
+     *
+     * 当调用 [PixelListController.scrollItemIntoView] 且目标 item 尚未测量时，
+     * 控制器会先按 estimated 高度滚动到大致位置，并把目标 itemIndex 记录在这里。
+     * RenderVariableLazyListViewport 在下一次 layout 完成测量后会重新调用一次
+     * scrollItemIntoView，使用真实测量值进行二次微调；测量到位即清空。
+     */
+    internal var pendingScrollIntoViewItemIndex: Int? = null
 }

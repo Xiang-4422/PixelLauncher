@@ -842,6 +842,18 @@ internal class RenderVariableLazyListViewport(
                 estimatedItemExtent = safeEstimate,
             )
         }
+
+        // 远端 scrollItemIntoView 二次微调：上一次调用时目标 item 还未测量，
+        // 现在如果已经进入可见窗口并被测出真实高度，就重入一次让 controller
+        // 用真实 offset 重新定位。controller 自身会在目标项 measured 后清空标记。
+        val pending = state.pendingScrollIntoViewItemIndex
+        if (
+            pending != null &&
+            pending in state.measuredItemHeightsPx.indices &&
+            state.measuredItemHeightsPx[pending] > 0
+        ) {
+            controller.scrollItemIntoView(state, pending)
+        }
     }
 
     override fun paint(
