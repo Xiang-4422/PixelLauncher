@@ -90,37 +90,41 @@ public class PixelHostView @JvmOverloads constructor(
 
     private var runtime = PixelUiRuntime(onVisualUpdate = { postInvalidateOnAnimation() })
     private var contentProvider: RootWidgetProvider? = null
-    private var lastRenderResult: PixelRenderResult? = null
+    internal var lastRenderResult: PixelRenderResult? = null
     private var pixelGapEnabled: Boolean = true
     private var pixelGapRatio: Float = 1.0f
-    private var activeSliderTarget: PixelSliderTarget? = null
+    internal var activeSliderTarget: PixelSliderTarget? = null
     private val frameLoop = PixelHostFrameLoop()
-    private var velocityTracker: VelocityTracker? = null
-    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
-    private var touchDownX = 0f
-    private var touchDownY = 0f
-    private var touchDownLogicalX = 0
-    private var touchDownLogicalY = 0
-    private var lastPagerLogicalX = 0
-    private var lastPagerLogicalY = 0
-    private var lastListLogicalY = 0
-    private var touchMoved = false
-    private val nestedScrollSession = NestedScrollSession()
-    private var candidatePagerTarget: PixelPagerTarget?
+    internal var velocityTracker: VelocityTracker? = null
+    internal val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+    internal var touchDownX = 0f
+    internal var touchDownY = 0f
+    internal var touchDownLogicalX = 0
+    internal var touchDownLogicalY = 0
+    internal var lastPagerLogicalX = 0
+    internal var lastPagerLogicalY = 0
+    internal var lastListLogicalY = 0
+    internal var touchMoved = false
+    internal val nestedScrollSession = NestedScrollSession()
+    internal var candidatePagerTarget: PixelPagerTarget?
         get() = nestedScrollSession.candidatePagerTarget
         set(value) { nestedScrollSession.candidatePagerTarget = value }
-    private var activePagerTarget: PixelPagerTarget?
+    internal var activePagerTarget: PixelPagerTarget?
         get() = nestedScrollSession.activePagerTarget
         set(value) { nestedScrollSession.activePagerTarget = value }
-    private var candidateListTarget: PixelListTarget?
+    internal var candidateListTarget: PixelListTarget?
         get() = nestedScrollSession.candidateListTarget
         set(value) { nestedScrollSession.candidateListTarget = value }
-    private var activeListTarget: PixelListTarget?
+    internal var candidateTextInputTarget: PixelTextInputTarget?
+        get() = nestedScrollSession.candidateTextInputTarget
+        set(value) { nestedScrollSession.candidateTextInputTarget = value }
+    internal var activeListTarget: PixelListTarget?
         get() = nestedScrollSession.activeListTarget
         set(value) { nestedScrollSession.activeListTarget = value }
-    private var focusedTextInputTarget: PixelTextInputTarget?
+    internal var focusedTextInputTarget: PixelTextInputTarget?
         get() = nestedScrollSession.focusedTextInputTarget
         set(value) { nestedScrollSession.focusedTextInputTarget = value }
+    private val gestureRouter = PixelHostGestureRouter(this)
 
     public var hostBridge: PixelHostBridge? = null
     public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
@@ -247,6 +251,7 @@ public class PixelHostView @JvmOverloads constructor(
         frameLoop.beginPaint()
         stepActivePagers(frameDeltaMs)
         stepActiveLists(frameDeltaMs)
+        stepFocusedTextInputCursor(frameDeltaMs)
         val provider = contentProvider
         val renderResult = if (provider != null) {
             val rootWidget = provider()
@@ -274,7 +279,8 @@ public class PixelHostView @JvmOverloads constructor(
             syncRequestedTextInputFocus(renderResult.textInputTargets)
             drawBuffer(canvas, renderResult.buffer)
             if (renderResult.pagerTargets.any { it.controller.isActive(it.state) } ||
-                renderResult.listTargets.any { it.controller.isActive(it.state) }
+                renderResult.listTargets.any { it.controller.isActive(it.state) } ||
+                isFocusedTextInputBlinking()
             ) {
                 postInvalidateOnAnimation()
             }
@@ -295,215 +301,7 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                velocityTracker?.recycle()
-                velocityTracker = VelocityTracker.obtain().apply { addMovement(event) }
-                touchDownX = event.x
-                touchDownY = event.y
-                touchMoved = false
-                val logicalPoint = mapTouchToLogical(event.x, event.y) ?: return true
-                touchDownLogicalX = logicalPoint.first
-                touchDownLogicalY = logicalPoint.second
-                lastPagerLogicalX = logicalPoint.first
-                lastPagerLogicalY = logicalPoint.second
-                lastListLogicalY = logicalPoint.second
-                activeSliderTarget = lastRenderResult
-                    ?.sliderTargets
-                    ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-                candidatePagerTarget = if (activeSliderTarget == null) {
-                    lastRenderResult
-                        ?.pagerTargets
-                        ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-                } else null
-                candidateListTarget = if (activeSliderTarget == null) {
-                    lastRenderResult
-                        ?.listTargets
-                        ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-                } else null
-                val textInputTarget = lastRenderResult
-                    ?.textInputTargets
-                    ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-                if (textInputTarget == null && focusedTextInputTarget != null) {
-                    clearFocusedTextInput()
-                }
-                activePagerTarget = null
-                activeListTarget = null
-                return true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                velocityTracker?.addMovement(event)
-                val logicalPoint = mapTouchToLogical(event.x, event.y) ?: return true
-                val rawDeltaX = event.x - touchDownX
-                val rawDeltaY = event.y - touchDownY
-                if (abs(rawDeltaX) > touchSlop || abs(rawDeltaY) > touchSlop) touchMoved = true
-
-                activeSliderTarget?.let { target ->
-                    val localX = logicalPoint.first - target.bounds.left
-                    val ratio = (localX.toFloat() / target.bounds.width).coerceIn(0f, 1f)
-                    target.onDrag(ratio)
-                    invalidate()
-                    return true
-                }
-
-                activePagerTarget?.let { target ->
-                    val deltaPx = when (target.axis) {
-                        PixelAxis.HORIZONTAL -> logicalPoint.first - lastPagerLogicalX
-                        PixelAxis.VERTICAL -> logicalPoint.second - lastPagerLogicalY
-                    }.toFloat()
-                    target.controller.dragBy(target.state, deltaPx, pagerViewportSize(target))
-                    lastPagerLogicalX = logicalPoint.first
-                    lastPagerLogicalY = logicalPoint.second
-                    invalidate()
-                    return true
-                }
-                activeListTarget?.let { target ->
-                    val deltaPx = (logicalPoint.second - lastListLogicalY).toFloat()
-                    val listCanConsumeDrag = target.controller.canConsumeDrag(
-                        target.state, deltaPx, target.viewportHeightPx, target.contentHeightPx,
-                    )
-                    if (listCanConsumeDrag) {
-                        target.controller.dragBy(target.state, deltaPx, target.viewportHeightPx, target.contentHeightPx)
-                        lastListLogicalY = logicalPoint.second
-                        invalidate()
-                        return true
-                    }
-                    val pagerTarget = candidatePagerTarget
-                    if (pagerTarget != null &&
-                        nestedScrollPolicy.shouldHandOffListToPager(pagerTarget.axis, listCanConsumeDrag, deltaPx)
-                    ) {
-                        activeListTarget = null
-                        activePagerTarget = pagerTarget
-                        candidatePagerTarget = null
-                        candidateListTarget = null
-                        pagerTarget.controller.startDrag(pagerTarget.state)
-                        lastPagerLogicalX = logicalPoint.first
-                        lastPagerLogicalY = lastListLogicalY
-                        pagerTarget.controller.dragBy(pagerTarget.state, deltaPx, pagerViewportSize(pagerTarget))
-                        lastPagerLogicalX = logicalPoint.first
-                        lastPagerLogicalY = logicalPoint.second
-                        invalidate()
-                        return true
-                    }
-                    lastListLogicalY = logicalPoint.second
-                    return true
-                }
-                candidatePagerTarget?.let { target ->
-                    val pagerWantsDrag = pagerGesturePolicy.shouldStartDrag(target.axis, rawDeltaX, rawDeltaY, touchSlop)
-                    val listWantsDrag = candidateListTarget?.let { shouldStartListDrag(rawDeltaX, rawDeltaY) } ?: false
-                    val listCanConsumeDrag = candidateListTarget?.let { listTarget ->
-                        listTarget.controller.canConsumeDrag(listTarget.state, rawDeltaY, listTarget.viewportHeightPx, listTarget.contentHeightPx)
-                    } ?: false
-                    val shouldDeferToList = nestedScrollPolicy.shouldDeferPagerToList(
-                        target.axis, pagerWantsDrag, listWantsDrag, listCanConsumeDrag,
-                    )
-                    if (pagerWantsDrag && !shouldDeferToList) {
-                        activePagerTarget = target
-                        candidatePagerTarget = null
-                        target.controller.startDrag(target.state)
-                        val initialDeltaPx = when (target.axis) {
-                            PixelAxis.HORIZONTAL -> logicalPoint.first - touchDownLogicalX
-                            PixelAxis.VERTICAL -> logicalPoint.second - touchDownLogicalY
-                        }.toFloat()
-                        if (initialDeltaPx != 0f) {
-                            target.controller.dragBy(target.state, initialDeltaPx, pagerViewportSize(target))
-                        }
-                        lastPagerLogicalX = logicalPoint.first
-                        lastPagerLogicalY = logicalPoint.second
-                        candidateListTarget = null
-                        invalidate()
-                    }
-                }
-                candidateListTarget?.let { target ->
-                    if (shouldStartListDrag(rawDeltaX, rawDeltaY)) {
-                        activeListTarget = target
-                        candidateListTarget = null
-                        target.controller.startDrag(target.state)
-                        val initialDeltaPx = (logicalPoint.second - touchDownLogicalY).toFloat()
-                        if (initialDeltaPx != 0f) {
-                            target.controller.dragBy(target.state, initialDeltaPx, target.viewportHeightPx, target.contentHeightPx)
-                        }
-                        lastListLogicalY = logicalPoint.second
-                        invalidate()
-                    }
-                }
-                return true
-            }
-
-            MotionEvent.ACTION_UP -> {
-                velocityTracker?.addMovement(event)
-                velocityTracker?.computeCurrentVelocity(1000)
-                val logicalPoint = mapTouchToLogical(event.x, event.y)
-
-                activeSliderTarget?.let { target ->
-                    val localX = if (logicalPoint != null) logicalPoint.first - target.bounds.left
-                                 else target.bounds.width / 2
-                    val ratio = (localX.toFloat() / target.bounds.width).coerceIn(0f, 1f)
-                    target.onRelease(ratio)
-                    activeSliderTarget = null
-                    invalidate()
-                    return true
-                }
-
-                activePagerTarget?.let { target ->
-                    val velocityPxPerSecond = rawVelocityToLogical(velocityTracker, target.axis)
-                    target.controller.endDrag(target.state, pagerViewportSize(target), velocityPxPerSecond)
-                    activePagerTarget = null
-                    candidatePagerTarget = null
-                    candidateListTarget = null
-                    velocityTracker?.recycle()
-                    velocityTracker = null
-                    invalidate()
-                    return true
-                }
-                activeListTarget?.let { target ->
-                    val velocityPxPerSecond = rawVelocityToLogical(velocityTracker, PixelAxis.VERTICAL)
-                    target.controller.endDrag(target.state, velocityPxPerSecond, target.viewportHeightPx, target.contentHeightPx)
-                    activeListTarget = null
-                    candidateListTarget = null
-                    candidatePagerTarget = null
-                    velocityTracker?.recycle()
-                    velocityTracker = null
-                    invalidate()
-                    return true
-                }
-
-                candidatePagerTarget = null
-                candidateListTarget = null
-                if (!touchMoved && logicalPoint != null) {
-                    resolveTextInputTarget(logicalPoint.first, logicalPoint.second)?.let { target ->
-                        focusTextInput(target)
-                        invalidate()
-                        return true
-                    }
-                    resolveClickTarget(logicalPoint.first, logicalPoint.second)?.onClick?.invoke()
-                    invalidate()
-                }
-                velocityTracker?.recycle()
-                velocityTracker = null
-                return true
-            }
-
-            MotionEvent.ACTION_CANCEL -> {
-                activeSliderTarget = null
-                activePagerTarget?.let { target ->
-                    target.controller.cancelDrag(target.state)
-                    invalidate()
-                }
-                activeListTarget?.let { target ->
-                    target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
-                }
-                candidatePagerTarget = null
-                activePagerTarget = null
-                candidateListTarget = null
-                activeListTarget = null
-                velocityTracker?.recycle()
-                velocityTracker = null
-                return true
-            }
-        }
-        return super.onTouchEvent(event)
+        return gestureRouter.onTouchEvent(event) ?: super.onTouchEvent(event)
     }
 
     override fun performClick(): Boolean {
@@ -542,11 +340,21 @@ public class PixelHostView @JvmOverloads constructor(
         }
     }
 
-    private fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
+    private fun stepFocusedTextInputCursor(deltaMs: Long) {
+        val target = focusedTextInputTarget ?: return
+        target.controller.stepCursorBlink(target.state, deltaMs)
+    }
+
+    private fun isFocusedTextInputBlinking(): Boolean {
+        val state = focusedTextInputTarget?.state ?: return false
+        return state.isFocused && state.cursorBlinkEnabled
+    }
+
+    internal fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
         return lastRenderResult?.clickTargets?.lastOrNull { it.bounds.contains(logicalX, logicalY) }
     }
 
-    private fun resolveTextInputTarget(logicalX: Int, logicalY: Int): PixelTextInputTarget? {
+    internal fun resolveTextInputTarget(logicalX: Int, logicalY: Int): PixelTextInputTarget? {
         return lastRenderResult?.textInputTargets?.lastOrNull { it.bounds.contains(logicalX, logicalY) }
     }
 
@@ -571,7 +379,7 @@ public class PixelHostView @JvmOverloads constructor(
         }
     }
 
-    private fun focusTextInput(target: PixelTextInputTarget) {
+    internal fun focusTextInput(target: PixelTextInputTarget) {
         if (focusedTextInputTarget?.state !== target.state) {
             focusedTextInputTarget?.let { it.controller.blur(it.state) }
         }
@@ -591,18 +399,18 @@ public class PixelHostView @JvmOverloads constructor(
         )
     }
 
-    private fun pagerViewportSize(target: PixelPagerTarget): Int {
+    internal fun pagerViewportSize(target: PixelPagerTarget): Int {
         return when (target.axis) {
             PixelAxis.HORIZONTAL -> target.bounds.width
             PixelAxis.VERTICAL -> target.bounds.height
         }.coerceAtLeast(1)
     }
 
-    private fun shouldStartListDrag(rawDeltaX: Float, rawDeltaY: Float): Boolean {
+    internal fun shouldStartListDrag(rawDeltaX: Float, rawDeltaY: Float): Boolean {
         return abs(rawDeltaY) > touchSlop && abs(rawDeltaY) >= abs(rawDeltaX)
     }
 
-    private fun rawVelocityToLogical(velocityTracker: VelocityTracker?, axis: PixelAxis): Float {
+    internal fun rawVelocityToLogical(velocityTracker: VelocityTracker?, axis: PixelAxis): Float {
         val geometry = PixelGridGeometryResolver.resolve(
             viewWidth = width,
             viewHeight = height,
@@ -729,7 +537,7 @@ public class PixelHostView @JvmOverloads constructor(
         }
     }
 
-    private fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
+    internal fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
         return PixelGridGeometryResolver.mapSurfaceToLogical(
             touchX = touchX,
             touchY = touchY,

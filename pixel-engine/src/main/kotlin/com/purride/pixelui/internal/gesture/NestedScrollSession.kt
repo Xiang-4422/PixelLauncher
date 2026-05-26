@@ -12,7 +12,11 @@ internal class NestedScrollSession {
 
     var candidatePagerTarget: PixelPagerTarget? = null
     var candidateListTarget: PixelListTarget? = null
+    var candidateTextInputTarget: PixelTextInputTarget? = null
     var focusedTextInputTarget: PixelTextInputTarget? = null
+    var consumedDeltaPx: Float = 0f
+    var remainingDeltaPx: Float = 0f
+    var edgeHandoff: Boolean = false
 
     var activePagerTarget: PixelPagerTarget? = null
         set(value) {
@@ -44,13 +48,19 @@ internal class NestedScrollSession {
     fun clearCandidates() {
         candidatePagerTarget = null
         candidateListTarget = null
+        candidateTextInputTarget = null
+        remainingDeltaPx = 0f
     }
 
     fun resetGesture() {
         candidatePagerTarget = null
         candidateListTarget = null
+        candidateTextInputTarget = null
         activePagerTarget = null
         activeListTarget = null
+        consumedDeltaPx = 0f
+        remainingDeltaPx = 0f
+        edgeHandoff = false
         if (owner != Owner.TEXT_INPUT) {
             owner = Owner.NONE
         }

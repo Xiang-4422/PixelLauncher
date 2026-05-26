@@ -78,6 +78,41 @@ public class PixelTextFieldController : ChangeNotifier() {
         state.compositionEnd = clampedEnd
     }
 
+    internal fun syncCursorBlinkConfig(
+        state: PixelTextFieldState,
+        enabled: Boolean,
+        periodMs: Long,
+    ) {
+        val safePeriodMs = periodMs.coerceAtLeast(1L)
+        if (state.cursorBlinkEnabled == enabled && state.cursorBlinkPeriodMs == safePeriodMs) return
+        state.cursorBlinkEnabled = enabled
+        state.cursorBlinkPeriodMs = safePeriodMs
+        resetCursorBlink(state)
+    }
+
+    internal fun resetCursorBlink(state: PixelTextFieldState) {
+        state.cursorBlinkElapsedMs = 0L
+        state.cursorVisible = true
+    }
+
+    internal fun stepCursorBlink(state: PixelTextFieldState, deltaMs: Long): Boolean {
+        if (!state.isFocused || !state.cursorBlinkEnabled || deltaMs <= 0L) {
+            val wasHidden = !state.cursorVisible
+            state.cursorVisible = true
+            state.cursorBlinkElapsedMs = 0L
+            return wasHidden
+        }
+        state.cursorBlinkElapsedMs += deltaMs
+        val halfPeriodMs = (state.cursorBlinkPeriodMs / 2L).coerceAtLeast(1L)
+        if (state.cursorBlinkElapsedMs < halfPeriodMs) return false
+        val toggles = state.cursorBlinkElapsedMs / halfPeriodMs
+        state.cursorBlinkElapsedMs %= halfPeriodMs
+        if (toggles % 2L == 0L) return false
+        state.cursorVisible = !state.cursorVisible
+        notifyListeners()
+        return true
+    }
+
     public fun setSelection(
         state: PixelTextFieldState,
         selectionStart: Int,
@@ -104,6 +139,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         state.isFocused = true
         state.focusRequested = false
         state.blurRequested = false
+        resetCursorBlink(state)
         notifyListeners()
     }
 
@@ -111,6 +147,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         state.isFocused = false
         state.focusRequested = false
         state.blurRequested = false
+        resetCursorBlink(state)
         notifyListeners()
     }
 

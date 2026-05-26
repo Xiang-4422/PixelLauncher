@@ -52,6 +52,11 @@ internal data class TextFieldWidget(
         }
         val safeMinLines = minLines.coerceAtLeast(1)
         val safeMaxLines = maxLines.coerceAtLeast(safeMinLines)
+        controller.syncCursorBlinkConfig(
+            state = state,
+            enabled = enabled && !readOnly && style.cursorBlinkEnabled,
+            periodMs = style.cursorBlinkPeriodMs,
+        )
         val text = state.text.ifEmpty { placeholder }
         val textStyle = when {
             !enabled && state.text.isEmpty() -> effectiveStyle.placeholderStyle
@@ -75,6 +80,7 @@ internal data class TextFieldWidget(
             onChanged = onChanged,
             onSubmitted = onSubmitted,
             cursorColor = if (enabled && !readOnly) style.cursorColor else null,
+            cursorVisible = state.cursorVisible,
             selectionColor = if (enabled && !readOnly) style.selectionColor else null,
             compositionColor = if (enabled && !readOnly) style.compositionColor else null,
             key = key,
@@ -111,6 +117,7 @@ private data class TextInputSurfaceWidget(
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
     val cursorColor: PixelColor?,
+    val cursorVisible: Boolean,
     val selectionColor: PixelColor?,
     val compositionColor: PixelColor?,
     override val key: Any? = null,
@@ -135,6 +142,7 @@ private data class TextInputSurfaceWidget(
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
             textInputCursorColor = cursorColor,
+            textInputCursorVisible = cursorVisible,
             textInputSelectionColor = selectionColor,
             textInputCompositionColor = compositionColor,
         )
@@ -160,6 +168,7 @@ private data class TextInputSurfaceWidget(
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
             textInputCursorColor = cursorColor,
+            textInputCursorVisible = cursorVisible,
             textInputSelectionColor = selectionColor,
             textInputCompositionColor = compositionColor,
         )

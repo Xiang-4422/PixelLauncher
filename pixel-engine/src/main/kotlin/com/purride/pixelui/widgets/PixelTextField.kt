@@ -28,6 +28,8 @@ public data class PixelTextFieldStyle(
      * < compositionEnd 且 widget 聚焦时绘制。默认与 cursorColor 同色。
      */
     val compositionColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    val cursorBlinkEnabled: Boolean = true,
+    val cursorBlinkPeriodMs: Long = 1_000L,
     val padding: Int = 2,
 ) {
     public companion object {

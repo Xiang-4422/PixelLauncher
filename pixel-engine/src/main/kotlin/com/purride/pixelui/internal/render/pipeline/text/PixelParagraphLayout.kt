@@ -27,6 +27,8 @@ internal data class PixelParagraphLine(
     val runs: List<PixelParagraphRun>,
     val width: Int,
     val height: Int,
+    val sourceStart: Int,
+    val sourceEnd: Int,
 )
 
 internal data class PixelParagraphRun(
@@ -133,8 +135,9 @@ internal object PixelParagraphLayouter {
         defaultTextRasterizer: PixelTextRasterizer,
     ): List<ParagraphCharacter> {
         val ellipsisStyle = characters.lastOrNull()?.style ?: PixelTextStyle.Default
+        val ellipsisSourceIndex = (characters.lastOrNull()?.sourceIndex ?: -1) + 1
         val ellipsis = ParagraphLayoutSupport.Ellipsis.map { value ->
-            ParagraphCharacter(value = value, style = ellipsisStyle)
+            ParagraphCharacter(value = value, style = ellipsisStyle, sourceIndex = ellipsisSourceIndex)
         }
         val ellipsisWidth = measureWidth(
             characters = ellipsis,
@@ -196,6 +199,8 @@ internal object PixelParagraphLayouter {
             runs = runs,
             width = runs.sumOf { run -> run.width },
             height = height,
+            sourceStart = characters.minOfOrNull { it.sourceIndex } ?: 0,
+            sourceEnd = (characters.maxOfOrNull { it.sourceIndex } ?: -1) + 1,
         )
     }
 
@@ -264,9 +269,10 @@ internal object PixelParagraphLayouter {
     }
 
     private fun flattenSpans(spans: List<PixelTextSpan>): List<ParagraphCharacter> {
+        var sourceIndex = 0
         return spans.flatMap { span ->
             span.text.map { character ->
-                ParagraphCharacter(value = character, style = span.style)
+                ParagraphCharacter(value = character, style = span.style, sourceIndex = sourceIndex++)
             }
         }
     }
@@ -274,5 +280,6 @@ internal object PixelParagraphLayouter {
     private data class ParagraphCharacter(
         val value: Char,
         val style: PixelTextStyle,
+        val sourceIndex: Int,
     )
 }

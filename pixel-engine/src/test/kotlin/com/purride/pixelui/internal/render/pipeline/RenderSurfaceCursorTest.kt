@@ -31,8 +31,14 @@ class RenderSurfaceCursorTest {
         text: String,
         focused: Boolean,
         cursorColor: PixelColor?,
+        selectionStart: Int = text.length,
+        maxLines: Int = 1,
     ): Pair<RenderSurface, PixelBuffer> {
-        val state = PixelTextFieldState(initialText = text)
+        val state = PixelTextFieldState(
+            initialText = text,
+            selectionStart = selectionStart,
+            selectionEnd = selectionStart,
+        )
         if (focused) {
             // 直接读 isFocused 的内部 set — controller.focus 是合法 API
             PixelTextFieldController().focus(state)
@@ -43,9 +49,9 @@ class RenderSurfaceCursorTest {
             style = PixelTextStyle(color = textColor),
             textAlign = PixelTextAlign.START,
             textDirection = TextDirection.LTR,
-            softWrap = false,
+            softWrap = maxLines > 1,
             overflow = TextOverflow.CLIP,
-            maxLines = 1,
+            maxLines = maxLines,
             defaultTextRasterizer = PixelBitmapFont.Default,
         )
         val surface = RenderSurface(
@@ -56,8 +62,8 @@ class RenderSurfaceCursorTest {
             textInputCursorColor = cursorColor,
         )
         surface.setRenderObjectChild(textChild)
-        surface.layout(RenderConstraints(maxWidth = 60, maxHeight = 12))
-        val buffer = PixelBuffer(width = 60, height = 12).also { it.clear() }
+        surface.layout(RenderConstraints(maxWidth = 60, maxHeight = 24))
+        val buffer = PixelBuffer(width = 60, height = 24).also { it.clear() }
         return surface to buffer
     }
 
@@ -86,17 +92,37 @@ class RenderSurfaceCursorTest {
     }
 
     @Test
-    fun cursorPaintsAtTextEndForNonEmptyText() {
-        val (surface, buffer) = makeSurface(text = "AB", focused = true, cursorColor = cursorColor)
+    fun cursorPaintsAtSelectionPositionForNonEmptyText() {
+        val (surface, buffer) = makeSurface(
+            text = "AB",
+            focused = true,
+            cursorColor = cursorColor,
+            selectionStart = 1,
+        )
         surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
 
-        // 找到第一个非透明的 cursor pixel — 它的 X 应当 >= text-end-X。
-        // 我们不严格断言精确 X（依赖具体字体宽度），但可以验证 cursor 不是在 X = 0 (空文本场景)。
         val firstCursorPixelIndex = buffer.pixels.indexOfFirst { it == cursorColor.argb }
         val width = 60
         val cursorX = firstCursorPixelIndex % width
-        // RenderText 渲染 "AB" 至少占用几像素宽，cursor 应当在 X >= 4 大概位置（5px 字体 + 内字间隙）
-        assertNotEquals("cursor must not be at X=0 for non-empty text", 0, cursorX)
+        assertNotEquals("cursor must not be at X=0 for selection after first character", 0, cursorX)
+        assertNotEquals("cursor must not be forced to text end", 12, cursorX)
+    }
+
+    @Test
+    fun multilineCursorUsesSelectionLine() {
+        val (surface, buffer) = makeSurface(
+            text = "AB\nCD",
+            focused = true,
+            cursorColor = cursorColor,
+            selectionStart = 3,
+            maxLines = 2,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+
+        val firstCursorPixelIndex = buffer.pixels.indexOfFirst { it == cursorColor.argb }
+        val width = 60
+        val cursorY = firstCursorPixelIndex / width
+        assertNotEquals("cursor should move to the second line after newline selection", 0, cursorY)
     }
 
     @Test

@@ -40,6 +40,73 @@ internal class RenderText(
     private var drawTextX = 0
     private var drawTextY = 0
 
+    fun textRangeRects(start: Int, end: Int): List<PixelTextRangeRect> {
+        if (text.isEmpty() || paragraphLayout.lines.isEmpty()) return emptyList()
+        val safeStart = start.coerceIn(0, text.length)
+        val safeEnd = end.coerceIn(safeStart, text.length)
+        if (safeStart >= safeEnd) return emptyList()
+        val rects = mutableListOf<PixelTextRangeRect>()
+        var y = drawTextY
+        paragraphLayout.lines.forEach { line ->
+            val lineStart = line.sourceStart.coerceIn(0, text.length)
+            val lineEnd = line.sourceEnd.coerceIn(lineStart, text.length)
+            val overlapStart = safeStart.coerceAtLeast(lineStart)
+            val overlapEnd = safeEnd.coerceAtMost(lineEnd)
+            if (overlapStart < overlapEnd) {
+                val lineX = drawTextX + ParagraphLayoutSupport.resolveLineStartX(
+                    textAlign = textAlign,
+                    textDirection = textDirection,
+                    availableWidth = size.width - paddingLeft - paddingRight,
+                    lineWidth = line.width,
+                )
+                val startX = lineX + measureTextRange(lineStart, overlapStart)
+                val endX = lineX + measureTextRange(lineStart, overlapEnd)
+                rects += PixelTextRangeRect(
+                    x = startX,
+                    y = y,
+                    width = (endX - startX).coerceAtLeast(1),
+                    height = line.height,
+                )
+            }
+            y += line.height
+        }
+        return rects
+    }
+
+    fun caretRect(index: Int): PixelTextRangeRect {
+        if (text.isEmpty() || paragraphLayout.lines.isEmpty()) {
+            return PixelTextRangeRect(x = drawTextX, y = drawTextY, width = 1, height = size.height.coerceAtLeast(1))
+        }
+        val caretIndex = index.coerceIn(0, text.length)
+        var y = drawTextY
+        paragraphLayout.lines.forEach { line ->
+            val lineStart = line.sourceStart.coerceIn(0, text.length)
+            val lineEnd = line.sourceEnd.coerceIn(lineStart, text.length)
+            if (caretIndex in lineStart..lineEnd) {
+                val lineX = drawTextX + ParagraphLayoutSupport.resolveLineStartX(
+                    textAlign = textAlign,
+                    textDirection = textDirection,
+                    availableWidth = size.width - paddingLeft - paddingRight,
+                    lineWidth = line.width,
+                )
+                return PixelTextRangeRect(
+                    x = lineX + measureTextRange(lineStart, caretIndex.coerceAtMost(lineEnd)),
+                    y = y,
+                    width = 1,
+                    height = line.height,
+                )
+            }
+            y += line.height
+        }
+        val lastLine = paragraphLayout.lines.last()
+        return PixelTextRangeRect(
+            x = drawTextX + lastLine.width,
+            y = (textHeight - lastLine.height).coerceAtLeast(0) + drawTextY,
+            width = 1,
+            height = lastLine.height,
+        )
+    }
+
     fun updateText(
         text: String,
         style: PixelTextStyle,
@@ -198,6 +265,20 @@ internal class RenderText(
         return letterSpacing <= 0 && fontScale <= 1 && lineHeight == null
     }
 
+    private fun measureTextRange(start: Int, end: Int): Int {
+        if (start >= end) return 0
+        val slice = text.substring(start.coerceIn(0, text.length), end.coerceIn(start, text.length))
+        return if (style.usesPlainRasterizer()) {
+            rasterizer.measureText(slice)
+        } else {
+            val scale = style.fontScale.coerceAtLeast(1)
+            val spacing = style.letterSpacing.coerceAtLeast(0)
+            slice.sumOf { character ->
+                (rasterizer.measureText(character.toString()) * scale) + spacing
+            }
+        }
+    }
+
     /**
      * 只把 scratch buffer 里非透明像素拷到目标 buffer，避免覆盖底色。
      */
@@ -245,3 +326,10 @@ internal class RenderText(
         return (constraints.constrainWidth(measuredWidth) - horizontalPadding).coerceAtLeast(0)
     }
 }
+
+internal data class PixelTextRangeRect(
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+)

@@ -42,6 +42,7 @@ internal class RenderSurface(
     private var textInputOnChanged: ((String) -> Unit)? = null,
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
     private var textInputCursorColor: PixelColor? = null,
+    private var textInputCursorVisible: Boolean = true,
     private var textInputSelectionColor: PixelColor? = null,
     private var textInputCompositionColor: PixelColor? = null,
 ) : SingleChildRenderObject() {
@@ -87,6 +88,7 @@ internal class RenderSurface(
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
         textInputCursorColor: PixelColor? = null,
+        textInputCursorVisible: Boolean = true,
         textInputSelectionColor: PixelColor? = null,
         textInputCompositionColor: PixelColor? = null,
     ) {
@@ -122,6 +124,7 @@ internal class RenderSurface(
             this.textInputOnChanged == textInputOnChanged &&
             this.textInputOnSubmitted == textInputOnSubmitted &&
             this.textInputCursorColor == textInputCursorColor &&
+            this.textInputCursorVisible == textInputCursorVisible &&
             this.textInputSelectionColor == textInputSelectionColor &&
             this.textInputCompositionColor == textInputCompositionColor
         ) {
@@ -156,6 +159,7 @@ internal class RenderSurface(
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted
         this.textInputCursorColor = textInputCursorColor
+        this.textInputCursorVisible = textInputCursorVisible
         this.textInputSelectionColor = textInputSelectionColor
         this.textInputCompositionColor = textInputCompositionColor
         markNeedsLayout()
@@ -254,15 +258,13 @@ internal class RenderSurface(
     /**
      * 在文本输入聚焦时绘制 1px 光标。
      *
-     * V1 行为：
+     * 行为：
      *  - 仅在 `textInputState?.isFocused == true` 且 [textInputCursorColor] 非空时绘制
      *  - 空文本：光标画在内容区起点（child 左缘）
-     *  - 非空文本：光标画在文字末端（child 左缘 + 文本宽度）
+     *  - 非空文本：光标按 selectionStart 的 caret 位置绘制
      *  - 光标高度 = child 当前测量高度
-     *  - 不闪烁；不参与 layout（不改 size）；不影响命中测试
-     *
-     * V2 待补：闪烁节拍、IME composition 下划线（selection 已在
-     * [paintTextInputSelection] 落地）。
+     *  - 可见性由 host frame loop 推进的 blink state 决定
+     *  - 不参与 layout（不改 size）；不影响命中测试
      */
     private fun paintTextInputCursor(
         context: PaintContext,
@@ -273,16 +275,68 @@ internal class RenderSurface(
         val state = textInputState ?: return
         val cursorColor = textInputCursorColor ?: return
         if (!state.isFocused) return
+        if (!textInputCursorVisible) return
         child ?: return
         val cursorBaseX = offsetX + childOffsetX
         val cursorBaseY = offsetY + childOffsetY
-        // 空文本：cursor 在内容区起点；非空：在文字末端。
-        // 文字宽度近似 = child.size.width（当文本非空时，child 即为渲染过的 RenderText）。
-        val cursorX = if (state.text.isEmpty()) cursorBaseX else cursorBaseX + child.size.width
-        val cursorHeight = child.size.height
+        val caret = (child as? RenderText)?.caretRect(state.selectionStart)
+        val fallbackCaret = if (caret == null) resolveTextInputCaret(state.text, state.selectionStart, child) else 0L
+        val cursorX = cursorBaseX + (caret?.x ?: caretX(fallbackCaret))
+        val cursorY = cursorBaseY + (caret?.y ?: caretY(fallbackCaret))
+        val cursorHeight = caret?.height ?: caretHeight(fallbackCaret)
         if (cursorHeight <= 0) return
-        context.fillRect(cursorX, cursorBaseY, 1, cursorHeight, cursorColor)
+        context.fillRect(cursorX, cursorY, 1, cursorHeight, cursorColor)
     }
+
+    private fun resolveTextInputCaret(text: String, selectionStart: Int, child: RenderBox): Long {
+        if (text.isEmpty()) {
+            return packCaret(x = 0, y = 0, height = child.size.height)
+        }
+        val caretIndex = selectionStart.coerceIn(0, text.length)
+        var lineCount = 1
+        var lineIndex = 0
+        var lineStart = 0
+        var index = 0
+        while (index < text.length) {
+            if (text[index] == '\n') {
+                lineCount += 1
+                if (index < caretIndex) {
+                    lineIndex += 1
+                    lineStart = index + 1
+                }
+            }
+            index += 1
+        }
+        var lineEnd = lineStart
+        while (lineEnd < text.length && text[lineEnd] != '\n') {
+            lineEnd += 1
+        }
+        val column = caretIndex - lineStart
+        val lineHeight = (child.size.height / lineCount).coerceAtLeast(1)
+        val lineLength = (lineEnd - lineStart).coerceAtLeast(1)
+        val cursorX = if (lineEnd == lineStart) {
+            0
+        } else {
+            (column.coerceIn(0, lineLength).toLong() * child.size.width / lineLength).toInt()
+        }
+        return packCaret(
+            x = cursorX.coerceIn(0, child.size.width),
+            y = lineIndex.coerceIn(0, lineCount - 1) * lineHeight,
+            height = lineHeight,
+        )
+    }
+
+    private fun packCaret(x: Int, y: Int, height: Int): Long {
+        return (x.toLong() and 0x1FFFFFL) or
+            ((y.toLong() and 0x1FFFFFL) shl 21) or
+            ((height.toLong() and 0x1FFFFFL) shl 42)
+    }
+
+    private fun caretX(value: Long): Int = (value and 0x1FFFFFL).toInt()
+
+    private fun caretY(value: Long): Int = ((value ushr 21) and 0x1FFFFFL).toInt()
+
+    private fun caretHeight(value: Long): Int = ((value ushr 42) and 0x1FFFFFL).toInt()
 
     /**
      * 文本输入聚焦时为 IME composition 区段绘制 1px 下划线。
@@ -291,8 +345,7 @@ internal class RenderSurface(
      *  - 仅在 `state.isFocused == true`、`textInputCompositionColor` 非空、
      *    `state.compositionStart >= 0 && state.compositionStart < state.compositionEnd`
      *    且 composition 范围都在 text 内时绘制
-     *  - X 范围按字符比例近似（与 selection 同口径），底边在 child 文本下一行
-     *  - 多行场景当前 V1 单行处理：整段在一行下方画一条线
+     *  - 按 RenderText 的行级文本映射拆分多行区段
      *  - 不参与 layout / 命中测试
      */
     private fun paintTextInputComposition(
@@ -314,17 +367,21 @@ internal class RenderSurface(
         val safeStart = start.coerceIn(0, length)
         val safeEnd = end.coerceIn(safeStart, length)
         if (safeStart >= safeEnd) return
-        val textWidth = child.size.width
-        if (textWidth <= 0) return
-        val textHeight = child.size.height
-        if (textHeight <= 0) return
         val baseX = offsetX + childOffsetX
         val baseY = offsetY + childOffsetY
+        val rects = (child as? RenderText)?.textRangeRects(safeStart, safeEnd)
+        if (!rects.isNullOrEmpty()) {
+            rects.forEach { rect ->
+                context.fillRect(baseX + rect.x, baseY + rect.y + rect.height - 1, rect.width, 1, underlineColor)
+            }
+            return
+        }
+        val textWidth = child.size.width
+        val textHeight = child.size.height
+        if (textWidth <= 0 || textHeight <= 0) return
         val startX = baseX + (safeStart.toLong() * textWidth / length).toInt()
         val endX = baseX + (safeEnd.toLong() * textWidth / length).toInt()
-        val width = (endX - startX).coerceAtLeast(1)
-        val underlineY = baseY + textHeight - 1
-        context.fillRect(startX, underlineY, width, 1, underlineColor)
+        context.fillRect(startX, baseY + textHeight - 1, (endX - startX).coerceAtLeast(1), 1, underlineColor)
     }
 
     /**
@@ -334,10 +391,7 @@ internal class RenderSurface(
      *  - 仅在 `textInputState?.isFocused == true`、selection 非空
      *    （selectionStart < selectionEnd 且都在 text 范围内）且
      *    [textInputSelectionColor] 非空时绘制
-     *  - X 位置按"文本宽度按字符数线性分摊"近似：
-     *    `selStartX = textLeft + (selectionStart / text.length) * child.size.width`
-     *    比例字体下会有像素级偏差，但当前 pixel 字体接近 monospace，可接受
-     *  - 多行：当前 V1 单行模型，按一行内整段高亮处理
+     *  - 按 RenderText 的行级文本映射拆分多行区段
      *  - 不参与 layout / 命中测试
      */
     private fun paintTextInputSelection(
@@ -356,16 +410,21 @@ internal class RenderSurface(
         val start = state.selectionStart.coerceIn(0, length)
         val end = state.selectionEnd.coerceIn(start, length)
         if (start >= end) return
-        val textWidth = child.size.width
-        if (textWidth <= 0) return
-        val textHeight = child.size.height
-        if (textHeight <= 0) return
         val baseX = offsetX + childOffsetX
         val baseY = offsetY + childOffsetY
+        val rects = (child as? RenderText)?.textRangeRects(start, end)
+        if (!rects.isNullOrEmpty()) {
+            rects.forEach { rect ->
+                context.fillRect(baseX + rect.x, baseY + rect.y, rect.width, rect.height, highlight)
+            }
+            return
+        }
+        val textWidth = child.size.width
+        val textHeight = child.size.height
+        if (textWidth <= 0 || textHeight <= 0) return
         val startX = baseX + (start.toLong() * textWidth / length).toInt()
         val endX = baseX + (end.toLong() * textWidth / length).toInt()
-        val width = (endX - startX).coerceAtLeast(1)
-        context.fillRect(startX, baseY, width, textHeight, highlight)
+        context.fillRect(startX, baseY, (endX - startX).coerceAtLeast(1), textHeight, highlight)
     }
 
     /**

@@ -39,6 +39,7 @@ class RenderSurfaceCompositionTest {
         compositionStart: Int = -1,
         compositionEnd: Int = -1,
         compositionColor: PixelColor? = this.compositionColor,
+        maxLines: Int = 1,
     ): Pair<RenderSurface, PixelBuffer> {
         val state = PixelTextFieldState(initialText = text)
         val controller = PixelTextFieldController()
@@ -51,9 +52,9 @@ class RenderSurfaceCompositionTest {
             style = PixelTextStyle(color = textColor),
             textAlign = PixelTextAlign.START,
             textDirection = TextDirection.LTR,
-            softWrap = false,
+            softWrap = maxLines > 1,
             overflow = TextOverflow.CLIP,
-            maxLines = 1,
+            maxLines = maxLines,
             defaultTextRasterizer = PixelBitmapFont.Default,
         )
         val surface = RenderSurface(
@@ -64,9 +65,28 @@ class RenderSurfaceCompositionTest {
             textInputCompositionColor = compositionColor,
         )
         surface.setRenderObjectChild(textChild)
-        surface.layout(RenderConstraints(maxWidth = 120, maxHeight = 12))
-        val buffer = PixelBuffer(width = 120, height = 12).also { it.clear() }
+        surface.layout(RenderConstraints(maxWidth = 120, maxHeight = 24))
+        val buffer = PixelBuffer(width = 120, height = 24).also { it.clear() }
         return surface to buffer
+    }
+
+    @Test
+    fun multilineCompositionPaintsUnderlineOnEachTouchedLine() {
+        val (surface, buffer) = makeSurface(
+            text = "AB\nCD",
+            focused = true,
+            compositionStart = 1,
+            compositionEnd = 5,
+            maxLines = 2,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+
+        val width = 120
+        val rows = mutableSetOf<Int>()
+        for (i in buffer.pixels.indices) {
+            if (buffer.pixels[i] == compositionColor.argb) rows += (i / width)
+        }
+        assertTrue("composition should underline both touched rows, rows=$rows", rows.size > 1)
     }
 
     @Test

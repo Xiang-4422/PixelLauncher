@@ -40,6 +40,7 @@ class RenderSurfaceSelectionTest {
         selectionEnd: Int = selectionStart,
         selectionColor: PixelColor? = this.selectionColor,
         cursorColor: PixelColor? = this.cursorColor,
+        maxLines: Int = 1,
     ): Pair<RenderSurface, PixelBuffer> {
         val state = PixelTextFieldState(
             initialText = text,
@@ -55,9 +56,9 @@ class RenderSurfaceSelectionTest {
             style = PixelTextStyle(color = textColor),
             textAlign = PixelTextAlign.START,
             textDirection = TextDirection.LTR,
-            softWrap = false,
+            softWrap = maxLines > 1,
             overflow = TextOverflow.CLIP,
-            maxLines = 1,
+            maxLines = maxLines,
             defaultTextRasterizer = PixelBitmapFont.Default,
         )
         val surface = RenderSurface(
@@ -72,6 +73,25 @@ class RenderSurfaceSelectionTest {
         surface.layout(RenderConstraints(maxWidth = 120, maxHeight = 12))
         val buffer = PixelBuffer(width = 120, height = 12).also { it.clear() }
         return surface to buffer
+    }
+
+    @Test
+    fun multilineSelectionPaintsSeparateRows() {
+        val (surface, buffer) = makeSurface(
+            text = "AB\nCD",
+            focused = true,
+            selectionStart = 1,
+            selectionEnd = 5,
+            maxLines = 2,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+
+        val width = 120
+        val rows = mutableSetOf<Int>()
+        for (i in buffer.pixels.indices) {
+            if (buffer.pixels[i] == selectionColor.argb) rows += (i / width)
+        }
+        assertTrue("selection should paint on both text rows, rows=$rows", rows.size > 1)
     }
 
     @Test
