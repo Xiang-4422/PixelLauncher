@@ -10,7 +10,12 @@ class PixelSpriteSheetLoaderTest {
         val definition = PixelSpriteSheetJsonLoader.parseDefinition(
             """
             {
+              "version": 1,
               "bitmap": "sprites/runner.png",
+              "metadata": {
+                "name": "runner",
+                "fps": "8"
+              },
               "frames": [
                 {"left": 0, "top": 0, "width": 4, "height": 4},
                 {"left": 4, "top": 0, "width": 4, "height": 4}
@@ -20,6 +25,9 @@ class PixelSpriteSheetLoaderTest {
         )
 
         assertEquals("sprites/runner.png", definition.bitmap)
+        assertEquals(1, definition.version)
+        assertEquals("runner", definition.metadata["name"])
+        assertEquals("8", definition.metadata["fps"])
         assertEquals(2, definition.frames.size)
         assertEquals(PixelBitmapRegion(4, 0, 4, 4), definition.frames[1])
     }
@@ -47,6 +55,18 @@ class PixelSpriteSheetLoaderTest {
             error("empty frames should fail")
         } catch (error: PixelSpriteSheetLoadException) {
             assertTrue(error.message.orEmpty().contains("frames"))
+        }
+    }
+
+    @Test
+    fun parseRejectsUnsupportedVersion() {
+        try {
+            PixelSpriteSheetJsonLoader.parseDefinition(
+                """{"version":2,"bitmap":"x.png","frames":[{"left":0,"top":0,"width":1,"height":1}]}""",
+            )
+            error("unsupported version should fail")
+        } catch (error: PixelSpriteSheetLoadException) {
+            assertTrue(error.message.orEmpty().contains("version 2"))
         }
     }
 }

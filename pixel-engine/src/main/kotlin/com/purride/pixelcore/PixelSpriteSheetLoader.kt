@@ -8,8 +8,11 @@ public class PixelSpriteSheetLoadException(
 public data class PixelSpriteSheetDefinition(
     val bitmap: String,
     val frames: List<PixelBitmapRegion>,
+    val version: Int = 1,
+    val metadata: Map<String, String> = emptyMap(),
 ) {
     init {
+        require(version == 1) { "unsupported sprite sheet version $version" }
         require(bitmap.isNotBlank()) { "bitmap must not be blank" }
         require(frames.isNotEmpty()) { "frames must not be empty" }
     }
@@ -19,6 +22,8 @@ public object PixelSpriteSheetJsonLoader {
     public fun parseDefinition(json: String): PixelSpriteSheetDefinition {
         return try {
             val bitmap = requireString(json, "bitmap")
+            val version = optionalInt(json, "version") ?: 1
+            val metadata = optionalObject(json, "metadata")?.let(::parseStringMap).orEmpty()
             val framesSource = requireArray(json, "frames")
             val frames = Regex("\\{([^{}]+)\\}")
                 .findAll(framesSource)
@@ -32,7 +37,12 @@ public object PixelSpriteSheetJsonLoader {
                     )
                 }
                 .toList()
-            PixelSpriteSheetDefinition(bitmap = bitmap, frames = frames)
+            PixelSpriteSheetDefinition(
+                bitmap = bitmap,
+                frames = frames,
+                version = version,
+                metadata = metadata,
+            )
         } catch (error: PixelSpriteSheetLoadException) {
             throw error
         } catch (error: Throwable) {
@@ -53,6 +63,31 @@ public object PixelSpriteSheetJsonLoader {
         val match = Regex("\"$name\"\\s*:\\s*\"([^\"]+)\"").find(json)
             ?: throw PixelSpriteSheetLoadException("Missing string field '$name'")
         return match.groupValues[1]
+    }
+
+    private fun optionalInt(json: String, name: String): Int? {
+        return Regex("\"$name\"\\s*:\\s*(-?\\d+)").find(json)?.groupValues?.get(1)?.toInt()
+    }
+
+    private fun optionalObject(json: String, name: String): String? {
+        val key = Regex("\"$name\"\\s*:\\s*\\{").find(json) ?: return null
+        var depth = 1
+        var index = key.range.last + 1
+        while (index < json.length && depth > 0) {
+            when (json[index]) {
+                '{' -> depth += 1
+                '}' -> depth -= 1
+            }
+            index += 1
+        }
+        if (depth != 0) throw PixelSpriteSheetLoadException("Unclosed object field '$name'")
+        return json.substring(key.range.last + 1, index - 1)
+    }
+
+    private fun parseStringMap(json: String): Map<String, String> {
+        return Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"")
+            .findAll(json)
+            .associate { match -> match.groupValues[1] to match.groupValues[2] }
     }
 
     private fun requireArray(json: String, name: String): String {
