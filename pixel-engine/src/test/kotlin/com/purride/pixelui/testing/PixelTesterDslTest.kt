@@ -2,15 +2,21 @@ package com.purride.pixelui.testing
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Axis
+import com.purride.pixelui.AspectRatio
 import com.purride.pixelui.Column
+import com.purride.pixelui.ConstrainedBox
+import com.purride.pixelui.Container
+import com.purride.pixelui.FittedBox
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
+import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
+import com.purride.pixelui.Wrap
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
@@ -137,6 +143,52 @@ class PixelTesterDslTest {
         tester.drag(find.byKey("grid"), dx = 0, dy = -10)
 
         assertTrue(state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
+    fun wrapAndConstraintWidgetsRenderExpectedPixels() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = Wrap(
+                children = listOf(
+                    SizedBox(width = 8, height = 4, child = Container(fillColor = PixelColor.fromRgb(255, 0, 0))),
+                    SizedBox(width = 8, height = 4, child = Container(fillColor = PixelColor.fromRgb(0, 255, 0))),
+                    SizedBox(width = 8, height = 4, child = Container(fillColor = PixelColor.fromRgb(0, 0, 255))),
+                ),
+                spacing = 1,
+                runSpacing = 1,
+            ),
+            logicalWidth = 18,
+            logicalHeight = 12,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.fromRgb(0, 0, 255).argb, buffer.getPixel(0, 5).argb)
+        tester.dispose()
+    }
+
+    @Test
+    fun aspectConstrainedAndFittedBoxRender() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = FittedBox(
+                child = AspectRatio(
+                    aspectRatio = 2f,
+                    child = ConstrainedBox(
+                        constraints = PixelBoxConstraints(minWidth = 8, minHeight = 4),
+                        child = Container(fillColor = PixelColor.fromRgb(255, 0, 0)),
+                    ),
+                ),
+            ),
+            logicalWidth = 20,
+            logicalHeight = 20,
+        )
+
+        val lit = tester.renderResult!!.buffer.pixels.count { it == PixelColor.fromRgb(255, 0, 0).argb }
+        assertTrue("FittedBox should paint scaled child pixels", lit > 0)
         tester.dispose()
     }
 

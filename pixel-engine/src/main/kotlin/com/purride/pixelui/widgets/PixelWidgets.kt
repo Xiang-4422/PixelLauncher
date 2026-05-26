@@ -6,11 +6,14 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.internal.AlignDirectionalWidget
 import com.purride.pixelui.internal.AlignWidget
+import com.purride.pixelui.internal.AspectRatioWidget
 import com.purride.pixelui.internal.ColumnWidget
+import com.purride.pixelui.internal.ConstrainedBoxWidget
 import com.purride.pixelui.internal.ContainerDirectionalWidget
 import com.purride.pixelui.internal.ContainerWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
+import com.purride.pixelui.internal.FittedBoxWidget
 import com.purride.pixelui.internal.CircleWidget
 import com.purride.pixelui.internal.ClipRectWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
@@ -41,6 +44,7 @@ import com.purride.pixelui.internal.RichTextWidget
 import com.purride.pixelui.internal.TextWidget
 import com.purride.pixelui.internal.TransformTranslateWidget
 import com.purride.pixelui.internal.VariableLazyListViewWidget
+import com.purride.pixelui.internal.WrapWidget
 import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
@@ -506,6 +510,38 @@ public fun Row(
         crossAxisAlignment = crossAxisAlignment,
         key = key,
     )
+}
+
+public fun Wrap(
+    children: List<Widget>,
+    spacing: Int = 0,
+    runSpacing: Int = 0,
+    key: Any? = null,
+): Widget {
+    return WrapWidget(children = children, spacing = spacing, runSpacing = runSpacing, key = key)
+}
+
+public fun AspectRatio(
+    aspectRatio: Float,
+    child: Widget,
+    key: Any? = null,
+): Widget {
+    return AspectRatioWidget(aspectRatio = aspectRatio, child = child, key = key)
+}
+
+public fun ConstrainedBox(
+    constraints: PixelBoxConstraints,
+    child: Widget,
+    key: Any? = null,
+): Widget {
+    return ConstrainedBoxWidget(constraints = constraints, child = child, key = key)
+}
+
+public fun FittedBox(
+    child: Widget,
+    key: Any? = null,
+): Widget {
+    return FittedBoxWidget(child = child, key = key)
 }
 
 public fun Column(
