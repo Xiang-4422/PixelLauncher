@@ -2,7 +2,11 @@ import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 
 plugins {
     alias(libs.plugins.android.library)
+    id("maven-publish")
 }
+
+group = "com.purride"
+version = "0.1.0-SNAPSHOT"
 
 android {
     namespace = "com.purride.pixelengine"
@@ -19,6 +23,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildToolsVersion = "36.0.0"
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 /**
@@ -103,6 +114,38 @@ tasks.register("checkPublicApi") {
 
 tasks.named("check") {
     dependsOn("checkPublicApi")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "com.purride"
+            artifactId = "pixel-engine"
+            version = project.version.toString()
+
+            afterEvaluate {
+                from(components["release"])
+            }
+
+            pom {
+                name.set("pixel-engine")
+                description.set("Pixel UI engine for Android-hosted pixel-grid interfaces.")
+                url.set("https://github.com/purride/pixel-engine")
+                licenses {
+                    license {
+                        name.set("Proprietary")
+                        distribution.set("repo")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("purride")
+                        name.set("Purride")
+                    }
+                }
+            }
+        }
+    }
 }
 
 fun String.normalizePublicApiLine(): String {
