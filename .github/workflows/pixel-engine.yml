@@ -24,19 +24,5 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: API baseline
-        run: ./gradlew :pixel-engine:checkPublicApi --no-daemon
-
-      - name: Full gate
-        run: ./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:lintDebug :pixel-engine:assembleDebug :pixel-demo:assembleDebug :pixel-demo:testDebugUnitTest --no-daemon
-
-      - name: Minimal sample
-        run: ./gradlew :pixel-minimal-sample:assembleDebug --no-daemon
-
-      - name: Maven local dry-run
-        run: ./gradlew :pixel-engine:publishToMavenLocal --dry-run --no-daemon
-
-      - name: Docs site
-        run: |
-          python -m pip install mkdocs
-          mkdocs build --strict
+      - name: Pixel release check
+        run: bash tools/pixel-release-check.sh
