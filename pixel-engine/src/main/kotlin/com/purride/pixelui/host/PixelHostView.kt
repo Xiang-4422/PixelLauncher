@@ -30,6 +30,7 @@ import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelListTarget
+import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.HostRootWidget
@@ -95,6 +96,8 @@ public class PixelHostView @JvmOverloads constructor(
     private var pixelGapEnabled: Boolean = true
     private var pixelGapRatio: Float = 1.0f
     internal var activeSliderTarget: PixelSliderTarget? = null
+    internal var activeScrollbarTarget: PixelScrollbarTarget? = null
+    internal var scrollbarDragThumbOffsetY: Int = 0
     private val frameLoop = PixelHostFrameLoop()
     internal var velocityTracker: VelocityTracker? = null
     internal val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
@@ -232,6 +235,7 @@ public class PixelHostView @JvmOverloads constructor(
             clickTargets = emptyList(),
             pagerTargets = emptyList(),
             listTargets = emptyList(),
+            scrollbarTargets = emptyList(),
             textInputTargets = emptyList(),
             sliderTargets = emptyList(),
         )

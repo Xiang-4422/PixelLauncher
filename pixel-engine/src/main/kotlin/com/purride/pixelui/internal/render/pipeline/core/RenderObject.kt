@@ -179,6 +179,15 @@ public abstract class RenderBox : RenderObject() {
     ) = Unit
 
     /**
+     * 导出当前子树里的滚动条拖动目标。框架内部使用，不暴露给外部扩展点。
+     */
+    internal open fun collectScrollbarTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelScrollbarTarget>,
+    ) = Unit
+
+    /**
      * 导出当前子树里的文本输入目标。框架内部使用，不暴露给外部扩展点。
      */
     internal open fun collectTextInputTargets(

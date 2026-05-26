@@ -64,7 +64,7 @@ private class GridViewWidget(override val key: Any? = null) : StatefulWidget(key
                             ),
                         ),
                         SizedBox(height = 2),
-                        Text("GridViewBuilder: fixed cell + arrow focus", style = TextStyle.Default),
+                        Text("GridViewBuilder: fixed cell + arrow focus + drag thumb", style = TextStyle.Default),
                     ),
                     mainAxisSize = MainAxisSize.MAX,
                     crossAxisAlignment = CrossAxisAlignment.STRETCH,

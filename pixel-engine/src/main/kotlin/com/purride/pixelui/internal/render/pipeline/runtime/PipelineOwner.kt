@@ -91,6 +91,7 @@ internal class PipelineOwner(
         root.collectClickTargets(offsetX = 0, offsetY = 0, targets = session.clickTargets)
         root.collectPagerTargets(offsetX = 0, offsetY = 0, targets = session.pagerTargets)
         root.collectListTargets(offsetX = 0, offsetY = 0, targets = session.listTargets)
+        root.collectScrollbarTargets(offsetX = 0, offsetY = 0, targets = session.scrollbarTargets)
         root.collectTextInputTargets(offsetX = 0, offsetY = 0, targets = session.textInputTargets)
         root.collectSliderTargets(offsetX = 0, offsetY = 0, targets = session.sliderTargets)
         lastTargetDiagnostics = TargetDiagnostics(

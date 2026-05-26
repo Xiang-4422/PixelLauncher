@@ -154,6 +154,18 @@ internal data class PixelListTarget(
 )
 
 /**
+ * 滚动条命中目标。
+ */
+internal data class PixelScrollbarTarget(
+    val bounds: PixelRect,
+    val thumbBounds: PixelRect,
+    val viewportHeightPx: Int,
+    val contentHeightPx: Int,
+    val state: PixelListState,
+    val controller: PixelListController,
+)
+
+/**
  * 滑块命中目标。onDrag 在手指移动时调用（值 0..1），onRelease 在抬手时调用。
  */
 internal data class PixelSliderTarget(
@@ -187,6 +199,7 @@ internal data class PixelRenderResult(
     val clickTargets: List<PixelClickTarget>,
     val pagerTargets: List<PixelPagerTarget>,
     val listTargets: List<PixelListTarget>,
+    val scrollbarTargets: List<PixelScrollbarTarget>,
     val textInputTargets: List<PixelTextInputTarget>,
     val sliderTargets: List<PixelSliderTarget>,
 )
@@ -199,6 +212,7 @@ internal data class PixelRenderSession(
     val clickTargets: MutableList<PixelClickTarget> = mutableListOf(),
     val pagerTargets: MutableList<PixelPagerTarget> = mutableListOf(),
     val listTargets: MutableList<PixelListTarget> = mutableListOf(),
+    val scrollbarTargets: MutableList<PixelScrollbarTarget> = mutableListOf(),
     val textInputTargets: MutableList<PixelTextInputTarget> = mutableListOf(),
     val sliderTargets: MutableList<PixelSliderTarget> = mutableListOf(),
 ) {
@@ -211,6 +225,7 @@ internal data class PixelRenderSession(
             clickTargets = clickTargets,
             pagerTargets = pagerTargets,
             listTargets = listTargets,
+            scrollbarTargets = scrollbarTargets,
             textInputTargets = textInputTargets,
             sliderTargets = sliderTargets,
         )

@@ -237,6 +237,35 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun scrollbarThumbDragScrollsBoundListState() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = Scrollbar(
+                state = state,
+                width = 2,
+                key = "scrollbar",
+                child = ListViewBuilder(
+                    itemCount = 40,
+                    itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                    itemExtent = 6,
+                    state = state,
+                    controller = controller,
+                ),
+            ),
+            logicalWidth = 40,
+            logicalHeight = 18,
+        )
+
+        tester.drag(find.byKey("scrollbar"), dx = 0, dy = 12)
+
+        assertTrue("Dragging the scrollbar thumb should update the list scroll offset", state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
     fun selectionControlsToggleThroughTap() {
         val tester = PixelTester()
         var checkbox = false

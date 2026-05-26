@@ -61,6 +61,10 @@ internal class RenderOpacity(
         if (opacity > 0f) renderChild?.collectListTargets(offsetX, offsetY, targets)
     }
 
+    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) {
+        if (opacity > 0f) renderChild?.collectScrollbarTargets(offsetX, offsetY, targets)
+    }
+
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) {
         if (opacity > 0f) renderChild?.collectTextInputTargets(offsetX, offsetY, targets)
     }
@@ -124,6 +128,12 @@ internal class RenderClipRect(
         trimListTargetsOutsideClip(targets, before, offsetX, offsetY, size.width, size.height)
     }
 
+    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) {
+        val before = targets.size
+        renderChild?.collectScrollbarTargets(offsetX, offsetY, targets)
+        trimScrollbarTargetsOutsideClip(targets, before, offsetX, offsetY, size.width, size.height)
+    }
+
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) {
         val before = targets.size
         renderChild?.collectTextInputTargets(offsetX, offsetY, targets)
@@ -185,6 +195,10 @@ internal class RenderTranslate(
         renderChild?.collectListTargets(offsetX + dx, offsetY + dy, targets)
     }
 
+    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) {
+        renderChild?.collectScrollbarTargets(offsetX + dx, offsetY + dy, targets)
+    }
+
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) {
         renderChild?.collectTextInputTargets(offsetX + dx, offsetY + dy, targets)
     }
@@ -236,6 +250,15 @@ private fun trimPagerTargetsOutsideClip(targets: MutableList<PixelPagerTarget>, 
 }
 
 private fun trimListTargetsOutsideClip(targets: MutableList<PixelListTarget>, startIndex: Int, left: Int, top: Int, width: Int, height: Int) {
+    val clip = PixelRect(left, top, width, height)
+    var index = targets.size - 1
+    while (index >= startIndex) {
+        if (!targets[index].bounds.intersects(clip)) targets.removeAt(index)
+        index -= 1
+    }
+}
+
+private fun trimScrollbarTargetsOutsideClip(targets: MutableList<PixelScrollbarTarget>, startIndex: Int, left: Int, top: Int, width: Int, height: Int) {
     val clip = PixelRect(left, top, width, height)
     var index = targets.size - 1
     while (index >= startIndex) {

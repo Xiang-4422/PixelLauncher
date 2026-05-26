@@ -134,6 +134,21 @@ internal class RenderStack(
         }
     }
 
+    override fun collectScrollbarTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelScrollbarTarget>,
+    ) {
+        renderChildren.forEach { child ->
+            val childOffset = resolveChildOffset(child)
+            child.collectScrollbarTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
     /**
      * 导出 stack 子树文本输入目标。
      */
@@ -366,6 +381,18 @@ internal class RenderPositioned(
         targets: MutableList<PixelListTarget>,
     ) {
         renderChild?.collectListTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
+    override fun collectScrollbarTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelScrollbarTarget>,
+    ) {
+        renderChild?.collectScrollbarTargets(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
             targets = targets,

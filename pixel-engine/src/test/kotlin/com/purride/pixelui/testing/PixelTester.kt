@@ -12,6 +12,7 @@ import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRect
 import com.purride.pixelui.internal.PixelRenderResult
+import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.PixelUiRuntime
@@ -217,6 +218,10 @@ public class PixelTester {
     }
 
     private fun dispatchDrag(startX: Int, startY: Int, dx: Int, dy: Int) {
+        renderResult?.scrollbarTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
+            dispatchScrollbarDrag(target, startY, startY + dy)
+            return
+        }
         renderResult?.sliderTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
             dispatchSliderDrag(target, startX + dx)
             return
@@ -294,6 +299,24 @@ public class PixelTester {
         needsRender = true
     }
 
+    private fun dispatchScrollbarDrag(target: PixelScrollbarTarget, startY: Int, endY: Int) {
+        val dragOffset = if (target.thumbBounds.contains(target.bounds.left, startY)) {
+            startY - target.thumbBounds.top
+        } else {
+            target.thumbBounds.height / 2
+        }.coerceIn(0, target.thumbBounds.height.coerceAtLeast(1))
+        val thumbTravel = (target.bounds.height - target.thumbBounds.height).coerceAtLeast(0)
+        val maxOffset = (target.contentHeightPx - target.viewportHeightPx).coerceAtLeast(0)
+        if (thumbTravel > 0 && maxOffset > 0) {
+            val thumbTop = (endY - target.bounds.top - dragOffset).coerceIn(0, thumbTravel)
+            val targetOffset = (thumbTop.toFloat() / thumbTravel.toFloat()) * maxOffset.toFloat()
+            target.controller.startDrag(target.state)
+            target.controller.scrollTo(target.state, targetOffset, target.viewportHeightPx, target.contentHeightPx)
+            target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
+        }
+        needsRender = true
+    }
+
     private fun dispatchListDrag(target: PixelListTarget, dy: Float) {
         target.controller.startDrag(target.state)
         target.controller.dragBy(target.state, dy, target.viewportHeightPx, target.contentHeightPx)
@@ -338,6 +361,7 @@ public class PixelTester {
         resolveTextInputTargetOrNull(widget)?.let { return it.bounds.center }
         resolveClickTargetOrNull(widget)?.let { return it.bounds.center }
         if (kind == TargetKind.DRAG || kind == TargetKind.ANY) {
+            resolveScrollbarTargetOrNull(widget)?.let { return it.thumbBounds.center }
             resolveSliderTargetOrNull(widget)?.let { return it.bounds.center }
             resolveListTargetOrNull(widget)?.let { return it.bounds.center }
             resolvePagerTargetOrNull(widget)?.let { return it.bounds.center }
@@ -385,6 +409,11 @@ public class PixelTester {
         return renderResult?.listTargets?.lastOrNull {
             it.controller === controller && it.state === state
         }
+    }
+
+    private fun resolveScrollbarTargetOrNull(widget: Any): PixelScrollbarTarget? {
+        val state = widget.readField("state")
+        return renderResult?.scrollbarTargets?.lastOrNull { it.state === state }
     }
 
     private fun resolvePagerTargetOrNull(widget: Any): PixelPagerTarget? {
@@ -660,6 +689,7 @@ private fun PixelRenderResult?.describeTargets(): String {
         appendLine("clickTargets=${clickTargets.map { it.bounds }}")
         appendLine("pagerTargets=${pagerTargets.map { it.bounds }}")
         appendLine("listTargets=${listTargets.map { it.bounds }}")
+        appendLine("scrollbarTargets=${scrollbarTargets.map { it.bounds }}")
         appendLine("textInputTargets=${textInputTargets.map { it.bounds }}")
         appendLine("sliderTargets=${sliderTargets.map { it.bounds }}")
     }.trimEnd()

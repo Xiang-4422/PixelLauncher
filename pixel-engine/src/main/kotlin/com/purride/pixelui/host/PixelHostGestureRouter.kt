@@ -3,6 +3,7 @@ package com.purride.pixelui
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import kotlin.math.abs
 
@@ -40,12 +41,26 @@ internal class PixelHostGestureRouter(
         host.activeSliderTarget = host.lastRenderResult
             ?.sliderTargets
             ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-        host.candidatePagerTarget = if (host.activeSliderTarget == null) {
+        host.activeScrollbarTarget = if (host.activeSliderTarget == null) {
+            host.lastRenderResult
+                ?.scrollbarTargets
+                ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
+        } else null
+        host.activeScrollbarTarget?.let { target ->
+            host.scrollbarDragThumbOffsetY = if (target.thumbBounds.contains(logicalPoint.first, logicalPoint.second)) {
+                logicalPoint.second - target.thumbBounds.top
+            } else {
+                target.thumbBounds.height / 2
+            }.coerceIn(0, target.thumbBounds.height.coerceAtLeast(1))
+            updateScrollbarDrag(target, logicalPoint.second)
+        }
+        val dragExclusiveTargetActive = host.activeSliderTarget != null || host.activeScrollbarTarget != null
+        host.candidatePagerTarget = if (!dragExclusiveTargetActive) {
             host.lastRenderResult
                 ?.pagerTargets
                 ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
         } else null
-        host.candidateListTarget = if (host.activeSliderTarget == null) {
+        host.candidateListTarget = if (!dragExclusiveTargetActive) {
             host.lastRenderResult
                 ?.listTargets
                 ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
@@ -53,10 +68,10 @@ internal class PixelHostGestureRouter(
         val textInputTarget = host.lastRenderResult
             ?.textInputTargets
             ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
-        host.candidateTextInputTarget = if (host.activeSliderTarget == null) textInputTarget else null
+        host.candidateTextInputTarget = if (!dragExclusiveTargetActive) textInputTarget else null
         host.activeTextInputSelectionTarget = null
         host.activeTextInputSelectionHandle = null
-        if (host.activeSliderTarget == null && textInputTarget != null && !textInputTarget.readOnly) {
+        if (!dragExclusiveTargetActive && textInputTarget != null && !textInputTarget.readOnly) {
             resolveNearestSelectionHandle(textInputTarget, logicalPoint.first, logicalPoint.second)?.let { handle ->
                 host.activeTextInputSelectionTarget = textInputTarget
                 host.activeTextInputSelectionHandle = handle
@@ -84,6 +99,12 @@ internal class PixelHostGestureRouter(
             val localX = logicalPoint.first - target.bounds.left
             val ratio = (localX.toFloat() / target.bounds.width).coerceIn(0f, 1f)
             target.onDrag(ratio)
+            host.invalidate()
+            return true
+        }
+
+        host.activeScrollbarTarget?.let { target ->
+            updateScrollbarDrag(target, logicalPoint.second)
             host.invalidate()
             return true
         }
@@ -222,6 +243,17 @@ internal class PixelHostGestureRouter(
             return true
         }
 
+        host.activeScrollbarTarget?.let { target ->
+            if (logicalPoint != null) {
+                updateScrollbarDrag(target, logicalPoint.second)
+            }
+            target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
+            host.activeScrollbarTarget = null
+            recycleVelocityTracker()
+            host.invalidate()
+            return true
+        }
+
         host.activePagerTarget?.let { target ->
             val velocityPxPerSecond = host.rawVelocityToLogical(host.velocityTracker, target.axis)
             target.controller.endDrag(target.state, host.pagerViewportSize(target), velocityPxPerSecond)
@@ -283,6 +315,10 @@ internal class PixelHostGestureRouter(
 
     private fun onCancel(): Boolean {
         host.activeSliderTarget = null
+        host.activeScrollbarTarget?.let { target ->
+            target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
+        }
+        host.activeScrollbarTarget = null
         clearActiveSelectionHandle()
         host.activePagerTarget?.let { target ->
             target.controller.cancelDrag(target.state)
@@ -294,6 +330,16 @@ internal class PixelHostGestureRouter(
         host.nestedScrollSession.resetGesture()
         recycleVelocityTracker()
         return true
+    }
+
+    private fun updateScrollbarDrag(target: PixelScrollbarTarget, logicalY: Int) {
+        val thumbTravel = (target.bounds.height - target.thumbBounds.height).coerceAtLeast(0)
+        val maxOffset = (target.contentHeightPx - target.viewportHeightPx).coerceAtLeast(0)
+        if (thumbTravel <= 0 || maxOffset <= 0) return
+        val thumbTop = (logicalY - target.bounds.top - host.scrollbarDragThumbOffsetY).coerceIn(0, thumbTravel)
+        val targetOffset = (thumbTop.toFloat() / thumbTravel.toFloat()) * maxOffset.toFloat()
+        target.controller.startDrag(target.state)
+        target.controller.scrollTo(target.state, targetOffset, target.viewportHeightPx, target.contentHeightPx)
     }
 
     private fun updateSelectionHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int) {
