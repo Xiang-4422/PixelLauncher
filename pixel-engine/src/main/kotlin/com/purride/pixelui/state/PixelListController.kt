@@ -113,6 +113,28 @@ public class PixelListController(
         notifyListeners()
     }
 
+    public fun saveState(state: PixelListState): PixelListSavedState {
+        return PixelListSavedState(scrollOffsetPx = state.scrollOffsetPx.coerceAtLeast(0f))
+    }
+
+    public fun restoreState(
+        state: PixelListState,
+        savedState: PixelListSavedState,
+        viewportHeightPx: Int = state.viewportHeightPx,
+        contentHeightPx: Int = state.contentHeightPx,
+    ) {
+        sync(
+            state = state,
+            viewportHeightPx = viewportHeightPx,
+            contentHeightPx = contentHeightPx,
+        )
+        state.scrollOffsetPx = coerceOffset(savedState.scrollOffsetPx, state.maxScrollOffsetPx)
+        state.isDragging = false
+        state.isSettling = false
+        state.scrollVelocityPxPerSecond = 0f
+        notifyListeners()
+    }
+
     public fun endDrag(
         state: PixelListState,
         velocityPxPerSecond: Float,

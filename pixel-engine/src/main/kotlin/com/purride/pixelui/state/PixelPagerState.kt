@@ -36,3 +36,11 @@ public class PixelPagerState(
     public val isSettling: Boolean
         get() = motionState.isSettling
 }
+
+/**
+ * PageView 的可持久化页位置。
+ */
+public data class PixelPagerSavedState(
+    public val currentPage: Int,
+    public val axis: PixelAxis,
+)

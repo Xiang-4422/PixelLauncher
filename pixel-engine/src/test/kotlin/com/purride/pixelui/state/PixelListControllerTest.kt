@@ -82,6 +82,34 @@ class PixelListControllerTest {
     }
 
     @Test
+    fun saveAndRestoreStateKeepsClampedScrollOffsetAndClearsTransientMotion() {
+        val source = controller.create(initialScrollOffsetPx = 18f)
+        controller.sync(source, viewportHeightPx = 20, contentHeightPx = 80)
+        val savedState = controller.saveState(source)
+
+        val restored = controller.create()
+        controller.startDrag(restored)
+        controller.restoreState(
+            state = restored,
+            savedState = savedState,
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+
+        assertEquals(18f, restored.scrollOffsetPx, 0.001f)
+        assertFalse(restored.isDragging)
+        assertFalse(restored.isSettling)
+
+        controller.restoreState(
+            state = restored,
+            savedState = savedState.copy(scrollOffsetPx = 100f),
+            viewportHeightPx = 20,
+            contentHeightPx = 50,
+        )
+        assertEquals(30f, restored.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
     fun scrollItemIntoViewMovesOnlyWhenTargetLeavesViewport() {
         val state = controller.create(initialScrollOffsetPx = 0f)
         state.itemTopOffsetsPx = intArrayOf(0, 12, 24, 36)

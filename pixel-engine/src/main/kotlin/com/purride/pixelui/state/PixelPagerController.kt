@@ -54,6 +54,28 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    public fun saveState(state: PixelPagerState): PixelPagerSavedState {
+        return PixelPagerSavedState(
+            currentPage = state.currentPage.coerceIn(0, state.pageCount - 1),
+            axis = state.axis,
+        )
+    }
+
+    public fun restoreState(
+        state: PixelPagerState,
+        savedState: PixelPagerSavedState,
+        pageCount: Int = state.pageCount,
+        axis: PixelAxis = savedState.axis,
+    ) {
+        sync(state = state, axis = axis, pageCount = pageCount)
+        val safePage = savedState.currentPage.coerceIn(0, state.pageCount - 1)
+        state.currentPage = safePage
+        state.settleTargetPage = safePage
+        state.lastDispatchedPage = safePage
+        state.motionState = motionController.reset()
+        notifyListeners()
+    }
+
     public fun startDrag(state: PixelPagerState) {
         state.settleTargetPage = state.currentPage
         state.motionState = motionController.startDrag(state.motionState)

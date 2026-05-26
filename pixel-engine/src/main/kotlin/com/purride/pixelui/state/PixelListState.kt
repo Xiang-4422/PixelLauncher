@@ -53,3 +53,10 @@ public class PixelListState(
      */
     internal var pendingScrollIntoViewItemIndex: Int? = null
 }
+
+/**
+ * List/Grid/SingleChildScrollView 的可持久化滚动位置。
+ */
+public data class PixelListSavedState(
+    public val scrollOffsetPx: Float,
+)

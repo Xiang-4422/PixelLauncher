@@ -455,6 +455,8 @@ com.purride.pixelui.state public fun dragBy(
 com.purride.pixelui.state public fun startDrag(state: PixelListState)
 com.purride.pixelui.state public fun canConsumeDrag(
 com.purride.pixelui.state public fun scrollTo(
+com.purride.pixelui.state public fun saveState(state: PixelListState): PixelListSavedState
+com.purride.pixelui.state public fun restoreState(
 com.purride.pixelui.state public fun endDrag(
 com.purride.pixelui.state public fun step(
 com.purride.pixelui.state public fun isActive(state: PixelListState): Boolean
@@ -464,10 +466,14 @@ com.purride.pixelui.state public var scrollOffsetPx: Float = initialScrollOffset
 com.purride.pixelui.state public var isDragging: Boolean = false
 com.purride.pixelui.state public var isSettling: Boolean = false
 com.purride.pixelui.state public var scrollVelocityPxPerSecond: Float = 0f
+com.purride.pixelui.state public data class PixelListSavedState(
+com.purride.pixelui.state public val scrollOffsetPx: Float,
 com.purride.pixelui.state public class PixelPagerController(
 com.purride.pixelui.state public fun create(
 com.purride.pixelui.state public fun sync(
 com.purride.pixelui.state public fun syncToPage(state: PixelPagerState, targetPage: Int)
+com.purride.pixelui.state public fun saveState(state: PixelPagerState): PixelPagerSavedState
+com.purride.pixelui.state public fun restoreState(
 com.purride.pixelui.state public fun startDrag(state: PixelPagerState)
 com.purride.pixelui.state public fun dragBy(
 com.purride.pixelui.state public fun endDrag(
@@ -484,6 +490,9 @@ com.purride.pixelui.state public var pageCount: Int = pageCount.coerceAtLeast(1)
 com.purride.pixelui.state public var settleTargetPage: Int = this.currentPage
 com.purride.pixelui.state public val isDragging: Boolean
 com.purride.pixelui.state public val isSettling: Boolean
+com.purride.pixelui.state public data class PixelPagerSavedState(
+com.purride.pixelui.state public val currentPage: Int,
+com.purride.pixelui.state public val axis: PixelAxis,
 com.purride.pixelui public data class PixelScrollPhysics(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Clamp: PixelScrollPhysics = PixelScrollPhysics()

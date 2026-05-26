@@ -11,7 +11,9 @@ import com.purride.pixelui.FocusScope
 import com.purride.pixelui.GridFocusTraversalPolicy
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
+import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
@@ -20,6 +22,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.state.PixelListSavedState
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
@@ -39,6 +42,7 @@ private class GridViewWidget(override val key: Any? = null) : StatefulWidget(key
         private val scrollState = PixelListState()
         private val scrollController = ScrollController()
         private val focusNodes = List(120) { index -> FocusNode("grid-$index") }
+        private var savedState: PixelListSavedState? = null
 
         override fun build(context: BuildContext): Widget {
             return FocusScope(
@@ -65,6 +69,20 @@ private class GridViewWidget(override val key: Any? = null) : StatefulWidget(key
                         ),
                         SizedBox(height = 2),
                         Text("GridViewBuilder: fixed cell + arrow focus + drag thumb", style = TextStyle.Default),
+                        SizedBox(height = 2),
+                        Row(
+                            children = listOf(
+                                OutlinedButton("SAVE", onPressed = {
+                                    setState { savedState = scrollController.saveState(scrollState) }
+                                }),
+                                OutlinedButton("RESTORE", onPressed = {
+                                    savedState?.let { snapshot ->
+                                        setState { scrollController.restoreState(scrollState, snapshot) }
+                                    }
+                                }),
+                            ),
+                            spacing = 2,
+                        ),
                     ),
                     mainAxisSize = MainAxisSize.MAX,
                     crossAxisAlignment = CrossAxisAlignment.STRETCH,

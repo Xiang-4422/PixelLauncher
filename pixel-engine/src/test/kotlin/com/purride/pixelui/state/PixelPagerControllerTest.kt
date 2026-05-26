@@ -87,4 +87,39 @@ class PixelPagerControllerTest {
         assertEquals(1, state.currentPage)
         assertFalse(state.isSettling)
     }
+
+    @Test
+    fun saveAndRestoreStateKeepsCurrentPageAndClearsMotion() {
+        val source = controller.create(pageCount = 5, currentPage = 3, axis = PixelAxis.VERTICAL)
+        val savedState = controller.saveState(source)
+        val restored = controller.create(pageCount = 2, currentPage = 0, axis = PixelAxis.HORIZONTAL)
+
+        controller.startDrag(restored)
+        controller.dragBy(restored, deltaPx = -30f, viewportSizePx = 100)
+        controller.restoreState(
+            state = restored,
+            savedState = savedState,
+            pageCount = 4,
+        )
+
+        assertEquals(PixelAxis.VERTICAL, restored.axis)
+        assertEquals(3, restored.currentPage)
+        assertEquals(3, restored.settleTargetPage)
+        assertFalse(restored.isDragging)
+        assertFalse(restored.isSettling)
+    }
+
+    @Test
+    fun restoreStateClampsPageWhenPageCountShrinks() {
+        val state = controller.create(pageCount = 5, currentPage = 0)
+
+        controller.restoreState(
+            state = state,
+            savedState = controller.saveState(controller.create(pageCount = 5, currentPage = 4)),
+            pageCount = 3,
+        )
+
+        assertEquals(2, state.currentPage)
+        assertEquals(2, state.settleTargetPage)
+    }
 }
