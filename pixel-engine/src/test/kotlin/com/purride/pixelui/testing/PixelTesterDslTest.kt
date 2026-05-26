@@ -1,6 +1,7 @@
 package com.purride.pixelui.testing
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.ActivityIndicator
 import com.purride.pixelui.Axis
 import com.purride.pixelui.AspectRatio
 import com.purride.pixelui.Checkbox
@@ -16,10 +17,13 @@ import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Scrollbar
+import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Snackbar
 import com.purride.pixelui.Switch
+import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
@@ -275,6 +279,34 @@ class PixelTesterDslTest {
             logicalHeight = 80,
         )
 
+        assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
+        tester.dispose()
+    }
+
+    @Test
+    fun tabsSegmentedAndProgressWidgetsRenderAndTap() {
+        val tester = PixelTester()
+        var tab = 0
+        var segment = 0
+
+        tester.pumpWidget(
+            widget = Column(
+                children = listOf(
+                    Tabs(labels = listOf("A", "B"), selectedIndex = tab, onSelected = { tab = it }),
+                    SegmentedControl(labels = listOf("ONE", "TWO"), selectedIndex = segment, onSelected = { segment = it }),
+                    ProgressBar(progress = 0.5f),
+                    ActivityIndicator(frame = 1),
+                ),
+                spacing = 2,
+            ),
+            logicalWidth = 100,
+            logicalHeight = 50,
+        )
+
+        tester.tap(find.byText("B"))
+
+        assertEquals(1, tab)
+        assertEquals(0, segment)
         assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
         tester.dispose()
     }

@@ -39,6 +39,7 @@ import com.purride.pixeldemo.showcase.interaction.ButtonStatesScene
 import com.purride.pixeldemo.showcase.interaction.GestureTapScene
 import com.purride.pixeldemo.showcase.interaction.ImeTypesScene
 import com.purride.pixeldemo.showcase.interaction.SelectionControlsScene
+import com.purride.pixeldemo.showcase.interaction.TabsProgressScene
 import com.purride.pixeldemo.showcase.interaction.TextFieldBasicsScene
 import com.purride.pixeldemo.showcase.interaction.TextInputHostCommandsScene
 import com.purride.pixeldemo.showcase.scroll.GridViewScene
@@ -91,6 +92,7 @@ object DemoCatalog {
                 GestureTapScene,
                 ButtonStatesScene,
                 SelectionControlsScene,
+                TabsProgressScene,
                 TextFieldBasicsScene,
                 ImeTypesScene,
                 TextInputHostCommandsScene,
