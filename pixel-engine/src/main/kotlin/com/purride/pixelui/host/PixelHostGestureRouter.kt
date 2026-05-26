@@ -253,7 +253,11 @@ internal class PixelHostGestureRouter(
             (host.candidateTextInputTarget ?: host.resolveTextInputTarget(logicalPoint.first, logicalPoint.second))?.let { target ->
                 host.focusTextInput(target)
                 val selection = resolveTextInputSelection(target, logicalPoint.first, logicalPoint.second)
-                if (!target.readOnly &&
+                val pressedMs = event.eventTime - event.downTime
+                if (!target.readOnly && pressedMs >= LONG_PRESS_TIMEOUT_MS) {
+                    target.controller.selectWordAt(target.state, selection)
+                    host.hostBridge?.performHapticFeedback(PixelHapticType.LONG_PRESS)
+                } else if (!target.readOnly &&
                     host.lastTextInputTapState === target.state &&
                     event.eventTime - host.lastTextInputTapTimeMs in 0L..DOUBLE_TAP_TIMEOUT_MS
                 ) {
@@ -350,6 +354,7 @@ internal class PixelHostGestureRouter(
 
     private companion object {
         const val DOUBLE_TAP_TIMEOUT_MS = 300L
+        const val LONG_PRESS_TIMEOUT_MS = 500L
     }
 }
 

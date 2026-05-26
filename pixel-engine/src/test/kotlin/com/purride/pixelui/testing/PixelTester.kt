@@ -57,6 +57,16 @@ public class PixelTester {
         render()
     }
 
+    public fun longPress(finder: PixelFinder) {
+        val point = resolvePoint(finder, TargetKind.ANY)
+        val target = renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(point.x, point.y) }
+            ?: fail("No text input target at (${point.x},${point.y})", finder)
+        if (target.readOnly) return
+        focusTextInput(target)
+        target.controller.selectWordAt(target.state, resolveTextInputSelection(target, point.x, point.y))
+        render()
+    }
+
     public fun drag(finder: PixelFinder, dx: Int, dy: Int) {
         val point = resolvePoint(finder, TargetKind.DRAG)
         dispatchDrag(point.x, point.y, dx, dy)
