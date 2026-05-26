@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 ./gradlew \
   :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
+  :pixel-engine:checkKdocCoverage \
   :pixel-engine:testDebugUnitTest \
   :pixel-engine:lintDebug \
   :pixel-engine:assembleDebug \

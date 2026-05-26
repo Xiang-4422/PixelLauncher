@@ -50,6 +50,7 @@ dependencies {
 
 val publicApiBaseline = layout.projectDirectory.file("api/pixel-engine.api")
 val binaryApiBaseline = layout.projectDirectory.file("api/pixel-engine.binary-api")
+val kdocCoverageMinimumPercent = 24.0
 
 val dumpPublicApi by tasks.registering {
     group = "verification"
@@ -182,9 +183,48 @@ tasks.register("checkBinaryApi") {
     }
 }
 
+tasks.register("checkKdocCoverage") {
+    group = "verification"
+    description = "Checks public KDoc coverage does not regress below the tracked release floor."
+
+    val sourceFiles = fileTree("src/main/kotlin") {
+        include("**/*.kt")
+    }
+    inputs.files(sourceFiles)
+    outputs.file(layout.buildDirectory.file("reports/kdoc/kdoc-coverage.txt"))
+
+    doLast {
+        val result = collectKdocCoverage(sourceFiles.files)
+        val report = layout.buildDirectory.file("reports/kdoc/kdoc-coverage.txt").get().asFile
+        report.parentFile.mkdirs()
+        report.writeText(
+            buildString {
+                appendLine("publicDeclarations=${result.total}")
+                appendLine("documentedDeclarations=${result.documented}")
+                appendLine("coveragePercent=${"%.2f".format(result.percent)}")
+                appendLine("minimumPercent=${"%.2f".format(kdocCoverageMinimumPercent)}")
+                if (result.missing.isNotEmpty()) {
+                    appendLine()
+                    appendLine("missingKdocSample:")
+                    result.missing.take(40).forEach { missing ->
+                        appendLine("- $missing")
+                    }
+                }
+            },
+        )
+        if (result.percent < kdocCoverageMinimumPercent) {
+            throw GradleException(
+                "pixel-engine public KDoc coverage ${"%.2f".format(result.percent)}% is below " +
+                    "${"%.2f".format(kdocCoverageMinimumPercent)}%. See ${report.path}.",
+            )
+        }
+    }
+}
+
 tasks.named("check") {
     dependsOn("checkPublicApi")
     dependsOn("checkBinaryApi")
+    dependsOn("checkKdocCoverage")
 }
 
 publishing {
@@ -252,4 +292,54 @@ fun String.isPublicBinaryApiDump(): Boolean {
         .firstOrNull()
         ?.startsWith("public ")
         ?: false
+}
+
+data class KdocCoverageResult(
+    val total: Int,
+    val documented: Int,
+    val missing: List<String>,
+) {
+    val percent: Double
+        get() = if (total == 0) 100.0 else documented * 100.0 / total
+}
+
+fun collectKdocCoverage(files: Set<File>): KdocCoverageResult {
+    var total = 0
+    var documented = 0
+    val missing = mutableListOf<String>()
+    files.sortedBy { file -> file.relativeTo(projectDir).path }.forEach { file ->
+        val lines = file.readLines()
+        lines.forEachIndexed { index, raw ->
+            val line = raw.trim()
+            if (line.isPublicKdocCandidate()) {
+                total += 1
+                if (lines.hasKdocBefore(index)) {
+                    documented += 1
+                } else {
+                    missing += "${file.relativeTo(projectDir).path}:${index + 1}: $line"
+                }
+            }
+        }
+    }
+    return KdocCoverageResult(total = total, documented = documented, missing = missing)
+}
+
+fun String.isPublicKdocCandidate(): Boolean {
+    if (!startsWith("public ")) return false
+    if (startsWith("public constructor")) return false
+    return Regex("\\b(class|interface|object|fun|val|var|typealias)\\b").containsMatchIn(this)
+}
+
+fun List<String>.hasKdocBefore(index: Int): Boolean {
+    var cursor = index - 1
+    while (cursor >= 0 && this[cursor].isBlank()) cursor -= 1
+    if (cursor < 0 || this[cursor].trim() != "*/") return false
+    cursor -= 1
+    while (cursor >= 0) {
+        val line = this[cursor].trim()
+        if (line.startsWith("/**")) return true
+        if (!line.startsWith("*")) return false
+        cursor -= 1
+    }
+    return false
 }
