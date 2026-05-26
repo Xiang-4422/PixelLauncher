@@ -73,6 +73,7 @@ internal class RenderScrollbar(
     }
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
     override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) = renderChild?.collectSemantics(offsetX, offsetY, nodes) ?: Unit
 
     private fun scrollbarMetrics(offsetX: Int, offsetY: Int): ScrollbarMetrics? {
         val viewport = state.viewportHeightPx.coerceAtLeast(size.height)

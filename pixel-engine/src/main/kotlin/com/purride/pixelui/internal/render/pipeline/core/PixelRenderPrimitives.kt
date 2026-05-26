@@ -3,6 +3,7 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.PixelSemanticsNode
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -204,6 +205,7 @@ internal data class PixelRenderResult(
     val scrollbarTargets: List<PixelScrollbarTarget>,
     val textInputTargets: List<PixelTextInputTarget>,
     val sliderTargets: List<PixelSliderTarget>,
+    val semanticsNodes: List<PixelSemanticsNode>,
 )
 
 /**
@@ -217,6 +219,7 @@ internal data class PixelRenderSession(
     val scrollbarTargets: MutableList<PixelScrollbarTarget> = mutableListOf(),
     val textInputTargets: MutableList<PixelTextInputTarget> = mutableListOf(),
     val sliderTargets: MutableList<PixelSliderTarget> = mutableListOf(),
+    val semanticsNodes: MutableList<PixelSemanticsNode> = mutableListOf(),
 ) {
     /**
      * 固化当前会话为对外渲染结果。
@@ -230,6 +233,7 @@ internal data class PixelRenderSession(
             scrollbarTargets = scrollbarTargets,
             textInputTargets = textInputTargets,
             sliderTargets = sliderTargets,
+            semanticsNodes = semanticsNodes,
         )
     }
 }

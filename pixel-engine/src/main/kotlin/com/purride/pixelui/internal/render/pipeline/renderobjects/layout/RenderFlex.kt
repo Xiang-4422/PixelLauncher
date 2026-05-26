@@ -398,6 +398,14 @@ internal class RenderFlex(
         }
     }
 
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+        val children = renderChildren
+        children.forEachIndexed { index, child ->
+            val childOffset = childOffsets[index]
+            child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, nodes)
+        }
+    }
+
     /**
      * 解析当前主轴尺寸对应的输出宽高。
      */
@@ -668,6 +676,10 @@ internal class RenderFlexChild(
         targets: MutableList<PixelSliderTarget>,
     ) {
         (child as? RenderBox)?.collectSliderTargets(offsetX, offsetY, targets)
+    }
+
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+        (child as? RenderBox)?.collectSemantics(offsetX, offsetY, nodes)
     }
 }
 

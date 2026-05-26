@@ -159,6 +159,14 @@ public class PixelTester {
 
     public fun dumpRenderTree(): String = runtime.dumpRenderTree()
 
+    public fun dumpSemanticsTree(): String {
+        val nodes = renderResult?.semanticsNodes.orEmpty()
+        if (nodes.isEmpty()) return "<empty semantics>"
+        return nodes.joinToString(separator = "\n") { node ->
+            "${node.role} label=\"${node.label}\" enabled=${node.enabled} focused=${node.focused} bounds=${node.left},${node.top},${node.width},${node.height}"
+        }
+    }
+
     public fun dispose() {
         runtime.dispose()
         scheduler.clear()
@@ -698,6 +706,7 @@ private fun PixelRenderResult?.describeTargets(): String {
         appendLine("scrollbarTargets=${scrollbarTargets.map { it.bounds }}")
         appendLine("textInputTargets=${textInputTargets.map { it.bounds }}")
         appendLine("sliderTargets=${sliderTargets.map { it.bounds }}")
+        appendLine("semanticsNodes=${semanticsNodes.map { "${it.role}:${it.label}" }}")
     }.trimEnd()
 }
 

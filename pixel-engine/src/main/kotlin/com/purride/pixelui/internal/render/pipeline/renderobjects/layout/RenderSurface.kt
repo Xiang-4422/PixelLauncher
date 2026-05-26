@@ -2,6 +2,8 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelSemanticsNode
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
@@ -633,6 +635,27 @@ internal class RenderSurface(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
             targets = targets,
+        )
+    }
+
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<PixelSemanticsNode>) {
+        val state = textInputState
+        if (state != null) {
+            nodes += PixelSemanticsNode(
+                label = state.text.ifEmpty { "" },
+                role = PixelSemanticRole.TEXT_FIELD,
+                enabled = textInputCursorColor != null || !textInputReadOnly,
+                focused = state.isFocused,
+                left = offsetX,
+                top = offsetY,
+                width = size.width,
+                height = size.height,
+            )
+        }
+        renderChild?.collectSemantics(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            nodes = nodes,
         )
     }
 

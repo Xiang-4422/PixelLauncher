@@ -204,6 +204,15 @@ public abstract class RenderBox : RenderObject() {
         offsetY: Int,
         targets: MutableList<PixelSliderTarget>,
     ) = Unit
+
+    /**
+     * 导出当前子树的基础可访问性语义。
+     */
+    internal open fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>,
+    ) = Unit
 }
 
 /**

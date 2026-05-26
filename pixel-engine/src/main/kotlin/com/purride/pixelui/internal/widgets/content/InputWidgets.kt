@@ -5,9 +5,11 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.Widget
@@ -211,11 +213,18 @@ internal data class OutlinedButtonWidget(
                 key = key?.let { "$it-text" },
             ),
         )
-        return if (effectiveEnabled) {
+        val button = if (effectiveEnabled) {
             GestureDetectorWidget(child = content, onTap = onPressed ?: {}, key = key)
         } else {
             content
         }
+        return Semantics(
+            label = text,
+            role = PixelSemanticRole.BUTTON,
+            enabled = effectiveEnabled,
+            child = button,
+            key = key?.let { "$it-semantics" },
+        )
     }
 }
 

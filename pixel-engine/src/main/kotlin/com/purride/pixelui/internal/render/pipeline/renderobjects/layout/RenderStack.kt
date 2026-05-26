@@ -182,6 +182,13 @@ internal class RenderStack(
         }
     }
 
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+        renderChildren.forEach { child ->
+            val childOffset = resolveChildOffset(child)
+            child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, nodes)
+        }
+    }
+
     /**
      * 解析子节点在 stack 内的偏移。
      */
@@ -424,6 +431,10 @@ internal class RenderPositioned(
             offsetY = offsetY + childOffsetY,
             targets = targets,
         )
+    }
+
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+        renderChild?.collectSemantics(offsetX + childOffsetX, offsetY + childOffsetY, nodes)
     }
 
     /**

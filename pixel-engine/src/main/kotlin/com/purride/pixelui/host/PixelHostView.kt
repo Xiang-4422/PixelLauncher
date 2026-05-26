@@ -238,6 +238,7 @@ public class PixelHostView @JvmOverloads constructor(
             scrollbarTargets = emptyList(),
             textInputTargets = emptyList(),
             sliderTargets = emptyList(),
+            semanticsNodes = emptyList(),
         )
         invalidate()
     }
@@ -266,6 +267,14 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public fun dumpElementTree(): String {
         return runtime.dumpElementTree()
+    }
+
+    public fun dumpSemanticsTree(): String {
+        val nodes = lastRenderResult?.semanticsNodes.orEmpty()
+        if (nodes.isEmpty()) return "<empty semantics>"
+        return nodes.joinToString(separator = "\n") { node ->
+            "${node.role} label=\"${node.label}\" enabled=${node.enabled} focused=${node.focused} bounds=${node.left},${node.top},${node.width},${node.height}"
+        }
     }
 
     override fun onDraw(canvas: Canvas) {

@@ -351,6 +351,17 @@ com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean
 com.purride.pixelui public fun FocusScope(
 com.purride.pixelui public fun Focus(
+com.purride.pixelui public enum class PixelSemanticRole
+com.purride.pixelui public data class PixelSemanticsNode(
+com.purride.pixelui public val label: String,
+com.purride.pixelui public val role: PixelSemanticRole,
+com.purride.pixelui public val enabled: Boolean,
+com.purride.pixelui public val focused: Boolean,
+com.purride.pixelui public val left: Int,
+com.purride.pixelui public val top: Int,
+com.purride.pixelui public val width: Int,
+com.purride.pixelui public val height: Int,
+com.purride.pixelui public fun Semantics(
 com.purride.pixelui public data class PixelUiState(
 com.purride.pixelui public interface Widget
 com.purride.pixelui public val key: Any?
@@ -410,6 +421,7 @@ com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun submitFocusedTextInput()
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
 com.purride.pixelui public fun dumpElementTree(): String
+com.purride.pixelui public fun dumpSemanticsTree(): String
 com.purride.pixelui public class PixelTextInputBridge(
 com.purride.pixelui public val inputView: EditText = EditText(context),
 com.purride.pixelui.internal public data class RenderSize(

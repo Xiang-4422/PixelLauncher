@@ -4,6 +4,8 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelSemanticsNode
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.TextDirection
@@ -354,6 +356,20 @@ internal class RenderText(
         targets += PixelClickTarget(
             bounds = PixelRect(left = offsetX, top = offsetY, width = size.width, height = size.height),
             onClick = onClick,
+        )
+    }
+
+    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<PixelSemanticsNode>) {
+        if (text.isBlank()) return
+        nodes += PixelSemanticsNode(
+            label = text,
+            role = PixelSemanticRole.TEXT,
+            enabled = true,
+            focused = false,
+            left = offsetX,
+            top = offsetY,
+            width = size.width,
+            height = size.height,
         )
     }
 

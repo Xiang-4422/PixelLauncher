@@ -57,6 +57,34 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun semanticsTreeReportsTextButtonAndTextFieldState() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "NAME")
+        controller.focus(state)
+
+        tester.pumpWidget(
+            widget = Column(
+                children = listOf(
+                    Text("TITLE"),
+                    OutlinedButton(text = "SAVE", onPressed = {}),
+                    TextField(state = state, controller = controller, key = "field"),
+                ),
+                spacing = 1,
+            ),
+            logicalWidth = 60,
+            logicalHeight = 30,
+        )
+
+        val semantics = tester.dumpSemanticsTree()
+        assertTrue(semantics.contains("TEXT label=\"TITLE\""))
+        assertTrue(semantics.contains("BUTTON label=\"SAVE\" enabled=true"))
+        assertTrue(semantics.contains("TEXT_FIELD label=\"NAME\""))
+        assertTrue(semantics.contains("focused=true"))
+        tester.dispose()
+    }
+
+    @Test
     fun tapNthByTextInvokesMatchingButtonCallback() {
         val tester = PixelTester()
         var first = 0
