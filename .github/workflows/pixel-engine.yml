@@ -1,0 +1,37 @@
+name: pixel-engine
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - "codex/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: API baseline
+        run: ./gradlew :pixel-engine:checkPublicApi --no-daemon
+
+      - name: Full gate
+        run: ./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:lintDebug :pixel-engine:assembleDebug :pixel-demo:assembleDebug :pixel-demo:testDebugUnitTest --no-daemon
+
+      - name: Minimal sample
+        run: ./gradlew :pixel-minimal-sample:assembleDebug --no-daemon
+
+      - name: Maven local dry-run
+        run: ./gradlew :pixel-engine:publishToMavenLocal --dry-run --no-daemon
