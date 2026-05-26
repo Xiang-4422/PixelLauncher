@@ -5,6 +5,7 @@ import com.purride.pixeldemo.showcase.composition.MasterDetailScene
 import com.purride.pixeldemo.showcase.composition.ModalOverlayScene
 import com.purride.pixeldemo.showcase.composition.NavigatorStackScene
 import com.purride.pixeldemo.showcase.composition.NestedPagerInListScene
+import com.purride.pixeldemo.showcase.composition.OverlayFeedbackScene
 import com.purride.pixeldemo.showcase.composition.StickyBottomBarScene
 import com.purride.pixeldemo.showcase.extension.CustomPagerPolicyScene
 import com.purride.pixeldemo.showcase.extension.CustomRasterizerScene
@@ -126,6 +127,7 @@ object DemoCatalog {
                 StickyBottomBarScene,
                 MasterDetailScene,
                 ModalOverlayScene,
+                OverlayFeedbackScene,
                 AsyncBuilderScene,
                 NavigatorStackScene,
             ),

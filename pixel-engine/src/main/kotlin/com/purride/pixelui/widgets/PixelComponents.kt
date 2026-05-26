@@ -83,3 +83,66 @@ public fun Switch(
         track
     }
 }
+
+public fun Dialog(
+    title: Widget? = null,
+    content: Widget,
+    actions: List<Widget> = emptyList(),
+    fillColor: PixelColor = PixelColor.Black,
+    borderColor: PixelColor = PixelColor.White,
+    key: Any? = null,
+): Widget {
+    val children = buildList {
+        if (title != null) add(title)
+        add(content)
+        if (actions.isNotEmpty()) add(Row(children = actions, spacing = 2, mainAxisAlignment = MainAxisAlignment.END))
+    }
+    return Center(
+        child = Container(
+            width = 96,
+            padding = EdgeInsets.all(3),
+            fillColor = fillColor,
+            borderColor = borderColor,
+            child = Column(children = children, spacing = 2),
+            key = key,
+        ),
+    )
+}
+
+public fun Toast(
+    message: String,
+    fillColor: PixelColor = PixelColor.Black,
+    textStyle: PixelTextStyle = PixelTextStyle.Default,
+    key: Any? = null,
+): Widget {
+    return Center(
+        child = Container(
+            padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
+            fillColor = fillColor,
+            borderColor = PixelColor.White,
+            child = Text(message, style = textStyle),
+            key = key,
+        ),
+    )
+}
+
+public fun Snackbar(
+    message: String,
+    action: Widget? = null,
+    fillColor: PixelColor = PixelColor.fromRgb(40, 40, 40),
+    textStyle: PixelTextStyle = PixelTextStyle.Default,
+    key: Any? = null,
+): Widget {
+    val rowChildren = if (action == null) {
+        listOf<Widget>(Expanded(child = Text(message, style = textStyle)))
+    } else {
+        listOf(Expanded(child = Text(message, style = textStyle)), action)
+    }
+    return Container(
+        padding = EdgeInsets.symmetric(horizontal = 3, vertical = 2),
+        fillColor = fillColor,
+        borderColor = PixelColor.White,
+        child = Row(children = rowChildren, spacing = 2, crossAxisAlignment = CrossAxisAlignment.CENTER),
+        key = key,
+    )
+}

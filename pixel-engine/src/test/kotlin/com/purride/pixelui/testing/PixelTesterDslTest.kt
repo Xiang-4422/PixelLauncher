@@ -7,6 +7,7 @@ import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
+import com.purride.pixelui.Dialog
 import com.purride.pixelui.FittedBox
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.ListTile
@@ -17,9 +18,11 @@ import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Snackbar
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
+import com.purride.pixelui.Toast
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
@@ -252,6 +255,27 @@ class PixelTesterDslTest {
         assertTrue(checkbox)
         assertTrue(switch)
         assertEquals(1, tileTapped)
+        tester.dispose()
+    }
+
+    @Test
+    fun overlayFeedbackWidgetsRenderText() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = Column(
+                children = listOf(
+                    Dialog(title = Text("Title"), content = Text("Body"), actions = listOf(Text("OK"))),
+                    Toast("Saved"),
+                    Snackbar("Queued", action = Text("UNDO")),
+                ),
+                spacing = 2,
+            ),
+            logicalWidth = 120,
+            logicalHeight = 80,
+        )
+
+        assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
         tester.dispose()
     }
 
