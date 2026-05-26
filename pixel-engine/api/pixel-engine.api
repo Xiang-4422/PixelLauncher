@@ -156,10 +156,16 @@ com.purride.pixelui public fun setPixel(x: Int, y: Int, color: PixelColor)
 com.purride.pixelui public fun drawLine(
 com.purride.pixelui public fun drawRect(
 com.purride.pixelui public fun fillRect(
+com.purride.pixelui public fun fillGradientRect(
 com.purride.pixelui public fun drawCircle(
 com.purride.pixelui public fun drawPolygon(
 com.purride.pixelui public fun drawPath(
 com.purride.pixelui public data class PixelPoint(
+com.purride.pixelui public data class PixelGradientStop(
+com.purride.pixelui public sealed class PixelGradient
+com.purride.pixelui public abstract val stops: List<PixelGradientStop>
+com.purride.pixelui public data class Linear(
+com.purride.pixelui public data class Radial(
 com.purride.pixelui public sealed class PixelPathCommand
 com.purride.pixelui public data class MoveTo(val point: PixelPoint) : PixelPathCommand()
 com.purride.pixelui public data class LineTo(val point: PixelPoint) : PixelPathCommand()

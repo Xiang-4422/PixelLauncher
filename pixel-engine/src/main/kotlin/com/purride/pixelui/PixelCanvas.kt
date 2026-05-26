@@ -63,6 +63,21 @@ public class PixelCanvas internal constructor(
         context.buffer.fillRect(offsetX + left, offsetY + top, width, height, color)
     }
 
+    public fun fillGradientRect(
+        left: Int,
+        top: Int,
+        width: Int,
+        height: Int,
+        gradient: PixelGradient,
+    ) {
+        if (width <= 0 || height <= 0) return
+        for (y in top until top + height) {
+            for (x in left until left + width) {
+                setPixel(x, y, gradient.colorAt(x, y))
+            }
+        }
+    }
+
     public fun drawCircle(
         centerX: Int,
         centerY: Int,
@@ -184,4 +199,58 @@ public class PixelCanvas internal constructor(
             drawLine(end.x, end.y, start.x, start.y, color, strokeWidth)
         }
     }
+}
+
+private fun PixelGradient.colorAt(x: Int, y: Int): PixelColor {
+    return when (this) {
+        is PixelGradient.Linear -> colorAt(linearOffset(x, y), sortedStops)
+        is PixelGradient.Radial -> {
+            val offset = if (radius == 0) {
+                1f
+            } else {
+                val dx = x - center.x
+                val dy = y - center.y
+                (sqrt((dx * dx + dy * dy).toDouble()) / radius.toDouble()).toFloat()
+            }
+            colorAt(offset, sortedStops)
+        }
+    }
+}
+
+private fun PixelGradient.Linear.linearOffset(x: Int, y: Int): Float {
+    val dx = end.x - start.x
+    val dy = end.y - start.y
+    val lengthSquared = dx * dx + dy * dy
+    if (lengthSquared == 0) return 1f
+    val px = x - start.x
+    val py = y - start.y
+    return ((px * dx + py * dy).toFloat() / lengthSquared.toFloat()).coerceIn(0f, 1f)
+}
+
+private fun colorAt(offset: Float, stops: List<PixelGradientStop>): PixelColor {
+    val t = offset.coerceIn(0f, 1f)
+    var previous = stops.first()
+    if (t <= previous.offset) return previous.color
+    for (index in 1 until stops.size) {
+        val next = stops[index]
+        if (t <= next.offset) {
+            val span = next.offset - previous.offset
+            val localT = if (span <= 0f) 1f else (t - previous.offset) / span
+            return lerpColor(previous.color, next.color, localT)
+        }
+        previous = next
+    }
+    return stops.last().color
+}
+
+private fun lerpColor(start: PixelColor, end: PixelColor, t: Float): PixelColor {
+    fun lerpChannel(a: Int, b: Int): Int {
+        return (a + ((b - a) * t)).toInt().coerceIn(0, 255)
+    }
+    return PixelColor.fromArgb(
+        a = lerpChannel(start.alpha, end.alpha),
+        r = lerpChannel(start.red, end.red),
+        g = lerpChannel(start.green, end.green),
+        b = lerpChannel(start.blue, end.blue),
+    )
 }

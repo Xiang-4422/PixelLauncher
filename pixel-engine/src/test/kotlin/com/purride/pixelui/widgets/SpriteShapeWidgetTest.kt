@@ -6,6 +6,8 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.CustomPaint
 import com.purride.pixelui.Path
+import com.purride.pixelui.PixelGradient
+import com.purride.pixelui.PixelGradientStop
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPathCommand
 import com.purride.pixelui.PixelPoint
@@ -153,6 +155,69 @@ class SpriteShapeWidgetTest {
         assertEquals(PixelColor.White, buffer.getPixel(0, 0))
         assertEquals(PixelColor.White, buffer.getPixel(7, 7))
         assertEquals(orange, buffer.getPixel(6, 4))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintFillsLinearGradientRect() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            CustomPaint(width = 3, height = 1) {
+                fillGradientRect(
+                    left = 0,
+                    top = 0,
+                    width = 3,
+                    height = 1,
+                    gradient = PixelGradient.Linear(
+                        start = PixelPoint(0, 0),
+                        end = PixelPoint(2, 0),
+                        stops = listOf(
+                            PixelGradientStop(0f, PixelColor.Black),
+                            PixelGradientStop(1f, PixelColor.White),
+                        ),
+                    ),
+                )
+            },
+            3,
+            1,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.Black, buffer.getPixel(0, 0))
+        assertEquals(PixelColor.fromRgb(127, 127, 127), buffer.getPixel(1, 0))
+        assertEquals(PixelColor.White, buffer.getPixel(2, 0))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintFillsRadialGradientRect() {
+        val tester = PixelTester()
+        val edge = PixelColor.fromRgb(200, 100, 0)
+        tester.pumpWidget(
+            CustomPaint(width = 3, height = 1) {
+                fillGradientRect(
+                    left = 0,
+                    top = 0,
+                    width = 3,
+                    height = 1,
+                    gradient = PixelGradient.Radial(
+                        center = PixelPoint(1, 0),
+                        radius = 1,
+                        stops = listOf(
+                            PixelGradientStop(0f, PixelColor.White),
+                            PixelGradientStop(1f, edge),
+                        ),
+                    ),
+                )
+            },
+            3,
+            1,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(edge, buffer.getPixel(0, 0))
+        assertEquals(PixelColor.White, buffer.getPixel(1, 0))
+        assertEquals(edge, buffer.getPixel(2, 0))
         tester.dispose()
     }
 

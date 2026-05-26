@@ -1,9 +1,50 @@
 package com.purride.pixelui
 
+import com.purride.pixelcore.PixelColor
+
 public data class PixelPoint(
     val x: Int,
     val y: Int,
 )
+
+public data class PixelGradientStop(
+    val offset: Float,
+    val color: PixelColor,
+) {
+    init {
+        require(offset.isFinite()) { "Gradient stop offset must be finite" }
+        require(offset in 0f..1f) { "Gradient stop offset must be in 0f..1f" }
+    }
+}
+
+public sealed class PixelGradient {
+    public abstract val stops: List<PixelGradientStop>
+
+    public data class Linear(
+        val start: PixelPoint,
+        val end: PixelPoint,
+        override val stops: List<PixelGradientStop>,
+    ) : PixelGradient() {
+        internal val sortedStops: List<PixelGradientStop> = normalizeGradientStops(stops)
+    }
+
+    public data class Radial(
+        val center: PixelPoint,
+        val radius: Int,
+        override val stops: List<PixelGradientStop>,
+    ) : PixelGradient() {
+        internal val sortedStops: List<PixelGradientStop> = normalizeGradientStops(stops)
+
+        init {
+            require(radius >= 0) { "Radial gradient radius must be >= 0" }
+        }
+    }
+}
+
+internal fun normalizeGradientStops(stops: List<PixelGradientStop>): List<PixelGradientStop> {
+    require(stops.isNotEmpty()) { "Gradient requires at least one stop" }
+    return stops.sortedBy { it.offset }
+}
 
 public sealed class PixelPathCommand {
     public data class MoveTo(val point: PixelPoint) : PixelPathCommand()
