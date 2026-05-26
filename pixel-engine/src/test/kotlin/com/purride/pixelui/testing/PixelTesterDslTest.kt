@@ -3,6 +3,7 @@ package com.purride.pixelui.testing
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
+import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
@@ -103,6 +104,39 @@ class PixelTesterDslTest {
         tester.pumpAndSettle()
 
         assertEquals(1, state.currentPage)
+        tester.dispose()
+    }
+
+    @Test
+    fun dragByKeyMovesGridThroughListTarget() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        val built = mutableSetOf<Int>()
+
+        tester.pumpWidget(
+            widget = GridViewBuilder(
+                itemCount = 100,
+                itemBuilder = { index ->
+                    built += index
+                    SizedBox(width = 8, height = 4, child = Text("$index"))
+                },
+                cellWidth = 8,
+                cellHeight = 4,
+                spacing = 1,
+                runSpacing = 1,
+                state = state,
+                controller = controller,
+                key = "grid",
+            ),
+            logicalWidth = 40,
+            logicalHeight = 14,
+        )
+
+        assertTrue("GridViewBuilder should build a window, not every item", built.size < 100)
+        tester.drag(find.byKey("grid"), dx = 0, dy = -10)
+
+        assertTrue(state.scrollOffsetPx > 0f)
         tester.dispose()
     }
 

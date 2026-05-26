@@ -14,7 +14,9 @@ import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.CircleWidget
 import com.purride.pixelui.internal.ClipRectWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
+import com.purride.pixelui.internal.GridViewWidget
 import com.purride.pixelui.internal.ImageWidget
+import com.purride.pixelui.internal.LazyGridViewWidget
 import com.purride.pixelui.internal.LazyListViewWidget
 import com.purride.pixelui.internal.LineWidget
 import com.purride.pixelui.internal.LazySeparatedListViewWidget
@@ -667,6 +669,54 @@ public fun ListViewSeparatedBuilder(
         separatorExtent = separatorExtent,
         state = state,
         controller = controller,
+        cacheExtent = cacheExtent,
+        key = key,
+    )
+}
+
+public fun GridView(
+    items: List<Widget>,
+    cellWidth: Int,
+    cellHeight: Int,
+    state: PixelListState,
+    controller: PixelListController,
+    spacing: Int = 0,
+    runSpacing: Int = spacing,
+    key: Any? = null,
+): Widget {
+    return GridViewWidget(
+        items = items,
+        cellWidth = cellWidth,
+        cellHeight = cellHeight,
+        state = state,
+        controller = controller,
+        spacing = spacing,
+        runSpacing = runSpacing,
+        key = key,
+    )
+}
+
+public fun GridViewBuilder(
+    itemCount: Int,
+    itemBuilder: (Int) -> Widget,
+    cellWidth: Int,
+    cellHeight: Int,
+    state: PixelListState,
+    controller: PixelListController,
+    spacing: Int = 0,
+    runSpacing: Int = spacing,
+    cacheExtent: Int = 1,
+    key: Any? = null,
+): Widget {
+    return LazyGridViewWidget(
+        itemCount = itemCount,
+        itemBuilder = itemBuilder,
+        cellWidth = cellWidth,
+        cellHeight = cellHeight,
+        state = state,
+        controller = controller,
+        spacing = spacing,
+        runSpacing = runSpacing,
         cacheExtent = cacheExtent,
         key = key,
     )

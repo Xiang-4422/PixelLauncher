@@ -23,6 +23,7 @@ public class PixelListState(
         internal set
 
     internal var maxScrollOffsetPx: Float = 0f
+    internal var viewportWidthPx: Int = 0
     internal var viewportHeightPx: Int = 0
     internal var contentHeightPx: Int = 0
 
