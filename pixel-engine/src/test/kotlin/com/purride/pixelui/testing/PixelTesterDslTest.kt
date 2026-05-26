@@ -2,6 +2,7 @@ package com.purride.pixelui.testing
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.ActivityIndicator
+import com.purride.pixelui.AppScaffold
 import com.purride.pixelui.Axis
 import com.purride.pixelui.AspectRatio
 import com.purride.pixelui.Checkbox
@@ -9,8 +10,11 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.Dialog
+import com.purride.pixelui.Badge
+import com.purride.pixelui.Divider
 import com.purride.pixelui.FittedBox
 import com.purride.pixelui.GridViewBuilder
+import com.purride.pixelui.Gap
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
@@ -307,6 +311,31 @@ class PixelTesterDslTest {
 
         assertEquals(1, tab)
         assertEquals(0, segment)
+        assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
+        tester.dispose()
+    }
+
+    @Test
+    fun scaffoldBadgeDividerAndGapRender() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = AppScaffold(
+                title = Text("Title"),
+                body = Column(
+                    children = listOf(
+                        Badge(child = Text("MAIL"), label = Text("3")),
+                        Divider(),
+                        Gap(height = 2),
+                        Text("Body"),
+                    ),
+                ),
+                bottomBar = Text("Bottom"),
+            ),
+            logicalWidth = 80,
+            logicalHeight = 60,
+        )
+
         assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
         tester.dispose()
     }

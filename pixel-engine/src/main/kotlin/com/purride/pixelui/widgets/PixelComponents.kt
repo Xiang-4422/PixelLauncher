@@ -218,6 +218,59 @@ public fun ActivityIndicator(
     return Row(children = dots, spacing = 1, key = key)
 }
 
+public fun Badge(
+    child: Widget,
+    label: Widget,
+    key: Any? = null,
+): Widget = Stack(
+    children = listOf(
+        child,
+        Positioned(
+            top = 0,
+            right = 0,
+            child = Container(
+                padding = EdgeInsets.symmetric(horizontal = 1, vertical = 0),
+                fillColor = PixelColor.fromRgb(220, 90, 80),
+                borderColor = PixelColor.White,
+                child = label,
+            ),
+        ),
+    ),
+    key = key,
+)
+
+public fun Divider(
+    color: PixelColor = PixelColor.White,
+    thickness: Int = 1,
+    key: Any? = null,
+): Widget = Container(height = thickness.coerceAtLeast(1), fillColor = color, key = key)
+
+public fun Gap(
+    width: Int = 0,
+    height: Int = 0,
+    key: Any? = null,
+): Widget = SizedBox(width = width, height = height, key = key)
+
+public fun AppScaffold(
+    title: Widget? = null,
+    body: Widget,
+    bottomBar: Widget? = null,
+    key: Any? = null,
+): Widget {
+    val children = buildList {
+        if (title != null) {
+            add(Container(padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1), borderColor = PixelColor.White, child = title))
+            add(Gap(height = 1))
+        }
+        add(Expanded(child = body))
+        if (bottomBar != null) {
+            add(Gap(height = 1))
+            add(bottomBar)
+        }
+    }
+    return Column(children = children, mainAxisSize = MainAxisSize.MAX, crossAxisAlignment = CrossAxisAlignment.STRETCH, key = key)
+}
+
 private fun Int.floorMod(divisor: Int): Int {
     val remainder = this % divisor
     return if (remainder < 0) remainder + divisor else remainder
