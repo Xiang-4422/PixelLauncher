@@ -296,6 +296,35 @@ com.purride.pixelui public data class Failure(public val error: Throwable) : Pix
 com.purride.pixelui public fun interface PixelAsyncSource<T>
 com.purride.pixelui public fun subscribe(listener: (PixelAsyncSnapshot<T>) -> Unit): () -> Unit
 com.purride.pixelui public fun <T> pixelAsyncSourceOf(value: T): PixelAsyncSource<T>
+com.purride.pixelui public enum class PixelKey
+com.purride.pixelui public data class PixelKeyEvent(
+com.purride.pixelui public enum class PixelFocusDirection
+com.purride.pixelui public fun interface FocusTraversalPolicy
+com.purride.pixelui public fun next(
+com.purride.pixelui public object ReadingOrderFocusTraversalPolicy : FocusTraversalPolicy
+com.purride.pixelui public class FocusNode(
+com.purride.pixelui public val debugLabel: String? = null,
+com.purride.pixelui public var canRequestFocus: Boolean = true,
+com.purride.pixelui public var onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
+com.purride.pixelui public var isFocused: Boolean = false
+com.purride.pixelui public fun requestFocus(): Boolean
+com.purride.pixelui public fun unfocus()
+com.purride.pixelui public class FocusScopeNode(
+com.purride.pixelui public var traversalPolicy: FocusTraversalPolicy = ReadingOrderFocusTraversalPolicy,
+com.purride.pixelui public val focusedChild: FocusNode?
+com.purride.pixelui public fun attach(node: FocusNode)
+com.purride.pixelui public fun detach(node: FocusNode)
+com.purride.pixelui public fun requestFocus(node: FocusNode): Boolean
+com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
+com.purride.pixelui public fun focusInDirection(direction: PixelFocusDirection): Boolean
+com.purride.pixelui public object PixelFocusManager
+com.purride.pixelui public val rootScope: FocusScopeNode = FocusScopeNode()
+com.purride.pixelui public var primaryFocus: FocusNode? = null
+com.purride.pixelui public fun setPrimaryFocus(node: FocusNode)
+com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
+com.purride.pixelui public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean
+com.purride.pixelui public fun FocusScope(
+com.purride.pixelui public fun Focus(
 com.purride.pixelui public data class PixelUiState(
 com.purride.pixelui public interface Widget
 com.purride.pixelui public val key: Any?

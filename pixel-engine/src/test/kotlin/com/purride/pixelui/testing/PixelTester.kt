@@ -1,6 +1,9 @@
 package com.purride.pixelui.testing
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.PixelFocusManager
+import com.purride.pixelui.PixelKey
+import com.purride.pixelui.PixelKeyEvent
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.ManualFrameScheduler
@@ -80,6 +83,18 @@ public class PixelTester {
     public fun submitTextInput() {
         val target = focusedTextInputTarget ?: fail("No focused text input target")
         target.onSubmitted?.invoke(target.state.text)
+        if (target.action == com.purride.pixelui.PixelTextInputAction.NEXT) {
+            PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(PixelKey.TAB))
+        }
+    }
+
+    public fun pressKey(key: PixelKey, character: Char? = null): Boolean {
+        val handled = PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(key = key, character = character))
+        if (handled) {
+            needsRender = true
+            render()
+        }
+        return handled
     }
 
     public fun composeText(finder: PixelFinder, text: String) {
@@ -136,6 +151,7 @@ public class PixelTester {
     public fun dispose() {
         runtime.dispose()
         scheduler.clear()
+        PixelFocusManager.clearFocus()
     }
 
     private fun render() {

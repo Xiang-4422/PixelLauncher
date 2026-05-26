@@ -37,6 +37,7 @@ import com.purride.pixeldemo.showcase.foundation.ShapePrimitivesScene
 import com.purride.pixeldemo.showcase.foundation.StackPositionedScene
 import com.purride.pixeldemo.showcase.foundation.TextMatrixScene
 import com.purride.pixeldemo.showcase.interaction.ButtonStatesScene
+import com.purride.pixeldemo.showcase.interaction.FocusKeyScene
 import com.purride.pixeldemo.showcase.interaction.GestureTapScene
 import com.purride.pixeldemo.showcase.interaction.ImeTypesScene
 import com.purride.pixeldemo.showcase.interaction.SelectionControlsScene
@@ -94,6 +95,7 @@ object DemoCatalog {
                 ButtonStatesScene,
                 SelectionControlsScene,
                 TabsProgressScene,
+                FocusKeyScene,
                 TextFieldBasicsScene,
                 ImeTypesScene,
                 TextInputHostCommandsScene,

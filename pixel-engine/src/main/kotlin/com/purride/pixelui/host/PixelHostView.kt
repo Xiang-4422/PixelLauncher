@@ -207,7 +207,21 @@ public class PixelHostView @JvmOverloads constructor(
     public fun submitFocusedTextInput() {
         val target = focusedTextInputTarget ?: return
         target.onSubmitted?.invoke(target.state.text)
+        if (target.action == PixelTextInputAction.NEXT) {
+            PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(PixelKey.TAB))
+        }
         invalidate()
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (event.action == android.view.KeyEvent.ACTION_DOWN) {
+            val handled = PixelFocusManager.dispatchKeyEvent(event.toPixelKeyEvent())
+            if (handled) {
+                invalidate()
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, backgroundColor: PixelColor) {
@@ -552,5 +566,24 @@ public class PixelHostView @JvmOverloads constructor(
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         )
+    }
+}
+
+private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {
+    return when (keyCode) {
+        android.view.KeyEvent.KEYCODE_TAB -> PixelKeyEvent(if (isShiftPressed) PixelKey.SHIFT_TAB else PixelKey.TAB)
+        android.view.KeyEvent.KEYCODE_DPAD_UP -> PixelKeyEvent(PixelKey.ARROW_UP)
+        android.view.KeyEvent.KEYCODE_DPAD_DOWN -> PixelKeyEvent(PixelKey.ARROW_DOWN)
+        android.view.KeyEvent.KEYCODE_DPAD_LEFT -> PixelKeyEvent(PixelKey.ARROW_LEFT)
+        android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> PixelKeyEvent(PixelKey.ARROW_RIGHT)
+        android.view.KeyEvent.KEYCODE_ENTER,
+        android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+        -> PixelKeyEvent(PixelKey.ENTER)
+        android.view.KeyEvent.KEYCODE_BACK -> PixelKeyEvent(PixelKey.BACK)
+        android.view.KeyEvent.KEYCODE_ESCAPE -> PixelKeyEvent(PixelKey.ESCAPE)
+        else -> {
+            val char = unicodeChar.takeIf { it != 0 }?.toChar()
+            if (char != null) PixelKeyEvent(PixelKey.CHARACTER, char) else PixelKeyEvent(PixelKey.UNKNOWN)
+        }
     }
 }
