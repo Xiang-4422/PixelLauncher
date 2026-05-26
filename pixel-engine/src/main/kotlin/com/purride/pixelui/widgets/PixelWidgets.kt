@@ -259,9 +259,10 @@ public fun Path(
     path: PixelPath,
     color: PixelColor,
     closed: Boolean = false,
+    strokeWidth: Int = 1,
     key: Any? = null,
 ): Widget {
-    return PathWidget(path = path, color = color, closed = closed, key = key)
+    return PathWidget(path = path, color = color, closed = closed, strokeWidth = strokeWidth, key = key)
 }
 
 /**

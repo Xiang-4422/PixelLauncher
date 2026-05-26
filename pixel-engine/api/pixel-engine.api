@@ -165,6 +165,9 @@ com.purride.pixelui public data class MoveTo(val point: PixelPoint) : PixelPathC
 com.purride.pixelui public data class LineTo(val point: PixelPoint) : PixelPathCommand()
 com.purride.pixelui public data object Close : PixelPathCommand()
 com.purride.pixelui public data class PixelPath(
+com.purride.pixelui public companion object
+com.purride.pixelui public fun rect(
+com.purride.pixelui public fun circle(
 com.purride.pixelui public typealias PixelNavigator = com.purride.pixelui.widgets.navigation.PixelNavigator
 com.purride.pixelui public typealias PixelNavigatorState = com.purride.pixelui.widgets.navigation.PixelNavigatorState
 com.purride.pixelui public typealias PixelRoute = com.purride.pixelui.widgets.navigation.PixelRoute

@@ -3,6 +3,7 @@ package com.purride.pixelui
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.internal.PaintContext
 import com.purride.pixelui.internal.drawLinePixels
+import com.purride.pixelui.internal.paintStrokePoint
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -26,8 +27,9 @@ public class PixelCanvas internal constructor(
         endX: Int,
         endY: Int,
         color: PixelColor,
+        strokeWidth: Int = 1,
     ) {
-        drawLinePixels(context, offsetX, offsetY, startX, startY, endX, endY, color)
+        drawLinePixels(context, offsetX, offsetY, startX, startY, endX, endY, color, strokeWidth)
     }
 
     public fun drawRect(
@@ -36,8 +38,19 @@ public class PixelCanvas internal constructor(
         width: Int,
         height: Int,
         color: PixelColor,
+        strokeWidth: Int = 1,
     ) {
-        context.buffer.drawRect(offsetX + left, offsetY + top, width, height, color)
+        if (strokeWidth <= 1) {
+            context.buffer.drawRect(offsetX + left, offsetY + top, width, height, color)
+            return
+        }
+        if (width <= 0 || height <= 0) return
+        val right = left + width - 1
+        val bottom = top + height - 1
+        drawLine(left, top, right, top, color, strokeWidth)
+        drawLine(right, top, right, bottom, color, strokeWidth)
+        drawLine(right, bottom, left, bottom, color, strokeWidth)
+        drawLine(left, bottom, left, top, color, strokeWidth)
     }
 
     public fun fillRect(
@@ -56,6 +69,7 @@ public class PixelCanvas internal constructor(
         radius: Int,
         color: PixelColor,
         filled: Boolean = true,
+        strokeWidth: Int = 1,
     ) {
         if (radius < 0) return
         if (filled) {
@@ -74,14 +88,15 @@ public class PixelCanvas internal constructor(
         var y = 0
         var err = 0
         while (x >= y) {
-            setPixel(centerX + x, centerY + y, color)
-            setPixel(centerX + y, centerY + x, color)
-            setPixel(centerX - y, centerY + x, color)
-            setPixel(centerX - x, centerY + y, color)
-            setPixel(centerX - x, centerY - y, color)
-            setPixel(centerX - y, centerY - x, color)
-            setPixel(centerX + y, centerY - x, color)
-            setPixel(centerX + x, centerY - y, color)
+            val strokeRadius = strokeWidth.coerceAtLeast(1) / 2
+            paintStrokePoint(context, offsetX, offsetY, centerX + x, centerY + y, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX + y, centerY + x, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX - y, centerY + x, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX - x, centerY + y, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX - x, centerY - y, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX - y, centerY - x, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX + y, centerY - x, strokeRadius, color)
+            paintStrokePoint(context, offsetX, offsetY, centerX + x, centerY - y, strokeRadius, color)
             y += 1
             if (err <= 0) {
                 err += 2 * y + 1
@@ -136,6 +151,7 @@ public class PixelCanvas internal constructor(
         path: PixelPath,
         color: PixelColor,
         closed: Boolean = false,
+        strokeWidth: Int = 1,
     ) {
         var current: PixelPoint? = null
         var subpathStart: PixelPoint? = null
@@ -148,7 +164,7 @@ public class PixelCanvas internal constructor(
                     lastPoint = command.point
                 }
                 is PixelPathCommand.LineTo -> {
-                    current?.let { start -> drawLine(start.x, start.y, command.point.x, command.point.y, color) }
+                    current?.let { start -> drawLine(start.x, start.y, command.point.x, command.point.y, color, strokeWidth) }
                     current = command.point
                     lastPoint = command.point
                 }
@@ -156,7 +172,7 @@ public class PixelCanvas internal constructor(
                     val start = current
                     val end = subpathStart
                     if (start != null && end != null) {
-                        drawLine(start.x, start.y, end.x, end.y, color)
+                        drawLine(start.x, start.y, end.x, end.y, color, strokeWidth)
                         current = end
                     }
                 }
@@ -165,7 +181,7 @@ public class PixelCanvas internal constructor(
         val start = subpathStart
         val end = lastPoint
         if (closed && start != null && end != null && start != end) {
-            drawLine(end.x, end.y, start.x, start.y, color)
+            drawLine(end.x, end.y, start.x, start.y, color, strokeWidth)
         }
     }
 }

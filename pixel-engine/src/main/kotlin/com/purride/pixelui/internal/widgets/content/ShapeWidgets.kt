@@ -72,13 +72,14 @@ internal data class PathWidget(
     val path: PixelPath,
     val color: PixelColor,
     val closed: Boolean,
+    val strokeWidth: Int,
     override val key: Any? = null,
 ) : LeafRenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
-        return RenderPath(path = path, color = color, closed = closed)
+        return RenderPath(path = path, color = color, closed = closed, strokeWidth = strokeWidth)
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
-        (renderObject as RenderPath).update(path = path, color = color, closed = closed)
+        (renderObject as RenderPath).update(path = path, color = color, closed = closed, strokeWidth = strokeWidth)
     }
 }

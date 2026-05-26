@@ -76,6 +76,22 @@ internal fun drawLinePixels(
     endY: Int,
     color: PixelColor,
 ) {
+    drawLinePixels(context, offsetX, offsetY, startX, startY, endX, endY, color, strokeWidth = 1)
+}
+
+internal fun drawLinePixels(
+    context: PaintContext,
+    offsetX: Int,
+    offsetY: Int,
+    startX: Int,
+    startY: Int,
+    endX: Int,
+    endY: Int,
+    color: PixelColor,
+    strokeWidth: Int,
+) {
+    val safeStrokeWidth = strokeWidth.coerceAtLeast(1)
+    val radius = safeStrokeWidth / 2
     var x0 = startX
     var y0 = startY
     val x1 = endX
@@ -85,13 +101,32 @@ internal fun drawLinePixels(
     val sx = if (x0 < x1) 1 else -1
     val sy = if (y0 < y1) 1 else -1
     var err = dx + dy
-    val buffer = context.buffer
     while (true) {
-        buffer.setPixel(offsetX + x0, offsetY + y0, color)
+        paintStrokePoint(context, offsetX, offsetY, x0, y0, radius, color)
         if (x0 == x1 && y0 == y1) break
         val e2 = 2 * err
         if (e2 >= dy) { err += dy; x0 += sx }
         if (e2 <= dx) { err += dx; y0 += sy }
+    }
+}
+
+internal fun paintStrokePoint(
+    context: PaintContext,
+    offsetX: Int,
+    offsetY: Int,
+    x: Int,
+    y: Int,
+    radius: Int,
+    color: PixelColor,
+) {
+    if (radius <= 0) {
+        context.buffer.setPixel(offsetX + x, offsetY + y, color)
+        return
+    }
+    for (dy in -radius..radius) {
+        for (dx in -radius..radius) {
+            context.buffer.setPixel(offsetX + x + dx, offsetY + y + dy, color)
+        }
     }
 }
 
@@ -248,15 +283,17 @@ internal class RenderPath(
     private var path: PixelPath,
     private var color: PixelColor,
     private var closed: Boolean,
+    private var strokeWidth: Int,
 ) : RenderBox() {
 
-    fun update(path: PixelPath, color: PixelColor, closed: Boolean) {
+    fun update(path: PixelPath, color: PixelColor, closed: Boolean, strokeWidth: Int) {
         val sizeChanged = this.path != path
-        val anyChanged = sizeChanged || this.color != color || this.closed != closed
+        val anyChanged = sizeChanged || this.color != color || this.closed != closed || this.strokeWidth != strokeWidth
         if (!anyChanged) return
         this.path = path
         this.color = color
         this.closed = closed
+        this.strokeWidth = strokeWidth
         if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }
@@ -291,7 +328,7 @@ internal class RenderPath(
                 is PixelPathCommand.LineTo -> {
                     val start = current
                     if (start != null) {
-                        drawLinePixels(context, offsetX, offsetY, start.x, start.y, command.point.x, command.point.y, color)
+                        drawLinePixels(context, offsetX, offsetY, start.x, start.y, command.point.x, command.point.y, color, strokeWidth)
                     }
                     current = command.point
                     lastPoint = command.point
@@ -300,7 +337,7 @@ internal class RenderPath(
                     val start = current
                     val end = subpathStart
                     if (start != null && end != null) {
-                        drawLinePixels(context, offsetX, offsetY, start.x, start.y, end.x, end.y, color)
+                        drawLinePixels(context, offsetX, offsetY, start.x, start.y, end.x, end.y, color, strokeWidth)
                         current = end
                     }
                 }
@@ -309,7 +346,7 @@ internal class RenderPath(
         val start = subpathStart
         val end = lastPoint
         if (closed && start != null && end != null && start != end) {
-            drawLinePixels(context, offsetX, offsetY, end.x, end.y, start.x, start.y, color)
+            drawLinePixels(context, offsetX, offsetY, end.x, end.y, start.x, start.y, color, strokeWidth)
         }
     }
 }

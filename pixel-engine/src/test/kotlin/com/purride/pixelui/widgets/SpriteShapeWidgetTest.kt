@@ -87,6 +87,40 @@ class SpriteShapeWidgetTest {
     }
 
     @Test
+    fun pathStrokeWidthPaintsThickerLine() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            Path(
+                path = PixelPath(
+                    listOf(
+                        PixelPathCommand.MoveTo(PixelPoint(1, 1)),
+                        PixelPathCommand.LineTo(PixelPoint(5, 1)),
+                    ),
+                ),
+                color = PixelColor.White,
+                strokeWidth = 3,
+            ),
+            7,
+            4,
+        )
+
+        assertEquals(PixelColor.White, tester.renderResult!!.buffer.getPixel(3, 0))
+        assertEquals(PixelColor.White, tester.renderResult!!.buffer.getPixel(3, 1))
+        assertEquals(PixelColor.White, tester.renderResult!!.buffer.getPixel(3, 2))
+        tester.dispose()
+    }
+
+    @Test
+    fun pathHelpersBuildRectAndCircleCommands() {
+        val rect = PixelPath.rect(left = 1, top = 2, width = 4, height = 3)
+        val circle = PixelPath.circle(centerX = 4, centerY = 4, radius = 2)
+
+        assertEquals(PixelPathCommand.MoveTo(PixelPoint(1, 2)), rect.commands.first())
+        assertEquals(PixelPathCommand.Close, rect.commands.last())
+        assertEquals(PixelPathCommand.Close, circle.commands.last())
+    }
+
+    @Test
     fun customPaintBatchesCanvasCommands() {
         val tester = PixelTester()
         val orange = PixelColor.fromRgb(200, 100, 0)
@@ -108,6 +142,7 @@ class SpriteShapeWidgetTest {
                         ),
                     ),
                     color = PixelColor.White,
+                    strokeWidth = 2,
                 )
             },
             8,
