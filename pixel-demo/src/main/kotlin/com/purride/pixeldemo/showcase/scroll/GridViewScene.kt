@@ -9,6 +9,7 @@ import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
 import com.purride.pixelui.ScrollController
+import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
@@ -38,15 +39,21 @@ private class GridViewWidget(override val key: Any? = null) : StatefulWidget(key
             return Column(
                 children = listOf(
                     Expanded(
-                        child = GridViewBuilder(
-                            itemCount = 120,
-                            itemBuilder = { index -> tile(index) },
-                            cellWidth = 24,
-                            cellHeight = 16,
-                            spacing = 2,
-                            runSpacing = 2,
+                        child = Scrollbar(
                             state = scrollState,
-                            controller = scrollController,
+                            thumbColor = PixelColor.White,
+                            trackColor = PixelColor.fromArgb(80, 0, 0, 0),
+                            width = 2,
+                            child = GridViewBuilder(
+                                itemCount = 120,
+                                itemBuilder = { index -> tile(index) },
+                                cellWidth = 24,
+                                cellHeight = 16,
+                                spacing = 2,
+                                runSpacing = 2,
+                                state = scrollState,
+                                controller = scrollController,
+                            ),
                         ),
                     ),
                     SizedBox(height = 2),

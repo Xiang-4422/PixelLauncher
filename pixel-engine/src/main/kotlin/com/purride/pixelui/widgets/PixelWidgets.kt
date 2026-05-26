@@ -35,6 +35,7 @@ import com.purride.pixelui.internal.PositionedDirectionalWidget
 import com.purride.pixelui.internal.PositionedWidget
 import com.purride.pixelui.internal.PolygonWidget
 import com.purride.pixelui.internal.RowWidget
+import com.purride.pixelui.internal.ScrollbarWidget
 import com.purride.pixelui.internal.SingleChildScrollViewWidget
 import com.purride.pixelui.internal.SizedBoxWidget
 import com.purride.pixelui.internal.StackWidget
@@ -754,6 +755,24 @@ public fun GridViewBuilder(
         spacing = spacing,
         runSpacing = runSpacing,
         cacheExtent = cacheExtent,
+        key = key,
+    )
+}
+
+public fun Scrollbar(
+    child: Widget,
+    state: PixelListState,
+    thumbColor: PixelColor = PixelColor.White,
+    trackColor: PixelColor? = null,
+    width: Int = 1,
+    key: Any? = null,
+): Widget {
+    return ScrollbarWidget(
+        child = child,
+        state = state,
+        thumbColor = thumbColor,
+        trackColor = trackColor,
+        width = width,
         key = key,
     )
 }

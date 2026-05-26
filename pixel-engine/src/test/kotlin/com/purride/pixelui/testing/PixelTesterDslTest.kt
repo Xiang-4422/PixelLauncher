@@ -13,6 +13,7 @@ import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
@@ -189,6 +190,35 @@ class PixelTesterDslTest {
 
         val lit = tester.renderResult!!.buffer.pixels.count { it == PixelColor.fromRgb(255, 0, 0).argb }
         assertTrue("FittedBox should paint scaled child pixels", lit > 0)
+        tester.dispose()
+    }
+
+    @Test
+    fun scrollbarPaintsThumbForScrollableContent() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        val thumb = PixelColor.fromRgb(10, 220, 240)
+
+        tester.pumpWidget(
+            widget = Scrollbar(
+                state = state,
+                thumbColor = thumb,
+                width = 2,
+                child = ListViewBuilder(
+                    itemCount = 20,
+                    itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                    itemExtent = 6,
+                    state = state,
+                    controller = controller,
+                ),
+            ),
+            logicalWidth = 40,
+            logicalHeight = 18,
+        )
+
+        val thumbPixels = tester.renderResult!!.buffer.pixels.count { it == thumb.argb }
+        assertTrue("Scrollbar should paint a thumb when content is scrollable", thumbPixels > 0)
         tester.dispose()
     }
 
