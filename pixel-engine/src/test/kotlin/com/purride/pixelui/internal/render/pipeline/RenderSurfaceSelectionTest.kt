@@ -30,6 +30,7 @@ import org.junit.Test
 class RenderSurfaceSelectionTest {
 
     private val selectionColor = PixelColor.fromRgb(0xFF, 0x80, 0x00)
+    private val handleColor = PixelColor.fromRgb(0x00, 0xFF, 0xFF)
     private val cursorColor = PixelColor.fromRgb(0xFF, 0xFF, 0x00)
     private val textColor = PixelColor.fromRgb(0xFF, 0xFF, 0xFF)
 
@@ -39,8 +40,10 @@ class RenderSurfaceSelectionTest {
         selectionStart: Int = text.length,
         selectionEnd: Int = selectionStart,
         selectionColor: PixelColor? = this.selectionColor,
+        selectionHandleColor: PixelColor? = null,
         cursorColor: PixelColor? = this.cursorColor,
         maxLines: Int = 1,
+        readOnly: Boolean = false,
     ): Pair<RenderSurface, PixelBuffer> {
         val state = PixelTextFieldState(
             initialText = text,
@@ -66,8 +69,10 @@ class RenderSurfaceSelectionTest {
             borderColor = null,
             textInputState = state,
             textInputController = controller,
+            textInputReadOnly = readOnly,
             textInputCursorColor = cursorColor,
             textInputSelectionColor = selectionColor,
+            textInputSelectionHandleColor = selectionHandleColor,
         )
         surface.setRenderObjectChild(textChild)
         surface.layout(RenderConstraints(maxWidth = 120, maxHeight = 12))
@@ -260,5 +265,34 @@ class RenderSurfaceSelectionTest {
             "selection should not paint past child height, maxY=$maxY",
             maxY in 0..10,
         )
+    }
+
+    @Test
+    fun focusedSelectionPaintsHandlesWhenEnabled() {
+        val (surface, buffer) = makeSurface(
+            text = "HELLO",
+            focused = true,
+            selectionStart = 1,
+            selectionEnd = 4,
+            selectionHandleColor = handleColor,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+        val handlePixels = buffer.pixels.count { it == handleColor.argb }
+        assertTrue("non-empty focused selection should paint handle pixels", handlePixels > 0)
+    }
+
+    @Test
+    fun readOnlySelectionDoesNotPaintHandles() {
+        val (surface, buffer) = makeSurface(
+            text = "HELLO",
+            focused = true,
+            selectionStart = 1,
+            selectionEnd = 4,
+            selectionHandleColor = handleColor,
+            readOnly = true,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+        val handlePixels = buffer.pixels.count { it == handleColor.argb }
+        assertEquals("readOnly field must not draw selection handles", 0, handlePixels)
     }
 }

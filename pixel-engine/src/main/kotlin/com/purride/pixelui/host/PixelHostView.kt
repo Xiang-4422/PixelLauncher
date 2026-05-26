@@ -107,6 +107,8 @@ public class PixelHostView @JvmOverloads constructor(
     internal var lastListLogicalY = 0
     internal var lastTextInputTapTimeMs: Long = -1L
     internal var lastTextInputTapState: PixelTextFieldState? = null
+    internal var activeTextInputSelectionTarget: PixelTextInputTarget? = null
+    internal var activeTextInputSelectionHandle: TextInputSelectionHandle? = null
     internal var touchMoved = false
     internal val nestedScrollSession = NestedScrollSession()
     internal var candidatePagerTarget: PixelPagerTarget?

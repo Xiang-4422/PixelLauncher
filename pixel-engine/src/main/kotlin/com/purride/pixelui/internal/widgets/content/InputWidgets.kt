@@ -83,6 +83,7 @@ internal data class TextFieldWidget(
             cursorVisible = state.cursorVisible,
             selectionColor = if (enabled && !readOnly) style.selectionColor else null,
             compositionColor = if (enabled && !readOnly) style.compositionColor else null,
+            selectionHandleColor = if (enabled && !readOnly && style.selectionHandlesEnabled) style.selectionHandleColor else null,
             key = key,
             child = TextWidget(
                 data = text,
@@ -120,6 +121,7 @@ private data class TextInputSurfaceWidget(
     val cursorVisible: Boolean,
     val selectionColor: PixelColor?,
     val compositionColor: PixelColor?,
+    val selectionHandleColor: PixelColor?,
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
@@ -145,6 +147,7 @@ private data class TextInputSurfaceWidget(
             textInputCursorVisible = cursorVisible,
             textInputSelectionColor = selectionColor,
             textInputCompositionColor = compositionColor,
+            textInputSelectionHandleColor = selectionHandleColor,
         )
     }
 
@@ -171,6 +174,7 @@ private data class TextInputSurfaceWidget(
             textInputCursorVisible = cursorVisible,
             textInputSelectionColor = selectionColor,
             textInputCompositionColor = compositionColor,
+            textInputSelectionHandleColor = selectionHandleColor,
         )
     }
 }

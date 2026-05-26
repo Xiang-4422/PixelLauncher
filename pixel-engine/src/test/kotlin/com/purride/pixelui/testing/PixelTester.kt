@@ -60,6 +60,14 @@ public class PixelTester {
         render()
     }
 
+    public fun dragSelectionStartHandle(finder: PixelFinder, dx: Int, dy: Int) {
+        dragSelectionHandle(finder, TextSelectionHandle.START, dx, dy)
+    }
+
+    public fun dragSelectionEndHandle(finder: PixelFinder, dx: Int, dy: Int) {
+        dragSelectionHandle(finder, TextSelectionHandle.END, dx, dy)
+    }
+
     public fun enterText(finder: PixelFinder, text: String) {
         val target = resolveTextInputTarget(finder)
         ensureTextInputEditable(target)
@@ -212,11 +220,45 @@ public class PixelTester {
         }
         renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
             focusTextInput(target)
-            target.controller.setSelection(target.state, resolveTextInputSelection(target, startX + dx, startY + dy))
+            if (target.state.selectionStart != target.state.selectionEnd) {
+                val handle = nearestSelectionHandle(target, startX, startY)
+                updateSelectionHandle(target, handle, startX + dx, startY + dy)
+            } else {
+                target.controller.setSelection(target.state, resolveTextInputSelection(target, startX + dx, startY + dy))
+            }
             needsRender = true
             return
         }
         fail("No draggable target at ($startX,$startY)")
+    }
+
+    private fun dragSelectionHandle(finder: PixelFinder, handle: TextSelectionHandle, dx: Int, dy: Int) {
+        val target = resolveTextInputTarget(finder)
+        ensureTextInputEditable(target)
+        if (target.state.selectionStart == target.state.selectionEnd) {
+            fail("Text input target has no non-empty selection")
+        }
+        focusTextInput(target)
+        val anchor = handlePoint(target, handle)
+        updateSelectionHandle(target, handle, anchor.x + dx, anchor.y + dy)
+        render()
+    }
+
+    private fun updateSelectionHandle(target: PixelTextInputTarget, handle: TextSelectionHandle, logicalX: Int, logicalY: Int) {
+        val selection = resolveTextInputSelection(target, logicalX, logicalY)
+        when (handle) {
+            TextSelectionHandle.START -> target.controller.setSelection(
+                target.state,
+                selection.coerceAtMost(target.state.selectionEnd),
+                target.state.selectionEnd,
+            )
+            TextSelectionHandle.END -> target.controller.setSelection(
+                target.state,
+                target.state.selectionStart,
+                selection.coerceAtLeast(target.state.selectionStart),
+            )
+        }
+        needsRender = true
     }
 
     private fun dispatchSliderDrag(target: PixelSliderTarget, x: Int) {
@@ -331,6 +373,39 @@ public class PixelTester {
         return abs(dy) >= abs(dx)
     }
 
+    private fun nearestSelectionHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): TextSelectionHandle {
+        val selection = resolveTextInputSelection(target, logicalX, logicalY)
+        val startDistance = abs(selection - target.state.selectionStart)
+        val endDistance = abs(selection - target.state.selectionEnd)
+        return if (startDistance <= endDistance) TextSelectionHandle.START else TextSelectionHandle.END
+    }
+
+    private fun handlePoint(target: PixelTextInputTarget, handle: TextSelectionHandle): Point {
+        val text = target.state.text
+        if (text.isEmpty()) return target.bounds.center
+        val index = when (handle) {
+            TextSelectionHandle.START -> target.state.selectionStart
+            TextSelectionHandle.END -> target.state.selectionEnd
+        }.coerceIn(0, text.length)
+        val lines = text.split('\n')
+        var lineStart = 0
+        lines.forEachIndexed { lineIndex, line ->
+            val lineEnd = lineStart + line.length
+            if (index <= lineEnd || lineIndex == lines.lastIndex) {
+                val x = target.bounds.left + if (line.isEmpty()) {
+                    0
+                } else {
+                    ((index - lineStart).coerceIn(0, line.length).toLong() * target.bounds.width / line.length).toInt()
+                }
+                val lineHeight = (target.bounds.height / lines.size.coerceAtLeast(1)).coerceAtLeast(1)
+                val y = target.bounds.top + lineIndex * lineHeight + lineHeight / 2
+                return Point(x, y)
+            }
+            lineStart = lineEnd + 1
+        }
+        return target.bounds.center
+    }
+
     private fun resolveTextInputSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
         val text = target.state.text
         if (text.isEmpty()) return 0
@@ -367,6 +442,11 @@ public class PixelTester {
     private enum class TargetKind {
         ANY,
         DRAG,
+    }
+
+    private enum class TextSelectionHandle {
+        START,
+        END,
     }
 
     private data class Point(val x: Int, val y: Int)

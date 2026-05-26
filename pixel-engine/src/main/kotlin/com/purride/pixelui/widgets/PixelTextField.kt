@@ -28,6 +28,14 @@ public data class PixelTextFieldStyle(
      * < compositionEnd 且 widget 聚焦时绘制。默认与 cursorColor 同色。
      */
     val compositionColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    /**
+     * 非空 selection 两端最小拖拽 handle 的颜色。
+     */
+    val selectionHandleColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    /**
+     * 是否绘制 selection handle。仅在 enabled 且非 readOnly 且 selection 非空时生效。
+     */
+    val selectionHandlesEnabled: Boolean = true,
     val cursorBlinkEnabled: Boolean = true,
     val cursorBlinkPeriodMs: Long = 1_000L,
     val padding: Int = 2,

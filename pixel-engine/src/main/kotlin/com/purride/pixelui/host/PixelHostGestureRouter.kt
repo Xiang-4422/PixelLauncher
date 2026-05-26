@@ -3,6 +3,7 @@ package com.purride.pixelui
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.internal.PixelTextInputTarget
 import kotlin.math.abs
 
 /**
@@ -53,6 +54,14 @@ internal class PixelHostGestureRouter(
             ?.textInputTargets
             ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
         host.candidateTextInputTarget = if (host.activeSliderTarget == null) textInputTarget else null
+        host.activeTextInputSelectionTarget = null
+        host.activeTextInputSelectionHandle = null
+        if (host.activeSliderTarget == null && textInputTarget != null && !textInputTarget.readOnly) {
+            resolveNearestSelectionHandle(textInputTarget, logicalPoint.first, logicalPoint.second)?.let { handle ->
+                host.activeTextInputSelectionTarget = textInputTarget
+                host.activeTextInputSelectionHandle = handle
+            }
+        }
         if (textInputTarget == null && host.focusedTextInputTarget != null) {
             host.clearFocusedTextInput()
         }
@@ -77,6 +86,14 @@ internal class PixelHostGestureRouter(
             target.onDrag(ratio)
             host.invalidate()
             return true
+        }
+
+        host.activeTextInputSelectionTarget?.let { target ->
+            if (host.touchMoved && host.activePagerTarget == null && host.activeListTarget == null) {
+                updateSelectionHandle(target, logicalPoint.first, logicalPoint.second)
+                host.invalidate()
+                return true
+            }
         }
 
         host.candidateTextInputTarget?.let { target ->
@@ -212,6 +229,7 @@ internal class PixelHostGestureRouter(
             host.candidatePagerTarget = null
             host.candidateListTarget = null
             host.candidateTextInputTarget = null
+            clearActiveSelectionHandle()
             recycleVelocityTracker()
             host.invalidate()
             return true
@@ -223,6 +241,7 @@ internal class PixelHostGestureRouter(
             host.candidateListTarget = null
             host.candidatePagerTarget = null
             host.candidateTextInputTarget = null
+            clearActiveSelectionHandle()
             recycleVelocityTracker()
             host.invalidate()
             return true
@@ -253,12 +272,14 @@ internal class PixelHostGestureRouter(
             host.invalidate()
         }
         host.candidateTextInputTarget = null
+        clearActiveSelectionHandle()
         recycleVelocityTracker()
         return true
     }
 
     private fun onCancel(): Boolean {
         host.activeSliderTarget = null
+        clearActiveSelectionHandle()
         host.activePagerTarget?.let { target ->
             target.controller.cancelDrag(target.state)
             host.invalidate()
@@ -271,7 +292,40 @@ internal class PixelHostGestureRouter(
         return true
     }
 
-    private fun resolveTextInputSelection(target: com.purride.pixelui.internal.PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
+    private fun updateSelectionHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int) {
+        if (target.readOnly) return
+        host.focusTextInput(target)
+        val selection = resolveTextInputSelection(target, logicalX, logicalY)
+        when (host.activeTextInputSelectionHandle) {
+            TextInputSelectionHandle.START -> target.controller.setSelection(
+                target.state,
+                selection.coerceAtMost(target.state.selectionEnd),
+                target.state.selectionEnd,
+            )
+            TextInputSelectionHandle.END -> target.controller.setSelection(
+                target.state,
+                target.state.selectionStart,
+                selection.coerceAtLeast(target.state.selectionStart),
+            )
+            null -> Unit
+        }
+    }
+
+    private fun resolveNearestSelectionHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): TextInputSelectionHandle? {
+        val state = target.state
+        if (state.selectionStart == state.selectionEnd) return null
+        val selection = resolveTextInputSelection(target, logicalX, logicalY)
+        val startDistance = abs(selection - state.selectionStart)
+        val endDistance = abs(selection - state.selectionEnd)
+        return if (startDistance <= endDistance) TextInputSelectionHandle.START else TextInputSelectionHandle.END
+    }
+
+    private fun clearActiveSelectionHandle() {
+        host.activeTextInputSelectionTarget = null
+        host.activeTextInputSelectionHandle = null
+    }
+
+    private fun resolveTextInputSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
         val text = target.state.text
         if (text.isEmpty()) return 0
         val lines = text.split('\n')
@@ -297,4 +351,9 @@ internal class PixelHostGestureRouter(
     private companion object {
         const val DOUBLE_TAP_TIMEOUT_MS = 300L
     }
+}
+
+internal enum class TextInputSelectionHandle {
+    START,
+    END,
 }

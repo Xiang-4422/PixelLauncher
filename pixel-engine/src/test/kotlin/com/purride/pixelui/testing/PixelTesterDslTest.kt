@@ -224,6 +224,30 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun dragSelectionHandlesUpdatesTextFieldSelection() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "ABCDE", selectionStart = 1, selectionEnd = 3)
+        controller.focus(state)
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                key = "field",
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+
+        tester.dragSelectionEndHandle(find.byKey("field"), dx = 28, dy = 0)
+
+        assertEquals(1, state.selectionStart)
+        assertTrue("end handle should extend the selection", state.selectionEnd > 3)
+        tester.dispose()
+    }
+
+    @Test
     fun enterTextRejectsReadOnlyTextField() {
         val tester = PixelTester()
         val controller = PixelTextFieldController()

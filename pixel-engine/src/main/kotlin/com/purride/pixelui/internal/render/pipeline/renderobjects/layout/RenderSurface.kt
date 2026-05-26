@@ -45,6 +45,7 @@ internal class RenderSurface(
     private var textInputCursorVisible: Boolean = true,
     private var textInputSelectionColor: PixelColor? = null,
     private var textInputCompositionColor: PixelColor? = null,
+    private var textInputSelectionHandleColor: PixelColor? = null,
 ) : SingleChildRenderObject() {
     private var childOffsetX = 0
     private var childOffsetY = 0
@@ -91,6 +92,7 @@ internal class RenderSurface(
         textInputCursorVisible: Boolean = true,
         textInputSelectionColor: PixelColor? = null,
         textInputCompositionColor: PixelColor? = null,
+        textInputSelectionHandleColor: PixelColor? = null,
     ) {
         val coercedMinLines = textInputMinLines.coerceAtLeast(1)
         val coercedMaxLines = textInputMaxLines.coerceAtLeast(coercedMinLines)
@@ -126,7 +128,8 @@ internal class RenderSurface(
             this.textInputCursorColor == textInputCursorColor &&
             this.textInputCursorVisible == textInputCursorVisible &&
             this.textInputSelectionColor == textInputSelectionColor &&
-            this.textInputCompositionColor == textInputCompositionColor
+            this.textInputCompositionColor == textInputCompositionColor &&
+            this.textInputSelectionHandleColor == textInputSelectionHandleColor
         ) {
             return
         }
@@ -162,6 +165,7 @@ internal class RenderSurface(
         this.textInputCursorVisible = textInputCursorVisible
         this.textInputSelectionColor = textInputSelectionColor
         this.textInputCompositionColor = textInputCompositionColor
+        this.textInputSelectionHandleColor = textInputSelectionHandleColor
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -251,6 +255,7 @@ internal class RenderSurface(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
         )
+        paintTextInputSelectionHandles(context, child, offsetX, offsetY)
         paintTextInputComposition(context, child, offsetX, offsetY)
         paintTextInputCursor(context, child, offsetX, offsetY)
     }
@@ -425,6 +430,50 @@ internal class RenderSurface(
         val startX = baseX + (start.toLong() * textWidth / length).toInt()
         val endX = baseX + (end.toLong() * textWidth / length).toInt()
         context.fillRect(startX, baseY, (endX - startX).coerceAtLeast(1), textHeight, highlight)
+    }
+
+    /**
+     * 文本输入选区两端的最小 1px handle。handle 不参与 layout 或命中测试，
+     * 交互层使用文本位置映射更新 selection。
+     */
+    private fun paintTextInputSelectionHandles(
+        context: PaintContext,
+        child: RenderBox?,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        val state = textInputState ?: return
+        val color = textInputSelectionHandleColor ?: return
+        if (!state.isFocused || textInputReadOnly) return
+        child ?: return
+        val text = state.text
+        if (text.isEmpty()) return
+        val length = text.length
+        val start = state.selectionStart.coerceIn(0, length)
+        val end = state.selectionEnd.coerceIn(start, length)
+        if (start >= end) return
+        val renderText = child as? RenderText
+        val startCaret = renderText?.caretRect(start) ?: unpackFallbackCaret(text, start, child)
+        val endCaret = renderText?.caretRect(end) ?: unpackFallbackCaret(text, end, child)
+        val baseX = offsetX + childOffsetX
+        val baseY = offsetY + childOffsetY
+        paintSelectionHandle(context, baseX + startCaret.x, baseY + startCaret.y + startCaret.height, color)
+        paintSelectionHandle(context, baseX + endCaret.x, baseY + endCaret.y + endCaret.height, color)
+    }
+
+    private fun unpackFallbackCaret(text: String, index: Int, child: RenderBox): PixelTextRangeRect {
+        val caret = resolveTextInputCaret(text, index, child)
+        return PixelTextRangeRect(
+            x = caretX(caret),
+            y = caretY(caret),
+            width = 1,
+            height = caretHeight(caret),
+        )
+    }
+
+    private fun paintSelectionHandle(context: PaintContext, x: Int, y: Int, color: PixelColor) {
+        context.fillRect(x, y - 1, 1, 2, color)
+        context.fillRect(x - 1, y, 3, 1, color)
     }
 
     /**
