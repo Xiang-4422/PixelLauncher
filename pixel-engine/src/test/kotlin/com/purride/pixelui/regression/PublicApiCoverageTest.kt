@@ -65,9 +65,15 @@ class PublicApiCoverageTest {
 
     private fun collectPublicApiNames(moduleRoot: File): Pair<Set<String>, Set<String>> {
         val scanDirs = listOf("widgets", "advanced", "controllers", "foundation", "state", "gesture", "host")
+        val extraFiles = listOf(
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelGeometry.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelNavigatorAliases.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheet.kt"),
+        )
         val widgetFunctionPattern = Regex("^public fun ([A-Z][A-Za-z0-9_]*)\\(", RegexOption.MULTILINE)
         val otherPatterns = listOf(
-            Regex("^public class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
+            Regex("^public (?:data |sealed )?class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
+            Regex("^public enum class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
             Regex("^public object ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
             Regex("^public typealias ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
         )
@@ -86,6 +92,14 @@ class PublicApiCoverageTest {
                     }
                 }
         }
+        extraFiles
+            .filter { it.exists() }
+            .forEach { file ->
+                val text = file.readText()
+                for (pattern in otherPatterns) {
+                    pattern.findAll(text).forEach { match -> otherApis.add(match.groupValues[1]) }
+                }
+            }
         return widgetFunctions to otherApis
     }
 

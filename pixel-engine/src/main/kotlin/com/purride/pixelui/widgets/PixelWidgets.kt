@@ -3,6 +3,7 @@ package com.purride.pixelui
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.internal.AlignDirectionalWidget
 import com.purride.pixelui.internal.AlignWidget
 import com.purride.pixelui.internal.ColumnWidget
@@ -11,6 +12,7 @@ import com.purride.pixelui.internal.ContainerWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.CircleWidget
+import com.purride.pixelui.internal.ClipRectWidget
 import com.purride.pixelui.internal.GestureDetectorWidget
 import com.purride.pixelui.internal.ImageWidget
 import com.purride.pixelui.internal.LazyListViewWidget
@@ -18,20 +20,26 @@ import com.purride.pixelui.internal.LineWidget
 import com.purride.pixelui.internal.LazySeparatedListViewWidget
 import com.purride.pixelui.internal.ListViewWidget
 import com.purride.pixelui.internal.OutlinedButtonWidget
+import com.purride.pixelui.internal.OpacityWidget
 import com.purride.pixelui.internal.SliderWidget
 import com.purride.pixelui.internal.PaddingDirectionalWidget
 import com.purride.pixelui.internal.PaddingWidget
 import com.purride.pixelui.internal.PageViewWidget
+import com.purride.pixelui.internal.PathWidget
 import com.purride.pixelui.internal.PositionedDirectionalWidget
 import com.purride.pixelui.internal.PositionedWidget
+import com.purride.pixelui.internal.PolygonWidget
 import com.purride.pixelui.internal.RowWidget
 import com.purride.pixelui.internal.SingleChildScrollViewWidget
 import com.purride.pixelui.internal.SizedBoxWidget
 import com.purride.pixelui.internal.StackWidget
+import com.purride.pixelui.internal.SpriteWidget
 import com.purride.pixelui.internal.TextFieldWidget
 import com.purride.pixelui.internal.RichTextWidget
 import com.purride.pixelui.internal.TextWidget
+import com.purride.pixelui.internal.TransformTranslateWidget
 import com.purride.pixelui.internal.VariableLazyListViewWidget
+import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -223,6 +231,32 @@ public fun Circle(
 }
 
 /**
+ * Polygon widget backed by direct pixel drawing.
+ *
+ * [filled] uses scanline fill; outline mode draws single-pixel line segments.
+ */
+public fun Polygon(
+    points: List<PixelPoint>,
+    color: PixelColor,
+    filled: Boolean = true,
+    key: Any? = null,
+): Widget {
+    return PolygonWidget(points = points, color = color, filled = filled, key = key)
+}
+
+/**
+ * Path widget. V1 supports MoveTo, LineTo, and Close commands.
+ */
+public fun Path(
+    path: PixelPath,
+    color: PixelColor,
+    closed: Boolean = false,
+    key: Any? = null,
+): Widget {
+    return PathWidget(path = path, color = color, closed = closed, key = key)
+}
+
+/**
  * 把不可变 [PixelBitmap] 1:1 blit 到目标 buffer。
  *
  * Layout：intrinsic 尺寸 = bitmap (width, height)，再按父约束 clamp；
@@ -236,6 +270,17 @@ public fun Image(
     key: Any? = null,
 ): Widget {
     return ImageWidget(bitmap = bitmap, key = key)
+}
+
+/**
+ * Draws one frame from [PixelSpriteSheet] without scaling.
+ */
+public fun Sprite(
+    sheet: PixelSpriteSheet,
+    frameIndex: Int,
+    key: Any? = null,
+): Widget {
+    return SpriteWidget(sheet = sheet, frameIndex = frameIndex, key = key)
 }
 
 public fun Text(
@@ -416,6 +461,31 @@ public fun PositionedFill(
         bottom = bottom,
         key = key,
     )
+}
+
+public fun Opacity(
+    opacity: Float,
+    child: Widget,
+    key: Any? = null,
+): Widget {
+    return OpacityWidget(opacity = opacity, child = child, key = key)
+}
+
+public fun ClipRect(
+    child: Widget,
+    key: Any? = null,
+): Widget {
+    return ClipRectWidget(child = child, key = key)
+}
+
+public object Transform {
+    public fun translate(
+        offset: IntOffset,
+        child: Widget,
+        key: Any? = null,
+    ): Widget {
+        return TransformTranslateWidget(offset = offset, child = child, key = key)
+    }
 }
 
 public fun Row(
