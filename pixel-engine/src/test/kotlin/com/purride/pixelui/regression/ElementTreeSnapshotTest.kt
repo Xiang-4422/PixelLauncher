@@ -2,23 +2,31 @@ package com.purride.pixelui.regression
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.AppScaffold
+import com.purride.pixelui.Badge
 import com.purride.pixelui.Center
+import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.DecoratedBox
+import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.Gap
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelTextSpan
+import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Stack
+import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.Wrap
 import com.purride.pixelui.internal.ElementDiagnosticsNode
 import com.purride.pixelui.internal.ElementTreeBuildRuntimeFactory
 import com.purride.pixelui.internal.UnsupportedWidgetAdapter
@@ -144,6 +152,42 @@ class ElementTreeSnapshotTest {
                 height = 22,
                 borderColor = PixelColor.White,
                 alignment = Alignment.TOP_START,
+            )
+        },
+        Scene(name = "components_controls") {
+            AppScaffold(
+                title = Text("SETTINGS"),
+                body = Column(
+                    children = listOf(
+                        Row(
+                            children = listOf(
+                                Checkbox(checked = true, onChanged = null),
+                                Text("SYNC"),
+                                Gap(width = 4),
+                                Switch(checked = false, onChanged = null),
+                            ),
+                            spacing = 2,
+                            crossAxisAlignment = CrossAxisAlignment.CENTER,
+                        ),
+                        Divider(color = PixelColor.fromRgb(120, 120, 120)),
+                        ProgressBar(progress = 0.55f, width = 42),
+                        Badge(child = Text("MAIL"), label = Text("3")),
+                    ),
+                    spacing = 2,
+                    crossAxisAlignment = CrossAxisAlignment.START,
+                ),
+                bottomBar = Text("READY"),
+            )
+        },
+        Scene(name = "wrap_layout") {
+            Wrap(
+                children = listOf(
+                    Container(child = Text("ONE"), padding = EdgeInsets.all(1), borderColor = PixelColor.White),
+                    Container(child = Text("TWO"), padding = EdgeInsets.all(1), borderColor = PixelColor.White),
+                    Container(child = Text("THREE"), padding = EdgeInsets.all(1), borderColor = PixelColor.White),
+                ),
+                spacing = 2,
+                runSpacing = 1,
             )
         },
     )
