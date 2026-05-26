@@ -5,6 +5,7 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -92,6 +93,29 @@ class RenderImageTest {
             val expected = if (x < 2 && y < 2) red.argb else PixelColor.Transparent.argb
             assertEquals("pixel ($x,$y)", expected, buffer.pixels[y * 6 + x])
         }
+    }
+
+    @Test
+    fun paintKeepsDestinationForTransparentSourcePixels() {
+        val blue = PixelColor.fromRgb(0, 0, 255)
+        val bitmap = PixelBitmap(
+            width = 2,
+            height = 1,
+            pixels = intArrayOf(PixelColor.Transparent.argb, PixelColor.fromArgb(128, 255, 0, 0).argb),
+        )
+        val render = RenderImage(bitmap = bitmap)
+        render.layout(RenderConstraints(maxWidth = 2, maxHeight = 1))
+
+        val buffer = PixelBuffer(width = 2, height = 1)
+        buffer.fillRect(0, 0, 2, 1, blue)
+        render.paint(context = PaintContext(buffer = buffer), offsetX = 0, offsetY = 0)
+
+        assertEquals(blue.argb, buffer.getPixel(0, 0).argb)
+        val blended = buffer.getPixel(1, 0)
+        assertEquals(255, blended.alpha)
+        assertTrue(blended.red in 127..129)
+        assertEquals(0, blended.green)
+        assertTrue(blended.blue in 126..128)
     }
 
     /** 更新到不同尺寸的 bitmap 后 layout 应当重新计算 size。 */
