@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.animation
 
 import com.purride.pixelcore.PixelBitmapAssetLoader
+import com.purride.pixelcore.PixelBitmapResourceLoader
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelResourceCache
 import com.purride.pixelcore.PixelSpriteSheet
@@ -16,6 +17,7 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.widgets.animated.AnimatedSprite
+import com.purride.pixeldemo.R
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 
@@ -34,6 +36,8 @@ object AnimatedSpriteScene : DemoScene {
             children = listOf(
                 Text("ASSET PNG", style = TextStyle(color = PixelColor.fromRgb(180, 180, 180))),
                 Image(bitmap),
+                Text("RESOURCE PNG", style = TextStyle(color = PixelColor.fromRgb(180, 180, 180))),
+                Image(SpriteAssets.runnerResourceBitmap(env)),
                 SizedBox(height = 2),
                 Text("STATIC FRAMES", style = TextStyle(color = PixelColor.fromRgb(180, 180, 180))),
                 Row(
@@ -71,5 +75,9 @@ private object SpriteAssets {
 
     fun runnerBitmap(env: DemoEnv) = cache.getBitmap("asset:pixel_demo/runner.png") {
         PixelBitmapAssetLoader(env.hostView.context.assets).load("pixel_demo/runner.png")
+    }
+
+    fun runnerResourceBitmap(env: DemoEnv) = cache.getBitmap("res:runner_resource") {
+        PixelBitmapResourceLoader(env.hostView.context.resources).load(R.drawable.runner_resource)
     }
 }
