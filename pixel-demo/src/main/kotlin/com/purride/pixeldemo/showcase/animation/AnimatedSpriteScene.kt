@@ -1,10 +1,11 @@
 package com.purride.pixeldemo.showcase.animation
 
-import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelBitmapAssetLoader
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelResourceCache
 import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelcore.PixelSpriteSheetJsonLoader
+import com.purride.pixelui.Image
 import com.purride.pixelui.Column
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.Row
@@ -25,11 +26,15 @@ object AnimatedSpriteScene : DemoScene {
 
     override fun build(env: DemoEnv): Widget {
         val vsync = PixelTickerProvider(env.hostView.frameScheduler)
-        val sheet = SpriteAssets.runner
+        val bitmap = SpriteAssets.runnerBitmap(env)
+        val sheet = SpriteAssets.runner(env)
         return Column(
             mainAxisAlignment = MainAxisAlignment.CENTER,
             spacing = 4,
             children = listOf(
+                Text("ASSET PNG", style = TextStyle(color = PixelColor.fromRgb(180, 180, 180))),
+                Image(bitmap),
+                SizedBox(height = 2),
                 Text("STATIC FRAMES", style = TextStyle(color = PixelColor.fromRgb(180, 180, 180))),
                 Row(
                     spacing = 3,
@@ -50,30 +55,21 @@ object AnimatedSpriteScene : DemoScene {
 private object SpriteAssets {
     private val cache = PixelResourceCache()
 
-    val runner: PixelSpriteSheet
-        get() = cache.getSpriteSheet("runner") {
+    fun runner(env: DemoEnv): PixelSpriteSheet {
+        return cache.getSpriteSheet("asset-runner-sheet") {
+            val assets = env.hostView.context.assets
+            val json = assets.open("pixel_demo/runner.json").bufferedReader().use { it.readText() }
+            val definition = PixelSpriteSheetJsonLoader.parseDefinition(json)
             PixelSpriteSheetJsonLoader.load(
-                json = """
-                    {"bitmap":"generated/runner.png","frames":[
-                      {"left":0,"top":0,"width":4,"height":4},
-                      {"left":4,"top":0,"width":4,"height":4},
-                      {"left":8,"top":0,"width":4,"height":4}
-                    ]}
-                """.trimIndent(),
-                bitmap = runnerBitmap(),
+                json = json,
+                bitmap = cache.getBitmap("asset:${definition.bitmap}") {
+                    PixelBitmapAssetLoader(assets).load(definition.bitmap)
+                },
             )
         }
+    }
 
-    private fun runnerBitmap(): PixelBitmap = cache.getBitmap("runner-bitmap") {
-        PixelBitmap(
-            width = 12,
-            height = 4,
-            pixels = intArrayOf(
-                0x00000000, 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0x00000000,
-                0xFFFFC040.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFC040.toInt(),
-                0x00000000, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0x00000000, 0x00000000, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0x00000000,
-                0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0x00000000, 0xFFFFC040.toInt(), 0x00000000, 0xFFFFC040.toInt(),
-            ),
-        )
+    fun runnerBitmap(env: DemoEnv) = cache.getBitmap("asset:pixel_demo/runner.png") {
+        PixelBitmapAssetLoader(env.hostView.context.assets).load("pixel_demo/runner.png")
     }
 }

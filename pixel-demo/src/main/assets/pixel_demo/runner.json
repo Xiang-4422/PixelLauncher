@@ -1,0 +1,8 @@
+{
+  "bitmap": "pixel_demo/runner.png",
+  "frames": [
+    { "left": 0, "top": 0, "width": 4, "height": 4 },
+    { "left": 4, "top": 0, "width": 4, "height": 4 },
+    { "left": 8, "top": 0, "width": 4, "height": 4 }
+  ]
+}
