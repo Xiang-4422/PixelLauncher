@@ -1,9 +1,10 @@
 package com.purride.pixeldemo.showcase.animation
 
 import com.purride.pixelcore.PixelBitmap
-import com.purride.pixelcore.PixelBitmapRegion
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelResourceCache
 import com.purride.pixelcore.PixelSpriteSheet
+import com.purride.pixelcore.PixelSpriteSheetJsonLoader
 import com.purride.pixelui.Column
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.Row
@@ -47,8 +48,24 @@ object AnimatedSpriteScene : DemoScene {
 }
 
 private object SpriteAssets {
-    val runner: PixelSpriteSheet = PixelSpriteSheet(
-        bitmap = PixelBitmap(
+    private val cache = PixelResourceCache()
+
+    val runner: PixelSpriteSheet
+        get() = cache.getSpriteSheet("runner") {
+            PixelSpriteSheetJsonLoader.load(
+                json = """
+                    {"bitmap":"generated/runner.png","frames":[
+                      {"left":0,"top":0,"width":4,"height":4},
+                      {"left":4,"top":0,"width":4,"height":4},
+                      {"left":8,"top":0,"width":4,"height":4}
+                    ]}
+                """.trimIndent(),
+                bitmap = runnerBitmap(),
+            )
+        }
+
+    private fun runnerBitmap(): PixelBitmap = cache.getBitmap("runner-bitmap") {
+        PixelBitmap(
             width = 12,
             height = 4,
             pixels = intArrayOf(
@@ -57,11 +74,6 @@ private object SpriteAssets {
                 0x00000000, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0x00000000, 0x00000000, 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0x00000000,
                 0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0xFFFFC040.toInt(), 0x00000000, 0x00000000, 0xFFFFC040.toInt(), 0x00000000, 0xFFFFC040.toInt(), 0x00000000, 0xFFFFC040.toInt(),
             ),
-        ),
-        frames = listOf(
-            PixelBitmapRegion(0, 0, 4, 4),
-            PixelBitmapRegion(4, 0, 4, 4),
-            PixelBitmapRegion(8, 0, 4, 4),
-        ),
-    )
+        )
+    }
 }
