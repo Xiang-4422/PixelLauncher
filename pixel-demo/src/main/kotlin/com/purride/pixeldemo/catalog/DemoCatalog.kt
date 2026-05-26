@@ -27,6 +27,7 @@ import com.purride.pixeldemo.showcase.stress.StressRebuildStormScene
 import com.purride.pixeldemo.showcase.stress.StressTextHeavyScene
 import com.purride.pixeldemo.showcase.foundation.AlignSizingScene
 import com.purride.pixeldemo.showcase.foundation.ContainerDecorationScene
+import com.purride.pixeldemo.showcase.foundation.CustomPaintScene
 import com.purride.pixeldemo.showcase.foundation.DirectionalVariantsScene
 import com.purride.pixeldemo.showcase.foundation.HelloPixelScene
 import com.purride.pixeldemo.showcase.foundation.ImageBlitScene
@@ -86,6 +87,7 @@ object DemoCatalog {
                 ImageBlitScene,
                 ShapePrimitivesScene,
                 PolygonPathScene,
+                CustomPaintScene,
             ),
         ),
         DemoSection(

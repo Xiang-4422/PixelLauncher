@@ -11,6 +11,7 @@ import com.purride.pixelui.internal.ColumnWidget
 import com.purride.pixelui.internal.ConstrainedBoxWidget
 import com.purride.pixelui.internal.ContainerDirectionalWidget
 import com.purride.pixelui.internal.ContainerWidget
+import com.purride.pixelui.internal.CustomPaintWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.FittedBoxWidget
@@ -261,6 +262,19 @@ public fun Path(
     key: Any? = null,
 ): Widget {
     return PathWidget(path = path, color = color, closed = closed, key = key)
+}
+
+/**
+ * Canvas-style pixel painter for batching multiple low-level drawing commands
+ * inside one render object.
+ */
+public fun CustomPaint(
+    width: Int,
+    height: Int,
+    key: Any? = null,
+    painter: PixelCanvas.() -> Unit,
+): Widget {
+    return CustomPaintWidget(width = width, height = height, painter = painter, key = key)
 }
 
 /**

@@ -149,6 +149,16 @@ com.purride.pixelcore public val supportedDotSizePxOptions: List<Int> = listOf(7
 com.purride.pixelcore public fun create(
 com.purride.pixelcore public fun resolutionOptions(currentProfile: ScreenProfile?): List<Int>
 com.purride.pixelengine public object PixelEngineModule
+com.purride.pixelui public class PixelCanvas internal constructor(
+com.purride.pixelui public val width: Int,
+com.purride.pixelui public val height: Int,
+com.purride.pixelui public fun setPixel(x: Int, y: Int, color: PixelColor)
+com.purride.pixelui public fun drawLine(
+com.purride.pixelui public fun drawRect(
+com.purride.pixelui public fun fillRect(
+com.purride.pixelui public fun drawCircle(
+com.purride.pixelui public fun drawPolygon(
+com.purride.pixelui public fun drawPath(
 com.purride.pixelui public data class PixelPoint(
 com.purride.pixelui public sealed class PixelPathCommand
 com.purride.pixelui public data class MoveTo(val point: PixelPoint) : PixelPathCommand()
@@ -554,6 +564,7 @@ com.purride.pixelui public fun Line(
 com.purride.pixelui public fun Circle(
 com.purride.pixelui public fun Polygon(
 com.purride.pixelui public fun Path(
+com.purride.pixelui public fun CustomPaint(
 com.purride.pixelui public fun Image(
 com.purride.pixelui public fun Sprite(
 com.purride.pixelui public fun Text(

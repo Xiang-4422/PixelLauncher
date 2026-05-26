@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelBitmapRegion
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
+import com.purride.pixelui.CustomPaint
 import com.purride.pixelui.Path
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPathCommand
@@ -82,6 +83,41 @@ class SpriteShapeWidgetTest {
 
         assertEquals(PixelColor.White, tester.renderResult!!.buffer.getPixel(0, 0))
         assertEquals(PixelColor.White, tester.renderResult!!.buffer.getPixel(3, 3))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintBatchesCanvasCommands() {
+        val tester = PixelTester()
+        val orange = PixelColor.fromRgb(200, 100, 0)
+        tester.pumpWidget(
+            CustomPaint(width = 8, height = 8) {
+                fillRect(0, 0, 8, 8, PixelColor.fromRgb(20, 20, 20))
+                drawLine(0, 0, 7, 7, PixelColor.White)
+                drawCircle(4, 4, 2, orange, filled = false)
+                drawPolygon(
+                    points = listOf(PixelPoint(1, 6), PixelPoint(3, 4), PixelPoint(5, 6)),
+                    color = PixelColor.fromRgb(80, 180, 110),
+                    filled = true,
+                )
+                drawPath(
+                    path = PixelPath(
+                        listOf(
+                            PixelPathCommand.MoveTo(PixelPoint(0, 7)),
+                            PixelPathCommand.LineTo(PixelPoint(7, 7)),
+                        ),
+                    ),
+                    color = PixelColor.White,
+                )
+            },
+            8,
+            8,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(0, 0))
+        assertEquals(PixelColor.White, buffer.getPixel(7, 7))
+        assertEquals(orange, buffer.getPixel(6, 4))
         tester.dispose()
     }
 
