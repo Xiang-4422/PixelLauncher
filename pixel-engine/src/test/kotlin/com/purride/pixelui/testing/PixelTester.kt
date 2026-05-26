@@ -442,6 +442,9 @@ public class PixelTester {
             TextSelectionHandle.START -> target.state.selectionStart
             TextSelectionHandle.END -> target.state.selectionEnd
         }.coerceIn(0, text.length)
+        target.caretBoundsForIndex?.invoke(index)?.let { caret ->
+            return Point(caret.left, caret.top + caret.height / 2)
+        }
         val lines = text.split('\n')
         var lineStart = 0
         lines.forEachIndexed { lineIndex, line ->
@@ -462,6 +465,9 @@ public class PixelTester {
     }
 
     private fun resolveTextInputSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
+        target.textIndexAt?.let { mapper ->
+            return mapper(logicalX, logicalY).coerceIn(0, target.state.text.length)
+        }
         val text = target.state.text
         if (text.isEmpty()) return 0
         val lines = text.split('\n')

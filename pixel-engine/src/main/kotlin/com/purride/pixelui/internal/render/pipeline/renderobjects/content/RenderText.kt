@@ -107,6 +107,33 @@ internal class RenderText(
         )
     }
 
+    fun textIndexAt(localX: Int, localY: Int): Int {
+        if (text.isEmpty() || paragraphLayout.lines.isEmpty()) return 0
+        val lineIndex = lineIndexAt(localY)
+        val line = paragraphLayout.lines[lineIndex]
+        val lineStart = line.sourceStart.coerceIn(0, text.length)
+        val lineEnd = line.sourceEnd.coerceIn(lineStart, text.length)
+        if (lineStart >= lineEnd) return lineStart
+        val lineX = drawTextX + ParagraphLayoutSupport.resolveLineStartX(
+            textAlign = textAlign,
+            textDirection = textDirection,
+            availableWidth = size.width - paddingLeft - paddingRight,
+            lineWidth = line.width,
+        )
+        val xInLine = (localX - lineX).coerceAtLeast(0)
+        if (xInLine <= 0) return lineStart
+        if (xInLine >= line.width) return lineEnd
+        var index = lineStart
+        while (index < lineEnd) {
+            val left = measureTextRange(lineStart, index)
+            val right = measureTextRange(lineStart, index + 1)
+            val midpoint = left + ((right - left).coerceAtLeast(1) / 2)
+            if (xInLine < midpoint) return index
+            index += 1
+        }
+        return lineEnd
+    }
+
     fun updateText(
         text: String,
         style: PixelTextStyle,
@@ -259,6 +286,19 @@ internal class RenderText(
             }
             cursorY += line.height
         }
+    }
+
+    private fun lineIndexAt(localY: Int): Int {
+        val lines = paragraphLayout.lines
+        if (lines.isEmpty()) return 0
+        val yInText = (localY - drawTextY).coerceAtLeast(0)
+        var cursorY = 0
+        lines.forEachIndexed { index, line ->
+            val nextY = cursorY + line.height
+            if (yInText < nextY || index == lines.lastIndex) return index
+            cursorY = nextY
+        }
+        return lines.lastIndex
     }
 
     private fun PixelTextStyle.usesPlainRasterizer(): Boolean {

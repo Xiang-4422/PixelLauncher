@@ -35,7 +35,11 @@ private class TextFieldBasicsWidget(override val key: Any? = null) : StatefulWid
         private val scrollCtrl = ScrollController()
         private val singleState = PixelTextFieldState()
         private val singleCtrl = TextEditingController()
-        private val multiState = PixelTextFieldState()
+        private val multiState = PixelTextFieldState(
+            initialText = "第一行\nSECOND LINE\n第三行",
+            selectionStart = 0,
+            selectionEnd = 9,
+        )
         private val multiCtrl = TextEditingController()
 
         override fun build(context: BuildContext): Widget = SingleChildScrollView(
@@ -56,10 +60,11 @@ private class TextFieldBasicsWidget(override val key: Any? = null) : StatefulWid
                             state = multiState,
                             controller = multiCtrl,
                             placeholder = "多行…",
+                            autofocus = true,
                             minLines = 2,
                             maxLines = 4,
                         ),
-                        Text("字符数: ${multiState.text.length}", style = TextStyle.Default),
+                        Text("字符数: ${multiState.text.length} / 跨行选区可拖动", style = TextStyle.Default),
                     ),
                     spacing = 4,
                     crossAxisAlignment = CrossAxisAlignment.STRETCH,

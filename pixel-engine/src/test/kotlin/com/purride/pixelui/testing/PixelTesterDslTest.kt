@@ -535,6 +535,59 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun dragSelectionEndHandleAcrossTextFieldLinesUsesRenderedCaretMapping() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "AA\nBBBB\nCC", selectionStart = 0, selectionEnd = 2)
+        controller.focus(state)
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                minLines = 3,
+                maxLines = 3,
+                key = "field",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 24,
+        )
+
+        tester.dragSelectionEndHandle(find.byKey("field"), dx = 0, dy = 8)
+
+        assertEquals(0, state.selectionStart)
+        assertTrue("end handle should cross into the next rendered line", state.selectionEnd > 3)
+        assertTrue(state.text.substring(state.selectionStart, state.selectionEnd).contains('\n'))
+        tester.dispose()
+    }
+
+    @Test
+    fun dragSelectionStartHandleAcrossTextFieldLinesUsesRenderedCaretMapping() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "AA\nBBBB\nCC", selectionStart = 3, selectionEnd = 7)
+        controller.focus(state)
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                minLines = 3,
+                maxLines = 3,
+                key = "field",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 24,
+        )
+
+        tester.dragSelectionStartHandle(find.byKey("field"), dx = 0, dy = -8)
+
+        assertEquals(7, state.selectionEnd)
+        assertTrue("start handle should move to the previous rendered line", state.selectionStart < 3)
+        tester.dispose()
+    }
+
+    @Test
     fun enterTextRejectsReadOnlyTextField() {
         val tester = PixelTester()
         val controller = PixelTextFieldController()

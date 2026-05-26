@@ -376,6 +376,9 @@ internal class PixelHostGestureRouter(
     }
 
     private fun resolveTextInputSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
+        target.textIndexAt?.let { mapper ->
+            return mapper(logicalX, logicalY).coerceIn(0, target.state.text.length)
+        }
         val text = target.state.text
         if (text.isEmpty()) return 0
         val lines = text.split('\n')

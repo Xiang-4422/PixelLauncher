@@ -576,6 +576,9 @@ internal class RenderSurface(
         val state = textInputState
         val controller = textInputController
         if (state != null && controller != null) {
+            val renderText = renderChild as? RenderText
+            val textBaseX = offsetX + childOffsetX
+            val textBaseY = offsetY + childOffsetY
             targets += PixelTextInputTarget(
                 bounds = PixelRect(
                     left = offsetX,
@@ -593,6 +596,25 @@ internal class RenderSurface(
                 action = textInputAction,
                 onChanged = textInputOnChanged,
                 onSubmitted = textInputOnSubmitted,
+                textIndexAt = renderText?.let { text ->
+                    { logicalX, logicalY ->
+                        text.textIndexAt(
+                            localX = logicalX - textBaseX,
+                            localY = logicalY - textBaseY,
+                        )
+                    }
+                },
+                caretBoundsForIndex = renderText?.let { text ->
+                    { index ->
+                        val caret = text.caretRect(index)
+                        PixelRect(
+                            left = textBaseX + caret.x,
+                            top = textBaseY + caret.y,
+                            width = caret.width,
+                            height = caret.height,
+                        )
+                    }
+                },
             )
         }
         renderChild?.collectTextInputTargets(

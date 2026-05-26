@@ -189,6 +189,8 @@ internal data class PixelTextInputTarget(
     val action: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
+    val textIndexAt: ((Int, Int) -> Int)? = null,
+    val caretBoundsForIndex: ((Int) -> PixelRect)? = null,
 )
 
 /**
