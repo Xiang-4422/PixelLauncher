@@ -2,6 +2,8 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.PixelPath
+import com.purride.pixelui.PixelPoint
 
 /** [Line] widget 的 render object widget 配置。 */
 internal data class LineWidget(
@@ -46,5 +48,37 @@ internal data class CircleWidget(
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderCircle).update(radius = radius, color = color, filled = filled)
+    }
+}
+
+/** [Polygon] widget 的 render object widget 配置。 */
+internal data class PolygonWidget(
+    val points: List<PixelPoint>,
+    val color: PixelColor,
+    val filled: Boolean,
+    override val key: Any? = null,
+) : LeafRenderObjectWidget(key = key) {
+    override fun createRenderObject(context: BuildContext): RenderObject {
+        return RenderPolygon(points = points, color = color, filled = filled)
+    }
+
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        (renderObject as RenderPolygon).update(points = points, color = color, filled = filled)
+    }
+}
+
+/** [Path] widget 的 render object widget 配置。 */
+internal data class PathWidget(
+    val path: PixelPath,
+    val color: PixelColor,
+    val closed: Boolean,
+    override val key: Any? = null,
+) : LeafRenderObjectWidget(key = key) {
+    override fun createRenderObject(context: BuildContext): RenderObject {
+        return RenderPath(path = path, color = color, closed = closed)
+    }
+
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        (renderObject as RenderPath).update(path = path, color = color, closed = closed)
     }
 }

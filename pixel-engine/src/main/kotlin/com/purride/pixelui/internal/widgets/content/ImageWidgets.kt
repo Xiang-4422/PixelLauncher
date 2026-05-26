@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.BuildContext
 
 /**
@@ -18,5 +19,20 @@ internal data class ImageWidget(
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderImage).updateBitmap(bitmap)
+    }
+}
+
+/** [Sprite] widget 的 render object widget。 */
+internal data class SpriteWidget(
+    val sheet: PixelSpriteSheet,
+    val frameIndex: Int,
+    override val key: Any? = null,
+) : LeafRenderObjectWidget(key = key) {
+    override fun createRenderObject(context: BuildContext): RenderObject {
+        return RenderSprite(sheet = sheet, frameIndex = frameIndex)
+    }
+
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        (renderObject as RenderSprite).update(sheet = sheet, frameIndex = frameIndex)
     }
 }
