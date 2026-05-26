@@ -85,18 +85,20 @@ com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val pixels: IntArray,
 com.purride.pixelcore public companion object
 com.purride.pixelcore public fun fromAndroidBitmap(source: AndroidBitmap): PixelBitmap
+com.purride.pixelcore public enum class PixelBlendMode
 com.purride.pixelcore public class PixelBuffer(
 com.purride.pixelcore public val width: Int,
 com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val pixels: IntArray = IntArray(width * height)
-com.purride.pixelcore public fun setPixel(x: Int, y: Int, color: PixelColor)
+com.purride.pixelcore public fun setPixel(
 com.purride.pixelcore public fun getPixel(x: Int, y: Int): PixelColor
-com.purride.pixelcore public fun fillRect(left: Int, top: Int, rectWidth: Int, rectHeight: Int, color: PixelColor)
-com.purride.pixelcore public fun drawRect(left: Int, top: Int, rectWidth: Int, rectHeight: Int, color: PixelColor)
+com.purride.pixelcore public fun fillRect(
+com.purride.pixelcore public fun drawRect(
 com.purride.pixelcore public fun clear()
 com.purride.pixelcore public fun blit(source: PixelBuffer, destX: Int, destY: Int)
 com.purride.pixelcore public fun blitRegion(
 com.purride.pixelcore public companion object
+com.purride.pixelcore public fun blendPixel(src: Int, dst: Int, blendMode: PixelBlendMode): Int?
 com.purride.pixelcore public fun blendSrcOver(src: Int, dst: Int): Int
 com.purride.pixelcore public class PixelBufferPool(
 com.purride.pixelcore public fun acquire(width: Int, height: Int): PixelBuffer
@@ -152,7 +154,7 @@ com.purride.pixelengine public object PixelEngineModule
 com.purride.pixelui public class PixelCanvas internal constructor(
 com.purride.pixelui public val width: Int,
 com.purride.pixelui public val height: Int,
-com.purride.pixelui public fun setPixel(x: Int, y: Int, color: PixelColor)
+com.purride.pixelui public fun setPixel(
 com.purride.pixelui public fun drawLine(
 com.purride.pixelui public fun drawRect(
 com.purride.pixelui public fun fillRect(
@@ -415,9 +417,9 @@ com.purride.pixelui.internal public fun inset(
 com.purride.pixelui.internal public class PaintContext(
 com.purride.pixelui.internal public val buffer: PixelBuffer,
 com.purride.pixelui.internal public val bufferPool: PixelBufferPool = PixelBufferPool(),
-com.purride.pixelui.internal public fun setColor(x: Int, y: Int, color: PixelColor)
-com.purride.pixelui.internal public fun fillRect(x: Int, y: Int, w: Int, h: Int, color: PixelColor)
-com.purride.pixelui.internal public fun drawRect(x: Int, y: Int, w: Int, h: Int, color: PixelColor)
+com.purride.pixelui.internal public fun setColor(
+com.purride.pixelui.internal public fun fillRect(
+com.purride.pixelui.internal public fun drawRect(
 com.purride.pixelui.internal public data class HitTestResult(
 com.purride.pixelui.internal public fun add(target: RenderObject)
 com.purride.pixelui.internal public abstract class RenderObject

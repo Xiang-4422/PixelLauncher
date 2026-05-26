@@ -13,15 +13,15 @@ public class PixelBuffer(
     public val pixels: IntArray = IntArray(width * height)
     private var nonOpaquePixelCount: Int = width * height
 
-    public fun setPixel(x: Int, y: Int, color: PixelColor) {
+    public fun setPixel(
+        x: Int,
+        y: Int,
+        color: PixelColor,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         if (x !in 0 until width || y !in 0 until height) return
         val index = y * width + x
-        val argb = color.argb
-        val result = when ((argb ushr 24) and 0xFF) {
-            0 -> return
-            0xFF -> argb
-            else -> blendSrcOver(src = argb, dst = pixels[index])
-        }
+        val result = blendPixel(src = color.argb, dst = pixels[index], blendMode = blendMode) ?: return
         writePixel(index, result)
     }
 
@@ -30,19 +30,32 @@ public class PixelBuffer(
         return PixelColor(pixels[y * width + x])
     }
 
-    public fun fillRect(left: Int, top: Int, rectWidth: Int, rectHeight: Int, color: PixelColor) {
+    public fun fillRect(
+        left: Int,
+        top: Int,
+        rectWidth: Int,
+        rectHeight: Int,
+        color: PixelColor,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         val startX = left.coerceIn(0, width)
         val startY = top.coerceIn(0, height)
         val endX = (left + rectWidth).coerceIn(startX, width)
         val endY = (top + rectHeight).coerceIn(startY, height)
         val argb = color.argb
         val alpha = (argb ushr 24) and 0xFF
-        if (alpha == 0) return
-        if (alpha == 0xFF) {
+        if (blendMode == PixelBlendMode.SrcOver && alpha == 0) return
+        if (blendMode == PixelBlendMode.SrcOver && alpha == 0xFF || blendMode == PixelBlendMode.Src || blendMode == PixelBlendMode.Clear) {
+            val fill = when (blendMode) {
+                PixelBlendMode.SrcOver,
+                PixelBlendMode.Src,
+                -> argb
+                PixelBlendMode.Clear -> PixelColor.Transparent.argb
+            }
             for (y in startY until endY) {
                 val base = y * width
                 for (x in startX until endX) {
-                    writePixel(base + x, argb)
+                    writePixel(base + x, fill)
                 }
             }
             return
@@ -56,22 +69,29 @@ public class PixelBuffer(
         }
     }
 
-    public fun drawRect(left: Int, top: Int, rectWidth: Int, rectHeight: Int, color: PixelColor) {
+    public fun drawRect(
+        left: Int,
+        top: Int,
+        rectWidth: Int,
+        rectHeight: Int,
+        color: PixelColor,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         if (rectWidth <= 0 || rectHeight <= 0) return
         val right = left + rectWidth - 1
         val bottom = top + rectHeight - 1
         val argb = color.argb
         val alpha = (argb ushr 24) and 0xFF
-        if (alpha == 0) return
+        if (blendMode == PixelBlendMode.SrcOver && alpha == 0) return
         for (x in left..right) {
             if (x in 0 until width) {
                 if (top in 0 until height) {
                     val index = top * width + x
-                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                    blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
                 if (bottom in 0 until height) {
                     val index = bottom * width + x
-                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                    blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
             }
         }
@@ -79,11 +99,11 @@ public class PixelBuffer(
             if (y in 0 until height) {
                 if (left in 0 until width) {
                     val index = y * width + left
-                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                    blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
                 if (right in 0 until width) {
                     val index = y * width + right
-                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                    blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
             }
         }
@@ -173,6 +193,20 @@ public class PixelBuffer(
     }
 
     public companion object {
+        public fun blendPixel(src: Int, dst: Int, blendMode: PixelBlendMode): Int? {
+            return when (blendMode) {
+                PixelBlendMode.SrcOver -> {
+                    when ((src ushr 24) and 0xFF) {
+                        0 -> null
+                        0xFF -> src
+                        else -> blendSrcOver(src = src, dst = dst)
+                    }
+                }
+                PixelBlendMode.Src -> src
+                PixelBlendMode.Clear -> PixelColor.Transparent.argb
+            }
+        }
+
         public fun blendSrcOver(src: Int, dst: Int): Int {
             val sa = (src ushr 24) and 0xFF
             if (sa == 0) return dst

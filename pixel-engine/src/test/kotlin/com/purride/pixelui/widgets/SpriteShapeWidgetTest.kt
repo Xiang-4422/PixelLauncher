@@ -2,6 +2,7 @@ package com.purride.pixelui.widgets
 
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelBitmapRegion
+import com.purride.pixelcore.PixelBlendMode
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.CustomPaint
@@ -218,6 +219,27 @@ class SpriteShapeWidgetTest {
         assertEquals(edge, buffer.getPixel(0, 0))
         assertEquals(PixelColor.White, buffer.getPixel(1, 0))
         assertEquals(edge, buffer.getPixel(2, 0))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintAppliesBlendMode() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            CustomPaint(width = 3, height = 1) {
+                fillRect(0, 0, 3, 1, PixelColor.White)
+                setPixel(0, 0, PixelColor.Transparent)
+                setPixel(1, 0, PixelColor.Transparent, blendMode = PixelBlendMode.Src)
+                fillRect(2, 0, 1, 1, PixelColor.White, blendMode = PixelBlendMode.Clear)
+            },
+            3,
+            1,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(0, 0))
+        assertEquals(PixelColor.Transparent, buffer.getPixel(1, 0))
+        assertEquals(PixelColor.Transparent, buffer.getPixel(2, 0))
         tester.dispose()
     }
 

@@ -31,6 +31,27 @@ class PixelBufferAlphaTest {
     }
 
     @Test
+    fun srcBlendModeOverwritesDestinationWithTransparentSource() {
+        val buffer = PixelBuffer(width = 1, height = 1)
+        buffer.setPixel(0, 0, PixelColor.White)
+
+        buffer.setPixel(0, 0, PixelColor.Transparent, blendMode = PixelBlendMode.Src)
+
+        assertEquals(PixelColor.Transparent.argb, buffer.getPixel(0, 0).argb)
+    }
+
+    @Test
+    fun clearBlendModeClearsRect() {
+        val buffer = PixelBuffer(width = 2, height = 1)
+        buffer.fillRect(0, 0, 2, 1, PixelColor.White)
+
+        buffer.fillRect(1, 0, 1, 1, PixelColor.White, blendMode = PixelBlendMode.Clear)
+
+        assertEquals(PixelColor.White.argb, buffer.getPixel(0, 0).argb)
+        assertEquals(PixelColor.Transparent.argb, buffer.getPixel(1, 0).argb)
+    }
+
+    @Test
     fun blitKeepsOpaqueFastPathSemantics() {
         val source = PixelBuffer(width = 1, height = 1)
         val dest = PixelBuffer(width = 1, height = 1)

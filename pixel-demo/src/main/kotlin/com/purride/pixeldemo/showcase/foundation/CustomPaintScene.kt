@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.foundation
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelBlendMode
 import com.purride.pixelui.Column
 import com.purride.pixelui.CustomPaint
 import com.purride.pixelui.MainAxisAlignment
@@ -41,6 +42,7 @@ object CustomPaintScene : DemoScene {
                             ),
                         ),
                     )
+                    fillRect(34, 2, 4, 4, PixelColor.White, blendMode = PixelBlendMode.Clear)
                     drawRect(0, 0, 42, 28, PixelColor.White, strokeWidth = 2)
                     drawLine(2, 24, 39, 3, PixelColor.fromRgb(255, 192, 64), strokeWidth = 2)
                     drawCircle(11, 9, 5, PixelColor.fromRgb(80, 180, 110), filled = false, strokeWidth = 2)

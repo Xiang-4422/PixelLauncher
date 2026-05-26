@@ -67,6 +67,7 @@ class PublicApiCoverageTest {
         val scanDirs = listOf("widgets", "advanced", "controllers", "foundation", "state", "gesture", "host")
         val extraFiles = listOf(
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelGeometry.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/graphics/PixelBlendMode.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelNavigatorAliases.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelBitmapLoaders.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelResourceCache.kt"),

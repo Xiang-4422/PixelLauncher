@@ -2,6 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelBufferPool
+import com.purride.pixelcore.PixelBlendMode
 import com.purride.pixelcore.PixelColor
 
 /**
@@ -80,16 +81,35 @@ public class PaintContext(
     public val buffer: PixelBuffer,
     public val bufferPool: PixelBufferPool = PixelBufferPool(),
 ) {
-    public fun setColor(x: Int, y: Int, color: PixelColor) {
-        buffer.setPixel(x, y, color)
+    public fun setColor(
+        x: Int,
+        y: Int,
+        color: PixelColor,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
+        buffer.setPixel(x, y, color, blendMode)
     }
 
-    public fun fillRect(x: Int, y: Int, w: Int, h: Int, color: PixelColor) {
-        buffer.fillRect(x, y, w, h, color)
+    public fun fillRect(
+        x: Int,
+        y: Int,
+        w: Int,
+        h: Int,
+        color: PixelColor,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
+        buffer.fillRect(x, y, w, h, color, blendMode)
     }
 
-    public fun drawRect(x: Int, y: Int, w: Int, h: Int, color: PixelColor) {
-        buffer.drawRect(x, y, w, h, color)
+    public fun drawRect(
+        x: Int,
+        y: Int,
+        w: Int,
+        h: Int,
+        color: PixelColor,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
+        buffer.drawRect(x, y, w, h, color, blendMode)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelcore.PixelBlendMode
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPathCommand
@@ -89,6 +90,7 @@ internal fun drawLinePixels(
     endY: Int,
     color: PixelColor,
     strokeWidth: Int,
+    blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) {
     val safeStrokeWidth = strokeWidth.coerceAtLeast(1)
     val radius = safeStrokeWidth / 2
@@ -102,7 +104,7 @@ internal fun drawLinePixels(
     val sy = if (y0 < y1) 1 else -1
     var err = dx + dy
     while (true) {
-        paintStrokePoint(context, offsetX, offsetY, x0, y0, radius, color)
+        paintStrokePoint(context, offsetX, offsetY, x0, y0, radius, color, blendMode)
         if (x0 == x1 && y0 == y1) break
         val e2 = 2 * err
         if (e2 >= dy) { err += dy; x0 += sx }
@@ -118,14 +120,15 @@ internal fun paintStrokePoint(
     y: Int,
     radius: Int,
     color: PixelColor,
+    blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) {
     if (radius <= 0) {
-        context.buffer.setPixel(offsetX + x, offsetY + y, color)
+        context.buffer.setPixel(offsetX + x, offsetY + y, color, blendMode)
         return
     }
     for (dy in -radius..radius) {
         for (dx in -radius..radius) {
-            context.buffer.setPixel(offsetX + x + dx, offsetY + y + dy, color)
+            context.buffer.setPixel(offsetX + x + dx, offsetY + y + dy, color, blendMode)
         }
     }
 }
