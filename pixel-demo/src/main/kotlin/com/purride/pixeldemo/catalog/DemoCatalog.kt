@@ -3,6 +3,7 @@ package com.purride.pixeldemo.catalog
 import com.purride.pixeldemo.showcase.composition.AsyncBuilderScene
 import com.purride.pixeldemo.showcase.composition.MasterDetailScene
 import com.purride.pixeldemo.showcase.composition.ModalOverlayScene
+import com.purride.pixeldemo.showcase.composition.NavigatorStackScene
 import com.purride.pixeldemo.showcase.composition.NestedPagerInListScene
 import com.purride.pixeldemo.showcase.composition.StickyBottomBarScene
 import com.purride.pixeldemo.showcase.extension.CustomPagerPolicyScene
@@ -28,6 +29,7 @@ import com.purride.pixeldemo.showcase.foundation.DirectionalVariantsScene
 import com.purride.pixeldemo.showcase.foundation.HelloPixelScene
 import com.purride.pixeldemo.showcase.foundation.ImageBlitScene
 import com.purride.pixeldemo.showcase.foundation.LayoutPrimitivesScene
+import com.purride.pixeldemo.showcase.foundation.PolygonPathScene
 import com.purride.pixeldemo.showcase.foundation.RichTextScene
 import com.purride.pixeldemo.showcase.foundation.ShapePrimitivesScene
 import com.purride.pixeldemo.showcase.foundation.StackPositionedScene
@@ -54,6 +56,7 @@ import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
 import com.purride.pixeldemo.showcase.integration.SystemActionDispatchScene
 import com.purride.pixeldemo.showcase.animation.AnimationCoreScene
 import com.purride.pixeldemo.showcase.animation.AnimationLayer3Scene
+import com.purride.pixeldemo.showcase.animation.AnimatedSpriteScene
 import com.purride.pixeldemo.showcase.animation.ImplicitAnimationsScene
 import com.purride.pixeldemo.header.HeaderPreviewScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
@@ -76,6 +79,7 @@ object DemoCatalog {
                 ContainerDecorationScene,
                 ImageBlitScene,
                 ShapePrimitivesScene,
+                PolygonPathScene,
             ),
         ),
         DemoSection(
@@ -119,6 +123,7 @@ object DemoCatalog {
                 MasterDetailScene,
                 ModalOverlayScene,
                 AsyncBuilderScene,
+                NavigatorStackScene,
             ),
         ),
         DemoSection(
@@ -170,6 +175,7 @@ object DemoCatalog {
                 AnimationCoreScene,
                 ImplicitAnimationsScene,
                 AnimationLayer3Scene,
+                AnimatedSpriteScene,
             ),
         ),
         DemoSection(

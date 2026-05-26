@@ -10,7 +10,6 @@ import com.purride.pixelui.Padding
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.state.PixelListState
-import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
@@ -18,7 +17,6 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoCatalog
 import com.purride.pixeldemo.catalog.DemoScene
-import com.purride.pixeldemo.catalog.DemoSection
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.settings.DemoSettingsScene
 import com.purride.pixelcore.PixelColor
@@ -48,7 +46,7 @@ private class HomeWidget(
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 children = listOf(
                     header(),
-                    Expanded(child = sectionList()),
+                    Expanded(child = sceneList()),
                     settingsBar(),
                 ),
             )
@@ -61,11 +59,14 @@ private class HomeWidget(
                 vertical = 3,
             )
 
-        private fun sectionList(): Widget {
-            val sections = DemoCatalog.sections
+        private fun sceneList(): Widget {
             val rows = mutableListOf<Widget>()
-            sections.forEach { section ->
-                rows += sectionRow(section)
+            DemoCatalog.sections.forEachIndexed { index, section ->
+                val accent = sectionAccent(index)
+                rows += sectionHeader(section.title, accent)
+                section.scenes.forEach { scene ->
+                    rows += sceneRow(scene, accent)
+                }
             }
             return SingleChildScrollView(
                 state = scrollState,
@@ -83,16 +84,23 @@ private class HomeWidget(
             )
         }
 
-        private fun sectionRow(section: DemoSection): Widget =
+        private fun sectionHeader(title: String, accent: PixelColor): Widget =
+            Padding(
+                child = Text(title.uppercase(), style = TextStyle(color = accent)),
+                horizontal = 0,
+                vertical = 2,
+            )
+
+        private fun sceneRow(scene: DemoScene, accent: PixelColor): Widget =
             GestureDetector(
-                onTap = { widget.env.navigator.push(DemoCategoryScene(section)) },
+                onTap = { widget.env.navigator.push(scene) },
                 child = Padding(
                     child = Column(
                         children = listOf(
-                            Text(section.title.uppercase(), style = TextStyle.Default),
+                            Text(scene.title, style = TextStyle.Default),
                             Text(
-                                "${section.scenes.size} scenes",
-                                style = TextStyle(color = PixelColor.fromRgb(200, 100, 0)),
+                                scene.description,
+                                style = TextStyle(color = accent),
                             ),
                         ),
                         spacing = 1,
@@ -102,6 +110,23 @@ private class HomeWidget(
                     vertical = 3,
                 ),
             )
+
+        private fun sectionAccent(index: Int): PixelColor {
+            val palette = listOf(
+                PixelColor.fromRgb(255, 192, 64),
+                PixelColor.fromRgb(80, 220, 255),
+                PixelColor.fromRgb(120, 255, 160),
+                PixelColor.fromRgb(255, 120, 160),
+                PixelColor.fromRgb(180, 160, 255),
+                PixelColor.fromRgb(255, 240, 120),
+                PixelColor.fromRgb(120, 180, 255),
+                PixelColor.fromRgb(255, 150, 80),
+                PixelColor.fromRgb(160, 255, 240),
+                PixelColor.fromRgb(220, 140, 255),
+                PixelColor.fromRgb(180, 220, 120),
+            )
+            return palette[index % palette.size]
+        }
 
         private fun settingsBar(): Widget =
             GestureDetector(
