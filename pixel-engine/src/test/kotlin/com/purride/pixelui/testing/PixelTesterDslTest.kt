@@ -3,11 +3,13 @@ package com.purride.pixelui.testing
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Axis
 import com.purride.pixelui.AspectRatio
+import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.FittedBox
 import com.purride.pixelui.GridViewBuilder
+import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
@@ -15,6 +17,7 @@ import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Wrap
@@ -219,6 +222,36 @@ class PixelTesterDslTest {
 
         val thumbPixels = tester.renderResult!!.buffer.pixels.count { it == thumb.argb }
         assertTrue("Scrollbar should paint a thumb when content is scrollable", thumbPixels > 0)
+        tester.dispose()
+    }
+
+    @Test
+    fun selectionControlsToggleThroughTap() {
+        val tester = PixelTester()
+        var checkbox = false
+        var switch = false
+        var tileTapped = 0
+
+        tester.pumpWidget(
+            widget = Column(
+                children = listOf(
+                    Checkbox(checked = checkbox, onChanged = { checkbox = it }, key = "checkbox"),
+                    Switch(checked = switch, onChanged = { switch = it }, key = "switch"),
+                    ListTile(title = Text("Tile"), onTap = { tileTapped++ }, key = "tile"),
+                ),
+                spacing = 2,
+            ),
+            logicalWidth = 80,
+            logicalHeight = 40,
+        )
+
+        tester.tap(find.byKey("checkbox"))
+        tester.tap(find.byKey("switch"))
+        tester.tap(find.byKey("tile"))
+
+        assertTrue(checkbox)
+        assertTrue(switch)
+        assertEquals(1, tileTapped)
         tester.dispose()
     }
 
