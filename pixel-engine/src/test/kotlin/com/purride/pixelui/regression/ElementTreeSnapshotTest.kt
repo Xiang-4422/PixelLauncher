@@ -6,6 +6,7 @@ import com.purride.pixelui.AppScaffold
 import com.purride.pixelui.Badge
 import com.purride.pixelui.Center
 import com.purride.pixelui.Checkbox
+import com.purride.pixelui.ClipRect
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
@@ -14,19 +15,28 @@ import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Gap
+import com.purride.pixelui.animation.IntOffset
+import com.purride.pixelui.Opacity
+import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
+import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.ElementDiagnosticsNode
 import com.purride.pixelui.internal.ElementTreeBuildRuntimeFactory
 import com.purride.pixelui.internal.UnsupportedWidgetAdapter
@@ -188,6 +198,32 @@ class ElementTreeSnapshotTest {
                 ),
                 spacing = 2,
                 runSpacing = 1,
+            )
+        },
+        Scene(name = "textfield_multiline_selection_handles") {
+            val state = PixelTextFieldState(initialText = "AA\nBBBB\nCC", selectionStart = 0, selectionEnd = 7)
+            val controller = TextEditingController()
+            controller.focus(state)
+            TextField(
+                state = state,
+                controller = controller,
+                minLines = 3,
+                maxLines = 3,
+            )
+        },
+        Scene(name = "opacity_clip_translate_semantics") {
+            Semantics(
+                label = "SHIFTED",
+                role = PixelSemanticRole.BUTTON,
+                child = ClipRect(
+                    child = Transform.translate(
+                        offset = IntOffset(4, 2),
+                        child = Opacity(
+                            opacity = 0.5f,
+                            child = OutlinedButton("GO", onPressed = {}),
+                        ),
+                    ),
+                ),
             )
         },
     )

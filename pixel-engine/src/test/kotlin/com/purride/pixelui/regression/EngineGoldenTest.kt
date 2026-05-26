@@ -1,11 +1,15 @@
 package com.purride.pixelui.regression
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelBitmapRegion
+import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AppScaffold
 import com.purride.pixelui.Badge
 import com.purride.pixelui.Center
 import com.purride.pixelui.Checkbox
+import com.purride.pixelui.ClipRect
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
@@ -14,21 +18,38 @@ import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Gap
+import com.purride.pixelui.GridViewBuilder
+import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.Opacity
+import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
+import com.purride.pixelui.Path
+import com.purride.pixelui.PixelPath
+import com.purride.pixelui.PixelPoint
+import com.purride.pixelui.Polygon
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
+import com.purride.pixelui.Scrollbar
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Sprite
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.internal.PixelUiRuntime
+import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelTextFieldState
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -199,6 +220,76 @@ class EngineGoldenTest {
                 runSpacing = 1,
             )
         },
+        Scene(name = "textfield_multiline_selection_handles", width = 72, height = 26) {
+            val state = PixelTextFieldState(initialText = "AA\nBBBB\nCC", selectionStart = 0, selectionEnd = 7)
+            val controller = TextEditingController()
+            controller.focus(state)
+            TextField(
+                state = state,
+                controller = controller,
+                minLines = 3,
+                maxLines = 3,
+            )
+        },
+        Scene(name = "scrollbar_grid_thumb", width = 42, height = 20) {
+            val controller = PixelListController()
+            val state = controller.create(initialScrollOffsetPx = 18f)
+            Scrollbar(
+                state = state,
+                width = 2,
+                thumbColor = PixelColor.White,
+                trackColor = PixelColor.fromArgb(90, 120, 120, 120),
+                child = GridViewBuilder(
+                    itemCount = 24,
+                    itemBuilder = { index ->
+                        Container(
+                            child = Text("${index % 10}"),
+                            borderColor = PixelColor.White,
+                            alignment = Alignment.CENTER,
+                        )
+                    },
+                    cellWidth = 10,
+                    cellHeight = 6,
+                    spacing = 1,
+                    runSpacing = 1,
+                    state = state,
+                    controller = controller,
+                ),
+            )
+        },
+        Scene(name = "sprite_polygon_path", width = 42, height = 18) {
+            Row(
+                children = listOf(
+                    Sprite(sheet = sampleSpriteSheet(), frameIndex = 1),
+                    Polygon(
+                        points = listOf(PixelPoint(0, 7), PixelPoint(7, 0), PixelPoint(14, 7)),
+                        color = PixelColor.White,
+                        filled = true,
+                    ),
+                    Path(
+                        path = PixelPath.rect(left = 0, top = 0, width = 12, height = 8),
+                        color = PixelColor.fromRgb(200, 100, 0),
+                        strokeWidth = 2,
+                    ),
+                ),
+                spacing = 3,
+            )
+        },
+        Scene(name = "opacity_clip_translate_semantics", width = 34, height = 16) {
+            Semantics(
+                label = "SHIFTED",
+                role = PixelSemanticRole.BUTTON,
+                child = ClipRect(
+                    child = Transform.translate(
+                        offset = IntOffset(4, 2),
+                        child = Opacity(
+                            opacity = 0.5f,
+                            child = OutlinedButton("GO", onPressed = {}),
+                        ),
+                    ),
+                ),
+            )
+        },
     )
 
     /**
@@ -287,6 +378,24 @@ class EngineGoldenTest {
             brightness >= 50 -> '*'
             else -> '.'
         }
+    }
+
+    private fun sampleSpriteSheet(): PixelSpriteSheet {
+        val red = PixelColor.fromRgb(220, 60, 60).argb
+        val yellow = PixelColor.fromRgb(230, 200, 60).argb
+        val blue = PixelColor.fromRgb(60, 100, 220).argb
+        val pixels = IntArray(8 * 4)
+        for (y in 0 until 4) {
+            for (x in 0 until 4) pixels[y * 8 + x] = if ((x + y) % 2 == 0) red else yellow
+            for (x in 4 until 8) pixels[y * 8 + x] = if (x == 4 || y == 0 || x == 7 || y == 3) blue else PixelColor.White.argb
+        }
+        return PixelSpriteSheet(
+            bitmap = PixelBitmap(width = 8, height = 4, pixels = pixels),
+            frames = listOf(
+                PixelBitmapRegion(left = 0, top = 0, width = 4, height = 4),
+                PixelBitmapRegion(left = 4, top = 0, width = 4, height = 4),
+            ),
+        )
     }
 
     companion object {
