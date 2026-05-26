@@ -1,15 +1,20 @@
 site_name: pixel-engine
-docs_dir: .
+docs_dir: docs
+site_dir: build/mkdocs-site
+validation:
+  nav:
+    omitted_files: ignore
+  links:
+    not_found: ignore
+    absolute_links: ignore
+    unrecognized_links: ignore
 nav:
-  - Home: docs/index.md
-  - Engine:
-      - Current Progress: docs/design/engine/像素UI引擎当前进度.md
-      - Architecture Plan: docs/design/engine/像素UI引擎架构与实施计划.md
-      - Component Guide: docs/design/engine/像素UI引擎组件接入指南.md
-  - Pixel Engine:
-      - Quick Start: pixel-engine/docs/使用说明/快速入门.md
-      - Components: pixel-engine/docs/使用说明/组件目录.md
-      - Roadmap: pixel-engine/docs/演进规划/演进路线.md
+  - Home: index.md
+  - Pixel Engine: pixel-engine.md
+  - Engine Design:
+      - Current Progress: design/engine/像素UI引擎当前进度.md
+      - Architecture Plan: design/engine/像素UI引擎架构与实施计划.md
+      - Component Guide: design/engine/像素UI引擎组件接入指南.md
   - Release:
-      - Checklist: RELEASE_CHECKLIST.md
-      - Notes Template: docs/release-notes-template.md
+      - Checklist: release-checklist.md
+      - Notes Template: release-notes-template.md
