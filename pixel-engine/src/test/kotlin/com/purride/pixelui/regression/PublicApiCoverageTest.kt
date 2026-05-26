@@ -68,7 +68,10 @@ class PublicApiCoverageTest {
         val extraFiles = listOf(
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelGeometry.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelNavigatorAliases.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelBitmapLoaders.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelResourceCache.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheet.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheetLoader.kt"),
         )
         val widgetFunctionPattern = Regex("^public fun ([A-Z][A-Za-z0-9_]*)\\(", RegexOption.MULTILINE)
         val otherPatterns = listOf(

@@ -45,6 +45,24 @@ class PerfRegressionTest {
             current = current.blitNanosAvg,
             multiplier = TIME_MULTIPLIER,
         )
+        assertWithinThreshold(
+            name = "resourceCacheNanosAvg",
+            baseline = baseline.resourceCacheNanosAvg,
+            current = current.resourceCacheNanosAvg,
+            multiplier = TIME_MULTIPLIER,
+        )
+        assertWithinThreshold(
+            name = "gridRenderNanosAvg",
+            baseline = baseline.gridRenderNanosAvg,
+            current = current.gridRenderNanosAvg,
+            multiplier = TIME_MULTIPLIER,
+        )
+        assertWithinThreshold(
+            name = "componentRenderNanosAvg",
+            baseline = baseline.componentRenderNanosAvg,
+            current = current.componentRenderNanosAvg,
+            multiplier = TIME_MULTIPLIER,
+        )
         baseline.richTextLayoutNanosByChars.forEach { (chars, baselineNanos) ->
             val currentNanos = current.richTextLayoutNanosByChars[chars] ?: return@forEach
             assertWithinThreshold(
@@ -83,6 +101,9 @@ class PerfRegressionTest {
             renderTimeNanosAvg = requiredLong(text = text, key = "renderTimeNanosAvg"),
             blitNanosAvg = requiredLong(text = text, key = "blitNanosAvg"),
             colorBlitNanosAvg = optionalLong(text = text, key = "colorBlitNanosAvg") ?: 0L,
+            resourceCacheNanosAvg = optionalLong(text = text, key = "resourceCacheNanosAvg") ?: 0L,
+            gridRenderNanosAvg = optionalLong(text = text, key = "gridRenderNanosAvg") ?: 0L,
+            componentRenderNanosAvg = optionalLong(text = text, key = "componentRenderNanosAvg") ?: 0L,
             richTextLayoutNanosByChars = parseMapBlock(text = text, key = "richTextLayoutNanosByChars"),
             variableLazyListNanosByItemCount = parseMapBlock(text = text, key = "variableLazyListNanosByItemCount"),
         )

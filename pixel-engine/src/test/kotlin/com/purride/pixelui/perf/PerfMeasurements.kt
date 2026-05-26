@@ -2,12 +2,22 @@ package com.purride.pixelui.perf
 
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelResourceCache
+import com.purride.pixelcore.PixelSpriteSheetJsonLoader
+import com.purride.pixelui.AppScaffold
+import com.purride.pixelui.Checkbox
+import com.purride.pixelui.Column
+import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextSpan
+import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
+import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -21,6 +31,9 @@ internal data class PerfSample(
     val renderTimeNanosAvg: Long,
     val blitNanosAvg: Long,
     val colorBlitNanosAvg: Long,
+    val resourceCacheNanosAvg: Long,
+    val gridRenderNanosAvg: Long,
+    val componentRenderNanosAvg: Long,
     val richTextLayoutNanosByChars: Map<Int, Long>,
     val variableLazyListNanosByItemCount: Map<Int, Long>,
 )
@@ -42,6 +55,15 @@ internal object PerfMeasurements {
             },
             colorBlitNanosAvg = medianLongSample(BLIT_SAMPLES) {
                 measureColorBlitNanos(iterations = BLIT_ITERATIONS)
+            },
+            resourceCacheNanosAvg = medianLongSample(RESOURCE_SAMPLES) {
+                measureResourceCacheNanos(iterations = RESOURCE_ITERATIONS)
+            },
+            gridRenderNanosAvg = medianLongSample(GRID_SAMPLES) {
+                measureGridRenderNanos(iterations = GRID_ITERATIONS)
+            },
+            componentRenderNanosAvg = medianLongSample(COMPONENT_SAMPLES) {
+                measureComponentRenderNanos(iterations = COMPONENT_ITERATIONS)
             },
             richTextLayoutNanosByChars = mapOf(
                 100 to medianLongSample(RICH_TEXT_SAMPLES) {
@@ -95,6 +117,9 @@ internal object PerfMeasurements {
             append("  \"renderTimeNanosAvg\": ").append(sample.renderTimeNanosAvg).append(",\n")
             append("  \"blitNanosAvg\": ").append(sample.blitNanosAvg).append(",\n")
             append("  \"colorBlitNanosAvg\": ").append(sample.colorBlitNanosAvg).append(",\n")
+            append("  \"resourceCacheNanosAvg\": ").append(sample.resourceCacheNanosAvg).append(",\n")
+            append("  \"gridRenderNanosAvg\": ").append(sample.gridRenderNanosAvg).append(",\n")
+            append("  \"componentRenderNanosAvg\": ").append(sample.componentRenderNanosAvg).append(",\n")
             append("  \"richTextLayoutNanosByChars\": {").append(richTextEntries).append("},\n")
             append("  \"variableLazyListNanosByItemCount\": {").append(variableListEntries).append("}\n")
             append("}\n")
@@ -218,6 +243,88 @@ internal object PerfMeasurements {
         )
     }
 
+    private fun measureResourceCacheNanos(iterations: Int): Long {
+        val json = """{"bitmap":"runner.png","frames":[{"left":0,"top":0,"width":2,"height":2}]}"""
+        val pixels = intArrayOf(
+            PixelColor.White.argb,
+            PixelColor.White.argb,
+            PixelColor.White.argb,
+            PixelColor.White.argb,
+        )
+        val bitmap = PixelBitmap(width = 2, height = 2, pixels = pixels)
+        val cache = PixelResourceCache()
+        val start = System.nanoTime()
+        repeat(iterations) {
+            cache.getSpriteSheet("runner") {
+                PixelSpriteSheetJsonLoader.load(json = json, bitmap = bitmap)
+            }
+            cache.getBitmap("runner-bitmap") { bitmap }
+        }
+        val end = System.nanoTime()
+        return (end - start) / iterations.toLong().coerceAtLeast(1L)
+    }
+
+    private fun measureGridRenderNanos(iterations: Int): Long {
+        val runtime = PixelUiRuntime()
+        try {
+            val start = System.nanoTime()
+            repeat(iterations) {
+                val controller = PixelListController()
+                val state = controller.create()
+                val grid = GridViewBuilder(
+                    itemCount = 400,
+                    cellWidth = 8,
+                    cellHeight = 8,
+                    state = state,
+                    controller = controller,
+                    cacheExtent = 1,
+                    itemBuilder = { index -> Text((index % 10).toString()) },
+                )
+                runtime.render(
+                    root = Scrollbar(child = grid, state = state),
+                    logicalWidth = 48,
+                    logicalHeight = 48,
+                )
+            }
+            val end = System.nanoTime()
+            return (end - start) / iterations.toLong().coerceAtLeast(1L)
+        } finally {
+            runtime.dispose()
+        }
+    }
+
+    private fun measureComponentRenderNanos(iterations: Int): Long {
+        val widget = AppScaffold(
+            title = Text("COMPONENTS"),
+            body = Column(
+                children = listOf(
+                    Row(
+                        children = listOf(
+                            Checkbox(checked = true, onChanged = null),
+                            Text("SYNC"),
+                            Switch(checked = false, onChanged = null),
+                        ),
+                        spacing = 2,
+                    ),
+                    ProgressBar(progress = 0.65f, width = 48),
+                    OutlinedButton(text = "ACTION", onPressed = { }),
+                ),
+                spacing = 2,
+            ),
+        )
+        val runtime = PixelUiRuntime()
+        try {
+            val start = System.nanoTime()
+            repeat(iterations) {
+                runtime.render(root = widget, logicalWidth = 96, logicalHeight = 48)
+            }
+            val end = System.nanoTime()
+            return (end - start) / iterations.toLong().coerceAtLeast(1L)
+        } finally {
+            runtime.dispose()
+        }
+    }
+
     /**
      * 变高 lazy list 端到端渲染耗时。
      *
@@ -314,4 +421,10 @@ internal object PerfMeasurements {
     private const val RICH_TEXT_SAMPLES = 5
     private const val VARIABLE_LIST_ITERATIONS = 3
     private const val VARIABLE_LIST_SAMPLES = 3
+    private const val RESOURCE_ITERATIONS = 1_000
+    private const val RESOURCE_SAMPLES = 5
+    private const val GRID_ITERATIONS = 5
+    private const val GRID_SAMPLES = 3
+    private const val COMPONENT_ITERATIONS = 10
+    private const val COMPONENT_SAMPLES = 3
 }
