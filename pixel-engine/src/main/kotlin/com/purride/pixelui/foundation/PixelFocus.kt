@@ -58,6 +58,45 @@ public object ReadingOrderFocusTraversalPolicy : FocusTraversalPolicy {
     }
 }
 
+public class GridFocusTraversalPolicy(
+    columns: Int,
+) : FocusTraversalPolicy {
+    public val columns: Int = columns.coerceAtLeast(1)
+
+    override fun next(
+        nodes: List<FocusNode>,
+        current: FocusNode?,
+        direction: PixelFocusDirection,
+    ): FocusNode? {
+        val focusable = nodes.filter { it.canRequestFocus }
+        if (focusable.isEmpty()) return null
+        val currentIndex = current?.let { focusable.indexOf(it) }?.takeIf { it >= 0 } ?: 0
+        val targetIndex = when (direction) {
+            PixelFocusDirection.NEXT -> (currentIndex + 1).floorMod(focusable.size)
+            PixelFocusDirection.PREVIOUS -> (currentIndex - 1).floorMod(focusable.size)
+            PixelFocusDirection.LEFT -> {
+                if (currentIndex % columns == 0) return null
+                currentIndex - 1
+            }
+            PixelFocusDirection.RIGHT -> {
+                if (currentIndex % columns == columns - 1 || currentIndex + 1 >= focusable.size) return null
+                currentIndex + 1
+            }
+            PixelFocusDirection.UP -> {
+                val next = currentIndex - columns
+                if (next < 0) return null
+                next
+            }
+            PixelFocusDirection.DOWN -> {
+                val next = currentIndex + columns
+                if (next >= focusable.size) return null
+                next
+            }
+        }
+        return focusable.getOrNull(targetIndex)
+    }
+}
+
 public class FocusNode(
     public val debugLabel: String? = null,
     public var canRequestFocus: Boolean = true,

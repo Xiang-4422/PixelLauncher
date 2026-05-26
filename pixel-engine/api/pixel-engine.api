@@ -326,6 +326,8 @@ com.purride.pixelui public enum class PixelFocusDirection
 com.purride.pixelui public fun interface FocusTraversalPolicy
 com.purride.pixelui public fun next(
 com.purride.pixelui public object ReadingOrderFocusTraversalPolicy : FocusTraversalPolicy
+com.purride.pixelui public class GridFocusTraversalPolicy(
+com.purride.pixelui public val columns: Int = columns.coerceAtLeast(1)
 com.purride.pixelui public class FocusNode(
 com.purride.pixelui public val debugLabel: String? = null,
 com.purride.pixelui public var canRequestFocus: Boolean = true,

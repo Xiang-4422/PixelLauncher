@@ -5,12 +5,16 @@ import com.purride.pixelui.Focus
 import com.purride.pixelui.FocusNode
 import com.purride.pixelui.FocusScope
 import com.purride.pixelui.FocusScopeNode
+import com.purride.pixelui.GridFocusTraversalPolicy
+import com.purride.pixelui.GridView
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
+import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
@@ -147,6 +151,51 @@ class PixelFocusTest {
 
             assertEquals("Ada", submitted)
             assertTrue(second.isFocused)
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun gridTraversalPolicyMovesByColumnsForArrowKeys() {
+        val nodes = List(6) { index -> FocusNode("cell-$index") }
+        val listState = PixelListState()
+        val listController = PixelListController()
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                FocusScope(
+                    node = FocusScopeNode(),
+                    traversalPolicy = GridFocusTraversalPolicy(columns = 2),
+                    child = GridView(
+                        items = nodes.mapIndexed { index, node ->
+                            Focus(
+                                node = node,
+                                autofocus = index == 0,
+                                child = Text("CELL $index"),
+                            )
+                        },
+                        cellWidth = 10,
+                        cellHeight = 4,
+                        state = listState,
+                        controller = listController,
+                        spacing = 1,
+                        runSpacing = 1,
+                    ),
+                ),
+                logicalWidth = 22,
+                logicalHeight = 18,
+            )
+
+            assertTrue(nodes[0].isFocused)
+            assertTrue(tester.pressKey(PixelKey.ARROW_RIGHT))
+            assertTrue(nodes[1].isFocused)
+            assertTrue(tester.pressKey(PixelKey.ARROW_DOWN))
+            assertTrue(nodes[3].isFocused)
+            assertTrue(tester.pressKey(PixelKey.ARROW_LEFT))
+            assertTrue(nodes[2].isFocused)
+            assertTrue(tester.pressKey(PixelKey.ARROW_UP))
+            assertTrue(nodes[0].isFocused)
         } finally {
             tester.dispose()
         }

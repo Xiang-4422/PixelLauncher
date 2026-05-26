@@ -5,6 +5,10 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Focus
+import com.purride.pixelui.FocusNode
+import com.purride.pixelui.FocusScope
+import com.purride.pixelui.GridFocusTraversalPolicy
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
@@ -34,50 +38,59 @@ private class GridViewWidget(override val key: Any? = null) : StatefulWidget(key
     class GridViewState : State<GridViewWidget>() {
         private val scrollState = PixelListState()
         private val scrollController = ScrollController()
+        private val focusNodes = List(120) { index -> FocusNode("grid-$index") }
 
         override fun build(context: BuildContext): Widget {
-            return Column(
-                children = listOf(
-                    Expanded(
-                        child = Scrollbar(
-                            state = scrollState,
-                            thumbColor = PixelColor.White,
-                            trackColor = PixelColor.fromArgb(80, 0, 0, 0),
-                            width = 2,
-                            child = GridViewBuilder(
-                                itemCount = 120,
-                                itemBuilder = { index -> tile(index) },
-                                cellWidth = 24,
-                                cellHeight = 16,
-                                spacing = 2,
-                                runSpacing = 2,
+            return FocusScope(
+                traversalPolicy = GridFocusTraversalPolicy(columns = 3),
+                child = Column(
+                    children = listOf(
+                        Expanded(
+                            child = Scrollbar(
                                 state = scrollState,
-                                controller = scrollController,
+                                thumbColor = PixelColor.White,
+                                trackColor = PixelColor.fromArgb(80, 0, 0, 0),
+                                width = 2,
+                                child = GridViewBuilder(
+                                    itemCount = 120,
+                                    itemBuilder = { index -> tile(index) },
+                                    cellWidth = 24,
+                                    cellHeight = 16,
+                                    spacing = 2,
+                                    runSpacing = 2,
+                                    state = scrollState,
+                                    controller = scrollController,
+                                ),
                             ),
                         ),
+                        SizedBox(height = 2),
+                        Text("GridViewBuilder: fixed cell + arrow focus", style = TextStyle.Default),
                     ),
-                    SizedBox(height = 2),
-                    Text("GridViewBuilder: fixed cell lazy window", style = TextStyle.Default),
+                    mainAxisSize = MainAxisSize.MAX,
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 ),
-                mainAxisSize = MainAxisSize.MAX,
-                crossAxisAlignment = CrossAxisAlignment.STRETCH,
             )
         }
 
         private fun tile(index: Int): Widget {
+            val focusNode = focusNodes[index]
             val color = when (index % 4) {
                 0 -> PixelColor.fromRgb(60, 120, 220)
                 1 -> PixelColor.fromRgb(220, 90, 80)
                 2 -> PixelColor.fromRgb(80, 180, 110)
                 else -> PixelColor.fromRgb(230, 180, 60)
             }
-            return Container(
-                fillColor = color,
-                borderColor = PixelColor.White,
-                child = Padding(
-                    child = Text("#$index", style = TextStyle(color = PixelColor.Black)),
-                    horizontal = 2,
-                    vertical = 2,
+            return Focus(
+                node = focusNode,
+                autofocus = index == 0,
+                child = Container(
+                    fillColor = color,
+                    borderColor = if (focusNode.isFocused) PixelColor.fromRgb(255, 255, 0) else PixelColor.White,
+                    child = Padding(
+                        child = Text("#$index", style = TextStyle(color = PixelColor.Black)),
+                        horizontal = 2,
+                        vertical = 2,
+                    ),
                 ),
             )
         }
