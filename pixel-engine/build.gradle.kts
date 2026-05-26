@@ -36,3 +36,77 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     testImplementation(libs.junit)
 }
+
+val publicApiBaseline = layout.projectDirectory.file("api/pixel-engine.api")
+
+val dumpPublicApi by tasks.registering {
+    group = "verification"
+    description = "Writes a deterministic text dump of pixel-engine public Kotlin declarations."
+
+    val sourceFiles = fileTree("src/main/kotlin") {
+        include("**/*.kt")
+    }
+    inputs.files(sourceFiles)
+    outputs.file(layout.buildDirectory.file("reports/api/pixel-engine.api"))
+
+    doLast {
+        val declarations = sourceFiles.files
+            .sortedBy { it.relativeTo(projectDir).path }
+            .flatMap { file ->
+                var currentPackage = ""
+                file.readLines()
+                    .mapNotNull { raw ->
+                        val line = raw.trim()
+                        when {
+                            line.startsWith("package ") -> {
+                                currentPackage = line.removePrefix("package ").trim()
+                                null
+                            }
+                            line.startsWith("public ") -> "$currentPackage ${line.normalizePublicApiLine()}"
+                            else -> null
+                        }
+                    }
+            }
+        val output = buildString {
+            appendLine("# pixel-engine public API baseline")
+            declarations.forEach { appendLine(it) }
+        }
+        val report = layout.buildDirectory.file("reports/api/pixel-engine.api").get().asFile
+        report.parentFile.mkdirs()
+        report.writeText(output)
+    }
+}
+
+tasks.register("checkPublicApi") {
+    group = "verification"
+    description = "Checks the tracked pixel-engine public API baseline."
+    dependsOn(dumpPublicApi)
+
+    inputs.file(publicApiBaseline)
+    inputs.file(layout.buildDirectory.file("reports/api/pixel-engine.api"))
+
+    doLast {
+        val baselineFile = publicApiBaseline.asFile
+        val actualFile = layout.buildDirectory.file("reports/api/pixel-engine.api").get().asFile
+        if (!baselineFile.exists()) {
+            throw GradleException("Missing API baseline: ${baselineFile.path}. Run :pixel-engine:dumpPublicApi and review the report.")
+        }
+        val expected = baselineFile.readText()
+        val actual = actualFile.readText()
+        if (expected != actual) {
+            throw GradleException(
+                "pixel-engine public API changed. Review ${actualFile.path} and update ${baselineFile.path} intentionally.",
+            )
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("checkPublicApi")
+}
+
+fun String.normalizePublicApiLine(): String {
+    return replace(Regex("\\s+"), " ")
+        .replace(Regex("\\s*\\{\\s*$"), "")
+        .trim()
+}
