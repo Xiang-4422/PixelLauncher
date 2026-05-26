@@ -62,4 +62,16 @@ class PixelBitmapFontTest {
             (0 until buffer.width).any { x -> buffer.getPixel(x, y) != PixelColor.Transparent }
         })
     }
+
+    @Test
+    fun fontMetricsExposeBuiltinBitmapBaseline() {
+        val metrics = font.fontMetrics("A")
+
+        assertEquals(7, metrics.cellHeight)
+        assertEquals(6, metrics.baseline)
+        assertEquals(6, metrics.ascent)
+        assertEquals(1, metrics.descent)
+        assertEquals(0, metrics.inkTop)
+        assertEquals(6, metrics.inkBottom)
+    }
 }

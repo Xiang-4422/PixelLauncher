@@ -147,6 +147,59 @@ class PixelFontEngineTest {
         assertTrue((0 until appLabelStyle.cellHeight).all { y -> buffer.getPixel(17, y) != PixelColor.Transparent })
     }
 
+    @Test
+    fun missingGlyphFallbackPaintsVisibleBoxWithNarrowOrWideAdvance() {
+        val pixelFontEngine = PixelFontEngine(CompositeGlyphProvider(emptyList()))
+        val buffer = PixelBuffer(width = 32, height = 20)
+
+        assertEquals(8, pixelFontEngine.measureText("$", appLabelStyle))
+        assertEquals(16, pixelFontEngine.measureText("\u4e2d", appLabelStyle))
+
+        pixelFontEngine.drawText(
+            buffer = buffer,
+            text = "$\u4e2d",
+            startX = 0,
+            startY = 0,
+            maxWidth = 32,
+            style = appLabelStyle,
+        )
+
+        assertTrue((0 until appLabelStyle.cellHeight).any { y -> buffer.getPixel(0, y) != PixelColor.Transparent })
+        assertTrue((0 until appLabelStyle.cellHeight).any { y -> buffer.getPixel(9, y) != PixelColor.Transparent })
+    }
+
+    @Test
+    fun missingWhitespaceFallbackKeepsAdvanceButNoInk() {
+        val pixelFontEngine = PixelFontEngine(CompositeGlyphProvider(emptyList()))
+        val buffer = PixelBuffer(width = 8, height = 16)
+
+        assertEquals(8, pixelFontEngine.measureText(" ", appLabelStyle))
+        pixelFontEngine.drawText(
+            buffer = buffer,
+            text = " ",
+            startX = 0,
+            startY = 0,
+            maxWidth = 8,
+            style = appLabelStyle,
+        )
+
+        assertTrue(buffer.pixels.all { it == PixelColor.Transparent.argb })
+    }
+
+    @Test
+    fun fontMetricsExposeBaselineAscentDescentAndInkBounds() {
+        val pixelFontEngine = PixelFontEngine(CountingGlyphProvider())
+
+        val metrics = pixelFontEngine.fontMetrics(text = "A\u4e2d", style = appLabelStyle)
+
+        assertEquals(16, metrics.cellHeight)
+        assertEquals(14, metrics.baseline)
+        assertEquals(14, metrics.ascent)
+        assertEquals(2, metrics.descent)
+        assertEquals(0, metrics.inkTop)
+        assertEquals(15, metrics.inkBottom)
+    }
+
     private class CountingGlyphProvider : GlyphProvider {
         var rasterizeCount: Int = 0
             private set

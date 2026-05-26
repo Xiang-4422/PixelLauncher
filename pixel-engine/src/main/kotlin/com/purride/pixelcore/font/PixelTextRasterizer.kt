@@ -16,6 +16,18 @@ public interface PixelTextRasterizer {
 
     public fun measureHeight(text: String): Int
 
+    public fun fontMetrics(text: String = " "): PixelFontMetrics {
+        val height = measureHeight(text.ifEmpty { " " }).coerceAtLeast(1)
+        return PixelFontMetrics(
+            cellHeight = height,
+            baseline = height - 1,
+            ascent = height - 1,
+            descent = 1,
+            inkTop = 0,
+            inkBottom = height - 1,
+        )
+    }
+
     public fun drawText(
         buffer: PixelBuffer,
         text: String,
@@ -24,6 +36,15 @@ public interface PixelTextRasterizer {
         color: PixelColor = PixelColor.fromRgb(255, 255, 255),
     )
 }
+
+public data class PixelFontMetrics(
+    val cellHeight: Int,
+    val baseline: Int,
+    val ascent: Int,
+    val descent: Int,
+    val inkTop: Int,
+    val inkBottom: Int,
+)
 
 /**
  * 带样式的文本栅格化适配器。
@@ -48,6 +69,10 @@ public class PixelStyledTextRasterizer(
     override fun measureHeight(text: String): Int {
         val lineCount = text.lines().size.coerceAtLeast(1)
         return (lineCount * style.cellHeight) + ((lineCount - 1) * lineSpacing)
+    }
+
+    override fun fontMetrics(text: String): PixelFontMetrics {
+        return engine.fontMetrics(text = text, style = style)
     }
 
     override fun drawText(

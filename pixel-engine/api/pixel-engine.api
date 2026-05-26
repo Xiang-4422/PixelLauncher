@@ -62,6 +62,7 @@ com.purride.pixelcore public class PixelFontEngine(
 com.purride.pixelcore public companion object
 com.purride.pixelcore public fun measureText(text: String, style: GlyphStyle): Int
 com.purride.pixelcore public fun trimToWidth(text: String, style: GlyphStyle, maxWidth: Int): String
+com.purride.pixelcore public fun fontMetrics(text: String = " ", style: GlyphStyle): PixelFontMetrics
 com.purride.pixelcore public fun drawText(
 com.purride.pixelcore public fun clearCache()
 com.purride.pixelcore public fun glyphCacheStats(): GlyphCacheStats
@@ -77,7 +78,9 @@ com.purride.pixelcore public fun load(assetDirectory: String): PixelGlyphPack
 com.purride.pixelcore public interface PixelTextRasterizer
 com.purride.pixelcore public fun measureText(text: String): Int
 com.purride.pixelcore public fun measureHeight(text: String): Int
+com.purride.pixelcore public fun fontMetrics(text: String = " "): PixelFontMetrics
 com.purride.pixelcore public fun drawText(
+com.purride.pixelcore public data class PixelFontMetrics(
 com.purride.pixelcore public class PixelStyledTextRasterizer(
 com.purride.pixelcore public class PixelBitmap(
 com.purride.pixelcore public val width: Int,

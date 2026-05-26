@@ -53,6 +53,10 @@ public class PixelBitmapFont(
         return (lineCount * glyphHeight) + ((lineCount - 1) * lineSpacing)
     }
 
+    override fun fontMetrics(text: String): PixelFontMetrics {
+        return engine.fontMetrics(text = text, style = glyphStyle)
+    }
+
     override fun drawText(
         buffer: PixelBuffer,
         text: String,
@@ -148,14 +152,15 @@ public class PixelBitmapFont(
 
         private val glyphCache = mutableMapOf<Char, GlyphBitmap>()
 
-        override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
+        override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap? {
             val normalizedCharacter = when {
                 character == ' ' -> ' '
                 character.isLowerCase() -> character.uppercaseChar()
                 else -> character
             }
+            if (!GLYPHS.containsKey(normalizedCharacter)) return null
             return glyphCache.getOrPut(normalizedCharacter) {
-                val rows = GLYPHS[normalizedCharacter] ?: GLYPHS.getValue('?')
+                val rows = GLYPHS.getValue(normalizedCharacter)
                 val sourceHeight = rows.size.coerceAtLeast(1)
                 val sourceWidth = rows.maxOfOrNull { row -> row.length }?.coerceAtLeast(1) ?: 1
                 val pixels = ByteArray(glyphWidth * glyphHeight)

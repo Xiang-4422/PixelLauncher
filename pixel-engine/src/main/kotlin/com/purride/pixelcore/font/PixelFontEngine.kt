@@ -87,17 +87,29 @@ public class CompositeGlyphProvider(
     private fun emptyGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
         val isWideGlyph = character.code !in 32..126
         val width = if (isWideGlyph) style.wideAdvanceWidth else style.narrowAdvanceWidth
+        val height = style.cellHeight.coerceAtLeast(1)
+        val pixels = ByteArray(width * height)
+        val isVisibleFallback = !character.isWhitespace() && !Character.isISOControl(character)
+        if (isVisibleFallback && width > 0) {
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    if (x == 0 || x == width - 1 || y == 0 || y == height - 1 || x == y || x == width - 1 - y) {
+                        pixels[(y * width) + x] = 1
+                    }
+                }
+            }
+        }
         return GlyphBitmap(
             width = width,
-            height = style.cellHeight,
-            pixels = ByteArray(width * style.cellHeight),
+            height = height,
+            pixels = pixels,
             metrics = GlyphMetrics(
                 advanceWidth = width,
-                baselineOffset = style.cellHeight - 2,
+                baselineOffset = height - 2,
                 isWideGlyph = isWideGlyph,
                 requiresVisualGapProtection = requiresVisualGapProtection(character, isWideGlyph),
-                inkLeft = width,
-                inkRight = -1,
+                inkLeft = if (isVisibleFallback) 0 else width,
+                inkRight = if (isVisibleFallback) width - 1 else -1,
             ),
         )
     }
@@ -253,6 +265,36 @@ public class PixelFontEngine(
             previousGlyph = glyph
         }
         return builder.toString()
+    }
+
+    public fun fontMetrics(text: String = " ", style: GlyphStyle): PixelFontMetrics {
+        val sample = text.ifEmpty { " " }
+        val glyphs = sample.map { character -> glyphFor(character, style) }
+        val baseline = glyphs.maxOfOrNull { glyph -> glyph.metrics.baselineOffset } ?: (style.cellHeight - 2)
+        var inkTop = style.cellHeight
+        var inkBottom = -1
+        glyphs.forEach { glyph ->
+            for (y in 0 until glyph.height) {
+                for (x in 0 until glyph.width) {
+                    if (glyph.pixels[(y * glyph.width) + x].toInt() != 0) {
+                        if (y < inkTop) inkTop = y
+                        if (y > inkBottom) inkBottom = y
+                    }
+                }
+            }
+        }
+        if (inkBottom < inkTop) {
+            inkTop = 0
+            inkBottom = 0
+        }
+        return PixelFontMetrics(
+            cellHeight = style.cellHeight,
+            baseline = baseline,
+            ascent = baseline.coerceAtLeast(0),
+            descent = (style.cellHeight - baseline).coerceAtLeast(0),
+            inkTop = inkTop,
+            inkBottom = inkBottom,
+        )
     }
 
     public fun drawText(

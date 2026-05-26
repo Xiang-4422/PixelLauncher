@@ -1020,6 +1020,42 @@ class PipelineElementTreeRendererTest {
         assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(1, 0))
     }
 
+    @Test
+    fun richTextMeasuresAndPaintsMixedRasterizerRuns() {
+        val compact = FixedRasterizer(glyphWidth = 1, glyphHeight = 1)
+        val tall = FixedRasterizer(glyphWidth = 2, glyphHeight = 3)
+        val orange = PixelColor.fromRgb(200, 100, 0)
+        val result = renderWithPipeline(
+            root = RichText(
+                spans = listOf(
+                    PixelTextSpan(
+                        text = "A",
+                        style = com.purride.pixelui.PixelTextStyle(
+                            color = PixelColor.White,
+                            textRasterizer = compact,
+                        ),
+                    ),
+                    PixelTextSpan(
+                        text = "B",
+                        style = com.purride.pixelui.PixelTextStyle(
+                            color = orange,
+                            textRasterizer = tall,
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 8,
+            logicalHeight = 4,
+        )
+
+        assertNotNull(result)
+        result ?: return
+        assertEquals(PixelColor.White, result.buffer.getPixel(0, 0))
+        assertEquals(orange, result.buffer.getPixel(1, 0))
+        assertEquals(orange, result.buffer.getPixel(2, 2))
+        assertEquals(PixelColor.Transparent, result.buffer.getPixel(3, 0))
+    }
+
     /**
      * RichText 应该跨 span 做字符级换行，并只在最后可见行追加 ellipsis。
      */
@@ -1421,6 +1457,31 @@ class PipelineElementTreeRendererTest {
             text.forEachIndexed { index, _ ->
                 if (x + index in 0 until buffer.width && y in 0 until buffer.height) {
                     buffer.setPixel(x = x + index, y = y, color = color)
+                }
+            }
+        }
+    }
+
+    private class FixedRasterizer(
+        private val glyphWidth: Int,
+        private val glyphHeight: Int,
+    ) : PixelTextRasterizer {
+        override fun measureText(text: String): Int = text.length * glyphWidth
+
+        override fun measureHeight(text: String): Int = glyphHeight
+
+        override fun drawText(
+            buffer: PixelBuffer,
+            text: String,
+            x: Int,
+            y: Int,
+            color: PixelColor,
+        ) {
+            text.forEachIndexed { index, _ ->
+                for (dy in 0 until glyphHeight) {
+                    for (dx in 0 until glyphWidth) {
+                        buffer.setPixel(x + index * glyphWidth + dx, y + dy, color)
+                    }
                 }
             }
         }
