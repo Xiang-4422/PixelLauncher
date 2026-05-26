@@ -1,0 +1,560 @@
+package com.purride.pixelui.testing
+
+import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.PixelTickerProvider
+import com.purride.pixelui.host.ManualFrameScheduler
+import com.purride.pixelui.internal.PixelClickTarget
+import com.purride.pixelui.internal.PixelListTarget
+import com.purride.pixelui.internal.PixelPagerTarget
+import com.purride.pixelui.internal.PixelRect
+import com.purride.pixelui.internal.PixelRenderResult
+import com.purride.pixelui.internal.PixelSliderTarget
+import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.PixelUiRuntime
+import kotlin.math.abs
+import java.util.IdentityHashMap
+
+public class PixelTester {
+    public val scheduler: ManualFrameScheduler = ManualFrameScheduler()
+    public val vsync: PixelTickerProvider = PixelTickerProvider(scheduler)
+
+    private val runtime = PixelUiRuntime(onVisualUpdate = { needsRender = true })
+    private var root: Widget? = null
+    private var logicalWidth: Int = 0
+    private var logicalHeight: Int = 0
+    private var needsRender: Boolean = false
+    private var focusedTextInputTarget: PixelTextInputTarget? = null
+    private var currentNanos: Long = 0L
+
+    internal var renderResult: PixelRenderResult? = null
+        private set
+
+    public fun pumpWidget(widget: Widget, logicalWidth: Int, logicalHeight: Int) {
+        root = widget
+        this.logicalWidth = logicalWidth
+        this.logicalHeight = logicalHeight
+        needsRender = true
+        render()
+    }
+
+    public fun tap(finder: PixelFinder) {
+        val point = resolvePoint(finder, TargetKind.ANY)
+        dispatchTapAt(point.x, point.y)
+        render()
+    }
+
+    public fun drag(finder: PixelFinder, dx: Int, dy: Int) {
+        val point = resolvePoint(finder, TargetKind.DRAG)
+        dispatchDrag(point.x, point.y, dx, dy)
+        render()
+    }
+
+    public fun enterText(finder: PixelFinder, text: String) {
+        val target = resolveTextInputTarget(finder)
+        ensureTextInputEditable(target)
+        focusTextInput(target)
+        target.controller.updateText(target.state, text)
+        target.onChanged?.invoke(target.state.text)
+        render()
+    }
+
+    public fun submitTextInput() {
+        val target = focusedTextInputTarget ?: fail("No focused text input target")
+        target.onSubmitted?.invoke(target.state.text)
+    }
+
+    public fun composeText(finder: PixelFinder, text: String) {
+        val target = resolveTextInputTarget(finder)
+        ensureTextInputEditable(target)
+        focusTextInput(target)
+        val start = target.state.selectionStart
+        val end = target.state.selectionEnd
+        val before = target.state.text.substring(0, start)
+        val after = target.state.text.substring(end)
+        val nextText = before + text + after
+        target.controller.updateText(
+            state = target.state,
+            text = nextText,
+            selectionStart = start + text.length,
+            selectionEnd = start + text.length,
+            compositionStart = start,
+            compositionEnd = start + text.length,
+        )
+        target.onChanged?.invoke(target.state.text)
+        render()
+    }
+
+    public fun updateComposition(finder: PixelFinder, start: Int, end: Int) {
+        val target = resolveTextInputTarget(finder)
+        ensureTextInputEditable(target)
+        focusTextInput(target)
+        target.controller.updateComposition(target.state, start, end)
+        render()
+    }
+
+    public fun pumpFrame(deltaMs: Long) {
+        val nextNanos = currentNanos + deltaMs * 1_000_000L
+        currentNanos = nextNanos
+        stepActiveScrollTargets(deltaMs)
+        scheduler.advanceFrame(nextNanos)
+        render()
+    }
+
+    public fun pumpAndSettle(maxFrames: Int = 60) {
+        repeat(maxFrames) {
+            pumpFrame(16)
+            if (!hasPendingActivity()) {
+                return
+            }
+        }
+        fail("pumpAndSettle did not settle after $maxFrames frames")
+    }
+
+    public fun dumpElementTree(): String = runtime.dumpElementTree()
+
+    public fun dumpRenderTree(): String = runtime.dumpRenderTree()
+
+    public fun dispose() {
+        runtime.dispose()
+        scheduler.clear()
+    }
+
+    private fun render() {
+        val widget = root ?: return
+        renderResult = runtime.render(widget, logicalWidth, logicalHeight)
+        focusedTextInputTarget = renderResult
+            ?.textInputTargets
+            ?.lastOrNull { it.state.isFocused }
+            ?: focusedTextInputTarget?.let { previous ->
+                renderResult?.textInputTargets?.lastOrNull { it.state === previous.state }
+            }
+        needsRender = false
+    }
+
+    private fun stepActiveScrollTargets(deltaMs: Long) {
+        val result = renderResult ?: return
+        result.pagerTargets.forEach { target ->
+            val wasActive = target.controller.isActive(target.state)
+            target.controller.step(target.state, deltaMs)
+            if (target.state.currentPage != target.state.lastDispatchedPage) {
+                target.state.lastDispatchedPage = target.state.currentPage
+                target.onPageChanged?.invoke(target.state.currentPage)
+            }
+            if (wasActive || target.controller.isActive(target.state)) needsRender = true
+        }
+        result.listTargets.forEach { target ->
+            val wasActive = target.controller.isActive(target.state)
+            target.controller.step(target.state, deltaMs, target.viewportHeightPx, target.contentHeightPx)
+            if (wasActive || target.controller.isActive(target.state)) needsRender = true
+        }
+    }
+
+    private fun hasPendingActivity(): Boolean {
+        val result = renderResult
+        val hasScrollActivity = result?.pagerTargets?.any { it.controller.isActive(it.state) } == true ||
+            result?.listTargets?.any { it.controller.isActive(it.state) } == true
+        return scheduler.pendingCount > 0 ||
+            vsync.activeTickerCount > 0 ||
+            needsRender ||
+            runtime.hasPendingBuild() ||
+            hasScrollActivity
+    }
+
+    private fun dispatchTapAt(x: Int, y: Int) {
+        renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(x, y) }?.let { target ->
+            focusTextInput(target)
+            return
+        }
+        val clickTarget = renderResult?.clickTargets?.lastOrNull { it.bounds.contains(x, y) }
+            ?: fail("No click target at ($x,$y)")
+        clickTarget.onClick.invoke()
+        needsRender = true
+    }
+
+    private fun dispatchDrag(startX: Int, startY: Int, dx: Int, dy: Int) {
+        renderResult?.sliderTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
+            dispatchSliderDrag(target, startX + dx)
+            return
+        }
+        val listTarget = renderResult?.listTargets?.lastOrNull { it.bounds.contains(startX, startY) }
+        val pagerTarget = renderResult?.pagerTargets?.lastOrNull { it.bounds.contains(startX, startY) }
+        if (listTarget != null && shouldStartListDrag(dx, dy)) {
+            val deltaY = dy.toFloat()
+            if (listTarget.controller.canConsumeDrag(
+                    listTarget.state,
+                    deltaY,
+                    listTarget.viewportHeightPx,
+                    listTarget.contentHeightPx,
+                )
+            ) {
+                dispatchListDrag(listTarget, deltaY)
+            } else if (pagerTarget != null) {
+                dispatchPagerDrag(pagerTarget, dx.toFloat(), deltaY)
+            } else {
+                dispatchListDrag(listTarget, deltaY)
+            }
+            return
+        }
+        if (pagerTarget != null) {
+            dispatchPagerDrag(pagerTarget, dx.toFloat(), dy.toFloat())
+            return
+        }
+        renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
+            focusTextInput(target)
+            target.controller.setSelection(target.state, resolveTextInputSelection(target, startX + dx, startY + dy))
+            needsRender = true
+            return
+        }
+        fail("No draggable target at ($startX,$startY)")
+    }
+
+    private fun dispatchSliderDrag(target: PixelSliderTarget, x: Int) {
+        val ratio = ((x - target.bounds.left).toFloat() / target.bounds.width.coerceAtLeast(1)).coerceIn(0f, 1f)
+        target.onDrag(ratio)
+        target.onRelease(ratio)
+        needsRender = true
+    }
+
+    private fun dispatchListDrag(target: PixelListTarget, dy: Float) {
+        target.controller.startDrag(target.state)
+        target.controller.dragBy(target.state, dy, target.viewportHeightPx, target.contentHeightPx)
+        target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
+        needsRender = true
+    }
+
+    private fun dispatchPagerDrag(target: PixelPagerTarget, dx: Float, dy: Float) {
+        val delta = when (target.axis) {
+            PixelAxis.HORIZONTAL -> dx
+            PixelAxis.VERTICAL -> dy
+        }
+        val viewport = when (target.axis) {
+            PixelAxis.HORIZONTAL -> target.bounds.width
+            PixelAxis.VERTICAL -> target.bounds.height
+        }.coerceAtLeast(1)
+        target.controller.startDrag(target.state)
+        target.controller.dragBy(target.state, delta, viewport)
+        target.controller.endDrag(target.state, viewport, 0f)
+        target.onPageChanged?.invoke(target.state.currentPage)
+        needsRender = true
+    }
+
+    private fun focusTextInput(target: PixelTextInputTarget) {
+        if (target.readOnly) return
+        focusedTextInputTarget?.takeUnless { it.state === target.state }?.let { previous ->
+            previous.controller.blur(previous.state)
+        }
+        target.controller.focus(target.state)
+        focusedTextInputTarget = target
+        needsRender = true
+    }
+
+    private fun ensureTextInputEditable(target: PixelTextInputTarget) {
+        if (target.readOnly) {
+            fail("Text input target is readOnly at ${target.bounds}")
+        }
+    }
+
+    private fun resolvePoint(finder: PixelFinder, kind: TargetKind): Point {
+        val widget = resolveWidget(finder) ?: fail("No widget matched $finder", finder)
+        resolveTextInputTargetOrNull(widget)?.let { return it.bounds.center }
+        resolveClickTargetOrNull(widget)?.let { return it.bounds.center }
+        if (kind == TargetKind.DRAG || kind == TargetKind.ANY) {
+            resolveSliderTargetOrNull(widget)?.let { return it.bounds.center }
+            resolveListTargetOrNull(widget)?.let { return it.bounds.center }
+            resolvePagerTargetOrNull(widget)?.let { return it.bounds.center }
+        }
+        fail("Matched $finder but no render target was exported for it", finder)
+    }
+
+    private fun resolveTextInputTarget(finder: PixelFinder): PixelTextInputTarget {
+        val widget = resolveWidget(finder) ?: fail("No widget matched $finder", finder)
+        return resolveTextInputTargetOrNull(widget)
+            ?: fail("Matched $finder but no text input target was exported for it", finder)
+    }
+
+    private fun resolveWidget(finder: PixelFinder): Any? {
+        return finder.resolve(runtime.collectWidgets())
+            ?: finder.resolve(root)
+    }
+
+    private fun resolveTextInputTargetOrNull(widget: Any): PixelTextInputTarget? {
+        val controller = widget.readField("controller")
+        val state = widget.readField("state")
+        return renderResult?.textInputTargets?.lastOrNull {
+            it.controller === controller && it.state === state
+        }
+    }
+
+    private fun resolveClickTargetOrNull(widget: Any): PixelClickTarget? {
+        val callback = widget.readField("onPressed") as? (() -> Unit)
+            ?: widget.readField("onTap") as? (() -> Unit)
+        return if (callback != null) {
+            renderResult?.clickTargets?.lastOrNull { it.onClick === callback }
+        } else {
+            null
+        }
+    }
+
+    private fun resolveSliderTargetOrNull(widget: Any): PixelSliderTarget? {
+        val onDrag = widget.readField("onDrag") as? ((Float) -> Unit)
+        return if (onDrag != null) renderResult?.sliderTargets?.lastOrNull { it.onDrag === onDrag } else null
+    }
+
+    private fun resolveListTargetOrNull(widget: Any): PixelListTarget? {
+        val controller = widget.readField("controller")
+        val state = widget.readField("state")
+        return renderResult?.listTargets?.lastOrNull {
+            it.controller === controller && it.state === state
+        }
+    }
+
+    private fun resolvePagerTargetOrNull(widget: Any): PixelPagerTarget? {
+        val controller = widget.readField("controller")
+        val state = widget.readField("state")
+        return renderResult?.pagerTargets?.lastOrNull {
+            it.controller === controller && it.state === state
+        }
+    }
+
+    private fun shouldStartListDrag(dx: Int, dy: Int): Boolean {
+        return abs(dy) >= abs(dx)
+    }
+
+    private fun resolveTextInputSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
+        val text = target.state.text
+        if (text.isEmpty()) return 0
+        val lines = text.split('\n')
+        val lineCount = lines.size.coerceAtLeast(1)
+        val lineHeight = (target.bounds.height / lineCount).coerceAtLeast(1)
+        val lineIndex = ((logicalY - target.bounds.top).coerceAtLeast(0) / lineHeight).coerceIn(0, lineCount - 1)
+        val line = lines[lineIndex]
+        val localX = (logicalX - target.bounds.left).coerceIn(0, target.bounds.width)
+        val column = if (line.isEmpty()) 0 else (localX.toLong() * line.length / target.bounds.width.coerceAtLeast(1)).toInt()
+        var index = 0
+        repeat(lineIndex) { index += lines[it].length + 1 }
+        return (index + column.coerceIn(0, line.length)).coerceIn(0, text.length)
+    }
+
+    private fun fail(message: String, finder: PixelFinder? = null): Nothing {
+        error(
+            buildString {
+                append(message)
+                if (finder != null) {
+                    append("\n\nFinder diagnostics:\n")
+                    append(finder.diagnostics(runtime.collectWidgets().ifEmpty { listOfNotNull(root) }))
+                }
+                append("\n\nElement tree:\n")
+                append(runtime.dumpElementTree())
+                append("\n\nRender tree:\n")
+                append(runtime.dumpRenderTree())
+                append("\n\nTargets:\n")
+                append(renderResult.describeTargets())
+            },
+        )
+    }
+
+    private enum class TargetKind {
+        ANY,
+        DRAG,
+    }
+
+    private data class Point(val x: Int, val y: Int)
+
+    private val PixelRect.center: Point
+        get() = Point(left + width / 2, top + height / 2)
+}
+
+public object find {
+    public fun byText(text: String): PixelFinder = PixelFinder.ByText(text)
+    public fun byType(type: kotlin.reflect.KClass<*>): PixelFinder = PixelFinder.ByType(type)
+    public fun byKey(key: Any): PixelFinder = PixelFinder.ByKey(key)
+}
+
+public sealed class PixelFinder {
+    internal abstract fun matches(widget: Any): Boolean
+
+    public fun nth(index: Int): PixelFinder {
+        require(index >= 0) { "index must be >= 0" }
+        return Nth(this, index)
+    }
+
+    internal open fun resolve(root: Any?): Any? = resolveAll(root).firstOrNull()
+
+    internal open fun resolveAll(root: Any?): List<Any> {
+        if (root == null) return emptyList()
+        val results = mutableListOf<Any>()
+        val seen = IdentityHashMap<Any, Boolean>()
+        walk(root, seen, results)
+        return results
+    }
+
+    internal fun diagnostics(root: Any?): String {
+        if (root == null) return "<no root widget>"
+        val nodes = mutableListOf<FinderDiagnosticsNode>()
+        val seen = IdentityHashMap<Any, Boolean>()
+        walkDiagnostics(
+            value = root,
+            path = "\$",
+            depth = 0,
+            seen = seen,
+            nodes = nodes,
+        )
+        val matches = nodes.filter { it.matches }
+        return buildString {
+            appendLine("matches=${matches.size}")
+            if (matches.isEmpty()) {
+                appendLine("matchedCandidates=<none>")
+            } else {
+                appendLine("matchedCandidates:")
+                matches.forEachIndexed { index, node ->
+                    appendLine("  [$index] ${node.path}: ${node.summary}")
+                }
+            }
+            appendLine("Widget tree:")
+            nodes.take(MAX_DIAGNOSTIC_NODES).forEach { node ->
+                repeat(node.depth) { append("  ") }
+                append(node.path)
+                append(": ")
+                append(node.summary)
+                if (node.matches) append("  <match>")
+                appendLine()
+            }
+            if (nodes.size > MAX_DIAGNOSTIC_NODES) {
+                append("... truncated ")
+                append(nodes.size - MAX_DIAGNOSTIC_NODES)
+                append(" nodes")
+            }
+        }.trimEnd()
+    }
+
+    private fun walk(value: Any?, seen: IdentityHashMap<Any, Boolean>, results: MutableList<Any>) {
+        if (value == null) return
+        if (value is String || value is Number || value is Boolean || value is Enum<*>) return
+        if (seen.put(value, true) != null) return
+        if (matches(value)) results += value
+        if (value is Iterable<*>) {
+            for (child in value) walk(child, seen, results)
+            return
+        }
+        val pkg = value::class.java.name
+        if (!pkg.startsWith("com.purride.")) return
+        for (field in value::class.java.declaredFields) {
+            field.isAccessible = true
+            walk(field.get(value), seen, results)
+        }
+    }
+
+    private fun walkDiagnostics(
+        value: Any?,
+        path: String,
+        depth: Int,
+        seen: IdentityHashMap<Any, Boolean>,
+        nodes: MutableList<FinderDiagnosticsNode>,
+    ) {
+        if (value == null) return
+        if (value is String || value is Number || value is Boolean || value is Enum<*>) return
+        if (seen.put(value, true) != null) return
+        if (nodes.size >= MAX_DIAGNOSTIC_NODES * 2) return
+        if (value is Iterable<*>) {
+            value.forEachIndexed { index, child ->
+                walkDiagnostics(child, "$path[$index]", depth, seen, nodes)
+            }
+            return
+        }
+        val className = value::class.java.name
+        if (!className.startsWith("com.purride.")) return
+        nodes += FinderDiagnosticsNode(
+            path = path,
+            summary = value.summaryForDiagnostics(),
+            depth = depth,
+            matches = matches(value),
+        )
+        for (field in value::class.java.declaredFields) {
+            field.isAccessible = true
+            walkDiagnostics(
+                value = field.get(value),
+                path = "$path.${field.name}",
+                depth = depth + 1,
+                seen = seen,
+                nodes = nodes,
+            )
+        }
+    }
+
+    public data class ByText(public val text: String) : PixelFinder() {
+        override fun matches(widget: Any): Boolean {
+            val state = widget.readField("state")
+            return widget.readField("text") == text ||
+                widget.readField("data") == text ||
+                widget.readField("placeholder") == text ||
+                state?.readField("text") == text
+        }
+    }
+
+    public data class ByType(public val type: kotlin.reflect.KClass<*>) : PixelFinder() {
+        override fun matches(widget: Any): Boolean = type.java.isInstance(widget)
+    }
+
+    public data class ByKey(public val key: Any) : PixelFinder() {
+        override fun matches(widget: Any): Boolean = widget.readField("key") == key
+    }
+
+    public data class Nth(public val finder: PixelFinder, public val index: Int) : PixelFinder() {
+        override fun matches(widget: Any): Boolean = finder.matches(widget)
+
+        override fun resolve(root: Any?): Any? = finder.resolveAll(root).getOrNull(index)
+
+        override fun resolveAll(root: Any?): List<Any> = listOfNotNull(resolve(root))
+    }
+
+    private data class FinderDiagnosticsNode(
+        val path: String,
+        val summary: String,
+        val depth: Int,
+        val matches: Boolean,
+    )
+
+    private companion object {
+        const val MAX_DIAGNOSTIC_NODES = 160
+    }
+}
+
+private fun Any.summaryForDiagnostics(): String {
+    return buildString {
+        append(this@summaryForDiagnostics::class.java.simpleName)
+        val details = buildList {
+            readField("key")?.let { add("key=$it") }
+            readField("text")?.let { add("text=$it") }
+            readField("data")?.let { add("data=$it") }
+            readField("placeholder")?.let { add("placeholder=$it") }
+            readField("state")?.readField("text")?.let { add("state.text=$it") }
+        }
+        if (details.isNotEmpty()) {
+            append("(")
+            append(details.joinToString())
+            append(")")
+        }
+    }
+}
+
+private fun PixelRenderResult?.describeTargets(): String {
+    if (this == null) return "<no render result>"
+    return buildString {
+        appendLine("clickTargets=${clickTargets.map { it.bounds }}")
+        appendLine("pagerTargets=${pagerTargets.map { it.bounds }}")
+        appendLine("listTargets=${listTargets.map { it.bounds }}")
+        appendLine("textInputTargets=${textInputTargets.map { it.bounds }}")
+        appendLine("sliderTargets=${sliderTargets.map { it.bounds }}")
+    }.trimEnd()
+}
+
+private fun Any.readField(name: String): Any? {
+    return generateSequence(this::class.java as Class<*>?) { it.superclass }
+        .flatMap { it.declaredFields.asSequence() }
+        .firstOrNull { it.name == name }
+        ?.let { field ->
+            field.isAccessible = true
+            field.get(this)
+        }
+}

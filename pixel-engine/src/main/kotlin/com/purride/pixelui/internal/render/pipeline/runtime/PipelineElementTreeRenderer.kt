@@ -40,6 +40,25 @@ internal class PipelineElementTreeRenderer private constructor(
         owner.dispose()
     }
 
+    fun dumpRenderTree(): String {
+        val diagnostics = owner.collectDiagnostics()
+        if (diagnostics.isEmpty()) return "<no render root>"
+        return buildString {
+            for (node in diagnostics) {
+                repeat(node.depth) { append("  ") }
+                append(node.name)
+                node.size?.let { size ->
+                    append(" [")
+                    append(size.width)
+                    append("x")
+                    append(size.height)
+                    append("]")
+                }
+                append("\n")
+            }
+        }.trimEnd()
+    }
+
     private fun Element?.findPipelineRenderRoot(): RenderBox? {
         this ?: return null
         return findRenderObject() as? RenderBox

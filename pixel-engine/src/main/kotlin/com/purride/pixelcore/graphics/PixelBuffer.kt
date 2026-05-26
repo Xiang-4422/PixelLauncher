@@ -11,10 +11,18 @@ public class PixelBuffer(
     public val height: Int,
 ) {
     public val pixels: IntArray = IntArray(width * height)
+    private var nonOpaquePixelCount: Int = width * height
 
     public fun setPixel(x: Int, y: Int, color: PixelColor) {
         if (x !in 0 until width || y !in 0 until height) return
-        pixels[y * width + x] = color.argb
+        val index = y * width + x
+        val argb = color.argb
+        val result = when ((argb ushr 24) and 0xFF) {
+            0 -> return
+            0xFF -> argb
+            else -> blendSrcOver(src = argb, dst = pixels[index])
+        }
+        writePixel(index, result)
     }
 
     public fun getPixel(x: Int, y: Int): PixelColor {
@@ -28,10 +36,22 @@ public class PixelBuffer(
         val endX = (left + rectWidth).coerceIn(startX, width)
         val endY = (top + rectHeight).coerceIn(startY, height)
         val argb = color.argb
+        val alpha = (argb ushr 24) and 0xFF
+        if (alpha == 0) return
+        if (alpha == 0xFF) {
+            for (y in startY until endY) {
+                val base = y * width
+                for (x in startX until endX) {
+                    writePixel(base + x, argb)
+                }
+            }
+            return
+        }
         for (y in startY until endY) {
             val base = y * width
             for (x in startX until endX) {
-                pixels[base + x] = argb
+                val index = base + x
+                writePixel(index, blendSrcOver(src = argb, dst = pixels[index]))
             }
         }
     }
@@ -41,22 +61,37 @@ public class PixelBuffer(
         val right = left + rectWidth - 1
         val bottom = top + rectHeight - 1
         val argb = color.argb
+        val alpha = (argb ushr 24) and 0xFF
+        if (alpha == 0) return
         for (x in left..right) {
             if (x in 0 until width) {
-                if (top in 0 until height) pixels[top * width + x] = argb
-                if (bottom in 0 until height) pixels[bottom * width + x] = argb
+                if (top in 0 until height) {
+                    val index = top * width + x
+                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                }
+                if (bottom in 0 until height) {
+                    val index = bottom * width + x
+                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                }
             }
         }
         for (y in top..bottom) {
             if (y in 0 until height) {
-                if (left in 0 until width) pixels[y * width + left] = argb
-                if (right in 0 until width) pixels[y * width + right] = argb
+                if (left in 0 until width) {
+                    val index = y * width + left
+                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                }
+                if (right in 0 until width) {
+                    val index = y * width + right
+                    writePixel(index, if (alpha == 0xFF) argb else blendSrcOver(src = argb, dst = pixels[index]))
+                }
             }
         }
     }
 
     public fun clear() {
         pixels.fill(PixelColor.Transparent.argb)
+        nonOpaquePixelCount = width * height
     }
 
     /**
@@ -110,10 +145,61 @@ public class PixelBuffer(
         h = h.coerceAtMost(source.height - srcY).coerceAtMost(height - dstY)
         if (w <= 0 || h <= 0) return
 
+        if (source.nonOpaquePixelCount == 0) {
+            for (row in 0 until h) {
+                val srcOffset = (srcY + row) * source.width + srcX
+                val dstOffset = (dstY + row) * width + dstX
+                System.arraycopy(source.pixels, srcOffset, pixels, dstOffset, w)
+            }
+            return
+        }
+
         for (row in 0 until h) {
             val srcOffset = (srcY + row) * source.width + srcX
             val dstOffset = (dstY + row) * width + dstX
-            System.arraycopy(source.pixels, srcOffset, pixels, dstOffset, w)
+            for (blendColumn in 0 until w) {
+                val dstIndex = dstOffset + blendColumn
+                writePixel(dstIndex, blendSrcOver(src = source.pixels[srcOffset + blendColumn], dst = pixels[dstIndex]))
+            }
+        }
+    }
+
+    private fun writePixel(index: Int, argb: Int) {
+        val oldOpaque = ((pixels[index] ushr 24) and 0xFF) == 0xFF
+        val newOpaque = ((argb ushr 24) and 0xFF) == 0xFF
+        if (oldOpaque && !newOpaque) nonOpaquePixelCount += 1
+        if (!oldOpaque && newOpaque) nonOpaquePixelCount -= 1
+        pixels[index] = argb
+    }
+
+    public companion object {
+        public fun blendSrcOver(src: Int, dst: Int): Int {
+            val sa = (src ushr 24) and 0xFF
+            if (sa == 0) return dst
+            if (sa == 0xFF) return src
+
+            val da = (dst ushr 24) and 0xFF
+            val sr = (src ushr 16) and 0xFF
+            val sg = (src ushr 8) and 0xFF
+            val sb = src and 0xFF
+            val dr = (dst ushr 16) and 0xFF
+            val dg = (dst ushr 8) and 0xFF
+            val db = dst and 0xFF
+
+            val invSa = 255 - sa
+            val outA = sa + (da * invSa + 127) / 255
+            if (outA == 0) return 0
+            val srcPremulR = sr * sa
+            val srcPremulG = sg * sa
+            val srcPremulB = sb * sa
+            val dstScale = (da * invSa + 127) / 255
+            val outR = (srcPremulR + dr * dstScale + outA / 2) / outA
+            val outG = (srcPremulG + dg * dstScale + outA / 2) / outA
+            val outB = (srcPremulB + db * dstScale + outA / 2) / outA
+            return (outA shl 24) or
+                (outR.coerceIn(0, 255) shl 16) or
+                (outG.coerceIn(0, 255) shl 8) or
+                outB.coerceIn(0, 255)
         }
     }
 }

@@ -30,6 +30,10 @@ internal class RetainedBuildRuntime(
         return buildOwner.collectDiagnostics()
     }
 
+    override fun collectWidgets(): List<Widget> {
+        return buildOwner.collectWidgets()
+    }
+
     /**
      * 释放内部 `BuildOwner` 以及整棵 retained element tree。
      */

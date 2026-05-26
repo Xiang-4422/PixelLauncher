@@ -1,6 +1,7 @@
 package com.purride.pixelui.widgets.animated
 
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.Opacity
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
@@ -83,7 +84,8 @@ private class AnimatedOpacityState : State<AnimatedOpacityWidget>() {
         val quantized = quantizeOpacity(rawOpacity)
         return when {
             quantized <= 0f -> SizedBox(child = widget.child)
-            else -> widget.child
+            quantized >= 1f -> widget.child
+            else -> Opacity(opacity = quantized, child = widget.child)
         }
     }
 }

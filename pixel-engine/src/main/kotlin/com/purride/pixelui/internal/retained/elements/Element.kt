@@ -97,6 +97,17 @@ internal abstract class Element(
         }
     }
 
+    internal fun collectWidgets(): List<Widget> {
+        val children = mutableListOf<Element>()
+        visitChildren(children::add)
+        return buildList {
+            add(widget)
+            children.forEach { child ->
+                addAll(child.collectWidgets())
+            }
+        }
+    }
+
     /**
      * 读取并登记对 inherited widget 的依赖。
      */

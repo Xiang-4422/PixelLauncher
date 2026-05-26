@@ -80,4 +80,17 @@ internal class PixelUiRuntime(
             }
         }.trimEnd()
     }
+
+    fun dumpRenderTree(): String {
+        return (elementTreeRenderer as? PipelineElementTreeRenderer)?.dumpRenderTree()
+            ?: "<render diagnostics unavailable>"
+    }
+
+    fun hasPendingBuild(): Boolean {
+        return buildRuntime.collectDiagnostics().dirtyQueueDiagnostics.pendingElementCount > 0
+    }
+
+    fun collectWidgets(): List<Widget> {
+        return buildRuntime.collectWidgets()
+    }
 }

@@ -8,6 +8,9 @@ public class PixelTickerProvider(
     private val activeTickers = mutableListOf<PixelTicker>()
     private var frameScheduled = false
 
+    public val activeTickerCount: Int
+        get() = activeTickers.size
+
     /**
      * 创建一个 ticker。
      *

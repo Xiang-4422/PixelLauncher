@@ -1,6 +1,8 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelcore.PixelSpriteSheet
 
 /**
  * [Image] widget 的 render object。
@@ -53,11 +55,97 @@ internal class RenderImage(
                     val srcOffset = srcY * srcW + skipLeft
                     val dstOffset = dstY * targetW + rowStartX
                     val rowLen = rowEndX - rowStartX
-                    System.arraycopy(bitmap.pixels, srcOffset, target.pixels, dstOffset, rowLen)
+                    for (column in 0 until rowLen) {
+                        val dstIndex = dstOffset + column
+                        target.pixels[dstIndex] = PixelBuffer.blendSrcOver(
+                            src = bitmap.pixels[srcOffset + column],
+                            dst = target.pixels[dstIndex],
+                        )
+                    }
                 }
             }
             dstY++
             srcY++
+        }
+    }
+}
+
+/**
+ * [Sprite] widget render object.
+ *
+ * Layout uses the selected frame size. Paint clips to the current layout box and
+ * copies only the frame region from the backing sprite sheet bitmap.
+ */
+internal class RenderSprite(
+    private var sheet: PixelSpriteSheet,
+    private var frameIndex: Int,
+) : RenderBox() {
+
+    init {
+        requireFrameIndex(frameIndex, sheet)
+    }
+
+    fun update(sheet: PixelSpriteSheet, frameIndex: Int) {
+        requireFrameIndex(frameIndex, sheet)
+        val oldFrame = this.sheet.frames[this.frameIndex]
+        val newFrame = sheet.frames[frameIndex]
+        val sizeChanged = oldFrame.width != newFrame.width || oldFrame.height != newFrame.height
+        val anyChanged = this.sheet !== sheet || this.frameIndex != frameIndex
+        if (!anyChanged) return
+        this.sheet = sheet
+        this.frameIndex = frameIndex
+        if (sizeChanged) markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    override fun layout(constraints: RenderConstraints) {
+        val frame = sheet.frames[frameIndex]
+        size = RenderSize(
+            width = constraints.constrainWidth(frame.width),
+            height = constraints.constrainHeight(frame.height),
+        )
+    }
+
+    override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
+        val bitmap = sheet.bitmap
+        val frame = sheet.frames[frameIndex]
+        val copyW = frame.width.coerceAtMost(size.width)
+        val copyH = frame.height.coerceAtMost(size.height)
+        if (copyW <= 0 || copyH <= 0) return
+
+        val target = context.buffer
+        val targetW = target.width
+        val targetH = target.height
+        var dstY = offsetY
+        var srcY = frame.top
+        var copiedRows = 0
+        while (copiedRows < copyH) {
+            if (dstY in 0 until targetH) {
+                val rowStartX = maxOf(0, offsetX)
+                val rowEndX = minOf(targetW, offsetX + copyW)
+                if (rowEndX > rowStartX) {
+                    val skipLeft = rowStartX - offsetX
+                    val srcOffset = srcY * bitmap.width + frame.left + skipLeft
+                    val dstOffset = dstY * targetW + rowStartX
+                    val rowLen = rowEndX - rowStartX
+                    for (column in 0 until rowLen) {
+                        val dstIndex = dstOffset + column
+                        target.pixels[dstIndex] = PixelBuffer.blendSrcOver(
+                            src = bitmap.pixels[srcOffset + column],
+                            dst = target.pixels[dstIndex],
+                        )
+                    }
+                }
+            }
+            dstY++
+            srcY++
+            copiedRows++
+        }
+    }
+
+    private fun requireFrameIndex(frameIndex: Int, sheet: PixelSpriteSheet) {
+        require(frameIndex in sheet.frames.indices) {
+            "frameIndex $frameIndex out of bounds for ${sheet.frames.size} frames"
         }
     }
 }

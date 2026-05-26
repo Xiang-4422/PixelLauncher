@@ -25,6 +25,8 @@ internal interface ElementTreeBuildRuntime {
      */
     fun collectDiagnostics(): BuildOwnerDiagnostics
 
+    fun collectWidgets(): List<Widget>
+
     /**
      * 释放构建运行时持有的 retained element tree 资源。
      */

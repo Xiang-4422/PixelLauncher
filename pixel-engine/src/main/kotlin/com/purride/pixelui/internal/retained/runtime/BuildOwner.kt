@@ -106,6 +106,10 @@ internal class BuildOwner(
             dirtyQueueDiagnostics = dirtyElementScheduler.collectDiagnostics(),
         )
     }
+
+    fun collectWidgets(): List<Widget> {
+        return rootElement?.collectWidgets().orEmpty()
+    }
 }
 
 /**
