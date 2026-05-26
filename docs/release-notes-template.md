@@ -27,6 +27,7 @@
 ## Validation
 
 - `:pixel-engine:checkPublicApi`
+- `:pixel-engine:checkBinaryApi`
 - `:pixel-engine:testDebugUnitTest`
 - `:pixel-engine:lintDebug`
 - `:pixel-engine:assembleDebug`

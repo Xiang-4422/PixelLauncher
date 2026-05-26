@@ -12,6 +12,7 @@
 
 - `./gradlew pixelReleaseCheck --no-daemon`
 - `./gradlew :pixel-engine:checkPublicApi --no-daemon`
+- `./gradlew :pixel-engine:checkBinaryApi --no-daemon`
 - `./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:lintDebug :pixel-engine:assembleDebug :pixel-demo:assembleDebug :pixel-demo:testDebugUnitTest --no-daemon`
 - `./gradlew :pixel-minimal-sample:assembleDebug --no-daemon`
 - `./gradlew :pixel-engine:publishToMavenLocal --dry-run --no-daemon`
@@ -20,6 +21,7 @@
 ## Review Items
 
 - Public API baseline reviewed and intentionally updated.
+- Binary API baseline reviewed and intentionally updated.
 - New public widgets are covered by docs, tests, and demo scenes.
 - Golden or snapshot changes are reviewed as visual changes, not accepted blindly.
 - Performance baselines are read-only unless a separate perf review approves updating them.

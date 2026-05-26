@@ -49,6 +49,7 @@ dependencies {
 }
 
 val publicApiBaseline = layout.projectDirectory.file("api/pixel-engine.api")
+val binaryApiBaseline = layout.projectDirectory.file("api/pixel-engine.binary-api")
 
 val dumpPublicApi by tasks.registering {
     group = "verification"
@@ -112,8 +113,78 @@ tasks.register("checkPublicApi") {
     }
 }
 
+val releaseRuntimeClasses = layout.buildDirectory.dir(
+    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
+)
+
+val dumpBinaryApi by tasks.registering {
+    group = "verification"
+    description = "Writes a deterministic javap dump of pixel-engine release binary API."
+    dependsOn("bundleLibRuntimeToDirRelease")
+
+    inputs.dir(releaseRuntimeClasses)
+    outputs.file(layout.buildDirectory.file("reports/api/pixel-engine.binary-api"))
+
+    doLast {
+        val classDir = releaseRuntimeClasses.get().asFile
+        if (!classDir.exists()) {
+            throw GradleException("Missing release runtime classes at ${classDir.path}")
+        }
+        val javap = File(System.getProperty("java.home"), "bin/javap").absolutePath
+        val classNames = classDir
+            .walkTopDown()
+            .filter { file -> file.isFile && file.extension == "class" }
+            .map { file -> file.relativeTo(classDir).invariantSeparatorsPath.removeSuffix(".class") }
+            .filter { name -> name.isPublishedBinaryApiClass() }
+            .map { name -> name.replace('/', '.') }
+            .sorted()
+            .toList()
+
+        val output = buildString {
+            appendLine("# pixel-engine binary API baseline")
+            classNames.forEach { className ->
+                val result = providers.exec {
+                    commandLine(javap, "-classpath", classDir.path, "-public", className)
+                }
+                result.standardOutput.asText.get()
+                    .normalizeBinaryApiDump()
+                    .takeIf { dump -> dump.isPublicBinaryApiDump() }
+                    ?.let { dump -> appendLine(dump) }
+            }
+        }
+        val report = layout.buildDirectory.file("reports/api/pixel-engine.binary-api").get().asFile
+        report.parentFile.mkdirs()
+        report.writeText(output)
+    }
+}
+
+tasks.register("checkBinaryApi") {
+    group = "verification"
+    description = "Checks the tracked pixel-engine binary API baseline."
+    dependsOn(dumpBinaryApi)
+
+    inputs.file(binaryApiBaseline)
+    inputs.file(layout.buildDirectory.file("reports/api/pixel-engine.binary-api"))
+
+    doLast {
+        val baselineFile = binaryApiBaseline.asFile
+        val actualFile = layout.buildDirectory.file("reports/api/pixel-engine.binary-api").get().asFile
+        if (!baselineFile.exists()) {
+            throw GradleException("Missing binary API baseline: ${baselineFile.path}. Run :pixel-engine:dumpBinaryApi and review the report.")
+        }
+        val expected = baselineFile.readText()
+        val actual = actualFile.readText()
+        if (expected != actual) {
+            throw GradleException(
+                "pixel-engine binary API changed. Review ${actualFile.path} and update ${baselineFile.path} intentionally.",
+            )
+        }
+    }
+}
+
 tasks.named("check") {
     dependsOn("checkPublicApi")
+    dependsOn("checkBinaryApi")
 }
 
 publishing {
@@ -152,4 +223,33 @@ fun String.normalizePublicApiLine(): String {
     return replace(Regex("\\s+"), " ")
         .replace(Regex("\\s*\\{\\s*$"), "")
         .trim()
+}
+
+fun String.isPublishedBinaryApiClass(): Boolean {
+    if (!startsWith("com/purride/pixelcore/") &&
+        !startsWith("com/purride/pixelengine/") &&
+        !startsWith("com/purride/pixelui/")
+    ) {
+        return false
+    }
+    if (contains("/internal/")) return false
+    if (endsWith("/BuildConfig") || contains("/R$") || endsWith("/R")) return false
+    if (substringAfterLast('/').contains("\$WhenMappings")) return false
+    if (Regex("\\$\\d+").containsMatchIn(this)) return false
+    return true
+}
+
+fun String.normalizeBinaryApiDump(): String {
+    return lineSequence()
+        .map { line -> line.trimEnd() }
+        .filterNot { line -> line.startsWith("Compiled from ") }
+        .filterNot { line -> line.isBlank() }
+        .joinToString(separator = "\n")
+}
+
+fun String.isPublicBinaryApiDump(): Boolean {
+    return lineSequence()
+        .firstOrNull()
+        ?.startsWith("public ")
+        ?: false
 }
