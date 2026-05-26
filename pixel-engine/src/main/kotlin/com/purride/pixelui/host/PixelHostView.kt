@@ -33,6 +33,7 @@ import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.HostRootWidget
+import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
 import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
@@ -104,6 +105,8 @@ public class PixelHostView @JvmOverloads constructor(
     internal var lastPagerLogicalX = 0
     internal var lastPagerLogicalY = 0
     internal var lastListLogicalY = 0
+    internal var lastTextInputTapTimeMs: Long = -1L
+    internal var lastTextInputTapState: PixelTextFieldState? = null
     internal var touchMoved = false
     internal val nestedScrollSession = NestedScrollSession()
     internal var candidatePagerTarget: PixelPagerTarget?

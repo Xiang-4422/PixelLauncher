@@ -233,6 +233,17 @@ internal class PixelHostGestureRouter(
         if (!host.touchMoved && logicalPoint != null) {
             (host.candidateTextInputTarget ?: host.resolveTextInputTarget(logicalPoint.first, logicalPoint.second))?.let { target ->
                 host.focusTextInput(target)
+                val selection = resolveTextInputSelection(target, logicalPoint.first, logicalPoint.second)
+                if (!target.readOnly &&
+                    host.lastTextInputTapState === target.state &&
+                    event.eventTime - host.lastTextInputTapTimeMs in 0L..DOUBLE_TAP_TIMEOUT_MS
+                ) {
+                    target.controller.selectWordAt(target.state, selection)
+                } else if (!target.readOnly) {
+                    target.controller.setSelection(target.state, selection)
+                }
+                host.lastTextInputTapState = target.state
+                host.lastTextInputTapTimeMs = event.eventTime
                 host.invalidate()
                 host.candidateTextInputTarget = null
                 recycleVelocityTracker()
@@ -281,5 +292,9 @@ internal class PixelHostGestureRouter(
     private fun recycleVelocityTracker() {
         host.velocityTracker?.recycle()
         host.velocityTracker = null
+    }
+
+    private companion object {
+        const val DOUBLE_TAP_TIMEOUT_MS = 300L
     }
 }

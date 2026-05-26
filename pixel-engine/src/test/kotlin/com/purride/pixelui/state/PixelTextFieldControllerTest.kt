@@ -72,6 +72,37 @@ class PixelTextFieldControllerTest {
     }
 
     @Test
+    fun selectWordAtSelectsAsciiWordRange() {
+        val state = controller.create(initialText = "HELLO pixel_42!")
+
+        controller.selectWordAt(state, index = 8)
+
+        assertEquals(6, state.selectionStart)
+        assertEquals(14, state.selectionEnd)
+        assertEquals("pixel_42", state.text.substring(state.selectionStart, state.selectionEnd))
+    }
+
+    @Test
+    fun selectWordAtSelectsSingleCjkCharacter() {
+        val state = controller.create(initialText = "你好吗")
+
+        controller.selectWordAt(state, index = 1)
+
+        assertEquals(1, state.selectionStart)
+        assertEquals(2, state.selectionEnd)
+    }
+
+    @Test
+    fun selectWordAtWhitespaceCollapsesToCaret() {
+        val state = controller.create(initialText = "A B")
+
+        controller.selectWordAt(state, index = 1)
+
+        assertEquals(1, state.selectionStart)
+        assertEquals(1, state.selectionEnd)
+    }
+
+    @Test
     fun setSelectionClampsIntoCurrentTextRange() {
         val state = controller.create(initialText = "ABCD")
 

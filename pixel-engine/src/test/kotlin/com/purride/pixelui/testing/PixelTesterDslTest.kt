@@ -201,6 +201,29 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun doubleTapTextFieldSelectsWord() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "HELLO")
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                key = "field",
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+
+        tester.doubleTap(find.byKey("field"))
+
+        assertTrue(state.isFocused)
+        assertEquals("HELLO", state.text.substring(state.selectionStart, state.selectionEnd))
+        tester.dispose()
+    }
+
+    @Test
     fun enterTextRejectsReadOnlyTextField() {
         val tester = PixelTester()
         val controller = PixelTextFieldController()

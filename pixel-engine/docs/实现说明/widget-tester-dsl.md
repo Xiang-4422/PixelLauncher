@@ -16,6 +16,7 @@ tester.pumpWidget(
 )
 
 tester.tap(find.byText("OK"))
+tester.doubleTap(find.byKey("field"))
 tester.drag(find.byKey("list"), dx = 0, dy = -12)
 tester.enterText(find.byKey("field"), "hello")
 tester.composeText(find.byKey("field"), "拼")
@@ -34,7 +35,7 @@ Finder：
 ## 边界
 
 - `pumpWidget` 直接调用 `PixelUiRuntime.render`。
-- `tap` / `drag` 先通过 finder 定位 render target bounds，再按坐标命中导出的 click / list / pager / text input / slider target；list 到边界且同点存在 pager target 时会 handoff 给 pager。
+- `tap` / `doubleTap` / `drag` 先通过 finder 定位 render target bounds，再按坐标命中导出的 click / list / pager / text input / slider target；TextField double tap 会选中单词，list 到边界且同点存在 pager target 时会 handoff 给 pager。
 - `enterText` / `composeText` / `updateComposition` / `submitTextInput` 走 text input target 和 controller；readOnly target 会直接报错。
 - finder 支持多结果和 `nth(index)`；失败时会 dump finder 候选、widget 路径、element tree、render tree 和当前 targets。
 - `pumpAndSettle` 会推进 manual scheduler、active ticker、pending build 以及 list/pager scroll activity。

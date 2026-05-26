@@ -135,6 +135,29 @@ public class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
+    public fun selectWordAt(state: PixelTextFieldState, index: Int) {
+        val text = state.text
+        if (text.isEmpty()) {
+            setSelection(state, 0, 0)
+            return
+        }
+        val safeIndex = index.coerceIn(0, text.length - 1)
+        val char = text[safeIndex]
+        if (char.isAsciiWord()) {
+            var start = safeIndex
+            while (start > 0 && text[start - 1].isAsciiWord()) start -= 1
+            var end = safeIndex + 1
+            while (end < text.length && text[end].isAsciiWord()) end += 1
+            setSelection(state, start, end)
+            return
+        }
+        if (char.isWhitespace()) {
+            setSelection(state, safeIndex, safeIndex)
+            return
+        }
+        setSelection(state, safeIndex, safeIndex + 1)
+    }
+
     public fun focus(state: PixelTextFieldState) {
         state.isFocused = true
         state.focusRequested = false
@@ -161,5 +184,9 @@ public class PixelTextFieldController : ChangeNotifier() {
         state.blurRequested = true
         state.focusRequested = false
         notifyListeners()
+    }
+
+    private fun Char.isAsciiWord(): Boolean {
+        return this == '_' || this in '0'..'9' || this in 'A'..'Z' || this in 'a'..'z'
     }
 }
