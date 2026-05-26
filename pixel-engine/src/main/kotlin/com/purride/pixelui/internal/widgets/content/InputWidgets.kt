@@ -71,7 +71,7 @@ internal data class TextFieldWidget(
             alignment = Alignment.CENTER_START,
             state = state,
             controller = controller,
-            readOnly = readOnly,
+            readOnly = readOnly || !enabled,
             autofocus = autofocus,
             minLines = safeMinLines,
             maxLines = safeMaxLines,

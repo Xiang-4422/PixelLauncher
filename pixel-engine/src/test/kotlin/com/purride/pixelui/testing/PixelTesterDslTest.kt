@@ -6,6 +6,7 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
+import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
@@ -270,6 +271,70 @@ class PixelTesterDslTest {
         } catch (error: IllegalStateException) {
             assertTrue(error.message.orEmpty().contains("readOnly"))
         } finally {
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun enterTextRejectsDisabledTextField() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                enabled = false,
+                key = "field",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 12,
+        )
+
+        try {
+            tester.enterText(find.byKey("field"), "NOPE")
+            error("enterText should reject disabled fields")
+        } catch (error: IllegalStateException) {
+            assertTrue(error.message.orEmpty().contains("readOnly"))
+        } finally {
+            assertEquals("", state.text)
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun submitTextInputCoversImeActions() {
+        val actions = listOf(
+            PixelTextInputAction.DONE,
+            PixelTextInputAction.GO,
+            PixelTextInputAction.SEARCH,
+            PixelTextInputAction.SEND,
+            PixelTextInputAction.NEXT,
+        )
+
+        actions.forEach { action ->
+            val tester = PixelTester()
+            val controller = PixelTextFieldController()
+            val state = controller.create(initialText = action.name)
+            var submitted = ""
+
+            tester.pumpWidget(
+                widget = TextField(
+                    state = state,
+                    controller = controller,
+                    textInputAction = action,
+                    onSubmitted = { submitted = it },
+                    key = "field",
+                ),
+                logicalWidth = 80,
+                logicalHeight = 12,
+            )
+
+            tester.tap(find.byKey("field"))
+            tester.submitTextInput()
+
+            assertEquals(action.name, submitted)
             tester.dispose()
         }
     }
