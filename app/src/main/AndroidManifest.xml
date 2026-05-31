@@ -15,6 +15,12 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- SMS/MMS permissions imply telephony; declare it optional so non-telephony
+         devices (tablets / Chrome OS) can still install. -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
