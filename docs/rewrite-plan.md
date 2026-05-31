@@ -1,7 +1,14 @@
 # PixelLauncher → pixel-engine 全量重写计划
 
-> 状态：草稿 · 2026-05-21
+> 状态：**Phase 0–8 已完成** · Phase 9 / 10 未完成（2026-05 按代码复核）
 > 原则：**保留全部 UI 设计**，把渲染/交互/状态层全部迁移到 pixel-engine；IDLE 流体物理完全丢弃，留待日后重新实现。
+>
+> 执行结论（以当前代码为准，本计划其余章节仅作历史参考，不再逐条对账）：
+>
+> - ✅ **Phase 0–8**：9 个屏幕全部迁到 pixel-engine，统一由 [`launcher/LauncherRootHost`](../app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 渲染；旧 `PixelRenderer` / `PixelDisplayView` / GL 路径 / `IdleFluidEngine` 均已删除。
+> - ⬜ **Phase 9**：`MainActivity` 尚未瘦身（仍约 2000 行，压着 SMS 模块编排、选择与视口数学）。
+> - 🚧 **Phase 10**：死渲染代码已清理（旧 render 字体栈、`jbox2d` 依赖已删，设置枚举已迁出 `render/`），但 `launcher/*Layout` 仍残留部分布局/命中数学。
+> - 当前执行口径以 [像素 UI 引擎当前进度](design/engine/像素UI引擎当前进度.md) 与 [pixel-engine 演进路线](../pixel-engine/docs/演进规划/演进路线.md) 为准。
 
 ---
 

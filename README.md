@@ -28,23 +28,23 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 当前真实主干是：
 
 - 单 `Activity`
-- 单一 `LauncherState`
-- 自定义像素渲染链路
+- 单一 `LauncherUiState`（由 `LauncherViewModel` 聚合）
+- pixel-engine widget 渲染链路（`LauncherRootHost` + `PixelHostView`）
 - 状态机驱动页面模式与输入处理
 
 主运行时链路是：
 
-1. `MainActivity` 初始化仓库、字体、渲染器、显示视图和输入代理
+1. `MainActivity` 初始化仓库、字体、`LauncherViewModel` 和 `LauncherRootHost`
 2. `data` 层从系统服务、权限能力或网络中读取真实数据
-3. `LauncherStateTransitions` 把输入和数据收敛成新的 `LauncherState`
-4. `PixelRenderer` 根据状态和屏幕参数生成 `PixelBuffer`
-5. `PixelDisplayView` 把逻辑像素缓冲绘制到屏幕
+3. `LauncherStateTransitions`（纯函数）与 `LauncherViewModel` 把输入和数据收敛成新的 `LauncherUiState`
+4. `MainActivity` 订阅 `LauncherViewModel` 的状态流，把最新 `LauncherUiState` 推送给 `LauncherRootHost`
+5. `LauncherRootHost` 按页面模式构建 pixel-engine 的 widget 树，经 `PixelHostView` 绘制到屏幕
 
 这意味着：
 
-- 当前 UI 不是 Android 控件树
-- 页面布局主要靠布局指标和像素绘制完成
-- 后续开发优先遵循“状态 + 数据 + 渲染”分层，而不是直接堆逻辑到 `MainActivity`
+- 当前 UI 不是 Android 控件树，而是 pixel-engine 的 Widget 树
+- 页面由 `ui/screen` 下的 widget 构建函数声明式描述，不再手写逐像素绘制
+- 后续开发优先遵循“数据 → ViewModel → UiState → widget”单向数据流，而不是直接堆逻辑到 `MainActivity`
 
 ## 3. 代码分层
 
@@ -54,13 +54,19 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
   - 运行时编排入口
   - 核心文件：[MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)
 - `app/src/main/kotlin/com/purride/pixellauncherv2/launcher`
-  - 状态机、页面布局、抽屉与设置页模型、搜索与列表交互
+  - 状态机、纯函数状态迁移、抽屉与设置页模型、设置枚举（主题 / 字体 / 充电特效）、统一渲染宿主
   - 核心文件：[LauncherState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt)
   - 核心文件：[LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
+  - 核心文件：[LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt)（按页面模式构建 pixel-engine widget 树）
+- `app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel`
+  - 把各 `Repository` 数据流聚合成单一 `LauncherUiState`
+  - 核心文件：[LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt)、[LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt)
+- `app/src/main/kotlin/com/purride/pixellauncherv2/ui`
+  - 基于 pixel-engine 的页面与组件：`screen`（每个页面一个 widget 构建函数）、`widget`（Header / BatteryDivider / 设置控件）、`theme`（`LauncherTheme` 颜色方案）、`text`（字形光栅化）
+  - 核心文件：[HomeScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt)、[SettingsScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt)
 - `app/src/main/kotlin/com/purride/pixellauncherv2/render`
-  - 像素字体、像素缓冲、页面绘制、主题、分辨率、动画
-  - 核心文件：[PixelRenderer.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
-  - 核心文件：[PixelDisplayView.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelDisplayView.kt)
+  - 重写后仅保留显示 / 文本 / 动画原语：屏幕分辨率档位、像素字形度量、充电动画节拍
+  - 核心文件：[ScreenProfile.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/ScreenProfile.kt)、[PixelFontEngine.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelFontEngine.kt)（承载 `GlyphStyle` 度量）
 - `app/src/main/kotlin/com/purride/pixellauncherv2/data`
   - 应用列表、设备状态、Usage Access、通信、定位、降雨预测、设置持久化
 - `app/src/main/kotlin/com/purride/pixellauncherv2/system`
@@ -80,8 +86,8 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 ### Home
 
 - 模式：`LauncherMode.HOME`
-- 布局：[HomeLayout.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/HomeLayout.kt)
-- 绘制：[PixelRenderer.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
+- 页面：[HomeScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt)
+- 宿主：[LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt)
 
 当前 Home 会显示：
 
@@ -98,7 +104,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 - 布局：[AppListLayout.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/AppListLayout.kt)
 - 搜索与排序：[DrawerSearchSupport.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/DrawerSearchSupport.kt)
 - 列表基座：[TextListSupport.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/TextListSupport.kt)
-- 滚动物理：[DrawerVerticalScrollController.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/DrawerVerticalScrollController.kt)
+- 渲染与滚动：[LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 内的 pixel-engine `ListViewBuilder`
 
 当前 Drawer 的实现特征：
 
@@ -113,7 +119,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 
 - 模式：`LauncherMode.SETTINGS`
 - 模型：[SettingsMenuModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuModel.kt)
-- 布局：[SettingsMenuLayout.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuLayout.kt)
+- 页面：[SettingsScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt)
 
 当前 Settings 的实现特征：
 
@@ -125,9 +131,9 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 ### Idle
 
 - 模式：`LauncherMode.IDLE`
-- 待机物理：[IdleFluidEngine.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/IdleFluidEngine.kt)
+- 页面：[IdleScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/IdleScreen.kt)
 
-当前 Idle 主要仍是待机页和动效页，不是系统锁屏替代。
+当前 Idle 是简化占位页（重写时已丢弃旧的流体物理，待后续单独立项重做），不是系统锁屏替代。
 
 ## 5. 当前关键数据源
 
@@ -243,7 +249,7 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 ./gradlew testDebugUnitTest
 ```
 
-注意：当前 `testDebugUnitTest` 仍有若干断言失败，不能作为 clone 后的绿色验收线；基础编译验收以 `./gradlew assembleDebug` 为准。
+注意：`:app` 当前没有单元测试（重写后陈旧测试集已整体移除，待按新架构重建），因此 `:app:testDebugUnitTest` 为空通过。完整验收门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，已包含 `:app:assembleDebug` 与 `:app:lintDebug`。
 
 ### Android Studio 运行
 
@@ -280,7 +286,7 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 - 新的数据能力优先进入 `data`
 - 新的页面语义优先进入 `LauncherState` 与 `LauncherStateTransitions`
 - 新的布局规则优先进入 `launcher/*Layout`
-- 新的绘制优先进入 `PixelRenderer`
+- 新的页面与绘制优先进入 `ui/screen` 与 `ui/widget`（pixel-engine widget），不要恢复旧的逐像素渲染器
 
 注释约定：
 
@@ -333,11 +339,11 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 1. 先读本 `README`
 2. 再读技术总览
 3. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
-4. 看 [LauncherState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
-5. 看 [TextListSupport.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/TextListSupport.kt) 和 [PixelRenderer.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelRenderer.kt)
+4. 看 [LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt) / [LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
+5. 看 [LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 和 [ui/screen](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen) 下的页面构建函数
 6. 最后按需求进入具体 `Repository`、`Layout` 和模块文档
 
 ## 11. 当前状态一句话总结
 
 这个项目目前已经具备比较完整的像素 launcher 技术底盘：  
-状态机、像素渲染、文本列表基座、Home 真实数据接入和单页设置系统都已经建立；`pixel-engine` 已经具备可运行的 Widget/runtime/render/host 底座。当前主线先继续补稳 `pixel-engine` 和 `pixel-demo` gate，暂不继续推进新的 `:app` 页面迁移。
+所有页面已迁移到 pixel-engine 渲染（`LauncherViewModel` → `LauncherUiState` → `LauncherRootHost` → `PixelHostView`）；`pixel-engine` 已经具备可运行的 Widget/runtime/render/host 底座，并接入 CI 门禁。当前主线是继续补稳 `pixel-engine` 和 `pixel-demo` gate；`:app` 侧的 `MainActivity` 瘦身（旧布局 / 命中数学下沉）尚未完成。
