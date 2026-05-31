@@ -57,35 +57,6 @@ object SettingsMenuLayout {
             rowMinGap = rowMinGap,
         )
     }
-
-    fun hitTestRow(
-        screenProfile: ScreenProfile,
-        logicalX: Int,
-        logicalY: Int,
-        rowCount: Int,
-        listStartIndex: Int = 0,
-        scrollOffsetPx: Int = 0,
-    ): Int? {
-        if (rowCount <= 0) {
-            return null
-        }
-
-        val metrics = metrics(screenProfile)
-        if (logicalX < metrics.panelX || logicalX >= metrics.panelX + metrics.panelWidth) {
-            return null
-        }
-        if (logicalY < metrics.firstRowY || logicalY >= metrics.panelBottom) {
-            return null
-        }
-
-        return TextListSupport.hitTestRow(
-            viewport = metrics.textList.viewport,
-            logicalY = logicalY,
-            rowCount = rowCount,
-            listStartIndex = listStartIndex,
-            scrollOffsetPx = scrollOffsetPx,
-        )
-    }
 }
 
 data class SettingsMenuLayoutMetrics(

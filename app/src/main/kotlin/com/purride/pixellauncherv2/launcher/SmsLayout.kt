@@ -30,49 +30,6 @@ object SmsLayout {
             rowHeight = threadRowHeight,
         )
     }
-
-    fun detailMetrics(screenProfile: ScreenProfile): SmsDetailLayoutMetrics {
-        val bodyTop = LauncherHeaderLayout.firstContentItemTop
-        val composeTop = (screenProfile.logicalHeight - composeBarHeight - composeBarBottomGap).coerceAtLeast(bodyTop)
-        val bodyBottomExclusive = composeTop
-        return SmsDetailLayoutMetrics(
-            textLeft = LauncherHeaderLayout.horizontalPadding + panelTextInsetX,
-            textWidth = (screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - panelTextInsetX - 1).coerceAtLeast(8),
-            bodyTop = bodyTop,
-            bodyBottomExclusive = bodyBottomExclusive,
-            composeTop = composeTop,
-            composeBottomExclusive = screenProfile.logicalHeight - composeBarBottomGap,
-            composeTextLeft = LauncherHeaderLayout.horizontalPadding + panelTextInsetX,
-            composeSendRight = screenProfile.logicalWidth - LauncherHeaderLayout.horizontalPadding - panelTextInsetX,
-        )
-    }
-
-    fun hitTestThreadRow(
-        screenProfile: ScreenProfile,
-        logicalX: Int,
-        logicalY: Int,
-        rowCount: Int,
-        listStartIndex: Int,
-        scrollOffsetPx: Int,
-    ): Int? {
-        if (rowCount <= 0) {
-            return null
-        }
-        val metrics = threadListMetrics(screenProfile)
-        if (logicalX !in 0 until screenProfile.logicalWidth) {
-            return null
-        }
-        if (logicalY !in metrics.textList.viewport.top until metrics.panelBottom) {
-            return null
-        }
-        return TextListSupport.hitTestRow(
-            viewport = metrics.textList.viewport,
-            logicalY = logicalY,
-            rowCount = rowCount,
-            listStartIndex = listStartIndex,
-            scrollOffsetPx = scrollOffsetPx,
-        )
-    }
 }
 
 data class SmsThreadListLayoutMetrics(
@@ -81,15 +38,4 @@ data class SmsThreadListLayoutMetrics(
     val rowMaxWidth: Int,
     val panelBottom: Int,
     val rowHeight: Int,
-)
-
-data class SmsDetailLayoutMetrics(
-    val textLeft: Int,
-    val textWidth: Int,
-    val bodyTop: Int,
-    val bodyBottomExclusive: Int,
-    val composeTop: Int,
-    val composeBottomExclusive: Int,
-    val composeTextLeft: Int,
-    val composeSendRight: Int,
 )
