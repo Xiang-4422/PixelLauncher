@@ -3,23 +3,17 @@ package com.purride.pixellauncherv2.launcher
 import android.content.Context
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelAxis
-import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelShape as EnginePixelShape
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfile
-import com.purride.pixelui.Alignment
 import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
-import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
-import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
-import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageController
 import com.purride.pixelui.PageView
-import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
@@ -28,8 +22,6 @@ import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
-import com.purride.pixelui.TextOverflow
-import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.jumpToEnd
@@ -37,6 +29,7 @@ import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
+import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
 import com.purride.pixellauncherv2.ui.screen.SmsInboxScreen
@@ -320,72 +313,13 @@ internal class LauncherRootHost(
 
     // ── APP_DRAWER content ────────────────────────────────────────────────────
 
-    private fun buildDrawerPage(): Widget {
-        val apps = drawerApps()
-        return Column(
-            spacing = 0,
-            mainAxisSize = MainAxisSize.MAX,
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            children = listOf(
-                Expanded(
-                    child = Padding(
-                        horizontal = 2,
-                        vertical = 2,
-                        child = ListViewBuilder(
-                            itemCount = apps.size.coerceAtLeast(1),
-                            state = drawerListState,
-                            controller = drawerListController,
-                            itemExtent = drawerRowHeight(),
-                            cacheExtent = 4,
-                            spacing = 1,
-                            itemBuilder = { index ->
-                                val app = apps.getOrNull(index)
-                                drawerListItem(
-                                    label = app?.label?.uppercase() ?: if (uiState.isLoading) "LOADING" else "NO RESULTS",
-                                    enabled = app != null,
-                                    onTap = app?.let { { callbacks.onDrawerAppPressed(index) } },
-                                )
-                            },
-                        ),
-                    ),
-                ),
-            ),
-        )
-    }
-
-    private fun drawerRowHeight(): Int = uiState.selectedFontSize.px + 5
-
-    private fun drawerListItem(
-        label: String,
-        enabled: Boolean,
-        onTap: (() -> Unit)?,
-    ): Widget {
-        val item = Row(
-            mainAxisSize = MainAxisSize.MAX,
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            children = listOf(
-                Expanded(
-                    child = Container(
-                        height = drawerRowHeight(),
-                        fillColor = PixelColor.Transparent,
-                        borderColor = null,
-                        padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
-                        alignment = when (uiState.drawerListAlignment) {
-                            DrawerListAlignment.LEFT   -> Alignment.CENTER_START
-                            DrawerListAlignment.CENTER -> Alignment.CENTER
-                            DrawerListAlignment.RIGHT  -> Alignment.CENTER_END
-                        },
-                        child = Text(
-                            label,
-                            style = TextStyle(color = if (enabled) theme.drawer.itemText else theme.drawer.itemTextMuted),
-                            overflow = TextOverflow.ELLIPSIS,
-                        ),
-                    ),
-                ),
-            ),
-        )
-        return if (onTap != null) GestureDetector(onTap = onTap, child = item) else item
-    }
+    private fun buildDrawerPage(): Widget = DrawerScreen(
+        uiState = uiState,
+        theme = theme,
+        listState = drawerListState,
+        listController = drawerListController,
+        onAppPressed = callbacks.onDrawerAppPressed,
+    )
 
     // ── Sync helpers ──────────────────────────────────────────────────────────
 
@@ -416,12 +350,6 @@ internal class LauncherRootHost(
     }
 
     /** 计算当前应显示的 APP 列表（等同于 MainActivity.currentDrawerApps()）。 */
-    private fun drawerApps(): List<AppEntry> {
-        if (uiState.drawerVisibleApps.isNotEmpty()) return uiState.drawerVisibleApps
-        if (uiState.drawerQuery.isNotBlank()) return emptyList()
-        return uiState.apps
-    }
-
     // ── Companion ─────────────────────────────────────────────────────────────
 
     companion object {
