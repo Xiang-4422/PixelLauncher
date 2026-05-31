@@ -65,11 +65,7 @@ import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
 import com.purride.pixellauncherv2.viewmodel.LauncherViewModel
 import com.purride.pixellauncherv2.viewmodel.toLauncherUiState
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -108,7 +104,13 @@ class MainActivity : AppCompatActivity() {
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
     private var pixelGapEnabled: Boolean = true
     private var selectedTheme: PixelTheme = PixelTheme.DAY
-    private var state = LauncherState()
+    // Single source of truth lives in [launcherViewModel]; `state` delegates onto it,
+    // so every existing `state = transition(state)` reducer call reads/writes there.
+    private var state: LauncherState
+        get() = launcherViewModel.current
+        set(value) {
+            launcherViewModel.current = value
+        }
     private var animationState = LauncherAnimationState()
     private var loadGeneration = 0
     private var launchPending = false
@@ -203,6 +205,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        launcherViewModel = ViewModelProvider(this)[LauncherViewModel::class.java]
         supportActionBar?.hide()
         window.setWindowAnimations(0)
 
@@ -340,20 +343,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Phase 0+: create ViewModel and observe its StateFlow alongside the old renderer.
-        launcherViewModel = ViewModelProvider(this)[LauncherViewModel::class.java]
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launcherViewModel.state.collect { vmState ->
-                    Log.d(
-                        TAG_VM,
-                        "state: battery=${vmState.batteryLevel}% charging=${vmState.isCharging}" +
-                            " missedCalls=${vmState.missedCallCount} unreadSms=${vmState.unreadSmsCount}" +
-                            " theme=${vmState.selectedTheme}",
-                    )
-                }
-            }
-        }
         renderCurrentFrame()
         handleLaunchIntent(intent)
         suppressActivityAnimations()
@@ -751,7 +740,6 @@ class MainActivity : AppCompatActivity() {
             )
             else -> state.copy(mode = mode)
         }
-        launcherViewModel.update { copy(mode = mode) }
         renderCurrentFrame()
         updateTextInputFocus()
         scheduleIdleCheck()
@@ -834,21 +822,6 @@ class MainActivity : AppCompatActivity() {
             )
             else -> return  // IDLE_PAGE, ADVANCED: no-op in new settings screen
         }
-        // Sync appearance fields to ViewModel so the settings screen reflects changes immediately
-        val updated = state  // applyAppearance / applyUiBehavior already updated state
-        launcherViewModel.update {
-            copy(
-                selectedFontSize = updated.selectedFontSize,
-                selectedFontStyle = updated.selectedFontStyle,
-                selectedPixelShape = updated.selectedPixelShape,
-                selectedDotSizePx = updated.selectedDotSizePx,
-                isPixelGapEnabled = updated.isPixelGapEnabled,
-                pixelGapRatio = updated.pixelGapRatio,
-                selectedTheme = updated.selectedTheme,
-                drawerListAlignment = updated.drawerListAlignment,
-                openDrawerInSearchMode = updated.openDrawerInSearchMode,
-            )
-        }
     }
 
     private fun onSettingsItemRatioChanged(item: SettingsMenuItem, ratio: Float) {
@@ -880,20 +853,6 @@ class MainActivity : AppCompatActivity() {
                 newTheme = s.selectedTheme,
             )
             else -> Unit
-        }
-        val updated = state
-        launcherViewModel.update {
-            copy(
-                selectedFontSize = updated.selectedFontSize,
-                selectedFontStyle = updated.selectedFontStyle,
-                selectedPixelShape = updated.selectedPixelShape,
-                selectedDotSizePx = updated.selectedDotSizePx,
-                isPixelGapEnabled = updated.isPixelGapEnabled,
-                pixelGapRatio = updated.pixelGapRatio,
-                selectedTheme = updated.selectedTheme,
-                drawerListAlignment = updated.drawerListAlignment,
-                openDrawerInSearchMode = updated.openDrawerInSearchMode,
-            )
         }
     }
 
@@ -1742,6 +1701,5 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
         const val smsIntentLogTag = "SmsIntent"
-        const val TAG_VM = "MainActivity/VM"
     }
 }
