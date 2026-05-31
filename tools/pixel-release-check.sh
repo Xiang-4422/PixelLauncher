@@ -14,6 +14,9 @@ cd "$ROOT_DIR"
   :pixel-demo:assembleDebug \
   :pixel-demo:testDebugUnitTest \
   :pixel-minimal-sample:assembleDebug \
+  :app:assembleDebug \
+  :app:lintDebug \
+  :app:testDebugUnitTest \
   --no-daemon
 
 ./gradlew :pixel-engine:publishToMavenLocal --dry-run --no-daemon

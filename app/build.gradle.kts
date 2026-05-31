@@ -40,6 +40,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    lint {
+        // Adopt lint as a CI gate on an existing codebase: grandfather the
+        // pre-existing findings via a baseline so the gate catches *new*
+        // regressions. The baselined debt is tracked separately (L-A5).
+        baseline = file("lint-baseline.xml")
+    }
     buildToolsVersion = "36.0.0"
 }
 
