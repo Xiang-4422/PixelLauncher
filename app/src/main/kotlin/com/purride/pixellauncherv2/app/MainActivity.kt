@@ -19,7 +19,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import com.purride.pixellauncherv2.BuildConfig
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
@@ -1621,9 +1620,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun maybeRequestUsageAccess(): Boolean {
-        if (BuildConfig.DEBUG) {
-            return false
-        }
         if (usageAccessPromptShown || screenUsageRepository.hasUsageAccess()) {
             return false
         }
