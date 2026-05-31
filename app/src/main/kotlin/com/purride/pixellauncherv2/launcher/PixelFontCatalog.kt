@@ -1,4 +1,4 @@
-package com.purride.pixellauncherv2.render
+package com.purride.pixellauncherv2.launcher
 
 enum class PixelFontSize(val px: Int) {
     PX_8(8),

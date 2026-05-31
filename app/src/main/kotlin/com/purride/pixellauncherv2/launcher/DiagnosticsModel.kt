@@ -1,6 +1,5 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.PixelFontCatalog
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 

@@ -2,7 +2,7 @@ package com.purride.pixellauncherv2.ui.theme
 
 import android.content.Context
 import com.purride.pixelcore.PixelColor
-import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.launcher.PixelTheme
 import org.json.JSONObject
 
 data class LauncherTheme(

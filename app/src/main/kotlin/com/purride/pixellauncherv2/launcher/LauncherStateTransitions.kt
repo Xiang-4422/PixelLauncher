@@ -2,11 +2,7 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
-import com.purride.pixellauncherv2.render.PixelFontSize
-import com.purride.pixellauncherv2.render.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
-import com.purride.pixellauncherv2.render.PixelTheme
-import com.purride.pixellauncherv2.render.ChargeIdleEffect
 import java.text.Collator
 import java.util.Locale
 

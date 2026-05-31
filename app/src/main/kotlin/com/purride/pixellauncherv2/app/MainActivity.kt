@@ -54,12 +54,12 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.render.LauncherAnimationState
-import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.PixelShape
-import com.purride.pixellauncherv2.render.PixelFontSize
-import com.purride.pixellauncherv2.render.PixelFontStyle
-import com.purride.pixellauncherv2.render.ChargeIdleEffect
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.PixelFontStyle
+import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.WindowModeController

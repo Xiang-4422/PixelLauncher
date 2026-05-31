@@ -2,12 +2,12 @@ package com.purride.pixellauncherv2.data
 
 import android.content.Context
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
-import com.purride.pixellauncherv2.render.ChargeIdleEffect
-import com.purride.pixellauncherv2.render.PixelFontCatalog
-import com.purride.pixellauncherv2.render.PixelFontSize
-import com.purride.pixellauncherv2.render.PixelFontStyle
+import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
-import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 class FontSettingsRepository(

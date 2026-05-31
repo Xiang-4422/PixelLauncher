@@ -36,7 +36,6 @@ import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
 import com.purride.pixelui.state.PixelListState
-import com.purride.pixellauncherv2.render.PixelTheme
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen

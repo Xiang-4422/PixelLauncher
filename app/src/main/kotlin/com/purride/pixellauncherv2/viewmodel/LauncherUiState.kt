@@ -9,11 +9,11 @@ import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
-import com.purride.pixellauncherv2.render.PixelFontCatalog
-import com.purride.pixellauncherv2.render.PixelFontSize
-import com.purride.pixellauncherv2.render.PixelFontStyle
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
-import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 /**

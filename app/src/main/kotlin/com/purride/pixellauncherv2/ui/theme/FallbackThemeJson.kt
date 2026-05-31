@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.ui.theme
 
-import com.purride.pixellauncherv2.render.PixelTheme
+import com.purride.pixellauncherv2.launcher.PixelTheme
 
 internal object FallbackThemeJson {
     private val day = """

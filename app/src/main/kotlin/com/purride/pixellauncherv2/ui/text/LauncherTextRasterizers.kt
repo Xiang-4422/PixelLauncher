@@ -11,8 +11,8 @@ import com.purride.pixelcore.PixelGlyphPack
 import com.purride.pixelcore.PixelGlyphPackAssetLoader
 import com.purride.pixelcore.PixelStyledTextRasterizer
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixellauncherv2.render.PixelFontSize
-import com.purride.pixellauncherv2.render.PixelFontStyle
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.PixelFontStyle
 
 class LauncherTextRasterizers(
     context: Context,

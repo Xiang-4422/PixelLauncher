@@ -1,5 +1,9 @@
 package com.purride.pixellauncherv2.render
 
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.PixelFontStyle
+
 data class GlyphStyle(
     val cellHeight: Int,
     val narrowAdvanceWidth: Int,

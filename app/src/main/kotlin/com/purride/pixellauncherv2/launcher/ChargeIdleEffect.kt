@@ -1,4 +1,4 @@
-package com.purride.pixellauncherv2.render
+package com.purride.pixellauncherv2.launcher
 
 enum class ChargeIdleEffect {
     FLUID,
