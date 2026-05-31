@@ -129,7 +129,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/AndroidStudioProjects/PixelLauncher/gradle/libs.versions.toml"
-            line="12"
+            line="11"
             column="13"/>
     </issue>
 
@@ -140,7 +140,7 @@
         errorLine2="            ~~~~~~~">
         <location
             file="$HOME/AndroidStudioProjects/PixelLauncher/gradle/libs.versions.toml"
-            line="12"
+            line="11"
             column="13"/>
     </issue>
 
@@ -168,23 +168,12 @@
 
     <issue
         id="NewerVersionAvailable"
-        message="A newer version of de.pirckheimer-gymnasium:jbox2d-library than 3.1.0 is available: 4.0.0"
-        errorLine1="jbox2d = &quot;3.1.0&quot;"
-        errorLine2="         ~~~~~~~">
-        <location
-            file="$HOME/AndroidStudioProjects/PixelLauncher/gradle/libs.versions.toml"
-            line="10"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
         message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.9.0 is available: 1.11.0"
         errorLine1="coroutines = &quot;1.9.0&quot;"
         errorLine2="             ~~~~~~~">
         <location
             file="$HOME/AndroidStudioProjects/PixelLauncher/gradle/libs.versions.toml"
-            line="13"
+            line="12"
             column="14"/>
     </issue>
 
