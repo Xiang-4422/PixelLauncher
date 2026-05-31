@@ -11,6 +11,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
@@ -66,8 +67,8 @@ class SettingsScreen(
                             state = listState,
                             controller = listController,
                             itemCount = items.size,
-                            itemExtent = ROW_HEIGHT,
-                            spacing = 1,
+                            itemExtent = SettingsListGeometry.ROW_EXTENT_PX,
+                            spacing = SettingsListGeometry.ROW_SPACING_PX,
                             itemBuilder = { index ->
                                 items[index]
                             },
@@ -215,9 +216,5 @@ class SettingsScreen(
                 setState { }
             }
         }
-    }
-
-    companion object {
-        const val ROW_HEIGHT = 25
     }
 }

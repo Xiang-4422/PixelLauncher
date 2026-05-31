@@ -10,9 +10,10 @@ object SmsLayout {
     private val composeBarHeight: Int
         get() = GlyphStyle.UI_SMALL_10.cellHeight + 4
     private const val composeBarBottomGap = 1
-    private const val threadMetaGap = 1
+    // Fixed pitch matching the engine's SmsThreadsScreen row layout (single source:
+    // SmsThreadGeometry), so visibleRows agrees with what is actually rendered.
     private val threadRowHeight: Int
-        get() = GlyphStyle.APP_LABEL_16.cellHeight + GlyphStyle.UI_SMALL_10.cellHeight + threadMetaGap + 2
+        get() = SmsThreadGeometry.ROW_PITCH_PX
 
     fun threadListMetrics(screenProfile: ScreenProfile): SmsThreadListLayoutMetrics {
         val top = LauncherHeaderLayout.firstContentItemTop

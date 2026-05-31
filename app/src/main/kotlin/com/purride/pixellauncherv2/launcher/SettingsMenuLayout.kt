@@ -8,8 +8,10 @@ object SettingsMenuLayout {
     private const val panelX = 0
     private const val panelBottomPadding = 4
     private const val rowGap = 2
+    // Fixed pitch matching the engine's SettingsScreen row layout (single source:
+    // SettingsListGeometry), so visibleRows agrees with what is actually rendered.
     private val rowHeight: Int
-        get() = GlyphStyle.UI_SMALL_10.cellHeight + rowGap
+        get() = SettingsListGeometry.ROW_PITCH_PX
     private const val rowTextInsetX = 2
     private const val rowValueInsetRight = 2
     private const val rowTextYOffset = 0

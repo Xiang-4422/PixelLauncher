@@ -18,6 +18,7 @@ import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
+import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -67,8 +68,8 @@ fun SmsThreadsScreen(
                     itemCount = uiState.smsThreads.size,
                     state = listState,
                     controller = listController,
-                    itemExtent = THREAD_ROW_HEIGHT,
-                    spacing = 1,
+                    itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
+                    spacing = SmsThreadGeometry.ROW_SPACING_PX,
                     itemBuilder = { index ->
                         val thread = uiState.smsThreads[index]
                         buildThreadRow(thread, theme, onOpenThread)
@@ -119,6 +120,3 @@ private fun buildSnippetLabel(thread: SmsThreadSummary): String {
     val prefix = if (thread.unreadCount > 0) "NEW ${thread.unreadCount}  " else ""
     return prefix + thread.snippet.trim()
 }
-
-/** 每行高度：顶部文字行 + 底部片段行 + 行间距 = 约 22px */
-private const val THREAD_ROW_HEIGHT = 22
