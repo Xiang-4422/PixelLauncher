@@ -48,6 +48,7 @@ import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
+import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
@@ -224,6 +225,8 @@ class MainActivity : AppCompatActivity() {
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
         pixelGapEnabled = appearanceSettings.pixelGapRatio > 0f
         selectedTheme = appearanceSettings.theme
+        // Keep the layout glyph metrics (visibleRows / row heights) in sync with the saved font.
+        GlyphStyle.configure(appearanceSettings.fontSize, appearanceSettings.fontStyle)
         state = LauncherStateTransitions.updateAppearance(
             state = state,
             selectedFontSize = appearanceSettings.fontSize,
@@ -1425,6 +1428,8 @@ class MainActivity : AppCompatActivity() {
         val effectivePixelGapEnabled = newPixelGapRatio > 0f
         pixelGapEnabled = effectivePixelGapEnabled
         selectedTheme = newTheme
+        // Re-sync glyph metrics before updateScreenProfile()/visibleRows() recompute the viewport.
+        GlyphStyle.configure(fontSize, fontStyle)
         fontSettingsRepository.setAppearanceSettings(
             fontSize = fontSize,
             fontStyle = fontStyle,
