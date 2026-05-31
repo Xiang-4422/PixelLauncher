@@ -20,6 +20,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
+import com.purride.pixellauncherv2.launcher.DrawerListGeometry
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -44,7 +45,7 @@ fun DrawerScreen(
     onAppPressed: (Int) -> Unit,
 ): Widget {
     val apps = drawerApps(uiState)
-    val rowHeight = uiState.selectedFontSize.px + 5
+    val rowHeight = DrawerListGeometry.rowExtent(uiState.selectedFontSize.px)
     return Column(
         spacing = 0,
         mainAxisSize = MainAxisSize.MAX,
@@ -60,7 +61,7 @@ fun DrawerScreen(
                         controller = listController,
                         itemExtent = rowHeight,
                         cacheExtent = 4,
-                        spacing = 1,
+                        spacing = DrawerListGeometry.ROW_SPACING_PX,
                         itemBuilder = { index ->
                             val app = apps.getOrNull(index)
                             drawerListItem(

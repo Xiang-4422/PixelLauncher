@@ -6,8 +6,10 @@ import com.purride.pixellauncherv2.render.ScreenProfile
 object AppListLayout {
 
     private const val bottomPadding = 0
+    // Match the engine's rendered drawer row pitch so visibleRows agrees with
+    // what DrawerScreen actually lays out (single source: DrawerListGeometry).
     private val rowHeight: Int
-        get() = GlyphStyle.APP_LABEL_16.cellHeight + maxOf(2, GlyphStyle.APP_LABEL_16.cellHeight / 5)
+        get() = DrawerListGeometry.rowPitch(GlyphStyle.APP_LABEL_16.cellHeight)
     private const val labelTopInset = 0
     private const val hiddenRailWidthDivisor = 5
     private const val hiddenRailMinWidth = 12
