@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -393,6 +394,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // configChanges="uiMode" keeps the activity alive across light/dark toggles;
+        // re-render so an AUTO theme follows the new system uiMode.
+        renderCurrentFrame()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -702,13 +710,17 @@ class MainActivity : AppCompatActivity() {
         val uiState = state.toLauncherUiState()
         launcherRootHost.update(
             state           = uiState,
-            theme           = LauncherThemes.from(applicationContext, uiState.selectedTheme),
+            theme           = LauncherThemes.from(applicationContext, uiState.selectedTheme.resolve(isSystemInDarkMode())),
             screenProfile   = screenProfile,
             chargeTick      = animationState.headerChargeTick,
             pixelGapEnabled = uiState.pixelGapRatio > 0f,
             pixelGapRatio   = uiState.pixelGapRatio,
         )
     }
+
+    /** 系统是否处于暗色模式，用于把 AUTO 主题解析成 NIGHT/DAY。 */
+    private fun isSystemInDarkMode(): Boolean =
+        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
     /** 主页 Pager 手势翻页回调 — 同步旧 state + ViewModel state 的 mode 字段。 */
     private fun onMainPageChanged(mode: LauncherMode) {

@@ -41,6 +41,7 @@
         android:theme="@style/Theme.PixelLauncherV2">
         <activity
             android:name=".app.MainActivity"
+            android:configChanges="uiMode"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
