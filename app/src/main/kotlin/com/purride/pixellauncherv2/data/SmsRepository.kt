@@ -199,6 +199,9 @@ class SmsRepository(
         if (!hasReadSmsPermission()) {
             return emptyList()
         }
+        // Query without a WHERE clause and filter in-process. Some MIUI builds silently
+        // return an empty cursor when a selection parameter is used on content://sms even
+        // though the rows exist — the full scan + filter is safe (same data as readThreads).
         val cursor = try {
             contentResolver.query(
                 Telephony.Sms.CONTENT_URI,
@@ -211,8 +214,8 @@ class SmsRepository(
                     Telephony.Sms.TYPE,
                     Telephony.Sms.READ,
                 ),
-                "${Telephony.Sms.THREAD_ID} = ?",
-                arrayOf(threadId.toString()),
+                null,
+                null,
                 "${Telephony.Sms.DATE} ASC",
             )
         } catch (_: SecurityException) {
@@ -227,11 +230,13 @@ class SmsRepository(
             val idDate = queryCursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
             val idType = queryCursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
             val idRead = queryCursor.getColumnIndexOrThrow(Telephony.Sms.READ)
-            val entries = ArrayList<SmsMessageEntry>(queryCursor.count.coerceAtLeast(0))
+            val entries = ArrayList<SmsMessageEntry>()
             while (queryCursor.moveToNext()) {
+                val rowThreadId = queryCursor.getLong(idThread)
+                if (rowThreadId != threadId) continue
                 entries += SmsMessageEntry(
                     messageId = queryCursor.getLong(idMessage),
-                    threadId = queryCursor.getLong(idThread),
+                    threadId = rowThreadId,
                     address = queryCursor.getString(idAddress).orEmpty(),
                     body = queryCursor.getString(idBody).orEmpty(),
                     dateMillis = queryCursor.getLong(idDate),
