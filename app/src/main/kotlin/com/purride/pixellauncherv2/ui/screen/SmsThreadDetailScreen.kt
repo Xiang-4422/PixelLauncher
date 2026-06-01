@@ -110,10 +110,10 @@ fun SmsThreadDetailScreen(
                 )
             },
         ),
-        // Draft compose bar
+        // Draft compose bar — intrinsic height (no STRETCH); a STRETCH Row here grabs
+        // the column's remaining height and collapses the message list above it.
         Row(
             spacing = 2,
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
             children = listOf(
                 Expanded(
                     child = SizedBox(
