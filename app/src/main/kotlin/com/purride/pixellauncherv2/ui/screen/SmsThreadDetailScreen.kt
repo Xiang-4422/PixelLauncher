@@ -110,14 +110,15 @@ fun SmsThreadDetailScreen(
                 )
             },
         ),
-        // Draft compose bar — intrinsic height (no STRETCH); a STRETCH Row here grabs
-        // the column's remaining height and collapses the message list above it.
-        Row(
-            spacing = 2,
-            children = listOf(
-                Expanded(
-                    child = SizedBox(
-                        height = COMPOSE_HEIGHT,
+        // Draft compose bar — pinned to a fixed height so it can't grab the column's
+        // remaining height and collapse the message list above it (the message list
+        // Expanded takes everything else).
+        SizedBox(
+            height = COMPOSE_HEIGHT,
+            child = Row(
+                spacing = 2,
+                children = listOf(
+                    Expanded(
                         child = TextField(
                             state = draftState,
                             controller = draftController,
@@ -127,11 +128,11 @@ fun SmsThreadDetailScreen(
                             onSubmitted = { onSendDraft() },
                         ),
                     ),
-                ),
-                OutlinedButton(
-                    text = "SEND",
-                    onPressed = onSendDraft,
-                    borderColor = theme.sms.draftBorder,
+                    OutlinedButton(
+                        text = "SEND",
+                        onPressed = onSendDraft,
+                        borderColor = theme.sms.draftBorder,
+                    ),
                 ),
             ),
         ),
@@ -139,6 +140,6 @@ fun SmsThreadDetailScreen(
 )
 
 private const val MSG_ROW_HEIGHT = 24
-private const val COMPOSE_HEIGHT = 16
+private const val COMPOSE_HEIGHT = 18
 /** android.provider.Telephony.Sms.MESSAGE_TYPE_SENT = 2 */
 private const val TYPE_SENT = 2
