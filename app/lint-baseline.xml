@@ -2,72 +2,6 @@
 <issues format="6" by="lint 9.0.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.1)" variant="all" version="9.0.1">
 
     <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/purride/pixellauncherv2/data/SmsNotificationHelper.kt"
-            line="40"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Missing permissions required by NotificationManagerCompat.notify: android.permission.POST_NOTIFICATIONS"
-        errorLine1="        NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/purride/pixellauncherv2/data/SmsNotificationHelper.kt"
-            line="40"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        NotificationManagerCompat.from(context).notify(unsupportedMmsNotificationId, notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/purride/pixellauncherv2/data/SmsNotificationHelper.kt"
-            line="52"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Missing permissions required by NotificationManagerCompat.notify: android.permission.POST_NOTIFICATIONS"
-        errorLine1="        NotificationManagerCompat.from(context).notify(unsupportedMmsNotificationId, notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/purride/pixellauncherv2/data/SmsNotificationHelper.kt"
-            line="52"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="NotificationPermission"
-        message="When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission"
-        errorLine1="        NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/purride/pixellauncherv2/data/SmsNotificationHelper.kt"
-            line="40"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="NotificationPermission"
-        message="When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission"
-        errorLine1="        NotificationManagerCompat.from(context).notify(unsupportedMmsNotificationId, notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/com/purride/pixellauncherv2/data/SmsNotificationHelper.kt"
-            line="52"
-            column="9"/>
-    </issue>
-
-    <issue
         id="AndroidGradlePluginVersion"
         message="A newer version of Gradle than 9.1.0 is available: 9.5.1"
         errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip"
@@ -151,7 +85,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="45"
+            line="46"
             column="13"/>
     </issue>
 
@@ -184,7 +118,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="45"
+            line="46"
             column="13"/>
     </issue>
 

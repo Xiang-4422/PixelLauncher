@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -1603,6 +1604,11 @@ class MainActivity : AppCompatActivity() {
             }
             if (!communicationStatusRepository.hasSmsPermission()) {
                 add(Manifest.permission.READ_SMS)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
             }
         }.distinct()
         if (missingPermissions.isEmpty()) {
