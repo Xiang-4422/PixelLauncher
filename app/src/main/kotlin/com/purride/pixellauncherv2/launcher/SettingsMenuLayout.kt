@@ -3,77 +3,35 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.ScreenProfile
 
+/**
+ * 设置页 / 短信收件箱的视口行数计算（状态机用）。
+ *
+ * 设置列表行高与引擎 SettingsScreen 共用固定 [SettingsListGeometry]；短信收件箱是横向
+ * pager（一条一页），[largeVisibleRows] 仅作非可视的选择 clamp。
+ */
 object SettingsMenuLayout {
 
-    private const val panelX = 0
     private const val panelBottomPadding = 4
     private const val rowGap = 2
-    // Fixed pitch matching the engine's SettingsScreen row layout (single source:
-    // SettingsListGeometry), so visibleRows agrees with what is actually rendered.
+
+    /** 设置列表固定行距（单一来源 [SettingsListGeometry]）。 */
     private val rowHeight: Int
         get() = SettingsListGeometry.ROW_PITCH_PX
-    private const val rowTextInsetX = 2
-    private const val rowValueInsetRight = 2
-    private const val rowTextYOffset = 0
-    private const val rowMinGap = 3
+
     private val largeRowHeight: Int
         get() = (GlyphStyle.APP_LABEL_16.cellHeight * 2) + rowGap
 
-    fun metrics(screenProfile: ScreenProfile): SettingsMenuLayoutMetrics {
-        return metrics(screenProfile, rowHeight)
-    }
+    fun visibleRows(screenProfile: ScreenProfile): Int = computeVisibleRows(screenProfile, rowHeight)
 
-    fun largeTextMetrics(screenProfile: ScreenProfile): SettingsMenuLayoutMetrics {
-        return metrics(screenProfile, largeRowHeight)
-    }
+    fun largeVisibleRows(screenProfile: ScreenProfile): Int = computeVisibleRows(screenProfile, largeRowHeight)
 
-    private fun metrics(
-        screenProfile: ScreenProfile,
-        listRowHeight: Int,
-    ): SettingsMenuLayoutMetrics {
-        val width = screenProfile.logicalWidth.coerceAtLeast(24)
+    private fun computeVisibleRows(screenProfile: ScreenProfile, listRowHeight: Int): Int {
         val panelTop = LauncherHeaderLayout.firstContentItemTop
         val panelBottom = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(panelTop + 24)
-        val rowTextX = panelX + rowTextInsetX
-        val rowValueRightX = (panelX + width - rowValueInsetRight).coerceAtLeast(rowTextX)
-        val textList = TextListSupport.createLayoutMetrics(
+        return TextListSupport.createLayoutMetrics(
             top = panelTop,
             bottomExclusive = panelBottom,
             rowHeight = listRowHeight,
-        )
-
-        return SettingsMenuLayoutMetrics(
-            panelX = panelX,
-            panelTop = panelTop,
-            panelWidth = width,
-            panelBottom = panelBottom,
-            textList = textList,
-            firstRowY = textList.viewport.top,
-            rowAreaHeight = textList.viewport.height,
-            rowHeight = listRowHeight,
-            visibleRows = textList.viewport.visibleRows,
-            rowTextX = rowTextX,
-            rowValueRightX = rowValueRightX,
-            rowTextYOffset = rowTextYOffset,
-            rowMaxTextWidth = (screenProfile.logicalWidth - rowTextX - 1).coerceAtLeast(8),
-            rowMinGap = rowMinGap,
-        )
+        ).viewport.visibleRows
     }
 }
-
-data class SettingsMenuLayoutMetrics(
-    val panelX: Int,
-    val panelTop: Int,
-    val panelWidth: Int,
-    val panelBottom: Int,
-    val textList: TextListLayoutMetrics,
-    val firstRowY: Int,
-    val rowAreaHeight: Int,
-    val rowHeight: Int,
-    val visibleRows: Int,
-    val rowTextX: Int,
-    val rowValueRightX: Int,
-    val rowTextYOffset: Int,
-    val rowMaxTextWidth: Int,
-    val rowMinGap: Int,
-)

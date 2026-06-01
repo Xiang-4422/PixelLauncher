@@ -133,10 +133,10 @@ class MainActivity : AppCompatActivity() {
         override fun isActive(): Boolean = !(isDestroyed || isFinishing)
 
         override fun smsThreadsVisibleRows(): Int =
-            SmsLayout.threadListMetrics(screenProfile).textList.viewport.visibleRows
+            SmsLayout.threadVisibleRows(screenProfile)
 
         override fun smsInboxVisibleRows(): Int =
-            SettingsMenuLayout.largeTextMetrics(screenProfile).visibleRows
+            SettingsMenuLayout.largeVisibleRows(screenProfile)
 
         override fun updateTextInputFocus() = this@MainActivity.updateTextInputFocus()
 
@@ -927,13 +927,9 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun visibleRows(): Int {
-        return AppListLayout.metrics(screenProfile).textList.viewport.visibleRows
-    }
+    private fun visibleRows(): Int = AppListLayout.visibleRows(screenProfile)
 
-    private fun settingsVisibleRows(): Int {
-        return SettingsMenuLayout.metrics(screenProfile).textList.viewport.visibleRows
-    }
+    private fun settingsVisibleRows(): Int = SettingsMenuLayout.visibleRows(screenProfile)
 
     /**
      * 从当前页面打开抽屉，并根据持久化偏好决定是否默认进入搜索态。
