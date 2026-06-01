@@ -91,7 +91,9 @@ object LauncherThemes {
         }
 
     fun fallbackFrom(pixelTheme: PixelTheme): LauncherTheme =
-        fallbackThemes.getValue(pixelTheme)
+        // AUTO is a setting sentinel, not a real theme; resolve it (no system info
+        // here, so default to DAY) before looking up the fallback map.
+        fallbackThemes.getValue(pixelTheme.resolve(systemInDarkMode = false))
 
     private fun parse(rawJson: String): LauncherTheme {
         val json = JSONObject(rawJson)
@@ -181,8 +183,8 @@ object LauncherThemes {
     }
 
     private val fallbackThemes: Map<PixelTheme, LauncherTheme> by lazy {
-        PixelTheme.entries.associateWith { theme ->
-            parse(FallbackThemeJson.byTheme.getValue(theme))
-        }
+        // Build only from the themes that have fallback JSON (DAY / NIGHT). AUTO is a
+        // setting sentinel resolved to DAY/NIGHT before lookup, never a key here.
+        FallbackThemeJson.byTheme.mapValues { (_, rawJson) -> parse(rawJson) }
     }
 }
