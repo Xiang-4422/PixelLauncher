@@ -464,4 +464,34 @@ class PixelListControllerTest {
         assertTrue(state.isSettling)
         assertEquals(-300f, state.scrollVelocityPxPerSecond, 0.001f)
     }
+
+    @Test
+    fun stepDoesNotNotifyWhenListIsIdle() {
+        val state = controller.create()
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 80)
+
+        var notifications = 0
+        controller.addListener { notifications++ }
+
+        controller.step(state, deltaMs = 16L, viewportHeightPx = 20, contentHeightPx = 80)
+        controller.step(state, deltaMs = 16L, viewportHeightPx = 20, contentHeightPx = 80)
+
+        // 静止列表（几何无变化）每帧 step 不得触发监听者，否则宿主无限重绘空转。
+        assertEquals(0, notifications)
+    }
+
+    @Test
+    fun stepNotifiesWhileSettling() {
+        val state = controller.create()
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 80)
+        controller.fling(state, velocityPxPerSecond = -300f)
+        assertTrue(state.isSettling)
+
+        var notifications = 0
+        controller.addListener { notifications++ }
+        controller.step(state, deltaMs = 16L, viewportHeightPx = 20, contentHeightPx = 80)
+
+        // settling 中的 step 必须通知，惯性滚动才能逐帧推进。
+        assertTrue(notifications >= 1)
+    }
 }

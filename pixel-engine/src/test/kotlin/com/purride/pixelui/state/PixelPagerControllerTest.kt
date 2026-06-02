@@ -122,4 +122,33 @@ class PixelPagerControllerTest {
         assertEquals(2, state.currentPage)
         assertEquals(2, state.settleTargetPage)
     }
+
+    @Test
+    fun stepDoesNotNotifyWhenPagerIsIdle() {
+        val state = controller.create(pageCount = 3, currentPage = 1)
+        var notifications = 0
+        controller.addListener { notifications++ }
+
+        controller.step(state, deltaMs = 16L)
+        controller.step(state, deltaMs = 16L)
+
+        // 静止 pager 每帧 step 不得触发监听者，否则宿主会无限重绘空转。
+        assertEquals(0, notifications)
+    }
+
+    @Test
+    fun stepNotifiesWhileSettling() {
+        val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.HORIZONTAL)
+        controller.startDrag(state)
+        controller.dragBy(state, deltaPx = 45f, viewportSizePx = 100)
+        controller.endDrag(state, viewportSizePx = 100, velocityPxPerSecond = 0f)
+        assertTrue(state.isSettling)
+
+        var notifications = 0
+        controller.addListener { notifications++ }
+        controller.step(state, deltaMs = 16L)
+
+        // 仍在 settling 时 step 必须通知，settle 动画才能逐帧推进。
+        assertEquals(1, notifications)
+    }
 }

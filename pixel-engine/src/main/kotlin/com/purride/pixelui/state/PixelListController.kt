@@ -30,19 +30,50 @@ public class PixelListController(
         viewportHeightPx: Int,
         contentHeightPx: Int,
     ) {
-        state.viewportHeightPx = viewportHeightPx.coerceAtLeast(0)
-        state.contentHeightPx = contentHeightPx.coerceAtLeast(0)
-        state.maxScrollOffsetPx = maxScrollOffsetPx(
+        reconcileGeometry(
+            state = state,
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
-        state.scrollOffsetPx = coerceOffset(state.scrollOffsetPx, state.maxScrollOffsetPx)
-        if (state.scrollOffsetPx <= 0f || state.scrollOffsetPx >= state.maxScrollOffsetPx) {
+        notifyListeners()
+    }
+
+    /**
+     * 把 viewport / content 几何同步进 [state] 并夹紧滚动偏移，返回本次是否真的
+     * 改变了任何字段。
+     *
+     * 与 [sync] 的区别：本方法**不**调用 [notifyListeners]，由调用方决定是否通知。
+     * 每帧的 [step] 借此在列表静止时保持沉默——否则 `step → notifyListeners`
+     * 会让监听该控制器的 element 每帧 markNeedsBuild，宿主 postInvalidateOnAnimation
+     * 永不收敛，形成空转重绘循环。[sync] 仍保持"总是通知"的对外语义。
+     */
+    private fun reconcileGeometry(
+        state: PixelListState,
+        viewportHeightPx: Int,
+        contentHeightPx: Int,
+    ): Boolean {
+        val newViewportHeightPx = viewportHeightPx.coerceAtLeast(0)
+        val newContentHeightPx = contentHeightPx.coerceAtLeast(0)
+        val newMaxScrollOffsetPx = maxScrollOffsetPx(
+            viewportHeightPx = viewportHeightPx,
+            contentHeightPx = contentHeightPx,
+        )
+        val newScrollOffsetPx = coerceOffset(state.scrollOffsetPx, newMaxScrollOffsetPx)
+        var changed = newViewportHeightPx != state.viewportHeightPx ||
+            newContentHeightPx != state.contentHeightPx ||
+            newMaxScrollOffsetPx != state.maxScrollOffsetPx ||
+            newScrollOffsetPx != state.scrollOffsetPx
+        state.viewportHeightPx = newViewportHeightPx
+        state.contentHeightPx = newContentHeightPx
+        state.maxScrollOffsetPx = newMaxScrollOffsetPx
+        state.scrollOffsetPx = newScrollOffsetPx
+        if (newScrollOffsetPx <= 0f || newScrollOffsetPx >= newMaxScrollOffsetPx) {
             if (state.isSettling) {
                 stopSettling(state)
+                changed = true
             }
         }
-        notifyListeners()
+        return changed
     }
 
     public fun dragBy(
@@ -165,12 +196,17 @@ public class PixelListController(
         viewportHeightPx: Int,
         contentHeightPx: Int,
     ) {
-        sync(
+        val geometryChanged = reconcileGeometry(
             state = state,
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
         if (!state.isSettling || deltaMs <= 0L) {
+            // 列表静止（或无时间推进）时，仅在几何真正变化时通知一次，否则保持
+            // 沉默，让宿主进入 idle，不再每帧空转重绘。
+            if (geometryChanged) {
+                notifyListeners()
+            }
             return
         }
 

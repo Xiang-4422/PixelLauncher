@@ -152,9 +152,14 @@ public class PixelPagerController(
     }
 
     public fun step(state: PixelPagerState, deltaMs: Long) {
-        val wasSettling = state.motionState.isSettling
+        // 没有 settling 动画在跑时，step 不会改变任何状态。此处提前返回、
+        // 不调用 notifyListeners()，避免静止的 pager 每帧都触发监听者重建 →
+        // 宿主 postInvalidateOnAnimation 永不停的空转重绘循环。
+        if (!state.motionState.isSettling) {
+            return
+        }
         state.motionState = motionController.step(state.motionState, deltaMs)
-        if (wasSettling && !state.motionState.isSettling) {
+        if (!state.motionState.isSettling) {
             state.currentPage = state.settleTargetPage.coerceIn(0, state.pageCount - 1)
             state.motionState = motionController.reset()
         }
