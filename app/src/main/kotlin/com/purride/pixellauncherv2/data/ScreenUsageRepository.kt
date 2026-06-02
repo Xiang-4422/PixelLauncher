@@ -4,6 +4,7 @@ import android.app.AppOpsManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.os.Build
 import android.os.Process
 import java.util.Calendar
 import java.util.Locale
@@ -68,11 +69,24 @@ class ScreenUsageRepository(
 
     /** 检查当前是否已经获得 Usage Access。 */
     fun hasUsageAccess(): Boolean {
-        val mode = appOpsManager?.unsafeCheckOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            appContext.packageName,
-        ) ?: return false
+        val ops = appOpsManager ?: return false
+        // unsafeCheckOpNoThrow 仅在 API 29+ 存在；minSdk=24 时低版本必须回退到
+        // 语义等价的 checkOpNoThrow（API 29 起被标记 deprecated，但功能一致），
+        // 否则 API 24–28 设备会在运行时抛 NoSuchMethodError 崩溃。
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ops.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                appContext.packageName,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            ops.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                appContext.packageName,
+            )
+        }
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
