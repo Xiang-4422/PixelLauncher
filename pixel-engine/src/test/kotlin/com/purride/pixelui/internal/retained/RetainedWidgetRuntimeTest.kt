@@ -335,6 +335,35 @@ class RetainedWidgetRuntimeTest {
     }
 
     @Test
+    fun reRenderingIdleTreeDoesNotRequestVisualUpdateWithinRenderPass() {
+        val visualUpdates = mutableListOf<Unit>()
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { visualUpdates += Unit },
+            widgetAdapter = UnsupportedWidgetAdapter,
+        )
+
+        try {
+            // 首帧（含 mount）：reconcile + buildScope 全在 render pass 内，标脏由本帧
+            // buildScope 排空，不得请求新帧。
+            buildRuntime.resolveElementTree(
+                TestSingleChildRenderWidget(label = "a", child = TestRenderWidget(label = "a")),
+            )
+            assertEquals(0, visualUpdates.size)
+
+            // 用全新 widget 实例再渲染一帧（宿主 content provider 每帧返回新实例的常态）：
+            // reconciliation 会 Element.update→markNeedsBuild，但同样在 pass 内被本帧
+            // buildScope 处理完，不得请求新帧——否则宿主 postInvalidateOnAnimation 永不
+            // 收敛，任何含 widget 树的页面静止时也满帧空转重绘。
+            buildRuntime.resolveElementTree(
+                TestSingleChildRenderWidget(label = "b", child = TestRenderWidget(label = "b")),
+            )
+            assertEquals(0, visualUpdates.size)
+        } finally {
+            buildRuntime.dispose()
+        }
+    }
+
+    @Test
     fun singleChildRenderObjectWidgetConnectsChildRenderObject() {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },

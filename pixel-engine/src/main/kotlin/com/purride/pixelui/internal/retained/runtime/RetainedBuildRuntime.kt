@@ -21,8 +21,7 @@ internal class RetainedBuildRuntime(
      * 执行一次 retained element tree 构建请求。
      */
     override fun resolveElementTree(request: ElementTreeBuildRequest): Element? {
-        buildOwner.updateRootWidget(request.root)
-        buildOwner.buildScope()
+        buildOwner.renderPass(request.root)
         return buildOwner.rootElement
     }
 

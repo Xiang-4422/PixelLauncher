@@ -40,6 +40,27 @@ internal class BuildOwner(
     }
 
     /**
+     * 在一次完整 render pass 内重建 retained 树：先用新根 widget reconcile，再排空
+     * dirty 队列。
+     *
+     * 关键不变量：reconcile（[updateRootWidget] → `Element.update` → 各 element 的
+     * markNeedsBuild）与 build 期间标脏的 element，都会被本次 [buildScope] 在同一帧
+     * 内处理完，因此 pass 期间 [requestVisualUpdate] 被抑制、不再向宿主多排一帧。
+     * 否则「每帧 reconcile 都 markNeedsBuild → requestVisualUpdate → 下一帧」会让
+     * 宿主 postInvalidateOnAnimation 永不收敛——任何含 widget 树的页面在静止时也会
+     * 满帧空转重绘。
+     */
+    fun renderPass(widget: Widget) {
+        inRenderPass = true
+        try {
+            updateRootWidget(widget)
+            buildScope()
+        } finally {
+            inRenderPass = false
+        }
+    }
+
+    /**
      * 把一个 element 加入下一轮 build 调度。
      */
     fun scheduleBuildFor(element: Element) {
@@ -49,10 +70,19 @@ internal class BuildOwner(
 
     /**
      * 请求宿主执行一次视觉更新。
+     *
+     * render pass 内标脏的 element 由本次 [buildScope] 处理完，无需另排一帧，故在
+     * pass 内直接返回；只有 pass 外的标脏（触摸、定时器、帧间 listenable 变化等
+     * 真实的带外事件）才请求新帧。
      */
     fun requestVisualUpdate() {
+        if (inRenderPass) {
+            return
+        }
         onVisualUpdate()
     }
+
+    private var inRenderPass = false
 
     /**
      * 注册一个 listenable 依赖。
