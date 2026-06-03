@@ -30,12 +30,20 @@ public class PixelListController(
         viewportHeightPx: Int,
         contentHeightPx: Int,
     ) {
-        reconcileGeometry(
-            state = state,
-            viewportHeightPx = viewportHeightPx,
-            contentHeightPx = contentHeightPx,
-        )
-        notifyListeners()
+        // 仅在几何真的变化时通知。每个滚动/列表 viewport 的 layout() 每帧都调用
+        // sync()，而 layout 发生在宿主 render pass 之外（不受 BuildOwner 的
+        // inRenderPass 抑制）；若无条件通知，监听该控制器的 widget 就会每帧
+        // markNeedsBuild → 宿主 postInvalidateOnAnimation 永不收敛，任何含
+        // 列表的页面静止时也满帧空转。事件驱动调用方（dragBy/scrollTo/restoreState
+        // 等）在 sync 之后各自再 notify，不依赖此处的无条件通知。
+        if (reconcileGeometry(
+                state = state,
+                viewportHeightPx = viewportHeightPx,
+                contentHeightPx = contentHeightPx,
+            )
+        ) {
+            notifyListeners()
+        }
     }
 
     /**
