@@ -472,7 +472,11 @@ class MainActivity : AppCompatActivity() {
                 navigateHomeFromHardwareKey()
                 return true
             }
-            if (onKeyDown(event.keyCode, event)) {
+            // BACK 必须走正常的 onBackPressedDispatcher 流程（onBackPressed 按 mode
+            // 关闭 SMS / 设置等覆盖层）。绝不能在这里经 onKeyDown 处理：onKeyDown 无
+            // BACK 分支，会落到 super.onKeyDown(KEYCODE_BACK)，后者 startTracking() 并
+            // 返回 true，从而吞掉按键、导致 onBackPressed 永不触发（SMS 里返回键失效）。
+            if (event.keyCode != KeyEvent.KEYCODE_BACK && onKeyDown(event.keyCode, event)) {
                 return true
             }
         }
