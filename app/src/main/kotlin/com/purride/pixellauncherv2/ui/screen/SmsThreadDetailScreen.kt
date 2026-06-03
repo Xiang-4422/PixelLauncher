@@ -150,6 +150,8 @@ private fun buildMessage(
                 style = TextStyle(color = if (isOut) theme.text.muted else theme.sms.body),
                 softWrap = true,
                 maxLines = Int.MAX_VALUE,
+                // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
+                textAlign = if (isOut) TextAlign.END else TextAlign.START,
             ),
         ),
     )

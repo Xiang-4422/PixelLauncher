@@ -7,7 +7,6 @@ import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Row
-import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
@@ -86,6 +85,10 @@ private fun buildThreadRow(
     onOpenThread: (threadId: Long, address: String) -> Unit,
 ): Widget = GestureDetector(
     onTap = { onOpenThread(thread.threadId, thread.address) },
+    // 内容优先的两行布局：
+    //  行1 = [未读圆圈徽标(accent)] 号码(dim 次要) ··· 时间(dim)
+    //  行2 = 摘要(body 亮色，主要可读元素)
+    // 取代旧的"号码抢眼蓝 + 每行重复 NEW n 文字"。
     child = Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MIN,
@@ -94,13 +97,22 @@ private fun buildThreadRow(
             Row(
                 spacing = 2,
                 crossAxisAlignment = CrossAxisAlignment.CENTER,
-                children = listOf(
-                    Text(
-                        thread.address.uppercase(),
-                        style = TextStyle(color = theme.sms.sender),
-                        overflow = TextOverflow.ELLIPSIS,
+                children = listOfNotNull(
+                    if (thread.unreadCount > 0) {
+                        Text(
+                            unreadBadge(thread.unreadCount),
+                            style = TextStyle(color = theme.sms.sender),
+                        )
+                    } else {
+                        null
+                    },
+                    Expanded(
+                        child = Text(
+                            thread.address.uppercase(),
+                            style = TextStyle(color = theme.text.muted),
+                            overflow = TextOverflow.ELLIPSIS,
+                        ),
                     ),
-                    Expanded(child = SizedBox(width = 0, height = 0)),
                     Text(
                         SmsTimeFormatter.format(thread.dateMillis),
                         style = TextStyle(color = theme.sms.timestamp),
@@ -108,15 +120,17 @@ private fun buildThreadRow(
                 ),
             ),
             Text(
-                buildSnippetLabel(thread),
-                style = TextStyle(color = theme.text.muted),
+                thread.snippet.trim(),
+                style = TextStyle(color = theme.sms.body),
                 overflow = TextOverflow.ELLIPSIS,
             ),
         ),
     ),
 )
 
-private fun buildSnippetLabel(thread: SmsThreadSummary): String {
-    val prefix = if (thread.unreadCount > 0) "NEW ${thread.unreadCount}  " else ""
-    return prefix + thread.snippet.trim()
+/** 未读徽标：圆圈数字（①..⑳，>20 用 ⑳+），紧凑且在像素字库覆盖范围内（U+2460..）。 */
+private fun unreadBadge(count: Int): String = when {
+    count <= 0 -> ""
+    count <= 20 -> ('①'.code + count - 1).toChar().toString()
+    else -> "⑳+"
 }
