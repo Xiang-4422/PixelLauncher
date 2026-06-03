@@ -248,7 +248,7 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 ./gradlew testDebugUnitTest
 ```
 
-注意：`:app` 当前没有单元测试（重写后陈旧测试集已整体移除，待按新架构重建），因此 `:app:testDebugUnitTest` 为空通过。完整验收门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，已包含 `:app:assembleDebug` 与 `:app:lintDebug`。
+注意：`:app` 已按新架构重建单元测试（ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等），`:app:testDebugUnitTest` 会实际执行。完整验收门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，已包含 `:app:assembleDebug`、`:app:lintDebug` 与 `:app:testDebugUnitTest`。
 
 ### Android Studio 运行
 
