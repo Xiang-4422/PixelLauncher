@@ -113,6 +113,23 @@ public class PixelTextFieldController : ChangeNotifier() {
         return true
     }
 
+    /**
+     * 距离下一次光标可见态翻转还有多少毫秒。
+     *
+     * 宿主用它把"聚焦期间每帧全量重绘"换成"只在下一个闪烁边界安排一次延迟
+     * 重绘"（见 [com.purride.pixelui.PixelHostView] 的 onDraw）：光标可见态每
+     * [PixelTextFieldState.cursorBlinkPeriodMs] 的一半才翻转一次，没必要逐帧
+     * postInvalidate。
+     *
+     * 未聚焦 / 关闭闪烁时返回 0L，调用方据此停止调度，循环自然停下；否则返回
+     * `(半周期 - 已累计 elapsed)` 的正数，最小 1L。
+     */
+    internal fun millisUntilNextCursorBlink(state: PixelTextFieldState): Long {
+        if (!state.isFocused || !state.cursorBlinkEnabled) return 0L
+        val halfPeriodMs = (state.cursorBlinkPeriodMs / 2L).coerceAtLeast(1L)
+        return (halfPeriodMs - state.cursorBlinkElapsedMs).coerceIn(1L, halfPeriodMs)
+    }
+
     public fun setSelection(
         state: PixelTextFieldState,
         selectionStart: Int,

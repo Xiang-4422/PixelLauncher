@@ -311,11 +311,11 @@ public class PixelHostView @JvmOverloads constructor(
             syncRequestedTextInputFocus(renderResult.textInputTargets)
             drawBuffer(canvas, renderResult.buffer)
             if (renderResult.pagerTargets.any { it.controller.isActive(it.state) } ||
-                renderResult.listTargets.any { it.controller.isActive(it.state) } ||
-                isFocusedTextInputBlinking()
+                renderResult.listTargets.any { it.controller.isActive(it.state) }
             ) {
                 postInvalidateOnAnimation()
             }
+            scheduleNextCursorBlinkInvalidate()
         }
         frameLoop.endPaint()
         frameStatsObserver?.invoke(frameLoop.snapshotStats())
@@ -377,9 +377,23 @@ public class PixelHostView @JvmOverloads constructor(
         target.controller.stepCursorBlink(target.state, deltaMs)
     }
 
-    private fun isFocusedTextInputBlinking(): Boolean {
-        val state = focusedTextInputTarget?.state ?: return false
-        return state.isFocused && state.cursorBlinkEnabled
+    /**
+     * 聚焦的文本框需要持续闪烁光标，但可见态只在半周期边界翻转一次。与其每帧
+     * [postInvalidateOnAnimation]（聚焦期间 ~58/60 帧都是多余的全量重绘），这里
+     * 只把下一次重绘安排在「下一个闪烁边界」。
+     *
+     * 翻转发生在 [stepFocusedTextInputCursor]（onDraw 内、render 之前），届时
+     * [PixelTextFieldController.stepCursorBlink] 会 notifyListeners 让监听该
+     * controller 的 widget 在本帧重建——所以光标视觉无需额外一帧即可更新。
+     * focus / 输入等事件各自会 [invalidate]，本方法随之按最新 elapsed 重新对齐
+     * 边界，因此光标在聚焦/输入时立即点亮并维持一个完整半周期。未聚焦或关闭
+     * 闪烁时 [PixelTextFieldController.millisUntilNextCursorBlink] 返回 0，这里
+     * 不再调度，循环自然停止。
+     */
+    private fun scheduleNextCursorBlinkInvalidate() {
+        val target = focusedTextInputTarget ?: return
+        val delayMs = target.controller.millisUntilNextCursorBlink(target.state)
+        if (delayMs > 0L) postInvalidateDelayed(delayMs)
     }
 
     internal fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
