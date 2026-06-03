@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+# --continue: run every gate task even after one fails, so a single run surfaces
+# ALL failures instead of aborting at the first. Gradle still exits non-zero if
+# any task failed, so the gate's pass/fail outcome is unchanged.
 ./gradlew \
   :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
@@ -17,6 +20,7 @@ cd "$ROOT_DIR"
   :app:assembleDebug \
   :app:lintDebug \
   :app:testDebugUnitTest \
+  --continue \
   --no-daemon
 
 ./gradlew :pixel-engine:publishToMavenLocal --dry-run --no-daemon
