@@ -2220,6 +2220,7 @@ public final class com.purride.pixelui.state.PixelTextFieldController extends co
   public final void syncCursorBlinkConfig$pixel_engine(com.purride.pixelui.state.PixelTextFieldState, boolean, long);
   public final void resetCursorBlink$pixel_engine(com.purride.pixelui.state.PixelTextFieldState);
   public final boolean stepCursorBlink$pixel_engine(com.purride.pixelui.state.PixelTextFieldState, long);
+  public final long millisUntilNextCursorBlink$pixel_engine(com.purride.pixelui.state.PixelTextFieldState);
   public final void setSelection(com.purride.pixelui.state.PixelTextFieldState, int, int);
   public static void setSelection$default(com.purride.pixelui.state.PixelTextFieldController, com.purride.pixelui.state.PixelTextFieldState, int, int, int, java.lang.Object);
   public final void clear(com.purride.pixelui.state.PixelTextFieldState);
