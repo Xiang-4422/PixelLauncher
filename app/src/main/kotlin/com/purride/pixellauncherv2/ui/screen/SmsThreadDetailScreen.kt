@@ -3,11 +3,11 @@ package com.purride.pixellauncherv2.ui.screen
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
-import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Row
+import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
@@ -78,15 +78,20 @@ fun SmsThreadDetailScreen(
                         ),
                     )
                 } else {
-                    ListViewBuilder(
-                        itemCount = uiState.smsMessages.size,
+                    // 用 SingleChildScrollView + Column 承载整段消息流：Column 会把每条
+                    // 消息按其完整正文高度排布，不会像变高 lazy list 那样把高消息裁顶，
+                    // 保证长短信（取件码 + 地址 + 链接 + 退订语）完整可读。
+                    SingleChildScrollView(
                         state = msgListState,
                         controller = msgListController,
-                        estimatedItemExtent = MSG_ESTIMATED_EXTENT,
-                        spacing = MSG_SPACING,
-                        itemBuilder = { index ->
-                            buildMessage(uiState.smsMessages[index], theme)
-                        },
+                        child = Column(
+                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                            mainAxisSize = MainAxisSize.MIN,
+                            spacing = MSG_SPACING,
+                            children = uiState.smsMessages.map { msg ->
+                                buildMessage(msg, theme)
+                            },
+                        ),
                     )
                 },
             ),
@@ -95,6 +100,9 @@ fun SmsThreadDetailScreen(
                 height = COMPOSE_HEIGHT,
                 child = Row(
                     spacing = 2,
+                    // 让输入框与 SEND 按钮都拉伸到 compose 栏的统一高度，避免两者
+                    // 各按固有高度顶部对齐导致的高度不一致。
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
                     children = listOf(
                         Expanded(
                             child = TextField(
@@ -164,7 +172,6 @@ private fun headerTitle(contact: String): String {
     return if (trimmed.length < contact.length) "$trimmed…" else trimmed
 }
 
-private const val MSG_ESTIMATED_EXTENT = 40
 private const val MSG_SPACING = 4
 private const val COMPOSE_HEIGHT = 18
 private const val HEADER_TITLE_MAX = 12
