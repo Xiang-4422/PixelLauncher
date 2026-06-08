@@ -13,6 +13,7 @@ import com.purride.pixelui.Dialog
 import com.purride.pixelui.Badge
 import com.purride.pixelui.Divider
 import com.purride.pixelui.FittedBox
+import com.purride.pixelui.CustomScrollView
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.Gap
 import com.purride.pixelui.ListTile
@@ -26,6 +27,8 @@ import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.SliverList
+import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Snackbar
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Tabs
@@ -189,6 +192,69 @@ class PixelTesterDslTest {
         tester.drag(find.byKey("grid"), dx = 0, dy = -10)
 
         assertTrue(state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
+    fun dragByKeyMovesCustomScrollViewThroughListTarget() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverPinnedHeader(
+                        child = SizedBox(height = 5, child = Text("PIN")),
+                    ),
+                    SliverList(
+                        items = List(20) { index -> SizedBox(height = 5, child = Text("ROW $index")) },
+                        spacing = 1,
+                    ),
+                ),
+                state = state,
+                controller = controller,
+                key = "custom",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 18,
+        )
+        tester.drag(find.byKey("custom"), dx = 0, dy = -12)
+
+        assertTrue(state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
+    fun pinnedSliverHeaderRemainsClickableAfterScroll() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        var taps = 0
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverPinnedHeader(
+                        child = OutlinedButton(text = "PIN", onPressed = { taps++ }, key = "pin"),
+                    ),
+                    SliverList(
+                        items = List(20) { index -> SizedBox(height = 5, child = Text("ROW $index")) },
+                        spacing = 1,
+                    ),
+                ),
+                state = state,
+                controller = controller,
+                key = "custom",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 18,
+        )
+        tester.drag(find.byKey("custom"), dx = 0, dy = -12)
+        tester.tap(find.byKey("pin"))
+
+        assertTrue(state.scrollOffsetPx > 0f)
+        assertEquals(1, taps)
         tester.dispose()
     }
 

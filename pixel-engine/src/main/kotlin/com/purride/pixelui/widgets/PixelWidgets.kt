@@ -12,6 +12,7 @@ import com.purride.pixelui.internal.ConstrainedBoxWidget
 import com.purride.pixelui.internal.ContainerDirectionalWidget
 import com.purride.pixelui.internal.ContainerWidget
 import com.purride.pixelui.internal.CustomPaintWidget
+import com.purride.pixelui.internal.CustomScrollViewWidget
 import com.purride.pixelui.internal.DecoratedBoxWidget
 import com.purride.pixelui.internal.FlexWrapperWidget
 import com.purride.pixelui.internal.FittedBoxWidget
@@ -725,6 +726,39 @@ public fun ListViewSeparatedBuilder(
         state = state,
         controller = controller,
         cacheExtent = cacheExtent,
+        key = key,
+    )
+}
+
+public fun SliverList(
+    items: List<Widget>,
+    spacing: Int = 0,
+    key: Any? = null,
+): PixelSliver {
+    return PixelSliverList(
+        items = items,
+        spacing = spacing,
+        key = key,
+    )
+}
+
+public fun SliverPinnedHeader(
+    child: Widget,
+    key: Any? = null,
+): PixelSliver {
+    return PixelSliverPinnedHeader(child = child, key = key)
+}
+
+public fun CustomScrollView(
+    slivers: List<PixelSliver>,
+    state: PixelListState,
+    controller: PixelListController,
+    key: Any? = null,
+): Widget {
+    return CustomScrollViewWidget(
+        slivers = slivers,
+        state = state,
+        controller = controller,
         key = key,
     )
 }

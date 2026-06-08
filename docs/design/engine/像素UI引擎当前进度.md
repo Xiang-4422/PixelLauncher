@@ -52,7 +52,7 @@
 
 当前 `com.purride.pixelui` 已经具备最小可运行组件体系：
 
-- Flutter 风格公开层：`Widget`、`BuildContext`、`Text`、`Container`、`Row`、`Column`、`Stack`、`PageView`、`ListView`、`GridView`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`、`TextField`、`OutlinedButton`
+- Flutter 风格公开层：`Widget`、`BuildContext`、`Text`、`Container`、`Row`、`Column`、`Stack`、`PageView`、`ListView`、`GridView`、`CustomScrollView`、`SliverList`、`SliverPinnedHeader`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`、`TextField`、`OutlinedButton`
 - retained build/runtime：`BuildOwner`、`Element`、`StatefulWidget`、`InheritedWidget`、`InheritedNotifier`、`Builder`、`StatefulBuilder`
 - direct pipeline：`RenderObject`、`RenderObjectWidget`、`PipelineOwner`、`PipelineElementTreeRenderer`
 - render objects：文本、surface、flex、stack、分页视口、滚动视口
@@ -75,6 +75,7 @@
 - 纵向列表
 - 固定 item 高度 lazy 列表
 - fixed-cell lazy grid
+- `CustomScrollView` + `SliverList` + pinned header
 - Scrollbar 与 pull-to-refresh
 - 单子节点滚动
 - 文本输入聚焦与宿主输入桥接
@@ -101,7 +102,7 @@ Demo 入口：
 
 `pixel-engine` 仍然是第一版可运行框架，还不是完整产品级 UI 系统：
 
-- `ListView` / `GridView` 已有 lazy 路径和 pull-to-refresh，但还没有 sliver / pinned header 体系
+- `CustomScrollView` 已有 `SliverList` 和 pinned header v1，但还没有 `SliverAppBar`、lazy sliver builder 或多个 pinned header 的推挤规则
 - 列表已有 clamp/fling/bounce 参数基础，但还没有完整平台级滚动物理、snap 策略和 route-aware scroll restoration
 - `TextField` 已支持多行 caret / selection / composition、光标节拍和最小 selection handle，但还没有完整长按菜单或平台级选择浮层
 - `RichText` 已支持 span tone 切换，但还不是完整段落/字号/字距系统

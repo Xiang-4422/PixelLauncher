@@ -46,6 +46,7 @@ import com.purride.pixeldemo.showcase.interaction.SelectionControlsScene
 import com.purride.pixeldemo.showcase.interaction.TabsProgressScene
 import com.purride.pixeldemo.showcase.interaction.TextFieldBasicsScene
 import com.purride.pixeldemo.showcase.interaction.TextInputHostCommandsScene
+import com.purride.pixeldemo.showcase.scroll.CustomScrollSliverScene
 import com.purride.pixeldemo.showcase.scroll.GridViewScene
 import com.purride.pixeldemo.showcase.scroll.ListEagerScene
 import com.purride.pixeldemo.showcase.scroll.ListSeparatedScene
@@ -114,6 +115,7 @@ object DemoCatalog {
                 ListVirtualFixedScene,
                 ListVariableHeightScene,
                 GridViewScene,
+                CustomScrollSliverScene,
                 ListSeparatedScene,
                 PullRefreshScene,
                 PagerHorizontalScene,

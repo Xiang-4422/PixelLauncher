@@ -596,6 +596,13 @@ com.purride.pixelui public fun Gap(
 com.purride.pixelui public fun AppScaffold(
 com.purride.pixelui public data class PixelBoxConstraints(
 com.purride.pixelui public fun PixelDebugOverlay(
+com.purride.pixelui public sealed interface PixelSliver
+com.purride.pixelui public val key: Any?
+com.purride.pixelui public data class PixelSliverList(
+com.purride.pixelui public val items: List<Widget>,
+com.purride.pixelui public val spacing: Int,
+com.purride.pixelui public data class PixelSliverPinnedHeader(
+com.purride.pixelui public val child: Widget,
 com.purride.pixelui public data class PixelTextFieldStyle(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelTextFieldStyle = PixelTextFieldStyle()
@@ -648,6 +655,9 @@ com.purride.pixelui public fun ListView(
 com.purride.pixelui public fun ListViewBuilder(
 com.purride.pixelui public fun ListViewSeparated(
 com.purride.pixelui public fun ListViewSeparatedBuilder(
+com.purride.pixelui public fun SliverList(
+com.purride.pixelui public fun SliverPinnedHeader(
+com.purride.pixelui public fun CustomScrollView(
 com.purride.pixelui public fun GridView(
 com.purride.pixelui public fun GridViewBuilder(
 com.purride.pixelui public fun Scrollbar(

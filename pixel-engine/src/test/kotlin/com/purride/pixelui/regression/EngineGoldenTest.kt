@@ -13,6 +13,7 @@ import com.purride.pixelui.ClipRect
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.CustomScrollView
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
@@ -37,6 +38,8 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.SliverList
+import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Sprite
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Switch
@@ -287,6 +290,35 @@ class EngineGoldenTest {
                     runSpacing = 1,
                     state = listState,
                     controller = listController,
+                ),
+            )
+        },
+        Scene(name = "custom_scroll_pinned_header", width = 44, height = 22) {
+            val controller = PixelListController()
+            val state = controller.create(initialScrollOffsetPx = 14f)
+            CustomScrollView(
+                state = state,
+                controller = controller,
+                slivers = listOf(
+                    SliverPinnedHeader(
+                        child = Container(
+                            child = Text("PIN"),
+                            height = 7,
+                            fillColor = PixelColor.fromRgb(230, 180, 60),
+                            borderColor = PixelColor.White,
+                            alignment = Alignment.CENTER,
+                        ),
+                    ),
+                    SliverList(
+                        spacing = 1,
+                        items = List(8) { index ->
+                            Container(
+                                child = Text("ROW $index"),
+                                height = 6,
+                                borderColor = PixelColor.fromArgb(120, 255, 255, 255),
+                            )
+                        },
+                    ),
                 ),
             )
         },
