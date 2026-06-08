@@ -36,6 +36,7 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelTextFieldController
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -539,6 +540,60 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun tapReadOnlyTextFieldDoesNotFocusOrShowEditableSelection() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "READ")
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                readOnly = true,
+                key = "field",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 12,
+        )
+
+        tester.tap(find.byKey("field"))
+        tester.doubleTap(find.byKey("field"))
+        tester.longPress(find.byKey("field"))
+
+        assertFalse(state.isFocused)
+        assertEquals(4, state.selectionStart)
+        assertEquals(4, state.selectionEnd)
+        tester.dispose()
+    }
+
+    @Test
+    fun tapDisabledTextFieldDoesNotFocusOrMutateSelection() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "DISABLED")
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                enabled = false,
+                key = "field",
+            ),
+            logicalWidth = 72,
+            logicalHeight = 12,
+        )
+
+        tester.tap(find.byKey("field"))
+        tester.doubleTap(find.byKey("field"))
+        tester.longPress(find.byKey("field"))
+
+        assertFalse(state.isFocused)
+        assertEquals(8, state.selectionStart)
+        assertEquals(8, state.selectionEnd)
+        tester.dispose()
+    }
+
+    @Test
     fun dragSelectionHandlesUpdatesTextFieldSelection() {
         val tester = PixelTester()
         val controller = PixelTextFieldController()
@@ -613,6 +668,66 @@ class PixelTesterDslTest {
         assertEquals(7, state.selectionEnd)
         assertTrue("start handle should move to the previous rendered line", state.selectionStart < 3)
         tester.dispose()
+    }
+
+    @Test
+    fun dragSelectionHandleRejectsReadOnlyTextField() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "ABCDE", selectionStart = 1, selectionEnd = 4)
+        controller.focus(state)
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                readOnly = true,
+                key = "field",
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+
+        try {
+            tester.dragSelectionEndHandle(find.byKey("field"), dx = 20, dy = 0)
+            error("dragSelectionEndHandle should reject readOnly fields")
+        } catch (error: IllegalStateException) {
+            assertTrue(error.message.orEmpty().contains("readOnly"))
+        } finally {
+            assertEquals(1, state.selectionStart)
+            assertEquals(4, state.selectionEnd)
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun dragSelectionHandleRejectsDisabledTextField() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "ABCDE", selectionStart = 1, selectionEnd = 4)
+        controller.focus(state)
+
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                enabled = false,
+                key = "field",
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+
+        try {
+            tester.dragSelectionStartHandle(find.byKey("field"), dx = -20, dy = 0)
+            error("dragSelectionStartHandle should reject disabled fields")
+        } catch (error: IllegalStateException) {
+            assertTrue(error.message.orEmpty().contains("readOnly"))
+        } finally {
+            assertEquals(1, state.selectionStart)
+            assertEquals(4, state.selectionEnd)
+            tester.dispose()
+        }
     }
 
     @Test

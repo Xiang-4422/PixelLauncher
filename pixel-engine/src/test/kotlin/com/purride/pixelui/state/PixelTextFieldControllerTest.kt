@@ -103,6 +103,39 @@ class PixelTextFieldControllerTest {
     }
 
     @Test
+    fun selectWordAtPunctuationSelectsOnlyPunctuationCharacter() {
+        val state = controller.create(initialText = "A,B")
+
+        controller.selectWordAt(state, index = 1)
+
+        assertEquals(1, state.selectionStart)
+        assertEquals(2, state.selectionEnd)
+        assertEquals(",", state.text.substring(state.selectionStart, state.selectionEnd))
+    }
+
+    @Test
+    fun selectWordAtEndIndexSelectsPreviousWord() {
+        val state = controller.create(initialText = "A BETA")
+
+        controller.selectWordAt(state, index = state.text.length)
+
+        assertEquals(2, state.selectionStart)
+        assertEquals(6, state.selectionEnd)
+        assertEquals("BETA", state.text.substring(state.selectionStart, state.selectionEnd))
+    }
+
+    @Test
+    fun selectWordAtOutOfRangeNegativeIndexClampsToStart() {
+        val state = controller.create(initialText = "ALPHA B")
+
+        controller.selectWordAt(state, index = -20)
+
+        assertEquals(0, state.selectionStart)
+        assertEquals(5, state.selectionEnd)
+        assertEquals("ALPHA", state.text.substring(state.selectionStart, state.selectionEnd))
+    }
+
+    @Test
     fun setSelectionClampsIntoCurrentTextRange() {
         val state = controller.create(initialText = "ABCD")
 
