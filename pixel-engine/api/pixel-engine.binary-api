@@ -1198,6 +1198,16 @@ public final class com.purride.pixelui.PixelHostProfilePreference {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelHostRenderCoordinator {
+  public com.purride.pixelui.PixelHostRenderCoordinator(com.purride.pixelui.PixelHostView, com.purride.pixelui.PixelHostTextInputCoordinator);
+  public final com.purride.pixelui.internal.PixelRenderResult getLastRenderResult();
+  public final void setLastRenderResult(com.purride.pixelui.internal.PixelRenderResult);
+  public final void setContent(kotlin.jvm.functions.Function0<? extends com.purride.pixelui.Widget>);
+  public final void submitFrame-olPvOxg(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.ScreenProfile, int);
+  public final com.purride.pixelui.internal.PixelRenderResult renderFrame();
+  public final java.lang.String dumpElementTree();
+  public final void dispose();
+}
 public final class com.purride.pixelui.PixelHostSetup {
   public com.purride.pixelui.PixelHostSetup(android.widget.FrameLayout, com.purride.pixelui.PixelHostView, com.purride.pixelui.PixelTextInputBridge);
   public final android.widget.FrameLayout getRootView();

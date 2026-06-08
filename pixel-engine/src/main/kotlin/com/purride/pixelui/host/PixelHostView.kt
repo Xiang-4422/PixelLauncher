@@ -24,7 +24,6 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
-import com.purride.pixelui.host.PixelHostFrameLoop
 import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
@@ -33,10 +32,8 @@ import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
-import com.purride.pixelui.internal.HostRootWidget
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
-import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -90,15 +87,14 @@ public class PixelHostView @JvmOverloads constructor(
             invalidate()
         }
 
-    private var runtime = PixelUiRuntime(onVisualUpdate = { postInvalidateOnAnimation() })
-    private var contentProvider: RootWidgetProvider? = null
-    internal var lastRenderResult: PixelRenderResult? = null
+    internal var lastRenderResult: PixelRenderResult?
+        get() = renderCoordinator.lastRenderResult
+        set(value) { renderCoordinator.lastRenderResult = value }
     private var pixelGapEnabled: Boolean = true
     private var pixelGapRatio: Float = 1.0f
     internal var activeSliderTarget: PixelSliderTarget? = null
     internal var activeScrollbarTarget: PixelScrollbarTarget? = null
     internal var scrollbarDragThumbOffsetY: Int = 0
-    private val frameLoop = PixelHostFrameLoop()
     internal var velocityTracker: VelocityTracker? = null
     internal val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     internal var touchDownX = 0f
@@ -134,6 +130,7 @@ public class PixelHostView @JvmOverloads constructor(
         set(value) { nestedScrollSession.focusedTextInputTarget = value }
     private val gestureRouter = PixelHostGestureRouter(this)
     private val textInputCoordinator = PixelHostTextInputCoordinator(this)
+    private val renderCoordinator = PixelHostRenderCoordinator(this, textInputCoordinator)
 
     public var hostBridge: PixelHostBridge? = null
     public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
@@ -173,8 +170,7 @@ public class PixelHostView @JvmOverloads constructor(
     private val reusableDestRect = Rect()
 
     public fun setContent(provider: RootWidgetProvider) {
-        contentProvider = provider
-        postInvalidateOnAnimation()
+        renderCoordinator.setContent(provider)
     }
 
     internal fun requestRender() { invalidate() }
@@ -215,19 +211,7 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, backgroundColor: PixelColor) {
-        this.screenProfile = screenProfile
-        this.backgroundColor = backgroundColor
-        lastRenderResult = PixelRenderResult(
-            buffer = pixelBuffer,
-            clickTargets = emptyList(),
-            pagerTargets = emptyList(),
-            listTargets = emptyList(),
-            scrollbarTargets = emptyList(),
-            textInputTargets = emptyList(),
-            sliderTargets = emptyList(),
-            semanticsNodes = emptyList(),
-        )
-        invalidate()
+        renderCoordinator.submitFrame(pixelBuffer, screenProfile, backgroundColor)
     }
 
     override fun setPixelGapEnabled(enabled: Boolean) {
@@ -253,7 +237,7 @@ public class PixelHostView @JvmOverloads constructor(
      * 该 API 在主线程调用，不应在生产热路径上频繁调用。
      */
     public fun dumpElementTree(): String {
-        return runtime.dumpElementTree()
+        return renderCoordinator.dumpElementTree()
     }
 
     public fun dumpSemanticsTree(): String {
@@ -266,46 +250,11 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val frameDeltaMs = frameLoop.consumeFrameDeltaMs()
-        frameLoop.beginPaint()
-        stepActivePagers(frameDeltaMs)
-        stepActiveLists(frameDeltaMs)
-        textInputCoordinator.stepCursorBlink(frameDeltaMs)
-        val provider = contentProvider
-        val renderResult = if (provider != null) {
-            val rootWidget = provider()
-            val wrappedRoot = HostRootWidget(
-                screenProfile = screenProfile,
-                textDirection = textDirection,
-                textRasterizer = textRasterizer,
-                child = rootWidget,
-                key = "host-root",
-            )
-            lastRenderResult = null
-            runtime.render(
-                root = wrappedRoot,
-                logicalWidth = screenProfile.logicalWidth,
-                logicalHeight = screenProfile.logicalHeight,
-            )
-        } else {
-            lastRenderResult
-        }
-
+        val renderResult = renderCoordinator.renderFrame()
         canvas.drawColor(backgroundColor.argb)
         if (renderResult != null) {
-            lastRenderResult = renderResult
-            dispatchPageChanged(renderResult.pagerTargets)
-            textInputCoordinator.syncRequestedFocus(renderResult.textInputTargets)
             drawBuffer(canvas, renderResult.buffer)
-            if (renderResult.pagerTargets.any { it.controller.isActive(it.state) } ||
-                renderResult.listTargets.any { it.controller.isActive(it.state) }
-            ) {
-                postInvalidateOnAnimation()
-            }
-            textInputCoordinator.scheduleNextCursorBlinkInvalidate()
         }
-        frameLoop.endPaint()
-        frameStatsObserver?.invoke(frameLoop.snapshotStats())
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -316,7 +265,7 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        runtime.dispose()
+        renderCoordinator.dispose()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -337,26 +286,6 @@ public class PixelHostView @JvmOverloads constructor(
             dotSizePx = preference.dotSizePx,
             pixelShape = preference.pixelShape,
         )
-    }
-
-    private fun stepActivePagers(deltaMs: Long) {
-        lastRenderResult?.pagerTargets?.forEach { it.controller.step(it.state, deltaMs) }
-    }
-
-    private fun dispatchPageChanged(targets: List<PixelPagerTarget>) {
-        targets.forEach { target ->
-            val currentPage = target.state.currentPage
-            if (currentPage != target.state.lastDispatchedPage) {
-                target.state.lastDispatchedPage = currentPage
-                target.onPageChanged?.invoke(currentPage)
-            }
-        }
-    }
-
-    private fun stepActiveLists(deltaMs: Long) {
-        lastRenderResult?.listTargets?.forEach { target ->
-            target.controller.step(target.state, deltaMs, target.viewportHeightPx, target.contentHeightPx)
-        }
     }
 
     internal fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
