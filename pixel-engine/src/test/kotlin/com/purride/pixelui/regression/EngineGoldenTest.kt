@@ -31,6 +31,7 @@ import com.purride.pixelui.Polygon
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Positioned
+import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.Scrollbar
@@ -49,6 +50,7 @@ import com.purride.pixelui.Wrap
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.internal.PixelUiRuntime
 import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelRefreshIndicatorController
 import com.purride.pixelui.state.PixelTextFieldState
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -254,6 +256,37 @@ class EngineGoldenTest {
                     runSpacing = 1,
                     state = state,
                     controller = controller,
+                ),
+            )
+        },
+        Scene(name = "refresh_indicator_armed", width = 42, height = 20) {
+            val listController = PixelListController()
+            val listState = listController.create()
+            val refreshController = PixelRefreshIndicatorController()
+            val refreshState = refreshController.create()
+            refreshController.startPull(refreshState)
+            refreshController.updatePull(refreshState, distancePx = 12f, thresholdPx = 10)
+            RefreshIndicator(
+                state = refreshState,
+                controller = refreshController,
+                thresholdPx = 10,
+                armedColor = PixelColor.fromRgb(200, 100, 0),
+                onRefresh = {},
+                child = GridViewBuilder(
+                    itemCount = 16,
+                    itemBuilder = { index ->
+                        Container(
+                            child = Text("${index % 10}"),
+                            borderColor = PixelColor.White,
+                            alignment = Alignment.CENTER,
+                        )
+                    },
+                    cellWidth = 10,
+                    cellHeight = 6,
+                    spacing = 1,
+                    runSpacing = 1,
+                    state = listState,
+                    controller = listController,
                 ),
             )
         },

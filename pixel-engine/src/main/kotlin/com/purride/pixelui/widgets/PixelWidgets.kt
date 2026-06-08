@@ -35,6 +35,7 @@ import com.purride.pixelui.internal.PathWidget
 import com.purride.pixelui.internal.PositionedDirectionalWidget
 import com.purride.pixelui.internal.PositionedWidget
 import com.purride.pixelui.internal.PolygonWidget
+import com.purride.pixelui.internal.RefreshIndicatorWidget
 import com.purride.pixelui.internal.RowWidget
 import com.purride.pixelui.internal.ScrollbarWidget
 import com.purride.pixelui.internal.SingleChildScrollViewWidget
@@ -52,6 +53,8 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
+import com.purride.pixelui.state.PixelRefreshIndicatorController
+import com.purride.pixelui.state.PixelRefreshIndicatorState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 
@@ -788,6 +791,32 @@ public fun Scrollbar(
         thumbColor = thumbColor,
         trackColor = trackColor,
         width = width,
+        key = key,
+    )
+}
+
+public fun RefreshIndicator(
+    child: Widget,
+    state: PixelRefreshIndicatorState,
+    controller: PixelRefreshIndicatorController,
+    onRefresh: () -> Unit,
+    thresholdPx: Int = 12,
+    enabled: Boolean = true,
+    indicatorColor: PixelColor = PixelColor.White,
+    armedColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
+    refreshingColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    key: Any? = null,
+): Widget {
+    return RefreshIndicatorWidget(
+        child = child,
+        state = state,
+        controller = controller,
+        thresholdPx = thresholdPx,
+        enabled = enabled,
+        indicatorColor = indicatorColor,
+        armedColor = armedColor,
+        refreshingColor = refreshingColor,
+        onRefresh = onRefresh,
         key = key,
     )
 }

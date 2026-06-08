@@ -8,6 +8,8 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
+import com.purride.pixelui.state.PixelRefreshIndicatorController
+import com.purride.pixelui.state.PixelRefreshIndicatorState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import kotlin.math.max
@@ -167,6 +169,25 @@ internal data class PixelScrollbarTarget(
 )
 
 /**
+ * 下拉刷新命中目标。
+ */
+internal data class PixelRefreshTarget(
+    val bounds: PixelRect,
+    val thresholdPx: Int,
+    val enabled: Boolean,
+    val sourceListState: PixelListState?,
+    val state: PixelRefreshIndicatorState,
+    val controller: PixelRefreshIndicatorController,
+    val onRefresh: () -> Unit,
+) {
+    fun canStartPull(deltaPx: Float): Boolean {
+        if (!enabled || state.isRefreshing || deltaPx <= 0f) return false
+        val listState = sourceListState ?: return true
+        return listState.scrollOffsetPx <= 0f
+    }
+}
+
+/**
  * 滑块命中目标。onDrag 在手指移动时调用（值 0..1），onRelease 在抬手时调用。
  */
 internal data class PixelSliderTarget(
@@ -203,6 +224,7 @@ internal data class PixelRenderResult(
     val pagerTargets: List<PixelPagerTarget>,
     val listTargets: List<PixelListTarget>,
     val scrollbarTargets: List<PixelScrollbarTarget>,
+    val refreshTargets: List<PixelRefreshTarget>,
     val textInputTargets: List<PixelTextInputTarget>,
     val sliderTargets: List<PixelSliderTarget>,
     val semanticsNodes: List<PixelSemanticsNode>,
@@ -217,6 +239,7 @@ internal data class PixelRenderSession(
     val pagerTargets: MutableList<PixelPagerTarget> = mutableListOf(),
     val listTargets: MutableList<PixelListTarget> = mutableListOf(),
     val scrollbarTargets: MutableList<PixelScrollbarTarget> = mutableListOf(),
+    val refreshTargets: MutableList<PixelRefreshTarget> = mutableListOf(),
     val textInputTargets: MutableList<PixelTextInputTarget> = mutableListOf(),
     val sliderTargets: MutableList<PixelSliderTarget> = mutableListOf(),
     val semanticsNodes: MutableList<PixelSemanticsNode> = mutableListOf(),
@@ -231,6 +254,7 @@ internal data class PixelRenderSession(
             pagerTargets = pagerTargets,
             listTargets = listTargets,
             scrollbarTargets = scrollbarTargets,
+            refreshTargets = refreshTargets,
             textInputTargets = textInputTargets,
             sliderTargets = sliderTargets,
             semanticsNodes = semanticsNodes,

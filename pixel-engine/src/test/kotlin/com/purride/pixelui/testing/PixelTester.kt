@@ -11,6 +11,7 @@ import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRect
+import com.purride.pixelui.internal.PixelRefreshTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
@@ -230,6 +231,12 @@ public class PixelTester {
             dispatchScrollbarDrag(target, startY, startY + dy)
             return
         }
+        renderResult?.refreshTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
+            if (dy > 0 && abs(dy) >= abs(dx) && target.canStartPull(dy.toFloat())) {
+                dispatchRefreshDrag(target, dy)
+                return
+            }
+        }
         renderResult?.sliderTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
             dispatchSliderDrag(target, startX + dx)
             return
@@ -325,6 +332,15 @@ public class PixelTester {
         needsRender = true
     }
 
+    private fun dispatchRefreshDrag(target: PixelRefreshTarget, dy: Int) {
+        target.controller.startPull(target.state)
+        target.controller.updatePull(target.state, dy.toFloat().coerceAtLeast(0f), target.thresholdPx)
+        if (target.controller.endPull(target.state, target.thresholdPx)) {
+            target.onRefresh()
+        }
+        needsRender = true
+    }
+
     private fun dispatchListDrag(target: PixelListTarget, dy: Float) {
         target.controller.startDrag(target.state)
         target.controller.dragBy(target.state, dy, target.viewportHeightPx, target.contentHeightPx)
@@ -371,6 +387,7 @@ public class PixelTester {
         if (kind == TargetKind.DRAG || kind == TargetKind.ANY) {
             resolveScrollbarTargetOrNull(widget)?.let { return it.thumbBounds.center }
             resolveSliderTargetOrNull(widget)?.let { return it.bounds.center }
+            resolveRefreshTargetOrNull(widget)?.let { return it.bounds.center }
             resolveListTargetOrNull(widget)?.let { return it.bounds.center }
             resolvePagerTargetOrNull(widget)?.let { return it.bounds.center }
         }
@@ -422,6 +439,14 @@ public class PixelTester {
     private fun resolveScrollbarTargetOrNull(widget: Any): PixelScrollbarTarget? {
         val state = widget.readField("state")
         return renderResult?.scrollbarTargets?.lastOrNull { it.state === state }
+    }
+
+    private fun resolveRefreshTargetOrNull(widget: Any): PixelRefreshTarget? {
+        val state = widget.readField("state")
+        val controller = widget.readField("controller")
+        return renderResult?.refreshTargets?.lastOrNull {
+            it.state === state && it.controller === controller
+        }
     }
 
     private fun resolvePagerTargetOrNull(widget: Any): PixelPagerTarget? {
@@ -704,6 +729,7 @@ private fun PixelRenderResult?.describeTargets(): String {
         appendLine("pagerTargets=${pagerTargets.map { it.bounds }}")
         appendLine("listTargets=${listTargets.map { it.bounds }}")
         appendLine("scrollbarTargets=${scrollbarTargets.map { it.bounds }}")
+        appendLine("refreshTargets=${refreshTargets.map { it.bounds }}")
         appendLine("textInputTargets=${textInputTargets.map { it.bounds }}")
         appendLine("sliderTargets=${sliderTargets.map { it.bounds }}")
         appendLine("semanticsNodes=${semanticsNodes.map { "${it.role}:${it.label}" }}")

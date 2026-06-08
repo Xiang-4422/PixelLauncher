@@ -30,6 +30,7 @@ import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
 import com.purride.pixelui.internal.PixelListTarget
+import com.purride.pixelui.internal.PixelRefreshTarget
 import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
@@ -109,6 +110,8 @@ public class PixelHostView @JvmOverloads constructor(
     private var pixelGapRatio: Float = 1.0f
     internal var activeSliderTarget: PixelSliderTarget? = null
     internal var activeScrollbarTarget: PixelScrollbarTarget? = null
+    internal var activeRefreshTarget: PixelRefreshTarget? = null
+    internal var candidateRefreshTarget: PixelRefreshTarget? = null
     internal var scrollbarDragThumbOffsetY: Int = 0
     internal var velocityTracker: VelocityTracker? = null
     internal val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()

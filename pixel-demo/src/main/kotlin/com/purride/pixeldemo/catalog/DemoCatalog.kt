@@ -54,6 +54,7 @@ import com.purride.pixeldemo.showcase.scroll.ListVirtualFixedScene
 import com.purride.pixeldemo.showcase.scroll.PageControllerCommandsScene
 import com.purride.pixeldemo.showcase.scroll.PagerHorizontalScene
 import com.purride.pixeldemo.showcase.scroll.PagerVerticalScene
+import com.purride.pixeldemo.showcase.scroll.PullRefreshScene
 import com.purride.pixeldemo.showcase.scroll.ScrollControllerCommandsScene
 import com.purride.pixeldemo.showcase.scroll.SingleChildScrollScene
 import com.purride.pixeldemo.showcase.integration.ConfigChangePreserveScene
@@ -114,6 +115,7 @@ object DemoCatalog {
                 ListVariableHeightScene,
                 GridViewScene,
                 ListSeparatedScene,
+                PullRefreshScene,
                 PagerHorizontalScene,
                 PagerVerticalScene,
                 ScrollControllerCommandsScene,

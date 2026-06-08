@@ -65,6 +65,10 @@ internal class RenderOpacity(
         if (opacity > 0f) renderChild?.collectScrollbarTargets(offsetX, offsetY, targets)
     }
 
+    override fun collectRefreshTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelRefreshTarget>) {
+        if (opacity > 0f) renderChild?.collectRefreshTargets(offsetX, offsetY, targets)
+    }
+
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) {
         if (opacity > 0f) renderChild?.collectTextInputTargets(offsetX, offsetY, targets)
     }
@@ -138,6 +142,12 @@ internal class RenderClipRect(
         trimScrollbarTargetsOutsideClip(targets, before, offsetX, offsetY, size.width, size.height)
     }
 
+    override fun collectRefreshTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelRefreshTarget>) {
+        val before = targets.size
+        renderChild?.collectRefreshTargets(offsetX, offsetY, targets)
+        trimRefreshTargetsOutsideClip(targets, before, offsetX, offsetY, size.width, size.height)
+    }
+
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) {
         val before = targets.size
         renderChild?.collectTextInputTargets(offsetX, offsetY, targets)
@@ -205,6 +215,10 @@ internal class RenderTranslate(
 
     override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) {
         renderChild?.collectScrollbarTargets(offsetX + dx, offsetY + dy, targets)
+    }
+
+    override fun collectRefreshTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelRefreshTarget>) {
+        renderChild?.collectRefreshTargets(offsetX + dx, offsetY + dy, targets)
     }
 
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) {
@@ -275,6 +289,21 @@ private fun trimScrollbarTargetsOutsideClip(targets: MutableList<PixelScrollbarT
     var index = targets.size - 1
     while (index >= startIndex) {
         if (!targets[index].bounds.intersects(clip)) targets.removeAt(index)
+        index -= 1
+    }
+}
+
+private fun trimRefreshTargetsOutsideClip(targets: MutableList<PixelRefreshTarget>, startIndex: Int, left: Int, top: Int, width: Int, height: Int) {
+    val clip = PixelRect(left, top, width, height)
+    var index = targets.lastIndex
+    while (index >= startIndex) {
+        val target = targets[index]
+        val clipped = target.bounds.intersect(clip)
+        if (clipped == null) {
+            targets.removeAt(index)
+        } else if (clipped != target.bounds) {
+            targets[index] = target.copy(bounds = clipped)
+        }
         index -= 1
     }
 }

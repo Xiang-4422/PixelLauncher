@@ -22,6 +22,7 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.ProgressBar
+import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
@@ -34,6 +35,7 @@ import com.purride.pixelui.Toast
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
+import com.purride.pixelui.state.PixelRefreshIndicatorController
 import com.purride.pixelui.state.PixelTextFieldController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -291,6 +293,119 @@ class PixelTesterDslTest {
         tester.drag(find.byKey("scrollbar"), dx = 0, dy = 12)
 
         assertTrue("Dragging the scrollbar thumb should update the list scroll offset", state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
+    fun pullRefreshTriggersWhenListIsAtTopAndThresholdIsReached() {
+        val tester = PixelTester()
+        val listController = PixelListController()
+        val listState = listController.create()
+        val refreshController = PixelRefreshIndicatorController()
+        val refreshState = refreshController.create()
+        var refreshes = 0
+
+        tester.pumpWidget(
+            widget = RefreshIndicator(
+                state = refreshState,
+                controller = refreshController,
+                thresholdPx = 10,
+                onRefresh = { refreshes += 1 },
+                key = "refresh",
+                child = ListViewBuilder(
+                    itemCount = 20,
+                    itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                    state = listState,
+                    controller = listController,
+                    itemExtent = 6,
+                    key = "list",
+                ),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 24,
+        )
+
+        tester.drag(find.byKey("refresh"), dx = 0, dy = 14)
+
+        assertEquals(1, refreshes)
+        assertTrue(refreshState.isRefreshing)
+
+        refreshController.completeRefresh(refreshState)
+        tester.pumpFrame(16)
+        assertEquals(0f, refreshState.pullDistancePx, 0.001f)
+        tester.dispose()
+    }
+
+    @Test
+    fun pullRefreshBelowThresholdDoesNotTrigger() {
+        val tester = PixelTester()
+        val listController = PixelListController()
+        val listState = listController.create()
+        val refreshController = PixelRefreshIndicatorController()
+        val refreshState = refreshController.create()
+        var refreshes = 0
+
+        tester.pumpWidget(
+            widget = RefreshIndicator(
+                state = refreshState,
+                controller = refreshController,
+                thresholdPx = 12,
+                onRefresh = { refreshes += 1 },
+                key = "refresh",
+                child = ListViewBuilder(
+                    itemCount = 20,
+                    itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                    state = listState,
+                    controller = listController,
+                    itemExtent = 6,
+                ),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 24,
+        )
+
+        tester.drag(find.byKey("refresh"), dx = 0, dy = 6)
+
+        assertEquals(0, refreshes)
+        assertFalse(refreshState.isRefreshing)
+        assertEquals(0f, refreshState.pullDistancePx, 0.001f)
+        tester.dispose()
+    }
+
+    @Test
+    fun pullRefreshDoesNotTriggerWhenListIsScrolledAwayFromTop() {
+        val tester = PixelTester()
+        val listController = PixelListController()
+        val listState = listController.create(initialScrollOffsetPx = 18f)
+        val refreshController = PixelRefreshIndicatorController()
+        val refreshState = refreshController.create()
+        var refreshes = 0
+
+        tester.pumpWidget(
+            widget = RefreshIndicator(
+                state = refreshState,
+                controller = refreshController,
+                thresholdPx = 10,
+                onRefresh = { refreshes += 1 },
+                key = "refresh",
+                child = ListViewBuilder(
+                    itemCount = 20,
+                    itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                    state = listState,
+                    controller = listController,
+                    itemExtent = 6,
+                    key = "list",
+                ),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 24,
+        )
+
+        tester.drag(find.byKey("refresh"), dx = 0, dy = 14)
+
+        assertEquals(0, refreshes)
+        assertFalse(refreshState.isRefreshing)
+        assertTrue("list should consume downward drag before refresh can arm", listState.scrollOffsetPx < 18f)
         tester.dispose()
     }
 

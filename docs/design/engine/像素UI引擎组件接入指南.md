@@ -123,10 +123,10 @@ setContentView(hostSetup.rootView)
 
 - 内容：`Text`
 - 容器与布局：`Container`、`Padding`、`SizedBox`、`Align`、`Center`、`Row`、`Column`、`Expanded`、`Stack`、`Positioned`
-- 滚动：`PageView`、`PageViewBuilder`、`ListView`、`ListViewBuilder`、`ListViewSeparated`、`SingleChildScrollView`
+- 滚动：`PageView`、`PageViewBuilder`、`ListView`、`ListViewBuilder`、`ListViewSeparated`、`GridView`、`GridViewBuilder`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`
 - 输入与按钮：`TextField`、`OutlinedButton`
 - 状态：`StatefulWidget`、`StatefulBuilder`、`Builder`、`ValueNotifier`、`ValueListenableBuilder`、`InheritedNotifier`
-- 控制器：`PageController`、`ScrollController`、`TextEditingController`
+- 控制器：`PageController`、`ScrollController`、`TextEditingController`、`PixelRefreshIndicatorController`
 
 旧的 `PixelText`、`PixelButton`、`PixelList`、`PixelPager` 等节点式名称不再作为推荐页面 API。
 
@@ -137,13 +137,15 @@ setContentView(hostSetup.rootView)
 - `maxLines` 限制
 - 超出 `maxLines` 时最后一行 ellipsis
 
-当前 `TextField` 仍是单行输入，但已经覆盖：
+当前 `TextField` 已覆盖：
 
 - placeholder ellipsis
 - disabled/readOnly 视觉状态
 - selection clamp
+- 多行 caret / selection / composition 分行绘制
+- 光标闪烁与最小 selection handle 拖拽
 
-当前 `ListView` 仍是纵向单列，不做真正虚拟化；但绘制和 target 收集已经限制在可见 item 上。
+当前滚动能力已经覆盖 eager list、固定高度 lazy list、变高估算 lazy list、separated list、fixed-cell lazy grid、scrollbar 和最小 pull-to-refresh。`RefreshIndicator` 使用独立的 `PixelRefreshIndicatorState` / `PixelRefreshIndicatorController`，只暴露状态与回调，不绑定网络或异步任务。
 
 ## 5. 自定义底层能力
 

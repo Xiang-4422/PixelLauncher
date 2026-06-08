@@ -43,6 +43,7 @@ internal class PixelHostRenderCoordinator(
             pagerTargets = emptyList(),
             listTargets = emptyList(),
             scrollbarTargets = emptyList(),
+            refreshTargets = emptyList(),
             textInputTargets = emptyList(),
             sliderTargets = emptyList(),
             semanticsNodes = emptyList(),

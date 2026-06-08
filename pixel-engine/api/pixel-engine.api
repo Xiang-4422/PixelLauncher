@@ -514,6 +514,16 @@ com.purride.pixelui.state public val isSettling: Boolean
 com.purride.pixelui.state public data class PixelPagerSavedState(
 com.purride.pixelui.state public val currentPage: Int,
 com.purride.pixelui.state public val axis: PixelAxis,
+com.purride.pixelui.state public class PixelRefreshIndicatorController : ChangeNotifier()
+com.purride.pixelui.state public fun create(): PixelRefreshIndicatorState = PixelRefreshIndicatorState()
+com.purride.pixelui.state public fun startPull(state: PixelRefreshIndicatorState)
+com.purride.pixelui.state public fun updatePull(
+com.purride.pixelui.state public fun endPull(
+com.purride.pixelui.state public fun completeRefresh(state: PixelRefreshIndicatorState)
+com.purride.pixelui.state public class PixelRefreshIndicatorState
+com.purride.pixelui.state public var pullDistancePx: Float = 0f
+com.purride.pixelui.state public var isArmed: Boolean = false
+com.purride.pixelui.state public var isRefreshing: Boolean = false
 com.purride.pixelui public data class PixelScrollPhysics(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Clamp: PixelScrollPhysics = PixelScrollPhysics()
@@ -641,6 +651,7 @@ com.purride.pixelui public fun ListViewSeparatedBuilder(
 com.purride.pixelui public fun GridView(
 com.purride.pixelui public fun GridViewBuilder(
 com.purride.pixelui public fun Scrollbar(
+com.purride.pixelui public fun RefreshIndicator(
 com.purride.pixelui public fun SingleChildScrollView(
 com.purride.pixelui public fun TextField(
 com.purride.pixelui public fun Slider(

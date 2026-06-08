@@ -149,6 +149,21 @@ internal class RenderStack(
         }
     }
 
+    override fun collectRefreshTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelRefreshTarget>,
+    ) {
+        renderChildren.forEach { child ->
+            val childOffset = resolveChildOffset(child)
+            child.collectRefreshTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
     /**
      * 导出 stack 子树文本输入目标。
      */

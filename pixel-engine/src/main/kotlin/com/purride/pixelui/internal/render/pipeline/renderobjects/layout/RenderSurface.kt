@@ -567,6 +567,18 @@ internal class RenderSurface(
         )
     }
 
+    override fun collectRefreshTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelRefreshTarget>,
+    ) {
+        renderChild?.collectRefreshTargets(
+            offsetX = offsetX + childOffsetX,
+            offsetY = offsetY + childOffsetY,
+            targets = targets,
+        )
+    }
+
     /**
      * 导出当前表面及其子树里的文本输入目标。
      */

@@ -1293,6 +1293,10 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setActiveSliderTarget$pixel_engine(com.purride.pixelui.internal.PixelSliderTarget);
   public final com.purride.pixelui.internal.PixelScrollbarTarget getActiveScrollbarTarget$pixel_engine();
   public final void setActiveScrollbarTarget$pixel_engine(com.purride.pixelui.internal.PixelScrollbarTarget);
+  public final com.purride.pixelui.internal.PixelRefreshTarget getActiveRefreshTarget$pixel_engine();
+  public final void setActiveRefreshTarget$pixel_engine(com.purride.pixelui.internal.PixelRefreshTarget);
+  public final com.purride.pixelui.internal.PixelRefreshTarget getCandidateRefreshTarget$pixel_engine();
+  public final void setCandidateRefreshTarget$pixel_engine(com.purride.pixelui.internal.PixelRefreshTarget);
   public final int getScrollbarDragThumbOffsetY$pixel_engine();
   public final void setScrollbarDragThumbOffsetY$pixel_engine(int);
   public final android.view.VelocityTracker getVelocityTracker$pixel_engine();
@@ -1835,6 +1839,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget GridViewBuilder$default(int, kotlin.jvm.functions.Function1, int, int, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Scrollbar-AD1dkFU(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, int, com.purride.pixelcore.PixelColor, int, java.lang.Object);
   public static com.purride.pixelui.Widget Scrollbar-AD1dkFU$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, int, com.purride.pixelcore.PixelColor, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget RefreshIndicator-zQGkKWs(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0<kotlin.Unit>, int, boolean, int, int, int, java.lang.Object);
+  public static com.purride.pixelui.Widget RefreshIndicator-zQGkKWs$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, int, boolean, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SingleChildScrollView(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object);
   public static com.purride.pixelui.Widget SingleChildScrollView$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget TextField-W2aZtLM(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
@@ -2276,6 +2282,23 @@ public final class com.purride.pixelui.state.PixelPagerState {
   public final boolean isDragging();
   public final boolean isSettling();
   public com.purride.pixelui.state.PixelPagerState();
+}
+public final class com.purride.pixelui.state.PixelRefreshIndicatorController extends com.purride.pixelui.ChangeNotifier {
+  public com.purride.pixelui.state.PixelRefreshIndicatorController();
+  public final com.purride.pixelui.state.PixelRefreshIndicatorState create();
+  public final void startPull(com.purride.pixelui.state.PixelRefreshIndicatorState);
+  public final void updatePull(com.purride.pixelui.state.PixelRefreshIndicatorState, float, int);
+  public final boolean endPull(com.purride.pixelui.state.PixelRefreshIndicatorState, int);
+  public final void completeRefresh(com.purride.pixelui.state.PixelRefreshIndicatorState);
+}
+public final class com.purride.pixelui.state.PixelRefreshIndicatorState {
+  public com.purride.pixelui.state.PixelRefreshIndicatorState();
+  public final float getPullDistancePx();
+  public final void setPullDistancePx$pixel_engine(float);
+  public final boolean isArmed();
+  public final void setArmed$pixel_engine(boolean);
+  public final boolean isRefreshing();
+  public final void setRefreshing$pixel_engine(boolean);
 }
 public final class com.purride.pixelui.state.PixelTextFieldController extends com.purride.pixelui.ChangeNotifier {
   public com.purride.pixelui.state.PixelTextFieldController();

@@ -363,6 +363,22 @@ internal class RenderFlex(
         }
     }
 
+    override fun collectRefreshTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelRefreshTarget>,
+    ) {
+        val children = renderChildren
+        children.forEachIndexed { index, child ->
+            val childOffset = childOffsets[index]
+            child.collectRefreshTargets(
+                offsetX = offsetX + childOffset.x,
+                offsetY = offsetY + childOffset.y,
+                targets = targets,
+            )
+        }
+    }
+
     /**
      * 导出当前 flex 子树里的文本输入目标。
      */
@@ -657,6 +673,14 @@ internal class RenderFlexChild(
         targets: MutableList<PixelScrollbarTarget>,
     ) {
         (child as? RenderBox)?.collectScrollbarTargets(offsetX, offsetY, targets)
+    }
+
+    override fun collectRefreshTargets(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelRefreshTarget>,
+    ) {
+        (child as? RenderBox)?.collectRefreshTargets(offsetX, offsetY, targets)
     }
 
     /**

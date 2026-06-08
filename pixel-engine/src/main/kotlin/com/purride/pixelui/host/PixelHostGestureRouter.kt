@@ -55,6 +55,11 @@ internal class PixelHostGestureRouter(
             updateScrollbarDrag(target, logicalPoint.second)
         }
         val dragExclusiveTargetActive = host.activeSliderTarget != null || host.activeScrollbarTarget != null
+        host.candidateRefreshTarget = if (!dragExclusiveTargetActive) {
+            host.lastRenderResult
+                ?.refreshTargets
+                ?.lastOrNull { it.bounds.contains(logicalPoint.first, logicalPoint.second) }
+        } else null
         host.candidatePagerTarget = if (!dragExclusiveTargetActive) {
             host.lastRenderResult
                 ?.pagerTargets
@@ -82,6 +87,7 @@ internal class PixelHostGestureRouter(
         }
         host.activePagerTarget = null
         host.activeListTarget = null
+        host.activeRefreshTarget = null
         host.nestedScrollSession.consumedDeltaPx = 0f
         host.nestedScrollSession.remainingDeltaPx = 0f
         host.nestedScrollSession.edgeHandoff = false
@@ -109,6 +115,13 @@ internal class PixelHostGestureRouter(
             return true
         }
 
+        host.activeRefreshTarget?.let { target ->
+            val distancePx = (logicalPoint.second - host.touchDownLogicalY).toFloat().coerceAtLeast(0f)
+            target.controller.updatePull(target.state, distancePx, target.thresholdPx)
+            host.invalidate()
+            return true
+        }
+
         host.activeTextInputSelectionTarget?.let { target ->
             if (host.touchMoved && host.activePagerTarget == null && host.activeListTarget == null) {
                 updateSelectionHandle(target, logicalPoint.first, logicalPoint.second)
@@ -122,6 +135,26 @@ internal class PixelHostGestureRouter(
                 host.focusTextInput(target)
                 val selection = resolveTextInputSelection(target, logicalPoint.first, logicalPoint.second)
                 target.controller.setSelection(target.state, selection)
+                host.invalidate()
+                return true
+            }
+        }
+
+        host.candidateRefreshTarget?.let { target ->
+            if (
+                host.touchMoved &&
+                host.activePagerTarget == null &&
+                host.activeListTarget == null &&
+                abs(rawDeltaY) >= abs(rawDeltaX) &&
+                target.canStartPull(rawDeltaY)
+            ) {
+                host.activeRefreshTarget = target
+                host.candidateRefreshTarget = null
+                host.candidatePagerTarget = null
+                host.candidateListTarget = null
+                host.candidateTextInputTarget = null
+                target.controller.startPull(target.state)
+                target.controller.updatePull(target.state, rawDeltaY.coerceAtLeast(0f), target.thresholdPx)
                 host.invalidate()
                 return true
             }
@@ -254,12 +287,28 @@ internal class PixelHostGestureRouter(
             return true
         }
 
+        host.activeRefreshTarget?.let { target ->
+            if (logicalPoint != null) {
+                val distancePx = (logicalPoint.second - host.touchDownLogicalY).toFloat().coerceAtLeast(0f)
+                target.controller.updatePull(target.state, distancePx, target.thresholdPx)
+            }
+            if (target.controller.endPull(target.state, target.thresholdPx)) {
+                target.onRefresh()
+            }
+            host.activeRefreshTarget = null
+            host.candidateRefreshTarget = null
+            recycleVelocityTracker()
+            host.invalidate()
+            return true
+        }
+
         host.activePagerTarget?.let { target ->
             val velocityPxPerSecond = host.rawVelocityToLogical(host.velocityTracker, target.axis)
             target.controller.endDrag(target.state, host.pagerViewportSize(target), velocityPxPerSecond)
             host.activePagerTarget = null
             host.candidatePagerTarget = null
             host.candidateListTarget = null
+            host.candidateRefreshTarget = null
             host.candidateTextInputTarget = null
             clearActiveSelectionHandle()
             recycleVelocityTracker()
@@ -272,6 +321,7 @@ internal class PixelHostGestureRouter(
             host.activeListTarget = null
             host.candidateListTarget = null
             host.candidatePagerTarget = null
+            host.candidateRefreshTarget = null
             host.candidateTextInputTarget = null
             clearActiveSelectionHandle()
             recycleVelocityTracker()
@@ -281,6 +331,7 @@ internal class PixelHostGestureRouter(
 
         host.candidatePagerTarget = null
         host.candidateListTarget = null
+        host.candidateRefreshTarget = null
         if (!host.touchMoved && logicalPoint != null) {
             (host.candidateTextInputTarget ?: host.resolveTextInputTarget(logicalPoint.first, logicalPoint.second))?.let { target ->
                 host.focusTextInput(target)
@@ -315,6 +366,11 @@ internal class PixelHostGestureRouter(
 
     private fun onCancel(): Boolean {
         host.activeSliderTarget = null
+        host.activeRefreshTarget?.let { target ->
+            target.controller.endPull(target.state, target.thresholdPx)
+        }
+        host.activeRefreshTarget = null
+        host.candidateRefreshTarget = null
         host.activeScrollbarTarget?.let { target ->
             target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
         }
