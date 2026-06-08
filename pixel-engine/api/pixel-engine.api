@@ -358,6 +358,22 @@ com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean
 com.purride.pixelui public fun FocusScope(
 com.purride.pixelui public fun Focus(
+com.purride.pixelui public typealias Validator<T> = (T) -> String?
+com.purride.pixelui public fun interface FormFieldRegistration
+com.purride.pixelui public fun dispose()
+com.purride.pixelui public class FormController : ChangeNotifier()
+com.purride.pixelui public val fieldCount: Int
+com.purride.pixelui public val isValid: Boolean
+com.purride.pixelui public fun <T> registerField(
+com.purride.pixelui public fun validate(): Boolean
+com.purride.pixelui public fun reset()
+com.purride.pixelui public class FormFieldState<T>(
+com.purride.pixelui public var value: T = initialValue
+com.purride.pixelui public var errorText: String? = null
+com.purride.pixelui public val hasError: Boolean
+com.purride.pixelui public fun setValue(value: T)
+com.purride.pixelui public fun Form(
+com.purride.pixelui public fun <T> FormField(
 com.purride.pixelui public enum class PixelSemanticRole
 com.purride.pixelui public data class PixelSemanticsNode(
 com.purride.pixelui public val label: String,

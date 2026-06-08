@@ -819,6 +819,27 @@ public final class com.purride.pixelui.FocusScopeNode extends com.purride.pixelu
 public interface com.purride.pixelui.FocusTraversalPolicy {
   public abstract com.purride.pixelui.FocusNode next(java.util.List<com.purride.pixelui.FocusNode>, com.purride.pixelui.FocusNode, com.purride.pixelui.PixelFocusDirection);
 }
+public final class com.purride.pixelui.FormController extends com.purride.pixelui.ChangeNotifier {
+  public com.purride.pixelui.FormController();
+  public final int getFieldCount();
+  public final boolean isValid();
+  public final <T> com.purride.pixelui.FormFieldRegistration registerField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>);
+  public static com.purride.pixelui.FormFieldRegistration registerField$default(com.purride.pixelui.FormController, com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public final boolean validate();
+  public final void reset();
+}
+public interface com.purride.pixelui.FormFieldRegistration {
+  public abstract void dispose();
+}
+public final class com.purride.pixelui.FormFieldState<T> extends com.purride.pixelui.ChangeNotifier {
+  public com.purride.pixelui.FormFieldState(T);
+  public final T getValue();
+  public final java.lang.String getErrorText();
+  public final boolean getHasError();
+  public final void setValue(T);
+  public final void setError$pixel_engine(java.lang.String);
+  public final void reset$pixel_engine();
+}
 public final class com.purride.pixelui.GridFocusTraversalPolicy implements com.purride.pixelui.FocusTraversalPolicy {
   public com.purride.pixelui.GridFocusTraversalPolicy(int);
   public final int getColumns();
@@ -1079,6 +1100,12 @@ public final class com.purride.pixelui.PixelFocusManager {
   public final void clearFocus(com.purride.pixelui.FocusNode);
   public static void clearFocus$default(com.purride.pixelui.PixelFocusManager, com.purride.pixelui.FocusNode, int, java.lang.Object);
   public final boolean dispatchKeyEvent(com.purride.pixelui.PixelKeyEvent);
+}
+public final class com.purride.pixelui.PixelFormKt {
+  public static final com.purride.pixelui.Widget Form(com.purride.pixelui.Widget, com.purride.pixelui.FormController, java.lang.Object);
+  public static com.purride.pixelui.Widget Form$default(com.purride.pixelui.Widget, com.purride.pixelui.FormController, java.lang.Object, int, java.lang.Object);
+  public static final <T> com.purride.pixelui.Widget FormField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.Object, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super com.purride.pixelui.FormFieldState<T>, ? extends com.purride.pixelui.Widget>);
+  public static com.purride.pixelui.Widget FormField$default(com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.Object, kotlin.jvm.functions.Function2, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelGeometryKt {
   public static final java.util.List<com.purride.pixelui.PixelGradientStop> normalizeGradientStops(java.util.List<com.purride.pixelui.PixelGradientStop>);

@@ -52,7 +52,7 @@
 
 当前 `com.purride.pixelui` 已经具备最小可运行组件体系：
 
-- Flutter 风格公开层：`Widget`、`BuildContext`、`Text`、`Container`、`Row`、`Column`、`Stack`、`PageView`、`ListView`、`GridView`、`CustomScrollView`、`SliverList`、`SliverPinnedHeader`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`、`TextField`、`OutlinedButton`
+- Flutter 风格公开层：`Widget`、`BuildContext`、`Text`、`Container`、`Row`、`Column`、`Stack`、`PageView`、`ListView`、`GridView`、`CustomScrollView`、`SliverList`、`SliverPinnedHeader`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`、`TextField`、`Form`、`FormField`、`OutlinedButton`
 - retained build/runtime：`BuildOwner`、`Element`、`StatefulWidget`、`InheritedWidget`、`InheritedNotifier`、`Builder`、`StatefulBuilder`
 - direct pipeline：`RenderObject`、`RenderObjectWidget`、`PipelineOwner`、`PipelineElementTreeRenderer`
 - render objects：文本、surface、flex、stack、分页视口、滚动视口
@@ -79,6 +79,7 @@
 - Scrollbar 与 pull-to-refresh
 - 单子节点滚动
 - 文本输入聚焦与宿主输入桥接
+- `Form` / `FormField` / `Validator` 基础校验
 - 多行文本输入 line config
 - `Pager + List` 复合滚动仲裁
 - `TextField + Button + List` 组合页面
@@ -105,6 +106,7 @@ Demo 入口：
 - `CustomScrollView` 已有 `SliverList` 和 pinned header v1，但还没有 `SliverAppBar`、lazy sliver builder 或多个 pinned header 的推挤规则
 - 列表已有 clamp/fling/bounce 参数基础，但还没有完整平台级滚动物理、snap 策略和 route-aware scroll restoration
 - `TextField` 已支持多行 caret / selection / composition、光标节拍和最小 selection handle，但还没有完整长按菜单或平台级选择浮层
+- `Form` v1 已支持字段注册、`validate()`、`reset()` 和错误文本状态，但还没有自动 FocusScope/IME action 联动
 - `RichText` 已支持 span tone 切换，但还不是完整段落/字号/字距系统
 - 主题 token 已接入基础状态，但还需要继续收敛组件级默认值和局部覆盖语义
 - 新渲染管线已有内部 diagnostics 和基础 target 裁剪回归，但还没有达到完整 Flutter 级别的布局、手势、文本系统
