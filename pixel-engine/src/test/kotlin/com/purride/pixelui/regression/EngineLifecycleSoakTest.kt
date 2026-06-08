@@ -4,6 +4,9 @@ import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelBitmapRegion
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
+import com.purride.pixelui.AsyncBuilder
+import com.purride.pixelui.PixelAsyncSource
+import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.Text
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.testing.PixelTester
@@ -85,6 +88,94 @@ class EngineLifecycleSoakTest {
         assertFalse(controller.isActive(state))
         assertEquals(state.maxScrollOffsetPx, state.scrollOffsetPx, 0.001f)
         assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
+
+    @Test
+    fun multipleTesterHostsKeepTickerStateIsolated() {
+        val first = PixelTester()
+        val second = PixelTester()
+        try {
+            first.pumpWidget(AnimatedSprite(sheet = spriteSheet(), fps = 8, vsync = first.vsync), 2, 2)
+            second.pumpWidget(AnimatedSprite(sheet = spriteSheet(), fps = 8, vsync = second.vsync), 2, 2)
+
+            assertEquals(1, first.vsync.activeTickerCount)
+            assertEquals(1, second.vsync.activeTickerCount)
+
+            repeat(90) {
+                first.pumpFrame(16)
+                second.pumpFrame(16)
+            }
+
+            first.dispose()
+            assertEquals(0, first.vsync.activeTickerCount)
+            assertEquals(1, second.vsync.activeTickerCount)
+
+            repeat(30) {
+                second.pumpFrame(16)
+            }
+        } finally {
+            first.dispose()
+            second.dispose()
+        }
+
+        assertEquals(0, first.vsync.activeTickerCount)
+        assertEquals(0, second.vsync.activeTickerCount)
+        assertEquals(0, first.scheduler.pendingCount)
+        assertEquals(0, second.scheduler.pendingCount)
+    }
+
+    @Test
+    fun tickerBurstDisposeDrainsScheduler() {
+        val tester = PixelTester()
+        val ticks = IntArray(40)
+        val tickers = List(ticks.size) { index ->
+            tester.vsync.createTicker { ticks[index] += 1 }
+        }
+
+        tickers.forEach { ticker -> ticker.start() }
+        assertEquals(ticks.size, tester.vsync.activeTickerCount)
+        assertEquals(1, tester.scheduler.pendingCount)
+
+        repeat(8) {
+            tester.pumpFrame(16)
+        }
+        assertTrue(ticks.all { it > 0 })
+
+        tickers.forEach { ticker -> ticker.dispose() }
+        tester.pumpFrame(16)
+
+        assertEquals(0, tester.vsync.activeTickerCount)
+        assertEquals(0, tester.scheduler.pendingCount)
+        tester.dispose()
+    }
+
+    @Test
+    fun repeatedAsyncBuilderMountDisposeUnsubscribesEveryListener() {
+        var subscriptions = 0
+        var unsubscriptions = 0
+        val source = PixelAsyncSource<Int> { listener ->
+            subscriptions += 1
+            listener(PixelAsyncSnapshot.Success(subscriptions))
+            return@PixelAsyncSource { unsubscriptions += 1 }
+        }
+
+        repeat(30) {
+            val tester = PixelTester()
+            try {
+                tester.pumpWidget(
+                    AsyncBuilder(source = source) { _, snapshot ->
+                        Text((snapshot as? PixelAsyncSnapshot.Success)?.value?.toString().orEmpty())
+                    },
+                    logicalWidth = 24,
+                    logicalHeight = 8,
+                )
+            } finally {
+                tester.dispose()
+            }
+        }
+
+        assertEquals(30, subscriptions)
+        assertEquals(30, unsubscriptions)
     }
 
     private fun spriteSheet(): PixelSpriteSheet {
