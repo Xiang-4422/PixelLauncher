@@ -133,6 +133,7 @@ public class PixelHostView @JvmOverloads constructor(
         get() = nestedScrollSession.focusedTextInputTarget
         set(value) { nestedScrollSession.focusedTextInputTarget = value }
     private val gestureRouter = PixelHostGestureRouter(this)
+    private val textInputCoordinator = PixelHostTextInputCoordinator(this)
 
     public var hostBridge: PixelHostBridge? = null
     public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
@@ -185,35 +186,21 @@ public class PixelHostView @JvmOverloads constructor(
         compositionStart: Int = -1,
         compositionEnd: Int = -1,
     ) {
-        val target = focusedTextInputTarget ?: return
-        if (target.readOnly) return
-        target.controller.updateText(
-            state = target.state,
+        textInputCoordinator.updateFocusedTextInput(
             text = text,
             selectionStart = selectionStart,
             selectionEnd = selectionEnd,
             compositionStart = compositionStart,
             compositionEnd = compositionEnd,
         )
-        target.onChanged?.invoke(text)
-        invalidate()
     }
 
     public fun clearFocusedTextInput() {
-        val target = focusedTextInputTarget ?: return
-        target.controller.blur(target.state)
-        nestedScrollSession.clearTextInputOwner()
-        hostBridge?.hideTextInput()
-        invalidate()
+        textInputCoordinator.clearFocusedTextInput()
     }
 
     public fun submitFocusedTextInput() {
-        val target = focusedTextInputTarget ?: return
-        target.onSubmitted?.invoke(target.state.text)
-        if (target.action == PixelTextInputAction.NEXT) {
-            PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(PixelKey.TAB))
-        }
-        invalidate()
+        textInputCoordinator.submitFocusedTextInput()
     }
 
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
@@ -283,7 +270,7 @@ public class PixelHostView @JvmOverloads constructor(
         frameLoop.beginPaint()
         stepActivePagers(frameDeltaMs)
         stepActiveLists(frameDeltaMs)
-        stepFocusedTextInputCursor(frameDeltaMs)
+        textInputCoordinator.stepCursorBlink(frameDeltaMs)
         val provider = contentProvider
         val renderResult = if (provider != null) {
             val rootWidget = provider()
@@ -308,14 +295,14 @@ public class PixelHostView @JvmOverloads constructor(
         if (renderResult != null) {
             lastRenderResult = renderResult
             dispatchPageChanged(renderResult.pagerTargets)
-            syncRequestedTextInputFocus(renderResult.textInputTargets)
+            textInputCoordinator.syncRequestedFocus(renderResult.textInputTargets)
             drawBuffer(canvas, renderResult.buffer)
             if (renderResult.pagerTargets.any { it.controller.isActive(it.state) } ||
                 renderResult.listTargets.any { it.controller.isActive(it.state) }
             ) {
                 postInvalidateOnAnimation()
             }
-            scheduleNextCursorBlinkInvalidate()
+            textInputCoordinator.scheduleNextCursorBlinkInvalidate()
         }
         frameLoop.endPaint()
         frameStatsObserver?.invoke(frameLoop.snapshotStats())
@@ -372,30 +359,6 @@ public class PixelHostView @JvmOverloads constructor(
         }
     }
 
-    private fun stepFocusedTextInputCursor(deltaMs: Long) {
-        val target = focusedTextInputTarget ?: return
-        target.controller.stepCursorBlink(target.state, deltaMs)
-    }
-
-    /**
-     * 聚焦的文本框需要持续闪烁光标，但可见态只在半周期边界翻转一次。与其每帧
-     * [postInvalidateOnAnimation]（聚焦期间 ~58/60 帧都是多余的全量重绘），这里
-     * 只把下一次重绘安排在「下一个闪烁边界」。
-     *
-     * 翻转发生在 [stepFocusedTextInputCursor]（onDraw 内、render 之前），届时
-     * [PixelTextFieldController.stepCursorBlink] 会 notifyListeners 让监听该
-     * controller 的 widget 在本帧重建——所以光标视觉无需额外一帧即可更新。
-     * focus / 输入等事件各自会 [invalidate]，本方法随之按最新 elapsed 重新对齐
-     * 边界，因此光标在聚焦/输入时立即点亮并维持一个完整半周期。未聚焦或关闭
-     * 闪烁时 [PixelTextFieldController.millisUntilNextCursorBlink] 返回 0，这里
-     * 不再调度，循环自然停止。
-     */
-    private fun scheduleNextCursorBlinkInvalidate() {
-        val target = focusedTextInputTarget ?: return
-        val delayMs = target.controller.millisUntilNextCursorBlink(target.state)
-        if (delayMs > 0L) postInvalidateDelayed(delayMs)
-    }
-
     internal fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
         return lastRenderResult?.clickTargets?.lastOrNull { it.bounds.contains(logicalX, logicalY) }
     }
@@ -404,45 +367,8 @@ public class PixelHostView @JvmOverloads constructor(
         return lastRenderResult?.textInputTargets?.lastOrNull { it.bounds.contains(logicalX, logicalY) }
     }
 
-    private fun syncRequestedTextInputFocus(targets: List<PixelTextInputTarget>) {
-        val blurTarget = focusedTextInputTarget?.takeIf { it.state.blurRequested }
-        if (blurTarget != null) {
-            blurTarget.state.blurRequested = false
-            clearFocusedTextInput()
-            return
-        }
-        val requestedTarget = targets.lastOrNull { it.state.focusRequested }
-        if (requestedTarget != null) {
-            requestedTarget.state.focusRequested = false
-            focusTextInput(requestedTarget)
-            requestedTarget.state.autofocusConsumed = true
-            return
-        }
-        val autofocusTarget = targets.lastOrNull { it.autofocus && !it.state.autofocusConsumed && focusedTextInputTarget == null }
-        if (autofocusTarget != null) {
-            autofocusTarget.state.autofocusConsumed = true
-            focusTextInput(autofocusTarget)
-        }
-    }
-
     internal fun focusTextInput(target: PixelTextInputTarget) {
-        if (focusedTextInputTarget?.state !== target.state) {
-            focusedTextInputTarget?.let { it.controller.blur(it.state) }
-        }
-        target.controller.focus(target.state)
-        nestedScrollSession.markTextInputOwner(target)
-        hostBridge?.showTextInput(
-            PixelTextInputRequest(
-                text = target.state.text,
-                selectionStart = target.state.selectionStart,
-                selectionEnd = target.state.selectionEnd,
-                readOnly = target.readOnly,
-                minLines = target.minLines,
-                maxLines = target.maxLines,
-                inputType = target.inputType,
-                action = target.action,
-            ),
-        )
+        textInputCoordinator.focus(target)
     }
 
     internal fun pagerViewportSize(target: PixelPagerTarget): Int {

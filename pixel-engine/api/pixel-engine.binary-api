@@ -1243,6 +1243,17 @@ public final class com.purride.pixelui.PixelHostSetupKt {
   public static final com.purride.pixelui.PixelHostSetup createPixelHostSetup(android.content.Context, com.purride.pixelui.PixelHostView, com.purride.pixelui.PixelHostSetupConfig);
   public static com.purride.pixelui.PixelHostSetup createPixelHostSetup$default(android.content.Context, com.purride.pixelui.PixelHostView, com.purride.pixelui.PixelHostSetupConfig, int, java.lang.Object);
 }
+public final class com.purride.pixelui.PixelHostTextInputCoordinator {
+  public com.purride.pixelui.PixelHostTextInputCoordinator(com.purride.pixelui.PixelHostView);
+  public final void updateFocusedTextInput(java.lang.String, int, int, int, int);
+  public static void updateFocusedTextInput$default(com.purride.pixelui.PixelHostTextInputCoordinator, java.lang.String, int, int, int, int, int, java.lang.Object);
+  public final void clearFocusedTextInput();
+  public final void submitFocusedTextInput();
+  public final void stepCursorBlink(long);
+  public final void scheduleNextCursorBlinkInvalidate();
+  public final void syncRequestedFocus(java.util.List<com.purride.pixelui.internal.PixelTextInputTarget>);
+  public final void focus(com.purride.pixelui.internal.PixelTextInputTarget);
+}
 public final class com.purride.pixelui.PixelHostView extends android.view.View implements com.purride.pixelcore.PixelFrameView {
   public com.purride.pixelui.PixelHostView(android.content.Context, android.util.AttributeSet);
   public com.purride.pixelui.PixelHostView(android.content.Context, android.util.AttributeSet, int, kotlin.jvm.internal.DefaultConstructorMarker);
