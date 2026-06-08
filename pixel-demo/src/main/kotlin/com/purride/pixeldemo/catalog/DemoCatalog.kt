@@ -34,6 +34,7 @@ import com.purride.pixeldemo.showcase.foundation.ImageBlitScene
 import com.purride.pixeldemo.showcase.foundation.LayoutPrimitivesScene
 import com.purride.pixeldemo.showcase.foundation.PolygonPathScene
 import com.purride.pixeldemo.showcase.foundation.RichTextScene
+import com.purride.pixeldemo.showcase.foundation.SafeAreaScene
 import com.purride.pixeldemo.showcase.foundation.ShapePrimitivesScene
 import com.purride.pixeldemo.showcase.foundation.StackPositionedScene
 import com.purride.pixeldemo.showcase.foundation.TextMatrixScene
@@ -81,6 +82,7 @@ object DemoCatalog {
                 AlignSizingScene,
                 StackPositionedScene,
                 DirectionalVariantsScene,
+                SafeAreaScene,
                 TextMatrixScene,
                 RichTextScene,
                 ContainerDecorationScene,

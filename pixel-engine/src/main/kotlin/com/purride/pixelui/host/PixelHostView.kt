@@ -11,6 +11,7 @@ import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.WindowInsets
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
@@ -35,6 +36,7 @@ import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.min
 
 /**
@@ -83,6 +85,19 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
         set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * Current system/window insets in pixel-engine logical coordinates.
+     *
+     * Android host callbacks update this automatically when [onApplyWindowInsets] runs.
+     * Tests or custom hosts may set it directly or call [setWindowInsets].
+     */
+    public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
+        set(value) {
+            if (field == value) return
             field = value
             invalidate()
         }
@@ -228,6 +243,21 @@ public class PixelHostView @JvmOverloads constructor(
         invalidate()
     }
 
+    /**
+     * Sets logical window insets manually.
+     *
+     * Android hosts usually rely on [onApplyWindowInsets]; tests and custom hosts can use this
+     * method to inject already-converted logical insets.
+     */
+    public fun setWindowInsets(
+        left: Int = 0,
+        top: Int = 0,
+        right: Int = 0,
+        bottom: Int = 0,
+    ) {
+        windowInsets = PixelWindowInsets(left = left, top = top, right = right, bottom = bottom)
+    }
+
     override fun asView(): View = this
 
     /**
@@ -263,6 +293,11 @@ public class PixelHostView @JvmOverloads constructor(
         updateScreenProfileFromPreference()
     }
 
+    override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
+        windowInsets = mapPlatformInsetsToLogical(insets)
+        return super.onApplyWindowInsets(insets)
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         renderCoordinator.dispose()
@@ -285,6 +320,24 @@ public class PixelHostView @JvmOverloads constructor(
             heightPx = height,
             dotSizePx = preference.dotSizePx,
             pixelShape = preference.pixelShape,
+        )
+    }
+
+    @Suppress("DEPRECATION")
+    private fun mapPlatformInsetsToLogical(insets: WindowInsets): PixelWindowInsets {
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = width,
+            viewHeight = height,
+            profile = screenProfile,
+            pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
+        ) ?: return PixelWindowInsets.Zero
+        val cellSize = geometry.cellSize.coerceAtLeast(1f)
+        return PixelWindowInsets(
+            left = insets.systemWindowInsetLeft.toLogicalInset(cellSize),
+            top = insets.systemWindowInsetTop.toLogicalInset(cellSize),
+            right = insets.systemWindowInsetRight.toLogicalInset(cellSize),
+            bottom = insets.systemWindowInsetBottom.toLogicalInset(cellSize),
         )
     }
 
@@ -449,6 +502,11 @@ public class PixelHostView @JvmOverloads constructor(
             pixelGapRatio = pixelGapRatio,
         )
     }
+}
+
+private fun Int.toLogicalInset(cellSize: Float): Int {
+    if (this <= 0) return 0
+    return ceil(this / cellSize).toInt()
 }
 
 private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {

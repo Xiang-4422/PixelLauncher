@@ -20,6 +20,7 @@ pixel-engine 不依赖 Android View 树管理 UI，所有内容由一个继承�
 - **Flutter 风格 API**：`Row` / `Column` / `Stack` / `Padding` / `Text` / `Container` 等声明式 widget，组合即可
 - **完整状态机制**：`StatefulWidget` / `State` / `setState` / `InheritedWidget` / `ValueNotifier` 一应俱全
 - **完整滚动 / 翻页**：`ListView` / `PageView` / `SingleChildScrollView` + 手势惯性物理
+- **宿主环境适配**：`MediaQuery` 暴露逻辑尺寸与 window insets，`SafeArea` 自动避让系统栏 / cutout 区域
 - **直接颜色与样式**：`PixelColor`、`TextStyle`、`ButtonStyle`、`TextFieldStyle` 覆盖常用视觉配置
 - **图像与图形原语**：`Image` / `Sprite` / `AnimatedSprite` / `Line` / `Circle` / `Polygon` / `Path` 直接落到像素缓冲
 - **导航与动画系统**：`PixelNavigator` / `PixelRoute` 支持 slide transition、guard、lifecycle、snapshot restore；动画基础包含 `PixelAnimationController`、`TweenAnimationBuilder`、`AnimatedContainer`、`AnimatedSwitcher`、`AnimatedBuilder`

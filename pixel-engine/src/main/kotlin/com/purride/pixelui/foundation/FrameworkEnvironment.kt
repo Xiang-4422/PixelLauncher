@@ -12,7 +12,79 @@ public data class MediaQueryData(
     val logicalWidth: Int,
     val logicalHeight: Int,
     val screenProfile: ScreenProfile,
-)
+    val viewInsets: PixelWindowInsets = PixelWindowInsets.Zero,
+    val viewPadding: PixelWindowInsets = PixelWindowInsets.Zero,
+    val padding: PixelWindowInsets = viewPadding,
+) {
+    public constructor(
+        logicalWidth: Int,
+        logicalHeight: Int,
+        screenProfile: ScreenProfile,
+    ) : this(
+        logicalWidth = logicalWidth,
+        logicalHeight = logicalHeight,
+        screenProfile = screenProfile,
+        viewInsets = PixelWindowInsets.Zero,
+        viewPadding = PixelWindowInsets.Zero,
+        padding = PixelWindowInsets.Zero,
+    )
+}
+
+/**
+ * Logical pixel insets exposed to widgets through [MediaQuery].
+ *
+ * Values are already converted into pixel-engine logical coordinates. Host integrations should
+ * map platform/system insets into this type before injecting them into the widget tree.
+ */
+public data class PixelWindowInsets(
+    val left: Int = 0,
+    val top: Int = 0,
+    val right: Int = 0,
+    val bottom: Int = 0,
+) {
+    /**
+     * Converts this inset value into the existing layout padding type.
+     */
+    public fun toEdgeInsets(): EdgeInsets {
+        return EdgeInsets(left = left, top = top, right = right, bottom = bottom)
+    }
+
+    /**
+     * Returns a copy with disabled sides zeroed out.
+     */
+    public fun only(
+        left: Boolean = true,
+        top: Boolean = true,
+        right: Boolean = true,
+        bottom: Boolean = true,
+    ): PixelWindowInsets {
+        return PixelWindowInsets(
+            left = if (left) this.left else 0,
+            top = if (top) this.top else 0,
+            right = if (right) this.right else 0,
+            bottom = if (bottom) this.bottom else 0,
+        )
+    }
+
+    /**
+     * Applies per-side minimum inset values.
+     */
+    public fun atLeast(minimum: PixelWindowInsets): PixelWindowInsets {
+        return PixelWindowInsets(
+            left = maxOf(left, minimum.left),
+            top = maxOf(top, minimum.top),
+            right = maxOf(right, minimum.right),
+            bottom = maxOf(bottom, minimum.bottom),
+        )
+    }
+
+    public companion object {
+        /**
+         * No system or window inset.
+         */
+        public val Zero: PixelWindowInsets = PixelWindowInsets()
+    }
+}
 
 public class Directionality(
     public val textDirection: TextDirection,

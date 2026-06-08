@@ -885,15 +885,23 @@ public final class com.purride.pixelui.MediaQuery$Companion {
   public com.purride.pixelui.MediaQuery$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.MediaQueryData {
-  public com.purride.pixelui.MediaQueryData(int, int, com.purride.pixelcore.ScreenProfile);
+  public com.purride.pixelui.MediaQueryData(int, int, com.purride.pixelcore.ScreenProfile, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets);
+  public com.purride.pixelui.MediaQueryData(int, int, com.purride.pixelcore.ScreenProfile, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final int getLogicalWidth();
   public final int getLogicalHeight();
   public final com.purride.pixelcore.ScreenProfile getScreenProfile();
+  public final com.purride.pixelui.PixelWindowInsets getViewInsets();
+  public final com.purride.pixelui.PixelWindowInsets getViewPadding();
+  public final com.purride.pixelui.PixelWindowInsets getPadding();
+  public com.purride.pixelui.MediaQueryData(int, int, com.purride.pixelcore.ScreenProfile);
   public final int component1();
   public final int component2();
   public final com.purride.pixelcore.ScreenProfile component3();
-  public final com.purride.pixelui.MediaQueryData copy(int, int, com.purride.pixelcore.ScreenProfile);
-  public static com.purride.pixelui.MediaQueryData copy$default(com.purride.pixelui.MediaQueryData, int, int, com.purride.pixelcore.ScreenProfile, int, java.lang.Object);
+  public final com.purride.pixelui.PixelWindowInsets component4();
+  public final com.purride.pixelui.PixelWindowInsets component5();
+  public final com.purride.pixelui.PixelWindowInsets component6();
+  public final com.purride.pixelui.MediaQueryData copy(int, int, com.purride.pixelcore.ScreenProfile, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets);
+  public static com.purride.pixelui.MediaQueryData copy$default(com.purride.pixelui.MediaQueryData, int, int, com.purride.pixelcore.ScreenProfile, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets, com.purride.pixelui.PixelWindowInsets, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -1277,6 +1285,8 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setBackgroundColor-0S9DSyc(int);
   public final int getPixelGridColor-bODNPuc();
   public final void setPixelGridColor-0S9DSyc(int);
+  public final com.purride.pixelui.PixelWindowInsets getWindowInsets();
+  public final void setWindowInsets(com.purride.pixelui.PixelWindowInsets);
   public final com.purride.pixelui.internal.PixelRenderResult getLastRenderResult$pixel_engine();
   public final void setLastRenderResult$pixel_engine(com.purride.pixelui.internal.PixelRenderResult);
   public final com.purride.pixelui.internal.PixelSliderTarget getActiveSliderTarget$pixel_engine();
@@ -1351,9 +1361,12 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public void submitFrame-olPvOxg(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.ScreenProfile, int);
   public void setPixelGapEnabled(boolean);
   public final void setPixelGapRatio(float);
+  public final void setWindowInsets(int, int, int, int);
+  public static void setWindowInsets$default(com.purride.pixelui.PixelHostView, int, int, int, int, int, java.lang.Object);
   public android.view.View asView();
   public final java.lang.String dumpElementTree();
   public final java.lang.String dumpSemanticsTree();
+  public android.view.WindowInsets onApplyWindowInsets(android.view.WindowInsets);
   public boolean onTouchEvent(android.view.MotionEvent);
   public boolean performClick();
   public final com.purride.pixelui.internal.PixelClickTarget resolveClickTarget$pixel_engine(int, int);
@@ -1369,6 +1382,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
 }
 public final class com.purride.pixelui.PixelHostViewKt {
   public static final com.purride.pixelui.PixelKeyEvent access$toPixelKeyEvent(android.view.KeyEvent);
+  public static final int access$toLogicalInset(int, float);
 }
 public final class com.purride.pixelui.PixelIconData {
   public com.purride.pixelui.PixelIconData(com.purride.pixelcore.PixelBitmap);
@@ -1830,9 +1844,41 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static final com.purride.pixelui.Widget OutlinedButton-iU0IJ84(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.PixelButtonStyle, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
   public static com.purride.pixelui.Widget OutlinedButton-iU0IJ84$default(java.lang.String, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelButtonStyle, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, int, java.lang.Object);
 }
+public final class com.purride.pixelui.PixelWindowInsets {
+  public static final com.purride.pixelui.PixelWindowInsets$Companion Companion;
+  public com.purride.pixelui.PixelWindowInsets(int, int, int, int);
+  public com.purride.pixelui.PixelWindowInsets(int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final int getLeft();
+  public final int getTop();
+  public final int getRight();
+  public final int getBottom();
+  public final com.purride.pixelui.EdgeInsets toEdgeInsets();
+  public final com.purride.pixelui.PixelWindowInsets only(boolean, boolean, boolean, boolean);
+  public static com.purride.pixelui.PixelWindowInsets only$default(com.purride.pixelui.PixelWindowInsets, boolean, boolean, boolean, boolean, int, java.lang.Object);
+  public final com.purride.pixelui.PixelWindowInsets atLeast(com.purride.pixelui.PixelWindowInsets);
+  public final int component1();
+  public final int component2();
+  public final int component3();
+  public final int component4();
+  public final com.purride.pixelui.PixelWindowInsets copy(int, int, int, int);
+  public static com.purride.pixelui.PixelWindowInsets copy$default(com.purride.pixelui.PixelWindowInsets, int, int, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelWindowInsets();
+  public static final com.purride.pixelui.PixelWindowInsets access$getZero$cp();
+}
+public final class com.purride.pixelui.PixelWindowInsets$Companion {
+  public final com.purride.pixelui.PixelWindowInsets getZero();
+  public com.purride.pixelui.PixelWindowInsets$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public final class com.purride.pixelui.ReadingOrderFocusTraversalPolicy implements com.purride.pixelui.FocusTraversalPolicy {
   public static final com.purride.pixelui.ReadingOrderFocusTraversalPolicy INSTANCE;
   public com.purride.pixelui.FocusNode next(java.util.List<com.purride.pixelui.FocusNode>, com.purride.pixelui.FocusNode, com.purride.pixelui.PixelFocusDirection);
+}
+public final class com.purride.pixelui.SafeAreaKt {
+  public static final com.purride.pixelui.Widget SafeArea(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object);
+  public static com.purride.pixelui.Widget SafeArea$default(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object, int, java.lang.Object);
 }
 public abstract class com.purride.pixelui.State<T extends com.purride.pixelui.StatefulWidget> {
   public T widget;

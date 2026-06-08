@@ -19,6 +19,7 @@ internal data class HostRootWidget(
     val screenProfile: ScreenProfile,
     val textDirection: TextDirection,
     val textRasterizer: PixelTextRasterizer,
+    val windowInsets: com.purride.pixelui.PixelWindowInsets,
     val child: Widget,
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
@@ -28,6 +29,9 @@ internal data class HostRootWidget(
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
                 screenProfile = screenProfile,
+                viewInsets = windowInsets,
+                viewPadding = windowInsets,
+                padding = windowInsets,
             ),
             child = Directionality(
                 textDirection = textDirection,

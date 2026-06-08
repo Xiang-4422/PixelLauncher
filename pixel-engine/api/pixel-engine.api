@@ -289,6 +289,13 @@ com.purride.pixelui public class ValueListenableBuilder<T>(
 com.purride.pixelui public class StatefulBuilder(
 com.purride.pixelui public enum class TextDirection
 com.purride.pixelui public data class MediaQueryData(
+com.purride.pixelui public constructor(
+com.purride.pixelui public data class PixelWindowInsets(
+com.purride.pixelui public fun toEdgeInsets(): EdgeInsets
+com.purride.pixelui public fun only(
+com.purride.pixelui public fun atLeast(minimum: PixelWindowInsets): PixelWindowInsets
+com.purride.pixelui public companion object
+com.purride.pixelui public val Zero: PixelWindowInsets = PixelWindowInsets()
 com.purride.pixelui public class Directionality(
 com.purride.pixelui public val textDirection: TextDirection,
 com.purride.pixelui public companion object
@@ -407,6 +414,7 @@ com.purride.pixelui public var screenProfile: ScreenProfile = ScreenProfile(
 com.purride.pixelui public var profilePreference: PixelHostProfilePreference? = null
 com.purride.pixelui public var backgroundColor: PixelColor = PixelColor.Black
 com.purride.pixelui public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
+com.purride.pixelui public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
 com.purride.pixelui public var hostBridge: PixelHostBridge? = null
 com.purride.pixelui public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
 com.purride.pixelui public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
@@ -420,6 +428,7 @@ com.purride.pixelui public fun updateFocusedTextInput(
 com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun submitFocusedTextInput()
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
+com.purride.pixelui public fun setWindowInsets(
 com.purride.pixelui public fun dumpElementTree(): String
 com.purride.pixelui public fun dumpSemanticsTree(): String
 com.purride.pixelui public class PixelTextInputBridge(
@@ -636,6 +645,7 @@ com.purride.pixelui public fun SingleChildScrollView(
 com.purride.pixelui public fun TextField(
 com.purride.pixelui public fun Slider(
 com.purride.pixelui public fun OutlinedButton(
+com.purride.pixelui public fun SafeArea(
 com.purride.pixelui.widgets.animated public fun AnimatedContainer(
 com.purride.pixelui.widgets.animated public fun AnimatedOpacity(
 com.purride.pixelui.widgets.animated public fun quantizeOpacity(t: Float): Float = when

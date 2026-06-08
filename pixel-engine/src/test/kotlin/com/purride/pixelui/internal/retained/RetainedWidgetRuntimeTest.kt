@@ -11,6 +11,8 @@ import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
+import com.purride.pixelui.PixelWindowInsets
+import com.purride.pixelui.SafeArea
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulBuilder
 import com.purride.pixelui.StatefulWidget
@@ -119,6 +121,7 @@ class RetainedWidgetRuntimeTest {
                     logicalWidth = 6,
                     logicalHeight = 4,
                     screenProfile = screenProfile,
+                    padding = PixelWindowInsets(left = 1, top = 0, right = 0, bottom = 0),
                 ),
                 child = Directionality(
                     textDirection = TextDirection.RTL,
@@ -130,6 +133,51 @@ class RetainedWidgetRuntimeTest {
         )
 
         assertEquals(PixelColor.fromRgb(200, 100, 0), result.buffer.getPixel(5, 0))
+    }
+
+    @Test
+    fun safeAreaUsesMediaQueryPadding() {
+        val runtime = PixelUiRuntime()
+        val screenProfile = ScreenProfile(
+            logicalWidth = 8,
+            logicalHeight = 8,
+            dotSizePx = 8,
+        )
+
+        val result = runtime.render(
+            root = MediaQuery(
+                data = MediaQueryData(
+                    logicalWidth = 8,
+                    logicalHeight = 8,
+                    screenProfile = screenProfile,
+                    padding = PixelWindowInsets(left = 1, top = 2, right = 0, bottom = 0),
+                ),
+                child = SafeArea(
+                    child = Container(
+                        width = 2,
+                        height = 2,
+                        fillColor = PixelColor.White,
+                        borderColor = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 8,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelColor.Transparent, result.buffer.getPixel(0, 0))
+        assertEquals(PixelColor.White, result.buffer.getPixel(1, 2))
+        assertEquals(PixelColor.White, result.buffer.getPixel(2, 3))
+    }
+
+    @Test
+    fun pixelWindowInsetsCanFilterSidesAndApplyMinimums() {
+        val filtered = PixelWindowInsets(left = 1, top = 2, right = 3, bottom = 4)
+            .only(left = true, top = false, right = false, bottom = true)
+            .atLeast(PixelWindowInsets(left = 4, top = 1, right = 0, bottom = 2))
+
+        assertEquals(PixelWindowInsets(left = 4, top = 1, right = 0, bottom = 4), filtered)
+        assertEquals(com.purride.pixelui.EdgeInsets(left = 4, top = 1, right = 0, bottom = 4), filtered.toEdgeInsets())
     }
 
     @Test
