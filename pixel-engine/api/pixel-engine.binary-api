@@ -1600,6 +1600,22 @@ public final class com.purride.pixelui.PixelSemanticsNode {
 public interface com.purride.pixelui.PixelSliver {
   public abstract java.lang.Object getKey();
 }
+public final class com.purride.pixelui.PixelSliverAppBar implements com.purride.pixelui.PixelSliver {
+  public com.purride.pixelui.PixelSliverAppBar(com.purride.pixelui.Widget, int, int, java.lang.Object);
+  public final com.purride.pixelui.Widget getChild();
+  public final int getExpandedHeight();
+  public final int getCollapsedHeight();
+  public java.lang.Object getKey();
+  public final com.purride.pixelui.Widget component1();
+  public final int component2();
+  public final int component3();
+  public final java.lang.Object component4();
+  public final com.purride.pixelui.PixelSliverAppBar copy(com.purride.pixelui.Widget, int, int, java.lang.Object);
+  public static com.purride.pixelui.PixelSliverAppBar copy$default(com.purride.pixelui.PixelSliverAppBar, com.purride.pixelui.Widget, int, int, java.lang.Object, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelui.PixelSliverList implements com.purride.pixelui.PixelSliver {
   public com.purride.pixelui.PixelSliverList(java.util.List<? extends com.purride.pixelui.Widget>, int, java.lang.Object);
   public final java.util.List<com.purride.pixelui.Widget> getItems();
@@ -1893,6 +1909,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.PixelSliver SliverList$default(java.util.List, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.PixelSliver SliverPinnedHeader(com.purride.pixelui.Widget, java.lang.Object);
   public static com.purride.pixelui.PixelSliver SliverPinnedHeader$default(com.purride.pixelui.Widget, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.PixelSliver SliverAppBar(com.purride.pixelui.Widget, int, int, java.lang.Object);
+  public static com.purride.pixelui.PixelSliver SliverAppBar$default(com.purride.pixelui.Widget, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget CustomScrollView(java.util.List<? extends com.purride.pixelui.PixelSliver>, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object);
   public static com.purride.pixelui.Widget CustomScrollView$default(java.util.List, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget GridView(java.util.List<? extends com.purride.pixelui.Widget>, int, int, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, int, java.lang.Object);

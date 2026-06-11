@@ -38,6 +38,7 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Sprite
@@ -307,6 +308,42 @@ class EngineGoldenTest {
                             fillColor = PixelColor.fromRgb(230, 180, 60),
                             borderColor = PixelColor.White,
                             alignment = Alignment.CENTER,
+                        ),
+                    ),
+                    SliverList(
+                        spacing = 1,
+                        items = List(8) { index ->
+                            Container(
+                                child = Text("ROW $index"),
+                                height = 6,
+                                borderColor = PixelColor.fromArgb(120, 255, 255, 255),
+                            )
+                        },
+                    ),
+                ),
+            )
+        },
+        Scene(name = "custom_scroll_sliver_app_bar", width = 44, height = 22) {
+            val controller = PixelListController()
+            val state = controller.create(initialScrollOffsetPx = 10f)
+            CustomScrollView(
+                state = state,
+                controller = controller,
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 14,
+                        collapsedHeight = 6,
+                        child = Container(
+                            child = Column(
+                                children = listOf(
+                                    Text("HERO"),
+                                    SizedBox(height = 2),
+                                    Text("BAR"),
+                                ),
+                                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                            ),
+                            fillColor = PixelColor.fromRgb(230, 180, 60),
+                            borderColor = PixelColor.White,
                         ),
                     ),
                     SliverList(

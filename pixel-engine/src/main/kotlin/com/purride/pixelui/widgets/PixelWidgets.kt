@@ -749,6 +749,22 @@ public fun SliverPinnedHeader(
     return PixelSliverPinnedHeader(child = child, key = key)
 }
 
+public fun SliverAppBar(
+    child: Widget,
+    expandedHeight: Int,
+    collapsedHeight: Int,
+    key: Any? = null,
+): PixelSliver {
+    require(expandedHeight >= 0) { "expandedHeight must be >= 0" }
+    require(collapsedHeight in 0..expandedHeight) { "collapsedHeight must be in 0..expandedHeight" }
+    return PixelSliverAppBar(
+        child = child,
+        expandedHeight = expandedHeight,
+        collapsedHeight = collapsedHeight,
+        key = key,
+    )
+}
+
 public fun CustomScrollView(
     slivers: List<PixelSliver>,
     state: PixelListState,

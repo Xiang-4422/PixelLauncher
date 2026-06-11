@@ -23,3 +23,13 @@ public data class PixelSliverPinnedHeader(
     public val child: Widget,
     override val key: Any?,
 ) : PixelSliver
+
+/**
+ * 参与滚动流并在滚过后收起到 collapsedHeight 的 app bar。
+ */
+public data class PixelSliverAppBar(
+    public val child: Widget,
+    public val expandedHeight: Int,
+    public val collapsedHeight: Int,
+    override val key: Any?,
+) : PixelSliver

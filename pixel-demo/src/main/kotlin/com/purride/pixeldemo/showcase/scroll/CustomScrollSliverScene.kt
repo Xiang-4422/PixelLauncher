@@ -14,6 +14,7 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.State
@@ -28,8 +29,8 @@ import com.purride.pixeldemo.scaffold.DemoScaffold
 
 object CustomScrollSliverScene : DemoScene {
     override val id = "custom_scroll_slivers"
-    override val title = "CustomScrollView Sliver"
-    override val description = "SliverList 与 pinned header 的组合滚动"
+    override val title = "CustomScrollView Slivers"
+    override val description = "SliverAppBar、pinned header 与 SliverList 组合滚动"
 
     override fun build(env: DemoEnv): Widget = CustomScrollSliverWidget()
 }
@@ -45,7 +46,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
             val items = List(32) { index -> row(index) }
             return DemoScaffold(
                 title = "CustomScrollView",
-                description = "Pinned header stays interactive while SliverList scrolls",
+                description = "AppBar collapses; pinned header stays interactive",
                 body = Scrollbar(
                     state = scrollState,
                     thumbColor = PixelColor.White,
@@ -53,6 +54,11 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                     width = 2,
                     child = CustomScrollView(
                         slivers = listOf(
+                            SliverAppBar(
+                                expandedHeight = 18,
+                                collapsedHeight = 8,
+                                child = appBar(),
+                            ),
                             SliverPinnedHeader(child = header()),
                             SliverList(items = items, spacing = 1),
                         ),
@@ -65,11 +71,31 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                         setState { scrollController.scrollItemIntoView(scrollState, 0) }
                     }),
                     OutlinedButton("MID", onPressed = {
-                        setState { scrollController.scrollItemIntoView(scrollState, 16) }
+                        setState { scrollController.scrollItemIntoView(scrollState, 17) }
                     }),
                     OutlinedButton("BOTTOM", onPressed = {
-                        setState { scrollController.scrollItemIntoView(scrollState, 32) }
+                        setState { scrollController.scrollItemIntoView(scrollState, 33) }
                     }),
+                ),
+            )
+        }
+
+        private fun appBar(): Widget {
+            return Container(
+                fillColor = PixelColor.fromRgb(60, 120, 220),
+                borderColor = PixelColor.White,
+                child = Padding(
+                    child = Column(
+                        children = listOf(
+                            Text("SLIVER APP BAR", style = TextStyle(color = PixelColor.White)),
+                            Text("expanded area collapses to toolbar", style = TextStyle(color = PixelColor.White)),
+                        ),
+                        spacing = 2,
+                        mainAxisSize = MainAxisSize.MAX,
+                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    ),
+                    horizontal = 2,
+                    vertical = 2,
                 ),
             )
         }

@@ -27,6 +27,7 @@ import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Snackbar
@@ -256,6 +257,60 @@ class PixelTesterDslTest {
         assertTrue(state.scrollOffsetPx > 0f)
         assertEquals(1, taps)
         tester.dispose()
+    }
+
+    @Test
+    fun sliverAppBarCollapsesAndRemainsClickable() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        var taps = 0
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 16,
+                        collapsedHeight = 8,
+                        child = Column(
+                            children = listOf(
+                                SizedBox(height = 8),
+                                OutlinedButton(text = "BAR", onPressed = { taps++ }, key = "bar"),
+                            ),
+                        ),
+                    ),
+                    SliverList(
+                        items = List(20) { index -> SizedBox(height = 5, child = Text("ROW $index")) },
+                        spacing = 1,
+                    ),
+                ),
+                state = state,
+                controller = controller,
+                key = "custom",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 20,
+        )
+        tester.drag(find.byKey("custom"), dx = 0, dy = -12)
+        tester.tap(find.byKey("bar"))
+
+        assertTrue(state.scrollOffsetPx > 0f)
+        assertEquals(1, taps)
+        tester.dispose()
+    }
+
+    @Test
+    fun sliverAppBarRejectsInvalidExtents() {
+        try {
+            SliverAppBar(
+                expandedHeight = 4,
+                collapsedHeight = 8,
+                child = Text("BAD"),
+            )
+            error("Expected invalid SliverAppBar extents to throw")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("collapsedHeight"))
+        }
     }
 
     @Test

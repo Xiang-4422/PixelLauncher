@@ -2,8 +2,10 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.PixelSliver
+import com.purride.pixelui.PixelSliverAppBar
 import com.purride.pixelui.PixelSliverList
 import com.purride.pixelui.PixelSliverPinnedHeader
+import com.purride.pixelui.SizedBox
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
@@ -27,6 +29,8 @@ internal data class CustomScrollViewWidget(
                                 itemIndex = itemIndex,
                                 pinned = false,
                                 spacingAfter = if (itemIndex < sliver.items.lastIndex) sliver.spacing.coerceAtLeast(0) else 0,
+                                minExtent = null,
+                                maxExtent = null,
                             ),
                         )
                         add(item)
@@ -38,9 +42,26 @@ internal data class CustomScrollViewWidget(
                                 itemIndex = 0,
                                 pinned = true,
                                 spacingAfter = 0,
+                                minExtent = null,
+                                maxExtent = null,
                             ),
                         )
                         add(sliver.child)
+                    }
+                    is PixelSliverAppBar -> {
+                        val expandedHeight = sliver.expandedHeight.coerceAtLeast(0)
+                        val collapsedHeight = sliver.collapsedHeight.coerceIn(0, expandedHeight.coerceAtLeast(0))
+                        add(
+                            CustomScrollChildEntry(
+                                sliverIndex = sliverIndex,
+                                itemIndex = 0,
+                                pinned = true,
+                                spacingAfter = 0,
+                                minExtent = collapsedHeight,
+                                maxExtent = expandedHeight,
+                            ),
+                        )
+                        add(SizedBox(height = expandedHeight, child = sliver.child, key = sliver.key))
                     }
                 }
             }
@@ -62,6 +83,8 @@ internal data class CustomScrollChildEntry(
     val itemIndex: Int,
     val pinned: Boolean,
     val spacingAfter: Int,
+    val minExtent: Int?,
+    val maxExtent: Int?,
 )
 
 private data class CustomScrollViewportWidget(

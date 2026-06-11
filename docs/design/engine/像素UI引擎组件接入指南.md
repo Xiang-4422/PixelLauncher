@@ -123,7 +123,7 @@ setContentView(hostSetup.rootView)
 
 - 内容：`Text`
 - 容器与布局：`Container`、`Padding`、`SizedBox`、`Align`、`Center`、`Row`、`Column`、`Expanded`、`Stack`、`Positioned`
-- 滚动：`PageView`、`PageViewBuilder`、`ListView`、`ListViewBuilder`、`ListViewSeparated`、`GridView`、`GridViewBuilder`、`CustomScrollView`、`SliverList`、`SliverPinnedHeader`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`
+- 滚动：`PageView`、`PageViewBuilder`、`ListView`、`ListViewBuilder`、`ListViewSeparated`、`GridView`、`GridViewBuilder`、`CustomScrollView`、`SliverList`、`SliverPinnedHeader`、`SliverAppBar`、`SingleChildScrollView`、`Scrollbar`、`RefreshIndicator`
 - 输入、表单与按钮：`TextField`、`Form`、`FormField`、`Validator`、`OutlinedButton`
 - 状态：`StatefulWidget`、`StatefulBuilder`、`Builder`、`ValueNotifier`、`ValueListenableBuilder`、`InheritedNotifier`
 - 控制器：`PageController`、`ScrollController`、`TextEditingController`、`PixelRefreshIndicatorController`
@@ -152,7 +152,7 @@ setContentView(hostSetup.rootView)
 - `Validator<T>` 返回错误文本
 - demo 和单测中的 TextField 表单校验组合
 
-当前滚动能力已经覆盖 eager list、固定高度 lazy list、变高估算 lazy list、separated list、fixed-cell lazy grid、`CustomScrollView` + `SliverList` + pinned header v1、scrollbar 和最小 pull-to-refresh。`RefreshIndicator` 使用独立的 `PixelRefreshIndicatorState` / `PixelRefreshIndicatorController`，只暴露状态与回调，不绑定网络或异步任务。
+当前滚动能力已经覆盖 eager list、固定高度 lazy list、变高估算 lazy list、separated list、fixed-cell lazy grid、`CustomScrollView` + `SliverList` + pinned header + collapsible `SliverAppBar` v1、scrollbar 和最小 pull-to-refresh。`RefreshIndicator` 使用独立的 `PixelRefreshIndicatorState` / `PixelRefreshIndicatorController`，只暴露状态与回调，不绑定网络或异步任务。
 
 ## 5. 自定义底层能力
 
