@@ -617,6 +617,12 @@ com.purride.pixelui public val key: Any?
 com.purride.pixelui public data class PixelSliverList(
 com.purride.pixelui public val items: List<Widget>,
 com.purride.pixelui public val spacing: Int,
+com.purride.pixelui public data class PixelSliverListBuilder(
+com.purride.pixelui public val itemCount: Int,
+com.purride.pixelui public val itemBuilder: (Int) -> Widget,
+com.purride.pixelui public val itemExtent: Int,
+com.purride.pixelui public val spacing: Int,
+com.purride.pixelui public val cacheExtent: Int,
 com.purride.pixelui public data class PixelSliverPinnedHeader(
 com.purride.pixelui public val child: Widget,
 com.purride.pixelui public data class PixelSliverAppBar(
@@ -676,6 +682,7 @@ com.purride.pixelui public fun ListViewBuilder(
 com.purride.pixelui public fun ListViewSeparated(
 com.purride.pixelui public fun ListViewSeparatedBuilder(
 com.purride.pixelui public fun SliverList(
+com.purride.pixelui public fun SliverListBuilder(
 com.purride.pixelui public fun SliverPinnedHeader(
 com.purride.pixelui public fun SliverAppBar(
 com.purride.pixelui public fun CustomScrollView(

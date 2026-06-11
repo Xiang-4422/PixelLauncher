@@ -15,7 +15,7 @@ import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.SliverAppBar
-import com.purride.pixelui.SliverList
+import com.purride.pixelui.SliverListBuilder
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
@@ -43,7 +43,6 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
         private val scrollController = ScrollController()
 
         override fun build(context: BuildContext): Widget {
-            val items = List(32) { index -> row(index) }
             return DemoScaffold(
                 title = "CustomScrollView",
                 description = "AppBar collapses; pinned header stays interactive",
@@ -60,7 +59,13 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                                 child = appBar(),
                             ),
                             SliverPinnedHeader(child = header()),
-                            SliverList(items = items, spacing = 1),
+                            SliverListBuilder(
+                                itemCount = 120,
+                                itemExtent = 10,
+                                spacing = 1,
+                                cacheExtent = 1,
+                                itemBuilder = { index -> row(index) },
+                            ),
                         ),
                         state = scrollState,
                         controller = scrollController,
@@ -68,13 +73,13 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                 ),
                 controls = listOf(
                     OutlinedButton("TOP", onPressed = {
-                        setState { scrollController.scrollItemIntoView(scrollState, 0) }
+                        setState { scrollController.scrollTo(scrollState, 0f, viewportHeightPx = 100, contentHeightPx = lazyContentHeight()) }
                     }),
                     OutlinedButton("MID", onPressed = {
-                        setState { scrollController.scrollItemIntoView(scrollState, 17) }
+                        setState { scrollController.scrollTo(scrollState, lazyContentHeight() / 2f, viewportHeightPx = 100, contentHeightPx = lazyContentHeight()) }
                     }),
                     OutlinedButton("BOTTOM", onPressed = {
-                        setState { scrollController.scrollItemIntoView(scrollState, 33) }
+                        setState { scrollController.scrollTo(scrollState, lazyContentHeight().toFloat(), viewportHeightPx = 100, contentHeightPx = lazyContentHeight()) }
                     }),
                 ),
             )
@@ -145,6 +150,10 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                     ),
                 ),
             )
+        }
+
+        private fun lazyContentHeight(): Int {
+            return 18 + 8 + (120 * 10) + (119 * 1)
         }
     }
 }

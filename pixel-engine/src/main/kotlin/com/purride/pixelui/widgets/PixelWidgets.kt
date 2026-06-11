@@ -742,6 +742,26 @@ public fun SliverList(
     )
 }
 
+public fun SliverListBuilder(
+    itemCount: Int,
+    itemBuilder: (Int) -> Widget,
+    itemExtent: Int,
+    spacing: Int = 0,
+    cacheExtent: Int = 1,
+    key: Any? = null,
+): PixelSliver {
+    require(itemCount >= 0) { "itemCount must be >= 0" }
+    require(itemExtent > 0) { "itemExtent must be > 0" }
+    return PixelSliverListBuilder(
+        itemCount = itemCount,
+        itemBuilder = itemBuilder,
+        itemExtent = itemExtent,
+        spacing = spacing,
+        cacheExtent = cacheExtent,
+        key = key,
+    )
+}
+
 public fun SliverPinnedHeader(
     child: Widget,
     key: Any? = null,

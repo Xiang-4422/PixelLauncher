@@ -29,6 +29,7 @@ import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
+import com.purride.pixelui.SliverListBuilder
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Snackbar
 import com.purride.pixelui.Switch
@@ -311,6 +312,46 @@ class PixelTesterDslTest {
         } catch (expected: IllegalArgumentException) {
             assertTrue(expected.message!!.contains("collapsedHeight"))
         }
+    }
+
+    @Test
+    fun sliverListBuilderBuildsWindowAndScrolls() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        val built = mutableSetOf<Int>()
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 8,
+                        collapsedHeight = 4,
+                        child = Text("BAR"),
+                    ),
+                    SliverListBuilder(
+                        itemCount = 100,
+                        itemExtent = 5,
+                        cacheExtent = 1,
+                        itemBuilder = { index ->
+                            built += index
+                            SizedBox(height = 5, child = Text("ROW $index"))
+                        },
+                    ),
+                ),
+                state = state,
+                controller = controller,
+                key = "custom",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 18,
+        )
+
+        assertTrue("SliverListBuilder should not build every item", built.size < 100)
+        tester.drag(find.byKey("custom"), dx = 0, dy = -20)
+
+        assertTrue(state.scrollOffsetPx > 0f)
+        tester.dispose()
     }
 
     @Test

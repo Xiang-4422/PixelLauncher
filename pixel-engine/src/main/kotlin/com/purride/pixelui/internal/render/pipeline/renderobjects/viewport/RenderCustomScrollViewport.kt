@@ -38,10 +38,24 @@ internal class RenderCustomScrollViewport(
         val childConstraints = RenderConstraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
         var cursorY = 0
         children.forEachIndexed { index, child ->
-            childOffsets[index] = cursorY
-            child.layout(childConstraints)
-            cursorY += sliverExtent(index, child)
+            val meta = metadata.getOrNull(index)
+            val childTop = meta?.contentTop ?: cursorY
+            childOffsets[index] = childTop
+            val extent = meta?.maxExtent
+            child.layout(
+                if (extent != null) {
+                    RenderConstraints(
+                        maxWidth = constraints.maxWidth,
+                        minHeight = extent.coerceAtLeast(0),
+                        maxHeight = extent.coerceAtLeast(0),
+                    )
+                } else {
+                    childConstraints
+                },
+            )
+            cursorY = maxOf(cursorY, childTop + sliverExtent(index, child))
             cursorY += metadata.getOrNull(index)?.spacingAfter?.coerceAtLeast(0) ?: 0
+            meta?.contentEnd?.let { contentEnd -> cursorY = maxOf(cursorY, contentEnd) }
         }
         size = RenderSize(width = constraints.maxWidth, height = constraints.maxHeight)
         controller.sync(state = state, viewportHeightPx = size.height, contentHeightPx = cursorY)
