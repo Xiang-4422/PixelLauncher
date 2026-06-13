@@ -56,6 +56,8 @@ public class PixelListState(
      * scrollItemIntoView，使用真实测量值进行二次微调；测量到位即清空。
      */
     internal var pendingScrollIntoViewItemIndex: Int? = null
+    internal var pendingRestorationState: PixelListSavedState? = null
+    internal var pendingRestorationPolicy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset
     internal var scrollSnapRanges: List<PixelScrollSnapRange> = emptyList()
     internal var snapTargetOffsetPx: Float? = null
     internal var lastFloatingScrollOffsetPx: Float? = null

@@ -183,6 +183,7 @@ com.purride.pixelui public typealias PixelNavigator = com.purride.pixelui.widget
 com.purride.pixelui public typealias PixelNavigatorState = com.purride.pixelui.widgets.navigation.PixelNavigatorState
 com.purride.pixelui public typealias PixelRoute = com.purride.pixelui.widgets.navigation.PixelRoute
 com.purride.pixelui public typealias PixelRouteTransition = com.purride.pixelui.widgets.navigation.PixelRouteTransition
+com.purride.pixelui public typealias PixelRouteScrollRestoration = com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration
 com.purride.pixelui public object PixelUiModule
 com.purride.pixelui.advanced public typealias PixelRenderObjectWidget = InternalRenderObjectWidget
 com.purride.pixelui.advanced public typealias PixelLeafRenderObjectWidget = InternalLeafRenderObjectWidget
@@ -734,3 +735,9 @@ com.purride.pixelui.widgets.navigation public val defaultTransition: PixelRouteT
 com.purride.pixelui.widgets.navigation public companion object
 com.purride.pixelui.widgets.navigation public fun maybeOf(context: BuildContext): PixelNavigatorState?
 com.purride.pixelui.widgets.navigation public fun of(context: BuildContext): PixelNavigatorState
+com.purride.pixelui.widgets.navigation public class PixelRouteScrollRestoration(
+com.purride.pixelui.widgets.navigation public val restorationId: String,
+com.purride.pixelui.widgets.navigation public val state: PixelListState,
+com.purride.pixelui.widgets.navigation public val controller: PixelListController,
+com.purride.pixelui.widgets.navigation public val child: Widget,
+com.purride.pixelui.widgets.navigation public val policy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset,

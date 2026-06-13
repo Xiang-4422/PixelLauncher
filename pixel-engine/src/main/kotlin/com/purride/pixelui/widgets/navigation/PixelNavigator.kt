@@ -30,6 +30,7 @@ import com.purride.pixelui.animation.PixelAnimationStatus
 import com.purride.pixelui.animation.PixelTickerProvider
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import java.util.IdentityHashMap
 
 public data class PixelRoute(
     val name: String,
@@ -55,6 +56,7 @@ public enum class PixelRouteTransition {
 public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) : ChangeNotifier() {
     private val routes = mutableListOf(initialRoute)
     private val pendingDisposeRoutes = mutableListOf<PixelRoute>()
+    private val routeRestorationBuckets = IdentityHashMap<PixelRoute, PixelRouteRestorationBucket>()
     internal var activeTransition: PixelNavigatorTransitionRecord? = null
         private set
 
@@ -178,11 +180,18 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         notifyListeners()
     }
 
+    internal fun restorationBucket(route: PixelRoute): PixelRouteRestorationBucket {
+        return routeRestorationBuckets.getOrPut(route) { PixelRouteRestorationBucket() }
+    }
+
     private fun disposePendingRoutes() {
         if (pendingDisposeRoutes.isEmpty()) return
         val routesToDispose = pendingDisposeRoutes.toList()
         pendingDisposeRoutes.clear()
-        routesToDispose.forEach { route -> route.onDispose?.invoke() }
+        routesToDispose.forEach { route ->
+            routeRestorationBuckets.remove(route)
+            route.onDispose?.invoke()
+        }
     }
 
     private fun nextTransitionId(): Long = ++nextTransitionIdValue
@@ -266,9 +275,13 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
     }
 
     private fun routeChild(route: PixelRoute, suffix: String = "incoming"): Widget {
-        return Builder(key = "route:${route.name}:$suffix") { routeContext ->
-            route.builder(routeContext)
-        }
+        return PixelRouteStorageScope(
+            bucket = navigatorState.restorationBucket(route),
+            child = Builder(key = "route:${route.name}:$suffix") { routeContext ->
+                route.builder(routeContext)
+            },
+            key = "route-storage:${route.name}:$suffix",
+        )
     }
 }
 
@@ -452,6 +465,31 @@ private class PixelNavigatorScope(
 ) : InheritedWidget(child = child, key = key) {
     override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
         return (oldWidget as? PixelNavigatorScope)?.navigatorState !== navigatorState
+    }
+}
+
+internal class PixelRouteStorageScope(
+    val bucket: PixelRouteRestorationBucket,
+    override val child: Widget,
+    override val key: Any? = null,
+) : InheritedWidget(child = child, key = key) {
+    override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
+        return (oldWidget as? PixelRouteStorageScope)?.bucket !== bucket
+    }
+}
+
+internal class PixelRouteRestorationBucket {
+    private val scrollStates = mutableMapOf<String, com.purride.pixelui.state.PixelListSavedState>()
+
+    fun readScrollState(restorationId: String): com.purride.pixelui.state.PixelListSavedState? {
+        return scrollStates[restorationId]
+    }
+
+    fun writeScrollState(
+        restorationId: String,
+        savedState: com.purride.pixelui.state.PixelListSavedState,
+    ) {
+        scrollStates[restorationId] = savedState
     }
 }
 

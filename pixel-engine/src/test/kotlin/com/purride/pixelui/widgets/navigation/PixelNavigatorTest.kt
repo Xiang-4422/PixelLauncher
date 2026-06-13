@@ -2,9 +2,12 @@ package com.purride.pixelui.widgets.navigation
 
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
+import com.purride.pixelui.ListView
 import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.Widget
+import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
@@ -241,6 +244,97 @@ class PixelNavigatorTest {
         } catch (error: IllegalStateException) {
             assertTrue(error.message.orEmpty().contains("missing route 'missing'"))
         }
+        tester.dispose()
+    }
+
+    @Test
+    fun routeScrollRestorationRestoresRecreatedListStateAfterPop() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        var rootState = controller.create()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            PixelRouteScrollRestoration(
+                restorationId = "feed",
+                state = rootState,
+                controller = controller,
+                child = ListView(
+                    items = List(30) { index ->
+                        SizedBox(height = 4, child = Text("ROW $index"))
+                    },
+                    state = rootState,
+                    controller = controller,
+                ),
+            )
+        }
+        val details = route("details") { Text("DETAILS") }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 40, 16)
+
+        controller.scrollTo(
+            state = rootState,
+            targetOffsetPx = 48f,
+            viewportHeightPx = rootState.viewportHeightPx,
+            contentHeightPx = rootState.contentHeightPx,
+        )
+        tester.pumpFrame(16)
+        assertEquals(48f, rootState.scrollOffsetPx)
+
+        navigator!!.push(details)
+        tester.pumpAndSettle()
+        rootState = controller.create()
+        assertEquals(0f, rootState.scrollOffsetPx)
+
+        assertTrue(navigator!!.pop())
+        tester.pumpAndSettle()
+        assertEquals(48f, rootState.scrollOffsetPx)
+        tester.dispose()
+    }
+
+    @Test
+    fun disposedRouteDoesNotRetainScrollRestorationBucket() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        var detailsState = controller.create()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = route("details") {
+            PixelRouteScrollRestoration(
+                restorationId = "feed",
+                state = detailsState,
+                controller = controller,
+                child = ListView(
+                    items = List(30) { index ->
+                        SizedBox(height = 4, child = Text("DETAIL $index"))
+                    },
+                    state = detailsState,
+                    controller = controller,
+                ),
+            )
+        }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 40, 16)
+
+        navigator!!.push(details)
+        tester.pumpAndSettle()
+        controller.scrollTo(
+            state = detailsState,
+            targetOffsetPx = 40f,
+            viewportHeightPx = detailsState.viewportHeightPx,
+            contentHeightPx = detailsState.contentHeightPx,
+        )
+        tester.pumpFrame(16)
+        assertEquals(40f, detailsState.scrollOffsetPx)
+
+        assertTrue(navigator!!.pop())
+        tester.pumpAndSettle()
+        detailsState = controller.create()
+        navigator!!.push(details)
+        tester.pumpAndSettle()
+
+        assertEquals(0f, detailsState.scrollOffsetPx)
         tester.dispose()
     }
 

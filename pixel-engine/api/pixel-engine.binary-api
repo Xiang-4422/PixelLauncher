@@ -2279,6 +2279,7 @@ public final class com.purride.pixelui.state.PixelListController extends com.pur
   public final com.purride.pixelui.state.PixelListSavedState saveState(com.purride.pixelui.state.PixelListState);
   public final void restoreState(com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, com.purride.pixelui.state.PixelListRestorationPolicy);
   public static void restoreState$default(com.purride.pixelui.state.PixelListController, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, com.purride.pixelui.state.PixelListRestorationPolicy, int, java.lang.Object);
+  public final void scheduleRestoreState$pixel_engine(com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, com.purride.pixelui.state.PixelListRestorationPolicy);
   public final void endDrag(com.purride.pixelui.state.PixelListState, float, int, int);
   public final void step(com.purride.pixelui.state.PixelListState, long, int, int);
   public final boolean isActive(com.purride.pixelui.state.PixelListState);
@@ -2340,6 +2341,10 @@ public final class com.purride.pixelui.state.PixelListState {
   public final void setSeparatedItemExtentVariable$pixel_engine(boolean);
   public final java.lang.Integer getPendingScrollIntoViewItemIndex$pixel_engine();
   public final void setPendingScrollIntoViewItemIndex$pixel_engine(java.lang.Integer);
+  public final com.purride.pixelui.state.PixelListSavedState getPendingRestorationState$pixel_engine();
+  public final void setPendingRestorationState$pixel_engine(com.purride.pixelui.state.PixelListSavedState);
+  public final com.purride.pixelui.state.PixelListRestorationPolicy getPendingRestorationPolicy$pixel_engine();
+  public final void setPendingRestorationPolicy$pixel_engine(com.purride.pixelui.state.PixelListRestorationPolicy);
   public final java.util.List<com.purride.pixelui.state.PixelScrollSnapRange> getScrollSnapRanges$pixel_engine();
   public final void setScrollSnapRanges$pixel_engine(java.util.List<com.purride.pixelui.state.PixelScrollSnapRange>);
   public final java.lang.Float getSnapTargetOffsetPx$pixel_engine();
@@ -2628,6 +2633,7 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigatorState ex
   public final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot snapshot();
   public final void restore(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, java.util.Map<java.lang.String, com.purride.pixelui.widgets.navigation.PixelRoute>);
   public final void completeTransition$pixel_engine(long);
+  public final com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket restorationBucket$pixel_engine(com.purride.pixelui.widgets.navigation.PixelRoute);
 }
 public final class com.purride.pixelui.widgets.navigation.PixelNavigatorTransitionRecord {
   public com.purride.pixelui.widgets.navigation.PixelNavigatorTransitionRecord(long, com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.widgets.navigation.PixelNavigatorOperation);
@@ -2667,6 +2673,30 @@ public final class com.purride.pixelui.widgets.navigation.PixelRoute {
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket {
+  public com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket();
+  public final com.purride.pixelui.state.PixelListSavedState readScrollState(java.lang.String);
+  public final void writeScrollState(java.lang.String, com.purride.pixelui.state.PixelListSavedState);
+}
+public final class com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration extends com.purride.pixelui.StatefulWidget {
+  public com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration(java.lang.String, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListRestorationPolicy, java.lang.Object);
+  public com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration(java.lang.String, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListRestorationPolicy, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getRestorationId();
+  public final com.purride.pixelui.state.PixelListState getState();
+  public final com.purride.pixelui.state.PixelListController getController();
+  public final com.purride.pixelui.Widget getChild();
+  public final com.purride.pixelui.state.PixelListRestorationPolicy getPolicy();
+  public java.lang.Object getKey();
+  public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
+}
+public final class com.purride.pixelui.widgets.navigation.PixelRouteStorageScope extends com.purride.pixelui.InheritedWidget {
+  public com.purride.pixelui.widgets.navigation.PixelRouteStorageScope(com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket, com.purride.pixelui.Widget, java.lang.Object);
+  public com.purride.pixelui.widgets.navigation.PixelRouteStorageScope(com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket getBucket();
+  public com.purride.pixelui.Widget getChild();
+  public java.lang.Object getKey();
+  public boolean updateShouldNotify(com.purride.pixelui.InheritedWidget);
 }
 public final class com.purride.pixelui.widgets.navigation.PixelRouteTransition extends java.lang.Enum<com.purride.pixelui.widgets.navigation.PixelRouteTransition> {
   public static final com.purride.pixelui.widgets.navigation.PixelRouteTransition None;

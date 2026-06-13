@@ -36,12 +36,27 @@ public class PixelListController(
         // markNeedsBuild → 宿主 postInvalidateOnAnimation 永不收敛，任何含
         // 列表的页面静止时也满帧空转。事件驱动调用方（dragBy/scrollTo/restoreState
         // 等）在 sync 之后各自再 notify，不依赖此处的无条件通知。
-        if (reconcileGeometry(
+        var changed = reconcileGeometry(
                 state = state,
                 viewportHeightPx = viewportHeightPx,
                 contentHeightPx = contentHeightPx,
             )
-        ) {
+        val pendingRestoration = state.pendingRestorationState
+        if (pendingRestoration != null) {
+            state.pendingRestorationState = null
+            val restoredOffset = restoredOffset(
+                state = state,
+                savedState = pendingRestoration,
+                policy = state.pendingRestorationPolicy,
+            )
+            changed = changed || restoredOffset != state.scrollOffsetPx
+            state.scrollOffsetPx = restoredOffset
+            state.isDragging = false
+            state.isSettling = false
+            state.scrollVelocityPxPerSecond = 0f
+            state.snapTargetOffsetPx = null
+        }
+        if (changed) {
             notifyListeners()
         }
     }
@@ -173,11 +188,34 @@ public class PixelListController(
         contentHeightPx: Int = state.contentHeightPx,
         policy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset,
     ) {
+        state.pendingRestorationState = null
         sync(
             state = state,
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
+        state.scrollOffsetPx = restoredOffset(state, savedState, policy)
+        state.isDragging = false
+        state.isSettling = false
+        state.scrollVelocityPxPerSecond = 0f
+        state.snapTargetOffsetPx = null
+        notifyListeners()
+    }
+
+    internal fun scheduleRestoreState(
+        state: PixelListState,
+        savedState: PixelListSavedState,
+        policy: PixelListRestorationPolicy,
+    ) {
+        state.pendingRestorationState = savedState
+        state.pendingRestorationPolicy = policy
+    }
+
+    private fun restoredOffset(
+        state: PixelListState,
+        savedState: PixelListSavedState,
+        policy: PixelListRestorationPolicy,
+    ): Float {
         val savedOffset = savedState.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
         val savedMaxOffset = savedState.maxScrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
         val targetOffset = when (policy) {
@@ -190,12 +228,7 @@ public class PixelListController(
                 }
             }
         }
-        state.scrollOffsetPx = coerceOffset(targetOffset, state.maxScrollOffsetPx)
-        state.isDragging = false
-        state.isSettling = false
-        state.scrollVelocityPxPerSecond = 0f
-        state.snapTargetOffsetPx = null
-        notifyListeners()
+        return coerceOffset(targetOffset, state.maxScrollOffsetPx)
     }
 
     public fun endDrag(
