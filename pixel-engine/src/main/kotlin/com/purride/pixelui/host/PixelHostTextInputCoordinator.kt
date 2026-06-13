@@ -35,6 +35,7 @@ internal class PixelHostTextInputCoordinator(
     fun clearFocusedTextInput() {
         val target = host.focusedTextInputTarget ?: return
         target.controller.blur(target.state)
+        target.focusNode?.unfocus()
         host.nestedScrollSession.clearTextInputOwner()
         host.hostBridge?.hideTextInput()
         host.invalidate()
@@ -92,6 +93,7 @@ internal class PixelHostTextInputCoordinator(
             }
         }
         target.controller.focus(target.state)
+        target.focusNode?.requestFocus()
         host.nestedScrollSession.markTextInputOwner(target)
         host.hostBridge?.showTextInput(
             PixelTextInputRequest(

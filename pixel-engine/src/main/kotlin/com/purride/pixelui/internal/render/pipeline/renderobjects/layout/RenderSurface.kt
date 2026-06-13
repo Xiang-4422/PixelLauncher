@@ -2,6 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.FocusNode
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsNode
 import com.purride.pixelui.PixelTextInputAction
@@ -41,6 +42,7 @@ internal class RenderSurface(
     private var textInputMaxLines: Int = 1,
     private var textInputType: PixelInputType = PixelInputType.TEXT,
     private var textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
+    private var textInputFocusNode: FocusNode? = null,
     private var textInputOnChanged: ((String) -> Unit)? = null,
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
     private var textInputCursorColor: PixelColor? = null,
@@ -88,6 +90,7 @@ internal class RenderSurface(
         textInputMaxLines: Int = 1,
         textInputType: PixelInputType = PixelInputType.TEXT,
         textInputAction: PixelTextInputAction = PixelTextInputAction.DONE,
+        textInputFocusNode: FocusNode? = null,
         textInputOnChanged: ((String) -> Unit)? = null,
         textInputOnSubmitted: ((String) -> Unit)? = null,
         textInputCursorColor: PixelColor? = null,
@@ -125,6 +128,7 @@ internal class RenderSurface(
             this.textInputMaxLines == coercedMaxLines &&
             this.textInputType == textInputType &&
             this.textInputAction == textInputAction &&
+            this.textInputFocusNode === textInputFocusNode &&
             this.textInputOnChanged == textInputOnChanged &&
             this.textInputOnSubmitted == textInputOnSubmitted &&
             this.textInputCursorColor == textInputCursorColor &&
@@ -161,6 +165,7 @@ internal class RenderSurface(
         this.textInputMaxLines = coercedMaxLines
         this.textInputType = textInputType
         this.textInputAction = textInputAction
+        this.textInputFocusNode = textInputFocusNode
         this.textInputOnChanged = textInputOnChanged
         this.textInputOnSubmitted = textInputOnSubmitted
         this.textInputCursorColor = textInputCursorColor
@@ -608,6 +613,7 @@ internal class RenderSurface(
                 maxLines = textInputMaxLines,
                 inputType = textInputType,
                 action = textInputAction,
+                focusNode = textInputFocusNode,
                 onChanged = textInputOnChanged,
                 onSubmitted = textInputOnSubmitted,
                 textIndexAt = renderText?.let { text ->

@@ -209,6 +209,7 @@ internal data class PixelTextInputTarget(
     val maxLines: Int,
     val inputType: com.purride.pixelui.PixelInputType,
     val action: PixelTextInputAction,
+    val focusNode: com.purride.pixelui.FocusNode? = null,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
     val textIndexAt: ((Int, Int) -> Int)? = null,

@@ -952,6 +952,7 @@ public fun TextField(
     onSubmitted: ((String) -> Unit)? = null,
     fillColor: PixelColor? = null,
     borderColor: PixelColor? = null,
+    focusNode: FocusNode? = null,
     key: Any? = null,
 ): Widget {
     return TextFieldWidget(
@@ -970,6 +971,7 @@ public fun TextField(
         onSubmitted = onSubmitted,
         fillColor = fillColor,
         borderColor = borderColor,
+        focusNode = focusNode,
         key = key,
     )
 }

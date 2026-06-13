@@ -285,7 +285,11 @@ private class FocusWidgetState : State<FocusWidget>() {
 
     override fun build(context: BuildContext): Widget {
         context.watch(widget.node)
-        return widget.child
+        return FocusNodeScope(
+            node = widget.node,
+            child = widget.child,
+            key = widget.key?.let { "$it-node-scope" },
+        )
     }
 
     private fun attachToScope() {
@@ -295,6 +299,16 @@ private class FocusWidgetState : State<FocusWidget>() {
         attachedScope?.detach(widget.node)
         attachedScope = scope
         scope.attach(widget.node)
+    }
+}
+
+internal class FocusNodeScope(
+    val node: FocusNode,
+    override val child: Widget,
+    override val key: Any? = null,
+) : InheritedWidget(child = child, key = key) {
+    override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
+        return (oldWidget as? FocusNodeScope)?.node !== node
     }
 }
 

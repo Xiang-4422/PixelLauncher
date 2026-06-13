@@ -8,7 +8,9 @@ import com.purride.pixelui.Form
 import com.purride.pixelui.FormController
 import com.purride.pixelui.FormField
 import com.purride.pixelui.FormFieldState
+import com.purride.pixelui.FocusNode
 import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
@@ -25,7 +27,7 @@ import com.purride.pixeldemo.scaffold.DemoScaffold
 object FormValidationScene : DemoScene {
     override val id = "form_validation"
     override val title = "Form validation"
-    override val description = "Form / FormField / Validator 基础校验和 reset"
+    override val description = "Form field focus, IME NEXT and cross-field validation"
 
     override fun build(env: DemoEnv): Widget = FormValidationWidget()
 }
@@ -34,31 +36,47 @@ private class FormValidationWidget(override val key: Any? = null) : StatefulWidg
     override fun createState(): State<out StatefulWidget> = FormValidationState()
 
     class FormValidationState : State<FormValidationWidget>() {
-        private val formController = FormController()
+        private val formController = FormController(
+            validators = listOf { values ->
+                if (values["name"] == values["confirmation"]) {
+                    emptyMap()
+                } else {
+                    mapOf("confirmation" to "两次输入不一致")
+                }
+            },
+        )
         private val nameField = FormFieldState("")
-        private val textController = TextEditingController()
-        private val textState = PixelTextFieldState()
+        private val confirmationField = FormFieldState("")
+        private val nameController = TextEditingController()
+        private val nameState = PixelTextFieldState()
+        private val confirmationController = TextEditingController()
+        private val confirmationState = PixelTextFieldState()
+        private val nameFocus = FocusNode("name")
+        private val confirmationFocus = FocusNode("confirmation")
         private var lastResult = "IDLE"
 
         override fun build(context: BuildContext): Widget {
             return DemoScaffold(
                 title = "Form",
-                description = "输入至少 3 个字符后校验通过",
+                description = "NEXT 跳到确认字段，两次输入必须一致",
                 body = Form(
                     controller = formController,
                     child = Column(
                         children = listOf(
                             FormField(
                                 state = nameField,
+                                fieldId = "name",
+                                focusNode = nameFocus,
                                 validator = { value -> if (value.trim().length < 3) "请输入至少 3 个字符" else null },
                             ) { _, field ->
                                 Column(
                                     children = listOfNotNull(
                                         Text("NAME", style = TextStyle(color = PixelColor.fromRgb(230, 180, 60))),
                                         TextField(
-                                            state = textState,
-                                            controller = textController,
+                                            state = nameState,
+                                            controller = nameController,
                                             placeholder = "Ada",
+                                            textInputAction = PixelTextInputAction.NEXT,
                                             style = TextFieldStyle(
                                                 borderColor = if (field.hasError) {
                                                     PixelColor.fromRgb(220, 90, 80)
@@ -69,6 +87,35 @@ private class FormValidationWidget(override val key: Any? = null) : StatefulWidg
                                             onChanged = { value -> field.setValue(value) },
                                         ),
                                         field.errorText?.let { Text(it, style = TextStyle(color = PixelColor.fromRgb(220, 90, 80))) },
+                                    ),
+                                    spacing = 2,
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                )
+                            },
+                            FormField(
+                                state = confirmationField,
+                                fieldId = "confirmation",
+                                focusNode = confirmationFocus,
+                            ) { _, field ->
+                                Column(
+                                    children = listOfNotNull(
+                                        Text("CONFIRM", style = TextStyle(color = PixelColor.fromRgb(100, 190, 220))),
+                                        TextField(
+                                            state = confirmationState,
+                                            controller = confirmationController,
+                                            placeholder = "Ada",
+                                            style = TextFieldStyle(
+                                                borderColor = if (field.hasError) {
+                                                    PixelColor.fromRgb(220, 90, 80)
+                                                } else {
+                                                    PixelColor.White
+                                                },
+                                            ),
+                                            onChanged = { value -> field.setValue(value) },
+                                        ),
+                                        field.errorText?.let {
+                                            Text(it, style = TextStyle(color = PixelColor.fromRgb(220, 90, 80)))
+                                        },
                                     ),
                                     spacing = 2,
                                     crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -89,7 +136,8 @@ private class FormValidationWidget(override val key: Any? = null) : StatefulWidg
                     OutlinedButton("RESET", onPressed = {
                         setState {
                             formController.reset()
-                            textController.clear(textState)
+                            nameController.clear(nameState)
+                            confirmationController.clear(confirmationState)
                             lastResult = "IDLE"
                         }
                     }),

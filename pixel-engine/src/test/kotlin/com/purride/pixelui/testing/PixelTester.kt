@@ -97,6 +97,8 @@ public class PixelTester {
         target.onSubmitted?.invoke(target.state.text)
         if (target.action == com.purride.pixelui.PixelTextInputAction.NEXT) {
             PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(PixelKey.TAB))
+            needsRender = true
+            render()
         }
     }
 
@@ -176,7 +178,18 @@ public class PixelTester {
 
     private fun render() {
         val widget = root ?: return
-        renderResult = runtime.render(widget, logicalWidth, logicalHeight)
+        var pass = 0
+        do {
+            renderResult = runtime.render(widget, logicalWidth, logicalHeight)
+            val requestedTarget = renderResult
+                ?.textInputTargets
+                ?.lastOrNull { it.state.focusRequested }
+            if (requestedTarget != null) {
+                requestedTarget.state.focusRequested = false
+                focusTextInput(requestedTarget)
+            }
+            pass += 1
+        } while (requestedTarget != null && pass < 2)
         focusedTextInputTarget = renderResult
             ?.textInputTargets
             ?.lastOrNull { it.state.isFocused }
@@ -370,6 +383,7 @@ public class PixelTester {
             previous.controller.blur(previous.state)
         }
         target.controller.focus(target.state)
+        target.focusNode?.requestFocus()
         focusedTextInputTarget = target
         needsRender = true
     }

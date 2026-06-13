@@ -360,9 +360,12 @@ com.purride.pixelui public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean
 com.purride.pixelui public fun FocusScope(
 com.purride.pixelui public fun Focus(
 com.purride.pixelui public typealias Validator<T> = (T) -> String?
+com.purride.pixelui public typealias FormValidator = (Map<String, Any?>) -> Map<String, String>
 com.purride.pixelui public fun interface FormFieldRegistration
 com.purride.pixelui public fun dispose()
-com.purride.pixelui public class FormController : ChangeNotifier()
+com.purride.pixelui public class FormController(
+com.purride.pixelui public var validators: List<FormValidator> = emptyList(),
+com.purride.pixelui public val focusScopeNode: FocusScopeNode = FocusScopeNode(),
 com.purride.pixelui public val fieldCount: Int
 com.purride.pixelui public val isValid: Boolean
 com.purride.pixelui public fun <T> registerField(

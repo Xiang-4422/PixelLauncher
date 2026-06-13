@@ -3,6 +3,8 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.FocusNode
+import com.purride.pixelui.FocusNodeScope
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelSemanticRole
@@ -13,6 +15,7 @@ import com.purride.pixelui.Semantics
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.Widget
+import com.purride.pixelui.getInheritedWidgetOfExactType
 import com.purride.pixelui.internal.toPixelAlignment
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
@@ -36,10 +39,18 @@ internal data class TextFieldWidget(
     val onSubmitted: ((String) -> Unit)?,
     val fillColor: PixelColor? = null,
     val borderColor: PixelColor? = null,
+    val focusNode: FocusNode? = null,
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
+        val effectiveFocusNode = focusNode ?: context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (effectiveFocusNode != null) {
+            context.watch(effectiveFocusNode)
+            if (effectiveFocusNode.isFocused && !state.isFocused && !state.focusRequested) {
+                controller.requestFocus(state)
+            }
+        }
         val effectiveStyle = when {
             !enabled -> PixelTextFieldStyle(
                 fillColor = style.fillColor,
@@ -79,6 +90,7 @@ internal data class TextFieldWidget(
             maxLines = safeMaxLines,
             inputType = inputType,
             textInputAction = textInputAction,
+            focusNode = effectiveFocusNode,
             onChanged = onChanged,
             onSubmitted = onSubmitted,
             cursorColor = if (enabled && !readOnly) style.cursorColor else null,
@@ -117,6 +129,7 @@ private data class TextInputSurfaceWidget(
     val maxLines: Int,
     val inputType: PixelInputType,
     val textInputAction: PixelTextInputAction,
+    val focusNode: FocusNode?,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
     val cursorColor: PixelColor?,
@@ -143,6 +156,7 @@ private data class TextInputSurfaceWidget(
             textInputMaxLines = maxLines,
             textInputType = inputType,
             textInputAction = textInputAction,
+            textInputFocusNode = focusNode,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
             textInputCursorColor = cursorColor,
@@ -170,6 +184,7 @@ private data class TextInputSurfaceWidget(
             textInputMaxLines = maxLines,
             textInputType = inputType,
             textInputAction = textInputAction,
+            textInputFocusNode = focusNode,
             textInputOnChanged = onChanged,
             textInputOnSubmitted = onSubmitted,
             textInputCursorColor = cursorColor,

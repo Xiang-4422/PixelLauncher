@@ -802,6 +802,14 @@ public final class com.purride.pixelui.FocusNode extends com.purride.pixelui.Cha
   public final void setFocused$pixel_engine(boolean);
   public com.purride.pixelui.FocusNode();
 }
+public final class com.purride.pixelui.FocusNodeScope extends com.purride.pixelui.InheritedWidget {
+  public com.purride.pixelui.FocusNodeScope(com.purride.pixelui.FocusNode, com.purride.pixelui.Widget, java.lang.Object);
+  public com.purride.pixelui.FocusNodeScope(com.purride.pixelui.FocusNode, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelui.FocusNode getNode();
+  public com.purride.pixelui.Widget getChild();
+  public java.lang.Object getKey();
+  public boolean updateShouldNotify(com.purride.pixelui.InheritedWidget);
+}
 public final class com.purride.pixelui.FocusScopeNode extends com.purride.pixelui.ChangeNotifier {
   public com.purride.pixelui.FocusScopeNode(com.purride.pixelui.FocusTraversalPolicy);
   public com.purride.pixelui.FocusScopeNode(com.purride.pixelui.FocusTraversalPolicy, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -820,13 +828,18 @@ public interface com.purride.pixelui.FocusTraversalPolicy {
   public abstract com.purride.pixelui.FocusNode next(java.util.List<com.purride.pixelui.FocusNode>, com.purride.pixelui.FocusNode, com.purride.pixelui.PixelFocusDirection);
 }
 public final class com.purride.pixelui.FormController extends com.purride.pixelui.ChangeNotifier {
-  public com.purride.pixelui.FormController();
+  public com.purride.pixelui.FormController(java.util.List<? extends kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ? extends java.lang.Object>, ? extends java.util.Map<java.lang.String, java.lang.String>>>, com.purride.pixelui.FocusScopeNode);
+  public com.purride.pixelui.FormController(java.util.List, com.purride.pixelui.FocusScopeNode, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.util.List<kotlin.jvm.functions.Function1<java.util.Map<java.lang.String, ? extends java.lang.Object>, java.util.Map<java.lang.String, java.lang.String>>> getValidators();
+  public final void setValidators(java.util.List<? extends kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ? extends java.lang.Object>, ? extends java.util.Map<java.lang.String, java.lang.String>>>);
+  public final com.purride.pixelui.FocusScopeNode getFocusScopeNode();
   public final int getFieldCount();
   public final boolean isValid();
-  public final <T> com.purride.pixelui.FormFieldRegistration registerField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>);
-  public static com.purride.pixelui.FormFieldRegistration registerField$default(com.purride.pixelui.FormController, com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public final <T> com.purride.pixelui.FormFieldRegistration registerField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.String);
+  public static com.purride.pixelui.FormFieldRegistration registerField$default(com.purride.pixelui.FormController, com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.String, int, java.lang.Object);
   public final boolean validate();
   public final void reset();
+  public com.purride.pixelui.FormController();
 }
 public interface com.purride.pixelui.FormFieldRegistration {
   public abstract void dispose();
@@ -1104,8 +1117,8 @@ public final class com.purride.pixelui.PixelFocusManager {
 public final class com.purride.pixelui.PixelFormKt {
   public static final com.purride.pixelui.Widget Form(com.purride.pixelui.Widget, com.purride.pixelui.FormController, java.lang.Object);
   public static com.purride.pixelui.Widget Form$default(com.purride.pixelui.Widget, com.purride.pixelui.FormController, java.lang.Object, int, java.lang.Object);
-  public static final <T> com.purride.pixelui.Widget FormField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.Object, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super com.purride.pixelui.FormFieldState<T>, ? extends com.purride.pixelui.Widget>);
-  public static com.purride.pixelui.Widget FormField$default(com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.Object, kotlin.jvm.functions.Function2, int, java.lang.Object);
+  public static final <T> com.purride.pixelui.Widget FormField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.String, com.purride.pixelui.FocusNode, java.lang.Object, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super com.purride.pixelui.FormFieldState<T>, ? extends com.purride.pixelui.Widget>);
+  public static com.purride.pixelui.Widget FormField$default(com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.String, com.purride.pixelui.FocusNode, java.lang.Object, kotlin.jvm.functions.Function2, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelGeometryKt {
   public static final java.util.List<com.purride.pixelui.PixelGradientStop> normalizeGradientStops(java.util.List<com.purride.pixelui.PixelGradientStop>);
@@ -1955,8 +1968,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget RefreshIndicator-zQGkKWs$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, int, boolean, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SingleChildScrollView(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object);
   public static com.purride.pixelui.Widget SingleChildScrollView$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget TextField-W2aZtLM(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
-  public static com.purride.pixelui.Widget TextField-W2aZtLM$default(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget TextField-T1ftQuk(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object);
+  public static com.purride.pixelui.Widget TextField-T1ftQuk$default(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Slider-WmmbFQo(float, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget Slider-WmmbFQo$default(float, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget OutlinedButton-iU0IJ84(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.PixelButtonStyle, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
