@@ -53,6 +53,12 @@ internal class RenderCustomScrollViewport(
                     childConstraints
                 },
             )
+            if (meta?.measuredItemCount != null && meta.estimatedExtent != null) {
+                state.ensureMeasuredItemCapacity(meta.measuredItemCount)
+                if (meta.itemIndex in state.measuredItemHeightsPx.indices) {
+                    state.measuredItemHeightsPx[meta.itemIndex] = child.size.height.coerceAtLeast(1)
+                }
+            }
             cursorY = maxOf(cursorY, childTop + sliverExtent(index, child))
             cursorY += metadata.getOrNull(index)?.spacingAfter?.coerceAtLeast(0) ?: 0
             meta?.contentEnd?.let { contentEnd -> cursorY = maxOf(cursorY, contentEnd) }

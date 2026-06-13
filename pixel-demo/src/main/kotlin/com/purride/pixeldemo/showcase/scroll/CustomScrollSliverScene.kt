@@ -30,7 +30,7 @@ import com.purride.pixeldemo.scaffold.DemoScaffold
 object CustomScrollSliverScene : DemoScene {
     override val id = "custom_scroll_slivers"
     override val title = "CustomScrollView Slivers"
-    override val description = "SliverAppBar、pinned header 与 SliverList 组合滚动"
+    override val description = "SliverAppBar、pinned header 与变高 lazy SliverList 组合滚动"
 
     override fun build(env: DemoEnv): Widget = CustomScrollSliverWidget()
 }
@@ -45,7 +45,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
         override fun build(context: BuildContext): Widget {
             return DemoScaffold(
                 title = "CustomScrollView",
-                description = "AppBar collapses; pinned header stays interactive",
+                description = "AppBar collapses; pinned header and estimated lazy rows stay interactive",
                 body = Scrollbar(
                     state = scrollState,
                     thumbColor = PixelColor.White,
@@ -61,7 +61,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                             SliverPinnedHeader(child = header()),
                             SliverListBuilder(
                                 itemCount = 120,
-                                itemExtent = 10,
+                                estimatedItemExtent = 10,
                                 spacing = 1,
                                 cacheExtent = 1,
                                 itemBuilder = { index -> row(index) },
@@ -133,7 +133,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                 else -> PixelColor.fromRgb(120, 120, 120)
             }
             return SizedBox(
-                height = 10,
+                height = rowHeight(index),
                 child = Container(
                     fillColor = color,
                     borderColor = PixelColor.fromArgb(120, 255, 255, 255),
@@ -153,7 +153,11 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
         }
 
         private fun lazyContentHeight(): Int {
-            return 18 + 8 + (120 * 10) + (119 * 1)
+            return 18 + 8 + (0 until 120).sumOf { rowHeight(it) } + (119 * 1)
+        }
+
+        private fun rowHeight(index: Int): Int {
+            return if (index % 5 == 0) 14 else 10
         }
     }
 }

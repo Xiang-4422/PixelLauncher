@@ -36,6 +36,8 @@ internal data class CustomScrollViewWidget(
                                     maxExtent = null,
                                     contentTop = null,
                                     contentEnd = null,
+                                    measuredItemCount = null,
+                                    estimatedExtent = null,
                                 ),
                             )
                             add(item)
@@ -44,21 +46,55 @@ internal data class CustomScrollViewWidget(
                     }
                     is PixelSliverListBuilder -> {
                         val contentStart = estimatedCursorY
-                        val totalHeight = fixedListContentHeight(
-                            itemCount = sliver.itemCount,
-                            itemExtent = sliver.itemExtent,
-                            spacing = sliver.spacing,
-                        )
-                        val range = FixedSliverRange.resolve(
-                            itemCount = sliver.itemCount,
-                            itemExtent = sliver.itemExtent,
-                            spacing = sliver.spacing,
-                            scrollOffsetPx = state.scrollOffsetPx - contentStart,
-                            viewportHeightPx = state.viewportHeightPx,
-                            cacheExtent = sliver.cacheExtent,
-                        )
+                        val fixedExtent = sliver.itemExtent
+                        val estimatedExtent = sliver.estimatedItemExtent
+                        val totalHeight: Int
+                        val range: FixedSliverRange
+                        if (fixedExtent != null) {
+                            totalHeight = fixedListContentHeight(
+                                itemCount = sliver.itemCount,
+                                itemExtent = fixedExtent,
+                                spacing = sliver.spacing,
+                            )
+                            range = FixedSliverRange.resolve(
+                                itemCount = sliver.itemCount,
+                                itemExtent = fixedExtent,
+                                spacing = sliver.spacing,
+                                scrollOffsetPx = state.scrollOffsetPx - contentStart,
+                                viewportHeightPx = state.viewportHeightPx,
+                                cacheExtent = sliver.cacheExtent,
+                            )
+                        } else {
+                            val safeEstimate = requireNotNull(estimatedExtent).coerceAtLeast(1)
+                            state.ensureMeasuredItemCapacity(sliver.itemCount)
+                            totalHeight = variableItemContentHeightPx(
+                                state = state,
+                                itemCount = sliver.itemCount,
+                                estimatedItemExtent = safeEstimate,
+                                spacing = sliver.spacing,
+                            )
+                            range = FixedSliverRange.resolveVariable(
+                                itemCount = sliver.itemCount,
+                                state = state,
+                                estimatedItemExtent = safeEstimate,
+                                spacing = sliver.spacing,
+                                scrollOffsetPx = state.scrollOffsetPx - contentStart,
+                                viewportHeightPx = state.viewportHeightPx,
+                                cacheExtent = sliver.cacheExtent,
+                            )
+                        }
                         repeat(range.count) { offset ->
                             val itemIndex = range.firstIndex + offset
+                            val itemTop = if (fixedExtent != null) {
+                                contentStart + itemIndex * (fixedExtent.coerceAtLeast(1) + sliver.spacing.coerceAtLeast(0))
+                            } else {
+                                contentStart + variableItemTopPx(
+                                    state = state,
+                                    itemIndex = itemIndex,
+                                    estimatedItemExtent = requireNotNull(estimatedExtent).coerceAtLeast(1),
+                                    spacing = sliver.spacing,
+                                )
+                            }
                             add(
                                 CustomScrollChildEntry(
                                     sliverIndex = sliverIndex,
@@ -66,9 +102,11 @@ internal data class CustomScrollViewWidget(
                                     pinned = false,
                                     spacingAfter = if (itemIndex < sliver.itemCount - 1) sliver.spacing.coerceAtLeast(0) else 0,
                                     minExtent = null,
-                                    maxExtent = sliver.itemExtent.coerceAtLeast(1),
-                                    contentTop = contentStart + itemIndex * (sliver.itemExtent.coerceAtLeast(1) + sliver.spacing.coerceAtLeast(0)),
+                                    maxExtent = fixedExtent?.coerceAtLeast(1),
+                                    contentTop = itemTop,
                                     contentEnd = contentStart + totalHeight,
+                                    measuredItemCount = if (fixedExtent == null) sliver.itemCount else null,
+                                    estimatedExtent = estimatedExtent,
                                 ),
                             )
                             add(sliver.itemBuilder(itemIndex))
@@ -86,6 +124,8 @@ internal data class CustomScrollViewWidget(
                                 maxExtent = null,
                                 contentTop = null,
                                 contentEnd = null,
+                                measuredItemCount = null,
+                                estimatedExtent = null,
                             ),
                         )
                         add(sliver.child)
@@ -103,6 +143,8 @@ internal data class CustomScrollViewWidget(
                                 maxExtent = expandedHeight,
                                 contentTop = null,
                                 contentEnd = null,
+                                measuredItemCount = null,
+                                estimatedExtent = null,
                             ),
                         )
                         add(SizedBox(height = expandedHeight, child = sliver.child, key = sliver.key))
@@ -132,6 +174,8 @@ internal data class CustomScrollChildEntry(
     val maxExtent: Int?,
     val contentTop: Int?,
     val contentEnd: Int?,
+    val measuredItemCount: Int?,
+    val estimatedExtent: Int?,
 )
 
 private data class CustomScrollViewportWidget(
@@ -180,6 +224,45 @@ private data class FixedSliverRange(
             val first = ((scrollTop / itemStride) - safeCache).coerceIn(0, itemCount - 1)
             val visibleEndPx = scrollTop + effectiveViewportHeight
             val last = ((visibleEndPx + itemStride - 1) / itemStride + safeCache).coerceIn(first, itemCount - 1)
+            return FixedSliverRange(firstIndex = first, count = last - first + 1)
+        }
+
+        fun resolveVariable(
+            itemCount: Int,
+            state: PixelListState,
+            estimatedItemExtent: Int,
+            spacing: Int,
+            scrollOffsetPx: Float,
+            viewportHeightPx: Int,
+            cacheExtent: Int,
+        ): FixedSliverRange {
+            val safeEstimate = estimatedItemExtent.coerceAtLeast(1)
+            if (itemCount <= 0) return FixedSliverRange(firstIndex = 0, count = 0)
+            val safeSpacing = spacing.coerceAtLeast(0)
+            val safeCache = cacheExtent.coerceAtLeast(0)
+            val effectiveViewportHeight = if (viewportHeightPx > 0) viewportHeightPx else safeEstimate * (safeCache + 8)
+            val cachePx = safeEstimate * safeCache
+            val windowTop = (scrollOffsetPx.toInt() - cachePx).coerceAtLeast(0)
+            val windowBottom = scrollOffsetPx.toInt().coerceAtLeast(0) + effectiveViewportHeight + cachePx
+
+            var first = 0
+            while (
+                first < itemCount - 1 &&
+                variableItemBottomPx(state, first, safeEstimate, safeSpacing) <= windowTop
+            ) {
+                first += 1
+            }
+
+            var last = first
+            while (
+                last < itemCount - 1 &&
+                variableItemTopPx(state, last, safeEstimate, safeSpacing) < windowBottom
+            ) {
+                last += 1
+            }
+            if (variableItemTopPx(state, last, safeEstimate, safeSpacing) >= windowBottom && last > first) {
+                last -= 1
+            }
             return FixedSliverRange(firstIndex = first, count = last - first + 1)
         }
     }

@@ -39,6 +39,7 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelRefreshIndicatorController
 import com.purride.pixelui.state.PixelTextFieldController
@@ -350,6 +351,46 @@ class PixelTesterDslTest {
         assertTrue("SliverListBuilder should not build every item", built.size < 100)
         tester.drag(find.byKey("custom"), dx = 0, dy = -20)
 
+        assertTrue(state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
+    fun sliverListBuilderSupportsEstimatedVariableHeights() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        val built = mutableSetOf<Int>()
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverListBuilder(
+                        itemCount = 80,
+                        estimatedItemExtent = 5,
+                        cacheExtent = 1,
+                        spacing = 1,
+                        itemBuilder = { index ->
+                            built += index
+                            SizedBox(
+                                height = if (index % 3 == 0) 9 else 5,
+                                child = Text("ROW $index"),
+                            )
+                        },
+                    ),
+                ),
+                state = state,
+                controller = controller,
+                key = "custom",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 18,
+        )
+
+        assertTrue("Estimated SliverListBuilder should not build every item", built.size < 80)
+        assertTrue("Visible variable-height item should be measured", stateHasMeasuredItems(state))
+
+        tester.drag(find.byKey("custom"), dx = 0, dy = -18)
         assertTrue(state.scrollOffsetPx > 0f)
         tester.dispose()
     }
@@ -1130,4 +1171,10 @@ class PixelTesterDslTest {
         assert(lit > 0)
         tester.dispose()
     }
+}
+
+private fun stateHasMeasuredItems(state: PixelListState): Boolean {
+    val field = PixelListState::class.java.getDeclaredField("measuredItemHeightsPx")
+    field.isAccessible = true
+    return (field.get(state) as IntArray).any { it > 0 }
 }

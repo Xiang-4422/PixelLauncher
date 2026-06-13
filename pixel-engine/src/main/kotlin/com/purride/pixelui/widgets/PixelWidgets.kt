@@ -745,17 +745,21 @@ public fun SliverList(
 public fun SliverListBuilder(
     itemCount: Int,
     itemBuilder: (Int) -> Widget,
-    itemExtent: Int,
+    itemExtent: Int? = null,
+    estimatedItemExtent: Int? = null,
     spacing: Int = 0,
     cacheExtent: Int = 1,
     key: Any? = null,
 ): PixelSliver {
     require(itemCount >= 0) { "itemCount must be >= 0" }
-    require(itemExtent > 0) { "itemExtent must be > 0" }
+    require(itemExtent == null || itemExtent > 0) { "itemExtent must be > 0" }
+    require(estimatedItemExtent == null || estimatedItemExtent > 0) { "estimatedItemExtent must be > 0" }
+    require(itemExtent != null || estimatedItemExtent != null) { "itemExtent or estimatedItemExtent must be provided" }
     return PixelSliverListBuilder(
         itemCount = itemCount,
         itemBuilder = itemBuilder,
         itemExtent = itemExtent,
+        estimatedItemExtent = estimatedItemExtent,
         spacing = spacing,
         cacheExtent = cacheExtent,
         key = key,

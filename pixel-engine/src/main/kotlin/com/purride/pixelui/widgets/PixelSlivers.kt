@@ -17,12 +17,13 @@ public data class PixelSliverList(
 ) : PixelSliver
 
 /**
- * 固定 item 高度的 lazy SliverList 描述。
+ * 固定或估算 item 高度的 lazy SliverList 描述。
  */
 public data class PixelSliverListBuilder(
     public val itemCount: Int,
     public val itemBuilder: (Int) -> Widget,
-    public val itemExtent: Int,
+    public val itemExtent: Int?,
+    public val estimatedItemExtent: Int?,
     public val spacing: Int,
     public val cacheExtent: Int,
     override val key: Any?,
