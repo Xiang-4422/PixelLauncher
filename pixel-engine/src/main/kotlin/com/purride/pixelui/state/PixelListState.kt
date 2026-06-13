@@ -59,4 +59,13 @@ public class PixelListState(
  */
 public data class PixelListSavedState(
     public val scrollOffsetPx: Float,
+    public val maxScrollOffsetPx: Float = 0f,
 )
+
+/**
+ * 列表恢复到新 viewport/content 几何时的偏移映射策略。
+ */
+public enum class PixelListRestorationPolicy {
+    AbsoluteOffset,
+    RelativeProgress,
+}

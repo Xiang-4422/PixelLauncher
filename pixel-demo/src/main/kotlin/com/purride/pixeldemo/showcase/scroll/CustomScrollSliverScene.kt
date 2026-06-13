@@ -23,6 +23,8 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixelui.state.PixelListRestorationPolicy
+import com.purride.pixelui.state.PixelListSavedState
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoScaffold
@@ -41,6 +43,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
     class CustomScrollSliverState : State<CustomScrollSliverWidget>() {
         private val scrollState = PixelListState()
         private val scrollController = ScrollController()
+        private var savedScrollState: PixelListSavedState? = null
 
         override fun build(context: BuildContext): Widget {
             return DemoScaffold(
@@ -81,6 +84,20 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                     }),
                     OutlinedButton("BOTTOM", onPressed = {
                         setState { scrollController.scrollTo(scrollState, lazyContentHeight().toFloat(), viewportHeightPx = 100, contentHeightPx = lazyContentHeight()) }
+                    }),
+                    OutlinedButton("SAVE", onPressed = {
+                        savedScrollState = scrollController.saveState(scrollState)
+                    }),
+                    OutlinedButton("RESTORE", onPressed = {
+                        savedScrollState?.let { saved ->
+                            setState {
+                                scrollController.restoreState(
+                                    state = scrollState,
+                                    savedState = saved,
+                                    policy = PixelListRestorationPolicy.RelativeProgress,
+                                )
+                            }
+                        }
                     }),
                 ),
             )

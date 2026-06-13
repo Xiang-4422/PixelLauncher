@@ -505,6 +505,8 @@ com.purride.pixelui.state public var isSettling: Boolean = false
 com.purride.pixelui.state public var scrollVelocityPxPerSecond: Float = 0f
 com.purride.pixelui.state public data class PixelListSavedState(
 com.purride.pixelui.state public val scrollOffsetPx: Float,
+com.purride.pixelui.state public val maxScrollOffsetPx: Float = 0f,
+com.purride.pixelui.state public enum class PixelListRestorationPolicy
 com.purride.pixelui.state public class PixelPagerController(
 com.purride.pixelui.state public fun create(
 com.purride.pixelui.state public fun sync(

@@ -153,7 +153,10 @@ public class PixelListController(
     }
 
     public fun saveState(state: PixelListState): PixelListSavedState {
-        return PixelListSavedState(scrollOffsetPx = state.scrollOffsetPx.coerceAtLeast(0f))
+        return PixelListSavedState(
+            scrollOffsetPx = state.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f),
+            maxScrollOffsetPx = state.maxScrollOffsetPx.finiteOrZero().coerceAtLeast(0f),
+        )
     }
 
     public fun restoreState(
@@ -161,13 +164,26 @@ public class PixelListController(
         savedState: PixelListSavedState,
         viewportHeightPx: Int = state.viewportHeightPx,
         contentHeightPx: Int = state.contentHeightPx,
+        policy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset,
     ) {
         sync(
             state = state,
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
-        state.scrollOffsetPx = coerceOffset(savedState.scrollOffsetPx, state.maxScrollOffsetPx)
+        val savedOffset = savedState.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
+        val savedMaxOffset = savedState.maxScrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
+        val targetOffset = when (policy) {
+            PixelListRestorationPolicy.AbsoluteOffset -> savedOffset
+            PixelListRestorationPolicy.RelativeProgress -> {
+                if (savedMaxOffset > 0f && state.maxScrollOffsetPx > 0f) {
+                    (savedOffset / savedMaxOffset).coerceIn(0f, 1f) * state.maxScrollOffsetPx
+                } else {
+                    savedOffset
+                }
+            }
+        }
+        state.scrollOffsetPx = coerceOffset(targetOffset, state.maxScrollOffsetPx)
         state.isDragging = false
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
@@ -354,4 +370,6 @@ public class PixelListController(
             else -> bounded
         }
     }
+
+    private fun Float.finiteOrZero(): Float = if (isFinite()) this else 0f
 }

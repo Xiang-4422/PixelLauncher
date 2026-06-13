@@ -2268,20 +2268,30 @@ public final class com.purride.pixelui.state.PixelListController extends com.pur
   public final boolean canConsumeDrag(com.purride.pixelui.state.PixelListState, float, int, int);
   public final void scrollTo(com.purride.pixelui.state.PixelListState, float, int, int);
   public final com.purride.pixelui.state.PixelListSavedState saveState(com.purride.pixelui.state.PixelListState);
-  public final void restoreState(com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int);
-  public static void restoreState$default(com.purride.pixelui.state.PixelListController, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, int, java.lang.Object);
+  public final void restoreState(com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, com.purride.pixelui.state.PixelListRestorationPolicy);
+  public static void restoreState$default(com.purride.pixelui.state.PixelListController, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, com.purride.pixelui.state.PixelListRestorationPolicy, int, java.lang.Object);
   public final void endDrag(com.purride.pixelui.state.PixelListState, float, int, int);
   public final void step(com.purride.pixelui.state.PixelListState, long, int, int);
   public final boolean isActive(com.purride.pixelui.state.PixelListState);
   public final void scrollItemIntoView(com.purride.pixelui.state.PixelListState, int);
   public com.purride.pixelui.state.PixelListController();
 }
+public final class com.purride.pixelui.state.PixelListRestorationPolicy extends java.lang.Enum<com.purride.pixelui.state.PixelListRestorationPolicy> {
+  public static final com.purride.pixelui.state.PixelListRestorationPolicy AbsoluteOffset;
+  public static final com.purride.pixelui.state.PixelListRestorationPolicy RelativeProgress;
+  public static com.purride.pixelui.state.PixelListRestorationPolicy[] values();
+  public static com.purride.pixelui.state.PixelListRestorationPolicy valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.state.PixelListRestorationPolicy> getEntries();
+}
 public final class com.purride.pixelui.state.PixelListSavedState {
-  public com.purride.pixelui.state.PixelListSavedState(float);
+  public com.purride.pixelui.state.PixelListSavedState(float, float);
+  public com.purride.pixelui.state.PixelListSavedState(float, float, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final float getScrollOffsetPx();
+  public final float getMaxScrollOffsetPx();
   public final float component1();
-  public final com.purride.pixelui.state.PixelListSavedState copy(float);
-  public static com.purride.pixelui.state.PixelListSavedState copy$default(com.purride.pixelui.state.PixelListSavedState, float, int, java.lang.Object);
+  public final float component2();
+  public final com.purride.pixelui.state.PixelListSavedState copy(float, float);
+  public static com.purride.pixelui.state.PixelListSavedState copy$default(com.purride.pixelui.state.PixelListSavedState, float, float, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);

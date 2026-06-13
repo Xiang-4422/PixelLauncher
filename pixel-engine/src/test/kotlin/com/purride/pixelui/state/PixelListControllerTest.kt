@@ -1,6 +1,8 @@
 package com.purride.pixelui
 
 import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListRestorationPolicy
+import com.purride.pixelui.state.PixelListSavedState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -107,6 +109,44 @@ class PixelListControllerTest {
             contentHeightPx = 50,
         )
         assertEquals(30f, restored.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun relativeProgressRestorationMapsOffsetToNewGeometry() {
+        val source = controller.create(initialScrollOffsetPx = 30f)
+        controller.sync(source, viewportHeightPx = 40, contentHeightPx = 100)
+        val savedState = controller.saveState(source)
+
+        assertEquals(60f, savedState.maxScrollOffsetPx, 0.001f)
+
+        val restored = controller.create()
+        controller.restoreState(
+            state = restored,
+            savedState = savedState,
+            viewportHeightPx = 50,
+            contentHeightPx = 250,
+            policy = PixelListRestorationPolicy.RelativeProgress,
+        )
+
+        assertEquals(100f, restored.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun restorationSanitizesNonFiniteSavedOffsets() {
+        val restored = controller.create()
+
+        controller.restoreState(
+            state = restored,
+            savedState = PixelListSavedState(
+                scrollOffsetPx = Float.NaN,
+                maxScrollOffsetPx = Float.POSITIVE_INFINITY,
+            ),
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+            policy = PixelListRestorationPolicy.RelativeProgress,
+        )
+
+        assertEquals(0f, restored.scrollOffsetPx, 0.001f)
     }
 
     @Test
