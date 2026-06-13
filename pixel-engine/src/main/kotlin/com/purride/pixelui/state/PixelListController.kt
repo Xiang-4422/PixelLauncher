@@ -368,6 +368,43 @@ public class PixelListController(
         )
     }
 
+    /**
+     * 将 CustomScrollView 中指定 lazy sliver 的 item 滚动到视口内。
+     */
+    public fun scrollSliverItemIntoView(
+        state: PixelListState,
+        sliverIndex: Int,
+        itemIndex: Int,
+    ) {
+        val geometry = state.sliverListGeometries[sliverIndex] ?: return
+        if (itemIndex !in 0 until geometry.itemCount || state.viewportHeightPx <= 0) return
+
+        val itemTopPx = geometry.itemTopPx(itemIndex).toFloat()
+        val itemBottomPx = geometry.itemBottomPx(itemIndex).toFloat()
+        val viewportTopPx = state.scrollOffsetPx
+        val viewportBottomPx = viewportTopPx + state.viewportHeightPx
+        val targetOffsetPx = when {
+            itemTopPx < viewportTopPx -> itemTopPx
+            itemBottomPx > viewportBottomPx -> itemBottomPx - state.viewportHeightPx
+            else -> state.scrollOffsetPx
+        }
+
+        state.pendingSliverScrollIntoView = if (
+            geometry.variableHeight &&
+            geometry.measuredItemHeightsPx.getOrNull(itemIndex) == 0
+        ) {
+            PixelPendingSliverScrollIntoView(sliverIndex = sliverIndex, itemIndex = itemIndex)
+        } else {
+            null
+        }
+        scrollTo(
+            state = state,
+            targetOffsetPx = targetOffsetPx,
+            viewportHeightPx = state.viewportHeightPx,
+            contentHeightPx = state.contentHeightPx,
+        )
+    }
+
     private fun maxScrollOffsetPx(
         viewportHeightPx: Int,
         contentHeightPx: Int,

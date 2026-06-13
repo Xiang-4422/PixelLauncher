@@ -103,7 +103,7 @@ Demo 入口：
 
 `pixel-engine` 仍然是第一版可运行框架，还不是完整产品级 UI 系统：
 
-- `CustomScrollView` 已有 eager `SliverList`、固定/估算高度 lazy `SliverListBuilder`、按声明顺序堆叠的多个 pinned header，以及支持 collapse/floating/snap/stretch 的 `SliverAppBar`；仍缺变高 lazy sliver 的完整虚拟 `scrollItemIntoView`
+- `CustomScrollView` 已有 eager `SliverList`、固定/估算高度 lazy `SliverListBuilder`、按 sliver 隔离的远端 item 定位与变高测量校正、多个 pinned header 顺序堆叠，以及支持 collapse/floating/snap/stretch 的 `SliverAppBar`
 - 列表已有 clamp/fling/bounce 参数、绝对 offset / 相对进度恢复基础，但还没有完整平台级滚动物理、snap 策略和 route-aware 自动恢复容器
 - `TextField` 已支持多行 caret / selection / composition、光标节拍和最小 selection handle，但还没有完整长按菜单或平台级选择浮层
 - `Form` v1 已支持字段注册、`validate()`、`reset()` 和错误文本状态，但还没有自动 FocusScope/IME action 联动

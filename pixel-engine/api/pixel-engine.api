@@ -498,6 +498,7 @@ com.purride.pixelui.state public fun endDrag(
 com.purride.pixelui.state public fun step(
 com.purride.pixelui.state public fun isActive(state: PixelListState): Boolean
 com.purride.pixelui.state public fun scrollItemIntoView(
+com.purride.pixelui.state public fun scrollSliverItemIntoView(
 com.purride.pixelui.state public class PixelListState(
 com.purride.pixelui.state public var scrollOffsetPx: Float = initialScrollOffsetPx.coerceAtLeast(0f)
 com.purride.pixelui.state public var isDragging: Boolean = false

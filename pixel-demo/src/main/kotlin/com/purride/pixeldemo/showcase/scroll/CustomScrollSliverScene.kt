@@ -93,6 +93,13 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                     OutlinedButton("MID", onPressed = {
                         setState { scrollController.scrollTo(scrollState, lazyContentHeight() / 2f, viewportHeightPx = 100, contentHeightPx = lazyContentHeight()) }
                     }),
+                    OutlinedButton("ROW 60", onPressed = {
+                        scrollController.scrollSliverItemIntoView(
+                            state = scrollState,
+                            sliverIndex = 3,
+                            itemIndex = 60,
+                        )
+                    }),
                     OutlinedButton("BOTTOM", onPressed = {
                         setState { scrollController.scrollTo(scrollState, lazyContentHeight().toFloat(), viewportHeightPx = 100, contentHeightPx = lazyContentHeight()) }
                     }),

@@ -152,7 +152,7 @@ setContentView(hostSetup.rootView)
 - `Validator<T>` 返回错误文本
 - demo 和单测中的 TextField 表单校验组合
 
-当前滚动能力已经覆盖 eager list、固定高度 lazy list、变高估算 lazy list、separated list、fixed-cell lazy grid、`CustomScrollView` + eager/fixed/estimated-height lazy `SliverList` + 多 pinned header 顺序堆叠 + collapse/floating/snap/stretch `SliverAppBar`、scrollbar 和最小 pull-to-refresh。`RefreshIndicator` 使用独立的 `PixelRefreshIndicatorState` / `PixelRefreshIndicatorController`，只暴露状态与回调，不绑定网络或异步任务。
+当前滚动能力已经覆盖 eager list、固定高度 lazy list、变高估算 lazy list、separated list、fixed-cell lazy grid、`CustomScrollView` + eager/fixed/estimated-height lazy `SliverList` + 按 sliver 隔离的远端 item 定位 + 多 pinned header 顺序堆叠 + collapse/floating/snap/stretch `SliverAppBar`、scrollbar 和最小 pull-to-refresh。`RefreshIndicator` 使用独立的 `PixelRefreshIndicatorState` / `PixelRefreshIndicatorController`，只暴露状态与回调，不绑定网络或异步任务。
 
 ## 5. 自定义底层能力
 

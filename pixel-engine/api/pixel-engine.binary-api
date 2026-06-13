@@ -2283,6 +2283,7 @@ public final class com.purride.pixelui.state.PixelListController extends com.pur
   public final void step(com.purride.pixelui.state.PixelListState, long, int, int);
   public final boolean isActive(com.purride.pixelui.state.PixelListState);
   public final void scrollItemIntoView(com.purride.pixelui.state.PixelListState, int);
+  public final void scrollSliverItemIntoView(com.purride.pixelui.state.PixelListState, int, int);
   public com.purride.pixelui.state.PixelListController();
 }
 public final class com.purride.pixelui.state.PixelListRestorationPolicy extends java.lang.Enum<com.purride.pixelui.state.PixelListRestorationPolicy> {
@@ -2339,6 +2340,9 @@ public final class com.purride.pixelui.state.PixelListState {
   public final java.lang.Float getLastFloatingScrollOffsetPx$pixel_engine();
   public final void setLastFloatingScrollOffsetPx$pixel_engine(java.lang.Float);
   public final java.util.Map<java.lang.Integer, java.lang.Integer> getFloatingRevealBySliverIndex$pixel_engine();
+  public final java.util.Map<java.lang.Integer, com.purride.pixelui.state.PixelSliverListGeometry> getSliverListGeometries$pixel_engine();
+  public final com.purride.pixelui.state.PixelPendingSliverScrollIntoView getPendingSliverScrollIntoView$pixel_engine();
+  public final void setPendingSliverScrollIntoView$pixel_engine(com.purride.pixelui.state.PixelPendingSliverScrollIntoView);
   public com.purride.pixelui.state.PixelListState();
 }
 public final class com.purride.pixelui.state.PixelPagerController extends com.purride.pixelui.ChangeNotifier {
@@ -2413,6 +2417,18 @@ public final class com.purride.pixelui.state.PixelPagerState {
   public final boolean isSettling();
   public com.purride.pixelui.state.PixelPagerState();
 }
+public final class com.purride.pixelui.state.PixelPendingSliverScrollIntoView {
+  public com.purride.pixelui.state.PixelPendingSliverScrollIntoView(int, int);
+  public final int getSliverIndex();
+  public final int getItemIndex();
+  public final int component1();
+  public final int component2();
+  public final com.purride.pixelui.state.PixelPendingSliverScrollIntoView copy(int, int);
+  public static com.purride.pixelui.state.PixelPendingSliverScrollIntoView copy$default(com.purride.pixelui.state.PixelPendingSliverScrollIntoView, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelui.state.PixelRefreshIndicatorController extends com.purride.pixelui.ChangeNotifier {
   public com.purride.pixelui.state.PixelRefreshIndicatorController();
   public final com.purride.pixelui.state.PixelRefreshIndicatorState create();
@@ -2441,6 +2457,26 @@ public final class com.purride.pixelui.state.PixelScrollSnapRange {
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.state.PixelSliverListGeometry {
+  public com.purride.pixelui.state.PixelSliverListGeometry(int, int, int, int, boolean, int[]);
+  public com.purride.pixelui.state.PixelSliverListGeometry(int, int, int, int, boolean, int[], int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final int getContentStartPx();
+  public final void setContentStartPx(int);
+  public final int getItemCount();
+  public final void setItemCount(int);
+  public final int getEstimatedItemExtent();
+  public final void setEstimatedItemExtent(int);
+  public final int getSpacing();
+  public final void setSpacing(int);
+  public final boolean getVariableHeight();
+  public final void setVariableHeight(boolean);
+  public final int[] getMeasuredItemHeightsPx();
+  public final void update(int, int, int, int, boolean);
+  public final int itemHeightPx(int);
+  public final int itemTopPx(int);
+  public final int itemBottomPx(int);
+  public final int contentHeightPx();
 }
 public final class com.purride.pixelui.state.PixelTextFieldController extends com.purride.pixelui.ChangeNotifier {
   public com.purride.pixelui.state.PixelTextFieldController();

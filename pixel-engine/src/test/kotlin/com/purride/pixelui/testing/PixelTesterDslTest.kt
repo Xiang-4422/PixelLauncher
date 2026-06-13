@@ -571,6 +571,56 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun scrollSliverItemIntoViewBuildsAndCorrectsRemoteVariableItem() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        val built = mutableSetOf<Int>()
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 8,
+                        collapsedHeight = 4,
+                        child = Container(width = 48, height = 8, fillColor = PixelColor.White),
+                    ),
+                    SliverPinnedHeader(
+                        child = Container(width = 48, height = 5, fillColor = PixelColor.fromRgb(70, 110, 220)),
+                    ),
+                    SliverListBuilder(
+                        itemCount = 80,
+                        estimatedItemExtent = 5,
+                        spacing = 1,
+                        cacheExtent = 1,
+                        itemBuilder = { index ->
+                            built += index
+                            SizedBox(
+                                height = if (index == 60) 11 else 5,
+                                child = Text("ROW $index"),
+                            )
+                        },
+                    ),
+                ),
+                state = state,
+                controller = controller,
+            ),
+            logicalWidth = 48,
+            logicalHeight = 18,
+        )
+
+        assertEquals(13, state.sliverListGeometries.getValue(2).contentStartPx)
+        controller.scrollSliverItemIntoView(state, sliverIndex = 2, itemIndex = 60)
+        tester.pumpFrame(16)
+        tester.pumpFrame(16)
+
+        assertTrue(60 in built)
+        assertEquals(11, state.sliverListGeometries.getValue(2).measuredItemHeightsPx[60])
+        assertEquals(null, state.pendingSliverScrollIntoView)
+        tester.dispose()
+    }
+
+    @Test
     fun wrapAndConstraintWidgetsRenderExpectedPixels() {
         val tester = PixelTester()
 
@@ -1349,7 +1399,7 @@ class PixelTesterDslTest {
 }
 
 private fun stateHasMeasuredItems(state: PixelListState): Boolean {
-    val field = PixelListState::class.java.getDeclaredField("measuredItemHeightsPx")
-    field.isAccessible = true
-    return (field.get(state) as IntArray).any { it > 0 }
+    return state.sliverListGeometries.values.any { geometry ->
+        geometry.measuredItemHeightsPx.any { it > 0 }
+    }
 }

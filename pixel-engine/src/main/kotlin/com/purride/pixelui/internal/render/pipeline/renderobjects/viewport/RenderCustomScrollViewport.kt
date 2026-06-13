@@ -37,10 +37,19 @@ internal class RenderCustomScrollViewport(
     override fun layout(constraints: RenderConstraints) {
         val children = renderChildren
         val childConstraints = RenderConstraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
+        val resolvedSliverStarts = mutableMapOf<Int, Int>()
         var cursorY = 0
         children.forEachIndexed { index, child ->
             val meta = metadata.getOrNull(index)
-            val childTop = meta?.contentTop ?: cursorY
+            val geometry = meta?.sliverGeometry
+            val childTop = if (geometry != null) {
+                val contentStart = resolvedSliverStarts.getOrPut(meta.sliverIndex) {
+                    cursorY.also { geometry.contentStartPx = it }
+                }
+                geometry.itemTopPx(meta.itemIndex).coerceAtLeast(contentStart)
+            } else {
+                meta?.contentTop ?: cursorY
+            }
             childOffsets[index] = childTop
             val extent = meta?.maxExtent
             child.layout(
@@ -60,9 +69,16 @@ internal class RenderCustomScrollViewport(
                     state.measuredItemHeightsPx[meta.itemIndex] = child.size.height.coerceAtLeast(1)
                 }
             }
+            if (geometry?.variableHeight == true && meta.itemIndex in geometry.measuredItemHeightsPx.indices) {
+                geometry.measuredItemHeightsPx[meta.itemIndex] = child.size.height.coerceAtLeast(1)
+            }
             cursorY = maxOf(cursorY, childTop + sliverExtent(index, child))
             cursorY += metadata.getOrNull(index)?.spacingAfter?.coerceAtLeast(0) ?: 0
-            meta?.contentEnd?.let { contentEnd -> cursorY = maxOf(cursorY, contentEnd) }
+            if (geometry != null) {
+                cursorY = maxOf(cursorY, geometry.contentStartPx + geometry.contentHeightPx())
+            } else {
+                meta?.contentEnd?.let { contentEnd -> cursorY = maxOf(cursorY, contentEnd) }
+            }
         }
         size = RenderSize(width = constraints.maxWidth, height = constraints.maxHeight)
         controller.sync(state = state, viewportHeightPx = size.height, contentHeightPx = cursorY)
@@ -79,6 +95,17 @@ internal class RenderCustomScrollViewport(
         updateFloatingReveal()
         state.itemTopOffsetsPx = childOffsets.toIntArray()
         state.itemHeightsPx = children.mapIndexed { index, child -> sliverExtent(index, child) }.toIntArray()
+        val pending = state.pendingSliverScrollIntoView
+        if (pending != null) {
+            val geometry = state.sliverListGeometries[pending.sliverIndex]
+            if (geometry?.measuredItemHeightsPx?.getOrNull(pending.itemIndex)?.let { it > 0 } == true) {
+                controller.scrollSliverItemIntoView(
+                    state = state,
+                    sliverIndex = pending.sliverIndex,
+                    itemIndex = pending.itemIndex,
+                )
+            }
+        }
     }
 
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {

@@ -4,6 +4,7 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListRestorationPolicy
 import com.purride.pixelui.state.PixelListSavedState
 import com.purride.pixelui.state.PixelScrollSnapRange
+import com.purride.pixelui.state.PixelSliverListGeometry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -313,6 +314,39 @@ class PixelListControllerTest {
         controller.scrollItemIntoView(state, itemIndex = 3)
 
         assertEquals(null, state.pendingScrollIntoViewItemIndex)
+    }
+
+    @Test
+    fun scrollSliverItemIntoViewUsesRequestedSliverGeometry() {
+        val state = controller.create()
+        state.sliverListGeometries[0] = PixelSliverListGeometry(
+            contentStartPx = 0,
+            itemCount = 4,
+            estimatedItemExtent = 5,
+            spacing = 0,
+            variableHeight = false,
+        )
+        val targetGeometry = PixelSliverListGeometry(
+            contentStartPx = 100,
+            itemCount = 20,
+            estimatedItemExtent = 10,
+            spacing = 1,
+            variableHeight = true,
+        )
+        state.sliverListGeometries[2] = targetGeometry
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 400)
+
+        controller.scrollSliverItemIntoView(state, sliverIndex = 2, itemIndex = 7)
+
+        assertEquals(167f, state.scrollOffsetPx, 0.001f)
+        assertEquals(2, state.pendingSliverScrollIntoView?.sliverIndex)
+        assertEquals(7, state.pendingSliverScrollIntoView?.itemIndex)
+
+        targetGeometry.measuredItemHeightsPx[7] = 20
+        controller.scrollSliverItemIntoView(state, sliverIndex = 2, itemIndex = 7)
+
+        assertEquals(177f, state.scrollOffsetPx, 0.001f)
+        assertEquals(null, state.pendingSliverScrollIntoView)
     }
 
     @Test

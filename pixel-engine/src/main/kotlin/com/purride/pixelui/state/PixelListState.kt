@@ -56,11 +56,78 @@ public class PixelListState(
     internal var snapTargetOffsetPx: Float? = null
     internal var lastFloatingScrollOffsetPx: Float? = null
     internal val floatingRevealBySliverIndex: MutableMap<Int, Int> = mutableMapOf()
+    internal val sliverListGeometries: MutableMap<Int, PixelSliverListGeometry> = mutableMapOf()
+    internal var pendingSliverScrollIntoView: PixelPendingSliverScrollIntoView? = null
 }
 
 internal data class PixelScrollSnapRange(
     val startOffsetPx: Float,
     val endOffsetPx: Float,
+)
+
+internal class PixelSliverListGeometry(
+    var contentStartPx: Int,
+    var itemCount: Int,
+    var estimatedItemExtent: Int,
+    var spacing: Int,
+    var variableHeight: Boolean,
+    measuredItemHeightsPx: IntArray = intArrayOf(),
+) {
+    var measuredItemHeightsPx: IntArray = IntArray(itemCount.coerceAtLeast(0)) { index ->
+        measuredItemHeightsPx.getOrNull(index) ?: 0
+    }
+        private set
+
+    fun update(
+        contentStartPx: Int,
+        itemCount: Int,
+        estimatedItemExtent: Int,
+        spacing: Int,
+        variableHeight: Boolean,
+    ) {
+        this.contentStartPx = contentStartPx
+        this.itemCount = itemCount.coerceAtLeast(0)
+        this.estimatedItemExtent = estimatedItemExtent.coerceAtLeast(1)
+        this.spacing = spacing.coerceAtLeast(0)
+        this.variableHeight = variableHeight
+        if (this.measuredItemHeightsPx.size != this.itemCount) {
+            val previous = this.measuredItemHeightsPx
+            this.measuredItemHeightsPx = IntArray(this.itemCount) { index ->
+                previous.getOrNull(index) ?: 0
+            }
+        }
+    }
+
+    fun itemHeightPx(itemIndex: Int): Int {
+        val measured = measuredItemHeightsPx.getOrNull(itemIndex) ?: 0
+        return if (variableHeight && measured > 0) measured else estimatedItemExtent
+    }
+
+    fun itemTopPx(itemIndex: Int): Int {
+        var top = contentStartPx
+        for (index in 0 until itemIndex.coerceIn(0, itemCount)) {
+            top += itemHeightPx(index)
+            if (index < itemCount - 1) top += spacing
+        }
+        return top
+    }
+
+    fun itemBottomPx(itemIndex: Int): Int = itemTopPx(itemIndex) + itemHeightPx(itemIndex)
+
+    fun contentHeightPx(): Int {
+        if (itemCount <= 0) return 0
+        var height = 0
+        repeat(itemCount) { index ->
+            height += itemHeightPx(index)
+            if (index < itemCount - 1) height += spacing
+        }
+        return height
+    }
+}
+
+internal data class PixelPendingSliverScrollIntoView(
+    val sliverIndex: Int,
+    val itemIndex: Int,
 )
 
 /**
