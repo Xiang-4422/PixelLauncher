@@ -1065,8 +1065,10 @@ internal class RenderLazySeparatedListViewport(
     children: List<RenderBox> = emptyList(),
     private var firstVirtualIndex: Int,
     private var itemCount: Int,
-    private var itemExtent: Int,
-    private var separatorExtent: Int,
+    private var itemExtent: Int?,
+    private var separatorExtent: Int?,
+    private var estimatedItemExtent: Int,
+    private var estimatedSeparatorExtent: Int,
     private var state: PixelListState,
     private var controller: PixelListController,
 ) : MultiChildRenderObject() {
@@ -1077,8 +1079,10 @@ internal class RenderLazySeparatedListViewport(
     fun updateLazySeparatedListViewport(
         firstVirtualIndex: Int,
         itemCount: Int,
-        itemExtent: Int,
-        separatorExtent: Int,
+        itemExtent: Int?,
+        separatorExtent: Int?,
+        estimatedItemExtent: Int,
+        estimatedSeparatorExtent: Int,
         state: PixelListState,
         controller: PixelListController,
     ) {
@@ -1087,6 +1091,8 @@ internal class RenderLazySeparatedListViewport(
             this.itemCount == itemCount &&
             this.itemExtent == itemExtent &&
             this.separatorExtent == separatorExtent &&
+            this.estimatedItemExtent == estimatedItemExtent &&
+            this.estimatedSeparatorExtent == estimatedSeparatorExtent &&
             this.state === state &&
             this.controller === controller
         ) {
@@ -1096,6 +1102,8 @@ internal class RenderLazySeparatedListViewport(
         this.itemCount = itemCount
         this.itemExtent = itemExtent
         this.separatorExtent = separatorExtent
+        this.estimatedItemExtent = estimatedItemExtent
+        this.estimatedSeparatorExtent = estimatedSeparatorExtent
         this.state = state
         this.controller = controller
         markNeedsLayout()
@@ -1103,31 +1111,43 @@ internal class RenderLazySeparatedListViewport(
     }
 
     override fun layout(constraints: RenderConstraints) {
+        state.ensureSeparatedVirtualMeasuredCapacity(itemCount)
         renderChildren.forEachIndexed { localIndex, child ->
             val virtualIndex = firstVirtualIndex + localIndex
-            val extent = virtualExtentPx(
-                virtualIndex = virtualIndex,
-                itemExtent = itemExtent,
-                separatorExtent = separatorExtent,
-            )
+            val fixedExtent = if (virtualIndex % 2 == 0) itemExtent else separatorExtent
             child.layout(
-                constraints = RenderConstraints(
-                    minWidth = 0,
-                    maxWidth = constraints.maxWidth,
-                    minHeight = extent,
-                    maxHeight = extent,
-                ),
+                constraints = if (fixedExtent != null) {
+                    RenderConstraints(
+                        minWidth = 0,
+                        maxWidth = constraints.maxWidth,
+                        minHeight = fixedExtent,
+                        maxHeight = fixedExtent,
+                    )
+                } else {
+                    RenderConstraints(
+                        minWidth = 0,
+                        maxWidth = constraints.maxWidth,
+                        minHeight = 0,
+                        maxHeight = constraints.maxHeight,
+                    )
+                },
             )
+            if (fixedExtent == null && virtualIndex in state.measuredSeparatedVirtualHeightsPx.indices) {
+                state.measuredSeparatedVirtualHeightsPx[virtualIndex] = child.size.height.coerceAtLeast(1)
+            }
         }
         size = RenderSize(
             width = constraints.maxWidth,
             height = constraints.maxHeight,
         )
         val safeItemCount = itemCount.coerceAtLeast(0)
-        val contentHeight = separatedContentHeightPx(
+        val contentHeight = separatedVariableContentHeightPx(
+            state = state,
             itemCount = safeItemCount,
             itemExtent = itemExtent,
             separatorExtent = separatorExtent,
+            estimatedItemExtent = estimatedItemExtent,
+            estimatedSeparatorExtent = estimatedSeparatorExtent,
         )
         controller.sync(
             state = state,
@@ -1135,10 +1155,34 @@ internal class RenderLazySeparatedListViewport(
             contentHeightPx = contentHeight,
         )
         state.itemTopOffsetsPx = IntArray(safeItemCount) { index ->
-            index * (itemExtent.coerceAtLeast(0) + separatorExtent.coerceAtLeast(0))
+            separatedVirtualTopPx(
+                state,
+                index * 2,
+                itemExtent,
+                separatorExtent,
+                estimatedItemExtent,
+                estimatedSeparatorExtent,
+            )
         }
-        state.itemHeightsPx = IntArray(safeItemCount) {
-            itemExtent.coerceAtLeast(0)
+        state.itemHeightsPx = IntArray(safeItemCount) { index ->
+            separatedVirtualExtentPx(
+                state,
+                index * 2,
+                itemExtent,
+                separatorExtent,
+                estimatedItemExtent,
+                estimatedSeparatorExtent,
+            )
+        }
+        val pending = state.pendingScrollIntoViewItemIndex
+        val targetVirtualIndex = pending?.times(2)
+        if (
+            pending != null &&
+            targetVirtualIndex != null &&
+            targetVirtualIndex in state.measuredSeparatedVirtualHeightsPx.indices &&
+            state.measuredSeparatedVirtualHeightsPx[targetVirtualIndex] > 0
+        ) {
+            controller.scrollItemIntoView(state, pending)
         }
     }
 
@@ -1154,11 +1198,7 @@ internal class RenderLazySeparatedListViewport(
                 child.paint(
                     context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
                     offsetX = 0,
-                    offsetY = virtualTopPx(
-                        virtualIndex = virtualIndex,
-                        itemExtent = itemExtent,
-                        separatorExtent = separatorExtent,
-                    ) - state.scrollOffsetPx.toInt(),
+                    offsetY = virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 )
             }
             context.buffer.blitRegion(
@@ -1188,11 +1228,7 @@ internal class RenderLazySeparatedListViewport(
             val virtualIndex = firstVirtualIndex + localIndex
             child.hitTest(
                 localX = localX,
-                localY = contentY - virtualTopPx(
-                    virtualIndex = virtualIndex,
-                    itemExtent = itemExtent,
-                    separatorExtent = separatorExtent,
-                ),
+                localY = contentY - virtualTopPx(virtualIndex),
                 result = result,
             )
         }
@@ -1208,11 +1244,7 @@ internal class RenderLazySeparatedListViewport(
             val virtualIndex = firstVirtualIndex + localIndex
             child.collectClickTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + virtualTopPx(
-                    virtualIndex = virtualIndex,
-                    itemExtent = itemExtent,
-                    separatorExtent = separatorExtent,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1233,11 +1265,7 @@ internal class RenderLazySeparatedListViewport(
             val virtualIndex = firstVirtualIndex + localIndex
             child.collectPagerTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + virtualTopPx(
-                    virtualIndex = virtualIndex,
-                    itemExtent = itemExtent,
-                    separatorExtent = separatorExtent,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1265,11 +1293,7 @@ internal class RenderLazySeparatedListViewport(
             val virtualIndex = firstVirtualIndex + localIndex
             child.collectListTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + virtualTopPx(
-                    virtualIndex = virtualIndex,
-                    itemExtent = itemExtent,
-                    separatorExtent = separatorExtent,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1290,11 +1314,7 @@ internal class RenderLazySeparatedListViewport(
             val virtualIndex = firstVirtualIndex + localIndex
             child.collectTextInputTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + virtualTopPx(
-                    virtualIndex = virtualIndex,
-                    itemExtent = itemExtent,
-                    separatorExtent = separatorExtent,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1315,11 +1335,7 @@ internal class RenderLazySeparatedListViewport(
             val virtualIndex = firstVirtualIndex + localIndex
             child.collectSliderTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + virtualTopPx(
-                    virtualIndex = virtualIndex,
-                    itemExtent = itemExtent,
-                    separatorExtent = separatorExtent,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1332,6 +1348,17 @@ internal class RenderLazySeparatedListViewport(
 
     private val renderChildren: List<RenderBox>
         get() = children.filterIsInstance<RenderBox>()
+
+    private fun virtualTopPx(virtualIndex: Int): Int {
+        return separatedVirtualTopPx(
+            state,
+            virtualIndex,
+            itemExtent,
+            separatorExtent,
+            estimatedItemExtent,
+            estimatedSeparatorExtent,
+        )
+    }
 }
 
 /**

@@ -348,7 +348,18 @@ public class PixelListController(
         // 变高 lazy list 远端定位：如果目标项尚未被真实测量，本次只能按 estimated
         // 高度算 offset，下一帧测量到位后还需要再校正一次。把意图存进 state，由
         // RenderVariableLazyListViewport.layout() 在测量完成后重入。
-        state.pendingScrollIntoViewItemIndex = if (
+        state.pendingScrollIntoViewItemIndex = if (state.separatedItemGeometryActive) {
+            val virtualIndex = itemIndex * 2
+            if (
+                state.separatedItemExtentVariable &&
+                virtualIndex in state.measuredSeparatedVirtualHeightsPx.indices &&
+                state.measuredSeparatedVirtualHeightsPx[virtualIndex] == 0
+            ) {
+                itemIndex
+            } else {
+                null
+            }
+        } else if (
             itemIndex in state.measuredItemHeightsPx.indices &&
             state.measuredItemHeightsPx[itemIndex] > 0
         ) {

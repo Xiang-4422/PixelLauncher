@@ -712,17 +712,34 @@ public fun ListViewSeparatedBuilder(
     separatorBuilder: (Int) -> Widget,
     state: PixelListState,
     controller: PixelListController,
-    itemExtent: Int,
-    separatorExtent: Int,
+    itemExtent: Int? = null,
+    separatorExtent: Int? = null,
+    estimatedItemExtent: Int? = null,
+    estimatedSeparatorExtent: Int? = null,
     cacheExtent: Int = 1,
     key: Any? = null,
 ): Widget {
+    require(itemCount >= 0) { "itemCount must be >= 0" }
+    require(itemExtent == null || itemExtent > 0) { "itemExtent must be > 0" }
+    require(separatorExtent == null || separatorExtent > 0) { "separatorExtent must be > 0" }
+    require(estimatedItemExtent == null || estimatedItemExtent > 0) { "estimatedItemExtent must be > 0" }
+    require(estimatedSeparatorExtent == null || estimatedSeparatorExtent > 0) {
+        "estimatedSeparatorExtent must be > 0"
+    }
+    require(itemExtent != null || estimatedItemExtent != null) {
+        "itemExtent or estimatedItemExtent must be provided"
+    }
+    require(separatorExtent != null || estimatedSeparatorExtent != null || itemCount <= 1) {
+        "separatorExtent or estimatedSeparatorExtent must be provided"
+    }
     return LazySeparatedListViewWidget(
         itemCount = itemCount,
         itemBuilder = itemBuilder,
         separatorBuilder = separatorBuilder,
         itemExtent = itemExtent,
         separatorExtent = separatorExtent,
+        estimatedItemExtent = estimatedItemExtent,
+        estimatedSeparatorExtent = estimatedSeparatorExtent,
         state = state,
         controller = controller,
         cacheExtent = cacheExtent,

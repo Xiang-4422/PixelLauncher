@@ -42,6 +42,9 @@ public class PixelListState(
      * 0 表示该 item 尚未测量；render layout 会在真实子节点完成布局后回写。
      */
     internal var measuredItemHeightsPx: IntArray = intArrayOf()
+    internal var measuredSeparatedVirtualHeightsPx: IntArray = intArrayOf()
+    internal var separatedItemGeometryActive: Boolean = false
+    internal var separatedItemExtentVariable: Boolean = false
 
     /**
      * 变高 lazy list 的"远端目标项尚未测量，等下一帧重测后微调"标记。

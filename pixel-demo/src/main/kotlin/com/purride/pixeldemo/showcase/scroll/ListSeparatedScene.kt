@@ -1,7 +1,6 @@
 package com.purride.pixeldemo.showcase.scroll
+
 import com.purride.pixelcore.PixelColor
-
-
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -26,7 +25,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object ListSeparatedScene : DemoScene {
     override val id = "list_separated"
     override val title = "ListViewSeparatedBuilder"
-    override val description = "带分隔线的虚拟列表，切换 1k / 5k"
+    override val description = "变高 item/separator 虚拟列表，切换 1k / 5k"
 
     override fun build(env: DemoEnv): Widget = ListSeparatedWidget()
 }
@@ -49,7 +48,10 @@ private class ListSeparatedWidget(override val key: Any? = null) : StatefulWidge
                     onPressed = { setState { countIdx = i } },
                     borderColor = if (i == countIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White,
                 )
-            }
+            } + OutlinedButton(
+                text = "ROW 700",
+                onPressed = { scrollController.scrollItemIntoView(scrollState, 700.coerceAtMost(count - 1)) },
+            )
             return Column(
                 children = listOf(
                     Expanded(
@@ -59,16 +61,20 @@ private class ListSeparatedWidget(override val key: Any? = null) : StatefulWidge
                                 Padding(
                                     child = Text("Item $i", style = TextStyle.Default),
                                     horizontal = 6,
-                                    vertical = 3,
+                                    vertical = if (i % 5 == 0) 5 else 3,
                                 )
                             },
-                            separatorBuilder = { _ ->
-                                Container(height = 1, fillColor = PixelColor.White, borderColor = null)
+                            separatorBuilder = { i ->
+                                Container(
+                                    height = if (i % 4 == 0) 2 else 1,
+                                    fillColor = PixelColor.White,
+                                    borderColor = null,
+                                )
                             },
                             state = scrollState,
                             controller = scrollController,
-                            itemExtent = 14,
-                            separatorExtent = 1,
+                            estimatedItemExtent = 14,
+                            estimatedSeparatorExtent = 1,
                         ),
                     ),
                     SizedBox(height = 2),

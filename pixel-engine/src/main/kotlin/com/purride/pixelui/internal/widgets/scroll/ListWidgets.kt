@@ -23,6 +23,7 @@ internal data class ListViewWidget(
      */
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
+        state.separatedItemGeometryActive = false
         return ListViewportWidget(
             children = items,
             state = state,
@@ -53,6 +54,7 @@ internal data class LazyListViewWidget(
 ) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
+        state.separatedItemGeometryActive = false
         val range = LazyListRange.resolve(
             itemCount = itemCount,
             itemExtent = itemExtent,
@@ -93,6 +95,7 @@ internal data class VariableLazyListViewWidget(
 ) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
+        state.separatedItemGeometryActive = false
         state.ensureMeasuredItemCapacity(itemCount)
         val range = VariableLazyListRange.resolve(
             itemCount = itemCount,
@@ -125,8 +128,10 @@ internal data class LazySeparatedListViewWidget(
     val itemCount: Int,
     val itemBuilder: (Int) -> Widget,
     val separatorBuilder: (Int) -> Widget,
-    val itemExtent: Int,
-    val separatorExtent: Int,
+    val itemExtent: Int?,
+    val separatorExtent: Int?,
+    val estimatedItemExtent: Int?,
+    val estimatedSeparatorExtent: Int?,
     val state: PixelListState,
     val controller: PixelListController,
     val cacheExtent: Int,
@@ -136,10 +141,18 @@ internal data class LazySeparatedListViewWidget(
 ) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
+        state.separatedItemGeometryActive = true
+        state.separatedItemExtentVariable = itemExtent == null
+        state.ensureSeparatedVirtualMeasuredCapacity(itemCount)
+        val resolvedItemExtent = itemExtent ?: requireNotNull(estimatedItemExtent)
+        val resolvedSeparatorExtent = separatorExtent ?: estimatedSeparatorExtent ?: 1
         val range = LazySeparatedListRange.resolve(
             itemCount = itemCount,
+            state = state,
             itemExtent = itemExtent,
             separatorExtent = separatorExtent,
+            estimatedItemExtent = resolvedItemExtent,
+            estimatedSeparatorExtent = resolvedSeparatorExtent,
             scrollOffsetPx = state.scrollOffsetPx,
             viewportHeightPx = state.viewportHeightPx,
             cacheExtent = cacheExtent,
@@ -157,6 +170,8 @@ internal data class LazySeparatedListViewWidget(
             itemCount = itemCount,
             itemExtent = itemExtent,
             separatorExtent = separatorExtent,
+            estimatedItemExtent = resolvedItemExtent,
+            estimatedSeparatorExtent = resolvedSeparatorExtent,
             state = state,
             controller = controller,
             key = key,
@@ -294,8 +309,10 @@ private data class LazySeparatedListViewportWidget(
     override val children: List<Widget>,
     val firstVirtualIndex: Int,
     val itemCount: Int,
-    val itemExtent: Int,
-    val separatorExtent: Int,
+    val itemExtent: Int?,
+    val separatorExtent: Int?,
+    val estimatedItemExtent: Int,
+    val estimatedSeparatorExtent: Int,
     val state: PixelListState,
     val controller: PixelListController,
     override val key: Any? = null,
@@ -309,6 +326,8 @@ private data class LazySeparatedListViewportWidget(
             itemCount = itemCount,
             itemExtent = itemExtent,
             separatorExtent = separatorExtent,
+            estimatedItemExtent = estimatedItemExtent,
+            estimatedSeparatorExtent = estimatedSeparatorExtent,
             state = state,
             controller = controller,
         )
@@ -323,6 +342,8 @@ private data class LazySeparatedListViewportWidget(
             itemCount = itemCount,
             itemExtent = itemExtent,
             separatorExtent = separatorExtent,
+            estimatedItemExtent = estimatedItemExtent,
+            estimatedSeparatorExtent = estimatedSeparatorExtent,
             state = state,
             controller = controller,
         )
@@ -373,15 +394,18 @@ private data class LazySeparatedListRange(
     companion object {
         fun resolve(
             itemCount: Int,
-            itemExtent: Int,
-            separatorExtent: Int,
+            state: PixelListState,
+            itemExtent: Int?,
+            separatorExtent: Int?,
+            estimatedItemExtent: Int,
+            estimatedSeparatorExtent: Int,
             scrollOffsetPx: Float,
             viewportHeightPx: Int,
             cacheExtent: Int,
         ): LazySeparatedListRange {
             val virtualCount = separatedVirtualCount(itemCount)
-            val safeItemExtent = itemExtent.coerceAtLeast(0)
-            val safeSeparatorExtent = separatorExtent.coerceAtLeast(0)
+            val safeItemExtent = estimatedItemExtent.coerceAtLeast(1)
+            val safeSeparatorExtent = estimatedSeparatorExtent.coerceAtLeast(1)
             val stride = safeItemExtent + safeSeparatorExtent
             if (virtualCount <= 0 || safeItemExtent <= 0 || stride <= 0) {
                 return LazySeparatedListRange(firstVirtualIndex = 0, count = 0)
@@ -395,12 +419,17 @@ private data class LazySeparatedListRange(
             val cachePx = stride * safeCache
             val windowTop = (scrollOffsetPx.toInt() - cachePx).coerceAtLeast(0)
             val windowBottom = scrollOffsetPx.toInt() + effectiveViewportHeight + cachePx
-            val firstItemIndex = (windowTop / stride).coerceIn(0, itemCount - 1)
-            var firstVirtualIndex = (firstItemIndex * 2 - 1).coerceAtLeast(0)
+            var firstVirtualIndex = 0
             while (
                 firstVirtualIndex < virtualCount - 1 &&
-                virtualTopPx(firstVirtualIndex, safeItemExtent, safeSeparatorExtent) +
-                    virtualExtentPx(firstVirtualIndex, safeItemExtent, safeSeparatorExtent) <= windowTop
+                separatedVirtualBottomPx(
+                    state,
+                    firstVirtualIndex,
+                    itemExtent,
+                    separatorExtent,
+                    safeItemExtent,
+                    safeSeparatorExtent,
+                ) <= windowTop
             ) {
                 firstVirtualIndex += 1
             }
@@ -408,12 +437,26 @@ private data class LazySeparatedListRange(
             var lastVirtualIndex = firstVirtualIndex
             while (
                 lastVirtualIndex < virtualCount - 1 &&
-                virtualTopPx(lastVirtualIndex, safeItemExtent, safeSeparatorExtent) < windowBottom
+                separatedVirtualTopPx(
+                    state,
+                    lastVirtualIndex,
+                    itemExtent,
+                    separatorExtent,
+                    safeItemExtent,
+                    safeSeparatorExtent,
+                ) < windowBottom
             ) {
                 lastVirtualIndex += 1
             }
             if (
-                virtualTopPx(lastVirtualIndex, safeItemExtent, safeSeparatorExtent) >= windowBottom &&
+                separatedVirtualTopPx(
+                    state,
+                    lastVirtualIndex,
+                    itemExtent,
+                    separatorExtent,
+                    safeItemExtent,
+                    safeSeparatorExtent,
+                ) >= windowBottom &&
                 lastVirtualIndex > firstVirtualIndex
             ) {
                 lastVirtualIndex -= 1
@@ -551,6 +594,104 @@ internal fun variableItemHeightPx(
 
 internal fun separatedVirtualCount(itemCount: Int): Int {
     return if (itemCount <= 0) 0 else (itemCount * 2) - 1
+}
+
+internal fun PixelListState.ensureSeparatedVirtualMeasuredCapacity(itemCount: Int) {
+    val virtualCount = separatedVirtualCount(itemCount)
+    if (measuredSeparatedVirtualHeightsPx.size == virtualCount) return
+    val previous = measuredSeparatedVirtualHeightsPx
+    measuredSeparatedVirtualHeightsPx = IntArray(virtualCount) { index ->
+        previous.getOrNull(index) ?: 0
+    }
+}
+
+internal fun separatedVirtualExtentPx(
+    state: PixelListState,
+    virtualIndex: Int,
+    itemExtent: Int?,
+    separatorExtent: Int?,
+    estimatedItemExtent: Int,
+    estimatedSeparatorExtent: Int,
+): Int {
+    val fixedExtent = if (virtualIndex % 2 == 0) itemExtent else separatorExtent
+    if (fixedExtent != null) return fixedExtent.coerceAtLeast(1)
+    val measured = state.measuredSeparatedVirtualHeightsPx.getOrNull(virtualIndex) ?: 0
+    if (measured > 0) return measured
+    return if (virtualIndex % 2 == 0) {
+        estimatedItemExtent.coerceAtLeast(1)
+    } else {
+        estimatedSeparatorExtent.coerceAtLeast(1)
+    }
+}
+
+internal fun separatedVirtualTopPx(
+    state: PixelListState,
+    virtualIndex: Int,
+    itemExtent: Int?,
+    separatorExtent: Int?,
+    estimatedItemExtent: Int,
+    estimatedSeparatorExtent: Int,
+): Int {
+    var top = 0
+    for (index in 0 until virtualIndex.coerceAtLeast(0)) {
+        top += separatedVirtualExtentPx(
+            state,
+            index,
+            itemExtent,
+            separatorExtent,
+            estimatedItemExtent,
+            estimatedSeparatorExtent,
+        )
+    }
+    return top
+}
+
+internal fun separatedVirtualBottomPx(
+    state: PixelListState,
+    virtualIndex: Int,
+    itemExtent: Int?,
+    separatorExtent: Int?,
+    estimatedItemExtent: Int,
+    estimatedSeparatorExtent: Int,
+): Int {
+    return separatedVirtualTopPx(
+        state,
+        virtualIndex,
+        itemExtent,
+        separatorExtent,
+        estimatedItemExtent,
+        estimatedSeparatorExtent,
+    ) + separatedVirtualExtentPx(
+        state,
+        virtualIndex,
+        itemExtent,
+        separatorExtent,
+        estimatedItemExtent,
+        estimatedSeparatorExtent,
+    )
+}
+
+internal fun separatedVariableContentHeightPx(
+    state: PixelListState,
+    itemCount: Int,
+    itemExtent: Int?,
+    separatorExtent: Int?,
+    estimatedItemExtent: Int,
+    estimatedSeparatorExtent: Int,
+): Int {
+    val virtualCount = separatedVirtualCount(itemCount)
+    var height = 0
+    repeat(virtualCount) { virtualIndex ->
+        height += separatedVirtualExtentPx(
+            state,
+            virtualIndex,
+            itemExtent,
+            separatorExtent,
+            estimatedItemExtent,
+            estimatedSeparatorExtent,
+        )
+    }
+    return height
 }
 
 internal fun virtualTopPx(

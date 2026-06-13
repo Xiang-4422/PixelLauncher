@@ -139,7 +139,7 @@ Demo 入口：
 
 ### 尚未开始
 
-- 变高 item 虚拟化
+- 继续优化变高 item/separator 虚拟化的热路径复杂度
 - 更完整的滚动物理、snap 和 nested scroll 策略
 - 段落级文本、字号/字距 token 和文本选择体验
 - 更完整的主题 token、组件默认值和局部覆盖系统

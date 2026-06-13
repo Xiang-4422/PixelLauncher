@@ -18,6 +18,7 @@ import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.Gap
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
+import com.purride.pixelui.ListViewSeparatedBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
@@ -617,6 +618,57 @@ class PixelTesterDslTest {
         assertTrue(60 in built)
         assertEquals(11, state.sliverListGeometries.getValue(2).measuredItemHeightsPx[60])
         assertEquals(null, state.pendingSliverScrollIntoView)
+        tester.dispose()
+    }
+
+    @Test
+    fun separatedBuilderSupportsVariableItemAndSeparatorHeights() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+        val builtItems = mutableSetOf<Int>()
+        val builtSeparators = mutableSetOf<Int>()
+
+        tester.pumpWidget(
+            widget = ListViewSeparatedBuilder(
+                itemCount = 100,
+                itemBuilder = { index ->
+                    builtItems += index
+                    SizedBox(
+                        height = if (index % 4 == 0) 9 else 5,
+                        child = Text("ITEM $index"),
+                    )
+                },
+                separatorBuilder = { index ->
+                    builtSeparators += index
+                    SizedBox(
+                        height = if (index % 3 == 0) 3 else 1,
+                        child = Container(fillColor = PixelColor.White),
+                    )
+                },
+                state = state,
+                controller = controller,
+                estimatedItemExtent = 5,
+                estimatedSeparatorExtent = 1,
+                cacheExtent = 1,
+                key = "separated",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 18,
+        )
+
+        assertTrue(builtItems.size < 100)
+        assertTrue(builtSeparators.size < 99)
+        assertEquals(9, state.measuredSeparatedVirtualHeightsPx[0])
+        assertEquals(3, state.measuredSeparatedVirtualHeightsPx[1])
+
+        controller.scrollItemIntoView(state, itemIndex = 70)
+        tester.pumpFrame(16)
+        tester.pumpFrame(16)
+
+        assertTrue(70 in builtItems)
+        assertTrue(state.measuredSeparatedVirtualHeightsPx[140] > 0)
+        assertEquals(null, state.pendingScrollIntoViewItemIndex)
         tester.dispose()
     }
 
