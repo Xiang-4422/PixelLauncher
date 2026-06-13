@@ -1133,7 +1133,9 @@ internal class RenderLazySeparatedListViewport(
                 },
             )
             if (fixedExtent == null && virtualIndex in state.measuredSeparatedVirtualHeightsPx.indices) {
-                state.measuredSeparatedVirtualHeightsPx[virtualIndex] = child.size.height.coerceAtLeast(1)
+                val measuredExtent = child.size.height.coerceAtLeast(1)
+                state.measuredSeparatedVirtualHeightsPx[virtualIndex] = measuredExtent
+                state.separatedExtentIndex.updateMeasured(virtualIndex, measuredExtent)
             }
         }
         size = RenderSize(

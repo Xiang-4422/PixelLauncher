@@ -2333,6 +2333,7 @@ public final class com.purride.pixelui.state.PixelListState {
   public final void setMeasuredItemHeightsPx$pixel_engine(int[]);
   public final int[] getMeasuredSeparatedVirtualHeightsPx$pixel_engine();
   public final void setMeasuredSeparatedVirtualHeightsPx$pixel_engine(int[]);
+  public final com.purride.pixelui.state.PixelSeparatedExtentIndex getSeparatedExtentIndex$pixel_engine();
   public final boolean getSeparatedItemGeometryActive$pixel_engine();
   public final void setSeparatedItemGeometryActive$pixel_engine(boolean);
   public final boolean getSeparatedItemExtentVariable$pixel_engine();
@@ -2463,6 +2464,16 @@ public final class com.purride.pixelui.state.PixelScrollSnapRange {
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.state.PixelSeparatedExtentIndex {
+  public com.purride.pixelui.state.PixelSeparatedExtentIndex();
+  public final void configure(int, java.lang.Integer, java.lang.Integer, int, int, int[]);
+  public final void updateMeasured(int, int);
+  public final int extentPx(int);
+  public final int topPx(int);
+  public final int bottomPx(int);
+  public final int totalHeightPx();
+  public final int indexAtOffsetPx(int);
 }
 public final class com.purride.pixelui.state.PixelSliverListGeometry {
   public com.purride.pixelui.state.PixelSliverListGeometry(int, int, int, int, boolean, int[]);

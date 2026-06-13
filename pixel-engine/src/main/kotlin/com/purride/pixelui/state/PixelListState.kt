@@ -43,6 +43,7 @@ public class PixelListState(
      */
     internal var measuredItemHeightsPx: IntArray = intArrayOf()
     internal var measuredSeparatedVirtualHeightsPx: IntArray = intArrayOf()
+    internal val separatedExtentIndex: PixelSeparatedExtentIndex = PixelSeparatedExtentIndex()
     internal var separatedItemGeometryActive: Boolean = false
     internal var separatedItemExtentVariable: Boolean = false
 
@@ -132,6 +133,111 @@ internal data class PixelPendingSliverScrollIntoView(
     val sliverIndex: Int,
     val itemIndex: Int,
 )
+
+internal class PixelSeparatedExtentIndex {
+    private var virtualCount: Int = 0
+    private var itemExtent: Int? = null
+    private var separatorExtent: Int? = null
+    private var estimatedItemExtent: Int = 1
+    private var estimatedSeparatorExtent: Int = 1
+    private var extents: IntArray = intArrayOf()
+    private var fenwickTree: IntArray = intArrayOf()
+
+    fun configure(
+        itemCount: Int,
+        itemExtent: Int?,
+        separatorExtent: Int?,
+        estimatedItemExtent: Int,
+        estimatedSeparatorExtent: Int,
+        measuredHeightsPx: IntArray,
+    ) {
+        val resolvedVirtualCount = if (itemCount <= 0) 0 else itemCount * 2 - 1
+        val safeItemExtent = estimatedItemExtent.coerceAtLeast(1)
+        val safeSeparatorExtent = estimatedSeparatorExtent.coerceAtLeast(1)
+        if (
+            virtualCount == resolvedVirtualCount &&
+            this.itemExtent == itemExtent &&
+            this.separatorExtent == separatorExtent &&
+            this.estimatedItemExtent == safeItemExtent &&
+            this.estimatedSeparatorExtent == safeSeparatorExtent
+        ) {
+            return
+        }
+
+        virtualCount = resolvedVirtualCount
+        this.itemExtent = itemExtent
+        this.separatorExtent = separatorExtent
+        this.estimatedItemExtent = safeItemExtent
+        this.estimatedSeparatorExtent = safeSeparatorExtent
+        extents = IntArray(virtualCount)
+        fenwickTree = IntArray(virtualCount + 1)
+        repeat(virtualCount) { virtualIndex ->
+            val fixedExtent = if (virtualIndex % 2 == 0) itemExtent else separatorExtent
+            val measuredExtent = measuredHeightsPx.getOrNull(virtualIndex) ?: 0
+            val extent = fixedExtent ?: measuredExtent.takeIf { it > 0 } ?: if (virtualIndex % 2 == 0) {
+                safeItemExtent
+            } else {
+                safeSeparatorExtent
+            }
+            extents[virtualIndex] = extent.coerceAtLeast(1)
+            addToFenwick(virtualIndex, extents[virtualIndex])
+        }
+    }
+
+    fun updateMeasured(virtualIndex: Int, measuredExtent: Int) {
+        if (virtualIndex !in 0 until virtualCount) return
+        val fixedExtent = if (virtualIndex % 2 == 0) itemExtent else separatorExtent
+        if (fixedExtent != null) return
+        val safeExtent = measuredExtent.coerceAtLeast(1)
+        val delta = safeExtent - extents[virtualIndex]
+        if (delta == 0) return
+        extents[virtualIndex] = safeExtent
+        addToFenwick(virtualIndex, delta)
+    }
+
+    fun extentPx(virtualIndex: Int): Int = extents.getOrElse(virtualIndex) { 0 }
+
+    fun topPx(virtualIndex: Int): Int = prefixSum(virtualIndex.coerceIn(0, virtualCount))
+
+    fun bottomPx(virtualIndex: Int): Int = topPx(virtualIndex) + extentPx(virtualIndex)
+
+    fun totalHeightPx(): Int = prefixSum(virtualCount)
+
+    fun indexAtOffsetPx(offsetPx: Int): Int {
+        if (virtualCount <= 0) return 0
+        val target = offsetPx.coerceIn(0, (totalHeightPx() - 1).coerceAtLeast(0))
+        var index = 0
+        var accumulated = 0
+        var bit = Integer.highestOneBit(virtualCount)
+        while (bit != 0) {
+            val next = index + bit
+            if (next <= virtualCount && accumulated + fenwickTree[next] <= target) {
+                index = next
+                accumulated += fenwickTree[next]
+            }
+            bit = bit shr 1
+        }
+        return index.coerceAtMost(virtualCount - 1)
+    }
+
+    private fun prefixSum(endExclusive: Int): Int {
+        var index = endExclusive.coerceIn(0, virtualCount)
+        var result = 0
+        while (index > 0) {
+            result += fenwickTree[index]
+            index -= index and -index
+        }
+        return result
+    }
+
+    private fun addToFenwick(virtualIndex: Int, delta: Int) {
+        var index = virtualIndex + 1
+        while (index < fenwickTree.size) {
+            fenwickTree[index] += delta
+            index += index and -index
+        }
+    }
+}
 
 /**
  * List/Grid/SingleChildScrollView 的可持久化滚动位置。

@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixelui.state.PixelSeparatedExtentIndex
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -179,5 +180,92 @@ class VariableHeightListTest {
         state.ensureMeasuredItemCapacity(5)
         // 全部未测量；总高 = 5 * 25 + 4 * 3 = 137
         assertEquals(137, variableItemContentHeightPx(state, itemCount = 5, estimatedItemExtent = 25, spacing = 3))
+    }
+
+    @Test
+    fun separatedExtentIndexMapsOffsetsWithoutLinearTopScans() {
+        val index = PixelSeparatedExtentIndex()
+        index.configure(
+            itemCount = 4,
+            itemExtent = null,
+            separatorExtent = null,
+            estimatedItemExtent = 5,
+            estimatedSeparatorExtent = 2,
+            measuredHeightsPx = IntArray(7),
+        )
+
+        assertEquals(0, index.topPx(0))
+        assertEquals(5, index.topPx(1))
+        assertEquals(7, index.topPx(2))
+        assertEquals(26, index.totalHeightPx())
+        assertEquals(0, index.indexAtOffsetPx(0))
+        assertEquals(0, index.indexAtOffsetPx(4))
+        assertEquals(1, index.indexAtOffsetPx(5))
+        assertEquals(6, index.indexAtOffsetPx(25))
+    }
+
+    @Test
+    fun separatedExtentIndexUpdatesDownstreamOffsetsAfterMeasurement() {
+        val index = PixelSeparatedExtentIndex()
+        index.configure(
+            itemCount = 3,
+            itemExtent = null,
+            separatorExtent = null,
+            estimatedItemExtent = 5,
+            estimatedSeparatorExtent = 1,
+            measuredHeightsPx = IntArray(5),
+        )
+
+        index.updateMeasured(virtualIndex = 0, measuredExtent = 9)
+        index.updateMeasured(virtualIndex = 1, measuredExtent = 3)
+
+        assertEquals(9, index.topPx(1))
+        assertEquals(12, index.topPx(2))
+        assertEquals(23, index.totalHeightPx())
+        assertEquals(1, index.indexAtOffsetPx(10))
+        assertEquals(2, index.indexAtOffsetPx(12))
+    }
+
+    @Test
+    fun separatedExtentIndexKeepsFixedExtentsAuthoritative() {
+        val index = PixelSeparatedExtentIndex()
+        index.configure(
+            itemCount = 2,
+            itemExtent = 6,
+            separatorExtent = 2,
+            estimatedItemExtent = 20,
+            estimatedSeparatorExtent = 10,
+            measuredHeightsPx = intArrayOf(30, 30, 30),
+        )
+
+        index.updateMeasured(virtualIndex = 0, measuredExtent = 40)
+        index.updateMeasured(virtualIndex = 1, measuredExtent = 40)
+
+        assertEquals(6, index.extentPx(0))
+        assertEquals(2, index.extentPx(1))
+        assertEquals(14, index.totalHeightPx())
+    }
+
+    @Test
+    fun separatedExtentIndexLocatesRemoteRowsInLargeLists() {
+        val itemCount = 100_000
+        val index = PixelSeparatedExtentIndex()
+        index.configure(
+            itemCount = itemCount,
+            itemExtent = null,
+            separatorExtent = null,
+            estimatedItemExtent = 5,
+            estimatedSeparatorExtent = 1,
+            measuredHeightsPx = IntArray(itemCount * 2 - 1),
+        )
+
+        val targetItem = 90_000
+        val targetVirtualIndex = targetItem * 2
+        val targetTop = targetItem * 6
+        assertEquals(targetVirtualIndex, index.indexAtOffsetPx(targetTop))
+
+        index.updateMeasured(targetVirtualIndex, measuredExtent = 11)
+        assertEquals(targetVirtualIndex, index.indexAtOffsetPx(targetTop + 10))
+        assertEquals(targetTop + 11, index.topPx(targetVirtualIndex + 1))
     }
 }
