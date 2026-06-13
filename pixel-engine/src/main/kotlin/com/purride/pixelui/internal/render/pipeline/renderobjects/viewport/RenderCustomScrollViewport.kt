@@ -84,7 +84,7 @@ internal class RenderCustomScrollViewport(
                 child.paint(
                     context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
                     offsetX = 0,
-                    offsetY = pinnedChildTop(index, child),
+                    offsetY = pinnedChildTop(index),
                 )
             }
             context.buffer.blitRegion(
@@ -104,7 +104,7 @@ internal class RenderCustomScrollViewport(
     override fun hitTest(localX: Int, localY: Int, result: HitTestResult) {
         if (!viewportBounds().contains(localX, localY)) return
         pinnedChildren().asReversed().forEach { (index, child) ->
-            val childTop = pinnedChildTop(index, child)
+            val childTop = pinnedChildTop(index)
             if (localY in childTop until childTop + child.size.height) {
                 child.hitTest(localX = localX, localY = localY - childTop, result = result)
                 return
@@ -221,7 +221,7 @@ internal class RenderCustomScrollViewport(
     private fun resolvedChildTop(index: Int): Int {
         val child = renderChildren.getOrNull(index)
         return if (metadata.getOrNull(index)?.pinned == true && child != null) {
-            pinnedChildTop(index, child)
+            pinnedChildTop(index)
         } else {
             scrolledChildTop(index)
         }
@@ -229,20 +229,32 @@ internal class RenderCustomScrollViewport(
 
     private fun scrolledChildTop(index: Int): Int = childOffsets[index] - state.scrollOffsetPx.toInt()
 
-    private fun pinnedChildTop(index: Int): Int = scrolledChildTop(index).coerceAtLeast(0)
-
     private fun sliverExtent(index: Int, child: RenderBox): Int {
         return metadata.getOrNull(index)?.maxExtent ?: child.size.height
     }
 
-    private fun pinnedChildTop(index: Int, child: RenderBox): Int {
-        val meta = metadata.getOrNull(index)
-        val maxExtent = meta?.maxExtent
-        val minExtent = meta?.minExtent
-        if (maxExtent != null && minExtent != null) {
-            return scrolledChildTop(index).coerceAtLeast(minExtent - maxExtent)
+    private fun pinnedChildTop(index: Int): Int {
+        var pinnedStackTop = 0
+        renderChildren.forEachIndexed { candidateIndex, candidate ->
+            val candidateMeta = metadata.getOrNull(candidateIndex)
+            if (candidateMeta?.pinned != true) return@forEachIndexed
+
+            val naturalTop = scrolledChildTop(candidateIndex)
+            val maxExtent = candidateMeta.maxExtent
+            val minExtent = candidateMeta.minExtent
+            val pinnedTop = if (maxExtent != null && minExtent != null) {
+                pinnedStackTop + minExtent - maxExtent
+            } else {
+                pinnedStackTop
+            }
+            val resolvedTop = naturalTop.coerceAtLeast(pinnedTop)
+            if (candidateIndex == index) return resolvedTop
+
+            if (naturalTop <= pinnedTop) {
+                pinnedStackTop += minExtent ?: candidate.size.height
+            }
         }
-        return pinnedChildTop(index)
+        return scrolledChildTop(index).coerceAtLeast(0)
     }
 
     private fun viewportBounds(): PixelRect = PixelRect(0, 0, size.width, size.height)

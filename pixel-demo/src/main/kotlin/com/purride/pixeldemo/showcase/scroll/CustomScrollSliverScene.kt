@@ -30,7 +30,7 @@ import com.purride.pixeldemo.scaffold.DemoScaffold
 object CustomScrollSliverScene : DemoScene {
     override val id = "custom_scroll_slivers"
     override val title = "CustomScrollView Slivers"
-    override val description = "SliverAppBar、pinned header 与变高 lazy SliverList 组合滚动"
+    override val description = "SliverAppBar、多个 pinned header 与变高 lazy SliverList 组合滚动"
 
     override fun build(env: DemoEnv): Widget = CustomScrollSliverWidget()
 }
@@ -45,7 +45,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
         override fun build(context: BuildContext): Widget {
             return DemoScaffold(
                 title = "CustomScrollView",
-                description = "AppBar collapses; pinned header and estimated lazy rows stay interactive",
+                description = "AppBar collapses; pinned headers stack above estimated lazy rows",
                 body = Scrollbar(
                     state = scrollState,
                     thumbColor = PixelColor.White,
@@ -59,6 +59,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                                 child = appBar(),
                             ),
                             SliverPinnedHeader(child = header()),
+                            SliverPinnedHeader(child = secondaryHeader()),
                             SliverListBuilder(
                                 itemCount = 120,
                                 estimatedItemExtent = 10,
@@ -125,6 +126,15 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
             )
         }
 
+        private fun secondaryHeader(): Widget {
+            return Container(
+                height = 8,
+                fillColor = PixelColor.fromRgb(80, 180, 110),
+                borderColor = PixelColor.White,
+                child = Text("SECOND PINNED HEADER", style = TextStyle(color = PixelColor.White)),
+            )
+        }
+
         private fun row(index: Int): Widget {
             val color = when (index % 4) {
                 0 -> PixelColor.fromRgb(60, 120, 220)
@@ -153,7 +163,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
         }
 
         private fun lazyContentHeight(): Int {
-            return 18 + 8 + (0 until 120).sumOf { rowHeight(it) } + (119 * 1)
+            return 18 + 8 + 8 + (0 until 120).sumOf { rowHeight(it) } + (119 * 1)
         }
 
         private fun rowHeight(index: Int): Int {

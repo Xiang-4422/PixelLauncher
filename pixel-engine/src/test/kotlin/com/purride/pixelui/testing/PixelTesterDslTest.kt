@@ -302,6 +302,47 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun multiplePinnedSliversStackWithoutOverlap() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create(initialScrollOffsetPx = 20f)
+        val appBarColor = PixelColor.fromRgb(220, 70, 70)
+        val firstHeaderColor = PixelColor.fromRgb(70, 200, 100)
+        val secondHeaderColor = PixelColor.fromRgb(70, 110, 220)
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 12,
+                        collapsedHeight = 4,
+                        child = Container(width = 32, height = 12, fillColor = appBarColor),
+                    ),
+                    SliverPinnedHeader(
+                        child = Container(width = 32, height = 5, fillColor = firstHeaderColor),
+                    ),
+                    SliverPinnedHeader(
+                        child = Container(width = 32, height = 4, fillColor = secondHeaderColor),
+                    ),
+                    SliverList(
+                        items = List(20) { SizedBox(height = 5, child = Text("ROW")) },
+                    ),
+                ),
+                state = state,
+                controller = controller,
+            ),
+            logicalWidth = 32,
+            logicalHeight = 18,
+        )
+
+        val pixels = tester.renderResult!!.buffer.pixels
+        assertEquals(appBarColor.argb, pixels[1 * 32 + 1])
+        assertEquals(firstHeaderColor.argb, pixels[5 * 32 + 1])
+        assertEquals(secondHeaderColor.argb, pixels[10 * 32 + 1])
+        tester.dispose()
+    }
+
+    @Test
     fun sliverAppBarRejectsInvalidExtents() {
         try {
             SliverAppBar(
