@@ -66,7 +66,11 @@ public class PixelListController(
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
-        val newScrollOffsetPx = coerceOffset(state.scrollOffsetPx, newMaxScrollOffsetPx)
+        val newScrollOffsetPx = if (physics.bounceEnabled && (state.isDragging || state.isSettling)) {
+            coerceExistingOverscroll(state.scrollOffsetPx, newMaxScrollOffsetPx)
+        } else {
+            coerceOffset(state.scrollOffsetPx, newMaxScrollOffsetPx)
+        }
         var changed = newViewportHeightPx != state.viewportHeightPx ||
             newContentHeightPx != state.contentHeightPx ||
             newMaxScrollOffsetPx != state.maxScrollOffsetPx ||
@@ -98,6 +102,7 @@ public class PixelListController(
         state.isDragging = true
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
+        state.snapTargetOffsetPx = null
         state.scrollOffsetPx = coerceDraggedOffset(
             targetOffsetPx = state.scrollOffsetPx - deltaPx,
             maxScrollOffsetPx = state.maxScrollOffsetPx,
@@ -109,6 +114,7 @@ public class PixelListController(
         state.isDragging = true
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
+        state.snapTargetOffsetPx = null
         notifyListeners()
     }
 
@@ -149,6 +155,7 @@ public class PixelListController(
             contentHeightPx = contentHeightPx,
         )
         state.scrollOffsetPx = coerceOffset(targetOffsetPx, state.maxScrollOffsetPx)
+        state.snapTargetOffsetPx = null
         notifyListeners()
     }
 
@@ -187,6 +194,7 @@ public class PixelListController(
         state.isDragging = false
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
+        state.snapTargetOffsetPx = null
         notifyListeners()
     }
 
@@ -202,6 +210,22 @@ public class PixelListController(
             contentHeightPx = contentHeightPx,
         )
         state.isDragging = false
+
+        val snapTarget = resolveSnapTarget(
+            state = state,
+            velocityPxPerSecond = velocityPxPerSecond,
+        )
+        if (snapTarget != null && abs(snapTarget - state.scrollOffsetPx) > physics.snapEpsilonPx) {
+            state.snapTargetOffsetPx = snapTarget
+            state.isSettling = true
+            state.scrollVelocityPxPerSecond = if (snapTarget > state.scrollOffsetPx) {
+                -SNAP_VELOCITY_PX_PER_SECOND
+            } else {
+                SNAP_VELOCITY_PX_PER_SECOND
+            }
+            notifyListeners()
+            return
+        }
 
         val canScroll = state.maxScrollOffsetPx > 0f
         if (!canScroll || !velocityPxPerSecond.isFinite() || abs(velocityPxPerSecond) < physics.minFlingVelocityPxPerSecond) {
@@ -231,6 +255,19 @@ public class PixelListController(
             if (geometryChanged) {
                 notifyListeners()
             }
+            return
+        }
+
+        state.snapTargetOffsetPx?.let { target ->
+            val distance = target - state.scrollOffsetPx
+            val stepPx = SNAP_VELOCITY_PX_PER_SECOND * (deltaMs / 1000f)
+            if (abs(distance) <= stepPx.coerceAtLeast(physics.snapEpsilonPx)) {
+                state.scrollOffsetPx = target
+                stopSettling(state)
+            } else {
+                state.scrollOffsetPx += if (distance > 0f) stepPx else -stepPx
+            }
+            notifyListeners()
             return
         }
 
@@ -342,6 +379,24 @@ public class PixelListController(
         state.scrollOffsetPx = coerceOffset(state.scrollOffsetPx, state.maxScrollOffsetPx)
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
+        state.snapTargetOffsetPx = null
+    }
+
+    private fun resolveSnapTarget(
+        state: PixelListState,
+        velocityPxPerSecond: Float,
+    ): Float? {
+        val range = state.scrollSnapRanges.firstOrNull { snapRange ->
+            state.scrollOffsetPx > snapRange.startOffsetPx &&
+                state.scrollOffsetPx < snapRange.endOffsetPx
+        } ?: return null
+        return when {
+            velocityPxPerSecond < -physics.minFlingVelocityPxPerSecond -> range.endOffsetPx
+            velocityPxPerSecond > physics.minFlingVelocityPxPerSecond -> range.startOffsetPx
+            state.scrollOffsetPx - range.startOffsetPx <
+                range.endOffsetPx - state.scrollOffsetPx -> range.startOffsetPx
+            else -> range.endOffsetPx
+        }.coerceIn(0f, state.maxScrollOffsetPx)
     }
 
     private fun coerceOffset(
@@ -371,5 +426,17 @@ public class PixelListController(
         }
     }
 
+    private fun coerceExistingOverscroll(
+        targetOffsetPx: Float,
+        maxScrollOffsetPx: Float,
+    ): Float {
+        val limit = physics.bounceOverscrollLimitPx.coerceAtLeast(0f)
+        return targetOffsetPx.coerceIn(-limit, maxScrollOffsetPx + limit)
+    }
+
     private fun Float.finiteOrZero(): Float = if (isFinite()) this else 0f
+
+    private companion object {
+        const val SNAP_VELOCITY_PX_PER_SECOND: Float = 240f
+    }
 }

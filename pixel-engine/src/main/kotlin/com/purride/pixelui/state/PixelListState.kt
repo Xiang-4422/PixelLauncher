@@ -52,7 +52,16 @@ public class PixelListState(
      * scrollItemIntoView，使用真实测量值进行二次微调；测量到位即清空。
      */
     internal var pendingScrollIntoViewItemIndex: Int? = null
+    internal var scrollSnapRanges: List<PixelScrollSnapRange> = emptyList()
+    internal var snapTargetOffsetPx: Float? = null
+    internal var lastFloatingScrollOffsetPx: Float? = null
+    internal val floatingRevealBySliverIndex: MutableMap<Int, Int> = mutableMapOf()
 }
+
+internal data class PixelScrollSnapRange(
+    val startOffsetPx: Float,
+    val endOffsetPx: Float,
+)
 
 /**
  * List/Grid/SingleChildScrollView 的可持久化滚动位置。

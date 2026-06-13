@@ -777,14 +777,24 @@ public fun SliverAppBar(
     child: Widget,
     expandedHeight: Int,
     collapsedHeight: Int,
+    floating: Boolean = false,
+    snap: Boolean = false,
+    stretch: Boolean = false,
+    stretchLimit: Int = expandedHeight,
     key: Any? = null,
 ): PixelSliver {
     require(expandedHeight >= 0) { "expandedHeight must be >= 0" }
     require(collapsedHeight in 0..expandedHeight) { "collapsedHeight must be in 0..expandedHeight" }
+    require(!snap || floating) { "snap requires floating = true" }
+    require(stretchLimit >= 0) { "stretchLimit must be >= 0" }
     return PixelSliverAppBar(
         child = child,
         expandedHeight = expandedHeight,
         collapsedHeight = collapsedHeight,
+        floating = floating,
+        snap = snap,
+        stretch = stretch,
+        stretchLimit = stretchLimit,
         key = key,
     )
 }

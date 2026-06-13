@@ -2,6 +2,7 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixelui.state.PixelScrollSnapRange
 
 internal class RenderCustomScrollViewport(
     children: List<RenderBox> = emptyList(),
@@ -20,11 +21,11 @@ internal class RenderCustomScrollViewport(
         state: PixelListState,
         controller: PixelListController,
     ) {
-        if (this.metadata == metadata && this.state === state && this.controller === controller) return
+        val needsLayout = this.metadata != metadata || this.state !== state || this.controller !== controller
         this.metadata = metadata
         this.state = state
         this.controller = controller
-        markNeedsLayout()
+        if (needsLayout) markNeedsLayout()
         markNeedsPaint()
     }
 
@@ -65,11 +66,23 @@ internal class RenderCustomScrollViewport(
         }
         size = RenderSize(width = constraints.maxWidth, height = constraints.maxHeight)
         controller.sync(state = state, viewportHeightPx = size.height, contentHeightPx = cursorY)
+        state.scrollSnapRanges = metadata.mapNotNull { entry ->
+            val contentTop = entry.contentTop ?: return@mapNotNull null
+            val maxExtent = entry.baseMaxExtent ?: return@mapNotNull null
+            val minExtent = entry.minExtent ?: return@mapNotNull null
+            if (!entry.snap || maxExtent <= minExtent) return@mapNotNull null
+            PixelScrollSnapRange(
+                startOffsetPx = contentTop.toFloat(),
+                endOffsetPx = (contentTop + maxExtent - minExtent).toFloat(),
+            )
+        }
+        updateFloatingReveal()
         state.itemTopOffsetsPx = childOffsets.toIntArray()
         state.itemHeightsPx = children.mapIndexed { index, child -> sliverExtent(index, child) }.toIntArray()
     }
 
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
+        updateFloatingReveal()
         val scratch = context.bufferPool.acquire(width = size.width, height = size.height)
         try {
             scratch.clear()
@@ -242,19 +255,50 @@ internal class RenderCustomScrollViewport(
             val naturalTop = scrolledChildTop(candidateIndex)
             val maxExtent = candidateMeta.maxExtent
             val minExtent = candidateMeta.minExtent
-            val pinnedTop = if (maxExtent != null && minExtent != null) {
-                pinnedStackTop + minExtent - maxExtent
+            val baseMaxExtent = candidateMeta.baseMaxExtent ?: maxExtent
+            val floatingReveal = state.floatingRevealBySliverIndex[candidateMeta.sliverIndex] ?: 0
+            val pinnedTop = if (baseMaxExtent != null && minExtent != null) {
+                pinnedStackTop + minExtent - baseMaxExtent + floatingReveal
             } else {
                 pinnedStackTop
             }
-            val resolvedTop = naturalTop.coerceAtLeast(pinnedTop)
+            val resolvedTop = if (
+                candidateMeta.stretch &&
+                state.scrollOffsetPx < 0f &&
+                candidateMeta.contentTop == 0
+            ) {
+                pinnedStackTop
+            } else {
+                naturalTop.coerceAtLeast(pinnedTop)
+            }
             if (candidateIndex == index) return resolvedTop
 
             if (naturalTop <= pinnedTop) {
-                pinnedStackTop += minExtent ?: candidate.size.height
+                pinnedStackTop += (minExtent ?: candidate.size.height) + floatingReveal
             }
         }
         return scrolledChildTop(index).coerceAtLeast(0)
+    }
+
+    private fun updateFloatingReveal() {
+        val currentOffset = state.scrollOffsetPx
+        val previousOffset = state.lastFloatingScrollOffsetPx
+        if (previousOffset == null) {
+            state.lastFloatingScrollOffsetPx = currentOffset
+            return
+        }
+        val revealDelta = (previousOffset - currentOffset).toInt()
+        metadata.asSequence()
+            .filter { it.pinned && it.floating }
+            .forEach { entry ->
+                val maxExtent = entry.baseMaxExtent ?: entry.maxExtent ?: return@forEach
+                val minExtent = entry.minExtent ?: return@forEach
+                val range = (maxExtent - minExtent).coerceAtLeast(0)
+                val currentReveal = state.floatingRevealBySliverIndex[entry.sliverIndex] ?: 0
+                state.floatingRevealBySliverIndex[entry.sliverIndex] =
+                    (currentReveal + revealDelta).coerceIn(0, range)
+            }
+        state.lastFloatingScrollOffsetPx = currentOffset
     }
 
     private fun viewportBounds(): PixelRect = PixelRect(0, 0, size.width, size.height)

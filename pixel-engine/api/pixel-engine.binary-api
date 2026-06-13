@@ -1601,17 +1601,25 @@ public interface com.purride.pixelui.PixelSliver {
   public abstract java.lang.Object getKey();
 }
 public final class com.purride.pixelui.PixelSliverAppBar implements com.purride.pixelui.PixelSliver {
-  public com.purride.pixelui.PixelSliverAppBar(com.purride.pixelui.Widget, int, int, java.lang.Object);
+  public com.purride.pixelui.PixelSliverAppBar(com.purride.pixelui.Widget, int, int, boolean, boolean, boolean, int, java.lang.Object);
   public final com.purride.pixelui.Widget getChild();
   public final int getExpandedHeight();
   public final int getCollapsedHeight();
+  public final boolean getFloating();
+  public final boolean getSnap();
+  public final boolean getStretch();
+  public final int getStretchLimit();
   public java.lang.Object getKey();
   public final com.purride.pixelui.Widget component1();
   public final int component2();
   public final int component3();
-  public final java.lang.Object component4();
-  public final com.purride.pixelui.PixelSliverAppBar copy(com.purride.pixelui.Widget, int, int, java.lang.Object);
-  public static com.purride.pixelui.PixelSliverAppBar copy$default(com.purride.pixelui.PixelSliverAppBar, com.purride.pixelui.Widget, int, int, java.lang.Object, int, java.lang.Object);
+  public final boolean component4();
+  public final boolean component5();
+  public final boolean component6();
+  public final int component7();
+  public final java.lang.Object component8();
+  public final com.purride.pixelui.PixelSliverAppBar copy(com.purride.pixelui.Widget, int, int, boolean, boolean, boolean, int, java.lang.Object);
+  public static com.purride.pixelui.PixelSliverAppBar copy$default(com.purride.pixelui.PixelSliverAppBar, com.purride.pixelui.Widget, int, int, boolean, boolean, boolean, int, java.lang.Object, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -1933,8 +1941,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.PixelSliver SliverListBuilder$default(int, kotlin.jvm.functions.Function1, java.lang.Integer, java.lang.Integer, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.PixelSliver SliverPinnedHeader(com.purride.pixelui.Widget, java.lang.Object);
   public static com.purride.pixelui.PixelSliver SliverPinnedHeader$default(com.purride.pixelui.Widget, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.PixelSliver SliverAppBar(com.purride.pixelui.Widget, int, int, java.lang.Object);
-  public static com.purride.pixelui.PixelSliver SliverAppBar$default(com.purride.pixelui.Widget, int, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.PixelSliver SliverAppBar(com.purride.pixelui.Widget, int, int, boolean, boolean, boolean, int, java.lang.Object);
+  public static com.purride.pixelui.PixelSliver SliverAppBar$default(com.purride.pixelui.Widget, int, int, boolean, boolean, boolean, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget CustomScrollView(java.util.List<? extends com.purride.pixelui.PixelSliver>, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object);
   public static com.purride.pixelui.Widget CustomScrollView$default(java.util.List, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget GridView(java.util.List<? extends com.purride.pixelui.Widget>, int, int, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, int, java.lang.Object);
@@ -2258,6 +2266,7 @@ public final class com.purride.pixelui.host.PixelHostFrameLoop {
   public com.purride.pixelui.host.PixelHostFrameLoop();
 }
 public final class com.purride.pixelui.state.PixelListController extends com.purride.pixelui.ChangeNotifier {
+  public static final float SNAP_VELOCITY_PX_PER_SECOND;
   public com.purride.pixelui.state.PixelListController(com.purride.pixelui.PixelScrollPhysics);
   public com.purride.pixelui.state.PixelListController(com.purride.pixelui.PixelScrollPhysics, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelui.state.PixelListState create(float);
@@ -2323,6 +2332,13 @@ public final class com.purride.pixelui.state.PixelListState {
   public final void setMeasuredItemHeightsPx$pixel_engine(int[]);
   public final java.lang.Integer getPendingScrollIntoViewItemIndex$pixel_engine();
   public final void setPendingScrollIntoViewItemIndex$pixel_engine(java.lang.Integer);
+  public final java.util.List<com.purride.pixelui.state.PixelScrollSnapRange> getScrollSnapRanges$pixel_engine();
+  public final void setScrollSnapRanges$pixel_engine(java.util.List<com.purride.pixelui.state.PixelScrollSnapRange>);
+  public final java.lang.Float getSnapTargetOffsetPx$pixel_engine();
+  public final void setSnapTargetOffsetPx$pixel_engine(java.lang.Float);
+  public final java.lang.Float getLastFloatingScrollOffsetPx$pixel_engine();
+  public final void setLastFloatingScrollOffsetPx$pixel_engine(java.lang.Float);
+  public final java.util.Map<java.lang.Integer, java.lang.Integer> getFloatingRevealBySliverIndex$pixel_engine();
   public com.purride.pixelui.state.PixelListState();
 }
 public final class com.purride.pixelui.state.PixelPagerController extends com.purride.pixelui.ChangeNotifier {
@@ -2413,6 +2429,18 @@ public final class com.purride.pixelui.state.PixelRefreshIndicatorState {
   public final void setArmed$pixel_engine(boolean);
   public final boolean isRefreshing();
   public final void setRefreshing$pixel_engine(boolean);
+}
+public final class com.purride.pixelui.state.PixelScrollSnapRange {
+  public com.purride.pixelui.state.PixelScrollSnapRange(float, float);
+  public final float getStartOffsetPx();
+  public final float getEndOffsetPx();
+  public final float component1();
+  public final float component2();
+  public final com.purride.pixelui.state.PixelScrollSnapRange copy(float, float);
+  public static com.purride.pixelui.state.PixelScrollSnapRange copy$default(com.purride.pixelui.state.PixelScrollSnapRange, float, float, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelui.state.PixelTextFieldController extends com.purride.pixelui.ChangeNotifier {
   public com.purride.pixelui.state.PixelTextFieldController();

@@ -3,6 +3,7 @@ package com.purride.pixelui
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListRestorationPolicy
 import com.purride.pixelui.state.PixelListSavedState
+import com.purride.pixelui.state.PixelScrollSnapRange
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -446,6 +447,42 @@ class PixelListControllerTest {
     }
 
     @Test
+    fun registeredSnapRangeSettlesToNearestBoundary() {
+        val state = controller.create(initialScrollOffsetPx = 3f)
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 80)
+        state.scrollSnapRanges = listOf(PixelScrollSnapRange(0f, 8f))
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = 0f,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+
+        assertTrue(state.isSettling)
+        controller.step(state, deltaMs = 100L, viewportHeightPx = 20, contentHeightPx = 80)
+        assertEquals(0f, state.scrollOffsetPx, 0.001f)
+        assertFalse(state.isSettling)
+    }
+
+    @Test
+    fun snapRangeUsesFlingDirection() {
+        val state = controller.create(initialScrollOffsetPx = 3f)
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 80)
+        state.scrollSnapRanges = listOf(PixelScrollSnapRange(0f, 8f))
+
+        controller.endDrag(
+            state = state,
+            velocityPxPerSecond = -500f,
+            viewportHeightPx = 20,
+            contentHeightPx = 80,
+        )
+        controller.step(state, deltaMs = 100L, viewportHeightPx = 20, contentHeightPx = 80)
+
+        assertEquals(8f, state.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
     fun customPhysicsCanEnableResistedOverscrollDuringDrag() {
         val controller = PixelListController(
             physics = PixelScrollPhysics(
@@ -463,6 +500,9 @@ class PixelListControllerTest {
             contentHeightPx = 50,
         )
 
+        assertEquals(-4f, state.scrollOffsetPx, 0.001f)
+
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 50)
         assertEquals(-4f, state.scrollOffsetPx, 0.001f)
     }
 

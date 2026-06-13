@@ -25,6 +25,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.Scrollbar
+import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.SliverAppBar
@@ -343,6 +344,127 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun floatingSliverAppBarRevealsDuringReverseScroll() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create(initialScrollOffsetPx = 20f)
+        val appBarColor = PixelColor.fromRgb(220, 70, 70)
+        val rowColor = PixelColor.fromRgb(60, 160, 90)
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 12,
+                        collapsedHeight = 4,
+                        floating = true,
+                        child = Container(width = 32, height = 12, fillColor = appBarColor),
+                    ),
+                    SliverList(
+                        items = List(20) {
+                            Container(width = 32, height = 5, fillColor = rowColor)
+                        },
+                    ),
+                ),
+                state = state,
+                controller = controller,
+                key = "floating",
+            ),
+            logicalWidth = 32,
+            logicalHeight = 18,
+        )
+        assertEquals(rowColor.argb, tester.renderResult!!.buffer.pixels[6 * 32 + 1])
+
+        tester.drag(find.byKey("floating"), dx = 0, dy = 4)
+
+        assertEquals(appBarColor.argb, tester.renderResult!!.buffer.pixels[6 * 32 + 1])
+        tester.dispose()
+    }
+
+    @Test
+    fun snappingSliverAppBarSettlesToBoundary() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create(initialScrollOffsetPx = 3f)
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 12,
+                        collapsedHeight = 4,
+                        floating = true,
+                        snap = true,
+                        child = Container(width = 32, height = 12, fillColor = PixelColor.White),
+                    ),
+                    SliverList(items = List(20) { SizedBox(height = 5, child = Text("ROW")) }),
+                ),
+                state = state,
+                controller = controller,
+            ),
+            logicalWidth = 32,
+            logicalHeight = 18,
+        )
+
+        controller.endDrag(state, 0f, state.viewportHeightPx, state.contentHeightPx)
+        tester.pumpAndSettle()
+
+        assertEquals(0f, state.scrollOffsetPx, 0.001f)
+        tester.dispose()
+    }
+
+    @Test
+    fun stretchingSliverAppBarUsesTopOverscroll() {
+        val tester = PixelTester()
+        val controller = PixelListController(
+            physics = PixelScrollPhysics(
+                bounceEnabled = true,
+                bounceOverscrollLimitPx = 8f,
+                bounceResistance = 0.5f,
+            ),
+        )
+        val state = controller.create()
+        val appBarColor = PixelColor.fromRgb(220, 70, 70)
+        val rowColor = PixelColor.fromRgb(60, 160, 90)
+
+        tester.pumpWidget(
+            widget = CustomScrollView(
+                slivers = listOf(
+                    SliverAppBar(
+                        expandedHeight = 12,
+                        collapsedHeight = 4,
+                        stretch = true,
+                        stretchLimit = 6,
+                        child = Container(width = 32, fillColor = appBarColor),
+                    ),
+                    SliverList(
+                        items = List(20) {
+                            Container(width = 32, height = 5, fillColor = rowColor)
+                        },
+                    ),
+                ),
+                state = state,
+                controller = controller,
+            ),
+            logicalWidth = 32,
+            logicalHeight = 18,
+        )
+        assertEquals(rowColor.argb, tester.renderResult!!.buffer.pixels[13 * 32 + 1])
+
+        controller.dragBy(
+            state = state,
+            deltaPx = 6f,
+            viewportHeightPx = state.viewportHeightPx,
+            contentHeightPx = state.contentHeightPx,
+        )
+        tester.pumpFrame(16)
+
+        assertTrue(state.scrollOffsetPx < 0f)
+        assertEquals(appBarColor.argb, tester.renderResult!!.buffer.pixels[13 * 32 + 1])
+        tester.dispose()
+    }
+
+    @Test
     fun sliverAppBarRejectsInvalidExtents() {
         try {
             SliverAppBar(
@@ -353,6 +475,18 @@ class PixelTesterDslTest {
             error("Expected invalid SliverAppBar extents to throw")
         } catch (expected: IllegalArgumentException) {
             assertTrue(expected.message!!.contains("collapsedHeight"))
+        }
+
+        try {
+            SliverAppBar(
+                expandedHeight = 8,
+                collapsedHeight = 4,
+                snap = true,
+                child = Text("BAD"),
+            )
+            error("Expected snap without floating to throw")
+        } catch (expected: IllegalArgumentException) {
+            assertTrue(expected.message!!.contains("floating"))
         }
     }
 

@@ -10,6 +10,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Scrollbar
@@ -32,7 +33,7 @@ import com.purride.pixeldemo.scaffold.DemoScaffold
 object CustomScrollSliverScene : DemoScene {
     override val id = "custom_scroll_slivers"
     override val title = "CustomScrollView Slivers"
-    override val description = "SliverAppBar、多个 pinned header 与变高 lazy SliverList 组合滚动"
+    override val description = "Floating/snap/stretch AppBar、多个 pinned header 与变高 lazy SliverList"
 
     override fun build(env: DemoEnv): Widget = CustomScrollSliverWidget()
 }
@@ -42,13 +43,19 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
 
     class CustomScrollSliverState : State<CustomScrollSliverWidget>() {
         private val scrollState = PixelListState()
-        private val scrollController = ScrollController()
+        private val scrollController = ScrollController(
+            physics = PixelScrollPhysics(
+                bounceEnabled = true,
+                bounceOverscrollLimitPx = 12f,
+                bounceResistance = 0.5f,
+            ),
+        )
         private var savedScrollState: PixelListSavedState? = null
 
         override fun build(context: BuildContext): Widget {
             return DemoScaffold(
                 title = "CustomScrollView",
-                description = "AppBar collapses; pinned headers stack above estimated lazy rows",
+                description = "Reverse to float, release to snap, pull top to stretch",
                 body = Scrollbar(
                     state = scrollState,
                     thumbColor = PixelColor.White,
@@ -59,6 +66,10 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                             SliverAppBar(
                                 expandedHeight = 18,
                                 collapsedHeight = 8,
+                                floating = true,
+                                snap = true,
+                                stretch = true,
+                                stretchLimit = 10,
                                 child = appBar(),
                             ),
                             SliverPinnedHeader(child = header()),

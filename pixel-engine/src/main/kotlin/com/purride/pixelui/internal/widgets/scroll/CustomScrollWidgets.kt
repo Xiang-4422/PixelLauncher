@@ -133,6 +133,12 @@ internal data class CustomScrollViewWidget(
                     is PixelSliverAppBar -> {
                         val expandedHeight = sliver.expandedHeight.coerceAtLeast(0)
                         val collapsedHeight = sliver.collapsedHeight.coerceIn(0, expandedHeight.coerceAtLeast(0))
+                        val contentTop = estimatedCursorY
+                        val stretchExtent = if (sliver.stretch && state.scrollOffsetPx < 0f) {
+                            (-state.scrollOffsetPx).toInt().coerceAtMost(sliver.stretchLimit)
+                        } else {
+                            0
+                        }
                         add(
                             CustomScrollChildEntry(
                                 sliverIndex = sliverIndex,
@@ -140,14 +146,18 @@ internal data class CustomScrollViewWidget(
                                 pinned = true,
                                 spacingAfter = 0,
                                 minExtent = collapsedHeight,
-                                maxExtent = expandedHeight,
-                                contentTop = null,
+                                maxExtent = expandedHeight + stretchExtent,
+                                baseMaxExtent = expandedHeight,
+                                contentTop = contentTop,
                                 contentEnd = null,
                                 measuredItemCount = null,
                                 estimatedExtent = null,
+                                floating = sliver.floating,
+                                snap = sliver.snap,
+                                stretch = sliver.stretch,
                             ),
                         )
-                        add(SizedBox(height = expandedHeight, child = sliver.child, key = sliver.key))
+                        add(SizedBox(height = expandedHeight + stretchExtent, child = sliver.child, key = sliver.key))
                         estimatedCursorY += expandedHeight
                     }
                 }
@@ -172,10 +182,14 @@ internal data class CustomScrollChildEntry(
     val spacingAfter: Int,
     val minExtent: Int?,
     val maxExtent: Int?,
+    val baseMaxExtent: Int? = null,
     val contentTop: Int?,
     val contentEnd: Int?,
     val measuredItemCount: Int?,
     val estimatedExtent: Int?,
+    val floating: Boolean = false,
+    val snap: Boolean = false,
+    val stretch: Boolean = false,
 )
 
 private data class CustomScrollViewportWidget(

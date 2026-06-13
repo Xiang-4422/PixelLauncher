@@ -632,6 +632,10 @@ com.purride.pixelui public data class PixelSliverAppBar(
 com.purride.pixelui public val child: Widget,
 com.purride.pixelui public val expandedHeight: Int,
 com.purride.pixelui public val collapsedHeight: Int,
+com.purride.pixelui public val floating: Boolean,
+com.purride.pixelui public val snap: Boolean,
+com.purride.pixelui public val stretch: Boolean,
+com.purride.pixelui public val stretchLimit: Int,
 com.purride.pixelui public data class PixelTextFieldStyle(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelTextFieldStyle = PixelTextFieldStyle()

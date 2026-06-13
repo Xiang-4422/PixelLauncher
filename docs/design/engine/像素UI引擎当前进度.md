@@ -75,7 +75,7 @@
 - 纵向列表
 - 固定 item 高度 lazy 列表
 - fixed-cell lazy grid
-- `CustomScrollView` + eager/lazy `SliverList` + pinned header + collapsible `SliverAppBar`
+- `CustomScrollView` + eager/lazy `SliverList` + pinned header + collapse/floating/snap/stretch `SliverAppBar`
 - Scrollbar 与 pull-to-refresh
 - 单子节点滚动
 - 文本输入聚焦与宿主输入桥接
@@ -103,7 +103,7 @@ Demo 入口：
 
 `pixel-engine` 仍然是第一版可运行框架，还不是完整产品级 UI 系统：
 
-- `CustomScrollView` 已有 eager `SliverList`、固定/估算高度 lazy `SliverListBuilder`、按声明顺序堆叠的多个 pinned header 和 collapsible `SliverAppBar` v1，但还没有 floating/snap/stretch app bar 或变高 lazy sliver 的完整虚拟 `scrollItemIntoView`
+- `CustomScrollView` 已有 eager `SliverList`、固定/估算高度 lazy `SliverListBuilder`、按声明顺序堆叠的多个 pinned header，以及支持 collapse/floating/snap/stretch 的 `SliverAppBar`；仍缺变高 lazy sliver 的完整虚拟 `scrollItemIntoView`
 - 列表已有 clamp/fling/bounce 参数、绝对 offset / 相对进度恢复基础，但还没有完整平台级滚动物理、snap 策略和 route-aware 自动恢复容器
 - `TextField` 已支持多行 caret / selection / composition、光标节拍和最小 selection handle，但还没有完整长按菜单或平台级选择浮层
 - `Form` v1 已支持字段注册、`validate()`、`reset()` 和错误文本状态，但还没有自动 FocusScope/IME action 联动

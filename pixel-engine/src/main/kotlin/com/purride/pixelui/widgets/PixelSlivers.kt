@@ -38,11 +38,15 @@ public data class PixelSliverPinnedHeader(
 ) : PixelSliver
 
 /**
- * 参与滚动流并在滚过后收起到 collapsedHeight 的 app bar。
+ * 支持收起、反向浮出、边界吸附和顶部拉伸的 app bar 描述。
  */
 public data class PixelSliverAppBar(
     public val child: Widget,
     public val expandedHeight: Int,
     public val collapsedHeight: Int,
+    public val floating: Boolean,
+    public val snap: Boolean,
+    public val stretch: Boolean,
+    public val stretchLimit: Int,
     override val key: Any?,
 ) : PixelSliver
