@@ -2786,6 +2786,35 @@ public final class com.purride.pixelui.widgets.animated.TweenAnimationBuilderKt 
   public static final <T> com.purride.pixelui.Widget TweenAnimationBuilder-nRVORKE(com.purride.pixelui.animation.Tween<T>, long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super T, ? extends com.purride.pixelui.Widget>);
   public static com.purride.pixelui.Widget TweenAnimationBuilder-nRVORKE$default(com.purride.pixelui.animation.Tween, long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, kotlin.jvm.functions.Function0, java.lang.Object, kotlin.jvm.functions.Function2, int, java.lang.Object);
 }
+public final class com.purride.pixelui.widgets.navigation.PixelDeepLink {
+  public static final com.purride.pixelui.widgets.navigation.PixelDeepLink$Companion Companion;
+  public com.purride.pixelui.widgets.navigation.PixelDeepLink(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.Map<java.lang.String, ? extends java.util.List<java.lang.String>>, java.lang.String);
+  public final java.lang.String getRawUri();
+  public final java.lang.String getScheme();
+  public final java.lang.String getHost();
+  public final java.util.List<java.lang.String> getPathSegments();
+  public final java.util.Map<java.lang.String, java.util.List<java.lang.String>> getQueryParameters();
+  public final java.lang.String getFragment();
+  public final java.lang.String queryParameter(java.lang.String);
+  public final java.lang.String component1();
+  public final java.lang.String component2();
+  public final java.lang.String component3();
+  public final java.util.List<java.lang.String> component4();
+  public final java.util.Map<java.lang.String, java.util.List<java.lang.String>> component5();
+  public final java.lang.String component6();
+  public final com.purride.pixelui.widgets.navigation.PixelDeepLink copy(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.Map<java.lang.String, ? extends java.util.List<java.lang.String>>, java.lang.String);
+  public static com.purride.pixelui.widgets.navigation.PixelDeepLink copy$default(com.purride.pixelui.widgets.navigation.PixelDeepLink, java.lang.String, java.lang.String, java.lang.String, java.util.List, java.util.Map, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.widgets.navigation.PixelDeepLink$Companion {
+  public final com.purride.pixelui.widgets.navigation.PixelDeepLink parse(java.lang.String);
+  public com.purride.pixelui.widgets.navigation.PixelDeepLink$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public interface com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver {
+  public abstract java.util.List<com.purride.pixelui.widgets.navigation.PixelRoute> resolve(com.purride.pixelui.widgets.navigation.PixelDeepLink);
+}
 public final class com.purride.pixelui.widgets.navigation.PixelNavigator extends com.purride.pixelui.StatefulWidget {
   public static final com.purride.pixelui.widgets.navigation.PixelNavigator$Companion Companion;
   public com.purride.pixelui.widgets.navigation.PixelNavigator(com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.animation.PixelTickerProvider, long, com.purride.pixelui.widgets.navigation.PixelRouteTransition, java.lang.Object, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -2850,6 +2879,10 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigatorState ex
   public final void restore(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, java.util.Map<java.lang.String, com.purride.pixelui.widgets.navigation.PixelRoute>);
   public final boolean restoreFromBundle(android.os.Bundle, java.util.Map<java.lang.String, com.purride.pixelui.widgets.navigation.PixelRoute>, java.lang.String);
   public static boolean restoreFromBundle$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, android.os.Bundle, java.util.Map, java.lang.String, int, java.lang.Object);
+  public final boolean handleDeepLink(java.lang.String, com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver, boolean);
+  public static boolean handleDeepLink$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, java.lang.String, com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver, boolean, int, java.lang.Object);
+  public final boolean handleDeepLink(com.purride.pixelui.widgets.navigation.PixelDeepLink, com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver, boolean);
+  public static boolean handleDeepLink$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, com.purride.pixelui.widgets.navigation.PixelDeepLink, com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver, boolean, int, java.lang.Object);
   public final void completeTransition$pixel_engine(long);
   public final com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket restorationBucket$pixel_engine(com.purride.pixelui.widgets.navigation.PixelRoute);
 }

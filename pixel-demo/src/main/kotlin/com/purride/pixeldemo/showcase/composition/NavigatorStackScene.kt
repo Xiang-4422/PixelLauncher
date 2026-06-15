@@ -17,6 +17,7 @@ import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.widgets.navigation.PixelNavigator
 import com.purride.pixelui.widgets.navigation.PixelNavigatorOperation
+import com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver
 import com.purride.pixelui.widgets.navigation.PixelRoute
 import com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration
 import com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder
@@ -26,7 +27,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object NavigatorStackScene : DemoScene {
     override val id = "navigator_stack"
     override val title = "NAVIGATOR"
-    override val description = "Navigator stack, guard, transitions and route scroll restore"
+    override val description = "Navigator stack, results, deep links, guard and route restore"
 
     override fun build(env: DemoEnv): Widget {
         val vsync = PixelTickerProvider(env.hostView.frameScheduler)
@@ -75,6 +76,24 @@ object NavigatorStackScene : DemoScene {
                                 nav.push(resultRoute()) { result ->
                                     resultState.value = result?.toString() ?: "null"
                                 }
+                            },
+                        ),
+                        OutlinedButton(
+                            text = "DEEP",
+                            onPressed = {
+                                nav.handleDeepLink(
+                                    uri = "pixel://demo/deep?from=$label",
+                                    resolver = PixelDeepLinkResolver { link ->
+                                        if (link.host == "demo" && link.pathSegments == listOf("deep")) {
+                                            listOf(
+                                                route("HOME", 0, resultState),
+                                                deepLinkRoute(link.queryParameter("from").orEmpty()),
+                                            )
+                                        } else {
+                                            null
+                                        }
+                                    },
+                                )
                             },
                         ),
                         OutlinedButton(
@@ -137,6 +156,24 @@ object NavigatorStackScene : DemoScene {
                         Text("CHOOSE RESULT", style = TextStyle(color = PixelColor.White)),
                         OutlinedButton(text = "SAVE", onPressed = { nav.pop("SAVE") }),
                         OutlinedButton(text = "CANCEL", onPressed = { nav.pop("CANCEL") }),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun deepLinkRoute(source: String): PixelRoute {
+        return PixelRoute(
+            name = "DEEP",
+            builder = { context ->
+                val nav = PixelNavigator.of(context)
+                Column(
+                    mainAxisAlignment = MainAxisAlignment.CENTER,
+                    spacing = 2,
+                    children = listOf(
+                        Text("DEEP LINK", style = TextStyle(color = PixelColor.fromRgb(255, 200, 60))),
+                        Text("FROM $source", style = TextStyle(color = PixelColor.fromRgb(180, 180, 180))),
+                        OutlinedButton(text = "POP", onPressed = { nav.pop() }),
                     ),
                 )
             },

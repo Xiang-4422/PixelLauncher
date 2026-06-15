@@ -663,6 +663,144 @@ class PixelNavigatorTest {
         tester.dispose()
     }
 
+    @Test
+    fun deepLinkParserDecodesPathRepeatedQueryAndFragment() {
+        val link = PixelDeepLink.parse(
+            "pixel://Example.COM/catalog/item%201?tag=a&tag=b+c&empty#section%201",
+        )
+
+        assertEquals("pixel", link.scheme)
+        assertEquals("example.com", link.host)
+        assertEquals(listOf("catalog", "item 1"), link.pathSegments)
+        assertEquals(listOf("a", "b c"), link.queryParameters["tag"])
+        assertEquals("", link.queryParameter("empty"))
+        assertEquals("section 1", link.fragment)
+    }
+
+    @Test
+    fun unmatchedDeepLinkLeavesStackAndLifecycleUntouched() {
+        val tester = PixelTester()
+        val events = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = PixelRoute(
+            name = "root",
+            builder = { context ->
+                navigator = PixelNavigator.of(context)
+                Text("ROOT")
+            },
+            onExit = { events += "exit" },
+        )
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        val handled = navigator!!.handleDeepLink(
+            uri = "pixel://demo/missing",
+            resolver = PixelDeepLinkResolver { null },
+        )
+
+        assertFalse(handled)
+        assertEquals(listOf("root"), navigator!!.stack.map { it.name })
+        assertTrue(events.isEmpty())
+        tester.dispose()
+    }
+
+    @Test
+    fun deepLinkAtomicallyReplacesStackAndSettlesLifecycleAndResults() {
+        val tester = PixelTester()
+        val events = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = PixelRoute(
+            name = "details",
+            builder = { Text("DETAILS") },
+            onExit = { events += "details-exit" },
+            onDispose = { events += "details-dispose" },
+        )
+        val deepRoot = route("deep-root") { Text("DEEP ROOT") }
+        val deepDetails = PixelRoute(
+            name = "deep-details",
+            builder = { Text("DEEP DETAILS") },
+            onEnter = { events += "deep-enter" },
+        )
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+        navigator!!.push(details) { result -> events += "result=$result" }
+        tester.pumpAndSettle()
+
+        val handled = navigator!!.handleDeepLink(
+            uri = "pixel://demo/details?id=42",
+            resolver = PixelDeepLinkResolver { link ->
+                if (link.pathSegments == listOf("details") && link.queryParameter("id") == "42") {
+                    listOf(deepRoot, deepDetails)
+                } else {
+                    null
+                }
+            },
+        )
+
+        assertTrue(handled)
+        assertEquals(listOf("deep-root", "deep-details"), navigator!!.stack.map { it.name })
+        assertEquals(PixelNavigatorOperation.Replace, navigator!!.activeTransition?.operation)
+        assertEquals(listOf("details-exit", "deep-enter"), events)
+        tester.pumpAndSettle()
+        assertEquals(
+            listOf("details-exit", "deep-enter", "details-dispose", "result=null"),
+            events,
+        )
+        assertTrue(tester.exists(find.byText("DEEP DETAILS")))
+        tester.dispose()
+    }
+
+    @Test
+    fun nonAnimatedDeepLinkDisposesImmediatelyAndEmptyResolutionIsDiagnostic() {
+        val tester = PixelTester()
+        val events = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = PixelRoute(
+            name = "root",
+            builder = { context ->
+                navigator = PixelNavigator.of(context)
+                Text("ROOT")
+            },
+            onDispose = { events += "root-dispose" },
+        )
+        val target = route("target") { Text("TARGET") }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        assertTrue(
+            navigator!!.handleDeepLink(
+                uri = "pixel://demo/target",
+                resolver = PixelDeepLinkResolver { listOf(target) },
+                animated = false,
+            ),
+        )
+        assertEquals(listOf("root-dispose"), events)
+        assertNull(navigator!!.activeTransition)
+
+        try {
+            navigator!!.handleDeepLink(
+                uri = "pixel://demo/empty",
+                resolver = PixelDeepLinkResolver { emptyList() },
+            )
+            fail("empty deep link route stack should be rejected")
+        } catch (error: IllegalArgumentException) {
+            assertTrue(error.message.orEmpty().contains("empty route stack"))
+            assertTrue(error.message.orEmpty().contains("pixel://demo/empty"))
+        }
+        tester.dispose()
+    }
+
+    @Test
+    fun invalidDeepLinkUriReportsOriginalInput() {
+        try {
+            PixelDeepLink.parse("pixel://bad host/path")
+            fail("invalid deep link URI should be rejected")
+        } catch (error: IllegalArgumentException) {
+            assertTrue(error.message.orEmpty().contains("pixel://bad host/path"))
+        }
+    }
+
     private fun route(name: String, builder: (BuildContext) -> Widget): PixelRoute {
         return PixelRoute(name = name, builder = builder)
     }

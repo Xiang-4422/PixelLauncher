@@ -738,6 +738,12 @@ com.purride.pixelui.widgets.animated public fun AnimatedPositioned(
 com.purride.pixelui.widgets.animated public fun AnimatedSprite(
 com.purride.pixelui.widgets.animated public fun AnimatedSwitcher(
 com.purride.pixelui.widgets.animated public fun <T> TweenAnimationBuilder(
+com.purride.pixelui.widgets.navigation public data class PixelDeepLink(
+com.purride.pixelui.widgets.navigation public fun queryParameter(name: String): String? = queryParameters[name]?.firstOrNull()
+com.purride.pixelui.widgets.navigation public companion object
+com.purride.pixelui.widgets.navigation public fun parse(uri: String): PixelDeepLink
+com.purride.pixelui.widgets.navigation public fun interface PixelDeepLinkResolver
+com.purride.pixelui.widgets.navigation public fun resolve(link: PixelDeepLink): List<PixelRoute>?
 com.purride.pixelui.widgets.navigation public const val PixelNavigatorBundleKey: String = "com.purride.pixelui.navigator.routeNames"
 com.purride.pixelui.widgets.navigation public data class PixelRoute(
 com.purride.pixelui.widgets.navigation public data class PixelNavigatorSnapshot(
@@ -763,6 +769,8 @@ com.purride.pixelui.widgets.navigation public fun snapshot(): PixelNavigatorSnap
 com.purride.pixelui.widgets.navigation public fun saveToBundle(
 com.purride.pixelui.widgets.navigation public fun restore(
 com.purride.pixelui.widgets.navigation public fun restoreFromBundle(
+com.purride.pixelui.widgets.navigation public fun handleDeepLink(
+com.purride.pixelui.widgets.navigation public fun handleDeepLink(
 com.purride.pixelui.widgets.navigation public class PixelNavigator(
 com.purride.pixelui.widgets.navigation public val initialRoute: PixelRoute,
 com.purride.pixelui.widgets.navigation public val vsync: PixelTickerProvider,

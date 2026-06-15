@@ -249,19 +249,7 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         val restored = snapshot.routeNames.map { name ->
             routeRegistry[name] ?: error("PixelNavigator.restore() missing route '$name' in routeRegistry")
         }
-        currentRoute.onExit?.invoke()
-        routeResultCallbacks.drop(1).forEach { callback ->
-            callback?.let { pendingResultDeliveries += PendingRouteResultDelivery(it, null) }
-        }
-        pendingDisposeRoutes += routes.filter { oldRoute -> restored.none { restoredRoute -> restoredRoute === oldRoute } }
-        routes.clear()
-        routes += restored
-        routeResultCallbacks.clear()
-        repeat(restored.size) { routeResultCallbacks += null }
-        currentRoute.onEnter?.invoke()
-        activeTransition = null
-        disposePendingRoutes()
-        notifyListeners()
+        replaceRouteStack(restored, animated = false)
     }
 
     public fun restoreFromBundle(
@@ -271,6 +259,27 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
     ): Boolean {
         val snapshot = savedInstanceState?.getPixelNavigatorSnapshot(key) ?: return false
         restore(snapshot, routeRegistry)
+        return true
+    }
+
+    public fun handleDeepLink(
+        uri: String,
+        resolver: PixelDeepLinkResolver,
+        animated: Boolean = true,
+    ): Boolean {
+        return handleDeepLink(PixelDeepLink.parse(uri), resolver, animated)
+    }
+
+    public fun handleDeepLink(
+        link: PixelDeepLink,
+        resolver: PixelDeepLinkResolver,
+        animated: Boolean = true,
+    ): Boolean {
+        val resolved = resolver.resolve(link) ?: return false
+        require(resolved.isNotEmpty()) {
+            "PixelDeepLinkResolver returned an empty route stack for '${link.rawUri}'"
+        }
+        replaceRouteStack(resolved, animated)
         return true
     }
 
@@ -301,6 +310,37 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         ).also { transition ->
             activeTransition = transition
         }
+    }
+
+    private fun replaceRouteStack(
+        restored: List<PixelRoute>,
+        animated: Boolean,
+    ) {
+        val outgoing = currentRoute
+        val incoming = restored.last()
+        outgoing.onExit?.invoke()
+        routeResultCallbacks.drop(1).forEach { callback ->
+            callback?.let { pendingResultDeliveries += PendingRouteResultDelivery(it, null) }
+        }
+        pendingDisposeRoutes += routes.filter { oldRoute ->
+            restored.none { restoredRoute -> restoredRoute === oldRoute }
+        }
+        routes.clear()
+        routes += restored
+        routeResultCallbacks.clear()
+        repeat(restored.size) { routeResultCallbacks += null }
+        incoming.onEnter?.invoke()
+        activeTransition = if (animated && outgoing !== incoming) {
+            startTransition(
+                outgoingRoute = outgoing,
+                incomingRoute = incoming,
+                operation = PixelNavigatorOperation.Replace,
+            )
+        } else {
+            disposePendingRoutes()
+            null
+        }
+        notifyListeners()
     }
 
     private fun disposePendingRoutes() {
