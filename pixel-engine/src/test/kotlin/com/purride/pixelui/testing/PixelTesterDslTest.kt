@@ -28,6 +28,8 @@ import com.purride.pixelui.PixelInspectorAllocationSample
 import com.purride.pixelui.PixelInspectorPanel
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
+import com.purride.pixelui.PixelInspectorTargetKind
+import com.purride.pixelui.PixelInspectorTargetSnapshot
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.ProgressBar
@@ -1537,6 +1539,7 @@ class PixelTesterDslTest {
                         slider = 1,
                         semantics = 4,
                     ),
+                    targetSnapshots = emptyList(),
                     elementTree = "Element",
                     renderTree = "Render",
                     semanticsTree = "Semantics",
@@ -1590,6 +1593,16 @@ class PixelTesterDslTest {
                         slider = 7,
                         semantics = 8,
                     ),
+                    targetSnapshots = listOf(
+                        PixelInspectorTargetSnapshot(
+                            kind = PixelInspectorTargetKind.TEXT_INPUT,
+                            left = 4,
+                            top = 5,
+                            width = 30,
+                            height = 9,
+                            detail = "#0 readOnly=0 action=DONE",
+                        ),
+                    ),
                     elementTree = "RootElement\n  TextElement",
                     renderTree = "RenderRoot\n  RenderText",
                     semanticsTree = "SemanticsRoot\n  label=OK",
@@ -1615,6 +1628,9 @@ class PixelTesterDslTest {
         tester.tap(find.byText("SEM"))
         assertTrue(tester.exists(find.byText("SEMANTICS TREE")))
         assertTrue(tester.exists(find.byText("  label=OK")))
+        tester.tap(find.byText("TARGETS"))
+        assertTrue(tester.exists(find.byText("TARGET BOUNDS")))
+        assertTrue(tester.exists(find.byText("TEXT_INPUT 4,5 30x9 #0 readOnly=0 action=DONE")))
         tester.dispose()
     }
 

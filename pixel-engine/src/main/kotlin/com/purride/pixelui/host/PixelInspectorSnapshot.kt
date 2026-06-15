@@ -9,6 +9,7 @@ public data class PixelInspectorSnapshot(
     val frameStats: PixelHostFrameStats?,
     val allocationSample: PixelInspectorAllocationSample?,
     val targetCounts: PixelInspectorTargetCounts,
+    val targetSnapshots: List<PixelInspectorTargetSnapshot>,
     val elementTree: String,
     val renderTree: String,
     val semanticsTree: String,
@@ -19,6 +20,34 @@ public data class PixelInspectorSnapshot(
     val activeSlider: Boolean,
     val activeScrollbar: Boolean,
     val activeRefresh: Boolean,
+)
+
+/**
+ * Inspector 可展示的命中或语义目标种类。
+ */
+public enum class PixelInspectorTargetKind {
+    CLICK,
+    PAGER,
+    LIST,
+    SCROLLBAR,
+    REFRESH,
+    TEXT_INPUT,
+    SLIDER,
+    SEMANTICS,
+}
+
+/**
+ * Inspector 面板展示用的 target 摘要。
+ *
+ * 这里只暴露命中区域和诊断字符串，不泄露内部 controller / state 引用。
+ */
+public data class PixelInspectorTargetSnapshot(
+    val kind: PixelInspectorTargetKind,
+    val left: Int,
+    val top: Int,
+    val width: Int,
+    val height: Int,
+    val detail: String = "",
 )
 
 /**

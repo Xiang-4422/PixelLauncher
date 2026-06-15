@@ -11,6 +11,8 @@ import com.purride.pixelui.PixelInspectorAllocationSample
 import com.purride.pixelui.PixelInspectorPanel
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
+import com.purride.pixelui.PixelInspectorTargetKind
+import com.purride.pixelui.PixelInspectorTargetSnapshot
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
@@ -54,6 +56,32 @@ object DebugOverlayScene : DemoScene {
                 textInput = 1,
                 slider = 1,
                 semantics = 6,
+            ),
+            targetSnapshots = listOf(
+                PixelInspectorTargetSnapshot(
+                    kind = PixelInspectorTargetKind.CLICK,
+                    left = 4,
+                    top = 8,
+                    width = 32,
+                    height = 9,
+                    detail = "#0",
+                ),
+                PixelInspectorTargetSnapshot(
+                    kind = PixelInspectorTargetKind.LIST,
+                    left = 2,
+                    top = 24,
+                    width = 92,
+                    height = 48,
+                    detail = "#0 active=1 content=160 viewport=48",
+                ),
+                PixelInspectorTargetSnapshot(
+                    kind = PixelInspectorTargetKind.TEXT_INPUT,
+                    left = 8,
+                    top = 74,
+                    width = 72,
+                    height = 10,
+                    detail = "#0 readOnly=0 action=DONE",
+                ),
             ),
             elementTree = "RootElement\n  ColumnElement\n    PixelDebugOverlay\n    PixelInspectorPanel",
             renderTree = "RenderHostRoot\n  RenderFlex\n    RenderDecoratedBox\n    RenderText",

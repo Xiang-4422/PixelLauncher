@@ -29,6 +29,7 @@ private enum class PixelInspectorPanelTab(
     Element("ELEMENT"),
     Render("RENDER"),
     Semantics("SEM"),
+    Targets("TARGETS"),
 }
 
 private class PixelInspectorPanelWidget(
@@ -54,8 +55,9 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
                 spacing = 2,
                 children = listOf(
                     Text("INSPECTOR", style = headerStyle),
-                    Row(
+                    Wrap(
                         spacing = 1,
+                        runSpacing = 1,
                         children = tabs.map { tab ->
                             OutlinedButton(
                                 text = tab.label,
@@ -79,6 +81,7 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
             PixelInspectorPanelTab.Element -> buildTree("ELEMENT TREE", snapshot.elementTree)
             PixelInspectorPanelTab.Render -> buildTree("RENDER TREE", snapshot.renderTree)
             PixelInspectorPanelTab.Semantics -> buildTree("SEMANTICS TREE", snapshot.semanticsTree)
+            PixelInspectorPanelTab.Targets -> buildTargets(snapshot.targetSnapshots)
         }
     }
 
@@ -96,6 +99,26 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
             add("STATE PEND ${flag(snapshot.hasPendingBuild)} FOCUS ${flag(snapshot.focusedTextInput)}")
             add("ACTIVE P${snapshot.activePagerCount} L${snapshot.activeListCount} SL${flag(snapshot.activeSlider)}")
             add("ACTIVE SB${flag(snapshot.activeScrollbar)} RF${flag(snapshot.activeRefresh)}")
+        }
+        return inspectorLines(lines)
+    }
+
+    private fun buildTargets(targets: List<PixelInspectorTargetSnapshot>): Widget {
+        val shown = targets.take(widget.maxTreeLines)
+        val overflow = targets.size - shown.size
+        val lines = buildList {
+            add("TARGET BOUNDS")
+            if (shown.isEmpty()) {
+                add("<empty>")
+            } else {
+                shown.forEach { target ->
+                    add(
+                        "${target.kind.name} ${target.left},${target.top} " +
+                            "${target.width}x${target.height} ${target.detail}".trimEnd(),
+                    )
+                }
+            }
+            if (overflow > 0) add("... +$overflow")
         }
         return inspectorLines(lines)
     }
