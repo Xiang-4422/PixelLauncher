@@ -22,7 +22,7 @@ import com.purride.pixelcore.PixelColor
 object TextFieldBasicsScene : DemoScene {
     override val id = "text_field_basics"
     override val title = "文本输入基础"
-    override val description = "单行 / 多行 TextField 及 controller"
+    override val description = "TextField multiline selection and platform edit menu"
 
     override fun build(env: DemoEnv): Widget = TextFieldBasicsWidget()
 }

@@ -72,6 +72,23 @@ class PixelTextFieldControllerTest {
     }
 
     @Test
+    fun copyCutAndPasteOperateOnCurrentSelection() {
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "hello world")
+        controller.setSelection(state, 0, 5)
+
+        assertEquals("hello", controller.selectedText(state))
+        assertEquals("hello", controller.cutSelection(state))
+        assertEquals(" world", state.text)
+        assertEquals(0, state.selectionStart)
+
+        controller.paste(state, "pixel")
+        assertEquals("pixel world", state.text)
+        assertEquals(5, state.selectionStart)
+        assertEquals(5, state.selectionEnd)
+    }
+
+    @Test
     fun selectWordAtSelectsAsciiWordRange() {
         val state = controller.create(initialText = "HELLO pixel_42!")
 

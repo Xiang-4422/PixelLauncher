@@ -1,6 +1,8 @@
 package com.purride.pixelui
 
 import android.content.Context
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
@@ -30,6 +32,7 @@ public class PixelTextInputBridge(
 ) : PixelHostBridge {
 
     private val inputMethodManager = context.getSystemService(InputMethodManager::class.java)
+    private val clipboardManager = context.getSystemService(ClipboardManager::class.java)
     private var syncingFromHost = false
 
     init {
@@ -125,6 +128,16 @@ public class PixelTextInputBridge(
     }
 
     override fun dispatchSystemAction(action: PixelSystemAction): Unit = Unit
+
+    override fun readClipboardText(): String? {
+        val clip = clipboardManager?.primaryClip ?: return null
+        if (clip.itemCount <= 0) return null
+        return clip.getItemAt(0)?.coerceToText(inputView.context)?.toString()
+    }
+
+    override fun writeClipboardText(text: String) {
+        clipboardManager?.setPrimaryClip(ClipData.newPlainText("pixel-text", text))
+    }
 
     private fun configureLineMode(request: PixelTextInputRequest) {
         val safeMinLines = request.minLines.coerceAtLeast(1)

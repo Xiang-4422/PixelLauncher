@@ -217,6 +217,15 @@ public class PixelHostView @JvmOverloads constructor(
         textInputCoordinator.submitFocusedTextInput()
     }
 
+    /**
+     * 对当前聚焦的 TextField 执行 [action]。
+     *
+     * 没有聚焦字段、选区或剪贴板内容不足以执行该动作时返回 `false`。
+     */
+    public fun performFocusedTextEditAction(action: PixelTextEditAction): Boolean {
+        return textInputCoordinator.performEditAction(action)
+    }
+
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
         if (event.action == android.view.KeyEvent.ACTION_DOWN) {
             val handled = PixelFocusManager.dispatchKeyEvent(event.toPixelKeyEvent())
@@ -354,6 +363,10 @@ public class PixelHostView @JvmOverloads constructor(
 
     internal fun focusTextInput(target: PixelTextInputTarget) {
         textInputCoordinator.focus(target)
+    }
+
+    internal fun showTextSelectionMenu(target: PixelTextInputTarget) {
+        showPixelTextSelectionActionMode(target)
     }
 
     internal fun pagerViewportSize(target: PixelPagerTarget): Int {

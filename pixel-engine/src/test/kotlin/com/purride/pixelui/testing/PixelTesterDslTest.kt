@@ -23,6 +23,7 @@ import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.Scrollbar
@@ -1414,6 +1415,92 @@ class PixelTesterDslTest {
             assertEquals(action.name, submitted)
             tester.dispose()
         }
+    }
+
+    @Test
+    fun textEditActionsUseSelectionAndClipboard() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "hello world")
+        var changed = ""
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                onChanged = { changed = it },
+                key = "field",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 12,
+        )
+
+        controller.setSelection(state, 0, 5)
+        assertTrue(tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.COPY))
+        assertEquals("hello", tester.clipboardText)
+        assertEquals("hello world", state.text)
+
+        assertTrue(tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.CUT))
+        assertEquals(" world", state.text)
+        assertEquals(" world", changed)
+
+        assertTrue(
+            tester.performTextEditAction(
+                find.byKey("field"),
+                PixelTextEditAction.PASTE,
+                pasteText = "pixel",
+            ),
+        )
+        assertEquals("pixel world", state.text)
+
+        assertTrue(tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.SELECT_ALL))
+        assertEquals(0, state.selectionStart)
+        assertEquals(state.text.length, state.selectionEnd)
+        tester.dispose()
+    }
+
+    @Test
+    fun textEditActionsRespectReadOnlyTargets() {
+        val tester = PixelTester()
+        val controller = PixelTextFieldController()
+        val state = controller.create(initialText = "read only")
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                readOnly = true,
+                key = "field",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 12,
+        )
+
+        controller.setSelection(state, 0, 4)
+        assertTrue(tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.COPY))
+        assertEquals("read", tester.clipboardText)
+        assertTrue(tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.SELECT_ALL))
+        assertEquals(0, state.selectionStart)
+        assertEquals(state.text.length, state.selectionEnd)
+
+        try {
+            tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.CUT)
+            error("readOnly cut should fail")
+        } catch (error: IllegalStateException) {
+            assertTrue(error.message.orEmpty().contains("readOnly"))
+        }
+        assertEquals("read only", state.text)
+
+        try {
+            tester.performTextEditAction(
+                find.byKey("field"),
+                PixelTextEditAction.PASTE,
+                pasteText = "write",
+            )
+            error("readOnly paste should fail")
+        } catch (error: IllegalStateException) {
+            assertTrue(error.message.orEmpty().contains("readOnly"))
+        }
+        assertEquals("read only", state.text)
+        tester.dispose()
     }
 
     @Test

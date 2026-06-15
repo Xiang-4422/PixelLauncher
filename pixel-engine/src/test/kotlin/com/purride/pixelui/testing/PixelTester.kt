@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelAxis
 import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
 import com.purride.pixelui.PixelKeyEvent
+import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.ManualFrameScheduler
@@ -30,6 +31,8 @@ public class PixelTester {
     private var logicalHeight: Int = 0
     private var needsRender: Boolean = false
     private var focusedTextInputTarget: PixelTextInputTarget? = null
+    public var clipboardText: String? = null
+        private set
     private var currentNanos: Long = 0L
 
     internal var renderResult: PixelRenderResult? = null
@@ -100,6 +103,44 @@ public class PixelTester {
             needsRender = true
             render()
         }
+    }
+
+    public fun performTextEditAction(
+        finder: PixelFinder,
+        action: PixelTextEditAction,
+        pasteText: String? = null,
+    ): Boolean {
+        val target = resolveTextInputTarget(finder)
+        focusTextInput(target)
+        val changed = when (action) {
+            PixelTextEditAction.COPY -> {
+                val selected = target.controller.selectedText(target.state)
+                if (selected.isEmpty()) return false
+                clipboardText = selected
+                false
+            }
+            PixelTextEditAction.CUT -> {
+                ensureTextInputEditable(target)
+                val selected = target.controller.cutSelection(target.state) ?: return false
+                clipboardText = selected
+                true
+            }
+            PixelTextEditAction.PASTE -> {
+                ensureTextInputEditable(target)
+                val text = pasteText ?: clipboardText.orEmpty()
+                if (text.isEmpty()) return false
+                target.controller.paste(target.state, text)
+                true
+            }
+            PixelTextEditAction.SELECT_ALL -> {
+                if (target.state.text.isEmpty()) return false
+                target.controller.selectAll(target.state)
+                false
+            }
+        }
+        if (changed) target.onChanged?.invoke(target.state.text)
+        render()
+        return true
     }
 
     public fun pressKey(key: PixelKey, character: Char? = null): Boolean {

@@ -417,6 +417,9 @@ com.purride.pixelui public fun hideTextInput()
 com.purride.pixelui public fun performHapticFeedback(type: PixelHapticType)
 com.purride.pixelui public fun requestFrame()
 com.purride.pixelui public fun dispatchSystemAction(action: PixelSystemAction)
+com.purride.pixelui public fun readClipboardText(): String? = null
+com.purride.pixelui public fun writeClipboardText(text: String): Unit = Unit
+com.purride.pixelui public enum class PixelTextEditAction
 com.purride.pixelui public data class PixelTextInputRequest(
 com.purride.pixelui public enum class PixelInputType
 com.purride.pixelui public enum class PixelTextInputAction
@@ -447,6 +450,7 @@ com.purride.pixelui public fun setContent(provider: RootWidgetProvider)
 com.purride.pixelui public fun updateFocusedTextInput(
 com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun submitFocusedTextInput()
+com.purride.pixelui public fun performFocusedTextEditAction(action: PixelTextEditAction): Boolean
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
 com.purride.pixelui public fun setWindowInsets(
 com.purride.pixelui public fun dumpElementTree(): String
@@ -558,6 +562,9 @@ com.purride.pixelui.state public fun updateComposition(
 com.purride.pixelui.state public fun setSelection(
 com.purride.pixelui.state public fun clear(state: PixelTextFieldState)
 com.purride.pixelui.state public fun selectAll(state: PixelTextFieldState)
+com.purride.pixelui.state public fun selectedText(state: PixelTextFieldState): String
+com.purride.pixelui.state public fun cutSelection(state: PixelTextFieldState): String?
+com.purride.pixelui.state public fun paste(state: PixelTextFieldState, text: String)
 com.purride.pixelui.state public fun selectWordAt(state: PixelTextFieldState, index: Int)
 com.purride.pixelui.state public fun focus(state: PixelTextFieldState)
 com.purride.pixelui.state public fun blur(state: PixelTextFieldState)

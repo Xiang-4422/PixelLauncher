@@ -1182,6 +1182,14 @@ public interface com.purride.pixelui.PixelHostBridge {
   public abstract void performHapticFeedback(com.purride.pixelui.PixelHapticType);
   public abstract void requestFrame();
   public abstract void dispatchSystemAction(com.purride.pixelui.PixelSystemAction);
+  public default java.lang.String readClipboardText();
+  public default void writeClipboardText(java.lang.String);
+  public static java.lang.String access$readClipboardText$jd(com.purride.pixelui.PixelHostBridge);
+  public static void access$writeClipboardText$jd(com.purride.pixelui.PixelHostBridge, java.lang.String);
+}
+public final class com.purride.pixelui.PixelHostBridge$DefaultImpls {
+  public static java.lang.String readClipboardText(com.purride.pixelui.PixelHostBridge);
+  public static void writeClipboardText(com.purride.pixelui.PixelHostBridge, java.lang.String);
 }
 public final class com.purride.pixelui.PixelHostFrameStats {
   public static final com.purride.pixelui.PixelHostFrameStats$Companion Companion;
@@ -1307,6 +1315,7 @@ public final class com.purride.pixelui.PixelHostTextInputCoordinator {
   public static void updateFocusedTextInput$default(com.purride.pixelui.PixelHostTextInputCoordinator, java.lang.String, int, int, int, int, int, java.lang.Object);
   public final void clearFocusedTextInput();
   public final void submitFocusedTextInput();
+  public final boolean performEditAction(com.purride.pixelui.PixelTextEditAction);
   public final void stepCursorBlink(long);
   public final void scheduleNextCursorBlinkInvalidate();
   public final void syncRequestedFocus(java.util.List<com.purride.pixelui.internal.PixelTextInputTarget>);
@@ -1401,6 +1410,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public static void updateFocusedTextInput$default(com.purride.pixelui.PixelHostView, java.lang.String, int, int, int, int, int, java.lang.Object);
   public final void clearFocusedTextInput();
   public final void submitFocusedTextInput();
+  public final boolean performFocusedTextEditAction(com.purride.pixelui.PixelTextEditAction);
   public boolean dispatchKeyEvent(android.view.KeyEvent);
   public void submitFrame-olPvOxg(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.ScreenProfile, int);
   public void setPixelGapEnabled(boolean);
@@ -1416,6 +1426,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final com.purride.pixelui.internal.PixelClickTarget resolveClickTarget$pixel_engine(int, int);
   public final com.purride.pixelui.internal.PixelTextInputTarget resolveTextInputTarget$pixel_engine(int, int);
   public final void focusTextInput$pixel_engine(com.purride.pixelui.internal.PixelTextInputTarget);
+  public final void showTextSelectionMenu$pixel_engine(com.purride.pixelui.internal.PixelTextInputTarget);
   public final int pagerViewportSize$pixel_engine(com.purride.pixelui.internal.PixelPagerTarget);
   public final boolean shouldStartListDrag$pixel_engine(float, float);
   public final float rawVelocityToLogical$pixel_engine(android.view.VelocityTracker, com.purride.pixelcore.PixelAxis);
@@ -1698,6 +1709,15 @@ public final class com.purride.pixelui.PixelSystemAction {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelTextEditAction extends java.lang.Enum<com.purride.pixelui.PixelTextEditAction> {
+  public static final com.purride.pixelui.PixelTextEditAction COPY;
+  public static final com.purride.pixelui.PixelTextEditAction CUT;
+  public static final com.purride.pixelui.PixelTextEditAction PASTE;
+  public static final com.purride.pixelui.PixelTextEditAction SELECT_ALL;
+  public static com.purride.pixelui.PixelTextEditAction[] values();
+  public static com.purride.pixelui.PixelTextEditAction valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelTextEditAction> getEntries();
+}
 public final class com.purride.pixelui.PixelTextFieldStyle {
   public static final com.purride.pixelui.PixelTextFieldStyle$Companion Companion;
   public com.purride.pixelui.PixelTextFieldStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -1766,6 +1786,8 @@ public final class com.purride.pixelui.PixelTextInputBridge implements com.purri
   public void performHapticFeedback(com.purride.pixelui.PixelHapticType);
   public void requestFrame();
   public void dispatchSystemAction(com.purride.pixelui.PixelSystemAction);
+  public java.lang.String readClipboardText();
+  public void writeClipboardText(java.lang.String);
   public static final boolean access$getSyncingFromHost$p(com.purride.pixelui.PixelTextInputBridge);
   public static final com.purride.pixelui.PixelHostView access$getHostView$p(com.purride.pixelui.PixelTextInputBridge);
 }
@@ -1803,6 +1825,10 @@ public final class com.purride.pixelui.PixelTextOverflow extends java.lang.Enum<
   public static com.purride.pixelui.PixelTextOverflow[] values();
   public static com.purride.pixelui.PixelTextOverflow valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelTextOverflow> getEntries();
+}
+public final class com.purride.pixelui.PixelTextSelectionActionModeKt {
+  public static final void showPixelTextSelectionActionMode(com.purride.pixelui.PixelHostView, com.purride.pixelui.internal.PixelTextInputTarget);
+  public static final boolean access$isAllSelected(com.purride.pixelui.internal.PixelTextInputTarget);
 }
 public final class com.purride.pixelui.PixelTextSpan {
   public com.purride.pixelui.PixelTextSpan(java.lang.String, com.purride.pixelui.PixelTextStyle);
@@ -2528,6 +2554,9 @@ public final class com.purride.pixelui.state.PixelTextFieldController extends co
   public static void setSelection$default(com.purride.pixelui.state.PixelTextFieldController, com.purride.pixelui.state.PixelTextFieldState, int, int, int, java.lang.Object);
   public final void clear(com.purride.pixelui.state.PixelTextFieldState);
   public final void selectAll(com.purride.pixelui.state.PixelTextFieldState);
+  public final java.lang.String selectedText(com.purride.pixelui.state.PixelTextFieldState);
+  public final java.lang.String cutSelection(com.purride.pixelui.state.PixelTextFieldState);
+  public final void paste(com.purride.pixelui.state.PixelTextFieldState, java.lang.String);
   public final void selectWordAt(com.purride.pixelui.state.PixelTextFieldState, int);
   public final void focus(com.purride.pixelui.state.PixelTextFieldState);
   public final void blur(com.purride.pixelui.state.PixelTextFieldState);

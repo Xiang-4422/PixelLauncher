@@ -152,6 +152,49 @@ public class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
+    /**
+     * 返回 [state] 当前选区的文本；折叠选区返回空字符串。
+     */
+    public fun selectedText(state: PixelTextFieldState): String {
+        if (state.selectionStart >= state.selectionEnd) return ""
+        return state.text.substring(state.selectionStart, state.selectionEnd)
+    }
+
+    /**
+     * 删除并返回 [state] 当前选区；没有非空选区时返回 `null`。
+     */
+    public fun cutSelection(state: PixelTextFieldState): String? {
+        val selected = selectedText(state)
+        if (selected.isEmpty()) return null
+        replaceSelection(state, "")
+        return selected
+    }
+
+    /**
+     * 用 [text] 替换 [state] 当前选区，并把光标折叠到插入文本之后。
+     */
+    public fun paste(state: PixelTextFieldState, text: String) {
+        if (text.isEmpty()) return
+        replaceSelection(state, text)
+    }
+
+    private fun replaceSelection(state: PixelTextFieldState, replacement: String) {
+        val start = state.selectionStart.coerceIn(0, state.text.length)
+        val end = state.selectionEnd.coerceIn(start, state.text.length)
+        val nextText = buildString(state.text.length - (end - start) + replacement.length) {
+            append(state.text, 0, start)
+            append(replacement)
+            append(state.text, end, state.text.length)
+        }
+        val caret = start + replacement.length
+        updateText(
+            state = state,
+            text = nextText,
+            selectionStart = caret,
+            selectionEnd = caret,
+        )
+    }
+
     public fun selectWordAt(state: PixelTextFieldState, index: Int) {
         val text = state.text
         if (text.isEmpty()) {

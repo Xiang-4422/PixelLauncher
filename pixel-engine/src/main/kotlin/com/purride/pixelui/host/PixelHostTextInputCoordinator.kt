@@ -50,6 +50,43 @@ internal class PixelHostTextInputCoordinator(
         host.invalidate()
     }
 
+    fun performEditAction(action: PixelTextEditAction): Boolean {
+        val target = host.focusedTextInputTarget ?: return false
+        val bridge = host.hostBridge
+        val changed = when (action) {
+            PixelTextEditAction.COPY -> {
+                val selected = target.controller.selectedText(target.state)
+                if (selected.isEmpty()) return false
+                bridge?.writeClipboardText(selected)
+                false
+            }
+            PixelTextEditAction.CUT -> {
+                if (target.readOnly) return false
+                val selected = target.controller.cutSelection(target.state) ?: return false
+                bridge?.writeClipboardText(selected)
+                true
+            }
+            PixelTextEditAction.PASTE -> {
+                if (target.readOnly) return false
+                val clipboardText = bridge?.readClipboardText().orEmpty()
+                if (clipboardText.isEmpty()) return false
+                target.controller.paste(target.state, clipboardText)
+                true
+            }
+            PixelTextEditAction.SELECT_ALL -> {
+                if (target.state.text.isEmpty()) return false
+                target.controller.selectAll(target.state)
+                false
+            }
+        }
+        if (changed) {
+            target.onChanged?.invoke(target.state.text)
+            focus(target)
+        }
+        host.invalidate()
+        return true
+    }
+
     fun stepCursorBlink(deltaMs: Long) {
         val target = host.focusedTextInputTarget ?: return
         target.controller.stepCursorBlink(target.state, deltaMs)

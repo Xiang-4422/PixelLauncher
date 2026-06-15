@@ -73,6 +73,12 @@ class DemoActivity : AppCompatActivity() {
             override fun requestFrame() {
                 originalBridge?.requestFrame()
             }
+            override fun readClipboardText(): String? {
+                return originalBridge?.readClipboardText()
+            }
+            override fun writeClipboardText(text: String) {
+                originalBridge?.writeClipboardText(text)
+            }
             override fun dispatchSystemAction(action: PixelSystemAction) {
                 val payload = action.payload?.let { " payload=$it" }.orEmpty()
                 Toast.makeText(

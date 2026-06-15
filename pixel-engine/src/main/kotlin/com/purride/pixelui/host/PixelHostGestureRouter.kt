@@ -340,11 +340,13 @@ internal class PixelHostGestureRouter(
                 if (!target.readOnly && pressedMs >= LONG_PRESS_TIMEOUT_MS) {
                     target.controller.selectWordAt(target.state, selection)
                     host.hostBridge?.performHapticFeedback(PixelHapticType.LONG_PRESS)
+                    host.showTextSelectionMenu(target)
                 } else if (!target.readOnly &&
                     host.lastTextInputTapState === target.state &&
                     event.eventTime - host.lastTextInputTapTimeMs in 0L..DOUBLE_TAP_TIMEOUT_MS
                 ) {
                     target.controller.selectWordAt(target.state, selection)
+                    host.showTextSelectionMenu(target)
                 } else if (!target.readOnly) {
                     target.controller.setSelection(target.state, selection)
                 }

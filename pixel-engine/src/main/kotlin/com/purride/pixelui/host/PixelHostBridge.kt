@@ -16,6 +16,26 @@ public interface PixelHostBridge {
     public fun requestFrame()
 
     public fun dispatchSystemAction(action: PixelSystemAction)
+
+    /**
+     * 返回宿主剪贴板中的纯文本；没有文本或宿主不支持剪贴板时返回 `null`。
+     */
+    public fun readClipboardText(): String? = null
+
+    /**
+     * 把 [text] 写入宿主剪贴板；不支持剪贴板的宿主可以保留默认空实现。
+     */
+    public fun writeClipboardText(text: String): Unit = Unit
+}
+
+/**
+ * 对当前聚焦 TextField 执行的标准文本编辑动作。
+ */
+public enum class PixelTextEditAction {
+    COPY,
+    CUT,
+    PASTE,
+    SELECT_ALL,
 }
 
 /**
