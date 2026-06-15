@@ -8,6 +8,7 @@ import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
 import com.purride.pixelui.PixelInspectorAllocationSample
+import com.purride.pixelui.PixelInspectorPanel
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.SizedBox
@@ -28,7 +29,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object DebugOverlayScene : DemoScene {
     override val id = "debug_overlay"
     override val title = "DEBUG OVERLAY"
-    override val description = "FPS / target / ticker diagnostics overlay"
+    override val description = "FPS / target / ticker diagnostics and inspector panel"
 
     override fun build(env: DemoEnv): Widget {
         val fakeStats = PixelHostFrameStats(
@@ -54,9 +55,9 @@ object DebugOverlayScene : DemoScene {
                 slider = 1,
                 semantics = 6,
             ),
-            elementTree = "Element",
-            renderTree = "Render",
-            semanticsTree = "Semantics",
+            elementTree = "RootElement\n  ColumnElement\n    PixelDebugOverlay\n    PixelInspectorPanel",
+            renderTree = "RenderHostRoot\n  RenderFlex\n    RenderDecoratedBox\n    RenderText",
+            semanticsTree = "SemanticsRoot\n  role=panel label=Debug\n  role=button label=RENDER",
             hasPendingBuild = false,
             focusedTextInput = true,
             activePagerCount = 1,
@@ -74,6 +75,8 @@ object DebugOverlayScene : DemoScene {
                     Text("OVERLAY", style = labelStyle),
                     SizedBox(height = 2),
                     PixelDebugOverlay(stats = fakeStats, inspector = fakeInspector, activeTickerCount = 2),
+                    SizedBox(height = 6),
+                    PixelInspectorPanel(snapshot = fakeInspector, maxTreeLines = 4),
                     SizedBox(height = 6),
                     Text("NULL → 0x0", style = labelStyle),
                     SizedBox(height = 2),

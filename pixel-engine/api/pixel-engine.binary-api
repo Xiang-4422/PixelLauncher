@@ -1481,6 +1481,15 @@ public final class com.purride.pixelui.PixelInspectorAllocationSample {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelInspectorPanelKt {
+  public static final com.purride.pixelui.Widget PixelInspectorPanel(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int);
+  public static com.purride.pixelui.Widget PixelInspectorPanel$default(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int, int, java.lang.Object);
+  public static final com.purride.pixelui.PixelTextStyle access$getHeaderStyle$p();
+  public static final int access$getSelectedBorderColor$p();
+  public static final int access$getPanelBorderColor$p();
+  public static final long access$formatInspectorKilobytes(long);
+  public static final com.purride.pixelui.PixelTextStyle access$getBodyStyle$p();
+}
 public final class com.purride.pixelui.PixelInspectorSnapshot {
   public com.purride.pixelui.PixelInspectorSnapshot(com.purride.pixelui.PixelHostFrameStats, com.purride.pixelui.PixelInspectorAllocationSample, com.purride.pixelui.PixelInspectorTargetCounts, java.lang.String, java.lang.String, java.lang.String, boolean, boolean, int, int, boolean, boolean, boolean);
   public final com.purride.pixelui.PixelHostFrameStats getFrameStats();

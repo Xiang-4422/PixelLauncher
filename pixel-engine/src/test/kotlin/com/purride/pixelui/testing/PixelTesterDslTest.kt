@@ -25,6 +25,7 @@ import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
 import com.purride.pixelui.PixelInspectorAllocationSample
+import com.purride.pixelui.PixelInspectorPanel
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelTextInputAction
@@ -1559,6 +1560,61 @@ class PixelTesterDslTest {
         assertTrue(tester.exists(find.byText("ACT P1 L2")))
         assertTrue(tester.exists(find.byText("MEM 4K/16K")))
         assertTrue(tester.exists(find.byText("TICK 5")))
+        tester.dispose()
+    }
+
+    @Test
+    fun inspectorPanelSwitchesBetweenSnapshotTrees() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            widget = PixelInspectorPanel(
+                snapshot = PixelInspectorSnapshot(
+                    frameStats = PixelHostFrameStats(
+                        deltaMs = 16,
+                        fpsAvg = 60f,
+                        paintTimeNanos = 2_000_000,
+                        frameCount = 9,
+                    ),
+                    allocationSample = PixelInspectorAllocationSample(
+                        usedHeapBytes = 1_024,
+                        totalHeapBytes = 2_048,
+                        maxHeapBytes = 4_096,
+                    ),
+                    targetCounts = PixelInspectorTargetCounts(
+                        click = 1,
+                        pager = 2,
+                        list = 3,
+                        scrollbar = 4,
+                        refresh = 5,
+                        textInput = 6,
+                        slider = 7,
+                        semantics = 8,
+                    ),
+                    elementTree = "RootElement\n  TextElement",
+                    renderTree = "RenderRoot\n  RenderText",
+                    semanticsTree = "SemanticsRoot\n  label=OK",
+                    hasPendingBuild = true,
+                    focusedTextInput = false,
+                    activePagerCount = 1,
+                    activeListCount = 0,
+                    activeSlider = true,
+                    activeScrollbar = false,
+                    activeRefresh = true,
+                ),
+                maxTreeLines = 3,
+            ),
+            logicalWidth = 128,
+            logicalHeight = 80,
+        )
+
+        assertTrue(tester.exists(find.byText("INSPECTOR")))
+        assertTrue(tester.exists(find.byText("MEM 1K/4K")))
+        tester.tap(find.byText("RENDER"))
+        assertTrue(tester.exists(find.byText("RENDER TREE")))
+        assertTrue(tester.exists(find.byText("RenderRoot")))
+        tester.tap(find.byText("SEM"))
+        assertTrue(tester.exists(find.byText("SEMANTICS TREE")))
+        assertTrue(tester.exists(find.byText("  label=OK")))
         tester.dispose()
     }
 
