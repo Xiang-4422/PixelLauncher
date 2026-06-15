@@ -166,18 +166,18 @@ Widget
 - 核心状态、pipeline、字体、几何、滚动控制器已有单测
 - `Text` 已支持基础多行换行、`maxLines` 和最后一行 ellipsis
 - `Text / RichText` 已通过内部 paragraph helper 统一基础换行、对齐和 ellipsis 规则
-- `ListViewBuilder(itemExtent)` 已支持固定高度 lazy viewport
+- `ListViewBuilder` / `ListViewSeparatedBuilder` / `SliverListBuilder` 已支持固定或估算高度 lazy viewport，并会用实测高度校正远端定位
 - `PixelScrollPhysics` 已提供 clamp/fling/bounce 参数基础
-- `TextField` 已补齐 placeholder、disabled/readOnly、多行 line config 与 selection 边界
+- `TextField` 已补齐 placeholder、disabled/readOnly、多行 line config、selection 边界、selection handle、平台 Copy/Cut/Paste/Select all 菜单
 - `RichText`、`PixelTextSpan` 已支持基础富文本 span 样式切换
 - `PixelThemeTokens` 已支持 selected/pressed/focused/disabled/readOnly 等基础状态默认值
 - `pixel-demo` 已有 Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States、Engine Stability Gate 和 Drawer Gate V2 gate
 
 ## 7. 尚未完成
 
-- 变高 item 虚拟化
-- 更完整的滚动物理、snap 和 nested scroll 策略
-- 段落级文本、字号/字距 token 和文本选择体验
+- 变高虚拟化热路径复杂度和超大列表性能复核
+- 更完整的滚动物理、snap、nested scroll 和 route-aware 自动恢复策略
+- 段落级文本、字号/字距 token 和平台文本选择菜单手测覆盖
 - 更完整的主题 token、组件默认值和局部覆盖系统
 - 更完整的布局协议、手势边界和性能策略
 
