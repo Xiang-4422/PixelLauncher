@@ -3,17 +3,20 @@ package com.purride.pixeldemo.showcase.integration
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Center
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
 import com.purride.pixelui.PixelInspectorAllocationSample
+import com.purride.pixelui.PixelInspectorBoundsOverlay
 import com.purride.pixelui.PixelInspectorPanel
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelInspectorTargetKind
 import com.purride.pixelui.PixelInspectorTargetSnapshot
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -103,6 +106,22 @@ object DebugOverlayScene : DemoScene {
                     Text("OVERLAY", style = labelStyle),
                     SizedBox(height = 2),
                     PixelDebugOverlay(stats = fakeStats, inspector = fakeInspector, activeTickerCount = 2),
+                    SizedBox(height = 6),
+                    Stack(
+                        children = listOf(
+                            Container(
+                                width = 96,
+                                height = 36,
+                                fillColor = PixelColor.fromRgb(24, 24, 28),
+                                borderColor = PixelColor.fromRgb(72, 72, 80),
+                            ),
+                            PixelInspectorBoundsOverlay(
+                                snapshot = fakeInspector,
+                                width = 96,
+                                height = 36,
+                            ),
+                        ),
+                    ),
                     SizedBox(height = 6),
                     PixelInspectorPanel(snapshot = fakeInspector, maxTreeLines = 4),
                     SizedBox(height = 6),

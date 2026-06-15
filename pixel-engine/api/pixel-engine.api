@@ -635,6 +635,7 @@ com.purride.pixelui public fun Gap(
 com.purride.pixelui public fun AppScaffold(
 com.purride.pixelui public data class PixelBoxConstraints(
 com.purride.pixelui public fun PixelDebugOverlay(
+com.purride.pixelui public fun PixelInspectorBoundsOverlay(
 com.purride.pixelui public fun PixelInspectorPanel(
 com.purride.pixelui public sealed interface PixelSliver
 com.purride.pixelui public val key: Any?

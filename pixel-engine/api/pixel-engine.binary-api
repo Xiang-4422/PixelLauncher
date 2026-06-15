@@ -1481,6 +1481,10 @@ public final class com.purride.pixelui.PixelInspectorAllocationSample {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelInspectorBoundsOverlayKt {
+  public static final com.purride.pixelui.Widget PixelInspectorBoundsOverlay(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set<? extends com.purride.pixelui.PixelInspectorTargetKind>, int, java.lang.Object);
+  public static com.purride.pixelui.Widget PixelInspectorBoundsOverlay$default(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set, int, java.lang.Object, int, java.lang.Object);
+}
 public final class com.purride.pixelui.PixelInspectorPanelKt {
   public static final com.purride.pixelui.Widget PixelInspectorPanel(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int);
   public static com.purride.pixelui.Widget PixelInspectorPanel$default(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int, int, java.lang.Object);
