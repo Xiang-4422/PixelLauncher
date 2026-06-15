@@ -302,11 +302,22 @@ internal class RenderPath(
     }
 
     override fun layout(constraints: RenderConstraints) {
-        val points = path.commands.mapNotNull {
-            when (it) {
-                is PixelPathCommand.MoveTo -> it.point
-                is PixelPathCommand.LineTo -> it.point
-                PixelPathCommand.Close -> null
+        val points = buildList {
+            path.commands.forEach { command ->
+                when (command) {
+                    is PixelPathCommand.MoveTo -> add(command.point)
+                    is PixelPathCommand.LineTo -> add(command.point)
+                    is PixelPathCommand.QuadraticTo -> {
+                        add(command.control)
+                        add(command.end)
+                    }
+                    is PixelPathCommand.CubicTo -> {
+                        add(command.control1)
+                        add(command.control2)
+                        add(command.end)
+                    }
+                    PixelPathCommand.Close -> Unit
+                }
             }
         }
         val maxX = points.maxOfOrNull { it.x } ?: 0
@@ -318,38 +329,18 @@ internal class RenderPath(
     }
 
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
-        var current: PixelPoint? = null
-        var subpathStart: PixelPoint? = null
-        var lastPoint: PixelPoint? = null
-        for (command in path.commands) {
-            when (command) {
-                is PixelPathCommand.MoveTo -> {
-                    current = command.point
-                    subpathStart = command.point
-                    lastPoint = command.point
-                }
-                is PixelPathCommand.LineTo -> {
-                    val start = current
-                    if (start != null) {
-                        drawLinePixels(context, offsetX, offsetY, start.x, start.y, command.point.x, command.point.y, color, strokeWidth)
-                    }
-                    current = command.point
-                    lastPoint = command.point
-                }
-                PixelPathCommand.Close -> {
-                    val start = current
-                    val end = subpathStart
-                    if (start != null && end != null) {
-                        drawLinePixels(context, offsetX, offsetY, start.x, start.y, end.x, end.y, color, strokeWidth)
-                        current = end
-                    }
-                }
-            }
-        }
-        val start = subpathStart
-        val end = lastPoint
-        if (closed && start != null && end != null && start != end) {
-            drawLinePixels(context, offsetX, offsetY, end.x, end.y, start.x, start.y, color, strokeWidth)
+        visitPixelPathSegments(path, closed) { startX, startY, endX, endY ->
+            drawLinePixels(
+                context,
+                offsetX,
+                offsetY,
+                startX,
+                startY,
+                endX,
+                endY,
+                color,
+                strokeWidth,
+            )
         }
     }
 }

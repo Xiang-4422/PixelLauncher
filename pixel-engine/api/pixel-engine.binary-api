@@ -1669,6 +1669,20 @@ public final class com.purride.pixelui.PixelPathCommand$Close extends com.purrid
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelPathCommand$CubicTo extends com.purride.pixelui.PixelPathCommand {
+  public com.purride.pixelui.PixelPathCommand$CubicTo(com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint);
+  public final com.purride.pixelui.PixelPoint getControl1();
+  public final com.purride.pixelui.PixelPoint getControl2();
+  public final com.purride.pixelui.PixelPoint getEnd();
+  public final com.purride.pixelui.PixelPoint component1();
+  public final com.purride.pixelui.PixelPoint component2();
+  public final com.purride.pixelui.PixelPoint component3();
+  public final com.purride.pixelui.PixelPathCommand$CubicTo copy(com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint);
+  public static com.purride.pixelui.PixelPathCommand$CubicTo copy$default(com.purride.pixelui.PixelPathCommand$CubicTo, com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelui.PixelPathCommand$LineTo extends com.purride.pixelui.PixelPathCommand {
   public com.purride.pixelui.PixelPathCommand$LineTo(com.purride.pixelui.PixelPoint);
   public final com.purride.pixelui.PixelPoint getPoint();
@@ -1685,6 +1699,18 @@ public final class com.purride.pixelui.PixelPathCommand$MoveTo extends com.purri
   public final com.purride.pixelui.PixelPoint component1();
   public final com.purride.pixelui.PixelPathCommand$MoveTo copy(com.purride.pixelui.PixelPoint);
   public static com.purride.pixelui.PixelPathCommand$MoveTo copy$default(com.purride.pixelui.PixelPathCommand$MoveTo, com.purride.pixelui.PixelPoint, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.PixelPathCommand$QuadraticTo extends com.purride.pixelui.PixelPathCommand {
+  public com.purride.pixelui.PixelPathCommand$QuadraticTo(com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint);
+  public final com.purride.pixelui.PixelPoint getControl();
+  public final com.purride.pixelui.PixelPoint getEnd();
+  public final com.purride.pixelui.PixelPoint component1();
+  public final com.purride.pixelui.PixelPoint component2();
+  public final com.purride.pixelui.PixelPathCommand$QuadraticTo copy(com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint);
+  public static com.purride.pixelui.PixelPathCommand$QuadraticTo copy$default(com.purride.pixelui.PixelPathCommand$QuadraticTo, com.purride.pixelui.PixelPoint, com.purride.pixelui.PixelPoint, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);

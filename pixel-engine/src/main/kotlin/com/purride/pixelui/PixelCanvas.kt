@@ -5,6 +5,7 @@ import com.purride.pixelcore.PixelBlendMode
 import com.purride.pixelui.internal.PaintContext
 import com.purride.pixelui.internal.drawLinePixels
 import com.purride.pixelui.internal.paintStrokePoint
+import com.purride.pixelui.internal.visitPixelPathSegments
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -181,37 +182,8 @@ public class PixelCanvas internal constructor(
         strokeWidth: Int = 1,
         blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
     ) {
-        var current: PixelPoint? = null
-        var subpathStart: PixelPoint? = null
-        var lastPoint: PixelPoint? = null
-        for (command in path.commands) {
-            when (command) {
-                is PixelPathCommand.MoveTo -> {
-                    current = command.point
-                    subpathStart = command.point
-                    lastPoint = command.point
-                }
-                is PixelPathCommand.LineTo -> {
-                    current?.let { start ->
-                        drawLine(start.x, start.y, command.point.x, command.point.y, color, strokeWidth, blendMode)
-                    }
-                    current = command.point
-                    lastPoint = command.point
-                }
-                PixelPathCommand.Close -> {
-                    val start = current
-                    val end = subpathStart
-                    if (start != null && end != null) {
-                        drawLine(start.x, start.y, end.x, end.y, color, strokeWidth, blendMode)
-                        current = end
-                    }
-                }
-            }
-        }
-        val start = subpathStart
-        val end = lastPoint
-        if (closed && start != null && end != null && start != end) {
-            drawLine(end.x, end.y, start.x, start.y, color, strokeWidth, blendMode)
+        visitPixelPathSegments(path, closed) { startX, startY, endX, endY ->
+            drawLine(startX, startY, endX, endY, color, strokeWidth, blendMode)
         }
     }
 }

@@ -257,7 +257,7 @@ public fun Polygon(
 }
 
 /**
- * Path widget. V1 supports MoveTo, LineTo, and Close commands.
+ * Path widget supporting line, quadratic, cubic, and close commands.
  */
 public fun Path(
     path: PixelPath,

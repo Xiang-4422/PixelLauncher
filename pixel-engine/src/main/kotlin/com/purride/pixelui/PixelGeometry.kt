@@ -49,6 +49,17 @@ internal fun normalizeGradientStops(stops: List<PixelGradientStop>): List<PixelG
 public sealed class PixelPathCommand {
     public data class MoveTo(val point: PixelPoint) : PixelPathCommand()
     public data class LineTo(val point: PixelPoint) : PixelPathCommand()
+    public data class QuadraticTo(
+        val control: PixelPoint,
+        val end: PixelPoint,
+    ) : PixelPathCommand()
+
+    public data class CubicTo(
+        val control1: PixelPoint,
+        val control2: PixelPoint,
+        val end: PixelPoint,
+    ) : PixelPathCommand()
+
     public data object Close : PixelPathCommand()
 }
 

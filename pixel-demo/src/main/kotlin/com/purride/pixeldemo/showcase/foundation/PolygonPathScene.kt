@@ -19,7 +19,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object PolygonPathScene : DemoScene {
     override val id = "polygon_path"
     override val title = "POLYGON/PATH"
-    override val description = "scanline polygon fill + MoveTo/LineTo path"
+    override val description = "scanline polygon fill + line/quadratic/cubic path"
 
     override fun build(env: DemoEnv): Widget {
         val amber = PixelColor.fromRgb(255, 192, 64)
@@ -50,9 +50,15 @@ object PolygonPathScene : DemoScene {
                     path = PixelPath(
                         listOf(
                             PixelPathCommand.MoveTo(PixelPoint(0, 5)),
-                            PixelPathCommand.LineTo(PixelPoint(3, 0)),
-                            PixelPathCommand.LineTo(PixelPoint(6, 5)),
-                            PixelPathCommand.LineTo(PixelPoint(9, 0)),
+                            PixelPathCommand.QuadraticTo(
+                                control = PixelPoint(4, 0),
+                                end = PixelPoint(8, 5),
+                            ),
+                            PixelPathCommand.CubicTo(
+                                control1 = PixelPoint(10, 0),
+                                control2 = PixelPoint(14, 0),
+                                end = PixelPoint(16, 5),
+                            ),
                         ),
                     ),
                     color = PixelColor.White,

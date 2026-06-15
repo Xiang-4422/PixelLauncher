@@ -114,6 +114,63 @@ class SpriteShapeWidgetTest {
     }
 
     @Test
+    fun pathDrawsQuadraticCurveThroughFlattenedSegments() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            Path(
+                path = PixelPath(
+                    listOf(
+                        PixelPathCommand.MoveTo(PixelPoint(0, 4)),
+                        PixelPathCommand.QuadraticTo(
+                            control = PixelPoint(4, 0),
+                            end = PixelPoint(8, 4),
+                        ),
+                    ),
+                ),
+                color = PixelColor.White,
+            ),
+            9,
+            5,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(0, 4))
+        assertEquals(PixelColor.White, buffer.getPixel(4, 2))
+        assertEquals(PixelColor.White, buffer.getPixel(8, 4))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintDrawsCubicCurveWithSharedPathFlattener() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            CustomPaint(width = 9, height = 5) {
+                drawPath(
+                    path = PixelPath(
+                        listOf(
+                            PixelPathCommand.MoveTo(PixelPoint(0, 4)),
+                            PixelPathCommand.CubicTo(
+                                control1 = PixelPoint(0, 0),
+                                control2 = PixelPoint(8, 0),
+                                end = PixelPoint(8, 4),
+                            ),
+                        ),
+                    ),
+                    color = PixelColor.White,
+                )
+            },
+            9,
+            5,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(0, 4))
+        assertEquals(PixelColor.White, buffer.getPixel(4, 1))
+        assertEquals(PixelColor.White, buffer.getPixel(8, 4))
+        tester.dispose()
+    }
+
+    @Test
     fun pathHelpersBuildRectAndCircleCommands() {
         val rect = PixelPath.rect(left = 1, top = 2, width = 4, height = 3)
         val circle = PixelPath.circle(centerX = 4, centerY = 4, radius = 2)
