@@ -70,6 +70,7 @@ import com.purride.pixeldemo.showcase.animation.AnimationLayer3Scene
 import com.purride.pixeldemo.showcase.animation.AnimatedSpriteScene
 import com.purride.pixeldemo.showcase.animation.ImplicitAnimationsScene
 import com.purride.pixeldemo.header.HeaderPreviewScene
+import com.purride.pixeldemo.showcase.theme.AppLayerThemeScene
 import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
 import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
 import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
@@ -130,6 +131,7 @@ object DemoCatalog {
             title = "Theme",
             scenes = listOf(
                 PaletteToggleScene,
+                AppLayerThemeScene,
                 ThemeTokensScene,
                 ThemeStateMatrixScene,
                 RtlMirrorScene,
