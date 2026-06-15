@@ -190,6 +190,7 @@ class PixelNavigatorTest {
         state.push(details)
         assertNotNull(state.activeTransition)
         assertEquals(listOf("root-enter", "root-exit", "details-enter"), events)
+        tester.pumpAndSettle()
         assertTrue(state.pop())
         assertNotNull(state.activeTransition)
         assertEquals(
@@ -200,6 +201,106 @@ class PixelNavigatorTest {
         tester.pumpAndSettle()
         assertNull(state.activeTransition)
         assertTrue(events.contains("details-dispose"))
+        tester.dispose()
+    }
+
+    @Test
+    fun transitionRecordsOperationForPushPopReplaceAndPopToRoot() {
+        val tester = PixelTester()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val first = route("first") { Text("FIRST") }
+        val second = route("second") { Text("SECOND") }
+        val third = route("third") { Text("THIRD") }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        val state = navigator!!
+        state.push(first)
+        assertEquals(PixelNavigatorOperation.Push, state.activeTransition?.operation)
+        tester.pumpAndSettle()
+
+        state.replace(second)
+        assertEquals(PixelNavigatorOperation.Replace, state.activeTransition?.operation)
+        tester.pumpAndSettle()
+
+        state.push(third)
+        tester.pumpAndSettle()
+        assertTrue(state.pop())
+        assertEquals(PixelNavigatorOperation.Pop, state.activeTransition?.operation)
+        tester.pumpAndSettle()
+
+        state.push(third)
+        tester.pumpAndSettle()
+        state.popToRoot()
+        assertEquals(PixelNavigatorOperation.Pop, state.activeTransition?.operation)
+        tester.dispose()
+    }
+
+    @Test
+    fun startingNewTransitionDisposesSupersededPendingRoutes() {
+        val tester = PixelTester()
+        val disposed = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = PixelRoute(
+            name = "details",
+            builder = { Text("DETAILS") },
+            onDispose = { disposed += "details" },
+        )
+        val replacement = route("replacement") { Text("REPLACEMENT") }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        val state = navigator!!
+        state.push(details)
+        tester.pumpAndSettle()
+        assertTrue(state.pop())
+        assertTrue(disposed.isEmpty())
+
+        state.push(replacement)
+        assertEquals(listOf("details"), disposed)
+        assertEquals(PixelNavigatorOperation.Push, state.activeTransition?.operation)
+        tester.dispose()
+    }
+
+    @Test
+    fun popToRootDisposesAllRemovedRoutesAfterAnimatedSettle() {
+        val tester = PixelTester()
+        val disposed = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val first = PixelRoute(
+            name = "first",
+            builder = { Text("FIRST") },
+            onDispose = { disposed += "first" },
+        )
+        val second = PixelRoute(
+            name = "second",
+            builder = { Text("SECOND") },
+            onDispose = { disposed += "second" },
+        )
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        val state = navigator!!
+        state.push(first)
+        tester.pumpAndSettle()
+        state.push(second)
+        tester.pumpAndSettle()
+
+        state.popToRoot(animated = true)
+        assertTrue(disposed.isEmpty())
+        tester.pumpAndSettle()
+
+        assertEquals(listOf("first", "second"), disposed)
+        assertEquals(listOf("root"), state.stack.map { it.name })
         tester.dispose()
     }
 

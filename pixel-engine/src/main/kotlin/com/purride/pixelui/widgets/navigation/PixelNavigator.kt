@@ -108,8 +108,7 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         outgoing.onExit?.invoke()
         routes += route
         route.onEnter?.invoke()
-        activeTransition = PixelNavigatorTransitionRecord(
-            id = nextTransitionId(),
+        startTransition(
             outgoingRoute = outgoing,
             incomingRoute = route,
             operation = PixelNavigatorOperation.Push,
@@ -125,8 +124,7 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         outgoing.onExit?.invoke()
         incoming.onEnter?.invoke()
         pendingDisposeRoutes += outgoing
-        activeTransition = PixelNavigatorTransitionRecord(
-            id = nextTransitionId(),
+        startTransition(
             outgoingRoute = outgoing,
             incomingRoute = incoming,
             operation = PixelNavigatorOperation.Pop,
@@ -148,8 +146,7 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         root.onEnter?.invoke()
         pendingDisposeRoutes += removed
         activeTransition = if (animated) {
-            PixelNavigatorTransitionRecord(
-                id = nextTransitionId(),
+            startTransition(
                 outgoingRoute = outgoing,
                 incomingRoute = root,
                 operation = PixelNavigatorOperation.Pop,
@@ -168,8 +165,7 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         route.onEnter?.invoke()
         pendingDisposeRoutes += outgoing
         activeTransition = if (animated) {
-            PixelNavigatorTransitionRecord(
-                id = nextTransitionId(),
+            startTransition(
                 outgoingRoute = outgoing,
                 incomingRoute = route,
                 operation = PixelNavigatorOperation.Replace,
@@ -229,6 +225,24 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
 
     internal fun restorationBucket(route: PixelRoute): PixelRouteRestorationBucket {
         return routeRestorationBuckets.getOrPut(route) { PixelRouteRestorationBucket() }
+    }
+
+    private fun startTransition(
+        outgoingRoute: PixelRoute,
+        incomingRoute: PixelRoute,
+        operation: PixelNavigatorOperation,
+    ): PixelNavigatorTransitionRecord {
+        if (activeTransition != null) {
+            disposePendingRoutes()
+        }
+        return PixelNavigatorTransitionRecord(
+            id = nextTransitionId(),
+            outgoingRoute = outgoingRoute,
+            incomingRoute = incomingRoute,
+            operation = operation,
+        ).also { transition ->
+            activeTransition = transition
+        }
     }
 
     private fun disposePendingRoutes() {
