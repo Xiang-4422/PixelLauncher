@@ -2824,8 +2824,11 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigatorState ex
   public final com.purride.pixelui.widgets.navigation.PixelRoute getCurrentRoute();
   public final java.util.List<com.purride.pixelui.widgets.navigation.PixelRoute> getStack();
   public final void push(com.purride.pixelui.widgets.navigation.PixelRoute);
+  public final void push(com.purride.pixelui.widgets.navigation.PixelRoute, kotlin.jvm.functions.Function1<java.lang.Object, kotlin.Unit>);
   public final boolean pop();
+  public final boolean pop(java.lang.Object);
   public final boolean maybePop();
+  public final boolean maybePop(java.lang.Object);
   public final void popToRoot(boolean);
   public static void popToRoot$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, boolean, int, java.lang.Object);
   public final void replace(com.purride.pixelui.widgets.navigation.PixelRoute, boolean);

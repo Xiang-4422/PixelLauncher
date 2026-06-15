@@ -752,8 +752,11 @@ com.purride.pixelui.widgets.navigation public val canPop: Boolean
 com.purride.pixelui.widgets.navigation public val currentRoute: PixelRoute
 com.purride.pixelui.widgets.navigation public val stack: List<PixelRoute>
 com.purride.pixelui.widgets.navigation public fun push(route: PixelRoute)
-com.purride.pixelui.widgets.navigation public fun pop(): Boolean
+com.purride.pixelui.widgets.navigation public fun push(
+com.purride.pixelui.widgets.navigation public fun pop(): Boolean = pop(result = null)
+com.purride.pixelui.widgets.navigation public fun pop(result: Any?): Boolean
 com.purride.pixelui.widgets.navigation public fun maybePop(): Boolean = pop()
+com.purride.pixelui.widgets.navigation public fun maybePop(result: Any?): Boolean = pop(result)
 com.purride.pixelui.widgets.navigation public fun popToRoot(animated: Boolean = true)
 com.purride.pixelui.widgets.navigation public fun replace(route: PixelRoute, animated: Boolean = true)
 com.purride.pixelui.widgets.navigation public fun snapshot(): PixelNavigatorSnapshot

@@ -30,14 +30,15 @@ object NavigatorStackScene : DemoScene {
 
     override fun build(env: DemoEnv): Widget {
         val vsync = PixelTickerProvider(env.hostView.frameScheduler)
+        val resultState = DemoResultState()
         return PixelNavigator(
-            initialRoute = route("HOME", 0),
+            initialRoute = route("HOME", 0, resultState),
             vsync = vsync,
             key = "navigator-demo",
         )
     }
 
-    private fun route(label: String, depth: Int): PixelRoute {
+    private fun route(label: String, depth: Int, resultState: DemoResultState): PixelRoute {
         return PixelRoute(
             name = label,
             canPop = { label != "LOCK" },
@@ -48,25 +49,37 @@ object NavigatorStackScene : DemoScene {
                     spacing = 2,
                     children = listOf(
                         Text("ROUTE $label", style = TextStyle(color = PixelColor.White)),
+                        Text(
+                            "result=${resultState.value}",
+                            style = TextStyle(color = PixelColor.fromRgb(180, 180, 180)),
+                        ),
                         OutlinedButton(
                             text = "PUSH",
-                            onPressed = { nav.push(route("D${depth + 1}", depth + 1)) },
+                            onPressed = { nav.push(route("D${depth + 1}", depth + 1, resultState)) },
                         ),
                         OutlinedButton(
                             text = "LOCK",
-                            onPressed = { nav.push(route("LOCK", depth + 1)) },
+                            onPressed = { nav.push(route("LOCK", depth + 1, resultState)) },
                         ),
                         OutlinedButton(
                             text = "SCROLL",
-                            onPressed = { nav.push(scrollRoute(depth + 1)) },
+                            onPressed = { nav.push(scrollRoute(depth + 1, resultState)) },
                         ),
                         OutlinedButton(
                             text = "CUSTOM",
                             onPressed = { nav.push(customRoute(depth + 1)) },
                         ),
                         OutlinedButton(
+                            text = "RESULT",
+                            onPressed = {
+                                nav.push(resultRoute()) { result ->
+                                    resultState.value = result?.toString() ?: "null"
+                                }
+                            },
+                        ),
+                        OutlinedButton(
                             text = "REPL",
-                            onPressed = { nav.replace(route("R$depth", depth)) },
+                            onPressed = { nav.replace(route("R$depth", depth, resultState)) },
                         ),
                         OutlinedButton(
                             text = "ROOT",
@@ -112,7 +125,25 @@ object NavigatorStackScene : DemoScene {
         )
     }
 
-    private fun scrollRoute(depth: Int): PixelRoute {
+    private fun resultRoute(): PixelRoute {
+        return PixelRoute(
+            name = "RESULT",
+            builder = { context ->
+                val nav = PixelNavigator.of(context)
+                Column(
+                    mainAxisAlignment = MainAxisAlignment.CENTER,
+                    spacing = 2,
+                    children = listOf(
+                        Text("CHOOSE RESULT", style = TextStyle(color = PixelColor.White)),
+                        OutlinedButton(text = "SAVE", onPressed = { nav.pop("SAVE") }),
+                        OutlinedButton(text = "CANCEL", onPressed = { nav.pop("CANCEL") }),
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun scrollRoute(depth: Int, resultState: DemoResultState): PixelRoute {
         val controller = PixelListController()
         val state = controller.create()
         return PixelRoute(
@@ -129,7 +160,7 @@ object NavigatorStackScene : DemoScene {
                             add(
                                 OutlinedButton(
                                     text = "DETAIL",
-                                    onPressed = { nav.push(route("FROM_SCROLL", depth + 1)) },
+                                    onPressed = { nav.push(route("FROM_SCROLL", depth + 1, resultState)) },
                                 ),
                             )
                             repeat(24) { index ->
@@ -144,4 +175,8 @@ object NavigatorStackScene : DemoScene {
             },
         )
     }
+
+    private class DemoResultState(
+        var value: String = "NONE",
+    )
 }

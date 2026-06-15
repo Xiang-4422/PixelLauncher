@@ -303,6 +303,114 @@ class PixelNavigatorTest {
     }
 
     @Test
+    fun popDeliversResultAfterRouteDisposes() {
+        val tester = PixelTester()
+        val events = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = PixelRoute(
+            name = "details",
+            builder = { Text("DETAILS") },
+            onDispose = { events += "dispose" },
+        )
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        navigator!!.push(details) { result -> events += "result=$result" }
+        tester.pumpAndSettle()
+        assertTrue(navigator!!.pop("saved"))
+        assertTrue(events.isEmpty())
+        tester.pumpAndSettle()
+
+        assertEquals(listOf("dispose", "result=saved"), events)
+        tester.dispose()
+    }
+
+    @Test
+    fun replaceKeepsResultCallbackForSameStackSlot() {
+        val tester = PixelTester()
+        var navigator: PixelNavigatorState? = null
+        var result: Any? = "unset"
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        navigator!!.push(route("first") { Text("FIRST") }) { value -> result = value }
+        tester.pumpAndSettle()
+        navigator!!.replace(route("replacement") { Text("REPLACEMENT") }, animated = false)
+        assertTrue(navigator!!.pop(42))
+        tester.pumpAndSettle()
+
+        assertEquals(42, result)
+        tester.dispose()
+    }
+
+    @Test
+    fun duplicateRouteInstancesKeepIndependentResultCallbacksAndGuardDoesNotComplete() {
+        val tester = PixelTester()
+        val results = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        var allowPop = false
+        val shared = PixelRoute(
+            name = "shared",
+            builder = { Text("SHARED") },
+            canPop = { allowPop },
+        )
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        navigator!!.push(shared) { results += "first=$it" }
+        tester.pumpAndSettle()
+        navigator!!.push(shared) { results += "second=$it" }
+        tester.pumpAndSettle()
+        assertFalse(navigator!!.pop("blocked"))
+        assertTrue(results.isEmpty())
+
+        allowPop = true
+        assertTrue(navigator!!.pop("top"))
+        tester.pumpAndSettle()
+        assertEquals(listOf("second=top"), results)
+        assertTrue(navigator!!.pop("bottom"))
+        tester.pumpAndSettle()
+        assertEquals(listOf("second=top", "first=bottom"), results)
+        tester.dispose()
+    }
+
+    @Test
+    fun popToRootAndRestoreCompleteRemovedCallbacksWithNull() {
+        val tester = PixelTester()
+        val results = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val first = route("first") { Text("FIRST") }
+        val second = route("second") { Text("SECOND") }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        navigator!!.push(first) { results += "first=$it" }
+        tester.pumpAndSettle()
+        navigator!!.push(second) { results += "second=$it" }
+        tester.pumpAndSettle()
+        navigator!!.popToRoot(animated = false)
+        assertEquals(listOf("first=null", "second=null"), results)
+
+        navigator!!.push(first) { results += "restored=$it" }
+        tester.pumpAndSettle()
+        navigator!!.restore(PixelNavigatorSnapshot(listOf("root")), mapOf("root" to root))
+        assertEquals("restored=null", results.last())
+        tester.dispose()
+    }
+
+    @Test
     fun transitionRecordsOperationForPushPopReplaceAndPopToRoot() {
         val tester = PixelTester()
         var navigator: PixelNavigatorState? = null

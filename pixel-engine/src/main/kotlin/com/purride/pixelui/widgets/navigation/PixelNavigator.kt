@@ -107,7 +107,9 @@ public fun interface PixelRouteTransitionBuilder {
 
 public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) : ChangeNotifier() {
     private val routes = mutableListOf(initialRoute)
+    private val routeResultCallbacks = mutableListOf<((Any?) -> Unit)?>(null)
     private val pendingDisposeRoutes = mutableListOf<PixelRoute>()
+    private val pendingResultDeliveries = mutableListOf<PendingRouteResultDelivery>()
     private val routeRestorationBuckets = IdentityHashMap<PixelRoute, PixelRouteRestorationBucket>()
     internal var activeTransition: PixelNavigatorTransitionRecord? = null
         private set
@@ -126,9 +128,24 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
     }
 
     public fun push(route: PixelRoute) {
+        pushInternal(route, onResult = null)
+    }
+
+    public fun push(
+        route: PixelRoute,
+        onResult: (Any?) -> Unit,
+    ) {
+        pushInternal(route, onResult)
+    }
+
+    private fun pushInternal(
+        route: PixelRoute,
+        onResult: ((Any?) -> Unit)?,
+    ) {
         val outgoing = currentRoute
         outgoing.onExit?.invoke()
         routes += route
+        routeResultCallbacks += onResult
         route.onEnter?.invoke()
         startTransition(
             outgoingRoute = outgoing,
@@ -138,14 +155,20 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         notifyListeners()
     }
 
-    public fun pop(): Boolean {
+    public fun pop(): Boolean = pop(result = null)
+
+    public fun pop(result: Any?): Boolean {
         if (!canPop) return false
         if (currentRoute.canPop?.invoke() == false) return false
         val outgoing = routes.removeAt(routes.lastIndex)
+        val resultCallback = routeResultCallbacks.removeAt(routeResultCallbacks.lastIndex)
         val incoming = currentRoute
         outgoing.onExit?.invoke()
         incoming.onEnter?.invoke()
         pendingDisposeRoutes += outgoing
+        resultCallback?.let { callback ->
+            pendingResultDeliveries += PendingRouteResultDelivery(callback, result)
+        }
         startTransition(
             outgoingRoute = outgoing,
             incomingRoute = incoming,
@@ -157,16 +180,24 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
 
     public fun maybePop(): Boolean = pop()
 
+    public fun maybePop(result: Any?): Boolean = pop(result)
+
     public fun popToRoot(animated: Boolean = true) {
         if (routes.size <= 1) return
         val outgoing = currentRoute
         val removed = routes.drop(1)
+        val removedCallbacks = routeResultCallbacks.drop(1)
         val root = routes.first()
         outgoing.onExit?.invoke()
         routes.clear()
         routes += root
+        routeResultCallbacks.clear()
+        routeResultCallbacks += null
         root.onEnter?.invoke()
         pendingDisposeRoutes += removed
+        removedCallbacks.forEach { callback ->
+            callback?.let { pendingResultDeliveries += PendingRouteResultDelivery(it, null) }
+        }
         activeTransition = if (animated) {
             startTransition(
                 outgoingRoute = outgoing,
@@ -219,9 +250,14 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
             routeRegistry[name] ?: error("PixelNavigator.restore() missing route '$name' in routeRegistry")
         }
         currentRoute.onExit?.invoke()
+        routeResultCallbacks.drop(1).forEach { callback ->
+            callback?.let { pendingResultDeliveries += PendingRouteResultDelivery(it, null) }
+        }
         pendingDisposeRoutes += routes.filter { oldRoute -> restored.none { restoredRoute -> restoredRoute === oldRoute } }
         routes.clear()
         routes += restored
+        routeResultCallbacks.clear()
+        repeat(restored.size) { routeResultCallbacks += null }
         currentRoute.onEnter?.invoke()
         activeTransition = null
         disposePendingRoutes()
@@ -268,12 +304,16 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
     }
 
     private fun disposePendingRoutes() {
-        if (pendingDisposeRoutes.isEmpty()) return
         val routesToDispose = pendingDisposeRoutes.toList()
+        val resultsToDeliver = pendingResultDeliveries.toList()
         pendingDisposeRoutes.clear()
+        pendingResultDeliveries.clear()
         routesToDispose.forEach { route ->
             routeRestorationBuckets.remove(route)
             route.onDispose?.invoke()
+        }
+        resultsToDeliver.forEach { delivery ->
+            delivery.callback(delivery.result)
         }
     }
 
@@ -651,4 +691,9 @@ internal data class PixelNavigatorTransitionRecord(
     val outgoingRoute: PixelRoute,
     val incomingRoute: PixelRoute,
     val operation: PixelNavigatorOperation,
+)
+
+private data class PendingRouteResultDelivery(
+    val callback: (Any?) -> Unit,
+    val result: Any?,
 )
