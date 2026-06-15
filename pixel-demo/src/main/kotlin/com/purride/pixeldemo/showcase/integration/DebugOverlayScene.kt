@@ -7,6 +7,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
+import com.purride.pixelui.PixelInspectorAllocationSample
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.SizedBox
@@ -38,6 +39,11 @@ object DebugOverlayScene : DemoScene {
         )
         val fakeInspector = PixelInspectorSnapshot(
             frameStats = fakeStats,
+            allocationSample = PixelInspectorAllocationSample(
+                usedHeapBytes = 512L * 1024L,
+                totalHeapBytes = 2L * 1024L * 1024L,
+                maxHeapBytes = 16L * 1024L * 1024L,
+            ),
             targetCounts = PixelInspectorTargetCounts(
                 click = 4,
                 pager = 1,

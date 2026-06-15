@@ -305,7 +305,10 @@ public class PixelHostView @JvmOverloads constructor(
      *
      * 该方法会构造多段诊断字符串，请只在调试路径按需调用。
      */
-    public fun inspect(includeFrameStats: Boolean = true): PixelInspectorSnapshot {
+    public fun inspect(
+        includeFrameStats: Boolean = true,
+        includeAllocationSample: Boolean = false,
+    ): PixelInspectorSnapshot {
         val renderResult = lastRenderResult
         val targetCounts = renderResult?.let { result ->
             PixelInspectorTargetCounts(
@@ -321,6 +324,7 @@ public class PixelHostView @JvmOverloads constructor(
         } ?: PixelInspectorTargetCounts.Empty
         return PixelInspectorSnapshot(
             frameStats = if (includeFrameStats) renderCoordinator.snapshotFrameStats() else null,
+            allocationSample = if (includeAllocationSample) snapshotAllocationSample() else null,
             targetCounts = targetCounts,
             elementTree = dumpElementTree(),
             renderTree = dumpRenderTree(),
@@ -332,6 +336,17 @@ public class PixelHostView @JvmOverloads constructor(
             activeSlider = activeSliderTarget != null,
             activeScrollbar = activeScrollbarTarget != null,
             activeRefresh = activeRefreshTarget != null,
+        )
+    }
+
+    private fun snapshotAllocationSample(): PixelInspectorAllocationSample {
+        val runtime = Runtime.getRuntime()
+        val total = runtime.totalMemory()
+        val free = runtime.freeMemory()
+        return PixelInspectorAllocationSample(
+            usedHeapBytes = (total - free).coerceAtLeast(0L),
+            totalHeapBytes = total,
+            maxHeapBytes = runtime.maxMemory(),
         )
     }
 

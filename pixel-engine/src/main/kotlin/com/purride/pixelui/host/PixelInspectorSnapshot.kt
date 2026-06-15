@@ -7,6 +7,7 @@ package com.purride.pixelui
  */
 public data class PixelInspectorSnapshot(
     val frameStats: PixelHostFrameStats?,
+    val allocationSample: PixelInspectorAllocationSample?,
     val targetCounts: PixelInspectorTargetCounts,
     val elementTree: String,
     val renderTree: String,
@@ -18,6 +19,19 @@ public data class PixelInspectorSnapshot(
     val activeSlider: Boolean,
     val activeScrollbar: Boolean,
     val activeRefresh: Boolean,
+)
+
+/**
+ * Inspector 的一次 JVM heap 采样。
+ *
+ * 这不是严格的“本帧分配字节数”，而是按需读取当前 heap 使用量，用于调试面板
+ * 快速观察内存趋势。采样会访问 [Runtime]，因此默认不在每次 [PixelHostView.inspect]
+ * 调用中启用。
+ */
+public data class PixelInspectorAllocationSample(
+    val usedHeapBytes: Long,
+    val totalHeapBytes: Long,
+    val maxHeapBytes: Long,
 )
 
 /**

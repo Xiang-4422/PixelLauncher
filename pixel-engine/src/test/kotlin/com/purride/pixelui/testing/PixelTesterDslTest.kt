@@ -24,6 +24,7 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
+import com.purride.pixelui.PixelInspectorAllocationSample
 import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelTextInputAction
@@ -1520,6 +1521,11 @@ class PixelTesterDslTest {
                 ),
                 inspector = PixelInspectorSnapshot(
                     frameStats = null,
+                    allocationSample = PixelInspectorAllocationSample(
+                        usedHeapBytes = 4_096,
+                        totalHeapBytes = 8_192,
+                        maxHeapBytes = 16_384,
+                    ),
                     targetCounts = PixelInspectorTargetCounts(
                         click = 2,
                         pager = 1,
@@ -1551,6 +1557,7 @@ class PixelTesterDslTest {
         assertTrue(tester.exists(find.byText("TGT C2 L3 P1 T1")))
         assertTrue(tester.exists(find.byText("SEM 4 PEND 1")))
         assertTrue(tester.exists(find.byText("ACT P1 L2")))
+        assertTrue(tester.exists(find.byText("MEM 4K/16K")))
         assertTrue(tester.exists(find.byText("TICK 5")))
         tester.dispose()
     }

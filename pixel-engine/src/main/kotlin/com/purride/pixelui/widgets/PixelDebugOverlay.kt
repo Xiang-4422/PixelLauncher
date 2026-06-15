@@ -56,6 +56,9 @@ public fun PixelDebugOverlay(
             val targets = it.targetCounts
             add("TGT C${targets.click} L${targets.list} P${targets.pager} T${targets.textInput}")
             add("SEM ${targets.semantics} PEND ${if (it.hasPendingBuild) 1 else 0}")
+            it.allocationSample?.let { sample ->
+                add("MEM ${formatKilobytes(sample.usedHeapBytes)}K/${formatKilobytes(sample.maxHeapBytes)}K")
+            }
             if (it.activePagerCount > 0 || it.activeListCount > 0 || it.activeSlider || it.activeScrollbar || it.activeRefresh) {
                 add("ACT P${it.activePagerCount} L${it.activeListCount}")
             }
@@ -75,4 +78,8 @@ public fun PixelDebugOverlay(
         ),
         key = key,
     )
+}
+
+private fun formatKilobytes(bytes: Long): Long {
+    return (bytes.coerceAtLeast(0L) + 1023L) / 1024L
 }
