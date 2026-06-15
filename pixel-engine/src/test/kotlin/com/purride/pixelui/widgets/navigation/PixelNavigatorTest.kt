@@ -248,6 +248,24 @@ class PixelNavigatorTest {
     }
 
     @Test
+    fun restoreFromNullBundleReturnsFalseWithoutChangingStack() {
+        val tester = PixelTester()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = route("details") { Text("DETAILS") }
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        val state = navigator!!
+        state.push(details)
+        assertFalse(state.restoreFromBundle(null, mapOf("root" to root, "details" to details)))
+        assertEquals(listOf("root", "details"), state.stack.map { it.name })
+        tester.dispose()
+    }
+
+    @Test
     fun routeScrollRestorationRestoresRecreatedListStateAfterPop() {
         val tester = PixelTester()
         val controller = PixelListController()

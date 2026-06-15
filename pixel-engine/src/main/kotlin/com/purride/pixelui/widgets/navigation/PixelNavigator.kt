@@ -1,5 +1,6 @@
 package com.purride.pixelui.widgets.navigation
 
+import android.os.Bundle
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Builder
 import com.purride.pixelui.ChangeNotifier
@@ -32,6 +33,12 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import java.util.IdentityHashMap
 
+/**
+ * Default [Bundle] key used by [PixelNavigatorState.saveToBundle] and
+ * [PixelNavigatorState.restoreFromBundle].
+ */
+public const val PixelNavigatorBundleKey: String = "com.purride.pixelui.navigator.routeNames"
+
 public data class PixelRoute(
     val name: String,
     val builder: (BuildContext) -> Widget,
@@ -45,6 +52,29 @@ public data class PixelRoute(
 public data class PixelNavigatorSnapshot(
     val routeNames: List<String>,
 )
+
+/**
+ * Saves this route-name snapshot into an Android [Bundle].
+ */
+public fun PixelNavigatorSnapshot.saveToBundle(
+    outState: Bundle,
+    key: String = PixelNavigatorBundleKey,
+) {
+    require(key.isNotBlank()) { "PixelNavigator snapshot Bundle key must not be blank" }
+    outState.putStringArrayList(key, ArrayList(routeNames))
+}
+
+/**
+ * Reads a [PixelNavigatorSnapshot] previously saved into this Android [Bundle].
+ */
+public fun Bundle.getPixelNavigatorSnapshot(
+    key: String = PixelNavigatorBundleKey,
+): PixelNavigatorSnapshot? {
+    require(key.isNotBlank()) { "PixelNavigator snapshot Bundle key must not be blank" }
+    val names = getStringArrayList(key) ?: return null
+    if (names.isEmpty()) return null
+    return PixelNavigatorSnapshot(routeNames = names.toList())
+}
 
 public enum class PixelRouteTransition {
     None,
@@ -155,6 +185,13 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         return PixelNavigatorSnapshot(routeNames = routes.map { route -> route.name })
     }
 
+    public fun saveToBundle(
+        outState: Bundle,
+        key: String = PixelNavigatorBundleKey,
+    ) {
+        snapshot().saveToBundle(outState, key)
+    }
+
     public fun restore(
         snapshot: PixelNavigatorSnapshot,
         routeRegistry: Map<String, PixelRoute>,
@@ -171,6 +208,16 @@ public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) 
         activeTransition = null
         disposePendingRoutes()
         notifyListeners()
+    }
+
+    public fun restoreFromBundle(
+        savedInstanceState: Bundle?,
+        routeRegistry: Map<String, PixelRoute>,
+        key: String = PixelNavigatorBundleKey,
+    ): Boolean {
+        val snapshot = savedInstanceState?.getPixelNavigatorSnapshot(key) ?: return false
+        restore(snapshot, routeRegistry)
+        return true
     }
 
     internal fun completeTransition(id: Long) {

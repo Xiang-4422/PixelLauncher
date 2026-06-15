@@ -729,8 +729,11 @@ com.purride.pixelui.widgets.animated public fun AnimatedPositioned(
 com.purride.pixelui.widgets.animated public fun AnimatedSprite(
 com.purride.pixelui.widgets.animated public fun AnimatedSwitcher(
 com.purride.pixelui.widgets.animated public fun <T> TweenAnimationBuilder(
+com.purride.pixelui.widgets.navigation public const val PixelNavigatorBundleKey: String = "com.purride.pixelui.navigator.routeNames"
 com.purride.pixelui.widgets.navigation public data class PixelRoute(
 com.purride.pixelui.widgets.navigation public data class PixelNavigatorSnapshot(
+com.purride.pixelui.widgets.navigation public fun PixelNavigatorSnapshot.saveToBundle(
+com.purride.pixelui.widgets.navigation public fun Bundle.getPixelNavigatorSnapshot(
 com.purride.pixelui.widgets.navigation public enum class PixelRouteTransition
 com.purride.pixelui.widgets.navigation public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) : ChangeNotifier()
 com.purride.pixelui.widgets.navigation public val canPop: Boolean
@@ -742,7 +745,9 @@ com.purride.pixelui.widgets.navigation public fun maybePop(): Boolean = pop()
 com.purride.pixelui.widgets.navigation public fun popToRoot(animated: Boolean = true)
 com.purride.pixelui.widgets.navigation public fun replace(route: PixelRoute, animated: Boolean = true)
 com.purride.pixelui.widgets.navigation public fun snapshot(): PixelNavigatorSnapshot
+com.purride.pixelui.widgets.navigation public fun saveToBundle(
 com.purride.pixelui.widgets.navigation public fun restore(
+com.purride.pixelui.widgets.navigation public fun restoreFromBundle(
 com.purride.pixelui.widgets.navigation public class PixelNavigator(
 com.purride.pixelui.widgets.navigation public val initialRoute: PixelRoute,
 com.purride.pixelui.widgets.navigation public val vsync: PixelTickerProvider,

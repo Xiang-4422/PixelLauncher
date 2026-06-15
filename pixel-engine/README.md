@@ -23,7 +23,7 @@ pixel-engine 不依赖 Android View 树管理 UI，所有内容由一个继承�
 - **宿主环境适配**：`MediaQuery` 暴露逻辑尺寸与 window insets，`SafeArea` 自动避让系统栏 / cutout 区域
 - **直接颜色与样式**：`PixelColor`、`TextStyle`、`ButtonStyle`、`TextFieldStyle` 覆盖常用视觉配置
 - **图像与图形原语**：`Image` / `Sprite` / `AnimatedSprite` / `Line` / `Circle` / `Polygon` / `Path` 直接落到像素缓冲
-- **导航与动画系统**：`PixelNavigator` / `PixelRoute` 支持 slide transition、guard、lifecycle、snapshot restore，`PixelRouteScrollRestoration` 自动恢复 route 内滚动位置；动画基础包含 `PixelAnimationController`、`TweenAnimationBuilder`、`AnimatedContainer`、`AnimatedSwitcher`、`AnimatedBuilder`
+- **导航与动画系统**：`PixelNavigator` / `PixelRoute` 支持 slide transition、guard、lifecycle、snapshot / Android Bundle restore，`PixelRouteScrollRestoration` 自动恢复 route 内滚动位置；动画基础包含 `PixelAnimationController`、`TweenAnimationBuilder`、`AnimatedContainer`、`AnimatedSwitcher`、`AnimatedBuilder`
 - **表单与焦点**：`Form` / `FormField` 支持字段与跨字段校验，`FocusScope`、键盘方向遍历和 TextField IME `NEXT` 可直接联动
 - **异步与调试**：`AsyncBuilder`、`PixelDebugOverlay`、`dumpElementTree()`、帧统计 observer
 - **测试工学**：test-only `PixelTester` DSL 可离屏 pump widget、tap / drag / pump frame

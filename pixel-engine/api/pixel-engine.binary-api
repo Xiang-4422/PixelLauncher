@@ -2720,6 +2720,13 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigator$Compani
   public final com.purride.pixelui.widgets.navigation.PixelNavigatorState of(com.purride.pixelui.BuildContext);
   public com.purride.pixelui.widgets.navigation.PixelNavigator$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelui.widgets.navigation.PixelNavigatorKt {
+  public static final java.lang.String PixelNavigatorBundleKey;
+  public static final void saveToBundle(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, android.os.Bundle, java.lang.String);
+  public static void saveToBundle$default(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, android.os.Bundle, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot getPixelNavigatorSnapshot(android.os.Bundle, java.lang.String);
+  public static com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot getPixelNavigatorSnapshot$default(android.os.Bundle, java.lang.String, int, java.lang.Object);
+}
 public final class com.purride.pixelui.widgets.navigation.PixelNavigatorOperation extends java.lang.Enum<com.purride.pixelui.widgets.navigation.PixelNavigatorOperation> {
   public static final com.purride.pixelui.widgets.navigation.PixelNavigatorOperation Push;
   public static final com.purride.pixelui.widgets.navigation.PixelNavigatorOperation Pop;
@@ -2752,7 +2759,11 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigatorState ex
   public final void replace(com.purride.pixelui.widgets.navigation.PixelRoute, boolean);
   public static void replace$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, com.purride.pixelui.widgets.navigation.PixelRoute, boolean, int, java.lang.Object);
   public final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot snapshot();
+  public final void saveToBundle(android.os.Bundle, java.lang.String);
+  public static void saveToBundle$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, android.os.Bundle, java.lang.String, int, java.lang.Object);
   public final void restore(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, java.util.Map<java.lang.String, com.purride.pixelui.widgets.navigation.PixelRoute>);
+  public final boolean restoreFromBundle(android.os.Bundle, java.util.Map<java.lang.String, com.purride.pixelui.widgets.navigation.PixelRoute>, java.lang.String);
+  public static boolean restoreFromBundle$default(com.purride.pixelui.widgets.navigation.PixelNavigatorState, android.os.Bundle, java.util.Map, java.lang.String, int, java.lang.Object);
   public final void completeTransition$pixel_engine(long);
   public final com.purride.pixelui.widgets.navigation.PixelRouteRestorationBucket restorationBucket$pixel_engine(com.purride.pixelui.widgets.navigation.PixelRoute);
 }
