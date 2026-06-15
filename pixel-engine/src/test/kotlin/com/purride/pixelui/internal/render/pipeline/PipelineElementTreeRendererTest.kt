@@ -870,6 +870,50 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * 5000 项远端滚动也应只构造窗口内 item。这个用例守住变高 lazy 路径的
+     * 产品化性能边界：不能因为滚到远端而退回 eager build。
+     */
+    @Test
+    fun listViewBuilderWithEstimatedItemExtentKeepsRemoteLargeListLazy() {
+        val controller = ScrollController()
+        val state = controller.create(initialScrollOffsetPx = 18_000f)
+        state.viewportHeightPx = 24
+        val builtItems = mutableListOf<Int>()
+
+        val result = renderWithPipeline(
+            root = SizedBox(
+                width = 32,
+                height = 24,
+                child = ListViewBuilder(
+                    itemCount = 5_000,
+                    state = state,
+                    controller = controller,
+                    estimatedItemExtent = 9,
+                    cacheExtent = 2,
+                    spacing = 1,
+                    itemBuilder = { index ->
+                        builtItems += index
+                        SizedBox(
+                            height = 6 + (index % 4),
+                            child = Text("ROW $index"),
+                        )
+                    },
+                ),
+            ),
+            logicalWidth = 32,
+            logicalHeight = 24,
+        )
+
+        assertNotNull(result)
+        assertTrue("Should build a small visible window, built=${builtItems.size}", builtItems.size <= 8)
+        assertTrue("Should not build early rows for a remote offset: $builtItems", builtItems.first() > 1_500)
+        assertTrue("Should not build all rows", builtItems.last() < 5_000)
+        assertEquals(5_000, state.measuredItemHeightsPx.size)
+        assertEquals(5_000, state.itemTopOffsetsPx.size)
+        assertTrue(state.contentHeightPx > 40_000)
+    }
+
+    /**
      * 变高 lazy list 应该按估算和已测高度支持真实 item index 定位。
      */
     @Test

@@ -806,7 +806,9 @@ internal class RenderVariableLazyListViewport(
             child.layout(childConstraints)
             val itemIndex = firstItemIndex + localIndex
             if (itemIndex in state.measuredItemHeightsPx.indices) {
-                state.measuredItemHeightsPx[itemIndex] = child.size.height.coerceAtLeast(1)
+                val measuredHeight = child.size.height.coerceAtLeast(1)
+                state.measuredItemHeightsPx[itemIndex] = measuredHeight
+                state.itemExtentIndex.updateMeasured(itemIndex, measuredHeight)
             }
         }
         size = RenderSize(
@@ -816,31 +818,23 @@ internal class RenderVariableLazyListViewport(
         val safeItemCount = itemCount.coerceAtLeast(0)
         val safeEstimate = estimatedItemExtent.coerceAtLeast(1)
         val safeSpacing = spacing.coerceAtLeast(0)
-        val contentHeight = variableItemContentHeightPx(
-            state = state,
+        state.itemExtentIndex.configure(
             itemCount = safeItemCount,
             estimatedItemExtent = safeEstimate,
             spacing = safeSpacing,
+            measuredHeightsPx = state.measuredItemHeightsPx,
         )
+        val contentHeight = state.itemExtentIndex.totalHeightPx()
         controller.sync(
             state = state,
             viewportHeightPx = size.height,
             contentHeightPx = contentHeight,
         )
         state.itemTopOffsetsPx = IntArray(safeItemCount) { index ->
-            variableItemTopPx(
-                state = state,
-                itemIndex = index,
-                estimatedItemExtent = safeEstimate,
-                spacing = safeSpacing,
-            )
+            state.itemExtentIndex.topPx(index)
         }
         state.itemHeightsPx = IntArray(safeItemCount) { index ->
-            variableItemHeightPx(
-                state = state,
-                itemIndex = index,
-                estimatedItemExtent = safeEstimate,
-            )
+            state.itemExtentIndex.extentPx(index)
         }
 
         // 远端 scrollItemIntoView 二次微调：上一次调用时目标 item 还未测量，
@@ -868,12 +862,7 @@ internal class RenderVariableLazyListViewport(
                 child.paint(
                     context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
                     offsetX = 0,
-                    offsetY = variableItemTopPx(
-                        state = state,
-                        itemIndex = itemIndex,
-                        estimatedItemExtent = estimatedItemExtent,
-                        spacing = spacing,
-                    ) - state.scrollOffsetPx.toInt(),
+                    offsetY = state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 )
             }
             context.buffer.blitRegion(
@@ -903,12 +892,7 @@ internal class RenderVariableLazyListViewport(
             val itemIndex = firstItemIndex + localIndex
             child.hitTest(
                 localX = localX,
-                localY = contentY - variableItemTopPx(
-                    state = state,
-                    itemIndex = itemIndex,
-                    estimatedItemExtent = estimatedItemExtent,
-                    spacing = spacing,
-                ),
+                localY = contentY - state.itemExtentIndex.topPx(itemIndex),
                 result = result,
             )
         }
@@ -924,12 +908,7 @@ internal class RenderVariableLazyListViewport(
             val itemIndex = firstItemIndex + localIndex
             child.collectClickTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + variableItemTopPx(
-                    state = state,
-                    itemIndex = itemIndex,
-                    estimatedItemExtent = estimatedItemExtent,
-                    spacing = spacing,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -950,12 +929,7 @@ internal class RenderVariableLazyListViewport(
             val itemIndex = firstItemIndex + localIndex
             child.collectPagerTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + variableItemTopPx(
-                    state = state,
-                    itemIndex = itemIndex,
-                    estimatedItemExtent = estimatedItemExtent,
-                    spacing = spacing,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -983,12 +957,7 @@ internal class RenderVariableLazyListViewport(
             val itemIndex = firstItemIndex + localIndex
             child.collectListTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + variableItemTopPx(
-                    state = state,
-                    itemIndex = itemIndex,
-                    estimatedItemExtent = estimatedItemExtent,
-                    spacing = spacing,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1009,12 +978,7 @@ internal class RenderVariableLazyListViewport(
             val itemIndex = firstItemIndex + localIndex
             child.collectTextInputTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + variableItemTopPx(
-                    state = state,
-                    itemIndex = itemIndex,
-                    estimatedItemExtent = estimatedItemExtent,
-                    spacing = spacing,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }
@@ -1035,12 +999,7 @@ internal class RenderVariableLazyListViewport(
             val itemIndex = firstItemIndex + localIndex
             child.collectSliderTargets(
                 offsetX = offsetX,
-                offsetY = offsetY + variableItemTopPx(
-                    state = state,
-                    itemIndex = itemIndex,
-                    estimatedItemExtent = estimatedItemExtent,
-                    spacing = spacing,
-                ) - state.scrollOffsetPx.toInt(),
+                offsetY = offsetY + state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 targets = collected,
             )
         }

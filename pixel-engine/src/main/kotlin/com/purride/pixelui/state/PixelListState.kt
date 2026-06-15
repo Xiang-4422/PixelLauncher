@@ -42,6 +42,7 @@ public class PixelListState(
      * 0 表示该 item 尚未测量；render layout 会在真实子节点完成布局后回写。
      */
     internal var measuredItemHeightsPx: IntArray = intArrayOf()
+    internal val itemExtentIndex: PixelItemExtentIndex = PixelItemExtentIndex()
     internal var measuredSeparatedVirtualHeightsPx: IntArray = intArrayOf()
     internal val separatedExtentIndex: PixelSeparatedExtentIndex = PixelSeparatedExtentIndex()
     internal var separatedItemGeometryActive: Boolean = false
@@ -64,6 +65,105 @@ public class PixelListState(
     internal val floatingRevealBySliverIndex: MutableMap<Int, Int> = mutableMapOf()
     internal val sliverListGeometries: MutableMap<Int, PixelSliverListGeometry> = mutableMapOf()
     internal var pendingSliverScrollIntoView: PixelPendingSliverScrollIntoView? = null
+}
+
+internal class PixelItemExtentIndex {
+    private var itemCount: Int = 0
+    private var estimatedItemExtent: Int = 1
+    private var spacing: Int = 0
+    private var extents: IntArray = intArrayOf()
+    private var fenwickTree: IntArray = intArrayOf()
+
+    fun configure(
+        itemCount: Int,
+        estimatedItemExtent: Int,
+        spacing: Int,
+        measuredHeightsPx: IntArray,
+    ) {
+        val resolvedItemCount = itemCount.coerceAtLeast(0)
+        val safeEstimate = estimatedItemExtent.coerceAtLeast(1)
+        val safeSpacing = spacing.coerceAtLeast(0)
+        if (
+            this.itemCount == resolvedItemCount &&
+            this.estimatedItemExtent == safeEstimate &&
+            this.spacing == safeSpacing &&
+            extents.size == resolvedItemCount
+        ) {
+            return
+        }
+
+        this.itemCount = resolvedItemCount
+        this.estimatedItemExtent = safeEstimate
+        this.spacing = safeSpacing
+        extents = IntArray(resolvedItemCount)
+        fenwickTree = IntArray(resolvedItemCount + 1)
+        repeat(resolvedItemCount) { index ->
+            val measured = measuredHeightsPx.getOrNull(index) ?: 0
+            val extent = measured.takeIf { it > 0 } ?: safeEstimate
+            extents[index] = extent.coerceAtLeast(1)
+            addToFenwick(index, extents[index])
+        }
+    }
+
+    fun updateMeasured(itemIndex: Int, measuredExtent: Int) {
+        if (itemIndex !in 0 until itemCount) return
+        val safeExtent = measuredExtent.coerceAtLeast(1)
+        val delta = safeExtent - extents[itemIndex]
+        if (delta == 0) return
+        extents[itemIndex] = safeExtent
+        addToFenwick(itemIndex, delta)
+    }
+
+    fun extentPx(itemIndex: Int): Int = extents.getOrElse(itemIndex) { 0 }
+
+    fun topPx(itemIndex: Int): Int {
+        val safeIndex = itemIndex.coerceIn(0, itemCount)
+        return prefixSum(safeIndex) + safeIndex * spacing
+    }
+
+    fun bottomPx(itemIndex: Int): Int = topPx(itemIndex) + extentPx(itemIndex)
+
+    fun totalHeightPx(): Int {
+        if (itemCount <= 0) return 0
+        return prefixSum(itemCount) + (itemCount - 1) * spacing
+    }
+
+    fun indexAtOffsetPx(offsetPx: Int): Int {
+        if (itemCount <= 0) return 0
+        val target = offsetPx.coerceIn(0, (totalHeightPx() - 1).coerceAtLeast(0))
+        var low = 0
+        var high = itemCount - 1
+        var result = 0
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            val bottom = bottomPx(mid)
+            if (bottom <= target) {
+                low = mid + 1
+            } else {
+                result = mid
+                high = mid - 1
+            }
+        }
+        return result
+    }
+
+    private fun prefixSum(endExclusive: Int): Int {
+        var index = endExclusive.coerceIn(0, itemCount)
+        var result = 0
+        while (index > 0) {
+            result += fenwickTree[index]
+            index -= index and -index
+        }
+        return result
+    }
+
+    private fun addToFenwick(itemIndex: Int, delta: Int) {
+        var index = itemIndex + 1
+        while (index < fenwickTree.size) {
+            fenwickTree[index] += delta
+            index += index and -index
+        }
+    }
 }
 
 internal data class PixelScrollSnapRange(

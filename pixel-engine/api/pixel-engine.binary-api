@@ -2372,6 +2372,16 @@ public final class com.purride.pixelui.host.PixelHostFrameLoop {
   public final com.purride.pixelui.PixelHostFrameStats snapshotStats();
   public com.purride.pixelui.host.PixelHostFrameLoop();
 }
+public final class com.purride.pixelui.state.PixelItemExtentIndex {
+  public com.purride.pixelui.state.PixelItemExtentIndex();
+  public final void configure(int, int, int, int[]);
+  public final void updateMeasured(int, int);
+  public final int extentPx(int);
+  public final int topPx(int);
+  public final int bottomPx(int);
+  public final int totalHeightPx();
+  public final int indexAtOffsetPx(int);
+}
 public final class com.purride.pixelui.state.PixelListController extends com.purride.pixelui.ChangeNotifier {
   public static final float SNAP_VELOCITY_PX_PER_SECOND;
   public com.purride.pixelui.state.PixelListController(com.purride.pixelui.PixelScrollPhysics);
@@ -2439,6 +2449,7 @@ public final class com.purride.pixelui.state.PixelListState {
   public final void setItemHeightsPx$pixel_engine(int[]);
   public final int[] getMeasuredItemHeightsPx$pixel_engine();
   public final void setMeasuredItemHeightsPx$pixel_engine(int[]);
+  public final com.purride.pixelui.state.PixelItemExtentIndex getItemExtentIndex$pixel_engine();
   public final int[] getMeasuredSeparatedVirtualHeightsPx$pixel_engine();
   public final void setMeasuredSeparatedVirtualHeightsPx$pixel_engine(int[]);
   public final com.purride.pixelui.state.PixelSeparatedExtentIndex getSeparatedExtentIndex$pixel_engine();

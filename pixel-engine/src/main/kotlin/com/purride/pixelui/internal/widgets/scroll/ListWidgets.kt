@@ -468,24 +468,25 @@ private data class VariableLazyListRange(
             val windowTop = (scrollOffsetPx.toInt() - cachePx).coerceAtLeast(0)
             val windowBottom = scrollOffsetPx.toInt() + effectiveViewportHeight + cachePx
 
-            var first = 0
+            state.itemExtentIndex.configure(
+                itemCount = itemCount,
+                estimatedItemExtent = safeEstimate,
+                spacing = safeSpacing,
+                measuredHeightsPx = state.measuredItemHeightsPx,
+            )
+            var first = state.itemExtentIndex.indexAtOffsetPx(windowTop)
             while (
                 first < itemCount - 1 &&
-                variableItemBottomPx(state, first, safeEstimate, safeSpacing) <= windowTop
+                state.itemExtentIndex.bottomPx(first) <= windowTop
             ) {
                 first += 1
             }
-
-            var last = first
+            var last = state.itemExtentIndex.indexAtOffsetPx(
+                (windowBottom - 1).coerceAtLeast(windowTop),
+            )
             while (
-                last < itemCount - 1 &&
-                variableItemTopPx(state, last, safeEstimate, safeSpacing) < windowBottom
-            ) {
-                last += 1
-            }
-            if (
-                variableItemTopPx(state, last, safeEstimate, safeSpacing) >= windowBottom &&
-                last > first
+                last > first &&
+                state.itemExtentIndex.topPx(last) >= windowBottom
             ) {
                 last -= 1
             }

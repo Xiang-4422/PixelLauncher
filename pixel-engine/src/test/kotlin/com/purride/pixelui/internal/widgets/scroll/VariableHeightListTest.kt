@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixelui.state.PixelItemExtentIndex
 import com.purride.pixelui.state.PixelSeparatedExtentIndex
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -180,6 +181,28 @@ class VariableHeightListTest {
         state.ensureMeasuredItemCapacity(5)
         // 全部未测量；总高 = 5 * 25 + 4 * 3 = 137
         assertEquals(137, variableItemContentHeightPx(state, itemCount = 5, estimatedItemExtent = 25, spacing = 3))
+    }
+
+    @Test
+    fun itemExtentIndexMapsRemoteOffsetsAndUpdatesMeasurements() {
+        val index = PixelItemExtentIndex()
+        index.configure(
+            itemCount = 100_000,
+            estimatedItemExtent = 5,
+            spacing = 1,
+            measuredHeightsPx = IntArray(100_000),
+        )
+
+        val targetItem = 90_000
+        val targetTop = targetItem * 6
+        assertEquals(targetItem, index.indexAtOffsetPx(targetTop))
+        assertEquals(targetTop, index.topPx(targetItem))
+        assertEquals(599_999, index.totalHeightPx())
+
+        index.updateMeasured(targetItem, measuredExtent = 11)
+        assertEquals(targetItem, index.indexAtOffsetPx(targetTop + 10))
+        assertEquals(targetTop + 12, index.topPx(targetItem + 1))
+        assertEquals(600_005, index.totalHeightPx())
     }
 
     @Test
