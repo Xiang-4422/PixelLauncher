@@ -15,6 +15,7 @@ public fun PixelInspectorBoundsOverlay(
     kinds: Set<PixelInspectorTargetKind> = PixelInspectorTargetKind.entries.toSet(),
     strokeWidth: Int = 1,
     key: Any? = null,
+    selectedTarget: PixelInspectorTargetSnapshot? = null,
 ): Widget {
     require(width >= 0) { "width must be >= 0" }
     require(height >= 0) { "height must be >= 0" }
@@ -31,6 +32,18 @@ public fun PixelInspectorBoundsOverlay(
                 strokeWidth = strokeWidth,
             )
         }
+        selectedTarget
+            ?.takeIf { it in targets }
+            ?.let { target ->
+                drawRect(
+                    left = target.left,
+                    top = target.top,
+                    width = target.width,
+                    height = target.height,
+                    color = PixelColor.White,
+                    strokeWidth = maxOf(2, strokeWidth),
+                )
+            }
     }
 }
 

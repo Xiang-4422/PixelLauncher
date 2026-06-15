@@ -1482,16 +1482,17 @@ public final class com.purride.pixelui.PixelInspectorAllocationSample {
   public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelui.PixelInspectorBoundsOverlayKt {
-  public static final com.purride.pixelui.Widget PixelInspectorBoundsOverlay(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set<? extends com.purride.pixelui.PixelInspectorTargetKind>, int, java.lang.Object);
-  public static com.purride.pixelui.Widget PixelInspectorBoundsOverlay$default(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget PixelInspectorBoundsOverlay(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set<? extends com.purride.pixelui.PixelInspectorTargetKind>, int, java.lang.Object, com.purride.pixelui.PixelInspectorTargetSnapshot);
+  public static com.purride.pixelui.Widget PixelInspectorBoundsOverlay$default(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set, int, java.lang.Object, com.purride.pixelui.PixelInspectorTargetSnapshot, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelInspectorPanelKt {
-  public static final com.purride.pixelui.Widget PixelInspectorPanel(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int);
-  public static com.purride.pixelui.Widget PixelInspectorPanel$default(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget PixelInspectorPanel(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int, com.purride.pixelui.PixelInspectorTargetSnapshot);
+  public static com.purride.pixelui.Widget PixelInspectorPanel$default(com.purride.pixelui.PixelInspectorSnapshot, java.lang.Object, int, com.purride.pixelui.PixelInspectorTargetSnapshot, int, java.lang.Object);
   public static final com.purride.pixelui.PixelTextStyle access$getHeaderStyle$p();
   public static final int access$getSelectedBorderColor$p();
   public static final int access$getPanelBorderColor$p();
   public static final long access$formatInspectorKilobytes(long);
+  public static final com.purride.pixelui.PixelTextStyle access$getSelectedTargetStyle$p();
   public static final com.purride.pixelui.PixelTextStyle access$getBodyStyle$p();
 }
 public final class com.purride.pixelui.PixelInspectorSnapshot {
@@ -1529,6 +1530,10 @@ public final class com.purride.pixelui.PixelInspectorSnapshot {
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.PixelInspectorSnapshotKt {
+  public static final com.purride.pixelui.PixelInspectorTargetSnapshot targetAt(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set<? extends com.purride.pixelui.PixelInspectorTargetKind>);
+  public static com.purride.pixelui.PixelInspectorTargetSnapshot targetAt$default(com.purride.pixelui.PixelInspectorSnapshot, int, int, java.util.Set, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelInspectorTargetCounts {
   public static final com.purride.pixelui.PixelInspectorTargetCounts$Companion Companion;
@@ -1582,6 +1587,7 @@ public final class com.purride.pixelui.PixelInspectorTargetSnapshot {
   public final int getWidth();
   public final int getHeight();
   public final java.lang.String getDetail();
+  public final boolean contains(int, int);
   public final com.purride.pixelui.PixelInspectorTargetKind component1();
   public final int component2();
   public final int component3();

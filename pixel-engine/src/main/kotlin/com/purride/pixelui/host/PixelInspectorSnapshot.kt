@@ -48,7 +48,31 @@ public data class PixelInspectorTargetSnapshot(
     val width: Int,
     val height: Int,
     val detail: String = "",
-)
+) {
+    public fun contains(x: Int, y: Int): Boolean {
+        return width > 0 &&
+            height > 0 &&
+            x >= left &&
+            y >= top &&
+            x < left + width &&
+            y < top + height
+    }
+}
+
+/**
+ * 按逻辑坐标查找最上层 inspector target。
+ *
+ * target 顺序与 snapshot 导出顺序一致；发生重叠时后导出的目标优先。
+ */
+public fun PixelInspectorSnapshot.targetAt(
+    x: Int,
+    y: Int,
+    kinds: Set<PixelInspectorTargetKind> = PixelInspectorTargetKind.entries.toSet(),
+): PixelInspectorTargetSnapshot? {
+    return targetSnapshots.lastOrNull { target ->
+        target.kind in kinds && target.contains(x, y)
+    }
+}
 
 /**
  * Inspector 的一次 JVM heap 采样。

@@ -20,6 +20,7 @@ import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.targetAt
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 
@@ -98,6 +99,11 @@ object DebugOverlayScene : DemoScene {
             activeRefresh = false,
         )
         val labelStyle = TextStyle(color = PixelColor.fromRgb(160, 160, 160))
+        val selectedTarget = fakeInspector.targetAt(
+            x = 3,
+            y = 25,
+            kinds = setOf(PixelInspectorTargetKind.LIST),
+        )
         return Center(
             child = Column(
                 mainAxisAlignment = MainAxisAlignment.CENTER,
@@ -119,11 +125,16 @@ object DebugOverlayScene : DemoScene {
                                 snapshot = fakeInspector,
                                 width = 96,
                                 height = 36,
+                                selectedTarget = selectedTarget,
                             ),
                         ),
                     ),
                     SizedBox(height = 6),
-                    PixelInspectorPanel(snapshot = fakeInspector, maxTreeLines = 4),
+                    PixelInspectorPanel(
+                        snapshot = fakeInspector,
+                        maxTreeLines = 4,
+                        selectedTarget = selectedTarget,
+                    ),
                     SizedBox(height = 6),
                     Text("NULL → 0x0", style = labelStyle),
                     SizedBox(height = 2),

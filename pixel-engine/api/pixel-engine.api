@@ -460,6 +460,8 @@ com.purride.pixelui public fun inspect(
 com.purride.pixelui public data class PixelInspectorSnapshot(
 com.purride.pixelui public enum class PixelInspectorTargetKind
 com.purride.pixelui public data class PixelInspectorTargetSnapshot(
+com.purride.pixelui public fun contains(x: Int, y: Int): Boolean
+com.purride.pixelui public fun PixelInspectorSnapshot.targetAt(
 com.purride.pixelui public data class PixelInspectorAllocationSample(
 com.purride.pixelui public data class PixelInspectorTargetCounts(
 com.purride.pixelui public companion object

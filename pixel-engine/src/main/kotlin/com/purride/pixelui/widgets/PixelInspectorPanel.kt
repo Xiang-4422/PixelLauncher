@@ -13,11 +13,13 @@ public fun PixelInspectorPanel(
     snapshot: PixelInspectorSnapshot,
     key: Any? = null,
     maxTreeLines: Int = 12,
+    selectedTarget: PixelInspectorTargetSnapshot? = null,
 ): Widget {
     require(maxTreeLines > 0) { "maxTreeLines must be > 0" }
     return PixelInspectorPanelWidget(
         snapshot = snapshot,
         maxTreeLines = maxTreeLines,
+        selectedTarget = selectedTarget,
         key = key,
     )
 }
@@ -35,6 +37,7 @@ private enum class PixelInspectorPanelTab(
 private class PixelInspectorPanelWidget(
     val snapshot: PixelInspectorSnapshot,
     val maxTreeLines: Int,
+    val selectedTarget: PixelInspectorTargetSnapshot?,
     key: Any?,
 ) : StatefulWidget(key = key) {
     override fun createState(): State<out StatefulWidget> = PixelInspectorPanelState()
@@ -81,7 +84,7 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
             PixelInspectorPanelTab.Element -> buildTree("ELEMENT TREE", snapshot.elementTree)
             PixelInspectorPanelTab.Render -> buildTree("RENDER TREE", snapshot.renderTree)
             PixelInspectorPanelTab.Semantics -> buildTree("SEMANTICS TREE", snapshot.semanticsTree)
-            PixelInspectorPanelTab.Targets -> buildTargets(snapshot.targetSnapshots)
+            PixelInspectorPanelTab.Targets -> buildTargets(snapshot.targetSnapshots, widget.selectedTarget)
         }
     }
 
@@ -103,24 +106,27 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
         return inspectorLines(lines)
     }
 
-    private fun buildTargets(targets: List<PixelInspectorTargetSnapshot>): Widget {
+    private fun buildTargets(
+        targets: List<PixelInspectorTargetSnapshot>,
+        selectedTarget: PixelInspectorTargetSnapshot?,
+    ): Widget {
         val shown = targets.take(widget.maxTreeLines)
         val overflow = targets.size - shown.size
-        val lines = buildList {
-            add("TARGET BOUNDS")
-            if (shown.isEmpty()) {
-                add("<empty>")
-            } else {
-                shown.forEach { target ->
-                    add(
-                        "${target.kind.name} ${target.left},${target.top} " +
-                            "${target.width}x${target.height} ${target.detail}".trimEnd(),
-                    )
-                }
+        val children = buildList {
+            add(Text("TARGET BOUNDS", style = bodyStyle))
+            if (shown.isEmpty()) add(Text("<empty>", style = bodyStyle))
+            shown.forEach { target ->
+                val line = "${target.kind.name} ${target.left},${target.top} " +
+                    "${target.width}x${target.height} ${target.detail}".trimEnd()
+                add(Text(line, style = if (target == selectedTarget) selectedTargetStyle else bodyStyle))
             }
-            if (overflow > 0) add("... +$overflow")
+            if (overflow > 0) add(Text("... +$overflow", style = bodyStyle))
         }
-        return inspectorLines(lines)
+        return Column(
+            crossAxisAlignment = CrossAxisAlignment.START,
+            spacing = 1,
+            children = children,
+        )
     }
 
     private fun buildTree(title: String, tree: String): Widget {
@@ -150,6 +156,7 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
 
 private val headerStyle = TextStyle(color = PixelColor.fromRgb(200, 255, 64))
 private val bodyStyle = TextStyle(color = PixelColor.fromRgb(180, 180, 180))
+private val selectedTargetStyle = TextStyle(color = PixelColor.fromRgb(200, 255, 64))
 private val selectedBorderColor = PixelColor.fromRgb(80, 180, 110)
 private val panelBorderColor = PixelColor.fromRgb(96, 96, 96)
 
