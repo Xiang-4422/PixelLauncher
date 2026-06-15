@@ -2,18 +2,26 @@ package com.purride.pixeldemo.showcase.theme
 
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.ButtonStyle
+import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GridViewBuilder
+import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
+import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.ScrollController
+import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
+import com.purride.pixelui.Switch
+import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextStyle
@@ -28,7 +36,7 @@ import com.purride.pixelcore.PixelColor
 object ThemeStateMatrixScene : DemoScene {
     override val id = "theme_state_matrix"
     override val title = "组件状态矩阵"
-    override val description = "观察 button / textfield 在 5 种真实状态下的外观"
+    override val description = "观察 button / textfield / controls 的状态外观"
 
     override fun build(env: DemoEnv): Widget = ThemeStateMatrixWidget()
 }
@@ -44,16 +52,19 @@ private class ThemeStateMatrixWidget(override val key: Any? = null) : StatefulWi
         private val tfCtrl = TextEditingController()
         private val tfReadState = PixelTextFieldState(initialText = "只读内容")
         private val tfReadCtrl = TextEditingController()
+        private val controlsScrollState = PixelListState()
+        private val controlsScrollCtrl = ScrollController()
 
         override fun build(context: BuildContext): Widget {
-            val subjects = listOf("Button", "TextField")
+            val subjects = listOf("Button", "TextField", "Controls")
             val controls = subjects.mapIndexed { i, s ->
                 OutlinedButton(s, onPressed = { setState { subjectIdx = i } }, borderColor = if (i == subjectIdx) PixelColor.fromRgb(200, 100, 0) else PixelColor.White)
             }
 
             val content: Widget = when (subjectIdx) {
                 0 -> buttonMatrix()
-                else -> textFieldMatrix()
+                1 -> textFieldMatrix()
+                else -> controlsMatrix()
             }
 
             return Column(
@@ -94,6 +105,80 @@ private class ThemeStateMatrixWidget(override val key: Any? = null) : StatefulWi
             spacing = 4,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
         )
+
+        private fun controlsMatrix(): Widget {
+            val accent = PixelColor.fromRgb(80, 180, 110)
+            return Column(
+                children = listOf(
+                    row(
+                        "ListTile",
+                        Column(
+                            children = listOf(
+                                ListTile(
+                                    leading = Checkbox(checked = true, onChanged = null, activeColor = accent),
+                                    title = Text("Enabled"),
+                                    trailing = Switch(checked = true, onChanged = null, activeColor = accent),
+                                    onTap = {},
+                                ),
+                                ListTile(
+                                    leading = Checkbox(checked = true, onChanged = null, enabled = false),
+                                    title = Text("Disabled"),
+                                    trailing = Switch(checked = false, onChanged = null, enabled = false),
+                                    enabled = false,
+                                ),
+                            ),
+                            spacing = 1,
+                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        ),
+                    ),
+                    row(
+                        "Checkbox / Switch",
+                        Row(
+                            children = listOf(
+                                Checkbox(checked = false, onChanged = {}),
+                                Checkbox(checked = true, onChanged = {}, activeColor = accent),
+                                Checkbox(checked = true, onChanged = {}, enabled = false),
+                                Switch(checked = false, onChanged = {}),
+                                Switch(checked = true, onChanged = {}, activeColor = accent),
+                                Switch(checked = true, onChanged = {}, enabled = false),
+                            ),
+                            spacing = 2,
+                            crossAxisAlignment = CrossAxisAlignment.CENTER,
+                        ),
+                    ),
+                    row("Tabs", Tabs(labels = listOf("A", "B", "C"), selectedIndex = 1, onSelected = {})),
+                    row("Segmented", SegmentedControl(labels = listOf("LOW", "MID", "HI"), selectedIndex = 2, onSelected = {})),
+                    row(
+                        "Scrollbar",
+                        SizedBox(
+                            height = 24,
+                            child = Scrollbar(
+                                state = controlsScrollState,
+                                width = 2,
+                                thumbColor = accent,
+                                child = GridViewBuilder(
+                                    itemCount = 24,
+                                    itemBuilder = { index ->
+                                        Container(
+                                            child = Text("${index % 10}"),
+                                            borderColor = PixelColor.White,
+                                        )
+                                    },
+                                    cellWidth = 12,
+                                    cellHeight = 6,
+                                    spacing = 1,
+                                    runSpacing = 1,
+                                    state = controlsScrollState,
+                                    controller = controlsScrollCtrl,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+                spacing = 4,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            )
+        }
 
         private fun row(label: String, widget: Widget) = Column(
             children = listOf(

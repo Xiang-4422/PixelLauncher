@@ -20,6 +20,7 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Gap
 import com.purride.pixelui.GridViewBuilder
+import com.purride.pixelui.ListTile
 import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.Opacity
@@ -37,6 +38,7 @@ import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.Semantics
+import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
@@ -44,6 +46,7 @@ import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Sprite
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Switch
+import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
@@ -262,6 +265,69 @@ class EngineGoldenTest {
                     ),
                 ),
                 spacing = 2,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            )
+        },
+        Scene(name = "component_controls_state_matrix", width = 96, height = 48) {
+            val accent = PixelColor.fromRgb(80, 180, 110)
+            val dim = PixelColor.fromRgb(80, 80, 80)
+            val scrollController = PixelListController()
+            val scrollState = scrollController.create(initialScrollOffsetPx = 9f)
+            Column(
+                children = listOf(
+                    ListTile(
+                        leading = Checkbox(checked = true, onChanged = null, activeColor = accent),
+                        title = Text("Enabled tile"),
+                        trailing = Switch(checked = true, onChanged = null, activeColor = accent),
+                        onTap = {},
+                    ),
+                    ListTile(
+                        leading = Checkbox(checked = true, onChanged = null, enabled = false),
+                        title = Text("Disabled tile"),
+                        trailing = Switch(checked = false, onChanged = null, enabled = false),
+                        enabled = false,
+                    ),
+                    Row(
+                        children = listOf(
+                            Checkbox(checked = false, onChanged = {}, inactiveColor = PixelColor.White),
+                            Checkbox(checked = true, onChanged = {}, activeColor = accent),
+                            Checkbox(checked = true, onChanged = {}, enabled = false),
+                            Switch(checked = false, onChanged = {}, inactiveColor = PixelColor.White),
+                            Switch(checked = true, onChanged = {}, activeColor = accent),
+                            Switch(checked = true, onChanged = {}, enabled = false),
+                        ),
+                        spacing = 2,
+                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    ),
+                    Tabs(labels = listOf("A", "B", "C"), selectedIndex = 1, onSelected = {}),
+                    SegmentedControl(labels = listOf("LOW", "MID", "HI"), selectedIndex = 2, onSelected = {}),
+                    SizedBox(
+                        height = 10,
+                        child = Scrollbar(
+                            state = scrollState,
+                            width = 2,
+                            thumbColor = accent,
+                            trackColor = dim,
+                            child = GridViewBuilder(
+                                itemCount = 12,
+                                itemBuilder = { index ->
+                                    Container(
+                                        child = Text("${index % 10}"),
+                                        borderColor = PixelColor.White,
+                                        alignment = Alignment.CENTER,
+                                    )
+                                },
+                                cellWidth = 12,
+                                cellHeight = 5,
+                                spacing = 1,
+                                runSpacing = 1,
+                                state = scrollState,
+                                controller = scrollController,
+                            ),
+                        ),
+                    ),
+                ),
+                spacing = 1,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
             )
         },
