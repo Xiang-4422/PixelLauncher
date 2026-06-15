@@ -7,6 +7,8 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
+import com.purride.pixelui.PixelInspectorSnapshot
+import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
@@ -25,7 +27,7 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object DebugOverlayScene : DemoScene {
     override val id = "debug_overlay"
     override val title = "DEBUG OVERLAY"
-    override val description = "FPS / 帧时间 overlay 视觉样式"
+    override val description = "FPS / target / ticker diagnostics overlay"
 
     override fun build(env: DemoEnv): Widget {
         val fakeStats = PixelHostFrameStats(
@@ -33,6 +35,29 @@ object DebugOverlayScene : DemoScene {
             fpsAvg = 60f,
             paintTimeNanos = 2_500_000,
             frameCount = 1234,
+        )
+        val fakeInspector = PixelInspectorSnapshot(
+            frameStats = fakeStats,
+            targetCounts = PixelInspectorTargetCounts(
+                click = 4,
+                pager = 1,
+                list = 2,
+                scrollbar = 1,
+                refresh = 0,
+                textInput = 1,
+                slider = 1,
+                semantics = 6,
+            ),
+            elementTree = "Element",
+            renderTree = "Render",
+            semanticsTree = "Semantics",
+            hasPendingBuild = false,
+            focusedTextInput = true,
+            activePagerCount = 1,
+            activeListCount = 1,
+            activeSlider = false,
+            activeScrollbar = false,
+            activeRefresh = false,
         )
         val labelStyle = TextStyle(color = PixelColor.fromRgb(160, 160, 160))
         return Center(
@@ -42,7 +67,7 @@ object DebugOverlayScene : DemoScene {
                 children = listOf(
                     Text("OVERLAY", style = labelStyle),
                     SizedBox(height = 2),
-                    PixelDebugOverlay(stats = fakeStats),
+                    PixelDebugOverlay(stats = fakeStats, inspector = fakeInspector, activeTickerCount = 2),
                     SizedBox(height = 6),
                     Text("NULL → 0x0", style = labelStyle),
                     SizedBox(height = 2),

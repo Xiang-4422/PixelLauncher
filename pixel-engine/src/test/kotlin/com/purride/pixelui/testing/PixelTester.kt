@@ -211,6 +211,10 @@ public class PixelTester {
         }
     }
 
+    public fun exists(finder: PixelFinder): Boolean {
+        return finder.resolve(root) != null
+    }
+
     public fun dispose() {
         runtime.dispose()
         scheduler.clear()

@@ -282,12 +282,57 @@ public class PixelHostView @JvmOverloads constructor(
         return renderCoordinator.dumpElementTree()
     }
 
+    /**
+     * 把当前 render tree 序列化成 ASCII 缩进字符串。
+     *
+     * 用于运行时调试；不应在生产热路径高频调用。还没渲染过一帧时返回
+     * `<no render root>`。
+     */
+    public fun dumpRenderTree(): String {
+        return renderCoordinator.dumpRenderTree()
+    }
+
     public fun dumpSemanticsTree(): String {
         val nodes = lastRenderResult?.semanticsNodes.orEmpty()
         if (nodes.isEmpty()) return "<empty semantics>"
         return nodes.joinToString(separator = "\n") { node ->
             "${node.role} label=\"${node.label}\" enabled=${node.enabled} focused=${node.focused} bounds=${node.left},${node.top},${node.width},${node.height}"
         }
+    }
+
+    /**
+     * 采样当前 host inspector 快照，供调试面板、log dump 或崩溃诊断使用。
+     *
+     * 该方法会构造多段诊断字符串，请只在调试路径按需调用。
+     */
+    public fun inspect(includeFrameStats: Boolean = true): PixelInspectorSnapshot {
+        val renderResult = lastRenderResult
+        val targetCounts = renderResult?.let { result ->
+            PixelInspectorTargetCounts(
+                click = result.clickTargets.size,
+                pager = result.pagerTargets.size,
+                list = result.listTargets.size,
+                scrollbar = result.scrollbarTargets.size,
+                refresh = result.refreshTargets.size,
+                textInput = result.textInputTargets.size,
+                slider = result.sliderTargets.size,
+                semantics = result.semanticsNodes.size,
+            )
+        } ?: PixelInspectorTargetCounts.Empty
+        return PixelInspectorSnapshot(
+            frameStats = if (includeFrameStats) renderCoordinator.snapshotFrameStats() else null,
+            targetCounts = targetCounts,
+            elementTree = dumpElementTree(),
+            renderTree = dumpRenderTree(),
+            semanticsTree = dumpSemanticsTree(),
+            hasPendingBuild = renderCoordinator.hasPendingBuild(),
+            focusedTextInput = focusedTextInputTarget != null,
+            activePagerCount = renderResult?.pagerTargets.orEmpty().count { it.controller.isActive(it.state) },
+            activeListCount = renderResult?.listTargets.orEmpty().count { it.controller.isActive(it.state) },
+            activeSlider = activeSliderTarget != null,
+            activeScrollbar = activeScrollbarTarget != null,
+            activeRefresh = activeRefreshTarget != null,
+        )
     }
 
     override fun onDraw(canvas: Canvas) {

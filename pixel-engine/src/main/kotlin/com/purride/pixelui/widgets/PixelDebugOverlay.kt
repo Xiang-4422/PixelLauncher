@@ -37,12 +37,31 @@ import com.purride.pixelcore.PixelColor
 public fun PixelDebugOverlay(
     stats: PixelHostFrameStats?,
     key: Any? = null,
+    inspector: PixelInspectorSnapshot? = null,
+    activeTickerCount: Int? = null,
 ): Widget {
-    if (stats == null) return SizedBox(width = 0, height = 0, key = key)
+    if (stats == null && inspector == null && activeTickerCount == null) {
+        return SizedBox(width = 0, height = 0, key = key)
+    }
     val ink = PixelColor.fromRgb(0xC8, 0xFF, 0x40)
     val bg = PixelColor.fromRgb(0x00, 0x00, 0x00)
     val border = PixelColor.fromRgb(0x60, 0x60, 0x60)
     val style = TextStyle(color = ink)
+    val lines = buildList {
+        stats?.let {
+            add("FPS ${it.fpsAvg.toInt()}")
+            add("MS  ${it.deltaMs}")
+        }
+        inspector?.let {
+            val targets = it.targetCounts
+            add("TGT C${targets.click} L${targets.list} P${targets.pager} T${targets.textInput}")
+            add("SEM ${targets.semantics} PEND ${if (it.hasPendingBuild) 1 else 0}")
+            if (it.activePagerCount > 0 || it.activeListCount > 0 || it.activeSlider || it.activeScrollbar || it.activeRefresh) {
+                add("ACT P${it.activePagerCount} L${it.activeListCount}")
+            }
+        }
+        activeTickerCount?.let { add("TICK $it") }
+    }
     return DecoratedBox(
         fillColor = bg,
         borderColor = border,
@@ -51,10 +70,7 @@ public fun PixelDebugOverlay(
             child = Column(
                 crossAxisAlignment = CrossAxisAlignment.START,
                 mainAxisSize = MainAxisSize.MIN,
-                children = listOf(
-                    Text("FPS ${stats.fpsAvg.toInt()}", style = style),
-                    Text("MS  ${stats.deltaMs}", style = style),
-                ),
+                children = lines.map { line -> Text(line, style = style) },
             ),
         ),
         key = key,

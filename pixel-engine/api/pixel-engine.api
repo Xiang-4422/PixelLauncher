@@ -454,7 +454,13 @@ com.purride.pixelui public fun performFocusedTextEditAction(action: PixelTextEdi
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
 com.purride.pixelui public fun setWindowInsets(
 com.purride.pixelui public fun dumpElementTree(): String
+com.purride.pixelui public fun dumpRenderTree(): String
 com.purride.pixelui public fun dumpSemanticsTree(): String
+com.purride.pixelui public fun inspect(includeFrameStats: Boolean = true): PixelInspectorSnapshot
+com.purride.pixelui public data class PixelInspectorSnapshot(
+com.purride.pixelui public data class PixelInspectorTargetCounts(
+com.purride.pixelui public companion object
+com.purride.pixelui public val Empty: PixelInspectorTargetCounts = PixelInspectorTargetCounts(
 com.purride.pixelui public class PixelTextInputBridge(
 com.purride.pixelui public val inputView: EditText = EditText(context),
 com.purride.pixelui.internal public data class RenderSize(

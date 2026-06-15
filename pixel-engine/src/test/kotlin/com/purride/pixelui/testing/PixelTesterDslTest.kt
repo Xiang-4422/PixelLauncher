@@ -22,6 +22,10 @@ import com.purride.pixelui.ListViewSeparatedBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
+import com.purride.pixelui.PixelDebugOverlay
+import com.purride.pixelui.PixelHostFrameStats
+import com.purride.pixelui.PixelInspectorSnapshot
+import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.ProgressBar
@@ -1500,6 +1504,54 @@ class PixelTesterDslTest {
             assertTrue(error.message.orEmpty().contains("readOnly"))
         }
         assertEquals("read only", state.text)
+        tester.dispose()
+    }
+
+    @Test
+    fun debugOverlayDisplaysInspectorAndTickerDiagnostics() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            widget = PixelDebugOverlay(
+                stats = PixelHostFrameStats(
+                    deltaMs = 16,
+                    fpsAvg = 60f,
+                    paintTimeNanos = 1_000_000,
+                    frameCount = 3,
+                ),
+                inspector = PixelInspectorSnapshot(
+                    frameStats = null,
+                    targetCounts = PixelInspectorTargetCounts(
+                        click = 2,
+                        pager = 1,
+                        list = 3,
+                        scrollbar = 1,
+                        refresh = 0,
+                        textInput = 1,
+                        slider = 1,
+                        semantics = 4,
+                    ),
+                    elementTree = "Element",
+                    renderTree = "Render",
+                    semanticsTree = "Semantics",
+                    hasPendingBuild = true,
+                    focusedTextInput = true,
+                    activePagerCount = 1,
+                    activeListCount = 2,
+                    activeSlider = false,
+                    activeScrollbar = false,
+                    activeRefresh = false,
+                ),
+                activeTickerCount = 5,
+            ),
+            logicalWidth = 96,
+            logicalHeight = 32,
+        )
+
+        assertTrue(tester.exists(find.byText("FPS 60")))
+        assertTrue(tester.exists(find.byText("TGT C2 L3 P1 T1")))
+        assertTrue(tester.exists(find.byText("SEM 4 PEND 1")))
+        assertTrue(tester.exists(find.byText("ACT P1 L2")))
+        assertTrue(tester.exists(find.byText("TICK 5")))
         tester.dispose()
     }
 

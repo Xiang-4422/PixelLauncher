@@ -98,6 +98,12 @@ internal class PixelHostRenderCoordinator(
 
     fun dumpElementTree(): String = runtime.dumpElementTree()
 
+    fun dumpRenderTree(): String = runtime.dumpRenderTree()
+
+    fun hasPendingBuild(): Boolean = runtime.hasPendingBuild()
+
+    fun snapshotFrameStats(): PixelHostFrameStats = frameLoop.snapshotStats()
+
     fun dispose() {
         runtime.dispose()
     }

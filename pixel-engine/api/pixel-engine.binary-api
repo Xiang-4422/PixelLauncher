@@ -1083,8 +1083,8 @@ public final class com.purride.pixelui.PixelControllerExtensionsKt {
   public static final com.purride.pixelui.VoidCallback observe(com.purride.pixelui.ChangeNotifier, kotlin.jvm.functions.Function0<kotlin.Unit>);
 }
 public final class com.purride.pixelui.PixelDebugOverlayKt {
-  public static final com.purride.pixelui.Widget PixelDebugOverlay(com.purride.pixelui.PixelHostFrameStats, java.lang.Object);
-  public static com.purride.pixelui.Widget PixelDebugOverlay$default(com.purride.pixelui.PixelHostFrameStats, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget PixelDebugOverlay(com.purride.pixelui.PixelHostFrameStats, java.lang.Object, com.purride.pixelui.PixelInspectorSnapshot, java.lang.Integer);
+  public static com.purride.pixelui.Widget PixelDebugOverlay$default(com.purride.pixelui.PixelHostFrameStats, java.lang.Object, com.purride.pixelui.PixelInspectorSnapshot, java.lang.Integer, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelFocusDirection extends java.lang.Enum<com.purride.pixelui.PixelFocusDirection> {
   public static final com.purride.pixelui.PixelFocusDirection NEXT;
@@ -1262,6 +1262,9 @@ public final class com.purride.pixelui.PixelHostRenderCoordinator {
   public final void submitFrame-olPvOxg(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.ScreenProfile, int);
   public final com.purride.pixelui.internal.PixelRenderResult renderFrame();
   public final java.lang.String dumpElementTree();
+  public final java.lang.String dumpRenderTree();
+  public final boolean hasPendingBuild();
+  public final com.purride.pixelui.PixelHostFrameStats snapshotFrameStats();
   public final void dispose();
 }
 public final class com.purride.pixelui.PixelHostSetup {
@@ -1419,7 +1422,10 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public static void setWindowInsets$default(com.purride.pixelui.PixelHostView, int, int, int, int, int, java.lang.Object);
   public android.view.View asView();
   public final java.lang.String dumpElementTree();
+  public final java.lang.String dumpRenderTree();
   public final java.lang.String dumpSemanticsTree();
+  public final com.purride.pixelui.PixelInspectorSnapshot inspect(boolean);
+  public static com.purride.pixelui.PixelInspectorSnapshot inspect$default(com.purride.pixelui.PixelHostView, boolean, int, java.lang.Object);
   public android.view.WindowInsets onApplyWindowInsets(android.view.WindowInsets);
   public boolean onTouchEvent(android.view.MotionEvent);
   public boolean performClick();
@@ -1460,6 +1466,68 @@ public final class com.purride.pixelui.PixelInputType extends java.lang.Enum<com
   public static com.purride.pixelui.PixelInputType[] values();
   public static com.purride.pixelui.PixelInputType valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelInputType> getEntries();
+}
+public final class com.purride.pixelui.PixelInspectorSnapshot {
+  public com.purride.pixelui.PixelInspectorSnapshot(com.purride.pixelui.PixelHostFrameStats, com.purride.pixelui.PixelInspectorTargetCounts, java.lang.String, java.lang.String, java.lang.String, boolean, boolean, int, int, boolean, boolean, boolean);
+  public final com.purride.pixelui.PixelHostFrameStats getFrameStats();
+  public final com.purride.pixelui.PixelInspectorTargetCounts getTargetCounts();
+  public final java.lang.String getElementTree();
+  public final java.lang.String getRenderTree();
+  public final java.lang.String getSemanticsTree();
+  public final boolean getHasPendingBuild();
+  public final boolean getFocusedTextInput();
+  public final int getActivePagerCount();
+  public final int getActiveListCount();
+  public final boolean getActiveSlider();
+  public final boolean getActiveScrollbar();
+  public final boolean getActiveRefresh();
+  public final com.purride.pixelui.PixelHostFrameStats component1();
+  public final com.purride.pixelui.PixelInspectorTargetCounts component2();
+  public final java.lang.String component3();
+  public final java.lang.String component4();
+  public final java.lang.String component5();
+  public final boolean component6();
+  public final boolean component7();
+  public final int component8();
+  public final int component9();
+  public final boolean component10();
+  public final boolean component11();
+  public final boolean component12();
+  public final com.purride.pixelui.PixelInspectorSnapshot copy(com.purride.pixelui.PixelHostFrameStats, com.purride.pixelui.PixelInspectorTargetCounts, java.lang.String, java.lang.String, java.lang.String, boolean, boolean, int, int, boolean, boolean, boolean);
+  public static com.purride.pixelui.PixelInspectorSnapshot copy$default(com.purride.pixelui.PixelInspectorSnapshot, com.purride.pixelui.PixelHostFrameStats, com.purride.pixelui.PixelInspectorTargetCounts, java.lang.String, java.lang.String, java.lang.String, boolean, boolean, int, int, boolean, boolean, boolean, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.PixelInspectorTargetCounts {
+  public static final com.purride.pixelui.PixelInspectorTargetCounts$Companion Companion;
+  public com.purride.pixelui.PixelInspectorTargetCounts(int, int, int, int, int, int, int, int);
+  public final int getClick();
+  public final int getPager();
+  public final int getList();
+  public final int getScrollbar();
+  public final int getRefresh();
+  public final int getTextInput();
+  public final int getSlider();
+  public final int getSemantics();
+  public final int component1();
+  public final int component2();
+  public final int component3();
+  public final int component4();
+  public final int component5();
+  public final int component6();
+  public final int component7();
+  public final int component8();
+  public final com.purride.pixelui.PixelInspectorTargetCounts copy(int, int, int, int, int, int, int, int);
+  public static com.purride.pixelui.PixelInspectorTargetCounts copy$default(com.purride.pixelui.PixelInspectorTargetCounts, int, int, int, int, int, int, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public static final com.purride.pixelui.PixelInspectorTargetCounts access$getEmpty$cp();
+}
+public final class com.purride.pixelui.PixelInspectorTargetCounts$Companion {
+  public final com.purride.pixelui.PixelInspectorTargetCounts getEmpty();
+  public com.purride.pixelui.PixelInspectorTargetCounts$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelKey extends java.lang.Enum<com.purride.pixelui.PixelKey> {
   public static final com.purride.pixelui.PixelKey TAB;

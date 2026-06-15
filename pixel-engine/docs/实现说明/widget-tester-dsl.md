@@ -24,6 +24,7 @@ tester.composeText(find.byKey("field"), "拼")
 tester.submitTextInput()
 tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.COPY)
 tester.performTextEditAction(find.byKey("field"), PixelTextEditAction.PASTE, pasteText = "text")
+tester.exists(find.byText("READY"))
 tester.pumpFrame(deltaMs = 16)
 tester.pumpAndSettle(maxFrames = 60)
 ```
@@ -44,6 +45,7 @@ Finder：
 - `performTextEditAction` 覆盖 Copy/Cut/Paste/Select all，并用 tester 内的
   `clipboardText` 模拟 clipboard；Cut/Paste 会触发 `onChanged`。
 - finder 支持多结果和 `nth(index)`；失败时会 dump finder 候选、widget 路径、element tree、render tree 和当前 targets。
+- `exists(finder)` 只做 finder 匹配，不要求目标可点击，适合断言 overlay / debug 文本。
 - `pumpAndSettle` 会推进 manual scheduler、active ticker、pending build 以及 list/pager scroll activity。
 
 ## 后续
