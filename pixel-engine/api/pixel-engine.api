@@ -181,8 +181,10 @@ com.purride.pixelui public fun rect(
 com.purride.pixelui public fun circle(
 com.purride.pixelui public typealias PixelNavigator = com.purride.pixelui.widgets.navigation.PixelNavigator
 com.purride.pixelui public typealias PixelNavigatorState = com.purride.pixelui.widgets.navigation.PixelNavigatorState
+com.purride.pixelui public typealias PixelNavigatorOperation = com.purride.pixelui.widgets.navigation.PixelNavigatorOperation
 com.purride.pixelui public typealias PixelRoute = com.purride.pixelui.widgets.navigation.PixelRoute
 com.purride.pixelui public typealias PixelRouteTransition = com.purride.pixelui.widgets.navigation.PixelRouteTransition
+com.purride.pixelui public typealias PixelRouteTransitionBuilder = com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder
 com.purride.pixelui public typealias PixelRouteScrollRestoration = com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration
 com.purride.pixelui public object PixelUiModule
 com.purride.pixelui.advanced public typealias PixelRenderObjectWidget = InternalRenderObjectWidget
@@ -742,6 +744,9 @@ com.purride.pixelui.widgets.navigation public data class PixelNavigatorSnapshot(
 com.purride.pixelui.widgets.navigation public fun PixelNavigatorSnapshot.saveToBundle(
 com.purride.pixelui.widgets.navigation public fun Bundle.getPixelNavigatorSnapshot(
 com.purride.pixelui.widgets.navigation public enum class PixelRouteTransition
+com.purride.pixelui.widgets.navigation public enum class PixelNavigatorOperation
+com.purride.pixelui.widgets.navigation public fun interface PixelRouteTransitionBuilder
+com.purride.pixelui.widgets.navigation public fun build(
 com.purride.pixelui.widgets.navigation public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) : ChangeNotifier()
 com.purride.pixelui.widgets.navigation public val canPop: Boolean
 com.purride.pixelui.widgets.navigation public val currentRoute: PixelRoute
@@ -760,6 +765,7 @@ com.purride.pixelui.widgets.navigation public val initialRoute: PixelRoute,
 com.purride.pixelui.widgets.navigation public val vsync: PixelTickerProvider,
 com.purride.pixelui.widgets.navigation public val transitionDuration: Duration = 200.milliseconds,
 com.purride.pixelui.widgets.navigation public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
+com.purride.pixelui.widgets.navigation public val transitionBuilder: PixelRouteTransitionBuilder? = null,
 com.purride.pixelui.widgets.navigation public companion object
 com.purride.pixelui.widgets.navigation public fun maybeOf(context: BuildContext): PixelNavigatorState?
 com.purride.pixelui.widgets.navigation public fun of(context: BuildContext): PixelNavigatorState

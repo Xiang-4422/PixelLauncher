@@ -47,6 +47,7 @@ public data class PixelRoute(
     val onEnter: (() -> Unit)? = null,
     val onExit: (() -> Unit)? = null,
     val onDispose: (() -> Unit)? = null,
+    val transitionBuilder: PixelRouteTransitionBuilder? = null,
 )
 
 public data class PixelNavigatorSnapshot(
@@ -81,6 +82,27 @@ public enum class PixelRouteTransition {
     Fade,
     SlideHorizontal,
     SlideVertical,
+}
+
+public enum class PixelNavigatorOperation {
+    Push,
+    Pop,
+    Replace,
+}
+
+/**
+ * Builds one frame of a custom route transition.
+ *
+ * [progress] advances from 0f to 1f. Navigator owns the ticker and completes route disposal
+ * only after the custom transition settles.
+ */
+public fun interface PixelRouteTransitionBuilder {
+    public fun build(
+        progress: Float,
+        operation: PixelNavigatorOperation,
+        outgoing: Widget,
+        incoming: Widget,
+    ): Widget
 }
 
 public class PixelNavigatorState internal constructor(initialRoute: PixelRoute) : ChangeNotifier() {
@@ -266,6 +288,7 @@ public class PixelNavigator(
     public val transitionDuration: Duration = 200.milliseconds,
     public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
     override val key: Any? = null,
+    public val transitionBuilder: PixelRouteTransitionBuilder? = null,
 ) : StatefulWidget(key = key) {
 
     override fun createState(): State<out StatefulWidget> = PixelNavigatorWidgetState()
@@ -298,7 +321,19 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
             val transition = transitionRecord.incomingRoute.transition ?: widget.defaultTransition
             val incoming = routeChild(transitionRecord.incomingRoute)
             val outgoing = routeChild(transitionRecord.outgoingRoute, suffix = "outgoing")
-            when (transition) {
+            val customBuilder = resolveTransitionBuilder(transitionRecord)
+            if (customBuilder != null) {
+                PixelRouteCustomTransition(
+                    id = transitionRecord.id,
+                    operation = transitionRecord.operation,
+                    duration = widget.transitionDuration,
+                    vsync = widget.vsync,
+                    builder = customBuilder,
+                    onSettled = { navigatorState.completeTransition(transitionRecord.id) },
+                    outgoing = outgoing,
+                    incoming = incoming,
+                )
+            } else when (transition) {
                 PixelRouteTransition.None -> {
                     navigatorState.completeTransition(transitionRecord.id)
                     incoming
@@ -335,6 +370,18 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
         )
     }
 
+    private fun resolveTransitionBuilder(
+        transition: PixelNavigatorTransitionRecord,
+    ): PixelRouteTransitionBuilder? {
+        val routeBuilder = when (transition.operation) {
+            PixelNavigatorOperation.Pop -> transition.outgoingRoute.transitionBuilder
+            PixelNavigatorOperation.Push,
+            PixelNavigatorOperation.Replace,
+            -> transition.incomingRoute.transitionBuilder
+        }
+        return routeBuilder ?: widget.transitionBuilder
+    }
+
     private fun routeChild(route: PixelRoute, suffix: String = "incoming"): Widget {
         return PixelRouteStorageScope(
             bucket = navigatorState.restorationBucket(route),
@@ -342,6 +389,51 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
                 route.builder(routeContext)
             },
             key = "route-storage:${route.name}:$suffix",
+        )
+    }
+}
+
+private class PixelRouteCustomTransition(
+    val id: Long,
+    val operation: PixelNavigatorOperation,
+    val duration: Duration,
+    val vsync: PixelTickerProvider,
+    val builder: PixelRouteTransitionBuilder,
+    val onSettled: () -> Unit,
+    val outgoing: Widget,
+    val incoming: Widget,
+) : StatefulWidget(key = "route-custom:$id") {
+    override fun createState(): State<out StatefulWidget> = PixelRouteCustomTransitionState()
+}
+
+private class PixelRouteCustomTransitionState : State<PixelRouteCustomTransition>() {
+    private lateinit var controller: PixelAnimationController
+    private lateinit var curved: CurvedAnimation
+    private var settled = false
+
+    override fun initState() {
+        controller = PixelAnimationController(duration = widget.duration, vsync = widget.vsync)
+        curved = CurvedAnimation(parent = controller, curve = Curves.Step(8))
+        controller.addListener {
+            if (!settled && controller.status == PixelAnimationStatus.Completed) {
+                settled = true
+                widget.onSettled()
+            }
+        }
+        controller.forward(from = 0f)
+    }
+
+    override fun dispose() {
+        controller.dispose()
+    }
+
+    override fun build(context: BuildContext): Widget {
+        context.watch(controller)
+        return widget.builder.build(
+            progress = curved.value,
+            operation = widget.operation,
+            outgoing = widget.outgoing,
+            incoming = widget.incoming,
         )
     }
 }
@@ -560,9 +652,3 @@ internal data class PixelNavigatorTransitionRecord(
     val incomingRoute: PixelRoute,
     val operation: PixelNavigatorOperation,
 )
-
-internal enum class PixelNavigatorOperation {
-    Push,
-    Pop,
-    Replace,
-}

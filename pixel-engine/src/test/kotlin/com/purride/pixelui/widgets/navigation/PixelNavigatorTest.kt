@@ -17,6 +17,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 class PixelNavigatorTest {
     @Test
@@ -201,6 +202,103 @@ class PixelNavigatorTest {
         tester.pumpAndSettle()
         assertNull(state.activeTransition)
         assertTrue(events.contains("details-dispose"))
+        tester.dispose()
+    }
+
+    @Test
+    fun customTransitionBuilderReceivesProgressAndOwnsPushAndPopFrames() {
+        val tester = PixelTester()
+        val frames = mutableListOf<Pair<PixelNavigatorOperation, Float>>()
+        val disposed = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = PixelRoute(
+            name = "details",
+            builder = { Text("DETAILS") },
+            onDispose = { disposed += "details" },
+            transitionBuilder = PixelRouteTransitionBuilder { progress, operation, _, incoming ->
+                frames += operation to progress
+                incoming
+            },
+        )
+        tester.pumpWidget(
+            PixelNavigator(
+                initialRoute = root,
+                vsync = tester.vsync,
+                transitionDuration = 200.milliseconds,
+            ),
+            32,
+            12,
+        )
+
+        navigator!!.push(details)
+        tester.pumpFrame(1)
+        tester.pumpFrame(1)
+        tester.pumpFrame(100)
+        assertTrue(frames.any { (operation, progress) ->
+            operation == PixelNavigatorOperation.Push && progress in 0.01f..0.99f
+        })
+        tester.pumpAndSettle()
+        assertTrue(tester.exists(com.purride.pixelui.testing.find.byText("DETAILS")))
+
+        frames.clear()
+        assertTrue(navigator!!.pop())
+        tester.pumpFrame(1)
+        tester.pumpFrame(1)
+        tester.pumpFrame(100)
+        assertTrue(frames.any { (operation, progress) ->
+            operation == PixelNavigatorOperation.Pop && progress in 0.01f..0.99f
+        })
+        assertTrue(disposed.isEmpty())
+        tester.pumpAndSettle()
+        assertEquals(listOf("details"), disposed)
+        tester.dispose()
+    }
+
+    @Test
+    fun routeTransitionBuilderOverridesNavigatorFallback() {
+        val tester = PixelTester()
+        var navigator: PixelNavigatorState? = null
+        var fallbackFrames = 0
+        var routeFrames = 0
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val plain = route("plain") { Text("PLAIN") }
+        val custom = PixelRoute(
+            name = "custom",
+            builder = { Text("CUSTOM") },
+            transitionBuilder = PixelRouteTransitionBuilder { _, _, _, incoming ->
+                routeFrames += 1
+                incoming
+            },
+        )
+        tester.pumpWidget(
+            PixelNavigator(
+                initialRoute = root,
+                vsync = tester.vsync,
+                transitionBuilder = PixelRouteTransitionBuilder { _, _, _, incoming ->
+                    fallbackFrames += 1
+                    incoming
+                },
+            ),
+            32,
+            12,
+        )
+
+        navigator!!.push(plain)
+        tester.pumpAndSettle()
+        assertTrue(fallbackFrames > 0)
+
+        fallbackFrames = 0
+        navigator!!.push(custom)
+        tester.pumpAndSettle()
+        assertTrue(routeFrames > 0)
+        assertEquals(0, fallbackFrames)
         tester.dispose()
     }
 

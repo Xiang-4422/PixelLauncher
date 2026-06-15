@@ -2777,14 +2777,15 @@ public final class com.purride.pixelui.widgets.animated.TweenAnimationBuilderKt 
 }
 public final class com.purride.pixelui.widgets.navigation.PixelNavigator extends com.purride.pixelui.StatefulWidget {
   public static final com.purride.pixelui.widgets.navigation.PixelNavigator$Companion Companion;
-  public com.purride.pixelui.widgets.navigation.PixelNavigator(com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.animation.PixelTickerProvider, long, com.purride.pixelui.widgets.navigation.PixelRouteTransition, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.widgets.navigation.PixelNavigator(com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.animation.PixelTickerProvider, long, com.purride.pixelui.widgets.navigation.PixelRouteTransition, java.lang.Object, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelui.widgets.navigation.PixelRoute getInitialRoute();
   public final com.purride.pixelui.animation.PixelTickerProvider getVsync();
   public final long getTransitionDuration-UwyO8pc();
   public final com.purride.pixelui.widgets.navigation.PixelRouteTransition getDefaultTransition();
   public java.lang.Object getKey();
+  public final com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder getTransitionBuilder();
   public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
-  public com.purride.pixelui.widgets.navigation.PixelNavigator(com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.animation.PixelTickerProvider, long, com.purride.pixelui.widgets.navigation.PixelRouteTransition, java.lang.Object, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.widgets.navigation.PixelNavigator(com.purride.pixelui.widgets.navigation.PixelRoute, com.purride.pixelui.animation.PixelTickerProvider, long, com.purride.pixelui.widgets.navigation.PixelRouteTransition, java.lang.Object, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.widgets.navigation.PixelNavigator$Companion {
   public final com.purride.pixelui.widgets.navigation.PixelNavigatorState maybeOf(com.purride.pixelui.BuildContext);
@@ -2855,8 +2856,8 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigatorTransiti
   public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelui.widgets.navigation.PixelRoute {
-  public com.purride.pixelui.widgets.navigation.PixelRoute(java.lang.String, kotlin.jvm.functions.Function1<? super com.purride.pixelui.BuildContext, ? extends com.purride.pixelui.Widget>, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0<java.lang.Boolean>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>);
-  public com.purride.pixelui.widgets.navigation.PixelRoute(java.lang.String, kotlin.jvm.functions.Function1, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.widgets.navigation.PixelRoute(java.lang.String, kotlin.jvm.functions.Function1<? super com.purride.pixelui.BuildContext, ? extends com.purride.pixelui.Widget>, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0<java.lang.Boolean>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder);
+  public com.purride.pixelui.widgets.navigation.PixelRoute(java.lang.String, kotlin.jvm.functions.Function1, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final java.lang.String getName();
   public final kotlin.jvm.functions.Function1<com.purride.pixelui.BuildContext, com.purride.pixelui.Widget> getBuilder();
   public final com.purride.pixelui.widgets.navigation.PixelRouteTransition getTransition();
@@ -2864,6 +2865,7 @@ public final class com.purride.pixelui.widgets.navigation.PixelRoute {
   public final kotlin.jvm.functions.Function0<kotlin.Unit> getOnEnter();
   public final kotlin.jvm.functions.Function0<kotlin.Unit> getOnExit();
   public final kotlin.jvm.functions.Function0<kotlin.Unit> getOnDispose();
+  public final com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder getTransitionBuilder();
   public final java.lang.String component1();
   public final kotlin.jvm.functions.Function1<com.purride.pixelui.BuildContext, com.purride.pixelui.Widget> component2();
   public final com.purride.pixelui.widgets.navigation.PixelRouteTransition component3();
@@ -2871,8 +2873,9 @@ public final class com.purride.pixelui.widgets.navigation.PixelRoute {
   public final kotlin.jvm.functions.Function0<kotlin.Unit> component5();
   public final kotlin.jvm.functions.Function0<kotlin.Unit> component6();
   public final kotlin.jvm.functions.Function0<kotlin.Unit> component7();
-  public final com.purride.pixelui.widgets.navigation.PixelRoute copy(java.lang.String, kotlin.jvm.functions.Function1<? super com.purride.pixelui.BuildContext, ? extends com.purride.pixelui.Widget>, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0<java.lang.Boolean>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>);
-  public static com.purride.pixelui.widgets.navigation.PixelRoute copy$default(com.purride.pixelui.widgets.navigation.PixelRoute, java.lang.String, kotlin.jvm.functions.Function1, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, int, java.lang.Object);
+  public final com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder component8();
+  public final com.purride.pixelui.widgets.navigation.PixelRoute copy(java.lang.String, kotlin.jvm.functions.Function1<? super com.purride.pixelui.BuildContext, ? extends com.purride.pixelui.Widget>, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0<java.lang.Boolean>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder);
+  public static com.purride.pixelui.widgets.navigation.PixelRoute copy$default(com.purride.pixelui.widgets.navigation.PixelRoute, java.lang.String, kotlin.jvm.functions.Function1, com.purride.pixelui.widgets.navigation.PixelRouteTransition, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -2909,4 +2912,7 @@ public final class com.purride.pixelui.widgets.navigation.PixelRouteTransition e
   public static com.purride.pixelui.widgets.navigation.PixelRouteTransition[] values();
   public static com.purride.pixelui.widgets.navigation.PixelRouteTransition valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.widgets.navigation.PixelRouteTransition> getEntries();
+}
+public interface com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder {
+  public abstract com.purride.pixelui.Widget build(float, com.purride.pixelui.widgets.navigation.PixelNavigatorOperation, com.purride.pixelui.Widget, com.purride.pixelui.Widget);
 }
