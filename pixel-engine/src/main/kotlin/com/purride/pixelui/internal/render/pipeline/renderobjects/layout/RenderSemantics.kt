@@ -43,18 +43,21 @@ internal class RenderSemantics(
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
     override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<PixelSemanticsNode>) {
-        nodes += PixelSemanticsNode(
-            label = label,
-            role = role,
-            enabled = enabled,
-            focused = focused,
-            left = offsetX,
-            top = offsetY,
-            width = size.width,
-            height = size.height,
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        targets += PixelSemanticsTarget(
+            node = PixelSemanticsNode(
+                label = label,
+                role = role,
+                enabled = enabled,
+                focused = focused,
+                left = offsetX,
+                top = offsetY,
+                width = size.width,
+                height = size.height,
+            ),
+            source = this,
         )
-        renderChild?.collectSemantics(offsetX, offsetY, nodes)
+        renderChild?.collectSemantics(offsetX, offsetY, targets)
     }
 
     private val renderChild: RenderBox?

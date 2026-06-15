@@ -521,6 +521,7 @@ internal class RenderSurface(
                     height = size.height,
                 ),
                 onClick = clickHandler,
+                source = this,
             )
         }
         renderChild?.collectClickTargets(
@@ -635,6 +636,7 @@ internal class RenderSurface(
                         )
                     }
                 },
+                source = this,
             )
         }
         renderChild?.collectTextInputTargets(
@@ -656,24 +658,27 @@ internal class RenderSurface(
         )
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<PixelSemanticsNode>) {
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
         val state = textInputState
         if (state != null) {
-            nodes += PixelSemanticsNode(
-                label = state.text.ifEmpty { "" },
-                role = PixelSemanticRole.TEXT_FIELD,
-                enabled = textInputCursorColor != null || !textInputReadOnly,
-                focused = state.isFocused,
-                left = offsetX,
-                top = offsetY,
-                width = size.width,
-                height = size.height,
+            targets += PixelSemanticsTarget(
+                node = PixelSemanticsNode(
+                    label = state.text.ifEmpty { "" },
+                    role = PixelSemanticRole.TEXT_FIELD,
+                    enabled = textInputCursorColor != null || !textInputReadOnly,
+                    focused = state.isFocused,
+                    left = offsetX,
+                    top = offsetY,
+                    width = size.width,
+                    height = size.height,
+                ),
+                source = this,
             )
         }
         renderChild?.collectSemantics(
             offsetX = offsetX + childOffsetX,
             offsetY = offsetY + childOffsetY,
-            nodes = nodes,
+            targets = targets,
         )
     }
 

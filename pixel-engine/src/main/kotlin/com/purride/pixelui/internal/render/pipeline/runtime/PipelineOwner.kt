@@ -95,7 +95,7 @@ internal class PipelineOwner(
         root.collectRefreshTargets(offsetX = 0, offsetY = 0, targets = session.refreshTargets)
         root.collectTextInputTargets(offsetX = 0, offsetY = 0, targets = session.textInputTargets)
         root.collectSliderTargets(offsetX = 0, offsetY = 0, targets = session.sliderTargets)
-        root.collectSemantics(offsetX = 0, offsetY = 0, nodes = session.semanticsNodes)
+        root.collectSemantics(offsetX = 0, offsetY = 0, targets = session.semanticsTargets)
         lastTargetDiagnostics = TargetDiagnostics(
             clickTargets = session.clickTargets.size,
             pagerTargets = session.pagerTargets.size,

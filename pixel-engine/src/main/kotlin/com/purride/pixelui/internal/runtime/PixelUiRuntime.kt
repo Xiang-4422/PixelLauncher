@@ -93,4 +93,25 @@ internal class PixelUiRuntime(
     fun collectWidgets(): List<Widget> {
         return buildRuntime.collectWidgets()
     }
+
+    fun collectInspectorNodeAssociations(): Map<RenderObject, InspectorNodeAssociation> {
+        val elementNodes = buildRuntime.collectDiagnostics().elementDiagnostics
+        val renderNodes = (elementTreeRenderer as? PipelineElementTreeRenderer)
+            ?.collectRenderDiagnostics()
+            .orEmpty()
+        val elementPaths = elementNodes.mapNotNull { node ->
+            node.renderObject?.let { renderObject -> renderObject to node.path }
+        }.toMap()
+        return renderNodes.associate { node ->
+            node.renderObject to InspectorNodeAssociation(
+                elementPath = elementPaths[node.renderObject],
+                renderPath = node.path,
+            )
+        }
+    }
 }
+
+internal data class InspectorNodeAssociation(
+    val elementPath: String?,
+    val renderPath: String,
+)

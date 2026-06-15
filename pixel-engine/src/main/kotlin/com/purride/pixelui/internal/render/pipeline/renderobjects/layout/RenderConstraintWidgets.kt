@@ -83,7 +83,7 @@ internal class RenderWrap(
     override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectScrollbarTargets(x, y, targets) }
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectTextInputTargets(x, y, targets) }
     override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectSliderTargets(x, y, targets) }
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) = collect(offsetX, offsetY) { child, x, y -> child.collectSemantics(x, y, nodes) }
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectSemantics(x, y, targets) }
 
     private fun collect(offsetX: Int, offsetY: Int, block: (RenderBox, Int, Int) -> Unit) {
         renderChildren.forEachIndexed { index, child ->
@@ -140,7 +140,7 @@ internal class RenderAspectRatio(
     override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) = renderChild?.collectScrollbarTargets(offsetX, offsetY, targets) ?: Unit
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
     override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) = renderChild?.collectSemantics(offsetX, offsetY, nodes) ?: Unit
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) = renderChild?.collectSemantics(offsetX, offsetY, targets) ?: Unit
 
     private val renderChild: RenderBox?
         get() = child as? RenderBox
@@ -190,7 +190,7 @@ internal class RenderConstrainedBox(
     override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) = renderChild?.collectScrollbarTargets(offsetX, offsetY, targets) ?: Unit
     override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
     override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) = renderChild?.collectSemantics(offsetX, offsetY, nodes) ?: Unit
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) = renderChild?.collectSemantics(offsetX, offsetY, targets) ?: Unit
 
     private val renderChild: RenderBox?
         get() = child as? RenderBox

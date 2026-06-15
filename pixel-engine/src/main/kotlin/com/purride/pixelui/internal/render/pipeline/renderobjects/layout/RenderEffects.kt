@@ -77,8 +77,8 @@ internal class RenderOpacity(
         if (opacity > 0f) renderChild?.collectSliderTargets(offsetX, offsetY, targets)
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
-        if (opacity > 0f) renderChild?.collectSemantics(offsetX, offsetY, nodes)
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        if (opacity > 0f) renderChild?.collectSemantics(offsetX, offsetY, targets)
     }
 
     private val renderChild: RenderBox?
@@ -160,8 +160,8 @@ internal class RenderClipRect(
         trimSliderTargetsOutsideClip(targets, before, offsetX, offsetY, size.width, size.height)
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
-        renderChild?.collectSemantics(offsetX, offsetY, nodes)
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        renderChild?.collectSemantics(offsetX, offsetY, targets)
     }
 
     private val renderChild: RenderBox?
@@ -229,8 +229,8 @@ internal class RenderTranslate(
         renderChild?.collectSliderTargets(offsetX + dx, offsetY + dy, targets)
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
-        renderChild?.collectSemantics(offsetX + dx, offsetY + dy, nodes)
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        renderChild?.collectSemantics(offsetX + dx, offsetY + dy, targets)
     }
 
     private val renderChild: RenderBox?

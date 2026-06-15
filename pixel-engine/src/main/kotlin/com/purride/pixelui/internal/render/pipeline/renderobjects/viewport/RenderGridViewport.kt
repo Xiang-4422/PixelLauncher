@@ -140,6 +140,7 @@ internal class RenderGridViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         val collected = mutableListOf<PixelListTarget>()
         collectChildTargets(offsetX, offsetY) { child, childOffsetX, childOffsetY ->

@@ -105,6 +105,7 @@ internal class RenderSlider(
             ),
             onDrag = onDrag,
             onRelease = onRelease,
+            source = this,
         )
     }
 

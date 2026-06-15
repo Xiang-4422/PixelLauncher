@@ -5,8 +5,10 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.host.PixelHostFrameLoop
 import com.purride.pixelui.internal.HostRootWidget
+import com.purride.pixelui.internal.InspectorNodeAssociation
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
+import com.purride.pixelui.internal.RenderObject
 import com.purride.pixelui.internal.PixelUiRuntime
 
 /**
@@ -101,6 +103,10 @@ internal class PixelHostRenderCoordinator(
     fun dumpRenderTree(): String = runtime.dumpRenderTree()
 
     fun hasPendingBuild(): Boolean = runtime.hasPendingBuild()
+
+    fun collectInspectorNodeAssociations(): Map<RenderObject, InspectorNodeAssociation> {
+        return runtime.collectInspectorNodeAssociations()
+    }
 
     fun snapshotFrameStats(): PixelHostFrameStats = frameLoop.snapshotStats()
 

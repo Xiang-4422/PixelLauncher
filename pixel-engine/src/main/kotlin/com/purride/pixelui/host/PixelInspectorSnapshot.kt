@@ -41,13 +41,15 @@ public enum class PixelInspectorTargetKind {
  *
  * 这里只暴露命中区域和诊断字符串，不泄露内部 controller / state 引用。
  */
-public data class PixelInspectorTargetSnapshot(
+public data class PixelInspectorTargetSnapshot @JvmOverloads constructor(
     val kind: PixelInspectorTargetKind,
     val left: Int,
     val top: Int,
     val width: Int,
     val height: Int,
     val detail: String = "",
+    val elementPath: String? = null,
+    val renderPath: String? = null,
 ) {
     public fun contains(x: Int, y: Int): Boolean {
         return width > 0 &&

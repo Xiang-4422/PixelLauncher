@@ -175,6 +175,7 @@ internal class RenderCustomScrollViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         collectChildTargets(offsetX, offsetY, targets) { child, x, y, bucket ->
             child.collectListTargets(x, y, bucket)
@@ -205,9 +206,9 @@ internal class RenderCustomScrollViewport(
         }
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
         visibleChildren(includePinned = true).forEach { (index, child) ->
-            child.collectSemantics(offsetX, offsetY + resolvedChildTop(index), nodes)
+            child.collectSemantics(offsetX, offsetY + resolvedChildTop(index), targets)
         }
     }
 

@@ -168,6 +168,7 @@ internal class RenderPagerViewport(
             state = state,
             controller = controller,
             onPageChanged = onPageChanged,
+            source = this,
         )
         val collected = mutableListOf<PixelPagerTarget>()
         collectVisiblePageTargets(

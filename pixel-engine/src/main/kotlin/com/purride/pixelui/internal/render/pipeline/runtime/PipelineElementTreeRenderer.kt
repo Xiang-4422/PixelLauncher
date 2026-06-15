@@ -41,7 +41,7 @@ internal class PipelineElementTreeRenderer private constructor(
     }
 
     fun dumpRenderTree(): String {
-        val diagnostics = owner.collectDiagnostics()
+        val diagnostics = collectRenderDiagnostics()
         if (diagnostics.isEmpty()) return "<no render root>"
         return buildString {
             for (node in diagnostics) {
@@ -58,6 +58,8 @@ internal class PipelineElementTreeRenderer private constructor(
             }
         }.trimEnd()
     }
+
+    fun collectRenderDiagnostics(): List<RenderDiagnosticsNode> = owner.collectDiagnostics()
 
     private fun Element?.findPipelineRenderRoot(): RenderBox? {
         this ?: return null

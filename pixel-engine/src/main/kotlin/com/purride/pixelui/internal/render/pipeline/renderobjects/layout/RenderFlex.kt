@@ -296,6 +296,7 @@ internal class RenderFlex(
                     height = size.height,
                 ),
                 onClick = clickHandler,
+                source = this,
             )
         }
         val children = renderChildren
@@ -414,11 +415,11 @@ internal class RenderFlex(
         }
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
         val children = renderChildren
         children.forEachIndexed { index, child ->
             val childOffset = childOffsets[index]
-            child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, nodes)
+            child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, targets)
         }
     }
 
@@ -702,8 +703,8 @@ internal class RenderFlexChild(
         (child as? RenderBox)?.collectSliderTargets(offsetX, offsetY, targets)
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
-        (child as? RenderBox)?.collectSemantics(offsetX, offsetY, nodes)
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        (child as? RenderBox)?.collectSemantics(offsetX, offsetY, targets)
     }
 }
 

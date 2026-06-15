@@ -76,23 +76,39 @@ internal abstract class Element(
     /**
      * 返回当前 element subtree 的内部诊断快照。
      */
-    internal fun collectDiagnostics(depth: Int = 0): List<ElementDiagnosticsNode> {
+    internal fun collectDiagnostics(): List<ElementDiagnosticsNode> {
+        return collectDiagnostics(depth = 0, path = "0:${widget.javaClass.simpleName}")
+    }
+
+    private fun collectDiagnostics(
+        depth: Int,
+        path: String,
+    ): List<ElementDiagnosticsNode> {
         val children = mutableListOf<Element>()
         visitChildren(children::add)
         return buildList {
+            val renderObject = if (this@Element is RenderObjectElement) findRenderObject() else null
+            val resolvedRenderObjectName = findRenderObject()?.javaClass?.simpleName
             add(
                 ElementDiagnosticsNode(
                     name = this@Element.javaClass.simpleName,
                     widgetName = widget.javaClass.simpleName,
+                    path = path,
                     depth = depth,
                     childCount = children.size,
                     isDirty = dirty,
                     listenedObjectCount = listenedObjects.size,
-                    renderObjectName = findRenderObject()?.javaClass?.simpleName,
+                    renderObjectName = resolvedRenderObjectName,
+                    renderObject = renderObject,
                 ),
             )
-            children.forEach { child ->
-                addAll(child.collectDiagnostics(depth = depth + 1))
+            children.forEachIndexed { index, child ->
+                addAll(
+                    child.collectDiagnostics(
+                        depth = depth + 1,
+                        path = "$path/$index:${child.widget.javaClass.simpleName}",
+                    ),
+                )
             }
         }
     }
@@ -180,11 +196,13 @@ internal abstract class Element(
 internal data class ElementDiagnosticsNode(
     val name: String,
     val widgetName: String,
+    val path: String,
     val depth: Int,
     val childCount: Int,
     val isDirty: Boolean,
     val listenedObjectCount: Int,
     val renderObjectName: String?,
+    val renderObject: RenderObject?,
 )
 
 /**

@@ -1264,6 +1264,7 @@ public final class com.purride.pixelui.PixelHostRenderCoordinator {
   public final java.lang.String dumpElementTree();
   public final java.lang.String dumpRenderTree();
   public final boolean hasPendingBuild();
+  public final java.util.Map<com.purride.pixelui.internal.RenderObject, com.purride.pixelui.internal.InspectorNodeAssociation> collectInspectorNodeAssociations();
   public final com.purride.pixelui.PixelHostFrameStats snapshotFrameStats();
   public final void dispose();
 }
@@ -1579,14 +1580,16 @@ public final class com.purride.pixelui.PixelInspectorTargetKind extends java.lan
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelInspectorTargetKind> getEntries();
 }
 public final class com.purride.pixelui.PixelInspectorTargetSnapshot {
-  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String);
-  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, java.lang.String, java.lang.String);
+  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, java.lang.String, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelui.PixelInspectorTargetKind getKind();
   public final int getLeft();
   public final int getTop();
   public final int getWidth();
   public final int getHeight();
   public final java.lang.String getDetail();
+  public final java.lang.String getElementPath();
+  public final java.lang.String getRenderPath();
   public final boolean contains(int, int);
   public final com.purride.pixelui.PixelInspectorTargetKind component1();
   public final int component2();
@@ -1594,11 +1597,19 @@ public final class com.purride.pixelui.PixelInspectorTargetSnapshot {
   public final int component4();
   public final int component5();
   public final java.lang.String component6();
-  public final com.purride.pixelui.PixelInspectorTargetSnapshot copy(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String);
-  public static com.purride.pixelui.PixelInspectorTargetSnapshot copy$default(com.purride.pixelui.PixelInspectorTargetSnapshot, com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, int, java.lang.Object);
+  public final java.lang.String component7();
+  public final java.lang.String component8();
+  public final com.purride.pixelui.PixelInspectorTargetSnapshot copy(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelui.PixelInspectorTargetSnapshot copy$default(com.purride.pixelui.PixelInspectorTargetSnapshot, com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String, java.lang.String);
+  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int, java.lang.String);
+  public com.purride.pixelui.PixelInspectorTargetSnapshot(com.purride.pixelui.PixelInspectorTargetKind, int, int, int, int);
+}
+public final class com.purride.pixelui.PixelInspectorTargetSnapshotFactoryKt {
+  public static final java.util.List<com.purride.pixelui.PixelInspectorTargetSnapshot> toInspectorTargetSnapshots(com.purride.pixelui.internal.PixelRenderResult, java.util.Map<com.purride.pixelui.internal.RenderObject, com.purride.pixelui.internal.InspectorNodeAssociation>);
 }
 public final class com.purride.pixelui.PixelKey extends java.lang.Enum<com.purride.pixelui.PixelKey> {
   public static final com.purride.pixelui.PixelKey TAB;

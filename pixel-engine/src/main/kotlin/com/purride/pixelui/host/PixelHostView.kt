@@ -322,11 +322,12 @@ public class PixelHostView @JvmOverloads constructor(
                 semantics = result.semanticsNodes.size,
             )
         } ?: PixelInspectorTargetCounts.Empty
+        val nodeAssociations = renderCoordinator.collectInspectorNodeAssociations()
         return PixelInspectorSnapshot(
             frameStats = if (includeFrameStats) renderCoordinator.snapshotFrameStats() else null,
             allocationSample = if (includeAllocationSample) snapshotAllocationSample() else null,
             targetCounts = targetCounts,
-            targetSnapshots = renderResult?.toInspectorTargetSnapshots().orEmpty(),
+            targetSnapshots = renderResult?.toInspectorTargetSnapshots(nodeAssociations).orEmpty(),
             elementTree = dumpElementTree(),
             renderTree = dumpRenderTree(),
             semanticsTree = dumpSemanticsTree(),
@@ -339,87 +340,6 @@ public class PixelHostView @JvmOverloads constructor(
             activeRefresh = activeRefreshTarget != null,
         )
     }
-
-    private fun PixelRenderResult.toInspectorTargetSnapshots(): List<PixelInspectorTargetSnapshot> {
-        return buildList {
-            clickTargets.forEachIndexed { index, target ->
-                add(target.bounds.toInspectorSnapshot(PixelInspectorTargetKind.CLICK, "#$index"))
-            }
-            pagerTargets.forEachIndexed { index, target ->
-                val axis = if (target.axis == PixelAxis.HORIZONTAL) "H" else "V"
-                val active = target.controller.isActive(target.state)
-                add(target.bounds.toInspectorSnapshot(PixelInspectorTargetKind.PAGER, "#$index axis=$axis active=${flag(active)}"))
-            }
-            listTargets.forEachIndexed { index, target ->
-                val active = target.controller.isActive(target.state)
-                add(
-                    target.bounds.toInspectorSnapshot(
-                        kind = PixelInspectorTargetKind.LIST,
-                        detail = "#$index active=${flag(active)} content=${target.contentHeightPx} viewport=${target.viewportHeightPx}",
-                    ),
-                )
-            }
-            scrollbarTargets.forEachIndexed { index, target ->
-                add(
-                    target.bounds.toInspectorSnapshot(
-                        kind = PixelInspectorTargetKind.SCROLLBAR,
-                        detail = "#$index thumb=${target.thumbBounds.shortLabel()}",
-                    ),
-                )
-            }
-            refreshTargets.forEachIndexed { index, target ->
-                add(
-                    target.bounds.toInspectorSnapshot(
-                        kind = PixelInspectorTargetKind.REFRESH,
-                        detail = "#$index enabled=${flag(target.enabled)} threshold=${target.thresholdPx}",
-                    ),
-                )
-            }
-            textInputTargets.forEachIndexed { index, target ->
-                add(
-                    target.bounds.toInspectorSnapshot(
-                        kind = PixelInspectorTargetKind.TEXT_INPUT,
-                        detail = "#$index readOnly=${flag(target.readOnly)} action=${target.action.name}",
-                    ),
-                )
-            }
-            sliderTargets.forEachIndexed { index, target ->
-                add(target.bounds.toInspectorSnapshot(PixelInspectorTargetKind.SLIDER, "#$index"))
-            }
-            semanticsNodes.forEachIndexed { index, node ->
-                add(
-                    PixelInspectorTargetSnapshot(
-                        kind = PixelInspectorTargetKind.SEMANTICS,
-                        left = node.left,
-                        top = node.top,
-                        width = node.width,
-                        height = node.height,
-                        detail = "#$index ${node.role.name} enabled=${flag(node.enabled)} focused=${flag(node.focused)} label=${node.label}",
-                    ),
-                )
-            }
-        }
-    }
-
-    private fun com.purride.pixelui.internal.PixelRect.toInspectorSnapshot(
-        kind: PixelInspectorTargetKind,
-        detail: String,
-    ): PixelInspectorTargetSnapshot {
-        return PixelInspectorTargetSnapshot(
-            kind = kind,
-            left = left,
-            top = top,
-            width = width,
-            height = height,
-            detail = detail,
-        )
-    }
-
-    private fun com.purride.pixelui.internal.PixelRect.shortLabel(): String {
-        return "${left},${top},${width}x${height}"
-    }
-
-    private fun flag(value: Boolean): Int = if (value) 1 else 0
 
     private fun snapshotAllocationSample(): PixelInspectorAllocationSample {
         val runtime = Runtime.getRuntime()

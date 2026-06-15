@@ -162,6 +162,7 @@ internal class RenderSingleChildScrollViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         val collected = mutableListOf<PixelListTarget>()
         renderChild?.collectListTargets(
@@ -410,6 +411,7 @@ internal class RenderListViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         val collected = mutableListOf<PixelListTarget>()
         visibleRenderChildren().forEach { (index, child) ->
@@ -683,6 +685,7 @@ internal class RenderLazyListViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         val collected = mutableListOf<PixelListTarget>()
         renderChildren.forEachIndexed { localIndex, child ->
@@ -951,6 +954,7 @@ internal class RenderVariableLazyListViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         val collected = mutableListOf<PixelListTarget>()
         renderChildren.forEachIndexed { localIndex, child ->
@@ -1248,6 +1252,7 @@ internal class RenderLazySeparatedListViewport(
             contentHeightPx = state.contentHeightPx,
             state = state,
             controller = controller,
+            source = this,
         )
         val collected = mutableListOf<PixelListTarget>()
         renderChildren.forEachIndexed { localIndex, child ->

@@ -132,6 +132,7 @@ internal data class PixelConstraints(
 internal data class PixelClickTarget(
     val bounds: PixelRect,
     val onClick: () -> Unit,
+    val source: RenderObject? = null,
 )
 
 /**
@@ -143,6 +144,7 @@ internal data class PixelPagerTarget(
     val state: PixelPagerState,
     val controller: PixelPagerController,
     val onPageChanged: ((Int) -> Unit)?,
+    val source: RenderObject? = null,
 )
 
 /**
@@ -154,6 +156,7 @@ internal data class PixelListTarget(
     val contentHeightPx: Int,
     val state: PixelListState,
     val controller: PixelListController,
+    val source: RenderObject? = null,
 )
 
 /**
@@ -166,6 +169,7 @@ internal data class PixelScrollbarTarget(
     val contentHeightPx: Int,
     val state: PixelListState,
     val controller: PixelListController,
+    val source: RenderObject? = null,
 )
 
 /**
@@ -179,6 +183,7 @@ internal data class PixelRefreshTarget(
     val state: PixelRefreshIndicatorState,
     val controller: PixelRefreshIndicatorController,
     val onRefresh: () -> Unit,
+    val source: RenderObject? = null,
 ) {
     fun canStartPull(deltaPx: Float): Boolean {
         if (!enabled || state.isRefreshing || deltaPx <= 0f) return false
@@ -194,6 +199,7 @@ internal data class PixelSliderTarget(
     val bounds: PixelRect,
     val onDrag: (Float) -> Unit,
     val onRelease: (Float) -> Unit,
+    val source: RenderObject? = null,
 )
 
 /**
@@ -214,6 +220,12 @@ internal data class PixelTextInputTarget(
     val onSubmitted: ((String) -> Unit)?,
     val textIndexAt: ((Int, Int) -> Int)? = null,
     val caretBoundsForIndex: ((Int) -> PixelRect)? = null,
+    val source: RenderObject? = null,
+)
+
+internal data class PixelSemanticsTarget(
+    val node: PixelSemanticsNode,
+    val source: RenderObject? = null,
 )
 
 /**
@@ -229,6 +241,7 @@ internal data class PixelRenderResult(
     val textInputTargets: List<PixelTextInputTarget>,
     val sliderTargets: List<PixelSliderTarget>,
     val semanticsNodes: List<PixelSemanticsNode>,
+    val semanticsTargets: List<PixelSemanticsTarget> = emptyList(),
 )
 
 /**
@@ -243,7 +256,7 @@ internal data class PixelRenderSession(
     val refreshTargets: MutableList<PixelRefreshTarget> = mutableListOf(),
     val textInputTargets: MutableList<PixelTextInputTarget> = mutableListOf(),
     val sliderTargets: MutableList<PixelSliderTarget> = mutableListOf(),
-    val semanticsNodes: MutableList<PixelSemanticsNode> = mutableListOf(),
+    val semanticsTargets: MutableList<PixelSemanticsTarget> = mutableListOf(),
 ) {
     /**
      * 固化当前会话为对外渲染结果。
@@ -258,7 +271,8 @@ internal data class PixelRenderSession(
             refreshTargets = refreshTargets,
             textInputTargets = textInputTargets,
             sliderTargets = sliderTargets,
-            semanticsNodes = semanticsNodes,
+            semanticsNodes = semanticsTargets.map(PixelSemanticsTarget::node),
+            semanticsTargets = semanticsTargets,
         )
     }
 }

@@ -77,6 +77,8 @@ object DebugOverlayScene : DemoScene {
                     width = 92,
                     height = 48,
                     detail = "#0 active=1 content=160 viewport=48",
+                    elementPath = "0:DebugScene/1:ListViewWidget",
+                    renderPath = "0:RenderHostRoot/1:RenderScrollViewport",
                 ),
                 PixelInspectorTargetSnapshot(
                     kind = PixelInspectorTargetKind.TEXT_INPUT,

@@ -1569,6 +1569,16 @@ class PixelTesterDslTest {
     @Test
     fun inspectorPanelSwitchesBetweenSnapshotTrees() {
         val tester = PixelTester()
+        val selectedTarget = PixelInspectorTargetSnapshot(
+            kind = PixelInspectorTargetKind.TEXT_INPUT,
+            left = 4,
+            top = 5,
+            width = 30,
+            height = 9,
+            detail = "#0 readOnly=0 action=DONE",
+            elementPath = "0:Root/0:TextFieldWidget",
+            renderPath = "0:RenderRoot/0:RenderSurface",
+        )
         tester.pumpWidget(
             widget = PixelInspectorPanel(
                 snapshot = PixelInspectorSnapshot(
@@ -1593,16 +1603,7 @@ class PixelTesterDslTest {
                         slider = 7,
                         semantics = 8,
                     ),
-                    targetSnapshots = listOf(
-                        PixelInspectorTargetSnapshot(
-                            kind = PixelInspectorTargetKind.TEXT_INPUT,
-                            left = 4,
-                            top = 5,
-                            width = 30,
-                            height = 9,
-                            detail = "#0 readOnly=0 action=DONE",
-                        ),
-                    ),
+                    targetSnapshots = listOf(selectedTarget),
                     elementTree = "RootElement\n  TextElement",
                     renderTree = "RenderRoot\n  RenderText",
                     semanticsTree = "SemanticsRoot\n  label=OK",
@@ -1615,6 +1616,7 @@ class PixelTesterDslTest {
                     activeRefresh = true,
                 ),
                 maxTreeLines = 3,
+                selectedTarget = selectedTarget,
             ),
             logicalWidth = 128,
             logicalHeight = 80,
@@ -1631,6 +1633,8 @@ class PixelTesterDslTest {
         tester.tap(find.byText("TARGETS"))
         assertTrue(tester.exists(find.byText("TARGET BOUNDS")))
         assertTrue(tester.exists(find.byText("TEXT_INPUT 4,5 30x9 #0 readOnly=0 action=DONE")))
+        assertTrue(tester.exists(find.byText("E 0:Root/0:TextFieldWidget")))
+        assertTrue(tester.exists(find.byText("R 0:RenderRoot/0:RenderSurface")))
         tester.dispose()
     }
 

@@ -119,6 +119,10 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
                 val line = "${target.kind.name} ${target.left},${target.top} " +
                     "${target.width}x${target.height} ${target.detail}".trimEnd()
                 add(Text(line, style = if (target == selectedTarget) selectedTargetStyle else bodyStyle))
+                if (target == selectedTarget) {
+                    add(Text("E ${target.elementPath ?: "<unlinked>"}", style = selectedTargetStyle))
+                    add(Text("R ${target.renderPath ?: "<unlinked>"}", style = selectedTargetStyle))
+                }
             }
             if (overflow > 0) add(Text("... +$overflow", style = bodyStyle))
         }

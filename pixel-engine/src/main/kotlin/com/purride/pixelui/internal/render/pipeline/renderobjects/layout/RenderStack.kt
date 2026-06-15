@@ -197,10 +197,10 @@ internal class RenderStack(
         }
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
         renderChildren.forEach { child ->
             val childOffset = resolveChildOffset(child)
-            child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, nodes)
+            child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, targets)
         }
     }
 
@@ -448,8 +448,8 @@ internal class RenderPositioned(
         )
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>) {
-        renderChild?.collectSemantics(offsetX + childOffsetX, offsetY + childOffsetY, nodes)
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        renderChild?.collectSemantics(offsetX + childOffsetX, offsetY + childOffsetY, targets)
     }
 
     /**

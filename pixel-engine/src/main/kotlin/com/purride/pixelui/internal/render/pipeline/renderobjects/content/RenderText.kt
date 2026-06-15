@@ -356,20 +356,24 @@ internal class RenderText(
         targets += PixelClickTarget(
             bounds = PixelRect(left = offsetX, top = offsetY, width = size.width, height = size.height),
             onClick = onClick,
+            source = this,
         )
     }
 
-    override fun collectSemantics(offsetX: Int, offsetY: Int, nodes: MutableList<PixelSemanticsNode>) {
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
         if (text.isBlank()) return
-        nodes += PixelSemanticsNode(
-            label = text,
-            role = PixelSemanticRole.TEXT,
-            enabled = true,
-            focused = false,
-            left = offsetX,
-            top = offsetY,
-            width = size.width,
-            height = size.height,
+        targets += PixelSemanticsTarget(
+            node = PixelSemanticsNode(
+                label = text,
+                role = PixelSemanticRole.TEXT,
+                enabled = true,
+                focused = false,
+                left = offsetX,
+                top = offsetY,
+                width = size.width,
+                height = size.height,
+            ),
+            source = this,
         )
     }
 

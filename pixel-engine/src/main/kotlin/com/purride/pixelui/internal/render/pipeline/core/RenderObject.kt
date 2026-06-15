@@ -92,20 +92,34 @@ public abstract class RenderObject {
      *
      * 该入口只用于内部测试和诊断，不参与公开 API。
      */
-    internal fun collectDiagnostics(depth: Int = 0): List<RenderDiagnosticsNode> {
+    internal fun collectDiagnostics(): List<RenderDiagnosticsNode> {
+        return collectDiagnostics(depth = 0, path = "0:${javaClass.simpleName}")
+    }
+
+    private fun collectDiagnostics(
+        depth: Int,
+        path: String,
+    ): List<RenderDiagnosticsNode> {
         val children = mutableListOf<RenderObject>()
         visitChildren(children::add)
         return buildList {
             add(
                 RenderDiagnosticsNode(
                     name = this@RenderObject.javaClass.simpleName,
+                    path = path,
                     depth = depth,
                     childCount = children.size,
                     size = (this@RenderObject as? RenderBox)?.size,
+                    renderObject = this@RenderObject,
                 ),
             )
-            children.forEach { child ->
-                addAll(child.collectDiagnostics(depth = depth + 1))
+            children.forEachIndexed { index, child ->
+                addAll(
+                    child.collectDiagnostics(
+                        depth = depth + 1,
+                        path = "$path/$index:${child.javaClass.simpleName}",
+                    ),
+                )
             }
         }
     }
@@ -116,9 +130,11 @@ public abstract class RenderObject {
  */
 internal data class RenderDiagnosticsNode(
     val name: String,
+    val path: String,
     val depth: Int,
     val childCount: Int,
     val size: RenderSize?,
+    val renderObject: RenderObject,
 )
 
 /**
@@ -220,7 +236,7 @@ public abstract class RenderBox : RenderObject() {
     internal open fun collectSemantics(
         offsetX: Int,
         offsetY: Int,
-        nodes: MutableList<com.purride.pixelui.PixelSemanticsNode>,
+        targets: MutableList<PixelSemanticsTarget>,
     ) = Unit
 }
 
