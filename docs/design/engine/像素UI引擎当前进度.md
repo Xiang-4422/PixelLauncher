@@ -38,7 +38,7 @@
 当前 `com.purride.pixelcore` 已经具备以下可复用底座：
 
 - 屏幕与几何：`ScreenProfile`、`ScreenProfileFactory`、`PixelGridGeometry`
-- 像素缓冲与调色板：`PixelBuffer`、`PixelPalette`、`FrameSwapBuffer`
+- 像素缓冲与 ARGB 颜色：`PixelBuffer`、`PixelColor`、`FrameSwapBuffer`
 - 字体与字形：`PixelBitmapFont`、`PixelTextRasterizer`、`PixelGlyphPack`、`PixelGlyphPackAssetLoader`、`PixelFontEngine`
 - 轴向运动与合成原语：`PixelAxis`、`AxisMotion`、`AxisBufferComposer`
 - 显示契约与调试：`PixelFrameView`、`RenderPerfLogger`
@@ -85,10 +85,10 @@
 - `TextField + Button + List` 组合页面
 - 权重布局、主轴排布、交叉轴对齐
 - 多行文本换行与单行 ellipsis
-- 富文本 span tone 切换
+- 富文本 span 样式切换
 - 列表可见区绘制与 target 裁剪
 - 单行输入框 placeholder 裁剪、disabled/readOnly 状态
-- 主题 token 与 selected/pressed/focused/disabled/readOnly 状态
+- 显式颜色方案与组件 focused/disabled/readOnly 状态矩阵
 - Drawer-like 迁移前验收页
 - Drawer Gate V2
 
@@ -105,10 +105,10 @@ Demo 入口：
 
 - `CustomScrollView` 已有 eager `SliverList`、固定/估算高度 lazy `SliverListBuilder`、按 sliver 隔离的远端 item 定位与变高测量校正、多个 pinned header 顺序堆叠，以及支持 collapse/floating/snap/stretch 的 `SliverAppBar`
 - 列表已有 clamp/fling/bounce 参数、绝对 offset / 相对进度恢复基础；`PixelRouteScrollRestoration` 已支持 route-aware 自动保存恢复，仍缺完整平台级滚动物理、snap 策略和 Bundle 级持久化
-- `TextField` 已支持多行 caret / selection / composition、光标节拍和最小 selection handle，但还没有完整长按菜单或平台级选择浮层
-- `Form` v1 已支持字段注册、`validate()`、`reset()` 和错误文本状态，但还没有自动 FocusScope/IME action 联动
-- `RichText` 已支持 span tone 切换，但还不是完整段落/字号/字距系统
-- 主题 token 已接入基础状态，但还需要继续收敛组件级默认值和局部覆盖语义
+- `TextField` 已支持多行 caret / selection / composition、光标节拍、selection handle 和 Android Copy/Cut/Paste/Select all 菜单，仍需要更多 IME/选择浮层实机覆盖
+- `Form` v1 已支持字段注册、`validate()`、`reset()`、错误文本状态、独立 FocusScope、IME `NEXT` 联动和跨字段校验
+- `RichText` 已支持 span 样式切换，但还不是完整段落/字号/字距系统
+- SDK 已移除内置 ThemeData/token 层，当前走显式 `PixelColor` 与应用层主题对象；仍需继续完善组件默认值和状态视觉 golden
 - 新渲染管线已有内部 diagnostics 和基础 target 裁剪回归，但还没有达到完整 Flutter 级别的布局、手势、文本系统
 
 旧渲染后端已经从生产源码删除；后续不要再把它作为 fallback 接回生产路径。
@@ -127,7 +127,7 @@ Demo 入口：
 - `ListViewBuilder(itemExtent)` 已支持固定高度 lazy viewport
 - `TextField` 已补齐 placeholder ellipsis、disabled/readOnly、多行 line config 与 selection 边界覆盖
 - Pipeline / retained runtime 已有 internal diagnostics，覆盖 render tree、element tree、dirty queue、layout/paint 计数和 target 数量
-- `RichText`、`PixelTextSpan`、`PixelScrollPhysics`、`PixelThemeTokens` 已作为向后兼容扩展加入
+- `RichText`、`PixelTextSpan`、`PixelScrollPhysics` 已作为向后兼容扩展加入
 - `pixel-demo` 已新增滚动压力、环境继承、Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States、Engine Stability Gate 和 Drawer Gate V2 验收场景
 
 ### 正在进行
@@ -141,7 +141,7 @@ Demo 入口：
 
 - 更完整的滚动物理、snap 和 nested scroll 策略
 - 段落级文本、字号/字距 token 和文本选择体验
-- 更完整的主题 token、组件默认值和局部覆盖系统
+- 更完整的组件默认值、状态视觉 golden 和应用层主题示例
 - 更完整的布局协议、手势边界和性能策略
 
 ## 5. 接手建议
@@ -156,7 +156,7 @@ Demo 入口：
 当前最值得继续推进的方向：
 
 - 补强复杂布局裁剪、嵌套手势和 diagnostics 的宿主可视化入口
-- 继续补滚动物理、文本系统和更完整主题 token
+- 继续补滚动物理、文本系统和组件状态视觉覆盖
 - 继续维持 `pixel-demo` gate 先行，暂不推进新的 `:app` 迁移
 
 ## 6. 验证命令

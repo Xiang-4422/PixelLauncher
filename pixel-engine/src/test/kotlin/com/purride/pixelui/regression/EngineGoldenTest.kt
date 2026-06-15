@@ -48,6 +48,7 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
@@ -213,6 +214,55 @@ class EngineGoldenTest {
                     crossAxisAlignment = CrossAxisAlignment.START,
                 ),
                 bottomBar = Text("READY"),
+            )
+        },
+        Scene(name = "component_state_matrix", width = 92, height = 42) {
+            val focusedController = TextEditingController()
+            val focusedState = focusedController.create(initialText = "FOCUS")
+            focusedController.focus(focusedState)
+            val disabledController = TextEditingController()
+            val disabledState = disabledController.create(initialText = "OFF")
+            val readOnlyController = TextEditingController()
+            val readOnlyState = readOnlyController.create(initialText = "LOCK")
+            val accent = PixelColor.fromRgb(200, 100, 0)
+            val dim = PixelColor.fromRgb(80, 80, 80)
+            val fieldStyle = PixelTextFieldStyle.Default.copy(
+                borderColor = PixelColor.White,
+                focusedBorderColor = accent,
+                disabledBorderColor = dim,
+                readOnlyBorderColor = PixelColor.fromRgb(230, 180, 60),
+                padding = 0,
+            )
+            Column(
+                children = listOf(
+                    Row(
+                        children = listOf(
+                            OutlinedButton("OK", onPressed = {}, borderColor = PixelColor.White),
+                            OutlinedButton("SEL", onPressed = {}, borderColor = accent),
+                            OutlinedButton("OFF", onPressed = {}, enabled = false, borderColor = dim),
+                        ),
+                        spacing = 2,
+                    ),
+                    TextField(
+                        state = focusedState,
+                        controller = focusedController,
+                        style = fieldStyle,
+                    ),
+                    TextField(
+                        state = disabledState,
+                        controller = disabledController,
+                        enabled = false,
+                        style = fieldStyle,
+                    ),
+                    TextField(
+                        state = readOnlyState,
+                        controller = readOnlyController,
+                        readOnly = true,
+                        style = fieldStyle,
+                    ),
+                ),
+                spacing = 2,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
             )
         },
         Scene(name = "wrap_layout", width = 34, height = 18) {

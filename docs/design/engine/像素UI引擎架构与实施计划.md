@@ -170,7 +170,7 @@ Widget
 - `PixelScrollPhysics` 已提供 clamp/fling/bounce 参数基础
 - `TextField` 已补齐 placeholder、disabled/readOnly、多行 line config、selection 边界、selection handle、平台 Copy/Cut/Paste/Select all 菜单
 - `RichText`、`PixelTextSpan` 已支持基础富文本 span 样式切换
-- `PixelThemeTokens` 已支持 selected/pressed/focused/disabled/readOnly 等基础状态默认值
+- SDK 已移除内置 `ThemeData` / token 层，当前通过显式 `PixelColor` 和 app 层主题对象控制组件状态色
 - `pixel-demo` 已有 Launcher-like、Drawer-like、Virtual List、Rich Text、Theme States、Engine Stability Gate 和 Drawer Gate V2 gate
 
 ## 7. 尚未完成
@@ -178,7 +178,7 @@ Widget
 - 变高虚拟化热路径复杂度和超大列表性能复核
 - 更完整的滚动物理、snap、nested scroll 和 route-aware 自动恢复策略
 - 段落级文本、字号/字距 token 和平台文本选择菜单手测覆盖
-- 更完整的主题 token、组件默认值和局部覆盖系统
+- 更完整的组件默认值、状态视觉 golden 和 app 层主题示例
 - 更完整的布局协议、手势边界和性能策略
 
 ## 8. 开发规则

@@ -64,25 +64,23 @@ val hostSetup = createPixelHostSetup(
             dotSizePx = 8,
         ),
         textDirection = TextDirection.LTR,
-        palette = PixelPalette.terminalGreen(),
-        themeData = ThemeData(
-            textStyle = TextStyle.Accent,
-            buttonStyle = ButtonStyle.Accent,
-        ),
+        backgroundColor = PixelColor.Black,
         content = {
             ValueListenableBuilder(counter) { _, value ->
                 Container(
                     padding = EdgeInsets.all(4),
+                    borderColor = PixelColor.fromRgb(120, 220, 120),
                     child = Column(
                         spacing = 4,
                         crossAxisAlignment = CrossAxisAlignment.STRETCH,
                         children = listOf(
-                            Text("COUNT $value"),
+                            Text("COUNT $value", color = PixelColor.fromRgb(150, 255, 170)),
                             SizedBox(
                                 height = 14,
                                 child = OutlinedButton(
                                     text = "CLICK",
                                     onPressed = { counter.value = value + 1 },
+                                    borderColor = PixelColor.fromRgb(255, 220, 120),
                                 ),
                             ),
                         ),
@@ -101,9 +99,7 @@ setContentView(hostSetup.rootView)
 - [PixelHostView.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt)
 - [PixelHostSetup.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostSetup.kt)
 - [PixelHostProfilePreference.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/host/PixelHostProfilePreference.kt)
-- [PixelThemeData.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelui/theme/PixelThemeData.kt)
 - [ScreenProfileFactory.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/screen/ScreenProfileFactory.kt)
-- [PixelPalette.kt](/Users/even/AndroidStudioProjects/PixelLauncher/pixel-engine/src/main/kotlin/com/purride/pixelcore/theme/PixelPalette.kt)
 
 ## 3. 页面组织方式
 
