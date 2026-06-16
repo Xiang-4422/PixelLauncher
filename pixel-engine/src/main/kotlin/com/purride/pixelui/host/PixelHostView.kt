@@ -37,7 +37,6 @@ import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
 import kotlin.math.abs
-import kotlin.math.ceil
 import kotlin.math.min
 
 /**
@@ -149,6 +148,7 @@ public class PixelHostView @JvmOverloads constructor(
     private val gestureRouter = PixelHostGestureRouter(this)
     private val textInputCoordinator = PixelHostTextInputCoordinator(this)
     private val renderCoordinator = PixelHostRenderCoordinator(this, textInputCoordinator)
+    private val lifecycleCoordinator = PixelHostLifecycleCoordinator(disposeRender = renderCoordinator::dispose)
 
     public var hostBridge: PixelHostBridge? = null
     public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
@@ -267,7 +267,7 @@ public class PixelHostView @JvmOverloads constructor(
         right: Int = 0,
         bottom: Int = 0,
     ) {
-        windowInsets = PixelWindowInsets(left = left, top = top, right = right, bottom = bottom)
+        windowInsets = lifecycleCoordinator.manualInsets(left = left, top = top, right = right, bottom = bottom)
     }
 
     override fun asView(): View = this
@@ -367,14 +367,25 @@ public class PixelHostView @JvmOverloads constructor(
         updateScreenProfileFromPreference()
     }
 
+    @Suppress("DEPRECATION")
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
-        windowInsets = mapPlatformInsetsToLogical(insets)
+        windowInsets = lifecycleCoordinator.platformInsetsToLogical(
+            leftPx = insets.systemWindowInsetLeft,
+            topPx = insets.systemWindowInsetTop,
+            rightPx = insets.systemWindowInsetRight,
+            bottomPx = insets.systemWindowInsetBottom,
+            viewWidth = width,
+            viewHeight = height,
+            screenProfile = screenProfile,
+            pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
+        )
         return super.onApplyWindowInsets(insets)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        renderCoordinator.dispose()
+        lifecycleCoordinator.onDetachedFromWindow()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -394,24 +405,6 @@ public class PixelHostView @JvmOverloads constructor(
             heightPx = height,
             dotSizePx = preference.dotSizePx,
             pixelShape = preference.pixelShape,
-        )
-    }
-
-    @Suppress("DEPRECATION")
-    private fun mapPlatformInsetsToLogical(insets: WindowInsets): PixelWindowInsets {
-        val geometry = PixelGridGeometryResolver.resolve(
-            viewWidth = width,
-            viewHeight = height,
-            profile = screenProfile,
-            pixelGapEnabled = pixelGapEnabled,
-            pixelGapRatio = pixelGapRatio,
-        ) ?: return PixelWindowInsets.Zero
-        val cellSize = geometry.cellSize.coerceAtLeast(1f)
-        return PixelWindowInsets(
-            left = insets.systemWindowInsetLeft.toLogicalInset(cellSize),
-            top = insets.systemWindowInsetTop.toLogicalInset(cellSize),
-            right = insets.systemWindowInsetRight.toLogicalInset(cellSize),
-            bottom = insets.systemWindowInsetBottom.toLogicalInset(cellSize),
         )
     }
 
@@ -580,11 +573,6 @@ public class PixelHostView @JvmOverloads constructor(
             pixelGapRatio = pixelGapRatio,
         )
     }
-}
-
-private fun Int.toLogicalInset(cellSize: Float): Int {
-    if (this <= 0) return 0
-    return ceil(this / cellSize).toInt()
 }
 
 private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {

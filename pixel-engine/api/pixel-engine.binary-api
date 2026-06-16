@@ -1246,6 +1246,12 @@ public final class com.purride.pixelui.PixelHostGestureRouterModel$Owner extends
   public static com.purride.pixelui.PixelHostGestureRouterModel$Owner valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelHostGestureRouterModel$Owner> getEntries();
 }
+public final class com.purride.pixelui.PixelHostLifecycleCoordinator {
+  public com.purride.pixelui.PixelHostLifecycleCoordinator(kotlin.jvm.functions.Function0<kotlin.Unit>);
+  public final com.purride.pixelui.PixelWindowInsets manualInsets(int, int, int, int);
+  public final com.purride.pixelui.PixelWindowInsets platformInsetsToLogical(int, int, int, int, int, int, com.purride.pixelcore.ScreenProfile, boolean, float);
+  public final void onDetachedFromWindow();
+}
 public final class com.purride.pixelui.PixelHostProfilePreference {
   public com.purride.pixelui.PixelHostProfilePreference(int, com.purride.pixelcore.PixelShape);
   public com.purride.pixelui.PixelHostProfilePreference(int, com.purride.pixelcore.PixelShape, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -1449,7 +1455,6 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
 }
 public final class com.purride.pixelui.PixelHostViewKt {
   public static final com.purride.pixelui.PixelKeyEvent access$toPixelKeyEvent(android.view.KeyEvent);
-  public static final int access$toLogicalInset(int, float);
 }
 public final class com.purride.pixelui.PixelIconData {
   public com.purride.pixelui.PixelIconData(com.purride.pixelcore.PixelBitmap);
