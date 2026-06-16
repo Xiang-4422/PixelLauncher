@@ -512,8 +512,33 @@ public final class com.purride.pixelcore.PixelResourceCache {
   public final com.purride.pixelcore.PixelSpriteSheet getSpriteSheet(java.lang.String, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelSpriteSheet>);
   public final void remove(java.lang.String);
   public final void clear();
+  public final com.purride.pixelcore.PixelResourceCacheSnapshot snapshot();
   public final int getBitmapCount();
   public final int getSpriteSheetCount();
+}
+public final class com.purride.pixelcore.PixelResourceCacheSnapshot {
+  public com.purride.pixelcore.PixelResourceCacheSnapshot(int, int, int, int, int, int, int, int);
+  public final int getBitmapCount();
+  public final int getSpriteSheetCount();
+  public final int getBitmapHits();
+  public final int getBitmapMisses();
+  public final int getSpriteSheetHits();
+  public final int getSpriteSheetMisses();
+  public final int getRemoveCount();
+  public final int getClearCount();
+  public final int component1();
+  public final int component2();
+  public final int component3();
+  public final int component4();
+  public final int component5();
+  public final int component6();
+  public final int component7();
+  public final int component8();
+  public final com.purride.pixelcore.PixelResourceCacheSnapshot copy(int, int, int, int, int, int, int, int);
+  public static com.purride.pixelcore.PixelResourceCacheSnapshot copy$default(com.purride.pixelcore.PixelResourceCacheSnapshot, int, int, int, int, int, int, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelcore.PixelShape extends java.lang.Enum<com.purride.pixelcore.PixelShape> {
   public static final com.purride.pixelcore.PixelShape SQUARE;

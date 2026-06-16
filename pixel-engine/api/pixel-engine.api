@@ -5,11 +5,13 @@ com.purride.pixelcore public fun load(path: String): PixelBitmap
 com.purride.pixelcore public class PixelBitmapResourceLoader(
 com.purride.pixelcore public fun load(resourceId: Int): PixelBitmap
 com.purride.pixelcore public object PixelCoreModule
+com.purride.pixelcore public data class PixelResourceCacheSnapshot(
 com.purride.pixelcore public class PixelResourceCache
 com.purride.pixelcore public fun getBitmap(key: String, loader: () -> PixelBitmap): PixelBitmap
 com.purride.pixelcore public fun getSpriteSheet(key: String, loader: () -> PixelSpriteSheet): PixelSpriteSheet
 com.purride.pixelcore public fun remove(key: String)
 com.purride.pixelcore public fun clear()
+com.purride.pixelcore public fun snapshot(): PixelResourceCacheSnapshot
 com.purride.pixelcore public val bitmapCount: Int
 com.purride.pixelcore public val spriteSheetCount: Int
 com.purride.pixelcore public data class PixelBitmapRegion(

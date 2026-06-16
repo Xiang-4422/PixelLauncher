@@ -75,6 +75,37 @@ class PixelResourceCacheTest {
         assertEquals(1, cache.spriteSheetCount)
     }
 
+    @Test
+    fun snapshotTracksHitsMissesAndLifecycleEvents() {
+        val cache = PixelResourceCache()
+
+        cache.getBitmap("icon") { bitmap() }
+        cache.getBitmap("icon") { bitmap(PixelColor.Black) }
+        cache.getSpriteSheet("runner") { sheet() }
+        cache.getSpriteSheet("runner") { sheet(PixelColor.Black) }
+
+        var snapshot = cache.snapshot()
+        assertEquals(1, snapshot.bitmapCount)
+        assertEquals(1, snapshot.spriteSheetCount)
+        assertEquals(1, snapshot.bitmapHits)
+        assertEquals(1, snapshot.bitmapMisses)
+        assertEquals(1, snapshot.spriteSheetHits)
+        assertEquals(1, snapshot.spriteSheetMisses)
+        assertEquals(0, snapshot.removeCount)
+        assertEquals(0, snapshot.clearCount)
+
+        cache.remove("missing")
+        cache.remove("icon")
+        cache.clear()
+        cache.clear()
+
+        snapshot = cache.snapshot()
+        assertEquals(0, snapshot.bitmapCount)
+        assertEquals(0, snapshot.spriteSheetCount)
+        assertEquals(1, snapshot.removeCount)
+        assertEquals(1, snapshot.clearCount)
+    }
+
     private fun bitmap(color: PixelColor = PixelColor.White): PixelBitmap {
         return PixelBitmap(width = 1, height = 1, pixels = intArrayOf(color.argb))
     }
