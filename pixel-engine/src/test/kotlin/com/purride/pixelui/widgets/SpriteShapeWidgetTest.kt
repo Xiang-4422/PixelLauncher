@@ -13,6 +13,7 @@ import com.purride.pixelui.PixelGradientStop
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPathCommand
 import com.purride.pixelui.PixelPoint
+import com.purride.pixelui.PixelShapeStyle
 import com.purride.pixelui.Polygon
 import com.purride.pixelui.Sprite
 import com.purride.pixelui.testing.PixelTester
@@ -195,6 +196,38 @@ class SpriteShapeWidgetTest {
     }
 
     @Test
+    fun shapeStyleControlsWidgetStrokeWidthAndBlendMode() {
+        val tester = PixelTester()
+        val style = PixelShapeStyle(
+            color = PixelColor.fromArgb(128, 255, 0, 0),
+            filled = false,
+            strokeWidth = 3,
+            blendMode = PixelBlendMode.Src,
+        )
+        tester.pumpWidget(
+            Path(
+                path = PixelPath(
+                    listOf(
+                        PixelPathCommand.MoveTo(PixelPoint(1, 1)),
+                        PixelPathCommand.LineTo(PixelPoint(5, 1)),
+                    ),
+                ),
+                style = style,
+            ),
+            7,
+            4,
+        )
+
+        val pixel = tester.renderResult!!.buffer.getPixel(3, 0)
+        assertEquals(128, pixel.alpha)
+        assertEquals(255, pixel.red)
+        assertEquals(0, pixel.green)
+        assertEquals(0, pixel.blue)
+        assertEquals(128, tester.renderResult!!.buffer.getPixel(3, 2).alpha)
+        tester.dispose()
+    }
+
+    @Test
     fun pathDrawsQuadraticCurveThroughFlattenedSegments() {
         val tester = PixelTester()
         tester.pumpWidget(
@@ -355,6 +388,33 @@ class SpriteShapeWidgetTest {
         assertEquals(expected, buffer.getPixel(2, 0))
         assertEquals(expected, buffer.getPixel(2, 2))
         assertEquals(expected, buffer.getPixel(2, 4))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintAcceptsShapeStyleHelpers() {
+        val tester = PixelTester()
+        val style = PixelShapeStyle(
+            color = PixelColor.White,
+            filled = false,
+            strokeWidth = 3,
+        )
+        tester.pumpWidget(
+            CustomPaint(width = 8, height = 5) {
+                drawLine(1, 1, 6, 1, style)
+                drawPolygon(
+                    points = listOf(PixelPoint(1, 4), PixelPoint(3, 2), PixelPoint(5, 4)),
+                    style = style,
+                )
+            },
+            8,
+            5,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(3, 0))
+        assertEquals(PixelColor.White, buffer.getPixel(3, 2))
+        assertEquals(PixelColor.White, buffer.getPixel(3, 4))
         tester.dispose()
     }
 

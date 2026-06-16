@@ -7,6 +7,7 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Line
 import com.purride.pixelui.MainAxisAlignment
+import com.purride.pixelui.PixelShapeStyle
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
@@ -31,6 +32,8 @@ object ShapePrimitivesScene : DemoScene {
     override fun build(env: DemoEnv): Widget {
         val ink = PixelColor.fromRgb(0xE0, 0xE0, 0xE0)
         val accent = PixelColor.fromRgb(0xFF, 0xC0, 0x40)
+        val outline = PixelShapeStyle(color = ink, filled = false, strokeWidth = 2)
+        val accentOutline = PixelShapeStyle(color = accent, filled = false, strokeWidth = 2)
         val labelStyle = TextStyle(color = PixelColor.fromRgb(180, 180, 180))
         return Center(
             child = Column(
@@ -42,11 +45,11 @@ object ShapePrimitivesScene : DemoScene {
                     Row(
                         mainAxisAlignment = MainAxisAlignment.CENTER,
                         children = listOf(
-                            Line(startX = 0, startY = 0, endX = 7, endY = 0, color = ink),
+                            Line(startX = 0, startY = 0, endX = 7, endY = 0, style = outline),
                             SizedBox(width = 4),
-                            Line(startX = 0, startY = 0, endX = 0, endY = 7, color = ink),
+                            Line(startX = 0, startY = 0, endX = 0, endY = 7, style = outline),
                             SizedBox(width = 4),
-                            Line(startX = 0, startY = 0, endX = 7, endY = 7, color = ink),
+                            Line(startX = 0, startY = 0, endX = 7, endY = 7, style = outline),
                         ),
                     ),
                     SizedBox(height = 6),
@@ -68,11 +71,11 @@ object ShapePrimitivesScene : DemoScene {
                     Row(
                         mainAxisAlignment = MainAxisAlignment.CENTER,
                         children = listOf(
-                            Circle(radius = 3, color = ink, filled = false),
+                            Circle(radius = 3, style = outline),
                             SizedBox(width = 3),
-                            Circle(radius = 5, color = ink, filled = false),
+                            Circle(radius = 5, style = outline),
                             SizedBox(width = 3),
-                            Circle(radius = 7, color = accent, filled = false),
+                            Circle(radius = 7, style = accentOutline),
                         ),
                     ),
                 ),

@@ -1022,6 +1022,7 @@ public final class com.purride.pixelui.PixelCanvas {
   public static void setPixel-YtVJrYg$default(com.purride.pixelui.PixelCanvas, int, int, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
   public final void drawLine-CpcyU5c(int, int, int, int, int, int, com.purride.pixelcore.PixelBlendMode);
   public static void drawLine-CpcyU5c$default(com.purride.pixelui.PixelCanvas, int, int, int, int, int, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
+  public final void drawLine(int, int, int, int, com.purride.pixelui.PixelShapeStyle);
   public final void drawRect-CpcyU5c(int, int, int, int, int, int, com.purride.pixelcore.PixelBlendMode);
   public static void drawRect-CpcyU5c$default(com.purride.pixelui.PixelCanvas, int, int, int, int, int, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
   public final void fillRect-nZs-OeI(int, int, int, int, int, com.purride.pixelcore.PixelBlendMode);
@@ -1030,10 +1031,14 @@ public final class com.purride.pixelui.PixelCanvas {
   public static void fillGradientRect$default(com.purride.pixelui.PixelCanvas, int, int, int, int, com.purride.pixelui.PixelGradient, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
   public final void drawCircle-gjMPoqA(int, int, int, int, boolean, int, com.purride.pixelcore.PixelBlendMode);
   public static void drawCircle-gjMPoqA$default(com.purride.pixelui.PixelCanvas, int, int, int, int, boolean, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
+  public final void drawCircle(int, int, int, com.purride.pixelui.PixelShapeStyle);
   public final void drawPolygon-K2hdtbI(java.util.List<com.purride.pixelui.PixelPoint>, int, boolean, com.purride.pixelcore.PixelBlendMode);
   public static void drawPolygon-K2hdtbI$default(com.purride.pixelui.PixelCanvas, java.util.List, int, boolean, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
+  public final void drawPolygon(java.util.List<com.purride.pixelui.PixelPoint>, com.purride.pixelui.PixelShapeStyle);
   public final void drawPath-Fbu4F6s(com.purride.pixelui.PixelPath, int, boolean, int, com.purride.pixelcore.PixelBlendMode);
   public static void drawPath-Fbu4F6s$default(com.purride.pixelui.PixelCanvas, com.purride.pixelui.PixelPath, int, boolean, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
+  public final void drawPath(com.purride.pixelui.PixelPath, com.purride.pixelui.PixelShapeStyle, boolean);
+  public static void drawPath$default(com.purride.pixelui.PixelCanvas, com.purride.pixelui.PixelPath, com.purride.pixelui.PixelShapeStyle, boolean, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelCanvasKt {
   public static final int access$colorAt(com.purride.pixelui.PixelGradient, int, int);
@@ -1797,6 +1802,23 @@ public final class com.purride.pixelui.PixelSemanticsNode {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelShapeStyle {
+  public com.purride.pixelui.PixelShapeStyle(int, boolean, int, com.purride.pixelcore.PixelBlendMode, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final int getColor-bODNPuc();
+  public final boolean getFilled();
+  public final int getStrokeWidth();
+  public final com.purride.pixelcore.PixelBlendMode getBlendMode();
+  public final int component1-bODNPuc();
+  public final boolean component2();
+  public final int component3();
+  public final com.purride.pixelcore.PixelBlendMode component4();
+  public final com.purride.pixelui.PixelShapeStyle copy-SEeGgR8(int, boolean, int, com.purride.pixelcore.PixelBlendMode);
+  public static com.purride.pixelui.PixelShapeStyle copy-SEeGgR8$default(com.purride.pixelui.PixelShapeStyle, int, boolean, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelShapeStyle(int, boolean, int, com.purride.pixelcore.PixelBlendMode, kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public interface com.purride.pixelui.PixelSliver {
   public abstract java.lang.Object getKey();
 }
@@ -2092,12 +2114,20 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget GestureDetector$default(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Line-nZs-OeI(int, int, int, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget Line-nZs-OeI$default(int, int, int, int, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Line(int, int, int, int, com.purride.pixelui.PixelShapeStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Line$default(int, int, int, int, com.purride.pixelui.PixelShapeStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Circle-K2hdtbI(int, int, boolean, java.lang.Object);
   public static com.purride.pixelui.Widget Circle-K2hdtbI$default(int, int, boolean, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Circle(int, com.purride.pixelui.PixelShapeStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Circle$default(int, com.purride.pixelui.PixelShapeStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Polygon-K2hdtbI(java.util.List<com.purride.pixelui.PixelPoint>, int, boolean, java.lang.Object);
   public static com.purride.pixelui.Widget Polygon-K2hdtbI$default(java.util.List, int, boolean, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Polygon(java.util.List<com.purride.pixelui.PixelPoint>, com.purride.pixelui.PixelShapeStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Polygon$default(java.util.List, com.purride.pixelui.PixelShapeStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Path-Fbu4F6s(com.purride.pixelui.PixelPath, int, boolean, int, java.lang.Object);
   public static com.purride.pixelui.Widget Path-Fbu4F6s$default(com.purride.pixelui.PixelPath, int, boolean, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Path(com.purride.pixelui.PixelPath, com.purride.pixelui.PixelShapeStyle, boolean, java.lang.Object);
+  public static com.purride.pixelui.Widget Path$default(com.purride.pixelui.PixelPath, com.purride.pixelui.PixelShapeStyle, boolean, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget CustomPaint(int, int, java.lang.Object, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelCanvas, kotlin.Unit>);
   public static com.purride.pixelui.Widget CustomPaint$default(int, int, java.lang.Object, kotlin.jvm.functions.Function1, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Image(com.purride.pixelcore.PixelBitmap, java.lang.Object);

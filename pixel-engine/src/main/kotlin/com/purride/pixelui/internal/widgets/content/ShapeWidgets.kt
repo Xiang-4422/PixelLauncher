@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPoint
+import com.purride.pixelui.PixelShapeStyle
 
 /** [Line] widget 的 render object widget 配置。 */
 internal data class LineWidget(
@@ -12,6 +13,7 @@ internal data class LineWidget(
     val endX: Int,
     val endY: Int,
     val color: PixelColor,
+    val style: PixelShapeStyle = PixelShapeStyle(color = color),
     override val key: Any? = null,
 ) : LeafRenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
@@ -20,7 +22,9 @@ internal data class LineWidget(
             startY = startY,
             endX = endX,
             endY = endY,
-            color = color,
+            color = style.color,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
         )
     }
 
@@ -30,7 +34,9 @@ internal data class LineWidget(
             startY = startY,
             endX = endX,
             endY = endY,
-            color = color,
+            color = style.color,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
         )
     }
 }
@@ -40,14 +46,27 @@ internal data class CircleWidget(
     val radius: Int,
     val color: PixelColor,
     val filled: Boolean,
+    val style: PixelShapeStyle = PixelShapeStyle(color = color, filled = filled),
     override val key: Any? = null,
 ) : LeafRenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
-        return RenderCircle(radius = radius, color = color, filled = filled)
+        return RenderCircle(
+            radius = radius,
+            color = style.color,
+            filled = style.filled,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
+        )
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
-        (renderObject as RenderCircle).update(radius = radius, color = color, filled = filled)
+        (renderObject as RenderCircle).update(
+            radius = radius,
+            color = style.color,
+            filled = style.filled,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
+        )
     }
 }
 
@@ -56,14 +75,27 @@ internal data class PolygonWidget(
     val points: List<PixelPoint>,
     val color: PixelColor,
     val filled: Boolean,
+    val style: PixelShapeStyle = PixelShapeStyle(color = color, filled = filled),
     override val key: Any? = null,
 ) : LeafRenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
-        return RenderPolygon(points = points, color = color, filled = filled)
+        return RenderPolygon(
+            points = points,
+            color = style.color,
+            filled = style.filled,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
+        )
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
-        (renderObject as RenderPolygon).update(points = points, color = color, filled = filled)
+        (renderObject as RenderPolygon).update(
+            points = points,
+            color = style.color,
+            filled = style.filled,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
+        )
     }
 }
 
@@ -73,13 +105,26 @@ internal data class PathWidget(
     val color: PixelColor,
     val closed: Boolean,
     val strokeWidth: Int,
+    val style: PixelShapeStyle = PixelShapeStyle(color = color, filled = false, strokeWidth = strokeWidth),
     override val key: Any? = null,
 ) : LeafRenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
-        return RenderPath(path = path, color = color, closed = closed, strokeWidth = strokeWidth)
+        return RenderPath(
+            path = path,
+            color = style.color,
+            closed = closed,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
+        )
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
-        (renderObject as RenderPath).update(path = path, color = color, closed = closed, strokeWidth = strokeWidth)
+        (renderObject as RenderPath).update(
+            path = path,
+            color = style.color,
+            closed = closed,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
+        )
     }
 }

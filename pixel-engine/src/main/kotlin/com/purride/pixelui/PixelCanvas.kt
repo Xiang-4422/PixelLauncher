@@ -39,6 +39,16 @@ public class PixelCanvas internal constructor(
         drawLinePixels(context, offsetX, offsetY, startX, startY, endX, endY, color, strokeWidth, blendMode)
     }
 
+    public fun drawLine(
+        startX: Int,
+        startY: Int,
+        endX: Int,
+        endY: Int,
+        style: PixelShapeStyle,
+    ) {
+        drawLine(startX, startY, endX, endY, style.color, style.strokeWidth, style.blendMode)
+    }
+
     public fun drawRect(
         left: Int,
         top: Int,
@@ -133,6 +143,15 @@ public class PixelCanvas internal constructor(
         }
     }
 
+    public fun drawCircle(
+        centerX: Int,
+        centerY: Int,
+        radius: Int,
+        style: PixelShapeStyle,
+    ) {
+        drawCircle(centerX, centerY, radius, style.color, style.filled, style.strokeWidth, style.blendMode)
+    }
+
     public fun drawPolygon(
         points: List<PixelPoint>,
         color: PixelColor,
@@ -148,7 +167,26 @@ public class PixelCanvas internal constructor(
             points = points,
             color = color,
             filled = filled,
+            strokeWidth = 1,
             blendMode = blendMode,
+        )
+    }
+
+    public fun drawPolygon(
+        points: List<PixelPoint>,
+        style: PixelShapeStyle,
+    ) {
+        polygonRasterizer.drawPolygon(
+            context = context,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            width = width,
+            height = height,
+            points = points,
+            color = style.color,
+            filled = style.filled,
+            strokeWidth = style.strokeWidth,
+            blendMode = style.blendMode,
         )
     }
 
@@ -162,6 +200,14 @@ public class PixelCanvas internal constructor(
         visitPixelPathSegments(path, closed) { startX, startY, endX, endY ->
             drawLine(startX, startY, endX, endY, color, strokeWidth, blendMode)
         }
+    }
+
+    public fun drawPath(
+        path: PixelPath,
+        style: PixelShapeStyle,
+        closed: Boolean = false,
+    ) {
+        drawPath(path, style.color, closed, style.strokeWidth, style.blendMode)
     }
 }
 

@@ -21,18 +21,31 @@ internal class RenderLine(
     private var endX: Int,
     private var endY: Int,
     private var color: PixelColor,
+    private var strokeWidth: Int = 1,
+    private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
 
-    fun update(startX: Int, startY: Int, endX: Int, endY: Int, color: PixelColor) {
+    fun update(
+        startX: Int,
+        startY: Int,
+        endX: Int,
+        endY: Int,
+        color: PixelColor,
+        strokeWidth: Int = 1,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         val sizeChanged = this.startX != startX || this.startY != startY ||
             this.endX != endX || this.endY != endY
-        val anyChanged = sizeChanged || this.color != color
+        val anyChanged = sizeChanged || this.color != color ||
+            this.strokeWidth != strokeWidth || this.blendMode != blendMode
         if (!anyChanged) return
         this.startX = startX
         this.startY = startY
         this.endX = endX
         this.endY = endY
         this.color = color
+        this.strokeWidth = strokeWidth
+        this.blendMode = blendMode
         if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }
@@ -47,23 +60,7 @@ internal class RenderLine(
     }
 
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
-        var x0 = startX
-        var y0 = startY
-        val x1 = endX
-        val y1 = endY
-        val dx = abs(x1 - x0)
-        val dy = -abs(y1 - y0)
-        val sx = if (x0 < x1) 1 else -1
-        val sy = if (y0 < y1) 1 else -1
-        var err = dx + dy
-        val buffer = context.buffer
-        while (true) {
-            buffer.setPixel(offsetX + x0, offsetY + y0, color)
-            if (x0 == x1 && y0 == y1) break
-            val e2 = 2 * err
-            if (e2 >= dy) { err += dy; x0 += sx }
-            if (e2 <= dx) { err += dx; y0 += sy }
-        }
+        drawLinePixels(context, offsetX, offsetY, startX, startY, endX, endY, color, strokeWidth, blendMode)
     }
 }
 
@@ -144,15 +141,26 @@ internal class RenderCircle(
     private var radius: Int,
     private var color: PixelColor,
     private var filled: Boolean,
+    private var strokeWidth: Int = 1,
+    private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
 
-    fun update(radius: Int, color: PixelColor, filled: Boolean) {
+    fun update(
+        radius: Int,
+        color: PixelColor,
+        filled: Boolean,
+        strokeWidth: Int = 1,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         val sizeChanged = this.radius != radius
-        val anyChanged = sizeChanged || this.color != color || this.filled != filled
+        val anyChanged = sizeChanged || this.color != color || this.filled != filled ||
+            this.strokeWidth != strokeWidth || this.blendMode != blendMode
         if (!anyChanged) return
         this.radius = radius
         this.color = color
         this.filled = filled
+        this.strokeWidth = strokeWidth
+        this.blendMode = blendMode
         if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }
@@ -178,7 +186,7 @@ internal class RenderCircle(
                 if (dx2 < 0) continue
                 val dx = kotlin.math.sqrt(dx2.toDouble()).toInt()
                 for (x in -dx..dx) {
-                    buffer.setPixel(cx + x, cy + dy, color)
+                    buffer.setPixel(cx + x, cy + dy, color, blendMode)
                 }
             }
         } else {
@@ -186,15 +194,16 @@ internal class RenderCircle(
             var x = radius
             var y = 0
             var err = 0
+            val strokeRadius = strokeWidth.coerceAtLeast(1) / 2
             while (x >= y) {
-                buffer.setPixel(cx + x, cy + y, color)
-                buffer.setPixel(cx + y, cy + x, color)
-                buffer.setPixel(cx - y, cy + x, color)
-                buffer.setPixel(cx - x, cy + y, color)
-                buffer.setPixel(cx - x, cy - y, color)
-                buffer.setPixel(cx - y, cy - x, color)
-                buffer.setPixel(cx + y, cy - x, color)
-                buffer.setPixel(cx + x, cy - y, color)
+                paintStrokePoint(context, 0, 0, cx + x, cy + y, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx + y, cy + x, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx - y, cy + x, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx - x, cy + y, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx - x, cy - y, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx - y, cy - x, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx + y, cy - x, strokeRadius, color, blendMode)
+                paintStrokePoint(context, 0, 0, cx + x, cy - y, strokeRadius, color, blendMode)
                 y += 1
                 if (err <= 0) {
                     err += 2 * y + 1
@@ -211,16 +220,27 @@ internal class RenderPolygon(
     private var points: List<PixelPoint>,
     private var color: PixelColor,
     private var filled: Boolean,
+    private var strokeWidth: Int = 1,
+    private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
     private val rasterizer = PixelPolygonRasterizer()
 
-    fun update(points: List<PixelPoint>, color: PixelColor, filled: Boolean) {
+    fun update(
+        points: List<PixelPoint>,
+        color: PixelColor,
+        filled: Boolean,
+        strokeWidth: Int = 1,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         val sizeChanged = this.points != points
-        val anyChanged = sizeChanged || this.color != color || this.filled != filled
+        val anyChanged = sizeChanged || this.color != color || this.filled != filled ||
+            this.strokeWidth != strokeWidth || this.blendMode != blendMode
         if (!anyChanged) return
         this.points = points
         this.color = color
         this.filled = filled
+        this.strokeWidth = strokeWidth
+        this.blendMode = blendMode
         if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }
@@ -244,6 +264,8 @@ internal class RenderPolygon(
             points = points,
             color = color,
             filled = filled,
+            strokeWidth = strokeWidth,
+            blendMode = blendMode,
         )
     }
 }
@@ -253,16 +275,25 @@ internal class RenderPath(
     private var color: PixelColor,
     private var closed: Boolean,
     private var strokeWidth: Int,
+    private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
 
-    fun update(path: PixelPath, color: PixelColor, closed: Boolean, strokeWidth: Int) {
+    fun update(
+        path: PixelPath,
+        color: PixelColor,
+        closed: Boolean,
+        strokeWidth: Int,
+        blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
+    ) {
         val sizeChanged = this.path != path
-        val anyChanged = sizeChanged || this.color != color || this.closed != closed || this.strokeWidth != strokeWidth
+        val anyChanged = sizeChanged || this.color != color || this.closed != closed ||
+            this.strokeWidth != strokeWidth || this.blendMode != blendMode
         if (!anyChanged) return
         this.path = path
         this.color = color
         this.closed = closed
         this.strokeWidth = strokeWidth
+        this.blendMode = blendMode
         if (sizeChanged) markNeedsLayout()
         markNeedsPaint()
     }
@@ -306,6 +337,7 @@ internal class RenderPath(
                 endY,
                 color,
                 strokeWidth,
+                blendMode,
             )
         }
     }

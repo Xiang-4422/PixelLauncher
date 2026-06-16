@@ -223,6 +223,28 @@ public fun Line(
 }
 
 /**
+ * 直线 widget，使用统一 shape style 控制颜色、线宽和 blend mode。
+ */
+public fun Line(
+    startX: Int,
+    startY: Int,
+    endX: Int,
+    endY: Int,
+    style: PixelShapeStyle,
+    key: Any? = null,
+): Widget {
+    return LineWidget(
+        startX = startX,
+        startY = startY,
+        endX = endX,
+        endY = endY,
+        color = style.color,
+        style = style,
+        key = key,
+    )
+}
+
+/**
  * 圆形 widget。
  *
  * Layout intrinsic 尺寸 = `(2 * radius + 1, 2 * radius + 1)`，父约束更紧时
@@ -243,6 +265,17 @@ public fun Circle(
 }
 
 /**
+ * 圆形 widget，使用统一 shape style 控制颜色、填充、线宽和 blend mode。
+ */
+public fun Circle(
+    radius: Int,
+    style: PixelShapeStyle,
+    key: Any? = null,
+): Widget {
+    return CircleWidget(radius = radius, color = style.color, filled = style.filled, style = style, key = key)
+}
+
+/**
  * Polygon widget backed by direct pixel drawing.
  *
  * [filled] uses scanline fill; outline mode draws single-pixel line segments.
@@ -257,6 +290,17 @@ public fun Polygon(
 }
 
 /**
+ * Polygon widget backed by direct pixel drawing, styled with [PixelShapeStyle].
+ */
+public fun Polygon(
+    points: List<PixelPoint>,
+    style: PixelShapeStyle,
+    key: Any? = null,
+): Widget {
+    return PolygonWidget(points = points, color = style.color, filled = style.filled, style = style, key = key)
+}
+
+/**
  * Path widget supporting line, quadratic, cubic, and close commands.
  */
 public fun Path(
@@ -267,6 +311,20 @@ public fun Path(
     key: Any? = null,
 ): Widget {
     return PathWidget(path = path, color = color, closed = closed, strokeWidth = strokeWidth, key = key)
+}
+
+/**
+ * Path widget supporting line, quadratic, cubic, and close commands, styled with [PixelShapeStyle].
+ *
+ * [PixelShapeStyle.filled] is ignored because Path currently only strokes segments.
+ */
+public fun Path(
+    path: PixelPath,
+    style: PixelShapeStyle,
+    closed: Boolean = false,
+    key: Any? = null,
+): Widget {
+    return PathWidget(path = path, color = style.color, closed = closed, strokeWidth = style.strokeWidth, style = style, key = key)
 }
 
 /**

@@ -159,11 +159,15 @@ com.purride.pixelui public val width: Int,
 com.purride.pixelui public val height: Int,
 com.purride.pixelui public fun setPixel(
 com.purride.pixelui public fun drawLine(
+com.purride.pixelui public fun drawLine(
 com.purride.pixelui public fun drawRect(
 com.purride.pixelui public fun fillRect(
 com.purride.pixelui public fun fillGradientRect(
 com.purride.pixelui public fun drawCircle(
+com.purride.pixelui public fun drawCircle(
 com.purride.pixelui public fun drawPolygon(
+com.purride.pixelui public fun drawPolygon(
+com.purride.pixelui public fun drawPath(
 com.purride.pixelui public fun drawPath(
 com.purride.pixelui public data class PixelPoint(
 com.purride.pixelui public data class PixelGradientStop(
@@ -643,6 +647,11 @@ com.purride.pixelui public data class PixelBoxConstraints(
 com.purride.pixelui public fun PixelDebugOverlay(
 com.purride.pixelui public fun PixelInspectorBoundsOverlay(
 com.purride.pixelui public fun PixelInspectorPanel(
+com.purride.pixelui public data class PixelShapeStyle(
+com.purride.pixelui public val color: PixelColor,
+com.purride.pixelui public val filled: Boolean = true,
+com.purride.pixelui public val strokeWidth: Int = 1,
+com.purride.pixelui public val blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 com.purride.pixelui public sealed interface PixelSliver
 com.purride.pixelui public val key: Any?
 com.purride.pixelui public data class PixelSliverList(
@@ -686,8 +695,12 @@ com.purride.pixelui public fun Flexible(
 com.purride.pixelui public fun Spacer(
 com.purride.pixelui public fun GestureDetector(
 com.purride.pixelui public fun Line(
+com.purride.pixelui public fun Line(
+com.purride.pixelui public fun Circle(
 com.purride.pixelui public fun Circle(
 com.purride.pixelui public fun Polygon(
+com.purride.pixelui public fun Polygon(
+com.purride.pixelui public fun Path(
 com.purride.pixelui public fun Path(
 com.purride.pixelui public fun CustomPaint(
 com.purride.pixelui public fun Image(

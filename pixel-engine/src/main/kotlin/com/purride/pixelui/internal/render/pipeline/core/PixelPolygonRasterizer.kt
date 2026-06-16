@@ -20,15 +20,39 @@ internal class PixelPolygonRasterizer {
         points: List<PixelPoint>,
         color: PixelColor,
         filled: Boolean,
+        strokeWidth: Int = 1,
         blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
     ) {
+        val safeStrokeWidth = strokeWidth.coerceAtLeast(1)
         if (points.size < 2 || width <= 0 || height <= 0) return
         if (!filled || points.size < 3) {
-            drawOutline(context, offsetX, offsetY, points, color, blendMode, skipFilledPixels = false, width, height)
+            drawOutline(
+                context,
+                offsetX,
+                offsetY,
+                points,
+                color,
+                blendMode,
+                skipFilledPixels = false,
+                width,
+                height,
+                safeStrokeWidth,
+            )
             return
         }
         drawFill(context, offsetX, offsetY, width, height, points, color, blendMode)
-        drawOutline(context, offsetX, offsetY, points, color, blendMode, skipFilledPixels = true, width, height)
+        drawOutline(
+            context,
+            offsetX,
+            offsetY,
+            points,
+            color,
+            blendMode,
+            skipFilledPixels = true,
+            width,
+            height,
+            safeStrokeWidth,
+        )
     }
 
     private fun drawFill(
@@ -68,12 +92,13 @@ internal class PixelPolygonRasterizer {
         skipFilledPixels: Boolean,
         width: Int,
         height: Int,
+        strokeWidth: Int,
     ) {
         for (index in points.indices) {
             val start = points[index]
             val end = points[(index + 1) % points.size]
             if (start == end) continue
-            drawLine(context, offsetX, offsetY, start, end, color, blendMode, skipFilledPixels, width, height, points)
+            drawLine(context, offsetX, offsetY, start, end, color, blendMode, skipFilledPixels, width, height, strokeWidth, points)
         }
     }
 
@@ -88,8 +113,10 @@ internal class PixelPolygonRasterizer {
         skipFilledPixels: Boolean,
         width: Int,
         height: Int,
+        strokeWidth: Int,
         points: List<PixelPoint>,
     ) {
+        val strokeRadius = strokeWidth / 2
         var x0 = start.x
         var y0 = start.y
         val x1 = end.x
@@ -101,7 +128,7 @@ internal class PixelPolygonRasterizer {
         var err = dx + dy
         while (true) {
             if (!skipFilledPixels || !isFilledPixel(points, x0, y0, width, height)) {
-                context.buffer.setPixel(offsetX + x0, offsetY + y0, color, blendMode)
+                paintStrokePoint(context, offsetX, offsetY, x0, y0, strokeRadius, color, blendMode)
             }
             if (x0 == x1 && y0 == y1) break
             val e2 = 2 * err
