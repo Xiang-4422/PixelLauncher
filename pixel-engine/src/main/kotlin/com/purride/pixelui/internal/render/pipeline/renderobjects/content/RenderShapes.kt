@@ -6,6 +6,7 @@ import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPathCommand
 import com.purride.pixelui.PixelPoint
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
@@ -247,6 +248,7 @@ internal class RenderPolygon(
         for (index in points.indices) {
             val start = points[index]
             val end = points[(index + 1) % points.size]
+            if (start == end) continue
             drawLinePixels(context, offsetX, offsetY, start.x, start.y, end.x, end.y, color)
         }
     }
@@ -265,7 +267,7 @@ internal class RenderPolygon(
                 val minEdgeY = min(a.y, b.y)
                 val maxEdgeY = max(a.y, b.y)
                 if (y < minEdgeY || y >= maxEdgeY) continue
-                val x = a.x + ((y - a.y).toLong() * (b.x - a.x) / (b.y - a.y)).toInt()
+                val x = scanlineIntersectionX(a, b, y)
                 intersections += x
             }
             intersections.sort()
@@ -279,6 +281,12 @@ internal class RenderPolygon(
                 i += 2
             }
         }
+        paintOutline(context, offsetX, offsetY)
+    }
+
+    private fun scanlineIntersectionX(a: PixelPoint, b: PixelPoint, y: Int): Int {
+        val fraction = (y - a.y).toDouble() / (b.y - a.y).toDouble()
+        return floor(a.x + fraction * (b.x - a.x)).toInt()
     }
 }
 

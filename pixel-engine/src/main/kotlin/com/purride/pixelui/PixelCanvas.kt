@@ -6,6 +6,7 @@ import com.purride.pixelui.internal.PaintContext
 import com.purride.pixelui.internal.drawLinePixels
 import com.purride.pixelui.internal.paintStrokePoint
 import com.purride.pixelui.internal.visitPixelPathSegments
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -142,11 +143,7 @@ public class PixelCanvas internal constructor(
     ) {
         if (points.size < 2) return
         if (!filled || points.size < 3) {
-            points.indices.forEach { index ->
-                val start = points[index]
-                val end = points[(index + 1) % points.size]
-                drawLine(start.x, start.y, end.x, end.y, color, blendMode = blendMode)
-            }
+            drawPolygonOutline(points, color, blendMode)
             return
         }
         val minY = max(0, points.minOf { it.y })
@@ -161,7 +158,7 @@ public class PixelCanvas internal constructor(
                 val minEdgeY = min(a.y, b.y)
                 val maxEdgeY = max(a.y, b.y)
                 if (y < minEdgeY || y >= maxEdgeY) continue
-                val x = a.x + ((y - a.y).toLong() * (b.x - a.x) / (b.y - a.y)).toInt()
+                val x = scanlineIntersectionX(a, b, y)
                 intersections += x
             }
             intersections.sort()
@@ -173,6 +170,26 @@ public class PixelCanvas internal constructor(
                 i += 2
             }
         }
+        drawPolygonOutline(points, color, blendMode)
+    }
+
+    private fun drawPolygonOutline(
+        points: List<PixelPoint>,
+        color: PixelColor,
+        blendMode: PixelBlendMode,
+    ) {
+        points.indices.forEach { index ->
+            val start = points[index]
+            val end = points[(index + 1) % points.size]
+            if (start != end) {
+                drawLine(start.x, start.y, end.x, end.y, color, blendMode = blendMode)
+            }
+        }
+    }
+
+    private fun scanlineIntersectionX(a: PixelPoint, b: PixelPoint, y: Int): Int {
+        val fraction = (y - a.y).toDouble() / (b.y - a.y).toDouble()
+        return floor(a.x + fraction * (b.x - a.x)).toInt()
     }
 
     public fun drawPath(

@@ -19,11 +19,12 @@ import com.purride.pixeldemo.scaffold.DemoEnv
 object PolygonPathScene : DemoScene {
     override val id = "polygon_path"
     override val title = "POLYGON/PATH"
-    override val description = "scanline polygon fill + line/quadratic/cubic path"
+    override val description = "concave polygon fill + line/quadratic/cubic path"
 
     override fun build(env: DemoEnv): Widget {
         val amber = PixelColor.fromRgb(255, 192, 64)
         val cyan = PixelColor.fromRgb(80, 220, 255)
+        val green = PixelColor.fromRgb(80, 220, 120)
         return Column(
             mainAxisAlignment = MainAxisAlignment.CENTER,
             spacing = 4,
@@ -41,6 +42,20 @@ object PolygonPathScene : DemoScene {
                             points = listOf(PixelPoint(0, 0), PixelPoint(8, 0), PixelPoint(8, 6), PixelPoint(0, 6)),
                             color = cyan,
                             filled = false,
+                        ),
+                        Polygon(
+                            points = listOf(
+                                PixelPoint(0, 0),
+                                PixelPoint(6, 0),
+                                PixelPoint(6, 6),
+                                PixelPoint(4, 6),
+                                PixelPoint(4, 2),
+                                PixelPoint(2, 2),
+                                PixelPoint(2, 6),
+                                PixelPoint(0, 6),
+                            ),
+                            color = green,
+                            filled = true,
                         ),
                     ),
                 ),

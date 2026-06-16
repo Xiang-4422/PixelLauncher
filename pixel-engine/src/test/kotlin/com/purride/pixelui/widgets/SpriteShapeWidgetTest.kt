@@ -66,6 +66,65 @@ class SpriteShapeWidgetTest {
     }
 
     @Test
+    fun polygonFilledKeepsConcaveNotchTransparentAndDrawsEdges() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            Polygon(
+                points = listOf(
+                    PixelPoint(0, 0),
+                    PixelPoint(6, 0),
+                    PixelPoint(6, 6),
+                    PixelPoint(4, 6),
+                    PixelPoint(4, 2),
+                    PixelPoint(2, 2),
+                    PixelPoint(2, 6),
+                    PixelPoint(0, 6),
+                ),
+                color = PixelColor.White,
+                filled = true,
+            ),
+            7,
+            7,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(1, 4))
+        assertEquals(PixelColor.Transparent, buffer.getPixel(3, 4))
+        assertEquals(PixelColor.White, buffer.getPixel(5, 4))
+        assertEquals(PixelColor.White, buffer.getPixel(3, 0))
+        assertEquals(PixelColor.White, buffer.getPixel(1, 6))
+        assertEquals(PixelColor.White, buffer.getPixel(5, 6))
+        tester.dispose()
+    }
+
+    @Test
+    fun polygonFilledToleratesRepeatedVerticesAndHorizontalBoundary() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            Polygon(
+                points = listOf(
+                    PixelPoint(0, 0),
+                    PixelPoint(4, 0),
+                    PixelPoint(4, 0),
+                    PixelPoint(4, 4),
+                    PixelPoint(0, 4),
+                    PixelPoint(0, 0),
+                ),
+                color = PixelColor.White,
+                filled = true,
+            ),
+            5,
+            5,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(2, 0))
+        assertEquals(PixelColor.White, buffer.getPixel(2, 2))
+        assertEquals(PixelColor.White, buffer.getPixel(2, 4))
+        tester.dispose()
+    }
+
+    @Test
     fun pathDrawsLineAndCloseSegments() {
         val tester = PixelTester()
         tester.pumpWidget(
@@ -213,6 +272,37 @@ class SpriteShapeWidgetTest {
         assertEquals(PixelColor.White, buffer.getPixel(0, 0))
         assertEquals(PixelColor.White, buffer.getPixel(7, 7))
         assertEquals(orange, buffer.getPixel(6, 4))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintPolygonUsesSameConcaveBoundaryRules() {
+        val tester = PixelTester()
+        tester.pumpWidget(
+            CustomPaint(width = 7, height = 7) {
+                drawPolygon(
+                    points = listOf(
+                        PixelPoint(0, 0),
+                        PixelPoint(6, 0),
+                        PixelPoint(6, 6),
+                        PixelPoint(4, 6),
+                        PixelPoint(4, 2),
+                        PixelPoint(2, 2),
+                        PixelPoint(2, 6),
+                        PixelPoint(0, 6),
+                    ),
+                    color = PixelColor.White,
+                    filled = true,
+                )
+            },
+            7,
+            7,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(PixelColor.White, buffer.getPixel(1, 4))
+        assertEquals(PixelColor.Transparent, buffer.getPixel(3, 4))
+        assertEquals(PixelColor.White, buffer.getPixel(5, 4))
         tester.dispose()
     }
 
