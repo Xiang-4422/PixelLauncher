@@ -2427,6 +2427,11 @@ public final class com.purride.pixelui.animation.PixelColorTween extends com.pur
   public java.lang.Object lerp(float);
   public com.purride.pixelui.animation.PixelColorTween(int, int, kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelui.animation.PixelGradientTween extends com.purride.pixelui.animation.Tween<com.purride.pixelui.PixelGradient> {
+  public com.purride.pixelui.animation.PixelGradientTween(com.purride.pixelui.PixelGradient, com.purride.pixelui.PixelGradient);
+  public com.purride.pixelui.PixelGradient lerp(float);
+  public java.lang.Object lerp(float);
+}
 public final class com.purride.pixelui.animation.PixelTicker {
   public com.purride.pixelui.animation.PixelTicker(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>, com.purride.pixelui.animation.PixelTickerProvider);
   public final boolean isActive();

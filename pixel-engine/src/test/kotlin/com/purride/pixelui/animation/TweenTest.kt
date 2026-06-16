@@ -2,6 +2,9 @@ package com.purride.pixelui.animation
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.PixelGradient
+import com.purride.pixelui.PixelGradientStop
+import com.purride.pixelui.PixelPoint
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -95,6 +98,95 @@ class TweenTest {
         val opaque = PixelColor.fromArgb(255, 255, 0, 0)
         val tween = PixelColorTween(transparent, opaque)
         assertEquals(128, tween.lerp(0.5f).alpha)
+    }
+
+    @Test
+    fun pixelGradientTweenInterpolatesLinearGeometryAndStops() {
+        val tween = PixelGradientTween(
+            begin = PixelGradient.Linear(
+                start = PixelPoint(0, 0),
+                end = PixelPoint(10, 0),
+                stops = listOf(
+                    PixelGradientStop(0f, PixelColor.Black),
+                    PixelGradientStop(1f, PixelColor.White),
+                ),
+            ),
+            end = PixelGradient.Linear(
+                start = PixelPoint(0, 10),
+                end = PixelPoint(10, 10),
+                stops = listOf(
+                    PixelGradientStop(0.25f, PixelColor.White),
+                    PixelGradientStop(0.75f, PixelColor.Black),
+                ),
+            ),
+        )
+
+        val gradient = tween.lerp(0.5f) as PixelGradient.Linear
+
+        assertEquals(PixelPoint(0, 5), gradient.start)
+        assertEquals(PixelPoint(10, 5), gradient.end)
+        assertEquals(0.125f, gradient.stops[0].offset, 0.0001f)
+        assertEquals(0.875f, gradient.stops[1].offset, 0.0001f)
+        assertEquals(128, gradient.stops[0].color.red)
+        assertEquals(128, gradient.stops[1].color.red)
+    }
+
+    @Test
+    fun pixelGradientTweenInterpolatesRadialGeometry() {
+        val tween = PixelGradientTween(
+            begin = PixelGradient.Radial(
+                center = PixelPoint(0, 0),
+                radius = 2,
+                stops = listOf(PixelGradientStop(0f, PixelColor.Black)),
+            ),
+            end = PixelGradient.Radial(
+                center = PixelPoint(10, 4),
+                radius = 8,
+                stops = listOf(PixelGradientStop(1f, PixelColor.White)),
+            ),
+        )
+
+        val gradient = tween.lerp(0.5f) as PixelGradient.Radial
+
+        assertEquals(PixelPoint(5, 2), gradient.center)
+        assertEquals(5, gradient.radius)
+        assertEquals(0.5f, gradient.stops.single().offset, 0.0001f)
+        assertEquals(128, gradient.stops.single().color.red)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun pixelGradientTweenRejectsMismatchedTypes() {
+        PixelGradientTween(
+            begin = PixelGradient.Linear(
+                start = PixelPoint(0, 0),
+                end = PixelPoint(1, 0),
+                stops = listOf(PixelGradientStop(0f, PixelColor.Black)),
+            ),
+            end = PixelGradient.Radial(
+                center = PixelPoint(0, 0),
+                radius = 1,
+                stops = listOf(PixelGradientStop(0f, PixelColor.White)),
+            ),
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun pixelGradientTweenRejectsMismatchedStopCounts() {
+        PixelGradientTween(
+            begin = PixelGradient.Linear(
+                start = PixelPoint(0, 0),
+                end = PixelPoint(1, 0),
+                stops = listOf(PixelGradientStop(0f, PixelColor.Black)),
+            ),
+            end = PixelGradient.Linear(
+                start = PixelPoint(0, 0),
+                end = PixelPoint(1, 0),
+                stops = listOf(
+                    PixelGradientStop(0f, PixelColor.Black),
+                    PixelGradientStop(1f, PixelColor.White),
+                ),
+            ),
+        )
     }
 
 }

@@ -254,6 +254,7 @@ com.purride.pixelui.animation public class IntTween(begin: Int, end: Int) : Twee
 com.purride.pixelui.animation public class EdgeInsetsTween(begin: EdgeInsets, end: EdgeInsets) : Tween<EdgeInsets>(begin, end)
 com.purride.pixelui.animation public class OffsetTween(begin: IntOffset, end: IntOffset) : Tween<IntOffset>(begin, end)
 com.purride.pixelui.animation public class PixelColorTween(begin: PixelColor, end: PixelColor) : Tween<PixelColor>(begin, end)
+com.purride.pixelui.animation public class PixelGradientTween(begin: PixelGradient, end: PixelGradient) : Tween<PixelGradient>(begin, end)
 com.purride.pixelui public typealias PageController = PixelPagerController
 com.purride.pixelui public typealias ScrollController = PixelListController
 com.purride.pixelui public typealias TextEditingController = PixelTextFieldController
