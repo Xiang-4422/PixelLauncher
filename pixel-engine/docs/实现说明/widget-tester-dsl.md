@@ -19,6 +19,8 @@ tester.tap(find.byText("OK"))
 tester.doubleTap(find.byKey("field"))
 tester.dragSelectionEndHandle(find.byKey("field"), dx = 8, dy = 0)
 tester.drag(find.byKey("list"), dx = 0, dy = -12)
+tester.fling(find.byKey("list"), dx = 0, dy = -4, velocityPxPerSecond = -120f)
+tester.cancelDrag(find.byKey("pager"), dx = -12, dy = 0)
 tester.enterText(find.byKey("field"), "hello")
 tester.composeText(find.byKey("field"), "拼")
 tester.submitTextInput()
@@ -39,7 +41,8 @@ Finder：
 ## 边界
 
 - `pumpWidget` 直接调用 `PixelUiRuntime.render`。
-- `tap` / `doubleTap` / `drag` 先通过 finder 定位 render target bounds，再按坐标命中导出的 click / list / pager / text input / slider target；TextField double tap 会选中单词，非空 selection 的拖动会按最近 handle 更新选区，list 到边界且同点存在 pager target 时会 handoff 给 pager。
+- `tap` / `doubleTap` / `drag` / `fling` / `cancelDrag` 先通过 finder 定位 render target bounds，再按坐标命中导出的 click / list / pager / text input / slider target；TextField double tap 会选中单词，非空 selection 的拖动会按最近 handle 更新选区，list 到边界且同点存在 pager target 时会 handoff 给 pager。
+- `fling` 会把调用方提供的 logical velocity 传给 list / pager controller 的 `endDrag`；`cancelDrag` 覆盖 host cancel 分支，list 以 0 velocity 结束拖动，pager 调用 `cancelDrag` 回弹到当前页。
 - `dragSelectionStartHandle` / `dragSelectionEndHandle` 显式驱动 TextField 选区两端的最小 handle，用于覆盖 selection handle 交互回归。
 - `enterText` / `composeText` / `updateComposition` / `submitTextInput` 走 text input target 和 controller；readOnly target 会直接报错。
 - `performTextEditAction` 覆盖 Copy/Cut/Paste/Select all，并用 tester 内的

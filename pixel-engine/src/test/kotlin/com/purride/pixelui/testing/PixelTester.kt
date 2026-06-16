@@ -78,6 +78,18 @@ public class PixelTester {
         render()
     }
 
+    public fun fling(finder: PixelFinder, dx: Int, dy: Int, velocityPxPerSecond: Float) {
+        val point = resolvePoint(finder, TargetKind.DRAG)
+        dispatchFling(point.x, point.y, dx, dy, velocityPxPerSecond)
+        render()
+    }
+
+    public fun cancelDrag(finder: PixelFinder, dx: Int = 0, dy: Int = 0) {
+        val point = resolvePoint(finder, TargetKind.DRAG)
+        dispatchDragCancel(point.x, point.y, dx, dy)
+        render()
+    }
+
     public fun dragSelectionStartHandle(finder: PixelFinder, dx: Int, dy: Int) {
         dragSelectionHandle(finder, TextSelectionHandle.START, dx, dy)
     }
@@ -334,6 +346,72 @@ public class PixelTester {
             return
         }
         fail("No draggable target at ($startX,$startY)")
+    }
+
+    private fun dispatchFling(startX: Int, startY: Int, dx: Int, dy: Int, velocityPxPerSecond: Float) {
+        val listTarget = renderResult?.listTargets?.lastOrNull { it.bounds.contains(startX, startY) }
+        val pagerTarget = renderResult?.pagerTargets?.lastOrNull { it.bounds.contains(startX, startY) }
+        if (listTarget != null && shouldStartListDrag(dx, dy)) {
+            listTarget.controller.startDrag(listTarget.state)
+            listTarget.controller.dragBy(listTarget.state, dy.toFloat(), listTarget.viewportHeightPx, listTarget.contentHeightPx)
+            listTarget.controller.endDrag(
+                listTarget.state,
+                velocityPxPerSecond,
+                listTarget.viewportHeightPx,
+                listTarget.contentHeightPx,
+            )
+            needsRender = true
+            return
+        }
+        if (pagerTarget != null) {
+            val delta = when (pagerTarget.axis) {
+                PixelAxis.HORIZONTAL -> dx.toFloat()
+                PixelAxis.VERTICAL -> dy.toFloat()
+            }
+            val viewport = when (pagerTarget.axis) {
+                PixelAxis.HORIZONTAL -> pagerTarget.bounds.width
+                PixelAxis.VERTICAL -> pagerTarget.bounds.height
+            }.coerceAtLeast(1)
+            pagerTarget.controller.startDrag(pagerTarget.state)
+            pagerTarget.controller.dragBy(pagerTarget.state, delta, viewport)
+            pagerTarget.controller.endDrag(pagerTarget.state, viewport, velocityPxPerSecond)
+            pagerTarget.onPageChanged?.invoke(pagerTarget.state.currentPage)
+            needsRender = true
+            return
+        }
+        fail("No fling target at ($startX,$startY)")
+    }
+
+    private fun dispatchDragCancel(startX: Int, startY: Int, dx: Int, dy: Int) {
+        val listTarget = renderResult?.listTargets?.lastOrNull { it.bounds.contains(startX, startY) }
+        val pagerTarget = renderResult?.pagerTargets?.lastOrNull { it.bounds.contains(startX, startY) }
+        if (listTarget != null && shouldStartListDrag(dx, dy)) {
+            listTarget.controller.startDrag(listTarget.state)
+            if (dy != 0) {
+                listTarget.controller.dragBy(listTarget.state, dy.toFloat(), listTarget.viewportHeightPx, listTarget.contentHeightPx)
+            }
+            listTarget.controller.endDrag(listTarget.state, 0f, listTarget.viewportHeightPx, listTarget.contentHeightPx)
+            needsRender = true
+            return
+        }
+        if (pagerTarget != null) {
+            val delta = when (pagerTarget.axis) {
+                PixelAxis.HORIZONTAL -> dx.toFloat()
+                PixelAxis.VERTICAL -> dy.toFloat()
+            }
+            val viewport = when (pagerTarget.axis) {
+                PixelAxis.HORIZONTAL -> pagerTarget.bounds.width
+                PixelAxis.VERTICAL -> pagerTarget.bounds.height
+            }.coerceAtLeast(1)
+            pagerTarget.controller.startDrag(pagerTarget.state)
+            if (delta != 0f) {
+                pagerTarget.controller.dragBy(pagerTarget.state, delta, viewport)
+            }
+            pagerTarget.controller.cancelDrag(pagerTarget.state)
+            needsRender = true
+            return
+        }
+        fail("No cancellable drag target at ($startX,$startY)")
     }
 
     private fun dragSelectionHandle(finder: PixelFinder, handle: TextSelectionHandle, dx: Int, dy: Int) {

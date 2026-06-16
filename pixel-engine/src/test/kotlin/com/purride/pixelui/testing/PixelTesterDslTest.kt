@@ -153,6 +153,32 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun flingByKeyStartsListSettlingWithVelocity() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = ListViewBuilder(
+                itemCount = 20,
+                itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                itemExtent = 6,
+                state = state,
+                controller = controller,
+                key = "list",
+            ),
+            logicalWidth = 40,
+            logicalHeight = 18,
+        )
+        tester.fling(find.byKey("list"), dx = 0, dy = -4, velocityPxPerSecond = -120f)
+
+        assertFalse(state.isDragging)
+        assertTrue(state.isSettling)
+        assertEquals(-120f, state.scrollVelocityPxPerSecond, 0.001f)
+        tester.dispose()
+    }
+
+    @Test
     fun dragByKeyMovesPagerThroughRenderTarget() {
         val tester = PixelTester()
         val controller = PixelPagerController(distanceThresholdFraction = 0.2f)
@@ -173,6 +199,56 @@ class PixelTesterDslTest {
         tester.pumpAndSettle()
 
         assertEquals(1, state.currentPage)
+        tester.dispose()
+    }
+
+    @Test
+    fun flingByKeyMovesPagerThroughVelocityPath() {
+        val tester = PixelTester()
+        val controller = PixelPagerController(distanceThresholdFraction = 0.9f)
+        val state = controller.create(pageCount = 2)
+
+        tester.pumpWidget(
+            widget = PageView(
+                axis = Axis.HORIZONTAL,
+                controller = controller,
+                state = state,
+                pages = listOf(Text("ONE"), Text("TWO")),
+                key = "pager",
+            ),
+            logicalWidth = 30,
+            logicalHeight = 10,
+        )
+        tester.fling(find.byKey("pager"), dx = -2, dy = 0, velocityPxPerSecond = -90f)
+        tester.pumpAndSettle()
+
+        assertEquals(1, state.currentPage)
+        tester.dispose()
+    }
+
+    @Test
+    fun cancelDragByKeySettlesPagerBackToCurrentPage() {
+        val tester = PixelTester()
+        val controller = PixelPagerController(distanceThresholdFraction = 0.2f)
+        val state = controller.create(pageCount = 2)
+
+        tester.pumpWidget(
+            widget = PageView(
+                axis = Axis.HORIZONTAL,
+                controller = controller,
+                state = state,
+                pages = listOf(Text("ONE"), Text("TWO")),
+                key = "pager",
+            ),
+            logicalWidth = 30,
+            logicalHeight = 10,
+        )
+        tester.cancelDrag(find.byKey("pager"), dx = -20, dy = 0)
+        tester.pumpAndSettle()
+
+        assertEquals(0, state.currentPage)
+        assertFalse(state.isDragging)
+        assertFalse(state.isSettling)
         tester.dispose()
     }
 
