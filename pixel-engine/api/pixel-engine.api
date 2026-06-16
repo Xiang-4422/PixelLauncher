@@ -14,6 +14,12 @@ com.purride.pixelcore public fun clear()
 com.purride.pixelcore public fun snapshot(): PixelResourceCacheSnapshot
 com.purride.pixelcore public val bitmapCount: Int
 com.purride.pixelcore public val spriteSheetCount: Int
+com.purride.pixelcore public class PixelResourceManifestLoadException(
+com.purride.pixelcore public data class PixelBitmapResourceDefinition(
+com.purride.pixelcore public data class PixelSpriteSheetResourceDefinition(
+com.purride.pixelcore public data class PixelResourceManifest(
+com.purride.pixelcore public object PixelResourceManifestJsonLoader
+com.purride.pixelcore public fun parse(json: String): PixelResourceManifest
 com.purride.pixelcore public data class PixelBitmapRegion(
 com.purride.pixelcore public data class PixelSpriteSheet(
 com.purride.pixelcore public class PixelSpriteSheetLoadException(

@@ -260,6 +260,18 @@ public final class com.purride.pixelcore.PixelBitmapRegion {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelcore.PixelBitmapResourceDefinition {
+  public com.purride.pixelcore.PixelBitmapResourceDefinition(java.lang.String, java.lang.String);
+  public final java.lang.String getId();
+  public final java.lang.String getPath();
+  public final java.lang.String component1();
+  public final java.lang.String component2();
+  public final com.purride.pixelcore.PixelBitmapResourceDefinition copy(java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelBitmapResourceDefinition copy$default(com.purride.pixelcore.PixelBitmapResourceDefinition, java.lang.String, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelcore.PixelBitmapResourceLoader {
   public com.purride.pixelcore.PixelBitmapResourceLoader(android.content.res.Resources);
   public final com.purride.pixelcore.PixelBitmap load(int);
@@ -540,6 +552,31 @@ public final class com.purride.pixelcore.PixelResourceCacheSnapshot {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelcore.PixelResourceManifest {
+  public com.purride.pixelcore.PixelResourceManifest(java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition>, java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition>, int, java.util.Map<java.lang.String, java.lang.String>);
+  public com.purride.pixelcore.PixelResourceManifest(java.util.List, java.util.List, int, java.util.Map, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> getBitmaps();
+  public final java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> getSpriteSheets();
+  public final int getVersion();
+  public final java.util.Map<java.lang.String, java.lang.String> getMetadata();
+  public final java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> component1();
+  public final java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> component2();
+  public final int component3();
+  public final java.util.Map<java.lang.String, java.lang.String> component4();
+  public final com.purride.pixelcore.PixelResourceManifest copy(java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition>, java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition>, int, java.util.Map<java.lang.String, java.lang.String>);
+  public static com.purride.pixelcore.PixelResourceManifest copy$default(com.purride.pixelcore.PixelResourceManifest, java.util.List, java.util.List, int, java.util.Map, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelcore.PixelResourceManifestJsonLoader {
+  public static final com.purride.pixelcore.PixelResourceManifestJsonLoader INSTANCE;
+  public final com.purride.pixelcore.PixelResourceManifest parse(java.lang.String);
+}
+public final class com.purride.pixelcore.PixelResourceManifestLoadException extends java.lang.IllegalArgumentException {
+  public com.purride.pixelcore.PixelResourceManifestLoadException(java.lang.String, java.lang.Throwable);
+  public com.purride.pixelcore.PixelResourceManifestLoadException(java.lang.String, java.lang.Throwable, int, kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public final class com.purride.pixelcore.PixelShape extends java.lang.Enum<com.purride.pixelcore.PixelShape> {
   public static final com.purride.pixelcore.PixelShape SQUARE;
   public static final com.purride.pixelcore.PixelShape CIRCLE;
@@ -585,6 +622,20 @@ public final class com.purride.pixelcore.PixelSpriteSheetJsonLoader {
 public final class com.purride.pixelcore.PixelSpriteSheetLoadException extends java.lang.IllegalArgumentException {
   public com.purride.pixelcore.PixelSpriteSheetLoadException(java.lang.String, java.lang.Throwable);
   public com.purride.pixelcore.PixelSpriteSheetLoadException(java.lang.String, java.lang.Throwable, int, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelcore.PixelSpriteSheetResourceDefinition {
+  public com.purride.pixelcore.PixelSpriteSheetResourceDefinition(java.lang.String, java.lang.String, java.lang.String);
+  public final java.lang.String getId();
+  public final java.lang.String getPath();
+  public final java.lang.String getBitmap();
+  public final java.lang.String component1();
+  public final java.lang.String component2();
+  public final java.lang.String component3();
+  public final com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy$default(com.purride.pixelcore.PixelSpriteSheetResourceDefinition, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelcore.PixelStyledTextRasterizer implements com.purride.pixelcore.PixelTextRasterizer {
   public com.purride.pixelcore.PixelStyledTextRasterizer(com.purride.pixelcore.PixelFontEngine, com.purride.pixelcore.GlyphStyle, int);

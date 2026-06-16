@@ -70,6 +70,7 @@ class PublicApiCoverageTest {
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/graphics/PixelBlendMode.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelui/PixelNavigatorAliases.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelBitmapLoaders.kt"),
+            moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelResourceManifest.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelResourceCache.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheet.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheetLoader.kt"),
