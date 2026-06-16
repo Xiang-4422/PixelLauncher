@@ -77,6 +77,115 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun gestureStreamInvokesButtonCallbackOnUp() {
+        val tester = PixelTester()
+        var tapped = 0
+
+        tester.pumpWidget(
+            widget = OutlinedButton(text = "OK", onPressed = { tapped++ }),
+            logicalWidth = 24,
+            logicalHeight = 10,
+        )
+
+        val gesture = tester.startGesture(find.byText("OK"))
+        assertEquals(0, tapped)
+        gesture.up()
+
+        assertEquals(1, tapped)
+        tester.dispose()
+    }
+
+    @Test
+    fun gestureStreamKeepsListDraggingUntilUp() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = ListViewBuilder(
+                itemCount = 20,
+                itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                itemExtent = 6,
+                state = state,
+                controller = controller,
+                key = "list",
+            ),
+            logicalWidth = 40,
+            logicalHeight = 18,
+        )
+
+        val gesture = tester.startGesture(find.byKey("list"))
+        gesture.moveBy(dx = 0, dy = -8)
+
+        assertTrue(state.isDragging)
+        assertTrue(state.scrollOffsetPx > 0f)
+
+        gesture.up()
+
+        assertFalse(state.isDragging)
+        tester.dispose()
+    }
+
+    @Test
+    fun gestureStreamCancelSettlesPagerBackToCurrentPage() {
+        val tester = PixelTester()
+        val controller = PixelPagerController(distanceThresholdFraction = 0.2f)
+        val state = controller.create(pageCount = 2)
+
+        tester.pumpWidget(
+            widget = PageView(
+                axis = Axis.HORIZONTAL,
+                controller = controller,
+                state = state,
+                pages = listOf(Text("ONE"), Text("TWO")),
+                key = "pager",
+            ),
+            logicalWidth = 30,
+            logicalHeight = 10,
+        )
+
+        val gesture = tester.startGesture(find.byKey("pager"))
+        gesture.moveBy(dx = -20, dy = 0)
+        assertTrue(state.isDragging)
+
+        gesture.cancel()
+        tester.pumpAndSettle()
+
+        assertEquals(0, state.currentPage)
+        assertFalse(state.isDragging)
+        assertFalse(state.isSettling)
+        tester.dispose()
+    }
+
+    @Test
+    fun gestureStreamsTrackIndependentPointerIds() {
+        val tester = PixelTester()
+        var first = 0
+        var second = 0
+
+        tester.pumpWidget(
+            widget = Column(
+                children = listOf(
+                    OutlinedButton(text = "A", onPressed = { first++ }),
+                    OutlinedButton(text = "B", onPressed = { second++ }),
+                ),
+                spacing = 1,
+            ),
+            logicalWidth = 24,
+            logicalHeight = 24,
+        )
+
+        val firstGesture = tester.startGesture(find.byText("A"), pointerId = 1)
+        val secondGesture = tester.startGesture(find.byText("B"), pointerId = 2)
+        secondGesture.up()
+        firstGesture.up()
+
+        assertEquals(1, first)
+        assertEquals(1, second)
+        tester.dispose()
+    }
+
+    @Test
     fun semanticsTreeReportsTextButtonAndTextFieldState() {
         val tester = PixelTester()
         val controller = PixelTextFieldController()

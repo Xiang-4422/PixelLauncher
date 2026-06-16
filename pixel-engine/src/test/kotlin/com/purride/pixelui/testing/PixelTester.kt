@@ -34,6 +34,7 @@ public class PixelTester {
     public var clipboardText: String? = null
         private set
     private var currentNanos: Long = 0L
+    private val activeGestures = mutableMapOf<Int, ActiveTestGesture>()
 
     internal var renderResult: PixelRenderResult? = null
         private set
@@ -87,6 +88,31 @@ public class PixelTester {
     public fun cancelDrag(finder: PixelFinder, dx: Int = 0, dy: Int = 0) {
         val point = resolvePoint(finder, TargetKind.DRAG)
         dispatchDragCancel(point.x, point.y, dx, dy)
+        render()
+    }
+
+    public fun startGesture(finder: PixelFinder, pointerId: Int = 0): PixelTestGesture {
+        val point = resolvePoint(finder, TargetKind.ANY)
+        beginGesture(pointerId, point.x, point.y)
+        render()
+        return PixelTestGesture(this, pointerId)
+    }
+
+    internal fun moveGestureBy(pointerId: Int, dx: Int, dy: Int) {
+        val gesture = activeGestures[pointerId] ?: fail("No active gesture for pointer $pointerId")
+        gesture.moveBy(dx, dy)
+        render()
+    }
+
+    internal fun endGesture(pointerId: Int) {
+        val gesture = activeGestures.remove(pointerId) ?: fail("No active gesture for pointer $pointerId")
+        gesture.up()
+        render()
+    }
+
+    internal fun cancelGesture(pointerId: Int) {
+        val gesture = activeGestures.remove(pointerId) ?: fail("No active gesture for pointer $pointerId")
+        gesture.cancel()
         render()
     }
 
@@ -231,6 +257,7 @@ public class PixelTester {
         runtime.dispose()
         scheduler.clear()
         PixelFocusManager.clearFocus()
+        activeGestures.clear()
     }
 
     private fun render() {
@@ -294,6 +321,30 @@ public class PixelTester {
             ?: fail("No click target at ($x,$y)")
         clickTarget.onClick.invoke()
         needsRender = true
+    }
+
+    private fun beginGesture(pointerId: Int, x: Int, y: Int) {
+        if (activeGestures.containsKey(pointerId)) {
+            fail("Pointer $pointerId already has an active gesture")
+        }
+        val target = resolveGestureTarget(x, y) ?: fail("No gesture target at ($x,$y)")
+        activeGestures[pointerId] = ActiveTestGesture(
+            startX = x,
+            startY = y,
+            currentX = x,
+            currentY = y,
+            target = target,
+        )
+    }
+
+    private fun resolveGestureTarget(x: Int, y: Int): TestGestureTarget? {
+        return renderResult?.scrollbarTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::Scrollbar)
+            ?: renderResult?.refreshTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::Refresh)
+            ?: renderResult?.sliderTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::Slider)
+            ?: renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::TextInput)
+            ?: renderResult?.listTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::List)
+            ?: renderResult?.pagerTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::Pager)
+            ?: renderResult?.clickTargets?.lastOrNull { it.bounds.contains(x, y) }?.let(TestGestureTarget::Click)
     }
 
     private fun dispatchDrag(startX: Int, startY: Int, dx: Int, dy: Int) {
@@ -500,6 +551,36 @@ public class PixelTester {
         needsRender = true
     }
 
+    private fun startPagerDrag(target: PixelPagerTarget, dx: Float, dy: Float) {
+        val delta = when (target.axis) {
+            PixelAxis.HORIZONTAL -> dx
+            PixelAxis.VERTICAL -> dy
+        }
+        val viewport = pagerViewport(target)
+        target.controller.startDrag(target.state)
+        target.controller.dragBy(target.state, delta, viewport)
+        needsRender = true
+    }
+
+    private fun endPagerDrag(target: PixelPagerTarget) {
+        val viewport = pagerViewport(target)
+        target.controller.endDrag(target.state, viewport, 0f)
+        target.onPageChanged?.invoke(target.state.currentPage)
+        needsRender = true
+    }
+
+    private fun cancelPagerDrag(target: PixelPagerTarget) {
+        target.controller.cancelDrag(target.state)
+        needsRender = true
+    }
+
+    private fun pagerViewport(target: PixelPagerTarget): Int {
+        return when (target.axis) {
+            PixelAxis.HORIZONTAL -> target.bounds.width
+            PixelAxis.VERTICAL -> target.bounds.height
+        }.coerceAtLeast(1)
+    }
+
     private fun focusTextInput(target: PixelTextInputTarget) {
         if (target.readOnly) return
         focusedTextInputTarget?.takeUnless { it.state === target.state }?.let { previous ->
@@ -680,10 +761,147 @@ public class PixelTester {
         END,
     }
 
+    private sealed class TestGestureTarget {
+        data class Click(val target: PixelClickTarget) : TestGestureTarget()
+        data class TextInput(val target: PixelTextInputTarget) : TestGestureTarget()
+        data class List(val target: PixelListTarget) : TestGestureTarget()
+        data class Pager(val target: PixelPagerTarget) : TestGestureTarget()
+        data class Slider(val target: PixelSliderTarget) : TestGestureTarget()
+        data class Scrollbar(val target: PixelScrollbarTarget) : TestGestureTarget()
+        data class Refresh(val target: PixelRefreshTarget) : TestGestureTarget()
+    }
+
+    private inner class ActiveTestGesture(
+        val startX: Int,
+        val startY: Int,
+        var currentX: Int,
+        var currentY: Int,
+        val target: TestGestureTarget,
+    ) {
+        private var moved = false
+        private var dragging = false
+
+        fun moveBy(dx: Int, dy: Int) {
+            currentX += dx
+            currentY += dy
+            if (dx != 0 || dy != 0) moved = true
+            when (val activeTarget = target) {
+                is TestGestureTarget.Click -> Unit
+                is TestGestureTarget.TextInput -> moveTextInput(activeTarget.target)
+                is TestGestureTarget.List -> moveList(activeTarget.target, dy)
+                is TestGestureTarget.Pager -> movePager(activeTarget.target, dx, dy)
+                is TestGestureTarget.Slider -> {
+                    dispatchSliderDrag(activeTarget.target, currentX)
+                    dragging = true
+                }
+                is TestGestureTarget.Scrollbar -> {
+                    dispatchScrollbarDrag(activeTarget.target, startY, currentY)
+                    dragging = true
+                }
+                is TestGestureTarget.Refresh -> if (dy > 0) {
+                    dispatchRefreshDrag(activeTarget.target, currentY - startY)
+                    dragging = true
+                }
+            }
+        }
+
+        fun up() {
+            when (val activeTarget = target) {
+                is TestGestureTarget.Click -> if (!moved && activeTarget.target.bounds.contains(currentX, currentY)) {
+                    activeTarget.target.onClick()
+                    needsRender = true
+                }
+                is TestGestureTarget.TextInput -> if (!moved) {
+                    focusTextInput(activeTarget.target)
+                }
+                is TestGestureTarget.List -> if (dragging) {
+                    activeTarget.target.controller.endDrag(
+                        activeTarget.target.state,
+                        0f,
+                        activeTarget.target.viewportHeightPx,
+                        activeTarget.target.contentHeightPx,
+                    )
+                    needsRender = true
+                }
+                is TestGestureTarget.Pager -> if (dragging) endPagerDrag(activeTarget.target)
+                is TestGestureTarget.Slider,
+                is TestGestureTarget.Scrollbar,
+                is TestGestureTarget.Refresh,
+                -> Unit
+            }
+        }
+
+        fun cancel() {
+            when (val activeTarget = target) {
+                is TestGestureTarget.Pager -> if (dragging) cancelPagerDrag(activeTarget.target)
+                is TestGestureTarget.List -> if (dragging) {
+                    activeTarget.target.controller.endDrag(
+                        activeTarget.target.state,
+                        0f,
+                        activeTarget.target.viewportHeightPx,
+                        activeTarget.target.contentHeightPx,
+                    )
+                    needsRender = true
+                }
+                is TestGestureTarget.Click,
+                is TestGestureTarget.TextInput,
+                is TestGestureTarget.Slider,
+                is TestGestureTarget.Scrollbar,
+                is TestGestureTarget.Refresh,
+                -> Unit
+            }
+        }
+
+        private fun moveTextInput(target: PixelTextInputTarget) {
+            focusTextInput(target)
+            if (target.readOnly) return
+            if (target.state.selectionStart != target.state.selectionEnd) {
+                val handle = nearestSelectionHandle(target, startX, startY)
+                updateSelectionHandle(target, handle, currentX, currentY)
+            } else {
+                target.controller.setSelection(target.state, resolveTextInputSelection(target, currentX, currentY))
+            }
+            dragging = true
+            needsRender = true
+        }
+
+        private fun moveList(target: PixelListTarget, dy: Int) {
+            if (!dragging) {
+                target.controller.startDrag(target.state)
+                dragging = true
+            }
+            target.controller.dragBy(target.state, dy.toFloat(), target.viewportHeightPx, target.contentHeightPx)
+            needsRender = true
+        }
+
+        private fun movePager(target: PixelPagerTarget, dx: Int, dy: Int) {
+            startPagerDrag(target, dx.toFloat(), dy.toFloat())
+            dragging = true
+        }
+    }
+
     private data class Point(val x: Int, val y: Int)
 
     private val PixelRect.center: Point
         get() = Point(left + width / 2, top + height / 2)
+}
+
+public class PixelTestGesture internal constructor(
+    private val tester: PixelTester,
+    private val pointerId: Int,
+) {
+    public fun moveBy(dx: Int, dy: Int): PixelTestGesture {
+        tester.moveGestureBy(pointerId, dx, dy)
+        return this
+    }
+
+    public fun up() {
+        tester.endGesture(pointerId)
+    }
+
+    public fun cancel() {
+        tester.cancelGesture(pointerId)
+    }
 }
 
 public object find {
