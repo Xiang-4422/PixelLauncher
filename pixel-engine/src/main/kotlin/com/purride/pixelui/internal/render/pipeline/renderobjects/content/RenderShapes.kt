@@ -6,7 +6,6 @@ import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPathCommand
 import com.purride.pixelui.PixelPoint
 import kotlin.math.abs
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
@@ -213,7 +212,7 @@ internal class RenderPolygon(
     private var color: PixelColor,
     private var filled: Boolean,
 ) : RenderBox() {
-    private val scanlineIntersections = mutableListOf<Int>()
+    private val rasterizer = PixelPolygonRasterizer()
 
     fun update(points: List<PixelPoint>, color: PixelColor, filled: Boolean) {
         val sizeChanged = this.points != points
@@ -236,57 +235,16 @@ internal class RenderPolygon(
     }
 
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
-        if (points.size < 2) return
-        if (filled && points.size >= 3) {
-            paintFilled(context, offsetX, offsetY)
-        } else {
-            paintOutline(context, offsetX, offsetY)
-        }
-    }
-
-    private fun paintOutline(context: PaintContext, offsetX: Int, offsetY: Int) {
-        for (index in points.indices) {
-            val start = points[index]
-            val end = points[(index + 1) % points.size]
-            if (start == end) continue
-            drawLinePixels(context, offsetX, offsetY, start.x, start.y, end.x, end.y, color)
-        }
-    }
-
-    private fun paintFilled(context: PaintContext, offsetX: Int, offsetY: Int) {
-        val minY = max(0, points.minOf { it.y })
-        val maxY = min(size.height - 1, points.maxOf { it.y })
-        if (maxY < minY) return
-        for (y in minY..maxY) {
-            val intersections = scanlineIntersections
-            intersections.clear()
-            for (index in points.indices) {
-                val a = points[index]
-                val b = points[(index + 1) % points.size]
-                if (a.y == b.y) continue
-                val minEdgeY = min(a.y, b.y)
-                val maxEdgeY = max(a.y, b.y)
-                if (y < minEdgeY || y >= maxEdgeY) continue
-                val x = scanlineIntersectionX(a, b, y)
-                intersections += x
-            }
-            intersections.sort()
-            var i = 0
-            while (i + 1 < intersections.size) {
-                val startX = max(0, intersections[i])
-                val endX = min(size.width - 1, intersections[i + 1])
-                for (x in startX..endX) {
-                    context.buffer.setPixel(offsetX + x, offsetY + y, color)
-                }
-                i += 2
-            }
-        }
-        paintOutline(context, offsetX, offsetY)
-    }
-
-    private fun scanlineIntersectionX(a: PixelPoint, b: PixelPoint, y: Int): Int {
-        val fraction = (y - a.y).toDouble() / (b.y - a.y).toDouble()
-        return floor(a.x + fraction * (b.x - a.x)).toInt()
+        rasterizer.drawPolygon(
+            context = context,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            width = size.width,
+            height = size.height,
+            points = points,
+            color = color,
+            filled = filled,
+        )
     }
 }
 

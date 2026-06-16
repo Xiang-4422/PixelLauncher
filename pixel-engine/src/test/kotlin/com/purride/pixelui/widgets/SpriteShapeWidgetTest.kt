@@ -3,6 +3,7 @@ package com.purride.pixelui.widgets
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelBitmapRegion
 import com.purride.pixelcore.PixelBlendMode
+import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.CustomPaint
@@ -121,6 +122,27 @@ class SpriteShapeWidgetTest {
         assertEquals(PixelColor.White, buffer.getPixel(2, 0))
         assertEquals(PixelColor.White, buffer.getPixel(2, 2))
         assertEquals(PixelColor.White, buffer.getPixel(2, 4))
+        tester.dispose()
+    }
+
+    @Test
+    fun polygonFilledPaintsAlphaBoundaryOnce() {
+        val tester = PixelTester()
+        val halfRed = PixelColor.fromArgb(128, 255, 0, 0)
+        tester.pumpWidget(
+            Polygon(
+                points = listOf(PixelPoint(0, 0), PixelPoint(4, 0), PixelPoint(4, 4), PixelPoint(0, 4)),
+                color = halfRed,
+                filled = true,
+            ),
+            5,
+            5,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(128, buffer.getPixel(2, 0).alpha)
+        assertEquals(128, buffer.getPixel(2, 2).alpha)
+        assertEquals(128, buffer.getPixel(2, 4).alpha)
         tester.dispose()
     }
 
@@ -303,6 +325,36 @@ class SpriteShapeWidgetTest {
         assertEquals(PixelColor.White, buffer.getPixel(1, 4))
         assertEquals(PixelColor.Transparent, buffer.getPixel(3, 4))
         assertEquals(PixelColor.White, buffer.getPixel(5, 4))
+        tester.dispose()
+    }
+
+    @Test
+    fun customPaintPolygonBlendsBoundaryOnce() {
+        val tester = PixelTester()
+        val blue = PixelColor.fromRgb(0, 0, 255)
+        val halfRed = PixelColor.fromArgb(128, 255, 0, 0)
+        val expected = PixelBuffer(width = 1, height = 1).also {
+            it.setPixel(0, 0, blue)
+            it.setPixel(0, 0, halfRed)
+        }.getPixel(0, 0)
+
+        tester.pumpWidget(
+            CustomPaint(width = 5, height = 5) {
+                fillRect(0, 0, 5, 5, blue)
+                drawPolygon(
+                    points = listOf(PixelPoint(0, 0), PixelPoint(4, 0), PixelPoint(4, 4), PixelPoint(0, 4)),
+                    color = halfRed,
+                    filled = true,
+                )
+            },
+            5,
+            5,
+        )
+
+        val buffer = tester.renderResult!!.buffer
+        assertEquals(expected, buffer.getPixel(2, 0))
+        assertEquals(expected, buffer.getPixel(2, 2))
+        assertEquals(expected, buffer.getPixel(2, 4))
         tester.dispose()
     }
 
