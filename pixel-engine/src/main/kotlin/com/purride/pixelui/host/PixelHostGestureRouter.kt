@@ -4,6 +4,7 @@ import android.view.MotionEvent
 import android.view.VelocityTracker
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelui.internal.PixelScrollbarTarget
+import com.purride.pixelui.internal.PixelTextInputSelectionGesture
 import com.purride.pixelui.internal.PixelTextInputTarget
 import kotlin.math.abs
 
@@ -77,7 +78,7 @@ internal class PixelHostGestureRouter(
         host.activeTextInputSelectionTarget = null
         host.activeTextInputSelectionHandle = null
         if (!dragExclusiveTargetActive && textInputTarget != null && !textInputTarget.readOnly) {
-            resolveNearestSelectionHandle(textInputTarget, logicalPoint.first, logicalPoint.second)?.let { handle ->
+            PixelTextInputSelectionGesture.nearestHandle(textInputTarget, logicalPoint.first, logicalPoint.second)?.let { handle ->
                 host.activeTextInputSelectionTarget = textInputTarget
                 host.activeTextInputSelectionHandle = handle
             }
@@ -133,8 +134,7 @@ internal class PixelHostGestureRouter(
         host.candidateTextInputTarget?.let { target ->
             if (host.touchMoved && host.activePagerTarget == null && host.activeListTarget == null) {
                 host.focusTextInput(target)
-                val selection = resolveTextInputSelection(target, logicalPoint.first, logicalPoint.second)
-                target.controller.setSelection(target.state, selection)
+                PixelTextInputSelectionGesture.setCollapsedSelection(target, logicalPoint.first, logicalPoint.second)
                 host.invalidate()
                 return true
             }
@@ -335,7 +335,11 @@ internal class PixelHostGestureRouter(
         if (!host.touchMoved && logicalPoint != null) {
             (host.candidateTextInputTarget ?: host.resolveTextInputTarget(logicalPoint.first, logicalPoint.second))?.let { target ->
                 host.focusTextInput(target)
-                val selection = resolveTextInputSelection(target, logicalPoint.first, logicalPoint.second)
+                val selection = PixelTextInputSelectionGesture.resolveSelection(
+                    target,
+                    logicalPoint.first,
+                    logicalPoint.second,
+                )
                 val pressedMs = event.eventTime - event.downTime
                 if (!target.readOnly && pressedMs >= LONG_PRESS_TIMEOUT_MS) {
                     target.controller.selectWordAt(target.state, selection)
@@ -348,7 +352,7 @@ internal class PixelHostGestureRouter(
                     target.controller.selectWordAt(target.state, selection)
                     host.showTextSelectionMenu(target)
                 } else if (!target.readOnly) {
-                    target.controller.setSelection(target.state, selection)
+                    PixelTextInputSelectionGesture.setCollapsedSelection(target, logicalPoint.first, logicalPoint.second)
                 }
                 host.lastTextInputTapState = target.state
                 host.lastTextInputTapTimeMs = event.eventTime
@@ -403,55 +407,17 @@ internal class PixelHostGestureRouter(
     private fun updateSelectionHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int) {
         if (target.readOnly) return
         host.focusTextInput(target)
-        val selection = resolveTextInputSelection(target, logicalX, logicalY)
-        when (host.activeTextInputSelectionHandle) {
-            TextInputSelectionHandle.START -> target.controller.setSelection(
-                target.state,
-                selection.coerceAtMost(target.state.selectionEnd),
-                target.state.selectionEnd,
-            )
-            TextInputSelectionHandle.END -> target.controller.setSelection(
-                target.state,
-                target.state.selectionStart,
-                selection.coerceAtLeast(target.state.selectionStart),
-            )
-            null -> Unit
-        }
-    }
-
-    private fun resolveNearestSelectionHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): TextInputSelectionHandle? {
-        val state = target.state
-        if (state.selectionStart == state.selectionEnd) return null
-        val selection = resolveTextInputSelection(target, logicalX, logicalY)
-        val startDistance = abs(selection - state.selectionStart)
-        val endDistance = abs(selection - state.selectionEnd)
-        return if (startDistance <= endDistance) TextInputSelectionHandle.START else TextInputSelectionHandle.END
+        PixelTextInputSelectionGesture.dragHandle(
+            target = target,
+            handle = host.activeTextInputSelectionHandle,
+            logicalX = logicalX,
+            logicalY = logicalY,
+        )
     }
 
     private fun clearActiveSelectionHandle() {
         host.activeTextInputSelectionTarget = null
         host.activeTextInputSelectionHandle = null
-    }
-
-    private fun resolveTextInputSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
-        target.textIndexAt?.let { mapper ->
-            return mapper(logicalX, logicalY).coerceIn(0, target.state.text.length)
-        }
-        val text = target.state.text
-        if (text.isEmpty()) return 0
-        val lines = text.split('\n')
-        val lineCount = lines.size.coerceAtLeast(1)
-        val lineHeight = (target.bounds.height / lineCount).coerceAtLeast(1)
-        val localY = (logicalY - target.bounds.top).coerceAtLeast(0)
-        val lineIndex = (localY / lineHeight).coerceIn(0, lineCount - 1)
-        val line = lines[lineIndex]
-        val localX = (logicalX - target.bounds.left).coerceIn(0, target.bounds.width)
-        val column = if (line.isEmpty()) 0 else (localX.toLong() * line.length / target.bounds.width.coerceAtLeast(1)).toInt()
-        var index = 0
-        repeat(lineIndex) { lineOffset ->
-            index += lines[lineOffset].length + 1
-        }
-        return (index + column.coerceIn(0, line.length)).coerceIn(0, text.length)
     }
 
     private fun recycleVelocityTracker() {
