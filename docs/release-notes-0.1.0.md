@@ -31,7 +31,7 @@ Maven release, Git tag, or GitHub release.
 - Test and release engineering additions: WidgetTester DSL, golden and element
   snapshots, fuzz and soak coverage, render performance smoke report, public API
   baseline, binary API baseline, KDoc coverage gate, Maven local dry-run,
-  minimal sample, MkDocs site, and CI workflow.
+  MkDocs site, and CI workflow.
 
 ## New Public API Areas
 
@@ -56,9 +56,8 @@ Maven release, Git tag, or GitHub release.
 
 ## Behavior Changes
 
-- `pixel-engine` release validation is scoped to the SDK, `pixel-demo`, and
-  `pixel-minimal-sample`; Launcher app validation is no longer part of the
-  `pixelReleaseCheck` gate.
+- `pixel-engine` release validation is scoped to the SDK and `pixel-demo`;
+  Launcher app validation is no longer part of the `pixelReleaseCheck` gate.
 - `HostRootWidget` now separates system `windowInsets` from IME `viewInsets`.
   `MediaQuery.viewPadding` reflects system bars, `MediaQuery.viewInsets`
   reflects IME overlap, and `MediaQuery.padding` is the non-overlapped safe
@@ -101,7 +100,6 @@ The gate includes:
 - `:pixel-engine:assembleDebug`
 - `:pixel-demo:assembleDebug`
 - `:pixel-demo:testDebugUnitTest`
-- `:pixel-minimal-sample:assembleDebug`
 - `:pixel-engine:publishToMavenLocal --dry-run`
 - `mkdocs build --strict`
 

@@ -17,7 +17,6 @@ cd "$ROOT_DIR"
   :pixel-engine:assembleDebug \
   :pixel-demo:assembleDebug \
   :pixel-demo:testDebugUnitTest \
-  :pixel-minimal-sample:assembleDebug \
   --continue \
   --no-daemon
 

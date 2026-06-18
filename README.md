@@ -248,7 +248,7 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 ./gradlew testDebugUnitTest
 ```
 
-注意：`:app` 已按新架构重建单元测试（ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等），`:app:testDebugUnitTest` 会实际执行。`pixel-engine` SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，该门禁只覆盖 `:pixel-engine`、`:pixel-demo`、`:pixel-minimal-sample`、Maven local dry-run 和文档站构建；Launcher 应用仍按上面的 app 命令单独验收。
+注意：`:app` 已按新架构重建单元测试（ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等），`:app:testDebugUnitTest` 会实际执行。`pixel-engine` SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，该门禁只覆盖 `:pixel-engine`、`:pixel-demo`、Maven local dry-run 和文档站构建；Launcher 应用仍按上面的 app 命令单独验收。
 
 ### Android Studio 运行
 

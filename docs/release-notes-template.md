@@ -36,7 +36,6 @@
 - `:pixel-engine:assembleDebug`
 - `:pixel-demo:assembleDebug`
 - `:pixel-demo:testDebugUnitTest`
-- `:pixel-minimal-sample:assembleDebug`
 - `:pixel-engine:publishToMavenLocal --dry-run`
 - `bash tools/pixel-perf-smoke.sh`
 - `mkdocs build --strict`

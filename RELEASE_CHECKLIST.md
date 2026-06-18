@@ -15,9 +15,9 @@
 - `./gradlew :pixel-engine:checkBinaryApi --no-daemon`
 - `./gradlew :pixel-engine:checkKdocCoverage --no-daemon`
 - `./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:lintDebug :pixel-engine:assembleDebug :pixel-demo:assembleDebug :pixel-demo:testDebugUnitTest --no-daemon`
-- `./gradlew :pixel-minimal-sample:assembleDebug --no-daemon`
 - `./gradlew :pixel-engine:publishToMavenLocal --dry-run --no-daemon`
 - `bash tools/pixel-perf-smoke.sh`
+- `bash tools/pixel-device-smoke.sh` when an Android device or emulator is available
 - `mkdocs build --strict`
 
 ## Review Items
@@ -28,5 +28,6 @@
 - New public widgets are covered by docs, tests, and demo scenes.
 - Golden or snapshot changes are reviewed as visual changes, not accepted blindly.
 - Performance checks are read-only. Run `bash tools/pixel-perf-smoke.sh` and review `pixel-engine/build/reports/perf/pixel-engine-render-smoke.txt`; do not commit generated perf reports or update baselines without a separate perf review.
+- Device checks are read-only. Run `bash tools/pixel-device-smoke.sh` and review `build/reports/device-smoke/` screenshots plus launch/window logs before release.
 - Release notes include migration notes for any source compatibility change.
 - No remote Maven publish, tag, or GitHub release is performed from local dry-run validation.

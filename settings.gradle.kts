@@ -23,5 +23,4 @@ rootProject.name = "PixelLauncherV2"
 include(":app")
 include(":pixel-engine")
 include(":pixel-demo")
-include(":pixel-minimal-sample")
  
