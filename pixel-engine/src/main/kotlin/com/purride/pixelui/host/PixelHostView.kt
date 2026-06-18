@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
+import android.os.Build
 import android.util.AttributeSet
 import android.view.InputDevice
 import android.view.MotionEvent
@@ -99,6 +100,19 @@ public class PixelHostView @JvmOverloads constructor(
      * Tests or custom hosts may set it directly or call [setWindowInsets].
      */
     public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
+    /**
+     * Current obscuring insets in pixel-engine logical coordinates.
+     *
+     * This is separate from [windowInsets]: [windowInsets] models persistent system safe areas,
+     * while [viewInsets] models transient occlusion such as the IME keyboard.
+     */
+    public var viewInsets: PixelWindowInsets = PixelWindowInsets.Zero
         set(value) {
             if (field == value) return
             field = value
@@ -294,6 +308,21 @@ public class PixelHostView @JvmOverloads constructor(
         windowInsets = lifecycleCoordinator.manualInsets(left = left, top = top, right = right, bottom = bottom)
     }
 
+    /**
+     * Sets logical view insets manually.
+     *
+     * Android hosts usually rely on [onApplyWindowInsets]; tests and custom hosts can use this
+     * method to inject already-converted IME or transient occlusion insets.
+     */
+    public fun setViewInsets(
+        left: Int = 0,
+        top: Int = 0,
+        right: Int = 0,
+        bottom: Int = 0,
+    ) {
+        viewInsets = lifecycleCoordinator.manualInsets(left = left, top = top, right = right, bottom = bottom)
+    }
+
     override fun asView(): View = this
 
     /**
@@ -393,17 +422,45 @@ public class PixelHostView @JvmOverloads constructor(
 
     @Suppress("DEPRECATION")
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
-        windowInsets = lifecycleCoordinator.platformInsetsToLogical(
-            leftPx = insets.systemWindowInsetLeft,
-            topPx = insets.systemWindowInsetTop,
-            rightPx = insets.systemWindowInsetRight,
-            bottomPx = insets.systemWindowInsetBottom,
-            viewWidth = width,
-            viewHeight = height,
-            screenProfile = screenProfile,
-            pixelGapEnabled = pixelGapEnabled,
-            pixelGapRatio = pixelGapRatio,
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val systemBars = insets.getInsets(WindowInsets.Type.systemBars())
+            val ime = insets.getInsets(WindowInsets.Type.ime())
+            windowInsets = lifecycleCoordinator.platformInsetsToLogical(
+                leftPx = systemBars.left,
+                topPx = systemBars.top,
+                rightPx = systemBars.right,
+                bottomPx = systemBars.bottom,
+                viewWidth = width,
+                viewHeight = height,
+                screenProfile = screenProfile,
+                pixelGapEnabled = pixelGapEnabled,
+                pixelGapRatio = pixelGapRatio,
+            )
+            viewInsets = lifecycleCoordinator.platformInsetsToLogical(
+                leftPx = ime.left,
+                topPx = ime.top,
+                rightPx = ime.right,
+                bottomPx = ime.bottom,
+                viewWidth = width,
+                viewHeight = height,
+                screenProfile = screenProfile,
+                pixelGapEnabled = pixelGapEnabled,
+                pixelGapRatio = pixelGapRatio,
+            )
+        } else {
+            windowInsets = lifecycleCoordinator.platformInsetsToLogical(
+                leftPx = insets.systemWindowInsetLeft,
+                topPx = insets.systemWindowInsetTop,
+                rightPx = insets.systemWindowInsetRight,
+                bottomPx = insets.systemWindowInsetBottom,
+                viewWidth = width,
+                viewHeight = height,
+                screenProfile = screenProfile,
+                pixelGapEnabled = pixelGapEnabled,
+                pixelGapRatio = pixelGapRatio,
+            )
+            viewInsets = PixelWindowInsets.Zero
+        }
         return super.onApplyWindowInsets(insets)
     }
 

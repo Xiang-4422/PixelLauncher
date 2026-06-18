@@ -1575,6 +1575,8 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setPixelGridColor-0S9DSyc(int);
   public final com.purride.pixelui.PixelWindowInsets getWindowInsets();
   public final void setWindowInsets(com.purride.pixelui.PixelWindowInsets);
+  public final com.purride.pixelui.PixelWindowInsets getViewInsets();
+  public final void setViewInsets(com.purride.pixelui.PixelWindowInsets);
   public final com.purride.pixelui.internal.PixelRenderResult getLastRenderResult$pixel_engine();
   public final void setLastRenderResult$pixel_engine(com.purride.pixelui.internal.PixelRenderResult);
   public final com.purride.pixelui.internal.PixelSliderTarget getActiveSliderTarget$pixel_engine();
@@ -1657,6 +1659,8 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setPixelGapRatio(float);
   public final void setWindowInsets(int, int, int, int);
   public static void setWindowInsets$default(com.purride.pixelui.PixelHostView, int, int, int, int, int, java.lang.Object);
+  public final void setViewInsets(int, int, int, int);
+  public static void setViewInsets$default(com.purride.pixelui.PixelHostView, int, int, int, int, int, java.lang.Object);
   public android.view.View asView();
   public final java.lang.String dumpElementTree();
   public final java.lang.String dumpRenderTree();

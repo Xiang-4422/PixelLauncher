@@ -482,6 +482,7 @@ com.purride.pixelui public var profilePreference: PixelHostProfilePreference? = 
 com.purride.pixelui public var backgroundColor: PixelColor = PixelColor.Black
 com.purride.pixelui public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
 com.purride.pixelui public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
+com.purride.pixelui public var viewInsets: PixelWindowInsets = PixelWindowInsets.Zero
 com.purride.pixelui public var hostBridge: PixelHostBridge? = null
 com.purride.pixelui public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
 com.purride.pixelui public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
@@ -497,6 +498,7 @@ com.purride.pixelui public fun submitFocusedTextInput()
 com.purride.pixelui public fun performFocusedTextEditAction(action: PixelTextEditAction): Boolean
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
 com.purride.pixelui public fun setWindowInsets(
+com.purride.pixelui public fun setViewInsets(
 com.purride.pixelui public fun dumpElementTree(): String
 com.purride.pixelui public fun dumpRenderTree(): String
 com.purride.pixelui public fun dumpSemanticsTree(): String

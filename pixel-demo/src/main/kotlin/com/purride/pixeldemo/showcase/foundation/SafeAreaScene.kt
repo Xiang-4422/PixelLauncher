@@ -28,16 +28,17 @@ object SafeAreaScene : DemoScene {
 private class SafeAreaShowcase : StatelessWidget() {
     override fun build(context: BuildContext): Widget {
         val media = MediaQuery.of(context)
-        val previewInsets = PixelWindowInsets(left = 8, top = 6, right = 4, bottom = 6)
+        val previewPadding = PixelWindowInsets(left = 8, top = 6, right = 4, bottom = 2)
+        val previewIme = PixelWindowInsets(bottom = 6)
         return MediaQuery(
             data = media.copy(
-                viewInsets = previewInsets,
-                viewPadding = previewInsets,
-                padding = previewInsets,
+                viewInsets = previewIme,
+                viewPadding = previewPadding,
+                padding = previewPadding.copy(bottom = 0),
             ),
             child = Column(
                 children = listOf(
-                    Text("INSETS L8 T6 R4 B6", style = TextStyle.Default),
+                    Text("SAFE L8 T6 R4 B0  IME B6", style = TextStyle.Default),
                     SizedBox(height = 4),
                     Container(
                         width = 140,

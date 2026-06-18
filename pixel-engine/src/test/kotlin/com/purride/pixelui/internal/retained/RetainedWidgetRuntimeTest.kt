@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.Builder
 import com.purride.pixelui.BuildContext
@@ -168,6 +169,42 @@ class RetainedWidgetRuntimeTest {
         assertEquals(PixelColor.Transparent, result.buffer.getPixel(0, 0))
         assertEquals(PixelColor.White, result.buffer.getPixel(1, 2))
         assertEquals(PixelColor.White, result.buffer.getPixel(2, 3))
+    }
+
+    @Test
+    fun hostRootSeparatesSystemPaddingFromImeViewInsets() {
+        val runtime = PixelUiRuntime()
+        val screenProfile = ScreenProfile(logicalWidth = 8, logicalHeight = 8, dotSizePx = 8)
+        var captured: MediaQueryData? = null
+
+        val result = runtime.render(
+            root = HostRootWidget(
+                screenProfile = screenProfile,
+                textDirection = TextDirection.LTR,
+                textRasterizer = PixelBitmapFont.Default,
+                windowInsets = PixelWindowInsets(left = 1, top = 2, right = 0, bottom = 1),
+                viewInsets = PixelWindowInsets(bottom = 4),
+                child = Builder {
+                    captured = MediaQuery.of(it)
+                    SafeArea(
+                        child = Container(
+                            width = 2,
+                            height = 2,
+                            fillColor = PixelColor.White,
+                            borderColor = null,
+                        ),
+                    )
+                },
+            ),
+            logicalWidth = 8,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelWindowInsets(left = 1, top = 2, right = 0, bottom = 1), captured?.viewPadding)
+        assertEquals(PixelWindowInsets(bottom = 4), captured?.viewInsets)
+        assertEquals(PixelWindowInsets(left = 1, top = 2, right = 0, bottom = 0), captured?.padding)
+        assertEquals(PixelColor.Transparent, result.buffer.getPixel(0, 0))
+        assertEquals(PixelColor.White, result.buffer.getPixel(1, 2))
     }
 
     @Test

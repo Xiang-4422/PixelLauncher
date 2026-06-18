@@ -6,6 +6,7 @@ import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
+import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
@@ -19,7 +20,8 @@ internal data class HostRootWidget(
     val screenProfile: ScreenProfile,
     val textDirection: TextDirection,
     val textRasterizer: PixelTextRasterizer,
-    val windowInsets: com.purride.pixelui.PixelWindowInsets,
+    val windowInsets: PixelWindowInsets,
+    val viewInsets: PixelWindowInsets,
     val child: Widget,
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
@@ -29,9 +31,9 @@ internal data class HostRootWidget(
                 logicalWidth = screenProfile.logicalWidth,
                 logicalHeight = screenProfile.logicalHeight,
                 screenProfile = screenProfile,
-                viewInsets = windowInsets,
+                viewInsets = viewInsets,
                 viewPadding = windowInsets,
-                padding = windowInsets,
+                padding = windowInsets.exclude(viewInsets),
             ),
             child = Directionality(
                 textDirection = textDirection,
@@ -40,6 +42,15 @@ internal data class HostRootWidget(
                     child = child,
                 ),
             ),
+        )
+    }
+
+    private fun PixelWindowInsets.exclude(overlap: PixelWindowInsets): PixelWindowInsets {
+        return PixelWindowInsets(
+            left = (left - overlap.left).coerceAtLeast(0),
+            top = (top - overlap.top).coerceAtLeast(0),
+            right = (right - overlap.right).coerceAtLeast(0),
+            bottom = (bottom - overlap.bottom).coerceAtLeast(0),
         )
     }
 }

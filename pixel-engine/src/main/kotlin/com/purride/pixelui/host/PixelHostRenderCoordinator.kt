@@ -68,6 +68,7 @@ internal class PixelHostRenderCoordinator(
                 textDirection = host.textDirection,
                 textRasterizer = host.textRasterizer,
                 windowInsets = host.windowInsets,
+                viewInsets = host.viewInsets,
                 child = rootWidget,
                 key = "host-root",
             )
