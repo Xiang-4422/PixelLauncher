@@ -107,6 +107,10 @@ The gate includes:
 
 Review the generated read-only performance report:
 
+```bash
+bash tools/pixel-perf-smoke.sh
+```
+
 ```text
 pixel-engine/build/reports/perf/pixel-engine-render-smoke.txt
 ```
