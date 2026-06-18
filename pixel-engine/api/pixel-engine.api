@@ -388,15 +388,32 @@ com.purride.pixelui public fun FocusScope(
 com.purride.pixelui public fun Focus(
 com.purride.pixelui public typealias Validator<T> = (T) -> String?
 com.purride.pixelui public typealias FormValidator = (Map<String, Any?>) -> Map<String, String>
+com.purride.pixelui public fun interface AsyncValidator<T>
+com.purride.pixelui public fun validate(value: T, complete: (String?) -> Unit): () -> Unit
+com.purride.pixelui public fun interface AsyncFormValidator
+com.purride.pixelui public fun validate(values: Map<String, Any?>, complete: (Map<String, String>) -> Unit): () -> Unit
+com.purride.pixelui public fun interface FormSubmitter
+com.purride.pixelui public fun submit(values: Map<String, Any?>, complete: (String?) -> Unit): () -> Unit
+com.purride.pixelui public fun interface FormAsyncOperation
+com.purride.pixelui public fun cancel()
+com.purride.pixelui public enum class FormSubmitState
 com.purride.pixelui public fun interface FormFieldRegistration
 com.purride.pixelui public fun dispose()
 com.purride.pixelui public class FormController(
 com.purride.pixelui public var validators: List<FormValidator> = emptyList(),
 com.purride.pixelui public val focusScopeNode: FocusScopeNode = FocusScopeNode(),
+com.purride.pixelui public var asyncValidators: List<AsyncFormValidator> = emptyList(),
+com.purride.pixelui public var submitState: FormSubmitState = FormSubmitState.IDLE
+com.purride.pixelui public var submitErrorText: String? = null
 com.purride.pixelui public val fieldCount: Int
 com.purride.pixelui public val isValid: Boolean
+com.purride.pixelui public val isValidating: Boolean
+com.purride.pixelui public val isSubmitting: Boolean
 com.purride.pixelui public fun <T> registerField(
 com.purride.pixelui public fun validate(): Boolean
+com.purride.pixelui public fun validateAsync(onComplete: (Boolean) -> Unit): FormAsyncOperation
+com.purride.pixelui public fun submit(
+com.purride.pixelui public fun clearSubmitState()
 com.purride.pixelui public fun reset()
 com.purride.pixelui public class FormFieldState<T>(
 com.purride.pixelui public var value: T = initialValue

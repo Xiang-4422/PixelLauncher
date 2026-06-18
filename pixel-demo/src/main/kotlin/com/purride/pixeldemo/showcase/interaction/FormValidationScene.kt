@@ -1,6 +1,7 @@
 package com.purride.pixeldemo.showcase.interaction
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.AsyncValidator
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -8,6 +9,7 @@ import com.purride.pixelui.Form
 import com.purride.pixelui.FormController
 import com.purride.pixelui.FormField
 import com.purride.pixelui.FormFieldState
+import com.purride.pixelui.FormSubmitter
 import com.purride.pixelui.FocusNode
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextInputAction
@@ -54,20 +56,37 @@ private class FormValidationWidget(override val key: Any? = null) : StatefulWidg
         private val nameFocus = FocusNode("name")
         private val confirmationFocus = FocusNode("confirmation")
         private var lastResult = "IDLE"
+        private var pendingNameValidation: ((String?) -> Unit)? = null
+        private var pendingSubmit: ((String?) -> Unit)? = null
 
         override fun build(context: BuildContext): Widget {
             return DemoScaffold(
                 title = "Form",
-                description = "NEXT 跳到确认字段，两次输入必须一致",
+                description = "NEXT、同步/异步校验和 submit 状态",
                 body = Form(
                     controller = formController,
                     child = Column(
-                        children = listOf(
+                        children = listOfNotNull(
                             FormField(
                                 state = nameField,
                                 fieldId = "name",
                                 focusNode = nameFocus,
                                 validator = { value -> if (value.trim().length < 3) "请输入至少 3 个字符" else null },
+                                asyncValidator = AsyncValidator { _, complete ->
+                                    var active = true
+                                    val callback: (String?) -> Unit = { error ->
+                                        if (active) {
+                                            complete(error)
+                                        }
+                                    }
+                                    pendingNameValidation = callback
+                                    return@AsyncValidator {
+                                        active = false
+                                        if (pendingNameValidation === callback) {
+                                            pendingNameValidation = null
+                                        }
+                                    }
+                                },
                             ) { _, field ->
                                 Column(
                                     children = listOfNotNull(
@@ -122,6 +141,10 @@ private class FormValidationWidget(override val key: Any? = null) : StatefulWidg
                                 )
                             },
                             Text("RESULT: $lastResult", style = TextStyle.Default),
+                            Text("STATE: ${formController.submitState}", style = TextStyle.Default),
+                            formController.submitErrorText?.let {
+                                Text("SUBMIT ERROR: $it", style = TextStyle(color = PixelColor.fromRgb(220, 90, 80)))
+                            },
                         ),
                         spacing = 4,
                         crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -133,12 +156,63 @@ private class FormValidationWidget(override val key: Any? = null) : StatefulWidg
                             lastResult = if (formController.validate()) "VALID" else "INVALID"
                         }
                     }),
+                    OutlinedButton("ASYNC", onPressed = {
+                        setState {
+                            lastResult = "ASYNC..."
+                            formController.validateAsync { valid ->
+                                setState {
+                                    lastResult = if (valid) "ASYNC VALID" else "ASYNC INVALID"
+                                }
+                            }
+                        }
+                    }),
+                    OutlinedButton("REMOTE", onPressed = {
+                        val complete = pendingNameValidation
+                        pendingNameValidation = null
+                        complete?.invoke(
+                            if (nameField.value.equals("taken", ignoreCase = true)) {
+                                "远端名称已存在"
+                            } else {
+                                null
+                            },
+                        )
+                        setState { }
+                    }),
+                    OutlinedButton("SUBMIT", onPressed = {
+                        setState {
+                            lastResult = "SUBMIT..."
+                            formController.submit(
+                                submitter = FormSubmitter { _, complete ->
+                                    val callback: (String?) -> Unit = { error -> complete(error) }
+                                    pendingSubmit = callback
+                                    return@FormSubmitter {
+                                        if (pendingSubmit === callback) {
+                                            pendingSubmit = null
+                                        }
+                                    }
+                                },
+                                onComplete = { ok ->
+                                    setState {
+                                        lastResult = if (ok) "SUBMITTED" else "SUBMIT FAILED"
+                                    }
+                                },
+                            )
+                        }
+                    }),
+                    OutlinedButton("DONE", onPressed = {
+                        val complete = pendingSubmit
+                        pendingSubmit = null
+                        complete?.invoke(null)
+                        setState { }
+                    }),
                     OutlinedButton("RESET", onPressed = {
                         setState {
                             formController.reset()
                             nameController.clear(nameState)
                             confirmationController.clear(confirmationState)
                             lastResult = "IDLE"
+                            pendingNameValidation = null
+                            pendingSubmit = null
                         }
                     }),
                 ),

@@ -1,7 +1,11 @@
 package com.purride.pixelui.foundation
 
 import com.purride.pixelui.Column
+import com.purride.pixelui.AsyncFormValidator
+import com.purride.pixelui.AsyncValidator
 import com.purride.pixelui.Form
+import com.purride.pixelui.FormSubmitState
+import com.purride.pixelui.FormSubmitter
 import com.purride.pixelui.FormController
 import com.purride.pixelui.FormField
 import com.purride.pixelui.FormFieldState
@@ -242,6 +246,189 @@ class PixelFormTest {
             assertTrue(error.message.orEmpty().contains("missing"))
         } finally {
             registration.dispose()
+        }
+    }
+
+    @Test
+    fun validateAsyncRunsFieldAndCrossFieldValidators() {
+        val name = FormFieldState("Ada")
+        var fieldComplete: ((String?) -> Unit)? = null
+        var crossComplete: ((Map<String, String>) -> Unit)? = null
+        val form = FormController(
+            asyncValidators = listOf(
+                AsyncFormValidator { values, complete ->
+                    assertEquals("Ada", values["name"])
+                    crossComplete = complete
+                    return@AsyncFormValidator { }
+                },
+            ),
+        )
+        val registration = form.registerField(
+            state = name,
+            fieldId = "name",
+            asyncValidator = AsyncValidator { value, complete ->
+                assertEquals("Ada", value)
+                fieldComplete = complete
+                return@AsyncValidator { }
+            },
+        )
+        try {
+            var result: Boolean? = null
+
+            form.validateAsync { valid -> result = valid }
+
+            assertEquals(FormSubmitState.VALIDATING, form.submitState)
+            assertTrue(form.isValidating)
+            fieldComplete?.invoke(null)
+            assertEquals(null, result)
+
+            crossComplete?.invoke(mapOf("name" to "taken"))
+
+            assertEquals(false, result)
+            assertEquals(FormSubmitState.IDLE, form.submitState)
+            assertEquals("taken", name.errorText)
+            assertFalse(form.isValid)
+        } finally {
+            registration.dispose()
+        }
+    }
+
+    @Test
+    fun validateAsyncCancelIgnoresLateFieldCompletion() {
+        val name = FormFieldState("Ada")
+        var cancelled = false
+        var completeField: ((String?) -> Unit)? = null
+        val form = FormController()
+        val registration = form.registerField(
+            state = name,
+            asyncValidator = AsyncValidator { _, complete ->
+                completeField = complete
+                return@AsyncValidator { cancelled = true }
+            },
+        )
+        try {
+            var result: Boolean? = null
+            val operation = form.validateAsync { valid -> result = valid }
+
+            operation.cancel()
+            completeField?.invoke("late")
+
+            assertTrue(cancelled)
+            assertEquals(null, result)
+            assertEquals(null, name.errorText)
+            assertEquals(FormSubmitState.IDLE, form.submitState)
+        } finally {
+            registration.dispose()
+        }
+    }
+
+    @Test
+    fun submitTracksSubmittingSucceededAndFailureStates() {
+        val name = FormFieldState("Ada")
+        val form = FormController()
+        val registration = form.registerField(state = name, fieldId = "name")
+        try {
+            var submitComplete: ((String?) -> Unit)? = null
+            var result: Boolean? = null
+
+            form.submit(
+                submitter = FormSubmitter { values, complete ->
+                    assertEquals("Ada", values["name"])
+                    submitComplete = complete
+                    return@FormSubmitter { }
+                },
+                onComplete = { ok -> result = ok },
+            )
+
+            assertEquals(FormSubmitState.SUBMITTING, form.submitState)
+            assertTrue(form.isSubmitting)
+
+            submitComplete?.invoke("network")
+
+            assertEquals(FormSubmitState.FAILED, form.submitState)
+            assertEquals("network", form.submitErrorText)
+            assertEquals(false, result)
+
+            form.clearSubmitState()
+            assertEquals(FormSubmitState.IDLE, form.submitState)
+
+            form.submit(
+                submitter = FormSubmitter { _, complete ->
+                    complete(null)
+                    return@FormSubmitter { }
+                },
+                onComplete = { ok -> result = ok },
+            )
+
+            assertEquals(FormSubmitState.SUCCEEDED, form.submitState)
+            assertEquals(null, form.submitErrorText)
+            assertEquals(true, result)
+        } finally {
+            registration.dispose()
+        }
+    }
+
+    @Test
+    fun submitStopsBeforeSubmitterWhenValidationFails() {
+        val name = FormFieldState("")
+        val form = FormController()
+        val registration = form.registerField(
+            state = name,
+            validator = { value -> if (value.isBlank()) "required" else null },
+        )
+        try {
+            var submitted = false
+            var result: Boolean? = null
+
+            form.submit(
+                submitter = FormSubmitter { _, _ ->
+                    submitted = true
+                    return@FormSubmitter { }
+                },
+                onComplete = { ok -> result = ok },
+            )
+
+            assertFalse(submitted)
+            assertEquals(false, result)
+            assertEquals("required", name.errorText)
+            assertEquals(FormSubmitState.FAILED, form.submitState)
+        } finally {
+            registration.dispose()
+        }
+    }
+
+    @Test
+    fun formFieldRegistersAsyncValidatorFromWidget() {
+        val tester = PixelTester()
+        val form = FormController()
+        val name = FormFieldState("Ada")
+        var completeField: ((String?) -> Unit)? = null
+        try {
+            tester.pumpWidget(
+                Form(
+                    controller = form,
+                    child = FormField(
+                        state = name,
+                        asyncValidator = AsyncValidator { _, complete ->
+                            completeField = complete
+                            return@AsyncValidator { }
+                        },
+                    ) { _, field ->
+                        Text("VALUE ${field.value}")
+                    },
+                ),
+                logicalWidth = 72,
+                logicalHeight = 24,
+            )
+
+            var result: Boolean? = null
+            form.validateAsync { valid -> result = valid }
+            completeField?.invoke("remote")
+
+            assertEquals(false, result)
+            assertEquals("remote", name.errorText)
+        } finally {
+            tester.dispose()
         }
     }
 }

@@ -843,6 +843,12 @@ public final class com.purride.pixelui.AsyncBuilder<T> extends com.purride.pixel
   public final kotlin.jvm.functions.Function2<com.purride.pixelui.BuildContext, com.purride.pixelui.PixelAsyncSnapshot<? extends T>, com.purride.pixelui.Widget> getBuilder();
   public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
 }
+public interface com.purride.pixelui.AsyncFormValidator {
+  public abstract kotlin.jvm.functions.Function0<kotlin.Unit> validate(java.util.Map<java.lang.String, ? extends java.lang.Object>, kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, java.lang.String>, kotlin.Unit>);
+}
+public interface com.purride.pixelui.AsyncValidator<T> {
+  public abstract kotlin.jvm.functions.Function0<kotlin.Unit> validate(T, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>);
+}
 public interface com.purride.pixelui.BuildContext {
   public abstract com.purride.pixelui.Widget getWidget();
   public abstract <T extends com.purride.pixelui.InheritedWidget> T dependOnInheritedWidgetOfExactType(kotlin.reflect.KClass<T>);
@@ -1002,17 +1008,30 @@ public final class com.purride.pixelui.FocusScopeNode extends com.purride.pixelu
 public interface com.purride.pixelui.FocusTraversalPolicy {
   public abstract com.purride.pixelui.FocusNode next(java.util.List<com.purride.pixelui.FocusNode>, com.purride.pixelui.FocusNode, com.purride.pixelui.PixelFocusDirection);
 }
+public interface com.purride.pixelui.FormAsyncOperation {
+  public abstract void cancel();
+}
 public final class com.purride.pixelui.FormController extends com.purride.pixelui.ChangeNotifier {
-  public com.purride.pixelui.FormController(java.util.List<? extends kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ? extends java.lang.Object>, ? extends java.util.Map<java.lang.String, java.lang.String>>>, com.purride.pixelui.FocusScopeNode);
-  public com.purride.pixelui.FormController(java.util.List, com.purride.pixelui.FocusScopeNode, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.FormController(java.util.List<? extends kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ? extends java.lang.Object>, ? extends java.util.Map<java.lang.String, java.lang.String>>>, com.purride.pixelui.FocusScopeNode, java.util.List<? extends com.purride.pixelui.AsyncFormValidator>);
+  public com.purride.pixelui.FormController(java.util.List, com.purride.pixelui.FocusScopeNode, java.util.List, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final java.util.List<kotlin.jvm.functions.Function1<java.util.Map<java.lang.String, ? extends java.lang.Object>, java.util.Map<java.lang.String, java.lang.String>>> getValidators();
   public final void setValidators(java.util.List<? extends kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ? extends java.lang.Object>, ? extends java.util.Map<java.lang.String, java.lang.String>>>);
   public final com.purride.pixelui.FocusScopeNode getFocusScopeNode();
+  public final java.util.List<com.purride.pixelui.AsyncFormValidator> getAsyncValidators();
+  public final void setAsyncValidators(java.util.List<? extends com.purride.pixelui.AsyncFormValidator>);
+  public final com.purride.pixelui.FormSubmitState getSubmitState();
+  public final java.lang.String getSubmitErrorText();
   public final int getFieldCount();
   public final boolean isValid();
-  public final <T> com.purride.pixelui.FormFieldRegistration registerField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.String);
-  public static com.purride.pixelui.FormFieldRegistration registerField$default(com.purride.pixelui.FormController, com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.String, int, java.lang.Object);
+  public final boolean isValidating();
+  public final boolean isSubmitting();
+  public final <T> com.purride.pixelui.FormFieldRegistration registerField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.String, com.purride.pixelui.AsyncValidator<T>);
+  public static com.purride.pixelui.FormFieldRegistration registerField$default(com.purride.pixelui.FormController, com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.String, com.purride.pixelui.AsyncValidator, int, java.lang.Object);
   public final boolean validate();
+  public final com.purride.pixelui.FormAsyncOperation validateAsync(kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>);
+  public final com.purride.pixelui.FormAsyncOperation submit(com.purride.pixelui.FormSubmitter, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>);
+  public static com.purride.pixelui.FormAsyncOperation submit$default(com.purride.pixelui.FormController, com.purride.pixelui.FormSubmitter, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public final void clearSubmitState();
   public final void reset();
   public com.purride.pixelui.FormController();
 }
@@ -1027,6 +1046,19 @@ public final class com.purride.pixelui.FormFieldState<T> extends com.purride.pix
   public final void setValue(T);
   public final void setError$pixel_engine(java.lang.String);
   public final void reset$pixel_engine();
+}
+public final class com.purride.pixelui.FormSubmitState extends java.lang.Enum<com.purride.pixelui.FormSubmitState> {
+  public static final com.purride.pixelui.FormSubmitState IDLE;
+  public static final com.purride.pixelui.FormSubmitState VALIDATING;
+  public static final com.purride.pixelui.FormSubmitState SUBMITTING;
+  public static final com.purride.pixelui.FormSubmitState SUCCEEDED;
+  public static final com.purride.pixelui.FormSubmitState FAILED;
+  public static com.purride.pixelui.FormSubmitState[] values();
+  public static com.purride.pixelui.FormSubmitState valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.FormSubmitState> getEntries();
+}
+public interface com.purride.pixelui.FormSubmitter {
+  public abstract kotlin.jvm.functions.Function0<kotlin.Unit> submit(java.util.Map<java.lang.String, ? extends java.lang.Object>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>);
 }
 public final class com.purride.pixelui.GridFocusTraversalPolicy implements com.purride.pixelui.FocusTraversalPolicy {
   public com.purride.pixelui.GridFocusTraversalPolicy(int);
@@ -1314,8 +1346,8 @@ public final class com.purride.pixelui.PixelFocusScrollTarget {
 public final class com.purride.pixelui.PixelFormKt {
   public static final com.purride.pixelui.Widget Form(com.purride.pixelui.Widget, com.purride.pixelui.FormController, java.lang.Object);
   public static com.purride.pixelui.Widget Form$default(com.purride.pixelui.Widget, com.purride.pixelui.FormController, java.lang.Object, int, java.lang.Object);
-  public static final <T> com.purride.pixelui.Widget FormField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.String, com.purride.pixelui.FocusNode, java.lang.Object, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super com.purride.pixelui.FormFieldState<T>, ? extends com.purride.pixelui.Widget>);
-  public static com.purride.pixelui.Widget FormField$default(com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.String, com.purride.pixelui.FocusNode, java.lang.Object, kotlin.jvm.functions.Function2, int, java.lang.Object);
+  public static final <T> com.purride.pixelui.Widget FormField(com.purride.pixelui.FormFieldState<T>, kotlin.jvm.functions.Function1<? super T, java.lang.String>, java.lang.String, com.purride.pixelui.FocusNode, java.lang.Object, com.purride.pixelui.AsyncValidator<T>, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super com.purride.pixelui.FormFieldState<T>, ? extends com.purride.pixelui.Widget>);
+  public static com.purride.pixelui.Widget FormField$default(com.purride.pixelui.FormFieldState, kotlin.jvm.functions.Function1, java.lang.String, com.purride.pixelui.FocusNode, java.lang.Object, com.purride.pixelui.AsyncValidator, kotlin.jvm.functions.Function2, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelGeometryKt {
   public static final java.util.List<com.purride.pixelui.PixelGradientStop> normalizeGradientStops(java.util.List<com.purride.pixelui.PixelGradientStop>);
