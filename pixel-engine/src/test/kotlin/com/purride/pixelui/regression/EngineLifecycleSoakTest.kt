@@ -2,6 +2,7 @@ package com.purride.pixelui.regression
 
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelBitmapRegion
+import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.AsyncBuilder
@@ -9,6 +10,7 @@ import com.purride.pixelui.PixelAsyncSource
 import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.Text
 import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.widgets.animated.AnimatedSprite
 import com.purride.pixelui.widgets.navigation.PixelNavigator
@@ -88,6 +90,83 @@ class EngineLifecycleSoakTest {
         assertFalse(controller.isActive(state))
         assertEquals(state.maxScrollOffsetPx, state.scrollOffsetPx, 0.001f)
         assertEquals(0f, state.scrollVelocityPxPerSecond, 0.001f)
+    }
+
+    @Test
+    fun pagerFlingLongRunSettlesAtTargetAndStops() {
+        val controller = PixelPagerController()
+        val state = controller.create(pageCount = 5, currentPage = 2, axis = PixelAxis.HORIZONTAL)
+        controller.startDrag(state)
+        controller.dragBy(state, deltaPx = -48f, viewportSizePx = 100)
+        controller.endDrag(state, viewportSizePx = 100, velocityPxPerSecond = -900f)
+
+        repeat(120) {
+            controller.step(state, deltaMs = 16)
+        }
+
+        assertFalse(controller.isActive(state))
+        assertEquals(3, state.currentPage)
+        assertEquals(3, state.settleTargetPage)
+        assertFalse(state.isDragging)
+        assertFalse(state.isSettling)
+    }
+
+    @Test
+    fun navigatorRepeatedReplaceAndPopToRootSettlesCallbacksAndDisposesRoutes() {
+        val tester = PixelTester()
+        val disposed = mutableListOf<String>()
+        val results = mutableListOf<String>()
+        var navigator: PixelNavigatorState? = null
+        val root = PixelRoute(
+            name = "root",
+            builder = { context ->
+                navigator = PixelNavigator.of(context)
+                Text("ROOT")
+            },
+        )
+        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
+
+        repeat(10) { index ->
+            val first = PixelRoute(
+                name = "first-$index",
+                builder = { Text("FIRST $index") },
+                onDispose = { disposed += "first-$index" },
+            )
+            val second = PixelRoute(
+                name = "second-$index",
+                builder = { Text("SECOND $index") },
+                onDispose = { disposed += "second-$index" },
+            )
+            val third = PixelRoute(
+                name = "third-$index",
+                builder = { Text("THIRD $index") },
+                onDispose = { disposed += "third-$index" },
+            )
+
+            navigator!!.push(first) { result -> results += "first-$index=$result" }
+            tester.pumpAndSettle()
+            navigator!!.replace(second)
+            tester.pumpAndSettle()
+            assertTrue("replace should dispose the outgoing route", "first-$index" in disposed)
+            assertEquals(0, tester.vsync.activeTickerCount)
+
+            navigator!!.push(third) { result -> results += "third-$index=$result" }
+            tester.pumpAndSettle()
+            navigator!!.popToRoot(animated = true)
+            tester.pumpAndSettle()
+
+            assertEquals(listOf("root"), navigator!!.stack.map { it.name })
+            assertTrue("popToRoot should dispose the replaced route", "second-$index" in disposed)
+            assertTrue("popToRoot should dispose the pushed route", "third-$index" in disposed)
+            assertTrue("popToRoot should complete replaced route callback", "first-$index=null" in results)
+            assertTrue("popToRoot should complete top route callback", "third-$index=null" in results)
+            assertEquals(0, tester.vsync.activeTickerCount)
+        }
+
+        assertEquals(30, disposed.size)
+        assertEquals(20, results.size)
+        assertEquals(0, tester.scheduler.pendingCount)
+        tester.dispose()
     }
 
     @Test
