@@ -255,7 +255,7 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 用 Android Studio 打开仓库根目录，等待 Gradle Sync 完成后，Run 配置下拉框应出现：
 
 - `app`：来自 [.run/app.run.xml](.run/app.run.xml)，会构建 `:app` 并直接启动 `com.purride.pixellauncherv2.app.MainActivity`
-- `pixel-demo`：来自 [.run/pixel-demo.run.xml](.run/pixel-demo.run.xml)，会构建 `:pixel-demo` 并启动 `com.purride.pixeldemo.app.DemoMenuActivity`
+- `pixel-demo`：来自 [.run/pixel-demo.run.xml](.run/pixel-demo.run.xml)，会构建 `:pixel-demo` 并启动 `com.purride.pixeldemo.DemoActivity`
 
 debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purride.pixellauncherv2.debug`。这样设备上即使已有不同签名的正式包 `com.purride.pixellauncherv2`，Android Studio 也可以直接安装并运行 debug 包。
 
@@ -296,51 +296,24 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 
 ## 9. 文档入口
 
-设计与技术文档都在 `docs/design` 下。
+项目级文档只保留三份：
 
-当前文档已经按目录分类：
+- [设计文档](docs/设计文档.md)：PixelLauncher 产品目标、app 侧架构、页面职责和开发约束
+- [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md)：engine 内部架构、渲染管线、runtime 和维护规则
+- [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)：engine 接入方式、常见用法、组件与 API 速查
 
-- 索引入口：
-  - [docs/design/README.md](docs/design/README.md)
-- 当前真实实现：
-  - [docs/design/architecture/技术实现总览.md](docs/design/architecture/技术实现总览.md)
-  - [docs/design/architecture/渲染实现原理.md](docs/design/architecture/渲染实现原理.md)
-- 像素引擎：
-  - [docs/design/engine/像素UI引擎架构与实施计划.md](docs/design/engine/像素UI引擎架构与实施计划.md)
-  - [docs/design/engine/像素UI引擎当前进度.md](docs/design/engine/像素UI引擎当前进度.md)
-  - [docs/design/engine/像素UI引擎组件接入指南.md](docs/design/engine/像素UI引擎组件接入指南.md)
-- 产品目标与模块设计：
-  - [docs/design/product/产品总规约.md](docs/design/product/产品总规约.md)
-  - [docs/design/product/主页设计.md](docs/design/product/主页设计.md)
-  - [docs/design/product/应用抽屉设计.md](docs/design/product/应用抽屉设计.md)
-  - [docs/design/product/待机页设计.md](docs/design/product/待机页设计.md)
-  - [docs/design/product/设置信息架构.md](docs/design/product/设置信息架构.md)
-
-推荐阅读顺序：
-
-1. [docs/design/README.md](docs/design/README.md)
-2. [docs/design/architecture/技术实现总览.md](docs/design/architecture/技术实现总览.md)
-3. 如果涉及渲染、性能或 Idle 动画，读 [docs/design/architecture/渲染实现原理.md](docs/design/architecture/渲染实现原理.md)
-4. 如果涉及像素引擎重构或新页面接入，读 [docs/design/engine/像素UI引擎架构与实施计划.md](docs/design/engine/像素UI引擎架构与实施计划.md)
-5. 再读 [docs/design/product/产品总规约.md](docs/design/product/产品总规约.md)
-
-模块文档：
-
-- [主页设计.md](docs/design/product/主页设计.md)
-- [应用抽屉设计.md](docs/design/product/应用抽屉设计.md)
-- [待机页设计.md](docs/design/product/待机页设计.md)
-- [设置信息架构.md](docs/design/product/设置信息架构.md)
+根目录 `README.md` 只作为项目入口和运行指南。详细 SDK 文档集中在 `pixel-engine/docs`。
 
 ## 10. 建议的接手顺序
 
 如果你是第一次接手这个项目，建议按下面顺序进入代码：
 
 1. 先读本 `README`
-2. 再读技术总览
+2. 再读 [设计文档](docs/设计文档.md)
 3. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
 4. 看 [LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt) / [LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
 5. 看 [LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 和 [ui/screen](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen) 下的页面构建函数
-6. 最后按需求进入具体 `Repository`、`Layout` 和模块文档
+6. 如果涉及 engine，再读 [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md) 和 [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)
 
 ## 11. 当前状态一句话总结
 

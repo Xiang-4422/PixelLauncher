@@ -1,0 +1,596 @@
+# pixel-engine 使用说明与 API 手册
+
+本文面向使用 pixel-engine 构建像素 UI 的开发者。内部实现和维护规则见 [架构与技术实现](架构与技术实现.md)。
+
+## 1. 快速接入
+
+pixel-engine 是 Android library 模块，最低 `minSdk = 24`，当前 `compileSdk = 36`。
+
+在 `settings.gradle.kts` 中包含模块：
+
+```kotlin
+include(":pixel-engine")
+```
+
+在 app 模块中依赖：
+
+```kotlin
+dependencies {
+    implementation(project(":pixel-engine"))
+}
+```
+
+常用 import：
+
+```kotlin
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.*
+import com.purride.pixelui.widgets.animated.*
+```
+
+导航、手势、advanced 扩展有少量子包：
+
+```kotlin
+import com.purride.pixelui.gesture.*
+import com.purride.pixelui.advanced.*
+import com.purride.pixelui.widgets.navigation.*
+```
+
+## 2. 最小 Activity
+
+```kotlin
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import com.purride.pixelui.Center
+import com.purride.pixelui.PixelHostSetupConfig
+import com.purride.pixelui.Text
+import com.purride.pixelui.createPixelHostSetup
+
+class HelloPixelActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val setup = createPixelHostSetup(
+            context = this,
+            config = PixelHostSetupConfig(
+                content = {
+                    Center(child = Text("HELLO PIXEL"))
+                },
+            ),
+        )
+        setContentView(setup.rootView)
+    }
+}
+```
+
+`createPixelHostSetup` 会创建：
+
+- `PixelHostView`
+- 默认 `PixelTextInputBridge`
+- 包含宿主和隐藏输入框的 `FrameLayout`
+
+## 3. 宿主配置
+
+```kotlin
+val setup = createPixelHostSetup(
+    context = this,
+    config = PixelHostSetupConfig(
+        profilePreference = PixelHostProfilePreference(
+            dotSizePx = 8,
+            pixelShape = PixelShape.SQUARE,
+        ),
+        backgroundColor = PixelColor.Black,
+        textDirection = TextDirection.LTR,
+        content = { AppRoot() },
+    ),
+)
+
+setup.hostView.pixelGridColor = PixelColor.fromRgb(8, 37, 13)
+setup.hostView.setPixelGapEnabled(true)
+setup.hostView.setPixelGapRatio(0.6f)
+```
+
+关键配置：
+
+| 配置 | 说明 |
+|---|---|
+| `profilePreference` | 点大小、像素形状偏好 |
+| `backgroundColor` | Android View 背景色 |
+| `textRasterizer` | 默认文本栅格器 |
+| `textDirection` | LTR / RTL |
+| `pagerGesturePolicy` | PageView 手势启动策略 |
+| `nestedScrollPolicy` | 嵌套滚动仲裁策略 |
+| `scrollPhysics` | 列表滚动物理 |
+| `frameScheduler` | 帧调度器 |
+| `content` | 根 widget provider |
+
+## 4. 状态管理
+
+### `ValueNotifier`
+
+适合轻量状态。
+
+```kotlin
+private val counter = ValueNotifier(0)
+
+content = {
+    Column(
+        children = listOf(
+            ValueListenableBuilder(counter) { _, value ->
+                Text("COUNT $value")
+            },
+            OutlinedButton(
+                text = "+1",
+                onPressed = { counter.value += 1 },
+            ),
+        ),
+    )
+}
+```
+
+不要在 `content` lambda 内创建长期状态对象，否则每次重建都会重置。
+
+### `StatefulWidget`
+
+适合封装可复用状态组件。
+
+```kotlin
+class CounterWidget : StatefulWidget() {
+    override fun createState(): State<out StatefulWidget> = CounterState()
+}
+
+class CounterState : State<CounterWidget>() {
+    private var count = 0
+
+    override fun build(context: BuildContext): Widget =
+        OutlinedButton(
+            text = "COUNT $count",
+            onPressed = { setState { count += 1 } },
+        )
+}
+```
+
+### Controller + State
+
+滚动、分页、输入等使用 controller + state：
+
+```kotlin
+private val listController = ScrollController()
+private val listState = listController.create()
+
+ListViewBuilder(
+    itemCount = 100,
+    itemBuilder = { Text("ITEM $it") },
+    state = listState,
+    controller = listController,
+    itemExtent = 8,
+)
+```
+
+## 5. 颜色、字体和主题
+
+engine 使用 ARGB `PixelColor`，不内置 `ThemeData`。推荐在 app 层定义主题对象，再显式传入 widget。
+
+```kotlin
+data class AppTheme(
+    val background: PixelColor,
+    val grid: PixelColor,
+    val text: PixelColor,
+    val accent: PixelColor,
+)
+
+val theme = AppTheme(
+    background = PixelColor.Black,
+    grid = PixelColor.fromRgb(8, 37, 13),
+    text = PixelColor.fromRgb(151, 255, 167),
+    accent = PixelColor.fromRgb(255, 220, 120),
+)
+
+setup.hostView.backgroundColor = theme.background
+setup.hostView.pixelGridColor = theme.grid
+
+Text("HOME", color = theme.text)
+Container(borderColor = theme.accent)
+```
+
+字体优先级：
+
+1. `TextStyle(textRasterizer = ...)`
+2. `DefaultTextRasterizer`
+3. `PixelHostView.textRasterizer`
+4. `PixelBitmapFont.Default`
+
+## 6. 常见页面模式
+
+### 基础面板
+
+```kotlin
+Container(
+    width = 80,
+    height = 32,
+    padding = EdgeInsets.all(2),
+    borderColor = PixelColor.White,
+    child = Column(
+        spacing = 2,
+        children = listOf(
+            Text("STATUS"),
+            Text("READY", color = PixelColor.fromRgb(120, 255, 160)),
+        ),
+    ),
+)
+```
+
+### 长列表
+
+```kotlin
+ListViewBuilder(
+    itemCount = apps.size,
+    itemBuilder = { index -> Text(apps[index].label) },
+    state = listState,
+    controller = listController,
+    itemExtent = 8,
+)
+```
+
+长列表必须提供 `itemExtent` 或 `estimatedItemExtent`，否则会走 eager 构建路径。
+
+### 分页
+
+```kotlin
+val pager = PageController()
+val pagerState = pager.create(pageCount = 3)
+
+PageView(
+    axis = Axis.HORIZONTAL,
+    controller = pager,
+    state = pagerState,
+    pages = listOf(HomePage(), DrawerPage(), SettingsPage()),
+)
+```
+
+### 输入框
+
+```kotlin
+val input = TextEditingController()
+val inputState = input.create(initialText = "")
+
+TextField(
+    state = inputState,
+    controller = input,
+    placeholder = "SEARCH",
+    inputType = PixelInputType.TEXT,
+    textInputAction = TextInputAction.SEARCH,
+    onChanged = { query -> search(query) },
+)
+```
+
+### 表单
+
+```kotlin
+val form = FormController()
+val nameField = FormFieldState("")
+val nameInput = TextEditingController()
+val nameInputState = nameInput.create(initialText = "")
+
+Form(
+    controller = form,
+    child = Column(
+        children = listOf(
+            FormField(
+                state = nameField,
+                fieldId = "name",
+                validator = { value -> if (value.isBlank()) "REQUIRED" else null },
+                builder = { _, field ->
+                    TextField(
+                        state = nameInputState,
+                        controller = nameInput,
+                        placeholder = field.errorText ?: "NAME",
+                        onChanged = { field.setValue(it) },
+                    )
+                },
+            ),
+            OutlinedButton(text = "SAVE", onPressed = { form.validate() }),
+        ),
+    ),
+)
+```
+
+## 7. API 速查
+
+### Host API
+
+| API | 用途 | 关键参数 |
+|---|---|---|
+| `createPixelHostSetup` | 创建默认 Android 宿主 | `context`、`hostView`、`config` |
+| `PixelHostSetup` | 宿主装配结果 | `rootView`、`hostView`、`textInputBridge` |
+| `PixelHostSetupConfig` | 宿主配置 | 背景、字体、手势策略、滚动物理、根内容 |
+| `PixelHostProfilePreference` | 点阵显示偏好 | `dotSizePx`、`pixelShape` |
+| `PixelHostView` | Android 像素宿主 | `setContent`、背景、格栅、insets、debug stats |
+
+### 基础类型
+
+| API | 用途 |
+|---|---|
+| `Widget` | 所有 UI 组件根接口 |
+| `BuildContext` | build 期间访问环境和依赖 |
+| `StatefulWidget` / `State` | 有状态组件 |
+| `StatelessWidget` | 无状态组件 |
+| `InheritedWidget` / `InheritedNotifier` | 环境传播和依赖通知 |
+| `Builder` / `StatefulBuilder` | 局部构建和局部状态 |
+| `ListenableBuilder` / `ValueListenableBuilder` | 监听状态并重建 |
+| `AsyncBuilder` | 订阅 `PixelAsyncSource` |
+
+### 布局组件
+
+| 组件 | 用途 | 关键参数 |
+|---|---|---|
+| `Row` | 横向线性布局 | `children`、`spacing`、`mainAxisAlignment`、`crossAxisAlignment` |
+| `Column` | 纵向线性布局 | 同 `Row` |
+| `Wrap` | 自动换行布局 | `children`、`spacing`、`runSpacing` |
+| `Stack` | 层叠布局 | `children`、`alignment` |
+| `Positioned` | Stack 内定位 | `left`、`top`、`right`、`bottom`、`width`、`height` |
+| `PositionedDirectional` | 方向感知定位 | `start`、`end`、`top`、`bottom` |
+| `PositionedFill` | 填满 Stack | `left`、`top`、`right`、`bottom` |
+| `Padding` | 内边距 | `padding`、`all`、`horizontal`、`vertical` |
+| `PaddingDirectional` | 方向感知内边距 | `EdgeInsetsDirectional` |
+| `Align` | 对齐 child | `alignment` |
+| `AlignDirectional` | 方向感知对齐 | `AlignmentDirectional` |
+| `Center` | 居中 child | `child` |
+| `SizedBox` | 固定尺寸/占位 | `width`、`height`、`child` |
+| `Expanded` | flex 紧约束填充 | `child`、`flex` |
+| `Flexible` | flex 松/紧约束 | `child`、`flex`、`fit` |
+| `Spacer` | flex 空白 | `flex` |
+| `AspectRatio` | 固定宽高比 | `aspectRatio`、`child` |
+| `ConstrainedBox` | 施加盒约束 | `PixelBoxConstraints`、`child` |
+| `FittedBox` | contain 缩放并居中 | `child` |
+| `SafeArea` | 避让宿主 insets | `child`、`minimum` |
+
+### 内容与装饰
+
+| 组件 | 用途 | 关键参数 |
+|---|---|---|
+| `Text` | 单行/多行文本 | `data`、`style`、`color`、`softWrap`、`maxLines`、`overflow`、`textAlign` |
+| `RichText` | 多 span 富文本 | `spans`、`softWrap`、`maxLines`、`overflow` |
+| `Container` | 尺寸、边距、内距、填充、边框 | `width`、`height`、`padding`、`margin`、`fillColor`、`borderColor` |
+| `ContainerDirectional` | 方向感知容器 | `paddingDirectional`、`marginDirectional`、`alignment` |
+| `DecoratedBox` | 装饰盒 | `fillColor`、`borderColor`、`padding`、`alignment` |
+| `Opacity` | 透明度效果 | `opacity`、`child` |
+| `ClipRect` | 矩形裁剪 | `child` |
+| `Transform.translate` | 平移 | `offset`、`child` |
+| `Image` | 绘制 `PixelBitmap` | `bitmap` |
+| `Sprite` | 绘制 sprite sheet 单帧 | `sheet`、`frameIndex` |
+| `Icon` | 绘制 `PixelIconData` | `icon` |
+
+### 图形原语
+
+| 组件 | 用途 | 关键参数 |
+|---|---|---|
+| `Line` | 直线 | 坐标、颜色、尺寸 |
+| `Circle` | 圆/圆环 | 半径、颜色、填充 |
+| `Polygon` | 多边形 | `points`、颜色、填充 |
+| `Path` | 路径 | `PixelPath`、颜色 |
+| `CustomPaint` | 自定义绘制闭包 | `width`、`height`、`painter` |
+
+### 选择、反馈和组合组件
+
+| 组件 | 用途 | 关键参数 |
+|---|---|---|
+| `OutlinedButton` | 描边按钮 | `text`、`onPressed`、`style`、`enabled` |
+| `ListTile` | 列表行 | `title`、`subtitle`、`leading`、`trailing`、`onTap` |
+| `Checkbox` | 复选框 | `checked`、`onChanged`、`enabled` |
+| `Switch` | 开关 | `checked`、`onChanged`、`enabled` |
+| `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease` |
+| `Tabs` | 标签页按钮组 | `labels`、`selectedIndex`、`onSelected` |
+| `SegmentedControl` | 分段选择 | `labels`、`selectedIndex`、`onSelected` |
+| `Dialog` | 居中对话框 | `title`、`content`、`actions` |
+| `Toast` | 中央短提示 | `message` |
+| `Snackbar` | 底部/容器内提示条 | `message`、`action` |
+| `ProgressBar` | 进度条 | `progress`、`width`、`height` |
+| `ActivityIndicator` | 简单加载动画 | `frame` |
+| `Badge` | 角标 | `child`、`label` |
+| `Divider` | 分隔线 | `color`、`thickness` |
+| `Gap` | 空白间隔 | `width`、`height` |
+| `AppScaffold` | 简单页面脚手架 | `title`、`body`、`bottomBar` |
+
+### 滚动、网格和分页
+
+| 组件 | 用途 | 关键参数 |
+|---|---|---|
+| `ListView` | eager 列表 | `items`、`state`、`controller`、`spacing` |
+| `ListViewBuilder` | builder 列表 | `itemCount`、`itemBuilder`、`itemExtent`、`estimatedItemExtent` |
+| `ListViewSeparated` | eager 分隔列表 | `itemBuilder`、`separatorBuilder` |
+| `ListViewSeparatedBuilder` | lazy 分隔列表 | item/separator 固定或估算高度 |
+| `GridView` | eager 网格 | `items`、`cellWidth`、`cellHeight` |
+| `GridViewBuilder` | lazy 网格 | `itemCount`、`itemBuilder`、`cellWidth`、`cellHeight` |
+| `SingleChildScrollView` | 单子节点滚动 | `child`、`state`、`controller` |
+| `PageView` | 页面列表 | `axis`、`controller`、`state`、`pages` |
+| `PageViewBuilder` | builder 分页 | `itemCount`、`itemBuilder` |
+| `Scrollbar` | 滚动条包装 | `child`、`state`、`thumbColor` |
+| `RefreshIndicator` | 下拉刷新包装 | `child`、`state`、`controller`、`onRefresh` |
+| `CustomScrollView` | sliver 滚动容器 | `slivers`、`state`、`controller` |
+| `SliverList` | eager sliver list | `items` |
+| `SliverListBuilder` | lazy sliver list | `itemCount`、`itemExtent` 或 `estimatedItemExtent` |
+| `SliverPinnedHeader` | 固定头部 | `child` |
+| `SliverAppBar` | 可折叠头部 | `expandedHeight`、`collapsedHeight`、`floating`、`snap`、`stretch` |
+
+### 输入、表单和焦点
+
+| API | 用途 | 关键参数 |
+|---|---|---|
+| `TextField` | 文本输入 | `state`、`controller`、`placeholder`、`enabled`、`readOnly`、`minLines`、`maxLines` |
+| `TextFieldStyle` | 输入框样式 | 边框、光标、选区、composition、文本样式 |
+| `Form` | 表单容器 | `controller`、`child` |
+| `FormField` | 表单字段 | `controller`、`state`、`fieldId`、`validator`、`builder` |
+| `FormController` | 表单状态 | `validate`、`validateAsync`、`submit`、`reset` |
+| `FormFieldState` | 单字段值和错误 | `value`、`errorText` |
+| `FocusNode` | 单点焦点 | `requestFocus`、`clearFocus` |
+| `FocusScope` / `FocusScopeNode` | 焦点域 | 方向遍历、IME next |
+
+### Controller
+
+| Controller | State | 用途 |
+|---|---|---|
+| `ScrollController` / `PixelListController` | `PixelListState` | List/Grid/ScrollView/CustomScrollView 滚动 |
+| `PageController` / `PixelPagerController` | `PixelPagerState` | PageView 翻页 |
+| `TextEditingController` / `PixelTextFieldController` | `PixelTextFieldState` | TextField 文本、光标、选区 |
+| `PixelRefreshIndicatorController` | `PixelRefreshIndicatorState` | RefreshIndicator 状态 |
+| `PixelAnimationController` | controller 自身 | 动画进度 |
+
+常用扩展：
+
+```kotlin
+pageController.jumpToPage(pageState, 2)
+pageController.nextPage(pageState)
+scrollController.showItem(listState, 20)
+scrollController.jumpToStart(listState)
+scrollController.jumpToEnd(listState)
+```
+
+### 导航
+
+| API | 用途 |
+|---|---|
+| `PixelNavigator` | route stack widget |
+| `PixelNavigatorState` | push/pop/replace/popToRoot |
+| `PixelRoute` | route 定义 |
+| `PixelRouteTransition` | None/Fade/SlideHorizontal/SlideVertical |
+| `PixelRouteTransitionBuilder` | 自定义 transition |
+| `PixelNavigatorSnapshot` | route stack 保存 |
+| `PixelDeepLink` | deep link 解析 |
+| `PixelDeepLinkResolver` | deep link 到 route stack |
+| `PixelRouteScrollRestoration` | route 内滚动位置恢复 |
+
+### 动画
+
+| API | 用途 |
+|---|---|
+| `PixelTickerProvider` | ticker 创建与生命周期 |
+| `PixelAnimationController` | 动画控制器 |
+| `CurvedAnimation` | 曲线包装 |
+| `Curves` / `Curve` / `Interval` | 曲线 |
+| `Tween` | 补间基类 |
+| `IntTween` / `EdgeInsetsTween` / `OffsetTween` / `PixelColorTween` / `PixelGradientTween` | 常用补间 |
+| `TweenAnimationBuilder` | builder 动画 |
+| `AnimatedBuilder` | 监听动画并重建局部子树 |
+| `AnimatedContainer` | 容器属性动画 |
+| `AnimatedOpacity` | 透明度动画 |
+| `AnimatedPadding` / `AnimatedAlign` / `AnimatedPositioned` | 布局动画 |
+| `AnimatedSwitcher` | child 切换动画 |
+| `AnimatedSprite` | sprite 帧动画 |
+
+### 调试组件
+
+| API | 用途 |
+|---|---|
+| `PixelDebugOverlay` | 显示 FPS、帧时间、target 统计 |
+| `PixelInspectorPanel` | 展示 element/render/semantics/target 树 |
+| `PixelInspectorBoundsOverlay` | 在画面上绘制 target bounds |
+| `PixelHostView.frameStatsObserver` | 监听帧统计 |
+| `PixelHostView.dumpElementTree()` | dump element tree |
+
+### pixelcore 常用类型
+
+| API | 用途 |
+|---|---|
+| `PixelColor` | ARGB 颜色 |
+| `PixelBuffer` | 每帧像素缓冲 |
+| `PixelBitmap` | 可复用位图资源 |
+| `PixelBitmapAssetLoader` / `PixelBitmapResourceLoader` | 加载 Android bitmap |
+| `PixelSpriteSheet` / `PixelSpriteSheetJsonLoader` | sprite sheet |
+| `PixelResourceManifestJsonLoader` / `PixelResourceCache` | 资源 manifest 与缓存 |
+| `ScreenProfile` / `ScreenProfileFactory` | 逻辑屏幕档位 |
+| `PixelGridGeometryResolver` | 逻辑像素到屏幕几何映射 |
+| `PixelTextRasterizer` | 文本测量和绘制协议 |
+| `PixelGlyphPackAssetLoader` | 字形包加载 |
+| `PixelFontEngine` | 字形查询、缓存和绘制 |
+
+## 8. 自定义 RenderObject
+
+用于内置 widget 不够表达的场景。
+
+```kotlin
+class HollowSquareWidget(
+    private val side: Int,
+    private val color: PixelColor,
+    override val key: Any? = null,
+) : PixelLeafRenderObjectWidget(key = key) {
+    override fun createRenderObject(context: BuildContext): PixelRenderObject =
+        HollowSquareRender(side, color)
+
+    override fun updateRenderObject(context: BuildContext, renderObject: PixelRenderObject) {
+        (renderObject as HollowSquareRender).update(side, color)
+    }
+}
+
+private class HollowSquareRender(
+    private var side: Int,
+    private var color: PixelColor,
+) : PixelRenderBox() {
+    override fun layout(constraints: PixelRenderConstraints) {
+        size = PixelRenderSize(
+            width = constraints.constrainWidth(side),
+            height = constraints.constrainHeight(side),
+        )
+    }
+
+    override fun paint(context: PixelPaintContext, offsetX: Int, offsetY: Int) {
+        for (y in 0 until size.height) {
+            for (x in 0 until size.width) {
+                val edge = x == 0 || y == 0 || x == size.width - 1 || y == size.height - 1
+                if (edge) context.setColor(offsetX + x, offsetY + y, color)
+            }
+        }
+    }
+
+    fun update(nextSide: Int, nextColor: PixelColor) {
+        val sizeChanged = side != nextSide
+        val colorChanged = color != nextColor
+        if (!sizeChanged && !colorChanged) return
+        side = nextSide
+        color = nextColor
+        if (sizeChanged) markNeedsLayout() else markNeedsPaint()
+    }
+}
+```
+
+规则：
+
+- 字段无变化时不要标脏
+- 尺寸变化用 `markNeedsLayout`
+- 纯绘制变化用 `markNeedsPaint`
+- `paint` 热路径避免大对象分配
+- 只在主线程调用 runtime 标脏 API
+
+## 9. 测试
+
+`PixelTester` 是 test-only DSL，只存在于 `pixel-engine/src/test`，不会进入 release AAR。
+
+示例：
+
+```kotlin
+val tester = PixelTester()
+
+tester.pumpWidget(
+    widget = OutlinedButton(text = "OK", onPressed = { clicked = true }),
+    logicalWidth = 32,
+    logicalHeight = 12,
+)
+
+tester.tap(find.byText("OK"))
+tester.drag(find.byKey("list"), dx = 0, dy = -12)
+tester.enterText(find.byKey("field"), "hello")
+tester.pumpAndSettle()
+```
+
+Finder：
+
+- `find.byText("OK")`
+- `find.byType(SomeWidget::class)`
+- `find.byKey("key")`
+- `find.byText("OK").nth(1)`
+
+常用验证：
+
+```bash
+./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:assembleDebug :pixel-demo:assembleDebug --no-daemon
+```

@@ -9,13 +9,4 @@ validation:
     absolute_links: ignore
     unrecognized_links: ignore
 nav:
-  - Home: index.md
-  - Pixel Engine: pixel-engine.md
-  - Engine Design:
-      - Current Progress: design/engine/像素UI引擎当前进度.md
-      - Architecture Plan: design/engine/像素UI引擎架构与实施计划.md
-      - Component Guide: design/engine/像素UI引擎组件接入指南.md
-  - Release:
-      - Checklist: release-checklist.md
-      - 0.1.0 Snapshot Notes: release-notes-0.1.0.md
-      - Notes Template: release-notes-template.md
+  - 设计文档: 设计文档.md
