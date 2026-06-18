@@ -27,6 +27,27 @@ public data class PixelSpriteSheetResourceDefinition(
     }
 }
 
+public data class PixelColorResourceDefinition(
+    val id: String,
+    val color: PixelColor,
+) {
+    init {
+        require(id.isNotBlank()) { "color id must not be blank" }
+    }
+}
+
+public data class PixelFontResourceDefinition(
+    val id: String,
+    val manifestPath: String,
+    val binaryPath: String,
+) {
+    init {
+        require(id.isNotBlank()) { "font id must not be blank" }
+        require(manifestPath.isNotBlank()) { "font manifestPath must not be blank" }
+        require(binaryPath.isNotBlank()) { "font binaryPath must not be blank" }
+    }
+}
+
 public data class PixelResourceManifest(
     val bitmaps: List<PixelBitmapResourceDefinition>,
     val spriteSheets: List<PixelSpriteSheetResourceDefinition>,
@@ -34,7 +55,7 @@ public data class PixelResourceManifest(
     val metadata: Map<String, String> = emptyMap(),
 ) {
     init {
-        require(version == 1) { "unsupported resource manifest version $version" }
+        require(version in 1..2) { "unsupported resource manifest version $version" }
         firstDuplicate(bitmaps.map { it.id })?.let { duplicate ->
             throw IllegalArgumentException("duplicate bitmap id '$duplicate'")
         }
@@ -52,6 +73,26 @@ public data class PixelResourceManifest(
     private fun firstDuplicate(ids: List<String>): String? {
         val seen = mutableSetOf<String>()
         return ids.firstOrNull { !seen.add(it) }
+    }
+}
+
+public data class PixelResourceCatalog(
+    val resources: PixelResourceManifest,
+    val colors: List<PixelColorResourceDefinition>,
+    val fonts: List<PixelFontResourceDefinition>,
+) {
+    init {
+        require(resources.version == 2 || (colors.isEmpty() && fonts.isEmpty())) {
+            "resource manifest version 2 is required for colors or fonts"
+        }
+        val ids = buildList {
+            addAll(resources.bitmaps.map { it.id })
+            addAll(resources.spriteSheets.map { it.id })
+            addAll(colors.map { it.id })
+            addAll(fonts.map { it.id })
+        }
+        val duplicate = ids.groupingBy { it }.eachCount().entries.firstOrNull { it.value > 1 }?.key
+        require(duplicate == null) { "duplicate resource id '$duplicate'" }
     }
 }
 
@@ -92,6 +133,38 @@ public object PixelResourceManifestJsonLoader {
             throw error
         } catch (error: Throwable) {
             throw PixelResourceManifestLoadException("Failed to parse resource manifest JSON: ${error.message}", error)
+        }
+    }
+
+    public fun parseCatalog(json: String): PixelResourceCatalog {
+        return try {
+            val resources = parse(json)
+            val colors = optionalArray(json, "colors")
+                ?.let { source ->
+                    parseObjects(source).map { item ->
+                        PixelColorResourceDefinition(
+                            id = requireString(item, "id"),
+                            color = parseColor(requireString(item, "value")),
+                        )
+                    }
+                }
+                .orEmpty()
+            val fonts = optionalArray(json, "fonts")
+                ?.let { source ->
+                    parseObjects(source).map { item ->
+                        PixelFontResourceDefinition(
+                            id = requireString(item, "id"),
+                            manifestPath = requireString(item, "manifest"),
+                            binaryPath = requireString(item, "binary"),
+                        )
+                    }
+                }
+                .orEmpty()
+            PixelResourceCatalog(resources = resources, colors = colors, fonts = fonts)
+        } catch (error: PixelResourceManifestLoadException) {
+            throw error
+        } catch (error: Throwable) {
+            throw PixelResourceManifestLoadException("Failed to parse resource catalog JSON: ${error.message}", error)
         }
     }
 
@@ -148,5 +221,17 @@ public object PixelResourceManifestJsonLoader {
         return Regex("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"")
             .findAll(json)
             .associate { match -> match.groupValues[1] to match.groupValues[2] }
+    }
+
+    private fun parseColor(value: String): PixelColor {
+        val hex = value.removePrefix("#")
+        val argb = when (hex.length) {
+            6 -> (0xFF000000L or hex.toLong(16)).toInt()
+            8 -> hex.toLong(16).toInt()
+            else -> throw PixelResourceManifestLoadException(
+                "Color '$value' must use #RRGGBB or #AARRGGBB",
+            )
+        }
+        return PixelColor(argb)
     }
 }

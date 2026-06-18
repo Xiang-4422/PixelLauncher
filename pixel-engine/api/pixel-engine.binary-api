@@ -366,6 +366,18 @@ public final class com.purride.pixelcore.PixelColor$Companion {
   public final int getWhite-bODNPuc();
   public com.purride.pixelcore.PixelColor$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelcore.PixelColorResourceDefinition {
+  public final java.lang.String getId();
+  public final int getColor-bODNPuc();
+  public final java.lang.String component1();
+  public final int component2-bODNPuc();
+  public final com.purride.pixelcore.PixelColorResourceDefinition copy-H3krcHo(java.lang.String, int);
+  public static com.purride.pixelcore.PixelColorResourceDefinition copy-H3krcHo$default(com.purride.pixelcore.PixelColorResourceDefinition, java.lang.String, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelcore.PixelColorResourceDefinition(java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public final class com.purride.pixelcore.PixelCoreModule {
   public static final com.purride.pixelcore.PixelCoreModule INSTANCE;
 }
@@ -410,6 +422,20 @@ public final class com.purride.pixelcore.PixelFontMetrics {
   public final int component6();
   public final com.purride.pixelcore.PixelFontMetrics copy(int, int, int, int, int, int);
   public static com.purride.pixelcore.PixelFontMetrics copy$default(com.purride.pixelcore.PixelFontMetrics, int, int, int, int, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelcore.PixelFontResourceDefinition {
+  public com.purride.pixelcore.PixelFontResourceDefinition(java.lang.String, java.lang.String, java.lang.String);
+  public final java.lang.String getId();
+  public final java.lang.String getManifestPath();
+  public final java.lang.String getBinaryPath();
+  public final java.lang.String component1();
+  public final java.lang.String component2();
+  public final java.lang.String component3();
+  public final com.purride.pixelcore.PixelFontResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelFontResourceDefinition copy$default(com.purride.pixelcore.PixelFontResourceDefinition, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -552,6 +578,20 @@ public final class com.purride.pixelcore.PixelResourceCacheSnapshot {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelcore.PixelResourceCatalog {
+  public com.purride.pixelcore.PixelResourceCatalog(com.purride.pixelcore.PixelResourceManifest, java.util.List<com.purride.pixelcore.PixelColorResourceDefinition>, java.util.List<com.purride.pixelcore.PixelFontResourceDefinition>);
+  public final com.purride.pixelcore.PixelResourceManifest getResources();
+  public final java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> getColors();
+  public final java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> getFonts();
+  public final com.purride.pixelcore.PixelResourceManifest component1();
+  public final java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> component2();
+  public final java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> component3();
+  public final com.purride.pixelcore.PixelResourceCatalog copy(com.purride.pixelcore.PixelResourceManifest, java.util.List<com.purride.pixelcore.PixelColorResourceDefinition>, java.util.List<com.purride.pixelcore.PixelFontResourceDefinition>);
+  public static com.purride.pixelcore.PixelResourceCatalog copy$default(com.purride.pixelcore.PixelResourceCatalog, com.purride.pixelcore.PixelResourceManifest, java.util.List, java.util.List, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelcore.PixelResourceManifest {
   public com.purride.pixelcore.PixelResourceManifest(java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition>, java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition>, int, java.util.Map<java.lang.String, java.lang.String>);
   public com.purride.pixelcore.PixelResourceManifest(java.util.List, java.util.List, int, java.util.Map, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -572,6 +612,7 @@ public final class com.purride.pixelcore.PixelResourceManifest {
 public final class com.purride.pixelcore.PixelResourceManifestJsonLoader {
   public static final com.purride.pixelcore.PixelResourceManifestJsonLoader INSTANCE;
   public final com.purride.pixelcore.PixelResourceManifest parse(java.lang.String);
+  public final com.purride.pixelcore.PixelResourceCatalog parseCatalog(java.lang.String);
 }
 public final class com.purride.pixelcore.PixelResourceManifestLoadException extends java.lang.IllegalArgumentException {
   public com.purride.pixelcore.PixelResourceManifestLoadException(java.lang.String, java.lang.Throwable);

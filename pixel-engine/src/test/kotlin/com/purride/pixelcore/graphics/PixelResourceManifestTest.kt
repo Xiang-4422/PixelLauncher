@@ -74,9 +74,9 @@ class PixelResourceManifestTest {
 
     @Test
     fun parseRejectsUnsupportedVersion() {
-        val error = expectManifestError("""{"version": 2}""")
+        val error = expectManifestError("""{"version": 3}""")
 
-        assertTrue(error.message.orEmpty().contains("version 2"))
+        assertTrue(error.message.orEmpty().contains("version 3"))
     }
 
     @Test
@@ -86,10 +86,85 @@ class PixelResourceManifestTest {
         assertTrue(error.message.orEmpty().contains("Missing string field 'path'"))
     }
 
+    @Test
+    fun parseCatalogReadsColorsFontsAndBaseResources() {
+        val catalog = PixelResourceManifestJsonLoader.parseCatalog(
+            """
+            {
+              "version": 2,
+              "bitmaps": [
+                { "id": "icons", "path": "images/icons.png" }
+              ],
+              "colors": [
+                { "id": "accent", "value": "#22AAFF" },
+                { "id": "overlay", "value": "#80224466" }
+              ],
+              "fonts": [
+                {
+                  "id": "ui8",
+                  "manifest": "glyphpacks/ui8/manifest.json",
+                  "binary": "glyphpacks/ui8/glyphs.bin"
+                }
+              ]
+            }
+            """.trimIndent(),
+        )
+
+        assertEquals(2, catalog.resources.version)
+        assertEquals("images/icons.png", catalog.resources.bitmaps.single().path)
+        assertEquals(PixelColor.fromRgb(0x22, 0xAA, 0xFF), catalog.colors[0].color)
+        assertEquals(PixelColor.fromArgb(0x80, 0x22, 0x44, 0x66), catalog.colors[1].color)
+        assertEquals("ui8", catalog.fonts.single().id)
+        assertEquals("glyphpacks/ui8/manifest.json", catalog.fonts.single().manifestPath)
+        assertEquals("glyphpacks/ui8/glyphs.bin", catalog.fonts.single().binaryPath)
+    }
+
+    @Test
+    fun parseCatalogRequiresVersionTwoForColorsAndFonts() {
+        val error = expectCatalogError(
+            """{"version":1,"colors":[{"id":"accent","value":"#FFFFFF"}]}""",
+        )
+
+        assertTrue(error.message.orEmpty().contains("version 2"))
+    }
+
+    @Test
+    fun parseCatalogRejectsDuplicateIdsAcrossResourceTypes() {
+        val error = expectCatalogError(
+            """
+            {
+              "version": 2,
+              "bitmaps": [{ "id": "shared", "path": "image.png" }],
+              "fonts": [{ "id": "shared", "manifest": "font.json", "binary": "font.bin" }]
+            }
+            """.trimIndent(),
+        )
+
+        assertTrue(error.message.orEmpty().contains("duplicate resource id 'shared'"))
+    }
+
+    @Test
+    fun parseCatalogRejectsInvalidColorEncoding() {
+        val error = expectCatalogError(
+            """{"version":2,"colors":[{"id":"accent","value":"#1234"}]}""",
+        )
+
+        assertTrue(error.message.orEmpty().contains("#RRGGBB or #AARRGGBB"))
+    }
+
     private fun expectManifestError(json: String): PixelResourceManifestLoadException {
         return try {
             PixelResourceManifestJsonLoader.parse(json)
             error("manifest should fail")
+        } catch (error: PixelResourceManifestLoadException) {
+            error
+        }
+    }
+
+    private fun expectCatalogError(json: String): PixelResourceManifestLoadException {
+        return try {
+            PixelResourceManifestJsonLoader.parseCatalog(json)
+            error("resource catalog should fail")
         } catch (error: PixelResourceManifestLoadException) {
             error
         }
