@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+import argparse
 import json
 import struct
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
-
-from PIL import Image, ImageDraw, ImageFont
+from typing import Any, Iterable, Sequence
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -60,6 +59,17 @@ class FusionPackSpec:
     baseline: int
     default_advance: int
     supported_ranges: list[RangeSpec]
+
+
+@dataclass(frozen=True)
+class BdfGlyph:
+    code_point: int
+    advance_width: int
+    width: int
+    height: int
+    x_offset: int
+    y_offset: int
+    bitmap_rows: tuple[str, ...]
 
 
 FUSION_PACKS = [
@@ -174,63 +184,282 @@ FUSION_PACKS = [
 ]
 
 
-def main() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    for pack in FUSION_PACKS:
-        generate_fusion_pack(pack)
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = build_argument_parser()
+    args = parser.parse_args(argv)
+    if args.input is None:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        for pack in FUSION_PACKS:
+            generate_fusion_pack(pack)
+        return
+
+    try:
+        ranges = parse_ranges(args.ranges)
+    except ValueError as error:
+        parser.error(str(error))
+    input_path = Path(args.input)
+    if not input_path.is_file():
+        parser.error(f"input font does not exist: {input_path}")
+    if args.baseline >= args.cell_height:
+        parser.error("baseline must be smaller than cell height")
+    output_dir = Path(args.output)
+    common = {
+        "font_path": input_path,
+        "output_dir": output_dir,
+        "pack_id": args.pack_id,
+        "display_name": args.display_name,
+        "cell_height": args.cell_height,
+        "baseline": args.baseline,
+        "default_advance": args.default_advance,
+        "supported_ranges": ranges,
+    }
+    suffix = input_path.suffix.lower()
+    if suffix in {".ttf", ".otf"}:
+        generate_ttf_pack(font_size=args.font_size or args.cell_height, **common)
+    elif suffix == ".bdf":
+        generate_bdf_pack(**common)
+    else:
+        parser.error(f"unsupported font extension '{suffix}'; expected .ttf, .otf, or .bdf")
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Convert TTF/OTF/BDF fonts into pixel-engine glyph packs.",
+    )
+    parser.add_argument("--input", help="Input .ttf, .otf, or .bdf file. Omit to regenerate built-in packs.")
+    parser.add_argument("--output", default=str(OUTPUT_DIR), help="Output directory containing the pack folder.")
+    parser.add_argument("--pack-id", default="custom_font", help="Stable glyph pack id.")
+    parser.add_argument("--display-name", default="Custom Font", help="Display name stored in manifest.json.")
+    parser.add_argument("--cell-height", type=positive_int, default=8, help="Output cell height in pixels.")
+    parser.add_argument("--baseline", type=non_negative_int, default=7, help="Baseline row measured from cell top.")
+    parser.add_argument("--default-advance", type=positive_int, default=8, help="Fallback glyph advance width.")
+    parser.add_argument("--font-size", type=positive_int, help="TTF/OTF rasterization size; defaults to cell height.")
+    parser.add_argument("--ranges", default="0020-007E", help="Comma-separated Unicode ranges, e.g. 0020-007E,4E00-9FFF.")
+    return parser
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be > 0")
+    return parsed
+
+
+def non_negative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be >= 0")
+    return parsed
+
+
+def parse_ranges(value: str) -> list[RangeSpec]:
+    ranges: list[RangeSpec] = []
+    for raw_part in value.split(","):
+        part = raw_part.strip()
+        if not part:
+            continue
+        bounds = part.split("-", maxsplit=1)
+        start = int(bounds[0], 16)
+        end = int(bounds[1], 16) if len(bounds) == 2 else start
+        if start < 0 or end < start or end > 0x10FFFF:
+            raise ValueError(f"invalid Unicode range: {part}")
+        ranges.append(RangeSpec(start, end))
+    if not ranges:
+        raise ValueError("at least one Unicode range is required")
+    return ranges
 
 
 def generate_fusion_pack(spec: FusionPackSpec) -> None:
+    generate_ttf_pack(
+        font_path=spec.font_path,
+        output_dir=OUTPUT_DIR,
+        pack_id=spec.pack_id,
+        display_name=spec.display_name,
+        font_size=spec.font_size,
+        cell_height=spec.font_size,
+        baseline=spec.baseline,
+        default_advance=spec.default_advance,
+        supported_ranges=spec.supported_ranges,
+    )
+
+
+def generate_ttf_pack(
+    font_path: Path,
+    output_dir: Path,
+    pack_id: str,
+    display_name: str,
+    font_size: int,
+    cell_height: int,
+    baseline: int,
+    default_advance: int,
+    supported_ranges: list[RangeSpec],
+) -> None:
+    from PIL import ImageFont
+
     font = ImageFont.truetype(
-        str(spec.font_path),
-        size=spec.font_size,
+        str(font_path),
+        size=font_size,
         layout_engine=ImageFont.Layout.BASIC,
     )
 
     records = []
-    for code_point in iter_code_points(spec.supported_ranges):
+    for code_point in iter_code_points(supported_ranges):
         character = chr(code_point)
         glyph_pixels = render_font_glyph(
             font=font,
             character=character,
-            cell_height=spec.font_size,
-            baseline=spec.baseline,
+            cell_height=cell_height,
+            baseline=baseline,
         )
         if glyph_pixels is None:
             continue
         if not any(glyph_pixels) and not character.isspace():
             continue
 
-        width = detect_glyph_width(glyph_pixels, spec.font_size, spec.font_size)
+        width = detect_glyph_width(glyph_pixels, cell_height, cell_height)
         if width <= 0:
-            width = spec.default_advance
+            width = default_advance
 
         records.append(
             (
                 code_point,
                 width,
                 width,
-                pack_bits(crop_glyph_pixels(glyph_pixels, spec.font_size, spec.font_size, width)),
+                pack_bits(crop_glyph_pixels(glyph_pixels, cell_height, cell_height, width)),
             ),
         )
 
     write_pack(
-        pack_id=spec.pack_id,
-        display_name=spec.display_name,
-        cell_height=spec.font_size,
-        baseline=spec.baseline,
-        default_advance=spec.default_advance,
+        output_dir=output_dir,
+        pack_id=pack_id,
+        display_name=display_name,
+        cell_height=cell_height,
+        baseline=baseline,
+        default_advance=default_advance,
         supported_ranges=summarize_ranges([code_point for code_point, *_ in records]),
         records=records,
     )
 
 
+def generate_bdf_pack(
+    font_path: Path,
+    output_dir: Path,
+    pack_id: str,
+    display_name: str,
+    cell_height: int,
+    baseline: int,
+    default_advance: int,
+    supported_ranges: list[RangeSpec],
+) -> None:
+    selected = set(iter_code_points(supported_ranges))
+    records: list[tuple[int, int, int, bytes]] = []
+    for glyph in parse_bdf(font_path):
+        if glyph.code_point not in selected:
+            continue
+        advance = glyph.advance_width if glyph.advance_width > 0 else default_advance
+        output_width = max(1, advance, glyph.x_offset + glyph.width)
+        pixels = rasterize_bdf_glyph(glyph, output_width, cell_height, baseline)
+        if not any(pixels) and glyph.code_point != 0x20:
+            continue
+        records.append((glyph.code_point, advance, output_width, pack_bits(pixels)))
+
+    write_pack(
+        output_dir=output_dir,
+        pack_id=pack_id,
+        display_name=display_name,
+        cell_height=cell_height,
+        baseline=baseline,
+        default_advance=default_advance,
+        supported_ranges=summarize_ranges([code_point for code_point, *_ in records]),
+        records=records,
+    )
+
+
+def parse_bdf(font_path: Path) -> list[BdfGlyph]:
+    glyphs: list[BdfGlyph] = []
+    current: dict[str, Any] | None = None
+    reading_bitmap = False
+    for raw_line in font_path.read_text(encoding="ascii").splitlines():
+        line = raw_line.strip()
+        if line.startswith("STARTCHAR "):
+            current = {"bitmap_rows": []}
+            reading_bitmap = False
+        elif current is None:
+            continue
+        elif line.startswith("ENCODING "):
+            current["code_point"] = int(line.split()[1])
+        elif line.startswith("DWIDTH "):
+            current["advance_width"] = int(line.split()[1])
+        elif line.startswith("BBX "):
+            _, width, height, x_offset, y_offset = line.split()[:5]
+            current.update(
+                width=int(width),
+                height=int(height),
+                x_offset=int(x_offset),
+                y_offset=int(y_offset),
+            )
+        elif line == "BITMAP":
+            reading_bitmap = True
+        elif line == "ENDCHAR":
+            reading_bitmap = False
+            required = {"code_point", "width", "height", "x_offset", "y_offset"}
+            missing = sorted(required.difference(current))
+            if missing:
+                raise ValueError(f"BDF glyph is missing fields: {', '.join(missing)}")
+            code_point = int(current["code_point"])
+            if code_point >= 0:
+                rows = tuple(current["bitmap_rows"])
+                height = int(current["height"])
+                if len(rows) != height:
+                    raise ValueError(
+                        f"BDF glyph U+{code_point:04X} has {len(rows)} bitmap rows, expected {height}",
+                    )
+                glyphs.append(
+                    BdfGlyph(
+                        code_point=code_point,
+                        advance_width=int(current.get("advance_width", 0)),
+                        width=int(current["width"]),
+                        height=height,
+                        x_offset=int(current["x_offset"]),
+                        y_offset=int(current["y_offset"]),
+                        bitmap_rows=rows,
+                    ),
+                )
+            current = None
+        elif reading_bitmap and line:
+            current["bitmap_rows"].append(line)
+    if current is not None:
+        raise ValueError("BDF ended before ENDCHAR")
+    return glyphs
+
+
+def rasterize_bdf_glyph(glyph: BdfGlyph, output_width: int, cell_height: int, baseline: int) -> bytes:
+    pixels = bytearray(output_width * cell_height)
+    top = baseline - (glyph.y_offset + glyph.height)
+    for source_y, encoded_row in enumerate(glyph.bitmap_rows):
+        row_value = int(encoded_row, 16) if encoded_row else 0
+        encoded_bits = len(encoded_row) * 4
+        target_y = top + source_y
+        if target_y < 0 or target_y >= cell_height:
+            continue
+        for source_x in range(glyph.width):
+            bit_index = encoded_bits - 1 - source_x
+            if bit_index < 0 or not (row_value & (1 << bit_index)):
+                continue
+            target_x = glyph.x_offset + source_x
+            if 0 <= target_x < output_width:
+                pixels[target_y * output_width + target_x] = 1
+    return bytes(pixels)
+
+
 def render_font_glyph(
-    font: ImageFont.FreeTypeFont,
+    font: Any,
     character: str,
     cell_height: int,
     baseline: int,
 ) -> bytes | None:
+    from PIL import Image, ImageDraw
+
     image = Image.new("1", (cell_height, cell_height), 0)
     draw = ImageDraw.Draw(image)
     draw.fontmode = "1"
@@ -312,6 +541,7 @@ def format_range(start: int, end: int) -> str:
 
 
 def write_pack(
+    output_dir: Path,
     pack_id: str,
     display_name: str,
     cell_height: int,
@@ -320,7 +550,7 @@ def write_pack(
     supported_ranges: list[str],
     records: list[tuple[int, int, int, bytes]],
 ) -> None:
-    pack_dir = OUTPUT_DIR / pack_id
+    pack_dir = output_dir / pack_id
     pack_dir.mkdir(parents=True, exist_ok=True)
 
     manifest = {

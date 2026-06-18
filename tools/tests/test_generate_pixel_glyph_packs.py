@@ -1,0 +1,111 @@
+from __future__ import annotations
+
+import json
+import struct
+import tempfile
+import unittest
+from pathlib import Path
+
+from tools import generate_pixel_glyph_packs as converter
+
+
+SAMPLE_BDF = """STARTFONT 2.1
+FONT sample
+SIZE 8 75 75
+FONTBOUNDINGBOX 6 8 0 0
+CHARS 1
+STARTCHAR LATIN_CAPITAL_LETTER_A
+ENCODING 65
+SWIDTH 500 0
+DWIDTH 6 0
+BBX 5 7 0 0
+BITMAP
+70
+88
+88
+F8
+88
+88
+88
+ENDCHAR
+ENDFONT
+"""
+
+
+class GlyphPackConverterTest(unittest.TestCase):
+    def test_parse_ranges_accepts_singletons_and_intervals(self) -> None:
+        ranges = converter.parse_ranges("0041,4E00-4E02")
+
+        self.assertEqual([(0x41, 0x41), (0x4E00, 0x4E02)], [(item.start, item.end) for item in ranges])
+
+    def test_bdf_cli_generates_parser_compatible_pack(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "sample.bdf"
+            output = root / "output"
+            source.write_text(SAMPLE_BDF, encoding="ascii")
+
+            converter.main(
+                [
+                    "--input",
+                    str(source),
+                    "--output",
+                    str(output),
+                    "--pack-id",
+                    "sample_bdf",
+                    "--display-name",
+                    "Sample BDF",
+                    "--cell-height",
+                    "8",
+                    "--baseline",
+                    "7",
+                    "--default-advance",
+                    "6",
+                    "--ranges",
+                    "0041-0041",
+                ],
+            )
+
+            pack_dir = output / "sample_bdf"
+            manifest = json.loads((pack_dir / "manifest.json").read_text(encoding="utf-8"))
+            binary = (pack_dir / "glyphs.bin").read_bytes()
+
+            self.assertEqual("sample_bdf", manifest["packId"])
+            self.assertEqual("Sample BDF", manifest["displayName"])
+            self.assertEqual(8, manifest["cellHeight"])
+            self.assertEqual(["0041-0041"], manifest["supportedRanges"])
+
+            magic, version, cell_height, glyph_count = struct.unpack_from(">IIII", binary, 0)
+            code_point, advance, width, data_length = struct.unpack_from(">IIII", binary, 16)
+            packed = binary[32 : 32 + data_length]
+            pixels = unpack_bits(packed, width * cell_height)
+
+            self.assertEqual(0x50474C59, magic)
+            self.assertEqual(1, version)
+            self.assertEqual(8, cell_height)
+            self.assertEqual(1, glyph_count)
+            self.assertEqual(0x41, code_point)
+            self.assertEqual(6, advance)
+            self.assertEqual(6, width)
+            self.assertEqual("011100", pixels[0:6])
+            self.assertEqual("100010", pixels[6:12])
+            self.assertEqual("000000", pixels[-6:])
+
+    def test_bdf_rejects_incomplete_bitmap_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "broken.bdf"
+            source.write_text(SAMPLE_BDF.replace("88\nENDCHAR", "ENDCHAR"), encoding="ascii")
+
+            with self.assertRaisesRegex(ValueError, "bitmap rows"):
+                converter.parse_bdf(source)
+
+
+def unpack_bits(packed: bytes, pixel_count: int) -> str:
+    return "".join(
+        "1" if packed[index // 8] & (1 << (7 - (index % 8))) else "0"
+        for index in range(pixel_count)
+    )
+
+
+if __name__ == "__main__":
+    unittest.main()

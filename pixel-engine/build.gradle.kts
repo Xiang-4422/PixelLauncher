@@ -52,6 +52,29 @@ val publicApiBaseline = layout.projectDirectory.file("api/pixel-engine.api")
 val binaryApiBaseline = layout.projectDirectory.file("api/pixel-engine.binary-api")
 val kdocCoverageMinimumPercent = 24.0
 
+tasks.register<Exec>("generatePixelGlyphPacks") {
+    group = "build"
+    description = "Generates the built-in TTF glyph packs with the shared converter CLI."
+    workingDir(rootProject.projectDir)
+    commandLine("python3", rootProject.file("tools/generate_pixel_glyph_packs.py"))
+}
+
+val testPixelGlyphPackConverter by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the BDF/TTF glyph pack converter unit tests."
+    workingDir(rootProject.projectDir)
+    commandLine(
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/tests",
+        "-p",
+        "test_*.py",
+    )
+}
+
 val dumpPublicApi by tasks.registering {
     group = "verification"
     description = "Writes a deterministic text dump of pixel-engine public Kotlin declarations."
@@ -225,6 +248,7 @@ tasks.named("check") {
     dependsOn("checkPublicApi")
     dependsOn("checkBinaryApi")
     dependsOn("checkKdocCoverage")
+    dependsOn(testPixelGlyphPackConverter)
 }
 
 publishing {

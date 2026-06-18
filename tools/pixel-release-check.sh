@@ -11,6 +11,7 @@ cd "$ROOT_DIR"
   :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkKdocCoverage \
+  :pixel-engine:testPixelGlyphPackConverter \
   :pixel-engine:testDebugUnitTest \
   :pixel-engine:lintDebug \
   :pixel-engine:assembleDebug \
