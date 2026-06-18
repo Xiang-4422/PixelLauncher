@@ -24,9 +24,14 @@ com.purride.pixelcore public data class PixelBitmapRegion(
 com.purride.pixelcore public data class PixelSpriteSheet(
 com.purride.pixelcore public class PixelSpriteSheetLoadException(
 com.purride.pixelcore public data class PixelSpriteSheetDefinition(
+com.purride.pixelcore public data class PixelSpriteFrameDefinition(
+com.purride.pixelcore public data class PixelSpriteAtlasDefinition(
+com.purride.pixelcore public data class PixelSpriteAtlas(
 com.purride.pixelcore public object PixelSpriteSheetJsonLoader
 com.purride.pixelcore public fun parseDefinition(json: String): PixelSpriteSheetDefinition
+com.purride.pixelcore public fun parseAtlasDefinition(json: String): PixelSpriteAtlasDefinition
 com.purride.pixelcore public fun load(json: String, bitmap: PixelBitmap): PixelSpriteSheet
+com.purride.pixelcore public fun loadAtlas(json: String, bitmap: PixelBitmap): PixelSpriteAtlas
 com.purride.pixelcore public object AxisBufferComposer
 com.purride.pixelcore public fun isCompositionNeeded(secondary: PixelBuffer?, offsetPx: Float): Boolean
 com.purride.pixelcore public fun compose(

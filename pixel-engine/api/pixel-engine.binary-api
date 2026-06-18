@@ -585,6 +585,62 @@ public final class com.purride.pixelcore.PixelShape extends java.lang.Enum<com.p
   public static com.purride.pixelcore.PixelShape valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelcore.PixelShape> getEntries();
 }
+public final class com.purride.pixelcore.PixelSpriteAtlas {
+  public com.purride.pixelcore.PixelSpriteAtlas(com.purride.pixelcore.PixelSpriteSheet, java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition>, int);
+  public final com.purride.pixelcore.PixelSpriteSheet getSheet();
+  public final java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> getFrames();
+  public final int getScale();
+  public final com.purride.pixelcore.PixelSpriteSheet component1();
+  public final java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> component2();
+  public final int component3();
+  public final com.purride.pixelcore.PixelSpriteAtlas copy(com.purride.pixelcore.PixelSpriteSheet, java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition>, int);
+  public static com.purride.pixelcore.PixelSpriteAtlas copy$default(com.purride.pixelcore.PixelSpriteAtlas, com.purride.pixelcore.PixelSpriteSheet, java.util.List, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelcore.PixelSpriteAtlasDefinition {
+  public com.purride.pixelcore.PixelSpriteAtlasDefinition(java.lang.String, java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition>, int, int, java.util.Map<java.lang.String, java.lang.String>);
+  public com.purride.pixelcore.PixelSpriteAtlasDefinition(java.lang.String, java.util.List, int, int, java.util.Map, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getBitmap();
+  public final java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> getFrames();
+  public final int getScale();
+  public final int getVersion();
+  public final java.util.Map<java.lang.String, java.lang.String> getMetadata();
+  public final java.lang.String component1();
+  public final java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> component2();
+  public final int component3();
+  public final int component4();
+  public final java.util.Map<java.lang.String, java.lang.String> component5();
+  public final com.purride.pixelcore.PixelSpriteAtlasDefinition copy(java.lang.String, java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition>, int, int, java.util.Map<java.lang.String, java.lang.String>);
+  public static com.purride.pixelcore.PixelSpriteAtlasDefinition copy$default(com.purride.pixelcore.PixelSpriteAtlasDefinition, java.lang.String, java.util.List, int, int, java.util.Map, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelcore.PixelSpriteFrameDefinition {
+  public com.purride.pixelcore.PixelSpriteFrameDefinition(com.purride.pixelcore.PixelBitmapRegion, int, int, int, int, int, int);
+  public com.purride.pixelcore.PixelSpriteFrameDefinition(com.purride.pixelcore.PixelBitmapRegion, int, int, int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelcore.PixelBitmapRegion getRegion();
+  public final int getSourceWidth();
+  public final int getSourceHeight();
+  public final int getTrimLeft();
+  public final int getTrimTop();
+  public final int getPivotX();
+  public final int getPivotY();
+  public final com.purride.pixelcore.PixelBitmapRegion component1();
+  public final int component2();
+  public final int component3();
+  public final int component4();
+  public final int component5();
+  public final int component6();
+  public final int component7();
+  public final com.purride.pixelcore.PixelSpriteFrameDefinition copy(com.purride.pixelcore.PixelBitmapRegion, int, int, int, int, int, int);
+  public static com.purride.pixelcore.PixelSpriteFrameDefinition copy$default(com.purride.pixelcore.PixelSpriteFrameDefinition, com.purride.pixelcore.PixelBitmapRegion, int, int, int, int, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelcore.PixelSpriteSheet {
   public com.purride.pixelcore.PixelSpriteSheet(com.purride.pixelcore.PixelBitmap, java.util.List<com.purride.pixelcore.PixelBitmapRegion>);
   public final com.purride.pixelcore.PixelBitmap getBitmap();
@@ -617,7 +673,9 @@ public final class com.purride.pixelcore.PixelSpriteSheetDefinition {
 public final class com.purride.pixelcore.PixelSpriteSheetJsonLoader {
   public static final com.purride.pixelcore.PixelSpriteSheetJsonLoader INSTANCE;
   public final com.purride.pixelcore.PixelSpriteSheetDefinition parseDefinition(java.lang.String);
+  public final com.purride.pixelcore.PixelSpriteAtlasDefinition parseAtlasDefinition(java.lang.String);
   public final com.purride.pixelcore.PixelSpriteSheet load(java.lang.String, com.purride.pixelcore.PixelBitmap);
+  public final com.purride.pixelcore.PixelSpriteAtlas loadAtlas(java.lang.String, com.purride.pixelcore.PixelBitmap);
 }
 public final class com.purride.pixelcore.PixelSpriteSheetLoadException extends java.lang.IllegalArgumentException {
   public com.purride.pixelcore.PixelSpriteSheetLoadException(java.lang.String, java.lang.Throwable);

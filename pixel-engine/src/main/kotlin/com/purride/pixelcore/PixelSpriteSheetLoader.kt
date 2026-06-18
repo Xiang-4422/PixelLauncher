@@ -12,34 +12,99 @@ public data class PixelSpriteSheetDefinition(
     val metadata: Map<String, String> = emptyMap(),
 ) {
     init {
-        require(version == 1) { "unsupported sprite sheet version $version" }
+        require(version in 1..2) { "unsupported sprite sheet version $version" }
         require(bitmap.isNotBlank()) { "bitmap must not be blank" }
         require(frames.isNotEmpty()) { "frames must not be empty" }
     }
 }
 
+public data class PixelSpriteFrameDefinition(
+    val region: PixelBitmapRegion,
+    val sourceWidth: Int = region.width,
+    val sourceHeight: Int = region.height,
+    val trimLeft: Int = 0,
+    val trimTop: Int = 0,
+    val pivotX: Int = 0,
+    val pivotY: Int = 0,
+) {
+    init {
+        require(sourceWidth > 0) { "sourceWidth must be > 0, got $sourceWidth" }
+        require(sourceHeight > 0) { "sourceHeight must be > 0, got $sourceHeight" }
+        require(trimLeft >= 0) { "trimLeft must be >= 0, got $trimLeft" }
+        require(trimTop >= 0) { "trimTop must be >= 0, got $trimTop" }
+        require(trimLeft + region.width <= sourceWidth) { "trimmed frame exceeds sourceWidth" }
+        require(trimTop + region.height <= sourceHeight) { "trimmed frame exceeds sourceHeight" }
+        require(pivotX in 0..sourceWidth) { "pivotX must be within source width" }
+        require(pivotY in 0..sourceHeight) { "pivotY must be within source height" }
+    }
+}
+
+public data class PixelSpriteAtlasDefinition(
+    val bitmap: String,
+    val frames: List<PixelSpriteFrameDefinition>,
+    val scale: Int = 1,
+    val version: Int = 2,
+    val metadata: Map<String, String> = emptyMap(),
+) {
+    init {
+        require(bitmap.isNotBlank()) { "bitmap must not be blank" }
+        require(frames.isNotEmpty()) { "frames must not be empty" }
+        require(scale > 0) { "scale must be > 0, got $scale" }
+        require(version in 1..2) { "unsupported sprite sheet version $version" }
+    }
+}
+
+public data class PixelSpriteAtlas(
+    val sheet: PixelSpriteSheet,
+    val frames: List<PixelSpriteFrameDefinition>,
+    val scale: Int,
+) {
+    init {
+        require(frames.size == sheet.frames.size) { "atlas frame metadata must match sheet frames" }
+        require(scale > 0) { "scale must be > 0, got $scale" }
+    }
+}
+
 public object PixelSpriteSheetJsonLoader {
     public fun parseDefinition(json: String): PixelSpriteSheetDefinition {
+        val atlas = parseAtlasDefinition(json)
+        return PixelSpriteSheetDefinition(
+            bitmap = atlas.bitmap,
+            frames = atlas.frames.map { it.region },
+            version = atlas.version,
+            metadata = atlas.metadata,
+        )
+    }
+
+    public fun parseAtlasDefinition(json: String): PixelSpriteAtlasDefinition {
         return try {
             val bitmap = requireString(json, "bitmap")
             val version = optionalInt(json, "version") ?: 1
+            val scale = optionalInt(json, "scale") ?: 1
             val metadata = optionalObject(json, "metadata")?.let(::parseStringMap).orEmpty()
             val framesSource = requireArray(json, "frames")
-            val frames = Regex("\\{([^{}]+)\\}")
-                .findAll(framesSource)
-                .map { match ->
-                    val frameJson = match.value
-                    PixelBitmapRegion(
+            val frames = parseObjects(framesSource)
+                .map { frameJson ->
+                    val region = PixelBitmapRegion(
                         left = requireInt(frameJson, "left"),
                         top = requireInt(frameJson, "top"),
                         width = requireInt(frameJson, "width"),
                         height = requireInt(frameJson, "height"),
                     )
+                    PixelSpriteFrameDefinition(
+                        region = region,
+                        sourceWidth = optionalInt(frameJson, "sourceWidth") ?: region.width,
+                        sourceHeight = optionalInt(frameJson, "sourceHeight") ?: region.height,
+                        trimLeft = optionalInt(frameJson, "trimLeft") ?: 0,
+                        trimTop = optionalInt(frameJson, "trimTop") ?: 0,
+                        pivotX = optionalInt(frameJson, "pivotX") ?: 0,
+                        pivotY = optionalInt(frameJson, "pivotY") ?: 0,
+                    )
                 }
-                .toList()
-            PixelSpriteSheetDefinition(
+            PixelSpriteAtlasDefinition(
                 bitmap = bitmap,
                 frames = frames,
+                scale = scale,
                 version = version,
                 metadata = metadata,
             )
@@ -57,6 +122,47 @@ public object PixelSpriteSheetJsonLoader {
         } catch (error: Throwable) {
             throw PixelSpriteSheetLoadException("Failed to create sprite sheet for '${definition.bitmap}': ${error.message}", error)
         }
+    }
+
+    public fun loadAtlas(json: String, bitmap: PixelBitmap): PixelSpriteAtlas {
+        val definition = parseAtlasDefinition(json)
+        return try {
+            val sheet = PixelSpriteSheet(
+                bitmap = bitmap,
+                frames = definition.frames.map { it.region },
+            )
+            PixelSpriteAtlas(
+                sheet = sheet,
+                frames = definition.frames,
+                scale = definition.scale,
+            )
+        } catch (error: Throwable) {
+            throw PixelSpriteSheetLoadException("Failed to create sprite atlas for '${definition.bitmap}': ${error.message}", error)
+        }
+    }
+
+    private fun parseObjects(arraySource: String): List<String> {
+        val objects = mutableListOf<String>()
+        var depth = 0
+        var start = -1
+        arraySource.forEachIndexed { index, char ->
+            when (char) {
+                '{' -> {
+                    if (depth == 0) start = index
+                    depth += 1
+                }
+                '}' -> {
+                    depth -= 1
+                    if (depth < 0) throw PixelSpriteSheetLoadException("Unexpected closing frame object")
+                    if (depth == 0 && start >= 0) {
+                        objects += arraySource.substring(start, index + 1)
+                        start = -1
+                    }
+                }
+            }
+        }
+        if (depth != 0) throw PixelSpriteSheetLoadException("Unclosed frame object")
+        return objects
     }
 
     private fun requireString(json: String, name: String): String {
