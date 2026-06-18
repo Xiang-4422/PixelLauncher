@@ -16,17 +16,6 @@ class SettingsMenuModelTest {
     // ── Cyclic option stepping (wrapIndex) ────────────────────────────────────
 
     @Test
-    fun nextFontSize_stepsForwardAndWrapsAround() {
-        assertEquals(PixelFontSize.PX_10, SettingsMenuModel.nextFontSize(PixelFontSize.PX_8, 1))
-        assertEquals(PixelFontSize.PX_8, SettingsMenuModel.nextFontSize(PixelFontSize.PX_12, 1))
-    }
-
-    @Test
-    fun nextFontSize_stepsBackwardWrapsToLast() {
-        assertEquals(PixelFontSize.PX_12, SettingsMenuModel.nextFontSize(PixelFontSize.PX_8, -1))
-    }
-
-    @Test
     fun nextFontStyle_togglesBetweenTheTwoOptions() {
         assertEquals(PixelFontStyle.PROP, SettingsMenuModel.nextFontStyle(PixelFontStyle.MONO, 1))
         assertEquals(PixelFontStyle.MONO, SettingsMenuModel.nextFontStyle(PixelFontStyle.PROP, 1))
@@ -54,21 +43,6 @@ class SettingsMenuModelTest {
         // forward then backward returns to the original
         val stepped = SettingsMenuModel.nextTheme(first, 1)
         assertEquals(first, SettingsMenuModel.nextTheme(stepped, -1))
-    }
-
-    // ── Slider ratio mapping (font size) ──────────────────────────────────────
-
-    @Test
-    fun fontSizeRatio_mapsEndpointsToZeroAndOne() {
-        assertEquals(0f, SettingsMenuModel.fontSizeRatio(PixelFontSize.PX_8), 0f)
-        assertEquals(1f, SettingsMenuModel.fontSizeRatio(PixelFontSize.PX_12), 0f)
-    }
-
-    @Test
-    fun fontSizeAtRatio_isInverseOfFontSizeRatio() {
-        for (size in SettingsMenuModel.fontSizeOptions) {
-            assertEquals(size, SettingsMenuModel.fontSizeAtRatio(SettingsMenuModel.fontSizeRatio(size)))
-        }
     }
 
     // ── Pixel gap ratio stepping + snapping ───────────────────────────────────
@@ -133,7 +107,7 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun selectedItem_firstRowIsFontSize() {
-        assertEquals(SettingsMenuItem.FONT_SIZE, SettingsMenuModel.selectedItem(LauncherState(settingsSelectedIndex = 0)))
+    fun selectedItem_firstRowIsFontStyle() {
+        assertEquals(SettingsMenuItem.FONT_STYLE, SettingsMenuModel.selectedItem(LauncherState(settingsSelectedIndex = 0)))
     }
 }

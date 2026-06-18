@@ -54,7 +54,6 @@ import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.PixelShape
-import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.ScreenProfile
@@ -229,11 +228,9 @@ class MainActivity : AppCompatActivity() {
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
         pixelGapEnabled = appearanceSettings.pixelGapRatio > 0f
         selectedTheme = appearanceSettings.theme
-        // Keep the layout glyph metrics (visibleRows / row heights) in sync with the saved font.
-        GlyphStyle.configure(appearanceSettings.fontSize, appearanceSettings.fontStyle)
+        GlyphStyle.configure(appearanceSettings.fontStyle)
         state = LauncherStateTransitions.updateAppearance(
             state = state,
-            selectedFontSize = appearanceSettings.fontSize,
             selectedFontStyle = appearanceSettings.fontStyle,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
@@ -774,16 +771,7 @@ class MainActivity : AppCompatActivity() {
     private fun onSettingsItemAction(item: SettingsMenuItem, direction: Int) {
         val s = state
         when (item) {
-            SettingsMenuItem.FONT_SIZE -> applyAppearance(
-                fontSize = SettingsMenuModel.nextFontSize(s.selectedFontSize, direction),
-                fontStyle = s.selectedFontStyle,
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = s.selectedDotSizePx,
-                newPixelGapEnabled = s.isPixelGapEnabled,
-                newTheme = s.selectedTheme,
-            )
             SettingsMenuItem.FONT_STYLE -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = SettingsMenuModel.nextFontStyle(s.selectedFontStyle, direction),
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = s.selectedDotSizePx,
@@ -791,7 +779,6 @@ class MainActivity : AppCompatActivity() {
                 newTheme = s.selectedTheme,
             )
             SettingsMenuItem.RESOLUTION -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = s.selectedFontStyle,
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = SettingsMenuModel.nextResolution(s.selectedDotSizePx, direction, screenProfile),
@@ -799,7 +786,6 @@ class MainActivity : AppCompatActivity() {
                 newTheme = s.selectedTheme,
             )
             SettingsMenuItem.PIXEL_GAP_SIZE -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = s.selectedFontStyle,
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = s.selectedDotSizePx,
@@ -809,7 +795,6 @@ class MainActivity : AppCompatActivity() {
             )
             SettingsMenuItem.PIXEL_GAP -> return
             SettingsMenuItem.STYLE -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = s.selectedFontStyle,
                 newPixelShape = SettingsMenuModel.nextStyle(s.selectedPixelShape, direction),
                 newDotSizePx = s.selectedDotSizePx,
@@ -817,7 +802,6 @@ class MainActivity : AppCompatActivity() {
                 newTheme = s.selectedTheme,
             )
             SettingsMenuItem.THEME -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = s.selectedFontStyle,
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = s.selectedDotSizePx,
@@ -843,16 +827,7 @@ class MainActivity : AppCompatActivity() {
     private fun onSettingsItemRatioChanged(item: SettingsMenuItem, ratio: Float) {
         val s = state
         when (item) {
-            SettingsMenuItem.FONT_SIZE -> applyAppearance(
-                fontSize = SettingsMenuModel.fontSizeAtRatio(ratio),
-                fontStyle = s.selectedFontStyle,
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = s.selectedDotSizePx,
-                newPixelGapEnabled = s.isPixelGapEnabled,
-                newTheme = s.selectedTheme,
-            )
             SettingsMenuItem.RESOLUTION -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = s.selectedFontStyle,
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = SettingsMenuModel.resolutionAtRatio(ratio, screenProfile),
@@ -860,7 +835,6 @@ class MainActivity : AppCompatActivity() {
                 newTheme = s.selectedTheme,
             )
             SettingsMenuItem.PIXEL_GAP_SIZE -> applyAppearance(
-                fontSize = s.selectedFontSize,
                 fontStyle = s.selectedFontStyle,
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = s.selectedDotSizePx,
@@ -1225,22 +1199,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun changeSettingValue(direction: Int) {
         when (SettingsMenuModel.selectedItem(state)) {
-            SettingsMenuItem.FONT_SIZE -> {
-                val nextFontSize = SettingsMenuModel.nextFontSize(state.selectedFontSize, direction)
-                applyAppearance(
-                    fontSize = nextFontSize,
-                    fontStyle = state.selectedFontStyle,
-                    newPixelShape = state.selectedPixelShape,
-                    newDotSizePx = state.selectedDotSizePx,
-                    newPixelGapEnabled = state.isPixelGapEnabled,
-                    newTheme = state.selectedTheme,
-                )
-            }
-
             SettingsMenuItem.FONT_STYLE -> {
                 val nextFontStyle = SettingsMenuModel.nextFontStyle(state.selectedFontStyle, direction)
                 applyAppearance(
-                    fontSize = state.selectedFontSize,
                     fontStyle = nextFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
@@ -1256,7 +1217,6 @@ class MainActivity : AppCompatActivity() {
                     screenProfile = screenProfile,
                 )
                 applyAppearance(
-                    fontSize = state.selectedFontSize,
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = nextDotSizePx,
@@ -1271,7 +1231,6 @@ class MainActivity : AppCompatActivity() {
 
             SettingsMenuItem.PIXEL_GAP_SIZE -> {
                 applyAppearance(
-                    fontSize = state.selectedFontSize,
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
@@ -1284,7 +1243,6 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.STYLE -> {
                 val nextPixelShape = SettingsMenuModel.nextStyle(state.selectedPixelShape, direction)
                 applyAppearance(
-                    fontSize = state.selectedFontSize,
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = nextPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
@@ -1296,7 +1254,6 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.THEME -> {
                 val nextTheme = SettingsMenuModel.nextTheme(state.selectedTheme, direction)
                 applyAppearance(
-                    fontSize = state.selectedFontSize,
                     fontStyle = state.selectedFontStyle,
                     newPixelShape = state.selectedPixelShape,
                     newDotSizePx = state.selectedDotSizePx,
@@ -1388,7 +1345,6 @@ class MainActivity : AppCompatActivity() {
     private fun scrollSmsDetailBy(deltaPx: Int) = Unit
 
     private fun applyAppearance(
-        fontSize: PixelFontSize,
         fontStyle: PixelFontStyle,
         newPixelShape: PixelShape,
         newDotSizePx: Int,
@@ -1399,10 +1355,8 @@ class MainActivity : AppCompatActivity() {
         val effectivePixelGapEnabled = newPixelGapRatio > 0f
         pixelGapEnabled = effectivePixelGapEnabled
         selectedTheme = newTheme
-        // Re-sync glyph metrics before updateScreenProfile()/visibleRows() recompute the viewport.
-        GlyphStyle.configure(fontSize, fontStyle)
+        GlyphStyle.configure(fontStyle)
         fontSettingsRepository.setAppearanceSettings(
-            fontSize = fontSize,
             fontStyle = fontStyle,
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
@@ -1412,7 +1366,6 @@ class MainActivity : AppCompatActivity() {
         )
         state = LauncherStateTransitions.updateAppearance(
             state = state,
-            selectedFontSize = fontSize,
             selectedFontStyle = fontStyle,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,

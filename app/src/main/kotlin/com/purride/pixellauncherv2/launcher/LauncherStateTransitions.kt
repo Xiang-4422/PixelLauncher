@@ -628,7 +628,6 @@ object LauncherStateTransitions {
     /** 把当前外观选择写回状态。 */
     fun updateAppearance(
         state: LauncherState,
-        selectedFontSize: PixelFontSize = state.selectedFontSize,
         selectedFontStyle: PixelFontStyle = state.selectedFontStyle,
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
@@ -637,7 +636,6 @@ object LauncherStateTransitions {
         selectedTheme: PixelTheme = state.selectedTheme,
     ): LauncherState {
         return state.copy(
-            selectedFontSize = selectedFontSize,
             selectedFontStyle = selectedFontStyle,
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,

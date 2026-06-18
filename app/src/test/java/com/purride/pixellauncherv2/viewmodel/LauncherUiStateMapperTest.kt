@@ -4,7 +4,6 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
-import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -43,7 +42,6 @@ class LauncherUiStateMapperTest {
             smsCurrentAddress = "10086",
             isDefaultSmsApp = true,
             smsPermissionState = SmsPermissionState.READY,
-            selectedFontSize = PixelFontSize.PX_12,
             selectedFontStyle = PixelFontStyle.MONO,
             selectedDotSizePx = 9,
             isPixelGapEnabled = false,
@@ -85,7 +83,6 @@ class LauncherUiStateMapperTest {
         assertEquals(true, ui.isDefaultSmsApp)
         assertEquals(SmsPermissionState.READY, ui.smsPermissionState)
         // appearance
-        assertEquals(PixelFontSize.PX_12, ui.selectedFontSize)
         assertEquals(PixelFontStyle.MONO, ui.selectedFontStyle)
         assertEquals(9, ui.selectedDotSizePx)
         assertEquals(false, ui.isPixelGapEnabled)

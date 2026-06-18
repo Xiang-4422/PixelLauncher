@@ -14,7 +14,6 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
@@ -50,7 +49,6 @@ class SettingsScreen(
 
         private val listController = PixelListController()
         private val listState: PixelListState = listController.create()
-        private var previewFontSizeRatio: Float? = null
         private var previewPixelSizeRatio: Float? = null
         private var previewGapRatio: Float? = null
 
@@ -79,27 +77,9 @@ class SettingsScreen(
         }
 
         private fun LauncherUiState.toSettingsWidgets(t: LauncherTheme): List<Widget> = buildList {
-            val fontPreview = previewFontSizeRatio ?: SettingsMenuModel.fontSizeRatio(selectedFontSize)
-            val fontPreviewSize = SettingsMenuModel.fontSizeAtRatio(fontPreview)
             val pixelPreview = previewPixelSizeRatio ?: SettingsMenuModel.resolutionRatio(selectedDotSizePx)
             val pixelPreviewSize = SettingsMenuModel.resolutionAtRatio(pixelPreview)
             val gapPreview = previewGapRatio ?: SettingsMenuModel.pixelGapRatioSnap(pixelGapRatio)
-            add(
-                SettingsValueSlider(
-                    title = "FONT SIZE",
-                    valueLabel = PixelFontCatalog.sizeLabel(fontPreviewSize),
-                    value = fontPreview,
-                    theme = t,
-                    onStepDown = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, -1) },
-                    onStepUp = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, +1) },
-                    onValuePreview = { ratio -> updateFontSizePreview(ratio) },
-                    onValueChanged = { ratio ->
-                        val snapped = SettingsMenuModel.fontSizeRatio(SettingsMenuModel.fontSizeAtRatio(ratio))
-                        previewFontSizeRatio = null
-                        widget.onItemRatioChanged(SettingsMenuItem.FONT_SIZE, snapped)
-                    },
-                ),
-            )
             add(
                 SettingsSegmentedSwitchRow(
                     title = "FONT STYLE",
@@ -174,15 +154,6 @@ class SettingsScreen(
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.DRAWER_AUTO_SEARCH, +1) },
                 ),
-            )
-        }
-
-        private fun updateFontSizePreview(ratio: Float) {
-            val snapped = SettingsMenuModel.fontSizeRatio(SettingsMenuModel.fontSizeAtRatio(ratio))
-            updatePreview(
-                current = previewFontSizeRatio,
-                next = snapped,
-                assign = { previewFontSizeRatio = it },
             )
         }
 

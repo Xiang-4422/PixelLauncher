@@ -36,7 +36,6 @@ data class LauncherState(
     val smsDraftText: String = "",
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
-    val selectedFontSize: PixelFontSize = PixelFontCatalog.defaultFontSize,
     val selectedFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,

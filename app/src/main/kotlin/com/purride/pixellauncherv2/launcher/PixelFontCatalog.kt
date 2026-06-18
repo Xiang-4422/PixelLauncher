@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
+/** 渲染层使用的固定字体像素尺寸。UI 组件按需直接引用，不再通过全局设置项控制。 */
 enum class PixelFontSize(val px: Int) {
     PX_8(8),
     PX_10(10),
@@ -13,23 +14,14 @@ enum class PixelFontStyle {
 
 object PixelFontCatalog {
 
-    val defaultFontSize: PixelFontSize = PixelFontSize.PX_10
     val defaultFontStyle: PixelFontStyle = PixelFontStyle.PROP
 
-    fun fontSizeOptions(): List<PixelFontSize> = PixelFontSize.entries
-
     fun fontStyleOptions(): List<PixelFontStyle> = PixelFontStyle.entries
-
-    fun sizeLabel(size: PixelFontSize): String = "${size.px}PX"
 
     fun styleLabel(style: PixelFontStyle): String {
         return when (style) {
             PixelFontStyle.MONO -> "MONO"
             PixelFontStyle.PROP -> "PROP"
         }
-    }
-
-    fun combinedLabel(size: PixelFontSize, style: PixelFontStyle): String {
-        return "FUSION ${size.px} ${styleLabel(style)}"
     }
 }

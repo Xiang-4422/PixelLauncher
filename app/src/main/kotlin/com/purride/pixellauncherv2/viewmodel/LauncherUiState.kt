@@ -10,7 +10,6 @@ import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
-import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
@@ -67,7 +66,6 @@ data class LauncherUiState(
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
 
     // ── Appearance (old render types; migrated to pixel-engine in Phase 1+) ───
-    val selectedFontSize: PixelFontSize = PixelFontCatalog.defaultFontSize,
     val selectedFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,

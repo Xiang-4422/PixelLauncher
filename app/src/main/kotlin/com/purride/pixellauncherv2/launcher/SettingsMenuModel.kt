@@ -5,7 +5,6 @@ import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 enum class SettingsMenuItem {
-    FONT_SIZE,
     FONT_STYLE,
     RESOLUTION,
     PIXEL_GAP,
@@ -26,7 +25,6 @@ data class SettingsMenuRow(
 
 object SettingsMenuModel {
 
-    val fontSizeOptions: List<PixelFontSize> = PixelFontCatalog.fontSizeOptions()
     val fontStyleOptions: List<PixelFontStyle> = PixelFontCatalog.fontStyleOptions()
     val styleOptions: List<PixelShape> = listOf(
         PixelShape.SQUARE,
@@ -36,12 +34,6 @@ object SettingsMenuModel {
     val themeOptions: List<PixelTheme> = PixelTheme.entries
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
         return buildList {
-            add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.FONT_SIZE,
-                title = "FONT SIZE",
-                value = PixelFontCatalog.sizeLabel(state.selectedFontSize),
-            ))
             add(
             SettingsMenuRow(
                 item = SettingsMenuItem.FONT_STYLE,
@@ -95,12 +87,6 @@ object SettingsMenuModel {
         return rows[state.settingsSelectedIndex.coerceIn(0, rows.lastIndex)].item
     }
 
-    fun nextFontSize(current: PixelFontSize, direction: Int): PixelFontSize {
-        val currentIndex = fontSizeOptions.indexOf(current).takeIf { it >= 0 } ?: 0
-        val nextIndex = wrapIndex(currentIndex + direction, fontSizeOptions.size)
-        return fontSizeOptions[nextIndex]
-    }
-
     fun nextFontStyle(current: PixelFontStyle, direction: Int): PixelFontStyle {
         val currentIndex = fontStyleOptions.indexOf(current).takeIf { it >= 0 } ?: 0
         val nextIndex = wrapIndex(currentIndex + direction, fontStyleOptions.size)
@@ -119,12 +105,6 @@ object SettingsMenuModel {
         val nextIndex = wrapIndex(currentIndex + direction, resolutionOptions.size)
         return resolutionOptions[nextIndex]
     }
-
-    fun fontSizeRatio(size: PixelFontSize): Float =
-        ratioForIndex(fontSizeOptions.indexOf(size).takeIf { it >= 0 } ?: 0, fontSizeOptions.size)
-
-    fun fontSizeAtRatio(ratio: Float): PixelFontSize =
-        fontSizeOptions[indexForRatio(ratio, fontSizeOptions.size)]
 
     fun resolutionRatio(current: Int, screenProfile: ScreenProfile? = null): Float {
         val options = ScreenProfileFactory.resolutionOptions(screenProfile)

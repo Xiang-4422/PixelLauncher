@@ -1,7 +1,5 @@
 package com.purride.pixellauncherv2.render
 
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
-import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelFontStyle
 
 data class GlyphStyle(
@@ -20,28 +18,26 @@ data class GlyphStyle(
 ) {
     companion object {
         @Volatile
-        private var configuredFontSize: PixelFontSize = PixelFontCatalog.defaultFontSize
+        private var configuredFontStyle: PixelFontStyle = PixelFontStyle.PROP
 
-        @Volatile
-        private var configuredFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle
+        /** 所有布局尺寸计算使用固定 10px。 */
+        private const val FIXED_FONT_PX = 10
 
         val APP_LABEL_16: GlyphStyle
-            get() = styleForAppLabel(configuredFontSize, configuredFontStyle)
+            get() = styleFor(FIXED_FONT_PX, configuredFontStyle)
 
         val UI_SMALL_10: GlyphStyle
-            get() = styleForUiSmall(configuredFontSize, configuredFontStyle)
+            get() = styleFor(FIXED_FONT_PX, configuredFontStyle)
 
-        fun configure(fontSize: PixelFontSize, fontStyle: PixelFontStyle) {
-            configuredFontSize = fontSize
+        fun configure(fontStyle: PixelFontStyle) {
             configuredFontStyle = fontStyle
         }
 
-        private fun styleForAppLabel(size: PixelFontSize, style: PixelFontStyle): GlyphStyle {
-            val cellHeight = size.px
+        private fun styleFor(cellHeight: Int, style: PixelFontStyle): GlyphStyle {
             return GlyphStyle(
                 cellHeight = cellHeight,
-                narrowAdvanceWidth = narrowAdvanceWidth(size, style),
-                wideAdvanceWidth = wideAdvanceWidth(size, style),
+                narrowAdvanceWidth = narrowAdvanceWidth(cellHeight, style),
+                wideAdvanceWidth = cellHeight,
                 oversampleFactor = 1,
                 narrowMinimumSampleRatio = 1f,
                 wideMinimumSampleRatio = 1f,
@@ -54,39 +50,10 @@ data class GlyphStyle(
             )
         }
 
-        private fun styleForUiSmall(size: PixelFontSize, style: PixelFontStyle): GlyphStyle {
-            val cellHeight = size.px
-            return GlyphStyle(
-                cellHeight = cellHeight,
-                narrowAdvanceWidth = narrowAdvanceWidth(size, style),
-                wideAdvanceWidth = wideAdvanceWidth(size, style),
-                oversampleFactor = 1,
-                narrowMinimumSampleRatio = 1f,
-                wideMinimumSampleRatio = 1f,
-                narrowTextSizeRatio = 1f,
-                wideTextSizeRatio = 1f,
-                narrowFontWeight = PixelFontWeight.NORMAL,
-                wideFontWeight = PixelFontWeight.NORMAL,
-                narrowFontFamily = PixelFontFamily.MONOSPACE,
-                wideFontFamily = PixelFontFamily.DEFAULT,
-            )
-        }
-
-        private fun narrowAdvanceWidth(size: PixelFontSize, style: PixelFontStyle): Int {
+        private fun narrowAdvanceWidth(cellHeight: Int, style: PixelFontStyle): Int {
             return when (style) {
-                PixelFontStyle.MONO -> size.px
-                PixelFontStyle.PROP -> when (size) {
-                    PixelFontSize.PX_8 -> 4
-                    PixelFontSize.PX_10 -> 6
-                    PixelFontSize.PX_12 -> 8
-                }
-            }
-        }
-
-        private fun wideAdvanceWidth(size: PixelFontSize, style: PixelFontStyle): Int {
-            return when (style) {
-                PixelFontStyle.MONO -> size.px
-                PixelFontStyle.PROP -> size.px
+                PixelFontStyle.MONO -> cellHeight
+                PixelFontStyle.PROP -> 6
             }
         }
     }

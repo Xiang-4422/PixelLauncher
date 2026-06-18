@@ -45,7 +45,7 @@ fun DrawerScreen(
     onAppPressed: (Int) -> Unit,
 ): Widget {
     val apps = drawerApps(uiState)
-    val rowHeight = DrawerListGeometry.rowExtent(uiState.selectedFontSize.px)
+    val rowHeight = DrawerListGeometry.rowExtent(10)
     return Column(
         spacing = 0,
         mainAxisSize = MainAxisSize.MAX,

@@ -96,7 +96,7 @@ internal class LauncherRootHost(
         context = context,
         config = PixelHostSetupConfig(
             textRasterizer = textRasterizers.getRasterizer(
-                uiState.selectedFontSize,
+                PixelFontSize.PX_10,
                 uiState.selectedFontStyle,
             ),
             content = { buildRoot() },
@@ -133,7 +133,7 @@ internal class LauncherRootHost(
         setup.hostView.backgroundColor = theme.surface.appBackground
         setup.hostView.pixelGridColor  = theme.surface.pixelGrid
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
-            state.selectedFontSize,
+            PixelFontSize.PX_10,
             state.selectedFontStyle,
         )
 
