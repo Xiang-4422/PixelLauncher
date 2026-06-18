@@ -13,14 +13,16 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelSystemAction
 import com.purride.pixelui.PixelTextInputRequest
 import com.purride.pixelui.createPixelHostSetup
+import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixeldemo.browser.DemoBrowserScene
 import com.purride.pixeldemo.app.DemoTextRasterizers
 import com.purride.pixeldemo.catalog.DemoCatalog
 import com.purride.pixeldemo.catalog.DemoScene
-import com.purride.pixeldemo.home.DemoHomeScene
 import com.purride.pixeldemo.scaffold.DemoEnv
 import com.purride.pixeldemo.scaffold.DemoNavigator
 import com.purride.pixeldemo.scaffold.DemoScaffold
 import com.purride.pixeldemo.settings.DemoAppSettings
+import com.purride.pixeldemo.settings.DemoSettingsScene
 
 class DemoActivity : AppCompatActivity() {
 
@@ -100,7 +102,7 @@ class DemoActivity : AppCompatActivity() {
         nav.env = env
 
         val savedId = savedInstanceState?.getString(KEY_SCENE_ID)
-        val startScene = savedId?.let { DemoCatalog.findById(it) } ?: DemoHomeScene
+        val startScene = sceneForSavedId(savedId)
         nav.push(startScene)
 
         setContentView(setup.rootView)
@@ -132,13 +134,31 @@ class DemoActivity : AppCompatActivity() {
         hostView.textRasterizer = rasterizers.getRasterizer(settings.fontSizePx, settings.fontStyle)
     }
 
+    private fun sceneForSavedId(id: String?): DemoScene {
+        return when (id) {
+            DemoBrowserScene.id -> DemoBrowserScene
+            DemoSettingsScene.id -> DemoSettingsScene
+            null -> DemoBrowserScene
+            else -> DemoCatalog.findById(id) ?: DemoBrowserScene
+        }
+    }
+
     private inner class NavigatorImpl : DemoNavigator {
         lateinit var env: DemoEnv
         private val stack = ArrayDeque<DemoScene>()
 
-        val currentScene: DemoScene get() = stack.lastOrNull() ?: DemoHomeScene
+        override val currentScene: DemoScene get() = stack.lastOrNull() ?: DemoBrowserScene
 
         override fun push(scene: DemoScene) {
+            stack.addLast(scene)
+            renderScene(scene)
+            updateBackCallback()
+        }
+
+        override fun replace(scene: DemoScene) {
+            if (stack.isNotEmpty()) {
+                stack.removeLast()
+            }
             stack.addLast(scene)
             renderScene(scene)
             updateBackCallback()
@@ -154,8 +174,8 @@ class DemoActivity : AppCompatActivity() {
 
         override fun popToMenu() {
             stack.clear()
-            stack.addLast(DemoHomeScene)
-            renderScene(DemoHomeScene)
+            stack.addLast(DemoBrowserScene)
+            renderScene(DemoBrowserScene)
             updateBackCallback()
         }
 
@@ -165,7 +185,7 @@ class DemoActivity : AppCompatActivity() {
 
             // scene 级别覆盖
             scene.initialProfile?.let { applyProfile(it) }
-            scene.pagerGesturePolicy?.let { hostView.pagerGesturePolicy = it }
+            hostView.pagerGesturePolicy = scene.pagerGesturePolicy ?: PagerGesturePolicy.Default
 
             if (scene.isFullScreen) {
                 hostView.setContent { scene.build(env) }

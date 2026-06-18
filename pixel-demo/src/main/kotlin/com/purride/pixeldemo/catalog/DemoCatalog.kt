@@ -1,215 +1,110 @@
 package com.purride.pixeldemo.catalog
 
-import com.purride.pixeldemo.showcase.composition.AppScaffoldScene
-import com.purride.pixeldemo.showcase.composition.AsyncBuilderScene
-import com.purride.pixeldemo.showcase.composition.MasterDetailScene
-import com.purride.pixeldemo.showcase.composition.ModalOverlayScene
-import com.purride.pixeldemo.showcase.composition.NavigatorStackScene
-import com.purride.pixeldemo.showcase.composition.NestedPagerInListScene
-import com.purride.pixeldemo.showcase.composition.OverlayFeedbackScene
-import com.purride.pixeldemo.showcase.composition.StickyBottomBarScene
-import com.purride.pixeldemo.showcase.extension.CustomPagerPolicyScene
-import com.purride.pixeldemo.showcase.extension.CustomRasterizerScene
-import com.purride.pixeldemo.showcase.extension.CustomRenderObjectScene
-import com.purride.pixeldemo.showcase.extension.CustomScrollPhysicsScene
-import com.purride.pixeldemo.showcase.extension.ManualFrameStepperScene
-import com.purride.pixeldemo.showcase.extension.NestedScrollPolicyScene
-import com.purride.pixeldemo.showcase.stress.StressAnimationFloodScene
-import com.purride.pixeldemo.showcase.templates.TplCalculatorScene
-import com.purride.pixeldemo.showcase.templates.TplChatScene
-import com.purride.pixeldemo.showcase.templates.TplFileBrowserScene
-import com.purride.pixeldemo.showcase.templates.TplPlayerHudScene
-import com.purride.pixeldemo.showcase.templates.TplSettingsScene
-import com.purride.pixeldemo.showcase.stress.StressDeepTreeScene
-import com.purride.pixeldemo.showcase.stress.StressGestureStormScene
-import com.purride.pixeldemo.showcase.stress.StressListScaleScene
-import com.purride.pixeldemo.showcase.stress.StressRebuildStormScene
-import com.purride.pixeldemo.showcase.stress.StressTextHeavyScene
-import com.purride.pixeldemo.showcase.foundation.AlignSizingScene
-import com.purride.pixeldemo.showcase.foundation.ContainerDecorationScene
-import com.purride.pixeldemo.showcase.foundation.CustomPaintScene
-import com.purride.pixeldemo.showcase.foundation.DirectionalVariantsScene
-import com.purride.pixeldemo.showcase.foundation.HelloPixelScene
-import com.purride.pixeldemo.showcase.foundation.ImageBlitScene
-import com.purride.pixeldemo.showcase.foundation.LayoutPrimitivesScene
-import com.purride.pixeldemo.showcase.foundation.PolygonPathScene
-import com.purride.pixeldemo.showcase.foundation.RichTextScene
-import com.purride.pixeldemo.showcase.foundation.SafeAreaScene
-import com.purride.pixeldemo.showcase.foundation.ShapePrimitivesScene
-import com.purride.pixeldemo.showcase.foundation.StackPositionedScene
-import com.purride.pixeldemo.showcase.foundation.TextMatrixScene
-import com.purride.pixeldemo.showcase.interaction.ButtonStatesScene
-import com.purride.pixeldemo.showcase.interaction.FocusKeyScene
-import com.purride.pixeldemo.showcase.interaction.FormValidationScene
-import com.purride.pixeldemo.showcase.interaction.GestureTapScene
-import com.purride.pixeldemo.showcase.interaction.ImeTypesScene
-import com.purride.pixeldemo.showcase.interaction.SelectionControlsScene
-import com.purride.pixeldemo.showcase.interaction.TabsProgressScene
-import com.purride.pixeldemo.showcase.interaction.TextFieldBasicsScene
-import com.purride.pixeldemo.showcase.interaction.TextInputHostCommandsScene
-import com.purride.pixeldemo.showcase.scroll.CustomScrollSliverScene
-import com.purride.pixeldemo.showcase.scroll.GridViewScene
-import com.purride.pixeldemo.showcase.scroll.ListEagerScene
-import com.purride.pixeldemo.showcase.scroll.ListSeparatedScene
-import com.purride.pixeldemo.showcase.scroll.ListVariableHeightScene
-import com.purride.pixeldemo.showcase.scroll.ListVirtualFixedScene
-import com.purride.pixeldemo.showcase.scroll.PageControllerCommandsScene
-import com.purride.pixeldemo.showcase.scroll.PagerHorizontalScene
-import com.purride.pixeldemo.showcase.scroll.PagerVerticalScene
-import com.purride.pixeldemo.showcase.scroll.PullRefreshScene
-import com.purride.pixeldemo.showcase.scroll.ScrollControllerCommandsScene
-import com.purride.pixeldemo.showcase.scroll.SingleChildScrollScene
-import com.purride.pixeldemo.showcase.integration.ConfigChangePreserveScene
-import com.purride.pixeldemo.showcase.integration.DebugOverlayScene
-import com.purride.pixeldemo.showcase.integration.EmptyLoadingErrorScene
-import com.purride.pixeldemo.showcase.integration.HapticFeedbackScene
-import com.purride.pixeldemo.showcase.integration.HostHotSwapScene
-import com.purride.pixeldemo.showcase.integration.SystemActionDispatchScene
-import com.purride.pixeldemo.showcase.animation.AnimationCoreScene
-import com.purride.pixeldemo.showcase.animation.AnimationLayer3Scene
-import com.purride.pixeldemo.showcase.animation.AnimatedSpriteScene
-import com.purride.pixeldemo.showcase.animation.ImplicitAnimationsScene
-import com.purride.pixeldemo.header.HeaderPreviewScene
-import com.purride.pixeldemo.showcase.theme.AppLayerThemeScene
-import com.purride.pixeldemo.showcase.theme.PaletteToggleScene
-import com.purride.pixeldemo.showcase.theme.RtlMirrorScene
-import com.purride.pixeldemo.showcase.theme.ThemeStateMatrixScene
-import com.purride.pixeldemo.showcase.theme.ThemeTokensScene
+import com.purride.pixeldemo.showcase.AnimationStateShowcaseScene
+import com.purride.pixeldemo.showcase.ControlShowcaseScene
+import com.purride.pixeldemo.showcase.LabShowcaseScene
+import com.purride.pixeldemo.showcase.LayoutShowcaseScene
+import com.purride.pixeldemo.showcase.NavigationHostShowcaseScene
+import com.purride.pixeldemo.showcase.PaintMediaShowcaseScene
+import com.purride.pixeldemo.showcase.ScrollPagingShowcaseScene
+import com.purride.pixeldemo.showcase.TextInputShowcaseScene
 
 object DemoCatalog {
-    val sections: List<DemoSection> = listOf(
-        DemoSection(
-            title = "Foundation",
-            scenes = listOf(
-                HelloPixelScene,
-                LayoutPrimitivesScene,
-                AlignSizingScene,
-                StackPositionedScene,
-                DirectionalVariantsScene,
-                SafeAreaScene,
-                TextMatrixScene,
-                RichTextScene,
-                ContainerDecorationScene,
-                ImageBlitScene,
-                ShapePrimitivesScene,
-                PolygonPathScene,
-                CustomPaintScene,
-            ),
-        ),
-        DemoSection(
-            title = "Interaction",
-            scenes = listOf(
-                GestureTapScene,
-                ButtonStatesScene,
-                SelectionControlsScene,
-                TabsProgressScene,
-                FocusKeyScene,
-                FormValidationScene,
-                TextFieldBasicsScene,
-                ImeTypesScene,
-                TextInputHostCommandsScene,
-            ),
-        ),
-        DemoSection(
-            title = "Scroll",
-            scenes = listOf(
-                SingleChildScrollScene,
-                ListEagerScene,
-                ListVirtualFixedScene,
-                ListVariableHeightScene,
-                GridViewScene,
-                CustomScrollSliverScene,
-                ListSeparatedScene,
-                PullRefreshScene,
-                PagerHorizontalScene,
-                PagerVerticalScene,
-                ScrollControllerCommandsScene,
-                PageControllerCommandsScene,
-            ),
-        ),
-        DemoSection(
-            title = "Theme",
-            scenes = listOf(
-                PaletteToggleScene,
-                AppLayerThemeScene,
-                ThemeTokensScene,
-                ThemeStateMatrixScene,
-                RtlMirrorScene,
-            ),
-        ),
-        DemoSection(
-            title = "Composition",
-            scenes = listOf(
-                NestedPagerInListScene,
-                StickyBottomBarScene,
-                AppScaffoldScene,
-                MasterDetailScene,
-                ModalOverlayScene,
-                OverlayFeedbackScene,
-                AsyncBuilderScene,
-                NavigatorStackScene,
-            ),
-        ),
-        DemoSection(
-            title = "Extension",
-            scenes = listOf(
-                CustomRenderObjectScene,
-                CustomPagerPolicyScene,
-                CustomRasterizerScene,
-                ManualFrameStepperScene,
-                CustomScrollPhysicsScene,
-                NestedScrollPolicyScene,
-            ),
-        ),
-        DemoSection(
-            title = "Templates",
-            scenes = listOf(
-                TplSettingsScene,
-                TplCalculatorScene,
-                TplFileBrowserScene,
-                TplChatScene,
-                TplPlayerHudScene,
-            ),
-        ),
-        DemoSection(
-            title = "Stress",
-            scenes = listOf(
-                StressListScaleScene,
-                StressRebuildStormScene,
-                StressDeepTreeScene,
-                StressAnimationFloodScene,
-                StressGestureStormScene,
-                StressTextHeavyScene,
-            ),
-        ),
-        DemoSection(
-            title = "Integration",
-            scenes = listOf(
-                HostHotSwapScene,
-                ConfigChangePreserveScene,
-                EmptyLoadingErrorScene,
-                HapticFeedbackScene,
-                SystemActionDispatchScene,
-                DebugOverlayScene,
-            ),
-        ),
-        DemoSection(
-            title = "Animation",
-            scenes = listOf(
-                AnimationCoreScene,
-                ImplicitAnimationsScene,
-                AnimationLayer3Scene,
-                AnimatedSpriteScene,
-            ),
-        ),
-        DemoSection(
-            title = "Launcher UI",
-            scenes = listOf(
-                HeaderPreviewScene,
-            ),
-        ),
+    val layout = DemoCategory(
+        id = "layout",
+        title = "基础布局",
+        summary = "尺寸、约束、排列、方向感知布局",
+    )
+    val textInput = DemoCategory(
+        id = "text_input",
+        title = "文本输入",
+        summary = "文本、富文本、输入框与 IME",
+    )
+    val controls = DemoCategory(
+        id = "controls",
+        title = "交互控件",
+        summary = "按钮、选择、分段、进度与图标",
+    )
+    val scroll = DemoCategory(
+        id = "scroll",
+        title = "滚动分页",
+        summary = "列表、网格、分页、刷新和滚动控制",
+    )
+    val paint = DemoCategory(
+        id = "paint",
+        title = "绘制媒体",
+        summary = "图形原语、位图、精灵和自定义绘制",
+    )
+    val animation = DemoCategory(
+        id = "animation",
+        title = "动画状态",
+        summary = "动画控制器、监听构建和状态构建",
+    )
+    val navigation = DemoCategory(
+        id = "navigation",
+        title = "导航宿主",
+        summary = "导航、反馈、焦点、表单、语义和宿主调试",
+    )
+    val lab = DemoCategory(
+        id = "lab",
+        title = "压力验证",
+        summary = "维护 engine 所需的压测与诊断入口",
     )
 
+    val categories: List<DemoCategory> = listOf(
+        layout,
+        textInput,
+        controls,
+        scroll,
+        paint,
+        animation,
+        navigation,
+        lab,
+    )
+
+    val allItems: List<DemoScene> = listOf(
+        LayoutShowcaseScene,
+        TextInputShowcaseScene,
+        ControlShowcaseScene,
+        ScrollPagingShowcaseScene,
+        PaintMediaShowcaseScene,
+        AnimationStateShowcaseScene,
+        NavigationHostShowcaseScene,
+        LabShowcaseScene,
+    )
+
+    fun itemsFor(category: DemoCategory): List<DemoScene> =
+        allItems.filter { it.category?.id == category.id }
+
+    fun itemsFor(categoryId: String): List<DemoScene> =
+        allItems.filter { it.category?.id == categoryId }
+
     fun findById(id: String): DemoScene? =
-        sections.flatMap { it.scenes }.find { it.id == id }
+        allItems.find { it.id == id }
+
+    fun search(query: String): List<DemoScene> {
+        val terms = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (terms.isEmpty()) return allItems
+        return allItems.filter { item ->
+            val haystack = buildString {
+                append(item.id).append(' ')
+                append(item.title).append(' ')
+                append(item.summary).append(' ')
+                item.category?.let { append(it.title).append(' ').append(it.summary).append(' ') }
+                append(item.tags.joinToString(" ")).append(' ')
+                append(item.apis.joinToString(" "))
+            }.lowercase()
+            terms.all { term -> haystack.contains(term) }
+        }
+    }
+
+    fun previousItem(id: String): DemoScene? {
+        val index = allItems.indexOfFirst { it.id == id }
+        return if (index > 0) allItems[index - 1] else null
+    }
+
+    fun nextItem(id: String): DemoScene? {
+        val index = allItems.indexOfFirst { it.id == id }
+        return if (index >= 0 && index < allItems.lastIndex) allItems[index + 1] else null
+    }
 }

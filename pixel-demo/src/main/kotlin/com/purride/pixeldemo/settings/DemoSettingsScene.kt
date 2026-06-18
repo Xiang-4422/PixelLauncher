@@ -37,7 +37,7 @@ private fun pctToDotSize(pct: Float): Int =
 object DemoSettingsScene : DemoScene {
     override val id = "settings"
     override val title = "SETTINGS"
-    override val description = "display / pixel / font"
+    override val summary = "display / pixel / font"
 
     override fun build(env: DemoEnv): Widget = SettingsWidget(env)
 }
