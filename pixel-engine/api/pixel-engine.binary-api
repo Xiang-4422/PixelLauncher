@@ -1619,6 +1619,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void submitFocusedTextInput();
   public final boolean performFocusedTextEditAction(com.purride.pixelui.PixelTextEditAction);
   public boolean dispatchKeyEvent(android.view.KeyEvent);
+  public boolean dispatchGenericMotionEvent(android.view.MotionEvent);
   public void submitFrame-olPvOxg(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.ScreenProfile, int);
   public void setPixelGapEnabled(boolean);
   public final void setPixelGapRatio(float);

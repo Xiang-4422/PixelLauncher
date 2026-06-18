@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
 import android.util.AttributeSet
+import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.view.View
@@ -34,6 +35,7 @@ import com.purride.pixelui.internal.PixelRefreshTarget
 import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.host.PixelJoystickFocusRouter
 import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelKeyEvent
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
@@ -147,6 +149,7 @@ public class PixelHostView @JvmOverloads constructor(
         get() = nestedScrollSession.focusedTextInputTarget
         set(value) { nestedScrollSession.focusedTextInputTarget = value }
     private val gestureRouter = PixelHostGestureRouter(this)
+    private val joystickFocusRouter = PixelJoystickFocusRouter()
     private val textInputCoordinator = PixelHostTextInputCoordinator(this)
     private val renderCoordinator = PixelHostRenderCoordinator(this, textInputCoordinator)
     private val lifecycleCoordinator = PixelHostLifecycleCoordinator(disposeRender = renderCoordinator::dispose)
@@ -236,6 +239,26 @@ public class PixelHostView @JvmOverloads constructor(
             }
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (
+            event.action == MotionEvent.ACTION_MOVE &&
+            (event.isFromSource(InputDevice.SOURCE_JOYSTICK) || event.isFromSource(InputDevice.SOURCE_GAMEPAD))
+        ) {
+            val keyEvent = joystickFocusRouter.onAxes(
+                xAxis = event.getAxisValue(MotionEvent.AXIS_X),
+                yAxis = event.getAxisValue(MotionEvent.AXIS_Y),
+                hatX = event.getAxisValue(MotionEvent.AXIS_HAT_X),
+                hatY = event.getAxisValue(MotionEvent.AXIS_HAT_Y),
+                eventTimeMs = event.eventTime,
+            )
+            if (keyEvent != null && PixelFocusManager.dispatchKeyEvent(keyEvent)) {
+                invalidate()
+                return true
+            }
+        }
+        return super.dispatchGenericMotionEvent(event)
     }
 
     override fun submitFrame(pixelBuffer: PixelBuffer, screenProfile: ScreenProfile, backgroundColor: PixelColor) {
