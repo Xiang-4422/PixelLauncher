@@ -22,6 +22,7 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.state.PixelListRestorationPolicy
 import com.purride.pixelui.state.PixelListSavedState
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixeldemo.catalog.DemoScene
@@ -77,7 +78,13 @@ private class GridViewWidget(override val key: Any? = null) : StatefulWidget(key
                                 }),
                                 OutlinedButton("RESTORE", onPressed = {
                                     savedState?.let { snapshot ->
-                                        setState { scrollController.restoreState(scrollState, snapshot) }
+                                        setState {
+                                            scrollController.restoreState(
+                                                state = scrollState,
+                                                savedState = snapshot,
+                                                policy = PixelListRestorationPolicy.AnchorItem,
+                                            )
+                                        }
                                     }
                                 }),
                             ),

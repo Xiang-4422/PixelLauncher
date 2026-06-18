@@ -112,7 +112,7 @@ private class CustomScrollSliverWidget(override val key: Any? = null) : Stateful
                                 scrollController.restoreState(
                                     state = scrollState,
                                     savedState = saved,
-                                    policy = PixelListRestorationPolicy.RelativeProgress,
+                                    policy = PixelListRestorationPolicy.AnchorItem,
                                 )
                             }
                         }

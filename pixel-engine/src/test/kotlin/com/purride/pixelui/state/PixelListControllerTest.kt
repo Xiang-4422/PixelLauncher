@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListAnchor
 import com.purride.pixelui.state.PixelListRestorationPolicy
 import com.purride.pixelui.state.PixelListSavedState
 import com.purride.pixelui.state.PixelScrollSnapRange
@@ -131,6 +132,130 @@ class PixelListControllerTest {
         )
 
         assertEquals(100f, restored.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun saveStateCapturesFirstVisibleItemAnchor() {
+        val source = controller.create(initialScrollOffsetPx = 25f)
+        controller.sync(source, viewportHeightPx = 20, contentHeightPx = 80)
+        source.itemTopOffsetsPx = intArrayOf(0, 12, 24, 48)
+        source.itemHeightsPx = intArrayOf(10, 10, 20, 12)
+
+        val savedState = controller.saveState(source)
+
+        assertEquals(2, savedState.anchor?.itemIndex)
+        assertEquals(1f, savedState.anchor?.itemOffsetPx ?: -1f, 0.001f)
+        assertEquals(null, savedState.anchor?.sliverIndex)
+    }
+
+    @Test
+    fun anchorItemRestorationUsesNewItemGeometry() {
+        val restored = controller.create()
+        restored.itemTopOffsetsPx = intArrayOf(0, 20, 70)
+        restored.itemHeightsPx = intArrayOf(18, 44, 12)
+
+        controller.restoreState(
+            state = restored,
+            savedState = PixelListSavedState(
+                scrollOffsetPx = 15f,
+                maxScrollOffsetPx = 60f,
+                anchor = PixelListAnchor(itemIndex = 1, itemOffsetPx = 5f),
+            ),
+            viewportHeightPx = 20,
+            contentHeightPx = 100,
+            policy = PixelListRestorationPolicy.AnchorItem,
+        )
+
+        assertEquals(25f, restored.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
+    fun scheduledAnchorRestorationWaitsForItemGeometry() {
+        val restored = controller.create()
+        val savedState = PixelListSavedState(
+            scrollOffsetPx = 15f,
+            maxScrollOffsetPx = 60f,
+            anchor = PixelListAnchor(itemIndex = 1, itemOffsetPx = 5f),
+        )
+
+        controller.scheduleRestoreState(
+            state = restored,
+            savedState = savedState,
+            policy = PixelListRestorationPolicy.AnchorItem,
+        )
+        controller.sync(restored, viewportHeightPx = 20, contentHeightPx = 100)
+
+        assertEquals(0f, restored.scrollOffsetPx, 0.001f)
+        assertEquals(savedState, restored.pendingRestorationState)
+
+        restored.itemTopOffsetsPx = intArrayOf(0, 20, 70)
+        restored.itemHeightsPx = intArrayOf(18, 44, 12)
+        controller.sync(restored, viewportHeightPx = 20, contentHeightPx = 100)
+
+        assertEquals(25f, restored.scrollOffsetPx, 0.001f)
+        assertEquals(null, restored.pendingRestorationState)
+    }
+
+    @Test
+    fun restoreStateWithAnchorBeforeGeometrySchedulesPendingRestore() {
+        val restored = controller.create()
+        val savedState = PixelListSavedState(
+            scrollOffsetPx = 15f,
+            maxScrollOffsetPx = 60f,
+            anchor = PixelListAnchor(itemIndex = 1, itemOffsetPx = 5f),
+        )
+
+        controller.restoreState(
+            state = restored,
+            savedState = savedState,
+            viewportHeightPx = 20,
+            contentHeightPx = 100,
+            policy = PixelListRestorationPolicy.AnchorItem,
+        )
+
+        assertEquals(savedState, restored.pendingRestorationState)
+
+        restored.itemTopOffsetsPx = intArrayOf(0, 20, 70)
+        restored.itemHeightsPx = intArrayOf(18, 44, 12)
+        controller.sync(restored, viewportHeightPx = 20, contentHeightPx = 100)
+
+        assertEquals(25f, restored.scrollOffsetPx, 0.001f)
+        assertEquals(null, restored.pendingRestorationState)
+    }
+
+    @Test
+    fun anchorItemRestorationSupportsLazySliverGeometry() {
+        val source = controller.create(initialScrollOffsetPx = 57f)
+        source.sliverListGeometries[3] = PixelSliverListGeometry(
+            contentStartPx = 40,
+            itemCount = 3,
+            estimatedItemExtent = 10,
+            spacing = 2,
+            variableHeight = false,
+        )
+        controller.sync(source, viewportHeightPx = 20, contentHeightPx = 100)
+
+        val savedState = controller.saveState(source)
+
+        assertEquals(PixelListAnchor(itemIndex = 1, itemOffsetPx = 5f, sliverIndex = 3), savedState.anchor)
+
+        val restored = controller.create()
+        restored.sliverListGeometries[3] = PixelSliverListGeometry(
+            contentStartPx = 80,
+            itemCount = 3,
+            estimatedItemExtent = 12,
+            spacing = 2,
+            variableHeight = false,
+        )
+        controller.restoreState(
+            state = restored,
+            savedState = savedState,
+            viewportHeightPx = 20,
+            contentHeightPx = 140,
+            policy = PixelListRestorationPolicy.AnchorItem,
+        )
+
+        assertEquals(99f, restored.scrollOffsetPx, 0.001f)
     }
 
     @Test

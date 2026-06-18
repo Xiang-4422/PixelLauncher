@@ -2745,6 +2745,22 @@ public final class com.purride.pixelui.host.PixelHostFrameLoop {
   public final com.purride.pixelui.PixelHostFrameStats snapshotStats();
   public com.purride.pixelui.host.PixelHostFrameLoop();
 }
+public final class com.purride.pixelui.state.AnchorRestoreOffset$Invalid extends com.purride.pixelui.state.AnchorRestoreOffset {
+  public static final com.purride.pixelui.state.AnchorRestoreOffset$Invalid INSTANCE;
+}
+public final class com.purride.pixelui.state.AnchorRestoreOffset$Resolved extends com.purride.pixelui.state.AnchorRestoreOffset {
+  public com.purride.pixelui.state.AnchorRestoreOffset$Resolved(float);
+  public final float getOffsetPx();
+  public final float component1();
+  public final com.purride.pixelui.state.AnchorRestoreOffset$Resolved copy(float);
+  public static com.purride.pixelui.state.AnchorRestoreOffset$Resolved copy$default(com.purride.pixelui.state.AnchorRestoreOffset$Resolved, float, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.state.AnchorRestoreOffset$Unavailable extends com.purride.pixelui.state.AnchorRestoreOffset {
+  public static final com.purride.pixelui.state.AnchorRestoreOffset$Unavailable INSTANCE;
+}
 public final class com.purride.pixelui.state.PixelItemExtentIndex {
   public com.purride.pixelui.state.PixelItemExtentIndex();
   public final void configure(int, int, int, int[]);
@@ -2754,6 +2770,21 @@ public final class com.purride.pixelui.state.PixelItemExtentIndex {
   public final int bottomPx(int);
   public final int totalHeightPx();
   public final int indexAtOffsetPx(int);
+}
+public final class com.purride.pixelui.state.PixelListAnchor {
+  public com.purride.pixelui.state.PixelListAnchor(int, float, java.lang.Integer);
+  public com.purride.pixelui.state.PixelListAnchor(int, float, java.lang.Integer, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final int getItemIndex();
+  public final float getItemOffsetPx();
+  public final java.lang.Integer getSliverIndex();
+  public final int component1();
+  public final float component2();
+  public final java.lang.Integer component3();
+  public final com.purride.pixelui.state.PixelListAnchor copy(int, float, java.lang.Integer);
+  public static com.purride.pixelui.state.PixelListAnchor copy$default(com.purride.pixelui.state.PixelListAnchor, int, float, java.lang.Integer, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelui.state.PixelListController extends com.purride.pixelui.ChangeNotifier {
   public static final float SNAP_VELOCITY_PX_PER_SECOND;
@@ -2780,19 +2811,22 @@ public final class com.purride.pixelui.state.PixelListController extends com.pur
 public final class com.purride.pixelui.state.PixelListRestorationPolicy extends java.lang.Enum<com.purride.pixelui.state.PixelListRestorationPolicy> {
   public static final com.purride.pixelui.state.PixelListRestorationPolicy AbsoluteOffset;
   public static final com.purride.pixelui.state.PixelListRestorationPolicy RelativeProgress;
+  public static final com.purride.pixelui.state.PixelListRestorationPolicy AnchorItem;
   public static com.purride.pixelui.state.PixelListRestorationPolicy[] values();
   public static com.purride.pixelui.state.PixelListRestorationPolicy valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.state.PixelListRestorationPolicy> getEntries();
 }
 public final class com.purride.pixelui.state.PixelListSavedState {
-  public com.purride.pixelui.state.PixelListSavedState(float, float);
-  public com.purride.pixelui.state.PixelListSavedState(float, float, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.state.PixelListSavedState(float, float, com.purride.pixelui.state.PixelListAnchor);
+  public com.purride.pixelui.state.PixelListSavedState(float, float, com.purride.pixelui.state.PixelListAnchor, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final float getScrollOffsetPx();
   public final float getMaxScrollOffsetPx();
+  public final com.purride.pixelui.state.PixelListAnchor getAnchor();
   public final float component1();
   public final float component2();
-  public final com.purride.pixelui.state.PixelListSavedState copy(float, float);
-  public static com.purride.pixelui.state.PixelListSavedState copy$default(com.purride.pixelui.state.PixelListSavedState, float, float, int, java.lang.Object);
+  public final com.purride.pixelui.state.PixelListAnchor component3();
+  public final com.purride.pixelui.state.PixelListSavedState copy(float, float, com.purride.pixelui.state.PixelListAnchor);
+  public static com.purride.pixelui.state.PixelListSavedState copy$default(com.purride.pixelui.state.PixelListSavedState, float, float, com.purride.pixelui.state.PixelListAnchor, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -2847,6 +2881,13 @@ public final class com.purride.pixelui.state.PixelListState {
   public final com.purride.pixelui.state.PixelPendingSliverScrollIntoView getPendingSliverScrollIntoView$pixel_engine();
   public final void setPendingSliverScrollIntoView$pixel_engine(com.purride.pixelui.state.PixelPendingSliverScrollIntoView);
   public com.purride.pixelui.state.PixelListState();
+}
+public final class com.purride.pixelui.state.PixelListStateKt {
+  public static final java.lang.String PixelListSavedStateBundleKey;
+  public static final void saveToBundle(com.purride.pixelui.state.PixelListSavedState, android.os.Bundle, java.lang.String);
+  public static void saveToBundle$default(com.purride.pixelui.state.PixelListSavedState, android.os.Bundle, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.state.PixelListSavedState getPixelListSavedState(android.os.Bundle, java.lang.String);
+  public static com.purride.pixelui.state.PixelListSavedState getPixelListSavedState$default(android.os.Bundle, java.lang.String, int, java.lang.Object);
 }
 public final class com.purride.pixelui.state.PixelPagerController extends com.purride.pixelui.ChangeNotifier {
   public static final com.purride.pixelui.state.PixelPagerController$Companion Companion;
@@ -2989,6 +3030,7 @@ public final class com.purride.pixelui.state.PixelSliverListGeometry {
   public final int itemHeightPx(int);
   public final int itemTopPx(int);
   public final int itemBottomPx(int);
+  public final int indexAtOffsetPx(int);
   public final int contentHeightPx();
 }
 public final class com.purride.pixelui.state.PixelTextFieldController extends com.purride.pixelui.ChangeNotifier {

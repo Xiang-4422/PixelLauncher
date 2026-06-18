@@ -1,5 +1,7 @@
 package com.purride.pixelui.state
 
+import android.os.Bundle
+
 /**
  * 通用列表状态。
  *
@@ -220,6 +222,25 @@ internal class PixelSliverListGeometry(
 
     fun itemBottomPx(itemIndex: Int): Int = itemTopPx(itemIndex) + itemHeightPx(itemIndex)
 
+    fun indexAtOffsetPx(offsetPx: Int): Int {
+        if (itemCount <= 0) return 0
+        val localOffsetPx = (offsetPx - contentStartPx).coerceIn(0, (contentHeightPx() - 1).coerceAtLeast(0))
+        var cursor = 0
+        repeat(itemCount) { index ->
+            cursor += itemHeightPx(index)
+            if (localOffsetPx < cursor) {
+                return index
+            }
+            if (index < itemCount - 1) {
+                cursor += spacing
+                if (localOffsetPx < cursor) {
+                    return index
+                }
+            }
+        }
+        return itemCount - 1
+    }
+
     fun contentHeightPx(): Int {
         if (itemCount <= 0) return 0
         var height = 0
@@ -342,12 +363,84 @@ internal class PixelSeparatedExtentIndex {
 }
 
 /**
+ * Android [Bundle] key used by [PixelListSavedState.saveToBundle] and [getPixelListSavedState].
+ */
+public const val PixelListSavedStateBundleKey: String = "com.purride.pixelui.list.savedState"
+
+/**
+ * A stable item anchor captured with [PixelListSavedState].
+ *
+ * [itemIndex] is the first visible item at save time. [itemOffsetPx] is the number of pixels
+ * scrolled past that item's top edge. [sliverIndex] is only set when the anchor belongs to a
+ * lazy sliver inside `CustomScrollView`.
+ */
+public data class PixelListAnchor(
+    public val itemIndex: Int,
+    public val itemOffsetPx: Float,
+    public val sliverIndex: Int? = null,
+)
+
+/**
  * List/Grid/SingleChildScrollView 的可持久化滚动位置。
  */
 public data class PixelListSavedState(
     public val scrollOffsetPx: Float,
     public val maxScrollOffsetPx: Float = 0f,
+    public val anchor: PixelListAnchor? = null,
 )
+
+/**
+ * Saves this list scroll snapshot into an Android [Bundle].
+ */
+public fun PixelListSavedState.saveToBundle(
+    outState: Bundle,
+    key: String = PixelListSavedStateBundleKey,
+) {
+    require(key.isNotBlank()) { "PixelListSavedState Bundle key must not be blank" }
+    val bundle = Bundle()
+    bundle.putFloat(PixelListSavedStateKeys.ScrollOffsetPx, scrollOffsetPx)
+    bundle.putFloat(PixelListSavedStateKeys.MaxScrollOffsetPx, maxScrollOffsetPx)
+    val savedAnchor = anchor
+    if (savedAnchor != null) {
+        bundle.putBoolean(PixelListSavedStateKeys.HasAnchor, true)
+        bundle.putInt(PixelListSavedStateKeys.AnchorItemIndex, savedAnchor.itemIndex)
+        bundle.putFloat(PixelListSavedStateKeys.AnchorItemOffsetPx, savedAnchor.itemOffsetPx)
+        val sliverIndex = savedAnchor.sliverIndex
+        if (sliverIndex != null) {
+            bundle.putBoolean(PixelListSavedStateKeys.HasAnchorSliver, true)
+            bundle.putInt(PixelListSavedStateKeys.AnchorSliverIndex, sliverIndex)
+        }
+    }
+    outState.putBundle(key, bundle)
+}
+
+/**
+ * Reads a [PixelListSavedState] previously saved into this Android [Bundle].
+ */
+public fun Bundle.getPixelListSavedState(
+    key: String = PixelListSavedStateBundleKey,
+): PixelListSavedState? {
+    require(key.isNotBlank()) { "PixelListSavedState Bundle key must not be blank" }
+    val bundle = getBundle(key) ?: return null
+    val anchor = if (bundle.getBoolean(PixelListSavedStateKeys.HasAnchor, false)) {
+        PixelListAnchor(
+            itemIndex = bundle.getInt(PixelListSavedStateKeys.AnchorItemIndex),
+            itemOffsetPx = bundle.getFloat(PixelListSavedStateKeys.AnchorItemOffsetPx),
+            sliverIndex = if (bundle.getBoolean(PixelListSavedStateKeys.HasAnchorSliver, false)) {
+                bundle.getInt(PixelListSavedStateKeys.AnchorSliverIndex)
+            } else {
+                null
+            },
+        )
+    } else {
+        null
+    }
+    return PixelListSavedState(
+        scrollOffsetPx = bundle.getFloat(PixelListSavedStateKeys.ScrollOffsetPx),
+        maxScrollOffsetPx = bundle.getFloat(PixelListSavedStateKeys.MaxScrollOffsetPx),
+        anchor = anchor,
+    )
+}
 
 /**
  * 列表恢复到新 viewport/content 几何时的偏移映射策略。
@@ -355,4 +448,15 @@ public data class PixelListSavedState(
 public enum class PixelListRestorationPolicy {
     AbsoluteOffset,
     RelativeProgress,
+    AnchorItem,
+}
+
+private object PixelListSavedStateKeys {
+    const val ScrollOffsetPx = "scrollOffsetPx"
+    const val MaxScrollOffsetPx = "maxScrollOffsetPx"
+    const val HasAnchor = "hasAnchor"
+    const val AnchorItemIndex = "anchorItemIndex"
+    const val AnchorItemOffsetPx = "anchorItemOffsetPx"
+    const val HasAnchorSliver = "hasAnchorSliver"
+    const val AnchorSliverIndex = "anchorSliverIndex"
 }

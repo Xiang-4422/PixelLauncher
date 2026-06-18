@@ -11,7 +11,7 @@ import kotlin.math.abs
  * 1. 根据内容高度和视口高度夹紧滚动范围
  * 2. 响应手指拖动更新滚动偏移
  *
- * 暂时不做惯性滚动、回弹或锚点定位，这些可以在后续迭代继续补。
+ * 惯性、回弹、锚点恢复和 item 定位会在同一个 offset 模型上收敛。
  *
  * 监听变化：本类继承 [ChangeNotifier]，可直接
  * `controller.addListener { /* on changed */ }` 注册回调，或用
@@ -43,18 +43,21 @@ public class PixelListController(
             )
         val pendingRestoration = state.pendingRestorationState
         if (pendingRestoration != null) {
-            state.pendingRestorationState = null
             val restoredOffset = restoredOffset(
                 state = state,
                 savedState = pendingRestoration,
                 policy = state.pendingRestorationPolicy,
+                waitForAnchorGeometry = true,
             )
-            changed = changed || restoredOffset != state.scrollOffsetPx
-            state.scrollOffsetPx = restoredOffset
-            state.isDragging = false
-            state.isSettling = false
-            state.scrollVelocityPxPerSecond = 0f
-            state.snapTargetOffsetPx = null
+            if (restoredOffset != null) {
+                state.pendingRestorationState = null
+                changed = changed || restoredOffset != state.scrollOffsetPx
+                state.scrollOffsetPx = restoredOffset
+                state.isDragging = false
+                state.isSettling = false
+                state.scrollVelocityPxPerSecond = 0f
+                state.snapTargetOffsetPx = null
+            }
         }
         if (changed) {
             notifyListeners()
@@ -178,6 +181,7 @@ public class PixelListController(
         return PixelListSavedState(
             scrollOffsetPx = state.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f),
             maxScrollOffsetPx = state.maxScrollOffsetPx.finiteOrZero().coerceAtLeast(0f),
+            anchor = resolveSavedAnchor(state),
         )
     }
 
@@ -194,11 +198,23 @@ public class PixelListController(
             viewportHeightPx = viewportHeightPx,
             contentHeightPx = contentHeightPx,
         )
-        state.scrollOffsetPx = restoredOffset(state, savedState, policy)
+        val restoredOffset = restoredOffset(
+            state = state,
+            savedState = savedState,
+            policy = policy,
+            waitForAnchorGeometry = policy == PixelListRestorationPolicy.AnchorItem,
+        )
         state.isDragging = false
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
         state.snapTargetOffsetPx = null
+        if (restoredOffset == null) {
+            state.pendingRestorationState = savedState
+            state.pendingRestorationPolicy = policy
+            notifyListeners()
+            return
+        }
+        state.scrollOffsetPx = restoredOffset
         notifyListeners()
     }
 
@@ -215,7 +231,8 @@ public class PixelListController(
         state: PixelListState,
         savedState: PixelListSavedState,
         policy: PixelListRestorationPolicy,
-    ): Float {
+        waitForAnchorGeometry: Boolean,
+    ): Float? {
         val savedOffset = savedState.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
         val savedMaxOffset = savedState.maxScrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
         val targetOffset = when (policy) {
@@ -227,8 +244,119 @@ public class PixelListController(
                     savedOffset
                 }
             }
+            PixelListRestorationPolicy.AnchorItem -> {
+                val anchor = savedState.anchor ?: return restoredOffset(
+                    state = state,
+                    savedState = savedState,
+                    policy = PixelListRestorationPolicy.RelativeProgress,
+                    waitForAnchorGeometry = waitForAnchorGeometry,
+                )
+                when (val anchorOffset = restoredAnchorOffset(state, anchor)) {
+                    is AnchorRestoreOffset.Resolved -> anchorOffset.offsetPx
+                    AnchorRestoreOffset.Unavailable -> {
+                        if (waitForAnchorGeometry) return null
+                        return restoredOffset(
+                            state = state,
+                            savedState = savedState,
+                            policy = PixelListRestorationPolicy.RelativeProgress,
+                            waitForAnchorGeometry = false,
+                        )
+                    }
+                    AnchorRestoreOffset.Invalid -> {
+                        return restoredOffset(
+                            state = state,
+                            savedState = savedState,
+                            policy = PixelListRestorationPolicy.RelativeProgress,
+                            waitForAnchorGeometry = false,
+                        )
+                    }
+                }
+            }
         }
         return coerceOffset(targetOffset, state.maxScrollOffsetPx)
+    }
+
+    private fun resolveSavedAnchor(state: PixelListState): PixelListAnchor? {
+        resolveSliverAnchor(state)?.let { anchor -> return anchor }
+        return resolveItemAnchor(
+            scrollOffsetPx = state.scrollOffsetPx,
+            itemTopOffsetsPx = state.itemTopOffsetsPx,
+            itemHeightsPx = state.itemHeightsPx,
+        )
+    }
+
+    private fun resolveSliverAnchor(state: PixelListState): PixelListAnchor? {
+        if (state.sliverListGeometries.isEmpty()) return null
+        val scrollOffsetPx = state.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
+        val entry = state.sliverListGeometries.entries
+            .sortedBy { (_, geometry) -> geometry.contentStartPx }
+            .firstOrNull { (_, geometry) ->
+                val contentEndPx = geometry.contentStartPx + geometry.contentHeightPx()
+                scrollOffsetPx >= geometry.contentStartPx && scrollOffsetPx < contentEndPx
+            } ?: return null
+        val geometry = entry.value
+        if (geometry.itemCount <= 0) return null
+        val itemIndex = geometry.indexAtOffsetPx(scrollOffsetPx.toInt())
+        val itemTopPx = geometry.itemTopPx(itemIndex).toFloat()
+        val itemOffsetPx = (scrollOffsetPx - itemTopPx)
+            .coerceIn(0f, geometry.itemHeightPx(itemIndex).toFloat())
+        return PixelListAnchor(
+            itemIndex = itemIndex,
+            itemOffsetPx = itemOffsetPx,
+            sliverIndex = entry.key,
+        )
+    }
+
+    private fun resolveItemAnchor(
+        scrollOffsetPx: Float,
+        itemTopOffsetsPx: IntArray,
+        itemHeightsPx: IntArray,
+    ): PixelListAnchor? {
+        if (itemTopOffsetsPx.isEmpty() || itemHeightsPx.isEmpty()) return null
+        val viewportTopPx = scrollOffsetPx.finiteOrZero().coerceAtLeast(0f)
+        val itemIndex = itemTopOffsetsPx.indices.firstOrNull { index ->
+            val itemHeight = itemHeightsPx.getOrNull(index)?.coerceAtLeast(0) ?: 0
+            itemTopOffsetsPx[index] + itemHeight > viewportTopPx
+        } ?: itemTopOffsetsPx.lastIndex
+        val itemTopPx = itemTopOffsetsPx[itemIndex].toFloat()
+        val itemHeightPx = itemHeightsPx.getOrNull(itemIndex)?.coerceAtLeast(0)?.toFloat() ?: 0f
+        return PixelListAnchor(
+            itemIndex = itemIndex,
+            itemOffsetPx = (viewportTopPx - itemTopPx).coerceIn(0f, itemHeightPx),
+        )
+    }
+
+    private fun restoredAnchorOffset(
+        state: PixelListState,
+        anchor: PixelListAnchor,
+    ): AnchorRestoreOffset {
+        val sliverIndex = anchor.sliverIndex
+        if (sliverIndex != null) {
+            val geometry = state.sliverListGeometries[sliverIndex]
+            if (geometry == null) {
+                return if (state.sliverListGeometries.isEmpty()) {
+                    AnchorRestoreOffset.Unavailable
+                } else {
+                    AnchorRestoreOffset.Invalid
+                }
+            }
+            if (anchor.itemIndex !in 0 until geometry.itemCount) {
+                return AnchorRestoreOffset.Invalid
+            }
+            val offset = geometry.itemTopPx(anchor.itemIndex) +
+                anchor.itemOffsetPx.finiteOrZero().coerceAtLeast(0f)
+            return AnchorRestoreOffset.Resolved(offset)
+        }
+
+        if (state.itemTopOffsetsPx.isEmpty() || state.itemHeightsPx.isEmpty()) {
+            return AnchorRestoreOffset.Unavailable
+        }
+        if (anchor.itemIndex !in state.itemTopOffsetsPx.indices) {
+            return AnchorRestoreOffset.Invalid
+        }
+        val offset = state.itemTopOffsetsPx[anchor.itemIndex] +
+            anchor.itemOffsetPx.finiteOrZero().coerceAtLeast(0f)
+        return AnchorRestoreOffset.Resolved(offset)
     }
 
     public fun endDrag(
@@ -520,4 +648,12 @@ public class PixelListController(
     private companion object {
         const val SNAP_VELOCITY_PX_PER_SECOND: Float = 240f
     }
+}
+
+private sealed class AnchorRestoreOffset {
+    data class Resolved(val offsetPx: Float) : AnchorRestoreOffset()
+
+    object Unavailable : AnchorRestoreOffset()
+
+    object Invalid : AnchorRestoreOffset()
 }
