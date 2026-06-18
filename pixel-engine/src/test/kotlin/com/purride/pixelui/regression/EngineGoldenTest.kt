@@ -16,6 +16,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.CustomScrollView
 import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Divider
+import com.purride.pixelui.Dialog
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Gap
@@ -27,8 +28,10 @@ import com.purride.pixelui.Opacity
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Path
+import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPoint
+import com.purride.pixelui.PixelRoute
 import com.purride.pixelui.Polygon
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.ProgressBar
@@ -40,6 +43,7 @@ import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Snackbar
 import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
 import com.purride.pixelui.SliverPinnedHeader
@@ -52,10 +56,13 @@ import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.PixelTextFieldStyle
+import com.purride.pixelui.Toast
 import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.animation.PixelTickerProvider
+import com.purride.pixelui.host.ManualFrameScheduler
 import com.purride.pixelui.internal.PixelUiRuntime
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelRefreshIndicatorController
@@ -329,6 +336,57 @@ class EngineGoldenTest {
                 ),
                 spacing = 1,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            )
+        },
+        Scene(name = "navigator_route_scope", width = 64, height = 22) {
+            PixelNavigator(
+                initialRoute = PixelRoute(
+                    name = "home",
+                    builder = { context ->
+                        AppScaffold(
+                            title = Text("NAV"),
+                            body = Column(
+                                children = listOf(
+                                    Text("HOME"),
+                                    OutlinedButton("DETAILS", onPressed = {}),
+                                ),
+                                spacing = 2,
+                                crossAxisAlignment = CrossAxisAlignment.START,
+                            ),
+                            bottomBar = Text(if (PixelNavigator.maybeOf(context) != null) "SCOPED" else "MISSING"),
+                        )
+                    },
+                ),
+                vsync = PixelTickerProvider(ManualFrameScheduler()),
+            )
+        },
+        Scene(name = "overlay_feedback", width = 108, height = 46) {
+            Stack(
+                children = listOf(
+                    Dialog(
+                        title = Text("CONFIRM"),
+                        content = Text("DELETE ITEM"),
+                        actions = listOf(
+                            OutlinedButton("CANCEL", onPressed = {}),
+                            OutlinedButton("OK", onPressed = {}),
+                        ),
+                    ),
+                    Positioned(
+                        child = SizedBox(
+                            width = 44,
+                            height = 12,
+                            child = Toast("SAVED", fillColor = PixelColor.fromRgb(40, 40, 40)),
+                        ),
+                        left = 32,
+                        top = 2,
+                    ),
+                    Positioned(
+                        child = Snackbar("QUEUED", action = OutlinedButton("UNDO", onPressed = {})),
+                        left = 3,
+                        right = 3,
+                        bottom = 2,
+                    ),
+                ),
             )
         },
         Scene(name = "wrap_layout", width = 34, height = 18) {
