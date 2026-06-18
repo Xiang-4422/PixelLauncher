@@ -19,6 +19,7 @@ public fun ListTile(
     trailing: Widget? = null,
     onTap: (() -> Unit)? = null,
     enabled: Boolean = true,
+    semanticLabel: String = "ListTile",
     key: Any? = null,
 ): Widget {
     val texts = if (subtitle == null) title else Column(children = listOf(title, subtitle), spacing = 1)
@@ -33,8 +34,14 @@ public fun ListTile(
         fillColor = if (enabled) null else PixelColor.fromArgb(80, 80, 80, 80),
         key = key,
     )
-    val interactive = if (enabled && onTap != null) GestureDetector(child = content, onTap = onTap, key = key) else content
-    return FocusHighlight(child = interactive, enabled = enabled && onTap != null)
+    val effectiveEnabled = enabled && onTap != null
+    val interactive = if (effectiveEnabled) GestureDetector(child = content, onTap = onTap, key = key) else content
+    return FocusableControl(
+        label = semanticLabel,
+        role = if (effectiveEnabled) PixelSemanticRole.BUTTON else PixelSemanticRole.GENERIC,
+        enabled = effectiveEnabled,
+        child = interactive,
+    )
 }
 
 public fun Checkbox(
@@ -43,6 +50,7 @@ public fun Checkbox(
     enabled: Boolean = true,
     activeColor: PixelColor = PixelColor.White,
     inactiveColor: PixelColor = PixelColor.fromRgb(120, 120, 120),
+    semanticLabel: String = if (checked) "Checkbox checked" else "Checkbox unchecked",
     key: Any? = null,
 ): Widget {
     val color = if (!enabled) PixelColor.fromRgb(80, 80, 80) else if (checked) activeColor else inactiveColor
@@ -53,12 +61,18 @@ public fun Checkbox(
         borderColor = color,
         child = Center(child = Text(mark, style = TextStyle(color = color))),
     )
-    val interactive = if (enabled && onChanged != null) {
+    val effectiveEnabled = enabled && onChanged != null
+    val interactive = if (effectiveEnabled) {
         GestureDetector(child = box, onTap = { onChanged(!checked) }, key = key)
     } else {
         box
     }
-    return FocusHighlight(child = interactive, enabled = enabled && onChanged != null)
+    return FocusableControl(
+        label = semanticLabel,
+        role = PixelSemanticRole.CHECKBOX,
+        enabled = effectiveEnabled,
+        child = interactive,
+    )
 }
 
 public fun Switch(
@@ -67,6 +81,7 @@ public fun Switch(
     enabled: Boolean = true,
     activeColor: PixelColor = PixelColor.fromRgb(80, 180, 110),
     inactiveColor: PixelColor = PixelColor.fromRgb(120, 120, 120),
+    semanticLabel: String = if (checked) "Switch on" else "Switch off",
     key: Any? = null,
 ): Widget {
     val border = if (!enabled) PixelColor.fromRgb(80, 80, 80) else if (checked) activeColor else inactiveColor
@@ -79,12 +94,18 @@ public fun Switch(
         padding = EdgeInsets.all(1),
         child = Row(children = if (checked) listOf(spacer, thumb) else listOf(thumb, spacer)),
     )
-    val interactive = if (enabled && onChanged != null) {
+    val effectiveEnabled = enabled && onChanged != null
+    val interactive = if (effectiveEnabled) {
         GestureDetector(child = track, onTap = { onChanged(!checked) }, key = key)
     } else {
         track
     }
-    return FocusHighlight(child = interactive, enabled = enabled && onChanged != null)
+    return FocusableControl(
+        label = semanticLabel,
+        role = PixelSemanticRole.SWITCH,
+        enabled = effectiveEnabled,
+        child = interactive,
+    )
 }
 
 public fun Dialog(
@@ -157,10 +178,16 @@ public fun Tabs(
     key: Any? = null,
 ): Widget = Row(
     children = labels.mapIndexed { index, label ->
-        OutlinedButton(
-            text = label,
-            onPressed = { onSelected(index) },
-            borderColor = if (index == selectedIndex) PixelColor.fromRgb(80, 180, 110) else PixelColor.White,
+        FocusableControl(
+            label = label,
+            role = PixelSemanticRole.TAB,
+            enabled = true,
+            focusWhenParentFocused = index == selectedIndex,
+            child = OutlinedButton(
+                text = label,
+                onPressed = { onSelected(index) },
+                borderColor = if (index == selectedIndex) PixelColor.fromRgb(80, 180, 110) else PixelColor.White,
+            ),
         )
     },
     spacing = 1,
@@ -174,12 +201,18 @@ public fun SegmentedControl(
     key: Any? = null,
 ): Widget = Row(
     children = labels.mapIndexed { index, label ->
-        Container(
-            fillColor = if (index == selectedIndex) PixelColor.White else PixelColor.Transparent,
-            borderColor = PixelColor.White,
-            child = GestureDetector(
-                child = Padding(child = Text(label, style = TextStyle(color = if (index == selectedIndex) PixelColor.Black else PixelColor.White)), horizontal = 2, vertical = 1),
-                onTap = { onSelected(index) },
+        FocusableControl(
+            label = label,
+            role = PixelSemanticRole.TAB,
+            enabled = true,
+            focusWhenParentFocused = index == selectedIndex,
+            child = Container(
+                fillColor = if (index == selectedIndex) PixelColor.White else PixelColor.Transparent,
+                borderColor = PixelColor.White,
+                child = GestureDetector(
+                    child = Padding(child = Text(label, style = TextStyle(color = if (index == selectedIndex) PixelColor.Black else PixelColor.White)), horizontal = 2, vertical = 1),
+                    onTap = { onSelected(index) },
+                ),
             ),
         )
     },
@@ -279,9 +312,12 @@ private fun Int.floorMod(divisor: Int): Int {
     return if (remainder < 0) remainder + divisor else remainder
 }
 
-private data class FocusHighlight(
+private data class FocusableControl(
+    val label: String,
+    val role: PixelSemanticRole,
     val child: Widget,
     val enabled: Boolean,
+    val focusWhenParentFocused: Boolean = true,
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
@@ -289,8 +325,8 @@ private data class FocusHighlight(
         if (focusNode != null) {
             context.watch(focusNode)
         }
-        val focused = enabled && focusNode?.isFocused == true
-        return if (focused) {
+        val focused = enabled && focusWhenParentFocused && focusNode?.isFocused == true
+        val highlighted = if (focused) {
             Stack(
                 children = listOf(
                     child,
@@ -300,5 +336,12 @@ private data class FocusHighlight(
         } else {
             child
         }
+        return Semantics(
+            label = label,
+            role = role,
+            enabled = enabled,
+            focused = focused,
+            child = highlighted,
+        )
     }
 }

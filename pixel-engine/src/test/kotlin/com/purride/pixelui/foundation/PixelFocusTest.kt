@@ -16,8 +16,10 @@ import com.purride.pixelui.ListTile
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
+import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.Switch
+import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Widget
@@ -89,9 +91,31 @@ class PixelFocusTest {
 
     @Test
     fun focusedSelectionControlsDrawFocusBorder() {
-        assertFocusedControlDrawsBorder("Checkbox", Checkbox(checked = false, onChanged = { }))
-        assertFocusedControlDrawsBorder("Switch", Switch(checked = true, onChanged = { }))
-        assertFocusedControlDrawsBorder("ListTile", ListTile(title = Text("Tile"), onTap = { }))
+        assertFocusedControlDrawsBorder(
+            name = "Checkbox",
+            child = Checkbox(checked = false, onChanged = { }, semanticLabel = "Sync"),
+            expectedSemantics = "CHECKBOX label=\"Sync\" enabled=true focused=true",
+        )
+        assertFocusedControlDrawsBorder(
+            name = "Switch",
+            child = Switch(checked = true, onChanged = { }, semanticLabel = "Wifi"),
+            expectedSemantics = "SWITCH label=\"Wifi\" enabled=true focused=true",
+        )
+        assertFocusedControlDrawsBorder(
+            name = "ListTile",
+            child = ListTile(title = Text("Tile"), onTap = { }, semanticLabel = "Open tile"),
+            expectedSemantics = "BUTTON label=\"Open tile\" enabled=true focused=true",
+        )
+        assertFocusedControlDrawsBorder(
+            name = "Tabs",
+            child = Tabs(labels = listOf("A", "B"), selectedIndex = 1, onSelected = { }),
+            expectedSemantics = "TAB label=\"B\" enabled=true focused=true",
+        )
+        assertFocusedControlDrawsBorder(
+            name = "SegmentedControl",
+            child = SegmentedControl(labels = listOf("ONE", "TWO"), selectedIndex = 1, onSelected = { }),
+            expectedSemantics = "TAB label=\"TWO\" enabled=true focused=true",
+        )
     }
 
     @Test
@@ -286,7 +310,7 @@ class PixelFocusTest {
         }
     }
 
-    private fun assertFocusedControlDrawsBorder(name: String, child: Widget) {
+    private fun assertFocusedControlDrawsBorder(name: String, child: Widget, expectedSemantics: String) {
         val node = FocusNode("control")
         val tester = PixelTester()
         try {
@@ -297,6 +321,7 @@ class PixelFocusTest {
             )
 
             assertTrue("$name should draw focus border", tester.renderResult!!.buffer.pixels.any { it == focusColor.argb })
+            assertTrue("$name should export focused semantics", tester.dumpSemanticsTree().contains(expectedSemantics))
         } finally {
             tester.dispose()
         }
