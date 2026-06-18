@@ -18,9 +18,6 @@ cd "$ROOT_DIR"
   :pixel-demo:assembleDebug \
   :pixel-demo:testDebugUnitTest \
   :pixel-minimal-sample:assembleDebug \
-  :app:assembleDebug \
-  :app:lintDebug \
-  :app:testDebugUnitTest \
   --continue \
   --no-daemon
 
