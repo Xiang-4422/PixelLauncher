@@ -814,13 +814,25 @@ class MainActivity : AppCompatActivity() {
                 openDrawerInSearchMode = s.openDrawerInSearchMode,
                 chargeIdleEffect = s.chargeIdleEffect,
             )
+            SettingsMenuItem.IDLE_PAGE -> applyUiBehavior(
+                drawerListAlignment = s.drawerListAlignment,
+                isIdlePageEnabled = SettingsMenuModel.toggle(s.isIdlePageEnabled),
+                openDrawerInSearchMode = s.openDrawerInSearchMode,
+                chargeIdleEffect = s.chargeIdleEffect,
+            )
+            SettingsMenuItem.CHARGE_IDLE_EFFECT -> applyUiBehavior(
+                drawerListAlignment = s.drawerListAlignment,
+                isIdlePageEnabled = s.isIdlePageEnabled,
+                openDrawerInSearchMode = s.openDrawerInSearchMode,
+                chargeIdleEffect = SettingsMenuModel.nextChargeIdleEffect(s.chargeIdleEffect, direction),
+            )
             SettingsMenuItem.DRAWER_AUTO_SEARCH -> applyUiBehavior(
                 drawerListAlignment = s.drawerListAlignment,
                 isIdlePageEnabled = s.isIdlePageEnabled,
                 openDrawerInSearchMode = SettingsMenuModel.toggle(s.openDrawerInSearchMode),
                 chargeIdleEffect = s.chargeIdleEffect,
             )
-            else -> return  // IDLE_PAGE, ADVANCED: no-op in new settings screen
+            SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
 
@@ -1289,7 +1301,16 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            SettingsMenuItem.ADVANCED -> Unit
+            SettingsMenuItem.CHARGE_IDLE_EFFECT -> {
+                applyUiBehavior(
+                    drawerListAlignment = state.drawerListAlignment,
+                    isIdlePageEnabled = state.isIdlePageEnabled,
+                    openDrawerInSearchMode = state.openDrawerInSearchMode,
+                    chargeIdleEffect = SettingsMenuModel.nextChargeIdleEffect(state.chargeIdleEffect, direction),
+                )
+            }
+
+            SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
 

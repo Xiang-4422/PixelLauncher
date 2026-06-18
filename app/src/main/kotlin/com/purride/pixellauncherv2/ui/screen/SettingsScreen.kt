@@ -16,6 +16,7 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
@@ -128,13 +129,12 @@ class SettingsScreen(
                 ),
             )
             add(
-                SettingsSegmentedSwitchRow(
+                SettingsOptionStepperRow(
                     title = "THEME",
-                    rightSelected = selectedTheme.ordinal == 1,
-                    leftLabel = "DAY",
-                    rightLabel = "NIGHT",
+                    valueLabel = SettingsMenuModel.themeLabel(selectedTheme),
                     theme = t,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.THEME, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
                 ),
             )
             add(
@@ -153,6 +153,32 @@ class SettingsScreen(
                     theme = t,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.DRAWER_AUTO_SEARCH, +1) },
+                ),
+            )
+            add(
+                SettingsSwitchRow(
+                    title = "IDLE PAGE",
+                    checked = isIdlePageEnabled,
+                    theme = t,
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.IDLE_PAGE, +1) },
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "IDLE EFFECT",
+                    valueLabel = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, +1) },
+                ),
+            )
+            add(
+                SettingsActionRow(
+                    title = "ADVANCED",
+                    valueLabel = "OPEN",
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.ADVANCED, +1) },
                 ),
             )
         }

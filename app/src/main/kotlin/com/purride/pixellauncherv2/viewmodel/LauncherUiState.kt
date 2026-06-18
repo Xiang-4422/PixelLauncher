@@ -4,6 +4,7 @@ import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.data.UnreadSmsEntry
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.HomeContextCard
@@ -17,13 +18,7 @@ import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 /**
  * 重写后的 Launcher UI 状态快照。
- *
- * 与旧 [com.purride.pixellauncherv2.launcher.LauncherState] 相比，移除了以下字段：
- * - `idleFluidState`（IDLE 物理引擎已废弃，将在新版本重新实现）
- * - `chargeIdleEffect`（IDLE 相关）
- * - `isIdlePageEnabled`（IDLE 相关）
- *
- * 外观/字体类型目前仍引用旧 render 层类型，将在 Phase 1 后逐步迁移至 pixel-engine 类型。
+ * 外观/字体类型目前仍引用旧 render 层类型，将在后续逐步迁移至 pixel-engine 类型。
  */
 data class LauncherUiState(
     // ── App Drawer ────────────────────────────────────────────────────────────
@@ -75,7 +70,9 @@ data class LauncherUiState(
 
     // ── UI behaviour ──────────────────────────────────────────────────────────
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
+    val isIdlePageEnabled: Boolean = false,
     val openDrawerInSearchMode: Boolean = false,
+    val chargeIdleEffect: ChargeIdleEffect = ChargeIdleEffect.FLUID,
 
     // ── Device status ─────────────────────────────────────────────────────────
     val batteryLevel: Int = 100,

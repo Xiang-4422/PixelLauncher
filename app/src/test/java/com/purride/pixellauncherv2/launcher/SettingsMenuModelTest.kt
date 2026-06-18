@@ -35,6 +35,13 @@ class SettingsMenuModelTest {
     }
 
     @Test
+    fun nextChargeIdleEffect_cyclesThroughEffects() {
+        assertEquals(ChargeIdleEffect.HORIZON, SettingsMenuModel.nextChargeIdleEffect(ChargeIdleEffect.FLUID, 1))
+        assertEquals(ChargeIdleEffect.CASCADE, SettingsMenuModel.nextChargeIdleEffect(ChargeIdleEffect.FLUID, -1))
+        assertEquals(ChargeIdleEffect.FLUID, SettingsMenuModel.nextChargeIdleEffect(ChargeIdleEffect.CASCADE, 1))
+    }
+
+    @Test
     fun nextTheme_wrapsAtBothEndsAndRoundTrips() {
         val first = PixelTheme.entries.first()
         val last = PixelTheme.entries.last()
@@ -74,6 +81,7 @@ class SettingsMenuModelTest {
         assertFalse(SettingsMenuModel.toggle(true))
         assertEquals("SQUARE", SettingsMenuModel.styleLabel(PixelShape.SQUARE))
         assertEquals("CENTER", SettingsMenuModel.drawerListAlignmentLabel(DrawerListAlignment.CENTER))
+        assertEquals("DOT MATRIX", SettingsMenuModel.chargeIdleEffectLabel(ChargeIdleEffect.DOT_MATRIX))
     }
 
     @Test
@@ -97,6 +105,24 @@ class SettingsMenuModelTest {
         val withoutGap = SettingsMenuModel.rows(LauncherState(isPixelGapEnabled = false)).map { it.item }
         assertTrue(withGap.contains(SettingsMenuItem.STYLE))
         assertFalse(withoutGap.contains(SettingsMenuItem.STYLE))
+    }
+
+    @Test
+    fun rows_includeIdleAndAdvancedActions() {
+        val rows = SettingsMenuModel.rows(
+            LauncherState(
+                isIdlePageEnabled = true,
+                chargeIdleEffect = ChargeIdleEffect.TANK,
+            ),
+        )
+        val items = rows.map { it.item }
+
+        assertTrue(items.contains(SettingsMenuItem.IDLE_PAGE))
+        assertTrue(items.contains(SettingsMenuItem.CHARGE_IDLE_EFFECT))
+        assertTrue(items.contains(SettingsMenuItem.ADVANCED))
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
+        assertEquals("TANK", rows.first { it.item == SettingsMenuItem.CHARGE_IDLE_EFFECT }.value)
+        assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
     }
 
     @Test

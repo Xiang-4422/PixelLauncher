@@ -148,6 +148,34 @@ fun SettingsOptionStepperRow(
     ),
 )
 
+fun SettingsActionRow(
+    title: String,
+    valueLabel: String,
+    theme: LauncherTheme,
+    onPressed: () -> Unit,
+): Widget = GestureDetector(
+    onTap = onPressed,
+    child = Container(
+        padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+        child = Row(
+            spacing = 2,
+            children = listOf(
+                Text(
+                    title,
+                    style = TextStyle(color = theme.settings.itemTitle),
+                    overflow = TextOverflow.ELLIPSIS,
+                ),
+                Expanded(child = SizedBox(width = 0, height = 0)),
+                Text(
+                    valueLabel,
+                    style = TextStyle(color = theme.settings.itemValue),
+                    overflow = TextOverflow.ELLIPSIS,
+                ),
+            ),
+        ),
+    ),
+)
+
 private fun SettingsSwitch(
     checked: Boolean,
     theme: LauncherTheme,

@@ -13,6 +13,7 @@ enum class SettingsMenuItem {
     THEME,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
+    CHARGE_IDLE_EFFECT,
     DRAWER_AUTO_SEARCH,
     ADVANCED,
 }
@@ -35,23 +36,26 @@ object SettingsMenuModel {
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
         return buildList {
             add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.FONT_STYLE,
-                title = "FONT STYLE",
-                value = PixelFontCatalog.styleLabel(state.selectedFontStyle),
-            ))
+                SettingsMenuRow(
+                    item = SettingsMenuItem.FONT_STYLE,
+                    title = "FONT STYLE",
+                    value = PixelFontCatalog.styleLabel(state.selectedFontStyle),
+                ),
+            )
             add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.RESOLUTION,
-                title = "PIXEL SIZE",
-                value = resolutionLabel(state.selectedDotSizePx, screenProfile),
-            ))
+                SettingsMenuRow(
+                    item = SettingsMenuItem.RESOLUTION,
+                    title = "PIXEL SIZE",
+                    value = resolutionLabel(state.selectedDotSizePx, screenProfile),
+                ),
+            )
             add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.PIXEL_GAP_SIZE,
-                title = "GAP SIZE",
-                value = pixelGapSizeLabel(state.pixelGapRatio),
-            ))
+                SettingsMenuRow(
+                    item = SettingsMenuItem.PIXEL_GAP_SIZE,
+                    title = "GAP SIZE",
+                    value = pixelGapSizeLabel(state.pixelGapRatio),
+                ),
+            )
             if (state.isPixelGapEnabled) {
                 add(
                     SettingsMenuRow(
@@ -62,23 +66,47 @@ object SettingsMenuModel {
                 )
             }
             add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.THEME,
-                title = "THEME",
-                value = themeLabel(state.selectedTheme),
-            ))
+                SettingsMenuRow(
+                    item = SettingsMenuItem.THEME,
+                    title = "THEME",
+                    value = themeLabel(state.selectedTheme),
+                ),
+            )
             add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.APP_LIST_ALIGNMENT,
-                title = "APP ALIGN",
-                value = drawerListAlignmentLabel(state.drawerListAlignment),
-            ))
+                SettingsMenuRow(
+                    item = SettingsMenuItem.APP_LIST_ALIGNMENT,
+                    title = "APP ALIGN",
+                    value = drawerListAlignmentLabel(state.drawerListAlignment),
+                ),
+            )
             add(
-            SettingsMenuRow(
-                item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
-                title = "DRAWER SEARCH",
-                value = onOffLabel(state.openDrawerInSearchMode),
-            ))
+                SettingsMenuRow(
+                    item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
+                    title = "DRAWER SEARCH",
+                    value = onOffLabel(state.openDrawerInSearchMode),
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.IDLE_PAGE,
+                    title = "IDLE PAGE",
+                    value = onOffLabel(state.isIdlePageEnabled),
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.CHARGE_IDLE_EFFECT,
+                    title = "IDLE EFFECT",
+                    value = chargeIdleEffectLabel(state.chargeIdleEffect),
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.ADVANCED,
+                    title = "ADVANCED",
+                    value = "OPEN",
+                ),
+            )
         }
     }
 

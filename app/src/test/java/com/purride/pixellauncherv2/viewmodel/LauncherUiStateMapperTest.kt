@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.viewmodel
 
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
@@ -15,10 +16,8 @@ import org.junit.Test
  * internal [LauncherState] into the immutable [LauncherUiState] snapshot the
  * pixel-engine host renders.
  *
- * The mapper is a field-by-field copy that intentionally drops the IDLE-only
- * fields (isIdlePageEnabled / chargeIdleEffect) — that omission is enforced by
- * the type (LauncherUiState has no such fields), so the test focuses on
- * verifying the shared fields survive the mapping rather than getting crossed.
+ * The mapper is a field-by-field copy, so this test focuses on verifying fields
+ * survive the mapping rather than getting crossed.
  */
 class LauncherUiStateMapperTest {
 
@@ -48,6 +47,9 @@ class LauncherUiStateMapperTest {
             pixelGapRatio = 0.5f,
             selectedTheme = PixelTheme.NIGHT,
             drawerListAlignment = DrawerListAlignment.CENTER,
+            isIdlePageEnabled = true,
+            openDrawerInSearchMode = true,
+            chargeIdleEffect = ChargeIdleEffect.TANK,
             batteryLevel = 42,
             isCharging = true,
             launchCount = 11,
@@ -89,6 +91,9 @@ class LauncherUiStateMapperTest {
         assertEquals(0.5f, ui.pixelGapRatio, 0f)
         assertEquals(PixelTheme.NIGHT, ui.selectedTheme)
         assertEquals(DrawerListAlignment.CENTER, ui.drawerListAlignment)
+        assertEquals(true, ui.isIdlePageEnabled)
+        assertEquals(true, ui.openDrawerInSearchMode)
+        assertEquals(ChargeIdleEffect.TANK, ui.chargeIdleEffect)
         // device + stats + status rows
         assertEquals(42, ui.batteryLevel)
         assertEquals(true, ui.isCharging)

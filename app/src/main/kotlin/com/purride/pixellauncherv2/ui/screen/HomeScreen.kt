@@ -2,7 +2,9 @@ package com.purride.pixellauncherv2.ui.screen
 
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
@@ -12,8 +14,10 @@ import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -58,7 +62,7 @@ class HomeScreen(
                             crossAxisAlignment = CrossAxisAlignment.STRETCH,
                             mainAxisSize = MainAxisSize.MIN,
                             spacing = 2,
-                            children = buildInfoColumn(s, t),
+                            children = buildInfoColumn(s, t) + buildContextCard(s, t),
                         ),
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
@@ -100,6 +104,32 @@ class HomeScreen(
                     add(Text(line, style = TextStyle(color = t.text.secondary)))
                 }
             }
+
+        private fun buildContextCard(s: LauncherUiState, t: LauncherTheme): Widget {
+            val model = s.homeContextModel()
+            return Container(
+                padding = EdgeInsets.symmetric(horizontal = 2, vertical = 2),
+                borderColor = t.surface.panel,
+                fillColor = t.surface.panelSubtle,
+                child = Column(
+                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    mainAxisSize = MainAxisSize.MIN,
+                    spacing = 1,
+                    children = listOf(
+                        Text(
+                            model.title,
+                            style = TextStyle(color = t.text.muted),
+                            overflow = TextOverflow.ELLIPSIS,
+                        ),
+                        Text(
+                            model.body,
+                            style = TextStyle(color = t.text.primary),
+                            overflow = TextOverflow.ELLIPSIS,
+                        ),
+                    ),
+                ),
+            )
+        }
     }
 }
 
@@ -129,4 +159,40 @@ private fun LauncherUiState.toHomeInfoRows(): List<String> = buildList {
 
     // Screen usage（常驻）
     add("USE ${screenUsageTimeText.ifBlank { "--:--" }}  OPEN ${screenOpenCountText.ifBlank { "--" }}")
+
+    if (terminalStatusText.isNotBlank()) {
+        add(terminalStatusText)
+    }
 }
+
+private data class HomeContextModel(
+    val title: String,
+    val body: String,
+)
+
+private fun LauncherUiState.homeContextModel(): HomeContextModel =
+    when (homeContextCard) {
+        HomeContextCard.QUOTE -> HomeContextModel(
+            title = "FOCUS",
+            body = quoteText.ifBlank { "BREATHE, FOCUS ON ONE THING." },
+        )
+        HomeContextCard.MEDIA -> HomeContextModel(
+            title = "MEDIA",
+            body = "NO ACTIVE MEDIA",
+        )
+        HomeContextCard.NOTIFICATIONS -> {
+            val parts = buildList {
+                if (missedCallCount > 0) add("CALL $missedCallCount")
+                if (unreadSmsCount > 0) add("SMS $unreadSmsCount")
+                if (rainHintText.isNotBlank()) add(rainHintText)
+            }
+            HomeContextModel(
+                title = "NOTIFY",
+                body = parts.joinToString("  ").ifBlank { "NO PRIORITY ALERTS" },
+            )
+        }
+        HomeContextCard.TODO -> HomeContextModel(
+            title = "TODO",
+            body = "SOURCE NOT SET",
+        )
+    }
