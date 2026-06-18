@@ -1,5 +1,7 @@
 package com.purride.pixelui.foundation
 
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
 import com.purride.pixelui.Focus
 import com.purride.pixelui.FocusNode
@@ -7,12 +9,15 @@ import com.purride.pixelui.FocusScope
 import com.purride.pixelui.FocusScopeNode
 import com.purride.pixelui.GridFocusTraversalPolicy
 import com.purride.pixelui.GridView
+import com.purride.pixelui.ListTile
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.Switch
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextField
+import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
@@ -24,6 +29,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelFocusTest {
+    private val focusColor = PixelColor.fromRgb(255, 200, 0)
+
     @Test
     fun autofocusAndTabTraversalMovePrimaryFocus() {
         val first = FocusNode("first")
@@ -52,6 +59,36 @@ class PixelFocusTest {
         } finally {
             tester.dispose()
         }
+    }
+
+    @Test
+    fun focusedButtonExportsSemanticsAndDrawsFocusBorder() {
+        val node = FocusNode("button")
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                Focus(
+                    node = node,
+                    autofocus = true,
+                    child = OutlinedButton(text = "OK", onPressed = { }),
+                ),
+                logicalWidth = 32,
+                logicalHeight = 12,
+            )
+
+            val semantics = tester.dumpSemanticsTree()
+            assertTrue(semantics.contains("BUTTON label=\"OK\" enabled=true focused=true"))
+            assertTrue(tester.renderResult!!.buffer.pixels.any { it == focusColor.argb })
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun focusedSelectionControlsDrawFocusBorder() {
+        assertFocusedControlDrawsBorder("Checkbox", Checkbox(checked = false, onChanged = { }))
+        assertFocusedControlDrawsBorder("Switch", Switch(checked = true, onChanged = { }))
+        assertFocusedControlDrawsBorder("ListTile", ListTile(title = Text("Tile"), onTap = { }))
     }
 
     @Test
@@ -196,6 +233,22 @@ class PixelFocusTest {
             assertTrue(nodes[2].isFocused)
             assertTrue(tester.pressKey(PixelKey.ARROW_UP))
             assertTrue(nodes[0].isFocused)
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    private fun assertFocusedControlDrawsBorder(name: String, child: Widget) {
+        val node = FocusNode("control")
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                Focus(node = node, autofocus = true, child = child),
+                logicalWidth = 48,
+                logicalHeight = 18,
+            )
+
+            assertTrue("$name should draw focus border", tester.renderResult!!.buffer.pixels.any { it == focusColor.argb })
         } finally {
             tester.dispose()
         }

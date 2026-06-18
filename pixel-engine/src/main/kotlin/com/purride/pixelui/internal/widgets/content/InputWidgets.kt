@@ -210,8 +210,13 @@ internal data class OutlinedButtonWidget(
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         val effectiveEnabled = enabled && onPressed != null
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) {
+            context.watch(focusNode)
+        }
+        val focused = effectiveEnabled && focusNode?.isFocused == true
         val effectiveFill = fillColor ?: style.fillColor
-        val effectiveBorder = borderColor ?: style.borderColor
+        val effectiveBorder = borderColor ?: if (focused) DefaultFocusBorderColor else style.borderColor
         val content = ButtonSurfaceWidget(
             fillColor = effectiveFill,
             borderColor = effectiveBorder,
@@ -237,11 +242,14 @@ internal data class OutlinedButtonWidget(
             label = text,
             role = PixelSemanticRole.BUTTON,
             enabled = effectiveEnabled,
+            focused = focused,
             child = button,
             key = key?.let { "$it-semantics" },
         )
     }
 }
+
+private val DefaultFocusBorderColor: PixelColor = PixelColor.fromRgb(255, 200, 0)
 
 /**
  * OutlinedButton 使用的 direct surface。

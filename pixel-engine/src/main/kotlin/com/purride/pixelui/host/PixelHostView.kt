@@ -34,6 +34,7 @@ import com.purride.pixelui.internal.PixelRefreshTarget
 import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelKeyEvent
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
 import kotlin.math.abs
@@ -576,20 +577,9 @@ public class PixelHostView @JvmOverloads constructor(
 }
 
 private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {
-    return when (keyCode) {
-        android.view.KeyEvent.KEYCODE_TAB -> PixelKeyEvent(if (isShiftPressed) PixelKey.SHIFT_TAB else PixelKey.TAB)
-        android.view.KeyEvent.KEYCODE_DPAD_UP -> PixelKeyEvent(PixelKey.ARROW_UP)
-        android.view.KeyEvent.KEYCODE_DPAD_DOWN -> PixelKeyEvent(PixelKey.ARROW_DOWN)
-        android.view.KeyEvent.KEYCODE_DPAD_LEFT -> PixelKeyEvent(PixelKey.ARROW_LEFT)
-        android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> PixelKeyEvent(PixelKey.ARROW_RIGHT)
-        android.view.KeyEvent.KEYCODE_ENTER,
-        android.view.KeyEvent.KEYCODE_DPAD_CENTER,
-        -> PixelKeyEvent(PixelKey.ENTER)
-        android.view.KeyEvent.KEYCODE_BACK -> PixelKeyEvent(PixelKey.BACK)
-        android.view.KeyEvent.KEYCODE_ESCAPE -> PixelKeyEvent(PixelKey.ESCAPE)
-        else -> {
-            val char = unicodeChar.takeIf { it != 0 }?.toChar()
-            if (char != null) PixelKeyEvent(PixelKey.CHARACTER, char) else PixelKeyEvent(PixelKey.UNKNOWN)
-        }
-    }
+    return mapAndroidKeyCodeToPixelKeyEvent(
+        keyCode = keyCode,
+        isShiftPressed = isShiftPressed,
+        unicodeChar = unicodeChar,
+    )
 }

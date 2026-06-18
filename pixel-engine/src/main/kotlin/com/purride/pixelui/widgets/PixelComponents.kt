@@ -33,7 +33,8 @@ public fun ListTile(
         fillColor = if (enabled) null else PixelColor.fromArgb(80, 80, 80, 80),
         key = key,
     )
-    return if (enabled && onTap != null) GestureDetector(child = content, onTap = onTap, key = key) else content
+    val interactive = if (enabled && onTap != null) GestureDetector(child = content, onTap = onTap, key = key) else content
+    return FocusHighlight(child = interactive, enabled = enabled && onTap != null)
 }
 
 public fun Checkbox(
@@ -52,11 +53,12 @@ public fun Checkbox(
         borderColor = color,
         child = Center(child = Text(mark, style = TextStyle(color = color))),
     )
-    return if (enabled && onChanged != null) {
+    val interactive = if (enabled && onChanged != null) {
         GestureDetector(child = box, onTap = { onChanged(!checked) }, key = key)
     } else {
         box
     }
+    return FocusHighlight(child = interactive, enabled = enabled && onChanged != null)
 }
 
 public fun Switch(
@@ -77,11 +79,12 @@ public fun Switch(
         padding = EdgeInsets.all(1),
         child = Row(children = if (checked) listOf(spacer, thumb) else listOf(thumb, spacer)),
     )
-    return if (enabled && onChanged != null) {
+    val interactive = if (enabled && onChanged != null) {
         GestureDetector(child = track, onTap = { onChanged(!checked) }, key = key)
     } else {
         track
     }
+    return FocusHighlight(child = interactive, enabled = enabled && onChanged != null)
 }
 
 public fun Dialog(
@@ -274,4 +277,28 @@ public fun AppScaffold(
 private fun Int.floorMod(divisor: Int): Int {
     val remainder = this % divisor
     return if (remainder < 0) remainder + divisor else remainder
+}
+
+private data class FocusHighlight(
+    val child: Widget,
+    val enabled: Boolean,
+    override val key: Any? = null,
+) : StatelessWidget(key = key) {
+    override fun build(context: BuildContext): Widget {
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) {
+            context.watch(focusNode)
+        }
+        val focused = enabled && focusNode?.isFocused == true
+        return if (focused) {
+            Stack(
+                children = listOf(
+                    child,
+                    PositionedFill(child = Container(borderColor = PixelColor.fromRgb(255, 200, 0))),
+                ),
+            )
+        } else {
+            child
+        }
+    }
 }
