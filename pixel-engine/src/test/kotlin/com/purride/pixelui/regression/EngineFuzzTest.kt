@@ -1,12 +1,15 @@
 package com.purride.pixelui.regression
 
 import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBitmapRegion
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelSpriteSheet
+import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AspectRatio
+import com.purride.pixelui.Builder
 import com.purride.pixelui.Center
 import com.purride.pixelui.ClipRect
 import com.purride.pixelui.Column
@@ -16,19 +19,25 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.FittedBox
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.GridViewBuilder
+import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.Opacity
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelBoxConstraints
+import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.animation.IntOffset
+import com.purride.pixelui.internal.HostRootWidget
+import com.purride.pixelui.internal.PixelUiRuntime
 import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListRestorationPolicy
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
@@ -256,6 +265,111 @@ class EngineFuzzTest {
         }
     }
 
+    @Test
+    fun scrollAnchorRestorationFuzzPreservesVisibleItemAcrossGeometryChanges() {
+        val seed = 20260619L
+        val random = Random(seed)
+        repeat(100) { iteration ->
+            runFuzzCase(seed, iteration, null) {
+                val itemCount = 2 + random.nextInt(40)
+                val oldHeights = IntArray(itemCount) { 2 + random.nextInt(12) }
+                val newHeights = IntArray(itemCount) { 2 + random.nextInt(16) }
+                val oldSpacing = random.nextInt(4)
+                val newSpacing = random.nextInt(4)
+                val oldTopOffsets = topOffsets(oldHeights, oldSpacing)
+                val newTopOffsets = topOffsets(newHeights, newSpacing)
+                val anchorIndex = random.nextInt(itemCount)
+                val anchorOffset = random.nextInt(oldHeights[anchorIndex]).toFloat()
+                val oldContentHeight = contentHeight(oldHeights, oldSpacing)
+                val newContentHeight = contentHeight(newHeights, newSpacing)
+                val oldViewportHeight = 5 + random.nextInt(32)
+                val newViewportHeight = 5 + random.nextInt(32)
+                val controller = PixelListController()
+
+                val source = controller.create()
+                controller.sync(source, oldViewportHeight, oldContentHeight)
+                source.itemTopOffsetsPx = oldTopOffsets
+                source.itemHeightsPx = oldHeights
+                controller.scrollTo(
+                    state = source,
+                    targetOffsetPx = oldTopOffsets[anchorIndex] + anchorOffset,
+                    viewportHeightPx = oldViewportHeight,
+                    contentHeightPx = oldContentHeight,
+                )
+                source.itemTopOffsetsPx = oldTopOffsets
+                source.itemHeightsPx = oldHeights
+                val saved = controller.saveState(source)
+
+                val restored = controller.create()
+                controller.sync(restored, newViewportHeight, newContentHeight)
+                restored.itemTopOffsetsPx = newTopOffsets
+                restored.itemHeightsPx = newHeights
+                controller.restoreState(
+                    state = restored,
+                    savedState = saved,
+                    viewportHeightPx = newViewportHeight,
+                    contentHeightPx = newContentHeight,
+                    policy = PixelListRestorationPolicy.AnchorItem,
+                )
+
+                val savedAnchor = saved.anchor!!
+                val expectedOffset = (newTopOffsets[savedAnchor.itemIndex] + savedAnchor.itemOffsetPx)
+                    .coerceIn(0f, (newContentHeight - newViewportHeight).coerceAtLeast(0).toFloat())
+                assertEquals(expectedOffset, restored.scrollOffsetPx, 0.001f)
+            }
+        }
+    }
+
+    @Test
+    fun hostRootInsetsFuzzKeepsPaddingSeparatedFromImeInsets() {
+        val seed = 20260620L
+        val random = Random(seed)
+        repeat(80) { iteration ->
+            runFuzzCase(seed, iteration, null) {
+                val windowInsets = randomInsets(random)
+                val viewInsets = randomInsets(random)
+                var capturedPadding: PixelWindowInsets? = null
+                var capturedViewPadding: PixelWindowInsets? = null
+                var capturedViewInsets: PixelWindowInsets? = null
+                val runtime = PixelUiRuntime()
+                try {
+                    runtime.render(
+                        root = HostRootWidget(
+                            screenProfile = ScreenProfile(logicalWidth = 12, logicalHeight = 8, dotSizePx = 4),
+                            textDirection = TextDirection.LTR,
+                            textRasterizer = PixelBitmapFont.Default,
+                            windowInsets = windowInsets,
+                            viewInsets = viewInsets,
+                            child = Builder {
+                                val media = MediaQuery.of(it)
+                                capturedPadding = media.padding
+                                capturedViewPadding = media.viewPadding
+                                capturedViewInsets = media.viewInsets
+                                Text("INSETS")
+                            },
+                        ),
+                        logicalWidth = 12,
+                        logicalHeight = 8,
+                    )
+                } finally {
+                    runtime.dispose()
+                }
+
+                assertEquals(windowInsets, capturedViewPadding)
+                assertEquals(viewInsets, capturedViewInsets)
+                assertEquals(
+                    PixelWindowInsets(
+                        left = (windowInsets.left - viewInsets.left).coerceAtLeast(0),
+                        top = (windowInsets.top - viewInsets.top).coerceAtLeast(0),
+                        right = (windowInsets.right - viewInsets.right).coerceAtLeast(0),
+                        bottom = (windowInsets.bottom - viewInsets.bottom).coerceAtLeast(0),
+                    ),
+                    capturedPadding,
+                )
+            }
+        }
+    }
+
     private fun randomWidget(random: Random, depth: Int, onTap: () -> Unit): Widget {
         if (depth >= 3) {
             return when (random.nextInt(3)) {
@@ -375,21 +489,49 @@ class EngineFuzzTest {
         }
     }
 
-    private fun runFuzzCase(seed: Long, iteration: Int, tester: PixelTester, block: () -> Unit) {
+    private fun runFuzzCase(seed: Long, iteration: Int, tester: PixelTester?, block: () -> Unit) {
         try {
             block()
         } catch (error: Throwable) {
             throw AssertionError(
                 buildString {
                     appendLine("Fuzz failure seed=$seed iteration=$iteration")
-                    appendLine("Element tree:")
-                    appendLine(tester.dumpElementTree())
-                    appendLine("Render tree:")
-                    appendLine(tester.dumpRenderTree())
+                    if (tester != null) {
+                        appendLine("Element tree:")
+                        appendLine(tester.dumpElementTree())
+                        appendLine("Render tree:")
+                        appendLine(tester.dumpRenderTree())
+                    }
                 },
                 error,
             )
         }
+    }
+
+    private fun topOffsets(heights: IntArray, spacing: Int): IntArray {
+        var cursor = 0
+        return IntArray(heights.size) { index ->
+            val top = cursor
+            cursor += heights[index]
+            if (index < heights.lastIndex) {
+                cursor += spacing
+            }
+            top
+        }
+    }
+
+    private fun contentHeight(heights: IntArray, spacing: Int): Int {
+        if (heights.isEmpty()) return 0
+        return heights.sum() + spacing * (heights.size - 1)
+    }
+
+    private fun randomInsets(random: Random): PixelWindowInsets {
+        return PixelWindowInsets(
+            left = random.nextInt(8),
+            top = random.nextInt(8),
+            right = random.nextInt(8),
+            bottom = random.nextInt(8),
+        )
     }
 
     private fun assertThrowsIllegalArgument(block: () -> Unit) {
