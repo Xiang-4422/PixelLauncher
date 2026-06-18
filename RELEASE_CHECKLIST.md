@@ -26,6 +26,6 @@
 - KDoc coverage report reviewed; public API coverage must not regress below the release floor.
 - New public widgets are covered by docs, tests, and demo scenes.
 - Golden or snapshot changes are reviewed as visual changes, not accepted blindly.
-- Performance baselines are read-only unless a separate perf review approves updating them.
+- Performance checks are read-only. Review `pixel-engine/build/reports/perf/pixel-engine-render-smoke.txt`; do not commit generated perf reports or update baselines without a separate perf review.
 - Release notes include migration notes for any source compatibility change.
 - No remote Maven publish, tag, or GitHub release is performed from local dry-run validation.
