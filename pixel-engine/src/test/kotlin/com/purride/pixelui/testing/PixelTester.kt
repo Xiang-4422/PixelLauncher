@@ -37,6 +37,7 @@ public class PixelTester {
         private set
     private var currentNanos: Long = 0L
     private val activeGestures = mutableMapOf<Int, ActiveTestGesture>()
+    private var primaryPointerId: Int? = null
 
     internal var renderResult: PixelRenderResult? = null
         private set
@@ -100,21 +101,23 @@ public class PixelTester {
         return PixelTestGesture(this, pointerId)
     }
 
-    internal fun moveGestureBy(pointerId: Int, dx: Int, dy: Int) {
+    internal fun moveGestureBy(pointerId: Int, dx: Int, dy: Int, deltaMs: Long = 16L) {
         val gesture = activeGestures[pointerId] ?: fail("No active gesture for pointer $pointerId")
-        gesture.moveBy(dx, dy)
+        gesture.moveBy(dx, dy, deltaMs.coerceAtLeast(1L))
         render()
     }
 
     internal fun endGesture(pointerId: Int) {
         val gesture = activeGestures.remove(pointerId) ?: fail("No active gesture for pointer $pointerId")
         gesture.up()
+        if (primaryPointerId == pointerId) promotePrimaryPointer()
         render()
     }
 
     internal fun cancelGesture(pointerId: Int) {
         val gesture = activeGestures.remove(pointerId) ?: fail("No active gesture for pointer $pointerId")
         gesture.cancel()
+        if (primaryPointerId == pointerId) promotePrimaryPointer()
         render()
     }
 
@@ -260,6 +263,7 @@ public class PixelTester {
         scheduler.clear()
         PixelFocusManager.clearFocus()
         activeGestures.clear()
+        primaryPointerId = null
     }
 
     private fun render() {
@@ -330,13 +334,23 @@ public class PixelTester {
             fail("Pointer $pointerId already has an active gesture")
         }
         val target = resolveGestureTarget(x, y) ?: fail("No gesture target at ($x,$y)")
+        if (primaryPointerId == null) primaryPointerId = pointerId
         activeGestures[pointerId] = ActiveTestGesture(
+            pointerId = pointerId,
             startX = x,
             startY = y,
             currentX = x,
             currentY = y,
             target = target,
         )
+    }
+
+    private fun promotePrimaryPointer() {
+        primaryPointerId = activeGestures.keys.minOrNull()
+    }
+
+    private fun isPrimaryPointer(pointerId: Int): Boolean {
+        return primaryPointerId == null || primaryPointerId == pointerId
     }
 
     private fun resolveGestureTarget(x: Int, y: Int): TestGestureTarget? {
@@ -556,9 +570,9 @@ public class PixelTester {
         needsRender = true
     }
 
-    private fun endPagerDrag(target: PixelPagerTarget) {
+    private fun endPagerDrag(target: PixelPagerTarget, velocityPxPerSecond: Float = 0f) {
         val viewport = pagerViewport(target)
-        target.controller.endDrag(target.state, viewport, 0f)
+        target.controller.endDrag(target.state, viewport, velocityPxPerSecond)
         target.onPageChanged?.invoke(target.state.currentPage)
         needsRender = true
     }
@@ -749,6 +763,7 @@ public class PixelTester {
     }
 
     private inner class ActiveTestGesture(
+        val pointerId: Int,
         val startX: Int,
         val startY: Int,
         var currentX: Int,
@@ -757,11 +772,16 @@ public class PixelTester {
     ) {
         private var moved = false
         private var dragging = false
+        private var elapsedMs = 0L
+        private val samples = mutableListOf(GestureSample(elapsedMs = 0L, x = startX, y = startY))
 
-        fun moveBy(dx: Int, dy: Int) {
+        fun moveBy(dx: Int, dy: Int, deltaMs: Long) {
             currentX += dx
             currentY += dy
+            elapsedMs += deltaMs
+            samples += GestureSample(elapsedMs = elapsedMs, x = currentX, y = currentY)
             if (dx != 0 || dy != 0) moved = true
+            if (!isPrimaryPointer(pointerId) && target.isPointerExclusive()) return
             when (val activeTarget = target) {
                 is TestGestureTarget.Click -> Unit
                 is TestGestureTarget.TextInput -> moveTextInput(activeTarget.target)
@@ -794,13 +814,13 @@ public class PixelTester {
                 is TestGestureTarget.List -> if (dragging) {
                     activeTarget.target.controller.endDrag(
                         activeTarget.target.state,
-                        0f,
+                        velocityY(),
                         activeTarget.target.viewportHeightPx,
                         activeTarget.target.contentHeightPx,
                     )
                     needsRender = true
                 }
-                is TestGestureTarget.Pager -> if (dragging) endPagerDrag(activeTarget.target)
+                is TestGestureTarget.Pager -> if (dragging) endPagerDrag(activeTarget.target, velocityFor(activeTarget.target.axis))
                 is TestGestureTarget.Slider,
                 is TestGestureTarget.Scrollbar,
                 is TestGestureTarget.Refresh,
@@ -855,6 +875,36 @@ public class PixelTester {
             startPagerDrag(target, dx.toFloat(), dy.toFloat())
             dragging = true
         }
+
+        private fun velocityFor(axis: PixelAxis): Float {
+            return when (axis) {
+                PixelAxis.HORIZONTAL -> velocityX()
+                PixelAxis.VERTICAL -> velocityY()
+            }
+        }
+
+        private fun velocityX(): Float = velocity { it.x }
+
+        private fun velocityY(): Float = velocity { it.y }
+
+        private fun velocity(selector: (GestureSample) -> Int): Float {
+            if (samples.size < 2) return 0f
+            val last = samples.last()
+            val first = samples.asReversed().firstOrNull { last.elapsedMs - it.elapsedMs >= 16L }
+                ?: samples.first()
+            val dtMs = (last.elapsedMs - first.elapsedMs).coerceAtLeast(1L)
+            return ((selector(last) - selector(first)).toFloat() * 1000f) / dtMs
+        }
+    }
+
+    private data class GestureSample(val elapsedMs: Long, val x: Int, val y: Int)
+
+    private fun TestGestureTarget.isPointerExclusive(): Boolean {
+        return this is TestGestureTarget.List ||
+            this is TestGestureTarget.Pager ||
+            this is TestGestureTarget.Slider ||
+            this is TestGestureTarget.Scrollbar ||
+            this is TestGestureTarget.Refresh
     }
 
     private data class Point(val x: Int, val y: Int)
@@ -869,6 +919,11 @@ public class PixelTestGesture internal constructor(
 ) {
     public fun moveBy(dx: Int, dy: Int): PixelTestGesture {
         tester.moveGestureBy(pointerId, dx, dy)
+        return this
+    }
+
+    public fun moveBy(dx: Int, dy: Int, deltaMs: Long): PixelTestGesture {
+        tester.moveGestureBy(pointerId, dx, dy, deltaMs)
         return this
     }
 

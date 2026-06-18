@@ -186,6 +186,94 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun gestureStreamEstimatesListVelocityOnUp() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = ListViewBuilder(
+                itemCount = 20,
+                itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                itemExtent = 6,
+                state = state,
+                controller = controller,
+                key = "list",
+            ),
+            logicalWidth = 40,
+            logicalHeight = 18,
+        )
+
+        tester.startGesture(find.byKey("list"))
+            .moveBy(dx = 0, dy = -8, deltaMs = 40)
+            .up()
+
+        assertFalse(state.isDragging)
+        assertTrue(state.isSettling)
+        assertEquals(-200f, state.scrollVelocityPxPerSecond, 0.001f)
+        tester.dispose()
+    }
+
+    @Test
+    fun gestureStreamUsesEstimatedVelocityForPagerOnUp() {
+        val tester = PixelTester()
+        val controller = PixelPagerController(distanceThresholdFraction = 0.9f)
+        val state = controller.create(pageCount = 2)
+
+        tester.pumpWidget(
+            widget = PageView(
+                axis = Axis.HORIZONTAL,
+                controller = controller,
+                state = state,
+                pages = listOf(Text("ONE"), Text("TWO")),
+                key = "pager",
+            ),
+            logicalWidth = 30,
+            logicalHeight = 10,
+        )
+
+        tester.startGesture(find.byKey("pager"))
+            .moveBy(dx = -2, dy = 0, deltaMs = 1)
+            .up()
+        tester.pumpAndSettle()
+
+        assertEquals(1, state.currentPage)
+        tester.dispose()
+    }
+
+    @Test
+    fun secondaryPointerHandsOffAfterPrimaryPointerEnds() {
+        val tester = PixelTester()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        tester.pumpWidget(
+            widget = ListViewBuilder(
+                itemCount = 20,
+                itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                itemExtent = 6,
+                state = state,
+                controller = controller,
+                key = "list",
+            ),
+            logicalWidth = 40,
+            logicalHeight = 18,
+        )
+
+        val primary = tester.startGesture(find.byKey("list"), pointerId = 1)
+        val secondary = tester.startGesture(find.byKey("list"), pointerId = 2)
+        secondary.moveBy(dx = 0, dy = -12)
+        assertEquals(0f, state.scrollOffsetPx, 0.001f)
+
+        primary.up()
+        secondary.moveBy(dx = 0, dy = -12)
+        secondary.up()
+
+        assertTrue(state.scrollOffsetPx > 0f)
+        tester.dispose()
+    }
+
+    @Test
     fun semanticsTreeReportsTextButtonAndTextFieldState() {
         val tester = PixelTester()
         val controller = PixelTextFieldController()

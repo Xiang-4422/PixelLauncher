@@ -58,4 +58,4 @@ Finder：
 ## 后续
 
 - 用 DSL 继续替换旧的 controller 直驱回归测试。
-- 补更接近真实 host router 的多指速度估算与 pointer handoff 事件模型。
+- gesture stream 已支持 pointerId、primary pointer handoff，以及基于 move sample 的 list / pager velocity 估算；`moveBy(dx, dy, deltaMs)` 可显式控制测试时间步长。
