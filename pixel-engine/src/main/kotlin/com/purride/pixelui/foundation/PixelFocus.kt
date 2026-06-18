@@ -1,5 +1,8 @@
 package com.purride.pixelui
 
+import com.purride.pixelui.state.PixelListController
+import com.purride.pixelui.state.PixelListState
+
 public enum class PixelKey {
     TAB,
     SHIFT_TAB,
@@ -26,6 +29,24 @@ public enum class PixelFocusDirection {
     DOWN,
     LEFT,
     RIGHT,
+}
+
+/**
+ * 焦点获得时把指定滚动 item 保持在可见区域内。
+ *
+ * 普通 `ListView`、`GridView`、`SingleChildScrollView` 传 [itemIndex]；
+ * `CustomScrollView` 的 lazy sliver 传 [sliverIndex] 和 [itemIndex]。
+ */
+public data class PixelFocusScrollTarget(
+    val state: PixelListState,
+    val controller: PixelListController,
+    val itemIndex: Int,
+    val sliverIndex: Int? = null,
+) {
+    init {
+        require(itemIndex >= 0) { "itemIndex must be >= 0" }
+        require(sliverIndex == null || sliverIndex >= 0) { "sliverIndex must be >= 0" }
+    }
 }
 
 public fun interface FocusTraversalPolicy {
@@ -229,11 +250,12 @@ public fun Focus(
     autofocus: Boolean = false,
     canRequestFocus: Boolean = true,
     onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
+    scrollTarget: PixelFocusScrollTarget? = null,
     key: Any? = null,
 ): Widget {
     node.canRequestFocus = canRequestFocus
     node.onKeyEvent = onKeyEvent
-    return FocusWidget(node = node, autofocus = autofocus, child = child, key = key)
+    return FocusWidget(node = node, autofocus = autofocus, scrollTarget = scrollTarget, child = child, key = key)
 }
 
 private class FocusScopeWidget(
@@ -245,6 +267,7 @@ private class FocusScopeWidget(
 private class FocusWidget(
     val node: FocusNode,
     val autofocus: Boolean,
+    val scrollTarget: PixelFocusScrollTarget?,
     val child: Widget,
     override val key: Any?,
 ) : StatefulWidget(key = key) {
@@ -253,6 +276,7 @@ private class FocusWidget(
 
 private class FocusWidgetState : State<FocusWidget>() {
     private var attachedScope: FocusScopeNode? = null
+    private var ensuredScrollTarget: PixelFocusScrollTarget? = null
 
     override fun initState() {
         attachToScope()
@@ -272,6 +296,10 @@ private class FocusWidgetState : State<FocusWidget>() {
         if (oldWidget.node !== widget.node) {
             attachedScope?.detach(oldWidget.node)
             attachedScope = null
+            ensuredScrollTarget = null
+        }
+        if (oldWidget.scrollTarget != widget.scrollTarget) {
+            ensuredScrollTarget = null
         }
         attachToScope()
         if (widget.autofocus && PixelFocusManager.primaryFocus == null) {
@@ -285,6 +313,7 @@ private class FocusWidgetState : State<FocusWidget>() {
 
     override fun build(context: BuildContext): Widget {
         context.watch(widget.node)
+        ensureFocusedItemVisible()
         return FocusNodeScope(
             node = widget.node,
             child = widget.child,
@@ -299,6 +328,40 @@ private class FocusWidgetState : State<FocusWidget>() {
         attachedScope?.detach(widget.node)
         attachedScope = scope
         scope.attach(widget.node)
+    }
+
+    private fun ensureFocusedItemVisible() {
+        val target = widget.scrollTarget
+        if (!widget.node.isFocused) {
+            ensuredScrollTarget = null
+            return
+        }
+        if (target == null || ensuredScrollTarget == target) return
+        if (ensureVisibleIfReady(target)) {
+            ensuredScrollTarget = target
+        }
+    }
+
+    private fun ensureVisibleIfReady(target: PixelFocusScrollTarget): Boolean {
+        if (target.state.viewportHeightPx <= 0) return false
+        val sliverIndex = target.sliverIndex
+        if (sliverIndex != null) {
+            if (target.state.sliverListGeometries[sliverIndex]?.itemHeightPx(target.itemIndex) == null) return false
+            target.controller.scrollSliverItemIntoView(
+                state = target.state,
+                sliverIndex = sliverIndex,
+                itemIndex = target.itemIndex,
+            )
+            return true
+        }
+        if (
+            target.itemIndex !in target.state.itemTopOffsetsPx.indices ||
+            target.itemIndex !in target.state.itemHeightsPx.indices
+        ) {
+            return false
+        }
+        target.controller.scrollItemIntoView(state = target.state, itemIndex = target.itemIndex)
+        return true
     }
 }
 

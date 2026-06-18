@@ -3,12 +3,15 @@ package com.purride.pixelui.foundation
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.Focus
 import com.purride.pixelui.FocusNode
+import com.purride.pixelui.PixelFocusScrollTarget
 import com.purride.pixelui.FocusScope
 import com.purride.pixelui.FocusScopeNode
 import com.purride.pixelui.GridFocusTraversalPolicy
 import com.purride.pixelui.GridView
+import com.purride.pixelui.ListView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelFocusManager
@@ -233,6 +236,51 @@ class PixelFocusTest {
             assertTrue(nodes[2].isFocused)
             assertTrue(tester.pressKey(PixelKey.ARROW_UP))
             assertTrue(nodes[0].isFocused)
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun focusedScrollTargetKeepsListItemVisible() {
+        val nodes = List(8) { index -> FocusNode("row-$index") }
+        val listController = PixelListController()
+        val listState = listController.create()
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                FocusScope(
+                    node = FocusScopeNode(),
+                    child = ListView(
+                        items = nodes.mapIndexed { index, node ->
+                            Focus(
+                                node = node,
+                                autofocus = index == 5,
+                                scrollTarget = PixelFocusScrollTarget(
+                                    state = listState,
+                                    controller = listController,
+                                    itemIndex = index,
+                                ),
+                                child = Container(height = 6, child = Text("ROW $index")),
+                            )
+                        },
+                        state = listState,
+                        controller = listController,
+                        spacing = 1,
+                    ),
+                ),
+                logicalWidth = 72,
+                logicalHeight = 18,
+            )
+            tester.pumpFrame(16)
+
+            assertTrue(nodes[5].isFocused)
+            assertTrue("focused row should be scrolled into view", listState.scrollOffsetPx > 0f)
+            val offsetAfterFirstEnsure = listState.scrollOffsetPx
+
+            tester.pumpFrame(16)
+
+            assertEquals(offsetAfterFirstEnsure, listState.scrollOffsetPx, 0.001f)
         } finally {
             tester.dispose()
         }

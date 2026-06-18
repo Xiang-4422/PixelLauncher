@@ -357,6 +357,7 @@ com.purride.pixelui public fun <T> pixelAsyncSourceOf(value: T): PixelAsyncSourc
 com.purride.pixelui public enum class PixelKey
 com.purride.pixelui public data class PixelKeyEvent(
 com.purride.pixelui public enum class PixelFocusDirection
+com.purride.pixelui public data class PixelFocusScrollTarget(
 com.purride.pixelui public fun interface FocusTraversalPolicy
 com.purride.pixelui public fun next(
 com.purride.pixelui public object ReadingOrderFocusTraversalPolicy : FocusTraversalPolicy
