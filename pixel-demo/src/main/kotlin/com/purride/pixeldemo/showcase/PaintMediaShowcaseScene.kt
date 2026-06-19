@@ -1,7 +1,9 @@
 package com.purride.pixeldemo.showcase
 
 import com.purride.pixelcore.PixelBitmap
+import com.purride.pixelcore.PixelBitmapRegion
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelcore.PixelSpriteSheet
 import com.purride.pixelui.Circle
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -19,6 +21,7 @@ import com.purride.pixelui.PixelPoint
 import com.purride.pixelui.PixelShapeStyle
 import com.purride.pixelui.Polygon
 import com.purride.pixelui.Row
+import com.purride.pixelui.Sprite
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -142,7 +145,15 @@ object PaintMediaShowcaseScene : DemoScene {
                 samplePanel(
                     title = "Sprite",
                     color = Green,
-                    child = Text("Sprite 使用 PixelSpriteSheet；此页保留 API 搜索入口", style = TextStyle(color = Green)),
+                    child = Row(
+                        children = listOf(
+                            Sprite(sheet = previewSpriteSheet(), frameIndex = 0),
+                            Sprite(sheet = previewSpriteSheet(), frameIndex = 1),
+                            Text("PixelSpriteSheet frames", style = TextStyle(color = Green)),
+                        ),
+                        spacing = 4,
+                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    ),
                 ),
             ),
             spacing = 4,
@@ -161,5 +172,28 @@ object PaintMediaShowcaseScene : DemoScene {
             }
         }
         return PixelBitmap(width = 16, height = 16, pixels = pixels)
+    }
+
+    private fun previewSpriteSheet(): PixelSpriteSheet {
+        val bitmap = PixelBitmap(
+            width = 16,
+            height = 8,
+            pixels = IntArray(16 * 8) { index ->
+                val x = index % 16
+                val y = index / 16
+                when {
+                    x < 8 && y in 2..5 -> Green.argb
+                    x >= 8 && (x + y) % 2 == 0 -> Accent.argb
+                    else -> PixelColor.Transparent.argb
+                }
+            },
+        )
+        return PixelSpriteSheet(
+            bitmap = bitmap,
+            frames = listOf(
+                PixelBitmapRegion(left = 0, top = 0, width = 8, height = 8),
+                PixelBitmapRegion(left = 8, top = 0, width = 8, height = 8),
+            ),
+        )
     }
 }

@@ -31,6 +31,7 @@ fun SmsThreadsScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
     chargeTick: Int,
+    statusBarHeight: Int,
     listState: PixelListState,
     listController: PixelListController,
     onOpenThread: (threadId: Long, address: String) -> Unit,
@@ -46,6 +47,7 @@ fun SmsThreadsScreen(
             isCharging = uiState.isCharging,
             chargeTick = chargeTick,
             theme = theme,
+            statusBarHeight = statusBarHeight,
         ),
         Expanded(
             child = if (uiState.smsThreads.isEmpty()) {

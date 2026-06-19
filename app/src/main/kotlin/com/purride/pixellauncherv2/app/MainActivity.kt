@@ -21,6 +21,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
@@ -264,6 +266,7 @@ class MainActivity : AppCompatActivity() {
             heightPx = metrics.heightPixels,
             dotSizePx = appearanceSettings.dotSizePx,
             pixelShape = appearanceSettings.pixelShape,
+            statusBarHeightPx = currentStatusBarHeightPx(),
         )
         // Phase 8: unified root host (single host for all 9 modes)
         launcherRootHost = LauncherRootHost(
@@ -395,7 +398,15 @@ class MainActivity : AppCompatActivity() {
         super.onConfigurationChanged(newConfig)
         // configChanges="uiMode" keeps the activity alive across light/dark toggles;
         // re-render so an AUTO theme follows the new system uiMode.
-        renderCurrentFrame()
+        if (::launcherRootHost.isInitialized) {
+            val widthPx = launcherRootHost.rootView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+            val heightPx = launcherRootHost.rootView.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+            if (!updateScreenProfile(widthPx, heightPx)) {
+                renderCurrentFrame()
+            }
+        } else {
+            renderCurrentFrame()
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -912,6 +923,7 @@ class MainActivity : AppCompatActivity() {
             heightPx = heightPx,
             dotSizePx = state.selectedDotSizePx,
             pixelShape = state.selectedPixelShape,
+            statusBarHeightPx = currentStatusBarHeightPx(),
         )
         if (newProfile == screenProfile) {
             return false
@@ -926,8 +938,33 @@ class MainActivity : AppCompatActivity() {
             state = state,
             visibleRows = settingsVisibleRows(),
         )
+        state = LauncherStateTransitions.reflowSmsWindow(
+            state = state,
+            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile),
+        )
+        state = LauncherStateTransitions.reflowSmsThreadWindow(
+            state = state,
+            visibleRows = SmsLayout.threadVisibleRows(screenProfile),
+        )
         renderCurrentFrame()
         return true
+    }
+
+    private fun currentStatusBarHeightPx(): Int {
+        val insetHeight = ViewCompat.getRootWindowInsets(window.decorView)
+            ?.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.statusBars())
+            ?.top
+            ?: 0
+        return insetHeight.takeIf { it > 0 } ?: statusBarHeightResourcePx()
+    }
+
+    private fun statusBarHeightResourcePx(): Int {
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (resourceId > 0) {
+            resources.getDimensionPixelSize(resourceId)
+        } else {
+            0
+        }
     }
 
     private fun visibleRows(): Int = AppListLayout.visibleRows(screenProfile)

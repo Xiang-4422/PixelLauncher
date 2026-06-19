@@ -14,6 +14,7 @@ import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelTextFieldState
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 
 /**
@@ -33,6 +34,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
  * @param isCharging  是否正在充电
  * @param chargeTick  动画帧计数，传 0 表示静态（无充电动画）
  * @param theme       当前颜色主题（提供 statusBar token）
+ * @param statusBarHeight 顶部状态栏占位高度（engine 逻辑像素）
  */
 fun LauncherHeader(
     timeText: String,
@@ -41,9 +43,11 @@ fun LauncherHeader(
     isCharging: Boolean,
     chargeTick: Int,
     theme: LauncherTheme,
+    statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
 ): Widget = Column(
-    children = listOf(
-        Row(
+    children = statusBarChildren(
+        statusBarHeight = statusBarHeight,
+        row = Row(
             children = listOf(
                 Text(timeText, style = TextStyle(color = theme.statusBar.text)),
                 Expanded(child = SizedBox(width = 0, height = 0)),
@@ -51,7 +55,7 @@ fun LauncherHeader(
             ),
             spacing = 0,
         ),
-        BatteryDividerWidget(
+        divider = BatteryDividerWidget(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
@@ -79,11 +83,13 @@ fun LauncherSearchHeader(
     isCharging: Boolean,
     chargeTick: Int,
     theme: LauncherTheme,
+    statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
     onChanged: (String) -> Unit,
     onSubmitted: () -> Unit,
 ): Widget = Column(
-    children = listOf(
-        Row(
+    children = statusBarChildren(
+        statusBarHeight = statusBarHeight,
+        row = Row(
             children = listOf(
                 Expanded(
                     child = TextField(
@@ -106,7 +112,7 @@ fun LauncherSearchHeader(
             ),
             spacing = 0,
         ),
-        BatteryDividerWidget(
+        divider = BatteryDividerWidget(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
@@ -118,3 +124,19 @@ fun LauncherSearchHeader(
     mainAxisSize = MainAxisSize.MIN,
     crossAxisAlignment = CrossAxisAlignment.STRETCH,
 )
+
+private fun statusBarChildren(
+    statusBarHeight: Int,
+    row: Widget,
+    divider: Widget,
+): List<Widget> = buildList {
+    val topSpacer = (statusBarHeight - LauncherHeaderLayout.headerContentHeight).coerceAtLeast(0)
+    if (topSpacer > 0) {
+        add(SizedBox(height = topSpacer))
+    }
+    add(row)
+    if (LauncherHeaderLayout.dividerGap > 0) {
+        add(SizedBox(height = LauncherHeaderLayout.dividerGap))
+    }
+    add(divider)
+}

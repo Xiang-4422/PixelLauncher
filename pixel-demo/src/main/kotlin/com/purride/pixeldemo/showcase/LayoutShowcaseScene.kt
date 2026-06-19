@@ -4,29 +4,39 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Align
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AspectRatio
+import com.purride.pixelui.Center
+import com.purride.pixelui.ClipRect
 import com.purride.pixelui.Column
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.ContainerDirectional
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.FittedBox
+import com.purride.pixelui.Flexible
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Opacity
 import com.purride.pixelui.PixelBoxConstraints
+import com.purride.pixelui.PositionedDirectional
+import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.SafeArea
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Spacer
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
+import com.purride.pixelui.animation.IntOffset
 import com.purride.pixeldemo.catalog.DemoCatalog
 import com.purride.pixeldemo.catalog.DemoScene
 import com.purride.pixeldemo.scaffold.Accent
@@ -37,6 +47,7 @@ import com.purride.pixeldemo.scaffold.Green
 import com.purride.pixeldemo.scaffold.Muted
 import com.purride.pixeldemo.scaffold.Pink
 import com.purride.pixeldemo.scaffold.Purple
+import com.purride.pixeldemo.scaffold.Yellow
 import com.purride.pixeldemo.scaffold.samplePanel
 import com.purride.pixeldemo.scaffold.sectionTitle
 import com.purride.pixeldemo.scaffold.swatch
@@ -61,6 +72,15 @@ object LayoutShowcaseScene : DemoScene {
         "AspectRatio",
         "ConstrainedBox",
         "FittedBox",
+        "Center",
+        "Flexible",
+        "Spacer",
+        "PositionedDirectional",
+        "PositionedFill",
+        "Opacity",
+        "ClipRect",
+        "Transform.translate",
+        "DecoratedBox",
         "Directionality",
     )
     override val isFullScreen = true
@@ -81,6 +101,7 @@ object LayoutShowcaseScene : DemoScene {
                                 children = listOf(
                                     swatch(Cyan, width = 14),
                                     Expanded(child = Container(height = 8, fillColor = Green)),
+                                    Flexible(flex = 1, child = Container(height = 8, fillColor = Yellow)),
                                     swatch(Pink, width = 18),
                                 ),
                                 spacing = 2,
@@ -89,6 +110,7 @@ object LayoutShowcaseScene : DemoScene {
                             Row(
                                 children = listOf(
                                     Container(width = 18, height = 8, fillColor = Accent),
+                                    Spacer(),
                                     Container(width = 26, height = 8, fillColor = Blue),
                                     Container(width = 12, height = 8, fillColor = Purple),
                                 ),
@@ -108,7 +130,9 @@ object LayoutShowcaseScene : DemoScene {
                         borderColor = Purple,
                         child = Stack(
                             children = listOf(
+                                PositionedFill(child = Opacity(opacity = 0.35f, child = Container(fillColor = PixelColor.fromRgb(12, 10, 20)))),
                                 Positioned(left = 4, top = 4, child = Container(width = 32, height = 14, fillColor = Blue)),
+                                PositionedDirectional(start = 10, top = 2, child = Container(width = 18, height = 8, fillColor = Green)),
                                 Positioned(left = 22, top = 12, child = Container(width = 32, height = 14, fillColor = Pink)),
                                 Positioned(right = 4, bottom = 3, child = Text("HUD", style = TextStyle(color = Accent))),
                             ),
@@ -142,6 +166,18 @@ object LayoutShowcaseScene : DemoScene {
                                         child = Container(fillColor = Green, borderColor = PixelColor.White),
                                     ),
                                     FittedBox(child = Text("FIT", style = TextStyle(color = Accent))),
+                                    Center(
+                                        child = DecoratedBox(
+                                            fillColor = PixelColor.fromRgb(12, 16, 20),
+                                            borderColor = Yellow,
+                                            child = ClipRect(
+                                                child = Transform.translate(
+                                                    offset = IntOffset(2, 1),
+                                                    child = Text("TX", style = TextStyle(color = Yellow)),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
                                 ),
                                 spacing = 3,
                                 crossAxisAlignment = CrossAxisAlignment.CENTER,

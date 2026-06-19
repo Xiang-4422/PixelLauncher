@@ -6,6 +6,7 @@ data class ScreenProfile(
     val dotSizePx: Int,
     val pixelShape: PixelShape = PixelShape.SQUARE,
     val scaleMode: ScaleMode = ScaleMode.FIT_CENTER,
+    val statusBarHeight: Int = 0,
 )
 
 enum class PixelShape {

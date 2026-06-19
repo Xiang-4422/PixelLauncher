@@ -58,6 +58,10 @@ object ScrollPagingShowcaseScene : DemoScene {
         "ScrollController",
         "PageController",
         "PixelScrollPhysics",
+        "PixelSliverList",
+        "PixelSliverListBuilder",
+        "PixelSliverPinnedHeader",
+        "PixelSliverAppBar",
     )
     override val isFullScreen = true
 

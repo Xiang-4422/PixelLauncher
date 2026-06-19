@@ -86,13 +86,20 @@ public fun Switch(
 ): Widget {
     val border = if (!enabled) PixelColor.fromRgb(80, 80, 80) else if (checked) activeColor else inactiveColor
     val thumb = Container(width = 5, height = 5, fillColor = border)
-    val spacer = SizedBox(width = 5, height = 5)
     val track = Container(
         width = 14,
         height = 7,
         borderColor = border,
-        padding = EdgeInsets.all(1),
-        child = Row(children = if (checked) listOf(spacer, thumb) else listOf(thumb, spacer)),
+        child = Stack(
+            children = listOf(
+                Positioned(
+                    left = if (checked) null else 1,
+                    right = if (checked) 1 else null,
+                    top = 1,
+                    child = thumb,
+                ),
+            ),
+        ),
     )
     val effectiveEnabled = enabled && onChanged != null
     val interactive = if (effectiveEnabled) {
@@ -123,7 +130,6 @@ public fun Dialog(
     }
     return Center(
         child = Container(
-            width = 96,
             padding = EdgeInsets.all(3),
             fillColor = fillColor,
             borderColor = borderColor,
@@ -144,7 +150,12 @@ public fun Toast(
             padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
             fillColor = fillColor,
             borderColor = PixelColor.White,
-            child = Text(message, style = textStyle),
+            child = Text(
+                message,
+                style = textStyle,
+                softWrap = true,
+                maxLines = Int.MAX_VALUE,
+            ),
             key = key,
         ),
     )
@@ -158,9 +169,9 @@ public fun Snackbar(
     key: Any? = null,
 ): Widget {
     val rowChildren = if (action == null) {
-        listOf<Widget>(Expanded(child = Text(message, style = textStyle)))
+        listOf<Widget>(Expanded(child = snackbarText(message, textStyle)))
     } else {
-        listOf(Expanded(child = Text(message, style = textStyle)), action)
+        listOf(Expanded(child = snackbarText(message, textStyle)), action)
     }
     return Container(
         padding = EdgeInsets.symmetric(horizontal = 3, vertical = 2),
@@ -206,13 +217,21 @@ public fun SegmentedControl(
             role = PixelSemanticRole.TAB,
             enabled = true,
             focusWhenParentFocused = index == selectedIndex,
-            child = Container(
-                fillColor = if (index == selectedIndex) PixelColor.White else PixelColor.Transparent,
-                borderColor = PixelColor.White,
-                child = GestureDetector(
-                    child = Padding(child = Text(label, style = TextStyle(color = if (index == selectedIndex) PixelColor.Black else PixelColor.White)), horizontal = 2, vertical = 1),
-                    onTap = { onSelected(index) },
+            child = GestureDetector(
+                child = Container(
+                    fillColor = if (index == selectedIndex) PixelColor.White else PixelColor.Transparent,
+                    borderColor = PixelColor.White,
+                    child = Padding(
+                        child = Text(
+                            label,
+                            style = TextStyle(color = if (index == selectedIndex) PixelColor.Black else PixelColor.White),
+                            overflow = PixelTextOverflow.ELLIPSIS,
+                        ),
+                        horizontal = 2,
+                        vertical = 1,
+                    ),
                 ),
+                onTap = { onSelected(index) },
             ),
         )
     },
@@ -311,6 +330,17 @@ private fun Int.floorMod(divisor: Int): Int {
     val remainder = this % divisor
     return if (remainder < 0) remainder + divisor else remainder
 }
+
+private fun snackbarText(
+    message: String,
+    textStyle: PixelTextStyle,
+): Widget = Text(
+    message,
+    style = textStyle,
+    softWrap = true,
+    maxLines = 2,
+    overflow = PixelTextOverflow.ELLIPSIS,
+)
 
 private data class FocusableControl(
     val label: String,

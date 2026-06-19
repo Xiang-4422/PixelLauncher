@@ -12,8 +12,10 @@ import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelSystemAction
 import com.purride.pixelui.PixelTextInputRequest
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.gesture.PagerGesturePolicy
+import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixeldemo.browser.DemoBrowserScene
 import com.purride.pixeldemo.app.DemoTextRasterizers
 import com.purride.pixeldemo.catalog.DemoCatalog
@@ -43,6 +45,8 @@ class DemoActivity : AppCompatActivity() {
 
         rasterizers = DemoTextRasterizers(this)
         val initSettings = DemoAppSettings()
+        val frameScheduler = PixelFrameScheduler.Default
+        val vsync = PixelTickerProvider(frameScheduler)
         val setup = createPixelHostSetup(
             context = this,
             config = PixelHostSetupConfig(
@@ -51,6 +55,7 @@ class DemoActivity : AppCompatActivity() {
                     pixelShape = initSettings.pixelShape,
                 ),
                 textRasterizer = rasterizers.getRasterizer(initSettings.fontSizePx, initSettings.fontStyle),
+                frameScheduler = frameScheduler,
             ),
         )
         hostView = setup.hostView
@@ -94,6 +99,7 @@ class DemoActivity : AppCompatActivity() {
         val env = DemoEnv(
             hostView = hostView,
             rasterizers = rasterizers,
+            vsync = vsync,
             applyPreferredProfile = ::applyProfile,
             navigator = nav,
             currentSettings = currentSettings,

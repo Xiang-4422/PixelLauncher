@@ -3,8 +3,11 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.Container
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.FocusNode
 import com.purride.pixelui.FocusNodeScope
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelSemanticRole
@@ -13,6 +16,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.StatelessWidget
+import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.Widget
 import com.purride.pixelui.getInheritedWidgetOfExactType
@@ -217,24 +221,22 @@ internal data class OutlinedButtonWidget(
         val focused = effectiveEnabled && focusNode?.isFocused == true
         val effectiveFill = fillColor ?: style.fillColor
         val effectiveBorder = borderColor ?: if (focused) DefaultFocusBorderColor else style.borderColor
-        val content = ButtonSurfaceWidget(
+        val content = Container(
             fillColor = effectiveFill,
             borderColor = effectiveBorder,
-            padding = 1,
+            padding = EdgeInsets.all(1),
             alignment = style.alignment,
             key = key,
-            child = TextWidget(
-                data = text,
+            child = Text(
+                text,
                 style = style.textStyle,
-                softWrap = false,
-                maxLines = 1,
-                overflow = PixelTextOverflow.CLIP,
+                overflow = PixelTextOverflow.ELLIPSIS,
                 textAlign = TextAlign.CENTER,
                 key = key?.let { "$it-text" },
             ),
         )
         val button = if (effectiveEnabled) {
-            GestureDetectorWidget(child = content, onTap = onPressed ?: {}, key = key)
+            GestureDetector(child = content, onTap = onPressed ?: {}, key = key)
         } else {
             content
         }
@@ -250,39 +252,3 @@ internal data class OutlinedButtonWidget(
 }
 
 private val DefaultFocusBorderColor: PixelColor = PixelColor.fromRgb(255, 200, 0)
-
-/**
- * OutlinedButton 使用的 direct surface。
- */
-private data class ButtonSurfaceWidget(
-    override val child: Widget?,
-    val fillColor: PixelColor? = null,
-    val borderColor: PixelColor? = null,
-    val padding: Int,
-    val alignment: Alignment,
-    override val key: Any? = null,
-) : SingleChildRenderObjectWidget(child = child, key = key) {
-    override fun createRenderObject(context: BuildContext): RenderObject {
-        return RenderSurface(
-            fillColor = fillColor,
-            borderColor = borderColor,
-            alignment = alignment.toPixelAlignment(),
-            contentPaddingLeft = padding,
-            contentPaddingTop = padding,
-            contentPaddingRight = padding,
-            contentPaddingBottom = padding,
-        )
-    }
-
-    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
-        (renderObject as RenderSurface).updateSurface(
-            fillColor = fillColor,
-            borderColor = borderColor,
-            alignment = alignment.toPixelAlignment(),
-            contentPaddingLeft = padding,
-            contentPaddingTop = padding,
-            contentPaddingRight = padding,
-            contentPaddingBottom = padding,
-        )
-    }
-}

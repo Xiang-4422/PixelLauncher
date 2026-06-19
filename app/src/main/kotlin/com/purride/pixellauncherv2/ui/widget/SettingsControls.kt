@@ -18,6 +18,11 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 
+private const val SETTINGS_SWITCH_PADDING_PX = 1
+private const val SETTINGS_SWITCH_SEGMENT_GAP_PX = 1
+private const val SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX = 1
+private const val SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX = 1
+
 fun SettingsValueSlider(
     title: String,
     valueLabel: String,
@@ -184,28 +189,25 @@ private fun SettingsSwitch(
     onLabel: String,
     onToggle: () -> Unit,
 ): Widget {
-    val width = if (showLabels) 34 else 18
+    val effectiveOffLabel = if (showLabels) offLabel else ""
+    val effectiveOnLabel = if (showLabels) onLabel else ""
     return GestureDetector(
         onTap = onToggle,
-        child = SizedBox(
-            width = width,
-            height = 11,
-            child = Container(
-                borderColor = theme.button.border,
-                padding = EdgeInsets.all(1),
-                child = Row(
-                    spacing = 1,
-                    children = listOf(
-                        switchSegment(
-                            label = if (showLabels) offLabel else "",
-                            active = !checked,
-                            theme = theme,
-                        ),
-                        switchSegment(
-                            label = if (showLabels) onLabel else "",
-                            active = checked,
-                            theme = theme,
-                        ),
+        child = Container(
+            borderColor = theme.button.border,
+            padding = EdgeInsets.all(SETTINGS_SWITCH_PADDING_PX),
+            child = Row(
+                spacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
+                children = listOf(
+                    switchSegment(
+                        label = effectiveOffLabel,
+                        active = !checked,
+                        theme = theme,
+                    ),
+                    switchSegment(
+                        label = effectiveOnLabel,
+                        active = checked,
+                        theme = theme,
                     ),
                 ),
             ),
@@ -217,14 +219,16 @@ private fun switchSegment(
     label: String,
     active: Boolean,
     theme: LauncherTheme,
-): Widget = Expanded(
-    child = Container(
-        fillColor = if (active) theme.button.pressedFill else PixelColor.Transparent,
-        alignment = Alignment.CENTER,
-        child = Text(
-            label,
-            style = TextStyle(color = if (active) theme.button.text else theme.button.disabledText),
-            overflow = TextOverflow.CLIP,
-        ),
+): Widget = Container(
+    fillColor = if (active) theme.button.pressedFill else PixelColor.Transparent,
+    padding = EdgeInsets.symmetric(
+        horizontal = SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX,
+        vertical = SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX,
+    ),
+    alignment = Alignment.CENTER,
+    child = Text(
+        label,
+        style = TextStyle(color = if (active) theme.button.text else theme.button.disabledText),
+        overflow = TextOverflow.CLIP,
     ),
 )

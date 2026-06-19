@@ -1,6 +1,7 @@
 package com.purride.pixeldemo
 
 import com.purride.pixeldemo.catalog.DemoCatalog
+import com.purride.pixeldemo.catalog.DemoTreeCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -15,14 +16,16 @@ class DemoCatalogCoverageTest {
     fun catalogContainsExpectedComponentCategories() {
         assertEquals(
             listOf(
-                "基础布局",
-                "文本输入",
-                "交互控件",
-                "滚动分页",
-                "绘制媒体",
-                "动画状态",
-                "导航宿主",
-                "压力验证",
+                "布局",
+                "文本",
+                "输入",
+                "控件",
+                "反馈",
+                "滚动",
+                "绘制",
+                "动效",
+                "导航",
+                "调试",
             ),
             DemoCatalog.categories.map { it.title },
         )
@@ -68,22 +71,27 @@ class DemoCatalogCoverageTest {
 
     @Test
     fun searchMatchesTitleTagsAndApis() {
-        assertEquals("components_text_input", DemoCatalog.search("TextField").first().id)
-        assertEquals("components_scroll_paging", DemoCatalog.search("ListView").first().id)
-        assertEquals("components_controls", DemoCatalog.search("Button").first().id)
-        assertEquals("components_navigation_host", DemoCatalog.search("Navigator").first().id)
-        assertEquals("components_paint_media", DemoCatalog.search("canvas").first().id)
+        assertSearchContains("TextField", "text_text_field")
+        assertSearchContains("ListView", "scroll_list_view")
+        assertSearchContains("Button", "controls_outlined_button")
+        assertSearchContains("Navigator", "deep_navigation_runtime")
+        assertSearchContains("canvas", "paint_custom_paint")
+        assertSearchContains("AnimatedSprite", "deep_resources_sprites")
+        assertSearchContains("PixelResourceCache", "deep_resources_sprites")
+        assertSearchContains("PixelNavigatorSnapshot", "deep_navigation_runtime")
+        assertSearchContains("FormValidator", "nav_form")
+        assertSearchContains("PixelInspectorPanel", "debug_inspector_panel")
+        assertSearchContains("PixelLeafRenderObjectWidget", "deep_inspector_advanced")
+        assertSearchContains("PixelPagerSavedState", "deep_state_restoration")
     }
 
     @Test
     fun categoryFilteringAndAdjacentNavigationAreStable() {
-        assertEquals(
-            DemoCatalog.categories.size,
-            DemoCatalog.allItems.size,
-        )
+        assertTrue(DemoCatalog.allItems.size > DemoCatalog.categories.size)
         DemoCatalog.categories.forEach { category ->
-            assertEquals(1, DemoCatalog.itemsFor(category).size)
-            assertEquals(1, DemoCatalog.itemsFor(category.id).size)
+            val items = DemoCatalog.itemsFor(category)
+            assertTrue("${category.id} must contain at least one scene", items.isNotEmpty())
+            assertEquals(items, DemoCatalog.itemsFor(category.id))
         }
 
         val first = DemoCatalog.allItems.first()
@@ -93,5 +101,164 @@ class DemoCatalogCoverageTest {
         assertSame(second, DemoCatalog.nextItem(first.id))
         assertSame(first, DemoCatalog.previousItem(second.id))
         assertNull(DemoCatalog.nextItem(last.id))
+    }
+
+    @Test
+    fun demoTreeCatalogMirrorsUiUxCatalogOrder() {
+        assertEquals(DemoCatalog.categories.map { it.id }, DemoTreeCatalog.categories.map { it.id })
+        assertEquals(DemoCatalog.allItems, DemoTreeCatalog.leafScenes)
+        assertEquals(listOf(DemoCatalog.categories.first().id), DemoTreeCatalog.defaultSelectedPath())
+
+        val columns = DemoTreeCatalog.visibleColumns(DemoTreeCatalog.defaultSelectedPath())
+        assertEquals(DemoCatalog.categories.size, columns.first().size)
+        assertEquals(
+            listOf(
+                "layout_padding",
+                "layout_padding_directional",
+                "layout_align",
+                "layout_center",
+                "layout_align_directional",
+                "layout_sized_box",
+                "layout_container",
+                "layout_container_directional",
+                "layout_row",
+                "layout_column",
+                "layout_expanded",
+                "layout_flexible",
+                "layout_spacer",
+                "layout_wrap",
+                "layout_stack",
+                "layout_positioned",
+                "layout_positioned_directional",
+                "layout_positioned_fill",
+                "layout_opacity",
+                "layout_clip_rect",
+                "layout_transform_translate",
+                "layout_decorated_box",
+                "layout_aspect_ratio",
+                "layout_constrained_box",
+                "layout_fitted_box",
+                "layout_safe_area",
+                "layout_gesture_detector",
+                "controls_divider",
+                "controls_gap",
+            ),
+            columns[1].map { it.scene?.id },
+        )
+        assertEquals("layout_padding", columns[1].first().scene?.id)
+
+        DemoTreeCatalog.categories.forEach { category ->
+            assertTrue("${category.id} must contain leaf scenes", category.children.isNotEmpty())
+            category.children.forEach { leaf ->
+                assertTrue("${leaf.id} must be a leaf scene", leaf.isLeaf)
+                assertNotNull("${leaf.id} must reference a scene", leaf.scene)
+            }
+        }
+    }
+
+    @Test
+    fun leafOrderMatchesUiUxSections() {
+        assertEquals(
+            listOf(
+                "layout_padding",
+                "layout_padding_directional",
+                "layout_align",
+                "layout_center",
+                "layout_align_directional",
+                "layout_sized_box",
+                "layout_container",
+                "layout_container_directional",
+                "layout_row",
+                "layout_column",
+                "layout_expanded",
+                "layout_flexible",
+                "layout_spacer",
+                "layout_wrap",
+                "layout_stack",
+                "layout_positioned",
+                "layout_positioned_directional",
+                "layout_positioned_fill",
+                "layout_opacity",
+                "layout_clip_rect",
+                "layout_transform_translate",
+                "layout_decorated_box",
+                "layout_aspect_ratio",
+                "layout_constrained_box",
+                "layout_fitted_box",
+                "layout_safe_area",
+                "layout_gesture_detector",
+                "controls_divider",
+                "controls_gap",
+                "text_text",
+                "text_rich_text",
+                "text_text_field",
+                "nav_focus_scope",
+                "nav_focus",
+                "nav_form",
+                "nav_form_field",
+                "nav_semantics",
+                "controls_outlined_button",
+                "controls_list_tile",
+                "controls_checkbox",
+                "controls_switch",
+                "controls_tabs",
+                "controls_segmented_control",
+                "controls_slider",
+                "controls_progress_bar",
+                "controls_activity_indicator",
+                "controls_badge",
+                "controls_dialog",
+                "controls_toast",
+                "controls_snackbar",
+                "scroll_single_child_scroll_view",
+                "scroll_list_view",
+                "scroll_list_view_builder",
+                "scroll_list_view_separated",
+                "scroll_list_view_separated_builder",
+                "scroll_grid_view",
+                "scroll_grid_view_builder",
+                "scroll_page_view",
+                "scroll_page_view_builder",
+                "scroll_scrollbar",
+                "scroll_refresh_indicator",
+                "scroll_custom_scroll_view",
+                "scroll_sliver_list",
+                "scroll_sliver_list_builder",
+                "scroll_sliver_pinned_header",
+                "scroll_sliver_app_bar",
+                "deep_state_restoration",
+                "controls_icon",
+                "paint_line",
+                "paint_circle",
+                "paint_polygon",
+                "paint_path",
+                "paint_custom_paint",
+                "paint_image",
+                "paint_sprite",
+                "paint_animated_sprite",
+                "deep_resources_sprites",
+                "animation_animated_container",
+                "animation_animated_opacity",
+                "animation_animated_padding",
+                "animation_animated_align",
+                "animation_animated_positioned",
+                "animation_animated_switcher",
+                "animation_tween_animation_builder",
+                "animation_animated_builder",
+                "controls_app_scaffold",
+                "deep_navigation_runtime",
+                "debug_overlay",
+                "debug_inspector_panel",
+                "debug_inspector_bounds_overlay",
+                "deep_inspector_advanced",
+                "deep_performance_lab",
+            ),
+            DemoCatalog.allItems.map { it.id },
+        )
+    }
+
+    private fun assertSearchContains(query: String, sceneId: String) {
+        val ids = DemoCatalog.search(query).map { it.id }
+        assertTrue("$query should find $sceneId, got $ids", sceneId in ids)
     }
 }

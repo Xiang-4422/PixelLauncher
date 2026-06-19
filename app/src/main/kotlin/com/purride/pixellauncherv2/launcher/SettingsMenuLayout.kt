@@ -26,7 +26,7 @@ object SettingsMenuLayout {
     fun largeVisibleRows(screenProfile: ScreenProfile): Int = computeVisibleRows(screenProfile, largeRowHeight)
 
     private fun computeVisibleRows(screenProfile: ScreenProfile, listRowHeight: Int): Int {
-        val panelTop = LauncherHeaderLayout.firstContentItemTop
+        val panelTop = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val panelBottom = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(panelTop + 24)
         return TextListSupport.createLayoutMetrics(
             top = panelTop,

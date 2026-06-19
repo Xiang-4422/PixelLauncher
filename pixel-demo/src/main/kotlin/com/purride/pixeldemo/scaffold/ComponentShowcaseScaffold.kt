@@ -10,7 +10,6 @@ import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
-import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
@@ -43,14 +42,7 @@ fun samplePanel(
         padding = EdgeInsets.all(3),
         borderColor = color,
         fillColor = Panel,
-        child = Column(
-            children = listOf(
-                Text(title, style = TextStyle(color = color)),
-                child,
-            ),
-            spacing = 2,
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        ),
+        child = child,
     )
 
 fun apiTags(
@@ -109,28 +101,8 @@ private class ComponentShowcaseFrame(
         private fun header(): Widget =
             Padding(
                 horizontal = 4,
-                vertical = 3,
-                child = Column(
-                    children = listOf(
-                        Row(
-                            children = listOf(
-                                Expanded(child = Text(item.title, style = TextStyle(color = Accent))),
-                                Text(item.category?.title.orEmpty(), style = TextStyle(color = Muted)),
-                            ),
-                            spacing = 2,
-                            crossAxisAlignment = CrossAxisAlignment.CENTER,
-                        ),
-                        Text(
-                            item.summary,
-                            style = TextStyle(color = Muted),
-                            softWrap = false,
-                            overflow = PixelTextOverflow.ELLIPSIS,
-                        ),
-                        apiTags(item.apis.take(8)),
-                    ),
-                    spacing = 2,
-                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                ),
+                vertical = 2,
+                child = Text(item.title, style = TextStyle(color = Accent)),
             )
 
         private fun content(): Widget =

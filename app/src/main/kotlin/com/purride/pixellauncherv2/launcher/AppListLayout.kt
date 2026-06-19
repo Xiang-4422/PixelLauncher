@@ -18,7 +18,7 @@ object AppListLayout {
         get() = DrawerListGeometry.rowPitch(GlyphStyle.APP_LABEL_16.cellHeight)
 
     fun visibleRows(screenProfile: ScreenProfile): Int {
-        val listStartY = LauncherHeaderLayout.firstContentItemTop
+        val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val railHeight = (screenProfile.logicalHeight - listStartY - bottomPadding).coerceAtLeast(rowHeight)
         return TextListSupport.createLayoutMetrics(
             top = listStartY,

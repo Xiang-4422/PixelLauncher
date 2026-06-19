@@ -13,6 +13,7 @@ import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.launcher.DiagnosticsModel
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -40,6 +41,7 @@ fun DiagnosticsScreen(
             isCharging = uiState.isCharging,
             chargeTick = chargeTick,
             theme = theme,
+            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
         ),
         Expanded(
             child = Padding(

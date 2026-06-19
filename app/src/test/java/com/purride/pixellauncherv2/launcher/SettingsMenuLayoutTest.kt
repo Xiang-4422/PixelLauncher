@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.ScreenProfile
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -15,7 +16,7 @@ import org.junit.Test
 class SettingsMenuLayoutTest {
 
     private fun expectedVisibleRows(profile: ScreenProfile, rowHeight: Int): Int {
-        val top = LauncherHeaderLayout.firstContentItemTop
+        val top = LauncherHeaderLayout.firstContentItemTop(profile)
         val panelBottom = (profile.logicalHeight - 4).coerceAtLeast(top + 24)
         val height = (panelBottom - top).coerceAtLeast(rowHeight)
         return (height / rowHeight).coerceAtLeast(1)
@@ -49,5 +50,27 @@ class SettingsMenuLayoutTest {
     @Test
     fun visibleRows_isAtLeastOneForTinyScreens() {
         assertEquals(1, SettingsMenuLayout.visibleRows(ScreenProfile(64, 1, 4)))
+    }
+
+    @Test
+    fun visibleRows_usesStatusBarHeightFromProfile() {
+        val defaultHeader = SettingsMenuLayout.visibleRows(ScreenProfile(120, 240, 4))
+        val tallerHeader = SettingsMenuLayout.visibleRows(
+            ScreenProfile(
+                logicalWidth = 120,
+                logicalHeight = 240,
+                dotSizePx = 4,
+                statusBarHeight = 48,
+            ),
+        )
+
+        assertEquals(
+            expectedVisibleRows(
+                ScreenProfile(120, 240, 4, statusBarHeight = 48),
+                SettingsListGeometry.ROW_PITCH_PX,
+            ),
+            tallerHeader,
+        )
+        assertTrue("a taller status bar must reduce settings rows", tallerHeader < defaultHeader)
     }
 }

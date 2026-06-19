@@ -6,10 +6,12 @@ import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
-import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.Row
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
@@ -66,23 +68,19 @@ class HomeScreen(
                         ),
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
-                    Padding(
-                        horizontal = 2,
-                        vertical = 2,
-                        child = Row(
-                            spacing = 0,
-                            children = listOf(
-                                OutlinedButton(
-                                    text = "CONTACT",
-                                    onPressed = widget.onOpenContacts,
-                                    borderColor = t.button.border,
-                                ),
-                                Expanded(child = SizedBox(width = 0, height = 0)),
-                                OutlinedButton(
-                                    text = "SMS",
-                                    onPressed = widget.onOpenSms,
-                                    borderColor = t.button.border,
-                                ),
+                    Row(
+                        spacing = 0,
+                        children = listOf(
+                            HomeTextButton(
+                                text = "CONTACT",
+                                theme = t,
+                                onPressed = widget.onOpenContacts,
+                            ),
+                            Expanded(child = SizedBox(width = 0, height = 0)),
+                            HomeTextButton(
+                                text = "SMS",
+                                theme = t,
+                                onPressed = widget.onOpenSms,
                             ),
                         ),
                     ),
@@ -168,6 +166,24 @@ private fun LauncherUiState.toHomeInfoRows(): List<String> = buildList {
 private data class HomeContextModel(
     val title: String,
     val body: String,
+)
+
+private fun HomeTextButton(
+    text: String,
+    theme: LauncherTheme,
+    onPressed: () -> Unit,
+): Widget = Semantics(
+    label = text,
+    role = PixelSemanticRole.BUTTON,
+    enabled = true,
+    child = GestureDetector(
+        onTap = onPressed,
+        child = Text(
+            text,
+            style = TextStyle(color = theme.button.text),
+            overflow = TextOverflow.CLIP,
+        ),
+    ),
 )
 
 private fun LauncherUiState.homeContextModel(): HomeContextModel =

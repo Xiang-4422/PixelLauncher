@@ -32,6 +32,7 @@ fun SmsInboxScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
     chargeTick: Int,
+    statusBarHeight: Int,
     pagerController: PixelPagerController,
     pagerState: PixelPagerState,
     scrollController: PixelListController,
@@ -56,6 +57,7 @@ fun SmsInboxScreen(
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
                 theme = theme,
+                statusBarHeight = statusBarHeight,
             ),
             Expanded(
                 child = if (entries.isEmpty()) {

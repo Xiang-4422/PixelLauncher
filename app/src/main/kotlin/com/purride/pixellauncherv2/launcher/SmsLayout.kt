@@ -15,7 +15,7 @@ object SmsLayout {
         get() = SmsThreadGeometry.ROW_PITCH_PX
 
     fun threadVisibleRows(screenProfile: ScreenProfile): Int {
-        val top = LauncherHeaderLayout.firstContentItemTop
+        val top = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val bottomExclusive = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(top + threadRowHeight)
         return TextListSupport.createLayoutMetrics(
             top = top,

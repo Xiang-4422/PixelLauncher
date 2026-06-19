@@ -200,6 +200,7 @@ internal class LauncherRootHost(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
+            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             listState = threadListState,
             listController = threadListController,
             onOpenThread = callbacks.onOpenThread,
@@ -208,6 +209,7 @@ internal class LauncherRootHost(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
+            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             pagerController = inboxPagerController,
             pagerState = inboxPagerState,
             scrollController = inboxScrollController,
@@ -221,6 +223,7 @@ internal class LauncherRootHost(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
+            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             msgListState = msgListState,
             msgListController = msgListController,
             draftController = draftController,
@@ -294,6 +297,7 @@ internal class LauncherRootHost(
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
                 theme = theme,
+                statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
                 onChanged = callbacks.onDrawerQueryChanged,
                 onSubmitted = callbacks.onDrawerSubmitSearch,
             )
@@ -308,6 +312,7 @@ internal class LauncherRootHost(
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
                 theme = theme,
+                statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             )
         }
 

@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.ActivityIndicator
 import com.purride.pixelui.Badge
+import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -15,7 +16,9 @@ import com.purride.pixelui.Icon
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelIconData
+import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Row
 import com.purride.pixelui.SegmentedControl
@@ -50,6 +53,8 @@ object ControlShowcaseScene : DemoScene {
     override val apis = setOf(
         "OutlinedButton",
         "ListTile",
+        "ButtonStyle",
+        "PixelButtonStyle",
         "Checkbox",
         "Switch",
         "Tabs",
@@ -80,8 +85,13 @@ private class ControlBody(
         private var segment = 0
         private var slider = 0.62f
 
-        override fun build(context: com.purride.pixelui.BuildContext): Widget =
-            Column(
+        override fun build(context: com.purride.pixelui.BuildContext): Widget {
+            val explicitStyle: PixelButtonStyle = ButtonStyle(
+                fillColor = PixelColor.fromRgb(24, 18, 4),
+                borderColor = Yellow,
+                textStyle = PixelTextStyle(color = Yellow),
+            )
+            return Column(
                 children = listOf(
                     sectionTitle("按钮与列表行"),
                     samplePanel(
@@ -92,6 +102,7 @@ private class ControlBody(
                                 Row(
                                     children = listOf(
                                         OutlinedButton(text = "PRIMARY", onPressed = {}, borderColor = Accent),
+                                        OutlinedButton(text = "STYLE", onPressed = {}, style = explicitStyle),
                                         OutlinedButton(text = "DISABLED", onPressed = null, enabled = false),
                                         Badge(
                                             child = OutlinedButton(text = "MAIL", onPressed = {}, borderColor = Pink),
@@ -179,6 +190,7 @@ private class ControlBody(
                 mainAxisSize = MainAxisSize.MIN,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
             )
+        }
 
         private fun tinyIcon(): PixelBitmap {
             val clear = PixelColor.Transparent.argb

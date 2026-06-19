@@ -17,7 +17,7 @@ class AppListLayoutTest {
 
     private fun expectedVisibleRows(profile: ScreenProfile): Int {
         val rowHeight = DrawerListGeometry.rowPitch(GlyphStyle.APP_LABEL_16.cellHeight)
-        val top = LauncherHeaderLayout.firstContentItemTop
+        val top = LauncherHeaderLayout.firstContentItemTop(profile)
         val rail = (profile.logicalHeight - top).coerceAtLeast(rowHeight)
         return (rail / rowHeight).coerceAtLeast(1)
     }
@@ -44,5 +44,20 @@ class AppListLayoutTest {
         val short = AppListLayout.visibleRows(ScreenProfile(120, 200, 4))
         val tall = AppListLayout.visibleRows(ScreenProfile(120, 800, 4))
         assertTrue("a 600px taller viewport must show strictly more rows", tall > short)
+    }
+
+    @Test
+    fun visibleRows_usesStatusBarHeightFromProfile() {
+        val defaultHeader = AppListLayout.visibleRows(ScreenProfile(120, 240, 4))
+        val tallerHeader = AppListLayout.visibleRows(
+            ScreenProfile(
+                logicalWidth = 120,
+                logicalHeight = 240,
+                dotSizePx = 4,
+                statusBarHeight = 48,
+            ),
+        )
+
+        assertTrue("a taller status bar must reduce visible drawer rows", tallerHeader < defaultHeader)
     }
 }
