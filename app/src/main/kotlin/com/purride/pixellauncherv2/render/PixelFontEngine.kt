@@ -1,7 +1,5 @@
 package com.purride.pixellauncherv2.render
 
-import com.purride.pixellauncherv2.launcher.PixelFontStyle
-
 data class GlyphStyle(
     val cellHeight: Int,
     val narrowAdvanceWidth: Int,
@@ -17,26 +15,20 @@ data class GlyphStyle(
     val wideFontFamily: PixelFontFamily,
 ) {
     companion object {
-        @Volatile
-        private var configuredFontStyle: PixelFontStyle = PixelFontStyle.PROP
-
         /** 所有布局尺寸计算使用固定 10px。 */
         private const val FIXED_FONT_PX = 10
+        private const val NARROW_ADVANCE_PX = 6
 
         val APP_LABEL_16: GlyphStyle
-            get() = styleFor(FIXED_FONT_PX, configuredFontStyle)
+            get() = styleFor(FIXED_FONT_PX)
 
         val UI_SMALL_10: GlyphStyle
-            get() = styleFor(FIXED_FONT_PX, configuredFontStyle)
+            get() = styleFor(FIXED_FONT_PX)
 
-        fun configure(fontStyle: PixelFontStyle) {
-            configuredFontStyle = fontStyle
-        }
-
-        private fun styleFor(cellHeight: Int, style: PixelFontStyle): GlyphStyle {
+        private fun styleFor(cellHeight: Int): GlyphStyle {
             return GlyphStyle(
                 cellHeight = cellHeight,
-                narrowAdvanceWidth = narrowAdvanceWidth(cellHeight, style),
+                narrowAdvanceWidth = NARROW_ADVANCE_PX,
                 wideAdvanceWidth = cellHeight,
                 oversampleFactor = 1,
                 narrowMinimumSampleRatio = 1f,
@@ -48,13 +40,6 @@ data class GlyphStyle(
                 narrowFontFamily = PixelFontFamily.MONOSPACE,
                 wideFontFamily = PixelFontFamily.DEFAULT,
             )
-        }
-
-        private fun narrowAdvanceWidth(cellHeight: Int, style: PixelFontStyle): Int {
-            return when (style) {
-                PixelFontStyle.MONO -> cellHeight
-                PixelFontStyle.PROP -> 6
-            }
         }
     }
 }

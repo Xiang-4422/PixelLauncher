@@ -96,8 +96,7 @@ internal class LauncherRootHost(
         context = context,
         config = PixelHostSetupConfig(
             textRasterizer = textRasterizers.getRasterizer(
-                PixelFontSize.PX_10,
-                uiState.selectedFontStyle,
+                PixelFontCatalog.defaultUiFontSize,
             ),
             content = { buildRoot() },
         ),
@@ -133,8 +132,7 @@ internal class LauncherRootHost(
         setup.hostView.backgroundColor = theme.surface.appBackground
         setup.hostView.pixelGridColor  = theme.surface.pixelGrid
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
-            PixelFontSize.PX_10,
-            state.selectedFontStyle,
+            PixelFontCatalog.defaultUiFontSize,
         )
 
         // ── Sync main pager ───────────────────────────────────────────────────

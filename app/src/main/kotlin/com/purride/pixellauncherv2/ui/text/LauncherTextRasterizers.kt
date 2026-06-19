@@ -12,27 +12,19 @@ import com.purride.pixelcore.PixelGlyphPackAssetLoader
 import com.purride.pixelcore.PixelStyledTextRasterizer
 import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixellauncherv2.launcher.PixelFontSize
-import com.purride.pixellauncherv2.launcher.PixelFontStyle
 
 class LauncherTextRasterizers(
     context: Context,
 ) {
 
     private val glyphPackLoader = PixelGlyphPackAssetLoader(context)
-    private val cache = mutableMapOf<Pair<PixelFontSize, PixelFontStyle>, PixelTextRasterizer>()
+    private val cache = mutableMapOf<PixelFontSize, PixelTextRasterizer>()
 
-    fun getRasterizer(
-        size: PixelFontSize,
-        style: PixelFontStyle,
-    ): PixelTextRasterizer {
-        return cache.getOrPut(size to style) {
-            val styleName = when (style) {
-                PixelFontStyle.MONO -> "monospaced"
-                PixelFontStyle.PROP -> "proportional"
-            }
+    fun getRasterizer(size: PixelFontSize): PixelTextRasterizer {
+        return cache.getOrPut(size) {
             fusionRasterizer(
-                latinAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${styleName}_latin",
-                zhHansAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${styleName}_zh_hans",
+                latinAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${DEFAULT_STYLE_NAME}_latin",
+                zhHansAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${DEFAULT_STYLE_NAME}_zh_hans",
             )
         }
     }
@@ -78,5 +70,9 @@ class LauncherTextRasterizers(
             wideFontFamily = PixelFontFamily.DEFAULT,
             baseLetterSpacing = 0,
         )
+    }
+
+    private companion object {
+        const val DEFAULT_STYLE_NAME = "proportional"
     }
 }

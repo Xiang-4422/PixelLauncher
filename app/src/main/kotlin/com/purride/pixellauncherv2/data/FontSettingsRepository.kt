@@ -3,8 +3,6 @@ package com.purride.pixellauncherv2.data
 import android.content.Context
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
-import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
@@ -16,7 +14,6 @@ class FontSettingsRepository(
     private val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     data class AppearanceSettings(
-        val fontStyle: PixelFontStyle,
         val pixelShape: PixelShape,
         val dotSizePx: Int,
         val pixelGapEnabled: Boolean,
@@ -33,7 +30,6 @@ class FontSettingsRepository(
 
     fun getAppearanceSettings(): AppearanceSettings {
         return AppearanceSettings(
-            fontStyle = readStoredFontStyle(),
             pixelShape = readStoredPixelShape() ?: PixelShape.SQUARE,
             dotSizePx = readStoredDotSizePx(),
             pixelGapEnabled = readStoredPixelGapEnabled(),
@@ -52,7 +48,6 @@ class FontSettingsRepository(
     }
 
     fun setAppearanceSettings(
-        fontStyle: PixelFontStyle,
         pixelShape: PixelShape,
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
@@ -62,7 +57,6 @@ class FontSettingsRepository(
         val safeDotSizePx = ScreenProfileFactory.supportedDotSizePxOptions.firstOrNull { it == dotSizePx }
             ?: ScreenProfileFactory.defaultDotSizePx
         sharedPreferences.edit()
-            .putString(KEY_FONT_STYLE, fontStyle.name)
             .putString(KEY_PIXEL_SHAPE, pixelShape.name)
             .putInt(KEY_DOT_SIZE_PX, safeDotSizePx)
             .putBoolean(KEY_PIXEL_GAP_ENABLED, pixelGapEnabled)
@@ -83,12 +77,6 @@ class FontSettingsRepository(
             .putBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, openDrawerInSearchMode)
             .putString(KEY_CHARGE_IDLE_EFFECT, chargeIdleEffect.name)
             .apply()
-    }
-
-    private fun readStoredFontStyle(): PixelFontStyle {
-        val storedValue = sharedPreferences.getString(KEY_FONT_STYLE, null)
-        return PixelFontStyle.entries.firstOrNull { it.name == storedValue }
-            ?: PixelFontCatalog.defaultFontStyle
     }
 
     private fun readStoredPixelShape(): PixelShape? {
@@ -130,7 +118,6 @@ class FontSettingsRepository(
 
     private companion object {
         const val PREFERENCES_NAME = "pixel_launcher_prefs"
-        const val KEY_FONT_STYLE = "selected_font_style"
         const val KEY_PIXEL_SHAPE = "selected_pixel_shape"
         const val KEY_DOT_SIZE_PX = "selected_dot_size_px"
         const val KEY_PIXEL_GAP_ENABLED = "pixel_gap_enabled"

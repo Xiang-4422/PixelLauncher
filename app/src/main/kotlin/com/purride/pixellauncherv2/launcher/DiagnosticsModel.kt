@@ -29,7 +29,7 @@ object DiagnosticsModel {
             DiagnosticsLine("LAUNCHES", state.launchCount.toString()),
             DiagnosticsLine("LAST", lastLaunch),
             DiagnosticsLine("RECENT", recentSummary),
-            DiagnosticsLine("FONT", "FUSION 10 ${PixelFontCatalog.styleLabel(state.selectedFontStyle)}"),
+            DiagnosticsLine("FONT", "FUSION ${PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize)}"),
             DiagnosticsLine("DISPLAY", "${screenProfile.logicalWidth}X${screenProfile.logicalHeight}"),
             DiagnosticsLine("POWER", "${state.batteryLevel}%${if (state.isCharging) " CHG" else ""}"),
         )
@@ -53,7 +53,7 @@ object DiagnosticsModel {
             DiagnosticsLine("LAUNCHES", state.launchCount.toString()),
             DiagnosticsLine("LAST", lastLaunch),
             DiagnosticsLine("RECENT", recentSummary),
-            DiagnosticsLine("FONT", "FUSION 10 ${PixelFontCatalog.styleLabel(state.selectedFontStyle)}"),
+            DiagnosticsLine("FONT", "FUSION ${PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize)}"),
             DiagnosticsLine("DISPLAY", "${screenProfile.logicalWidth}X${screenProfile.logicalHeight}"),
             DiagnosticsLine("POWER", "${state.batteryLevel}%${if (state.isCharging) " CHG" else ""}"),
         )

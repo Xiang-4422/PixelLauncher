@@ -7,21 +7,11 @@ enum class PixelFontSize(val px: Int) {
     PX_12(12),
 }
 
-enum class PixelFontStyle {
-    MONO,
-    PROP,
-}
-
 object PixelFontCatalog {
 
-    val defaultFontStyle: PixelFontStyle = PixelFontStyle.PROP
+    val defaultUiFontSize: PixelFontSize = PixelFontSize.PX_10
 
-    fun fontStyleOptions(): List<PixelFontStyle> = PixelFontStyle.entries
+    fun fontSizeOptions(): List<PixelFontSize> = PixelFontSize.entries
 
-    fun styleLabel(style: PixelFontStyle): String {
-        return when (style) {
-            PixelFontStyle.MONO -> "MONO"
-            PixelFontStyle.PROP -> "PROP"
-        }
-    }
+    fun sizeLabel(size: PixelFontSize): String = "${size.px}PX"
 }

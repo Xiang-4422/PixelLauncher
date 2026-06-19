@@ -16,12 +16,6 @@ class SettingsMenuModelTest {
     // ── Cyclic option stepping (wrapIndex) ────────────────────────────────────
 
     @Test
-    fun nextFontStyle_togglesBetweenTheTwoOptions() {
-        assertEquals(PixelFontStyle.PROP, SettingsMenuModel.nextFontStyle(PixelFontStyle.MONO, 1))
-        assertEquals(PixelFontStyle.MONO, SettingsMenuModel.nextFontStyle(PixelFontStyle.PROP, 1))
-    }
-
-    @Test
     fun nextStyle_cyclesThroughShapes() {
         assertEquals(PixelShape.CIRCLE, SettingsMenuModel.nextStyle(PixelShape.SQUARE, 1))
         assertEquals(PixelShape.SQUARE, SettingsMenuModel.nextStyle(PixelShape.DIAMOND, 1))
@@ -93,8 +87,8 @@ class SettingsMenuModelTest {
 
     @Test
     fun displayValue_wrapsNonBlankInAngleBrackets() {
-        assertEquals("<MONO>", SettingsMenuModel.displayValue(SettingsMenuRow(SettingsMenuItem.FONT_STYLE, "FONT STYLE", "MONO")))
-        assertEquals("", SettingsMenuModel.displayValue(SettingsMenuRow(SettingsMenuItem.FONT_STYLE, "FONT STYLE", "")))
+        assertEquals("<10PX>", SettingsMenuModel.displayValue(SettingsMenuRow(SettingsMenuItem.RESOLUTION, "PIXEL SIZE", "10PX")))
+        assertEquals("", SettingsMenuModel.displayValue(SettingsMenuRow(SettingsMenuItem.RESOLUTION, "PIXEL SIZE", "")))
     }
 
     // ── rows() conditional content + selectedItem clamping ────────────────────
@@ -133,7 +127,7 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun selectedItem_firstRowIsFontStyle() {
-        assertEquals(SettingsMenuItem.FONT_STYLE, SettingsMenuModel.selectedItem(LauncherState(settingsSelectedIndex = 0)))
+    fun selectedItem_firstRowIsResolution() {
+        assertEquals(SettingsMenuItem.RESOLUTION, SettingsMenuModel.selectedItem(LauncherState(settingsSelectedIndex = 0)))
     }
 }

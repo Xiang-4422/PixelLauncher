@@ -14,11 +14,9 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
-import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
-import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsValueSlider
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -81,16 +79,6 @@ class SettingsScreen(
             val pixelPreview = previewPixelSizeRatio ?: SettingsMenuModel.resolutionRatio(selectedDotSizePx)
             val pixelPreviewSize = SettingsMenuModel.resolutionAtRatio(pixelPreview)
             val gapPreview = previewGapRatio ?: SettingsMenuModel.pixelGapRatioSnap(pixelGapRatio)
-            add(
-                SettingsSegmentedSwitchRow(
-                    title = "FONT STYLE",
-                    rightSelected = selectedFontStyle == PixelFontStyle.PROP,
-                    leftLabel = "MONO",
-                    rightLabel = "PROP",
-                    theme = t,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.FONT_STYLE, +1) },
-                ),
-            )
             add(
                 SettingsValueSlider(
                     title = "PIXEL SIZE",

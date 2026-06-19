@@ -5,7 +5,6 @@ import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 enum class SettingsMenuItem {
-    FONT_STYLE,
     RESOLUTION,
     PIXEL_GAP,
     PIXEL_GAP_SIZE,
@@ -26,7 +25,6 @@ data class SettingsMenuRow(
 
 object SettingsMenuModel {
 
-    val fontStyleOptions: List<PixelFontStyle> = PixelFontCatalog.fontStyleOptions()
     val styleOptions: List<PixelShape> = listOf(
         PixelShape.SQUARE,
         PixelShape.CIRCLE,
@@ -35,13 +33,6 @@ object SettingsMenuModel {
     val themeOptions: List<PixelTheme> = PixelTheme.entries
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
         return buildList {
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.FONT_STYLE,
-                    title = "FONT STYLE",
-                    value = PixelFontCatalog.styleLabel(state.selectedFontStyle),
-                ),
-            )
             add(
                 SettingsMenuRow(
                     item = SettingsMenuItem.RESOLUTION,
@@ -113,12 +104,6 @@ object SettingsMenuModel {
     fun selectedItem(state: LauncherState): SettingsMenuItem {
         val rows = rows(state)
         return rows[state.settingsSelectedIndex.coerceIn(0, rows.lastIndex)].item
-    }
-
-    fun nextFontStyle(current: PixelFontStyle, direction: Int): PixelFontStyle {
-        val currentIndex = fontStyleOptions.indexOf(current).takeIf { it >= 0 } ?: 0
-        val nextIndex = wrapIndex(currentIndex + direction, fontStyleOptions.size)
-        return fontStyleOptions[nextIndex]
     }
 
     fun nextStyle(current: PixelShape, direction: Int): PixelShape {

@@ -33,7 +33,6 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     smsDraftText = smsDraftText,
     isDefaultSmsApp = isDefaultSmsApp,
     smsPermissionState = smsPermissionState,
-    selectedFontStyle = selectedFontStyle,
     selectedPixelShape = selectedPixelShape,
     selectedDotSizePx = selectedDotSizePx,
     isPixelGapEnabled = isPixelGapEnabled,

@@ -5,7 +5,6 @@ import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
-import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import org.junit.Assert.assertEquals
@@ -42,7 +41,6 @@ class LauncherUiStateMapperTest {
             smsCurrentAddress = "10086",
             isDefaultSmsApp = true,
             smsPermissionState = SmsPermissionState.READY,
-            selectedFontStyle = PixelFontStyle.MONO,
             selectedDotSizePx = 9,
             isPixelGapEnabled = false,
             pixelGapRatio = 0.5f,
@@ -87,7 +85,6 @@ class LauncherUiStateMapperTest {
         assertEquals(true, ui.isDefaultSmsApp)
         assertEquals(SmsPermissionState.READY, ui.smsPermissionState)
         // appearance
-        assertEquals(PixelFontStyle.MONO, ui.selectedFontStyle)
         assertEquals(9, ui.selectedDotSizePx)
         assertEquals(false, ui.isPixelGapEnabled)
         assertEquals(0.5f, ui.pixelGapRatio, 0f)

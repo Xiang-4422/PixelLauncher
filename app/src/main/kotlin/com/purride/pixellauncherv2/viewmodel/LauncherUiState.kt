@@ -9,15 +9,13 @@ import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
-import com.purride.pixellauncherv2.launcher.PixelFontStyle
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 /**
  * 重写后的 Launcher UI 状态快照。
- * 外观/字体类型目前仍引用旧 render 层类型，将在后续逐步迁移至 pixel-engine 类型。
+ * 外观类型目前仍引用旧 render 层类型，将在后续逐步迁移至 pixel-engine 类型。
  */
 data class LauncherUiState(
     // ── App Drawer ────────────────────────────────────────────────────────────
@@ -61,7 +59,6 @@ data class LauncherUiState(
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
 
     // ── Appearance (old render types; migrated to pixel-engine in Phase 1+) ───
-    val selectedFontStyle: PixelFontStyle = PixelFontCatalog.defaultFontStyle,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,

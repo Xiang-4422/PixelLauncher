@@ -4,24 +4,25 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Coverage for [PixelFontCatalog] — style labels, the exposed option list and
- * the documented default. JVM-safe; no Android dependencies.
+ * Coverage for [PixelFontCatalog] — fixed pixel-size choices and the documented
+ * UI default. JVM-safe; no Android dependencies.
  */
 class PixelFontCatalogTest {
 
     @Test
-    fun styleLabel_mapsBothStyles() {
-        assertEquals("MONO", PixelFontCatalog.styleLabel(PixelFontStyle.MONO))
-        assertEquals("PROP", PixelFontCatalog.styleLabel(PixelFontStyle.PROP))
+    fun sizeLabel_mapsPixelSizes() {
+        assertEquals("8PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_8))
+        assertEquals("10PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_10))
+        assertEquals("12PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_12))
     }
 
     @Test
     fun options_exposeAllEnumEntries() {
-        assertEquals(PixelFontStyle.entries.toList(), PixelFontCatalog.fontStyleOptions())
+        assertEquals(PixelFontSize.entries.toList(), PixelFontCatalog.fontSizeOptions())
     }
 
     @Test
-    fun default_isProportional() {
-        assertEquals(PixelFontStyle.PROP, PixelFontCatalog.defaultFontStyle)
+    fun default_is10px() {
+        assertEquals(PixelFontSize.PX_10, PixelFontCatalog.defaultUiFontSize)
     }
 }

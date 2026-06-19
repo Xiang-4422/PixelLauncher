@@ -628,7 +628,6 @@ object LauncherStateTransitions {
     /** 把当前外观选择写回状态。 */
     fun updateAppearance(
         state: LauncherState,
-        selectedFontStyle: PixelFontStyle = state.selectedFontStyle,
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
         isPixelGapEnabled: Boolean = state.isPixelGapEnabled,
@@ -636,7 +635,6 @@ object LauncherStateTransitions {
         selectedTheme: PixelTheme = state.selectedTheme,
     ): LauncherState {
         return state.copy(
-            selectedFontStyle = selectedFontStyle,
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
             isPixelGapEnabled = isPixelGapEnabled,
