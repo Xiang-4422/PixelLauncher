@@ -48,10 +48,36 @@ import com.purride.pixeldemo.scaffold.Yellow
 import com.purride.pixeldemo.scaffold.samplePanel
 
 val NavigationInputOfficialComponentScenes: List<DemoScene> = listOf(
-    ComponentExampleScene("nav_focus_scope", "FocusScope", "焦点遍历范围和 traversal policy", DemoCatalog.input, setOf("component", "focus"), setOf("FocusScope", "ReadingOrderFocusTraversalPolicy", "PixelFocusDirection")) { FocusScopeOfficialBody() },
-    ComponentExampleScene("nav_focus", "Focus", "单个可聚焦节点", DemoCatalog.input, setOf("component", "focus"), setOf("Focus", "FocusNode")) { FocusOfficialBody() },
-    ComponentExampleScene("nav_form", "Form", "表单控制器和校验范围", DemoCatalog.input, setOf("component", "form"), setOf("Form", "FormController", "FormValidator")) { FormOfficialBody(showFieldOnly = false) },
-    ComponentExampleScene("nav_form_field", "FormField", "表单字段状态和 validator", DemoCatalog.input, setOf("component", "formfield"), setOf("FormField", "FormFieldState")) { FormOfficialBody(showFieldOnly = true) },
+    ComponentExampleScene(
+        "nav_focus_scope",
+        "Focus",
+        "焦点节点、范围和遍历",
+        DemoCatalog.input,
+        setOf("component", "focus"),
+        setOf("Focus", "FocusNode", "FocusScope", "ReadingOrderFocusTraversalPolicy", "PixelFocusDirection"),
+    ) {
+        Column(
+            children = listOf(FocusScopeOfficialBody(), FocusOfficialBody()),
+            spacing = 4,
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        )
+    },
+    ComponentExampleScene(
+        "nav_form",
+        "Form",
+        "表单控制器、字段状态和校验",
+        DemoCatalog.input,
+        setOf("component", "form", "formfield"),
+        setOf("Form", "FormController", "FormValidator", "FormField", "FormFieldState"),
+    ) {
+        Column(
+            children = listOf(FormOfficialBody(showFieldOnly = false), FormOfficialBody(showFieldOnly = true)),
+            spacing = 4,
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        )
+    },
     componentScene("nav_semantics", "Semantics", "为子树导出语义标签和角色", DemoCatalog.input, "Semantics", extraApis = setOf("PixelSemanticRole", "PixelSemanticsNode")) {
         Semantics(
             label = "demo button",
@@ -65,20 +91,40 @@ val DebugOfficialComponentScenes: List<DemoScene> = listOf(
     componentScene("debug_overlay", "PixelDebugOverlay", "显示 FPS、帧耗时、Inspector 和 ticker 摘要", DemoCatalog.debug, "PixelDebugOverlay", extraApis = setOf("PixelHostFrameStats")) { env ->
         PixelDebugOverlay(stats = debugSnapshot().frameStats, inspector = debugSnapshot(), activeTickerCount = env.vsync.activeTickerCount)
     },
-    componentScene("debug_inspector_panel", "PixelInspectorPanel", "交互式 inspector 信息面板", DemoCatalog.debug, "PixelInspectorPanel", extraApis = setOf("PixelInspectorSnapshot")) {
-        PixelInspectorPanel(snapshot = debugSnapshot(), maxTreeLines = 4)
-    },
-    componentScene("debug_inspector_bounds_overlay", "PixelInspectorBoundsOverlay", "在画面上叠加 inspector target bounds", DemoCatalog.debug, "PixelInspectorBoundsOverlay", extraApis = setOf("PixelInspectorTargetSnapshot", "PixelInspectorTargetKind")) {
-        Container(
-            width = 96,
-            height = 42,
-            borderColor = Yellow,
-            child = Stack(
-                children = listOf(
-                    Container(padding = EdgeInsets.all(2), child = Text("TARGETS", style = TextStyle(color = Muted))),
-                    PixelInspectorBoundsOverlay(snapshot = debugSnapshot(), width = 96, height = 42),
+    ComponentExampleScene(
+        "debug_inspector_panel",
+        "Inspector",
+        "Inspector 面板与 bounds overlay",
+        DemoCatalog.debug,
+        setOf("component", "debug", "inspector"),
+        setOf("PixelInspectorPanel", "PixelInspectorBoundsOverlay", "PixelInspectorSnapshot", "PixelInspectorTargetSnapshot", "PixelInspectorTargetKind"),
+    ) {
+        Column(
+            children = listOf(
+                samplePanel(
+                    title = "PixelInspectorPanel",
+                    color = Purple,
+                    child = PixelInspectorPanel(snapshot = debugSnapshot(), maxTreeLines = 4),
+                ),
+                samplePanel(
+                    title = "BoundsOverlay",
+                    color = Yellow,
+                    child = Container(
+                        width = 96,
+                        height = 42,
+                        borderColor = Yellow,
+                        child = Stack(
+                            children = listOf(
+                                Container(padding = EdgeInsets.all(2), child = Text("TARGETS", style = TextStyle(color = Muted))),
+                                PixelInspectorBoundsOverlay(snapshot = debugSnapshot(), width = 96, height = 42),
+                            ),
+                        ),
+                    ),
                 ),
             ),
+            spacing = 4,
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
         )
     },
 )

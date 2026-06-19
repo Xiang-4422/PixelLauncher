@@ -5,13 +5,16 @@ import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import com.purride.pixelui.PixelHapticType
 import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
+import com.purride.pixelui.SafeArea
 import com.purride.pixelui.PixelSystemAction
 import com.purride.pixelui.PixelTextInputRequest
+import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.gesture.PagerGesturePolicy
@@ -112,6 +115,8 @@ class DemoActivity : AppCompatActivity() {
         nav.push(startScene)
 
         setContentView(setup.rootView)
+        ViewCompat.requestApplyInsets(setup.rootView)
+        setup.rootView.post { ViewCompat.requestApplyInsets(setup.rootView) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -194,17 +199,28 @@ class DemoActivity : AppCompatActivity() {
             hostView.pagerGesturePolicy = scene.pagerGesturePolicy ?: PagerGesturePolicy.Default
 
             if (scene.isFullScreen) {
-                hostView.setContent { scene.build(env) }
+                hostView.setContent { withGlobalTopPadding(scene.build(env)) }
             } else {
                 hostView.setContent {
-                    DemoScaffold(
-                        title = scene.title,
-                        description = scene.description,
-                        body = scene.build(env),
+                    withGlobalTopPadding(
+                        DemoScaffold(
+                            title = scene.title,
+                            description = scene.description,
+                            body = scene.build(env),
+                        ),
                     )
                 }
             }
         }
+
+        private fun withGlobalTopPadding(child: Widget): Widget =
+            SafeArea(
+                child = child,
+                left = false,
+                top = true,
+                right = false,
+                bottom = false,
+            )
 
         private fun updateBackCallback() {
             backCallback.isEnabled = stack.size > 1

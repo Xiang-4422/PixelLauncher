@@ -50,51 +50,57 @@ val ScrollOfficialComponentScenes: List<DemoScene> = listOf(
     scrollScene("scroll_single_child_scroll_view", "SingleChildScrollView", "单 child 滚动容器", setOf("SingleChildScrollView", "ScrollController", "PixelListState")) {
         SingleChildScrollDemo()
     },
-    scrollScene("scroll_list_view", "ListView", "静态列表组件", setOf("ListView", "ScrollController", "PixelListState")) {
-        FixedListDemo()
-    },
-    scrollScene("scroll_list_view_builder", "ListViewBuilder", "懒加载列表组件", setOf("ListViewBuilder", "ScrollController", "PixelListState")) {
-        LazyListDemo()
-    },
-    scrollScene("scroll_list_view_separated", "ListViewSeparated", "带 separator 的静态列表", setOf("ListViewSeparated", "ScrollController", "PixelListState")) {
-        FixedSeparatedListDemo()
-    },
-    scrollScene("scroll_list_view_separated_builder", "ListViewSeparatedBuilder", "带 separator 的懒加载列表", setOf("ListViewSeparatedBuilder", "ScrollController", "PixelListState")) {
-        LazySeparatedListDemo()
-    },
-    scrollScene("scroll_grid_view", "GridView", "静态网格组件", setOf("GridView", "ScrollController", "PixelListState")) {
-        FixedGridDemo()
-    },
-    scrollScene("scroll_grid_view_builder", "GridViewBuilder", "懒加载网格组件", setOf("GridViewBuilder", "ScrollController", "PixelListState")) {
-        LazyGridDemo()
-    },
-    scrollScene("scroll_page_view", "PageView", "分页滚动组件", setOf("PageView", "PageController")) {
-        PageViewDemo(builder = false)
-    },
-    scrollScene("scroll_page_view_builder", "PageViewBuilder", "懒加载分页组件", setOf("PageViewBuilder", "PageController")) {
-        PageViewDemo(builder = true)
-    },
+    scrollGroupScene(
+        id = "scroll_list_view",
+        title = "ListView",
+        summary = "静态、懒加载和分隔列表",
+        apis = setOf("ListView", "ListViewBuilder", "ListViewSeparated", "ListViewSeparatedBuilder", "ScrollController", "PixelListState"),
+        panels = listOf(
+            "ListView" to { FixedListDemo() },
+            "ListViewBuilder" to { LazyListDemo() },
+            "ListViewSeparated" to { FixedSeparatedListDemo() },
+            "SeparatedBuilder" to { LazySeparatedListDemo() },
+        ),
+    ),
+    scrollGroupScene(
+        id = "scroll_grid_view",
+        title = "GridView",
+        summary = "静态和懒加载网格",
+        apis = setOf("GridView", "GridViewBuilder", "ScrollController", "PixelListState"),
+        panels = listOf(
+            "GridView" to { FixedGridDemo() },
+            "GridViewBuilder" to { LazyGridDemo() },
+        ),
+    ),
+    scrollGroupScene(
+        id = "scroll_page_view",
+        title = "PageView",
+        summary = "静态和懒加载分页",
+        apis = setOf("PageView", "PageViewBuilder", "PageController"),
+        panels = listOf(
+            "PageView" to { PageViewDemo(builder = false) },
+            "PageViewBuilder" to { PageViewDemo(builder = true) },
+        ),
+    ),
     scrollScene("scroll_scrollbar", "Scrollbar", "滚动条装饰组件", setOf("Scrollbar", "ListViewBuilder", "PixelListState")) {
         ScrollbarDemo()
     },
     scrollScene("scroll_refresh_indicator", "RefreshIndicator", "下拉刷新容器", setOf("RefreshIndicator", "PixelRefreshIndicatorController")) {
         RefreshIndicatorDemo()
     },
-    scrollScene("scroll_custom_scroll_view", "CustomScrollView", "组合 sliver 的滚动容器", setOf("CustomScrollView", "SliverList", "SliverPinnedHeader")) {
-        CustomScrollDemo()
-    },
-    scrollScene("scroll_sliver_list", "SliverList", "静态 sliver 列表", setOf("SliverList", "CustomScrollView")) {
-        SliverListDemo(builder = false)
-    },
-    scrollScene("scroll_sliver_list_builder", "SliverListBuilder", "懒加载 sliver 列表", setOf("SliverListBuilder", "CustomScrollView")) {
-        SliverListDemo(builder = true)
-    },
-    scrollScene("scroll_sliver_pinned_header", "SliverPinnedHeader", "固定在顶部的 sliver header", setOf("SliverPinnedHeader", "CustomScrollView")) {
-        PinnedHeaderDemo()
-    },
-    scrollScene("scroll_sliver_app_bar", "SliverAppBar", "可折叠 sliver app bar", setOf("SliverAppBar", "CustomScrollView")) {
-        SliverAppBarDemo()
-    },
+    scrollGroupScene(
+        id = "scroll_custom_scroll_view",
+        title = "Slivers",
+        summary = "CustomScrollView 和 sliver 组件",
+        apis = setOf("CustomScrollView", "SliverList", "SliverListBuilder", "SliverPinnedHeader", "SliverAppBar"),
+        panels = listOf(
+            "CustomScrollView" to { CustomScrollDemo() },
+            "SliverList" to { SliverListDemo(builder = false) },
+            "SliverListBuilder" to { SliverListDemo(builder = true) },
+            "PinnedHeader" to { PinnedHeaderDemo() },
+            "SliverAppBar" to { SliverAppBarDemo() },
+        ),
+    ),
 )
 
 private fun scrollScene(
@@ -116,6 +122,29 @@ private fun scrollScene(
                 listOf(
                     samplePanel(title = "Example", color = Yellow, child = body()),
                 ),
+            )
+        },
+    )
+
+private fun scrollGroupScene(
+    id: String,
+    title: String,
+    summary: String,
+    apis: Set<String>,
+    panels: List<Pair<String, () -> Widget>>,
+): DemoScene =
+    ComponentExampleScene(
+        id = id,
+        title = title,
+        summary = summary,
+        category = DemoCatalog.scroll,
+        tags = setOf("component", "scroll", title.lowercase()),
+        apis = apis,
+        bodyBuilder = {
+            scrollBody(
+                panels.map { (panelTitle, body) ->
+                    samplePanel(title = panelTitle, color = Yellow, child = body())
+                },
             )
         },
     )

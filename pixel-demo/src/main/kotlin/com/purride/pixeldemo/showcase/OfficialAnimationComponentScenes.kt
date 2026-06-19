@@ -44,14 +44,30 @@ import com.purride.pixeldemo.scaffold.samplePanel
 import kotlin.time.Duration.Companion.milliseconds
 
 val AnimationOfficialComponentScenes: List<DemoScene> = listOf(
-    animationScene("animation_animated_container", "AnimatedContainer", "尺寸、padding、borderColor 的隐式动画", AnimationKind.Container, setOf("AnimatedContainer", "Curves", "PixelTickerProvider")),
-    animationScene("animation_animated_opacity", "AnimatedOpacity", "透明度隐式动画", AnimationKind.Opacity, setOf("AnimatedOpacity", "PixelTickerProvider")),
-    animationScene("animation_animated_padding", "AnimatedPadding", "padding 隐式动画", AnimationKind.Padding, setOf("AnimatedPadding", "EdgeInsetsTween")),
-    animationScene("animation_animated_align", "AnimatedAlign", "alignment 隐式动画", AnimationKind.Align, setOf("AnimatedAlign")),
-    animationScene("animation_animated_positioned", "AnimatedPositioned", "Stack child 位置隐式动画", AnimationKind.Positioned, setOf("AnimatedPositioned")),
-    animationScene("animation_animated_switcher", "AnimatedSwitcher", "child identity 变化时切换动画", AnimationKind.Switcher, setOf("AnimatedSwitcher")),
-    animationScene("animation_tween_animation_builder", "TweenAnimationBuilder", "Tween 驱动的声明式动画构建", AnimationKind.TweenBuilder, setOf("TweenAnimationBuilder", "IntTween")),
-    animationScene("animation_animated_builder", "AnimatedBuilder", "复用静态 child 的动画构建器", AnimationKind.AnimatedBuilder, setOf("AnimatedBuilder", "PixelAnimationController", "PixelAnimationStatus")),
+    animationScene(
+        id = "animation_animated_container",
+        title = "Animated Widgets",
+        summary = "隐式动画组件集合",
+        examples = listOf(
+            "AnimatedContainer" to AnimationKind.Container,
+            "AnimatedOpacity" to AnimationKind.Opacity,
+            "AnimatedPadding" to AnimationKind.Padding,
+            "AnimatedAlign" to AnimationKind.Align,
+            "AnimatedPositioned" to AnimationKind.Positioned,
+            "AnimatedSwitcher" to AnimationKind.Switcher,
+        ),
+        apis = setOf("AnimatedContainer", "AnimatedOpacity", "AnimatedPadding", "AnimatedAlign", "AnimatedPositioned", "AnimatedSwitcher", "Curves", "PixelTickerProvider"),
+    ),
+    animationScene(
+        id = "animation_tween_animation_builder",
+        title = "Animation Builders",
+        summary = "Tween 与 controller 驱动的动画构建",
+        examples = listOf(
+            "TweenAnimationBuilder" to AnimationKind.TweenBuilder,
+            "AnimatedBuilder" to AnimationKind.AnimatedBuilder,
+        ),
+        apis = setOf("TweenAnimationBuilder", "IntTween", "AnimatedBuilder", "PixelAnimationController", "PixelAnimationStatus"),
+    ),
 )
 
 private enum class AnimationKind {
@@ -69,7 +85,7 @@ private fun animationScene(
     id: String,
     title: String,
     summary: String,
-    kind: AnimationKind,
+    examples: List<Pair<String, AnimationKind>>,
     apis: Set<String>,
 ): DemoScene =
     ComponentExampleScene(
@@ -79,13 +95,12 @@ private fun animationScene(
         category = DemoCatalog.animation,
         tags = setOf("component", "animation", title.lowercase()),
         apis = apis,
-        bodyBuilder = { env -> AnimationOfficialBody(env = env, title = title, kind = kind) },
+        bodyBuilder = { env -> AnimationOfficialBody(env = env, examples = examples) },
     )
 
 private class AnimationOfficialBody(
     private val env: DemoEnv,
-    private val title: String,
-    private val kind: AnimationKind,
+    private val examples: List<Pair<String, AnimationKind>>,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
     override fun createState(): State<out StatefulWidget> = AnimationOfficialState()
@@ -107,34 +122,36 @@ private class AnimationOfficialBody(
             controller.dispose()
         }
 
-        override fun build(context: BuildContext): Widget =
-            Column(
+        override fun build(context: BuildContext): Widget {
+            val controls = Row(
                 children = listOf(
-                    Row(
-                        children = listOf(
-                            OutlinedButton(
-                                text = "TOGGLE",
-                                onPressed = {
-                                    expanded = !expanded
-                                    controller.forward(from = 0f)
-                                    setState {}
-                                },
-                                borderColor = Accent,
-                            ),
-                            Text("tick=${widget.env.vsync.activeTickerCount}", style = TextStyle(color = Muted)),
-                            Text("end=$completed", style = TextStyle(color = Yellow)),
-                        ),
-                        spacing = 3,
-                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    OutlinedButton(
+                        text = "TOGGLE",
+                        onPressed = {
+                            expanded = !expanded
+                            controller.forward(from = 0f)
+                            setState {}
+                        },
+                        borderColor = Accent,
                     ),
-                    samplePanel(title = "Example", color = Accent, child = example()),
+                    Text("tick=${widget.env.vsync.activeTickerCount}", style = TextStyle(color = Muted)),
+                    Text("end=$completed", style = TextStyle(color = Yellow)),
                 ),
+                spacing = 3,
+                crossAxisAlignment = CrossAxisAlignment.CENTER,
+            )
+            val panels = widget.examples.map { (title, kind) ->
+                samplePanel(title = title, color = Accent, child = example(kind))
+            }
+            return Column(
+                children = listOf(controls) + panels,
                 spacing = 4,
                 mainAxisSize = MainAxisSize.MIN,
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
             )
+        }
 
-        private fun example(): Widget = when (widget.kind) {
+        private fun example(kind: AnimationKind): Widget = when (kind) {
             AnimationKind.Container -> AnimatedContainer(
                 duration = 400.milliseconds,
                 vsync = widget.env.vsync,

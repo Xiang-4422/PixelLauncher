@@ -84,24 +84,28 @@ val PaintOfficialComponentScenes: List<DemoScene> = listOf(
             drawLine(34, 8, 94, 26, PixelColor.White, strokeWidth = 2)
         }
     },
-    paintScene("paint_image", "Image", "按 PixelBitmap 1:1 blit", setOf("Image", "PixelBitmap")) {
-        Row(children = listOf(Image(bitmap = officialBitmap()), Text("PixelBitmap", style = TextStyle(color = Cyan))), spacing = 4, crossAxisAlignment = CrossAxisAlignment.CENTER)
-    },
-    paintScene("paint_sprite", "Sprite", "从 PixelSpriteSheet 绘制单帧", setOf("Sprite", "PixelSpriteSheet", "PixelBitmapRegion")) {
-        Row(children = listOf(Sprite(sheet = officialSpriteSheet(), frameIndex = 0), Sprite(sheet = officialSpriteSheet(), frameIndex = 1)), spacing = 4)
-    },
     ComponentExampleScene(
-        id = "paint_animated_sprite",
-        title = "AnimatedSprite",
-        summary = "按 fps 播放 PixelSpriteSheet",
+        id = "paint_image",
+        title = "Bitmap & Sprite",
+        summary = "PixelBitmap、SpriteSheet 与精灵动画",
         category = DemoCatalog.paint,
-        tags = setOf("component", "sprite", "animation"),
-        apis = setOf("AnimatedSprite", "PixelSpriteSheet", "PixelTickerProvider"),
+        tags = setOf("component", "paint", "bitmap", "sprite", "animation"),
+        apis = setOf("Image", "PixelBitmap", "Sprite", "PixelSpriteSheet", "PixelBitmapRegion", "AnimatedSprite", "PixelTickerProvider"),
         bodyBuilder = { env ->
             paintBody(
                 listOf(
                     samplePanel(
-                        title = "Example",
+                        title = "Image",
+                        color = Cyan,
+                        child = Row(children = listOf(Image(bitmap = officialBitmap()), Text("PixelBitmap", style = TextStyle(color = Cyan))), spacing = 4, crossAxisAlignment = CrossAxisAlignment.CENTER),
+                    ),
+                    samplePanel(
+                        title = "Sprite",
+                        color = Green,
+                        child = Row(children = listOf(Sprite(sheet = officialSpriteSheet(), frameIndex = 0), Sprite(sheet = officialSpriteSheet(), frameIndex = 1)), spacing = 4),
+                    ),
+                    samplePanel(
+                        title = "AnimatedSprite",
                         color = Accent,
                         child = AnimatedSprite(sheet = officialSpriteSheet(), fps = 4, vsync = env.vsync),
                     ),

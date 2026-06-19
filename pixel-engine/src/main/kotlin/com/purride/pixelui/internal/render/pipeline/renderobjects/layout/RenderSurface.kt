@@ -32,6 +32,7 @@ internal class RenderSurface(
     private var contentPaddingRight: Int = 0,
     private var contentPaddingBottom: Int = 0,
     private var onClick: (() -> Unit)? = null,
+    private var preserveChildMinConstraints: Boolean = false,
     private var tightChildWidth: Boolean = false,
     private var tightChildHeight: Boolean = false,
     private var textInputState: PixelTextFieldState? = null,
@@ -80,6 +81,7 @@ internal class RenderSurface(
         contentPaddingRight: Int = 0,
         contentPaddingBottom: Int = 0,
         onClick: (() -> Unit)? = null,
+        preserveChildMinConstraints: Boolean = false,
         tightChildWidth: Boolean = false,
         tightChildHeight: Boolean = false,
         textInputState: PixelTextFieldState? = null,
@@ -118,6 +120,7 @@ internal class RenderSurface(
             this.contentPaddingRight == contentPaddingRight &&
             this.contentPaddingBottom == contentPaddingBottom &&
             this.onClick == onClick &&
+            this.preserveChildMinConstraints == preserveChildMinConstraints &&
             this.tightChildWidth == tightChildWidth &&
             this.tightChildHeight == tightChildHeight &&
             this.textInputState === textInputState &&
@@ -155,6 +158,7 @@ internal class RenderSurface(
         this.contentPaddingRight = contentPaddingRight
         this.contentPaddingBottom = contentPaddingBottom
         this.onClick = onClick
+        this.preserveChildMinConstraints = preserveChildMinConstraints
         this.tightChildWidth = tightChildWidth
         this.tightChildHeight = tightChildHeight
         this.textInputState = textInputState
@@ -194,10 +198,24 @@ internal class RenderSurface(
             currentExplicitHeight != null -> (currentExplicitHeight - contentPaddingTop - contentPaddingBottom).coerceAtLeast(0)
             else -> (constraints.maxHeight - verticalInsets).coerceAtLeast(0)
         }
+        val childMinWidth = when {
+            tightChildWidth -> childMaxWidth
+            preserveChildMinConstraints && currentExplicitWidth == null -> {
+                (constraints.minWidth - horizontalInsets).coerceAtLeast(0).coerceAtMost(childMaxWidth)
+            }
+            else -> 0
+        }
+        val childMinHeight = when {
+            tightChildHeight -> childMaxHeight
+            preserveChildMinConstraints && currentExplicitHeight == null -> {
+                (constraints.minHeight - verticalInsets).coerceAtLeast(0).coerceAtMost(childMaxHeight)
+            }
+            else -> 0
+        }
         val childConstraints = RenderConstraints(
-            minWidth = if (tightChildWidth) childMaxWidth else 0,
+            minWidth = childMinWidth,
             maxWidth = childMaxWidth,
-            minHeight = if (tightChildHeight) childMaxHeight else 0,
+            minHeight = childMinHeight,
             maxHeight = childMaxHeight,
         )
         child?.layout(constraints = childConstraints)

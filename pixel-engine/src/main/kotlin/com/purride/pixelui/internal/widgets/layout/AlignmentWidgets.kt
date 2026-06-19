@@ -32,6 +32,7 @@ internal data class PaddingWidget(
             contentPaddingTop = padding.top,
             contentPaddingRight = padding.right,
             contentPaddingBottom = padding.bottom,
+            preserveChildMinConstraints = true,
         )
     }
 
@@ -48,6 +49,7 @@ internal data class PaddingWidget(
             contentPaddingTop = padding.top,
             contentPaddingRight = padding.right,
             contentPaddingBottom = padding.bottom,
+            preserveChildMinConstraints = true,
         )
     }
 }

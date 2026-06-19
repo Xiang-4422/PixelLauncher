@@ -89,53 +89,100 @@ import com.purride.pixeldemo.scaffold.Yellow
 import com.purride.pixeldemo.scaffold.samplePanel
 
 val LayoutOfficialComponentScenes: List<DemoScene> = listOf(
-    componentScene("layout_padding", "Padding", "为单个 child 添加固定内边距", DemoCatalog.layout, "Padding") {
-        Padding(all = 4, child = exampleBox("PAD", Accent))
-    },
-    componentScene("layout_padding_directional", "PaddingDirectional", "按 start/end/top/bottom 添加方向感知内边距", DemoCatalog.layout, "PaddingDirectional") {
-        Directionality(
-            textDirection = TextDirection.RTL,
-            child = PaddingDirectional(
-                padding = EdgeInsetsDirectional.only(start = 8, end = 1, top = 2, bottom = 2),
-                child = exampleBox("RTL", Cyan),
-            ),
-        )
-    },
-    componentScene("layout_align", "Align", "在可用空间内按 Alignment 对齐 child", DemoCatalog.layout, "Align") {
-        Container(
-            width = 82,
-            height = 28,
-            borderColor = Accent,
-            child = Align(alignment = Alignment.CENTER_END, child = exampleBox("END", Accent)),
-        )
-    },
-    componentScene("layout_center", "Center", "把 child 放到父布局中央", DemoCatalog.layout, "Center") {
-        Container(width = 82, height = 28, borderColor = Cyan, child = Center(child = exampleBox("MID", Cyan)))
-    },
-    componentScene("layout_align_directional", "AlignDirectional", "使用 start/end 语义对齐 child", DemoCatalog.layout, "AlignDirectional") {
-        Directionality(
-            textDirection = TextDirection.RTL,
-            child = Container(width = 82, height = 28, borderColor = Green, child = AlignDirectional(alignment = AlignmentDirectional.CENTER_START, child = exampleBox("START", Green))),
-        )
-    },
+    ComponentExampleScene(
+        id = "layout_padding",
+        title = "Padding",
+        summary = "固定与方向感知内边距",
+        category = DemoCatalog.layout,
+        tags = setOf("component", "padding"),
+        apis = setOf("Padding", "PaddingDirectional", "EdgeInsets", "EdgeInsetsDirectional"),
+        bodyBuilder = {
+            officialBody(
+                listOf(
+                    samplePanel(title = "Padding", color = Accent, child = Padding(all = 4, child = exampleBox("PAD", Accent))),
+                    samplePanel(
+                        title = "PaddingDirectional",
+                        color = Cyan,
+                        child = Directionality(
+                            textDirection = TextDirection.RTL,
+                            child = PaddingDirectional(
+                                padding = EdgeInsetsDirectional.only(start = 8, end = 1, top = 2, bottom = 2),
+                                child = exampleBox("RTL", Cyan),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        },
+    ),
+    ComponentExampleScene(
+        id = "layout_align",
+        title = "Align",
+        summary = "普通、居中与方向感知对齐",
+        category = DemoCatalog.layout,
+        tags = setOf("component", "align", "center"),
+        apis = setOf("Align", "Center", "AlignDirectional", "Alignment", "AlignmentDirectional"),
+        bodyBuilder = {
+            officialBody(
+                listOf(
+                    samplePanel(
+                        title = "Align",
+                        color = Accent,
+                        child = Container(width = 82, height = 28, borderColor = Accent, child = Align(alignment = Alignment.CENTER_END, child = exampleBox("END", Accent))),
+                    ),
+                    samplePanel(
+                        title = "Center",
+                        color = Cyan,
+                        child = Container(width = 82, height = 28, borderColor = Cyan, child = Center(child = exampleBox("MID", Cyan))),
+                    ),
+                    samplePanel(
+                        title = "AlignDirectional",
+                        color = Green,
+                        child = Directionality(
+                            textDirection = TextDirection.RTL,
+                            child = Container(width = 82, height = 28, borderColor = Green, child = AlignDirectional(alignment = AlignmentDirectional.CENTER_START, child = exampleBox("START", Green))),
+                        ),
+                    ),
+                ),
+            )
+        },
+    ),
     componentScene("layout_sized_box", "SizedBox", "指定固定宽高或作为空白占位", DemoCatalog.layout, "SizedBox") {
         Row(children = listOf(exampleBox("A", Cyan), SizedBox(width = 10, height = 8), exampleBox("B", Pink)), spacing = 1)
     },
-    componentScene("layout_container", "Container", "设置尺寸、padding、填充、边框与对齐", DemoCatalog.layout, "Container") {
-        Container(width = 86, height = 28, padding = EdgeInsets.all(3), fillColor = PixelColor.fromRgb(18, 14, 8), borderColor = Accent, child = Text("Container", style = TextStyle(color = Accent)))
-    },
-    componentScene("layout_container_directional", "ContainerDirectional", "方向感知 padding/margin 与 alignment", DemoCatalog.layout, "ContainerDirectional") {
-        Directionality(
-            textDirection = TextDirection.RTL,
-            child = ContainerDirectional(
-                width = 86,
-                paddingDirectional = EdgeInsetsDirectional.only(start = 10, end = 2, top = 2, bottom = 2),
-                borderColor = Blue,
-                alignment = AlignmentDirectional.CENTER_START,
-                child = Text("RTL START", style = TextStyle(color = Blue)),
-            ),
-        )
-    },
+    ComponentExampleScene(
+        id = "layout_container",
+        title = "Container",
+        summary = "尺寸、padding、装饰与方向感知容器",
+        category = DemoCatalog.layout,
+        tags = setOf("component", "container"),
+        apis = setOf("Container", "ContainerDirectional"),
+        bodyBuilder = {
+            officialBody(
+                listOf(
+                    samplePanel(
+                        title = "Container",
+                        color = Accent,
+                        child = Container(width = 86, height = 28, padding = EdgeInsets.all(3), fillColor = PixelColor.fromRgb(18, 14, 8), borderColor = Accent, child = Text("Container", style = TextStyle(color = Accent))),
+                    ),
+                    samplePanel(
+                        title = "ContainerDirectional",
+                        color = Blue,
+                        child = Directionality(
+                            textDirection = TextDirection.RTL,
+                            child = ContainerDirectional(
+                                width = 86,
+                                paddingDirectional = EdgeInsetsDirectional.only(start = 10, end = 2, top = 2, bottom = 2),
+                                borderColor = Blue,
+                                alignment = AlignmentDirectional.CENTER_START,
+                                child = Text("RTL START", style = TextStyle(color = Blue)),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        },
+    ),
     componentScene("layout_row", "Row", "水平排列多个 child", DemoCatalog.layout, "Row") {
         Row(children = listOf(exampleBox("1", Cyan), exampleBox("2", Green), exampleBox("3", Pink)), spacing = 3, crossAxisAlignment = CrossAxisAlignment.CENTER)
     },
@@ -162,15 +209,31 @@ val LayoutOfficialComponentScenes: List<DemoScene> = listOf(
             child = Stack(children = listOf(PositionedFill(child = Container(fillColor = PixelColor.fromRgb(12, 8, 20))), Positioned(left = 5, top = 4, child = exampleBox("A", Blue)), Positioned(left = 20, top = 14, child = exampleBox("B", Pink)))),
         )
     },
-    componentScene("layout_positioned", "Positioned", "在 Stack 中用 left/top/right/bottom 定位 child", DemoCatalog.layout, "Positioned") {
-        stackStage(Positioned(left = 8, top = 8, child = exampleBox("POS", Accent)))
-    },
-    componentScene("layout_positioned_directional", "PositionedDirectional", "在 Stack 中用 start/end 定位 child", DemoCatalog.layout, "PositionedDirectional") {
-        Directionality(textDirection = TextDirection.RTL, child = stackStage(PositionedDirectional(start = 8, top = 8, child = exampleBox("DIR", Blue))))
-    },
-    componentScene("layout_positioned_fill", "PositionedFill", "让 child 填满 Stack 可用空间", DemoCatalog.layout, "PositionedFill") {
-        stackStage(PositionedFill(left = 6, top = 6, right = 6, bottom = 6, child = Container(fillColor = Green, borderColor = PixelColor.White)))
-    },
+    ComponentExampleScene(
+        id = "layout_positioned",
+        title = "Positioned",
+        summary = "Stack 内的绝对、方向感知与填充定位",
+        category = DemoCatalog.layout,
+        tags = setOf("component", "positioned", "stack"),
+        apis = setOf("Positioned", "PositionedDirectional", "PositionedFill"),
+        bodyBuilder = {
+            officialBody(
+                listOf(
+                    samplePanel(title = "Positioned", color = Accent, child = stackStage(Positioned(left = 8, top = 8, child = exampleBox("POS", Accent)))),
+                    samplePanel(
+                        title = "PositionedDirectional",
+                        color = Blue,
+                        child = Directionality(textDirection = TextDirection.RTL, child = stackStage(PositionedDirectional(start = 8, top = 8, child = exampleBox("DIR", Blue)))),
+                    ),
+                    samplePanel(
+                        title = "PositionedFill",
+                        color = Green,
+                        child = stackStage(PositionedFill(left = 6, top = 6, right = 6, bottom = 6, child = Container(fillColor = Green, borderColor = PixelColor.White))),
+                    ),
+                ),
+            )
+        },
+    ),
     componentScene("layout_opacity", "Opacity", "以离散透明度绘制 child", DemoCatalog.layout, "Opacity") {
         Opacity(opacity = 0.5f, child = exampleBox("50%", Pink))
     },
@@ -236,10 +299,22 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     componentScene("controls_list_tile", "ListTile", "带 leading/title/subtitle/trailing 的列表行", DemoCatalog.controls, "ListTile") {
         ListTile(leading = Icon(PixelIconData(officialTinyIcon())), title = Text("ListTile", style = TextStyle(color = Cyan)), subtitle = Text("subtitle", style = TextStyle(color = Muted)), trailing = Text(">", style = TextStyle(color = Accent)), onTap = {})
     },
-    ComponentExampleScene("controls_checkbox", "Checkbox", "布尔选择控件", DemoCatalog.controls, setOf("component", "checkbox"), setOf("Checkbox")) { CheckboxOfficialBody() },
-    ComponentExampleScene("controls_switch", "Switch", "开关状态控件", DemoCatalog.controls, setOf("component", "switch"), setOf("Switch")) { SwitchOfficialBody() },
-    ComponentExampleScene("controls_tabs", "Tabs", "标签页选择控件", DemoCatalog.controls, setOf("component", "tabs"), setOf("Tabs")) { TabsOfficialBody() },
-    ComponentExampleScene("controls_segmented_control", "SegmentedControl", "分段选择控件", DemoCatalog.controls, setOf("component", "segmented"), setOf("SegmentedControl")) { SegmentedOfficialBody() },
+    ComponentExampleScene("controls_checkbox", "Selection", "Checkbox 和 Switch 二元选择", DemoCatalog.controls, setOf("component", "checkbox", "switch"), setOf("Checkbox", "Switch")) {
+        officialBody(
+            listOf(
+                CheckboxOfficialBody(),
+                SwitchOfficialBody(),
+            ),
+        )
+    },
+    ComponentExampleScene("controls_tabs", "Tabs", "Tabs 和 SegmentedControl 分段选择", DemoCatalog.controls, setOf("component", "tabs", "segmented"), setOf("Tabs", "SegmentedControl")) {
+        officialBody(
+            listOf(
+                TabsOfficialBody(),
+                SegmentedOfficialBody(),
+            ),
+        )
+    },
     ComponentExampleScene("controls_slider", "Slider", "连续值拖动控件", DemoCatalog.controls, setOf("component", "slider"), setOf("Slider")) { SliderOfficialBody(showProgress = false) },
     ComponentExampleScene("controls_progress_bar", "ProgressBar", "水平进度展示", DemoCatalog.feedback, setOf("component", "progress"), setOf("ProgressBar")) { SliderOfficialBody(showProgress = true) },
     componentScene("controls_activity_indicator", "ActivityIndicator", "四帧像素加载指示器", DemoCatalog.feedback, "ActivityIndicator") {
@@ -257,14 +332,26 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     componentScene("controls_icon", "Icon", "用 PixelIconData 渲染小型位图图标", DemoCatalog.paint, "Icon", extraApis = setOf("PixelIconData")) {
         Icon(PixelIconData(officialTinyIcon()))
     },
-    componentScene("controls_dialog", "Dialog", "居中的标题、内容和操作区", DemoCatalog.feedback, "Dialog") {
-        Dialog(title = Text("TITLE", style = TextStyle(color = Accent)), content = Text("CONTENT", style = TextStyle(color = Muted)), actions = listOf(OutlinedButton(text = "OK", onPressed = {}, borderColor = Accent)))
-    },
-    componentScene("controls_toast", "Toast", "短提示浮层", DemoCatalog.feedback, "Toast") {
-        Toast(message = "Saved", textStyle = TextStyle(color = Accent))
-    },
-    componentScene("controls_snackbar", "Snackbar", "底部消息条和可选 action", DemoCatalog.feedback, "Snackbar") {
-        Snackbar(message = "Message", action = OutlinedButton(text = "UNDO", onPressed = {}, borderColor = Accent), textStyle = TextStyle(color = PixelColor.White))
+    ComponentExampleScene("controls_dialog", "Messages", "Dialog、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "Toast", "Snackbar")) {
+        officialBody(
+            listOf(
+                samplePanel(
+                    title = "Dialog",
+                    color = Accent,
+                    child = Dialog(title = Text("TITLE", style = TextStyle(color = Accent)), content = Text("CONTENT", style = TextStyle(color = Muted)), actions = listOf(OutlinedButton(text = "OK", onPressed = {}, borderColor = Accent))),
+                ),
+                samplePanel(
+                    title = "Toast",
+                    color = Yellow,
+                    child = Toast(message = "Saved", textStyle = TextStyle(color = Accent)),
+                ),
+                samplePanel(
+                    title = "Snackbar",
+                    color = Pink,
+                    child = Snackbar(message = "Message", action = OutlinedButton(text = "UNDO", onPressed = {}, borderColor = Accent), textStyle = TextStyle(color = PixelColor.White)),
+                ),
+            ),
+        )
     },
     componentScene("controls_app_scaffold", "AppScaffold", "标题、body、bottomBar 的页面骨架", DemoCatalog.navigation, "AppScaffold") {
         Container(

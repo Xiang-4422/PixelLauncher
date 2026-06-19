@@ -15,13 +15,18 @@ internal data class GestureDetectorWidget(
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
-        return RenderSurface(alignment = PixelAlignment.TOP_START, onClick = onTap)
+        return RenderSurface(
+            alignment = PixelAlignment.TOP_START,
+            onClick = onTap,
+            preserveChildMinConstraints = true,
+        )
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderSurface).updateSurface(
             alignment = PixelAlignment.TOP_START,
             onClick = onTap,
+            preserveChildMinConstraints = true,
         )
     }
 }

@@ -77,6 +77,23 @@ class DemoCatalogCoverageTest {
         assertSearchContains("Navigator", "deep_navigation_runtime")
         assertSearchContains("canvas", "paint_custom_paint")
         assertSearchContains("AnimatedSprite", "deep_resources_sprites")
+        assertSearchContains("PaddingDirectional", "layout_padding")
+        assertSearchContains("Center", "layout_align")
+        assertSearchContains("ContainerDirectional", "layout_container")
+        assertSearchContains("PositionedFill", "layout_positioned")
+        assertSearchContains("Switch", "controls_checkbox")
+        assertSearchContains("SegmentedControl", "controls_tabs")
+        assertSearchContains("Toast", "controls_dialog")
+        assertSearchContains("ListViewBuilder", "scroll_list_view")
+        assertSearchContains("GridViewBuilder", "scroll_grid_view")
+        assertSearchContains("PageViewBuilder", "scroll_page_view")
+        assertSearchContains("SliverAppBar", "scroll_custom_scroll_view")
+        assertSearchContains("Sprite", "paint_image")
+        assertSearchContains("AnimatedPadding", "animation_animated_container")
+        assertSearchContains("AnimatedBuilder", "animation_tween_animation_builder")
+        assertSearchContains("FocusNode", "nav_focus_scope")
+        assertSearchContains("FormFieldState", "nav_form")
+        assertSearchContains("PixelInspectorBoundsOverlay", "debug_inspector_panel")
         assertSearchContains("PixelResourceCache", "deep_resources_sprites")
         assertSearchContains("PixelNavigatorSnapshot", "deep_navigation_runtime")
         assertSearchContains("FormValidator", "nav_form")
@@ -114,13 +131,9 @@ class DemoCatalogCoverageTest {
         assertEquals(
             listOf(
                 "layout_padding",
-                "layout_padding_directional",
                 "layout_align",
-                "layout_center",
-                "layout_align_directional",
                 "layout_sized_box",
                 "layout_container",
-                "layout_container_directional",
                 "layout_row",
                 "layout_column",
                 "layout_expanded",
@@ -129,8 +142,6 @@ class DemoCatalogCoverageTest {
                 "layout_wrap",
                 "layout_stack",
                 "layout_positioned",
-                "layout_positioned_directional",
-                "layout_positioned_fill",
                 "layout_opacity",
                 "layout_clip_rect",
                 "layout_transform_translate",
@@ -161,13 +172,9 @@ class DemoCatalogCoverageTest {
         assertEquals(
             listOf(
                 "layout_padding",
-                "layout_padding_directional",
                 "layout_align",
-                "layout_center",
-                "layout_align_directional",
                 "layout_sized_box",
                 "layout_container",
-                "layout_container_directional",
                 "layout_row",
                 "layout_column",
                 "layout_expanded",
@@ -176,8 +183,6 @@ class DemoCatalogCoverageTest {
                 "layout_wrap",
                 "layout_stack",
                 "layout_positioned",
-                "layout_positioned_directional",
-                "layout_positioned_fill",
                 "layout_opacity",
                 "layout_clip_rect",
                 "layout_transform_translate",
@@ -193,39 +198,24 @@ class DemoCatalogCoverageTest {
                 "text_rich_text",
                 "text_text_field",
                 "nav_focus_scope",
-                "nav_focus",
                 "nav_form",
-                "nav_form_field",
                 "nav_semantics",
                 "controls_outlined_button",
                 "controls_list_tile",
                 "controls_checkbox",
-                "controls_switch",
                 "controls_tabs",
-                "controls_segmented_control",
                 "controls_slider",
                 "controls_progress_bar",
                 "controls_activity_indicator",
                 "controls_badge",
                 "controls_dialog",
-                "controls_toast",
-                "controls_snackbar",
                 "scroll_single_child_scroll_view",
                 "scroll_list_view",
-                "scroll_list_view_builder",
-                "scroll_list_view_separated",
-                "scroll_list_view_separated_builder",
                 "scroll_grid_view",
-                "scroll_grid_view_builder",
                 "scroll_page_view",
-                "scroll_page_view_builder",
                 "scroll_scrollbar",
                 "scroll_refresh_indicator",
                 "scroll_custom_scroll_view",
-                "scroll_sliver_list",
-                "scroll_sliver_list_builder",
-                "scroll_sliver_pinned_header",
-                "scroll_sliver_app_bar",
                 "deep_state_restoration",
                 "controls_icon",
                 "paint_line",
@@ -234,22 +224,13 @@ class DemoCatalogCoverageTest {
                 "paint_path",
                 "paint_custom_paint",
                 "paint_image",
-                "paint_sprite",
-                "paint_animated_sprite",
                 "deep_resources_sprites",
                 "animation_animated_container",
-                "animation_animated_opacity",
-                "animation_animated_padding",
-                "animation_animated_align",
-                "animation_animated_positioned",
-                "animation_animated_switcher",
                 "animation_tween_animation_builder",
-                "animation_animated_builder",
                 "controls_app_scaffold",
                 "deep_navigation_runtime",
                 "debug_overlay",
                 "debug_inspector_panel",
-                "debug_inspector_bounds_overlay",
                 "deep_inspector_advanced",
                 "deep_performance_lab",
             ),

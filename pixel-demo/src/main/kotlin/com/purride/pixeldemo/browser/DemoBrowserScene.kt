@@ -19,6 +19,7 @@ import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListState
@@ -152,10 +153,18 @@ private class BrowserWidget(
                                 controller = widget.browserState.columnControllers.getOrElse(depth) { ScrollController() },
                                 child = Padding(
                                     all = 1,
-                                    child = Column(
-                                        children = nodes.map { node -> nodeRow(node = node, depth = depth) },
-                                        spacing = 2,
-                                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    child = Row(
+                                        children = listOf(
+                                            Expanded(
+                                                child = Column(
+                                                    children = nodes.map { node -> nodeRow(node = node, depth = depth) },
+                                                    spacing = 2,
+                                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                                ),
+                                            ),
+                                        ),
+                                        mainAxisSize = MainAxisSize.MAX,
+                                        crossAxisAlignment = CrossAxisAlignment.START,
                                     ),
                                 ),
                             ),
@@ -172,7 +181,30 @@ private class BrowserWidget(
         ): Widget {
             val selected = widget.browserState.selectedNodeIdsByDepth.getOrNull(depth) == node.id
             val color = node.category?.categoryColor() ?: Accent
-            return GestureDetector(
+            val row = nodeRowSurface(
+                node = node,
+                depth = depth,
+                selected = selected,
+                color = color,
+            )
+            return if (depth == 0) {
+                row
+            } else {
+                Row(
+                    children = listOf(Expanded(child = row)),
+                    mainAxisSize = MainAxisSize.MAX,
+                    crossAxisAlignment = CrossAxisAlignment.START,
+                )
+            }
+        }
+
+        private fun nodeRowSurface(
+            node: DemoTreeNode,
+            depth: Int,
+            selected: Boolean,
+            color: PixelColor,
+        ): Widget =
+            GestureDetector(
                 onTap = { selectNode(node = node, depth = depth) },
                 child = Container(
                     padding = EdgeInsets.all(2),
@@ -182,10 +214,10 @@ private class BrowserWidget(
                         node.shortTitle,
                         style = TextStyle(color = if (selected) Accent else PixelColor.White),
                         softWrap = true,
+                        textAlign = if (depth == 0) TextAlign.START else TextAlign.CENTER,
                     ),
                 ),
             )
-        }
 
         private fun selectNode(
             node: DemoTreeNode,
