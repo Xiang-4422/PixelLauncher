@@ -39,6 +39,7 @@ internal class RenderSingleChildScrollViewport(
         val child = renderChild
         child?.layout(
             constraints = RenderConstraints(
+                minWidth = constraints.maxWidth,
                 maxWidth = constraints.maxWidth,
                 maxHeight = safeScrollableMaxHeight(constraints.maxHeight),
             ),

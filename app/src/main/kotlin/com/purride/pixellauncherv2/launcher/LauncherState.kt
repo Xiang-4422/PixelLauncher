@@ -28,6 +28,7 @@ data class LauncherState(
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
     val smsThreads: List<SmsThreadSummary> = emptyList(),
+    val isSmsThreadsLoading: Boolean = false,
     val smsThreadSelectedIndex: Int = 0,
     val smsThreadListStartIndex: Int = 0,
     val smsCurrentThreadId: Long? = null,
@@ -59,16 +60,7 @@ data class LauncherState(
     val rainHintText: String = "",
     val screenUsageTimeText: String = "--:--",
     val screenOpenCountText: String = "--",
-    val quoteText: String = "BREATHE, FOCUS ON ONE THING, AND LET THE REST WAIT.",
-    val homeContextCard: HomeContextCard = HomeContextCard.QUOTE,
 )
-
-enum class HomeContextCard {
-    QUOTE,
-    MEDIA,
-    NOTIFICATIONS,
-    TODO,
-}
 
 enum class DrawerFocus {
     LIST,

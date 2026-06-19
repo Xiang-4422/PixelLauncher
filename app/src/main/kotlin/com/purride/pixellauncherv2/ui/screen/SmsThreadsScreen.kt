@@ -50,20 +50,10 @@ fun SmsThreadsScreen(
             statusBarHeight = statusBarHeight,
         ),
         Expanded(
-            child = if (uiState.smsThreads.isEmpty()) {
-                Column(
-                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                    mainAxisSize = MainAxisSize.MAX,
-                    mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
-                    spacing = 0,
-                    children = listOf(
-                        Text(
-                            "NO MESSAGES",
-                            style = TextStyle(color = theme.sms.timestamp),
-                            textAlign = com.purride.pixelui.TextAlign.CENTER,
-                        ),
-                    ),
-                )
+            child = if (uiState.isSmsThreadsLoading) {
+                centeredSmsStatus("LOADING", theme)
+            } else if (uiState.smsThreads.isEmpty()) {
+                centeredSmsStatus("NO MESSAGES", theme)
             } else {
                 ListViewBuilder(
                     itemCount = uiState.smsThreads.size,
@@ -77,6 +67,23 @@ fun SmsThreadsScreen(
                     },
                 )
             },
+        ),
+    ),
+)
+
+private fun centeredSmsStatus(
+    text: String,
+    theme: LauncherTheme,
+): Widget = Column(
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    mainAxisSize = MainAxisSize.MAX,
+    mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
+    spacing = 0,
+    children = listOf(
+        Text(
+            text,
+            style = TextStyle(color = theme.sms.timestamp),
+            textAlign = com.purride.pixelui.TextAlign.CENTER,
         ),
     ),
 )

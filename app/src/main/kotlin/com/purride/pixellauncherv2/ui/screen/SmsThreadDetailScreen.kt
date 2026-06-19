@@ -6,6 +6,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
@@ -86,13 +87,16 @@ fun SmsThreadDetailScreen(
                     SingleChildScrollView(
                         state = msgListState,
                         controller = msgListController,
-                        child = Column(
-                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                            mainAxisSize = MainAxisSize.MIN,
-                            spacing = MSG_SPACING,
-                            children = uiState.smsMessages.map { msg ->
-                                buildMessage(msg, theme)
-                            },
+                        child = Padding(
+                            horizontal = 2,
+                            child = Column(
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                mainAxisSize = MainAxisSize.MIN,
+                                spacing = MSG_SPACING,
+                                children = uiState.smsMessages.map { msg ->
+                                    buildMessage(msg, theme)
+                                },
+                            ),
                         ),
                     )
                 },

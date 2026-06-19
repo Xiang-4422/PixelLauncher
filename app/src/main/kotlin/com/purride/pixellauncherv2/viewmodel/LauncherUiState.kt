@@ -7,7 +7,6 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
-import com.purride.pixellauncherv2.launcher.HomeContextCard
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
@@ -51,6 +50,7 @@ data class LauncherUiState(
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
     val smsThreads: List<SmsThreadSummary> = emptyList(),
+    val isSmsThreadsLoading: Boolean = false,
     val smsThreadSelectedIndex: Int = 0,
     val smsThreadListStartIndex: Int = 0,
     val smsCurrentThreadId: Long? = null,
@@ -92,8 +92,4 @@ data class LauncherUiState(
     val rainHintText: String = "",
     val screenUsageTimeText: String = "--:--",
     val screenOpenCountText: String = "--",
-
-    // ── Home context card ─────────────────────────────────────────────────────
-    val quoteText: String = "BREATHE, FOCUS ON ONE THING, AND LET THE REST WAIT.",
-    val homeContextCard: HomeContextCard = HomeContextCard.QUOTE,
 )

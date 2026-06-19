@@ -18,6 +18,7 @@ import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparatedBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTextSpan
+import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
@@ -25,6 +26,8 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Padding
+import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
@@ -34,6 +37,7 @@ import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.Widget
+import com.purride.pixelui.state.PixelListController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -330,6 +334,45 @@ class PipelineElementTreeRendererTest {
         }
 
         assertNotNull(result)
+    }
+
+    /**
+     * paragraph wrap 应该使用完整 run 宽度，包含字体内部的相邻字形间距。
+     */
+    @Test
+    fun wrappedTextUsesFullRunMeasurementIncludingPairGaps() {
+        val rasterizer = PairGapRasterizer()
+        val controller = PixelListController()
+        val state = controller.create()
+
+        val result = renderWithPipeline(
+            root = SingleChildScrollView(
+                state = state,
+                controller = controller,
+                child = Padding(
+                    horizontal = 2,
+                    child = Column(
+                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        mainAxisSize = MainAxisSize.MIN,
+                        spacing = 0,
+                        children = listOf(
+                            Text(
+                                data = "ABCDE",
+                                style = PixelTextStyle(textRasterizer = rasterizer),
+                                softWrap = true,
+                                maxLines = Int.MAX_VALUE,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 12,
+            logicalHeight = 8,
+        )
+
+        assertNotNull(result)
+        assertEquals("ABCD\nE", rasterizer.lastDrawnText)
+        assertEquals(12, result?.buffer?.width)
     }
 
     /**
@@ -1503,6 +1546,31 @@ class PipelineElementTreeRendererTest {
                     buffer.setPixel(x = x + index, y = y, color = color)
                 }
             }
+        }
+    }
+
+    private class PairGapRasterizer : PixelTextRasterizer {
+        var lastDrawnText: String = ""
+            private set
+
+        override fun measureText(text: String): Int {
+            return text.lines().maxOfOrNull { line ->
+                if (line.isEmpty()) 0 else line.length + (line.length - 1)
+            } ?: 0
+        }
+
+        override fun measureHeight(text: String): Int {
+            return text.lines().size.coerceAtLeast(1)
+        }
+
+        override fun drawText(
+            buffer: PixelBuffer,
+            text: String,
+            x: Int,
+            y: Int,
+            color: PixelColor,
+        ) {
+            lastDrawnText = text
         }
     }
 

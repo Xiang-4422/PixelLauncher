@@ -24,6 +24,7 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     smsSelectedIndex = smsSelectedIndex,
     smsListStartIndex = smsListStartIndex,
     smsThreads = smsThreads,
+    isSmsThreadsLoading = isSmsThreadsLoading,
     smsThreadSelectedIndex = smsThreadSelectedIndex,
     smsThreadListStartIndex = smsThreadListStartIndex,
     smsCurrentThreadId = smsCurrentThreadId,
@@ -55,6 +56,4 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     rainHintText = rainHintText,
     screenUsageTimeText = screenUsageTimeText,
     screenOpenCountText = screenOpenCountText,
-    quoteText = quoteText,
-    homeContextCard = homeContextCard,
 )

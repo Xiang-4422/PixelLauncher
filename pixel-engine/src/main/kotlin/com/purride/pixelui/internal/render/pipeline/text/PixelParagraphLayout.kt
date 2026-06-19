@@ -103,25 +103,24 @@ internal object PixelParagraphLayouter {
     ): List<List<ParagraphCharacter>> {
         val lines = mutableListOf<List<ParagraphCharacter>>()
         val current = mutableListOf<ParagraphCharacter>()
-        var currentWidth = 0
         characters.forEach { character ->
             if (character.value == '\n') {
                 lines += current.toList()
                 current.clear()
-                currentWidth = 0
                 return@forEach
             }
-            val advance = measureChar(
-                character = character,
-                defaultTextRasterizer = defaultTextRasterizer,
-            )
-            if (current.isNotEmpty() && currentWidth + advance > availableWidth) {
+            val candidate = current + character
+            if (
+                current.isNotEmpty() &&
+                measureWidth(
+                    characters = candidate,
+                    defaultTextRasterizer = defaultTextRasterizer,
+                ) > availableWidth
+            ) {
                 lines += current.toList()
                 current.clear()
-                currentWidth = 0
             }
             current += character
-            currentWidth += advance
         }
         if (current.isNotEmpty()) {
             lines += current.toList()
@@ -146,19 +145,15 @@ internal object PixelParagraphLayouter {
         if (ellipsisWidth > availableWidth) {
             return emptyList()
         }
-        val charWidths = IntArray(characters.size) { index ->
-            measureChar(
-                character = characters[index],
-                defaultTextRasterizer = defaultTextRasterizer,
-            )
-        }
         val result = characters.toMutableList()
-        var combinedWidth = charWidths.sum() + ellipsisWidth
-        var lastIndex = result.lastIndex
-        while (lastIndex >= 0 && combinedWidth > availableWidth) {
-            combinedWidth -= charWidths[lastIndex]
-            result.removeAt(lastIndex)
-            lastIndex -= 1
+        while (
+            result.isNotEmpty() &&
+            measureWidth(
+                characters = result + ellipsis,
+                defaultTextRasterizer = defaultTextRasterizer,
+            ) > availableWidth
+        ) {
+            result.removeAt(result.lastIndex)
         }
         return result + ellipsis
     }
@@ -224,21 +219,32 @@ internal object PixelParagraphLayouter {
         characters: List<ParagraphCharacter>,
         defaultTextRasterizer: PixelTextRasterizer,
     ): Int {
-        return characters.sumOf { character ->
-            measureChar(
-                character = character,
+        if (characters.isEmpty()) {
+            return 0
+        }
+        var width = 0
+        val builder = StringBuilder()
+        var currentStyle: PixelTextStyle? = null
+        characters.forEach { character ->
+            if (currentStyle != null && currentStyle != character.style) {
+                width += measureStyledText(
+                    text = builder.toString(),
+                    style = currentStyle ?: PixelTextStyle.Default,
+                    defaultTextRasterizer = defaultTextRasterizer,
+                )
+                builder.clear()
+            }
+            currentStyle = character.style
+            builder.append(character.value)
+        }
+        if (builder.isNotEmpty()) {
+            width += measureStyledText(
+                text = builder.toString(),
+                style = currentStyle ?: PixelTextStyle.Default,
                 defaultTextRasterizer = defaultTextRasterizer,
             )
         }
-    }
-
-    private fun measureChar(
-        character: ParagraphCharacter,
-        defaultTextRasterizer: PixelTextRasterizer,
-    ): Int {
-        val rasterizer = character.style.textRasterizer ?: defaultTextRasterizer
-        return (rasterizer.measureText(character.value.toString()) * character.style.safeFontScale()) +
-            character.style.letterSpacing.coerceAtLeast(0)
+        return width
     }
 
     private fun measureStyledText(

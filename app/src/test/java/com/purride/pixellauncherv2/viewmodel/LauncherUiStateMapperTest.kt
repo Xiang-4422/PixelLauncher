@@ -36,6 +36,7 @@ class LauncherUiStateMapperTest {
             mode = LauncherMode.APP_DRAWER,
             returnMode = LauncherMode.SETTINGS,
             settingsSelectedIndex = 3,
+            isSmsThreadsLoading = true,
             smsDraftText = "draft",
             smsCurrentThreadId = 7L,
             smsCurrentAddress = "10086",
@@ -79,6 +80,7 @@ class LauncherUiStateMapperTest {
         assertEquals(LauncherMode.SETTINGS, ui.returnMode)
         assertEquals(3, ui.settingsSelectedIndex)
         // sms
+        assertEquals(true, ui.isSmsThreadsLoading)
         assertEquals("draft", ui.smsDraftText)
         assertEquals(7L, ui.smsCurrentThreadId)
         assertEquals("10086", ui.smsCurrentAddress)

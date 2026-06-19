@@ -101,13 +101,18 @@ internal class SmsController(
     fun openModule(forceRefresh: Boolean = false, unreadOnly: Boolean = true) {
         smsThreadsUnreadOnly = unreadOnly
         refreshSmsCapability(render = false)
-        if (forceRefresh) {
-            refreshSmsThreads(render = false, unreadOnly = smsThreadsUnreadOnly)
-        }
-        host.state = if (
+        val canShowThreads =
             host.state.smsPermissionState != SmsPermissionState.MISSING &&
             (host.state.isDefaultSmsApp || smsRolePromptDismissedThisSession)
-        ) {
+        if (!canShowThreads) {
+            host.state = host.state.copy(isSmsThreadsLoading = false)
+        } else if (forceRefresh) {
+            host.state = host.state.copy(
+                smsThreads = emptyList(),
+                isSmsThreadsLoading = true,
+            )
+        }
+        host.state = if (canShowThreads) {
             LauncherStateTransitions.showSmsThreads(
                 state = host.state,
                 visibleRows = host.smsThreadsVisibleRows(),
@@ -117,6 +122,9 @@ internal class SmsController(
         }
         host.render()
         host.updateTextInputFocus()
+        if (canShowThreads && forceRefresh) {
+            refreshSmsThreads(render = true, unreadOnly = smsThreadsUnreadOnly)
+        }
     }
 
     fun closeModule() {
@@ -356,7 +364,7 @@ internal class SmsController(
                     return@post
                 }
                 host.state = LauncherStateTransitions.updateSmsThreads(
-                    state = host.state,
+                    state = host.state.copy(isSmsThreadsLoading = false),
                     threads = threads,
                     visibleRows = host.smsThreadsVisibleRows(),
                 )
