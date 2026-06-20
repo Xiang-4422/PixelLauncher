@@ -84,6 +84,16 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name=".app.LauncherNotificationListenerService"
+            android:exported="true"
+            android:label="@string/notification_listener_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".app.SmsDeliverReceiver"
             android:exported="true"

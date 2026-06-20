@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Pixel Launcher</string>
+    <string name="notification_listener_label">Pixel Launcher Notifications</string>
 </resources>
