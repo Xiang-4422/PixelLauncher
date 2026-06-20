@@ -9,6 +9,7 @@ import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherMode
+import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
@@ -96,6 +97,9 @@ data class LauncherUiState(
     val unreadSmsCount: Int = 0,
     val notificationSummaryText: String = "",
     val notificationCount: Int = 0,
+    val notificationSources: List<NotificationSourceInfo> = emptyList(),
+    val mutedNotificationSourceIds: Set<String> = emptySet(),
+    val priorityNotificationSourceIds: Set<String> = emptySet(),
     val rainHintText: String = "",
     val rainUpdatedTimeText: String = "",
     val screenUsageTimeText: String = "--:--",

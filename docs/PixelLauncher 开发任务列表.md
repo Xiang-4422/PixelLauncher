@@ -153,17 +153,24 @@
 
 ### P1-01 Notification Listener 摘要配置
 
-- [ ] Settings 中增加 App 级静音配置。
-- [ ] Settings 中增加显式优先来源配置。
-- [ ] 摘要规则保持：静音过滤、ongoing 过滤、高优先级或显式优先来源、最多 2 个来源、剩余 `+N`。
-- [ ] Home / Idle 只显示一行 `NOTIFY ...`，不展示完整通知流。
-- [ ] 点击通知摘要进入系统通知面板或对应 App。
+- [x] Settings 中增加 App 级静音配置。
+- [x] Settings 中增加显式优先来源配置。
+- [x] 摘要规则保持：静音过滤、ongoing 过滤、高优先级或显式优先来源、最多 2 个来源、剩余 `+N`。
+- [x] Home / Idle 只显示一行 `NOTIFY ...`，不展示完整通知流。
+- [x] 点击通知摘要进入系统通知面板或对应 App。
 
 验收：
 
-- [ ] 通知摘要不变成完整通知中心。
-- [ ] 用户能关闭不想看的来源。
-- [ ] 摘要内容可解释、可关闭。
+- [x] 通知摘要不变成完整通知中心。
+- [x] 用户能关闭不想看的来源。
+- [x] 摘要内容可解释、可关闭。
+
+证据：
+
+- `NotificationSettingsScreen` 只列来源与 `NORMAL / PRIORITY / MUTED` 状态，点击来源循环配置，不展示完整通知流。
+- `NotificationSummarySettingsRepository` 持久化静音来源与显式优先来源；`NotificationSummaryStore.updateRules` 在配置变化后立即重算摘要。
+- `NotificationSummaryModelTest` 覆盖静音过滤、ongoing 过滤、高优先级、显式优先来源、最多 2 个来源和 `+N`。
+- `HomeInfoModelTest` 与 `IdleStatusModelTest` 覆盖 Home / Idle 只显示一行 `NOTIFY ...`；Home 点击通知摘要时单一来源打开对应 App，否则进入系统通知设置。
 
 ### P1-02 数字健康展示
 

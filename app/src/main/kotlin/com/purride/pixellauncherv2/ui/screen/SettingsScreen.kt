@@ -15,6 +15,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.DataHealthModel
 import com.purride.pixellauncherv2.launcher.HomeInfoModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
+import com.purride.pixellauncherv2.launcher.NotificationSettingsModel
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -205,6 +206,17 @@ class SettingsScreen(
                 ),
             )
             addSection(SettingsSection.DATA, t)
+            add(
+                SettingsActionRow(
+                    title = "NOTIFY",
+                    valueLabel = NotificationSettingsModel.summary(
+                        mutedSourceIds = mutedNotificationSourceIds,
+                        prioritySourceIds = priorityNotificationSourceIds,
+                    ),
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.NOTIFICATIONS, +1) },
+                ),
+            )
             add(
                 SettingsActionRow(
                     title = "DATA",

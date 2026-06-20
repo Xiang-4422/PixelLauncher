@@ -117,6 +117,8 @@ class SettingsMenuModelTest {
                 smsPermissionState = SmsPermissionState.READY,
                 hasPostNotificationPermission = true,
                 hasNotificationListenerAccess = true,
+                mutedNotificationSourceIds = setOf("com.noisy"),
+                priorityNotificationSourceIds = setOf("com.bank"),
                 apps = listOf(AppEntry(label = "Bank", packageName = "com.bank", activityName = "BankActivity")),
             ),
         )
@@ -129,6 +131,7 @@ class SettingsMenuModelTest {
         assertTrue(items.contains(SettingsMenuItem.IDLE_TIMEOUT))
         assertTrue(items.contains(SettingsMenuItem.CHARGE_IDLE_EFFECT))
         assertTrue(items.contains(SettingsMenuItem.APP_MANAGEMENT))
+        assertTrue(items.contains(SettingsMenuItem.NOTIFICATIONS))
         assertTrue(items.contains(SettingsMenuItem.DATA_HEALTH))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
         assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
@@ -138,6 +141,7 @@ class SettingsMenuModelTest {
         assertEquals("60S", rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.value)
         assertEquals("TANK", rows.first { it.item == SettingsMenuItem.CHARGE_IDLE_EFFECT }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.value)
+        assertEquals("M1 P1", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
         assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
     }
@@ -167,6 +171,7 @@ class SettingsMenuModelTest {
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.section)
         assertEquals(SettingsSection.IDLE, rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.section)
+        assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.section)
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
         assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
         assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))

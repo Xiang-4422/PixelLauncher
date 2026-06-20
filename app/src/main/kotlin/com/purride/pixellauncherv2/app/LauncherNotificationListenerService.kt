@@ -3,12 +3,11 @@ package com.purride.pixellauncherv2.app
 import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
 import com.purride.pixellauncherv2.data.NotificationSummaryStore
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSignalPriority
 import com.purride.pixellauncherv2.launcher.NotificationSummary
-import com.purride.pixellauncherv2.launcher.NotificationSummaryModel
-import com.purride.pixellauncherv2.launcher.NotificationSummaryRules
 import java.util.Locale
 
 @Suppress("DEPRECATION")
@@ -36,12 +35,11 @@ class LauncherNotificationListenerService : NotificationListenerService() {
         }.getOrElse {
             emptyArray<StatusBarNotification>()
         }
-        val summary = NotificationSummaryModel.summarize(
-            signals = notifications
-                .mapNotNull(::toSignal),
-            rules = NotificationSummaryRules(mutedSourceIds = setOf(packageName)),
-        )
-        NotificationSummaryStore.update(summary)
+        val signals = notifications
+            .mapNotNull(::toSignal)
+            .filterNot { signal -> signal.sourceId == packageName }
+        val rules = NotificationSummarySettingsRepository(this).rules()
+        NotificationSummaryStore.updateSignals(signals, rules)
     }
 
     private fun toSignal(statusBarNotification: StatusBarNotification): NotificationSignal? {

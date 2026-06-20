@@ -33,6 +33,7 @@ object LauncherStateTransitions {
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
+            LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.DIAGNOSTICS -> state.returnMode
         }
         val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
@@ -66,6 +67,7 @@ object LauncherStateTransitions {
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
+            LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
         }
         return state.copy(
@@ -92,6 +94,14 @@ object LauncherStateTransitions {
 
     /** 关闭数据健康页，并返回设置页。 */
     fun hideDataHealth(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
+    fun showNotificationSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.NOTIFICATION_SETTINGS)
+    }
+
+    fun hideNotificationSettings(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
@@ -138,6 +148,7 @@ object LauncherStateTransitions {
 
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
+            LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.DIAGNOSTICS,
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,
@@ -805,10 +816,24 @@ object LauncherStateTransitions {
         state: LauncherState,
         notificationSummaryText: String,
         notificationCount: Int,
+        notificationSources: List<NotificationSourceInfo> = state.notificationSources,
     ): LauncherState {
         return state.copy(
             notificationSummaryText = notificationSummaryText.trim(),
             notificationCount = notificationCount.coerceAtLeast(0),
+            notificationSources = notificationSources,
+        )
+    }
+
+    fun updateNotificationRules(
+        state: LauncherState,
+        mutedSourceIds: Set<String>,
+        prioritySourceIds: Set<String>,
+    ): LauncherState {
+        val muted = mutedSourceIds.sanitizeSourceIds()
+        return state.copy(
+            mutedNotificationSourceIds = muted,
+            priorityNotificationSourceIds = prioritySourceIds.sanitizeSourceIds() - muted,
         )
     }
 
@@ -1318,6 +1343,12 @@ object LauncherStateTransitions {
         if (size <= 0) return 0
         val mod = index % size
         return if (mod < 0) mod + size else mod
+    }
+
+    private fun Set<String>.sanitizeSourceIds(): Set<String> {
+        return mapNotNull { value ->
+            value.trim().takeIf(String::isNotEmpty)
+        }.toSet()
     }
 
     private data class DrawerSearchHit(

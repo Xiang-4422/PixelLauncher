@@ -65,6 +65,9 @@ data class LauncherState(
     val unreadSmsCount: Int = 0,
     val notificationSummaryText: String = "",
     val notificationCount: Int = 0,
+    val notificationSources: List<NotificationSourceInfo> = emptyList(),
+    val mutedNotificationSourceIds: Set<String> = emptySet(),
+    val priorityNotificationSourceIds: Set<String> = emptySet(),
     val rainHintText: String = "",
     val rainUpdatedTimeText: String = "",
     val screenUsageTimeText: String = "--:--",
@@ -99,6 +102,7 @@ enum class LauncherMode {
     SMS_INBOX,
     APP_MANAGEMENT,
     DATA_HEALTH,
+    NOTIFICATION_SETTINGS,
     DIAGNOSTICS,
     IDLE,
 }

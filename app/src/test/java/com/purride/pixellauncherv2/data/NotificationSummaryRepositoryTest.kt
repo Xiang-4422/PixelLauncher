@@ -1,6 +1,9 @@
 package com.purride.pixellauncherv2.data
 
 import com.purride.pixellauncherv2.launcher.NotificationSummary
+import com.purride.pixellauncherv2.launcher.NotificationSignal
+import com.purride.pixellauncherv2.launcher.NotificationSignalPriority
+import com.purride.pixellauncherv2.launcher.NotificationSummaryRules
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -35,6 +38,37 @@ class NotificationSummaryRepositoryTest {
                 NotificationSummary(count = 2, text = "CAL MEET  BANK OTP"),
             ),
             received,
+        )
+    }
+
+    @Test
+    fun updateRulesRebuildsCurrentSignalsImmediately() {
+        val repository = NotificationSummaryRepository()
+        val received = mutableListOf<NotificationSummary>()
+        repository.start { summary -> received += summary }
+
+        NotificationSummaryStore.updateSignals(
+            nextSignals = listOf(
+                NotificationSignal(
+                    sourceId = "bank",
+                    sourceLabel = "BANK",
+                    title = "OTP",
+                    priority = NotificationSignalPriority.HIGH,
+                ),
+            ),
+            nextRules = NotificationSummaryRules(),
+        )
+        NotificationSummaryStore.updateRules(NotificationSummaryRules(mutedSourceIds = setOf("bank")))
+
+        assertEquals(1, received[1].count)
+        assertEquals("BANK OTP", received[1].text)
+        assertEquals(
+            NotificationSummary(
+                count = 0,
+                text = "",
+                sources = received[1].sources,
+            ),
+            received[2],
         )
     }
 }

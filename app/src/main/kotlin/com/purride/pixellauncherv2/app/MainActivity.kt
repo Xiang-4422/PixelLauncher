@@ -37,6 +37,8 @@ import com.purride.pixellauncherv2.data.GeoPoint
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.NextAlarmRepository
 import com.purride.pixellauncherv2.data.NotificationSummaryRepository
+import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
+import com.purride.pixellauncherv2.data.NotificationSummaryStore
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
@@ -109,6 +111,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var screenUsageRepository: ScreenUsageRepository
     private lateinit var communicationStatusRepository: CommunicationStatusRepository
     private lateinit var notificationSummaryRepository: NotificationSummaryRepository
+    private lateinit var notificationSummarySettingsRepository: NotificationSummarySettingsRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var smsController: SmsController
     private lateinit var rainForecastRepository: RainForecastRepository
@@ -241,6 +244,7 @@ class MainActivity : AppCompatActivity() {
         screenUsageRepository = ScreenUsageRepository(applicationContext)
         communicationStatusRepository = CommunicationStatusRepository(applicationContext)
         notificationSummaryRepository = NotificationSummaryRepository()
+        notificationSummarySettingsRepository = NotificationSummarySettingsRepository(applicationContext)
         smsController = SmsController(
             context = applicationContext,
             backgroundExecutor = backgroundExecutor,
@@ -269,6 +273,13 @@ class MainActivity : AppCompatActivity() {
             openDrawerInSearchMode = uiBehaviorSettings.openDrawerInSearchMode,
             chargeIdleEffect = uiBehaviorSettings.chargeIdleEffect,
         )
+        state = notificationSummarySettingsRepository.rules().let { rules ->
+            LauncherStateTransitions.updateNotificationRules(
+                state = state,
+                mutedSourceIds = rules.mutedSourceIds,
+                prioritySourceIds = rules.prioritySourceIds,
+            )
+        }
         state = LauncherStateTransitions.updateStats(state, launcherStatsRepository.read())
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
         state = LauncherStateTransitions.updateTime(
@@ -315,6 +326,7 @@ class MainActivity : AppCompatActivity() {
                 onAppCacheReset = ::onAppCacheReset,
                 onOpenDataHealth = ::openDataHealth,
                 onDataHealthItemPressed = ::onDataHealthItemPressed,
+                onNotificationSourcePressed = ::onNotificationSourcePressed,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,
                 onSelectSmsIndex     = smsController::selectIndex,
@@ -349,6 +361,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_INBOX -> smsController.closeUnreadInbox()
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
+                    LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -575,6 +588,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
+                    LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
                     LauncherMode.IDLE,
@@ -598,6 +612,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
+                    LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE,
                     LauncherMode.SMS_ROLE_PROMPT -> Unit
@@ -616,6 +631,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
+                    LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -633,6 +649,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
+                    LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -661,6 +678,7 @@ class MainActivity : AppCompatActivity() {
                         smsController.launchSelectedUnread()
                     }
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
+                    LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
                     LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.HOME -> Unit
@@ -904,6 +922,7 @@ class MainActivity : AppCompatActivity() {
                 chargeIdleEffect = s.chargeIdleEffect,
             )
             SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
+            SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
@@ -950,6 +969,8 @@ class MainActivity : AppCompatActivity() {
             HomeInfoAction.ALARM -> openAlarmClock()
 
             HomeInfoAction.BATTERY -> openBatterySettings()
+
+            HomeInfoAction.NOTIFICATION -> openNotificationSummaryTarget()
 
             HomeInfoAction.SMS -> {
                 if (state.unreadSmsCount > 0) {
@@ -1023,6 +1044,25 @@ class MainActivity : AppCompatActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             },
         )
+    }
+
+    private fun openNotificationSummaryTarget() {
+        val sourceIntent = state.notificationSources.singleOrNull()?.let { source ->
+            packageManager.getLaunchIntentForPackage(source.sourceId)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        val notificationSettingsIntent = Intent(ACTION_NOTIFICATION_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val systemSettingsIntent = Intent(Settings.ACTION_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        if (sourceIntent != null) {
+            launchFirstAvailableIntent(sourceIntent, notificationSettingsIntent, systemSettingsIntent)
+        } else {
+            launchFirstAvailableIntent(notificationSettingsIntent, systemSettingsIntent)
+        }
     }
 
     // End Phase 4 ──────────────────────────────────────────────────────────────
@@ -1377,6 +1417,36 @@ class MainActivity : AppCompatActivity() {
         updateDrawerInputFocus()
     }
 
+    private fun closeDataHealth() {
+        state = LauncherStateTransitions.hideDataHealth(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun openNotificationSettings() {
+        settleSettingsMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.showNotificationSettings(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun closeNotificationSettings() {
+        state = LauncherStateTransitions.hideNotificationSettings(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun onNotificationSourcePressed(sourceId: String) {
+        val rules = notificationSummarySettingsRepository.cycleSource(sourceId)
+        state = LauncherStateTransitions.updateNotificationRules(
+            state = state,
+            mutedSourceIds = rules.mutedSourceIds,
+            prioritySourceIds = rules.prioritySourceIds,
+        )
+        NotificationSummaryStore.updateRules(rules)
+        renderCurrentFrame()
+    }
+
     private fun openAppManagement(selectedIndex: Int = state.appEditorSelectedIndex) {
         settleSettingsMotionBeforeExplicitAction()
         state = LauncherStateTransitions.showAppManagement(state, selectedIndex)
@@ -1445,12 +1515,6 @@ class MainActivity : AppCompatActivity() {
         state = LauncherStateTransitions.showAppManagement(state, selectedIndex)
         renderCurrentFrame()
         updateTextInputFocus()
-    }
-
-    private fun closeDataHealth() {
-        state = LauncherStateTransitions.hideDataHealth(state)
-        renderCurrentFrame()
-        updateDrawerInputFocus()
     }
 
     private fun onDataHealthItemPressed(item: DataHealthItem) {
@@ -1584,6 +1648,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
+            LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.DIAGNOSTICS -> true
 
             LauncherMode.IDLE -> false
@@ -1709,6 +1774,7 @@ class MainActivity : AppCompatActivity() {
             state = state,
             notificationSummaryText = notificationSummary.text,
             notificationCount = notificationSummary.count,
+            notificationSources = notificationSummary.sources,
         )
         renderCurrentFrame()
     }
@@ -2036,6 +2102,7 @@ class MainActivity : AppCompatActivity() {
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"
         const val statusBarMessageTimeoutMs: Long = 2_500L
+        const val ACTION_NOTIFICATION_SETTINGS = "android.settings.NOTIFICATION_SETTINGS"
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
         const val smsIntentLogTag = "SmsIntent"

@@ -78,6 +78,7 @@ class HomeInfoDetailModelTest {
         assertEquals("OPEN CALL LOG", HomeInfoDetailModel.notice(HomeInfoAction.CALL, LauncherState()))
         assertEquals("OPEN ALARMS", HomeInfoDetailModel.notice(HomeInfoAction.ALARM, LauncherState()))
         assertEquals("OPEN BATTERY", HomeInfoDetailModel.notice(HomeInfoAction.BATTERY, LauncherState()))
+        assertEquals("OPEN NOTIFY", HomeInfoDetailModel.notice(HomeInfoAction.NOTIFICATION, LauncherState()))
     }
 
     @Test

@@ -34,6 +34,7 @@ import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
 import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
+import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.SmsInboxScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
@@ -248,6 +249,13 @@ internal class LauncherRootHost(
             chargeTick = chargeTick,
             screenProfile = screenProfile,
             onItemPressed = callbacks.onDataHealthItemPressed,
+        )
+        LauncherMode.NOTIFICATION_SETTINGS -> NotificationSettingsScreen(
+            uiState = uiState,
+            theme = theme,
+            chargeTick = chargeTick,
+            screenProfile = screenProfile,
+            onSourcePressed = callbacks.onNotificationSourcePressed,
         )
         LauncherMode.APP_MANAGEMENT    -> AppManagementScreen(
             uiState = uiState,

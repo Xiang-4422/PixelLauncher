@@ -75,7 +75,7 @@ class HomeInfoModelTest {
             listOf(
                 "CALL 1" to HomeInfoAction.CALL,
                 "SMS 1" to HomeInfoAction.SMS,
-                "NOTIFY BANK OTP" to null,
+                "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
             ),
             lines.map { it.text to it.action },
         )

@@ -8,6 +8,7 @@ enum class HomeInfoAction {
     SMS,
     ALARM,
     BATTERY,
+    NOTIFICATION,
     USAGE,
 }
 
@@ -82,7 +83,7 @@ object HomeInfoModel {
         }
         val notificationLine = notificationLine(notificationSummaryText, notificationCount)
         if (notificationLine != null) {
-            add(HomeInfoLine(notificationLine))
+            add(HomeInfoLine(notificationLine, HomeInfoAction.NOTIFICATION))
         }
         if (nextAlarmText.isNotBlank() && nextAlarmText != "--:--") {
             add(HomeInfoLine("ALARM $nextAlarmText", HomeInfoAction.ALARM))

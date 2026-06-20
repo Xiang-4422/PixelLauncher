@@ -18,6 +18,7 @@ enum class SettingsMenuItem {
     CHARGE_IDLE_EFFECT,
     DRAWER_AUTO_SEARCH,
     APP_MANAGEMENT,
+    NOTIFICATIONS,
     DATA_HEALTH,
     ADVANCED,
 }
@@ -152,6 +153,17 @@ object SettingsMenuModel {
                     title = "IDLE EFFECT",
                     value = chargeIdleEffectLabel(state.chargeIdleEffect),
                     section = SettingsSection.IDLE,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.NOTIFICATIONS,
+                    title = "NOTIFY",
+                    value = NotificationSettingsModel.summary(
+                        mutedSourceIds = state.mutedNotificationSourceIds,
+                        prioritySourceIds = state.priorityNotificationSourceIds,
+                    ),
+                    section = SettingsSection.DATA,
                 ),
             )
             add(

@@ -6,6 +6,7 @@ import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -65,6 +66,9 @@ class LauncherUiStateMapperTest {
             unreadSmsCount = 5,
             notificationSummaryText = "BANK OTP",
             notificationCount = 1,
+            notificationSources = listOf(NotificationSourceInfo("bank", "BANK")),
+            mutedNotificationSourceIds = setOf("noisy"),
+            priorityNotificationSourceIds = setOf("bank"),
             rainHintText = "RAIN 18:00",
             rainUpdatedTimeText = "09:41",
             screenUsageTimeText = "01:23",
@@ -128,6 +132,9 @@ class LauncherUiStateMapperTest {
         assertEquals(5, ui.unreadSmsCount)
         assertEquals("BANK OTP", ui.notificationSummaryText)
         assertEquals(1, ui.notificationCount)
+        assertEquals(listOf(NotificationSourceInfo("bank", "BANK")), ui.notificationSources)
+        assertEquals(setOf("noisy"), ui.mutedNotificationSourceIds)
+        assertEquals(setOf("bank"), ui.priorityNotificationSourceIds)
         assertEquals("RAIN 18:00", ui.rainHintText)
         assertEquals("09:41", ui.rainUpdatedTimeText)
         assertEquals("01:23", ui.screenUsageTimeText)

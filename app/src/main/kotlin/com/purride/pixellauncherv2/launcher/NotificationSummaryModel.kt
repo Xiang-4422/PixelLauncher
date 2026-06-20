@@ -22,9 +22,15 @@ data class NotificationSummaryRules(
     val maxItems: Int = 2,
 )
 
+data class NotificationSourceInfo(
+    val sourceId: String,
+    val sourceLabel: String,
+)
+
 data class NotificationSummary(
     val count: Int,
     val text: String,
+    val sources: List<NotificationSourceInfo> = emptyList(),
 )
 
 object NotificationSummaryModel {
@@ -33,6 +39,18 @@ object NotificationSummaryModel {
         signals: List<NotificationSignal>,
         rules: NotificationSummaryRules = NotificationSummaryRules(),
     ): NotificationSummary {
+        val sources = signals
+            .asSequence()
+            .filter { signal -> signal.sourceId.isNotBlank() }
+            .map { signal ->
+                NotificationSourceInfo(
+                    sourceId = signal.sourceId.trim(),
+                    sourceLabel = signal.sourceLabel.trim().ifEmpty { signal.sourceId.trim() },
+                )
+            }
+            .distinctBy(NotificationSourceInfo::sourceId)
+            .sortedBy(NotificationSourceInfo::sourceLabel)
+            .toList()
         val candidates = signals
             .asSequence()
             .filter { signal -> signal.sourceId.isNotBlank() }
@@ -46,7 +64,7 @@ object NotificationSummaryModel {
             .toList()
 
         if (candidates.isEmpty()) {
-            return NotificationSummary(count = 0, text = "")
+            return NotificationSummary(count = 0, text = "", sources = sources)
         }
 
         val visible = candidates
@@ -57,6 +75,7 @@ object NotificationSummaryModel {
         return NotificationSummary(
             count = candidates.size,
             text = visible.joinToString("  ") + suffix,
+            sources = sources,
         )
     }
 

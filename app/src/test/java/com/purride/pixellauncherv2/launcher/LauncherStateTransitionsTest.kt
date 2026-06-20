@@ -405,10 +405,24 @@ class LauncherStateTransitionsTest {
             state = LauncherState(),
             notificationSummaryText = "  BANK OTP  ",
             notificationCount = -1,
+            notificationSources = listOf(NotificationSourceInfo("bank", "BANK")),
         )
 
         assertEquals("BANK OTP", result.notificationSummaryText)
         assertEquals(0, result.notificationCount)
+        assertEquals(listOf(NotificationSourceInfo("bank", "BANK")), result.notificationSources)
+    }
+
+    @Test
+    fun updateNotificationRulesTrimsSourcesAndLetsMuteWin() {
+        val result = LauncherStateTransitions.updateNotificationRules(
+            state = LauncherState(),
+            mutedSourceIds = setOf(" noisy ", ""),
+            prioritySourceIds = setOf("noisy", "bank"),
+        )
+
+        assertEquals(setOf("noisy"), result.mutedNotificationSourceIds)
+        assertEquals(setOf("bank"), result.priorityNotificationSourceIds)
     }
 
     @Test

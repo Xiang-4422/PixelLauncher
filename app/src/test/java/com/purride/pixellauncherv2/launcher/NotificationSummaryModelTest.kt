@@ -39,7 +39,9 @@ class NotificationSummaryModelTest {
             rules = NotificationSummaryRules(mutedSourceIds = setOf("muted")),
         )
 
-        assertEquals(NotificationSummary(count = 0, text = ""), summary)
+        assertEquals(0, summary.count)
+        assertEquals("", summary.text)
+        assertEquals(4, summary.sources.size)
     }
 
     @Test
@@ -66,6 +68,31 @@ class NotificationSummaryModelTest {
 
         assertEquals(2, summary.count)
         assertEquals("CAL MEET  BANK OTP", summary.text)
+        assertEquals(
+            listOf(
+                NotificationSourceInfo(sourceId = "bank", sourceLabel = "BANK"),
+                NotificationSourceInfo(sourceId = "calendar", sourceLabel = "CAL"),
+            ),
+            summary.sources,
+        )
+    }
+
+    @Test
+    fun summarizeKeepsMutedSourcesVisibleForSettings() {
+        val summary = NotificationSummaryModel.summarize(
+            signals = listOf(
+                NotificationSignal(
+                    sourceId = "muted",
+                    sourceLabel = "MUTED",
+                    priority = NotificationSignalPriority.HIGH,
+                ),
+            ),
+            rules = NotificationSummaryRules(mutedSourceIds = setOf("muted")),
+        )
+
+        assertEquals(0, summary.count)
+        assertEquals("", summary.text)
+        assertEquals(listOf(NotificationSourceInfo(sourceId = "muted", sourceLabel = "MUTED")), summary.sources)
     }
 
     @Test

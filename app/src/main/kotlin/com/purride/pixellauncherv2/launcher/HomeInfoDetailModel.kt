@@ -77,6 +77,7 @@ object HomeInfoDetailModel {
             HomeInfoAction.SMS -> if (unreadSmsCount > 0) "OPEN UNREAD SMS" else "OPEN SMS"
             HomeInfoAction.ALARM -> "OPEN ALARMS"
             HomeInfoAction.BATTERY -> "OPEN BATTERY"
+            HomeInfoAction.NOTIFICATION -> "OPEN NOTIFY"
             HomeInfoAction.USAGE -> if (hasUsageAccess) "USE TODAY" else "USE NEEDS ACCESS"
         }
     }
