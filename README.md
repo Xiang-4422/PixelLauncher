@@ -3,7 +3,7 @@
 PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。  
 这个仓库的目标不是做传统图标桌面，而是通过统一的像素 UI、极简信息呈现和状态驱动页面，减少用户为了“确认状态”而频繁打开 App。
 
-这份 `README` 作为项目的文档中枢，帮助新接手的工程师快速建立完整心智模型：项目是什么、架构怎么组织、代码入口在哪、如何运行、应该先读哪些文档，以及哪些边界不要轻易打破。
+这份 `README` 作为项目入口和运行指南。需要完整了解项目事实、模块职责、运行链路和开发边界时，先读 [项目总览](docs/项目总览.md)。
 
 ## 1. 项目定位
 
@@ -298,6 +298,7 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 
 项目级文档只保留当前仍会指导开发的文档：
 
+- [项目总览](docs/项目总览.md)：项目现状、模块架构、engine 原理、demo 职责、Launcher 核心模块和开发路径
 - [设计文档](docs/设计文档.md)：PixelLauncher 产品目标、app 侧架构、页面职责和开发约束
 - [PixelLauncher UI 规范](docs/PixelLauncher%20UI规范.md)：Launcher 页面、字体、间距、控件和真机问题反馈规则
 - [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md)：engine 内部架构、渲染管线、runtime 和维护规则
@@ -310,12 +311,13 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 如果你是第一次接手这个项目，建议按下面顺序进入代码：
 
 1. 先读本 `README`
-2. 再读 [设计文档](docs/设计文档.md)
-3. 涉及 UI 时读 [PixelLauncher UI 规范](docs/PixelLauncher%20UI规范.md)
-4. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
-5. 看 [LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt) / [LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
-6. 看 [LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 和 [ui/screen](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen) 下的页面构建函数
-7. 如果涉及 engine，再读 [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md) 和 [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)
+2. 再读 [项目总览](docs/项目总览.md)
+3. 读 [设计文档](docs/设计文档.md)
+4. 涉及 UI 时读 [PixelLauncher UI 规范](docs/PixelLauncher%20UI规范.md)
+5. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
+6. 看 [LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt) / [LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
+7. 看 [LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 和 [ui/screen](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen) 下的页面构建函数
+8. 如果涉及 engine，再读 [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md) 和 [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)
 
 ## 11. 当前状态一句话总结
 
