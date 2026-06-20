@@ -208,6 +208,25 @@ class UiSpecStaticTest {
     }
 
     @Test
+    fun drawerLongPressActionsStayInLightweightOverlay() {
+        val moduleRoot = resolveModuleRoot()
+        val source = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/DrawerScreen.kt")
+            .readText()
+
+        assertTrue(
+            "Drawer long-press actions must stay in a lightweight dialog overlay.",
+            source.contains("isAppActionMenuVisible") &&
+                source.contains("Stack(") &&
+                source.contains("PositionedFill(") &&
+                source.contains("Dialog(") &&
+                source.contains("TextButton(text = \"EDIT\"") &&
+                source.contains("TextButton(text = \"REFRESH\"") &&
+                source.contains("TextButton(text = \"CANCEL\""),
+        )
+    }
+
+    @Test
     fun transientMessagesReplaceStatusBarTextButKeepBatteryDivider() {
         val moduleRoot = resolveModuleRoot()
         val headerSource = moduleRoot

@@ -8,6 +8,7 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     drawerQuery = drawerQuery,
     isDrawerSearchFocused = isDrawerSearchFocused,
     isDrawerRailSliding = isDrawerRailSliding,
+    isAppActionMenuVisible = isAppActionMenuVisible,
     selectedIndex = selectedIndex,
     listStartIndex = listStartIndex,
     drawerPageIndex = drawerPageIndex,

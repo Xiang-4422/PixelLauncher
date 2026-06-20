@@ -13,6 +13,7 @@ object LauncherStateTransitions {
         return state.copy(
             mode = LauncherMode.HOME,
             isDrawerSearchFocused = false,
+            isAppActionMenuVisible = false,
         )
     }
 
@@ -41,6 +42,7 @@ object LauncherStateTransitions {
                 returnMode = returnMode,
                 settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex),
                 isDrawerSearchFocused = false,
+                isAppActionMenuVisible = false,
             ),
             visibleRows = visibleRows,
         )
@@ -69,6 +71,7 @@ object LauncherStateTransitions {
         return state.copy(
             mode = fallbackMode,
             returnMode = fallbackMode,
+            isAppActionMenuVisible = false,
         )
     }
 
@@ -92,6 +95,26 @@ object LauncherStateTransitions {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
+    fun showAppActionMenu(state: LauncherState, selectedIndex: Int): LauncherState {
+        if (state.mode != LauncherMode.APP_DRAWER || state.apps.isEmpty()) {
+            return state.copy(isAppActionMenuVisible = false)
+        }
+        val safeIndex = selectedIndex.coerceIn(0, state.apps.lastIndex)
+        val selectedApp = state.apps[safeIndex]
+        return state.copy(
+            isAppActionMenuVisible = true,
+            isDrawerSearchFocused = false,
+            isDrawerRailSliding = false,
+            appEditorSelectedIndex = safeIndex,
+            appEditorNameDraft = selectedApp.label,
+            appEditorAliasDraft = selectedApp.aliases.joinToString(" "),
+        )
+    }
+
+    fun hideAppActionMenu(state: LauncherState): LauncherState {
+        return state.copy(isAppActionMenuVisible = false)
+    }
+
     fun showAppManagement(state: LauncherState, selectedIndex: Int = state.appEditorSelectedIndex): LauncherState {
         val apps = state.apps
         val safeIndex = selectedIndex.coerceIn(0, (apps.size - 1).coerceAtLeast(0))
@@ -100,6 +123,7 @@ object LauncherStateTransitions {
         return state.copy(
             mode = LauncherMode.APP_MANAGEMENT,
             returnMode = returnMode,
+            isAppActionMenuVisible = false,
             appEditorSelectedIndex = safeIndex,
             appEditorNameDraft = selectedApp?.label.orEmpty(),
             appEditorAliasDraft = selectedApp?.aliases.orEmpty().joinToString(" "),

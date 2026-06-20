@@ -249,6 +249,48 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun appActionMenu_openedFromDrawerKeepsDrawerModeAndPrefillsSelectedApp() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isDrawerSearchFocused = true,
+            isDrawerRailSliding = true,
+            apps = listOf(
+                AppEntry(label = "Bank", packageName = "pkg.bank", activityName = "BankActivity", aliases = listOf("pay")),
+                AppEntry(label = "Maps", packageName = "pkg.maps", activityName = "MapsActivity", aliases = listOf("nav", "road")),
+            ),
+        )
+
+        val opened = LauncherStateTransitions.showAppActionMenu(state, selectedIndex = 1)
+        val closed = LauncherStateTransitions.hideAppActionMenu(opened)
+
+        assertEquals(LauncherMode.APP_DRAWER, opened.mode)
+        assertEquals(true, opened.isAppActionMenuVisible)
+        assertEquals(false, opened.isDrawerSearchFocused)
+        assertEquals(false, opened.isDrawerRailSliding)
+        assertEquals(1, opened.appEditorSelectedIndex)
+        assertEquals("Maps", opened.appEditorNameDraft)
+        assertEquals("nav road", opened.appEditorAliasDraft)
+        assertEquals(false, closed.isAppActionMenuVisible)
+        assertEquals(LauncherMode.APP_DRAWER, closed.mode)
+    }
+
+    @Test
+    fun appActionMenu_isClearedWhenOpeningAppManagementOrLeavingDrawer() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            isAppActionMenuVisible = true,
+            apps = listOf(AppEntry(label = "Bank", packageName = "pkg.bank", activityName = "BankActivity")),
+        )
+
+        assertEquals(false, LauncherStateTransitions.showAppManagement(state).isAppActionMenuVisible)
+        assertEquals(false, LauncherStateTransitions.showHome(state).isAppActionMenuVisible)
+        assertEquals(
+            false,
+            LauncherStateTransitions.showSettings(state, visibleRows = 5).isAppActionMenuVisible,
+        )
+    }
+
+    @Test
     fun appManagement_selectionWrapsAndSyncsDrafts() {
         val state = LauncherState(
             mode = LauncherMode.APP_MANAGEMENT,

@@ -26,6 +26,7 @@ class LauncherUiStateMapperTest {
             apps = listOf(AppEntry(label = "A", packageName = "p.a", activityName = "act")),
             drawerQuery = "qq",
             isDrawerSearchFocused = true,
+            isAppActionMenuVisible = true,
             selectedIndex = 4,
             listStartIndex = 2,
             drawerPageIndex = 1,
@@ -84,6 +85,7 @@ class LauncherUiStateMapperTest {
         assertEquals(state.apps, ui.apps)
         assertEquals("qq", ui.drawerQuery)
         assertEquals(true, ui.isDrawerSearchFocused)
+        assertEquals(true, ui.isAppActionMenuVisible)
         assertEquals(4, ui.selectedIndex)
         assertEquals(2, ui.listStartIndex)
         assertEquals(1, ui.drawerPageIndex)

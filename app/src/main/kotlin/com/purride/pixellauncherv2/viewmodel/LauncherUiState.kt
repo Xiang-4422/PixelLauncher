@@ -25,6 +25,7 @@ data class LauncherUiState(
     val drawerQuery: String = "",
     val isDrawerSearchFocused: Boolean = false,
     val isDrawerRailSliding: Boolean = false,
+    val isAppActionMenuVisible: Boolean = false,
     val selectedIndex: Int = 0,
     val listStartIndex: Int = 0,
     val drawerPageIndex: Int = 0,

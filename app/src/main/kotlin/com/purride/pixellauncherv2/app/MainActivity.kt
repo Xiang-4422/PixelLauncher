@@ -302,6 +302,9 @@ class MainActivity : AppCompatActivity() {
                 onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
                 onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
                 onDrawerAppLongPressed = ::onPixelEngineDrawerAppLongPressed,
+                onDrawerAppMenuEdit = ::onDrawerAppMenuEdit,
+                onDrawerAppMenuRefresh = ::onDrawerAppMenuRefresh,
+                onDrawerAppMenuDismiss = ::onDrawerAppMenuDismiss,
                 onSettingsItemAction = ::onSettingsItemAction,
                 onAppEditorPrevious = ::onAppEditorPrevious,
                 onAppEditorNext = ::onAppEditorNext,
@@ -348,7 +351,9 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
-                        state = if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
+                        state = if (state.isAppActionMenuVisible) {
+                            LauncherStateTransitions.hideAppActionMenu(state)
+                        } else if (state.isDrawerSearchFocused || state.drawerQuery.isNotBlank()) {
                             LauncherStateTransitions.exitDrawerSearch(
                                 state = state,
                                 visibleRows = visibleRows(),
@@ -1213,7 +1218,34 @@ class MainActivity : AppCompatActivity() {
                 app.activityName == selectedApp.activityName
         }.takeIf { it >= 0 } ?: return
         settleDrawerMotionBeforeExplicitAction()
-        openAppManagement(selectedIndex = appIndex)
+        state = LauncherStateTransitions.showAppActionMenu(state, selectedIndex = appIndex)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun onDrawerAppMenuEdit() {
+        if (state.mode != LauncherMode.APP_DRAWER || !state.isAppActionMenuVisible) {
+            return
+        }
+        openAppManagement(selectedIndex = state.appEditorSelectedIndex)
+    }
+
+    private fun onDrawerAppMenuRefresh() {
+        if (state.mode != LauncherMode.APP_DRAWER || !state.isAppActionMenuVisible) {
+            return
+        }
+        state = LauncherStateTransitions.hideAppActionMenu(state)
+        appRepository.clearCachedLaunchableApps()
+        loadApps()
+    }
+
+    private fun onDrawerAppMenuDismiss() {
+        if (!state.isAppActionMenuVisible) {
+            return
+        }
+        state = LauncherStateTransitions.hideAppActionMenu(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
     }
 
     private fun hideDrawerKeyboard() {

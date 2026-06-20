@@ -356,6 +356,9 @@ internal class LauncherRootHost(
         listController = drawerListController,
         onAppPressed = callbacks.onDrawerAppPressed,
         onAppLongPressed = callbacks.onDrawerAppLongPressed,
+        onAppMenuEdit = callbacks.onDrawerAppMenuEdit,
+        onAppMenuRefresh = callbacks.onDrawerAppMenuRefresh,
+        onAppMenuDismiss = callbacks.onDrawerAppMenuDismiss,
     )
 
     // ── Sync helpers ──────────────────────────────────────────────────────────

@@ -21,6 +21,9 @@ data class LauncherCallbacks(
     val onDrawerSubmitSearch: () -> Unit,
     val onDrawerAppPressed: (Int) -> Unit,
     val onDrawerAppLongPressed: (Int) -> Unit,
+    val onDrawerAppMenuEdit: () -> Unit,
+    val onDrawerAppMenuRefresh: () -> Unit,
+    val onDrawerAppMenuDismiss: () -> Unit,
 
     // ── SETTINGS ──────────────────────────────────────────────────────────────
     val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,

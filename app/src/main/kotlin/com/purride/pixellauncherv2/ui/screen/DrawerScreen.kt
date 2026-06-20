@@ -5,16 +5,22 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Dialog
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
@@ -46,10 +52,13 @@ fun DrawerScreen(
     listController: ScrollController,
     onAppPressed: (Int) -> Unit,
     onAppLongPressed: (Int) -> Unit,
+    onAppMenuEdit: () -> Unit,
+    onAppMenuRefresh: () -> Unit,
+    onAppMenuDismiss: () -> Unit,
 ): Widget {
     val apps = drawerApps(uiState)
     val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.defaultUiFontSize.px)
-    return Column(
+    val content = Column(
         spacing = 0,
         mainAxisSize = MainAxisSize.MAX,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -82,6 +91,28 @@ fun DrawerScreen(
             ),
         ),
     )
+    return if (uiState.isAppActionMenuVisible) {
+        Stack(
+            children = listOf(
+                content,
+                PositionedFill(
+                    child = GestureDetector(
+                        onTap = onAppMenuDismiss,
+                        child = Container(fillColor = PixelColor.Transparent),
+                    ),
+                ),
+                drawerActionMenu(
+                    app = uiState.apps.getOrNull(uiState.appEditorSelectedIndex),
+                    theme = theme,
+                    onEdit = onAppMenuEdit,
+                    onRefresh = onAppMenuRefresh,
+                    onDismiss = onAppMenuDismiss,
+                ),
+            ),
+        )
+    } else {
+        content
+    }
 }
 
 /** 当前抽屉应用列表：优先可见列表，查询非空但无结果时为空，否则全部应用。 */
@@ -130,4 +161,45 @@ private fun drawerListItem(
     } else {
         item
     }
+}
+
+private fun drawerActionMenu(
+    app: AppEntry?,
+    theme: LauncherTheme,
+    onEdit: () -> Unit,
+    onRefresh: () -> Unit,
+    onDismiss: () -> Unit,
+): Widget {
+    val actionStyle = TextButtonStyle(
+        textStyle = TextStyle(color = theme.button.text),
+        padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
+    )
+    val titleText = drawerActionMenuTitle(app)
+    return Dialog(
+        title = Text(
+            titleText,
+            style = TextStyle(color = theme.text.primary),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        ),
+        content = Column(
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            spacing = LauncherSpacing.ROW_SPACING,
+            children = listOf(
+                TextButton(text = "EDIT", onPressed = onEdit, style = actionStyle),
+                TextButton(text = "REFRESH", onPressed = onRefresh, style = actionStyle),
+                TextButton(text = "CANCEL", onPressed = onDismiss, style = actionStyle),
+            ),
+        ),
+        fillColor = theme.surface.panel,
+        borderColor = theme.button.border,
+    )
+}
+
+private fun drawerActionMenuTitle(app: AppEntry?): String {
+    val label = app?.label?.uppercase().orEmpty().ifBlank { "APP" }
+    val maxChars = 18
+    return if (label.length <= maxChars) label else "${label.take(maxChars - 2)}.."
 }

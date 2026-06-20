@@ -70,16 +70,24 @@
 
 ### P0-03 App 管理交互收敛
 
-- [ ] 将 App 重命名和别名编辑整理成稳定入口。
-- [ ] Drawer 长按和 Settings 都能进入 App 管理。
-- [ ] 设计像素风轻量浮层菜单，用于 Drawer 长按操作。
-- [ ] App 缓存刷新入口保持清晰，不进入 Drawer 搜索结果列表。
+- [x] 将 App 重命名和别名编辑整理成稳定入口。
+- [x] Drawer 长按和 Settings 都能进入 App 管理。
+- [x] 设计像素风轻量浮层菜单，用于 Drawer 长按操作。
+- [x] App 缓存刷新入口保持清晰，不进入 Drawer 搜索结果列表。
 
 验收：
 
-- [ ] Drawer 列表只显示 App 标题。
-- [ ] 别名只影响搜索，不挤占列表行空间。
-- [ ] 重命名标题优先显示。
+- [x] Drawer 列表只显示 App 标题。
+- [x] 别名只影响搜索，不挤占列表行空间。
+- [x] 重命名标题优先显示。
+
+证据：
+
+- Drawer 长按先打开轻量浮层菜单，菜单只提供 `EDIT`、`REFRESH`、`CANCEL`。
+- `EDIT` 进入完整 App 管理页，复用重命名和别名编辑入口；Settings 的 `APP MANAGEMENT` 仍直接进入同一页面。
+- `REFRESH` 只在浮层或 App 管理页触发缓存刷新，不进入 Drawer 搜索结果列表。
+- `LauncherStateTransitionsTest` 覆盖 Drawer 浮层打开、关闭、进入 App 管理和离开 Drawer 时自动收起。
+- `UiSpecStaticTest.drawerLongPressActionsStayInLightweightOverlay` 和 `drawerListDoesNotRenderSearchMatchReasonTags` 约束 Drawer 列表仍只显示 App 标题。
 
 ### P0-04 Idle 自动进入稳定性验收
 
