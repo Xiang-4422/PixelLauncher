@@ -34,37 +34,28 @@ class ScreenUsageRepository(
         val usageEvents = usageStatsManager?.queryEvents(dayStartMillis, nowMillis)
             ?: return noAccessSnapshot
         val event = UsageEvents.Event()
-        var interactiveStartedAt: Long? = null
-        var interactiveDurationMillis = 0L
-        var screenOpenCount = 0
+        val events = buildList {
+            while (usageEvents.hasNextEvent()) {
+                usageEvents.getNextEvent(event)
+                when (event.eventType) {
+                    UsageEvents.Event.SCREEN_INTERACTIVE -> add(
+                        ScreenUsageEvent(
+                            type = ScreenUsageEventType.INTERACTIVE,
+                            timestampMillis = event.timeStamp,
+                        ),
+                    )
 
-        while (usageEvents.hasNextEvent()) {
-            usageEvents.getNextEvent(event)
-            when (event.eventType) {
-                UsageEvents.Event.SCREEN_INTERACTIVE -> {
-                    screenOpenCount += 1
-                    interactiveStartedAt = event.timeStamp
-                }
-
-                UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
-                    val startedAt = interactiveStartedAt
-                    if (startedAt != null && event.timeStamp > startedAt) {
-                        interactiveDurationMillis += (event.timeStamp - startedAt)
-                    }
-                    interactiveStartedAt = null
+                    UsageEvents.Event.SCREEN_NON_INTERACTIVE -> add(
+                        ScreenUsageEvent(
+                            type = ScreenUsageEventType.NON_INTERACTIVE,
+                            timestampMillis = event.timeStamp,
+                        ),
+                    )
                 }
             }
         }
 
-        val activeStart = interactiveStartedAt
-        if (activeStart != null && nowMillis > activeStart) {
-            interactiveDurationMillis += (nowMillis - activeStart)
-        }
-
-        return ScreenUsageSnapshot(
-            usageTimeText = formatDurationText(interactiveDurationMillis),
-            openCountText = screenOpenCount.toString(),
-        )
+        return ScreenUsageSummaryModel.summarize(events = events, nowMillis = nowMillis)
     }
 
     /** 检查当前是否已经获得 Usage Access。 */

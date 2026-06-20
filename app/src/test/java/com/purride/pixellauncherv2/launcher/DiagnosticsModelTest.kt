@@ -22,6 +22,7 @@ class DiagnosticsModelTest {
             listOf(
                 "HOME",
                 "DATA",
+                "USAGE",
                 "LAUNCHES",
                 "LAST",
                 "RECENT",
@@ -80,6 +81,7 @@ class DiagnosticsModelTest {
 
         assertEquals("3 ROWS", byTitle["HOME"])
         assertEquals("OK", byTitle["DATA"])
+        assertEquals("EVENTS", byTitle["USAGE"])
     }
 
     @Test
@@ -101,6 +103,7 @@ class DiagnosticsModelTest {
         assertEquals("C10 B9 A6/10", byTitle["10PX"])
         assertEquals("C12 B11 A8/12", byTitle["12PX"])
         assertEquals("RISK 1 138/116", byTitle["TEXT"])
+        assertEquals("NO ACCESS", byTitle["USAGE"])
         assertEquals("DATA 138/116", byTitle["TEXT MAX"])
         assertEquals("1", byTitle["TEXT RISK"])
         assertEquals("0/12", byTitle["STATUS"])

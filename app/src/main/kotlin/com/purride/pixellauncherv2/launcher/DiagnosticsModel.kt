@@ -22,6 +22,7 @@ object DiagnosticsModel {
             recentApps = state.recentApps,
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
+            hasUsageAccess = state.hasUsageAccess,
             screenProfile = screenProfile,
         )
     }
@@ -37,6 +38,7 @@ object DiagnosticsModel {
             recentApps = state.recentApps,
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
+            hasUsageAccess = state.hasUsageAccess,
             screenProfile = screenProfile,
         )
     }
@@ -50,6 +52,7 @@ object DiagnosticsModel {
         recentApps: List<String>,
         batteryLevel: Int,
         isCharging: Boolean,
+        hasUsageAccess: Boolean,
         screenProfile: ScreenProfile,
     ): List<DiagnosticsLine> {
         val lastLaunch = lastLaunchPackageName
@@ -75,6 +78,7 @@ object DiagnosticsModel {
         return listOf(
             DiagnosticsLine("HOME", homeSummary),
             DiagnosticsLine("DATA", dataSummary),
+            DiagnosticsLine("USAGE", if (hasUsageAccess) "EVENTS" else "NO ACCESS"),
             DiagnosticsLine("LAUNCHES", launchCount.toString()),
             DiagnosticsLine("LAST", lastLaunch),
             DiagnosticsLine("RECENT", recentSummary),

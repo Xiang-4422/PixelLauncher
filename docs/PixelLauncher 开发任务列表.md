@@ -174,16 +174,23 @@
 
 ### P1-02 数字健康展示
 
-- [ ] 自研今日使用时长统计。
-- [ ] 自研今日打开次数统计。
-- [ ] Home 显示简短摘要。
-- [ ] Settings / Diagnostics 展示数据来源和权限状态。
+- [x] 自研今日使用时长统计。
+- [x] 自研今日打开次数统计。
+- [x] Home 显示简短摘要。
+- [x] Settings / Diagnostics 展示数据来源和权限状态。
 
 验收：
 
-- [ ] 只做展示，不做冷却、拦截或夜间隐藏 App。
-- [ ] 数据异常时有可见原因。
-- [ ] Drawer 启动路径不增加阻断。
+- [x] 只做展示，不做冷却、拦截或夜间隐藏 App。
+- [x] 数据异常时有可见原因。
+- [x] Drawer 启动路径不增加阻断。
+
+证据：
+
+- `ScreenUsageSummaryModelTest` 覆盖今日亮屏使用时长和打开次数的自研聚合逻辑；`ScreenUsageRepository` 只负责读取 Android UsageEvents 并交给纯模型计算。
+- `HomeInfoModelTest` 覆盖 Home 中短摘要 `USE xx:xx  OPEN n`；`HomeInfoDetailModelTest` 覆盖 Usage 缺权限与刷新结果文案。
+- `DataHealthModelTest` 与 `DataHealthRepairActionModelTest` 覆盖 Usage Access 缺失原因和系统设置修复入口。
+- `DiagnosticsModelTest` 覆盖 `USAGE EVENTS / NO ACCESS` 数据来源与权限状态；Drawer 启动路径只记录 `LauncherStatsRepository` 打开次数，不增加阻断或限制。
 
 ### P1-03 SMS 完整短信能力
 
