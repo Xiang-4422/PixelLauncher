@@ -28,7 +28,9 @@ import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
+import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
 import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
@@ -91,6 +93,12 @@ internal class LauncherRootHost(
     private val msgListState = msgListController.create()
     private val draftController = TextEditingController()
     private val draftState = draftController.create()
+
+    // ── APP_MANAGEMENT editor fields ────────────────────────────────────────
+    private val appNameController = TextEditingController()
+    private val appNameState = appNameController.create()
+    private val appAliasController = TextEditingController()
+    private val appAliasState = appAliasController.create()
 
     val setup: PixelHostSetup = createPixelHostSetup(
         context = context,
@@ -181,6 +189,9 @@ internal class LauncherRootHost(
         // ── Sync draft text ───────────────────────────────────────────────────
         syncDraftState()
 
+        // ── Sync app editor fields ────────────────────────────────────────────
+        syncAppEditorState()
+
         setup.hostView.invalidate()
     }
 
@@ -235,9 +246,34 @@ internal class LauncherRootHost(
             chargeTick = chargeTick,
             screenProfile = screenProfile,
         )
+        LauncherMode.DATA_HEALTH       -> DataHealthScreen(
+            uiState = uiState,
+            theme = theme,
+            chargeTick = chargeTick,
+            screenProfile = screenProfile,
+            onItemPressed = callbacks.onDataHealthItemPressed,
+        )
+        LauncherMode.APP_MANAGEMENT    -> AppManagementScreen(
+            uiState = uiState,
+            theme = theme,
+            chargeTick = chargeTick,
+            screenProfile = screenProfile,
+            nameController = appNameController,
+            nameState = appNameState,
+            aliasController = appAliasController,
+            aliasState = appAliasState,
+            onPrevious = callbacks.onAppEditorPrevious,
+            onNext = callbacks.onAppEditorNext,
+            onNameChanged = callbacks.onAppEditorNameChanged,
+            onAliasChanged = callbacks.onAppEditorAliasChanged,
+            onSave = callbacks.onAppEditorSave,
+            onReset = callbacks.onAppEditorReset,
+            onCacheReset = callbacks.onAppCacheReset,
+        )
         LauncherMode.IDLE              -> IdleScreen(
             uiState = uiState,
             theme = theme,
+            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
         )
     }
 
@@ -274,6 +310,8 @@ internal class LauncherRootHost(
         theme = theme,
         onOpenContacts = callbacks.onOpenContacts,
         onOpenSms = callbacks.onOpenSms,
+        onInfoAction = callbacks.onHomeInfoAction,
+        onInfoDetail = callbacks.onHomeInfoDetail,
     )
 
     private fun buildSettingsPage(): Widget = com.purride.pixellauncherv2.ui.screen.SettingsScreen(
@@ -290,6 +328,7 @@ internal class LauncherRootHost(
                 state = drawerQueryState,
                 controller = drawerTextController,
                 placeholder = "SEARCH APP",
+                messageText = uiState.statusBarMessageText,
                 autofocus = uiState.isDrawerSearchFocused,
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
@@ -306,6 +345,7 @@ internal class LauncherRootHost(
                     LauncherMode.SETTINGS -> "SETTINGS"
                     else -> "HOME"
                 },
+                messageText = uiState.statusBarMessageText,
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
@@ -322,6 +362,7 @@ internal class LauncherRootHost(
         listState = drawerListState,
         listController = drawerListController,
         onAppPressed = callbacks.onDrawerAppPressed,
+        onAppLongPressed = callbacks.onDrawerAppLongPressed,
     )
 
     // ── Sync helpers ──────────────────────────────────────────────────────────
@@ -334,7 +375,7 @@ internal class LauncherRootHost(
                 selectionStart = uiState.drawerQuery.length,
             )
         }
-        if (uiState.isDrawerSearchFocused) {
+        if (uiState.mode == LauncherMode.APP_DRAWER && uiState.isDrawerSearchFocused) {
             drawerTextController.requestFocus(drawerQueryState)
         } else if (drawerQueryState.isFocused) {
             drawerTextController.requestBlur(drawerQueryState)
@@ -348,6 +389,23 @@ internal class LauncherRootHost(
                 state = draftState,
                 text = text,
                 selectionStart = text.length,
+            )
+        }
+    }
+
+    private fun syncAppEditorState() {
+        if (appNameState.text != uiState.appEditorNameDraft) {
+            appNameController.updateText(
+                state = appNameState,
+                text = uiState.appEditorNameDraft,
+                selectionStart = uiState.appEditorNameDraft.length,
+            )
+        }
+        if (appAliasState.text != uiState.appEditorAliasDraft) {
+            appAliasController.updateText(
+                state = appAliasState,
+                text = uiState.appEditorAliasDraft,
+                selectionStart = uiState.appEditorAliasDraft.length,
             )
         }
     }

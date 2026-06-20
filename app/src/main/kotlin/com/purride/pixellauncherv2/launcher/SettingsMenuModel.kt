@@ -10,10 +10,25 @@ enum class SettingsMenuItem {
     PIXEL_GAP_SIZE,
     STYLE,
     THEME,
+    HOME_STATUS,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
+    CHARGE_AUTO_IDLE,
+    INACTIVITY_AUTO_IDLE,
+    IDLE_TIMEOUT,
     CHARGE_IDLE_EFFECT,
     DRAWER_AUTO_SEARCH,
+    APP_MANAGEMENT,
+    DATA_HEALTH,
+    ADVANCED,
+}
+
+enum class SettingsSection {
+    DISPLAY,
+    HOME,
+    DRAWER,
+    IDLE,
+    DATA,
     ADVANCED,
 }
 
@@ -21,6 +36,7 @@ data class SettingsMenuRow(
     val item: SettingsMenuItem,
     val title: String,
     val value: String = "",
+    val section: SettingsSection = SettingsSection.DISPLAY,
 )
 
 object SettingsMenuModel {
@@ -38,6 +54,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.RESOLUTION,
                     title = "PIXEL SIZE",
                     value = resolutionLabel(state.selectedDotSizePx, screenProfile),
+                    section = SettingsSection.DISPLAY,
                 ),
             )
             add(
@@ -45,6 +62,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.PIXEL_GAP_SIZE,
                     title = "GAP SIZE",
                     value = pixelGapSizeLabel(state.pixelGapRatio),
+                    section = SettingsSection.DISPLAY,
                 ),
             )
             if (state.isPixelGapEnabled) {
@@ -53,6 +71,7 @@ object SettingsMenuModel {
                         item = SettingsMenuItem.STYLE,
                         title = "STYLE",
                         value = styleLabel(state.selectedPixelShape),
+                        section = SettingsSection.DISPLAY,
                     ),
                 )
             }
@@ -61,6 +80,15 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.THEME,
                     title = "THEME",
                     value = themeLabel(state.selectedTheme),
+                    section = SettingsSection.DISPLAY,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.HOME_STATUS,
+                    title = "HOME STATUS",
+                    value = HomeInfoModel.summary(state),
+                    section = SettingsSection.HOME,
                 ),
             )
             add(
@@ -68,6 +96,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.APP_LIST_ALIGNMENT,
                     title = "APP ALIGN",
                     value = drawerListAlignmentLabel(state.drawerListAlignment),
+                    section = SettingsSection.DRAWER,
                 ),
             )
             add(
@@ -75,6 +104,15 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.DRAWER_AUTO_SEARCH,
                     title = "DRAWER SEARCH",
                     value = onOffLabel(state.openDrawerInSearchMode),
+                    section = SettingsSection.DRAWER,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.APP_MANAGEMENT,
+                    title = "APP MANAGE",
+                    value = if (state.apps.isEmpty()) "EMPTY" else "OPEN",
+                    section = SettingsSection.DRAWER,
                 ),
             )
             add(
@@ -82,6 +120,31 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.IDLE_PAGE,
                     title = "IDLE PAGE",
                     value = onOffLabel(state.isIdlePageEnabled),
+                    section = SettingsSection.IDLE,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.CHARGE_AUTO_IDLE,
+                    title = "CHARGE IDLE",
+                    value = onOffLabel(state.chargeAutoIdleEnabled),
+                    section = SettingsSection.IDLE,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.INACTIVITY_AUTO_IDLE,
+                    title = "AUTO IDLE",
+                    value = onOffLabel(state.inactivityAutoIdleEnabled),
+                    section = SettingsSection.IDLE,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.IDLE_TIMEOUT,
+                    title = "IDLE TIME",
+                    value = idleTimeoutLabel(state.idleTimeoutSeconds),
+                    section = SettingsSection.IDLE,
                 ),
             )
             add(
@@ -89,6 +152,15 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.CHARGE_IDLE_EFFECT,
                     title = "IDLE EFFECT",
                     value = chargeIdleEffectLabel(state.chargeIdleEffect),
+                    section = SettingsSection.IDLE,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.DATA_HEALTH,
+                    title = "DATA HEALTH",
+                    value = DataHealthModel.summary(state),
+                    section = SettingsSection.DATA,
                 ),
             )
             add(
@@ -96,9 +168,14 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.ADVANCED,
                     title = "ADVANCED",
                     value = "OPEN",
+                    section = SettingsSection.ADVANCED,
                 ),
             )
         }
+    }
+
+    fun sections(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsSection> {
+        return rows(state, screenProfile).map { it.section }.distinct()
     }
 
     fun selectedItem(state: LauncherState): SettingsMenuItem {
@@ -174,6 +251,10 @@ object SettingsMenuModel {
         return ChargeIdleEffect.entries[nextIndex]
     }
 
+    fun nextIdleTimeoutSeconds(current: Int, direction: Int): Int {
+        return IdleSettings.nextTimeoutSeconds(current = current, direction = direction)
+    }
+
     fun drawerListAlignmentLabel(alignment: DrawerListAlignment): String {
         return when (alignment) {
             DrawerListAlignment.LEFT -> "LEFT"
@@ -190,6 +271,19 @@ object SettingsMenuModel {
             ChargeIdleEffect.DOT_MATRIX -> "DOT MATRIX"
             ChargeIdleEffect.TANK -> "TANK"
             ChargeIdleEffect.CASCADE -> "CASCADE"
+        }
+    }
+
+    fun idleTimeoutLabel(seconds: Int): String = IdleSettings.timeoutLabel(seconds)
+
+    fun sectionLabel(section: SettingsSection): String {
+        return when (section) {
+            SettingsSection.DISPLAY -> "DISPLAY"
+            SettingsSection.HOME -> "HOME"
+            SettingsSection.DRAWER -> "DRAWER"
+            SettingsSection.IDLE -> "IDLE"
+            SettingsSection.DATA -> "DATA"
+            SettingsSection.ADVANCED -> "ADVANCED"
         }
     }
 

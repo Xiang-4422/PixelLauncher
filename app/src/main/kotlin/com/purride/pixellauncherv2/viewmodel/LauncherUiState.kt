@@ -7,6 +7,7 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
+import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.render.PixelShape
@@ -42,6 +43,9 @@ data class LauncherUiState(
     // ── Settings screen ───────────────────────────────────────────────────────
     val settingsSelectedIndex: Int = 0,
     val settingsListStartIndex: Int = 0,
+    val appEditorSelectedIndex: Int = 0,
+    val appEditorNameDraft: String = "",
+    val appEditorAliasDraft: String = "",
 
     // ── SMS ───────────────────────────────────────────────────────────────────
     val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
@@ -55,6 +59,7 @@ data class LauncherUiState(
     val smsCurrentAddress: String = "",
     val smsMessages: List<SmsMessageEntry> = emptyList(),
     val smsDraftText: String = "",
+    val smsSendStatusText: String = "",
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
 
@@ -68,6 +73,9 @@ data class LauncherUiState(
     // ── UI behaviour ──────────────────────────────────────────────────────────
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     val isIdlePageEnabled: Boolean = false,
+    val chargeAutoIdleEnabled: Boolean = false,
+    val inactivityAutoIdleEnabled: Boolean = true,
+    val idleTimeoutSeconds: Int = IdleSettings.DEFAULT_TIMEOUT_SECONDS,
     val openDrawerInSearchMode: Boolean = false,
     val chargeIdleEffect: ChargeIdleEffect = ChargeIdleEffect.FLUID,
 
@@ -86,7 +94,18 @@ data class LauncherUiState(
     val nextAlarmText: String = "--:--",
     val missedCallCount: Int = 0,
     val unreadSmsCount: Int = 0,
+    val notificationSummaryText: String = "",
+    val notificationCount: Int = 0,
     val rainHintText: String = "",
+    val rainUpdatedTimeText: String = "",
     val screenUsageTimeText: String = "--:--",
     val screenOpenCountText: String = "--",
+    val statusBarMessageText: String = "",
+    val hasUsageAccess: Boolean = false,
+    val hasLocationPermission: Boolean = false,
+    val hasCallLogPermission: Boolean = false,
+    val hasSmsReadPermission: Boolean = false,
+    val hasPostNotificationPermission: Boolean = false,
+    val hasNotificationListenerAccess: Boolean = false,
+    val dataHealthUpdatedTimeText: String = "",
 )

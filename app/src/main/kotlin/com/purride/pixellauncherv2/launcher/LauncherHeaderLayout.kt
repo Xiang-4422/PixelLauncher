@@ -8,6 +8,7 @@ object LauncherHeaderLayout {
 
     const val horizontalPadding = 2
     const val dividerGap = 1
+    const val dividerHeight = 1
 
     val rowY: Int
         get() = 0
@@ -22,7 +23,7 @@ object LauncherHeaderLayout {
         get() = headerTextY + GlyphStyle.UI_SMALL_10.cellHeight + dividerGap
 
     val headerContentHeight: Int
-        get() = GlyphStyle.UI_SMALL_10.cellHeight + dividerGap + 1
+        get() = GlyphStyle.UI_SMALL_10.cellHeight + dividerGap + dividerHeight
 
     val defaultStatusBarHeight: Int
         get() = headerContentHeight

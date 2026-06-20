@@ -4,19 +4,23 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
-import com.purride.pixelui.ListViewBuilder
+import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixellauncherv2.launcher.DataHealthModel
+import com.purride.pixellauncherv2.launcher.HomeInfoModel
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
+import com.purride.pixellauncherv2.launcher.SettingsSection
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
+import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsValueSlider
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -60,15 +64,11 @@ class SettingsScreen(
                 spacing = 0,
                 children = listOf(
                     Expanded(
-                        child = ListViewBuilder(
+                        child = ListView(
+                            items = items,
                             state = listState,
                             controller = listController,
-                            itemCount = items.size,
-                            itemExtent = SettingsListGeometry.ROW_EXTENT_PX,
                             spacing = SettingsListGeometry.ROW_SPACING_PX,
-                            itemBuilder = { index ->
-                                items[index]
-                            },
                         ),
                     ),
                 ),
@@ -79,9 +79,10 @@ class SettingsScreen(
             val pixelPreview = previewPixelSizeRatio ?: SettingsMenuModel.resolutionRatio(selectedDotSizePx)
             val pixelPreviewSize = SettingsMenuModel.resolutionAtRatio(pixelPreview)
             val gapPreview = previewGapRatio ?: SettingsMenuModel.pixelGapRatioSnap(pixelGapRatio)
+            addSection(SettingsSection.DISPLAY, t)
             add(
                 SettingsValueSlider(
-                    title = "PIXEL SIZE",
+                    title = "PIXEL",
                     valueLabel = "${pixelPreviewSize}PX",
                     value = pixelPreview,
                     theme = t,
@@ -97,7 +98,7 @@ class SettingsScreen(
             )
             add(
                 SettingsValueSlider(
-                    title = "GAP SIZE",
+                    title = "GAP",
                     valueLabel = SettingsMenuModel.pixelGapSizeLabel(gapPreview),
                     value = gapPreview,
                     theme = t,
@@ -125,9 +126,19 @@ class SettingsScreen(
                     onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
                 ),
             )
+            addSection(SettingsSection.HOME, t)
+            add(
+                SettingsActionRow(
+                    title = "STATUS",
+                    valueLabel = HomeInfoModel.summary(this@toSettingsWidgets),
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.HOME_STATUS, +1) },
+                ),
+            )
+            addSection(SettingsSection.DRAWER, t)
             add(
                 SettingsOptionStepperRow(
-                    title = "APP ALIGN",
+                    title = "ALIGN",
                     valueLabel = SettingsMenuModel.drawerListAlignmentLabel(drawerListAlignment),
                     theme = t,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.APP_LIST_ALIGNMENT, -1) },
@@ -136,7 +147,7 @@ class SettingsScreen(
             )
             add(
                 SettingsSwitchRow(
-                    title = "DRAWER SEARCH",
+                    title = "SEARCH",
                     checked = openDrawerInSearchMode,
                     theme = t,
                     showLabels = true,
@@ -144,8 +155,17 @@ class SettingsScreen(
                 ),
             )
             add(
+                SettingsActionRow(
+                    title = "APPS",
+                    valueLabel = if (apps.isEmpty()) "EMPTY" else "OPEN",
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.APP_MANAGEMENT, +1) },
+                ),
+            )
+            addSection(SettingsSection.IDLE, t)
+            add(
                 SettingsSwitchRow(
-                    title = "IDLE PAGE",
+                    title = "IDLE",
                     checked = isIdlePageEnabled,
                     theme = t,
                     showLabels = true,
@@ -153,20 +173,66 @@ class SettingsScreen(
                 ),
             )
             add(
+                SettingsSwitchRow(
+                    title = "CHARGE",
+                    checked = chargeAutoIdleEnabled,
+                    theme = t,
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.CHARGE_AUTO_IDLE, +1) },
+                ),
+            )
+            add(
+                SettingsSwitchRow(
+                    title = "AUTO",
+                    checked = inactivityAutoIdleEnabled,
+                    theme = t,
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.INACTIVITY_AUTO_IDLE, +1) },
+                ),
+            )
+            add(
                 SettingsOptionStepperRow(
-                    title = "IDLE EFFECT",
+                    title = "TIMEOUT",
+                    valueLabel = SettingsMenuModel.idleTimeoutLabel(idleTimeoutSeconds),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, +1) },
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "EFFECT",
                     valueLabel = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
                     theme = t,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, +1) },
                 ),
             )
+            addSection(SettingsSection.DATA, t)
+            add(
+                SettingsActionRow(
+                    title = "DATA",
+                    valueLabel = DataHealthModel.summary(this@toSettingsWidgets),
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.DATA_HEALTH, +1) },
+                ),
+            )
+            addSection(SettingsSection.ADVANCED, t)
             add(
                 SettingsActionRow(
                     title = "ADVANCED",
                     valueLabel = "OPEN",
                     theme = t,
                     onPressed = { widget.onItemAction(SettingsMenuItem.ADVANCED, +1) },
+                ),
+            )
+        }
+
+        private fun MutableList<Widget>.addSection(section: SettingsSection, theme: LauncherTheme) {
+            add(
+                SettingsSectionHeader(
+                    title = SettingsMenuModel.sectionLabel(section),
+                    theme = theme,
                 ),
             )
         }

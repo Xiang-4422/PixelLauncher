@@ -65,6 +65,15 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showHome_clearsDrawerSearchFocus() {
+        val state = LauncherState(mode = LauncherMode.APP_DRAWER, isDrawerSearchFocused = true)
+        val result = LauncherStateTransitions.showHome(state)
+
+        assertEquals(LauncherMode.HOME, result.mode)
+        assertEquals(false, result.isDrawerSearchFocused)
+    }
+
+    @Test
     fun showSettings_fromHome_remembersHomeAsReturnMode() {
         val result = LauncherStateTransitions.showSettings(LauncherState(mode = LauncherMode.HOME), visibleRows = 5)
         assertEquals(LauncherMode.SETTINGS, result.mode)
@@ -73,9 +82,13 @@ class LauncherStateTransitionsTest {
 
     @Test
     fun showSettings_fromDrawer_remembersDrawerAsReturnMode() {
-        val result = LauncherStateTransitions.showSettings(LauncherState(mode = LauncherMode.APP_DRAWER), visibleRows = 5)
+        val result = LauncherStateTransitions.showSettings(
+            LauncherState(mode = LauncherMode.APP_DRAWER, isDrawerSearchFocused = true),
+            visibleRows = 5,
+        )
         assertEquals(LauncherMode.SETTINGS, result.mode)
         assertEquals(LauncherMode.APP_DRAWER, result.returnMode)
+        assertEquals(false, result.isDrawerSearchFocused)
     }
 
     @Test
@@ -117,6 +130,14 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showIdle_whenEnabledFromDrawer_entersIdleAndRemembersDrawer() {
+        val state = LauncherState(mode = LauncherMode.APP_DRAWER, isIdlePageEnabled = true)
+        val result = LauncherStateTransitions.showIdle(state)
+        assertEquals(LauncherMode.IDLE, result.mode)
+        assertEquals(LauncherMode.APP_DRAWER, result.returnMode)
+    }
+
+    @Test
     fun showIdle_whenEnabledButNotOnHomeOrDrawer_isBlocked() {
         val state = LauncherState(mode = LauncherMode.SETTINGS, isIdlePageEnabled = true)
         assertSame(state, LauncherStateTransitions.showIdle(state))
@@ -126,6 +147,22 @@ class LauncherStateTransitionsTest {
     fun hideIdle_returnsToModeBeforeIdle() {
         val state = LauncherState(mode = LauncherMode.IDLE, returnMode = LauncherMode.APP_DRAWER)
         assertEquals(LauncherMode.APP_DRAWER, LauncherStateTransitions.hideIdle(state).mode)
+    }
+
+    @Test
+    fun updateUiBehaviorNormalizesIdleTimeoutSeconds() {
+        val result = LauncherStateTransitions.updateUiBehavior(
+            state = LauncherState(),
+            isIdlePageEnabled = true,
+            chargeAutoIdleEnabled = true,
+            inactivityAutoIdleEnabled = true,
+            idleTimeoutSeconds = 45,
+        )
+
+        assertEquals(true, result.isIdlePageEnabled)
+        assertEquals(true, result.chargeAutoIdleEnabled)
+        assertEquals(true, result.inactivityAutoIdleEnabled)
+        assertEquals(30, result.idleTimeoutSeconds)
     }
 
     // ── Diagnostics + SMS navigation ──────────────────────────────────────────
@@ -138,9 +175,129 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun dataHealth_openAndClose() {
+        val opened = LauncherStateTransitions.showDataHealth(LauncherState(mode = LauncherMode.SETTINGS))
+        assertEquals(LauncherMode.DATA_HEALTH, opened.mode)
+        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideDataHealth(opened).mode)
+    }
+
+    @Test
+    fun updateDataHealthPreservesOrWritesRefreshTime() {
+        val state = LauncherState(dataHealthUpdatedTimeText = "09:40")
+
+        val preserved = LauncherStateTransitions.updateDataHealth(
+            state = state,
+            hasUsageAccess = true,
+            hasLocationPermission = true,
+            hasCallLogPermission = true,
+            hasSmsReadPermission = true,
+            hasPostNotificationPermission = true,
+            hasNotificationListenerAccess = true,
+        )
+        val updated = LauncherStateTransitions.updateDataHealth(
+            state = state,
+            hasUsageAccess = true,
+            hasLocationPermission = true,
+            hasCallLogPermission = true,
+            hasSmsReadPermission = true,
+            hasPostNotificationPermission = true,
+            hasNotificationListenerAccess = true,
+            dataHealthUpdatedTimeText = "09:41",
+        )
+
+        assertEquals("09:40", preserved.dataHealthUpdatedTimeText)
+        assertEquals("09:41", updated.dataHealthUpdatedTimeText)
+    }
+
+    @Test
+    fun appManagement_openAndClose() {
+        val state = LauncherState(
+            mode = LauncherMode.SETTINGS,
+            apps = listOf(
+                AppEntry(label = "Bank", packageName = "pkg.bank", activityName = "BankActivity", aliases = listOf("pay")),
+            ),
+        )
+
+        val opened = LauncherStateTransitions.showAppManagement(state)
+
+        assertEquals(LauncherMode.APP_MANAGEMENT, opened.mode)
+        assertEquals(LauncherMode.SETTINGS, opened.returnMode)
+        assertEquals(0, opened.appEditorSelectedIndex)
+        assertEquals("Bank", opened.appEditorNameDraft)
+        assertEquals("pay", opened.appEditorAliasDraft)
+        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideAppManagement(opened).mode)
+    }
+
+    @Test
+    fun appManagement_openedFromDrawerReturnsToDrawer() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_DRAWER,
+            apps = listOf(
+                AppEntry(label = "Bank", packageName = "pkg.bank", activityName = "BankActivity"),
+                AppEntry(label = "Maps", packageName = "pkg.maps", activityName = "MapsActivity"),
+            ),
+        )
+
+        val opened = LauncherStateTransitions.showAppManagement(state, selectedIndex = 1)
+        val closed = LauncherStateTransitions.hideAppManagement(opened)
+
+        assertEquals(LauncherMode.APP_MANAGEMENT, opened.mode)
+        assertEquals(LauncherMode.APP_DRAWER, opened.returnMode)
+        assertEquals(1, opened.appEditorSelectedIndex)
+        assertEquals("Maps", opened.appEditorNameDraft)
+        assertEquals(LauncherMode.APP_DRAWER, closed.mode)
+    }
+
+    @Test
+    fun appManagement_selectionWrapsAndSyncsDrafts() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_MANAGEMENT,
+            apps = listOf(
+                AppEntry(label = "Bank", packageName = "pkg.bank", activityName = "BankActivity", aliases = listOf("pay")),
+                AppEntry(label = "Maps", packageName = "pkg.maps", activityName = "MapsActivity", aliases = listOf("nav", "road")),
+            ),
+        )
+
+        val next = LauncherStateTransitions.moveAppEditorSelection(state, direction = 1)
+        val previous = LauncherStateTransitions.moveAppEditorSelection(next, direction = -1)
+
+        assertEquals(1, next.appEditorSelectedIndex)
+        assertEquals("Maps", next.appEditorNameDraft)
+        assertEquals("nav road", next.appEditorAliasDraft)
+        assertEquals(0, previous.appEditorSelectedIndex)
+        assertEquals("Bank", previous.appEditorNameDraft)
+        assertEquals("pay", previous.appEditorAliasDraft)
+    }
+
+    @Test
+    fun appManagement_emptyListClearsDrafts() {
+        val state = LauncherState(
+            mode = LauncherMode.APP_MANAGEMENT,
+            appEditorSelectedIndex = 3,
+            appEditorNameDraft = "old",
+            appEditorAliasDraft = "alias",
+        )
+
+        val result = LauncherStateTransitions.moveAppEditorSelection(state, direction = 1)
+
+        assertEquals(0, result.appEditorSelectedIndex)
+        assertEquals("", result.appEditorNameDraft)
+        assertEquals("", result.appEditorAliasDraft)
+    }
+
+    @Test
+    fun appManagement_updatesDraftsIndependently() {
+        val renamed = LauncherStateTransitions.updateAppEditorNameDraft(LauncherState(), "Pay")
+        val aliased = LauncherStateTransitions.updateAppEditorAliasDraft(renamed, "bank bill")
+
+        assertEquals("Pay", aliased.appEditorNameDraft)
+        assertEquals("bank bill", aliased.appEditorAliasDraft)
+    }
+
+    @Test
     fun showSmsThreadDetail_setsThreadIdentityAndReturnMode() {
         val result = LauncherStateTransitions.showSmsThreadDetail(
-            state = LauncherState(mode = LauncherMode.SMS_THREADS),
+            state = LauncherState(mode = LauncherMode.SMS_THREADS, smsSendStatusText = "FAILED"),
             threadId = 42L,
             address = "10086",
         )
@@ -148,22 +305,78 @@ class LauncherStateTransitionsTest {
         assertEquals(42L, result.smsCurrentThreadId)
         assertEquals("10086", result.smsCurrentAddress)
         assertEquals(LauncherMode.SMS_THREADS, result.returnMode)
+        assertEquals("", result.smsSendStatusText)
     }
 
     @Test
-    fun hideSmsThreadDetail_returnsToThreadsAndClearsDraft() {
-        val state = LauncherState(mode = LauncherMode.SMS_THREAD_DETAIL, smsDraftText = "unsent")
+    fun hideSmsThreadDetail_returnsToThreadsAndClearsDraftStatus() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREAD_DETAIL,
+            smsDraftText = "unsent",
+            smsSendStatusText = "FAILED",
+        )
         val result = LauncherStateTransitions.hideSmsThreadDetail(state)
         assertEquals(LauncherMode.SMS_THREADS, result.mode)
         assertEquals("", result.smsDraftText)
+        assertEquals("", result.smsSendStatusText)
     }
 
     @Test
-    fun hideSmsThreads_returnsHomeAndClearsDraft() {
-        val state = LauncherState(mode = LauncherMode.SMS_THREADS, smsDraftText = "unsent")
+    fun hideSmsThreads_returnsHomeAndClearsDraftStatus() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREADS,
+            smsDraftText = "unsent",
+            smsSendStatusText = "FAILED",
+        )
         val result = LauncherStateTransitions.hideSmsThreads(state)
         assertEquals(LauncherMode.HOME, result.mode)
         assertEquals("", result.smsDraftText)
+        assertEquals("", result.smsSendStatusText)
+    }
+
+    @Test
+    fun updateSmsSendStatusText_updatesOnlyDraftStatus() {
+        val result = LauncherStateTransitions.updateSmsSendStatusText(
+            state = LauncherState(smsDraftText = "hello"),
+            smsSendStatusText = "SENDING",
+        )
+
+        assertEquals("hello", result.smsDraftText)
+        assertEquals("SENDING", result.smsSendStatusText)
+    }
+
+    @Test
+    fun updateRainHintText_updatesSummaryAndRefreshTime() {
+        val result = LauncherStateTransitions.updateRainHintText(
+            state = LauncherState(),
+            rainHintText = "RAIN 12C",
+            rainUpdatedTimeText = "09:41",
+        )
+
+        assertEquals("RAIN 12C", result.rainHintText)
+        assertEquals("09:41", result.rainUpdatedTimeText)
+    }
+
+    @Test
+    fun updateNotificationSummary_trimsSummaryAndClampsCount() {
+        val result = LauncherStateTransitions.updateNotificationSummary(
+            state = LauncherState(),
+            notificationSummaryText = "  BANK OTP  ",
+            notificationCount = -1,
+        )
+
+        assertEquals("BANK OTP", result.notificationSummaryText)
+        assertEquals(0, result.notificationCount)
+    }
+
+    @Test
+    fun updateStatusBarMessage_trimsGlobalTransientMessage() {
+        val result = LauncherStateTransitions.updateStatusBarMessage(
+            state = LauncherState(),
+            message = "  USE TODAY  ",
+        )
+
+        assertEquals("USE TODAY", result.statusBarMessageText)
     }
 
     // ── Selection clamping ────────────────────────────────────────────────────

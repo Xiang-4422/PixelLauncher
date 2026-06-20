@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.data
 import android.content.Context
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
+import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
@@ -24,6 +25,9 @@ class FontSettingsRepository(
     data class UiBehaviorSettings(
         val drawerListAlignment: DrawerListAlignment,
         val isIdlePageEnabled: Boolean,
+        val chargeAutoIdleEnabled: Boolean,
+        val inactivityAutoIdleEnabled: Boolean,
+        val idleTimeoutSeconds: Int,
         val openDrawerInSearchMode: Boolean,
         val chargeIdleEffect: ChargeIdleEffect,
     )
@@ -42,6 +46,9 @@ class FontSettingsRepository(
         return UiBehaviorSettings(
             drawerListAlignment = readStoredDrawerListAlignment(),
             isIdlePageEnabled = sharedPreferences.getBoolean(KEY_IDLE_PAGE_ENABLED, false),
+            chargeAutoIdleEnabled = sharedPreferences.getBoolean(KEY_CHARGE_AUTO_IDLE_ENABLED, false),
+            inactivityAutoIdleEnabled = sharedPreferences.getBoolean(KEY_INACTIVITY_AUTO_IDLE_ENABLED, true),
+            idleTimeoutSeconds = readStoredIdleTimeoutSeconds(),
             openDrawerInSearchMode = sharedPreferences.getBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, false),
             chargeIdleEffect = readStoredChargeIdleEffect(),
         )
@@ -68,12 +75,18 @@ class FontSettingsRepository(
     fun setUiBehaviorSettings(
         drawerListAlignment: DrawerListAlignment,
         isIdlePageEnabled: Boolean,
+        chargeAutoIdleEnabled: Boolean,
+        inactivityAutoIdleEnabled: Boolean,
+        idleTimeoutSeconds: Int,
         openDrawerInSearchMode: Boolean,
         chargeIdleEffect: ChargeIdleEffect,
     ) {
         sharedPreferences.edit()
             .putString(KEY_DRAWER_LIST_ALIGNMENT, drawerListAlignment.name)
             .putBoolean(KEY_IDLE_PAGE_ENABLED, isIdlePageEnabled)
+            .putBoolean(KEY_CHARGE_AUTO_IDLE_ENABLED, chargeAutoIdleEnabled)
+            .putBoolean(KEY_INACTIVITY_AUTO_IDLE_ENABLED, inactivityAutoIdleEnabled)
+            .putInt(KEY_IDLE_TIMEOUT_SECONDS, IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds))
             .putBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, openDrawerInSearchMode)
             .putString(KEY_CHARGE_IDLE_EFFECT, chargeIdleEffect.name)
             .apply()
@@ -116,6 +129,14 @@ class FontSettingsRepository(
         return ChargeIdleEffect.entries.firstOrNull { it.name == storedValue } ?: ChargeIdleEffect.FLUID
     }
 
+    private fun readStoredIdleTimeoutSeconds(): Int {
+        val storedValue = sharedPreferences.getInt(
+            KEY_IDLE_TIMEOUT_SECONDS,
+            IdleSettings.DEFAULT_TIMEOUT_SECONDS,
+        )
+        return IdleSettings.normalizeTimeoutSeconds(storedValue)
+    }
+
     private companion object {
         const val PREFERENCES_NAME = "pixel_launcher_prefs"
         const val KEY_PIXEL_SHAPE = "selected_pixel_shape"
@@ -125,6 +146,9 @@ class FontSettingsRepository(
         const val KEY_THEME = "selected_theme"
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"
         const val KEY_IDLE_PAGE_ENABLED = "idle_page_enabled"
+        const val KEY_CHARGE_AUTO_IDLE_ENABLED = "charge_auto_idle_enabled"
+        const val KEY_INACTIVITY_AUTO_IDLE_ENABLED = "inactivity_auto_idle_enabled"
+        const val KEY_IDLE_TIMEOUT_SECONDS = "idle_timeout_seconds"
         const val KEY_OPEN_DRAWER_IN_SEARCH_MODE = "open_drawer_in_search_mode"
         const val KEY_CHARGE_IDLE_EFFECT = "charge_idle_effect"
     }

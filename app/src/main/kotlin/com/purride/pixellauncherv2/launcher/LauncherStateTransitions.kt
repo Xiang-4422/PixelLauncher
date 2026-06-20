@@ -10,7 +10,10 @@ object LauncherStateTransitions {
 
     /** 切回 Home 模式，不改动其他派生字段。 */
     fun showHome(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.HOME)
+        return state.copy(
+            mode = LauncherMode.HOME,
+            isDrawerSearchFocused = false,
+        )
     }
 
     /**
@@ -27,6 +30,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_THREAD_DETAIL -> state.mode
 
             LauncherMode.SETTINGS,
+            LauncherMode.APP_MANAGEMENT,
+            LauncherMode.DATA_HEALTH,
             LauncherMode.DIAGNOSTICS -> state.returnMode
         }
         val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
@@ -35,6 +40,7 @@ object LauncherStateTransitions {
                 mode = LauncherMode.SETTINGS,
                 returnMode = returnMode,
                 settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex),
+                isDrawerSearchFocused = false,
             ),
             visibleRows = visibleRows,
         )
@@ -56,6 +62,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_THREAD_DETAIL -> state.returnMode
 
             LauncherMode.SETTINGS,
+            LauncherMode.APP_MANAGEMENT,
+            LauncherMode.DATA_HEALTH,
             LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
         }
         return state.copy(
@@ -72,6 +80,74 @@ object LauncherStateTransitions {
     /** 关闭 diagnostics，并返回设置页。 */
     fun hideDiagnostics(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
+    /** 从设置页进入数据健康页。 */
+    fun showDataHealth(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.DATA_HEALTH)
+    }
+
+    /** 关闭数据健康页，并返回设置页。 */
+    fun hideDataHealth(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
+    fun showAppManagement(state: LauncherState, selectedIndex: Int = state.appEditorSelectedIndex): LauncherState {
+        val apps = state.apps
+        val safeIndex = selectedIndex.coerceIn(0, (apps.size - 1).coerceAtLeast(0))
+        val selectedApp = apps.getOrNull(safeIndex)
+        val returnMode = if (state.mode == LauncherMode.APP_MANAGEMENT) state.returnMode else state.mode
+        return state.copy(
+            mode = LauncherMode.APP_MANAGEMENT,
+            returnMode = returnMode,
+            appEditorSelectedIndex = safeIndex,
+            appEditorNameDraft = selectedApp?.label.orEmpty(),
+            appEditorAliasDraft = selectedApp?.aliases.orEmpty().joinToString(" "),
+        )
+    }
+
+    fun hideAppManagement(state: LauncherState): LauncherState {
+        val returnMode = when (state.returnMode) {
+            LauncherMode.HOME,
+            LauncherMode.APP_DRAWER,
+            LauncherMode.SETTINGS -> state.returnMode
+
+            LauncherMode.APP_MANAGEMENT,
+            LauncherMode.DATA_HEALTH,
+            LauncherMode.DIAGNOSTICS,
+            LauncherMode.IDLE,
+            LauncherMode.SMS_ROLE_PROMPT,
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_THREAD_DETAIL,
+            LauncherMode.SMS_INBOX -> LauncherMode.SETTINGS
+        }
+        return state.copy(mode = returnMode)
+    }
+
+    fun moveAppEditorSelection(state: LauncherState, direction: Int): LauncherState {
+        val apps = state.apps
+        if (apps.isEmpty()) {
+            return state.copy(
+                appEditorSelectedIndex = 0,
+                appEditorNameDraft = "",
+                appEditorAliasDraft = "",
+            )
+        }
+        val nextIndex = wrapIndex(state.appEditorSelectedIndex + direction, apps.size)
+        val selectedApp = apps[nextIndex]
+        return state.copy(
+            appEditorSelectedIndex = nextIndex,
+            appEditorNameDraft = selectedApp.label,
+            appEditorAliasDraft = selectedApp.aliases.joinToString(" "),
+        )
+    }
+
+    fun updateAppEditorNameDraft(state: LauncherState, nameDraft: String): LauncherState {
+        return state.copy(appEditorNameDraft = nameDraft)
+    }
+
+    fun updateAppEditorAliasDraft(state: LauncherState, aliasDraft: String): LauncherState {
+        return state.copy(appEditorAliasDraft = aliasDraft)
     }
 
     /**
@@ -140,6 +216,7 @@ object LauncherStateTransitions {
         return state.copy(
             mode = LauncherMode.HOME,
             smsDraftText = "",
+            smsSendStatusText = "",
         )
     }
 
@@ -154,6 +231,7 @@ object LauncherStateTransitions {
             returnMode = LauncherMode.SMS_THREADS,
             smsCurrentThreadId = threadId,
             smsCurrentAddress = address,
+            smsSendStatusText = "",
         )
     }
 
@@ -163,6 +241,7 @@ object LauncherStateTransitions {
             mode = LauncherMode.SMS_THREADS,
             returnMode = LauncherMode.HOME,
             smsDraftText = "",
+            smsSendStatusText = "",
         )
     }
 
@@ -648,12 +727,18 @@ object LauncherStateTransitions {
         state: LauncherState,
         drawerListAlignment: DrawerListAlignment = state.drawerListAlignment,
         isIdlePageEnabled: Boolean = state.isIdlePageEnabled,
+        chargeAutoIdleEnabled: Boolean = state.chargeAutoIdleEnabled,
+        inactivityAutoIdleEnabled: Boolean = state.inactivityAutoIdleEnabled,
+        idleTimeoutSeconds: Int = state.idleTimeoutSeconds,
         openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
         chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
     ): LauncherState {
         return state.copy(
             drawerListAlignment = drawerListAlignment,
             isIdlePageEnabled = isIdlePageEnabled,
+            chargeAutoIdleEnabled = chargeAutoIdleEnabled,
+            inactivityAutoIdleEnabled = inactivityAutoIdleEnabled,
+            idleTimeoutSeconds = IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds),
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
         )
@@ -694,9 +779,27 @@ object LauncherStateTransitions {
         )
     }
 
-    /** 写入 Home 的天气与温度摘要文本。 */
-    fun updateRainHintText(state: LauncherState, rainHintText: String): LauncherState {
-        return state.copy(rainHintText = rainHintText)
+    fun updateNotificationSummary(
+        state: LauncherState,
+        notificationSummaryText: String,
+        notificationCount: Int,
+    ): LauncherState {
+        return state.copy(
+            notificationSummaryText = notificationSummaryText.trim(),
+            notificationCount = notificationCount.coerceAtLeast(0),
+        )
+    }
+
+    /** 写入 Home 的天气与温度摘要文本及最近刷新时间。 */
+    fun updateRainHintText(
+        state: LauncherState,
+        rainHintText: String,
+        rainUpdatedTimeText: String = state.rainUpdatedTimeText,
+    ): LauncherState {
+        return state.copy(
+            rainHintText = rainHintText,
+            rainUpdatedTimeText = rainUpdatedTimeText,
+        )
     }
 
     /** 更新 Home 中当天屏幕使用时长和打开次数摘要。 */
@@ -708,6 +811,34 @@ object LauncherStateTransitions {
         return state.copy(
             screenUsageTimeText = screenUsageTimeText,
             screenOpenCountText = screenOpenCountText,
+        )
+    }
+
+    fun updateStatusBarMessage(
+        state: LauncherState,
+        message: String,
+    ): LauncherState {
+        return state.copy(statusBarMessageText = message.trim())
+    }
+
+    fun updateDataHealth(
+        state: LauncherState,
+        hasUsageAccess: Boolean,
+        hasLocationPermission: Boolean,
+        hasCallLogPermission: Boolean,
+        hasSmsReadPermission: Boolean,
+        hasPostNotificationPermission: Boolean,
+        hasNotificationListenerAccess: Boolean,
+        dataHealthUpdatedTimeText: String = state.dataHealthUpdatedTimeText,
+    ): LauncherState {
+        return state.copy(
+            hasUsageAccess = hasUsageAccess,
+            hasLocationPermission = hasLocationPermission,
+            hasCallLogPermission = hasCallLogPermission,
+            hasSmsReadPermission = hasSmsReadPermission,
+            hasPostNotificationPermission = hasPostNotificationPermission,
+            hasNotificationListenerAccess = hasNotificationListenerAccess,
+            dataHealthUpdatedTimeText = dataHealthUpdatedTimeText,
         )
     }
 
@@ -803,6 +934,13 @@ object LauncherStateTransitions {
         smsDraftText: String,
     ): LauncherState {
         return state.copy(smsDraftText = smsDraftText)
+    }
+
+    fun updateSmsSendStatusText(
+        state: LauncherState,
+        smsSendStatusText: String,
+    ): LauncherState {
+        return state.copy(smsSendStatusText = smsSendStatusText)
     }
 
     /**
@@ -1036,6 +1174,7 @@ object LauncherStateTransitions {
             metadata.normalizedLabel == normalizedQuery ||
                 metadata.normalizedEnglishLabel == normalizedQuery ||
                 metadata.normalizedAlias == normalizedQuery ||
+                metadata.normalizedUserAliases.any { it == normalizedQuery } ||
                 metadata.normalizedPackage == normalizedQuery ||
                 metadata.normalizedActivity == normalizedQuery ||
                 metadata.pinyinFull == normalizedQuery ||
@@ -1043,6 +1182,7 @@ object LauncherStateTransitions {
 
             metadata.normalizedLabel.startsWith(normalizedQuery) -> 1
             metadata.normalizedEnglishLabel.startsWith(normalizedQuery) -> 1
+            metadata.normalizedUserAliases.any { it.startsWith(normalizedQuery) } -> 1
             metadata.normalizedAlias.startsWith(normalizedQuery) -> 2
             metadata.normalizedPackage.startsWith(normalizedQuery) -> 2
             metadata.normalizedActivity.startsWith(normalizedQuery) -> 2
@@ -1050,6 +1190,7 @@ object LauncherStateTransitions {
             metadata.pinyinInitial.startsWith(normalizedQuery) -> 4
             metadata.normalizedLabel.contains(normalizedQuery) ||
                 metadata.normalizedEnglishLabel.contains(normalizedQuery) ||
+                metadata.normalizedUserAliases.any { it.contains(normalizedQuery) } ||
                 metadata.normalizedAlias.contains(normalizedQuery) ||
                 metadata.normalizedPackage.contains(normalizedQuery) ||
                 metadata.normalizedActivity.contains(normalizedQuery) ||
@@ -1149,6 +1290,12 @@ object LauncherStateTransitions {
             smsThreadSelectedIndex = safeSelectedIndex,
             smsThreadListStartIndex = nextListStartIndex,
         )
+    }
+
+    private fun wrapIndex(index: Int, size: Int): Int {
+        if (size <= 0) return 0
+        val mod = index % size
+        return if (mod < 0) mod + size else mod
     }
 
     private data class DrawerSearchHit(

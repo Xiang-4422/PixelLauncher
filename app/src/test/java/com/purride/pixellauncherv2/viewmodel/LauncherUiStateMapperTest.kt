@@ -35,8 +35,12 @@ class LauncherUiStateMapperTest {
             mode = LauncherMode.APP_DRAWER,
             returnMode = LauncherMode.SETTINGS,
             settingsSelectedIndex = 3,
+            appEditorSelectedIndex = 1,
+            appEditorNameDraft = "Pay",
+            appEditorAliasDraft = "bank bill",
             isSmsThreadsLoading = true,
             smsDraftText = "draft",
+            smsSendStatusText = "FAILED",
             smsCurrentThreadId = 7L,
             smsCurrentAddress = "10086",
             isDefaultSmsApp = true,
@@ -47,6 +51,9 @@ class LauncherUiStateMapperTest {
             selectedTheme = PixelTheme.NIGHT,
             drawerListAlignment = DrawerListAlignment.CENTER,
             isIdlePageEnabled = true,
+            chargeAutoIdleEnabled = true,
+            inactivityAutoIdleEnabled = false,
+            idleTimeoutSeconds = 60,
             openDrawerInSearchMode = true,
             chargeIdleEffect = ChargeIdleEffect.TANK,
             batteryLevel = 42,
@@ -56,9 +63,20 @@ class LauncherUiStateMapperTest {
             nextAlarmText = "07:30",
             missedCallCount = 2,
             unreadSmsCount = 5,
+            notificationSummaryText = "BANK OTP",
+            notificationCount = 1,
             rainHintText = "RAIN 18:00",
+            rainUpdatedTimeText = "09:41",
             screenUsageTimeText = "01:23",
             screenOpenCountText = "37",
+            statusBarMessageText = "USE TODAY",
+            hasUsageAccess = true,
+            hasLocationPermission = true,
+            hasCallLogPermission = false,
+            hasSmsReadPermission = true,
+            hasPostNotificationPermission = false,
+            hasNotificationListenerAccess = true,
+            dataHealthUpdatedTimeText = "09:42",
         )
 
         val ui = state.toLauncherUiState()
@@ -77,9 +95,13 @@ class LauncherUiStateMapperTest {
         assertEquals(LauncherMode.APP_DRAWER, ui.mode)
         assertEquals(LauncherMode.SETTINGS, ui.returnMode)
         assertEquals(3, ui.settingsSelectedIndex)
+        assertEquals(1, ui.appEditorSelectedIndex)
+        assertEquals("Pay", ui.appEditorNameDraft)
+        assertEquals("bank bill", ui.appEditorAliasDraft)
         // sms
         assertEquals(true, ui.isSmsThreadsLoading)
         assertEquals("draft", ui.smsDraftText)
+        assertEquals("FAILED", ui.smsSendStatusText)
         assertEquals(7L, ui.smsCurrentThreadId)
         assertEquals("10086", ui.smsCurrentAddress)
         assertEquals(true, ui.isDefaultSmsApp)
@@ -91,6 +113,9 @@ class LauncherUiStateMapperTest {
         assertEquals(PixelTheme.NIGHT, ui.selectedTheme)
         assertEquals(DrawerListAlignment.CENTER, ui.drawerListAlignment)
         assertEquals(true, ui.isIdlePageEnabled)
+        assertEquals(true, ui.chargeAutoIdleEnabled)
+        assertEquals(false, ui.inactivityAutoIdleEnabled)
+        assertEquals(60, ui.idleTimeoutSeconds)
         assertEquals(true, ui.openDrawerInSearchMode)
         assertEquals(ChargeIdleEffect.TANK, ui.chargeIdleEffect)
         // device + stats + status rows
@@ -101,9 +126,20 @@ class LauncherUiStateMapperTest {
         assertEquals("07:30", ui.nextAlarmText)
         assertEquals(2, ui.missedCallCount)
         assertEquals(5, ui.unreadSmsCount)
+        assertEquals("BANK OTP", ui.notificationSummaryText)
+        assertEquals(1, ui.notificationCount)
         assertEquals("RAIN 18:00", ui.rainHintText)
+        assertEquals("09:41", ui.rainUpdatedTimeText)
         assertEquals("01:23", ui.screenUsageTimeText)
         assertEquals("37", ui.screenOpenCountText)
+        assertEquals("USE TODAY", ui.statusBarMessageText)
+        assertEquals(true, ui.hasUsageAccess)
+        assertEquals(true, ui.hasLocationPermission)
+        assertEquals(false, ui.hasCallLogPermission)
+        assertEquals(true, ui.hasSmsReadPermission)
+        assertEquals(false, ui.hasPostNotificationPermission)
+        assertEquals(true, ui.hasNotificationListenerAccess)
+        assertEquals("09:42", ui.dataHealthUpdatedTimeText)
     }
 
     @Test

@@ -11,16 +11,29 @@ data class LauncherCallbacks(
     val onOpenContacts: () -> Unit,
     /** 用户点击 SMS 按钮 → 进入短信模块 */
     val onOpenSms: () -> Unit,
+    /** 用户点击 HOME 信息行。 */
+    val onHomeInfoAction: (HomeInfoAction) -> Unit,
+    /** 用户长按 HOME 信息行。 */
+    val onHomeInfoDetail: (HomeInfoAction) -> Unit,
 
     // ── APP_DRAWER ────────────────────────────────────────────────────────────
     val onDrawerQueryChanged: (String) -> Unit,
     val onDrawerSubmitSearch: () -> Unit,
     val onDrawerAppPressed: (Int) -> Unit,
+    val onDrawerAppLongPressed: (Int) -> Unit,
 
     // ── SETTINGS ──────────────────────────────────────────────────────────────
     val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,
     val onSettingsItemRatioChanged: (SettingsMenuItem, Float) -> Unit,
     val onSettingsPreviewChanged: () -> Unit,
+    val onAppEditorPrevious: () -> Unit,
+    val onAppEditorNext: () -> Unit,
+    val onAppEditorNameChanged: (String) -> Unit,
+    val onAppEditorAliasChanged: (String) -> Unit,
+    val onAppEditorSave: () -> Unit,
+    val onAppEditorReset: () -> Unit,
+    val onAppCacheReset: () -> Unit,
+    val onDataHealthItemPressed: (DataHealthItem) -> Unit,
 
     // ── SMS ───────────────────────────────────────────────────────────────────
     val onRequestSmsRole: () -> Unit,

@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -10,6 +11,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.provider.AlarmClock
+import android.provider.CallLog
 import android.provider.Settings
 import android.provider.ContactsContract
 import android.util.Log
@@ -23,6 +26,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
@@ -33,20 +37,25 @@ import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.GeoPoint
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.NextAlarmRepository
+import com.purride.pixellauncherv2.data.NotificationSummaryRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.DataHealthItem
 import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
+import com.purride.pixellauncherv2.launcher.HomeInfoAction
+import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.LauncherCallbacks
 import com.purride.pixellauncherv2.launcher.LauncherRootHost
+import com.purride.pixellauncherv2.launcher.NotificationSummary
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
@@ -90,12 +99,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var launcherRootHost: LauncherRootHost
 
     private lateinit var appRepository: AppRepository
+    private lateinit var appCustomizationRepository: AppCustomizationRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
     private lateinit var launcherStatsRepository: LauncherStatsRepository
     private lateinit var deviceStatusRepository: DeviceStatusRepository
     private lateinit var nextAlarmRepository: NextAlarmRepository
     private lateinit var screenUsageRepository: ScreenUsageRepository
     private lateinit var communicationStatusRepository: CommunicationStatusRepository
+    private lateinit var notificationSummaryRepository: NotificationSummaryRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var smsController: SmsController
     private lateinit var rainForecastRepository: RainForecastRepository
@@ -192,12 +203,22 @@ class MainActivity : AppCompatActivity() {
             return@Runnable
         }
         val idleForMs = SystemClock.uptimeMillis() - state.lastInteractionUptimeMs
-        if (idleForMs >= IDLE_TIMEOUT_MS) {
-            state = LauncherStateTransitions.showIdle(state)
-            renderCurrentFrame()
+        if (state.inactivityAutoIdleEnabled && idleForMs >= idleTimeoutMs()) {
+            enterIdleIfAllowed()
         } else {
             scheduleIdleCheck()
         }
+    }
+
+    private val statusBarMessageClearRunnable = Runnable {
+        if (state.statusBarMessageText.isBlank()) {
+            return@Runnable
+        }
+        state = LauncherStateTransitions.updateStatusBarMessage(
+            state = state,
+            message = "",
+        )
+        renderCurrentFrame()
     }
 
     /**
@@ -210,12 +231,14 @@ class MainActivity : AppCompatActivity() {
         window.setWindowAnimations(0)
 
         appRepository = PackageManagerAppRepository(applicationContext)
+        appCustomizationRepository = AppCustomizationRepository(applicationContext)
         fontSettingsRepository = FontSettingsRepository(applicationContext)
         launcherStatsRepository = LauncherStatsRepository(applicationContext)
         deviceStatusRepository = DeviceStatusRepository(applicationContext)
         nextAlarmRepository = NextAlarmRepository(applicationContext)
         screenUsageRepository = ScreenUsageRepository(applicationContext)
         communicationStatusRepository = CommunicationStatusRepository(applicationContext)
+        notificationSummaryRepository = NotificationSummaryRepository()
         smsController = SmsController(
             context = applicationContext,
             backgroundExecutor = backgroundExecutor,
@@ -240,6 +263,9 @@ class MainActivity : AppCompatActivity() {
             state = state,
             drawerListAlignment = uiBehaviorSettings.drawerListAlignment,
             isIdlePageEnabled = uiBehaviorSettings.isIdlePageEnabled,
+            chargeAutoIdleEnabled = uiBehaviorSettings.chargeAutoIdleEnabled,
+            inactivityAutoIdleEnabled = uiBehaviorSettings.inactivityAutoIdleEnabled,
+            idleTimeoutSeconds = uiBehaviorSettings.idleTimeoutSeconds,
             openDrawerInSearchMode = uiBehaviorSettings.openDrawerInSearchMode,
             chargeIdleEffect = uiBehaviorSettings.chargeIdleEffect,
         )
@@ -270,12 +296,23 @@ class MainActivity : AppCompatActivity() {
             callbacks = LauncherCallbacks(
                 onOpenContacts       = ::onHomeOpenContacts,
                 onOpenSms            = ::onHomeOpenSms,
+                onHomeInfoAction     = ::onHomeInfoAction,
+                onHomeInfoDetail     = ::onHomeInfoDetail,
                 onDrawerQueryChanged = ::onPixelEngineDrawerQueryChanged,
                 onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
                 onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
+                onDrawerAppLongPressed = ::onPixelEngineDrawerAppLongPressed,
                 onSettingsItemAction = ::onSettingsItemAction,
                 onSettingsItemRatioChanged = ::onSettingsItemRatioChanged,
                 onSettingsPreviewChanged = ::onSettingsPreviewChanged,
+                onAppEditorPrevious = ::onAppEditorPrevious,
+                onAppEditorNext = ::onAppEditorNext,
+                onAppEditorNameChanged = ::onAppEditorNameChanged,
+                onAppEditorAliasChanged = ::onAppEditorAliasChanged,
+                onAppEditorSave = ::onAppEditorSave,
+                onAppEditorReset = ::onAppEditorReset,
+                onAppCacheReset = ::onAppCacheReset,
+                onDataHealthItemPressed = ::onDataHealthItemPressed,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,
                 onSelectSmsIndex     = smsController::selectIndex,
@@ -308,6 +345,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREADS -> smsController.closeModule()
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
                     LauncherMode.SMS_INBOX -> smsController.closeUnreadInbox()
+                    LauncherMode.APP_MANAGEMENT -> closeAppManagement()
+                    LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -354,6 +393,7 @@ class MainActivity : AppCompatActivity() {
         startClockTicker()
         deviceStatusRepository.start(::onDeviceStatusChanged)
         nextAlarmRepository.start(::onNextAlarmChanged)
+        notificationSummaryRepository.start(::onNotificationSummaryChanged)
         resetDrawerVerticalGesture()
         if (
             state.mode != LauncherMode.SMS_ROLE_PROMPT &&
@@ -424,11 +464,14 @@ class MainActivity : AppCompatActivity() {
         mainHandler.removeCallbacks(clockTicker)
         mainHandler.removeCallbacks(animationTicker)
         mainHandler.removeCallbacks(idleRunnable)
+        mainHandler.removeCallbacks(statusBarMessageClearRunnable)
+        state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
         launchRunnable?.let(mainHandler::removeCallbacks)
         launchRunnable = null
         launchPending = false
         deviceStatusRepository.stop()
         nextAlarmRepository.stop()
+        notificationSummaryRepository.stop()
         communicationStatusRepository.stop()
         smsController.stop()
         suppressActivityAnimations()
@@ -447,6 +490,7 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             homeDataPermissionRequestCode -> {
                 communicationStatusRepository.start(::onCommunicationStatusChanged)
+                smsController.refreshSmsCapability(render = false)
                 refreshCommunicationStatus(render = false)
                 refreshRainHint(force = true, render = true)
             }
@@ -525,6 +569,8 @@ class MainActivity : AppCompatActivity() {
                         smsController.moveInboxSelection(-1)
                     }
                     LauncherMode.SETTINGS -> Unit
+                    LauncherMode.APP_MANAGEMENT,
+                    LauncherMode.DATA_HEALTH,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
                     LauncherMode.IDLE,
@@ -546,6 +592,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
+                    LauncherMode.APP_MANAGEMENT,
+                    LauncherMode.DATA_HEALTH,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE,
                     LauncherMode.SMS_ROLE_PROMPT -> Unit
@@ -562,6 +610,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> smsController.moveInboxSelection(-1)
                     LauncherMode.APP_DRAWER -> Unit
+                    LauncherMode.APP_MANAGEMENT,
+                    LauncherMode.DATA_HEALTH,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -577,6 +627,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> smsController.moveInboxSelection(1)
                     LauncherMode.APP_DRAWER -> Unit
+                    LauncherMode.APP_MANAGEMENT,
+                    LauncherMode.DATA_HEALTH,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -604,6 +656,8 @@ class MainActivity : AppCompatActivity() {
                         settleSettingsMotionBeforeExplicitAction()
                         smsController.launchSelectedUnread()
                     }
+                    LauncherMode.DATA_HEALTH -> closeDataHealth()
+                    LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_DRAWER -> Unit
@@ -635,7 +689,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun loadApps() {
         val generation = ++loadGeneration
-        val cachedApps = appRepository.loadCachedLaunchableApps()
+        val cachedApps = applyAppCustomizations(appRepository.loadCachedLaunchableApps())
         if (cachedApps.isNotEmpty()) {
             state = LauncherStateTransitions.withApps(
                 previous = state,
@@ -649,7 +703,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         backgroundExecutor.execute {
-            val apps = appRepository.loadLaunchableApps()
+            val apps = applyAppCustomizations(appRepository.loadLaunchableApps())
             mainHandler.post {
                 if (generation != loadGeneration || isDestroyed || isFinishing) {
                     return@post
@@ -669,6 +723,10 @@ class MainActivity : AppCompatActivity() {
                 refreshDerivedUiState(render = true)
             }
         }
+    }
+
+    private fun applyAppCustomizations(apps: List<AppEntry>): List<AppEntry> {
+        return appCustomizationRepository.applyCustomizations(apps)
     }
 
     private fun launchSelectedApp() {
@@ -715,6 +773,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun renderCurrentFrame() {
         if (!::launcherRootHost.isInitialized) return
+        refreshDataHealthState()
         val uiState = state.toLauncherUiState()
         launcherRootHost.update(
             state           = uiState,
@@ -804,6 +863,9 @@ class MainActivity : AppCompatActivity() {
                 newPixelGapEnabled = s.isPixelGapEnabled,
                 newTheme = SettingsMenuModel.nextTheme(s.selectedTheme, direction),
             )
+            SettingsMenuItem.HOME_STATUS -> {
+                state = LauncherStateTransitions.showHome(state)
+            }
             SettingsMenuItem.APP_LIST_ALIGNMENT -> applyUiBehavior(
                 drawerListAlignment = SettingsMenuModel.nextDrawerListAlignment(s.drawerListAlignment, direction),
                 isIdlePageEnabled = s.isIdlePageEnabled,
@@ -815,6 +877,15 @@ class MainActivity : AppCompatActivity() {
                 isIdlePageEnabled = SettingsMenuModel.toggle(s.isIdlePageEnabled),
                 openDrawerInSearchMode = s.openDrawerInSearchMode,
                 chargeIdleEffect = s.chargeIdleEffect,
+            )
+            SettingsMenuItem.CHARGE_AUTO_IDLE -> applyUiBehavior(
+                chargeAutoIdleEnabled = SettingsMenuModel.toggle(s.chargeAutoIdleEnabled),
+            )
+            SettingsMenuItem.INACTIVITY_AUTO_IDLE -> applyUiBehavior(
+                inactivityAutoIdleEnabled = SettingsMenuModel.toggle(s.inactivityAutoIdleEnabled),
+            )
+            SettingsMenuItem.IDLE_TIMEOUT -> applyUiBehavior(
+                idleTimeoutSeconds = SettingsMenuModel.nextIdleTimeoutSeconds(s.idleTimeoutSeconds, direction),
             )
             SettingsMenuItem.CHARGE_IDLE_EFFECT -> applyUiBehavior(
                 drawerListAlignment = s.drawerListAlignment,
@@ -828,6 +899,8 @@ class MainActivity : AppCompatActivity() {
                 openDrawerInSearchMode = SettingsMenuModel.toggle(s.openDrawerInSearchMode),
                 chargeIdleEffect = s.chargeIdleEffect,
             )
+            SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
+            SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
@@ -841,6 +914,7 @@ class MainActivity : AppCompatActivity() {
                 newPixelGapEnabled = s.isPixelGapEnabled,
                 newTheme = s.selectedTheme,
             )
+            SettingsMenuItem.HOME_STATUS -> Unit
             SettingsMenuItem.PIXEL_GAP_SIZE -> applyAppearance(
                 newPixelShape = s.selectedPixelShape,
                 newDotSizePx = s.selectedDotSizePx,
@@ -875,6 +949,101 @@ class MainActivity : AppCompatActivity() {
     /** SMS 按钮：进入短信模块。 */
     private fun onHomeOpenSms() {
         smsController.openModule(forceRefresh = true, unreadOnly = false)
+    }
+
+    private fun onHomeInfoAction(action: HomeInfoAction) {
+        when (action) {
+            HomeInfoAction.RAIN -> {
+                if (deviceLocationRepository.hasLocationPermission()) {
+                    showStatusBarMessage(HomeInfoDetailModel.rainRefreshStarted())
+                    refreshRainHint(force = true, render = true, showFeedback = true)
+                } else {
+                    showStatusBarMessage(HomeInfoDetailModel.notice(action, state))
+                    requestHomeDataPermissions(
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                    )
+                }
+            }
+
+            HomeInfoAction.CALL -> openCallLog()
+
+            HomeInfoAction.ALARM -> openAlarmClock()
+
+            HomeInfoAction.BATTERY -> openBatterySettings()
+
+            HomeInfoAction.SMS -> {
+                if (state.unreadSmsCount > 0) {
+                    smsController.openUnreadInbox()
+                } else {
+                    smsController.openModule(forceRefresh = true, unreadOnly = false)
+                }
+            }
+
+            HomeInfoAction.USAGE -> {
+                if (screenUsageRepository.hasUsageAccess()) {
+                    showStatusBarMessage(HomeInfoDetailModel.usageRefreshStarted())
+                    refreshScreenUsageSummary(render = true, showFeedback = true)
+                } else {
+                    showStatusBarMessage(HomeInfoDetailModel.notice(action, state))
+                    launchSystemIntent(
+                        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    private fun onHomeInfoDetail(action: HomeInfoAction) {
+        showStatusBarMessage(HomeInfoDetailModel.notice(action, state))
+    }
+
+    private fun showStatusBarMessage(message: String) {
+        val normalizedMessage = message.trim()
+        if (normalizedMessage.isEmpty()) {
+            return
+        }
+        state = LauncherStateTransitions.updateStatusBarMessage(
+            state = state,
+            message = normalizedMessage,
+        )
+        renderCurrentFrame()
+        scheduleStatusBarMessageClear()
+    }
+
+    private fun openCallLog() {
+        launchFirstAvailableIntent(
+            Intent(Intent.ACTION_VIEW, CallLog.Calls.CONTENT_URI).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+            Intent(Intent.ACTION_DIAL).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }
+
+    private fun openAlarmClock() {
+        launchFirstAvailableIntent(
+            Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }
+
+    private fun openBatterySettings() {
+        launchFirstAvailableIntent(
+            Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+            Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+            Intent(Settings.ACTION_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
     }
 
     // End Phase 4 ──────────────────────────────────────────────────────────────
@@ -1060,6 +1229,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun onPixelEngineDrawerAppLongPressed(index: Int) {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return
+        }
+        recordInteraction()
+        val selectedApp = currentDrawerApps().getOrNull(index) ?: return
+        val appIndex = state.apps.indexOfFirst { app ->
+            app.packageName == selectedApp.packageName &&
+                app.activityName == selectedApp.activityName
+        }.takeIf { it >= 0 } ?: return
+        settleDrawerMotionBeforeExplicitAction()
+        openAppManagement(selectedIndex = appIndex)
+    }
+
     private fun hideDrawerKeyboard() {
         val inputManager = getSystemService(InputMethodManager::class.java) ?: return
         inputManager.hideSoftInputFromWindow(window.decorView.windowToken, 0)
@@ -1180,6 +1363,128 @@ class MainActivity : AppCompatActivity() {
         updateDrawerInputFocus()
     }
 
+    private fun openDataHealth() {
+        settleSettingsMotionBeforeExplicitAction()
+        refreshDataHealthState(updateTimestamp = true)
+        state = LauncherStateTransitions.showDataHealth(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun openAppManagement(selectedIndex: Int = state.appEditorSelectedIndex) {
+        settleSettingsMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.showAppManagement(state, selectedIndex)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun closeAppManagement() {
+        state = LauncherStateTransitions.hideAppManagement(state)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun onAppEditorPrevious() {
+        state = LauncherStateTransitions.moveAppEditorSelection(state, -1)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun onAppEditorNext() {
+        state = LauncherStateTransitions.moveAppEditorSelection(state, 1)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun onAppEditorNameChanged(text: String) {
+        state = LauncherStateTransitions.updateAppEditorNameDraft(state, text)
+    }
+
+    private fun onAppEditorAliasChanged(text: String) {
+        state = LauncherStateTransitions.updateAppEditorAliasDraft(state, text)
+    }
+
+    private fun onAppEditorSave() {
+        val selectedApp = state.apps.getOrNull(state.appEditorSelectedIndex) ?: return
+        val labelOverride = state.appEditorNameDraft.trim().takeIf { it.isNotBlank() && it != selectedApp.systemLabel }
+            .orEmpty()
+        appCustomizationRepository.saveCustomization(
+            app = selectedApp,
+            labelOverride = labelOverride,
+            aliasText = state.appEditorAliasDraft,
+        )
+        refreshAppsAfterCustomization(state.appEditorSelectedIndex)
+    }
+
+    private fun onAppEditorReset() {
+        val selectedApp = state.apps.getOrNull(state.appEditorSelectedIndex) ?: return
+        appCustomizationRepository.resetCustomization(selectedApp)
+        refreshAppsAfterCustomization(state.appEditorSelectedIndex)
+    }
+
+    private fun onAppCacheReset() {
+        appRepository.clearCachedLaunchableApps()
+        loadApps()
+    }
+
+    private fun refreshAppsAfterCustomization(selectedIndex: Int) {
+        val baseApps = state.apps.map { app ->
+            app.copy(label = app.systemLabel, aliases = emptyList())
+        }
+        state = LauncherStateTransitions.withApps(
+            previous = state,
+            apps = applyAppCustomizations(baseApps),
+            visibleRows = visibleRows(),
+        )
+        state = LauncherStateTransitions.showAppManagement(state, selectedIndex)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun closeDataHealth() {
+        state = LauncherStateTransitions.hideDataHealth(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun onDataHealthItemPressed(item: DataHealthItem) {
+        when (item) {
+            DataHealthItem.UPDATED -> Unit
+
+            DataHealthItem.USAGE -> launchSystemIntent(
+                Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+
+            DataHealthItem.LOCATION -> requestHomeDataPermissions(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            )
+
+            DataHealthItem.CALL_LOG -> requestHomeDataPermissions(Manifest.permission.READ_CALL_LOG)
+
+            DataHealthItem.SMS_READ -> requestHomeDataPermissions(Manifest.permission.READ_SMS)
+
+            DataHealthItem.SMS_APP,
+            DataHealthItem.SMS_SEND -> smsController.ensureReadAccessAndRole()
+
+            DataHealthItem.NOTIFICATION_POST -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    requestHomeDataPermissions(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+
+            DataHealthItem.NOTIFICATION_LISTENER -> launchSystemIntent(
+                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                },
+            )
+        }
+        refreshDataHealthState(updateTimestamp = true)
+        renderCurrentFrame()
+    }
+
 
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent == null) {
@@ -1229,97 +1534,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun changeSettingValue(direction: Int) {
-        when (SettingsMenuModel.selectedItem(state)) {
-            SettingsMenuItem.RESOLUTION -> {
-                val nextDotSizePx = SettingsMenuModel.nextResolution(
-                    current = state.selectedDotSizePx,
-                    direction = direction,
-                    screenProfile = screenProfile,
-                )
-                applyAppearance(
-                    newPixelShape = state.selectedPixelShape,
-                    newDotSizePx = nextDotSizePx,
-                    newPixelGapEnabled = state.isPixelGapEnabled,
-                    newTheme = state.selectedTheme,
-                )
-            }
-
-            SettingsMenuItem.PIXEL_GAP -> {
-                return
-            }
-
-            SettingsMenuItem.PIXEL_GAP_SIZE -> {
-                applyAppearance(
-                    newPixelShape = state.selectedPixelShape,
-                    newDotSizePx = state.selectedDotSizePx,
-                    newPixelGapEnabled = SettingsMenuModel.nextPixelGapRatio(state.pixelGapRatio, direction) > 0f,
-                    newPixelGapRatio = SettingsMenuModel.nextPixelGapRatio(state.pixelGapRatio, direction),
-                    newTheme = state.selectedTheme,
-                )
-            }
-
-            SettingsMenuItem.STYLE -> {
-                val nextPixelShape = SettingsMenuModel.nextStyle(state.selectedPixelShape, direction)
-                applyAppearance(
-                    newPixelShape = nextPixelShape,
-                    newDotSizePx = state.selectedDotSizePx,
-                    newPixelGapEnabled = state.isPixelGapEnabled,
-                    newTheme = state.selectedTheme,
-                )
-            }
-
-            SettingsMenuItem.THEME -> {
-                val nextTheme = SettingsMenuModel.nextTheme(state.selectedTheme, direction)
-                applyAppearance(
-                    newPixelShape = state.selectedPixelShape,
-                    newDotSizePx = state.selectedDotSizePx,
-                    newPixelGapEnabled = state.isPixelGapEnabled,
-                    newTheme = nextTheme,
-                )
-            }
-
-            SettingsMenuItem.APP_LIST_ALIGNMENT -> {
-                applyUiBehavior(
-                    drawerListAlignment = SettingsMenuModel.nextDrawerListAlignment(state.drawerListAlignment, direction),
-                    isIdlePageEnabled = state.isIdlePageEnabled,
-                    openDrawerInSearchMode = state.openDrawerInSearchMode,
-                    chargeIdleEffect = state.chargeIdleEffect,
-                )
-            }
-
-            SettingsMenuItem.IDLE_PAGE -> {
-                applyUiBehavior(
-                    drawerListAlignment = state.drawerListAlignment,
-                    isIdlePageEnabled = SettingsMenuModel.toggle(state.isIdlePageEnabled),
-                    openDrawerInSearchMode = state.openDrawerInSearchMode,
-                    chargeIdleEffect = state.chargeIdleEffect,
-                )
-            }
-
-            SettingsMenuItem.DRAWER_AUTO_SEARCH -> {
-                applyUiBehavior(
-                    drawerListAlignment = state.drawerListAlignment,
-                    isIdlePageEnabled = state.isIdlePageEnabled,
-                    openDrawerInSearchMode = SettingsMenuModel.toggle(state.openDrawerInSearchMode),
-                    chargeIdleEffect = state.chargeIdleEffect,
-                )
-            }
-
-            SettingsMenuItem.CHARGE_IDLE_EFFECT -> {
-                applyUiBehavior(
-                    drawerListAlignment = state.drawerListAlignment,
-                    isIdlePageEnabled = state.isIdlePageEnabled,
-                    openDrawerInSearchMode = state.openDrawerInSearchMode,
-                    chargeIdleEffect = SettingsMenuModel.nextChargeIdleEffect(state.chargeIdleEffect, direction),
-                )
-            }
-
-            SettingsMenuItem.ADVANCED -> openDiagnostics()
-        }
-    }
-
-
     private fun settleSettingsMotionBeforeExplicitAction() = Unit
 
     private fun stopDrawerVerticalListAnimation(resetOffset: Boolean) = Unit
@@ -1362,6 +1576,8 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
+            LauncherMode.APP_MANAGEMENT,
+            LauncherMode.DATA_HEALTH,
             LauncherMode.DIAGNOSTICS -> true
 
             LauncherMode.IDLE -> false
@@ -1403,14 +1619,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyUiBehavior(
-        drawerListAlignment: DrawerListAlignment,
-        isIdlePageEnabled: Boolean,
-        openDrawerInSearchMode: Boolean,
-        chargeIdleEffect: ChargeIdleEffect,
+        drawerListAlignment: DrawerListAlignment = state.drawerListAlignment,
+        isIdlePageEnabled: Boolean = state.isIdlePageEnabled,
+        chargeAutoIdleEnabled: Boolean = state.chargeAutoIdleEnabled,
+        inactivityAutoIdleEnabled: Boolean = state.inactivityAutoIdleEnabled,
+        idleTimeoutSeconds: Int = state.idleTimeoutSeconds,
+        openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
+        chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
     ) {
         fontSettingsRepository.setUiBehaviorSettings(
             drawerListAlignment = drawerListAlignment,
             isIdlePageEnabled = isIdlePageEnabled,
+            chargeAutoIdleEnabled = chargeAutoIdleEnabled,
+            inactivityAutoIdleEnabled = inactivityAutoIdleEnabled,
+            idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
         )
@@ -1418,11 +1640,19 @@ class MainActivity : AppCompatActivity() {
             state = state,
             drawerListAlignment = drawerListAlignment,
             isIdlePageEnabled = isIdlePageEnabled,
+            chargeAutoIdleEnabled = chargeAutoIdleEnabled,
+            inactivityAutoIdleEnabled = inactivityAutoIdleEnabled,
+            idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
         )
         if (!isIdlePageEnabled && state.mode == LauncherMode.IDLE) {
             wakeFromIdle()
+            return
+        }
+        if (isIdlePageEnabled && chargeAutoIdleEnabled && state.isCharging && enterIdleIfAllowed()) {
+            updateDrawerInputFocus()
+            scheduleIdleCheck()
             return
         }
         refreshDerivedUiState(render = true)
@@ -1431,9 +1661,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onDeviceStatusChanged(deviceStatus: DeviceStatus) {
+        val wasCharging = state.isCharging
         state = LauncherStateTransitions.updateDeviceStatus(state, deviceStatus)
         refreshDerivedUiState(render = true)
         startAnimationTickerIfNeeded()
+        if (!wasCharging && deviceStatus.isCharging && state.chargeAutoIdleEnabled) {
+            enterIdleIfAllowed()
+        } else {
+            scheduleIdleCheck()
+        }
     }
 
     private fun onNextAlarmChanged(nextAlarmText: String) {
@@ -1453,7 +1689,26 @@ class MainActivity : AppCompatActivity() {
         refreshDerivedUiState(render = true)
     }
 
-    private fun refreshScreenUsageSummary(render: Boolean) {
+    private fun onNotificationSummaryChanged(notificationSummary: NotificationSummary) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { onNotificationSummaryChanged(notificationSummary) }
+            return
+        }
+        if (isDestroyed || isFinishing) {
+            return
+        }
+        state = LauncherStateTransitions.updateNotificationSummary(
+            state = state,
+            notificationSummaryText = notificationSummary.text,
+            notificationCount = notificationSummary.count,
+        )
+        renderCurrentFrame()
+    }
+
+    private fun refreshScreenUsageSummary(
+        render: Boolean,
+        showFeedback: Boolean = false,
+    ) {
         backgroundExecutor.execute {
             val snapshot = screenUsageRepository.readTodaySummary()
             mainHandler.post {
@@ -1465,7 +1720,10 @@ class MainActivity : AppCompatActivity() {
                     screenUsageTimeText = snapshot.usageTimeText,
                     screenOpenCountText = snapshot.openCountText,
                 )
-                if (render) {
+                if (showFeedback) {
+                    refreshDataHealthState()
+                    showStatusBarMessage(HomeInfoDetailModel.usageRefreshResult(state))
+                } else if (render) {
                     refreshDerivedUiState(render = true)
                 } else {
                     renderCurrentFrame()
@@ -1495,7 +1753,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun refreshRainHint(force: Boolean, render: Boolean) {
+    private fun refreshRainHint(
+        force: Boolean,
+        render: Boolean,
+        showFeedback: Boolean = false,
+    ) {
         if (!force) {
             val elapsedSinceLastRefresh = SystemClock.elapsedRealtime() - lastRainRefreshElapsedRealtimeMs
             if (lastRainRefreshElapsedRealtimeMs > 0L && elapsedSinceLastRefresh < rainRefreshIntervalMs) {
@@ -1503,11 +1765,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
         if (rainRefreshInFlight) {
+            if (showFeedback) {
+                showStatusBarMessage(HomeInfoDetailModel.rainRefreshStarted())
+            }
             return
         }
         if (!deviceLocationRepository.hasLocationPermission()) {
             lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
             applyRainHintText(rainLocationPromptText, render = render)
+            if (showFeedback) {
+                showStatusBarMessage(HomeInfoDetailModel.notice(HomeInfoAction.RAIN, state))
+            }
             maybeRequestHomeDataPermissions()
             return
         }
@@ -1522,6 +1790,9 @@ class MainActivity : AppCompatActivity() {
                 lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
                 rainRefreshInFlight = false
                 applyRainHintText(rainLocationPromptText, render = render)
+                if (showFeedback) {
+                    showStatusBarMessage(HomeInfoDetailModel.rainLocationUnavailable())
+                }
                 return@requestBestLocation
             }
 
@@ -1532,6 +1803,9 @@ class MainActivity : AppCompatActivity() {
                 lastRainLocation?.distanceToMeters(location)?.let { it >= rainRefreshDistanceThresholdMeters } != false
             if (!shouldFetch) {
                 rainRefreshInFlight = false
+                if (showFeedback) {
+                    showStatusBarMessage(HomeInfoDetailModel.rainRefreshUpdated(state))
+                }
                 return@requestBestLocation
             }
 
@@ -1553,6 +1827,9 @@ class MainActivity : AppCompatActivity() {
                         lastSuccessfulRainHintText = weatherSummary.orEmpty()
                         rainRefreshInFlight = false
                         applyRainHintText(weatherSummary.orEmpty(), render = render)
+                        if (showFeedback) {
+                            showStatusBarMessage(HomeInfoDetailModel.rainRefreshUpdated(state))
+                        }
                     }
                 }.onFailure {
                     mainHandler.post {
@@ -1563,6 +1840,13 @@ class MainActivity : AppCompatActivity() {
                         lastRainRefreshElapsedRealtimeMs = SystemClock.elapsedRealtime()
                         rainRefreshInFlight = false
                         applyRainHintText(previousSuccessfulHint, render = render)
+                        if (showFeedback) {
+                            showStatusBarMessage(
+                                HomeInfoDetailModel.rainRefreshFailed(
+                                    hasPreviousHint = previousSuccessfulHint.isNotBlank(),
+                                ),
+                            )
+                        }
                     }
                 }
             }
@@ -1573,12 +1857,46 @@ class MainActivity : AppCompatActivity() {
         state = LauncherStateTransitions.updateRainHintText(
             state = state,
             rainHintText = rainHintText,
+            rainUpdatedTimeText = timeTextProvider.currentTimeText(),
         )
         if (render) {
             refreshDerivedUiState(render = true)
         } else {
             renderCurrentFrame()
         }
+    }
+
+    private fun refreshDataHealthState(updateTimestamp: Boolean = false) {
+        state = LauncherStateTransitions.updateDataHealth(
+            state = state,
+            hasUsageAccess = screenUsageRepository.hasUsageAccess(),
+            hasLocationPermission = deviceLocationRepository.hasLocationPermission(),
+            hasCallLogPermission = communicationStatusRepository.hasCallLogPermission(),
+            hasSmsReadPermission = communicationStatusRepository.hasSmsPermission(),
+            hasPostNotificationPermission = hasPostNotificationPermission(),
+            hasNotificationListenerAccess = hasNotificationListenerAccess(),
+            dataHealthUpdatedTimeText = if (updateTimestamp) {
+                timeTextProvider.currentTimeText()
+            } else {
+                state.dataHealthUpdatedTimeText
+            },
+        )
+    }
+
+    private fun hasPostNotificationPermission(): Boolean {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun hasNotificationListenerAccess(): Boolean {
+        val enabledListeners = Settings.Secure.getString(
+            contentResolver,
+            "enabled_notification_listeners",
+        ).orEmpty()
+        return enabledListeners
+            .split(':')
+            .mapNotNull { ComponentName.unflattenFromString(it) }
+            .any { it.packageName == packageName }
     }
 
     private fun maybeRequestHomeDataPermissions() {
@@ -1606,6 +1924,16 @@ class MainActivity : AppCompatActivity() {
             return
         }
         homeDataPermissionPromptShown = true
+        requestHomeDataPermissions(*missingPermissions.toTypedArray())
+    }
+
+    private fun requestHomeDataPermissions(vararg permissions: String) {
+        val missingPermissions = permissions
+            .filter { permission -> checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED }
+            .distinct()
+        if (missingPermissions.isEmpty()) {
+            return
+        }
         requestPermissions(
             missingPermissions.toTypedArray(),
             homeDataPermissionRequestCode,
@@ -1626,6 +1954,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshDerivedUiState(render: Boolean) {
+        refreshDataHealthState()
         state = LauncherStateTransitions.updateTerminalStatus(
             state = state,
             terminalStatusText = terminalStatusProvider.buildStatus(state),
@@ -1666,11 +1995,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleIdleCheck() {
         mainHandler.removeCallbacks(idleRunnable)
-        if (canEnterIdle()) {
+        if (canEnterIdle() && state.inactivityAutoIdleEnabled) {
             val idleForMs = SystemClock.uptimeMillis() - state.lastInteractionUptimeMs
-            val delay = (IDLE_TIMEOUT_MS - idleForMs).coerceAtLeast(0L)
+            val delay = (idleTimeoutMs() - idleForMs).coerceAtLeast(0L)
             mainHandler.postDelayed(idleRunnable, delay)
         }
+    }
+
+    private fun scheduleStatusBarMessageClear() {
+        mainHandler.removeCallbacks(statusBarMessageClearRunnable)
+        mainHandler.postDelayed(statusBarMessageClearRunnable, statusBarMessageTimeoutMs)
+    }
+
+    private fun idleTimeoutMs(): Long {
+        return state.idleTimeoutSeconds.coerceAtLeast(1).toLong() * 1_000L
+    }
+
+    private fun enterIdleIfAllowed(): Boolean {
+        val nextState = LauncherStateTransitions.showIdle(state)
+        if (nextState == state) {
+            return false
+        }
+        state = nextState
+        renderCurrentFrame()
+        return true
     }
 
     @Suppress("DEPRECATION")
@@ -1679,7 +2027,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val IDLE_TIMEOUT_MS = 25_000L
         const val LOW_BATTERY_THRESHOLD = 15
         const val homeDataPermissionRequestCode = 1001
         const val smsPermissionRequestCode = 1002
@@ -1687,6 +2034,7 @@ class MainActivity : AppCompatActivity() {
         const val rainRefreshIntervalMs: Long = 30 * 60 * 1000L
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"
+        const val statusBarMessageTimeoutMs: Long = 2_500L
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
         const val smsIntentLogTag = "SmsIntent"

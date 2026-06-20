@@ -4,10 +4,13 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextEditingController
+import com.purride.pixelui.TextAlign
+import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextInputAction
@@ -30,6 +33,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
  *
  * @param timeText    当前时间字符串（例如 "14:30"）
  * @param screenTitle 屏幕名称（例如 "HOME"、"APP DRAWER"）
+ * @param messageText 临时消息；非空时独占文字行，电量线保持显示
  * @param batteryLevel 电量百分比 0–100
  * @param isCharging  是否正在充电
  * @param chargeTick  动画帧计数，传 0 表示静态（无充电动画）
@@ -39,33 +43,82 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 fun LauncherHeader(
     timeText: String,
     screenTitle: String,
+    messageText: String = "",
     batteryLevel: Int,
     isCharging: Boolean,
     chargeTick: Int,
     theme: LauncherTheme,
     statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
-): Widget = Column(
-    children = statusBarChildren(
-        statusBarHeight = statusBarHeight,
-        row = Row(
-            children = listOf(
-                Text(timeText, style = TextStyle(color = theme.statusBar.text)),
-                Expanded(child = SizedBox(width = 0, height = 0)),
-                Text(screenTitle, style = TextStyle(color = theme.statusBar.text)),
+): Widget {
+    val message = messageText.trim()
+    val isShowingMessage = message.isNotEmpty()
+    return Column(
+        children = statusBarChildren(
+            statusBarHeight = statusBarHeight,
+            row = if (isShowingMessage) {
+                statusBarMessage(message, theme)
+            } else {
+                Padding(
+                    horizontal = LauncherHeaderLayout.horizontalPadding,
+                    child = Row(
+                        children = listOf(
+                            statusBarText(timeText, theme),
+                            Expanded(
+                                child = statusBarText(
+                                    text = screenTitle,
+                                    theme = theme,
+                                    textAlign = TextAlign.END,
+                                ),
+                            ),
+                        ),
+                        spacing = 0,
+                    ),
+                )
+            },
+            divider = BatteryDividerWidget(
+                batteryLevel = batteryLevel,
+                isCharging = isCharging,
+                chargeTick = chargeTick,
+                primaryColor = theme.statusBar.divider,
+                accentColor = theme.statusBar.charging,
             ),
-            spacing = 0,
         ),
-        divider = BatteryDividerWidget(
-            batteryLevel = batteryLevel,
-            isCharging = isCharging,
-            chargeTick = chargeTick,
-            primaryColor = theme.statusBar.divider,
-            accentColor = theme.statusBar.charging,
+        spacing = 0,
+        mainAxisSize = MainAxisSize.MIN,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    )
+}
+
+private fun statusBarText(
+    text: String,
+    theme: LauncherTheme,
+    textAlign: TextAlign = TextAlign.START,
+): Widget = Text(
+    text,
+    style = TextStyle(color = theme.statusBar.text),
+    textAlign = textAlign,
+    overflow = TextOverflow.ELLIPSIS,
+    softWrap = false,
+    maxLines = 1,
+)
+
+private fun statusBarMessage(
+    text: String,
+    theme: LauncherTheme,
+): Widget = Padding(
+    horizontal = LauncherHeaderLayout.horizontalPadding,
+    child = Row(
+        children = listOf(
+            Expanded(
+                child = statusBarText(
+                    text = text,
+                    theme = theme,
+                    textAlign = TextAlign.CENTER,
+                ),
+            ),
         ),
+        spacing = 0,
     ),
-    spacing = 0,
-    mainAxisSize = MainAxisSize.MIN,
-    crossAxisAlignment = CrossAxisAlignment.STRETCH,
 )
 
 /**
@@ -78,6 +131,7 @@ fun LauncherSearchHeader(
     state: PixelTextFieldState,
     controller: TextEditingController,
     placeholder: String,
+    messageText: String = "",
     autofocus: Boolean,
     batteryLevel: Int,
     isCharging: Boolean,
@@ -86,44 +140,55 @@ fun LauncherSearchHeader(
     statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
     onChanged: (String) -> Unit,
     onSubmitted: () -> Unit,
-): Widget = Column(
-    children = statusBarChildren(
-        statusBarHeight = statusBarHeight,
-        row = Row(
-            children = listOf(
-                Expanded(
-                    child = TextField(
-                        state = state,
-                        controller = controller,
-                        placeholder = placeholder,
-                        autofocus = autofocus,
-                        textInputAction = TextInputAction.SEARCH,
-                        style = TextFieldStyle(
-                            borderColor = null,
-                            focusedBorderColor = null,
-                            textStyle = TextStyle(color = theme.statusBar.searchText),
-                            placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
-                            padding = 0,
+): Widget {
+    val message = messageText.trim()
+    val isShowingMessage = message.isNotEmpty()
+    return Column(
+        children = statusBarChildren(
+            statusBarHeight = statusBarHeight,
+            row = if (isShowingMessage) {
+                statusBarMessage(message, theme)
+            } else {
+                Padding(
+                    horizontal = LauncherHeaderLayout.horizontalPadding,
+                    child = Row(
+                        children = listOf(
+                            Expanded(
+                                child = TextField(
+                                    state = state,
+                                    controller = controller,
+                                    placeholder = placeholder,
+                                    autofocus = autofocus,
+                                    textInputAction = TextInputAction.SEARCH,
+                                    style = TextFieldStyle(
+                                        borderColor = null,
+                                        focusedBorderColor = null,
+                                        textStyle = TextStyle(color = theme.statusBar.searchText),
+                                        placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
+                                        padding = 0,
+                                    ),
+                                    onChanged = onChanged,
+                                    onSubmitted = { onSubmitted() },
+                                ),
+                            ),
                         ),
-                        onChanged = onChanged,
-                        onSubmitted = { onSubmitted() },
+                        spacing = 0,
                     ),
-                ),
+                )
+            },
+            divider = BatteryDividerWidget(
+                batteryLevel = batteryLevel,
+                isCharging = isCharging,
+                chargeTick = chargeTick,
+                primaryColor = theme.statusBar.divider,
+                accentColor = theme.statusBar.charging,
             ),
-            spacing = 0,
         ),
-        divider = BatteryDividerWidget(
-            batteryLevel = batteryLevel,
-            isCharging = isCharging,
-            chargeTick = chargeTick,
-            primaryColor = theme.statusBar.divider,
-            accentColor = theme.statusBar.charging,
-        ),
-    ),
-    spacing = 0,
-    mainAxisSize = MainAxisSize.MIN,
-    crossAxisAlignment = CrossAxisAlignment.STRETCH,
-)
+        spacing = 0,
+        mainAxisSize = MainAxisSize.MIN,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    )
+}
 
 private fun statusBarChildren(
     statusBarHeight: Int,

@@ -36,6 +36,13 @@ class SettingsMenuModelTest {
     }
 
     @Test
+    fun nextIdleTimeoutSeconds_cyclesThroughDiscreteOptions() {
+        assertEquals(60, SettingsMenuModel.nextIdleTimeoutSeconds(30, 1))
+        assertEquals(120, SettingsMenuModel.nextIdleTimeoutSeconds(15, -1))
+        assertEquals(60, SettingsMenuModel.nextIdleTimeoutSeconds(25, 1))
+    }
+
+    @Test
     fun nextTheme_wrapsAtBothEndsAndRoundTrips() {
         val first = PixelTheme.entries.first()
         val last = PixelTheme.entries.last()
@@ -76,6 +83,7 @@ class SettingsMenuModelTest {
         assertEquals("SQUARE", SettingsMenuModel.styleLabel(PixelShape.SQUARE))
         assertEquals("CENTER", SettingsMenuModel.drawerListAlignmentLabel(DrawerListAlignment.CENTER))
         assertEquals("DOT MATRIX", SettingsMenuModel.chargeIdleEffectLabel(ChargeIdleEffect.DOT_MATRIX))
+        assertEquals("30S", SettingsMenuModel.idleTimeoutLabel(30))
     }
 
     @Test
@@ -102,21 +110,85 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun rows_includeIdleAndAdvancedActions() {
+    fun rows_includeHomeIdleDataHealthAndAdvancedActions() {
         val rows = SettingsMenuModel.rows(
             LauncherState(
+                screenUsageTimeText = "00:20",
+                screenOpenCountText = "2",
                 isIdlePageEnabled = true,
+                chargeAutoIdleEnabled = true,
+                inactivityAutoIdleEnabled = true,
+                idleTimeoutSeconds = 60,
                 chargeIdleEffect = ChargeIdleEffect.TANK,
+                hasUsageAccess = true,
+                hasLocationPermission = true,
+                hasCallLogPermission = true,
+                hasSmsReadPermission = true,
+                isDefaultSmsApp = true,
+                smsPermissionState = SmsPermissionState.READY,
+                hasPostNotificationPermission = true,
+                hasNotificationListenerAccess = true,
+                apps = listOf(AppEntry(label = "Bank", packageName = "com.bank", activityName = "BankActivity")),
             ),
         )
         val items = rows.map { it.item }
 
+        assertTrue(items.contains(SettingsMenuItem.HOME_STATUS))
         assertTrue(items.contains(SettingsMenuItem.IDLE_PAGE))
+        assertTrue(items.contains(SettingsMenuItem.CHARGE_AUTO_IDLE))
+        assertTrue(items.contains(SettingsMenuItem.INACTIVITY_AUTO_IDLE))
+        assertTrue(items.contains(SettingsMenuItem.IDLE_TIMEOUT))
         assertTrue(items.contains(SettingsMenuItem.CHARGE_IDLE_EFFECT))
+        assertTrue(items.contains(SettingsMenuItem.APP_MANAGEMENT))
+        assertTrue(items.contains(SettingsMenuItem.DATA_HEALTH))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
+        assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.CHARGE_AUTO_IDLE }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.INACTIVITY_AUTO_IDLE }.value)
+        assertEquals("60S", rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.value)
         assertEquals("TANK", rows.first { it.item == SettingsMenuItem.CHARGE_IDLE_EFFECT }.value)
+        assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.value)
+        assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
+    }
+
+    @Test
+    fun rows_areGroupedBySettingsProductAreas() {
+        val state = LauncherState(
+            isPixelGapEnabled = true,
+            apps = listOf(AppEntry(label = "Bank", packageName = "com.bank", activityName = "BankActivity")),
+        )
+        val rows = SettingsMenuModel.rows(state)
+
+        assertEquals(
+            listOf(
+                SettingsSection.DISPLAY,
+                SettingsSection.HOME,
+                SettingsSection.DRAWER,
+                SettingsSection.IDLE,
+                SettingsSection.DATA,
+                SettingsSection.ADVANCED,
+            ),
+            SettingsMenuModel.sections(state),
+        )
+        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.RESOLUTION }.section)
+        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME }.section)
+        assertEquals(SettingsSection.HOME, rows.first { it.item == SettingsMenuItem.HOME_STATUS }.section)
+        assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.section)
+        assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.section)
+        assertEquals(SettingsSection.IDLE, rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.section)
+        assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
+        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
+        assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))
+        assertEquals("HOME", SettingsMenuModel.sectionLabel(SettingsSection.HOME))
+    }
+
+    @Test
+    fun rows_marksAppManagementEmptyWhenNoAppsAreLoaded() {
+        val rows = SettingsMenuModel.rows(LauncherState(apps = emptyList()))
+
+        assertEquals("EMPTY", rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.value)
     }
 
     @Test
