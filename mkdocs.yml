@@ -10,3 +10,4 @@ validation:
     unrecognized_links: ignore
 nav:
   - 设计文档: 设计文档.md
+  - UI 规范: PixelLauncher UI规范.md

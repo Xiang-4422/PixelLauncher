@@ -296,9 +296,10 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 
 ## 9. 文档入口
 
-项目级文档只保留三份：
+项目级文档只保留当前仍会指导开发的文档：
 
 - [设计文档](docs/设计文档.md)：PixelLauncher 产品目标、app 侧架构、页面职责和开发约束
+- [PixelLauncher UI 规范](docs/PixelLauncher%20UI规范.md)：Launcher 页面、字体、间距、控件和真机问题反馈规则
 - [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md)：engine 内部架构、渲染管线、runtime 和维护规则
 - [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)：engine 接入方式、常见用法、组件与 API 速查
 
@@ -310,10 +311,11 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 
 1. 先读本 `README`
 2. 再读 [设计文档](docs/设计文档.md)
-3. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
-4. 看 [LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt) / [LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
-5. 看 [LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 和 [ui/screen](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen) 下的页面构建函数
-6. 如果涉及 engine，再读 [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md) 和 [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)
+3. 涉及 UI 时读 [PixelLauncher UI 规范](docs/PixelLauncher%20UI规范.md)
+4. 看 [MainActivity.kt](app/src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt)，建立运行时主链路认知
+5. 看 [LauncherViewModel.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherViewModel.kt) / [LauncherUiState.kt](app/src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt) 和 [LauncherStateTransitions.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt)
+6. 看 [LauncherRootHost.kt](app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt) 和 [ui/screen](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen) 下的页面构建函数
+7. 如果涉及 engine，再读 [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md) 和 [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)
 
 ## 11. 当前状态一句话总结
 
