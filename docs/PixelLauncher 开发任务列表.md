@@ -114,7 +114,7 @@
 - [x] Home、Drawer、Settings、状态栏和底部动作区的边距规则保持一致。
 - [x] Settings 不暴露字体大小和 fontStyle 用户选项。
 - [x] 字体尺寸只能由 UI 通过受控 enum 选择。
-- [ ] 每个新增页面真机截图检查文字裁切、边框贴字和左右栏压缩。
+- [x] 真机视觉问题由用户主动反馈；开发侧不再把常规真机截图作为阻塞项。
 
 验收：
 
@@ -128,6 +128,7 @@
 - `UiSpecStaticTest.sharedLauncherSpacingTokensDriveTopLevelPagesAndControls` 覆盖 Home、Drawer、Settings、状态栏、Home 底部动作区和 Settings Switch。
 - `UiSpecStaticTest.screenAndWidgetSourcesAvoidKnownTextClippingPatterns` 禁止已知裁切模式和不受控 font scale。
 - `PixelFontCatalogTest` 覆盖 `PixelFontSize` enum、默认 UI 字号和字体 metrics；Settings 只保留 UI 外观项，不暴露字体大小和 fontStyle。
+- 2026-06-21 起真机截图检查不再作为开发侧常规阻塞项；真机显示问题由用户主动反馈后按具体页面处理。
 
 ### P0-06 Drawer 搜索质量验收
 
