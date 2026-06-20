@@ -747,12 +747,14 @@ object LauncherStateTransitions {
         state: LauncherState,
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
+        selectedPixelSizePresetIndex: Int = state.selectedPixelSizePresetIndex,
         isPixelGapEnabled: Boolean = state.isPixelGapEnabled,
         selectedTheme: PixelTheme = state.selectedTheme,
     ): LauncherState {
         return state.copy(
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
+            selectedPixelSizePresetIndex = selectedPixelSizePresetIndex,
             isPixelGapEnabled = isPixelGapEnabled,
             selectedTheme = selectedTheme,
         )
@@ -868,7 +870,26 @@ object LauncherStateTransitions {
         state: LauncherState,
         message: String,
     ): LauncherState {
-        return state.copy(statusBarMessageText = message.trim())
+        return state.copy(
+            statusBarMessageText = message.trim(),
+            statusBarActionLeadingText = "",
+            statusBarActionLabel = "",
+            isStatusBarActionDanger = false,
+        )
+    }
+
+    fun updateStatusBarAction(
+        state: LauncherState,
+        leadingText: String,
+        actionLabel: String,
+        isDanger: Boolean,
+    ): LauncherState {
+        return state.copy(
+            statusBarMessageText = "",
+            statusBarActionLeadingText = leadingText.trim(),
+            statusBarActionLabel = actionLabel.trim(),
+            isStatusBarActionDanger = isDanger,
+        )
     }
 
     fun updateDataHealth(

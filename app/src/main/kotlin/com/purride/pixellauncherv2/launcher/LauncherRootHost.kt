@@ -328,6 +328,7 @@ internal class LauncherRootHost(
         uiState = uiState,
         theme = theme,
         onItemAction = callbacks.onSettingsItemAction,
+        onPixelSizePresetSelected = callbacks.onPixelSizePresetSelected,
     )
 
     private fun buildSharedStatusBar(): Widget =
@@ -337,6 +338,9 @@ internal class LauncherRootHost(
                 controller = drawerTextController,
                 placeholder = "SEARCH APP",
                 messageText = uiState.statusBarMessageText,
+                actionLeadingText = uiState.statusBarActionLeadingText,
+                actionLabel = uiState.statusBarActionLabel,
+                isActionDanger = uiState.isStatusBarActionDanger,
                 autofocus = uiState.isDrawerSearchFocused,
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
@@ -345,6 +349,7 @@ internal class LauncherRootHost(
                 statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
                 onChanged = callbacks.onDrawerQueryChanged,
                 onSubmitted = callbacks.onDrawerSubmitSearch,
+                onAction = callbacks.onStatusBarAction,
             )
         } else {
             LauncherHeader(
@@ -354,11 +359,15 @@ internal class LauncherRootHost(
                     else -> "HOME"
                 },
                 messageText = uiState.statusBarMessageText,
+                actionLeadingText = uiState.statusBarActionLeadingText,
+                actionLabel = uiState.statusBarActionLabel,
+                isActionDanger = uiState.isStatusBarActionDanger,
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
                 theme = theme,
                 statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
+                onAction = callbacks.onStatusBarAction,
             )
         }
 

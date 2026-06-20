@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.ui.widget
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
@@ -11,6 +12,8 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Row
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -40,6 +43,47 @@ fun SettingsSegmentedControlRow(
             ),
             titleFlex = 1,
             trailingFlex = 3,
+        ),
+    )
+}
+
+fun SettingsPixelSizeControl(
+    title: String,
+    valueLabel: String,
+    presetLabels: List<String>,
+    selectedPresetIndex: Int,
+    theme: LauncherTheme,
+    onPresetSelected: (Int) -> Unit,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+): Widget {
+    return Container(
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            mainAxisSize = MainAxisSize.MIN,
+            spacing = LauncherSpacing.ROW_SPACING,
+            children = listOf(
+                settingsInlineRow(
+                    title = settingsTitleCell(title = title, theme = theme),
+                    trailing = settingsValueCell(valueLabel = valueLabel, theme = theme),
+                ),
+                settingsInlineRow(
+                    title = SegmentedControl(
+                        labels = presetLabels,
+                        selectedIndex = selectedPresetIndex,
+                        onSelected = onPresetSelected,
+                    ),
+                    trailing = Row(
+                        mainAxisSize = MainAxisSize.MIN,
+                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                        spacing = SETTINGS_INLINE_COLUMN_GAP_PX,
+                        children = listOf(
+                            pixelStepButton(text = "-", theme = theme, onPressed = onDecrease),
+                            pixelStepButton(text = "+", theme = theme, onPressed = onIncrease),
+                        ),
+                    ),
+                ),
+            ),
         ),
     )
 }
@@ -181,6 +225,19 @@ private fun settingsValueCell(
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
+    ),
+)
+
+private fun pixelStepButton(
+    text: String,
+    theme: LauncherTheme,
+    onPressed: () -> Unit,
+): Widget = TextButton(
+    text = text,
+    onPressed = onPressed,
+    style = TextButtonStyle(
+        textStyle = TextStyle(color = theme.settings.itemValue),
+        padding = EdgeInsets.symmetric(horizontal = LauncherSpacing.BORDERED_CONTROL_INSET),
     ),
 )
 

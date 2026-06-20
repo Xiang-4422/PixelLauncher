@@ -1,6 +1,9 @@
 package com.purride.pixellauncherv2.ui.widget
 
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.Alignment
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
@@ -8,6 +11,8 @@ import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
@@ -44,36 +49,48 @@ fun LauncherHeader(
     timeText: String,
     screenTitle: String,
     messageText: String = "",
+    actionLeadingText: String = "",
+    actionLabel: String = "",
+    isActionDanger: Boolean = false,
     batteryLevel: Int,
     isCharging: Boolean,
     chargeTick: Int,
     theme: LauncherTheme,
     statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
+    onAction: (() -> Unit)? = null,
 ): Widget {
     val message = messageText.trim()
+    val action = actionLabel.trim()
     val isShowingMessage = message.isNotEmpty()
-    return Column(
+    val isShowingAction = action.isNotEmpty()
+    val header = Column(
         children = statusBarChildren(
             statusBarHeight = statusBarHeight,
-            row = if (isShowingMessage) {
-                statusBarMessage(message, theme)
-            } else {
-                Padding(
-                    horizontal = LauncherHeaderLayout.horizontalPadding,
-                    child = Row(
-                        children = listOf(
-                            statusBarText(timeText, theme),
-                            Expanded(
-                                child = statusBarText(
-                                    text = screenTitle,
-                                    theme = theme,
-                                    textAlign = TextAlign.END,
+            row = when {
+                isShowingAction -> statusBarAction(
+                    leadingText = actionLeadingText,
+                    actionLabel = action,
+                    onAction = onAction,
+                )
+                isShowingMessage -> statusBarMessage(message, theme)
+                else -> {
+                    Padding(
+                        horizontal = LauncherHeaderLayout.horizontalPadding,
+                        child = Row(
+                            children = listOf(
+                                statusBarText(timeText, theme),
+                                Expanded(
+                                    child = statusBarText(
+                                        text = screenTitle,
+                                        theme = theme,
+                                        textAlign = TextAlign.END,
+                                    ),
                                 ),
                             ),
+                            spacing = 0,
                         ),
-                        spacing = 0,
-                    ),
-                )
+                    )
+                }
             },
             divider = BatteryDividerWidget(
                 batteryLevel = batteryLevel,
@@ -87,6 +104,14 @@ fun LauncherHeader(
         mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
     )
+    return if (isShowingAction) {
+        Container(
+            fillColor = statusBarActionBackgroundColor(isActionDanger, theme),
+            child = header,
+        )
+    } else {
+        header
+    }
 }
 
 private fun statusBarText(
@@ -121,6 +146,41 @@ private fun statusBarMessage(
     ),
 )
 
+private fun statusBarAction(
+    leadingText: String,
+    actionLabel: String,
+    onAction: (() -> Unit)?,
+): Widget {
+    val actionTextStyle = TextStyle(color = PixelColor.White)
+    return Container(
+        child = Padding(
+            horizontal = LauncherHeaderLayout.horizontalPadding,
+            child = Row(
+                children = listOf(
+                    Text(
+                        leadingText,
+                        style = actionTextStyle,
+                        overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
+                    ),
+                    Expanded(
+                        child = Container(
+                            alignment = Alignment.CENTER_END,
+                            child = TextButton(
+                                text = actionLabel,
+                                onPressed = onAction,
+                                style = TextButtonStyle(textStyle = actionTextStyle),
+                            ),
+                        ),
+                    ),
+                ),
+                spacing = 0,
+            ),
+        ),
+    )
+}
+
 /**
  * 同一套 Launcher 状态栏的搜索态。
  *
@@ -132,6 +192,9 @@ fun LauncherSearchHeader(
     controller: TextEditingController,
     placeholder: String,
     messageText: String = "",
+    actionLeadingText: String = "",
+    actionLabel: String = "",
+    isActionDanger: Boolean = false,
     autofocus: Boolean,
     batteryLevel: Int,
     isCharging: Boolean,
@@ -140,41 +203,50 @@ fun LauncherSearchHeader(
     statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
     onChanged: (String) -> Unit,
     onSubmitted: () -> Unit,
+    onAction: (() -> Unit)? = null,
 ): Widget {
     val message = messageText.trim()
+    val action = actionLabel.trim()
     val isShowingMessage = message.isNotEmpty()
-    return Column(
+    val isShowingAction = action.isNotEmpty()
+    val header = Column(
         children = statusBarChildren(
             statusBarHeight = statusBarHeight,
-            row = if (isShowingMessage) {
-                statusBarMessage(message, theme)
-            } else {
-                Padding(
-                    horizontal = LauncherHeaderLayout.horizontalPadding,
-                    child = Row(
-                        children = listOf(
-                            Expanded(
-                                child = TextField(
-                                    state = state,
-                                    controller = controller,
-                                    placeholder = placeholder,
-                                    autofocus = autofocus,
-                                    textInputAction = TextInputAction.SEARCH,
-                                    style = TextFieldStyle(
-                                        borderColor = null,
-                                        focusedBorderColor = null,
-                                        textStyle = TextStyle(color = theme.statusBar.searchText),
-                                        placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
-                                        padding = 0,
+            row = when {
+                isShowingAction -> statusBarAction(
+                    leadingText = actionLeadingText,
+                    actionLabel = action,
+                    onAction = onAction,
+                )
+                isShowingMessage -> statusBarMessage(message, theme)
+                else -> {
+                    Padding(
+                        horizontal = LauncherHeaderLayout.horizontalPadding,
+                        child = Row(
+                            children = listOf(
+                                Expanded(
+                                    child = TextField(
+                                        state = state,
+                                        controller = controller,
+                                        placeholder = placeholder,
+                                        autofocus = autofocus,
+                                        textInputAction = TextInputAction.SEARCH,
+                                        style = TextFieldStyle(
+                                            borderColor = null,
+                                            focusedBorderColor = null,
+                                            textStyle = TextStyle(color = theme.statusBar.searchText),
+                                            placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
+                                            padding = 0,
+                                        ),
+                                        onChanged = onChanged,
+                                        onSubmitted = { onSubmitted() },
                                     ),
-                                    onChanged = onChanged,
-                                    onSubmitted = { onSubmitted() },
                                 ),
                             ),
+                            spacing = 0,
                         ),
-                        spacing = 0,
-                    ),
-                )
+                    )
+                }
             },
             divider = BatteryDividerWidget(
                 batteryLevel = batteryLevel,
@@ -188,6 +260,23 @@ fun LauncherSearchHeader(
         mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
     )
+    return if (isShowingAction) {
+        Container(
+            fillColor = statusBarActionBackgroundColor(isActionDanger, theme),
+            child = header,
+        )
+    } else {
+        header
+    }
+}
+
+private fun statusBarActionBackgroundColor(
+    isDanger: Boolean,
+    theme: LauncherTheme,
+): PixelColor = if (isDanger) {
+    PixelColor.fromRgb(255, 0, 0)
+} else {
+    theme.surface.panel
 }
 
 private fun statusBarChildren(

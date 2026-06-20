@@ -49,6 +49,9 @@ class UiSpecStaticTest {
         val controlsSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
             .readText()
+        val mainActivitySource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
+            .readText()
         val switchSource = Regex(
             """private fun SettingsSwitch\([\s\S]*?\n}\n\nprivate fun switchSegment""",
         ).find(controlsSource)?.value.orEmpty()
@@ -159,7 +162,7 @@ class UiSpecStaticTest {
     }
 
     @Test
-    fun pixelAndGapSettingsUseSwitchersInsteadOfSliders() {
+    fun pixelAndGapSettingsUseTwoLineControlAndSwitchersInsteadOfSliders() {
         val moduleRoot = resolveModuleRoot()
         val screenSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
@@ -167,17 +170,29 @@ class UiSpecStaticTest {
         val controlsSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
             .readText()
+        val mainActivitySource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
+            .readText()
 
         assertTrue(
-            "PIXEL must use engine SegmentedControl and GAP must use the ON/OFF switcher.",
-            Regex("""SettingsSegmentedControlRow\(\s*title = "PIXEL"""").containsMatchIn(screenSource) &&
+            "PIXEL must use the two-line size control and GAP must use the ON/OFF switcher.",
+            Regex("""SettingsPixelSizeControl\(\s*title = "PIXEL"""").containsMatchIn(screenSource) &&
                 Regex("""SettingsSwitchRow\(\s*title = "GAP"""").containsMatchIn(screenSource),
         )
         assertTrue(
-            "The PIXEL wrapper must keep its title and all options in one inline SegmentedControl row.",
-            controlsSource.contains("SegmentedControl(") &&
-                !controlsSource.contains("labels.chunked(") &&
-                controlsSource.contains("trailingFlex = 3"),
+            "The PIXEL control must show value, S/M/L presets, and manual +/- buttons.",
+            screenSource.contains("valueLabel = selectedDotSizePx.toString()") &&
+                screenSource.contains("presetLabels = SettingsMenuModel.pixelSizePresetLabels") &&
+                screenSource.contains("selectedPresetIndex = selectedPixelSizePresetIndex") &&
+                controlsSource.contains("fun SettingsPixelSizeControl(") &&
+                controlsSource.contains("SegmentedControl(") &&
+                controlsSource.contains("pixelStepButton(text = \"-\"") &&
+                controlsSource.contains("pixelStepButton(text = \"+\""),
+        )
+        assertTrue(
+            "PIXEL +/- buttons must nudge the current value by 1 instead of cycling preset options.",
+            mainActivitySource.contains("newDotSizePx = (s.selectedDotSizePx + direction).coerceAtLeast(1)") &&
+                !mainActivitySource.contains("SettingsMenuModel.nextResolution(s.selectedDotSizePx"),
         )
         assertTrue(
             "Settings must not retain the removed slider control or ratio preview state.",
@@ -237,8 +252,20 @@ class UiSpecStaticTest {
             .readText()
 
         val offenders = listOfNotNull(
-            if (!headerSource.contains("row = if (isShowingMessage)")) {
-                "status bar row must switch to the transient message"
+            if (!headerSource.contains("row = when {")) {
+                "status bar row must switch transient states before normal text"
+            } else {
+                null
+            },
+            if (!headerSource.contains("isShowingAction -> statusBarAction(")) {
+                "status bar action must take precedence over normal text and message rows"
+            } else {
+                null
+            },
+            if (!headerSource.contains("fillColor = statusBarActionBackgroundColor(isActionDanger, theme)") ||
+                !headerSource.contains("PixelColor.fromRgb(255, 0, 0)")
+            ) {
+                "status bar action background must cover the whole header in neutral red"
             } else {
                 null
             },

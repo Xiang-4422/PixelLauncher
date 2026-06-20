@@ -27,6 +27,8 @@ data class LauncherCallbacks(
 
     // ── SETTINGS ──────────────────────────────────────────────────────────────
     val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,
+    val onPixelSizePresetSelected: (Int) -> Unit,
+    val onStatusBarAction: () -> Unit,
     val onAppEditorPrevious: () -> Unit,
     val onAppEditorNext: () -> Unit,
     val onAppEditorNameChanged: (String) -> Unit,

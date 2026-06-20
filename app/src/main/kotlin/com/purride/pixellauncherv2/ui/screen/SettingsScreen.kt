@@ -23,9 +23,9 @@ import com.purride.pixellauncherv2.launcher.SettingsSection
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
+import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
-import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedControlRow
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -44,6 +44,7 @@ class SettingsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
     private val onItemAction: (SettingsMenuItem, Int) -> Unit,
+    private val onPixelSizePresetSelected: (Int) -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -79,21 +80,17 @@ class SettingsScreen(
         }
 
         private fun LauncherUiState.toSettingsWidgets(t: LauncherTheme): List<Widget> = buildList {
-            val resolutionOptions = SettingsMenuModel.resolutionOptions()
-            val selectedResolutionIndex = SettingsMenuModel.resolutionIndex(selectedDotSizePx)
             addSection(SettingsSection.DISPLAY, t)
             add(
-                SettingsSegmentedControlRow(
+                SettingsPixelSizeControl(
                     title = "PIXEL",
-                    labels = resolutionOptions.map(Int::toString),
-                    selectedIndex = selectedResolutionIndex,
+                    valueLabel = selectedDotSizePx.toString(),
+                    presetLabels = SettingsMenuModel.pixelSizePresetLabels,
+                    selectedPresetIndex = selectedPixelSizePresetIndex,
                     theme = t,
-                    onSelected = { index ->
-                        val direction = index - selectedResolutionIndex
-                        if (direction != 0) {
-                            widget.onItemAction(SettingsMenuItem.RESOLUTION, direction)
-                        }
-                    },
+                    onPresetSelected = widget.onPixelSizePresetSelected,
+                    onDecrease = { widget.onItemAction(SettingsMenuItem.RESOLUTION, -1) },
+                    onIncrease = { widget.onItemAction(SettingsMenuItem.RESOLUTION, +1) },
                 ),
             )
             add(

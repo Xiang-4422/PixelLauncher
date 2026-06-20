@@ -119,6 +119,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var windowModeController: WindowModeController
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
     private var selectedTheme: PixelTheme = PixelTheme.DAY
+    private var pendingPixelRollbackDotSizePx: Int? = null
+    private var pendingPixelRollbackPresetIndex: Int = -1
+    private var pendingPixelCancelDeadlineUptimeMs: Long = 0L
     // Single source of truth lives in [launcherViewModel]; `state` delegates onto it,
     // so every existing `state = transition(state)` reducer call reads/writes there.
     private var state: LauncherState
@@ -226,6 +229,12 @@ class MainActivity : AppCompatActivity() {
         renderCurrentFrame()
     }
 
+    private val pixelChangeCancelTicker = object : Runnable {
+        override fun run() {
+            updatePixelChangeCancelStatusBar()
+        }
+    }
+
     /**
      * 启动整个 launcher 运行时，恢复设置，接线仓库与渲染链路，并完成首次渲染。
      */
@@ -260,6 +269,7 @@ class MainActivity : AppCompatActivity() {
             state = state,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
+            selectedPixelSizePresetIndex = appearanceSettings.pixelSizePresetIndex,
             isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
         )
@@ -317,6 +327,8 @@ class MainActivity : AppCompatActivity() {
                 onDrawerAppMenuRefresh = ::onDrawerAppMenuRefresh,
                 onDrawerAppMenuDismiss = ::onDrawerAppMenuDismiss,
                 onSettingsItemAction = ::onSettingsItemAction,
+                onPixelSizePresetSelected = ::onPixelSizePresetSelected,
+                onStatusBarAction = ::onStatusBarAction,
                 onAppEditorPrevious = ::onAppEditorPrevious,
                 onAppEditorNext = ::onAppEditorNext,
                 onAppEditorNameChanged = ::onAppEditorNameChanged,
@@ -484,6 +496,10 @@ class MainActivity : AppCompatActivity() {
         mainHandler.removeCallbacks(animationTicker)
         mainHandler.removeCallbacks(idleRunnable)
         mainHandler.removeCallbacks(statusBarMessageClearRunnable)
+        mainHandler.removeCallbacks(pixelChangeCancelTicker)
+        pendingPixelRollbackDotSizePx = null
+        pendingPixelRollbackPresetIndex = -1
+        pendingPixelCancelDeadlineUptimeMs = 0L
         state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
         launchRunnable?.let(mainHandler::removeCallbacks)
         launchRunnable = null
@@ -860,11 +876,9 @@ class MainActivity : AppCompatActivity() {
     private fun onSettingsItemAction(item: SettingsMenuItem, direction: Int) {
         val s = state
         when (item) {
-            SettingsMenuItem.RESOLUTION -> applyAppearance(
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = SettingsMenuModel.nextResolution(s.selectedDotSizePx, direction, screenProfile),
-                newPixelGapEnabled = s.isPixelGapEnabled,
-                newTheme = s.selectedTheme,
+            SettingsMenuItem.RESOLUTION -> applyPixelSizeChange(
+                newDotSizePx = (s.selectedDotSizePx + direction).coerceAtLeast(1),
+                newPresetIndex = -1,
             )
             SettingsMenuItem.PIXEL_GAP -> {
                 val enabled = !s.isPixelGapEnabled
@@ -928,6 +942,19 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
+    }
+
+    private fun onStatusBarAction() {
+        if (pendingPixelRollbackDotSizePx != null) {
+            cancelPendingPixelSizeChange()
+        }
+    }
+
+    private fun onPixelSizePresetSelected(index: Int) {
+        applyPixelSizeChange(
+            newDotSizePx = SettingsMenuModel.pixelSizePresetValue(index),
+            newPresetIndex = index,
+        )
     }
 
     // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
@@ -1659,9 +1686,33 @@ class MainActivity : AppCompatActivity() {
 
     private fun scrollSmsDetailBy(deltaPx: Int) = Unit
 
+    private fun applyPixelSizeChange(
+        newDotSizePx: Int,
+        newPresetIndex: Int,
+    ) {
+        val currentDotSizePx = state.selectedDotSizePx
+        val currentPresetIndex = state.selectedPixelSizePresetIndex
+        if (newDotSizePx == currentDotSizePx && newPresetIndex == currentPresetIndex) {
+            return
+        }
+        if (pendingPixelRollbackDotSizePx == null) {
+            pendingPixelRollbackDotSizePx = currentDotSizePx
+            pendingPixelRollbackPresetIndex = currentPresetIndex
+        }
+        applyAppearance(
+            newPixelShape = state.selectedPixelShape,
+            newDotSizePx = newDotSizePx,
+            newPixelSizePresetIndex = newPresetIndex,
+            newPixelGapEnabled = state.isPixelGapEnabled,
+            newTheme = state.selectedTheme,
+        )
+        startPixelChangeCancelCountdown()
+    }
+
     private fun applyAppearance(
         newPixelShape: PixelShape,
         newDotSizePx: Int,
+        newPixelSizePresetIndex: Int = state.selectedPixelSizePresetIndex,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
     ) {
@@ -1670,6 +1721,7 @@ class MainActivity : AppCompatActivity() {
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
+            pixelSizePresetIndex = newPixelSizePresetIndex,
             pixelGapEnabled = effectivePixelGapEnabled,
             theme = newTheme,
         )
@@ -1677,6 +1729,7 @@ class MainActivity : AppCompatActivity() {
             state = state,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
+            selectedPixelSizePresetIndex = newPixelSizePresetIndex,
             isPixelGapEnabled = effectivePixelGapEnabled,
             selectedTheme = newTheme,
         )
@@ -1685,6 +1738,59 @@ class MainActivity : AppCompatActivity() {
         val heightPx = launcherRootHost.rootView.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
         val screenProfileChanged = updateScreenProfile(widthPx, heightPx)
         refreshDerivedUiState(render = !screenProfileChanged)
+    }
+
+    private fun startPixelChangeCancelCountdown() {
+        pendingPixelCancelDeadlineUptimeMs = SystemClock.uptimeMillis() + pixelChangeCancelTimeoutMs
+        mainHandler.removeCallbacks(statusBarMessageClearRunnable)
+        mainHandler.removeCallbacks(pixelChangeCancelTicker)
+        updatePixelChangeCancelStatusBar()
+    }
+
+    private fun updatePixelChangeCancelStatusBar() {
+        if (pendingPixelRollbackDotSizePx == null) {
+            return
+        }
+        val remainingMs = pendingPixelCancelDeadlineUptimeMs - SystemClock.uptimeMillis()
+        if (remainingMs <= 0L) {
+            clearPendingPixelSizeChange()
+            return
+        }
+        val remainingSeconds = ((remainingMs + 999L) / 1_000L).coerceIn(1L, 5L)
+        state = LauncherStateTransitions.updateStatusBarAction(
+            state = state,
+            leadingText = "${remainingSeconds}s",
+            actionLabel = "CANCEL",
+            isDanger = true,
+        )
+        renderCurrentFrame()
+        mainHandler.postDelayed(pixelChangeCancelTicker, 1_000L)
+    }
+
+    private fun cancelPendingPixelSizeChange() {
+        val rollbackDotSizePx = pendingPixelRollbackDotSizePx ?: return
+        val rollbackPresetIndex = pendingPixelRollbackPresetIndex
+        clearPendingPixelSizeChange(render = false)
+        applyAppearance(
+            newPixelShape = state.selectedPixelShape,
+            newDotSizePx = rollbackDotSizePx,
+            newPixelSizePresetIndex = rollbackPresetIndex,
+            newPixelGapEnabled = state.isPixelGapEnabled,
+            newTheme = state.selectedTheme,
+        )
+        state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
+        renderCurrentFrame()
+    }
+
+    private fun clearPendingPixelSizeChange(render: Boolean = true) {
+        mainHandler.removeCallbacks(pixelChangeCancelTicker)
+        pendingPixelRollbackDotSizePx = null
+        pendingPixelRollbackPresetIndex = -1
+        pendingPixelCancelDeadlineUptimeMs = 0L
+        state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
+        if (render) {
+            renderCurrentFrame()
+        }
     }
 
     private fun applyUiBehavior(
@@ -2104,6 +2210,7 @@ class MainActivity : AppCompatActivity() {
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"
         const val statusBarMessageTimeoutMs: Long = 2_500L
+        const val pixelChangeCancelTimeoutMs: Long = 5_000L
         const val ACTION_NOTIFICATION_SETTINGS = "android.settings.NOTIFICATION_SETTINGS"
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"

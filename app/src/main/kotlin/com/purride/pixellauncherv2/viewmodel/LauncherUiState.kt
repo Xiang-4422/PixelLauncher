@@ -69,6 +69,7 @@ data class LauncherUiState(
     // ── Appearance (old render types; migrated to pixel-engine in Phase 1+) ───
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
+    val selectedPixelSizePresetIndex: Int = -1,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
 
@@ -106,6 +107,9 @@ data class LauncherUiState(
     val screenUsageTimeText: String = "--:--",
     val screenOpenCountText: String = "--",
     val statusBarMessageText: String = "",
+    val statusBarActionLeadingText: String = "",
+    val statusBarActionLabel: String = "",
+    val isStatusBarActionDanger: Boolean = false,
     val hasUsageAccess: Boolean = false,
     val hasLocationPermission: Boolean = false,
     val hasCallLogPermission: Boolean = false,
