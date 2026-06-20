@@ -32,6 +32,7 @@ internal class RenderSurface(
     private var contentPaddingRight: Int = 0,
     private var contentPaddingBottom: Int = 0,
     private var onClick: (() -> Unit)? = null,
+    private var onLongPress: (() -> Unit)? = null,
     private var preserveChildMinConstraints: Boolean = false,
     private var tightChildWidth: Boolean = false,
     private var tightChildHeight: Boolean = false,
@@ -81,6 +82,7 @@ internal class RenderSurface(
         contentPaddingRight: Int = 0,
         contentPaddingBottom: Int = 0,
         onClick: (() -> Unit)? = null,
+        onLongPress: (() -> Unit)? = null,
         preserveChildMinConstraints: Boolean = false,
         tightChildWidth: Boolean = false,
         tightChildHeight: Boolean = false,
@@ -120,6 +122,7 @@ internal class RenderSurface(
             this.contentPaddingRight == contentPaddingRight &&
             this.contentPaddingBottom == contentPaddingBottom &&
             this.onClick == onClick &&
+            this.onLongPress == onLongPress &&
             this.preserveChildMinConstraints == preserveChildMinConstraints &&
             this.tightChildWidth == tightChildWidth &&
             this.tightChildHeight == tightChildHeight &&
@@ -158,6 +161,7 @@ internal class RenderSurface(
         this.contentPaddingRight = contentPaddingRight
         this.contentPaddingBottom = contentPaddingBottom
         this.onClick = onClick
+        this.onLongPress = onLongPress
         this.preserveChildMinConstraints = preserveChildMinConstraints
         this.tightChildWidth = tightChildWidth
         this.tightChildHeight = tightChildHeight
@@ -517,7 +521,7 @@ internal class RenderSurface(
             localY = localY - childOffsetY,
             result = result,
         )
-        if (onClick != null) {
+        if (onClick != null || onLongPress != null) {
             result.add(this)
         }
     }
@@ -530,7 +534,7 @@ internal class RenderSurface(
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
     ) {
-        onClick?.let { clickHandler ->
+        if (onClick != null || onLongPress != null) {
             targets += PixelClickTarget(
                 bounds = PixelRect(
                     left = offsetX,
@@ -538,7 +542,8 @@ internal class RenderSurface(
                     width = size.width,
                     height = size.height,
                 ),
-                onClick = clickHandler,
+                onClick = onClick ?: {},
+                onLongPress = onLongPress,
                 source = this,
             )
         }

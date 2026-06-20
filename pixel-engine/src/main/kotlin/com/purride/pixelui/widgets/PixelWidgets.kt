@@ -192,9 +192,10 @@ public fun Spacer(
 public fun GestureDetector(
     child: Widget,
     onTap: () -> Unit,
+    onLongPress: (() -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    return GestureDetectorWidget(child = child, onTap = onTap, key = key)
+    return GestureDetectorWidget(child = child, onTap = onTap, onLongPress = onLongPress, key = key)
 }
 
 /**

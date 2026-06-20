@@ -29,7 +29,7 @@ import com.purride.pixelcore.PixelColor
  * MS  16
  * ```
  *
- * 视觉规格：黑底（半透明）边框 +1px padding + 2 行小字。整块约 14×9 像素。
+ * 视觉规格：黑底（半透明）边框 +2px padding + 2 行小字。
  * 文本颜色固定为亮黄绿（不依赖 theme），便于在任意背景上识别。
  *
  * 不在 paint 热路径产生持久分配——每次调用只构造少量临时 widget。
@@ -69,16 +69,29 @@ public fun PixelDebugOverlay(
         fillColor = bg,
         borderColor = border,
         child = Padding(
-            all = 1,
+            all = DEBUG_OVERLAY_PADDING_PX,
             child = Column(
                 crossAxisAlignment = CrossAxisAlignment.START,
                 mainAxisSize = MainAxisSize.MIN,
-                children = lines.map { line -> Text(line, style = style) },
+                children = lines.map { line -> debugOverlayLine(line, style) },
             ),
         ),
         key = key,
     )
 }
+
+private const val DEBUG_OVERLAY_PADDING_PX = 2
+
+private fun debugOverlayLine(
+    line: String,
+    style: TextStyle,
+): Widget = Text(
+    line,
+    style = style,
+    overflow = TextOverflow.ELLIPSIS,
+    softWrap = false,
+    maxLines = 1,
+)
 
 private fun formatKilobytes(bytes: Long): Long {
     return (bytes.coerceAtLeast(0L) + 1023L) / 1024L

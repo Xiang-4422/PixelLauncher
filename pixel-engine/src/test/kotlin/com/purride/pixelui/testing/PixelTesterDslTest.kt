@@ -16,6 +16,7 @@ import com.purride.pixelui.FittedBox
 import com.purride.pixelui.CustomScrollView
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.Gap
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparatedBuilder
@@ -92,6 +93,30 @@ class PixelTesterDslTest {
         gesture.up()
 
         assertEquals(1, tapped)
+        tester.dispose()
+    }
+
+    @Test
+    fun longPressInvokesGestureDetectorLongPressCallback() {
+        val tester = PixelTester()
+        var tapped = 0
+        var longPressed = 0
+
+        tester.pumpWidget(
+            widget = GestureDetector(
+                child = Text("OPEN"),
+                onTap = { tapped++ },
+                onLongPress = { longPressed++ },
+                key = "gesture",
+            ),
+            logicalWidth = 32,
+            logicalHeight = 10,
+        )
+
+        tester.longPress(find.byKey("gesture"))
+
+        assertEquals(0, tapped)
+        assertEquals(1, longPressed)
         tester.dispose()
     }
 

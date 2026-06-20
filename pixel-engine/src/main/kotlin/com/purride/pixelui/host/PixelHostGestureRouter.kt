@@ -361,7 +361,14 @@ internal class PixelHostGestureRouter(
                 recycleVelocityTracker()
                 return true
             }
-            host.resolveClickTarget(logicalPoint.first, logicalPoint.second)?.onClick?.invoke()
+            val clickTarget = host.resolveClickTarget(logicalPoint.first, logicalPoint.second)
+            val pressedMs = event.eventTime - event.downTime
+            if (pressedMs >= LONG_PRESS_TIMEOUT_MS && clickTarget?.onLongPress != null) {
+                host.hostBridge?.performHapticFeedback(PixelHapticType.LONG_PRESS)
+                clickTarget.onLongPress.invoke()
+            } else {
+                clickTarget?.onClick?.invoke()
+            }
             host.invalidate()
         }
         host.candidateTextInputTarget = null

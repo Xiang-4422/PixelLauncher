@@ -224,7 +224,7 @@ internal data class OutlinedButtonWidget(
         val content = Container(
             fillColor = effectiveFill,
             borderColor = effectiveBorder,
-            padding = EdgeInsets.all(1),
+            padding = EdgeInsets.all(OUTLINED_BUTTON_PADDING_PX),
             alignment = style.alignment,
             key = key,
             child = Text(
@@ -251,4 +251,5 @@ internal data class OutlinedButtonWidget(
     }
 }
 
+private const val OUTLINED_BUTTON_PADDING_PX: Int = 2
 private val DefaultFocusBorderColor: PixelColor = PixelColor.fromRgb(255, 200, 0)

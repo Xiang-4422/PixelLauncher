@@ -12,12 +12,14 @@ import com.purride.pixelui.internal.toPixelAlignment
 internal data class GestureDetectorWidget(
     override val child: Widget,
     val onTap: () -> Unit,
+    val onLongPress: (() -> Unit)?,
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderSurface(
             alignment = PixelAlignment.TOP_START,
             onClick = onTap,
+            onLongPress = onLongPress,
             preserveChildMinConstraints = true,
         )
     }
@@ -26,6 +28,7 @@ internal data class GestureDetectorWidget(
         (renderObject as RenderSurface).updateSurface(
             alignment = PixelAlignment.TOP_START,
             onClick = onTap,
+            onLongPress = onLongPress,
             preserveChildMinConstraints = true,
         )
     }

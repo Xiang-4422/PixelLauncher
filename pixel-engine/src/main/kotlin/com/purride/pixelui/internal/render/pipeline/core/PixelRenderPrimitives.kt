@@ -132,6 +132,7 @@ internal data class PixelConstraints(
 internal data class PixelClickTarget(
     val bounds: PixelRect,
     val onClick: () -> Unit,
+    val onLongPress: (() -> Unit)? = null,
     val source: RenderObject? = null,
 )
 

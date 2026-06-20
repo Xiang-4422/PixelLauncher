@@ -30,7 +30,7 @@ public fun ListTile(
     }
     val content = Container(
         child = Row(children = rowChildren, spacing = 2, crossAxisAlignment = CrossAxisAlignment.CENTER),
-        padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+        padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
         fillColor = if (enabled) null else PixelColor.fromArgb(80, 80, 80, 80),
         key = key,
     )
@@ -226,9 +226,11 @@ public fun SegmentedControl(
                             label,
                             style = TextStyle(color = if (index == selectedIndex) PixelColor.Black else PixelColor.White),
                             overflow = PixelTextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
                         ),
                         horizontal = 2,
-                        vertical = 1,
+                        vertical = TEXT_CONTAINER_PADDING_PX,
                     ),
                 ),
                 onTap = { onSelected(index) },
@@ -314,7 +316,13 @@ public fun AppScaffold(
 ): Widget {
     val children = buildList {
         if (title != null) {
-            add(Container(padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1), borderColor = PixelColor.White, child = title))
+            add(
+                Container(
+                    padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
+                    borderColor = PixelColor.White,
+                    child = title,
+                ),
+            )
             add(Gap(height = 1))
         }
         add(Expanded(child = body))
@@ -330,6 +338,8 @@ private fun Int.floorMod(divisor: Int): Int {
     val remainder = this % divisor
     return if (remainder < 0) remainder + divisor else remainder
 }
+
+private const val TEXT_CONTAINER_PADDING_PX = 2
 
 private fun snackbarText(
     message: String,

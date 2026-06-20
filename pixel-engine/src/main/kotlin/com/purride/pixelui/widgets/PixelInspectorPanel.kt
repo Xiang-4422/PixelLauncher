@@ -113,18 +113,18 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
         val shown = targets.take(widget.maxTreeLines)
         val overflow = targets.size - shown.size
         val children = buildList {
-            add(Text("TARGET BOUNDS", style = bodyStyle))
-            if (shown.isEmpty()) add(Text("<empty>", style = bodyStyle))
+            add(inspectorLineText("TARGET BOUNDS", bodyStyle))
+            if (shown.isEmpty()) add(inspectorLineText("<empty>", bodyStyle))
             shown.forEach { target ->
                 val line = "${target.kind.name} ${target.left},${target.top} " +
                     "${target.width}x${target.height} ${target.detail}".trimEnd()
-                add(Text(line, style = if (target == selectedTarget) selectedTargetStyle else bodyStyle))
+                add(inspectorLineText(line, if (target == selectedTarget) selectedTargetStyle else bodyStyle))
                 if (target == selectedTarget) {
-                    add(Text("E ${target.elementPath ?: "<unlinked>"}", style = selectedTargetStyle))
-                    add(Text("R ${target.renderPath ?: "<unlinked>"}", style = selectedTargetStyle))
+                    add(inspectorLineText("E ${target.elementPath ?: "<unlinked>"}", selectedTargetStyle))
+                    add(inspectorLineText("R ${target.renderPath ?: "<unlinked>"}", selectedTargetStyle))
                 }
             }
-            if (overflow > 0) add(Text("... +$overflow", style = bodyStyle))
+            if (overflow > 0) add(inspectorLineText("... +$overflow", bodyStyle))
         }
         return Column(
             crossAxisAlignment = CrossAxisAlignment.START,
@@ -150,13 +150,24 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
             crossAxisAlignment = CrossAxisAlignment.START,
             spacing = 1,
             children = lines.map { line ->
-                Text(line, style = bodyStyle, maxLines = 1, overflow = TextOverflow.CLIP)
+                inspectorLineText(line, bodyStyle)
             },
         )
     }
 
     private fun flag(value: Boolean): Int = if (value) 1 else 0
 }
+
+private fun inspectorLineText(
+    text: String,
+    style: TextStyle,
+): Widget = Text(
+    text,
+    style = style,
+    maxLines = 1,
+    overflow = TextOverflow.ELLIPSIS,
+    softWrap = false,
+)
 
 private val headerStyle = TextStyle(color = PixelColor.fromRgb(200, 255, 64))
 private val bodyStyle = TextStyle(color = PixelColor.fromRgb(180, 180, 180))
