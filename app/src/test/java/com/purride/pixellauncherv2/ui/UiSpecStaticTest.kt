@@ -195,6 +195,15 @@ class UiSpecStaticTest {
                 !mainActivitySource.contains("SettingsMenuModel.nextResolution(s.selectedDotSizePx"),
         )
         assertTrue(
+            "PIXEL and GAP changes must preview first, persist only after CONFIRM, and restore on timeout.",
+            mainActivitySource.contains("SettingsMenuItem.PIXEL_GAP ->") &&
+                mainActivitySource.contains("applyPixelAppearancePreview(") &&
+                mainActivitySource.contains("confirmPendingPixelAppearanceChange()") &&
+                mainActivitySource.contains("actionLabel = \"CONFIRM\"") &&
+                mainActivitySource.contains("restorePendingPixelAppearanceChange()") &&
+                !mainActivitySource.contains("actionLabel = \"CANCEL\""),
+        )
+        assertTrue(
             "Settings must not retain the removed slider control or ratio preview state.",
             !screenSource.contains("SettingsValueSlider") &&
                 !controlsSource.contains("fun SettingsValueSlider") &&

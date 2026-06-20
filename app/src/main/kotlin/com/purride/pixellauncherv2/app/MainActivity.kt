@@ -119,9 +119,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var windowModeController: WindowModeController
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
     private var selectedTheme: PixelTheme = PixelTheme.DAY
-    private var pendingPixelRollbackDotSizePx: Int? = null
-    private var pendingPixelRollbackPresetIndex: Int = -1
-    private var pendingPixelCancelDeadlineUptimeMs: Long = 0L
+    private var pendingPixelAppearanceBaseline: PixelAppearanceBaseline? = null
+    private var pendingPixelConfirmDeadlineUptimeMs: Long = 0L
     // Single source of truth lives in [launcherViewModel]; `state` delegates onto it,
     // so every existing `state = transition(state)` reducer call reads/writes there.
     private var state: LauncherState
@@ -229,9 +228,9 @@ class MainActivity : AppCompatActivity() {
         renderCurrentFrame()
     }
 
-    private val pixelChangeCancelTicker = object : Runnable {
+    private val pixelChangeConfirmTicker = object : Runnable {
         override fun run() {
-            updatePixelChangeCancelStatusBar()
+            updatePixelChangeConfirmStatusBar()
         }
     }
 
@@ -496,10 +495,8 @@ class MainActivity : AppCompatActivity() {
         mainHandler.removeCallbacks(animationTicker)
         mainHandler.removeCallbacks(idleRunnable)
         mainHandler.removeCallbacks(statusBarMessageClearRunnable)
-        mainHandler.removeCallbacks(pixelChangeCancelTicker)
-        pendingPixelRollbackDotSizePx = null
-        pendingPixelRollbackPresetIndex = -1
-        pendingPixelCancelDeadlineUptimeMs = 0L
+        mainHandler.removeCallbacks(pixelChangeConfirmTicker)
+        restorePendingPixelAppearanceChange(render = false)
         state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
         launchRunnable?.let(mainHandler::removeCallbacks)
         launchRunnable = null
@@ -882,25 +879,32 @@ class MainActivity : AppCompatActivity() {
             )
             SettingsMenuItem.PIXEL_GAP -> {
                 val enabled = !s.isPixelGapEnabled
-                applyAppearance(
-                    newPixelShape = s.selectedPixelShape,
+                applyPixelAppearancePreview(
                     newDotSizePx = s.selectedDotSizePx,
+                    newPresetIndex = s.selectedPixelSizePresetIndex,
                     newPixelGapEnabled = enabled,
-                    newTheme = s.selectedTheme,
                 )
             }
-            SettingsMenuItem.STYLE -> applyAppearance(
-                newPixelShape = SettingsMenuModel.nextStyle(s.selectedPixelShape, direction),
-                newDotSizePx = s.selectedDotSizePx,
-                newPixelGapEnabled = s.isPixelGapEnabled,
-                newTheme = s.selectedTheme,
-            )
-            SettingsMenuItem.THEME -> applyAppearance(
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = s.selectedDotSizePx,
-                newPixelGapEnabled = s.isPixelGapEnabled,
-                newTheme = SettingsMenuModel.nextTheme(s.selectedTheme, direction),
-            )
+            SettingsMenuItem.STYLE -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val current = state
+                applyAppearance(
+                    newPixelShape = SettingsMenuModel.nextStyle(current.selectedPixelShape, direction),
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newTheme = current.selectedTheme,
+                )
+            }
+            SettingsMenuItem.THEME -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val current = state
+                applyAppearance(
+                    newPixelShape = current.selectedPixelShape,
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newTheme = SettingsMenuModel.nextTheme(current.selectedTheme, direction),
+                )
+            }
             SettingsMenuItem.HOME_STATUS -> {
                 state = LauncherStateTransitions.showHome(state)
             }
@@ -945,8 +949,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onStatusBarAction() {
-        if (pendingPixelRollbackDotSizePx != null) {
-            cancelPendingPixelSizeChange()
+        if (pendingPixelAppearanceBaseline != null) {
+            confirmPendingPixelAppearanceChange()
         }
     }
 
@@ -1117,7 +1121,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateScreenProfile(widthPx: Int, heightPx: Int): Boolean {
+    private fun updateScreenProfile(widthPx: Int, heightPx: Int, render: Boolean = true): Boolean {
         val newProfile = ScreenProfileFactory.create(
             widthPx = widthPx,
             heightPx = heightPx,
@@ -1146,7 +1150,9 @@ class MainActivity : AppCompatActivity() {
             state = state,
             visibleRows = SmsLayout.threadVisibleRows(screenProfile),
         )
-        renderCurrentFrame()
+        if (render) {
+            renderCurrentFrame()
+        }
         return true
     }
 
@@ -1690,23 +1696,50 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPresetIndex: Int,
     ) {
-        val currentDotSizePx = state.selectedDotSizePx
-        val currentPresetIndex = state.selectedPixelSizePresetIndex
-        if (newDotSizePx == currentDotSizePx && newPresetIndex == currentPresetIndex) {
+        applyPixelAppearancePreview(
+            newDotSizePx = newDotSizePx,
+            newPresetIndex = newPresetIndex,
+            newPixelGapEnabled = state.isPixelGapEnabled,
+        )
+    }
+
+    private fun applyPixelAppearancePreview(
+        newDotSizePx: Int,
+        newPresetIndex: Int,
+        newPixelGapEnabled: Boolean,
+    ) {
+        val current = state
+        if (
+            newDotSizePx == current.selectedDotSizePx &&
+            newPresetIndex == current.selectedPixelSizePresetIndex &&
+            newPixelGapEnabled == current.isPixelGapEnabled
+        ) {
             return
         }
-        if (pendingPixelRollbackDotSizePx == null) {
-            pendingPixelRollbackDotSizePx = currentDotSizePx
-            pendingPixelRollbackPresetIndex = currentPresetIndex
-        }
-        applyAppearance(
-            newPixelShape = state.selectedPixelShape,
+
+        val baseline = pendingPixelAppearanceBaseline ?: PixelAppearanceBaseline(
+            dotSizePx = current.selectedDotSizePx,
+            presetIndex = current.selectedPixelSizePresetIndex,
+            pixelGapEnabled = current.isPixelGapEnabled,
+        ).also { pendingPixelAppearanceBaseline = it }
+
+        applyAppearanceState(
+            newPixelShape = current.selectedPixelShape,
             newDotSizePx = newDotSizePx,
             newPixelSizePresetIndex = newPresetIndex,
-            newPixelGapEnabled = state.isPixelGapEnabled,
-            newTheme = state.selectedTheme,
+            newPixelGapEnabled = newPixelGapEnabled,
+            newTheme = current.selectedTheme,
         )
-        startPixelChangeCancelCountdown()
+
+        if (
+            newDotSizePx == baseline.dotSizePx &&
+            newPresetIndex == baseline.presetIndex &&
+            newPixelGapEnabled == baseline.pixelGapEnabled
+        ) {
+            clearPendingPixelAppearanceChange()
+        } else {
+            startPixelChangeConfirmCountdown()
+        }
     }
 
     private fun applyAppearance(
@@ -1716,77 +1749,125 @@ class MainActivity : AppCompatActivity() {
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
     ) {
-        val effectivePixelGapEnabled = newPixelGapEnabled
-        selectedTheme = newTheme
-        fontSettingsRepository.setAppearanceSettings(
+        persistAppearance(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
             pixelSizePresetIndex = newPixelSizePresetIndex,
-            pixelGapEnabled = effectivePixelGapEnabled,
+            pixelGapEnabled = newPixelGapEnabled,
             theme = newTheme,
         )
+        applyAppearanceState(
+            newPixelShape = newPixelShape,
+            newDotSizePx = newDotSizePx,
+            newPixelSizePresetIndex = newPixelSizePresetIndex,
+            newPixelGapEnabled = newPixelGapEnabled,
+            newTheme = newTheme,
+        )
+    }
+
+    private fun persistAppearance(
+        pixelShape: PixelShape,
+        dotSizePx: Int,
+        pixelSizePresetIndex: Int,
+        pixelGapEnabled: Boolean,
+        theme: PixelTheme,
+    ) {
+        fontSettingsRepository.setAppearanceSettings(
+            pixelShape = pixelShape,
+            dotSizePx = dotSizePx,
+            pixelSizePresetIndex = pixelSizePresetIndex,
+            pixelGapEnabled = pixelGapEnabled,
+            theme = theme,
+        )
+    }
+
+    private fun applyAppearanceState(
+        newPixelShape: PixelShape,
+        newDotSizePx: Int,
+        newPixelSizePresetIndex: Int,
+        newPixelGapEnabled: Boolean,
+        newTheme: PixelTheme,
+        render: Boolean = true,
+    ) {
+        selectedTheme = newTheme
         state = LauncherStateTransitions.updateAppearance(
             state = state,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
             selectedPixelSizePresetIndex = newPixelSizePresetIndex,
-            isPixelGapEnabled = effectivePixelGapEnabled,
+            isPixelGapEnabled = newPixelGapEnabled,
             selectedTheme = newTheme,
         )
 
         val widthPx = launcherRootHost.rootView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
         val heightPx = launcherRootHost.rootView.height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
-        val screenProfileChanged = updateScreenProfile(widthPx, heightPx)
-        refreshDerivedUiState(render = !screenProfileChanged)
+        val screenProfileChanged = updateScreenProfile(widthPx, heightPx, render = render)
+        refreshDerivedUiState(render = render && !screenProfileChanged)
     }
 
-    private fun startPixelChangeCancelCountdown() {
-        pendingPixelCancelDeadlineUptimeMs = SystemClock.uptimeMillis() + pixelChangeCancelTimeoutMs
+    private fun startPixelChangeConfirmCountdown() {
+        pendingPixelConfirmDeadlineUptimeMs = SystemClock.uptimeMillis() + pixelAppearanceConfirmTimeoutMs
         mainHandler.removeCallbacks(statusBarMessageClearRunnable)
-        mainHandler.removeCallbacks(pixelChangeCancelTicker)
-        updatePixelChangeCancelStatusBar()
+        mainHandler.removeCallbacks(pixelChangeConfirmTicker)
+        updatePixelChangeConfirmStatusBar()
     }
 
-    private fun updatePixelChangeCancelStatusBar() {
-        if (pendingPixelRollbackDotSizePx == null) {
+    private fun updatePixelChangeConfirmStatusBar() {
+        if (pendingPixelAppearanceBaseline == null) {
             return
         }
-        val remainingMs = pendingPixelCancelDeadlineUptimeMs - SystemClock.uptimeMillis()
+        val remainingMs = pendingPixelConfirmDeadlineUptimeMs - SystemClock.uptimeMillis()
         if (remainingMs <= 0L) {
-            clearPendingPixelSizeChange()
+            restorePendingPixelAppearanceChange()
             return
         }
         val remainingSeconds = ((remainingMs + 999L) / 1_000L).coerceIn(1L, 5L)
         state = LauncherStateTransitions.updateStatusBarAction(
             state = state,
             leadingText = "${remainingSeconds}s",
-            actionLabel = "CANCEL",
+            actionLabel = "CONFIRM",
             isDanger = true,
         )
         renderCurrentFrame()
-        mainHandler.postDelayed(pixelChangeCancelTicker, 1_000L)
+        mainHandler.postDelayed(pixelChangeConfirmTicker, 1_000L)
     }
 
-    private fun cancelPendingPixelSizeChange() {
-        val rollbackDotSizePx = pendingPixelRollbackDotSizePx ?: return
-        val rollbackPresetIndex = pendingPixelRollbackPresetIndex
-        clearPendingPixelSizeChange(render = false)
-        applyAppearance(
+    private fun confirmPendingPixelAppearanceChange() {
+        if (pendingPixelAppearanceBaseline == null) {
+            return
+        }
+        val confirmedState = state
+        persistAppearance(
+            pixelShape = confirmedState.selectedPixelShape,
+            dotSizePx = confirmedState.selectedDotSizePx,
+            pixelSizePresetIndex = confirmedState.selectedPixelSizePresetIndex,
+            pixelGapEnabled = confirmedState.isPixelGapEnabled,
+            theme = confirmedState.selectedTheme,
+        )
+        clearPendingPixelAppearanceChange()
+    }
+
+    private fun restorePendingPixelAppearanceChange(render: Boolean = true) {
+        val baseline = pendingPixelAppearanceBaseline ?: return
+        clearPendingPixelAppearanceChange(render = false)
+        applyAppearanceState(
             newPixelShape = state.selectedPixelShape,
-            newDotSizePx = rollbackDotSizePx,
-            newPixelSizePresetIndex = rollbackPresetIndex,
-            newPixelGapEnabled = state.isPixelGapEnabled,
+            newDotSizePx = baseline.dotSizePx,
+            newPixelSizePresetIndex = baseline.presetIndex,
+            newPixelGapEnabled = baseline.pixelGapEnabled,
             newTheme = state.selectedTheme,
+            render = render,
         )
         state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
-        renderCurrentFrame()
+        if (render) {
+            renderCurrentFrame()
+        }
     }
 
-    private fun clearPendingPixelSizeChange(render: Boolean = true) {
-        mainHandler.removeCallbacks(pixelChangeCancelTicker)
-        pendingPixelRollbackDotSizePx = null
-        pendingPixelRollbackPresetIndex = -1
-        pendingPixelCancelDeadlineUptimeMs = 0L
+    private fun clearPendingPixelAppearanceChange(render: Boolean = true) {
+        mainHandler.removeCallbacks(pixelChangeConfirmTicker)
+        pendingPixelAppearanceBaseline = null
+        pendingPixelConfirmDeadlineUptimeMs = 0L
         state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
         if (render) {
             renderCurrentFrame()
@@ -2210,10 +2291,16 @@ class MainActivity : AppCompatActivity() {
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"
         const val statusBarMessageTimeoutMs: Long = 2_500L
-        const val pixelChangeCancelTimeoutMs: Long = 5_000L
+        const val pixelAppearanceConfirmTimeoutMs: Long = 5_000L
         const val ACTION_NOTIFICATION_SETTINGS = "android.settings.NOTIFICATION_SETTINGS"
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
         const val smsIntentLogTag = "SmsIntent"
     }
 }
+
+private data class PixelAppearanceBaseline(
+    val dotSizePx: Int,
+    val presetIndex: Int,
+    val pixelGapEnabled: Boolean,
+)
