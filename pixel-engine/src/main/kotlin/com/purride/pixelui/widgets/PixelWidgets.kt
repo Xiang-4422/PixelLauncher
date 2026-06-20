@@ -44,6 +44,7 @@ import com.purride.pixelui.internal.SizedBoxWidget
 import com.purride.pixelui.internal.StackWidget
 import com.purride.pixelui.internal.SpriteWidget
 import com.purride.pixelui.internal.TextFieldWidget
+import com.purride.pixelui.internal.TextButtonWidget
 import com.purride.pixelui.internal.RichTextWidget
 import com.purride.pixelui.internal.TextWidget
 import com.purride.pixelui.internal.TransformTranslateWidget
@@ -66,6 +67,7 @@ import com.purride.pixelui.state.PixelTextFieldState
  */
 public typealias TextStyle = PixelTextStyle
 public typealias ButtonStyle = PixelButtonStyle
+public typealias TextButtonStyle = PixelTextButtonStyle
 public typealias TextFieldStyle = PixelTextFieldStyle
 public typealias TextOverflow = PixelTextOverflow
 public typealias TextInputAction = PixelTextInputAction
@@ -1076,6 +1078,28 @@ public fun OutlinedButton(
         enabled = enabled,
         fillColor = fillColor,
         borderColor = borderColor,
+        key = key,
+    )
+}
+
+/**
+ * 无边框文字按钮。
+ *
+ * 默认不增加 padding，按钮尺寸由文字自然决定。需要更大的点击区域时，通过 [style]
+ * 显式提供 [PixelTextButtonStyle.padding]。
+ */
+public fun TextButton(
+    text: String,
+    onPressed: (() -> Unit)?,
+    style: TextButtonStyle = TextButtonStyle.Default,
+    enabled: Boolean = true,
+    key: Any? = null,
+): Widget {
+    return TextButtonWidget(
+        text = text,
+        onPressed = onPressed,
+        style = style,
+        enabled = enabled,
         key = key,
     )
 }

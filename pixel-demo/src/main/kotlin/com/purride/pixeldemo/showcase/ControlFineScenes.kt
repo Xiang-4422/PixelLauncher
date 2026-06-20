@@ -19,6 +19,7 @@ import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelIconData
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Row
 import com.purride.pixelui.SegmentedControl
@@ -28,6 +29,8 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixeldemo.catalog.DemoCatalog
@@ -47,10 +50,18 @@ import com.purride.pixeldemo.scaffold.sectionTitle
 object ButtonListScene : DemoScene {
     override val id = "controls_buttons_list"
     override val title = "按钮列表"
-    override val summary = "OutlinedButton、ButtonStyle、PixelButtonStyle 和 ListTile"
+    override val summary = "TextButton、OutlinedButton、按钮样式和 ListTile"
     override val category = DemoCatalog.controls
     override val tags = setOf("button", "listtile", "style")
-    override val apis = setOf("OutlinedButton", "ButtonStyle", "PixelButtonStyle", "ListTile")
+    override val apis = setOf(
+        "TextButton",
+        "TextButtonStyle",
+        "PixelTextButtonStyle",
+        "OutlinedButton",
+        "ButtonStyle",
+        "PixelButtonStyle",
+        "ListTile",
+    )
     override val isFullScreen = true
 
     override fun build(env: DemoEnv): Widget {
@@ -59,6 +70,9 @@ object ButtonListScene : DemoScene {
             borderColor = Yellow,
             textStyle = PixelTextStyle(color = Yellow),
         )
+        val textButtonStyle: PixelTextButtonStyle = TextButtonStyle(
+            textStyle = PixelTextStyle(color = Accent),
+        )
         return ComponentShowcaseScaffold(
             item = this,
             env = env,
@@ -66,10 +80,11 @@ object ButtonListScene : DemoScene {
                 listOf(
                     sectionTitle("命令控件"),
                     samplePanel(
-                        title = "OutlinedButton styles",
+                        title = "TextButton / OutlinedButton",
                         color = Green,
                         child = Row(
                             children = listOf(
+                                TextButton(text = "TEXT", onPressed = {}, style = textButtonStyle),
                                 OutlinedButton(text = "PRIMARY", onPressed = {}, borderColor = Accent),
                                 OutlinedButton(text = "STYLE", onPressed = {}, style = explicitStyle),
                                 OutlinedButton(text = "OFF", onPressed = null, enabled = false),

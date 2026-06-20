@@ -13,6 +13,7 @@ import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
+import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.StatelessWidget
@@ -231,6 +232,51 @@ internal data class OutlinedButtonWidget(
                 text,
                 style = style.textStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
+                textAlign = TextAlign.CENTER,
+                key = key?.let { "$it-text" },
+            ),
+        )
+        val button = if (effectiveEnabled) {
+            GestureDetector(child = content, onTap = onPressed ?: {}, key = key)
+        } else {
+            content
+        }
+        return Semantics(
+            label = text,
+            role = PixelSemanticRole.BUTTON,
+            enabled = effectiveEnabled,
+            focused = focused,
+            child = button,
+            key = key?.let { "$it-semantics" },
+        )
+    }
+}
+
+/** 无边框、零默认 padding 的文字按钮。 */
+internal data class TextButtonWidget(
+    val text: String,
+    val onPressed: (() -> Unit)?,
+    val style: PixelTextButtonStyle,
+    val enabled: Boolean,
+    override val key: Any? = null,
+) : StatelessWidget(key = key) {
+    override fun build(context: BuildContext): Widget {
+        val effectiveEnabled = enabled && onPressed != null
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) {
+            context.watch(focusNode)
+        }
+        val focused = effectiveEnabled && focusNode?.isFocused == true
+        val content = Container(
+            padding = style.padding,
+            alignment = style.alignment,
+            key = key,
+            child = Text(
+                text,
+                style = style.textStyle,
+                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
                 textAlign = TextAlign.CENTER,
                 key = key?.let { "$it-text" },
             ),

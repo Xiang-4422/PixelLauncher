@@ -10,6 +10,7 @@ import com.purride.pixelui.Column
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.Dialog
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Badge
 import com.purride.pixelui.Divider
 import com.purride.pixelui.FittedBox
@@ -35,6 +36,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.RefreshIndicator
+import com.purride.pixelui.Row
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.SegmentedControl
@@ -47,6 +49,8 @@ import com.purride.pixelui.Snackbar
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
 import com.purride.pixelui.Wrap
@@ -61,6 +65,51 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelTesterDslTest {
+    @Test
+    fun textButtonUsesNaturalTextSizeUntilPaddingIsExplicit() {
+        val tester = PixelTester()
+        var tapped = 0
+
+        tester.pumpWidget(
+            widget = Row(
+                children = listOf(
+                    TextButton(text = "OK", onPressed = { tapped++ }, key = "text-button"),
+                ),
+            ),
+            logicalWidth = 32,
+            logicalHeight = 16,
+        )
+        val naturalBounds = requireNotNull(tester.renderResult)
+            .clickTargets
+            .single()
+            .bounds
+        tester.tap(find.byKey("text-button"))
+        assertEquals(1, tapped)
+
+        tester.pumpWidget(
+            widget = Row(
+                children = listOf(
+                    TextButton(
+                        text = "OK",
+                        onPressed = {},
+                        style = TextButtonStyle(padding = EdgeInsets.all(2)),
+                        key = "padded-text-button",
+                    ),
+                ),
+            ),
+            logicalWidth = 32,
+            logicalHeight = 16,
+        )
+        val paddedBounds = requireNotNull(tester.renderResult)
+            .clickTargets
+            .single()
+            .bounds
+
+        assertEquals(naturalBounds.width + 4, paddedBounds.width)
+        assertEquals(naturalBounds.height + 4, paddedBounds.height)
+        tester.dispose()
+    }
+
     @Test
     fun tapByTextInvokesButtonCallback() {
         val tester = PixelTester()

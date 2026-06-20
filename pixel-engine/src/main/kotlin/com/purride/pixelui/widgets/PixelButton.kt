@@ -18,3 +18,18 @@ public data class PixelButtonStyle(
         public val Default: PixelButtonStyle = PixelButtonStyle()
     }
 }
+
+/**
+ * 无边框文字按钮样式。
+ *
+ * 默认 padding 为零，按钮尺寸由文字自然决定；需要扩大点击区域时由调用方显式设置。
+ */
+public data class PixelTextButtonStyle(
+    val textStyle: PixelTextStyle = PixelTextStyle.Default,
+    val alignment: Alignment = Alignment.CENTER,
+    val padding: EdgeInsets = EdgeInsets.all(0),
+) {
+    public companion object {
+        public val Default: PixelTextButtonStyle = PixelTextButtonStyle()
+    }
+}
