@@ -124,7 +124,7 @@ private fun buildThreadRow(
                         },
                         Expanded(
                             child = Text(
-                                thread.address.uppercase(),
+                                thread.displayName.ifBlank { thread.address }.uppercase(),
                                 style = TextStyle(color = theme.text.muted),
                                 overflow = TextOverflow.ELLIPSIS,
                                 softWrap = false,

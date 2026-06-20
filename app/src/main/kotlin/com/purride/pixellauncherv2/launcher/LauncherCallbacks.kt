@@ -43,7 +43,9 @@ data class LauncherCallbacks(
     val onOpenThread: (threadId: Long, address: String) -> Unit,
     val onSelectSmsIndex: (Int) -> Unit,
     val onDraftChanged: (String) -> Unit,
+    val onSmsThreadSearchChanged: (String) -> Unit,
     val onSendDraft: () -> Unit,
+    val onSmsMessagePressed: (Long) -> Unit,
 
     // ── Navigation ────────────────────────────────────────────────────────────
     /**

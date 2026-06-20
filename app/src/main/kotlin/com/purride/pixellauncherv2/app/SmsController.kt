@@ -1,6 +1,8 @@
 package com.purride.pixellauncherv2.app
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +15,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
+import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import java.util.concurrent.ExecutorService
 
 /**
@@ -66,6 +69,7 @@ internal class SmsController(
 
     private val smsRepository = SmsRepository(context)
     private val unreadSmsRepository = UnreadSmsRepository(context)
+    private val appContext = context.applicationContext
 
     private var smsThreadsUnreadOnly = true
     private var smsRolePromptDismissedThisSession = false
@@ -97,6 +101,14 @@ internal class SmsController(
             state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text),
             smsSendStatusText = "",
         )
+    }
+
+    fun threadSearchChanged(text: String) {
+        host.state = LauncherStateTransitions.updateSmsThreadSearchQuery(
+            state = host.state,
+            query = text,
+        )
+        host.render()
     }
 
     // ── Module open/close ─────────────────────────────────────────────────────
@@ -164,6 +176,26 @@ internal class SmsController(
         )
         host.render()
         host.updateDrawerInputFocus()
+    }
+
+    fun openUnreadSummaryTarget() {
+        val unreadEntries = unreadSmsRepository.readUnreadMessages()
+        val firstThread = unreadEntries.firstOrNull()
+        if (firstThread != null && unreadEntries.all { it.threadId == firstThread.threadId }) {
+            openSmsThread(threadId = firstThread.threadId, address = firstThread.address)
+        } else {
+            host.state = LauncherStateTransitions.updateUnreadSmsEntries(
+                state = host.state,
+                entries = unreadEntries,
+                visibleRows = host.smsInboxVisibleRows(),
+            )
+            host.state = LauncherStateTransitions.showUnreadSmsInbox(
+                state = host.state,
+                visibleRows = host.smsInboxVisibleRows(),
+            )
+            host.render()
+            host.updateDrawerInputFocus()
+        }
     }
 
     fun closeUnreadInbox() {
@@ -261,6 +293,25 @@ internal class SmsController(
         }
     }
 
+    fun copyMessageCodeOrBody(messageId: Long) {
+        val message = host.state.smsMessages.firstOrNull { it.messageId == messageId } ?: return
+        val code = SmsVerificationCodeModel.extract(message.body)
+        val textToCopy = code ?: message.body.trim()
+        if (textToCopy.isBlank()) return
+        val clipboard = appContext.getSystemService(ClipboardManager::class.java) ?: return
+        clipboard.setPrimaryClip(
+            ClipData.newPlainText(
+                if (code != null) "SMS CODE" else "SMS BODY",
+                textToCopy,
+            ),
+        )
+        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+            state = host.state,
+            smsSendStatusText = if (code != null) SMS_STATUS_COPIED_CODE else SMS_STATUS_COPIED_BODY,
+        )
+        host.render()
+    }
+
     /** 申请默认短信应用角色；若已是默认应用则直接进入会话列表。 */
     fun requestDefaultRole() {
         if (smsRepository.isDefaultSmsApp()) {
@@ -281,6 +332,7 @@ internal class SmsController(
             if (!smsRepository.hasReadSmsPermission()) add(Manifest.permission.READ_SMS)
             if (!smsRepository.hasSendSmsPermission()) add(Manifest.permission.SEND_SMS)
             if (!smsRepository.hasReceiveSmsPermission()) add(Manifest.permission.RECEIVE_SMS)
+            if (!smsRepository.hasReadContactsPermission()) add(Manifest.permission.READ_CONTACTS)
         }
         if (missingPermissions.isNotEmpty()) {
             host.requestSmsPermissions(missingPermissions.toTypedArray())
@@ -437,5 +489,7 @@ internal class SmsController(
         const val LOG_TAG = "SmsIntent"
         const val SMS_STATUS_SENDING = "SENDING"
         const val SMS_STATUS_FAILED = "FAILED"
+        const val SMS_STATUS_COPIED_CODE = "COPIED CODE"
+        const val SMS_STATUS_COPIED_BODY = "COPIED MSG"
     }
 }

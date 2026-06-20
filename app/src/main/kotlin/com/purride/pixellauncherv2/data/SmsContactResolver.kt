@@ -1,0 +1,60 @@
+package com.purride.pixellauncherv2.data
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.ContactsContract
+import androidx.core.content.ContextCompat
+
+class SmsContactResolver(
+    private val context: Context,
+) {
+    private val cache = mutableMapOf<String, String>()
+
+    fun displayName(address: String): String {
+        val normalized = normalizeAddress(address)
+        if (normalized.isEmpty()) return ""
+        cache[normalized]?.let { return it }
+        val resolved = queryDisplayName(address).trim()
+        cache[normalized] = resolved
+        return resolved
+    }
+
+    private fun queryDisplayName(address: String): String {
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return ""
+        }
+        val uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+            Uri.encode(address),
+        )
+        val cursor = runCatching {
+            context.contentResolver.query(
+                uri,
+                arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME),
+                null,
+                null,
+                null,
+            )
+        }.getOrNull() ?: return ""
+
+        cursor.use { queryCursor ->
+            if (!queryCursor.moveToFirst()) return ""
+            val displayNameIndex = queryCursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME)
+            if (displayNameIndex < 0) return ""
+            return queryCursor.getString(displayNameIndex).orEmpty()
+        }
+    }
+
+    private fun normalizeAddress(address: String): String {
+        return buildString {
+            address.forEach { char ->
+                if (char.isDigit() || char == '+') append(char)
+            }
+        }.ifBlank { address.trim() }
+    }
+}

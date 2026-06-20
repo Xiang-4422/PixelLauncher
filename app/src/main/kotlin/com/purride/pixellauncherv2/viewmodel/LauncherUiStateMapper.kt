@@ -34,6 +34,7 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     smsCurrentThreadId = smsCurrentThreadId,
     smsCurrentAddress = smsCurrentAddress,
     smsMessages = smsMessages,
+    smsThreadSearchQuery = smsThreadSearchQuery,
     smsDraftText = smsDraftText,
     smsSendStatusText = smsSendStatusText,
     isDefaultSmsApp = isDefaultSmsApp,

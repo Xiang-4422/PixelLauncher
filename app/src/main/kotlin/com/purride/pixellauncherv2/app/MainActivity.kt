@@ -331,7 +331,9 @@ class MainActivity : AppCompatActivity() {
                 onOpenThread         = smsController::openThread,
                 onSelectSmsIndex     = smsController::selectIndex,
                 onDraftChanged       = smsController::draftChanged,
+                onSmsThreadSearchChanged = smsController::threadSearchChanged,
                 onSendDraft          = smsController::sendDraft,
+                onSmsMessagePressed  = smsController::copyMessageCodeOrBody,
                 onMainPageChanged    = ::onMainPageChanged,
             ),
         )
@@ -974,7 +976,7 @@ class MainActivity : AppCompatActivity() {
 
             HomeInfoAction.SMS -> {
                 if (state.unreadSmsCount > 0) {
-                    smsController.openUnreadInbox()
+                    smsController.openUnreadSummaryTarget()
                 } else {
                     smsController.openModule(forceRefresh = true, unreadOnly = false)
                 }

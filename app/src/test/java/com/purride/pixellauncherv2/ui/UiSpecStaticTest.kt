@@ -322,6 +322,24 @@ class UiSpecStaticTest {
         )
     }
 
+    @Test
+    fun smsDetailKeepsMessageCopyAndCodeHint() {
+        val moduleRoot = resolveModuleRoot()
+        val source = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SmsThreadDetailScreen.kt")
+            .readText()
+
+        assertTrue(
+            "SMS detail messages must keep tap-to-copy and visible verification code hints.",
+            source.contains("onMessagePressed") &&
+                source.contains("SEARCH MSG") &&
+                source.contains("SmsThreadSearchModel.filter") &&
+                source.contains("GestureDetector(") &&
+                source.contains("SmsVerificationCodeModel.extract") &&
+                source.contains("\"CODE "),
+        )
+    }
+
     private fun File.findUiSpecOffenders(moduleRoot: File): List<String> {
         val relativePath = relativeTo(moduleRoot).invariantSeparatorsPath
         return readLines().flatMapIndexed { index, line ->

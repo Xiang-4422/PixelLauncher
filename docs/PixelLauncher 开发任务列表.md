@@ -194,21 +194,30 @@
 
 ### P1-03 SMS 完整短信能力
 
-- [ ] 联系人名称映射。
-- [ ] Home 未读短信摘要直达对应短信视图。
-- [ ] 验证码识别和快速复制。
-- [ ] 正文选择、复制、重发。
-- [ ] 发送中、发送失败、已发送状态。
-- [ ] 线程内搜索：联系人名、号码、正文。
-- [ ] 长短信分页或稳定换行。
-- [ ] 空状态、loading、错误状态保持一致。
-- [ ] 权限缺失和默认短信角色缺失可见。
+- [x] 联系人名称映射。
+- [x] Home 未读短信摘要直达对应短信视图。
+- [x] 验证码识别和快速复制。
+- [x] 正文选择、复制、重发。
+- [x] 发送中、发送失败、已发送状态。
+- [x] 线程内搜索：联系人名、号码、正文。
+- [x] 长短信分页或稳定换行。
+- [x] 空状态、loading、错误状态保持一致。
+- [x] 权限缺失和默认短信角色缺失可见。
 
 验收：
 
-- [ ] 首次进入、空线程、长文本、发送失败都不是空白或裁切状态。
-- [ ] SMS 搜索不进入 Drawer。
-- [ ] Home 的 SMS 摘要能直达对应短信视图。
+- [x] 首次进入、空线程、长文本、发送失败都不是空白或裁切状态。
+- [x] SMS 搜索不进入 Drawer。
+- [x] Home 的 SMS 摘要能直达对应短信视图。
+
+证据：
+
+- `SmsContactResolver` 在具备 `READ_CONTACTS` 时映射联系人名；线程列表和会话标题优先显示 `displayName`，发送和深链仍使用真实号码。
+- `SmsController.openUnreadSummaryTarget` 在单一未读会话时直达线程，多会话时进入未读列表。
+- `SmsVerificationCodeModelTest` 覆盖中文/英文验证码识别；短信详情页显示 `CODE n`，点击消息复制验证码或正文。
+- `SmsThreadSearchModelTest` 覆盖联系人名、号码、正文搜索；搜索输入只存在于 `SmsThreadDetailScreen`，不进入 Drawer。
+- `SmsThreadDetailScreen` 使用完整换行正文、`NO MESSAGES` / `NO MATCH` 状态和 `SENDING` / `FAILED` / `COPIED ...` 状态行；发送失败保留草稿，用户再次点击 `SEND` 即重发。
+- `SmsMessageStatusModelTest`、`LauncherStateTransitionsTest`、`UiSpecStaticTest.smsDetailKeepsMessageCopyAndCodeHint` 覆盖消息状态、SMS 状态清理、搜索/复制/验证码 UI 入口。
 
 ### P1-04 Idle 视觉状态系统
 

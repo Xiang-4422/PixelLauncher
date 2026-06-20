@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.ui.screen
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
@@ -24,6 +25,8 @@ import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
+import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
+import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
@@ -47,12 +50,26 @@ fun SmsThreadDetailScreen(
     statusBarHeight: Int,
     msgListState: PixelListState,
     msgListController: PixelListController,
+    searchController: PixelTextFieldController,
+    searchState: PixelTextFieldState,
     draftController: PixelTextFieldController,
     draftState: PixelTextFieldState,
+    onSearchChanged: (String) -> Unit,
     onDraftChanged: (String) -> Unit,
     onSendDraft: () -> Unit,
+    onMessagePressed: (Long) -> Unit,
 ): Widget {
-    val contact = uiState.smsCurrentAddress.trim().ifBlank { "SMS" }
+    val contact = uiState.smsMessages
+        .lastOrNull()
+        ?.displayName
+        ?.trim()
+        .orEmpty()
+        .ifBlank { uiState.smsCurrentAddress.trim() }
+        .ifBlank { "SMS" }
+    val visibleMessages = SmsThreadSearchModel.filter(
+        messages = uiState.smsMessages,
+        query = uiState.smsThreadSearchQuery,
+    )
     return Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MAX,
@@ -68,6 +85,11 @@ fun SmsThreadDetailScreen(
                 theme = theme,
                 statusBarHeight = statusBarHeight,
             ),
+            buildSearchArea(
+                searchState = searchState,
+                searchController = searchController,
+                onSearchChanged = onSearchChanged,
+            ),
             Expanded(
                 child = if (uiState.smsMessages.isEmpty()) {
                     Column(
@@ -77,6 +99,16 @@ fun SmsThreadDetailScreen(
                         spacing = 0,
                         children = listOf(
                             smsStatusText("NO MESSAGES", theme),
+                        ),
+                    )
+                } else if (visibleMessages.isEmpty()) {
+                    Column(
+                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        mainAxisSize = MainAxisSize.MAX,
+                        mainAxisAlignment = MainAxisAlignment.CENTER,
+                        spacing = 0,
+                        children = listOf(
+                            smsStatusText("NO MATCH", theme),
                         ),
                     )
                 } else {
@@ -93,8 +125,8 @@ fun SmsThreadDetailScreen(
                                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                 mainAxisSize = MainAxisSize.MIN,
                                 spacing = LauncherSpacing.ROW_SPACING * 2,
-                                children = uiState.smsMessages.map { msg ->
-                                    buildMessage(msg, theme)
+                                children = visibleMessages.map { msg ->
+                                    buildMessage(msg, theme, onMessagePressed)
                                 },
                             ),
                         ),
@@ -112,6 +144,22 @@ fun SmsThreadDetailScreen(
         ),
     )
 }
+
+private fun buildSearchArea(
+    searchState: PixelTextFieldState,
+    searchController: PixelTextFieldController,
+    onSearchChanged: (String) -> Unit,
+): Widget = Padding(
+    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+    vertical = LauncherSpacing.CONTENT_VERTICAL,
+    child = TextField(
+        state = searchState,
+        controller = searchController,
+        placeholder = "SEARCH MSG",
+        textInputAction = TextInputAction.SEARCH,
+        onChanged = onSearchChanged,
+    ),
+)
 
 private fun buildComposeArea(
     uiState: LauncherUiState,
@@ -170,42 +218,65 @@ private fun buildComposeArea(
 private fun buildMessage(
     msg: SmsMessageEntry,
     theme: LauncherTheme,
+    onMessagePressed: (Long) -> Unit,
 ): Widget {
     val isSent = SmsMessageStatusModel.isSent(msg.type)
-    return Column(
-        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        mainAxisSize = MainAxisSize.MIN,
-        spacing = 1,
-        children = listOf(
-            Row(
-                spacing = LauncherSpacing.ROW_SPACING,
-                crossAxisAlignment = CrossAxisAlignment.CENTER,
-                children = listOf(
-                    Text(
-                        SmsMessageStatusModel.label(msg.type),
-                        style = TextStyle(color = theme.sms.sender),
-                        overflow = TextOverflow.ELLIPSIS,
-                        softWrap = false,
-                        maxLines = 1,
-                    ),
-                    Expanded(child = SizedBox(width = 0, height = 0)),
-                    Text(
-                        SmsTimeFormatter.format(msg.dateMillis),
-                        style = TextStyle(color = theme.sms.timestamp),
-                        overflow = TextOverflow.ELLIPSIS,
-                        softWrap = false,
-                        maxLines = 1,
+    val code = SmsVerificationCodeModel.extract(msg.body)
+    return GestureDetector(
+        onTap = { onMessagePressed(msg.messageId) },
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            mainAxisSize = MainAxisSize.MIN,
+            spacing = 1,
+            children = listOf(
+                Row(
+                    spacing = LauncherSpacing.ROW_SPACING,
+                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    children = listOf(
+                        Text(
+                            SmsMessageStatusModel.label(msg.type),
+                            style = TextStyle(color = theme.sms.sender),
+                            overflow = TextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
+                        ),
+                        Expanded(child = SizedBox(width = 0, height = 0)),
+                        Text(
+                            SmsTimeFormatter.format(msg.dateMillis),
+                            style = TextStyle(color = theme.sms.timestamp),
+                            overflow = TextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
+                        ),
                     ),
                 ),
-            ),
-            Text(
-                msg.body,
-                style = TextStyle(color = if (isSent) theme.text.muted else theme.sms.body),
-                softWrap = true,
-                maxLines = Int.MAX_VALUE,
-                // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
-                textAlign = if (isSent) TextAlign.END else TextAlign.START,
-            ),
+                Text(
+                    msg.body,
+                    style = TextStyle(color = if (isSent) theme.text.muted else theme.sms.body),
+                    softWrap = true,
+                    maxLines = Int.MAX_VALUE,
+                    // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
+                    textAlign = if (isSent) TextAlign.END else TextAlign.START,
+                ),
+            ) + codeLine(code, theme, isSent),
+        ),
+    )
+}
+
+private fun codeLine(
+    code: String?,
+    theme: LauncherTheme,
+    isSent: Boolean,
+): List<Widget> {
+    if (code.isNullOrBlank()) return emptyList()
+    return listOf(
+        Text(
+            "CODE $code",
+            style = TextStyle(color = theme.semantic.info),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+            textAlign = if (isSent) TextAlign.END else TextAlign.START,
         ),
     )
 }

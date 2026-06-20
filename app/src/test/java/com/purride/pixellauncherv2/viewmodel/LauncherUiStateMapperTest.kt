@@ -45,6 +45,7 @@ class LauncherUiStateMapperTest {
             smsSendStatusText = "FAILED",
             smsCurrentThreadId = 7L,
             smsCurrentAddress = "10086",
+            smsThreadSearchQuery = "code",
             isDefaultSmsApp = true,
             smsPermissionState = SmsPermissionState.READY,
             selectedDotSizePx = 9,
@@ -109,6 +110,7 @@ class LauncherUiStateMapperTest {
         assertEquals("FAILED", ui.smsSendStatusText)
         assertEquals(7L, ui.smsCurrentThreadId)
         assertEquals("10086", ui.smsCurrentAddress)
+        assertEquals("code", ui.smsThreadSearchQuery)
         assertEquals(true, ui.isDefaultSmsApp)
         assertEquals(SmsPermissionState.READY, ui.smsPermissionState)
         // appearance

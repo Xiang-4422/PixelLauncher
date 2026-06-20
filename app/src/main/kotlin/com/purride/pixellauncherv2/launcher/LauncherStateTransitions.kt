@@ -251,6 +251,7 @@ object LauncherStateTransitions {
         return state.copy(
             mode = LauncherMode.HOME,
             smsDraftText = "",
+            smsThreadSearchQuery = "",
             smsSendStatusText = "",
         )
     }
@@ -266,6 +267,7 @@ object LauncherStateTransitions {
             returnMode = LauncherMode.SMS_THREADS,
             smsCurrentThreadId = threadId,
             smsCurrentAddress = address,
+            smsThreadSearchQuery = "",
             smsSendStatusText = "",
         )
     }
@@ -276,6 +278,7 @@ object LauncherStateTransitions {
             mode = LauncherMode.SMS_THREADS,
             returnMode = LauncherMode.HOME,
             smsDraftText = "",
+            smsThreadSearchQuery = "",
             smsSendStatusText = "",
         )
     }
@@ -983,6 +986,13 @@ object LauncherStateTransitions {
         return state.copy(smsDraftText = smsDraftText)
     }
 
+    fun updateSmsThreadSearchQuery(
+        state: LauncherState,
+        query: String,
+    ): LauncherState {
+        return state.copy(smsThreadSearchQuery = query.take(MAX_SMS_SEARCH_QUERY_LENGTH))
+    }
+
     fun updateSmsSendStatusText(
         state: LauncherState,
         smsSendStatusText: String,
@@ -1362,4 +1372,5 @@ object LauncherStateTransitions {
     private const val maxDrawerQueryLength: Int = 40
     private const val maxRecentBoostAppCount: Int = 3
     private const val maxRecentBoostShift: Int = 3
+    private const val MAX_SMS_SEARCH_QUERY_LENGTH: Int = 40
 }

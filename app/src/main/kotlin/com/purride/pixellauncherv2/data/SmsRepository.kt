@@ -24,6 +24,7 @@ data class SmsThreadSummary(
     val dateMillis: Long,
     val unreadCount: Int,
     val messageCount: Int,
+    val displayName: String = "",
 )
 
 data class SmsMessageEntry(
@@ -34,6 +35,7 @@ data class SmsMessageEntry(
     val dateMillis: Long,
     val type: Int,
     val isRead: Boolean,
+    val displayName: String = "",
 )
 
 data class SmsSendRequest(
@@ -47,6 +49,7 @@ class SmsRepository(
 ) {
 
     private val contentResolver: ContentResolver = context.contentResolver
+    private val contactResolver = SmsContactResolver(context)
     private var smsObserver: ContentObserver? = null
 
     fun hasReadSmsPermission(): Boolean {
@@ -67,6 +70,13 @@ class SmsRepository(
         return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.RECEIVE_SMS,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun hasReadContactsPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CONTACTS,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -186,6 +196,7 @@ class SmsRepository(
                 SmsThreadSummary(
                     threadId = thread.threadId,
                     address = thread.address.ifBlank { "UNKNOWN" },
+                    displayName = contactResolver.displayName(thread.address),
                     snippet = thread.snippet,
                     dateMillis = thread.dateMillis,
                     unreadCount = thread.unreadCount,
@@ -242,6 +253,7 @@ class SmsRepository(
                     dateMillis = queryCursor.getLong(idDate),
                     type = queryCursor.getInt(idType),
                     isRead = queryCursor.getInt(idRead) != 0,
+                    displayName = contactResolver.displayName(queryCursor.getString(idAddress).orEmpty()),
                 )
             }
             return entries
@@ -323,6 +335,7 @@ class SmsRepository(
                 dateMillis = now,
                 type = Telephony.Sms.MESSAGE_TYPE_SENT,
                 isRead = true,
+                displayName = contactResolver.displayName(address),
             )
         }
     }
@@ -372,6 +385,7 @@ class SmsRepository(
                 dateMillis = dateMillis,
                 type = Telephony.Sms.MESSAGE_TYPE_INBOX,
                 isRead = false,
+                displayName = contactResolver.displayName(address),
             )
         }.getOrNull()
     }

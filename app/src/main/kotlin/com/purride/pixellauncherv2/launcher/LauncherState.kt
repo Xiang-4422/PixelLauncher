@@ -38,6 +38,7 @@ data class LauncherState(
     val smsCurrentThreadId: Long? = null,
     val smsCurrentAddress: String = "",
     val smsMessages: List<SmsMessageEntry> = emptyList(),
+    val smsThreadSearchQuery: String = "",
     val smsDraftText: String = "",
     val smsSendStatusText: String = "",
     val isDefaultSmsApp: Boolean = false,

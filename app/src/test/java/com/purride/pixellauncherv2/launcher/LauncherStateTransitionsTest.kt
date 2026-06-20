@@ -339,7 +339,11 @@ class LauncherStateTransitionsTest {
     @Test
     fun showSmsThreadDetail_setsThreadIdentityAndReturnMode() {
         val result = LauncherStateTransitions.showSmsThreadDetail(
-            state = LauncherState(mode = LauncherMode.SMS_THREADS, smsSendStatusText = "FAILED"),
+            state = LauncherState(
+                mode = LauncherMode.SMS_THREADS,
+                smsThreadSearchQuery = "old",
+                smsSendStatusText = "FAILED",
+            ),
             threadId = 42L,
             address = "10086",
         )
@@ -347,6 +351,7 @@ class LauncherStateTransitionsTest {
         assertEquals(42L, result.smsCurrentThreadId)
         assertEquals("10086", result.smsCurrentAddress)
         assertEquals(LauncherMode.SMS_THREADS, result.returnMode)
+        assertEquals("", result.smsThreadSearchQuery)
         assertEquals("", result.smsSendStatusText)
     }
 
@@ -354,11 +359,13 @@ class LauncherStateTransitionsTest {
     fun hideSmsThreadDetail_returnsToThreadsAndClearsDraftStatus() {
         val state = LauncherState(
             mode = LauncherMode.SMS_THREAD_DETAIL,
+            smsThreadSearchQuery = "code",
             smsDraftText = "unsent",
             smsSendStatusText = "FAILED",
         )
         val result = LauncherStateTransitions.hideSmsThreadDetail(state)
         assertEquals(LauncherMode.SMS_THREADS, result.mode)
+        assertEquals("", result.smsThreadSearchQuery)
         assertEquals("", result.smsDraftText)
         assertEquals("", result.smsSendStatusText)
     }
@@ -385,6 +392,16 @@ class LauncherStateTransitionsTest {
 
         assertEquals("hello", result.smsDraftText)
         assertEquals("SENDING", result.smsSendStatusText)
+    }
+
+    @Test
+    fun updateSmsThreadSearchQuery_clampsLongInput() {
+        val result = LauncherStateTransitions.updateSmsThreadSearchQuery(
+            state = LauncherState(),
+            query = "x".repeat(80),
+        )
+
+        assertEquals(40, result.smsThreadSearchQuery.length)
     }
 
     @Test

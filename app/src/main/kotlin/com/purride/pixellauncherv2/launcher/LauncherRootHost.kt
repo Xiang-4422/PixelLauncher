@@ -90,6 +90,8 @@ internal class LauncherRootHost(
     // ── SMS_THREAD_DETAIL message list + draft ────────────────────────────────
     private val msgListController = ScrollController()
     private val msgListState = msgListController.create()
+    private val smsSearchController = TextEditingController()
+    private val smsSearchState = smsSearchController.create()
     private val draftController = TextEditingController()
     private val draftState = draftController.create()
 
@@ -231,10 +233,14 @@ internal class LauncherRootHost(
             statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             msgListState = msgListState,
             msgListController = msgListController,
+            searchController = smsSearchController,
+            searchState = smsSearchState,
             draftController = draftController,
             draftState = draftState,
+            onSearchChanged = callbacks.onSmsThreadSearchChanged,
             onDraftChanged = callbacks.onDraftChanged,
             onSendDraft = callbacks.onSendDraft,
+            onMessagePressed = callbacks.onSmsMessagePressed,
         )
         LauncherMode.DIAGNOSTICS       -> DiagnosticsScreen(
             uiState = uiState,
