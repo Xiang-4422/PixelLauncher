@@ -198,19 +198,25 @@
 
 ### P1-04 Idle 视觉状态系统
 
-- [ ] 默认态。
-- [ ] 充电态。
-- [ ] 低电量态。
-- [ ] 天气风险态。
-- [ ] 通知摘要态。
-- [ ] 夜间降低亮度。
-- [ ] 充电常显时降低信息密度。
+- [x] 默认态。
+- [x] 充电态。
+- [x] 低电量态。
+- [x] 天气风险态。
+- [x] 通知摘要态。
+- [x] 夜间降低亮度。
+- [x] 充电常显时降低信息密度。
 
 验收：
 
-- [ ] Idle 是 Launcher 内部稳定页面。
-- [ ] Android 系统锁屏仍完全负责安全锁屏。
-- [ ] Idle 不实现 PIN、密码、生物识别或 root 锁屏替代。
+- [x] Idle 是 Launcher 内部稳定页面。
+- [x] Android 系统锁屏仍完全负责安全锁屏。
+- [x] Idle 不实现 PIN、密码、生物识别或 root 锁屏替代。
+
+证据：
+
+- `IdleStatusModelTest` 覆盖默认态、充电态、低电量态、天气风险态和通知摘要态的优先级与文案。
+- `IdlePresentationModelTest` 覆盖夜间降低亮度时间窗，以及充电态隐藏 footer 以降低常显信息密度。
+- `IdleScreen` 只消费 `IdleStatusModel` 和 `IdlePresentationModel`，未加入 PIN、密码、生物识别或 root 锁屏替代逻辑。
 
 ### P1-05 Advanced / Diagnostics 深化
 

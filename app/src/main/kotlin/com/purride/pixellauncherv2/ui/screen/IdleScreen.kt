@@ -15,6 +15,7 @@ import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixellauncherv2.launcher.IdlePresentationModel
 import com.purride.pixellauncherv2.launcher.IdleStatusKind
 import com.purride.pixellauncherv2.launcher.IdleStatusModel
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
@@ -36,6 +37,7 @@ fun IdleScreen(
         .joinToString("  ")
         .ifBlank { "--- --- --" }
     val status = IdleStatusModel.line(uiState)
+    val presentation = IdlePresentationModel.presentation(uiState)
     val statusColor = when (status.kind) {
         IdleStatusKind.NOTIFICATION -> theme.semantic.warning
         IdleStatusKind.CHARGING -> theme.semantic.success
@@ -43,6 +45,10 @@ fun IdleScreen(
         IdleStatusKind.WEATHER -> theme.semantic.info
         IdleStatusKind.DEFAULT -> theme.text.secondary
     }
+    val timeColor = if (presentation.isNight) theme.text.secondary else theme.text.primary
+    val subtitleColor = if (presentation.isNight) theme.text.muted else theme.text.secondary
+    val statusBodyColor = if (presentation.isNight) theme.text.secondary else theme.text.primary
+    val statusFillColor = if (presentation.isNight) PixelColor.Transparent else theme.surface.panelSubtle
 
     return Padding(
         padding = EdgeInsets.only(
@@ -59,11 +65,11 @@ fun IdleScreen(
                 Expanded(child = SizedBox(width = 0, height = 0)),
                 idleText(
                     text = uiState.currentTimeText.ifEmpty { "--:--" },
-                    color = theme.text.primary,
+                    color = timeColor,
                 ),
                 idleText(
                     text = subtitle,
-                    color = theme.text.muted,
+                    color = subtitleColor,
                 ),
                 Container(
                     padding = EdgeInsets.symmetric(
@@ -71,7 +77,7 @@ fun IdleScreen(
                         vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
                     ),
                     borderColor = statusColor,
-                    fillColor = theme.surface.panelSubtle,
+                    fillColor = statusFillColor,
                     child = Column(
                         mainAxisSize = MainAxisSize.MIN,
                         crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -83,28 +89,39 @@ fun IdleScreen(
                             ),
                             idleText(
                                 text = status.body,
-                                color = theme.text.primary,
+                                color = statusBodyColor,
                             ),
                         ),
                     ),
                 ),
                 Expanded(child = SizedBox(width = 0, height = 0)),
-                Row(
-                    spacing = LauncherSpacing.ROW_SPACING,
-                    children = listOf(
-                        Expanded(
-                            child = idleText(
-                                text = "BAT ${uiState.batteryLevel.coerceIn(0, 100)}%",
-                                color = theme.text.secondary,
-                            ),
-                        ),
-                        Expanded(
-                            child = idleText(
-                                text = "USE ${uiState.screenUsageTimeText.ifBlank { "--:--" }}",
-                                color = theme.text.muted,
-                                textAlign = TextAlign.END,
-                            ),
-                        ),
+            ) + idleFooter(uiState, theme, presentation.showFooter),
+        ),
+    )
+}
+
+private fun idleFooter(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    showFooter: Boolean,
+): List<Widget> {
+    if (!showFooter) return emptyList()
+
+    return listOf(
+        Row(
+            spacing = LauncherSpacing.ROW_SPACING,
+            children = listOf(
+                Expanded(
+                    child = idleText(
+                        text = "BAT ${uiState.batteryLevel.coerceIn(0, 100)}%",
+                        color = theme.text.secondary,
+                    ),
+                ),
+                Expanded(
+                    child = idleText(
+                        text = "USE ${uiState.screenUsageTimeText.ifBlank { "--:--" }}",
+                        color = theme.text.muted,
+                        textAlign = TextAlign.END,
                     ),
                 ),
             ),
