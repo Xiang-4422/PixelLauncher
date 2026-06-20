@@ -7,8 +7,10 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageViewBuilder
+import com.purride.pixelui.Padding
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
@@ -19,6 +21,8 @@ import com.purride.pixellauncherv2.data.UnreadSmsEntry
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
+
+private const val SMS_READING_PADDING_PX = 2
 
 /**
  * SMS_INBOX 屏幕：未读消息翻页浏览。
@@ -53,6 +57,7 @@ fun SmsInboxScreen(
             LauncherHeader(
                 timeText = uiState.currentTimeText.ifEmpty { "--:--" },
                 screenTitle = titleText,
+                messageText = uiState.statusBarMessageText,
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
@@ -67,11 +72,7 @@ fun SmsInboxScreen(
                         mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
                         spacing = 0,
                         children = listOf(
-                            Text(
-                                "NO UNREAD MESSAGES",
-                                style = TextStyle(color = theme.sms.timestamp),
-                                textAlign = com.purride.pixelui.TextAlign.CENTER,
-                            ),
+                            smsStatusText("NO UNREAD MESSAGES", theme),
                         ),
                     )
                 } else {
@@ -106,20 +107,27 @@ private fun buildInboxPage(
     child = SingleChildScrollView(
         state = scrollState,
         controller = scrollController,
-        child = Column(
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            mainAxisSize = MainAxisSize.MIN,
-            spacing = 2,
-            children = listOf(
-                Text(
-                    entry.address.uppercase(),
-                    style = TextStyle(color = theme.sms.sender),
-                ),
-                Text(
-                    entry.body,
-                    style = TextStyle(color = theme.sms.body),
-                    softWrap = true,
-                    maxLines = Int.MAX_VALUE,
+        child = Padding(
+            horizontal = SMS_READING_PADDING_PX,
+            vertical = SMS_READING_PADDING_PX,
+            child = Column(
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                mainAxisSize = MainAxisSize.MIN,
+                spacing = 2,
+                children = listOf(
+                    Text(
+                        entry.address.uppercase(),
+                        style = TextStyle(color = theme.sms.sender),
+                        overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
+                    ),
+                    Text(
+                        entry.body,
+                        style = TextStyle(color = theme.sms.body),
+                        softWrap = true,
+                        maxLines = Int.MAX_VALUE,
+                    ),
                 ),
             ),
         ),

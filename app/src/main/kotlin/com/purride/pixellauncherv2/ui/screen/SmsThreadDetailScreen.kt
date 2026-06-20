@@ -22,6 +22,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
@@ -34,7 +35,7 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
  * - 消息列表用变高 lazy list（[ListViewBuilder] 的 estimatedItemExtent 路径），
  *   每条按正文自适应高度，**完整换行显示**，不再 ELLIPSIS 截断——验证码 / 通知
  *   类长短信的关键内容（取件码、链接等）现在能读全。
- * - 每条消息：方向 + 时间一行（dim），下面整段正文；IN 用 body 前景色、OUT 用
+ * - 每条消息：状态 + 时间一行（dim），下面整段正文；IN 用 body 前景色、SENT 用
  *   muted 前景色区分收发。
  * - 表头显示对方地址（截断防溢出），底部固定草稿栏（TextField + SEND）。
  */
@@ -59,6 +60,7 @@ fun SmsThreadDetailScreen(
             LauncherHeader(
                 timeText = uiState.currentTimeText.ifEmpty { "--:--" },
                 screenTitle = headerTitle(contact),
+                messageText = uiState.statusBarMessageText,
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
@@ -73,11 +75,7 @@ fun SmsThreadDetailScreen(
                         mainAxisAlignment = MainAxisAlignment.CENTER,
                         spacing = 0,
                         children = listOf(
-                            Text(
-                                "NO MESSAGES",
-                                style = TextStyle(color = theme.sms.timestamp),
-                                textAlign = TextAlign.CENTER,
-                            ),
+                            smsStatusText("NO MESSAGES", theme),
                         ),
                     )
                 } else {
@@ -89,6 +87,7 @@ fun SmsThreadDetailScreen(
                         controller = msgListController,
                         child = Padding(
                             horizontal = 2,
+                            vertical = 2,
                             child = Column(
                                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                 mainAxisSize = MainAxisSize.MIN,
@@ -101,14 +100,48 @@ fun SmsThreadDetailScreen(
                     )
                 },
             ),
-            // 草稿栏固定高度，避免抢占消息列表 Expanded 的剩余空间把列表压塌。
-            SizedBox(
-                height = COMPOSE_HEIGHT,
-                child = Row(
+            buildComposeArea(
+                uiState = uiState,
+                theme = theme,
+                draftState = draftState,
+                draftController = draftController,
+                onDraftChanged = onDraftChanged,
+                onSendDraft = onSendDraft,
+            ),
+        ),
+    )
+}
+
+private fun buildComposeArea(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    draftState: PixelTextFieldState,
+    draftController: PixelTextFieldController,
+    onDraftChanged: (String) -> Unit,
+    onSendDraft: () -> Unit,
+): Widget = Padding(
+    horizontal = 2,
+    vertical = 2,
+    child = Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        mainAxisSize = MainAxisSize.MIN,
+        spacing = 2,
+        children = buildList {
+            if (uiState.smsSendStatusText.isNotBlank()) {
+                add(
+                    Text(
+                        uiState.smsSendStatusText,
+                        style = TextStyle(color = theme.sms.timestamp),
+                        overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
+                    ),
+                )
+            }
+            add(
+                Row(
                     spacing = 2,
-                    // 让输入框与 SEND 按钮都拉伸到 compose 栏的统一高度，避免两者
-                    // 各按固有高度顶部对齐导致的高度不一致。
-                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    crossAxisAlignment = CrossAxisAlignment.CENTER,
                     children = listOf(
                         Expanded(
                             child = TextField(
@@ -127,17 +160,17 @@ fun SmsThreadDetailScreen(
                         ),
                     ),
                 ),
-            ),
-        ),
-    )
-}
+            )
+        },
+    ),
+)
 
 /** 一条消息：方向 + 时间一行，下面整段正文（完整换行，不截断）。 */
 private fun buildMessage(
     msg: SmsMessageEntry,
     theme: LauncherTheme,
 ): Widget {
-    val isOut = msg.type == TYPE_SENT
+    val isSent = SmsMessageStatusModel.isSent(msg.type)
     return Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MIN,
@@ -148,24 +181,29 @@ private fun buildMessage(
                 crossAxisAlignment = CrossAxisAlignment.CENTER,
                 children = listOf(
                     Text(
-                        if (isOut) "OUT" else "IN",
+                        SmsMessageStatusModel.label(msg.type),
                         style = TextStyle(color = theme.sms.sender),
+                        overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
                     Text(
                         SmsTimeFormatter.format(msg.dateMillis),
                         style = TextStyle(color = theme.sms.timestamp),
-                        overflow = TextOverflow.CLIP,
+                        overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
                     ),
                 ),
             ),
             Text(
                 msg.body,
-                style = TextStyle(color = if (isOut) theme.text.muted else theme.sms.body),
+                style = TextStyle(color = if (isSent) theme.text.muted else theme.sms.body),
                 softWrap = true,
                 maxLines = Int.MAX_VALUE,
                 // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
-                textAlign = if (isOut) TextAlign.END else TextAlign.START,
+                textAlign = if (isSent) TextAlign.END else TextAlign.START,
             ),
         ),
     )
@@ -179,7 +217,4 @@ private fun headerTitle(contact: String): String {
 }
 
 private const val MSG_SPACING = 4
-private const val COMPOSE_HEIGHT = 18
 private const val HEADER_TITLE_MAX = 12
-/** android.provider.Telephony.Sms.MESSAGE_TYPE_SENT = 2 */
-private const val TYPE_SENT = 2

@@ -6,6 +6,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
@@ -19,6 +20,8 @@ import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
 import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
+
+private const val SMS_THREAD_ROW_PADDING_PX = 2
 
 /**
  * SMS_THREADS 屏幕：会话列表。
@@ -43,6 +46,7 @@ fun SmsThreadsScreen(
         LauncherHeader(
             timeText = uiState.currentTimeText.ifEmpty { "--:--" },
             screenTitle = "SMS",
+            messageText = uiState.statusBarMessageText,
             batteryLevel = uiState.batteryLevel,
             isCharging = uiState.isCharging,
             chargeTick = chargeTick,
@@ -80,11 +84,7 @@ private fun centeredSmsStatus(
     mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
     spacing = 0,
     children = listOf(
-        Text(
-            text,
-            style = TextStyle(color = theme.sms.timestamp),
-            textAlign = com.purride.pixelui.TextAlign.CENTER,
-        ),
+        smsStatusText(text, theme),
     ),
 )
 
@@ -98,40 +98,54 @@ private fun buildThreadRow(
     //  行1 = [未读圆圈徽标(accent)] 号码(dim 次要) ··· 时间(dim)
     //  行2 = 摘要(body 亮色，主要可读元素)
     // 取代旧的"号码抢眼蓝 + 每行重复 NEW n 文字"。
-    child = Column(
-        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        mainAxisSize = MainAxisSize.MIN,
-        spacing = 1,
-        children = listOf(
-            Row(
-                spacing = 2,
-                crossAxisAlignment = CrossAxisAlignment.CENTER,
-                children = listOfNotNull(
-                    if (thread.unreadCount > 0) {
+    child = Padding(
+        horizontal = SMS_THREAD_ROW_PADDING_PX,
+        vertical = SMS_THREAD_ROW_PADDING_PX,
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            mainAxisSize = MainAxisSize.MIN,
+            spacing = 1,
+            children = listOf(
+                Row(
+                    spacing = 2,
+                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    children = listOfNotNull(
+                        if (thread.unreadCount > 0) {
+                            Text(
+                                unreadBadge(thread.unreadCount),
+                                style = TextStyle(color = theme.sms.sender),
+                                overflow = TextOverflow.ELLIPSIS,
+                                softWrap = false,
+                                maxLines = 1,
+                            )
+                        } else {
+                            null
+                        },
+                        Expanded(
+                            child = Text(
+                                thread.address.uppercase(),
+                                style = TextStyle(color = theme.text.muted),
+                                overflow = TextOverflow.ELLIPSIS,
+                                softWrap = false,
+                                maxLines = 1,
+                            ),
+                        ),
                         Text(
-                            unreadBadge(thread.unreadCount),
-                            style = TextStyle(color = theme.sms.sender),
-                        )
-                    } else {
-                        null
-                    },
-                    Expanded(
-                        child = Text(
-                            thread.address.uppercase(),
-                            style = TextStyle(color = theme.text.muted),
+                            SmsTimeFormatter.format(thread.dateMillis),
+                            style = TextStyle(color = theme.sms.timestamp),
                             overflow = TextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
                         ),
                     ),
-                    Text(
-                        SmsTimeFormatter.format(thread.dateMillis),
-                        style = TextStyle(color = theme.sms.timestamp),
-                    ),
                 ),
-            ),
-            Text(
-                thread.snippet.trim(),
-                style = TextStyle(color = theme.sms.body),
-                overflow = TextOverflow.ELLIPSIS,
+                Text(
+                    thread.snippet.trim(),
+                    style = TextStyle(color = theme.sms.body),
+                    overflow = TextOverflow.ELLIPSIS,
+                    softWrap = false,
+                    maxLines = 1,
+                ),
             ),
         ),
     ),

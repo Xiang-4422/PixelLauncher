@@ -93,7 +93,10 @@ internal class SmsController(
     }
 
     fun draftChanged(text: String) {
-        host.state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text)
+        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+            state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text),
+            smsSendStatusText = "",
+        )
     }
 
     // ── Module open/close ─────────────────────────────────────────────────────
@@ -212,6 +215,11 @@ internal class SmsController(
             ensureReadAccessAndRole()
             return
         }
+        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+            state = host.state,
+            smsSendStatusText = SMS_STATUS_SENDING,
+        )
+        host.render()
         backgroundExecutor.execute {
             val result = smsRepository.sendMessage(
                 SmsSendRequest(
@@ -227,9 +235,12 @@ internal class SmsController(
                 result.onSuccess { sentEntry ->
                     val nextMessages = host.state.smsMessages + sentEntry
                     host.state = LauncherStateTransitions.updateSmsMessages(
-                        state = LauncherStateTransitions.updateSmsDraftText(
-                            state = host.state,
-                            smsDraftText = "",
+                        state = LauncherStateTransitions.updateSmsSendStatusText(
+                            state = LauncherStateTransitions.updateSmsDraftText(
+                                state = host.state,
+                                smsDraftText = "",
+                            ),
+                            smsSendStatusText = "",
                         ),
                         threadId = sentEntry.threadId.takeIf { it > 0L } ?: host.state.smsCurrentThreadId,
                         address = sentEntry.address,
@@ -238,6 +249,13 @@ internal class SmsController(
                     host.render()
                     refreshSmsThreads(render = false)
                     host.refreshCommunicationStatus(render = false)
+                }
+                result.onFailure {
+                    host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                        state = host.state,
+                        smsSendStatusText = SMS_STATUS_FAILED,
+                    )
+                    host.render()
                 }
             }
         }
@@ -417,5 +435,7 @@ internal class SmsController(
 
     private companion object {
         const val LOG_TAG = "SmsIntent"
+        const val SMS_STATUS_SENDING = "SENDING"
+        const val SMS_STATUS_FAILED = "FAILED"
     }
 }

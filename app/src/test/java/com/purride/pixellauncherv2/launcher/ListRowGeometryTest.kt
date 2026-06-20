@@ -22,7 +22,7 @@ class ListRowGeometryTest {
 
     @Test
     fun smsThreadRowPitch_isExtentPlusSpacing() {
-        assertEquals(23, SmsThreadGeometry.ROW_PITCH_PX)
+        assertEquals(26, SmsThreadGeometry.ROW_PITCH_PX)
         assertEquals(
             SmsThreadGeometry.ROW_EXTENT_PX + SmsThreadGeometry.ROW_SPACING_PX,
             SmsThreadGeometry.ROW_PITCH_PX,
