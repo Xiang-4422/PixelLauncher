@@ -18,11 +18,12 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixellauncherv2.data.UnreadSmsEntry
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
-private const val SMS_READING_PADDING_PX = 2
+private const val SMS_READING_PADDING_PX = LauncherSpacing.CONTENT_HORIZONTAL
 
 /**
  * SMS_INBOX 屏幕：未读消息翻页浏览。
@@ -113,7 +114,7 @@ private fun buildInboxPage(
             child = Column(
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 mainAxisSize = MainAxisSize.MIN,
-                spacing = 2,
+                spacing = LauncherSpacing.ROW_SPACING,
                 children = listOf(
                     Text(
                         entry.address.uppercase(),

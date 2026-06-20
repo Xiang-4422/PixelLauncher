@@ -22,6 +22,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -86,12 +87,12 @@ fun SmsThreadDetailScreen(
                         state = msgListState,
                         controller = msgListController,
                         child = Padding(
-                            horizontal = 2,
-                            vertical = 2,
+                            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                            vertical = LauncherSpacing.CONTENT_VERTICAL,
                             child = Column(
                                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                 mainAxisSize = MainAxisSize.MIN,
-                                spacing = MSG_SPACING,
+                                spacing = LauncherSpacing.ROW_SPACING * 2,
                                 children = uiState.smsMessages.map { msg ->
                                     buildMessage(msg, theme)
                                 },
@@ -120,12 +121,12 @@ private fun buildComposeArea(
     onDraftChanged: (String) -> Unit,
     onSendDraft: () -> Unit,
 ): Widget = Padding(
-    horizontal = 2,
-    vertical = 2,
+    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+    vertical = LauncherSpacing.CONTENT_VERTICAL,
     child = Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MIN,
-        spacing = 2,
+        spacing = LauncherSpacing.ROW_SPACING,
         children = buildList {
             if (uiState.smsSendStatusText.isNotBlank()) {
                 add(
@@ -140,7 +141,7 @@ private fun buildComposeArea(
             }
             add(
                 Row(
-                    spacing = 2,
+                    spacing = LauncherSpacing.ROW_SPACING,
                     crossAxisAlignment = CrossAxisAlignment.CENTER,
                     children = listOf(
                         Expanded(
@@ -177,7 +178,7 @@ private fun buildMessage(
         spacing = 1,
         children = listOf(
             Row(
-                spacing = 2,
+                spacing = LauncherSpacing.ROW_SPACING,
                 crossAxisAlignment = CrossAxisAlignment.CENTER,
                 children = listOf(
                     Text(
@@ -216,5 +217,4 @@ private fun headerTitle(contact: String): String {
     return if (trimmed.length < contact.length) "$trimmed…" else trimmed
 }
 
-private const val MSG_SPACING = 4
 private const val HEADER_TITLE_MAX = 12

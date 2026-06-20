@@ -22,6 +22,7 @@ import com.purride.pixellauncherv2.launcher.DataHealthItem
 import com.purride.pixellauncherv2.launcher.DataHealthLine
 import com.purride.pixellauncherv2.launcher.DataHealthModel
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -64,12 +65,12 @@ class DataHealthScreen(
                             state = scrollState,
                             controller = scrollController,
                             child = Padding(
-                                horizontal = 2,
-                                vertical = 2,
+                                horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                                vertical = LauncherSpacing.CONTENT_VERTICAL,
                                 child = Column(
                                     crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                     mainAxisSize = MainAxisSize.MIN,
-                                    spacing = 2,
+                                    spacing = LauncherSpacing.ROW_SPACING,
                                     children = DataHealthModel.lines(widget.uiState).map { line ->
                                         dataHealthRow(
                                             line = line,
@@ -95,9 +96,9 @@ private fun dataHealthRow(
     onTap = { onPressed(line.item) },
     child = Padding(
         horizontal = 0,
-        vertical = 2,
+        vertical = LauncherSpacing.CONTENT_VERTICAL,
         child = Row(
-            spacing = 2,
+            spacing = LauncherSpacing.ROW_SPACING,
             mainAxisAlignment = MainAxisAlignment.START,
             crossAxisAlignment = CrossAxisAlignment.CENTER,
             children = listOf(

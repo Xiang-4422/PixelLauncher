@@ -107,6 +107,31 @@ class UiSpecStaticTest {
     }
 
     @Test
+    fun screenSourcesUseLauncherSpacingForPageRhythm() {
+        val moduleRoot = resolveModuleRoot()
+        val screenRoot = moduleRoot.resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen")
+        val offenders = screenRoot.walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .flatMap { file ->
+                file.readLines().flatMapIndexed { index, line ->
+                    forbiddenPageRhythmPatterns.mapNotNull { pattern ->
+                        if (pattern.regex.containsMatchIn(line)) {
+                            "${file.relativeTo(moduleRoot).invariantSeparatorsPath}:${index + 1}: ${pattern.description}: ${line.trim()}"
+                        } else {
+                            null
+                        }
+                    }
+                }
+            }
+            .toList()
+
+        assertTrue(
+            "Launcher screens must use LauncherSpacing for page rhythm:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty(),
+        )
+    }
+
+    @Test
     fun settingsInlineRowsKeepBothSidesInExpandedCells() {
         val moduleRoot = resolveModuleRoot()
         val file = moduleRoot.resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
@@ -302,6 +327,14 @@ class UiSpecStaticTest {
                 "do not render Drawer search match reason labels",
             ),
             ForbiddenPattern(Regex(""""(ALIAS|PINYIN|PKG|ACT)""""), "do not hard-code search reason tags in Drawer UI"),
+        )
+
+        val forbiddenPageRhythmPatterns = listOf(
+            ForbiddenPattern(Regex("""\bhorizontal\s*=\s*2\b"""), "use LauncherSpacing.CONTENT_HORIZONTAL"),
+            ForbiddenPattern(Regex("""\bvertical\s*=\s*2\b"""), "use LauncherSpacing.CONTENT_VERTICAL"),
+            ForbiddenPattern(Regex("""\bspacing\s*=\s*2\b"""), "use LauncherSpacing.ROW_SPACING"),
+            ForbiddenPattern(Regex("""EdgeInsets\.all\(2\)"""), "use LauncherSpacing.BORDERED_CONTROL_INSET"),
+            ForbiddenPattern(Regex("""\bpadding\s*=\s*2\b"""), "use LauncherSpacing.BORDERED_CONTROL_INSET"),
         )
     }
 }

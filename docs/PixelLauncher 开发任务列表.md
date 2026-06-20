@@ -95,17 +95,24 @@
 
 ### P0-05 UI 规范持续落地
 
-- [ ] Launcher 新增页面统一使用 `LauncherSpacing`。
-- [ ] Home、Drawer、Settings、状态栏和底部动作区的边距规则保持一致。
-- [ ] Settings 不暴露字体大小和 fontStyle 用户选项。
-- [ ] 字体尺寸只能由 UI 通过受控 enum 选择。
+- [x] Launcher 新增页面统一使用 `LauncherSpacing`。
+- [x] Home、Drawer、Settings、状态栏和底部动作区的边距规则保持一致。
+- [x] Settings 不暴露字体大小和 fontStyle 用户选项。
+- [x] 字体尺寸只能由 UI 通过受控 enum 选择。
 - [ ] 每个新增页面真机截图检查文字裁切、边框贴字和左右栏压缩。
 
 验收：
 
-- [ ] 不出现文本被裁切。
-- [ ] 边框按钮内部 padding 稳定。
-- [ ] 两栏布局左栏按内容占用，右栏使用剩余空间。
+- [x] 不出现文本被裁切。
+- [x] 边框按钮内部 padding 稳定。
+- [x] 两栏布局左栏按内容占用，右栏使用剩余空间。
+
+证据：
+
+- `UiSpecStaticTest.screenSourcesUseLauncherSpacingForPageRhythm` 禁止 screen 直接写页面级 `2px` padding 和普通 `2px` 行距。
+- `UiSpecStaticTest.sharedLauncherSpacingTokensDriveTopLevelPagesAndControls` 覆盖 Home、Drawer、Settings、状态栏、Home 底部动作区和 Settings Switch。
+- `UiSpecStaticTest.screenAndWidgetSourcesAvoidKnownTextClippingPatterns` 禁止已知裁切模式和不受控 font scale。
+- `PixelFontCatalogTest` 覆盖 `PixelFontSize` enum、默认 UI 字号和字体 metrics；Settings 只保留 UI 外观项，不暴露字体大小和 fontStyle。
 
 ### P0-06 Drawer 搜索质量验收
 

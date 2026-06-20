@@ -18,10 +18,11 @@ import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
-private const val SMS_THREAD_ROW_PADDING_PX = 2
+private const val SMS_THREAD_ROW_PADDING_PX = LauncherSpacing.CONTENT_HORIZONTAL
 
 /**
  * SMS_THREADS 屏幕：会话列表。
@@ -107,7 +108,7 @@ private fun buildThreadRow(
             spacing = 1,
             children = listOf(
                 Row(
-                    spacing = 2,
+                    spacing = LauncherSpacing.ROW_SPACING,
                     crossAxisAlignment = CrossAxisAlignment.CENTER,
                     children = listOfNotNull(
                         if (thread.unreadCount > 0) {

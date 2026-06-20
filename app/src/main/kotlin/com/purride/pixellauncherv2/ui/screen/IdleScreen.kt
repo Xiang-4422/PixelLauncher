@@ -18,6 +18,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.launcher.IdleStatusKind
 import com.purride.pixellauncherv2.launcher.IdleStatusModel
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -45,15 +46,15 @@ fun IdleScreen(
 
     return Padding(
         padding = EdgeInsets.only(
-            left = 2,
-            top = statusBarHeight + 2,
-            right = 2,
-            bottom = 2,
+            left = LauncherSpacing.CONTENT_HORIZONTAL,
+            top = statusBarHeight + LauncherSpacing.CONTENT_VERTICAL,
+            right = LauncherSpacing.CONTENT_HORIZONTAL,
+            bottom = LauncherSpacing.CONTENT_VERTICAL,
         ),
         child = Column(
             mainAxisSize = MainAxisSize.MAX,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            spacing = 4,
+            spacing = LauncherSpacing.ROW_SPACING * 2,
             children = listOf(
                 Expanded(child = SizedBox(width = 0, height = 0)),
                 idleText(
@@ -65,7 +66,10 @@ fun IdleScreen(
                     color = theme.text.muted,
                 ),
                 Container(
-                    padding = EdgeInsets.symmetric(horizontal = 2, vertical = 2),
+                    padding = EdgeInsets.symmetric(
+                        horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,
+                        vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
+                    ),
                     borderColor = statusColor,
                     fillColor = theme.surface.panelSubtle,
                     child = Column(
@@ -86,7 +90,7 @@ fun IdleScreen(
                 ),
                 Expanded(child = SizedBox(width = 0, height = 0)),
                 Row(
-                    spacing = 2,
+                    spacing = LauncherSpacing.ROW_SPACING,
                     children = listOf(
                         Expanded(
                             child = idleText(

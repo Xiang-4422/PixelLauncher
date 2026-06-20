@@ -22,6 +22,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.DiagnosticsLine
 import com.purride.pixellauncherv2.launcher.DiagnosticsModel
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -68,12 +69,12 @@ class DiagnosticsScreen(
                             state = scrollState,
                             controller = scrollController,
                             child = Padding(
-                                horizontal = 2,
-                                vertical = 2,
+                                horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                                vertical = LauncherSpacing.CONTENT_VERTICAL,
                                 child = Column(
                                     crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                     mainAxisSize = MainAxisSize.MIN,
-                                    spacing = 2,
+                                    spacing = LauncherSpacing.ROW_SPACING,
                                     children = DiagnosticsModel
                                         .lines(widget.uiState, widget.screenProfile)
                                         .map { line ->
@@ -93,7 +94,7 @@ private fun diagnosticsRow(
     line: DiagnosticsLine,
     theme: LauncherTheme,
 ): Widget = Row(
-    spacing = 2,
+    spacing = LauncherSpacing.ROW_SPACING,
     mainAxisAlignment = MainAxisAlignment.START,
     crossAxisAlignment = CrossAxisAlignment.CENTER,
     children = listOf(

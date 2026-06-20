@@ -13,9 +13,10 @@ import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 
-private const val SMS_ROLE_PROMPT_PADDING_PX = 2
+private const val SMS_ROLE_PROMPT_PADDING_PX = LauncherSpacing.CONTENT_HORIZONTAL
 
 /**
  * SMS_ROLE_PROMPT 屏幕：提示用户将 PixelLauncher 设为默认短信应用。
@@ -33,7 +34,7 @@ fun SmsRolePromptScreen(
             mainAxisSize = MainAxisSize.MIN,
             mainAxisAlignment = MainAxisAlignment.CENTER,
             crossAxisAlignment = CrossAxisAlignment.CENTER,
-            spacing = 2,
+            spacing = LauncherSpacing.ROW_SPACING,
             children = listOf(
                 promptLine("SET PIXEL LAUNCHER", theme),
                 promptLine("AS DEFAULT SMS APP", theme),

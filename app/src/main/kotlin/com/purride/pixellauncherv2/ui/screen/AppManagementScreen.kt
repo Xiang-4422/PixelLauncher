@@ -28,6 +28,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -125,12 +126,12 @@ private fun appManagementBody(
     }
     val inputStyle = appTextFieldStyle(theme)
     return Padding(
-        horizontal = 2,
-        vertical = 2,
+        horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+        vertical = LauncherSpacing.CONTENT_VERTICAL,
         child = Column(
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             mainAxisSize = MainAxisSize.MIN,
-            spacing = 2,
+            spacing = LauncherSpacing.ROW_SPACING,
             children = listOf(
                 keyValueRow("APP", indexText, theme),
                 Text(
@@ -169,7 +170,7 @@ private fun appManagementBody(
                     onSubmitted = { onSave() },
                 ),
                 Row(
-                    spacing = 2,
+                    spacing = LauncherSpacing.ROW_SPACING,
                     children = listOf(
                         appCommandButton("PREV", theme, selectedApp != null, onPrevious),
                         Expanded(child = SizedBox(width = 0, height = 0)),
@@ -177,7 +178,7 @@ private fun appManagementBody(
                     ),
                 ),
                 Row(
-                    spacing = 2,
+                    spacing = LauncherSpacing.ROW_SPACING,
                     children = listOf(
                         appCommandButton("SAVE", theme, selectedApp != null, onSave),
                         Expanded(child = SizedBox(width = 0, height = 0)),
@@ -185,7 +186,7 @@ private fun appManagementBody(
                     ),
                 ),
                 Row(
-                    spacing = 2,
+                    spacing = LauncherSpacing.ROW_SPACING,
                     children = listOf(
                         appCommandButton("REFRESH", theme, true, onCacheReset),
                         Expanded(child = SizedBox(width = 0, height = 0)),
@@ -201,7 +202,7 @@ private fun keyValueRow(
     value: String,
     theme: LauncherTheme,
 ): Widget = Row(
-    spacing = 2,
+    spacing = LauncherSpacing.ROW_SPACING,
     children = listOf(
         Text(
             key,
@@ -245,7 +246,7 @@ private fun appTextFieldStyle(theme: LauncherTheme): TextFieldStyle = TextFieldS
     selectionColor = theme.semantic.info,
     compositionColor = theme.semantic.info,
     selectionHandleColor = theme.semantic.info,
-    padding = 2,
+    padding = LauncherSpacing.BORDERED_CONTROL_INSET,
 )
 
 private fun appCommandButton(
@@ -257,7 +258,7 @@ private fun appCommandButton(
     val content = Container(
         borderColor = if (enabled) theme.button.border else theme.button.disabledText,
         fillColor = PixelColor.Transparent,
-        padding = EdgeInsets.all(2),
+        padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
         alignment = Alignment.CENTER,
         child = Text(
             text,
