@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -8,8 +9,8 @@ import org.junit.Test
 
 /**
  * Coverage for [SettingsMenuModel] — the deterministic settings value logic
- * (cyclic option stepping, slider ratio mapping, gap snapping, labels and the
- * conditional row list). All JVM-safe; no Android dependencies.
+ * (cyclic option stepping, binary switches, labels and the conditional row list).
+ * All JVM-safe; no Android dependencies.
  */
 class SettingsMenuModelTest {
 
@@ -53,24 +54,15 @@ class SettingsMenuModelTest {
         assertEquals(first, SettingsMenuModel.nextTheme(stepped, -1))
     }
 
-    // ── Pixel gap ratio stepping + snapping ───────────────────────────────────
-
     @Test
-    fun nextPixelGapRatio_stepsToNextDiscreteStop() {
-        assertEquals(0.75f, SettingsMenuModel.nextPixelGapRatio(0.5f, 1), 0f)
-    }
-
-    @Test
-    fun nextPixelGapRatio_wrapsAroundEnds() {
-        assertEquals(0f, SettingsMenuModel.nextPixelGapRatio(1f, 1), 0f)
-        assertEquals(1f, SettingsMenuModel.nextPixelGapRatio(0f, -1), 0f)
-    }
-
-    @Test
-    fun pixelGapRatioSnap_picksNearestStopAndClamps() {
-        assertEquals(0.5f, SettingsMenuModel.pixelGapRatioSnap(0.6f), 0f)
-        assertEquals(1f, SettingsMenuModel.pixelGapRatioSnap(1.5f), 0f)
-        assertEquals(0f, SettingsMenuModel.pixelGapRatioSnap(-1f), 0f)
+    fun nextResolution_keepsOriginalDiscreteOptionsAndWraps() {
+        val options = ScreenProfileFactory.resolutionOptions(currentProfile = null)
+        assertEquals(options, SettingsMenuModel.resolutionOptions())
+        assertEquals(0, SettingsMenuModel.resolutionIndex(options.first()))
+        assertEquals(options.lastIndex, SettingsMenuModel.resolutionIndex(options.last()))
+        assertEquals(options[1], SettingsMenuModel.nextResolution(options.first(), 1))
+        assertEquals(options.first(), SettingsMenuModel.nextResolution(options.last(), 1))
+        assertEquals(options.last(), SettingsMenuModel.nextResolution(options.first(), -1))
     }
 
     // ── Labels + toggles ──────────────────────────────────────────────────────
@@ -87,13 +79,6 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun pixelGapSizeLabel_rendersClampedPercent() {
-        assertEquals("0%", SettingsMenuModel.pixelGapSizeLabel(0f))
-        assertEquals("50%", SettingsMenuModel.pixelGapSizeLabel(0.5f))
-        assertEquals("100%", SettingsMenuModel.pixelGapSizeLabel(1.5f))
-    }
-
-    @Test
     fun displayValue_wrapsNonBlankInAngleBrackets() {
         assertEquals("<10PX>", SettingsMenuModel.displayValue(SettingsMenuRow(SettingsMenuItem.RESOLUTION, "PIXEL SIZE", "10PX")))
         assertEquals("", SettingsMenuModel.displayValue(SettingsMenuRow(SettingsMenuItem.RESOLUTION, "PIXEL SIZE", "")))
@@ -103,10 +88,14 @@ class SettingsMenuModelTest {
 
     @Test
     fun rows_includeStyleRowOnlyWhenPixelGapEnabled() {
-        val withGap = SettingsMenuModel.rows(LauncherState(isPixelGapEnabled = true)).map { it.item }
-        val withoutGap = SettingsMenuModel.rows(LauncherState(isPixelGapEnabled = false)).map { it.item }
+        val enabledRows = SettingsMenuModel.rows(LauncherState(isPixelGapEnabled = true))
+        val disabledRows = SettingsMenuModel.rows(LauncherState(isPixelGapEnabled = false))
+        val withGap = enabledRows.map { it.item }
+        val withoutGap = disabledRows.map { it.item }
         assertTrue(withGap.contains(SettingsMenuItem.STYLE))
         assertFalse(withoutGap.contains(SettingsMenuItem.STYLE))
+        assertEquals("ON", enabledRows.first { it.item == SettingsMenuItem.PIXEL_GAP }.value)
+        assertEquals("OFF", disabledRows.first { it.item == SettingsMenuItem.PIXEL_GAP }.value)
     }
 
     @Test

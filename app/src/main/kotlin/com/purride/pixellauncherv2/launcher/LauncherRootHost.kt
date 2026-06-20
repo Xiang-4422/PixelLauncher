@@ -64,8 +64,6 @@ internal class LauncherRootHost(
     private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY)
     private var chargeTick: Int = 0
     private var screenProfile: ScreenProfile = ScreenProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
-    private var pixelGapEnabled: Boolean = true
-    private var pixelGapRatio: Float = 1f
     private val textRasterizers = LauncherTextRasterizers(context)
 
     // ── Main pager: HOME=0, APP_DRAWER=1, SETTINGS=2 ─────────────────────────
@@ -121,22 +119,19 @@ internal class LauncherRootHost(
         theme: LauncherTheme,
         screenProfile: ScreenProfile,
         chargeTick: Int,
-        pixelGapEnabled: Boolean = state.pixelGapRatio > 0f,
-        pixelGapRatio: Float = state.pixelGapRatio,
+        pixelGapEnabled: Boolean = state.isPixelGapEnabled,
     ) {
         uiState = state
         this.theme = theme
         this.chargeTick = chargeTick
         this.screenProfile = screenProfile
-        this.pixelGapEnabled = pixelGapEnabled
-        this.pixelGapRatio = pixelGapRatio.coerceIn(0f, 1f)
 
         setup.hostView.profilePreference = PixelHostProfilePreference(
             dotSizePx = screenProfile.dotSizePx,
             pixelShape = screenProfile.pixelShape.toEngineShape(),
         )
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
-        setup.hostView.setPixelGapRatio(this.pixelGapRatio)
+        setup.hostView.setPixelGapRatio(if (pixelGapEnabled) 1f else 0f)
         setup.hostView.backgroundColor = theme.surface.appBackground
         setup.hostView.pixelGridColor  = theme.surface.pixelGrid
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
@@ -318,8 +313,6 @@ internal class LauncherRootHost(
         uiState = uiState,
         theme = theme,
         onItemAction = callbacks.onSettingsItemAction,
-        onItemRatioChanged = callbacks.onSettingsItemRatioChanged,
-        onPreviewChanged = callbacks.onSettingsPreviewChanged,
     )
 
     private fun buildSharedStatusBar(): Widget =

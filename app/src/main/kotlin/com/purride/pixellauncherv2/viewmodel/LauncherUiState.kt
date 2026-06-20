@@ -67,7 +67,6 @@ data class LauncherUiState(
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
-    val pixelGapRatio: Float = 1f,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
 
     // ── UI behaviour ──────────────────────────────────────────────────────────

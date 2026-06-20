@@ -6,6 +6,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Padding
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
@@ -13,6 +14,7 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.DataHealthModel
 import com.purride.pixellauncherv2.launcher.HomeInfoModel
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -22,7 +24,7 @@ import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
-import com.purride.pixellauncherv2.ui.widget.SettingsValueSlider
+import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedControlRow
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -41,8 +43,6 @@ class SettingsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
     private val onItemAction: (SettingsMenuItem, Int) -> Unit,
-    private val onItemRatioChanged: (SettingsMenuItem, Float) -> Unit,
-    private val onPreviewChanged: () -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -52,8 +52,6 @@ class SettingsScreen(
 
         private val listController = PixelListController()
         private val listState: PixelListState = listController.create()
-        private var previewPixelSizeRatio: Float? = null
-        private var previewGapRatio: Float? = null
 
         override fun build(context: BuildContext): Widget {
             val items = widget.uiState.toSettingsWidgets(widget.theme)
@@ -64,11 +62,15 @@ class SettingsScreen(
                 spacing = 0,
                 children = listOf(
                     Expanded(
-                        child = ListView(
-                            items = items,
-                            state = listState,
-                            controller = listController,
-                            spacing = SettingsListGeometry.ROW_SPACING_PX,
+                        child = Padding(
+                            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                            vertical = LauncherSpacing.CONTENT_VERTICAL,
+                            child = ListView(
+                                items = items,
+                                state = listState,
+                                controller = listController,
+                                spacing = SettingsListGeometry.ROW_SPACING_PX,
+                            ),
                         ),
                     ),
                 ),
@@ -76,36 +78,30 @@ class SettingsScreen(
         }
 
         private fun LauncherUiState.toSettingsWidgets(t: LauncherTheme): List<Widget> = buildList {
-            val pixelPreview = previewPixelSizeRatio ?: SettingsMenuModel.resolutionRatio(selectedDotSizePx)
-            val pixelPreviewSize = SettingsMenuModel.resolutionAtRatio(pixelPreview)
-            val gapPreview = previewGapRatio ?: SettingsMenuModel.pixelGapRatioSnap(pixelGapRatio)
+            val resolutionOptions = SettingsMenuModel.resolutionOptions()
+            val selectedResolutionIndex = SettingsMenuModel.resolutionIndex(selectedDotSizePx)
             addSection(SettingsSection.DISPLAY, t)
             add(
-                SettingsValueSlider(
+                SettingsSegmentedControlRow(
                     title = "PIXEL",
-                    valueLabel = "${pixelPreviewSize}PX",
-                    value = pixelPreview,
+                    labels = resolutionOptions.map(Int::toString),
+                    selectedIndex = selectedResolutionIndex,
                     theme = t,
-                    onStepDown = { widget.onItemAction(SettingsMenuItem.RESOLUTION, -1) },
-                    onStepUp = { widget.onItemAction(SettingsMenuItem.RESOLUTION, +1) },
-                    onValuePreview = { ratio -> updatePixelSizePreview(ratio) },
-                    onValueChanged = { ratio ->
-                        val snapped = SettingsMenuModel.resolutionRatio(SettingsMenuModel.resolutionAtRatio(ratio))
-                        previewPixelSizeRatio = null
-                        widget.onItemRatioChanged(SettingsMenuItem.RESOLUTION, snapped)
+                    onSelected = { index ->
+                        val direction = index - selectedResolutionIndex
+                        if (direction != 0) {
+                            widget.onItemAction(SettingsMenuItem.RESOLUTION, direction)
+                        }
                     },
                 ),
             )
             add(
-                SettingsValueSlider(
+                SettingsSwitchRow(
                     title = "GAP",
-                    valueLabel = SettingsMenuModel.pixelGapSizeLabel(gapPreview),
-                    value = gapPreview,
+                    checked = isPixelGapEnabled,
                     theme = t,
-                    live = true,
-                    onStepDown = { widget.onItemAction(SettingsMenuItem.PIXEL_GAP_SIZE, -1) },
-                    onStepUp = { widget.onItemAction(SettingsMenuItem.PIXEL_GAP_SIZE, +1) },
-                    onValueChanged = { ratio -> updateGapPreviewAndCommit(ratio) },
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_GAP, +1) },
                 ),
             )
             add(
@@ -237,35 +233,5 @@ class SettingsScreen(
             )
         }
 
-        private fun updatePixelSizePreview(ratio: Float) {
-            val snapped = SettingsMenuModel.resolutionRatio(SettingsMenuModel.resolutionAtRatio(ratio))
-            updatePreview(
-                current = previewPixelSizeRatio,
-                next = snapped,
-                assign = { previewPixelSizeRatio = it },
-            )
-        }
-
-        private fun updateGapPreviewAndCommit(ratio: Float) {
-            val snapped = SettingsMenuModel.pixelGapRatioSnap(ratio)
-            updatePreview(
-                current = previewGapRatio,
-                next = snapped,
-                assign = { previewGapRatio = it },
-            )
-            widget.onItemRatioChanged(SettingsMenuItem.PIXEL_GAP_SIZE, snapped)
-        }
-
-        private fun updatePreview(
-            current: Float?,
-            next: Float,
-            assign: (Float) -> Unit,
-        ) {
-            if (current != next) {
-                assign(next)
-                widget.onPreviewChanged()
-                setState { }
-            }
-        }
     }
 }

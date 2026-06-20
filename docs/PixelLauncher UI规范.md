@@ -84,10 +84,23 @@ enum class PixelFontSize(val px: Int) {
 
 边框内文字必须保留稳定 padding：
 
-- 普通文本按钮最小 padding 使用 `EdgeInsets.all(2)`。
-- 列表行左右 padding 不小于 2 个 pixel-engine 单位。
+- `OutlinedButton` 的文字与边框之间最小 padding 使用 `EdgeInsets.all(2)`。
+- `TextButton` 默认 padding 为零，需要扩大点击区域时由调用方显式配置。
+- Home、Drawer、Settings 的普通内容统一使用 `LauncherSpacing.CONTENT_HORIZONTAL` 作为页面左右边距。
+- 普通无边框行使用自然尺寸，不在页面边距之外重复增加行内 padding。
+- 三个主页面的普通行间距统一使用 `LauncherSpacing.ROW_SPACING`。
 - 边框不能贴字，不能只在顶部看起来有 1px 空隙。
 - 需要紧凑布局时，优先减少外部间距，不减少文字与边框的内部 padding。
+
+Launcher 页面空间常量集中在 `LauncherSpacing`：
+
+| 常量 | 当前值 | 使用场景 |
+|---|---:|---|
+| `CONTENT_HORIZONTAL` | 2 | 状态栏文字、搜索框以及 Home、Drawer、Settings 正文左右边距 |
+| `CONTENT_VERTICAL` | 2 | Home、Drawer、Settings 正文顶部和底部边距 |
+| `ROW_SPACING` | 2 | 三个主页面普通同级行之间的间距 |
+| `EDGE_ACTION` | 1 | Home 底部 `CALL` / `SMS` 距左右及底部屏幕边缘 |
+| `BORDERED_CONTROL_INSET` | 2 | Settings Switch 等自定义有边框控件的文字内距 |
 
 禁止：
 
@@ -143,8 +156,14 @@ enum class PixelFontSize(val px: Int) {
 
 - 无特殊需要时不要加边框。
 - 有边框时必须保证内部 padding 和垂直居中。
-- 首页底部 `CONTACT` / `SMS` 使用无边框 TextButton，贴左右边布局，不留多余边距。
+- 首页底部 `CALL` / `SMS` 使用无边框 TextButton，按钮内部零 padding，屏幕边缘间距由 Home 布局负责。
 - 按钮状态不能改变布局尺寸。
+
+Settings 的 Display 控件：
+
+- `PIXEL` 使用 pixel-engine `SegmentedControl` 展示类似 Switch 的多值选项，只能从 `ScreenProfileFactory` 提供的离散尺寸中选择；窄屏时每行最多 3 项。
+- `GAP` 使用二元 Switch，只显示 `ON / OFF`，状态模型只保存 Boolean。
+- `PIXEL` 和 `GAP` 都不使用 Slider，也不保留比例预览状态。
 
 按钮内容：
 
@@ -183,6 +202,7 @@ Launcher 替代原生状态栏显示时：
 - 状态栏高度应来自 Android 真实 status bar inset。
 - 顶部自绘状态栏只占用这段真实高度。
 - 内容区从状态栏下方开始布局。
+- 左侧时间、右侧页面标识、临时消息和搜索框距离屏幕左右边缘各 2 个 pixel-engine 逻辑像素。
 - 状态栏同时作为全局临时消息出口，不再绘制页面内 Toast 浮层。
 - 临时消息出现时，只替换时间、页面标题或搜索框所在的文字行。
 - 临时消息独占文字行并单行居中显示，过长时省略；新消息替换旧消息并重置消失计时。
@@ -270,6 +290,7 @@ Home 是手机亮屏后的第一印象，只展示当前最重要的信息。
 - 重要信息优先于装饰。
 - 顶部信息顺序固定为日期、常显天气、动态优先级状态。
 - 天气不参与动态状态行竞争；无数据和无定位权限时仍保留占位及刷新入口。
+- 左下角 `CALL` 和右下角 `SMS` 距离左右及底部屏幕边缘各 1 个 pixel-engine 逻辑像素。
 - 状态文本短而明确。
 - 底部主要操作保持稳定位置。
 - 动态状态更新不能导致整屏跳动。

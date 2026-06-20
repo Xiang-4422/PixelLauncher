@@ -5,7 +5,6 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
-import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
@@ -21,11 +20,10 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.DrawerListGeometry
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
-
-private const val DRAWER_ROW_PADDING_PX = 2
 
 /**
  * APP_DRAWER 应用列表页（pixel-engine 渲染）。
@@ -58,8 +56,8 @@ fun DrawerScreen(
         children = listOf(
             Expanded(
                 child = Padding(
-                    horizontal = 2,
-                    vertical = 2,
+                    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                    vertical = LauncherSpacing.CONTENT_VERTICAL,
                     child = ListViewBuilder(
                         itemCount = apps.size.coerceAtLeast(1),
                         state = listState,
@@ -111,10 +109,6 @@ private fun drawerListItem(
                     height = rowHeight,
                     fillColor = PixelColor.Transparent,
                     borderColor = null,
-                    padding = EdgeInsets.symmetric(
-                        horizontal = DRAWER_ROW_PADDING_PX,
-                        vertical = DRAWER_ROW_PADDING_PX,
-                    ),
                     alignment = when (alignment) {
                         DrawerListAlignment.LEFT -> Alignment.CENTER_START
                         DrawerListAlignment.CENTER -> Alignment.CENTER

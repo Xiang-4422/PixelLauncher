@@ -12,8 +12,8 @@ import com.purride.pixellauncherv2.render.ScreenProfile
  */
 object SettingsMenuLayout {
 
-    private const val panelBottomPadding = 4
-    private const val rowGap = 2
+    private const val panelBottomPadding = LauncherSpacing.CONTENT_VERTICAL
+    private const val rowGap = LauncherSpacing.ROW_SPACING
 
     /** 设置列表估算行距（单一来源 [SettingsListGeometry]）。 */
     private val rowHeight: Int

@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.ui.screen
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
@@ -14,12 +15,15 @@ import com.purride.pixelui.SizedBox
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoLine
 import com.purride.pixellauncherv2.launcher.HomeInfoModel
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -54,6 +58,9 @@ class HomeScreen(
         override fun build(context: BuildContext): Widget {
             val s = widget.uiState
             val t = widget.theme
+            val actionButtonStyle = TextButtonStyle(
+                textStyle = TextStyle(color = t.button.text),
+            )
 
             return Column(
                 crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -61,29 +68,36 @@ class HomeScreen(
                 spacing = 0,
                 children = listOf(
                     Padding(
-                        horizontal = 2,
-                        vertical = 2,
+                        horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                        vertical = LauncherSpacing.CONTENT_VERTICAL,
                         child = Column(
                             crossAxisAlignment = CrossAxisAlignment.STRETCH,
                             mainAxisSize = MainAxisSize.MIN,
-                            spacing = 2,
+                            spacing = LauncherSpacing.ROW_SPACING,
                             children = buildInfoColumn(s, t),
                         ),
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
-                    Row(
-                        spacing = 0,
-                        children = listOf(
-                            HomeTextButton(
-                                text = "CONTACT",
-                                theme = t,
-                                onPressed = widget.onOpenContacts,
-                            ),
-                            Expanded(child = SizedBox(width = 0, height = 0)),
-                            HomeTextButton(
-                                text = "SMS",
-                                theme = t,
-                                onPressed = widget.onOpenSms,
+                    Padding(
+                        padding = EdgeInsets.only(
+                            left = LauncherSpacing.EDGE_ACTION,
+                            right = LauncherSpacing.EDGE_ACTION,
+                            bottom = LauncherSpacing.EDGE_ACTION,
+                        ),
+                        child = Row(
+                            spacing = 0,
+                            children = listOf(
+                                TextButton(
+                                    text = "CALL",
+                                    onPressed = widget.onOpenContacts,
+                                    style = actionButtonStyle,
+                                ),
+                                Expanded(child = SizedBox(width = 0, height = 0)),
+                                TextButton(
+                                    text = "SMS",
+                                    onPressed = widget.onOpenSms,
+                                    style = actionButtonStyle,
+                                ),
                             ),
                         ),
                     ),
@@ -157,23 +171,3 @@ private fun HomeInfoRow(
         ),
     )
 }
-
-private fun HomeTextButton(
-    text: String,
-    theme: LauncherTheme,
-    onPressed: () -> Unit,
-): Widget = Semantics(
-    label = text,
-    role = PixelSemanticRole.BUTTON,
-    enabled = true,
-    child = GestureDetector(
-        onTap = onPressed,
-        child = Text(
-            text,
-            style = TextStyle(color = theme.button.text),
-            overflow = TextOverflow.ELLIPSIS,
-            softWrap = false,
-            maxLines = 1,
-        ),
-    ),
-)

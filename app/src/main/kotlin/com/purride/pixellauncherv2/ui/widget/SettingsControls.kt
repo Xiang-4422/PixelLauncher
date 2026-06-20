@@ -2,7 +2,6 @@ package com.purride.pixellauncherv2.ui.widget
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
-import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
@@ -10,58 +9,40 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Row
-import com.purride.pixelui.Slider
+import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 
-private const val SETTINGS_SWITCH_PADDING_PX = 2
+/** Switch 的 OFF/ON 分段之间保留一条像素缝，不属于页面行间距。 */
 private const val SETTINGS_SWITCH_SEGMENT_GAP_PX = 1
-private const val SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX = 2
-private const val SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX = 2
-private const val SETTINGS_ROW_HORIZONTAL_PADDING_PX = 2
-private const val SETTINGS_ROW_VERTICAL_PADDING_PX = 2
-private const val SETTINGS_LABEL_VERTICAL_PADDING_PX = 2
 
-fun SettingsValueSlider(
+/** 设置行标题列与值列的内部水平间距，不用于相邻设置行。 */
+private const val SETTINGS_INLINE_COLUMN_GAP_PX = 2
+
+fun SettingsSegmentedControlRow(
     title: String,
-    valueLabel: String,
-    value: Float,
+    labels: List<String>,
+    selectedIndex: Int,
     theme: LauncherTheme,
-    live: Boolean = false,
-    onStepDown: () -> Unit,
-    onStepUp: () -> Unit,
-    onValuePreview: (Float) -> Unit = {},
-    onValueChanged: (Float) -> Unit,
-): Widget = Container(
-    padding = settingsRowPadding(),
-    child = Column(
-        mainAxisSize = MainAxisSize.MIN,
-        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        spacing = 1,
-        children = listOf(
-            settingsInlineRow(
-                title = GestureDetector(
-                    onTap = onStepDown,
-                    child = settingsTitleCell(title = title, theme = theme),
-                ),
-                trailing = GestureDetector(
-                    onTap = onStepUp,
-                    child = settingsValueCell(valueLabel = valueLabel, theme = theme),
-                ),
+    onSelected: (Int) -> Unit,
+): Widget {
+    return Container(
+        child = settingsInlineRow(
+            title = settingsTitleCell(title = title, theme = theme),
+            trailing = SegmentedControl(
+                labels = labels,
+                selectedIndex = selectedIndex,
+                onSelected = onSelected,
             ),
-            Slider(
-                value = value.coerceIn(0f, 1f),
-                onDrag = if (live) onValueChanged else onValuePreview,
-                onRelease = onValueChanged,
-                activeColor = theme.semantic.info,
-                trackColor = theme.text.muted,
-            ),
+            titleFlex = 1,
+            trailingFlex = 3,
         ),
-    ),
-)
+    )
+}
 
 fun SettingsSwitchRow(
     title: String,
@@ -72,7 +53,6 @@ fun SettingsSwitchRow(
     onLabel: String = "ON",
     onToggle: () -> Unit,
 ): Widget = Container(
-    padding = settingsRowPadding(),
     child = settingsInlineRow(
         title = GestureDetector(
             onTap = onToggle,
@@ -113,7 +93,6 @@ fun SettingsOptionStepperRow(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ): Widget = Container(
-    padding = settingsRowPadding(),
     child = settingsInlineRow(
         title = GestureDetector(
             onTap = onPrevious,
@@ -134,7 +113,6 @@ fun SettingsActionRow(
 ): Widget = GestureDetector(
     onTap = onPressed,
     child = Container(
-        padding = settingsRowPadding(),
         child = settingsInlineRow(
             title = settingsTitleCell(title = title, theme = theme),
             trailing = settingsValueCell(valueLabel = valueLabel, theme = theme),
@@ -146,7 +124,6 @@ fun SettingsSectionHeader(
     title: String,
     theme: LauncherTheme,
 ): Widget = Container(
-    padding = settingsRowPadding(),
     child = Text(
         title,
         style = TextStyle(color = theme.text.muted),
@@ -159,13 +136,15 @@ fun SettingsSectionHeader(
 private fun settingsInlineRow(
     title: Widget,
     trailing: Widget,
+    titleFlex: Int = 1,
+    trailingFlex: Int = 1,
 ): Widget = Row(
     mainAxisSize = MainAxisSize.MAX,
     crossAxisAlignment = CrossAxisAlignment.CENTER,
-    spacing = 2,
+    spacing = SETTINGS_INLINE_COLUMN_GAP_PX,
     children = listOf(
-        Expanded(child = settingsRowCell(title, Alignment.CENTER_START)),
-        Expanded(child = settingsRowCell(trailing, Alignment.CENTER_END)),
+        Expanded(flex = titleFlex, child = settingsRowCell(title, Alignment.CENTER_START)),
+        Expanded(flex = trailingFlex, child = settingsRowCell(trailing, Alignment.CENTER_END)),
     ),
 )
 
@@ -181,7 +160,6 @@ private fun settingsTitleCell(
     title: String,
     theme: LauncherTheme,
 ): Widget = Container(
-    padding = EdgeInsets.symmetric(vertical = SETTINGS_LABEL_VERTICAL_PADDING_PX),
     alignment = Alignment.CENTER_START,
     child = Text(
         title,
@@ -196,7 +174,6 @@ private fun settingsValueCell(
     valueLabel: String,
     theme: LauncherTheme,
 ): Widget = Container(
-    padding = EdgeInsets.symmetric(vertical = SETTINGS_LABEL_VERTICAL_PADDING_PX),
     alignment = Alignment.CENTER_END,
     child = Text(
         valueLabel,
@@ -205,11 +182,6 @@ private fun settingsValueCell(
         softWrap = false,
         maxLines = 1,
     ),
-)
-
-private fun settingsRowPadding(): EdgeInsets = EdgeInsets.symmetric(
-    horizontal = SETTINGS_ROW_HORIZONTAL_PADDING_PX,
-    vertical = SETTINGS_ROW_VERTICAL_PADDING_PX,
 )
 
 private fun SettingsSwitch(
@@ -226,7 +198,6 @@ private fun SettingsSwitch(
         onTap = onToggle,
         child = Container(
             borderColor = theme.button.border,
-            padding = EdgeInsets.all(SETTINGS_SWITCH_PADDING_PX),
             child = Row(
                 spacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
                 children = listOf(
@@ -253,8 +224,8 @@ private fun switchSegment(
 ): Widget = Container(
     fillColor = if (active) theme.button.pressedFill else PixelColor.Transparent,
     padding = EdgeInsets.symmetric(
-        horizontal = SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX,
-        vertical = SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX,
+        horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,
+        vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
     ),
     alignment = Alignment.CENTER,
     child = Text(

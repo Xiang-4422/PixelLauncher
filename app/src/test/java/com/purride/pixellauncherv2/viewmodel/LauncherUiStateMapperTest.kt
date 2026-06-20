@@ -47,7 +47,6 @@ class LauncherUiStateMapperTest {
             smsPermissionState = SmsPermissionState.READY,
             selectedDotSizePx = 9,
             isPixelGapEnabled = false,
-            pixelGapRatio = 0.5f,
             selectedTheme = PixelTheme.NIGHT,
             drawerListAlignment = DrawerListAlignment.CENTER,
             isIdlePageEnabled = true,
@@ -109,7 +108,6 @@ class LauncherUiStateMapperTest {
         // appearance
         assertEquals(9, ui.selectedDotSizePx)
         assertEquals(false, ui.isPixelGapEnabled)
-        assertEquals(0.5f, ui.pixelGapRatio, 0f)
         assertEquals(PixelTheme.NIGHT, ui.selectedTheme)
         assertEquals(DrawerListAlignment.CENTER, ui.drawerListAlignment)
         assertEquals(true, ui.isIdlePageEnabled)

@@ -7,7 +7,6 @@ import com.purride.pixellauncherv2.render.ScreenProfileFactory
 enum class SettingsMenuItem {
     RESOLUTION,
     PIXEL_GAP,
-    PIXEL_GAP_SIZE,
     STYLE,
     THEME,
     HOME_STATUS,
@@ -59,9 +58,9 @@ object SettingsMenuModel {
             )
             add(
                 SettingsMenuRow(
-                    item = SettingsMenuItem.PIXEL_GAP_SIZE,
-                    title = "GAP SIZE",
-                    value = pixelGapSizeLabel(state.pixelGapRatio),
+                    item = SettingsMenuItem.PIXEL_GAP,
+                    title = "GAP",
+                    value = onOffLabel(state.isPixelGapEnabled),
                     section = SettingsSection.DISPLAY,
                 ),
             )
@@ -190,35 +189,17 @@ object SettingsMenuModel {
     }
 
     fun nextResolution(current: Int, direction: Int, screenProfile: ScreenProfile? = null): Int {
-        val resolutionOptions = ScreenProfileFactory.resolutionOptions(screenProfile)
-        val currentIndex = resolutionOptions.indexOf(current).takeIf { it >= 0 } ?: 0
-        val nextIndex = wrapIndex(currentIndex + direction, resolutionOptions.size)
-        return resolutionOptions[nextIndex]
+        val options = resolutionOptions(screenProfile)
+        val nextIndex = wrapIndex(resolutionIndex(current, screenProfile) + direction, options.size)
+        return options[nextIndex]
     }
 
-    fun resolutionRatio(current: Int, screenProfile: ScreenProfile? = null): Float {
-        val options = ScreenProfileFactory.resolutionOptions(screenProfile)
-        val index = options.indexOf(current).takeIf { it >= 0 } ?: 0
-        return ratioForIndex(index, options.size)
+    fun resolutionOptions(screenProfile: ScreenProfile? = null): List<Int> {
+        return ScreenProfileFactory.resolutionOptions(screenProfile)
     }
 
-    fun resolutionAtRatio(ratio: Float, screenProfile: ScreenProfile? = null): Int {
-        val options = ScreenProfileFactory.resolutionOptions(screenProfile)
-        return options[indexForRatio(ratio, options.size)]
-    }
-
-    fun nextPixelGapRatio(current: Float, direction: Int): Float {
-        val currentIndex = pixelGapRatioOptions.indices.minByOrNull { index ->
-            kotlin.math.abs(pixelGapRatioOptions[index] - current)
-        } ?: 0
-        return pixelGapRatioOptions[wrapIndex(currentIndex + direction, pixelGapRatioOptions.size)]
-    }
-
-    fun pixelGapRatioSnap(ratio: Float): Float {
-        val index = pixelGapRatioOptions.indices.minByOrNull { candidate ->
-            kotlin.math.abs(pixelGapRatioOptions[candidate] - ratio.coerceIn(0f, 1f))
-        } ?: 0
-        return pixelGapRatioOptions[index]
+    fun resolutionIndex(current: Int, screenProfile: ScreenProfile? = null): Int {
+        return resolutionOptions(screenProfile).indexOf(current).takeIf { it >= 0 } ?: 0
     }
 
     fun nextTheme(current: PixelTheme, direction: Int): PixelTheme {
@@ -293,10 +274,6 @@ object SettingsMenuModel {
         return if (value) "ON" else "OFF"
     }
 
-    fun pixelGapSizeLabel(ratio: Float): String {
-        return "${(ratio.coerceIn(0f, 1f) * 100).toInt()}%"
-    }
-
     fun resolutionLabel(dotSizePx: Int, screenProfile: ScreenProfile? = null): String {
         return "${dotSizePx}PX"
     }
@@ -316,16 +293,4 @@ object SettingsMenuModel {
         return if (mod < 0) mod + size else mod
     }
 
-    private fun ratioForIndex(index: Int, size: Int): Float {
-        if (size <= 1) return 0f
-        return index.coerceIn(0, size - 1).toFloat() / (size - 1).toFloat()
-    }
-
-    private fun indexForRatio(ratio: Float, size: Int): Int {
-        if (size <= 1) return 0
-        return kotlin.math.round(ratio.coerceIn(0f, 1f) * (size - 1)).toInt()
-            .coerceIn(0, size - 1)
-    }
-
-    private val pixelGapRatioOptions = listOf(0f, 0.25f, 0.5f, 0.75f, 1f)
 }

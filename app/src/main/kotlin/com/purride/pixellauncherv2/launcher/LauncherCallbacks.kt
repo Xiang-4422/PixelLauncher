@@ -24,8 +24,6 @@ data class LauncherCallbacks(
 
     // ── SETTINGS ──────────────────────────────────────────────────────────────
     val onSettingsItemAction: (SettingsMenuItem, Int) -> Unit,
-    val onSettingsItemRatioChanged: (SettingsMenuItem, Float) -> Unit,
-    val onSettingsPreviewChanged: () -> Unit,
     val onAppEditorPrevious: () -> Unit,
     val onAppEditorNext: () -> Unit,
     val onAppEditorNameChanged: (String) -> Unit,

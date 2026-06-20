@@ -44,7 +44,6 @@ data class LauncherState(
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
-    val pixelGapRatio: Float = 1f,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     val isIdlePageEnabled: Boolean = false,

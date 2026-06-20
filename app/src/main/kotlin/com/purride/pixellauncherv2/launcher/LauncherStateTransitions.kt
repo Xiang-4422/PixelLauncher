@@ -710,14 +710,12 @@ object LauncherStateTransitions {
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
         isPixelGapEnabled: Boolean = state.isPixelGapEnabled,
-        pixelGapRatio: Float = state.pixelGapRatio,
         selectedTheme: PixelTheme = state.selectedTheme,
     ): LauncherState {
         return state.copy(
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
             isPixelGapEnabled = isPixelGapEnabled,
-            pixelGapRatio = pixelGapRatio.coerceIn(0f, 1f),
             selectedTheme = selectedTheme,
         )
     }

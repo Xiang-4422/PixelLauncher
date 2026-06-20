@@ -29,21 +29,79 @@ class UiSpecStaticTest {
     }
 
     @Test
-    fun settingsTextPaddingConstantsRemainAtLeastTwoPixels() {
+    fun sharedLauncherSpacingTokensDriveTopLevelPagesAndControls() {
         val moduleRoot = resolveModuleRoot()
-        val file = moduleRoot.resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
-        val source = file.readText()
-        val offenders = minPaddingConstants.mapNotNull { rule ->
-            val value = rule.regex.find(source)?.groupValues?.getOrNull(1)?.toIntOrNull()
-            when {
-                value == null -> "${file.relativeTo(moduleRoot).invariantSeparatorsPath}: missing ${rule.constantName}"
-                value < 2 -> "${file.relativeTo(moduleRoot).invariantSeparatorsPath}: ${rule.constantName} must be >= 2, found $value"
-                else -> null
-            }
-        }
+        val spacingSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherSpacing.kt")
+            .readText()
+        val headerSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherHeaderLayout.kt")
+            .readText()
+        val homeSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt")
+            .readText()
+        val drawerSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/DrawerScreen.kt")
+            .readText()
+        val settingsSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
+            .readText()
+        val controlsSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
+            .readText()
+        val switchSource = Regex(
+            """private fun SettingsSwitch\([\s\S]*?\n}\n\nprivate fun switchSegment""",
+        ).find(controlsSource)?.value.orEmpty()
+        val offenders = listOfNotNull(
+            if (!spacingSource.contains("const val CONTENT_HORIZONTAL = 2")) "CONTENT_HORIZONTAL must be 2" else null,
+            if (!spacingSource.contains("const val CONTENT_VERTICAL = 2")) "CONTENT_VERTICAL must be 2" else null,
+            if (!spacingSource.contains("const val ROW_SPACING = 2")) "ROW_SPACING must be 2" else null,
+            if (!spacingSource.contains("const val EDGE_ACTION = 1")) "EDGE_ACTION must be 1" else null,
+            if (!spacingSource.contains("const val BORDERED_CONTROL_INSET = 2")) {
+                "BORDERED_CONTROL_INSET must be 2"
+            } else {
+                null
+            },
+            if (!headerSource.contains("horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL")) {
+                "status bar must use shared horizontal content padding"
+            } else {
+                null
+            },
+            if (!homeSource.contains("horizontal = LauncherSpacing.CONTENT_HORIZONTAL") ||
+                !homeSource.contains("spacing = LauncherSpacing.ROW_SPACING")
+            ) {
+                "Home must use shared content padding and row spacing"
+            } else {
+                null
+            },
+            if (!drawerSource.contains("horizontal = LauncherSpacing.CONTENT_HORIZONTAL") ||
+                drawerSource.contains("DRAWER_ROW_PADDING_PX")
+            ) {
+                "Drawer must use page padding without duplicate row padding"
+            } else {
+                null
+            },
+            if (!settingsSource.contains("horizontal = LauncherSpacing.CONTENT_HORIZONTAL") ||
+                controlsSource.contains("settingsRowPadding")
+            ) {
+                "Settings must use page padding without duplicate row padding"
+            } else {
+                null
+            },
+            if (switchSource.isEmpty() || switchSource.contains("padding =")) {
+                "Settings Switch outer border must not add a gap around active segments"
+            } else {
+                null
+            },
+            if (!controlsSource.contains("LauncherSpacing.BORDERED_CONTROL_INSET")) {
+                "Settings Switch labels must use the shared bordered-control inset"
+            } else {
+                null
+            },
+        )
 
         assertTrue(
-            "Launcher settings text padding constants must stay >= 2px:\n${offenders.joinToString("\n")}",
+            "Launcher top-level spacing must stay centralized:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
         )
     }
@@ -57,12 +115,12 @@ class UiSpecStaticTest {
             """private fun settingsInlineRow\([\s\S]*?\n\)\n\nprivate fun settingsRowCell""",
         ).find(source)?.value.orEmpty()
         val offenders = listOfNotNull(
-            if (!inlineRowSource.contains("Expanded(child = settingsRowCell(title, Alignment.CENTER_START))")) {
+            if (!inlineRowSource.contains("Expanded(flex = titleFlex, child = settingsRowCell(title, Alignment.CENTER_START))")) {
                 "left settings cell must stay Expanded and center-start aligned"
             } else {
                 null
             },
-            if (!inlineRowSource.contains("Expanded(child = settingsRowCell(trailing, Alignment.CENTER_END))")) {
+            if (!inlineRowSource.contains("Expanded(flex = trailingFlex, child = settingsRowCell(trailing, Alignment.CENTER_END))")) {
                 "right settings cell must stay Expanded and center-end aligned"
             } else {
                 null
@@ -72,6 +130,36 @@ class UiSpecStaticTest {
         assertTrue(
             "Settings inline rows must keep left and right content in peer Expanded cells:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
+        )
+    }
+
+    @Test
+    fun pixelAndGapSettingsUseSwitchersInsteadOfSliders() {
+        val moduleRoot = resolveModuleRoot()
+        val screenSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
+            .readText()
+        val controlsSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
+            .readText()
+
+        assertTrue(
+            "PIXEL must use engine SegmentedControl and GAP must use the ON/OFF switcher.",
+            Regex("""SettingsSegmentedControlRow\(\s*title = "PIXEL"""").containsMatchIn(screenSource) &&
+                Regex("""SettingsSwitchRow\(\s*title = "GAP"""").containsMatchIn(screenSource),
+        )
+        assertTrue(
+            "The PIXEL wrapper must keep its title and all options in one inline SegmentedControl row.",
+            controlsSource.contains("SegmentedControl(") &&
+                !controlsSource.contains("labels.chunked(") &&
+                controlsSource.contains("trailingFlex = 3"),
+        )
+        assertTrue(
+            "Settings must not retain the removed slider control or ratio preview state.",
+            !screenSource.contains("SettingsValueSlider") &&
+                !controlsSource.contains("fun SettingsValueSlider") &&
+                !screenSource.contains("previewPixelSizeRatio") &&
+                !screenSource.contains("previewGapRatio"),
         )
     }
 
@@ -144,6 +232,32 @@ class UiSpecStaticTest {
         )
     }
 
+    @Test
+    fun screenEdgeStatusAndHomeActionsUseTheirSemanticSpacingTokens() {
+        val moduleRoot = resolveModuleRoot()
+        val headerLayoutSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherHeaderLayout.kt")
+            .readText()
+        val homeSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt")
+            .readText()
+
+        assertTrue(
+            "Status bar time and page title must use the shared 2px content edge.",
+            headerLayoutSource.contains("horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL"),
+        )
+        assertTrue(
+            "Home CALL and SMS must stay 1px from horizontal and bottom screen edges.",
+            homeSource.contains("left = LauncherSpacing.EDGE_ACTION") &&
+                homeSource.contains("right = LauncherSpacing.EDGE_ACTION") &&
+                homeSource.contains("bottom = LauncherSpacing.EDGE_ACTION"),
+        )
+        assertTrue(
+            "Home actions must use the engine TextButton instead of a local button wrapper.",
+            homeSource.contains("TextButton(") && !homeSource.contains("HomeTextButton"),
+        )
+    }
+
     private fun File.findUiSpecOffenders(moduleRoot: File): List<String> {
         val relativePath = relativeTo(moduleRoot).invariantSeparatorsPath
         return readLines().flatMapIndexed { index, line ->
@@ -172,11 +286,6 @@ class UiSpecStaticTest {
         val description: String,
     )
 
-    private data class MinPaddingConstant(
-        val constantName: String,
-        val regex: Regex,
-    )
-
     private companion object {
         val forbiddenPatterns = listOf(
             ForbiddenPattern(Regex("""TextOverflow\.CLIP"""), "use ELLIPSIS or wrapping, not CLIP"),
@@ -184,33 +293,6 @@ class UiSpecStaticTest {
             ForbiddenPattern(Regex("""EdgeInsets\.all\(1\)"""), "bordered/text containers need at least 2px padding"),
             ForbiddenPattern(Regex("""\bvertical\s*=\s*1\b"""), "text row vertical padding must be at least 2px"),
             ForbiddenPattern(Regex("""\bCOMPOSE_HEIGHT\b"""), "compose bars should use natural height"),
-        )
-
-        val minPaddingConstants = listOf(
-            MinPaddingConstant(
-                constantName = "SETTINGS_SWITCH_PADDING_PX",
-                regex = Regex("""SETTINGS_SWITCH_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingConstant(
-                constantName = "SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX",
-                regex = Regex("""SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingConstant(
-                constantName = "SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX",
-                regex = Regex("""SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingConstant(
-                constantName = "SETTINGS_ROW_HORIZONTAL_PADDING_PX",
-                regex = Regex("""SETTINGS_ROW_HORIZONTAL_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingConstant(
-                constantName = "SETTINGS_ROW_VERTICAL_PADDING_PX",
-                regex = Regex("""SETTINGS_ROW_VERTICAL_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingConstant(
-                constantName = "SETTINGS_LABEL_VERTICAL_PADDING_PX",
-                regex = Regex("""SETTINGS_LABEL_VERTICAL_PADDING_PX\s*=\s*(\d+)"""),
-            ),
         )
 
         val drawerMatchReasonUiPatterns = listOf(

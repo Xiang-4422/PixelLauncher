@@ -16,7 +16,6 @@ import android.provider.CallLog
 import android.provider.Settings
 import android.provider.ContactsContract
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -113,7 +112,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
     private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
-    private var pixelGapEnabled: Boolean = true
     private var selectedTheme: PixelTheme = PixelTheme.DAY
     // Single source of truth lives in [launcherViewModel]; `state` delegates onto it,
     // so every existing `state = transition(state)` reducer call reads/writes there.
@@ -249,14 +247,12 @@ class MainActivity : AppCompatActivity() {
         rainForecastRepository = RainForecastRepository()
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
-        pixelGapEnabled = appearanceSettings.pixelGapRatio > 0f
         selectedTheme = appearanceSettings.theme
         state = LauncherStateTransitions.updateAppearance(
             state = state,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
-            isPixelGapEnabled = appearanceSettings.pixelGapRatio > 0f,
-            pixelGapRatio = appearanceSettings.pixelGapRatio,
+            isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
         )
         state = LauncherStateTransitions.updateUiBehavior(
@@ -303,8 +299,6 @@ class MainActivity : AppCompatActivity() {
                 onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
                 onDrawerAppLongPressed = ::onPixelEngineDrawerAppLongPressed,
                 onSettingsItemAction = ::onSettingsItemAction,
-                onSettingsItemRatioChanged = ::onSettingsItemRatioChanged,
-                onSettingsPreviewChanged = ::onSettingsPreviewChanged,
                 onAppEditorPrevious = ::onAppEditorPrevious,
                 onAppEditorNext = ::onAppEditorNext,
                 onAppEditorNameChanged = ::onAppEditorNameChanged,
@@ -780,8 +774,7 @@ class MainActivity : AppCompatActivity() {
             theme           = LauncherThemes.from(applicationContext, uiState.selectedTheme.resolve(isSystemInDarkMode())),
             screenProfile   = screenProfile,
             chargeTick      = animationState.headerChargeTick,
-            pixelGapEnabled = uiState.pixelGapRatio > 0f,
-            pixelGapRatio   = uiState.pixelGapRatio,
+            pixelGapEnabled = uiState.isPixelGapEnabled,
         )
     }
 
@@ -843,14 +836,15 @@ class MainActivity : AppCompatActivity() {
                 newPixelGapEnabled = s.isPixelGapEnabled,
                 newTheme = s.selectedTheme,
             )
-            SettingsMenuItem.PIXEL_GAP_SIZE -> applyAppearance(
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = s.selectedDotSizePx,
-                newPixelGapEnabled = SettingsMenuModel.nextPixelGapRatio(s.pixelGapRatio, direction) > 0f,
-                newPixelGapRatio = SettingsMenuModel.nextPixelGapRatio(s.pixelGapRatio, direction),
-                newTheme = s.selectedTheme,
-            )
-            SettingsMenuItem.PIXEL_GAP -> return
+            SettingsMenuItem.PIXEL_GAP -> {
+                val enabled = !s.isPixelGapEnabled
+                applyAppearance(
+                    newPixelShape = s.selectedPixelShape,
+                    newDotSizePx = s.selectedDotSizePx,
+                    newPixelGapEnabled = enabled,
+                    newTheme = s.selectedTheme,
+                )
+            }
             SettingsMenuItem.STYLE -> applyAppearance(
                 newPixelShape = SettingsMenuModel.nextStyle(s.selectedPixelShape, direction),
                 newDotSizePx = s.selectedDotSizePx,
@@ -903,31 +897,6 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
-    }
-
-    private fun onSettingsItemRatioChanged(item: SettingsMenuItem, ratio: Float) {
-        val s = state
-        when (item) {
-            SettingsMenuItem.RESOLUTION -> applyAppearance(
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = SettingsMenuModel.resolutionAtRatio(ratio, screenProfile),
-                newPixelGapEnabled = s.isPixelGapEnabled,
-                newTheme = s.selectedTheme,
-            )
-            SettingsMenuItem.HOME_STATUS -> Unit
-            SettingsMenuItem.PIXEL_GAP_SIZE -> applyAppearance(
-                newPixelShape = s.selectedPixelShape,
-                newDotSizePx = s.selectedDotSizePx,
-                newPixelGapEnabled = ratio > 0f,
-                newPixelGapRatio = ratio,
-                newTheme = s.selectedTheme,
-            )
-            else -> Unit
-        }
-    }
-
-    private fun onSettingsPreviewChanged() {
-        launcherRootHost.rootView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
     }
 
     // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
@@ -1590,17 +1559,14 @@ class MainActivity : AppCompatActivity() {
         newPixelShape: PixelShape,
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
-        newPixelGapRatio: Float = state.pixelGapRatio,
         newTheme: PixelTheme,
     ) {
-        val effectivePixelGapEnabled = newPixelGapRatio > 0f
-        pixelGapEnabled = effectivePixelGapEnabled
+        val effectivePixelGapEnabled = newPixelGapEnabled
         selectedTheme = newTheme
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
             pixelGapEnabled = effectivePixelGapEnabled,
-            pixelGapRatio = newPixelGapRatio,
             theme = newTheme,
         )
         state = LauncherStateTransitions.updateAppearance(
@@ -1608,7 +1574,6 @@ class MainActivity : AppCompatActivity() {
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
             isPixelGapEnabled = effectivePixelGapEnabled,
-            pixelGapRatio = newPixelGapRatio,
             selectedTheme = newTheme,
         )
 

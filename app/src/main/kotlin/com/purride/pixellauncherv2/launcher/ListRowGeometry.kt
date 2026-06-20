@@ -13,7 +13,7 @@ object SettingsListGeometry {
     const val ROW_EXTENT_PX = 25
 
     /** 行与行之间的间距像素。 */
-    const val ROW_SPACING_PX = 1
+    const val ROW_SPACING_PX = LauncherSpacing.ROW_SPACING
 
     /** 行距（item + spacing）；状态机据此把视口高度换算成可见行数。 */
     const val ROW_PITCH_PX = ROW_EXTENT_PX + ROW_SPACING_PX

@@ -166,8 +166,8 @@ PixelLauncher 当前只做：
 
 已具备：
 
-- 像素尺寸。
-- 像素间隙。
+- 像素尺寸使用 pixel-engine `SegmentedControl`，保留原有可选分辨率集合并按窄屏分行。
+- 像素间隙只保留 `ON / OFF` Switch，不再提供比例 Slider。
 - 像素形状。
 - 主题。
 - 应用列表对齐。

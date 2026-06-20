@@ -13,7 +13,8 @@ class ListRowGeometryTest {
 
     @Test
     fun settingsRowPitch_isExtentPlusSpacing() {
-        assertEquals(26, SettingsListGeometry.ROW_PITCH_PX)
+        assertEquals(LauncherSpacing.ROW_SPACING, SettingsListGeometry.ROW_SPACING_PX)
+        assertEquals(27, SettingsListGeometry.ROW_PITCH_PX)
         assertEquals(
             SettingsListGeometry.ROW_EXTENT_PX + SettingsListGeometry.ROW_SPACING_PX,
             SettingsListGeometry.ROW_PITCH_PX,
@@ -22,6 +23,7 @@ class ListRowGeometryTest {
 
     @Test
     fun smsThreadRowPitch_isExtentPlusSpacing() {
+        assertEquals(1, SmsThreadGeometry.ROW_SPACING_PX)
         assertEquals(26, SmsThreadGeometry.ROW_PITCH_PX)
         assertEquals(
             SmsThreadGeometry.ROW_EXTENT_PX + SmsThreadGeometry.ROW_SPACING_PX,

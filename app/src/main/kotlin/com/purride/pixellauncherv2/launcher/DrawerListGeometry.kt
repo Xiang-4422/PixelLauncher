@@ -9,14 +9,11 @@ package com.purride.pixellauncherv2.launcher
  */
 object DrawerListGeometry {
 
-    /** 单行内容高度在字号基础上额外增加的像素。 */
-    const val ROW_EXTENT_PADDING_PX = 5
-
     /** 行与行之间的间距像素。 */
-    const val ROW_SPACING_PX = 1
+    const val ROW_SPACING_PX = LauncherSpacing.ROW_SPACING
 
-    /** 单行内容高度（即 ListViewBuilder 的 itemExtent）。 */
-    fun rowExtent(fontPx: Int): Int = fontPx + ROW_EXTENT_PADDING_PX
+    /** 无边框应用行按字体自然高度测量，不在行内重复添加垂直 padding。 */
+    fun rowExtent(fontPx: Int): Int = fontPx.coerceAtLeast(0)
 
     /**
      * 行距（item + spacing）。把视口高度换算成可见行数时用这个，

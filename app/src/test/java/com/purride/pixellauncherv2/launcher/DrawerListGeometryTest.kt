@@ -12,15 +12,15 @@ import org.junit.Test
 class DrawerListGeometryTest {
 
     @Test
-    fun rowExtent_addsPaddingToFontHeight() {
-        assertEquals(15, DrawerListGeometry.rowExtent(10))
-        assertEquals(17, DrawerListGeometry.rowExtent(12))
+    fun rowExtent_usesNaturalFontHeight() {
+        assertEquals(10, DrawerListGeometry.rowExtent(10))
+        assertEquals(12, DrawerListGeometry.rowExtent(12))
     }
 
     @Test
     fun rowPitch_isExtentPlusSpacing() {
-        assertEquals(16, DrawerListGeometry.rowPitch(10))
-        assertEquals(18, DrawerListGeometry.rowPitch(12))
+        assertEquals(12, DrawerListGeometry.rowPitch(10))
+        assertEquals(14, DrawerListGeometry.rowPitch(12))
         // pitch must always exceed the rendered item extent by exactly the spacing
         assertEquals(
             DrawerListGeometry.rowExtent(10) + DrawerListGeometry.ROW_SPACING_PX,

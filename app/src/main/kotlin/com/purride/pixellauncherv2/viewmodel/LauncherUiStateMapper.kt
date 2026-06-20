@@ -40,7 +40,6 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     selectedPixelShape = selectedPixelShape,
     selectedDotSizePx = selectedDotSizePx,
     isPixelGapEnabled = isPixelGapEnabled,
-    pixelGapRatio = pixelGapRatio,
     selectedTheme = selectedTheme,
     drawerListAlignment = drawerListAlignment,
     isIdlePageEnabled = isIdlePageEnabled,

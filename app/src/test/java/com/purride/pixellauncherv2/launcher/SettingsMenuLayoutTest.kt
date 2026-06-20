@@ -17,7 +17,7 @@ class SettingsMenuLayoutTest {
 
     private fun expectedVisibleRows(profile: ScreenProfile, rowHeight: Int): Int {
         val top = LauncherHeaderLayout.firstContentItemTop(profile)
-        val panelBottom = (profile.logicalHeight - 4).coerceAtLeast(top + 24)
+        val panelBottom = (profile.logicalHeight - LauncherSpacing.CONTENT_VERTICAL).coerceAtLeast(top + 24)
         val height = (panelBottom - top).coerceAtLeast(rowHeight)
         return (height / rowHeight).coerceAtLeast(1)
     }

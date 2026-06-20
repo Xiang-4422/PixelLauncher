@@ -6,7 +6,7 @@ import kotlin.math.max
 
 object LauncherHeaderLayout {
 
-    const val horizontalPadding = 2
+    const val horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL
     const val dividerGap = 1
     const val dividerHeight = 1
 
@@ -38,10 +38,10 @@ object LauncherHeaderLayout {
     fun contentTop(screenProfile: ScreenProfile): Int = statusBarHeight(screenProfile)
 
     val firstContentItemTop: Int
-        get() = contentTop + max(3, GlyphStyle.UI_SMALL_10.cellHeight / 3)
+        get() = contentTop + LauncherSpacing.CONTENT_VERTICAL
 
     fun firstContentItemTop(screenProfile: ScreenProfile): Int {
-        return contentTop(screenProfile) + max(3, GlyphStyle.UI_SMALL_10.cellHeight / 3)
+        return contentTop(screenProfile) + LauncherSpacing.CONTENT_VERTICAL
     }
 
     val titleGap: Int
