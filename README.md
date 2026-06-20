@@ -43,7 +43,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 这意味着：
 
 - 当前 UI 不是 Android 控件树，而是 pixel-engine 的 Widget 树
-- 页面由 `ui/screen` 下的 widget 构建函数声明式描述，不再手写逐像素绘制
+- 页面由 `ui/screen` 下的 widget 构建函数声明式描述
 - 后续开发优先遵循“数据 → ViewModel → UiState → widget”单向数据流，而不是直接堆逻辑到 `MainActivity`
 
 ## 3. 代码分层
@@ -65,7 +65,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
   - 基于 pixel-engine 的页面与组件：`screen`（每个页面一个 widget 构建函数）、`widget`（Header / BatteryDivider / 设置控件）、`theme`（`LauncherTheme` 颜色方案）、`text`（字形光栅化）
   - 核心文件：[HomeScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt)、[SettingsScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt)、[DrawerScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/DrawerScreen.kt)
 - `app/src/main/kotlin/com/purride/pixellauncherv2/render`
-  - 重写后仅保留显示 / 文本 / 动画原语：屏幕分辨率档位、像素字形度量、充电动画节拍
+  - 显示 / 文本 / 动画原语：屏幕分辨率档位、像素字形度量、充电动画节拍
   - 核心文件：[ScreenProfile.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/ScreenProfile.kt)、[PixelFontEngine.kt](app/src/main/kotlin/com/purride/pixellauncherv2/render/PixelFontEngine.kt)（承载 `GlyphStyle` 度量）
 - `app/src/main/kotlin/com/purride/pixellauncherv2/data`
   - 应用列表、设备状态、Usage Access、通信、定位、降雨预测、设置持久化
@@ -132,7 +132,7 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
 - 模式：`LauncherMode.IDLE`
 - 页面：[IdleScreen.kt](app/src/main/kotlin/com/purride/pixellauncherv2/ui/screen/IdleScreen.kt)
 
-当前 Idle 是简化占位页（重写时已丢弃旧的流体物理，待后续单独立项重做），不是系统锁屏替代。
+当前 Idle 是简化待机页，不是系统锁屏替代。
 
 ## 5. 当前关键数据源
 
@@ -248,7 +248,7 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 ./gradlew testDebugUnitTest
 ```
 
-注意：`:app` 已按新架构重建单元测试（ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等），`:app:testDebugUnitTest` 会实际执行。`pixel-engine` SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，该门禁只覆盖 `:pixel-engine`、`:pixel-demo`、Maven local dry-run 和文档站构建；Launcher 应用仍按上面的 app 命令单独验收。
+注意：`:app:testDebugUnitTest` 覆盖 ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等。`pixel-engine` SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，该门禁只覆盖 `:pixel-engine`、`:pixel-demo`、Maven local dry-run 和文档站构建；Launcher 应用仍按上面的 app 命令单独验收。
 
 ### Android Studio 运行
 
@@ -285,7 +285,7 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 - 新的数据能力优先进入 `data`
 - 新的页面语义优先进入 `LauncherState` 与 `LauncherStateTransitions`
 - 新的布局规则优先进入 `launcher/*Layout`
-- 新的页面与绘制优先进入 `ui/screen` 与 `ui/widget`（pixel-engine widget），不要恢复旧的逐像素渲染器
+- 新的页面与绘制优先进入 `ui/screen` 与 `ui/widget`（pixel-engine widget）
 
 注释约定：
 
@@ -321,5 +321,4 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 
 ## 11. 当前状态一句话总结
 
-这个项目目前已经具备比较完整的像素 launcher 技术底盘：  
-所有页面已迁移到 pixel-engine 渲染，`LauncherViewModel` 持有唯一 `LauncherState` 状态源，经 `LauncherRootHost` → `PixelHostView` 绘制；SMS 编排（`SmsController`）与 Drawer 页面（`DrawerScreen`）已各自独立，旧的手工坐标命中测试已清空，`:app` 已接入 CI 门禁（编译 / lint / 单测）。当前主线转向 `:app` 收尾与发布准备（行高一致性、lint 清理、配置变更 / insets / 暗色 / 签名）；`pixel-engine` SDK 路线作为并行长期线。
+这个项目目前具备完整的像素 launcher 技术底盘：主界面由 pixel-engine 渲染，`LauncherViewModel` 持有唯一 `LauncherState` 状态源，经 `LauncherRootHost` → `PixelHostView` 绘制；SMS 编排（`SmsController`）与 Drawer 页面（`DrawerScreen`）各自独立，`:app` 接入 CI 门禁（编译 / lint / 单测）。当前主线是 `:app` 收尾与发布准备（行高一致性、lint 清理、配置变更 / insets / 暗色 / 签名）；`pixel-engine` SDK 路线作为并行长期线。
