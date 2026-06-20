@@ -34,7 +34,29 @@ object DataHealthModel {
         hasNotificationListenerAccess = state.hasNotificationListenerAccess,
     )
 
+    fun issueCount(state: LauncherState): Int = issueCount(
+        hasUsageAccess = state.hasUsageAccess,
+        hasLocationPermission = state.hasLocationPermission,
+        hasCallLogPermission = state.hasCallLogPermission,
+        hasSmsReadPermission = state.hasSmsReadPermission,
+        isDefaultSmsApp = state.isDefaultSmsApp,
+        smsPermissionState = state.smsPermissionState,
+        hasPostNotificationPermission = state.hasPostNotificationPermission,
+        hasNotificationListenerAccess = state.hasNotificationListenerAccess,
+    )
+
     fun summary(state: LauncherUiState): String = summary(
+        hasUsageAccess = state.hasUsageAccess,
+        hasLocationPermission = state.hasLocationPermission,
+        hasCallLogPermission = state.hasCallLogPermission,
+        hasSmsReadPermission = state.hasSmsReadPermission,
+        isDefaultSmsApp = state.isDefaultSmsApp,
+        smsPermissionState = state.smsPermissionState,
+        hasPostNotificationPermission = state.hasPostNotificationPermission,
+        hasNotificationListenerAccess = state.hasNotificationListenerAccess,
+    )
+
+    fun issueCount(state: LauncherUiState): Int = issueCount(
         hasUsageAccess = state.hasUsageAccess,
         hasLocationPermission = state.hasLocationPermission,
         hasCallLogPermission = state.hasCallLogPermission,
@@ -83,7 +105,30 @@ object DataHealthModel {
         hasPostNotificationPermission: Boolean,
         hasNotificationListenerAccess: Boolean,
     ): String {
-        val issueCount = listOf(
+        val issueCount = issueCount(
+            hasUsageAccess = hasUsageAccess,
+            hasLocationPermission = hasLocationPermission,
+            hasCallLogPermission = hasCallLogPermission,
+            hasSmsReadPermission = hasSmsReadPermission,
+            isDefaultSmsApp = isDefaultSmsApp,
+            smsPermissionState = smsPermissionState,
+            hasPostNotificationPermission = hasPostNotificationPermission,
+            hasNotificationListenerAccess = hasNotificationListenerAccess,
+        )
+        return if (issueCount == 0) "OK" else "$issueCount ISSUE"
+    }
+
+    private fun issueCount(
+        hasUsageAccess: Boolean,
+        hasLocationPermission: Boolean,
+        hasCallLogPermission: Boolean,
+        hasSmsReadPermission: Boolean,
+        isDefaultSmsApp: Boolean,
+        smsPermissionState: SmsPermissionState,
+        hasPostNotificationPermission: Boolean,
+        hasNotificationListenerAccess: Boolean,
+    ): Int {
+        return listOf(
             hasUsageAccess,
             hasLocationPermission,
             hasCallLogPermission,
@@ -93,7 +138,6 @@ object DataHealthModel {
             hasPostNotificationPermission,
             hasNotificationListenerAccess,
         ).count { !it }
-        return if (issueCount == 0) "OK" else "$issueCount ISSUE"
     }
 
     private fun lines(

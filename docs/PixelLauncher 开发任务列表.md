@@ -30,16 +30,23 @@
 
 ### P0-01 Home 决策层与异常状态
 
-- [ ] 梳理 Home 状态优先级，确保通信、时间、环境、使用统计按确定规则排序。
-- [ ] 为天气、Usage、Call Log、SMS、Notification 等数据失败增加明确可见状态。
-- [ ] 后台刷新失败时显示短原因，避免 Home 出现空白或静默失败。
-- [ ] 保持 Home 常显信息克制，目标是打开后 1 秒内知道是否有事。
+- [x] 梳理 Home 状态优先级，确保通信、时间、环境、使用统计按确定规则排序。
+- [x] 为天气、Usage、Call Log、SMS、Notification 等数据失败增加明确可见状态。
+- [x] 后台刷新失败时显示短原因，避免 Home 出现空白或静默失败。
+- [x] 保持 Home 常显信息克制，目标是打开后 1 秒内知道是否有事。
 
 验收：
 
-- [ ] Home 不成为 Dashboard。
-- [ ] 数据缺权限、无数据、刷新失败都有可见解释。
-- [ ] 状态行仍然最多显示重要信息，不挤占天气常显行。
+- [x] Home 不成为 Dashboard。
+- [x] 数据缺权限、无数据、刷新失败都有可见解释。
+- [x] 状态行仍然最多显示重要信息，不挤占天气常显行。
+
+证据：
+
+- `HomeInfoModelTest` 覆盖通信优先、通知摘要、闹钟、低电量、Usage、最多 3 行和天气常显行不占用优先级行。
+- `TerminalStatusProviderTest.buildStatus_dataIssuesAppearBeforeQuietReadyStates` 覆盖 Data Health 异常在 Home 终端状态中显示为 `DATA n ISSUE`。
+- `HomeInfoDetailModelTest` 覆盖天气刷新中、刷新失败、无定位、Usage 缺权限和刷新结果短文案。
+- `DataHealthModelTest` 覆盖 Usage、Location、Call Log、SMS、Notification 的短原因。
 
 ### P0-02 Data Health 可解释性深化
 
