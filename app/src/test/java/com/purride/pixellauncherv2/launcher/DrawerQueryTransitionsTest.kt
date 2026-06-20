@@ -30,6 +30,43 @@ class DrawerQueryTransitionsTest {
     }
 
     @Test
+    fun updateDrawerQuery_matchesUserAliases() {
+        val customizedApps = listOf(
+            AppEntry(
+                label = "Bank",
+                packageName = "com.bank",
+                activityName = "BankActivity",
+                aliases = listOf("pay bill"),
+            ),
+            AppEntry(label = "Browser", packageName = "com.browser", activityName = "BrowserActivity"),
+        )
+        val customizedState = LauncherState(apps = customizedApps, drawerVisibleApps = customizedApps)
+
+        val result = LauncherStateTransitions.updateDrawerQuery(customizedState, query = "pay", visibleRows = 5)
+
+        assertEquals(listOf("Bank"), result.drawerVisibleApps.map { it.label })
+        assertEquals(0, result.selectedIndex)
+    }
+
+    @Test
+    fun updateDrawerQuery_searchesRenamedDisplayLabel() {
+        val customizedApps = listOf(
+            AppEntry(
+                label = "Pay",
+                packageName = "com.bank",
+                activityName = "BankActivity",
+                systemLabel = "Bank",
+            ),
+            AppEntry(label = "Browser", packageName = "com.browser", activityName = "BrowserActivity"),
+        )
+        val customizedState = LauncherState(apps = customizedApps, drawerVisibleApps = customizedApps)
+
+        val result = LauncherStateTransitions.updateDrawerQuery(customizedState, query = "pay", visibleRows = 5)
+
+        assertEquals(listOf("Pay"), result.drawerVisibleApps.map { it.label })
+    }
+
+    @Test
     fun updateDrawerQuery_blankQueryShowsAllApps() {
         val result = LauncherStateTransitions.updateDrawerQuery(state, query = "", visibleRows = 5)
         assertEquals("", result.drawerQuery)

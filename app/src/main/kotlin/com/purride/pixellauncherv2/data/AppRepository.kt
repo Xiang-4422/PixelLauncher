@@ -6,4 +6,6 @@ interface AppRepository {
     fun loadCachedLaunchableApps(): List<AppEntry>
 
     fun loadLaunchableApps(): List<AppEntry>
+
+    fun clearCachedLaunchableApps()
 }

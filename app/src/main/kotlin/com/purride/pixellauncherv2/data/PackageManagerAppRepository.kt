@@ -23,6 +23,8 @@ class PackageManagerAppRepository(
         private const val FIELD_PACKAGE_NAME = "packageName"
         private const val FIELD_ACTIVITY_NAME = "activityName"
         private const val FIELD_ENGLISH_LABEL = "englishLabel"
+        private const val FIELD_SYSTEM_LABEL = "systemLabel"
+        private const val FIELD_ALIASES = "aliases"
     }
 
     private val packageManager: PackageManager = context.packageManager
@@ -50,11 +52,21 @@ class PackageManagerAppRepository(
                             packageName = packageName,
                             activityName = activityName,
                             englishLabel = item.optString(FIELD_ENGLISH_LABEL),
+                            systemLabel = item.optString(FIELD_SYSTEM_LABEL).ifBlank {
+                                item.optString(FIELD_LABEL)
+                            },
+                            aliases = item.optJSONArray(FIELD_ALIASES).orEmptyStrings(),
                         ),
                     )
                 }
             }
         }.getOrDefault(emptyList())
+    }
+
+    override fun clearCachedLaunchableApps() {
+        sharedPreferences.edit()
+            .remove(KEY_CACHED_APPS)
+            .apply()
     }
 
     /**
@@ -98,6 +110,7 @@ class PackageManagerAppRepository(
                         label = englishLabel,
                         packageName = activityInfo.packageName,
                     ),
+                    systemLabel = displayLabel,
                 )
             }
             .sortedWith { left, right ->
@@ -188,11 +201,25 @@ class PackageManagerAppRepository(
                     .put(FIELD_LABEL, app.label)
                     .put(FIELD_PACKAGE_NAME, app.packageName)
                     .put(FIELD_ACTIVITY_NAME, app.activityName)
-                    .put(FIELD_ENGLISH_LABEL, app.englishLabel),
+                    .put(FIELD_ENGLISH_LABEL, app.englishLabel)
+                    .put(FIELD_SYSTEM_LABEL, app.systemLabel)
+                    .put(FIELD_ALIASES, JSONArray(app.aliases)),
             )
         }
         sharedPreferences.edit()
             .putString(KEY_CACHED_APPS, jsonArray.toString())
             .apply()
+    }
+
+    private fun JSONArray?.orEmptyStrings(): List<String> {
+        if (this == null) return emptyList()
+        return buildList(length()) {
+            for (index in 0 until length()) {
+                val value = optString(index).trim()
+                if (value.isNotEmpty()) {
+                    add(value)
+                }
+            }
+        }
     }
 }

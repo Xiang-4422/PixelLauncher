@@ -5,4 +5,6 @@ data class AppEntry(
     val packageName: String,
     val activityName: String,
     val englishLabel: String = "",
+    val systemLabel: String = label,
+    val aliases: List<String> = emptyList(),
 )

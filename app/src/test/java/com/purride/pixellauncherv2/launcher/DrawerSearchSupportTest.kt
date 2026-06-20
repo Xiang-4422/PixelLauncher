@@ -38,6 +38,65 @@ class DrawerSearchSupportTest {
     }
 
     @Test
+    fun buildMetadata_userAliasesAreNormalizedAndDeduped() {
+        val meta = DrawerSearchSupport.buildMetadata(
+            label = "Bank",
+            aliases = listOf("Pay Me", "pay-me", "账 单"),
+            packageName = "com.example.bank",
+        )
+
+        assertEquals(listOf("payme", "账单"), meta.normalizedUserAliases)
+    }
+
+    @Test
+    fun matchSourceLabel_explainsNonLabelSearchHits() {
+        assertEquals(
+            "ALIAS",
+            DrawerSearchSupport.matchSourceLabel(
+                AppEntry(
+                    label = "Bank",
+                    packageName = "com.example.bank",
+                    activityName = "BankActivity",
+                    aliases = listOf("pay bill"),
+                ),
+                "pay",
+            ),
+        )
+        assertEquals(
+            "PINYIN",
+            DrawerSearchSupport.matchSourceLabel(
+                AppEntry(label = "微信", packageName = "com.tencent.mm", activityName = "MainActivity"),
+                "wx",
+            ),
+        )
+        assertEquals(
+            "PKG",
+            DrawerSearchSupport.matchSourceLabel(
+                AppEntry(label = "Browser", packageName = "org.mozilla.firefox", activityName = "MainActivity"),
+                "mozilla",
+            ),
+        )
+        assertEquals(
+            "ACT",
+            DrawerSearchSupport.matchSourceLabel(
+                AppEntry(label = "Camera", packageName = "com.example.camera", activityName = "CaptureActivity"),
+                "capture",
+            ),
+        )
+    }
+
+    @Test
+    fun matchSourceLabel_omitsVisibleLabelHits() {
+        assertEquals(
+            null,
+            DrawerSearchSupport.matchSourceLabel(
+                AppEntry(label = "Gmail", packageName = "com.google.android.gm", activityName = "MailActivity"),
+                "gm",
+            ),
+        )
+    }
+
+    @Test
     fun letterIndexForLabel_mapsLatinInitial() {
         assertEquals(0, DrawerSearchSupport.letterIndexForLabel("Apple"))
         assertEquals(25, DrawerSearchSupport.letterIndexForLabel("zebra"))

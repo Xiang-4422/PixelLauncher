@@ -21,8 +21,11 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.DrawerListGeometry
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
+
+private const val DRAWER_ROW_PADDING_PX = 2
 
 /**
  * APP_DRAWER 应用列表页（pixel-engine 渲染）。
@@ -36,6 +39,7 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
  * @param listState      host 持有的列表滚动状态
  * @param listController host 持有的列表滚动控制器
  * @param onAppPressed   点击某行应用（按可见列表下标）
+ * @param onAppLongPressed 长按某行应用（按可见列表下标）
  */
 fun DrawerScreen(
     uiState: LauncherUiState,
@@ -43,9 +47,10 @@ fun DrawerScreen(
     listState: PixelListState,
     listController: ScrollController,
     onAppPressed: (Int) -> Unit,
+    onAppLongPressed: (Int) -> Unit,
 ): Widget {
     val apps = drawerApps(uiState)
-    val rowHeight = DrawerListGeometry.rowExtent(10)
+    val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.defaultUiFontSize.px)
     return Column(
         spacing = 0,
         mainAxisSize = MainAxisSize.MAX,
@@ -71,6 +76,7 @@ fun DrawerScreen(
                                 alignment = uiState.drawerListAlignment,
                                 theme = theme,
                                 onTap = app?.let { { onAppPressed(index) } },
+                                onLongPress = app?.let { { onAppLongPressed(index) } },
                             )
                         },
                     ),
@@ -94,6 +100,7 @@ private fun drawerListItem(
     alignment: DrawerListAlignment,
     theme: LauncherTheme,
     onTap: (() -> Unit)?,
+    onLongPress: (() -> Unit)?,
 ): Widget {
     val item = Row(
         mainAxisSize = MainAxisSize.MAX,
@@ -104,7 +111,10 @@ private fun drawerListItem(
                     height = rowHeight,
                     fillColor = PixelColor.Transparent,
                     borderColor = null,
-                    padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+                    padding = EdgeInsets.symmetric(
+                        horizontal = DRAWER_ROW_PADDING_PX,
+                        vertical = DRAWER_ROW_PADDING_PX,
+                    ),
                     alignment = when (alignment) {
                         DrawerListAlignment.LEFT -> Alignment.CENTER_START
                         DrawerListAlignment.CENTER -> Alignment.CENTER
@@ -114,10 +124,16 @@ private fun drawerListItem(
                         label,
                         style = TextStyle(color = if (enabled) theme.drawer.itemText else theme.drawer.itemTextMuted),
                         overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
                     ),
                 ),
             ),
         ),
     )
-    return if (onTap != null) GestureDetector(onTap = onTap, child = item) else item
+    return if (onTap != null) {
+        GestureDetector(onTap = onTap, onLongPress = onLongPress, child = item)
+    } else {
+        item
+    }
 }

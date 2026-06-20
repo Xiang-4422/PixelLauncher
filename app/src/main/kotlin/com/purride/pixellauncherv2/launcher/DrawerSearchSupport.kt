@@ -12,6 +12,7 @@ data class DrawerSearchMetadata(
     val normalizedLabel: String,
     val normalizedEnglishLabel: String,
     val normalizedAlias: String,
+    val normalizedUserAliases: List<String>,
     val normalizedPackage: String,
     val normalizedActivity: String,
     val pinyinFull: String,
@@ -26,6 +27,7 @@ object DrawerSearchSupport {
         return buildMetadata(
             label = appEntry.label,
             englishLabel = appEntry.englishLabel,
+            aliases = appEntry.aliases,
             packageName = appEntry.packageName,
             activityName = appEntry.activityName,
         )
@@ -34,12 +36,17 @@ object DrawerSearchSupport {
     fun buildMetadata(
         label: String,
         englishLabel: String = "",
+        aliases: List<String> = emptyList(),
         packageName: String,
         activityName: String = "",
     ): DrawerSearchMetadata {
         val normalizedLabel = normalizeForSearch(label)
         val normalizedEnglishLabel = normalizeForSearch(englishLabel)
         val normalizedAlias = normalizeForSearch(packageName.substringAfterLast('.'))
+        val normalizedUserAliases = aliases
+            .map(::normalizeForSearch)
+            .filter { it.isNotEmpty() }
+            .distinct()
         val normalizedPackage = normalizeForSearch(packageName)
         val normalizedActivity = normalizeForSearch(activityName.substringAfterLast('.'))
         val pinyin = toPinyin(label)
@@ -58,6 +65,7 @@ object DrawerSearchSupport {
             normalizedLabel = normalizedLabel,
             normalizedEnglishLabel = normalizedEnglishLabel,
             normalizedAlias = normalizedAlias,
+            normalizedUserAliases = normalizedUserAliases,
             normalizedPackage = normalizedPackage,
             normalizedActivity = normalizedActivity,
             pinyinFull = pinyin.full,
@@ -78,6 +86,40 @@ object DrawerSearchSupport {
         return value
             .lowercase(Locale.getDefault())
             .replace(searchNoiseRegex, "")
+    }
+
+    fun matchSourceLabel(appEntry: AppEntry, query: String): String? {
+        val normalizedQuery = normalizeForSearch(query)
+        if (normalizedQuery.isEmpty()) {
+            return null
+        }
+        val metadata = buildMetadata(appEntry)
+        return matchSourceLabel(
+            normalizedQuery = normalizedQuery,
+            metadata = metadata,
+        )
+    }
+
+    private fun matchSourceLabel(
+        normalizedQuery: String,
+        metadata: DrawerSearchMetadata,
+    ): String? {
+        return when {
+            metadata.normalizedLabel.matchesQuery(normalizedQuery) ||
+                metadata.normalizedEnglishLabel.matchesQuery(normalizedQuery) -> null
+
+            metadata.normalizedUserAliases.any { it.matchesQuery(normalizedQuery) } -> "ALIAS"
+
+            metadata.pinyinFull.matchesQuery(normalizedQuery) ||
+                metadata.pinyinInitial.matchesQuery(normalizedQuery) -> "PINYIN"
+
+            metadata.normalizedPackage.matchesQuery(normalizedQuery) ||
+                metadata.normalizedAlias.matchesQuery(normalizedQuery) -> "PKG"
+
+            metadata.normalizedActivity.matchesQuery(normalizedQuery) -> "ACT"
+
+            else -> null
+        }
     }
 
     private fun toPinyin(label: String): PinyinTokens {
@@ -166,6 +208,10 @@ object DrawerSearchSupport {
         return this in 'a'..'z' ||
             this in 'A'..'Z' ||
             this in '0'..'9'
+    }
+
+    private fun String.matchesQuery(normalizedQuery: String): Boolean {
+        return isNotEmpty() && contains(normalizedQuery)
     }
 
     private data class PinyinTokens(
