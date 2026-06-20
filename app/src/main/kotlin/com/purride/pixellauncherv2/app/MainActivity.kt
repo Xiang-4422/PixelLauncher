@@ -43,6 +43,8 @@ import com.purride.pixellauncherv2.data.ScreenUsageRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DataHealthItem
+import com.purride.pixellauncherv2.launcher.DataHealthRepairAction
+import com.purride.pixellauncherv2.launcher.DataHealthRepairActionModel
 import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
@@ -1419,34 +1421,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onDataHealthItemPressed(item: DataHealthItem) {
-        when (item) {
-            DataHealthItem.UPDATED -> Unit
+        val action = DataHealthRepairActionModel.actionFor(
+            item = item,
+            postNotificationsRuntimePermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+        )
+        when (action) {
+            DataHealthRepairAction.NONE -> Unit
 
-            DataHealthItem.USAGE -> launchSystemIntent(
+            DataHealthRepairAction.OPEN_USAGE_ACCESS_SETTINGS -> launchSystemIntent(
                 Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 },
             )
 
-            DataHealthItem.LOCATION -> requestHomeDataPermissions(
+            DataHealthRepairAction.REQUEST_LOCATION_PERMISSION -> requestHomeDataPermissions(
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION,
             )
 
-            DataHealthItem.CALL_LOG -> requestHomeDataPermissions(Manifest.permission.READ_CALL_LOG)
+            DataHealthRepairAction.REQUEST_CALL_LOG_PERMISSION -> requestHomeDataPermissions(Manifest.permission.READ_CALL_LOG)
 
-            DataHealthItem.SMS_READ -> requestHomeDataPermissions(Manifest.permission.READ_SMS)
+            DataHealthRepairAction.REQUEST_SMS_READ_PERMISSION -> requestHomeDataPermissions(Manifest.permission.READ_SMS)
 
-            DataHealthItem.SMS_APP,
-            DataHealthItem.SMS_SEND -> smsController.ensureReadAccessAndRole()
+            DataHealthRepairAction.ENSURE_SMS_ROLE -> smsController.ensureReadAccessAndRole()
 
-            DataHealthItem.NOTIFICATION_POST -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    requestHomeDataPermissions(Manifest.permission.POST_NOTIFICATIONS)
-                }
-            }
+            DataHealthRepairAction.REQUEST_POST_NOTIFICATIONS_PERMISSION ->
+                requestHomeDataPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-            DataHealthItem.NOTIFICATION_LISTENER -> launchSystemIntent(
+            DataHealthRepairAction.OPEN_NOTIFICATION_LISTENER_SETTINGS -> launchSystemIntent(
                 Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 },

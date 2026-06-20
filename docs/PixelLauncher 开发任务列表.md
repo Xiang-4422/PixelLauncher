@@ -43,16 +43,23 @@
 
 ### P0-02 Data Health 可解释性深化
 
-- [ ] 审核 Usage Access、Location、Call Log、SMS、Notification Listener 的异常展示是否覆盖全部真实失败路径。
-- [ ] 补齐缺失项的短原因，例如 `RUNTIME PERM`、`DEFAULT SMS ROLE`、`LISTENER ACCESS`。
-- [ ] 补齐缺失项的修复入口：请求权限、打开系统设置、申请默认短信角色或打开 Listener 设置。
-- [ ] 保持 Data Health 与 Advanced / Diagnostics 的摘要一致。
+- [x] 审核 Usage Access、Location、Call Log、SMS、Notification Listener 的异常展示是否覆盖全部真实失败路径。
+- [x] 补齐缺失项的短原因，例如 `RUNTIME PERM`、`DEFAULT SMS ROLE`、`LISTENER ACCESS`。
+- [x] 补齐缺失项的修复入口：请求权限、打开系统设置、申请默认短信角色或打开 Listener 设置。
+- [x] 保持 Data Health 与 Advanced / Diagnostics 的摘要一致。
 
 验收：
 
-- [ ] 用户能理解 Home 数据为空的原因。
-- [ ] 每个可修复异常都有明确入口。
-- [ ] 状态刷新后 UI 能及时反映最新结果。
+- [x] 用户能理解 Home 数据为空的原因。
+- [x] 每个可修复异常都有明确入口。
+- [x] 状态刷新后 UI 能及时反映最新结果。
+
+证据：
+
+- `DataHealthModelTest` 覆盖 Usage、Location、Call Log、SMS、Notification Post、Notification Listener 的值和短原因。
+- `DataHealthRepairActionModelTest` 覆盖每个 Data Health 行对应的修复动作。
+- `DataHealthModel` 同时驱动 Settings 摘要、Data Health 页面和 Diagnostics 文本采样，避免摘要来源分裂。
+- `LauncherStateTransitionsTest.updateDataHealthPreservesOrWritesRefreshTime` 覆盖更新时间写入；`MainActivity.onDataHealthItemPressed` 在执行修复动作后刷新 Data Health 状态。
 
 ### P0-03 App 管理交互收敛
 

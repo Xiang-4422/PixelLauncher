@@ -117,4 +117,29 @@ class DataHealthModelTest {
         assertEquals("NO LISTEN", byTitle.getValue("NOTIFY LISTEN").value)
         assertEquals("LISTENER ACCESS", byTitle.getValue("NOTIFY LISTEN").reason)
     }
+
+    @Test
+    fun missingLinesExposeShortAndroidReasonsForEveryRepairableSource() {
+        val byTitle = DataHealthModel.lines(
+            LauncherState(
+                hasUsageAccess = false,
+                hasLocationPermission = false,
+                hasCallLogPermission = false,
+                hasSmsReadPermission = false,
+                isDefaultSmsApp = false,
+                smsPermissionState = SmsPermissionState.MISSING,
+                hasPostNotificationPermission = false,
+                hasNotificationListenerAccess = false,
+            ),
+        ).associateBy { it.title }
+
+        assertEquals("USAGE ACCESS", byTitle.getValue("USAGE").reason)
+        assertEquals("RUNTIME PERM", byTitle.getValue("LOCATION").reason)
+        assertEquals("RUNTIME PERM", byTitle.getValue("CALL LOG").reason)
+        assertEquals("RUNTIME PERM", byTitle.getValue("SMS READ").reason)
+        assertEquals("DEFAULT SMS ROLE", byTitle.getValue("SMS APP").reason)
+        assertEquals("SMS PERM + ROLE", byTitle.getValue("SMS SEND").reason)
+        assertEquals("POST NOTIFY", byTitle.getValue("NOTIFY POST").reason)
+        assertEquals("LISTENER ACCESS", byTitle.getValue("NOTIFY LISTEN").reason)
+    }
 }
