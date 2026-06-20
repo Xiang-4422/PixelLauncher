@@ -49,6 +49,65 @@ class DrawerQueryTransitionsTest {
     }
 
     @Test
+    fun updateDrawerQuery_matchesPinyinFullAndInitials() {
+        val customizedApps = listOf(
+            AppEntry(label = "微信", packageName = "com.tencent.mm", activityName = "MainActivity"),
+            AppEntry(label = "相机", packageName = "com.android.camera", activityName = "CameraActivity"),
+        )
+        val customizedState = LauncherState(apps = customizedApps, drawerVisibleApps = customizedApps)
+
+        val fullPinyin = LauncherStateTransitions.updateDrawerQuery(customizedState, query = "weixin", visibleRows = 5)
+        val initials = LauncherStateTransitions.updateDrawerQuery(customizedState, query = "wx", visibleRows = 5)
+
+        assertEquals(listOf("微信"), fullPinyin.drawerVisibleApps.map { it.label })
+        assertEquals(listOf("微信"), initials.drawerVisibleApps.map { it.label })
+    }
+
+    @Test
+    fun updateDrawerQuery_matchesEnglishLabelAndPackageDerivedNames() {
+        val customizedApps = listOf(
+            AppEntry(
+                label = "设置",
+                englishLabel = "Settings",
+                packageName = "com.android.settings",
+                activityName = "SettingsActivity",
+            ),
+            AppEntry(
+                label = "浏览器",
+                englishLabel = "Browser",
+                packageName = "org.mozilla.firefox",
+                activityName = "BrowserActivity",
+            ),
+            AppEntry(
+                label = "相机",
+                packageName = "com.android.camera",
+                activityName = "CaptureActivity",
+            ),
+        )
+        val customizedState = LauncherState(apps = customizedApps, drawerVisibleApps = customizedApps)
+
+        val englishLabel = LauncherStateTransitions.updateDrawerQuery(
+            customizedState,
+            query = "browser",
+            visibleRows = 5,
+        )
+        val packageTail = LauncherStateTransitions.updateDrawerQuery(
+            customizedState,
+            query = "firefox",
+            visibleRows = 5,
+        )
+        val activityName = LauncherStateTransitions.updateDrawerQuery(
+            customizedState,
+            query = "capture",
+            visibleRows = 5,
+        )
+
+        assertEquals(listOf("浏览器"), englishLabel.drawerVisibleApps.map { it.label })
+        assertEquals(listOf("浏览器"), packageTail.drawerVisibleApps.map { it.label })
+        assertEquals(listOf("相机"), activityName.drawerVisibleApps.map { it.label })
+    }
+
+    @Test
     fun updateDrawerQuery_searchesRenamedDisplayLabel() {
         val customizedApps = listOf(
             AppEntry(
@@ -64,6 +123,38 @@ class DrawerQueryTransitionsTest {
         val result = LauncherStateTransitions.updateDrawerQuery(customizedState, query = "pay", visibleRows = 5)
 
         assertEquals(listOf("Pay"), result.drawerVisibleApps.map { it.label })
+    }
+
+    @Test
+    fun updateDrawerQuery_ordersRenamedAndAliasHitsAheadOfPackageHits() {
+        val customizedApps = listOf(
+            AppEntry(
+                label = "Pay",
+                packageName = "com.example.bankpay",
+                activityName = "BankActivity",
+                systemLabel = "Bank",
+            ),
+            AppEntry(
+                label = "Wallet",
+                packageName = "com.example.wallet",
+                activityName = "WalletActivity",
+                aliases = listOf("pay"),
+            ),
+            AppEntry(
+                label = "Browser",
+                packageName = "com.example.paybrowser",
+                activityName = "BrowserActivity",
+            ),
+        )
+        val customizedState = LauncherState(
+            apps = customizedApps,
+            drawerVisibleApps = customizedApps,
+            recentApps = listOf("com.example.paybrowser"),
+        )
+
+        val result = LauncherStateTransitions.updateDrawerQuery(customizedState, query = "pay", visibleRows = 5)
+
+        assertEquals(listOf("Pay", "Wallet", "Browser"), result.drawerVisibleApps.map { it.label })
     }
 
     @Test

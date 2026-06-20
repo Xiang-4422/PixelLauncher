@@ -96,17 +96,23 @@
 
 ### P0-06 Drawer 搜索质量验收
 
-- [ ] 为别名、重命名、拼音全拼、拼音首字母、英文标签、包名派生命中补齐测试。
-- [ ] 保留搜索命中解释在模型、排序调试和测试中。
-- [ ] 确认 Drawer 列表行不显示 `PINYIN`、`ALIAS`、`PACKAGE` 等命中标签。
-- [ ] 审核重命名和别名对排序结果的影响。
+- [x] 为别名、重命名、拼音全拼、拼音首字母、英文标签、包名派生命中补齐测试。
+- [x] 保留搜索命中解释在模型、排序调试和测试中。
+- [x] 确认 Drawer 列表行不显示 `PINYIN`、`ALIAS`、`PACKAGE` 等命中标签。
+- [x] 审核重命名和别名对排序结果的影响。
 
 验收：
 
-- [ ] Drawer 没有额外分类层级。
-- [ ] 搜索仍然只返回 App。
-- [ ] 搜索结果更符合用户自己的命名习惯。
-- [ ] 搜索结果列表只显示 App 标题。
+- [x] Drawer 没有额外分类层级。
+- [x] 搜索仍然只返回 App。
+- [x] 搜索结果更符合用户自己的命名习惯。
+- [x] 搜索结果列表只显示 App 标题。
+
+证据：
+
+- `DrawerQueryTransitionsTest` 覆盖别名、重命名、拼音全拼、拼音首字母、英文标签、包名尾部、包名全文、Activity 名和排序影响。
+- `DrawerSearchSupportTest` 保留 `ALIAS`、`PINYIN`、`PKG`、`ACT` 命中来源解释。
+- `UiSpecStaticTest.drawerListDoesNotRenderSearchMatchReasonTags` 保证 Drawer UI 列表只显示 App 标题。
 
 ## P1：差异化能力
 
