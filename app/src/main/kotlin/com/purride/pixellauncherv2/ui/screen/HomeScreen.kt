@@ -17,6 +17,9 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixellauncherv2.launcher.HomeInfoAction
+import com.purride.pixellauncherv2.launcher.HomeInfoLine
+import com.purride.pixellauncherv2.launcher.HomeInfoModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -32,12 +35,15 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
  * @param theme          当前颜色主题
  * @param onOpenContacts 点击 CONTACT → 打开通讯录
  * @param onOpenSms      点击 SMS → 进入短信模块
+ * @param onInfoAction   点击 HOME 信息行
  */
 class HomeScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
     private val onOpenContacts: () -> Unit,
     private val onOpenSms: () -> Unit,
+    private val onInfoAction: (HomeInfoAction) -> Unit,
+    private val onInfoDetail: (HomeInfoAction) -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -92,11 +98,28 @@ class HomeScreen(
                     Text(
                         s.currentDateText.ifBlank { "--- --- --" },
                         style = TextStyle(color = t.text.primary),
+                        overflow = TextOverflow.ELLIPSIS,
+                        softWrap = false,
+                        maxLines = 1,
                     ),
                 )
-                // Info rows (dim color): weather, alarm (conditional), comms (conditional), usage
-                s.toHomeInfoRows().forEach { line ->
-                    add(Text(line, style = TextStyle(color = t.text.secondary)))
+                add(
+                    HomeInfoRow(
+                        line = HomeInfoModel.weatherLine(s),
+                        theme = t,
+                        onAction = widget.onInfoAction,
+                        onDetail = widget.onInfoDetail,
+                    ),
+                )
+                HomeInfoModel.lines(s).forEach { line ->
+                    add(
+                        HomeInfoRow(
+                            line = line,
+                            theme = t,
+                            onAction = widget.onInfoAction,
+                            onDetail = widget.onInfoDetail,
+                        ),
+                    )
                 }
             }
     }
@@ -104,34 +127,35 @@ class HomeScreen(
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/**
- * 从 [LauncherUiState] 生成 HOME 信息行列表（不含日期行）：
- * 天气提示（常驻）、闹钟（有值时）、通信计数（非零时）、屏幕使用统计（常驻）。
- */
-private fun LauncherUiState.toHomeInfoRows(): List<String> = buildList {
-    // Weather / rain hint（常驻；空时显示占位符）
-    add(rainHintText.ifBlank { "--" })
-
-    // Alarm（仅当有设置且不是占位符时显示）
-    if (nextAlarmText.isNotBlank() && nextAlarmText != "--:--") {
-        add("ALARM $nextAlarmText")
-    }
-
-    // Missed calls + unread SMS（仅非零时显示）
-    val commParts = buildList {
-        if (missedCallCount > 0) add("CALL $missedCallCount")
-        if (unreadSmsCount > 0) add("SMS $unreadSmsCount")
-    }
-    if (commParts.isNotEmpty()) {
-        add(commParts.joinToString("  "))
-    }
-
-    // Screen usage（常驻）
-    add("USE ${screenUsageTimeText.ifBlank { "--:--" }}  OPEN ${screenOpenCountText.ifBlank { "--" }}")
-
-    if (terminalStatusText.isNotBlank()) {
-        add(terminalStatusText)
-    }
+private fun HomeInfoRow(
+    line: HomeInfoLine,
+    theme: LauncherTheme,
+    onAction: (HomeInfoAction) -> Unit,
+    onDetail: (HomeInfoAction) -> Unit,
+): Widget {
+    val text = Text(
+        line.text,
+        style = TextStyle(color = theme.text.secondary),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    )
+    val action = line.action ?: return text
+    return Semantics(
+        label = line.text,
+        role = PixelSemanticRole.BUTTON,
+        enabled = true,
+        child = GestureDetector(
+            onTap = { onAction(action) },
+            onLongPress = { onDetail(action) },
+            child = Row(
+                spacing = 0,
+                children = listOf(
+                    Expanded(child = text),
+                ),
+            ),
+        ),
+    )
 }
 
 private fun HomeTextButton(
@@ -147,7 +171,9 @@ private fun HomeTextButton(
         child = Text(
             text,
             style = TextStyle(color = theme.button.text),
-            overflow = TextOverflow.CLIP,
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
         ),
     ),
 )

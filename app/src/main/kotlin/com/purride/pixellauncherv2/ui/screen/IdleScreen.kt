@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.ui.screen
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
@@ -10,10 +11,13 @@ import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
-import com.purride.pixellauncherv2.launcher.SettingsMenuModel
+import com.purride.pixellauncherv2.launcher.IdleStatusKind
+import com.purride.pixellauncherv2.launcher.IdleStatusModel
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -24,36 +28,41 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 fun IdleScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
+    statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
 ): Widget {
     val subtitle = listOf(uiState.currentWeekdayText, uiState.currentDateText)
         .filter { it.isNotBlank() }
         .joinToString("  ")
         .ifBlank { "--- --- --" }
-    val status = uiState.idleStatusModel()
+    val status = IdleStatusModel.line(uiState)
     val statusColor = when (status.kind) {
         IdleStatusKind.NOTIFICATION -> theme.semantic.warning
         IdleStatusKind.CHARGING -> theme.semantic.success
+        IdleStatusKind.LOW_BATTERY -> theme.semantic.warning
         IdleStatusKind.WEATHER -> theme.semantic.info
         IdleStatusKind.DEFAULT -> theme.text.secondary
     }
 
     return Padding(
-        horizontal = 2,
-        vertical = 2,
+        padding = EdgeInsets.only(
+            left = 2,
+            top = statusBarHeight + 2,
+            right = 2,
+            bottom = 2,
+        ),
         child = Column(
             mainAxisSize = MainAxisSize.MAX,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             spacing = 4,
             children = listOf(
                 Expanded(child = SizedBox(width = 0, height = 0)),
-                Text(
-                    uiState.currentTimeText.ifEmpty { "--:--" },
-                    style = TextStyle(color = theme.text.primary, fontScale = 2),
+                idleText(
+                    text = uiState.currentTimeText.ifEmpty { "--:--" },
+                    color = theme.text.primary,
                 ),
-                Text(
-                    subtitle,
-                    style = TextStyle(color = theme.text.muted),
-                    overflow = TextOverflow.ELLIPSIS,
+                idleText(
+                    text = subtitle,
+                    color = theme.text.muted,
                 ),
                 Container(
                     padding = EdgeInsets.symmetric(horizontal = 2, vertical = 2),
@@ -64,15 +73,13 @@ fun IdleScreen(
                         crossAxisAlignment = CrossAxisAlignment.STRETCH,
                         spacing = 1,
                         children = listOf(
-                            Text(
-                                status.title,
-                                style = TextStyle(color = statusColor),
-                                overflow = TextOverflow.ELLIPSIS,
+                            idleText(
+                                text = status.title,
+                                color = statusColor,
                             ),
-                            Text(
-                                status.body,
-                                style = TextStyle(color = theme.text.primary),
-                                overflow = TextOverflow.ELLIPSIS,
+                            idleText(
+                                text = status.body,
+                                color = theme.text.primary,
                             ),
                         ),
                     ),
@@ -81,14 +88,18 @@ fun IdleScreen(
                 Row(
                     spacing = 2,
                     children = listOf(
-                        Text(
-                            "BAT ${uiState.batteryLevel.coerceIn(0, 100)}%",
-                            style = TextStyle(color = theme.text.secondary),
+                        Expanded(
+                            child = idleText(
+                                text = "BAT ${uiState.batteryLevel.coerceIn(0, 100)}%",
+                                color = theme.text.secondary,
+                            ),
                         ),
-                        Expanded(child = SizedBox(width = 0, height = 0)),
-                        Text(
-                            "USE ${uiState.screenUsageTimeText.ifBlank { "--:--" }}",
-                            style = TextStyle(color = theme.text.muted),
+                        Expanded(
+                            child = idleText(
+                                text = "USE ${uiState.screenUsageTimeText.ifBlank { "--:--" }}",
+                                color = theme.text.muted,
+                                textAlign = TextAlign.END,
+                            ),
                         ),
                     ),
                 ),
@@ -97,52 +108,15 @@ fun IdleScreen(
     )
 }
 
-private enum class IdleStatusKind {
-    NOTIFICATION,
-    CHARGING,
-    WEATHER,
-    DEFAULT,
-}
-
-private data class IdleStatusModel(
-    val kind: IdleStatusKind,
-    val title: String,
-    val body: String,
+private fun idleText(
+    text: String,
+    color: PixelColor,
+    textAlign: TextAlign = TextAlign.START,
+): Widget = Text(
+    text,
+    style = TextStyle(color = color),
+    textAlign = textAlign,
+    overflow = TextOverflow.ELLIPSIS,
+    softWrap = false,
+    maxLines = 1,
 )
-
-private fun LauncherUiState.idleStatusModel(): IdleStatusModel {
-    val notifications = buildList {
-        if (missedCallCount > 0) add("CALL $missedCallCount")
-        if (unreadSmsCount > 0) add("SMS $unreadSmsCount")
-    }
-    if (notifications.isNotEmpty()) {
-        return IdleStatusModel(
-            kind = IdleStatusKind.NOTIFICATION,
-            title = "NOTIFY",
-            body = notifications.joinToString("  "),
-        )
-    }
-
-    if (isCharging) {
-        return IdleStatusModel(
-            kind = IdleStatusKind.CHARGING,
-            title = "CHARGING",
-            body = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
-        )
-    }
-
-    if (rainHintText.isNotBlank()) {
-        return IdleStatusModel(
-            kind = IdleStatusKind.WEATHER,
-            title = "WEATHER",
-            body = rainHintText,
-        )
-    }
-
-    return IdleStatusModel(
-        kind = IdleStatusKind.DEFAULT,
-        title = "IDLE",
-        body = nextAlarmText.takeIf { it.isNotBlank() && it != "--:--" }?.let { "ALARM $it" }
-            ?: "NO PRIORITY STATE",
-    )
-}
