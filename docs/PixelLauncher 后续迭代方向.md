@@ -1,8 +1,8 @@
-# PixelLauncher 后续迭代方向建议
+# PixelLauncher 后续迭代方向
 
 日期：2026-06-20
 
-本文用于产品方向评审，不是实现任务清单。内容只基于 PixelLauncher 当前设计、现有代码能力和后续产品取舍，不再参考其他 Launcher 的功能形态。
+本文记录 PixelLauncher 已确认的产品方向、边界、迭代路线和验收标准。它不是建议稿，也不是完整实现任务清单；后续功能实现应先对应到本文条目，再进入具体设计和开发。内容只基于 PixelLauncher 当前设计、现有代码能力和后续产品取舍，不再参考其他 Launcher 的功能形态。
 
 ## 1. 已确认的产品边界
 
@@ -114,12 +114,16 @@ PixelLauncher 当前只做：
 已具备：
 
 - 日期。
-- 当前天气或降雨摘要。
+- 日期下方常显天气摘要；晴、云、雾、雨、雪等状态都显示，缺少数据或定位权限时保留可操作占位。
 - 下一次闹钟。
 - 未接来电和未读短信数量。
 - 当天屏幕使用时长和打开次数。
 - 终端状态文案。
 - 底部 `CONTACT` / `SMS` 文本入口。
+- `CALL / SMS / ALARM / BATTERY / USE` 已收敛到最多 3 行的优先级状态模型；天气使用独立常显行，不占用这 3 行。
+- Home 状态行已有点击动作：短信、通话、天气权限/刷新、闹钟、电池和使用统计都能进入对应入口。
+- Home 状态行长按已有轻量短提示，例如 Usage access、Rain refresh、SMS inbox 等动作说明；提示统一占用全局状态栏文字行并自动消失。
+- Home 的 `RAIN` / `USE` 点击动作已有轻量刷新反馈：刷新中、更新时间、无权限或不可用状态通过状态栏临时消息显示。
 
 刚移除：
 
@@ -127,9 +131,7 @@ PixelLauncher 当前只做：
 
 主要缺口：
 
-- Home 行内容目前还是按数据源追加，没有统一优先级模型。
-- 权限缺失、数据失败、后台刷新失败没有明确可见状态。
-- 信息行不可操作，例如 `SMS 3` 不能直接进入未读短信，`RAIN` 不能展开来源或更新时间。
+- 数据失败和后台刷新失败还没有明确可见状态。
 - Home 还没有真正形成“打开手机后 1 秒内知道是否有事”的决策层。
 
 ### Drawer
@@ -142,6 +144,9 @@ PixelLauncher 当前只做：
 - 轻量排序与本地化标签。
 - 左/中/右对齐设置。
 - 点击应用直接启动。
+- App 显示名重命名。
+- 用户自定义搜索别名。
+- Settings 和 Drawer 长按均可进入 App 管理。
 
 已确认边界：
 
@@ -154,46 +159,54 @@ PixelLauncher 当前只做：
 
 主要缺口：
 
-- 没有 App 显示名重命名。
-- 没有用户自定义搜索别名。
-- 没有围绕“快速定位并打开 App”的交互规范。
+- App 管理仍是编辑页形态，还没有 Playdate 式轻量浮层菜单。
+- 还缺围绕“快速定位并打开 App”的长按菜单交互规范。
 
 ### Settings
 
 已具备：
 
-- 字体风格切换。后续应移除该用户设置，改为 UI 内部字体尺寸枚举。
 - 像素尺寸。
 - 像素间隙。
 - 像素形状。
 - 主题。
 - 应用列表对齐。
 - Drawer 默认搜索。
+- Home 状态入口。
 - Idle 开关和 Idle effect。
+- Display / Home / Drawer / Idle / Data / Advanced 分组。
+- Data Health 入口，展示最近刷新时间、Usage、Location、Call Log、SMS、Notification POST、Notification Listener 等状态，异常行显示 Android 侧短原因，并提供基础权限/角色修复入口。
+- App 管理入口：别名、重命名和缓存刷新。
+- Idle 自动进入配置：充电自动进入、无操作自动进入和超时时长。
 - Advanced 入口。
+- Advanced / Diagnostics 展示 Home 摘要、Data Health 摘要、启动统计、受控字体 metrics、关键文案宽度采样、display、status bar inset 和电量状态。
+
+已调整：
+
+- 字体风格切换已移除。
+- 字体大小和 fontStyle 不作为用户设置项。
+- 字体尺寸由 UI 通过受控 enum 选择。
 
 主要缺口：
 
-- 没有按 Display / Home / Drawer / Idle / Data / Advanced 分组。
-- 缺权限与数据源状态页。
-- 缺 App 管理设置：别名、重命名、缓存刷新；入口同时放在 Settings 和 Drawer 长按菜单。
-- 缺 Idle 自动进入配置：充电自动进入、无操作 30s 自动进入。
-- 缺 UI 规范入口或说明，用于约束按钮、列表、两栏布局、文本裁切和状态栏处理。
-- Advanced 还只是诊断入口，没有形成“数据健康与调试”中心。
+- Data Health 已有基础错误状态、最近刷新时间和 Android 侧短原因；还缺后续 Notification Listener 摘要规则。
+- UI / 字体诊断已有基础 metrics 和关键文案宽度采样；还缺真实渲染 bounds 检查。
+- Advanced 已有基础状态总览和文本采样；还缺可操作的调试入口和更细的 bounds 验证。
 
 ### Idle
 
 已具备：
 
 - 时间、日期、电量、使用时长。
-- 状态优先级：通知 > 充电 > 天气 > 默认。
-- 充电状态显示当前 Idle effect 名称。
+- 状态优先级：通知 > 充电 > 需关注天气 > 默认。
+- 充电状态显示电量和当前 Idle effect 名称。
+- 支持充电自动进入 Idle。
+- 支持无操作自动进入 Idle，默认 30s，Settings 可配置。
 
 主要缺口：
 
 - Idle effect 目前更多是选项名称，不是完整视觉状态系统。
-- 充电、通知、天气还没有精细状态，例如充电预计完成、低电量、暴雨提醒。
-- 充电自动进入和无操作 30s 自动进入还没有配置化。
+- 充电、通知、需关注天气还没有精细状态，例如充电预计完成、暴雨提醒。
 - 没有低亮度/夜间简化模式。
 - Idle 还没有和 Home / Settings 形成完整的待机体验闭环。
 
@@ -215,7 +228,7 @@ PixelLauncher 当前只做：
 - 联系人名称映射、验证码识别/快速复制、线程搜索、发送失败状态、附件/长短信边界处理还没有。
 - SMS 子流程是独立页面，不进入 Drawer 搜索。
 
-## 4. 产品原则建议
+## 4. 产品原则
 
 ### 原则 1：Home 只回答“现在是否有事”
 
@@ -226,7 +239,7 @@ Home 不应该成为 Dashboard。它应该用极少信息回答：
 - 手机是否正在诱导继续使用。
 - 是否有重要通信、天气风险或低电量。
 
-建议 Home 的状态优先级固定为：
+Home 的状态优先级固定为：
 
 1. 紧急通信：未接电话、重要短信。
 2. 时间约束：下一次闹钟、日程、倒计时。
@@ -238,7 +251,7 @@ Home 不应该成为 Dashboard。它应该用极少信息回答：
 
 Drawer 的目标是最快启动 App，而不是成为全局搜索入口。
 
-可以加强：
+确定加强：
 
 - App 搜索质量。
 - App 别名。
@@ -259,13 +272,22 @@ Drawer 的目标是最快启动 App，而不是成为全局搜索入口。
 
 ### 原则 3：通知只做摘要和降噪
 
-不建议做完整通知中心。Notification Listener 要进入路线，但只用于摘要和降噪：
+不做完整通知中心。Notification Listener 要进入路线，但只用于摘要和降噪：
 
 - 未读计数。
 - 高优先级摘要。
 - 通知来源过滤。
 - Home 上一行摘要。
 - 点击进入系统通知面板或对应 App。
+
+初版摘要规则已确定：
+
+- 静音来源不进入摘要。
+- ongoing 常驻通知不进入摘要。
+- 只保留系统高优先级通知，或显式配置为高优先级的来源。
+- 摘要最多展示 2 个来源，剩余用 `+N` 表示。
+- Home / Idle 只显示一行 `NOTIFY ...`，不展示完整通知流。
+- `NotificationListenerService` 已通过进程内摘要桥接写入 Home / Idle 状态字段。
 
 ### 原则 4：Settings 同时补数据健康和 App 管理
 
@@ -279,7 +301,7 @@ Drawer 的目标是最快启动 App，而不是成为全局搜索入口。
 - App 别名。
 - App 重命名。
 - Idle 自动进入配置。
-- UI 规范相关配置和诊断入口。
+- UI / 字体诊断入口。
 
 不再进入 Settings：
 
@@ -306,13 +328,13 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 - 全局状态栏 padding 只在宿主顶部处理，不给整个 UI 递归加 padding。
 - 每个新增页面都要在真机截图自查文字是否被裁切。
 
-## 5. 推荐迭代路线
+## 5. 已确认迭代路线
 
 ### 阶段 A：补齐当前体验闭环
 
 目标：不扩大产品野心，先把现有 Home / Drawer / Settings / Idle / SMS 的基础闭环做完整。
 
-建议功能：
+确定功能：
 
 1. Home 优先级状态行
    - 把 `CALL / SMS / RAIN / ALARM / USE / BATTERY` 收敛成明确排序的状态模型。
@@ -322,15 +344,18 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 2. Home 行点击动作
    - `SMS n` 打开未读短信或短信列表。
    - `CALL n` 打开通话记录或联系人。
-   - `RAIN ...` 显示天气更新时间和权限状态。
+   - `RAIN ...` 在状态行显示天气摘要和最近刷新时间；缺定位权限时显示 `RAIN LOC`，点击请求权限或刷新天气。
    - `USE ...` 打开使用统计说明或系统 Usage Access 设置。
+   - `RAIN` / `USE` 点击后通过状态栏临时消息反馈刷新中、刷新结果或缺权限状态。
+   - 长按状态行通过状态栏显示临时消息，不改变点击动作。
 
 3. Settings 数据健康分组
-   - Usage Access：ON/OFF，点击打开系统设置。
-   - Location：ON/OFF，点击请求或打开系统设置。
-   - Call Log：ON/OFF。
+   - Usage Access：`READY` / `NO ACCESS`，点击打开系统设置。
+   - Location：`READY` / `NO PERM`，点击请求或打开系统设置。
+   - Call Log：`READY` / `NO PERM`。
    - SMS：权限状态 + 默认短信角色。
    - Notification：通知监听状态。
+   - 异常项显示短原因，例如 `RUNTIME PERM`、`DEFAULT SMS ROLE`、`LISTENER ACCESS`。
 
 4. App 管理基础能力
    - 重命名显示标签。
@@ -351,10 +376,10 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
    - 夜间更低亮度或更稀疏布局。
 
 7. UI 规范落地
-   - 单独维护 `docs/PixelLauncher UI规范.md`。
+   - `docs/PixelLauncher UI规范.md` 已作为 UI 验收基线。
    - 统一按钮、列表行、分栏、状态栏 padding、文本裁切规则。
-   - 移除 Settings 中的字体大小 / fontStyle 暴露。
-   - 字体尺寸改为 UI 通过 enum 选择。
+   - Settings 不暴露字体大小 / fontStyle。
+   - 字体尺寸由 UI 通过 enum 选择。
    - 明确禁止文本按钮使用不可靠固定高度。
    - 每个新增页面做真机截图检查。
 
@@ -370,7 +395,7 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 
 目标：不复杂化 Drawer，只把 App 搜索做到高质量。
 
-建议功能：
+确定功能：
 
 1. App 别名
    - 用户可为 App 添加多个搜索别名。
@@ -383,20 +408,22 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
    - Settings 和 Drawer 长按菜单都能编辑。
 
 3. 搜索命中解释
-   - 可以显示一小段 dim 文本，例如 `PINYIN`、`ALIAS`、`PACKAGE`。
-   - 不做多行复杂解释。
+   - 保留在搜索模型、排序调试和测试中，用于确认命中来源。
+   - 不在 Drawer 列表行中显示 `PINYIN`、`ALIAS`、`PACKAGE` 等标签。
+   - Drawer 列表只显示 App 标题，避免别名和命中原因挤占主标题空间。
 
 验收标准：
 
 - Drawer 没有额外分类层级。
 - 搜索仍然只返回 App。
 - 搜索结果更符合用户自己的命名习惯。
+- 搜索结果列表只显示 App 标题，重命名后的标题优先。
 
 ### 阶段 C：Idle 体验完善
 
 目标：让 Idle 成为 PixelLauncher 的视觉重点，但不承担系统锁屏替代职责。
 
-建议功能：
+确定功能：
 
 1. Pixel Idle 状态系统
    - 默认态。
@@ -424,12 +451,14 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 
 目标：把通知、使用时长和打开次数变成 Home / Idle 可用的状态来源。
 
-建议功能：
+确定功能：
 
 1. Notification Listener 可选接入
    - 只统计高优先级来源。
    - 支持 App 级静音和摘要。
    - Home 只显示摘要，不显示完整通知列表。
+   - 初版摘要规则已落地为高优先级 / 显式优先来源 / 静音过滤 / ongoing 过滤 / 最多两项。
+   - Listener service 已接入摘要桥接，前台 Activity 会订阅并刷新 Home / Idle 摘要。
 
 2. 使用时长
    - 统计今日使用时长。
@@ -451,7 +480,7 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 
 目标：SMS 作为 Launcher 内置完整短信功能，而不是只显示列表和详情。
 
-建议功能：
+确定功能：
 
 1. 线程与会话体验
    - 联系人名称映射。
@@ -477,23 +506,23 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 - Home 的 SMS 摘要能直达对应短信视图。
 - SMS 不进入 Drawer 搜索，Drawer 仍然只搜索 App。
 
-## 6. 不建议做的功能
+## 6. 明确不做的功能
 
-### 不建议做传统图标桌面
+### 不做传统图标桌面
 
 原因：
 
 - 会削弱像素文本体验。
 - 会把维护重点从状态与搜索转移到图标、网格、文件夹和动画细节。
 
-### 不建议做自由 widget 大屏
+### 不做自由 widget 大屏
 
 原因：
 
 - 自由 widget 会带来复杂布局、生命周期、权限和性能问题。
 - PixelLauncher 更适合少量官方状态块。
 
-### 不建议做完整通知中心
+### 不做完整通知中心
 
 原因：
 
@@ -501,7 +530,7 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 - Launcher 侧做完整通知会带来隐私和权限复杂度。
 - PixelLauncher 更适合做过滤、摘要和直达。
 
-### 不建议默认联网搜索
+### 不做默认联网搜索
 
 原因：
 
@@ -509,7 +538,7 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 - 联网搜索会让 Drawer 变慢且不可预测。
 - 也会引入隐私和网络失败问题。
 
-### 不建议在 Launcher 中处理系统锁屏替代
+### 不在 Launcher 中处理系统锁屏替代
 
 原因：
 
@@ -518,14 +547,14 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 - 失败风险高，可能影响解锁。
 - PixelLauncher 更适合做桌面、App 搜索和 Idle，而不是安全认证系统或锁屏替代系统。
 
-### 不建议引入复杂主题市场
+### 不引入复杂主题市场
 
 原因：
 
 - PixelLauncher 的视觉识别依赖统一像素风。
 - 当前更需要稳定字体、尺寸、可读性和主题 token，而不是无限外观参数。
 
-### 不建议做强干预数字健康
+### 不做强干预数字健康
 
 原因：
 
@@ -533,12 +562,13 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
 - 冷却、拦截、夜间隐藏 App 会改变 Launcher 的行为预期。
 - Drawer 的目标是快速打开 App，不应该在启动路径上增加阻断。
 
-## 7. 建议功能池
+## 7. 实施优先级
 
-### P0：近期最值得做
+### P0：近期必须推进
 
 1. Settings 数据健康页
    - 把 Usage Access、Location、Call Log、SMS、Notification Listener 状态统一展示。
+   - 缺失项显示 Android 侧短原因。
    - 理由：当前功能依赖权限和系统能力，用户需要知道为什么信息为空。
 
 2. Home 状态行点击动作
@@ -555,16 +585,16 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
    - 开关和超时时长放在 Settings。
 
 5. UI 规范落地
-   - 先单独建立 `docs/PixelLauncher UI规范.md`。
-   - 再按规范统一按钮、列表、分栏、文本裁切、状态栏 padding 规则。
-   - 移除 Settings 的 fontStyle 用户选项。
-   - 建立受控字体尺寸 enum。
+   - 按 `docs/PixelLauncher UI规范.md` 统一按钮、列表、分栏、文本裁切、状态栏 padding 规则。
+   - Settings 不提供字体大小和 fontStyle 用户选项。
+   - 字体尺寸使用受控 enum。
 
-### P1：产品差异化
+### P1：差异化能力
 
 1. 通知摘要
    - 可选 Notification Listener。
    - 只做摘要和过滤，不做完整通知流。
+   - 初版过滤规则和 listener bridge 已落地；后续补 Settings 中的 App 级静音和优先来源配置。
 
 2. 使用时长与打开次数
    - 只做展示和 Home 摘要。
@@ -574,24 +604,24 @@ root、SystemUI hook、锁屏替代这类系统级实验不要混入 Launcher �
    - 优先级：联系人映射 -> 验证码复制 -> 线程搜索。
    - 同步补发送失败状态、Home 直达。
 
-### P2：长期探索
+### P2：长期探索方向
 
 1. 官方状态块
    - 日程、媒体、Todo、倒计时。
    - 保持同屏最多一个主状态块。
 
-## 8. 推荐的下一轮评审问题
+## 8. 待明确问题
 
-为了把建议变成具体需求，建议下一轮先回答这些问题：
+以下问题尚未定细节，进入对应功能实现前需要确认：
 
 1. Home 重要信息的优先级是否按通信、时间、环境、使用统计排序？
-2. Notification Listener 的摘要白名单/黑名单怎么设计？
+2. Settings 中 Notification Listener 的 App 级静音和优先来源配置如何组织？
 3. SMS 联系人映射的数据来源优先使用系统联系人，还是先只做号码归一化？
 4. UI 规范落地后，先修 Launcher 主 App，还是同时约束 pixel-demo？
 
-## 9. 建议的决策结论
+## 9. 决策结论
 
-我建议 PixelLauncher 下一阶段不要扩成“万能桌面”。更适合的方向是：
+PixelLauncher 下一阶段不扩成“万能桌面”。已确认的方向是：
 
 - Home：从信息行升级为优先级状态页。
 - Drawer：保持 App 搜索，不做全局命令入口。

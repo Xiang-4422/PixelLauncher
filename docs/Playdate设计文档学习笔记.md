@@ -179,7 +179,7 @@ Playdate 系统菜单值得重点学习：
 1. PixelLauncher 是否采用接近 Playdate 的少色系统，还是保留当前多主题能力？
 2. 中文字体是否继续 8x8 cell，还是为可读性扩展到更大的 cell？
 3. Settings 是否统一成 Playdate 式简洁列表，而不是多装饰面板？
-4. Drawer 搜索结果是否只显示标题，命中原因隐藏到长按或详情？
+4. Drawer 搜索结果已确定只显示标题；命中原因只保留在搜索模型、测试或诊断中。
 5. Idle 是否采用更强的 Playdate 风格：大字、低信息、少动画？
 6. pixel-engine 是否需要提供官方 `PixelListRow`、`PixelTextButton`、`PixelSwitch`、`PixelDialog` 组件？
 
