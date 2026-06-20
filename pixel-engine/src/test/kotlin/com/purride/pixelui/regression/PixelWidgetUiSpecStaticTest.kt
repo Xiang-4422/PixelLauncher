@@ -62,6 +62,43 @@ class PixelWidgetUiSpecStaticTest {
         )
     }
 
+    @Test
+    fun hostGapRendererCachesDeadPixelGrid() {
+        val moduleRoot = resolveModuleRoot()
+        val source = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt")
+            .readText()
+
+        val offenders = listOfNotNull(
+            if (!source.contains("private var gapBackgroundBitmap: Bitmap? = null")) {
+                "gap renderer must cache the dead-pixel grid background"
+            } else {
+                null
+            },
+            if (!source.contains("drawGapBackground(canvas, buffer, geometry, shape)")) {
+                "gap renderer must draw cached dead-pixel background before lit pixels"
+            } else {
+                null
+            },
+            if (!source.contains("if (pixel.alpha <= 0) continue")) {
+                "per-frame gap loop must skip unlit pixels after drawing the cached background"
+            } else {
+                null
+            },
+            if (!source.contains("recycleGapBackgroundBitmap()")) {
+                "gap renderer must release cached bitmap when the host is detached or gap is disabled"
+            } else {
+                null
+            },
+        )
+
+        assertTrue(
+            "PixelHostView gap path must not redraw the full dead-pixel grid every frame:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
     private fun resolveModuleRoot(): File {
         val cwd = File(".").canonicalFile
         return if (cwd.name == "pixel-engine") cwd else cwd.resolve("pixel-engine")

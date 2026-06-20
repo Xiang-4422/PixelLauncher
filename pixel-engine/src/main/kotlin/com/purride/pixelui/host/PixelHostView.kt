@@ -3,6 +3,7 @@ package com.purride.pixelui
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
@@ -19,6 +20,7 @@ import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelFrameView
+import com.purride.pixelcore.PixelGridGeometry
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.ScreenProfile
@@ -41,6 +43,7 @@ import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelKeyEvent
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.min
 
 /**
@@ -203,6 +206,9 @@ public class PixelHostView @JvmOverloads constructor(
     }
     private val reusableDiamondPath = Path()
     private var reusableBitmap: Bitmap? = null
+    private var gapBackgroundBitmap: Bitmap? = null
+    private var gapBackgroundKey: GapBackgroundKey? = null
+    private val reusableGapBackgroundCanvas = Canvas()
     private val reusableDestRect = Rect()
 
     public fun setContent(provider: RootWidgetProvider) {
@@ -281,6 +287,9 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun setPixelGapEnabled(enabled: Boolean) {
         pixelGapEnabled = enabled
+        if (!enabled) {
+            recycleGapBackgroundBitmap()
+        }
         invalidate()
     }
 
@@ -466,6 +475,7 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        recycleGapBackgroundBitmap()
         lifecycleCoordinator.onDetachedFromWindow()
     }
 
@@ -583,7 +593,7 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     /** 用 [pixelGridColor] 填充逻辑像素内容区（screen panel 底色）。 */
-    private fun fillContentArea(canvas: Canvas, geometry: com.purride.pixelcore.PixelGridGeometry) {
+    private fun fillContentArea(canvas: Canvas, geometry: PixelGridGeometry) {
         if (pixelGridColor.argb == backgroundColor.argb) return
         reusablePaint.color = pixelGridColor.argb
         canvas.drawRect(
@@ -604,43 +614,116 @@ public class PixelHostView @JvmOverloads constructor(
      *
      * Canvas 在调用前已由 [onDraw] 清为 [backgroundColor]；此处不再重绘背景。
      */
-    private fun drawPixelShapes(canvas: Canvas, buffer: PixelBuffer, geometry: com.purride.pixelcore.PixelGridGeometry) {
+    private fun drawPixelShapes(canvas: Canvas, buffer: PixelBuffer, geometry: PixelGridGeometry) {
         val showDeadPixels = pixelGridColor.argb != backgroundColor.argb
         val shape = screenProfile.pixelShape
+        if (showDeadPixels) {
+            drawGapBackground(canvas, buffer, geometry, shape)
+        }
         for (y in 0 until buffer.height) {
             for (x in 0 until buffer.width) {
                 val pixel = buffer.getPixel(x, y)
-                val isLit = pixel.alpha > 0
-                if (!isLit && !showDeadPixels) continue
+                if (pixel.alpha <= 0) continue
 
                 val left = geometry.originX + x * geometry.cellSize + geometry.dotInset
                 val top = geometry.originY + y * geometry.cellSize + geometry.dotInset
                 val right = left + geometry.dotSize
                 val bottom = top + geometry.dotSize
-                reusablePaint.color = if (isLit) pixel.argb else pixelGridColor.argb
-
-                when (shape) {
-                    PixelShape.CIRCLE -> {
-                        val centerX = (left + right) / 2f
-                        val centerY = (top + bottom) / 2f
-                        val radius = min(right - left, bottom - top) / 2f
-                        canvas.drawCircle(centerX, centerY, radius, reusablePaint)
-                    }
-                    PixelShape.DIAMOND -> {
-                        val centerX = (left + right) / 2f
-                        val centerY = (top + bottom) / 2f
-                        reusableDiamondPath.reset()
-                        reusableDiamondPath.moveTo(centerX, top)
-                        reusableDiamondPath.lineTo(left, centerY)
-                        reusableDiamondPath.lineTo(centerX, bottom)
-                        reusableDiamondPath.lineTo(right, centerY)
-                        reusableDiamondPath.close()
-                        canvas.drawPath(reusableDiamondPath, reusablePaint)
-                    }
-                    else -> canvas.drawRect(left, top, right, bottom, reusablePaint)
-                }
+                reusablePaint.color = pixel.argb
+                drawPixelShape(canvas, left, top, right, bottom, shape)
             }
         }
+    }
+
+    private fun drawGapBackground(
+        canvas: Canvas,
+        buffer: PixelBuffer,
+        geometry: PixelGridGeometry,
+        shape: PixelShape,
+    ) {
+        val bitmap = gapBackgroundBitmap(buffer.width, buffer.height, geometry, shape) ?: return
+        canvas.drawBitmap(bitmap, geometry.originX, geometry.originY, null)
+    }
+
+    private fun gapBackgroundBitmap(
+        logicalWidth: Int,
+        logicalHeight: Int,
+        geometry: PixelGridGeometry,
+        shape: PixelShape,
+    ): Bitmap? {
+        val bitmapWidth = ceil(geometry.contentWidth).toInt().coerceAtLeast(1)
+        val bitmapHeight = ceil(geometry.contentHeight).toInt().coerceAtLeast(1)
+        val key = GapBackgroundKey(
+            bitmapWidth = bitmapWidth,
+            bitmapHeight = bitmapHeight,
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
+            cellSize = geometry.cellSize,
+            dotInset = geometry.dotInset,
+            dotSize = geometry.dotSize,
+            pixelShape = shape,
+            pixelGridArgb = pixelGridColor.argb,
+        )
+        val existing = gapBackgroundBitmap
+        if (existing != null && gapBackgroundKey == key && !existing.isRecycled) {
+            return existing
+        }
+
+        recycleGapBackgroundBitmap()
+        val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(Color.TRANSPARENT)
+        reusableGapBackgroundCanvas.setBitmap(bitmap)
+        reusablePaint.color = pixelGridColor.argb
+        for (y in 0 until logicalHeight) {
+            for (x in 0 until logicalWidth) {
+                val left = x * geometry.cellSize + geometry.dotInset
+                val top = y * geometry.cellSize + geometry.dotInset
+                val right = left + geometry.dotSize
+                val bottom = top + geometry.dotSize
+                drawPixelShape(reusableGapBackgroundCanvas, left, top, right, bottom, shape)
+            }
+        }
+        reusableGapBackgroundCanvas.setBitmap(null)
+        gapBackgroundBitmap = bitmap
+        gapBackgroundKey = key
+        return bitmap
+    }
+
+    private fun drawPixelShape(
+        canvas: Canvas,
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+        shape: PixelShape,
+    ) {
+        when (shape) {
+            PixelShape.CIRCLE -> {
+                val centerX = (left + right) / 2f
+                val centerY = (top + bottom) / 2f
+                val radius = min(right - left, bottom - top) / 2f
+                canvas.drawCircle(centerX, centerY, radius, reusablePaint)
+            }
+            PixelShape.DIAMOND -> {
+                val centerX = (left + right) / 2f
+                val centerY = (top + bottom) / 2f
+                reusableDiamondPath.reset()
+                reusableDiamondPath.moveTo(centerX, top)
+                reusableDiamondPath.lineTo(left, centerY)
+                reusableDiamondPath.lineTo(centerX, bottom)
+                reusableDiamondPath.lineTo(right, centerY)
+                reusableDiamondPath.close()
+                canvas.drawPath(reusableDiamondPath, reusablePaint)
+            }
+            else -> canvas.drawRect(left, top, right, bottom, reusablePaint)
+        }
+    }
+
+    private fun recycleGapBackgroundBitmap() {
+        reusableGapBackgroundCanvas.setBitmap(null)
+        gapBackgroundBitmap?.recycle()
+        gapBackgroundBitmap = null
+        gapBackgroundKey = null
     }
 
     internal fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
@@ -655,6 +738,18 @@ public class PixelHostView @JvmOverloads constructor(
         )
     }
 }
+
+private data class GapBackgroundKey(
+    val bitmapWidth: Int,
+    val bitmapHeight: Int,
+    val logicalWidth: Int,
+    val logicalHeight: Int,
+    val cellSize: Float,
+    val dotInset: Float,
+    val dotSize: Float,
+    val pixelShape: PixelShape,
+    val pixelGridArgb: Int,
+)
 
 private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {
     return mapAndroidKeyCodeToPixelKeyEvent(
