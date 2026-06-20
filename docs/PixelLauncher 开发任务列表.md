@@ -69,16 +69,22 @@
 
 ### P0-04 Idle 自动进入稳定性验收
 
-- [ ] 审核充电自动进入 Idle 的触发和退出行为。
-- [ ] 审核无操作默认 30s 自动进入 Idle 的触发和退出行为。
-- [ ] 审核 Settings 配置变更后是否立即影响 Idle 触发规则。
-- [ ] 稳定 Home / Drawer / Settings / SMS 与 Idle 自动进入之间的页面切换关系。
+- [x] 审核充电自动进入 Idle 的触发和退出行为。
+- [x] 审核无操作默认 30s 自动进入 Idle 的触发和退出行为。
+- [x] 审核 Settings 配置变更后是否立即影响 Idle 触发规则。
+- [x] 稳定 Home / Drawer / Settings / SMS 与 Idle 自动进入之间的页面切换关系。
 
 验收：
 
-- [ ] 充电和无操作能按设置进入 Idle。
-- [ ] 用户操作后不会误触发 Idle。
-- [ ] 不引入系统锁屏替代职责。
+- [x] 充电和无操作能按设置进入 Idle。
+- [x] 用户操作后不会误触发 Idle。
+- [x] 不引入系统锁屏替代职责。
+
+证据：
+
+- `IdleAutoEntryPolicy` 集中定义自动进入 Idle 的页面、充电、无操作和 launch-pending 规则。
+- `IdleAutoEntryPolicyTest` 覆盖充电触发、当前充电配置即时生效、无操作倒计时、超时归零、关闭配置和非 Home / Drawer 页面阻断。
+- `LauncherStateTransitionsTest` 覆盖进入 Idle 时的 return mode 和非 Home / Drawer 页面阻断。
 
 ### P0-05 UI 规范持续落地
 

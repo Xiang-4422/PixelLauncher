@@ -49,6 +49,7 @@ import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
+import com.purride.pixellauncherv2.launcher.IdleAutoEntryPolicy
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -197,11 +198,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val idleRunnable = Runnable {
-        if (!canEnterIdle()) {
-            return@Runnable
-        }
-        val idleForMs = SystemClock.uptimeMillis() - state.lastInteractionUptimeMs
-        if (state.inactivityAutoIdleEnabled && idleForMs >= idleTimeoutMs()) {
+        val delay = IdleAutoEntryPolicy.nextInactivityDelayMs(
+            state = state,
+            nowUptimeMs = SystemClock.uptimeMillis(),
+            launchPending = launchPending,
+        ) ?: return@Runnable
+        if (delay == 0L) {
             enterIdleIfAllowed()
         } else {
             scheduleIdleCheck()
@@ -1615,7 +1617,7 @@ class MainActivity : AppCompatActivity() {
             wakeFromIdle()
             return
         }
-        if (isIdlePageEnabled && chargeAutoIdleEnabled && state.isCharging && enterIdleIfAllowed()) {
+        if (IdleAutoEntryPolicy.shouldEnterForCurrentCharging(state, launchPending) && enterIdleIfAllowed()) {
             updateDrawerInputFocus()
             scheduleIdleCheck()
             return
@@ -1630,7 +1632,13 @@ class MainActivity : AppCompatActivity() {
         state = LauncherStateTransitions.updateDeviceStatus(state, deviceStatus)
         refreshDerivedUiState(render = true)
         startAnimationTickerIfNeeded()
-        if (!wasCharging && deviceStatus.isCharging && state.chargeAutoIdleEnabled) {
+        if (IdleAutoEntryPolicy.shouldEnterForCharging(
+                wasCharging = wasCharging,
+                isCharging = deviceStatus.isCharging,
+                state = state,
+                launchPending = launchPending,
+            )
+        ) {
             enterIdleIfAllowed()
         } else {
             scheduleIdleCheck()
@@ -1952,17 +1960,14 @@ class MainActivity : AppCompatActivity() {
         scheduleIdleCheck()
     }
 
-    private fun canEnterIdle(): Boolean {
-        return state.isIdlePageEnabled &&
-            !launchPending &&
-            (state.mode == LauncherMode.HOME || state.mode == LauncherMode.APP_DRAWER)
-    }
-
     private fun scheduleIdleCheck() {
         mainHandler.removeCallbacks(idleRunnable)
-        if (canEnterIdle() && state.inactivityAutoIdleEnabled) {
-            val idleForMs = SystemClock.uptimeMillis() - state.lastInteractionUptimeMs
-            val delay = (idleTimeoutMs() - idleForMs).coerceAtLeast(0L)
+        val delay = IdleAutoEntryPolicy.nextInactivityDelayMs(
+            state = state,
+            nowUptimeMs = SystemClock.uptimeMillis(),
+            launchPending = launchPending,
+        )
+        if (delay != null) {
             mainHandler.postDelayed(idleRunnable, delay)
         }
     }
@@ -1970,10 +1975,6 @@ class MainActivity : AppCompatActivity() {
     private fun scheduleStatusBarMessageClear() {
         mainHandler.removeCallbacks(statusBarMessageClearRunnable)
         mainHandler.postDelayed(statusBarMessageClearRunnable, statusBarMessageTimeoutMs)
-    }
-
-    private fun idleTimeoutMs(): Long {
-        return state.idleTimeoutSeconds.coerceAtLeast(1).toLong() * 1_000L
     }
 
     private fun enterIdleIfAllowed(): Boolean {
