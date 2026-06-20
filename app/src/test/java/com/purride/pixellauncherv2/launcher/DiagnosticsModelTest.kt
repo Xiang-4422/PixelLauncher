@@ -30,9 +30,13 @@ class DiagnosticsModelTest {
                 "10PX",
                 "12PX",
                 "TEXT",
+                "TEXT MAX",
+                "TEXT RISK",
                 "DISPLAY",
                 "STATUS",
+                "BOUNDS",
                 "POWER",
+                "DEBUG",
             ),
             titles,
         )
@@ -97,7 +101,11 @@ class DiagnosticsModelTest {
         assertEquals("C10 B9 A6/10", byTitle["10PX"])
         assertEquals("C12 B11 A8/12", byTitle["12PX"])
         assertEquals("RISK 1 138/116", byTitle["TEXT"])
+        assertEquals("DATA 138/116", byTitle["TEXT MAX"])
+        assertEquals("1", byTitle["TEXT RISK"])
         assertEquals("0/12", byTitle["STATUS"])
+        assertEquals("OK 18 ROW", byTitle["BOUNDS"])
+        assertEquals("DATA HEALTH", byTitle["DEBUG"])
     }
 
     @Test

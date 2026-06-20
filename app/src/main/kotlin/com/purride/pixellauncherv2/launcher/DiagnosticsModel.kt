@@ -12,10 +12,11 @@ object DiagnosticsModel {
 
     /** Overload for [LauncherUiState] (pixel-engine path). */
     fun lines(state: LauncherUiState, screenProfile: ScreenProfile): List<DiagnosticsLine> {
+        val textSamples = DiagnosticsTextSampleModel.samples(state, screenProfile)
         return lines(
             homeSummary = HomeInfoModel.summary(state),
             dataSummary = DataHealthModel.summary(state),
-            textSummary = DiagnosticsTextSampleModel.summary(state, screenProfile),
+            textSamples = textSamples,
             launchCount = state.launchCount,
             lastLaunchPackageName = state.lastLaunchPackageName,
             recentApps = state.recentApps,
@@ -26,10 +27,11 @@ object DiagnosticsModel {
     }
 
     fun lines(state: LauncherState, screenProfile: ScreenProfile): List<DiagnosticsLine> {
+        val textSamples = DiagnosticsTextSampleModel.samples(state, screenProfile)
         return lines(
             homeSummary = HomeInfoModel.summary(state),
             dataSummary = DataHealthModel.summary(state),
-            textSummary = DiagnosticsTextSampleModel.summary(state, screenProfile),
+            textSamples = textSamples,
             launchCount = state.launchCount,
             lastLaunchPackageName = state.lastLaunchPackageName,
             recentApps = state.recentApps,
@@ -42,7 +44,7 @@ object DiagnosticsModel {
     private fun lines(
         homeSummary: String,
         dataSummary: String,
-        textSummary: String,
+        textSamples: List<DiagnosticsTextSample>,
         launchCount: Int,
         lastLaunchPackageName: String?,
         recentApps: List<String>,
@@ -66,6 +68,9 @@ object DiagnosticsModel {
         val fontRows = PixelFontCatalog.fontSizeOptions().map { size ->
             DiagnosticsLine(PixelFontCatalog.sizeLabel(size), PixelFontCatalog.metricsLabel(size))
         }
+        val textSummary = DiagnosticsTextSampleModel.summary(textSamples)
+        val maxTextSample = DiagnosticsTextSampleModel.maxSample(textSamples)
+        val boundsSnapshot = DiagnosticsBoundsModel.snapshot(screenProfile)
 
         return listOf(
             DiagnosticsLine("HOME", homeSummary),
@@ -76,9 +81,16 @@ object DiagnosticsModel {
             DiagnosticsLine("FONT", "FUSION ${PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize)}"),
         ) + fontRows + listOf(
             DiagnosticsLine("TEXT", textSummary),
+            DiagnosticsLine(
+                "TEXT MAX",
+                maxTextSample?.let { "${it.group} ${it.widthPx}/${it.availablePx}" } ?: "NONE",
+            ),
+            DiagnosticsLine("TEXT RISK", DiagnosticsTextSampleModel.riskCount(textSamples).toString()),
             DiagnosticsLine("DISPLAY", "${screenProfile.logicalWidth}X${screenProfile.logicalHeight}"),
             DiagnosticsLine("STATUS", "${screenProfile.statusBarHeight}/$statusBarHeight"),
+            DiagnosticsLine("BOUNDS", boundsSnapshot.summary),
             DiagnosticsLine("POWER", "$batteryLevel%${if (isCharging) " CHG" else ""}"),
+            DiagnosticsLine("DEBUG", "DATA HEALTH"),
         )
     }
 }

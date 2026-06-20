@@ -5,6 +5,7 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
@@ -38,6 +39,7 @@ class DiagnosticsScreen(
     private val theme: LauncherTheme,
     private val chargeTick: Int,
     private val screenProfile: ScreenProfile,
+    private val onOpenDataHealth: () -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -78,7 +80,11 @@ class DiagnosticsScreen(
                                     children = DiagnosticsModel
                                         .lines(widget.uiState, widget.screenProfile)
                                         .map { line ->
-                                            diagnosticsRow(line = line, theme = widget.theme)
+                                            diagnosticsRow(
+                                                line = line,
+                                                theme = widget.theme,
+                                                onOpenDataHealth = widget.onOpenDataHealth,
+                                            )
                                         },
                                 ),
                             ),
@@ -91,6 +97,19 @@ class DiagnosticsScreen(
 }
 
 private fun diagnosticsRow(
+    line: DiagnosticsLine,
+    theme: LauncherTheme,
+    onOpenDataHealth: () -> Unit,
+): Widget {
+    val row = diagnosticsLineRow(line = line, theme = theme)
+    return if (line.title == "DEBUG" && line.value == "DATA HEALTH") {
+        GestureDetector(onTap = onOpenDataHealth, child = row)
+    } else {
+        row
+    }
+}
+
+private fun diagnosticsLineRow(
     line: DiagnosticsLine,
     theme: LauncherTheme,
 ): Widget = Row(

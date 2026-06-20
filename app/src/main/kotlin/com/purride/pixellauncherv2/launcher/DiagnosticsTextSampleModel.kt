@@ -39,6 +39,14 @@ object DiagnosticsTextSampleModel {
         )
     }
 
+    fun maxSample(samples: List<DiagnosticsTextSample>): DiagnosticsTextSample? {
+        return samples.maxByOrNull { it.widthPx }
+    }
+
+    fun riskCount(samples: List<DiagnosticsTextSample>): Int {
+        return samples.count { !it.fits }
+    }
+
     private fun buildSamples(
         homeLines: List<String>,
         dataLines: List<String>,
@@ -52,7 +60,7 @@ object DiagnosticsTextSampleModel {
         }
     }
 
-    private fun summary(samples: List<DiagnosticsTextSample>): String {
+    fun summary(samples: List<DiagnosticsTextSample>): String {
         val maxWidth = samples.maxOfOrNull { it.widthPx } ?: 0
         val availablePx = samples.firstOrNull()?.availablePx ?: 0
         val riskCount = samples.count { !it.fits }

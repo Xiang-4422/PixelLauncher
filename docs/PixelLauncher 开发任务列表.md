@@ -220,16 +220,23 @@
 
 ### P1-05 Advanced / Diagnostics 深化
 
-- [ ] 增加真实渲染 bounds 检查。
-- [ ] 暴露关键文案宽度采样结果。
-- [ ] 增加可操作的调试入口。
-- [ ] Data Health、Home 摘要、字体 metrics、display、status bar inset 和电量状态保持一致展示。
+- [x] 增加真实渲染 bounds 检查。
+- [x] 暴露关键文案宽度采样结果。
+- [x] 增加可操作的调试入口。
+- [x] Data Health、Home 摘要、字体 metrics、display、status bar inset 和电量状态保持一致展示。
 
 验收：
 
-- [ ] UI 裁切问题能通过诊断页定位。
-- [ ] 调试入口不影响普通用户路径。
-- [ ] 诊断信息短、明确、可复现。
+- [x] UI 裁切问题能通过诊断页定位。
+- [x] 调试入口不影响普通用户路径。
+- [x] 诊断信息短、明确、可复现。
+
+证据：
+
+- `DiagnosticsBoundsModelTest` 覆盖 Advanced 可用内容宽度、正文高度、可见行数和 bounds 风险摘要。
+- `DiagnosticsTextSampleModelTest` 与 `DiagnosticsModelTest` 覆盖 `TEXT`、`TEXT MAX`、`TEXT RISK` 行，能定位关键文案宽度风险。
+- `DiagnosticsModelTest` 覆盖 Home 摘要、Data Health 摘要、字体 metrics、display、status bar inset、电量状态、`BOUNDS` 和 `DEBUG DATA HEALTH` 行。
+- `UiSpecStaticTest.diagnosticsKeepsDataHealthDebugAction` 保证 Advanced 页的 `DEBUG DATA HEALTH` 行可点击进入 Data Health。
 
 ## P2：长期探索方向
 

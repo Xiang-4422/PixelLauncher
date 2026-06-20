@@ -302,6 +302,26 @@ class UiSpecStaticTest {
         )
     }
 
+    @Test
+    fun diagnosticsKeepsDataHealthDebugAction() {
+        val moduleRoot = resolveModuleRoot()
+        val diagnosticsSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/DiagnosticsScreen.kt")
+            .readText()
+        val rootHostSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt")
+            .readText()
+
+        assertTrue(
+            "Advanced diagnostics must keep an actionable Data Health debug row.",
+            diagnosticsSource.contains("onOpenDataHealth") &&
+                diagnosticsSource.contains("line.title == \"DEBUG\"") &&
+                diagnosticsSource.contains("line.value == \"DATA HEALTH\"") &&
+                diagnosticsSource.contains("GestureDetector(onTap = onOpenDataHealth") &&
+                rootHostSource.contains("onOpenDataHealth = callbacks.onOpenDataHealth"),
+        )
+    }
+
     private fun File.findUiSpecOffenders(moduleRoot: File): List<String> {
         val relativePath = relativeTo(moduleRoot).invariantSeparatorsPath
         return readLines().flatMapIndexed { index, line ->

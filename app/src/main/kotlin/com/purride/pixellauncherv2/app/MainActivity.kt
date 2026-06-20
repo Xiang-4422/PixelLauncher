@@ -313,6 +313,7 @@ class MainActivity : AppCompatActivity() {
                 onAppEditorSave = ::onAppEditorSave,
                 onAppEditorReset = ::onAppEditorReset,
                 onAppCacheReset = ::onAppCacheReset,
+                onOpenDataHealth = ::openDataHealth,
                 onDataHealthItemPressed = ::onDataHealthItemPressed,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,

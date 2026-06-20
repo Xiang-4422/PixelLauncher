@@ -240,6 +240,7 @@ internal class LauncherRootHost(
             theme = theme,
             chargeTick = chargeTick,
             screenProfile = screenProfile,
+            onOpenDataHealth = callbacks.onOpenDataHealth,
         )
         LauncherMode.DATA_HEALTH       -> DataHealthScreen(
             uiState = uiState,
