@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.render
 
 data class GlyphStyle(
     val cellHeight: Int,
+    val baseline: Int,
     val narrowAdvanceWidth: Int,
     val wideAdvanceWidth: Int,
     val oversampleFactor: Int,
@@ -28,6 +29,7 @@ data class GlyphStyle(
         private fun styleFor(cellHeight: Int): GlyphStyle {
             return GlyphStyle(
                 cellHeight = cellHeight,
+                baseline = (cellHeight - 1).coerceAtLeast(0),
                 narrowAdvanceWidth = NARROW_ADVANCE_PX,
                 wideAdvanceWidth = cellHeight,
                 oversampleFactor = 1,

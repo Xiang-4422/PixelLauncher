@@ -19,6 +19,12 @@ class GlyphStyleTest {
     }
 
     @Test
+    fun baseline_isStable() {
+        assertEquals(9, GlyphStyle.UI_SMALL_10.baseline)
+        assertEquals(9, GlyphStyle.APP_LABEL_16.baseline)
+    }
+
+    @Test
     fun narrowAdvanceWidth_isStable() {
         assertEquals(6, GlyphStyle.UI_SMALL_10.narrowAdvanceWidth)
         assertEquals(6, GlyphStyle.APP_LABEL_16.narrowAdvanceWidth)

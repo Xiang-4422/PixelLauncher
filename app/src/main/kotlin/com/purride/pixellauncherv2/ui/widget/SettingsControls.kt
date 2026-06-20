@@ -10,7 +10,6 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Row
-import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
@@ -18,10 +17,13 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 
-private const val SETTINGS_SWITCH_PADDING_PX = 1
+private const val SETTINGS_SWITCH_PADDING_PX = 2
 private const val SETTINGS_SWITCH_SEGMENT_GAP_PX = 1
-private const val SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX = 1
-private const val SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX = 1
+private const val SETTINGS_SWITCH_LABEL_HORIZONTAL_PADDING_PX = 2
+private const val SETTINGS_SWITCH_LABEL_VERTICAL_PADDING_PX = 2
+private const val SETTINGS_ROW_HORIZONTAL_PADDING_PX = 2
+private const val SETTINGS_ROW_VERTICAL_PADDING_PX = 2
+private const val SETTINGS_LABEL_VERTICAL_PADDING_PX = 2
 
 fun SettingsValueSlider(
     title: String,
@@ -34,32 +36,20 @@ fun SettingsValueSlider(
     onValuePreview: (Float) -> Unit = {},
     onValueChanged: (Float) -> Unit,
 ): Widget = Container(
-    padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+    padding = settingsRowPadding(),
     child = Column(
-        mainAxisSize = MainAxisSize.MAX,
+        mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        spacing = 2,
+        spacing = 1,
         children = listOf(
-            Row(
-                spacing = 2,
-                children = listOf(
-                    GestureDetector(
-                        onTap = onStepDown,
-                        child = Text(
-                            title,
-                            style = TextStyle(color = theme.settings.itemTitle),
-                            overflow = TextOverflow.ELLIPSIS,
-                        ),
-                    ),
-                    Expanded(child = SizedBox(width = 0, height = 0)),
-                    GestureDetector(
-                        onTap = onStepUp,
-                        child = Text(
-                            valueLabel,
-                            style = TextStyle(color = theme.settings.itemValue),
-                            overflow = TextOverflow.ELLIPSIS,
-                        ),
-                    ),
+            settingsInlineRow(
+                title = GestureDetector(
+                    onTap = onStepDown,
+                    child = settingsTitleCell(title = title, theme = theme),
+                ),
+                trailing = GestureDetector(
+                    onTap = onStepUp,
+                    child = settingsValueCell(valueLabel = valueLabel, theme = theme),
                 ),
             ),
             Slider(
@@ -82,24 +72,19 @@ fun SettingsSwitchRow(
     onLabel: String = "ON",
     onToggle: () -> Unit,
 ): Widget = Container(
-    padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
-    child = Row(
-        spacing = 2,
-        children = listOf(
-            Text(
-                title,
-                style = TextStyle(color = theme.settings.itemTitle),
-                overflow = TextOverflow.ELLIPSIS,
-            ),
-            Expanded(child = SizedBox(width = 0, height = 0)),
-            SettingsSwitch(
-                checked = checked,
-                theme = theme,
-                showLabels = showLabels,
-                offLabel = offLabel,
-                onLabel = onLabel,
-                onToggle = onToggle,
-            ),
+    padding = settingsRowPadding(),
+    child = settingsInlineRow(
+        title = GestureDetector(
+            onTap = onToggle,
+            child = settingsTitleCell(title = title, theme = theme),
+        ),
+        trailing = SettingsSwitch(
+            checked = checked,
+            theme = theme,
+            showLabels = showLabels,
+            offLabel = offLabel,
+            onLabel = onLabel,
+            onToggle = onToggle,
         ),
     ),
 )
@@ -128,27 +113,15 @@ fun SettingsOptionStepperRow(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ): Widget = Container(
-    padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
-    child = Row(
-        spacing = 2,
-        children = listOf(
-            GestureDetector(
-                onTap = onPrevious,
-                child = Text(
-                    title,
-                    style = TextStyle(color = theme.settings.itemTitle),
-                    overflow = TextOverflow.ELLIPSIS,
-                ),
-            ),
-            Expanded(child = SizedBox(width = 0, height = 0)),
-            GestureDetector(
-                onTap = onNext,
-                child = Text(
-                    valueLabel,
-                    style = TextStyle(color = theme.settings.itemValue),
-                    overflow = TextOverflow.ELLIPSIS,
-                ),
-            ),
+    padding = settingsRowPadding(),
+    child = settingsInlineRow(
+        title = GestureDetector(
+            onTap = onPrevious,
+            child = settingsTitleCell(title = title, theme = theme),
+        ),
+        trailing = GestureDetector(
+            onTap = onNext,
+            child = settingsValueCell(valueLabel = valueLabel, theme = theme),
         ),
     ),
 )
@@ -161,24 +134,82 @@ fun SettingsActionRow(
 ): Widget = GestureDetector(
     onTap = onPressed,
     child = Container(
-        padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
-        child = Row(
-            spacing = 2,
-            children = listOf(
-                Text(
-                    title,
-                    style = TextStyle(color = theme.settings.itemTitle),
-                    overflow = TextOverflow.ELLIPSIS,
-                ),
-                Expanded(child = SizedBox(width = 0, height = 0)),
-                Text(
-                    valueLabel,
-                    style = TextStyle(color = theme.settings.itemValue),
-                    overflow = TextOverflow.ELLIPSIS,
-                ),
-            ),
+        padding = settingsRowPadding(),
+        child = settingsInlineRow(
+            title = settingsTitleCell(title = title, theme = theme),
+            trailing = settingsValueCell(valueLabel = valueLabel, theme = theme),
         ),
     ),
+)
+
+fun SettingsSectionHeader(
+    title: String,
+    theme: LauncherTheme,
+): Widget = Container(
+    padding = settingsRowPadding(),
+    child = Text(
+        title,
+        style = TextStyle(color = theme.text.muted),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    ),
+)
+
+private fun settingsInlineRow(
+    title: Widget,
+    trailing: Widget,
+): Widget = Row(
+    mainAxisSize = MainAxisSize.MAX,
+    crossAxisAlignment = CrossAxisAlignment.CENTER,
+    spacing = 2,
+    children = listOf(
+        Expanded(child = settingsRowCell(title, Alignment.CENTER_START)),
+        Expanded(child = settingsRowCell(trailing, Alignment.CENTER_END)),
+    ),
+)
+
+private fun settingsRowCell(
+    child: Widget,
+    alignment: Alignment,
+): Widget = Container(
+    alignment = alignment,
+    child = child,
+)
+
+private fun settingsTitleCell(
+    title: String,
+    theme: LauncherTheme,
+): Widget = Container(
+    padding = EdgeInsets.symmetric(vertical = SETTINGS_LABEL_VERTICAL_PADDING_PX),
+    alignment = Alignment.CENTER_START,
+    child = Text(
+        title,
+        style = TextStyle(color = theme.settings.itemTitle),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    ),
+)
+
+private fun settingsValueCell(
+    valueLabel: String,
+    theme: LauncherTheme,
+): Widget = Container(
+    padding = EdgeInsets.symmetric(vertical = SETTINGS_LABEL_VERTICAL_PADDING_PX),
+    alignment = Alignment.CENTER_END,
+    child = Text(
+        valueLabel,
+        style = TextStyle(color = theme.settings.itemValue),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    ),
+)
+
+private fun settingsRowPadding(): EdgeInsets = EdgeInsets.symmetric(
+    horizontal = SETTINGS_ROW_HORIZONTAL_PADDING_PX,
+    vertical = SETTINGS_ROW_VERTICAL_PADDING_PX,
 )
 
 private fun SettingsSwitch(
@@ -228,7 +259,11 @@ private fun switchSegment(
     alignment = Alignment.CENTER,
     child = Text(
         label,
-        style = TextStyle(color = if (active) theme.button.text else theme.button.disabledText),
-        overflow = TextOverflow.CLIP,
+        style = TextStyle(
+            color = if (active) theme.button.text else theme.button.disabledText,
+        ),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
     ),
 )

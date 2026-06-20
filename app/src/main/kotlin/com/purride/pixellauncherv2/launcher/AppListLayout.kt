@@ -1,6 +1,5 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.render.ScreenProfile
 
 /**
@@ -15,7 +14,7 @@ object AppListLayout {
 
     /** 与引擎 DrawerScreen 渲染行距一致（单一来源 [DrawerListGeometry]）。 */
     private val rowHeight: Int
-        get() = DrawerListGeometry.rowPitch(GlyphStyle.APP_LABEL_16.cellHeight)
+        get() = DrawerListGeometry.rowPitch(PixelFontCatalog.defaultUiFontSize.px)
 
     fun visibleRows(screenProfile: ScreenProfile): Int {
         val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile)
