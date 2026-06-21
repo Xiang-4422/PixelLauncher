@@ -6,12 +6,14 @@ import android.content.ClipboardManager
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.os.LocaleList
 import android.view.KeyEvent
 import android.view.HapticFeedbackConstants
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import java.util.Locale
 
 /**
  * 默认的 Android 文本输入桥接。
@@ -90,12 +92,11 @@ public class PixelTextInputBridge(
             val safeSelectionStart = request.selectionStart.coerceIn(0, textLength)
             val safeSelectionEnd = request.selectionEnd.coerceIn(safeSelectionStart, textLength)
             inputView.setSelection(safeSelectionStart, safeSelectionEnd)
-            inputView.imeOptions = when (request.action) {
-                PixelTextInputAction.DONE -> EditorInfo.IME_ACTION_DONE
-                PixelTextInputAction.NEXT -> EditorInfo.IME_ACTION_NEXT
-                PixelTextInputAction.GO -> EditorInfo.IME_ACTION_GO
-                PixelTextInputAction.SEARCH -> EditorInfo.IME_ACTION_SEARCH
-                PixelTextInputAction.SEND -> EditorInfo.IME_ACTION_SEND
+            inputView.imeOptions = resolveAndroidImeOptions(request.action, request.inputType)
+            inputView.imeHintLocales = if (request.inputType == PixelInputType.ASCII) {
+                LocaleList(Locale.ENGLISH)
+            } else {
+                null
             }
         } finally {
             syncingFromHost = false
@@ -106,6 +107,7 @@ public class PixelTextInputBridge(
             inputView.clearFocus()
         } else {
             inputView.requestFocus()
+            inputMethodManager?.restartInput(inputView)
             inputMethodManager?.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
         }
     }
@@ -177,6 +179,11 @@ internal fun resolveAndroidInputType(
                 InputType.TYPE_CLASS_TEXT
             }
         }
+        PixelInputType.ASCII -> {
+            InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+                InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+        }
         PixelInputType.NUMBER -> {
             InputType.TYPE_CLASS_NUMBER or
                 InputType.TYPE_NUMBER_FLAG_SIGNED or
@@ -195,5 +202,23 @@ internal fun resolveAndroidInputType(
         PixelInputType.PASSWORD -> {
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
+    }
+}
+
+internal fun resolveAndroidImeOptions(
+    action: PixelTextInputAction,
+    inputType: PixelInputType,
+): Int {
+    val actionOption = when (action) {
+        PixelTextInputAction.DONE -> EditorInfo.IME_ACTION_DONE
+        PixelTextInputAction.NEXT -> EditorInfo.IME_ACTION_NEXT
+        PixelTextInputAction.GO -> EditorInfo.IME_ACTION_GO
+        PixelTextInputAction.SEARCH -> EditorInfo.IME_ACTION_SEARCH
+        PixelTextInputAction.SEND -> EditorInfo.IME_ACTION_SEND
+    }
+    return if (inputType == PixelInputType.ASCII) {
+        actionOption or EditorInfo.IME_FLAG_FORCE_ASCII
+    } else {
+        actionOption
     }
 }

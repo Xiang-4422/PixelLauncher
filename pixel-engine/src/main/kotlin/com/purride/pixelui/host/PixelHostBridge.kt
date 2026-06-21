@@ -61,6 +61,7 @@ public data class PixelTextInputRequest(
  * InputType / variation 常量，让系统软键盘在不同语义下弹出对应面板。
  *
  * - [TEXT]: 普通文本（默认），允许多行受 minLines/maxLines 限制
+ * - [ASCII]: 单行 ASCII 文本，向宿主请求英文大写键盘
  * - [NUMBER]: 数字面板（含正负号 / 小数点）
  * - [NUMBER_PASSWORD]: 数字密码（不显示原文）
  * - [EMAIL]: 邮件地址，含 @ 键
@@ -70,6 +71,7 @@ public data class PixelTextInputRequest(
  */
 public enum class PixelInputType {
     TEXT,
+    ASCII,
     NUMBER,
     NUMBER_PASSWORD,
     EMAIL,

@@ -8,6 +8,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.Row
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
@@ -196,6 +197,7 @@ fun LauncherSearchHeader(
     actionLabel: String = "",
     isActionDanger: Boolean = false,
     autofocus: Boolean,
+    textAlign: TextAlign = TextAlign.START,
     batteryLevel: Int,
     isCharging: Boolean,
     chargeTick: Int,
@@ -230,6 +232,8 @@ fun LauncherSearchHeader(
                                         controller = controller,
                                         placeholder = placeholder,
                                         autofocus = autofocus,
+                                        inputType = PixelInputType.ASCII,
+                                        textAlign = textAlign,
                                         textInputAction = TextInputAction.SEARCH,
                                         style = TextFieldStyle(
                                             borderColor = null,

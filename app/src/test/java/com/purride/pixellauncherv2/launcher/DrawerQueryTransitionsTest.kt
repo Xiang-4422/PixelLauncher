@@ -22,7 +22,7 @@ class DrawerQueryTransitionsTest {
     @Test
     fun updateDrawerQuery_filtersToMatchingApps() {
         val result = LauncherStateTransitions.updateDrawerQuery(state, query = "apple", visibleRows = 5)
-        assertEquals("apple", result.drawerQuery)
+        assertEquals("APPLE", result.drawerQuery)
         val labels = result.drawerVisibleApps.map { it.label }
         assertTrue("Apple should match 'apple'", labels.contains("Apple"))
         assertFalse("Banana should not match 'apple'", labels.contains("Banana"))
@@ -168,8 +168,8 @@ class DrawerQueryTransitionsTest {
     fun appendThenBackspaceDrawerQuery_roundTrips() {
         val a = LauncherStateTransitions.updateDrawerQuery(state, query = "a", visibleRows = 5)
         val ap = LauncherStateTransitions.appendDrawerQuery(a, text = "p", visibleRows = 5)
-        assertEquals("ap", ap.drawerQuery)
+        assertEquals("AP", ap.drawerQuery)
         val back = LauncherStateTransitions.backspaceDrawerQuery(ap, visibleRows = 5)
-        assertEquals("a", back.drawerQuery)
+        assertEquals("A", back.drawerQuery)
     }
 }

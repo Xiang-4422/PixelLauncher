@@ -526,7 +526,7 @@ object LauncherStateTransitions {
      * 根据新的 query 重新计算抽屉过滤结果，并把焦点重置到第一条结果。
      */
     fun updateDrawerQuery(state: LauncherState, query: String, visibleRows: Int): LauncherState {
-        val safeQuery = query.take(maxDrawerQueryLength)
+        val safeQuery = DrawerAsciiInputSanitizer.filter(query).take(maxDrawerQueryLength)
         val orderedApps = orderBlankQueryApps(state.apps, state.recentApps)
         val drawerApps = filterDrawerApps(
             orderedApps = orderedApps,

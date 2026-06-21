@@ -4,15 +4,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Coverage for [DrawerAsciiInputSanitizer.filter] — keeps printable ASCII
+ * Coverage for [DrawerAsciiInputSanitizer.filter] — uppercases printable ASCII
  * (code points 32..126) and drops control characters, DEL and non-ASCII input.
  * JVM-safe; no Android dependencies.
  */
 class DrawerAsciiInputSanitizerTest {
 
     @Test
-    fun filter_keepsPrintableAsciiUnchanged() {
-        assertEquals("Hello 123!", DrawerAsciiInputSanitizer.filter("Hello 123!"))
+    fun filter_uppercasesPrintableAscii() {
+        assertEquals("HELLO 123!", DrawerAsciiInputSanitizer.filter("Hello 123!"))
     }
 
     @Test
@@ -22,7 +22,7 @@ class DrawerAsciiInputSanitizerTest {
 
     @Test
     fun filter_dropsNonAsciiAndDel() {
-        assertEquals("ab", DrawerAsciiInputSanitizer.filter("a你b")) // CJK char dropped
+        assertEquals("AB", DrawerAsciiInputSanitizer.filter("a你b")) // CJK char dropped
         assertEquals("X", DrawerAsciiInputSanitizer.filter("X")) // DEL (127) dropped
     }
 

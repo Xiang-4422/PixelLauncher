@@ -21,6 +21,7 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.Widget
 import com.purride.pixelui.createPixelHostSetup
@@ -342,6 +343,11 @@ internal class LauncherRootHost(
                 actionLabel = uiState.statusBarActionLabel,
                 isActionDanger = uiState.isStatusBarActionDanger,
                 autofocus = uiState.isDrawerSearchFocused,
+                textAlign = when (uiState.drawerListAlignment) {
+                    DrawerListAlignment.LEFT -> TextAlign.START
+                    DrawerListAlignment.CENTER -> TextAlign.CENTER
+                    DrawerListAlignment.RIGHT -> TextAlign.END
+                },
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,

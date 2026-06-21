@@ -2,7 +2,10 @@ package com.purride.pixelui.host
 
 import android.text.InputType
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.resolveAndroidInputType
+import com.purride.pixelui.resolveAndroidImeOptions
+import android.view.inputmethod.EditorInfo
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -28,6 +31,28 @@ class PixelTextInputBridgeTest {
         assertEquals(
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE,
             resolveAndroidInputType(PixelInputType.TEXT, multiLine = true),
+        )
+    }
+
+    @Test
+    fun `ASCII maps to uppercase visible text input`() {
+        assertEquals(
+            InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+                InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS,
+            resolveAndroidInputType(PixelInputType.ASCII, multiLine = false),
+        )
+    }
+
+    @Test
+    fun `ASCII requests an ASCII keyboard while preserving the action`() {
+        assertEquals(
+            EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_FORCE_ASCII,
+            resolveAndroidImeOptions(PixelTextInputAction.SEARCH, PixelInputType.ASCII),
+        )
+        assertEquals(
+            EditorInfo.IME_ACTION_SEARCH,
+            resolveAndroidImeOptions(PixelTextInputAction.SEARCH, PixelInputType.TEXT),
         )
     }
 

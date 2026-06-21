@@ -39,6 +39,7 @@ internal data class TextFieldWidget(
     val minLines: Int,
     val maxLines: Int,
     val inputType: PixelInputType,
+    val textAlign: TextAlign,
     val textInputAction: PixelTextInputAction,
     val onChanged: ((String) -> Unit)?,
     val onSubmitted: ((String) -> Unit)?,
@@ -86,7 +87,11 @@ internal data class TextFieldWidget(
             fillColor = fillColor ?: effectiveStyle.fillColor,
             borderColor = borderColor ?: effectiveStyle.borderColor,
             padding = style.padding,
-            alignment = Alignment.CENTER_START,
+            alignment = when (textAlign) {
+                TextAlign.START -> Alignment.CENTER_START
+                TextAlign.CENTER -> Alignment.CENTER
+                TextAlign.END -> Alignment.CENTER_END
+            },
             state = state,
             controller = controller,
             readOnly = readOnly || !enabled,
@@ -110,7 +115,7 @@ internal data class TextFieldWidget(
                 softWrap = safeMaxLines > 1,
                 maxLines = safeMaxLines,
                 overflow = if (safeMaxLines > 1) PixelTextOverflow.CLIP else PixelTextOverflow.ELLIPSIS,
-                textAlign = TextAlign.START,
+                textAlign = textAlign,
                 key = key?.let { "$it-text" },
             ),
         )

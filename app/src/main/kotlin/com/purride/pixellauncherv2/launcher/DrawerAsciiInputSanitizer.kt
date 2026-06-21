@@ -6,7 +6,7 @@ object DrawerAsciiInputSanitizer {
         return buildString(text.length) {
             text.forEach { char ->
                 if (char.code in 32..126) {
-                    append(char)
+                    append(char.uppercaseChar())
                 }
             }
         }
