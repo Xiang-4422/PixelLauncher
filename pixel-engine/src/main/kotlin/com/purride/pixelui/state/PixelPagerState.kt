@@ -29,6 +29,7 @@ public class PixelPagerState(
     internal var lastDispatchedPage: Int = this.currentPage
 
     internal var motionState: AxisMotionState = AxisMotionState()
+    internal var dragStartOffsetPx: Float = 0f
 
     public val isDragging: Boolean
         get() = motionState.isDragging

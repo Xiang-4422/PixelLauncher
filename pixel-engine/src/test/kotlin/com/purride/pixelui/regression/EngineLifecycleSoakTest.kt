@@ -96,7 +96,7 @@ class EngineLifecycleSoakTest {
     fun pagerFlingLongRunSettlesAtTargetAndStops() {
         val controller = PixelPagerController()
         val state = controller.create(pageCount = 5, currentPage = 2, axis = PixelAxis.HORIZONTAL)
-        controller.startDrag(state)
+        controller.startDrag(state, viewportSizePx = 100)
         controller.dragBy(state, deltaPx = -48f, viewportSizePx = 100)
         controller.endDrag(state, viewportSizePx = 100, velocityPxPerSecond = -900f)
 

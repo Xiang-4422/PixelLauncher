@@ -14,7 +14,7 @@ class PixelPagerControllerTest {
     @Test
     fun horizontalDragPastThresholdChangesToPreviousPage() {
         val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.HORIZONTAL)
-        controller.startDrag(state)
+        controller.startDrag(state, viewportSizePx = 100)
         controller.dragBy(state, deltaPx = 45f, viewportSizePx = 100)
         controller.endDrag(
             state = state,
@@ -33,7 +33,7 @@ class PixelPagerControllerTest {
     @Test
     fun verticalDragPastThresholdChangesToNextPage() {
         val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.VERTICAL)
-        controller.startDrag(state)
+        controller.startDrag(state, viewportSizePx = 100)
         controller.dragBy(state, deltaPx = -45f, viewportSizePx = 100)
         controller.endDrag(
             state = state,
@@ -46,9 +46,38 @@ class PixelPagerControllerTest {
     }
 
     @Test
+    fun sameDirectionDragDuringSettleContinuesToFollowingPage() {
+        val state = controller.create(pageCount = 3, currentPage = 0, axis = PixelAxis.HORIZONTAL)
+        controller.startDrag(state, viewportSizePx = 100)
+        controller.dragBy(state, deltaPx = -45f, viewportSizePx = 100)
+        controller.endDrag(state, viewportSizePx = 100, velocityPxPerSecond = 0f)
+        controller.step(state, deltaMs = 60L)
+        val beforeTakeover = controller.snapshot(state)
+
+        controller.startDrag(state, viewportSizePx = 100)
+        val afterTakeover = controller.snapshot(state)
+
+        assertEquals(1, state.currentPage)
+        assertTrue(state.isDragging)
+        assertEquals(
+            beforeTakeover.dragOffsetPx + 100f,
+            afterTakeover.dragOffsetPx,
+            0.001f,
+        )
+
+        controller.dragBy(state, deltaPx = -45f, viewportSizePx = 100)
+        controller.endDrag(state, viewportSizePx = 100, velocityPxPerSecond = 0f)
+        assertEquals(2, state.settleTargetPage)
+
+        controller.step(state, deltaMs = 240L)
+        assertEquals(2, state.currentPage)
+        assertFalse(state.isSettling)
+    }
+
+    @Test
     fun velocityCanTriggerPageChangeEvenWithSmallDistance() {
         val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.HORIZONTAL)
-        controller.startDrag(state)
+        controller.startDrag(state, viewportSizePx = 100)
         controller.dragBy(state, deltaPx = 8f, viewportSizePx = 100)
         controller.endDrag(
             state = state,
@@ -62,13 +91,13 @@ class PixelPagerControllerTest {
     @Test
     fun boundaryClampsPageTargetAtEdges() {
         val firstPageState = controller.create(pageCount = 3, currentPage = 0, axis = PixelAxis.HORIZONTAL)
-        controller.startDrag(firstPageState)
+        controller.startDrag(firstPageState, viewportSizePx = 100)
         controller.dragBy(firstPageState, deltaPx = 40f, viewportSizePx = 100)
         controller.endDrag(firstPageState, viewportSizePx = 100, velocityPxPerSecond = 120f)
         assertEquals(0, firstPageState.settleTargetPage)
 
         val lastPageState = controller.create(pageCount = 3, currentPage = 2, axis = PixelAxis.VERTICAL)
-        controller.startDrag(lastPageState)
+        controller.startDrag(lastPageState, viewportSizePx = 100)
         controller.dragBy(lastPageState, deltaPx = -40f, viewportSizePx = 100)
         controller.endDrag(lastPageState, viewportSizePx = 100, velocityPxPerSecond = -120f)
         assertEquals(2, lastPageState.settleTargetPage)
@@ -77,7 +106,7 @@ class PixelPagerControllerTest {
     @Test
     fun cancelDragKeepsCurrentPageAndSettlesBackToZeroOffset() {
         val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.HORIZONTAL)
-        controller.startDrag(state)
+        controller.startDrag(state, viewportSizePx = 100)
         controller.dragBy(state, deltaPx = -30f, viewportSizePx = 100)
 
         controller.cancelDrag(state)
@@ -94,7 +123,7 @@ class PixelPagerControllerTest {
         val savedState = controller.saveState(source)
         val restored = controller.create(pageCount = 2, currentPage = 0, axis = PixelAxis.HORIZONTAL)
 
-        controller.startDrag(restored)
+        controller.startDrag(restored, viewportSizePx = 100)
         controller.dragBy(restored, deltaPx = -30f, viewportSizePx = 100)
         controller.restoreState(
             state = restored,
@@ -139,7 +168,7 @@ class PixelPagerControllerTest {
     @Test
     fun stepNotifiesWhileSettling() {
         val state = controller.create(pageCount = 3, currentPage = 1, axis = PixelAxis.HORIZONTAL)
-        controller.startDrag(state)
+        controller.startDrag(state, viewportSizePx = 100)
         controller.dragBy(state, deltaPx = 45f, viewportSizePx = 100)
         controller.endDrag(state, viewportSizePx = 100, velocityPxPerSecond = 0f)
         assertTrue(state.isSettling)

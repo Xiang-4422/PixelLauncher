@@ -302,9 +302,9 @@ internal class LauncherRootHost(
                     controller = mainPagerController,
                     state = mainPagerState,
                     pages = listOf(
+                        buildSettingsPage(),
                         buildHomePage(),
                         buildDrawerPage(),
-                        buildSettingsPage(),
                     ),
                     onPageChanged = { page ->
                         MAIN_PAGE_MODES.getOrNull(page)?.let { mode ->
@@ -443,9 +443,9 @@ internal class LauncherRootHost(
     companion object {
         const val MAIN_PAGE_COUNT = 3
         val MAIN_PAGE_MODES = listOf(
+            LauncherMode.SETTINGS,
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
-            LauncherMode.SETTINGS,
         )
         fun modeToMainPage(mode: LauncherMode): Int? = MAIN_PAGE_MODES.indexOf(mode).takeIf { it >= 0 }
 

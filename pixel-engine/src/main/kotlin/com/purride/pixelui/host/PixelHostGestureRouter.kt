@@ -196,7 +196,10 @@ internal class PixelHostGestureRouter(
                 host.activePagerTarget = pagerTarget
                 host.candidatePagerTarget = null
                 host.candidateListTarget = null
-                pagerTarget.controller.startDrag(pagerTarget.state)
+                pagerTarget.controller.startDrag(
+                    pagerTarget.state,
+                    host.pagerViewportSize(pagerTarget),
+                )
                 host.lastPagerLogicalX = logicalPoint.first
                 host.lastPagerLogicalY = host.lastListLogicalY
                 pagerTarget.controller.dragBy(pagerTarget.state, deltaPx, host.pagerViewportSize(pagerTarget))
@@ -223,7 +226,7 @@ internal class PixelHostGestureRouter(
             if (pagerWantsDrag && !shouldDeferToList) {
                 host.activePagerTarget = target
                 host.candidatePagerTarget = null
-                target.controller.startDrag(target.state)
+                target.controller.startDrag(target.state, host.pagerViewportSize(target))
                 val initialDeltaPx = when (target.axis) {
                     PixelAxis.HORIZONTAL -> logicalPoint.first - host.touchDownLogicalX
                     PixelAxis.VERTICAL -> logicalPoint.second - host.touchDownLogicalY

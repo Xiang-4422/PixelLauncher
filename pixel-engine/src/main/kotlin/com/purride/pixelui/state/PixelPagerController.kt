@@ -51,6 +51,7 @@ public class PixelPagerController(
         state.currentPage = safeTargetPage
         state.settleTargetPage = safeTargetPage
         state.motionState = motionController.reset()
+        state.dragStartOffsetPx = 0f
         notifyListeners()
     }
 
@@ -73,12 +74,24 @@ public class PixelPagerController(
         state.settleTargetPage = safePage
         state.lastDispatchedPage = safePage
         state.motionState = motionController.reset()
+        state.dragStartOffsetPx = 0f
         notifyListeners()
     }
 
-    public fun startDrag(state: PixelPagerState) {
+    public fun startDrag(state: PixelPagerState, viewportSizePx: Int) {
+        val safeViewportSizePx = viewportSizePx.coerceAtLeast(1).toFloat()
+        var dragStartOffset = motionController.visualOffsetPx(state.motionState)
+        if (state.motionState.isSettling) {
+            val targetPage = state.settleTargetPage.coerceIn(0, state.pageCount - 1)
+            val pageDelta = targetPage - state.currentPage
+            state.currentPage = targetPage
+            dragStartOffset += pageDelta * safeViewportSizePx
+        }
         state.settleTargetPage = state.currentPage
-        state.motionState = motionController.startDrag(state.motionState)
+        state.dragStartOffsetPx = dragStartOffset
+        state.motionState = motionController.startDrag(
+            state.motionState.copy(dragOffsetPx = dragStartOffset),
+        )
         notifyListeners()
     }
 
@@ -108,10 +121,11 @@ public class PixelPagerController(
         val distanceThreshold = safeViewportSizePx * distanceThresholdFraction
         val velocityThreshold = safeViewportSizePx * velocityThresholdPagesPerSecond
         val offsetPx = motionController.visualOffsetPx(state.motionState)
+        val gestureOffsetPx = offsetPx - state.dragStartOffsetPx
         // 非有限速度（NaN / Infinity）显式归零，避免依赖 IEEE 754 比较语义。
         val sanitizedVelocity = if (velocityPxPerSecond.isFinite()) velocityPxPerSecond else 0f
         val direction = resolveDirection(
-            offsetPx = offsetPx,
+            offsetPx = gestureOffsetPx,
             distanceThreshold = distanceThreshold,
             velocityPxPerSecond = sanitizedVelocity,
             velocityThreshold = velocityThreshold,
@@ -135,6 +149,7 @@ public class PixelPagerController(
         if (!state.motionState.isSettling) {
             state.currentPage = targetPage
             state.motionState = motionController.reset()
+            state.dragStartOffsetPx = 0f
         }
         notifyListeners()
     }
@@ -147,6 +162,7 @@ public class PixelPagerController(
         )
         if (!state.motionState.isSettling) {
             state.motionState = motionController.reset()
+            state.dragStartOffsetPx = 0f
         }
         notifyListeners()
     }
@@ -162,6 +178,7 @@ public class PixelPagerController(
         if (!state.motionState.isSettling) {
             state.currentPage = state.settleTargetPage.coerceIn(0, state.pageCount - 1)
             state.motionState = motionController.reset()
+            state.dragStartOffsetPx = 0f
         }
         notifyListeners()
     }

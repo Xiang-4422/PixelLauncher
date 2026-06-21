@@ -446,7 +446,7 @@ public class PixelTester {
                 PixelAxis.HORIZONTAL -> pagerTarget.bounds.width
                 PixelAxis.VERTICAL -> pagerTarget.bounds.height
             }.coerceAtLeast(1)
-            pagerTarget.controller.startDrag(pagerTarget.state)
+            pagerTarget.controller.startDrag(pagerTarget.state, viewport)
             pagerTarget.controller.dragBy(pagerTarget.state, delta, viewport)
             pagerTarget.controller.endDrag(pagerTarget.state, viewport, velocityPxPerSecond)
             pagerTarget.onPageChanged?.invoke(pagerTarget.state.currentPage)
@@ -477,7 +477,7 @@ public class PixelTester {
                 PixelAxis.HORIZONTAL -> pagerTarget.bounds.width
                 PixelAxis.VERTICAL -> pagerTarget.bounds.height
             }.coerceAtLeast(1)
-            pagerTarget.controller.startDrag(pagerTarget.state)
+            pagerTarget.controller.startDrag(pagerTarget.state, viewport)
             if (delta != 0f) {
                 pagerTarget.controller.dragBy(pagerTarget.state, delta, viewport)
             }
@@ -559,7 +559,7 @@ public class PixelTester {
             PixelAxis.HORIZONTAL -> target.bounds.width
             PixelAxis.VERTICAL -> target.bounds.height
         }.coerceAtLeast(1)
-        target.controller.startDrag(target.state)
+        target.controller.startDrag(target.state, viewport)
         target.controller.dragBy(target.state, delta, viewport)
         target.controller.endDrag(target.state, viewport, 0f)
         target.onPageChanged?.invoke(target.state.currentPage)
@@ -572,7 +572,7 @@ public class PixelTester {
             PixelAxis.VERTICAL -> dy
         }
         val viewport = pagerViewport(target)
-        target.controller.startDrag(target.state)
+        target.controller.startDrag(target.state, viewport)
         target.controller.dragBy(target.state, delta, viewport)
         needsRender = true
     }
