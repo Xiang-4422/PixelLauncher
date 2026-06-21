@@ -44,12 +44,7 @@ public fun ScrollController.jumpToStart(state: PixelListState) {
 }
 
 public fun ScrollController.jumpToEnd(state: PixelListState) {
-    scrollTo(
-        state = state,
-        targetOffsetPx = state.maxScrollOffsetPx,
-        viewportHeightPx = state.viewportHeightPx,
-        contentHeightPx = state.contentHeightPx,
-    )
+    scheduleJumpToEnd(state)
 }
 
 public fun ScrollController.fling(

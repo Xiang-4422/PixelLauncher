@@ -16,6 +16,32 @@ class PixelListControllerTest {
     private val controller = PixelListController()
 
     @Test
+    fun scheduledJumpToEndUsesGeometryFromNextLayout() {
+        val state = controller.create()
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 100)
+        controller.scrollTo(state, targetOffsetPx = 30f, viewportHeightPx = 20, contentHeightPx = 100)
+
+        controller.scheduleJumpToEnd(state)
+        assertEquals(30f, state.scrollOffsetPx, 0.001f)
+
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 120)
+        assertEquals(100f, state.scrollOffsetPx, 0.001f)
+        assertTrue(controller.isAtEnd(state))
+    }
+
+    @Test
+    fun userDragCancelsScheduledJumpToEnd() {
+        val state = controller.create()
+        controller.sync(state, viewportHeightPx = 20, contentHeightPx = 100)
+        controller.scrollTo(state, targetOffsetPx = 30f, viewportHeightPx = 20, contentHeightPx = 100)
+        controller.scheduleJumpToEnd(state)
+
+        assertTrue(controller.canConsumeDrag(state, 1f, viewportHeightPx = 20, contentHeightPx = 100))
+        assertEquals(30f, state.scrollOffsetPx, 0.001f)
+        assertFalse(controller.isAtEnd(state))
+    }
+
+    @Test
     fun dragByClampsScrollOffsetWithinContentRange() {
         val state = controller.create()
 

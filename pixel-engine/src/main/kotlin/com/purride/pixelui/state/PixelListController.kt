@@ -59,6 +59,15 @@ public class PixelListController(
                 state.snapTargetOffsetPx = null
             }
         }
+        if (state.pendingJumpToEnd) {
+            state.pendingJumpToEnd = false
+            changed = changed || state.scrollOffsetPx != state.maxScrollOffsetPx
+            state.scrollOffsetPx = state.maxScrollOffsetPx
+            state.isDragging = false
+            state.isSettling = false
+            state.scrollVelocityPxPerSecond = 0f
+            state.snapTargetOffsetPx = null
+        }
         if (changed) {
             notifyListeners()
         }
@@ -112,6 +121,7 @@ public class PixelListController(
         viewportHeightPx: Int,
         contentHeightPx: Int,
     ) {
+        state.pendingJumpToEnd = false
         sync(
             state = state,
             viewportHeightPx = viewportHeightPx,
@@ -129,6 +139,7 @@ public class PixelListController(
     }
 
     public fun startDrag(state: PixelListState) {
+        state.pendingJumpToEnd = false
         state.isDragging = true
         state.isSettling = false
         state.scrollVelocityPxPerSecond = 0f
@@ -149,6 +160,7 @@ public class PixelListController(
         viewportHeightPx: Int,
         contentHeightPx: Int,
     ): Boolean {
+        state.pendingJumpToEnd = false
         sync(
             state = state,
             viewportHeightPx = viewportHeightPx,
@@ -167,6 +179,7 @@ public class PixelListController(
         viewportHeightPx: Int,
         contentHeightPx: Int,
     ) {
+        state.pendingJumpToEnd = false
         sync(
             state = state,
             viewportHeightPx = viewportHeightPx,
@@ -175,6 +188,17 @@ public class PixelListController(
         state.scrollOffsetPx = coerceOffset(targetOffsetPx, state.maxScrollOffsetPx)
         state.snapTargetOffsetPx = null
         notifyListeners()
+    }
+
+    internal fun scheduleJumpToEnd(state: PixelListState) {
+        if (state.pendingJumpToEnd) return
+        state.pendingJumpToEnd = true
+        notifyListeners()
+    }
+
+    public fun isAtEnd(state: PixelListState, tolerancePx: Float = 0.5f): Boolean {
+        val safeTolerancePx = tolerancePx.takeIf { it.isFinite() }?.coerceAtLeast(0f) ?: 0f
+        return state.maxScrollOffsetPx - state.scrollOffsetPx <= safeTolerancePx
     }
 
     public fun saveState(state: PixelListState): PixelListSavedState {

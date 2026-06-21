@@ -125,6 +125,10 @@ internal class LauncherRootHost(
         chargeTick: Int,
         pixelGapEnabled: Boolean = state.isPixelGapEnabled,
     ) {
+        val previousState = uiState
+        val messagesWereAtEnd = !msgListState.isDragging &&
+            !msgListState.isSettling &&
+            msgListController.isAtEnd(msgListState)
         uiState = state
         this.theme = theme
         this.chargeTick = chargeTick
@@ -173,7 +177,7 @@ internal class LauncherRootHost(
         }
 
         // ── Sync SMS thread list scroll ───────────────────────────────────────
-        if (state.mode == LauncherMode.SMS_THREADS) {
+        if (SmsScrollSyncPolicy.shouldRevealSelectedThread(previousState, state)) {
             val target = state.smsThreadSelectedIndex.coerceIn(
                 0, (state.smsThreads.size - 1).coerceAtLeast(0),
             )
@@ -181,7 +185,12 @@ internal class LauncherRootHost(
         }
 
         // ── Sync SMS message list to bottom ───────────────────────────────────
-        if (state.mode == LauncherMode.SMS_THREAD_DETAIL && state.smsMessages.isNotEmpty()) {
+        if (SmsScrollSyncPolicy.shouldFollowMessagesToEnd(
+                previous = previousState,
+                current = state,
+                wasAtEnd = messagesWereAtEnd,
+            )
+        ) {
             msgListController.jumpToEnd(msgListState)
         }
 

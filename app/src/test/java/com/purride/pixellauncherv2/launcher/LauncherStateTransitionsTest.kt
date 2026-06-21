@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.launcher
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -341,6 +342,17 @@ class LauncherStateTransitionsTest {
         val result = LauncherStateTransitions.showSmsThreadDetail(
             state = LauncherState(
                 mode = LauncherMode.SMS_THREADS,
+                smsMessages = listOf(
+                    com.purride.pixellauncherv2.data.SmsMessageEntry(
+                        messageId = 1L,
+                        threadId = 1L,
+                        address = "old",
+                        body = "OLD",
+                        dateMillis = 1L,
+                        type = 1,
+                        isRead = true,
+                    ),
+                ),
                 smsThreadSearchQuery = "old",
                 smsSendStatusText = "FAILED",
             ),
@@ -353,6 +365,7 @@ class LauncherStateTransitionsTest {
         assertEquals(LauncherMode.SMS_THREADS, result.returnMode)
         assertEquals("", result.smsThreadSearchQuery)
         assertEquals("", result.smsSendStatusText)
+        assertTrue(result.smsMessages.isEmpty())
     }
 
     @Test

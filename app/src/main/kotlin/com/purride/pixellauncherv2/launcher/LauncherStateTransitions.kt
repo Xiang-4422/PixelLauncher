@@ -267,6 +267,7 @@ object LauncherStateTransitions {
             returnMode = LauncherMode.SMS_THREADS,
             smsCurrentThreadId = threadId,
             smsCurrentAddress = address,
+            smsMessages = emptyList(),
             smsThreadSearchQuery = "",
             smsSendStatusText = "",
         )

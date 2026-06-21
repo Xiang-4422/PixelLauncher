@@ -61,6 +61,7 @@ public class PixelListState(
     internal var pendingScrollIntoViewItemIndex: Int? = null
     internal var pendingRestorationState: PixelListSavedState? = null
     internal var pendingRestorationPolicy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset
+    internal var pendingJumpToEnd: Boolean = false
     internal var scrollSnapRanges: List<PixelScrollSnapRange> = emptyList()
     internal var snapTargetOffsetPx: Float? = null
     internal var lastFloatingScrollOffsetPx: Float? = null
