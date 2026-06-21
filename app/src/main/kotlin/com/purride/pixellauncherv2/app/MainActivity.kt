@@ -51,6 +51,7 @@ import com.purride.pixellauncherv2.launcher.DrawerAsciiInputSanitizer
 import com.purride.pixellauncherv2.launcher.DrawerContentTapAction
 import com.purride.pixellauncherv2.launcher.DrawerContentTapResolver
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
+import com.purride.pixellauncherv2.launcher.DrawerSearchAutoLaunchPolicy
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
 import com.purride.pixellauncherv2.launcher.IdleAutoEntryPolicy
@@ -777,9 +778,9 @@ class MainActivity : AppCompatActivity() {
     /**
      * 执行启动遮罩动画、拉起目标应用，并记录 launcher 的启动统计。
      */
-    private fun launchApp(selectedApp: AppEntry) {
-        if (!throttleClickHelper.canClick() || launchPending) {
-            return
+    private fun launchApp(selectedApp: AppEntry): Boolean {
+        if (launchPending || !throttleClickHelper.canClick()) {
+            return false
         }
         settleDrawerMotionBeforeExplicitAction()
         launchPending = true
@@ -801,6 +802,7 @@ class MainActivity : AppCompatActivity() {
         }
         launchRunnable = pendingRunnable
         mainHandler.postDelayed(pendingRunnable, LauncherAnimationState.launchShutterDurationMs)
+        return true
     }
 
     /**
@@ -1232,6 +1234,9 @@ class MainActivity : AppCompatActivity() {
             visibleRows = visibleRows(),
         )
         renderCurrentFrame()
+        DrawerSearchAutoLaunchPolicy.resolve(state)?.let { app ->
+            if (launchApp(app)) return
+        }
         startAnimationTickerIfNeeded()
     }
 
