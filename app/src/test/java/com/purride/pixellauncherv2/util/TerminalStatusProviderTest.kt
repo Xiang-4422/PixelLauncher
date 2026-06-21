@@ -6,20 +6,19 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Coverage for [TerminalStatusProvider] — the charging / low-power / night /
- * default status precedence driven off [LauncherState]. JVM-safe; no Android
- * dependencies.
+ * Coverage for [TerminalStatusProvider] — low-power / data / night / default
+ * status precedence driven off [LauncherState]. JVM-safe; no Android dependencies.
  */
 class TerminalStatusProviderTest {
 
     private val provider = TerminalStatusProvider()
 
     @Test
-    fun buildStatus_chargingTakesPrecedenceOverLowBattery() {
+    fun buildStatus_chargingDoesNotCreateHomeTerminalStatus() {
         val status = provider.buildStatus(
-            readyState(isCharging = true, batteryLevel = 10, currentTimeText = "23:00"),
+            readyState(isCharging = true, batteryLevel = 10, currentTimeText = "14:00"),
         )
-        assertEquals("CHARGING 10%", status)
+        assertEquals("SYSTEM READY", status)
     }
 
     @Test

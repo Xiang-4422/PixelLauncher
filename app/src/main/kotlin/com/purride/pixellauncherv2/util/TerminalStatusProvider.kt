@@ -8,8 +8,7 @@ class TerminalStatusProvider {
     fun buildStatus(state: LauncherState): String {
         val dataIssueCount = DataHealthModel.issueCount(state)
         return when {
-            state.isCharging -> "CHARGING ${state.batteryLevel}%"
-            state.batteryLevel <= 15 -> "LOW POWER ${state.batteryLevel}%"
+            !state.isCharging && state.batteryLevel <= 15 -> "LOW POWER ${state.batteryLevel}%"
             dataIssueCount > 0 -> "DATA $dataIssueCount ISSUE"
             isNight(state.currentTimeText) -> "NIGHT MODE READY"
             else -> "SYSTEM READY"
