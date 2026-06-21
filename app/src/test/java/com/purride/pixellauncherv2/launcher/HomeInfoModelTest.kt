@@ -32,7 +32,7 @@ class HomeInfoModelTest {
     }
 
     @Test
-    fun communicationRowsHaveHighestPriorityAndCapAtThreeLines() {
+    fun communicationRowsKeepPriorityWithoutLineCap() {
         val lines = HomeInfoModel.lines(
             LauncherUiState(
                 rainHintText = "RAIN 12:00",
@@ -51,13 +51,15 @@ class HomeInfoModelTest {
                 "CALL 2" to HomeInfoAction.CALL,
                 "SMS 3" to HomeInfoAction.SMS,
                 "ALARM 07:30" to HomeInfoAction.ALARM,
+                "BATTERY 8%" to HomeInfoAction.BATTERY,
+                "USE 00:10  OPEN 4" to HomeInfoAction.USAGE,
             ),
             lines.map { it.text to it.action },
         )
     }
 
     @Test
-    fun notificationSummaryShowsAsLastVisibleLineAfterDirectCommunication() {
+    fun notificationSummaryShowsAfterAllHomeStatusLines() {
         val lines = HomeInfoModel.lines(
             LauncherUiState(
                 missedCallCount = 1,
@@ -75,6 +77,8 @@ class HomeInfoModelTest {
             listOf(
                 "CALL 1" to HomeInfoAction.CALL,
                 "SMS 1" to HomeInfoAction.SMS,
+                "ALARM 07:30" to HomeInfoAction.ALARM,
+                "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
                 "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
             ),
             lines.map { it.text to it.action },
@@ -97,6 +101,7 @@ class HomeInfoModelTest {
         assertEquals(
             listOf(
                 "ALARM 07:30" to HomeInfoAction.ALARM,
+                "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
                 "NOTIFY CAL MEET" to HomeInfoAction.NOTIFICATION,
                 "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
             ),
@@ -273,7 +278,7 @@ class HomeInfoModelTest {
         )
 
         assertEquals(HomeInfoModel.lines(uiState), HomeInfoModel.lines(launcherState))
-        assertEquals("3 ROWS", HomeInfoModel.summary(launcherState))
+        assertEquals("4 ROWS", HomeInfoModel.summary(launcherState))
         assertEquals(HomeInfoModel.summary(uiState), HomeInfoModel.summary(launcherState))
         assertEquals(HomeInfoModel.weatherLine(uiState), HomeInfoModel.weatherLine(launcherState))
     }

@@ -102,16 +102,9 @@ object HomeInfoModel {
             }
         }
         val notificationLines = notificationLines(notificationSummaryText, notificationCount)
-        if (notificationLines.isEmpty()) {
-            return statusLines.take(MAX_HOME_INFO_LINES)
-        }
-
-        val visibleNotificationLines = notificationLines.take(MAX_HOME_INFO_LINES)
-        val statusSlots = (MAX_HOME_INFO_LINES - visibleNotificationLines.size).coerceAtLeast(0)
-        return statusLines.take(statusSlots) + visibleNotificationLines
+        return statusLines + notificationLines
     }
 
-    private const val MAX_HOME_INFO_LINES = 3
     private const val LOW_BATTERY_THRESHOLD = 15
 
     private fun notificationLines(summaryText: String, count: Int): List<HomeInfoLine> {
