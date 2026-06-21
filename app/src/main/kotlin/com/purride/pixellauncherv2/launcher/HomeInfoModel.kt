@@ -29,25 +29,19 @@ object HomeInfoModel {
         notificationCount = state.notificationCount,
         screenUsageTimeText = state.screenUsageTimeText,
         screenOpenCountText = state.screenOpenCountText,
-        terminalStatusText = state.terminalStatusText,
     )
 
-    fun lines(state: LauncherUiState): List<HomeInfoLine> = buildList {
-        addAll(
-            lines(
-                missedCallCount = state.missedCallCount,
-                unreadSmsCount = state.unreadSmsCount,
-                nextAlarmText = state.nextAlarmText,
-                isCharging = state.isCharging,
-                batteryLevel = state.batteryLevel,
-                notificationSummaryText = state.notificationSummaryText,
-                notificationCount = state.notificationCount,
-                screenUsageTimeText = state.screenUsageTimeText,
-                screenOpenCountText = state.screenOpenCountText,
-                terminalStatusText = state.terminalStatusText,
-            ),
-        )
-    }
+    fun lines(state: LauncherUiState): List<HomeInfoLine> = lines(
+        missedCallCount = state.missedCallCount,
+        unreadSmsCount = state.unreadSmsCount,
+        nextAlarmText = state.nextAlarmText,
+        isCharging = state.isCharging,
+        batteryLevel = state.batteryLevel,
+        notificationSummaryText = state.notificationSummaryText,
+        notificationCount = state.notificationCount,
+        screenUsageTimeText = state.screenUsageTimeText,
+        screenOpenCountText = state.screenOpenCountText,
+    )
 
     fun summary(state: LauncherState): String = rowCountLabel(lines(state).size)
 
@@ -73,7 +67,6 @@ object HomeInfoModel {
         notificationCount: Int,
         screenUsageTimeText: String,
         screenOpenCountText: String,
-        terminalStatusText: String,
     ): List<HomeInfoLine> {
         val statusLines = buildList {
             if (missedCallCount > 0) {
@@ -96,10 +89,6 @@ object HomeInfoModel {
                     action = HomeInfoAction.USAGE,
                 ),
             )
-
-            if (terminalStatusText.isNotBlank()) {
-                add(HomeInfoLine(terminalStatusText))
-            }
         }
         val notificationLines = notificationLines(notificationSummaryText, notificationCount)
         return statusLines + notificationLines

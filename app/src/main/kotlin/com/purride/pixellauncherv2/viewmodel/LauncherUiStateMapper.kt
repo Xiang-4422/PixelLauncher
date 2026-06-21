@@ -57,7 +57,6 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     lastInteractionUptimeMs = lastInteractionUptimeMs,
     launchCount = launchCount,
     lastLaunchPackageName = lastLaunchPackageName,
-    terminalStatusText = terminalStatusText,
     nextAlarmText = nextAlarmText,
     missedCallCount = missedCallCount,
     unreadSmsCount = unreadSmsCount,

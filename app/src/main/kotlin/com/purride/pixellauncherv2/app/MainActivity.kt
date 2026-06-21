@@ -73,7 +73,6 @@ import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
-import com.purride.pixellauncherv2.util.TerminalStatusProvider
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
 import com.purride.pixellauncherv2.viewmodel.LauncherViewModel
@@ -95,7 +94,6 @@ class MainActivity : AppCompatActivity() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val timeTextProvider = TimeTextProvider()
     private val throttleClickHelper = ThrottleClickHelper()
-    private val terminalStatusProvider = TerminalStatusProvider()
 
     private lateinit var launcherViewModel: LauncherViewModel
 
@@ -2218,10 +2216,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshDerivedUiState(render: Boolean) {
         refreshDataHealthState()
-        state = LauncherStateTransitions.updateTerminalStatus(
-            state = state,
-            terminalStatusText = terminalStatusProvider.buildStatus(state),
-        )
         if (render) {
             renderCurrentFrame()
         }

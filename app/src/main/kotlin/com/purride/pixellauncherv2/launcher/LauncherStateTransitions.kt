@@ -797,10 +797,6 @@ object LauncherStateTransitions {
         )
     }
 
-    fun updateTerminalStatus(state: LauncherState, terminalStatusText: String): LauncherState {
-        return state.copy(terminalStatusText = terminalStatusText)
-    }
-
     fun updateNextAlarmText(state: LauncherState, nextAlarmText: String): LauncherState {
         return state.copy(nextAlarmText = nextAlarmText)
     }

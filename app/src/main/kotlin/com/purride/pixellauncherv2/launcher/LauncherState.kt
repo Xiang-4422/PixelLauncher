@@ -61,7 +61,6 @@ data class LauncherState(
     val lastInteractionUptimeMs: Long = 0L,
     val launchCount: Int = 0,
     val lastLaunchPackageName: String? = null,
-    val terminalStatusText: String = "",
     val nextAlarmText: String = "--:--",
     val missedCallCount: Int = 0,
     val unreadSmsCount: Int = 0,

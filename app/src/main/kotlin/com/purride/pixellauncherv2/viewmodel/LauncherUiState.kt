@@ -92,8 +92,7 @@ data class LauncherUiState(
     val launchCount: Int = 0,
     val lastLaunchPackageName: String? = null,
 
-    // ── Status bar rows ───────────────────────────────────────────────────────
-    val terminalStatusText: String = "",
+    // ── Home info rows ────────────────────────────────────────────────────────
     val nextAlarmText: String = "--:--",
     val missedCallCount: Int = 0,
     val unreadSmsCount: Int = 0,

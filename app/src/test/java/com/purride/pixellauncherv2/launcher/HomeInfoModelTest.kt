@@ -7,24 +7,22 @@ import org.junit.Test
 class HomeInfoModelTest {
 
     @Test
-    fun quietStateShowsUsageAndTerminalOnly() {
+    fun quietStateShowsUsageOnly() {
         val state = LauncherUiState(
             rainHintText = "",
             hasLocationPermission = true,
             screenUsageTimeText = "",
             screenOpenCountText = "",
-            terminalStatusText = "READY",
         )
         val lines = HomeInfoModel.lines(state)
 
         assertEquals(
             listOf(
                 "USE --:--  OPEN --" to HomeInfoAction.USAGE,
-                "READY" to null,
             ),
             lines.map { it.text to it.action },
         )
-        assertEquals("2 ROWS", HomeInfoModel.summary(state))
+        assertEquals("1 ROW", HomeInfoModel.summary(state))
         assertEquals(
             "WEATHER --" to HomeInfoAction.RAIN,
             HomeInfoModel.weatherLine(state).let { it.text to it.action },
@@ -110,7 +108,7 @@ class HomeInfoModelTest {
     }
 
     @Test
-    fun notificationSummaryIsRenderedAfterUsageAndTerminalStatus() {
+    fun notificationSummaryIsRenderedAfterUsage() {
         val lines = HomeInfoModel.lines(
             LauncherUiState(
                 notificationSummaryText = "BANK OTP",
@@ -118,14 +116,12 @@ class HomeInfoModelTest {
                 hasLocationPermission = true,
                 screenUsageTimeText = "00:20",
                 screenOpenCountText = "2",
-                terminalStatusText = "SYSTEM READY",
             ),
         )
 
         assertEquals(
             listOf(
                 "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
-                "SYSTEM READY" to null,
                 "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
             ),
             lines.map { it.text to it.action },
