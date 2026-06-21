@@ -42,7 +42,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
  * @param messageText 临时消息；非空时独占文字行，电量线保持显示
  * @param batteryLevel 电量百分比 0–100
  * @param isCharging  是否正在充电
- * @param chargeTick  动画帧计数，传 0 表示静态（无充电动画）
+ * @param chargeTick  充电像素的动画帧计数
  * @param theme       当前颜色主题（提供 statusBar token）
  * @param statusBarHeight 顶部状态栏占位高度（engine 逻辑像素）
  */
@@ -97,8 +97,9 @@ fun LauncherHeader(
                 batteryLevel = batteryLevel,
                 isCharging = isCharging,
                 chargeTick = chargeTick,
-                primaryColor = theme.statusBar.divider,
-                accentColor = theme.statusBar.charging,
+                highColor = theme.statusBar.batteryHigh,
+                mediumColor = theme.statusBar.batteryMedium,
+                lowColor = theme.statusBar.batteryLow,
             ),
         ),
         spacing = 0,
@@ -256,8 +257,9 @@ fun LauncherSearchHeader(
                 batteryLevel = batteryLevel,
                 isCharging = isCharging,
                 chargeTick = chargeTick,
-                primaryColor = theme.statusBar.divider,
-                accentColor = theme.statusBar.charging,
+                highColor = theme.statusBar.batteryHigh,
+                mediumColor = theme.statusBar.batteryMedium,
+                lowColor = theme.statusBar.batteryLow,
             ),
         ),
         spacing = 0,

@@ -24,8 +24,9 @@ internal object FallbackThemeJson {
             "statusBar": {
               "text": "#0F172A",
               "mutedText": "#64748B",
-              "divider": "#2563EB",
-              "charging": "#16A34A",
+              "batteryHigh": "#16A34A",
+              "batteryMedium": "#EAB308",
+              "batteryLow": "#DC2626",
               "searchText": "#0F172A",
               "searchPlaceholder": "#64748B"
             },
@@ -82,8 +83,9 @@ internal object FallbackThemeJson {
             "statusBar": {
               "text": "#F8FAFC",
               "mutedText": "#94A3B8",
-              "divider": "#60A5FA",
-              "charging": "#4ADE80",
+              "batteryHigh": "#4ADE80",
+              "batteryMedium": "#FACC15",
+              "batteryLow": "#F87171",
               "searchText": "#F8FAFC",
               "searchPlaceholder": "#94A3B8"
             },

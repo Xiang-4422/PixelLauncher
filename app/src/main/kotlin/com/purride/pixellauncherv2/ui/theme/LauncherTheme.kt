@@ -41,8 +41,9 @@ data class TextColors(
 data class StatusBarColors(
     val text: PixelColor,
     val mutedText: PixelColor,
-    val divider: PixelColor,
-    val charging: PixelColor,
+    val batteryHigh: PixelColor,
+    val batteryMedium: PixelColor,
+    val batteryLow: PixelColor,
     val searchText: PixelColor,
     val searchPlaceholder: PixelColor,
 )
@@ -122,8 +123,9 @@ object LauncherThemes {
                 StatusBarColors(
                     text = it.color("text"),
                     mutedText = it.color("mutedText"),
-                    divider = it.color("divider"),
-                    charging = it.color("charging"),
+                    batteryHigh = it.color("batteryHigh"),
+                    batteryMedium = it.color("batteryMedium"),
+                    batteryLow = it.color("batteryLow"),
                     searchText = it.color("searchText"),
                     searchPlaceholder = it.color("searchPlaceholder"),
                 )

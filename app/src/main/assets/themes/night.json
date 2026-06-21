@@ -18,8 +18,9 @@
     "statusBar": {
       "text": "#F8FAFC",
       "mutedText": "#94A3B8",
-      "divider": "#60A5FA",
-      "charging": "#4ADE80",
+      "batteryHigh": "#4ADE80",
+      "batteryMedium": "#FACC15",
+      "batteryLow": "#F87171",
       "searchText": "#F8FAFC",
       "searchPlaceholder": "#94A3B8"
     },

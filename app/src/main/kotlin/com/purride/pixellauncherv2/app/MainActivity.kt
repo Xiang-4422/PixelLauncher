@@ -1668,7 +1668,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shouldAnimateHeaderCharge(): Boolean {
-        if (!state.isCharging || state.batteryLevel >= 100) {
+        if (!state.isCharging) {
             return false
         }
         return when (state.mode) {
