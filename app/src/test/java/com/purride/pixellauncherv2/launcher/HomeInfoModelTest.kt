@@ -57,7 +57,7 @@ class HomeInfoModelTest {
     }
 
     @Test
-    fun notificationSummaryShowsAfterDirectCommunicationBeforeAlarm() {
+    fun notificationSummaryShowsAsLastVisibleLineAfterDirectCommunication() {
         val lines = HomeInfoModel.lines(
             LauncherUiState(
                 missedCallCount = 1,
@@ -75,6 +75,52 @@ class HomeInfoModelTest {
             listOf(
                 "CALL 1" to HomeInfoAction.CALL,
                 "SMS 1" to HomeInfoAction.SMS,
+                "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
+            ),
+            lines.map { it.text to it.action },
+        )
+    }
+
+    @Test
+    fun notificationSummarySplitsVisibleNotificationsIntoTailRows() {
+        val lines = HomeInfoModel.lines(
+            LauncherUiState(
+                notificationSummaryText = "CAL MEET  BANK OTP",
+                notificationCount = 2,
+                nextAlarmText = "07:30",
+                hasLocationPermission = true,
+                screenUsageTimeText = "00:20",
+                screenOpenCountText = "2",
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                "ALARM 07:30" to HomeInfoAction.ALARM,
+                "NOTIFY CAL MEET" to HomeInfoAction.NOTIFICATION,
+                "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
+            ),
+            lines.map { it.text to it.action },
+        )
+    }
+
+    @Test
+    fun notificationSummaryIsRenderedAfterUsageAndTerminalStatus() {
+        val lines = HomeInfoModel.lines(
+            LauncherUiState(
+                notificationSummaryText = "BANK OTP",
+                notificationCount = 1,
+                hasLocationPermission = true,
+                screenUsageTimeText = "00:20",
+                screenOpenCountText = "2",
+                terminalStatusText = "SYSTEM READY",
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
+                "SYSTEM READY" to null,
                 "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
             ),
             lines.map { it.text to it.action },
