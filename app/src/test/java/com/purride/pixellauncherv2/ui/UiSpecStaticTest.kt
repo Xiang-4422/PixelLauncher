@@ -59,6 +59,11 @@ class UiSpecStaticTest {
             if (!spacingSource.contains("const val CONTENT_HORIZONTAL = 2")) "CONTENT_HORIZONTAL must be 2" else null,
             if (!spacingSource.contains("const val CONTENT_VERTICAL = 2")) "CONTENT_VERTICAL must be 2" else null,
             if (!spacingSource.contains("const val ROW_SPACING = 2")) "ROW_SPACING must be 2" else null,
+            if (!spacingSource.contains("const val SETTINGS_SECTION_GAP = ROW_SPACING * 2")) {
+                "SETTINGS_SECTION_GAP must describe extra Settings section separation"
+            } else {
+                null
+            },
             if (!spacingSource.contains("const val EDGE_ACTION = 1")) "EDGE_ACTION must be 1" else null,
             if (!spacingSource.contains("const val BORDERED_CONTROL_INSET = 2")) {
                 "BORDERED_CONTROL_INSET must be 2"
@@ -98,6 +103,15 @@ class UiSpecStaticTest {
             },
             if (!controlsSource.contains("LauncherSpacing.BORDERED_CONTROL_INSET")) {
                 "Settings Switch labels must use the shared bordered-control inset"
+            } else {
+                null
+            },
+            if (!settingsSource.contains("LauncherSpacing.SETTINGS_SECTION_GAP") ||
+                !controlsSource.contains("topMargin: Int = 0") ||
+                !controlsSource.contains("fillColor = theme.button.border") ||
+                !controlsSource.contains("style = TextStyle(color = theme.text.inverse)")
+            ) {
+                "Settings section headers must have distinct title bars and section separation"
             } else {
                 null
             },

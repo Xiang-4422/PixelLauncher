@@ -33,6 +33,14 @@ object LauncherSpacing {
     const val ROW_SPACING = 2
 
     /**
+     * Settings 页面不同分类之间的额外垂直间距。
+     *
+     * 使用场景：Settings section header 的顶部 margin。它只表达“上一类结束到下一类
+     * 标题开始”的分组关系，不用于普通设置行之间，也不用于控件内部 padding。
+     */
+    const val SETTINGS_SECTION_GAP = ROW_SPACING * 2
+
+    /**
      * 贴屏命令与屏幕边缘之间的特殊间距。
      *
      * 当前仅用于 Home 底部左侧 CALL 和右侧 SMS，使其距离左右及底部边缘 1px。

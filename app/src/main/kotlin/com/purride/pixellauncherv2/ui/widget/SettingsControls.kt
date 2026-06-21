@@ -167,10 +167,18 @@ fun SettingsActionRow(
 fun SettingsSectionHeader(
     title: String,
     theme: LauncherTheme,
+    topMargin: Int = 0,
 ): Widget = Container(
+    margin = EdgeInsets.only(top = topMargin),
+    fillColor = theme.button.border,
+    padding = EdgeInsets.symmetric(
+        horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+        vertical = LauncherSpacing.ROW_SPACING,
+    ),
+    alignment = Alignment.CENTER_START,
     child = Text(
         title,
-        style = TextStyle(color = theme.text.muted),
+        style = TextStyle(color = theme.text.inverse),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,

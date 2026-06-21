@@ -234,10 +234,12 @@ class SettingsScreen(
         }
 
         private fun MutableList<Widget>.addSection(section: SettingsSection, theme: LauncherTheme) {
+            val topMargin = if (isEmpty()) 0 else LauncherSpacing.SETTINGS_SECTION_GAP
             add(
                 SettingsSectionHeader(
                     title = SettingsMenuModel.sectionLabel(section),
                     theme = theme,
+                    topMargin = topMargin,
                 ),
             )
         }
