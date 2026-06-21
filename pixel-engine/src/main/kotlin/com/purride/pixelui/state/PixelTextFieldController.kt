@@ -234,13 +234,23 @@ public class PixelTextFieldController : ChangeNotifier() {
         notifyListeners()
     }
 
+    /** 请求下一帧聚焦；已经聚焦或存在待处理请求时不重复派发。 */
     public fun requestFocus(state: PixelTextFieldState) {
+        if (state.isFocused || state.focusRequested) return
         state.focusRequested = true
         state.blurRequested = false
         notifyListeners()
     }
 
+    /** 请求下一帧失焦；尚未应用的聚焦请求会被直接取消。 */
     public fun requestBlur(state: PixelTextFieldState) {
+        if (state.blurRequested) return
+        if (!state.isFocused) {
+            if (!state.focusRequested) return
+            state.focusRequested = false
+            notifyListeners()
+            return
+        }
         state.blurRequested = true
         state.focusRequested = false
         notifyListeners()

@@ -5,6 +5,9 @@ import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.resolveAndroidInputType
 import com.purride.pixelui.resolveAndroidImeOptions
+import com.purride.pixelui.normalizePrintableAsciiUppercase
+import com.purride.pixelui.shouldRestartAndroidTextInput
+import com.purride.pixelui.toAndroidEditorConfig
 import android.view.inputmethod.EditorInfo
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -17,6 +20,34 @@ import org.junit.Test
  * 可访问，无需真实设备或 Robolectric。
  */
 class PixelTextInputBridgeTest {
+
+    @Test
+    fun `ASCII normalization uppercases and removes unsupported input`() {
+        assertEquals("HELLO 123!", normalizePrintableAsciiUppercase("Hello 你123!"))
+    }
+
+    @Test
+    fun `IME restart is limited to focus and editor configuration changes`() {
+        val textConfig = com.purride.pixelui.PixelTextInputRequest(
+            text = "A",
+            inputType = PixelInputType.ASCII,
+            action = PixelTextInputAction.SEARCH,
+        ).toAndroidEditorConfig()
+        val numberConfig = com.purride.pixelui.PixelTextInputRequest(
+            text = "1",
+            inputType = PixelInputType.NUMBER,
+            action = PixelTextInputAction.DONE,
+        ).toAndroidEditorConfig()
+        val changedTextConfig = com.purride.pixelui.PixelTextInputRequest(
+            text = "ABC",
+            inputType = PixelInputType.ASCII,
+            action = PixelTextInputAction.SEARCH,
+        ).toAndroidEditorConfig()
+
+        assertEquals(true, shouldRestartAndroidTextInput(false, textConfig, textConfig))
+        assertEquals(false, shouldRestartAndroidTextInput(true, textConfig, changedTextConfig))
+        assertEquals(true, shouldRestartAndroidTextInput(true, textConfig, numberConfig))
+    }
 
     @Test
     fun `TEXT single-line maps to TYPE_CLASS_TEXT`() {

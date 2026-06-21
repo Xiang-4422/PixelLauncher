@@ -401,9 +401,10 @@ internal class LauncherRootHost(
                 selectionStart = uiState.drawerQuery.length,
             )
         }
-        if (uiState.mode == LauncherMode.APP_DRAWER && uiState.isDrawerSearchFocused) {
+        val shouldFocus = uiState.mode == LauncherMode.APP_DRAWER && uiState.isDrawerSearchFocused
+        if (shouldFocus) {
             drawerTextController.requestFocus(drawerQueryState)
-        } else if (drawerQueryState.isFocused) {
+        } else {
             drawerTextController.requestBlur(drawerQueryState)
         }
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.text.Editable
+import android.text.InputFilter
 import android.text.InputType
 import android.text.TextWatcher
 import android.os.LocaleList
@@ -36,6 +37,7 @@ public class PixelTextInputBridge(
     private val inputMethodManager = context.getSystemService(InputMethodManager::class.java)
     private val clipboardManager = context.getSystemService(ClipboardManager::class.java)
     private var syncingFromHost = false
+    private var editorConfig: AndroidTextInputEditorConfig? = null
 
     init {
         inputView.alpha = 0f
@@ -82,21 +84,32 @@ public class PixelTextInputBridge(
     }
 
     override fun showTextInput(request: PixelTextInputRequest) {
+        val nextEditorConfig = request.toAndroidEditorConfig()
+        val shouldRestartInput = shouldRestartAndroidTextInput(
+            wasFocused = inputView.hasFocus(),
+            previous = editorConfig,
+            next = nextEditorConfig,
+        )
         syncingFromHost = true
         try {
-            configureLineMode(request)
+            if (editorConfig != nextEditorConfig) {
+                configureLineMode(request)
+                inputView.imeOptions = resolveAndroidImeOptions(request.action, request.inputType)
+                inputView.imeHintLocales = if (request.inputType == PixelInputType.ASCII) {
+                    LocaleList(Locale.ENGLISH)
+                } else {
+                    null
+                }
+                editorConfig = nextEditorConfig
+            }
             if (inputView.text?.toString() != request.text) {
                 inputView.setText(request.text)
             }
             val textLength = inputView.text?.length ?: 0
             val safeSelectionStart = request.selectionStart.coerceIn(0, textLength)
             val safeSelectionEnd = request.selectionEnd.coerceIn(safeSelectionStart, textLength)
-            inputView.setSelection(safeSelectionStart, safeSelectionEnd)
-            inputView.imeOptions = resolveAndroidImeOptions(request.action, request.inputType)
-            inputView.imeHintLocales = if (request.inputType == PixelInputType.ASCII) {
-                LocaleList(Locale.ENGLISH)
-            } else {
-                null
+            if (inputView.selectionStart != safeSelectionStart || inputView.selectionEnd != safeSelectionEnd) {
+                inputView.setSelection(safeSelectionStart, safeSelectionEnd)
             }
         } finally {
             syncingFromHost = false
@@ -107,8 +120,32 @@ public class PixelTextInputBridge(
             inputView.clearFocus()
         } else {
             inputView.requestFocus()
-            inputMethodManager?.restartInput(inputView)
+            if (shouldRestartInput) {
+                inputMethodManager?.restartInput(inputView)
+            }
             inputMethodManager?.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    override fun updateTextInput(request: PixelTextInputRequest) {
+        val nextEditorConfig = request.toAndroidEditorConfig()
+        if (!inputView.hasFocus() || editorConfig != nextEditorConfig) {
+            showTextInput(request)
+            return
+        }
+        syncingFromHost = true
+        try {
+            if (inputView.text?.toString() != request.text) {
+                inputView.setText(request.text)
+            }
+            val textLength = inputView.text?.length ?: 0
+            val safeSelectionStart = request.selectionStart.coerceIn(0, textLength)
+            val safeSelectionEnd = request.selectionEnd.coerceIn(safeSelectionStart, textLength)
+            if (inputView.selectionStart != safeSelectionStart || inputView.selectionEnd != safeSelectionEnd) {
+                inputView.setSelection(safeSelectionStart, safeSelectionEnd)
+            }
+        } finally {
+            syncingFromHost = false
         }
     }
 
@@ -155,8 +192,56 @@ public class PixelTextInputBridge(
             inputView.setMaxLines(1)
         }
         inputView.inputType = resolveAndroidInputType(request.inputType, multiLine)
+        inputView.filters = if (request.inputType == PixelInputType.ASCII) {
+            ASCII_INPUT_FILTERS
+        } else {
+            EMPTY_INPUT_FILTERS
+        }
     }
 }
+
+internal data class AndroidTextInputEditorConfig(
+    val readOnly: Boolean,
+    val minLines: Int,
+    val maxLines: Int,
+    val inputType: PixelInputType,
+    val action: PixelTextInputAction,
+)
+
+internal fun PixelTextInputRequest.toAndroidEditorConfig(): AndroidTextInputEditorConfig {
+    val safeMinLines = minLines.coerceAtLeast(1)
+    return AndroidTextInputEditorConfig(
+        readOnly = readOnly,
+        minLines = safeMinLines,
+        maxLines = maxLines.coerceAtLeast(safeMinLines),
+        inputType = inputType,
+        action = action,
+    )
+}
+
+internal fun shouldRestartAndroidTextInput(
+    wasFocused: Boolean,
+    previous: AndroidTextInputEditorConfig?,
+    next: AndroidTextInputEditorConfig,
+): Boolean = !wasFocused || previous != next
+
+internal fun normalizePrintableAsciiUppercase(text: CharSequence): String = buildString(text.length) {
+    text.forEach { char ->
+        if (char.code in PRINTABLE_ASCII_RANGE) {
+            append(char.uppercaseChar())
+        }
+    }
+}
+
+private val PRINTABLE_ASCII_RANGE = 32..126
+private val EMPTY_INPUT_FILTERS = emptyArray<InputFilter>()
+private val ASCII_INPUT_FILTERS = arrayOf<InputFilter>(
+    InputFilter { source, start, end, _, _, _ ->
+        val original = source.subSequence(start, end)
+        val normalized = normalizePrintableAsciiUppercase(original)
+        if (normalized.contentEquals(original)) null else normalized
+    },
+)
 
 /**
  * 把 [PixelInputType] 映射到 Android 的 InputType 位组合。

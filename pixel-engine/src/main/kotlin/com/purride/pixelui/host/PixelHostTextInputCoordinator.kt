@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.state.PixelTextFieldState
 
 /**
  * Owns PixelHostView text input focus, IME request, submit, and cursor blink coordination.
@@ -99,6 +100,7 @@ internal class PixelHostTextInputCoordinator(
     }
 
     fun syncRequestedFocus(targets: List<PixelTextInputTarget>) {
+        rebindFocusedTarget(targets)
         val blurTarget = host.focusedTextInputTarget?.takeIf { it.state.blurRequested }
         if (blurTarget != null) {
             blurTarget.state.blurRequested = false
@@ -123,6 +125,19 @@ internal class PixelHostTextInputCoordinator(
         }
     }
 
+    private fun rebindFocusedTarget(targets: List<PixelTextInputTarget>) {
+        val previous = host.focusedTextInputTarget ?: return
+        val current = findTextInputTargetForState(targets, previous.state)
+        if (current == null) {
+            clearFocusedTextInput()
+        } else {
+            if (current !== previous) {
+                host.nestedScrollSession.markTextInputOwner(current)
+            }
+            host.hostBridge?.updateTextInput(current.toTextInputRequest())
+        }
+    }
+
     fun focus(target: PixelTextInputTarget) {
         if (host.focusedTextInputTarget?.state !== target.state) {
             host.focusedTextInputTarget?.let { previous ->
@@ -132,17 +147,22 @@ internal class PixelHostTextInputCoordinator(
         target.controller.focus(target.state)
         target.focusNode?.requestFocus()
         host.nestedScrollSession.markTextInputOwner(target)
-        host.hostBridge?.showTextInput(
-            PixelTextInputRequest(
-                text = target.state.text,
-                selectionStart = target.state.selectionStart,
-                selectionEnd = target.state.selectionEnd,
-                readOnly = target.readOnly,
-                minLines = target.minLines,
-                maxLines = target.maxLines,
-                inputType = target.inputType,
-                action = target.action,
-            ),
-        )
+        host.hostBridge?.showTextInput(target.toTextInputRequest())
     }
 }
+
+internal fun findTextInputTargetForState(
+    targets: List<PixelTextInputTarget>,
+    state: PixelTextFieldState,
+): PixelTextInputTarget? = targets.lastOrNull { it.state === state }
+
+private fun PixelTextInputTarget.toTextInputRequest(): PixelTextInputRequest = PixelTextInputRequest(
+    text = state.text,
+    selectionStart = state.selectionStart,
+    selectionEnd = state.selectionEnd,
+    readOnly = readOnly,
+    minLines = minLines,
+    maxLines = maxLines,
+    inputType = inputType,
+    action = action,
+)

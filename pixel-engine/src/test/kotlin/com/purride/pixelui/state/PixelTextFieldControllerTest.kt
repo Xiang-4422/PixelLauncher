@@ -38,7 +38,7 @@ class PixelTextFieldControllerTest {
     }
 
     @Test
-    fun requestFocusAndBlurSetPendingFlags() {
+    fun requestBlurCancelsFocusThatHasNotBeenApplied() {
         val state = controller.create()
 
         controller.requestFocus(state)
@@ -46,8 +46,28 @@ class PixelTextFieldControllerTest {
         assertFalse(state.blurRequested)
 
         controller.requestBlur(state)
-        assertTrue(state.blurRequested)
+        assertFalse(state.blurRequested)
         assertFalse(state.focusRequested)
+    }
+
+    @Test
+    fun repeatedFocusAndBlurRequestsAreIdempotent() {
+        val state = controller.create()
+        var notifications = 0
+        controller.addListener { notifications += 1 }
+
+        controller.requestFocus(state)
+        controller.requestFocus(state)
+        assertEquals(1, notifications)
+
+        controller.focus(state)
+        val focusedNotifications = notifications
+        controller.requestFocus(state)
+        assertEquals(focusedNotifications, notifications)
+
+        controller.requestBlur(state)
+        controller.requestBlur(state)
+        assertEquals(focusedNotifications + 1, notifications)
     }
 
     @Test

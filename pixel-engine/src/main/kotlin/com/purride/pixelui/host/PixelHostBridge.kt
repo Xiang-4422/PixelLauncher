@@ -9,6 +9,13 @@ package com.purride.pixelui
 public interface PixelHostBridge {
     public fun showTextInput(request: PixelTextInputRequest)
 
+    /**
+     * 同步已激活输入会话的文本和选区，不重新获取焦点或重启 IME。
+     *
+     * 不支持主动同步的宿主可以保留默认空实现；Android 默认桥接会完整实现。
+     */
+    public fun updateTextInput(request: PixelTextInputRequest): Unit = Unit
+
     public fun hideTextInput()
 
     public fun performHapticFeedback(type: PixelHapticType)
