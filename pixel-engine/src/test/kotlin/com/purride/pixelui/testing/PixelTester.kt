@@ -447,6 +447,7 @@ public class PixelTester {
                 PixelAxis.VERTICAL -> pagerTarget.bounds.height
             }.coerceAtLeast(1)
             pagerTarget.controller.startDrag(pagerTarget.state, viewport)
+            pagerTarget.onPageDragStart?.invoke()
             pagerTarget.controller.dragBy(pagerTarget.state, delta, viewport)
             pagerTarget.controller.endDrag(pagerTarget.state, viewport, velocityPxPerSecond)
             pagerTarget.onPageChanged?.invoke(pagerTarget.state.currentPage)
@@ -478,6 +479,7 @@ public class PixelTester {
                 PixelAxis.VERTICAL -> pagerTarget.bounds.height
             }.coerceAtLeast(1)
             pagerTarget.controller.startDrag(pagerTarget.state, viewport)
+            pagerTarget.onPageDragStart?.invoke()
             if (delta != 0f) {
                 pagerTarget.controller.dragBy(pagerTarget.state, delta, viewport)
             }
@@ -560,6 +562,7 @@ public class PixelTester {
             PixelAxis.VERTICAL -> target.bounds.height
         }.coerceAtLeast(1)
         target.controller.startDrag(target.state, viewport)
+        target.onPageDragStart?.invoke()
         target.controller.dragBy(target.state, delta, viewport)
         target.controller.endDrag(target.state, viewport, 0f)
         target.onPageChanged?.invoke(target.state.currentPage)
@@ -573,6 +576,7 @@ public class PixelTester {
         }
         val viewport = pagerViewport(target)
         target.controller.startDrag(target.state, viewport)
+        target.onPageDragStart?.invoke()
         target.controller.dragBy(target.state, delta, viewport)
         needsRender = true
     }
@@ -880,7 +884,16 @@ public class PixelTester {
         }
 
         private fun movePager(target: PixelPagerTarget, dx: Int, dy: Int) {
-            startPagerDrag(target, dx.toFloat(), dy.toFloat())
+            if (!dragging) {
+                startPagerDrag(target, dx.toFloat(), dy.toFloat())
+            } else {
+                val delta = when (target.axis) {
+                    PixelAxis.HORIZONTAL -> dx.toFloat()
+                    PixelAxis.VERTICAL -> dy.toFloat()
+                }
+                target.controller.dragBy(target.state, delta, pagerViewport(target))
+                needsRender = true
+            }
             dragging = true
         }
 

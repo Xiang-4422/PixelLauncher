@@ -345,6 +345,7 @@ class MainActivity : AppCompatActivity() {
                 onSendDraft          = smsController::sendDraft,
                 onSmsMessagePressed  = smsController::copyMessageCodeOrBody,
                 onMainPageChanged    = ::onMainPageChanged,
+                onMainPageDragStart  = ::onMainPageDragStart,
             ),
         )
         val rootContainer = FrameLayout(this).apply {
@@ -870,6 +871,18 @@ class MainActivity : AppCompatActivity() {
         renderCurrentFrame()
         updateTextInputFocus()
         scheduleIdleCheck()
+    }
+
+    private fun onMainPageDragStart() {
+        if (!state.isDrawerSearchFocused && !state.isAppActionMenuVisible) {
+            return
+        }
+        state = state.copy(
+            isDrawerSearchFocused = false,
+            isAppActionMenuVisible = false,
+        )
+        renderCurrentFrame()
+        updateTextInputFocus()
     }
 
     // End Phase 8 ─────────────────────────────────────────────────────────────

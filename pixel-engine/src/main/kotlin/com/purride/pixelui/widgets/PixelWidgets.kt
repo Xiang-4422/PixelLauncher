@@ -649,6 +649,7 @@ public fun PageView(
     state: PixelPagerState,
     pages: List<Widget>,
     onPageChanged: ((Int) -> Unit)? = null,
+    onPageDragStart: (() -> Unit)? = null,
     key: Any? = null,
 ): Widget {
     return PageViewWidget(
@@ -657,6 +658,7 @@ public fun PageView(
         state = state,
         pages = pages,
         onPageChanged = onPageChanged,
+        onPageDragStart = onPageDragStart,
         key = key,
     )
 }
@@ -668,6 +670,7 @@ public fun PageViewBuilder(
     itemCount: Int,
     itemBuilder: (Int) -> Widget,
     onPageChanged: ((Int) -> Unit)? = null,
+    onPageDragStart: (() -> Unit)? = null,
     key: Any? = null,
 ): Widget {
     return PageViewWidget(
@@ -677,6 +680,7 @@ public fun PageViewBuilder(
         pages = List(itemCount) { index -> itemBuilder(index) },
         key = key,
         onPageChanged = onPageChanged,
+        onPageDragStart = onPageDragStart,
     )
 }
 

@@ -57,4 +57,6 @@ data class LauncherCallbacks(
      * 仅在用户手势驱动翻页时触发；外部调用 jumpToPage 不触发此回调。
      */
     val onMainPageChanged: (LauncherMode) -> Unit,
+    /** 主页面 Pager 手势开始时触发，用于立即退出会被滑动打断的输入焦点。 */
+    val onMainPageDragStart: () -> Unit,
 )

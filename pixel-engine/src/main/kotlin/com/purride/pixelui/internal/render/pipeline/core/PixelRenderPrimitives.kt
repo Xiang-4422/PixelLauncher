@@ -145,6 +145,7 @@ internal data class PixelPagerTarget(
     val state: PixelPagerState,
     val controller: PixelPagerController,
     val onPageChanged: ((Int) -> Unit)?,
+    val onPageDragStart: (() -> Unit)?,
     val source: RenderObject? = null,
 )
 

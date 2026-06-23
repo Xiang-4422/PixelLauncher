@@ -321,6 +321,7 @@ internal class LauncherRootHost(
                             callbacks.onMainPageChanged(mode)
                         }
                     },
+                    onPageDragStart = callbacks.onMainPageDragStart,
                 ),
             ),
         ),

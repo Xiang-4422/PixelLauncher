@@ -232,6 +232,38 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun pagerDragStartCallbackRunsBeforePageChanged() {
+        val tester = PixelTester()
+        val controller = PixelPagerController(distanceThresholdFraction = 0.2f)
+        val state = controller.create(pageCount = 2)
+        val events = mutableListOf<String>()
+
+        tester.pumpWidget(
+            widget = PageView(
+                axis = Axis.HORIZONTAL,
+                controller = controller,
+                state = state,
+                pages = listOf(Text("ONE"), Text("TWO")),
+                onPageDragStart = { events += "drag" },
+                onPageChanged = { page -> events += "page$page" },
+                key = "pager",
+            ),
+            logicalWidth = 30,
+            logicalHeight = 10,
+        )
+
+        val gesture = tester.startGesture(find.byKey("pager"))
+        gesture.moveBy(dx = -20, dy = 0)
+        assertEquals(listOf("drag"), events)
+
+        gesture.up()
+        tester.pumpAndSettle()
+        assertEquals("drag", events.first())
+        assertTrue(events.drop(1).contains("page1"))
+        tester.dispose()
+    }
+
+    @Test
     fun gestureStreamsTrackIndependentPointerIds() {
         val tester = PixelTester()
         var first = 0

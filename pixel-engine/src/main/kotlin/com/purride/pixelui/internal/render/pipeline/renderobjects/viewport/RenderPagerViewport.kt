@@ -17,6 +17,7 @@ internal class RenderPagerViewport(
     private var state: PixelPagerState,
     private var controller: PixelPagerController,
     private var onPageChanged: ((Int) -> Unit)?,
+    private var onPageDragStart: (() -> Unit)?,
 ) : MultiChildRenderObject() {
     init {
         setRenderObjectChildren(children)
@@ -30,12 +31,14 @@ internal class RenderPagerViewport(
         state: PixelPagerState,
         controller: PixelPagerController,
         onPageChanged: ((Int) -> Unit)?,
+        onPageDragStart: (() -> Unit)?,
     ) {
         if (
             this.axis == axis &&
             this.state === state &&
             this.controller === controller &&
-            this.onPageChanged == onPageChanged
+            this.onPageChanged == onPageChanged &&
+            this.onPageDragStart == onPageDragStart
         ) {
             return
         }
@@ -43,6 +46,7 @@ internal class RenderPagerViewport(
         this.state = state
         this.controller = controller
         this.onPageChanged = onPageChanged
+        this.onPageDragStart = onPageDragStart
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -168,6 +172,7 @@ internal class RenderPagerViewport(
             state = state,
             controller = controller,
             onPageChanged = onPageChanged,
+            onPageDragStart = onPageDragStart,
             source = this,
         )
         val collected = mutableListOf<PixelPagerTarget>()

@@ -16,6 +16,7 @@ internal data class PageViewWidget(
     val state: PixelPagerState,
     val pages: List<Widget>,
     val onPageChanged: ((Int) -> Unit)?,
+    val onPageDragStart: (() -> Unit)?,
     override val key: Any? = null,
 ) : StatelessWidget(
     key = key,
@@ -31,6 +32,7 @@ internal data class PageViewWidget(
             state = state,
             controller = controller,
             onPageChanged = onPageChanged,
+            onPageDragStart = onPageDragStart,
             key = key,
         )
     }
@@ -45,6 +47,7 @@ private data class PagerViewportWidget(
     val state: PixelPagerState,
     val controller: PixelPagerController,
     val onPageChanged: ((Int) -> Unit)?,
+    val onPageDragStart: (() -> Unit)?,
     override val key: Any? = null,
 ) : MultiChildRenderObjectWidget(
     children = children,
@@ -59,6 +62,7 @@ private data class PagerViewportWidget(
             state = state,
             controller = controller,
             onPageChanged = onPageChanged,
+            onPageDragStart = onPageDragStart,
         )
     }
 
@@ -74,6 +78,7 @@ private data class PagerViewportWidget(
             state = state,
             controller = controller,
             onPageChanged = onPageChanged,
+            onPageDragStart = onPageDragStart,
         )
     }
 }

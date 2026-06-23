@@ -105,6 +105,7 @@ class NestedScrollSessionTest {
             state = PixelPagerState(pageCount = 3),
             controller = PixelPagerController(),
             onPageChanged = null,
+            onPageDragStart = null,
         )
     }
 
