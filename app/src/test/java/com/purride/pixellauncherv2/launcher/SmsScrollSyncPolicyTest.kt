@@ -10,7 +10,11 @@ class SmsScrollSyncPolicyTest {
 
     @Test
     fun threadListPositionOnlySyncsOnEntryOrSelectionChange() {
-        val threads = LauncherUiState(mode = LauncherMode.SMS_THREADS, smsThreadSelectedIndex = 1)
+        val threads = LauncherUiState(
+            mode = LauncherMode.SMS_THREADS,
+            smsPageIndex = SmsPageIndex.ALL,
+            smsThreadSelectedIndex = 1,
+        )
 
         assertTrue(SmsScrollSyncPolicy.shouldRevealSelectedThread(LauncherUiState(), threads))
         assertFalse(SmsScrollSyncPolicy.shouldRevealSelectedThread(threads, threads.copy()))
@@ -18,6 +22,35 @@ class SmsScrollSyncPolicyTest {
             SmsScrollSyncPolicy.shouldRevealSelectedThread(
                 threads,
                 threads.copy(smsThreadSelectedIndex = 2),
+            ),
+        )
+    }
+
+    @Test
+    fun threadListPositionDoesNotSyncOnUnreadPage() {
+        val unreadPage = LauncherUiState(
+            mode = LauncherMode.SMS_THREADS,
+            smsPageIndex = SmsPageIndex.UNREAD,
+            smsThreadSelectedIndex = 1,
+        )
+
+        assertFalse(SmsScrollSyncPolicy.shouldRevealSelectedThread(LauncherUiState(), unreadPage))
+    }
+
+    @Test
+    fun unreadListPositionOnlySyncsOnEntryOrSelectionChange() {
+        val unread = LauncherUiState(
+            mode = LauncherMode.SMS_THREADS,
+            smsPageIndex = SmsPageIndex.UNREAD,
+            smsSelectedIndex = 1,
+        )
+
+        assertTrue(SmsScrollSyncPolicy.shouldRevealSelectedUnread(LauncherUiState(), unread))
+        assertFalse(SmsScrollSyncPolicy.shouldRevealSelectedUnread(unread, unread.copy()))
+        assertTrue(
+            SmsScrollSyncPolicy.shouldRevealSelectedUnread(
+                unread,
+                unread.copy(smsSelectedIndex = 2),
             ),
         )
     }

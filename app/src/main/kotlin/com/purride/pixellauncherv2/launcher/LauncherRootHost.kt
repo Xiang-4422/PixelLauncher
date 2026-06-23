@@ -10,17 +10,13 @@ import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
-import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageController
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
-import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
-import com.purride.pixelui.SizedBox
-import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.Widget
@@ -28,7 +24,6 @@ import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
-import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
@@ -36,7 +31,6 @@ import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
 import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
-import com.purride.pixellauncherv2.ui.screen.SmsInboxScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadsScreen
@@ -78,15 +72,13 @@ internal class LauncherRootHost(
     private val drawerListController = ScrollController()
     private val drawerListState = drawerListController.create()
 
-    // ── SMS_THREADS list ──────────────────────────────────────────────────────
+    // ── SMS home pager + lists ────────────────────────────────────────────────
+    private val smsPagerController = PageController()
+    private val smsPagerState = smsPagerController.create(pageCount = SmsPageIndex.COUNT)
+    private val unreadListController = ScrollController()
+    private val unreadListState = unreadListController.create()
     private val threadListController = ScrollController()
     private val threadListState = threadListController.create()
-
-    // ── SMS_INBOX pager + per-page scroll ─────────────────────────────────────
-    private val inboxPagerController = PageController()
-    private val inboxPagerState = inboxPagerController.create(pageCount = 1)
-    private val inboxScrollController = ScrollController()
-    private val inboxScrollStates = mutableListOf<PixelListState>()
 
     // ── SMS_THREAD_DETAIL message list + draft ────────────────────────────────
     private val msgListController = ScrollController()
@@ -155,25 +147,27 @@ internal class LauncherRootHost(
         // ── Sync drawer ───────────────────────────────────────────────────────
         syncDrawerQueryState()
 
-        // ── Sync SMS inbox pager page count ───────────────────────────────────
-        val needed = state.unreadSmsEntries.size.coerceAtLeast(1)
-        while (inboxScrollStates.size < needed) {
-            inboxScrollStates.add(inboxScrollController.create())
-        }
-        if (inboxPagerState.pageCount != needed) {
-            inboxPagerController.sync(
-                state = inboxPagerState,
+        // ── Sync SMS home pager ───────────────────────────────────────────────
+        if (smsPagerState.pageCount != SmsPageIndex.COUNT) {
+            smsPagerController.sync(
+                state = smsPagerState,
                 axis = PixelAxis.HORIZONTAL,
-                pageCount = needed,
+                pageCount = SmsPageIndex.COUNT,
             )
         }
-        if (state.mode == LauncherMode.SMS_INBOX) {
-            val targetInboxPage = state.smsSelectedIndex.coerceIn(
+        if (state.mode == LauncherMode.SMS_THREADS || state.mode == LauncherMode.SMS_INBOX) {
+            val targetSmsPage = SmsPageIndex.coerce(state.smsPageIndex)
+            if (smsPagerState.currentPage != targetSmsPage) {
+                smsPagerController.jumpToPage(smsPagerState, targetSmsPage)
+            }
+        }
+
+        // ── Sync SMS unread list scroll ───────────────────────────────────────
+        if (SmsScrollSyncPolicy.shouldRevealSelectedUnread(previousState, state)) {
+            val target = state.smsSelectedIndex.coerceIn(
                 0, (state.unreadSmsEntries.size - 1).coerceAtLeast(0),
             )
-            if (inboxPagerState.currentPage != targetInboxPage) {
-                inboxPagerController.jumpToPage(inboxPagerState, targetInboxPage)
-            }
+            unreadListController.showItem(unreadListState, target)
         }
 
         // ── Sync SMS thread list scroll ───────────────────────────────────────
@@ -218,22 +212,27 @@ internal class LauncherRootHost(
             theme = theme,
             chargeTick = chargeTick,
             statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
+            pagerController = smsPagerController,
+            pagerState = smsPagerState,
+            unreadListState = unreadListState,
+            unreadListController = unreadListController,
             listState = threadListState,
             listController = threadListController,
+            onSmsPageSelected = callbacks.onSmsPageSelected,
             onOpenThread = callbacks.onOpenThread,
         )
-        LauncherMode.SMS_INBOX         -> SmsInboxScreen(
+        LauncherMode.SMS_INBOX         -> SmsThreadsScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
             statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
-            pagerController = inboxPagerController,
-            pagerState = inboxPagerState,
-            scrollController = inboxScrollController,
-            scrollStates = inboxScrollStates.toList().ifEmpty {
-                listOf(inboxScrollController.create())
-            },
-            onSelectSmsIndex = callbacks.onSelectSmsIndex,
+            pagerController = smsPagerController,
+            pagerState = smsPagerState,
+            unreadListState = unreadListState,
+            unreadListController = unreadListController,
+            listState = threadListState,
+            listController = threadListController,
+            onSmsPageSelected = callbacks.onSmsPageSelected,
             onOpenThread = callbacks.onOpenThread,
         )
         LauncherMode.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(

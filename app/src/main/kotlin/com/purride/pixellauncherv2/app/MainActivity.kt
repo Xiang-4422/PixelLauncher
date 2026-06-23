@@ -62,6 +62,7 @@ import com.purride.pixellauncherv2.launcher.LauncherCallbacks
 import com.purride.pixellauncherv2.launcher.LauncherRootHost
 import com.purride.pixellauncherv2.launcher.NotificationSummary
 import com.purride.pixellauncherv2.launcher.SmsLayout
+import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -157,8 +158,6 @@ class MainActivity : AppCompatActivity() {
 
         override fun updateTextInputFocus() = this@MainActivity.updateTextInputFocus()
 
-        override fun updateDrawerInputFocus() = this@MainActivity.updateDrawerInputFocus()
-
         override fun scheduleIdleCheck() = this@MainActivity.scheduleIdleCheck()
 
         override fun refreshCommunicationStatus(render: Boolean) =
@@ -172,7 +171,6 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(intent, smsRoleRequestCode)
         }
 
-        override fun launchSystemIntent(intent: Intent) = this@MainActivity.launchSystemIntent(intent)
     }
 
     private val clockTicker = object : Runnable {
@@ -339,6 +337,7 @@ class MainActivity : AppCompatActivity() {
                 onNotificationSourcePressed = ::onNotificationSourcePressed,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,
+                onSmsPageSelected    = smsController::selectPage,
                 onSelectSmsIndex     = smsController::selectIndex,
                 onDraftChanged       = smsController::draftChanged,
                 onSmsThreadSearchChanged = smsController::threadSearchChanged,
@@ -593,7 +592,11 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
-                        smsController.moveThreadSelection(-1)
+                        if (state.smsPageIndex == SmsPageIndex.UNREAD) {
+                            smsController.moveInboxSelection(-1)
+                        } else {
+                            smsController.moveThreadSelection(-1)
+                        }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> {
@@ -616,7 +619,11 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
-                        smsController.moveThreadSelection(1)
+                        if (state.smsPageIndex == SmsPageIndex.UNREAD) {
+                            smsController.moveInboxSelection(1)
+                        } else {
+                            smsController.moveThreadSelection(1)
+                        }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_INBOX -> {
@@ -639,8 +646,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
-                    LauncherMode.SMS_THREADS,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
+                    LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
                     LauncherMode.SMS_INBOX -> smsController.moveInboxSelection(-1)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -657,8 +664,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
-                    LauncherMode.SMS_THREADS,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
+                    LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
                     LauncherMode.SMS_INBOX -> smsController.moveInboxSelection(1)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -678,7 +685,11 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.ensureReadAccessAndRole()
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
-                        smsController.openSelectedThread()
+                        if (state.smsPageIndex == SmsPageIndex.UNREAD) {
+                            smsController.openSelectedUnreadThread()
+                        } else {
+                            smsController.openSelectedThread()
+                        }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
@@ -689,7 +700,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     LauncherMode.SMS_INBOX -> {
                         settleSettingsMotionBeforeExplicitAction()
-                        smsController.launchSelectedUnread()
+                        smsController.openSelectedUnreadThread()
                     }
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -979,7 +990,7 @@ class MainActivity : AppCompatActivity() {
 
     /** SMS 按钮：进入短信模块。 */
     private fun onHomeOpenSms() {
-        smsController.openModule(forceRefresh = true, unreadOnly = false)
+        smsController.openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)
     }
 
     private fun onHomeInfoAction(action: HomeInfoAction) {
@@ -1009,7 +1020,7 @@ class MainActivity : AppCompatActivity() {
                 if (state.unreadSmsCount > 0) {
                     smsController.openUnreadSummaryTarget()
                 } else {
-                    smsController.openModule(forceRefresh = true, unreadOnly = false)
+                    smsController.openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)
                 }
             }
 

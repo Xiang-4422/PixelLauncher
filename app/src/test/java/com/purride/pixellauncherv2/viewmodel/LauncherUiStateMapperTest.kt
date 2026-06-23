@@ -7,6 +7,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
+import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -40,6 +41,7 @@ class LauncherUiStateMapperTest {
             appEditorSelectedIndex = 1,
             appEditorNameDraft = "Pay",
             appEditorAliasDraft = "bank bill",
+            smsPageIndex = SmsPageIndex.ALL,
             isSmsThreadsLoading = true,
             smsDraftText = "draft",
             smsSendStatusText = "FAILED",
@@ -105,6 +107,7 @@ class LauncherUiStateMapperTest {
         assertEquals("Pay", ui.appEditorNameDraft)
         assertEquals("bank bill", ui.appEditorAliasDraft)
         // sms
+        assertEquals(SmsPageIndex.ALL, ui.smsPageIndex)
         assertEquals(true, ui.isSmsThreadsLoading)
         assertEquals("draft", ui.smsDraftText)
         assertEquals("FAILED", ui.smsSendStatusText)

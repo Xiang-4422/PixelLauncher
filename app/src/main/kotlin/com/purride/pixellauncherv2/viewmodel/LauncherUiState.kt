@@ -10,6 +10,7 @@ import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
+import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
@@ -51,6 +52,7 @@ data class LauncherUiState(
 
     // ── SMS ───────────────────────────────────────────────────────────────────
     val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
+    val smsPageIndex: Int = SmsPageIndex.UNREAD,
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
     val smsThreads: List<SmsThreadSummary> = emptyList(),

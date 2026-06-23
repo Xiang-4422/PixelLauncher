@@ -1,33 +1,41 @@
 package com.purride.pixellauncherv2.ui.screen
 
+import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
+import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixelui.state.PixelPagerController
+import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixellauncherv2.data.SmsThreadSummary
+import com.purride.pixellauncherv2.data.UnreadSmsEntry
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
+import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 private const val SMS_THREAD_ROW_PADDING_PX = LauncherSpacing.CONTENT_HORIZONTAL
+private val SMS_PAGE_TABS = listOf("UNREAD", "ALL")
 
 /**
- * SMS_THREADS 屏幕：会话列表。
+ * SMS_THREADS 屏幕：短信应用首页。
  *
- * 每行显示：
+ * 左页显示未读短信列表，右页显示全部会话列表。每行显示：
  * - 顶部行：联系人地址（accent 色，左对齐）+ 时间（dim 色，右对齐）
  * - 底部行：片段预览（dim 色，末尾截断）
  */
@@ -36,8 +44,13 @@ fun SmsThreadsScreen(
     theme: LauncherTheme,
     chargeTick: Int,
     statusBarHeight: Int,
+    pagerController: PixelPagerController,
+    pagerState: PixelPagerState,
+    unreadListState: PixelListState,
+    unreadListController: PixelListController,
     listState: PixelListState,
     listController: PixelListController,
+    onSmsPageSelected: (Int) -> Unit,
     onOpenThread: (threadId: Long, address: String) -> Unit,
 ): Widget = Column(
     crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -54,27 +67,92 @@ fun SmsThreadsScreen(
             theme = theme,
             statusBarHeight = statusBarHeight,
         ),
+        Padding(
+            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+            vertical = LauncherSpacing.ROW_SPACING,
+            child = Tabs(
+                labels = SMS_PAGE_TABS,
+                selectedIndex = SmsPageIndex.coerce(uiState.smsPageIndex),
+                onSelected = onSmsPageSelected,
+            ),
+        ),
         Expanded(
-            child = if (uiState.isSmsThreadsLoading) {
-                centeredSmsStatus("LOADING", theme)
-            } else if (uiState.smsThreads.isEmpty()) {
-                centeredSmsStatus("NO MESSAGES", theme)
-            } else {
-                ListViewBuilder(
-                    itemCount = uiState.smsThreads.size,
-                    state = listState,
-                    controller = listController,
-                    itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
-                    spacing = SmsThreadGeometry.ROW_SPACING_PX,
-                    itemBuilder = { index ->
-                        val thread = uiState.smsThreads[index]
-                        buildThreadRow(thread, theme, onOpenThread)
-                    },
-                )
-            },
+            child = PageView(
+                axis = Axis.HORIZONTAL,
+                controller = pagerController,
+                state = pagerState,
+                pages = listOf(
+                    buildUnreadMessagesPage(
+                        uiState = uiState,
+                        theme = theme,
+                        listState = unreadListState,
+                        listController = unreadListController,
+                        onOpenThread = onOpenThread,
+                    ),
+                    buildAllThreadsPage(
+                        uiState = uiState,
+                        theme = theme,
+                        listState = listState,
+                        listController = listController,
+                        onOpenThread = onOpenThread,
+                    ),
+                ),
+                onPageChanged = onSmsPageSelected,
+            ),
         ),
     ),
 )
+
+private fun buildUnreadMessagesPage(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    listState: PixelListState,
+    listController: PixelListController,
+    onOpenThread: (threadId: Long, address: String) -> Unit,
+): Widget {
+    val entries = uiState.unreadSmsEntries
+    if (uiState.isSmsThreadsLoading && entries.isEmpty()) {
+        return centeredSmsStatus("LOADING", theme)
+    }
+    if (entries.isEmpty()) {
+        return centeredSmsStatus("NO UNREAD MESSAGES", theme)
+    }
+    return ListViewBuilder(
+        itemCount = entries.size,
+        state = listState,
+        controller = listController,
+        itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
+        spacing = SmsThreadGeometry.ROW_SPACING_PX,
+        itemBuilder = { index ->
+            buildUnreadRow(entries[index], theme, onOpenThread)
+        },
+    )
+}
+
+private fun buildAllThreadsPage(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    listState: PixelListState,
+    listController: PixelListController,
+    onOpenThread: (threadId: Long, address: String) -> Unit,
+): Widget {
+    if (uiState.isSmsThreadsLoading) {
+        return centeredSmsStatus("LOADING", theme)
+    }
+    if (uiState.smsThreads.isEmpty()) {
+        return centeredSmsStatus("NO MESSAGES", theme)
+    }
+    return ListViewBuilder(
+        itemCount = uiState.smsThreads.size,
+        state = listState,
+        controller = listController,
+        itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
+        spacing = SmsThreadGeometry.ROW_SPACING_PX,
+        itemBuilder = { index ->
+            buildThreadRow(uiState.smsThreads[index], theme, onOpenThread)
+        },
+    )
+}
 
 private fun centeredSmsStatus(
     text: String,
@@ -86,6 +164,54 @@ private fun centeredSmsStatus(
     spacing = 0,
     children = listOf(
         smsStatusText(text, theme),
+    ),
+)
+
+private fun buildUnreadRow(
+    entry: UnreadSmsEntry,
+    theme: LauncherTheme,
+    onOpenThread: (threadId: Long, address: String) -> Unit,
+): Widget = GestureDetector(
+    onTap = { onOpenThread(entry.threadId, entry.address) },
+    child = Padding(
+        horizontal = SMS_THREAD_ROW_PADDING_PX,
+        vertical = SMS_THREAD_ROW_PADDING_PX,
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            mainAxisSize = MainAxisSize.MIN,
+            spacing = 1,
+            children = listOf(
+                Row(
+                    spacing = LauncherSpacing.ROW_SPACING,
+                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    children = listOf(
+                        Expanded(
+                            child = Text(
+                                entry.address.ifBlank { "UNKNOWN" }.uppercase(),
+                                style = TextStyle(color = theme.sms.sender),
+                                overflow = TextOverflow.ELLIPSIS,
+                                softWrap = false,
+                                maxLines = 1,
+                            ),
+                        ),
+                        Text(
+                            SmsTimeFormatter.format(entry.dateMillis),
+                            style = TextStyle(color = theme.sms.timestamp),
+                            overflow = TextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
+                        ),
+                    ),
+                ),
+                Text(
+                    entry.body.trim(),
+                    style = TextStyle(color = theme.sms.body),
+                    overflow = TextOverflow.ELLIPSIS,
+                    softWrap = false,
+                    maxLines = 1,
+                ),
+            ),
+        ),
     ),
 )
 

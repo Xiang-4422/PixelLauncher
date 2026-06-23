@@ -208,12 +208,13 @@ object LauncherStateTransitions {
         return state.copy(mode = state.returnMode)
     }
 
-    /** 打开未读短信列表页，并把正文窗口同步到第一条。 */
+    /** 打开短信首页，并默认定位到未读页。 */
     fun showUnreadSmsInbox(state: LauncherState, visibleRows: Int): LauncherState {
         return syncSmsWindow(
             state = state.copy(
-                mode = LauncherMode.SMS_INBOX,
+                mode = LauncherMode.SMS_THREADS,
                 returnMode = LauncherMode.HOME,
+                smsPageIndex = SmsPageIndex.UNREAD,
                 smsSelectedIndex = 0,
                 smsListStartIndex = 0,
             ),
@@ -234,12 +235,17 @@ object LauncherStateTransitions {
         )
     }
 
-    /** 打开短信会话列表。 */
-    fun showSmsThreads(state: LauncherState, visibleRows: Int): LauncherState {
+    /** 打开短信首页。 */
+    fun showSmsThreads(
+        state: LauncherState,
+        visibleRows: Int,
+        pageIndex: Int = SmsPageIndex.UNREAD,
+    ): LauncherState {
         return syncSmsThreadWindow(
             state = state.copy(
                 mode = LauncherMode.SMS_THREADS,
                 returnMode = LauncherMode.HOME,
+                smsPageIndex = SmsPageIndex.coerce(pageIndex),
                 smsThreadSelectedIndex = state.smsThreadSelectedIndex.coerceAtLeast(0),
             ),
             visibleRows = visibleRows,
@@ -686,6 +692,11 @@ object LauncherStateTransitions {
             state = state.copy(smsSelectedIndex = index.coerceIn(0, maxIndex)),
             visibleRows = visibleRows,
         )
+    }
+
+    /** 切换短信首页内部 Tab/Page。 */
+    fun selectSmsPage(state: LauncherState, index: Int): LauncherState {
+        return state.copy(smsPageIndex = SmsPageIndex.coerce(index))
     }
 
     /** 按相对行数移动短信页内部焦点。 */

@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Handler
 import android.util.Log
 import com.purride.pixellauncherv2.data.SmsRepository
@@ -14,6 +13,7 @@ import com.purride.pixellauncherv2.data.UnreadSmsRepository
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
+import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import java.util.concurrent.ExecutorService
@@ -51,7 +51,6 @@ internal class SmsController(
         fun smsInboxVisibleRows(): Int
 
         fun updateTextInputFocus()
-        fun updateDrawerInputFocus()
         fun scheduleIdleCheck()
 
         /** 刷新未接来电/未读短信计数（短信发送/已读后需要同步）。 */
@@ -63,15 +62,12 @@ internal class SmsController(
         /** 发起默认短信应用角色申请。 */
         fun startSmsRoleRequest(intent: Intent)
 
-        /** 启动一个系统 Intent（宿主负责 catch ActivityNotFoundException）。 */
-        fun launchSystemIntent(intent: Intent)
     }
 
     private val smsRepository = SmsRepository(context)
     private val unreadSmsRepository = UnreadSmsRepository(context)
     private val appContext = context.applicationContext
 
-    private var smsThreadsUnreadOnly = true
     private var smsRolePromptDismissedThisSession = false
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -96,6 +92,15 @@ internal class SmsController(
         host.state = host.state.copy(smsSelectedIndex = index)
     }
 
+    fun selectPage(index: Int) {
+        val nextState = LauncherStateTransitions.selectSmsPage(host.state, index)
+        if (nextState.smsPageIndex == host.state.smsPageIndex) {
+            return
+        }
+        host.state = nextState
+        host.render()
+    }
+
     fun draftChanged(text: String) {
         host.state = LauncherStateTransitions.updateSmsSendStatusText(
             state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text),
@@ -113,8 +118,10 @@ internal class SmsController(
 
     // ── Module open/close ─────────────────────────────────────────────────────
 
-    fun openModule(forceRefresh: Boolean = false, unreadOnly: Boolean = true) {
-        smsThreadsUnreadOnly = unreadOnly
+    fun openModule(
+        forceRefresh: Boolean = false,
+        initialPage: Int = SmsPageIndex.UNREAD,
+    ) {
         refreshSmsCapability(render = false)
         val canShowThreads =
             host.state.smsPermissionState != SmsPermissionState.MISSING &&
@@ -123,6 +130,7 @@ internal class SmsController(
             host.state = host.state.copy(isSmsThreadsLoading = false)
         } else if (forceRefresh) {
             host.state = host.state.copy(
+                unreadSmsEntries = emptyList(),
                 smsThreads = emptyList(),
                 isSmsThreadsLoading = true,
             )
@@ -131,6 +139,7 @@ internal class SmsController(
             LauncherStateTransitions.showSmsThreads(
                 state = host.state,
                 visibleRows = host.smsThreadsVisibleRows(),
+                pageIndex = initialPage,
             )
         } else {
             LauncherStateTransitions.showSmsRolePrompt(host.state)
@@ -138,12 +147,12 @@ internal class SmsController(
         host.render()
         host.updateTextInputFocus()
         if (canShowThreads && forceRefresh) {
-            refreshSmsThreads(render = true, unreadOnly = smsThreadsUnreadOnly)
+            refreshUnreadSmsEntries(render = true)
+            refreshSmsThreads(render = true)
         }
     }
 
     fun closeModule() {
-        smsThreadsUnreadOnly = true
         host.state = LauncherStateTransitions.hideSmsThreads(host.state)
         host.render()
         host.updateTextInputFocus()
@@ -165,44 +174,15 @@ internal class SmsController(
     }
 
     fun openUnreadInbox() {
-        host.state = LauncherStateTransitions.updateUnreadSmsEntries(
-            state = host.state,
-            entries = unreadSmsRepository.readUnreadMessages(),
-            visibleRows = host.smsInboxVisibleRows(),
-        )
-        host.state = LauncherStateTransitions.showUnreadSmsInbox(
-            state = host.state,
-            visibleRows = host.smsInboxVisibleRows(),
-        )
-        host.render()
-        host.updateDrawerInputFocus()
+        openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)
     }
 
     fun openUnreadSummaryTarget() {
-        val unreadEntries = unreadSmsRepository.readUnreadMessages()
-        val firstThread = unreadEntries.firstOrNull()
-        if (firstThread != null && unreadEntries.all { it.threadId == firstThread.threadId }) {
-            openSmsThread(threadId = firstThread.threadId, address = firstThread.address)
-        } else {
-            host.state = LauncherStateTransitions.updateUnreadSmsEntries(
-                state = host.state,
-                entries = unreadEntries,
-                visibleRows = host.smsInboxVisibleRows(),
-            )
-            host.state = LauncherStateTransitions.showUnreadSmsInbox(
-                state = host.state,
-                visibleRows = host.smsInboxVisibleRows(),
-            )
-            host.render()
-            host.updateDrawerInputFocus()
-        }
+        openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)
     }
 
     fun closeUnreadInbox() {
-        host.state = LauncherStateTransitions.hideUnreadSmsInbox(host.state)
-        host.render()
-        host.updateDrawerInputFocus()
-        host.scheduleIdleCheck()
+        closeModule()
     }
 
     // ── Hardware-key navigation ───────────────────────────────────────────────
@@ -225,14 +205,9 @@ internal class SmsController(
         host.render()
     }
 
-    fun launchSelectedUnread() {
+    fun openSelectedUnreadThread() {
         val entry = host.state.unreadSmsEntries.getOrNull(host.state.smsSelectedIndex) ?: return
-        host.launchSystemIntent(
-            Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("sms:${Uri.encode(entry.address)}")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-        )
+        openSmsThread(threadId = entry.threadId, address = entry.address)
     }
 
     // ── Draft sending + role / permission ─────────────────────────────────────
@@ -280,6 +255,7 @@ internal class SmsController(
                     )
                     host.render()
                     refreshSmsThreads(render = false)
+                    refreshUnreadSmsEntries(render = false)
                     host.refreshCommunicationStatus(render = false)
                 }
                 result.onFailure {
@@ -346,6 +322,7 @@ internal class SmsController(
     /** 短信运行时权限申请返回后调用。 */
     fun onPermissionsResult() {
         refreshSmsCapability(render = false)
+        refreshUnreadSmsEntries(render = false)
         refreshSmsThreads(render = false)
         requestDefaultRole()
         host.render()
@@ -355,7 +332,7 @@ internal class SmsController(
     fun onRoleRequestResult() {
         refreshSmsCapability(render = false)
         smsRolePromptDismissedThisSession = !smsRepository.isDefaultSmsApp()
-        openModule(forceRefresh = true, unreadOnly = false)
+        openModule(forceRefresh = true)
     }
 
     // ── Deep-link entry (from launch intent) ──────────────────────────────────
@@ -403,7 +380,8 @@ internal class SmsController(
         if (threadId != null) {
             backgroundExecutor.execute {
                 smsRepository.markThreadRead(threadId)
-                refreshSmsThreads(render = false, unreadOnly = smsThreadsUnreadOnly)
+                refreshSmsThreads(render = false)
+                refreshUnreadSmsEntries(render = false)
                 host.refreshCommunicationStatus(render = false)
             }
         }
@@ -424,11 +402,9 @@ internal class SmsController(
         }
     }
 
-    private fun refreshSmsThreads(render: Boolean, unreadOnly: Boolean = smsThreadsUnreadOnly) {
+    private fun refreshSmsThreads(render: Boolean) {
         backgroundExecutor.execute {
-            val threads = smsRepository.readThreads().let { allThreads ->
-                if (unreadOnly) allThreads.filter { it.unreadCount > 0 } else allThreads
-            }
+            val threads = smsRepository.readThreads()
             mainHandler.post {
                 if (!host.isActive()) {
                     return@post
@@ -437,6 +413,25 @@ internal class SmsController(
                     state = host.state.copy(isSmsThreadsLoading = false),
                     threads = threads,
                     visibleRows = host.smsThreadsVisibleRows(),
+                )
+                if (render) {
+                    host.render()
+                }
+            }
+        }
+    }
+
+    private fun refreshUnreadSmsEntries(render: Boolean) {
+        backgroundExecutor.execute {
+            val entries = unreadSmsRepository.readUnreadMessages()
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                host.state = LauncherStateTransitions.updateUnreadSmsEntries(
+                    state = host.state,
+                    entries = entries,
+                    visibleRows = host.smsInboxVisibleRows(),
                 )
                 if (render) {
                     host.render()
@@ -472,10 +467,10 @@ internal class SmsController(
 
     private fun onSmsProviderChanged() {
         refreshSmsCapability(render = false)
-        refreshSmsThreads(
-            render = host.state.mode == LauncherMode.SMS_THREADS || host.state.mode == LauncherMode.SMS_ROLE_PROMPT,
-            unreadOnly = smsThreadsUnreadOnly,
-        )
+        val renderSmsHome = host.state.mode == LauncherMode.SMS_THREADS ||
+            host.state.mode == LauncherMode.SMS_INBOX
+        refreshUnreadSmsEntries(render = renderSmsHome)
+        refreshSmsThreads(render = renderSmsHome || host.state.mode == LauncherMode.SMS_ROLE_PROMPT)
         if (host.state.mode == LauncherMode.SMS_THREAD_DETAIL) {
             refreshSmsThreadDetail(
                 threadId = host.state.smsCurrentThreadId,

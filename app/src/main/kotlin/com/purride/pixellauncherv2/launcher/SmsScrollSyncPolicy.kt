@@ -7,8 +7,18 @@ internal object SmsScrollSyncPolicy {
 
     fun shouldRevealSelectedThread(previous: LauncherUiState, current: LauncherUiState): Boolean {
         if (current.mode != LauncherMode.SMS_THREADS) return false
+        if (current.smsPageIndex != SmsPageIndex.ALL) return false
         return previous.mode != LauncherMode.SMS_THREADS ||
+            previous.smsPageIndex != current.smsPageIndex ||
             previous.smsThreadSelectedIndex != current.smsThreadSelectedIndex
+    }
+
+    fun shouldRevealSelectedUnread(previous: LauncherUiState, current: LauncherUiState): Boolean {
+        if (current.mode != LauncherMode.SMS_THREADS) return false
+        if (current.smsPageIndex != SmsPageIndex.UNREAD) return false
+        return previous.mode != LauncherMode.SMS_THREADS ||
+            previous.smsPageIndex != current.smsPageIndex ||
+            previous.smsSelectedIndex != current.smsSelectedIndex
     }
 
     fun shouldFollowMessagesToEnd(

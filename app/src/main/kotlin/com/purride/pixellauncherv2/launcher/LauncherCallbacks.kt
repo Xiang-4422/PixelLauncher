@@ -43,6 +43,7 @@ data class LauncherCallbacks(
     // ── SMS ───────────────────────────────────────────────────────────────────
     val onRequestSmsRole: () -> Unit,
     val onOpenThread: (threadId: Long, address: String) -> Unit,
+    val onSmsPageSelected: (Int) -> Unit,
     val onSelectSmsIndex: (Int) -> Unit,
     val onDraftChanged: (String) -> Unit,
     val onSmsThreadSearchChanged: (String) -> Unit,

@@ -25,6 +25,7 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     appEditorNameDraft = appEditorNameDraft,
     appEditorAliasDraft = appEditorAliasDraft,
     unreadSmsEntries = unreadSmsEntries,
+    smsPageIndex = smsPageIndex,
     smsSelectedIndex = smsSelectedIndex,
     smsListStartIndex = smsListStartIndex,
     smsThreads = smsThreads,

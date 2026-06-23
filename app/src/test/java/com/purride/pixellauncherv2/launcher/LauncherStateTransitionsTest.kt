@@ -397,6 +397,29 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showSmsThreads_defaultsToUnreadPage() {
+        val result = LauncherStateTransitions.showSmsThreads(
+            state = LauncherState(smsPageIndex = SmsPageIndex.ALL),
+            visibleRows = 4,
+        )
+
+        assertEquals(LauncherMode.SMS_THREADS, result.mode)
+        assertEquals(SmsPageIndex.UNREAD, result.smsPageIndex)
+    }
+
+    @Test
+    fun selectSmsPage_coercesToKnownPages() {
+        assertEquals(
+            SmsPageIndex.UNREAD,
+            LauncherStateTransitions.selectSmsPage(LauncherState(), -1).smsPageIndex,
+        )
+        assertEquals(
+            SmsPageIndex.ALL,
+            LauncherStateTransitions.selectSmsPage(LauncherState(), 99).smsPageIndex,
+        )
+    }
+
+    @Test
     fun updateSmsSendStatusText_updatesOnlyDraftStatus() {
         val result = LauncherStateTransitions.updateSmsSendStatusText(
             state = LauncherState(smsDraftText = "hello"),

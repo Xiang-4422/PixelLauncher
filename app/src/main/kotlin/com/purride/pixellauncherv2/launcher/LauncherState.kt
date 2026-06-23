@@ -29,6 +29,7 @@ data class LauncherState(
     val appEditorNameDraft: String = "",
     val appEditorAliasDraft: String = "",
     val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
+    val smsPageIndex: Int = SmsPageIndex.UNREAD,
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
     val smsThreads: List<SmsThreadSummary> = emptyList(),
