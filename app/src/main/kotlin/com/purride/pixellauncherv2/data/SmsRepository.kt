@@ -289,6 +289,30 @@ class SmsRepository(
         }
     }
 
+    fun markAllRead(): Boolean {
+        if (!isDefaultSmsApp()) {
+            Log.d(LOG_TAG, "markAllRead skipped: not default sms app")
+            return false
+        }
+        val values = ContentValues().apply {
+            put(Telephony.Sms.READ, 1)
+            put(Telephony.Sms.SEEN, 1)
+        }
+        return try {
+            val updatedRows = contentResolver.update(
+                Telephony.Sms.CONTENT_URI,
+                values,
+                "${Telephony.Sms.READ} = 0",
+                null,
+            )
+            Log.d(LOG_TAG, "markAllRead updatedRows=$updatedRows")
+            updatedRows > 0
+        } catch (_: SecurityException) {
+            Log.d(LOG_TAG, "markAllRead security exception")
+            false
+        }
+    }
+
     fun sendMessage(request: SmsSendRequest): Result<SmsMessageEntry> {
         val address = request.address.trim()
         val body = request.body.trim()

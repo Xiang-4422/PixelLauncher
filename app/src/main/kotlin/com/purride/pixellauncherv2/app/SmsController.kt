@@ -210,6 +210,21 @@ internal class SmsController(
         openSmsThread(threadId = entry.threadId, address = entry.address)
     }
 
+    fun markAllRead() {
+        if (host.state.unreadSmsEntries.isEmpty()) {
+            return
+        }
+        backgroundExecutor.execute {
+            val changed = smsRepository.markAllRead()
+            if (!changed) {
+                return@execute
+            }
+            refreshUnreadSmsEntries(render = false)
+            refreshSmsThreads(render = false)
+            host.refreshCommunicationStatus(render = true)
+        }
+    }
+
     // ── Draft sending + role / permission ─────────────────────────────────────
 
     fun sendDraft() {

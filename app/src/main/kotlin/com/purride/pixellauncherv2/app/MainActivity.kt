@@ -339,6 +339,7 @@ class MainActivity : AppCompatActivity() {
                 onOpenThread         = smsController::openThread,
                 onSmsPageSelected    = smsController::selectPage,
                 onSelectSmsIndex     = smsController::selectIndex,
+                onMarkSmsRead        = smsController::markAllRead,
                 onDraftChanged       = smsController::draftChanged,
                 onSmsThreadSearchChanged = smsController::threadSearchChanged,
                 onSendDraft          = smsController::sendDraft,

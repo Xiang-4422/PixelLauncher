@@ -219,6 +219,7 @@ internal class LauncherRootHost(
             listState = threadListState,
             listController = threadListController,
             onSmsPageSelected = callbacks.onSmsPageSelected,
+            onMarkSmsRead = callbacks.onMarkSmsRead,
             onOpenThread = callbacks.onOpenThread,
         )
         LauncherMode.SMS_INBOX         -> SmsThreadsScreen(
@@ -233,6 +234,7 @@ internal class LauncherRootHost(
             listState = threadListState,
             listController = threadListController,
             onSmsPageSelected = callbacks.onSmsPageSelected,
+            onMarkSmsRead = callbacks.onMarkSmsRead,
             onOpenThread = callbacks.onOpenThread,
         )
         LauncherMode.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(

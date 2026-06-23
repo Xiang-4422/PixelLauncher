@@ -390,6 +390,33 @@ class UiSpecStaticTest {
         )
     }
 
+    @Test
+    fun smsHomeKeepsBottomSharedTabsAndReadAction() {
+        val moduleRoot = resolveModuleRoot()
+        val source = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SmsThreadsScreen.kt")
+            .readText()
+        val controllerSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/SmsController.kt")
+            .readText()
+
+        assertTrue(
+            "SMS home tabs must stay at the bottom with a shared outer border and equal-width tab cells.",
+            source.contains("smsBottomTabs(") &&
+                source.contains("borderColor = theme.button.border") &&
+                source.contains("SMS_PAGE_TABS.mapIndexed") &&
+                source.contains("Expanded(") &&
+                !source.contains("import com.purride.pixelui.Tabs"),
+        )
+        assertTrue(
+            "SMS home must keep a top-right READ action wired to mark all unread messages read.",
+            source.contains("text = \"READ\"") &&
+                source.contains("onMarkSmsRead") &&
+                controllerSource.contains("fun markAllRead()") &&
+                controllerSource.contains("smsRepository.markAllRead()"),
+        )
+    }
+
     private fun File.findUiSpecOffenders(moduleRoot: File): List<String> {
         val relativePath = relativeTo(moduleRoot).invariantSeparatorsPath
         return readLines().flatMapIndexed { index, line ->

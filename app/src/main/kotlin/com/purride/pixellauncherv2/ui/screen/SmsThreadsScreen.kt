@@ -1,8 +1,12 @@
 package com.purride.pixellauncherv2.ui.screen
 
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.Alignment
 import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
@@ -10,8 +14,11 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
-import com.purride.pixelui.Tabs
+import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextAlign
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -22,8 +29,10 @@ import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.data.UnreadSmsEntry
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.widget.BatteryDividerWidget
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
@@ -51,30 +60,19 @@ fun SmsThreadsScreen(
     listState: PixelListState,
     listController: PixelListController,
     onSmsPageSelected: (Int) -> Unit,
+    onMarkSmsRead: () -> Unit,
     onOpenThread: (threadId: Long, address: String) -> Unit,
 ): Widget = Column(
     crossAxisAlignment = CrossAxisAlignment.STRETCH,
     mainAxisSize = MainAxisSize.MAX,
     spacing = 0,
     children = listOf(
-        LauncherHeader(
-            timeText = uiState.currentTimeText.ifEmpty { "--:--" },
-            screenTitle = "SMS",
-            messageText = uiState.statusBarMessageText,
-            batteryLevel = uiState.batteryLevel,
-            isCharging = uiState.isCharging,
-            chargeTick = chargeTick,
+        smsHeader(
+            uiState = uiState,
             theme = theme,
+            chargeTick = chargeTick,
             statusBarHeight = statusBarHeight,
-        ),
-        Padding(
-            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-            vertical = LauncherSpacing.ROW_SPACING,
-            child = Tabs(
-                labels = SMS_PAGE_TABS,
-                selectedIndex = SmsPageIndex.coerce(uiState.smsPageIndex),
-                onSelected = onSmsPageSelected,
-            ),
+            onMarkSmsRead = onMarkSmsRead,
         ),
         Expanded(
             child = PageView(
@@ -100,6 +98,135 @@ fun SmsThreadsScreen(
                 onPageChanged = onSmsPageSelected,
             ),
         ),
+        Padding(
+            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+            vertical = LauncherSpacing.ROW_SPACING,
+            child = smsBottomTabs(
+                selectedIndex = SmsPageIndex.coerce(uiState.smsPageIndex),
+                theme = theme,
+                onSelected = onSmsPageSelected,
+            ),
+        ),
+    ),
+)
+
+private fun smsHeader(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    chargeTick: Int,
+    statusBarHeight: Int,
+    onMarkSmsRead: () -> Unit,
+): Widget {
+    if (uiState.statusBarMessageText.isNotBlank()) {
+        return LauncherHeader(
+            timeText = uiState.currentTimeText.ifEmpty { "--:--" },
+            screenTitle = "SMS",
+            messageText = uiState.statusBarMessageText,
+            batteryLevel = uiState.batteryLevel,
+            isCharging = uiState.isCharging,
+            chargeTick = chargeTick,
+            theme = theme,
+            statusBarHeight = statusBarHeight,
+        )
+    }
+    val topSpacer = (statusBarHeight - LauncherHeaderLayout.headerContentHeight).coerceAtLeast(0)
+    val textStyle = TextStyle(color = theme.statusBar.text)
+    val readEnabled = uiState.unreadSmsEntries.isNotEmpty()
+    return Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        mainAxisSize = MainAxisSize.MIN,
+        spacing = 0,
+        children = buildList {
+            if (topSpacer > 0) {
+                add(SizedBox(height = topSpacer))
+            }
+            add(
+                Padding(
+                    horizontal = LauncherHeaderLayout.horizontalPadding,
+                    child = Row(
+                        spacing = 0,
+                        children = listOf(
+                            Text(
+                                uiState.currentTimeText.ifEmpty { "--:--" },
+                                style = textStyle,
+                                overflow = TextOverflow.ELLIPSIS,
+                                softWrap = false,
+                                maxLines = 1,
+                            ),
+                            Expanded(
+                                child = Text(
+                                    "SMS",
+                                    style = textStyle,
+                                    textAlign = TextAlign.CENTER,
+                                    overflow = TextOverflow.ELLIPSIS,
+                                    softWrap = false,
+                                    maxLines = 1,
+                                ),
+                            ),
+                            TextButton(
+                                text = "READ",
+                                onPressed = onMarkSmsRead,
+                                enabled = readEnabled,
+                                style = TextButtonStyle(
+                                    textStyle = TextStyle(
+                                        color = if (readEnabled) theme.statusBar.text else theme.statusBar.mutedText,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+            if (LauncherHeaderLayout.dividerGap > 0) {
+                add(SizedBox(height = LauncherHeaderLayout.dividerGap))
+            }
+            add(
+                BatteryDividerWidget(
+                    batteryLevel = uiState.batteryLevel,
+                    isCharging = uiState.isCharging,
+                    chargeTick = chargeTick,
+                    highColor = theme.statusBar.batteryHigh,
+                    mediumColor = theme.statusBar.batteryMedium,
+                    lowColor = theme.statusBar.batteryLow,
+                ),
+            )
+        },
+    )
+}
+
+private fun smsBottomTabs(
+    selectedIndex: Int,
+    theme: LauncherTheme,
+    onSelected: (Int) -> Unit,
+): Widget = Container(
+    borderColor = theme.button.border,
+    child = Row(
+        spacing = 0,
+        children = SMS_PAGE_TABS.mapIndexed { index, label ->
+            Expanded(
+                child = GestureDetector(
+                    onTap = { onSelected(index) },
+                    child = Container(
+                        alignment = Alignment.CENTER,
+                        fillColor = if (index == selectedIndex) theme.button.border else PixelColor.Transparent,
+                        padding = EdgeInsets.symmetric(
+                            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                            vertical = LauncherSpacing.ROW_SPACING,
+                        ),
+                        child = Text(
+                            label,
+                            style = TextStyle(
+                                color = if (index == selectedIndex) theme.text.inverse else theme.button.text,
+                            ),
+                            textAlign = TextAlign.CENTER,
+                            overflow = TextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
+                        ),
+                    ),
+                ),
+            )
+        },
     ),
 )
 
