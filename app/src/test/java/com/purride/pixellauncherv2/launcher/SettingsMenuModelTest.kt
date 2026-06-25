@@ -76,6 +76,8 @@ class SettingsMenuModelTest {
         assertEquals("CENTER", SettingsMenuModel.drawerListAlignmentLabel(DrawerListAlignment.CENTER))
         assertEquals("DOT MATRIX", SettingsMenuModel.chargeIdleEffectLabel(ChargeIdleEffect.DOT_MATRIX))
         assertEquals("30S", SettingsMenuModel.idleTimeoutLabel(30))
+        assertEquals("SET", SettingsMenuModel.apiKeyLabel("sk-test"))
+        assertEquals("EMPTY", SettingsMenuModel.apiKeyLabel(""))
     }
 
     @Test
@@ -117,6 +119,7 @@ class SettingsMenuModelTest {
                 smsPermissionState = SmsPermissionState.READY,
                 hasPostNotificationPermission = true,
                 hasNotificationListenerAccess = true,
+                deepSeekApiKey = "sk-test",
                 mutedNotificationSourceIds = setOf("com.noisy"),
                 priorityNotificationSourceIds = setOf("com.bank"),
                 apps = listOf(AppEntry(label = "Bank", packageName = "com.bank", activityName = "BankActivity")),
@@ -133,6 +136,7 @@ class SettingsMenuModelTest {
         assertTrue(items.contains(SettingsMenuItem.APP_MANAGEMENT))
         assertTrue(items.contains(SettingsMenuItem.NOTIFICATIONS))
         assertTrue(items.contains(SettingsMenuItem.DATA_HEALTH))
+        assertTrue(items.contains(SettingsMenuItem.DEEPSEEK_API_KEY))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
         assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
@@ -143,6 +147,7 @@ class SettingsMenuModelTest {
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.value)
         assertEquals("M1 P1", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
         assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
+        assertEquals("SET", rows.first { it.item == SettingsMenuItem.DEEPSEEK_API_KEY }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
     }
 
@@ -161,6 +166,7 @@ class SettingsMenuModelTest {
                 SettingsSection.DRAWER,
                 SettingsSection.IDLE,
                 SettingsSection.DATA,
+                SettingsSection.AI,
                 SettingsSection.ADVANCED,
             ),
             SettingsMenuModel.sections(state),
@@ -173,9 +179,11 @@ class SettingsMenuModelTest {
         assertEquals(SettingsSection.IDLE, rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.section)
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.section)
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
+        assertEquals(SettingsSection.AI, rows.first { it.item == SettingsMenuItem.DEEPSEEK_API_KEY }.section)
         assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
         assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))
         assertEquals("HOME", SettingsMenuModel.sectionLabel(SettingsSection.HOME))
+        assertEquals("AI", SettingsMenuModel.sectionLabel(SettingsSection.AI))
     }
 
     @Test

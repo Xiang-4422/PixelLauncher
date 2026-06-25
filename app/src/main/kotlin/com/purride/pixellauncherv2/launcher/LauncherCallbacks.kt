@@ -39,6 +39,7 @@ data class LauncherCallbacks(
     val onOpenDataHealth: () -> Unit,
     val onDataHealthItemPressed: (DataHealthItem) -> Unit,
     val onNotificationSourcePressed: (String) -> Unit,
+    val onDeepSeekApiKeyChanged: (String) -> Unit,
 
     // ── SMS ───────────────────────────────────────────────────────────────────
     val onRequestSmsRole: () -> Unit,

@@ -34,6 +34,7 @@ object LauncherStateTransitions {
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
+            LauncherMode.AI_SETTINGS,
             LauncherMode.DIAGNOSTICS -> state.returnMode
         }
         val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
@@ -68,6 +69,7 @@ object LauncherStateTransitions {
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
+            LauncherMode.AI_SETTINGS,
             LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
         }
         return state.copy(
@@ -102,6 +104,14 @@ object LauncherStateTransitions {
     }
 
     fun hideNotificationSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
+    fun showAiSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.AI_SETTINGS)
+    }
+
+    fun hideAiSettings(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
@@ -149,6 +159,7 @@ object LauncherStateTransitions {
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
+            LauncherMode.AI_SETTINGS,
             LauncherMode.DIAGNOSTICS,
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,
@@ -792,6 +803,13 @@ object LauncherStateTransitions {
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
         )
+    }
+
+    fun updateAiSettings(
+        state: LauncherState,
+        deepSeekApiKey: String = state.deepSeekApiKey,
+    ): LauncherState {
+        return state.copy(deepSeekApiKey = deepSeekApiKey)
     }
 
     fun updateDeviceStatus(state: LauncherState, deviceStatus: DeviceStatus): LauncherState {

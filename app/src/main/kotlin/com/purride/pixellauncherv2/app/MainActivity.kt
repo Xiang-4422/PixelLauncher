@@ -25,6 +25,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.purride.pixellauncherv2.data.AiSettingsRepository
 import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
@@ -104,6 +105,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var appRepository: AppRepository
     private lateinit var appCustomizationRepository: AppCustomizationRepository
+    private lateinit var aiSettingsRepository: AiSettingsRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
     private lateinit var launcherStatsRepository: LauncherStatsRepository
     private lateinit var deviceStatusRepository: DeviceStatusRepository
@@ -242,6 +244,7 @@ class MainActivity : AppCompatActivity() {
 
         appRepository = PackageManagerAppRepository(applicationContext)
         appCustomizationRepository = AppCustomizationRepository(applicationContext)
+        aiSettingsRepository = AiSettingsRepository(applicationContext)
         fontSettingsRepository = FontSettingsRepository(applicationContext)
         launcherStatsRepository = LauncherStatsRepository(applicationContext)
         deviceStatusRepository = DeviceStatusRepository(applicationContext)
@@ -260,6 +263,7 @@ class MainActivity : AppCompatActivity() {
         rainForecastRepository = RainForecastRepository()
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
+        val aiSettings = aiSettingsRepository.getSettings()
         selectedTheme = appearanceSettings.theme
         state = LauncherStateTransitions.updateAppearance(
             state = state,
@@ -278,6 +282,10 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = uiBehaviorSettings.idleTimeoutSeconds,
             openDrawerInSearchMode = uiBehaviorSettings.openDrawerInSearchMode,
             chargeIdleEffect = uiBehaviorSettings.chargeIdleEffect,
+        )
+        state = LauncherStateTransitions.updateAiSettings(
+            state = state,
+            deepSeekApiKey = aiSettings.deepSeekApiKey,
         )
         state = notificationSummarySettingsRepository.rules().let { rules ->
             LauncherStateTransitions.updateNotificationRules(
@@ -335,6 +343,7 @@ class MainActivity : AppCompatActivity() {
                 onOpenDataHealth = ::openDataHealth,
                 onDataHealthItemPressed = ::onDataHealthItemPressed,
                 onNotificationSourcePressed = ::onNotificationSourcePressed,
+                onDeepSeekApiKeyChanged = ::onDeepSeekApiKeyChanged,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,
                 onSmsPageSelected    = smsController::selectPage,
@@ -375,6 +384,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
+                    LauncherMode.AI_SETTINGS -> closeAiSettings()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -608,6 +618,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
+                    LauncherMode.AI_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
                     LauncherMode.IDLE,
@@ -636,6 +647,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
+                    LauncherMode.AI_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE,
                     LauncherMode.SMS_ROLE_PROMPT -> Unit
@@ -655,6 +667,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
+                    LauncherMode.AI_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -673,6 +686,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
+                    LauncherMode.AI_SETTINGS,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -706,6 +720,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
+                    LauncherMode.AI_SETTINGS -> closeAiSettings()
                     LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.HOME -> Unit
@@ -969,6 +984,7 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
+            SettingsMenuItem.DEEPSEEK_API_KEY -> openAiSettings()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
@@ -1359,7 +1375,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateTextInputFocus() {
         val drawerWantsTextInput = state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL && !drawerWantsTextInput) {
+        val aiSettingsWantsTextInput = state.mode == LauncherMode.AI_SETTINGS
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL && !drawerWantsTextInput && !aiSettingsWantsTextInput) {
             hideDrawerKeyboard()
         }
     }
@@ -1508,6 +1525,27 @@ class MainActivity : AppCompatActivity() {
         )
         NotificationSummaryStore.updateRules(rules)
         renderCurrentFrame()
+    }
+
+    private fun openAiSettings() {
+        settleSettingsMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.showAiSettings(state)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun closeAiSettings() {
+        state = LauncherStateTransitions.hideAiSettings(state)
+        renderCurrentFrame()
+        updateTextInputFocus()
+    }
+
+    private fun onDeepSeekApiKeyChanged(apiKey: String) {
+        aiSettingsRepository.setDeepSeekApiKey(apiKey)
+        state = LauncherStateTransitions.updateAiSettings(
+            state = state,
+            deepSeekApiKey = apiKey.trim(),
+        )
     }
 
     private fun openAppManagement(selectedIndex: Int = state.appEditorSelectedIndex) {
@@ -1712,6 +1750,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
+            LauncherMode.AI_SETTINGS,
             LauncherMode.DIAGNOSTICS -> true
 
             LauncherMode.IDLE -> false

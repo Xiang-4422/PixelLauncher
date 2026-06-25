@@ -24,6 +24,7 @@ import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
+import com.purride.pixellauncherv2.ui.screen.AiSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
@@ -93,6 +94,10 @@ internal class LauncherRootHost(
     private val appNameState = appNameController.create()
     private val appAliasController = TextEditingController()
     private val appAliasState = appAliasController.create()
+
+    // ── AI settings field ───────────────────────────────────────────────────
+    private val deepSeekApiKeyController = TextEditingController()
+    private val deepSeekApiKeyState = deepSeekApiKeyController.create()
 
     val setup: PixelHostSetup = createPixelHostSetup(
         context = context,
@@ -194,6 +199,9 @@ internal class LauncherRootHost(
         // ── Sync app editor fields ────────────────────────────────────────────
         syncAppEditorState()
 
+        // ── Sync AI settings field ────────────────────────────────────────────
+        syncAiSettingsState()
+
         setup.hostView.invalidate()
     }
 
@@ -273,6 +281,15 @@ internal class LauncherRootHost(
             chargeTick = chargeTick,
             screenProfile = screenProfile,
             onSourcePressed = callbacks.onNotificationSourcePressed,
+        )
+        LauncherMode.AI_SETTINGS    -> AiSettingsScreen(
+            uiState = uiState,
+            theme = theme,
+            chargeTick = chargeTick,
+            screenProfile = screenProfile,
+            apiKeyController = deepSeekApiKeyController,
+            apiKeyState = deepSeekApiKeyState,
+            onDeepSeekApiKeyChanged = callbacks.onDeepSeekApiKeyChanged,
         )
         LauncherMode.APP_MANAGEMENT    -> AppManagementScreen(
             uiState = uiState,
@@ -444,6 +461,16 @@ internal class LauncherRootHost(
                 state = appAliasState,
                 text = uiState.appEditorAliasDraft,
                 selectionStart = uiState.appEditorAliasDraft.length,
+            )
+        }
+    }
+
+    private fun syncAiSettingsState() {
+        if (deepSeekApiKeyState.text != uiState.deepSeekApiKey) {
+            deepSeekApiKeyController.updateText(
+                state = deepSeekApiKeyState,
+                text = uiState.deepSeekApiKey,
+                selectionStart = uiState.deepSeekApiKey.length,
             )
         }
     }

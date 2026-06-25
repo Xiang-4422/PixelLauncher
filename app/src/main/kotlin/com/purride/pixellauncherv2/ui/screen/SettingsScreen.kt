@@ -222,6 +222,15 @@ class SettingsScreen(
                     onPressed = { widget.onItemAction(SettingsMenuItem.DATA_HEALTH, +1) },
                 ),
             )
+            addSection(SettingsSection.AI, t)
+            add(
+                SettingsActionRow(
+                    title = "DEEPSEEK",
+                    valueLabel = SettingsMenuModel.apiKeyLabel(deepSeekApiKey),
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.DEEPSEEK_API_KEY, +1) },
+                ),
+            )
             addSection(SettingsSection.ADVANCED, t)
             add(
                 SettingsActionRow(
