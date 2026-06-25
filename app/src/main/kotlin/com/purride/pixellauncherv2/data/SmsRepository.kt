@@ -14,8 +14,9 @@ import android.provider.Telephony
 import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.purride.pixellauncherv2.launcher.SmsConversationIdentity
+import com.purride.pixellauncherv2.launcher.SmsConversationModel
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
-import java.util.Locale
 
 data class SmsThreadSummary(
     val threadId: Long,
@@ -25,6 +26,8 @@ data class SmsThreadSummary(
     val unreadCount: Int,
     val messageCount: Int,
     val displayName: String = "",
+    val conversationKey: String = "thread:$threadId",
+    val isServiceConversation: Boolean = false,
 )
 
 data class SmsMessageEntry(
@@ -36,6 +39,9 @@ data class SmsMessageEntry(
     val type: Int,
     val isRead: Boolean,
     val displayName: String = "",
+    val conversationKey: String = "thread:$threadId",
+    val conversationTitle: String = displayName.ifBlank { address },
+    val isServiceConversation: Boolean = false,
 )
 
 data class SmsSendRequest(
@@ -140,7 +146,7 @@ class SmsRepository(
         smsObserver = null
     }
 
-    fun readThreads(): List<SmsThreadSummary> {
+    fun readMessages(): List<SmsMessageEntry> {
         if (!hasReadSmsPermission()) {
             return emptyList()
         }
@@ -165,128 +171,59 @@ class SmsRepository(
         } ?: return emptyList()
 
         cursor.use { queryCursor ->
-            val idThread = queryCursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
-            val idAddress = queryCursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
-            val idBody = queryCursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
-            val idDate = queryCursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
-            val idRead = queryCursor.getColumnIndexOrThrow(Telephony.Sms.READ)
-
-            val threads = LinkedHashMap<Long, MutableSmsThread>()
-            while (queryCursor.moveToNext()) {
-                val threadId = queryCursor.getLong(idThread)
-                val address = queryCursor.getString(idAddress).orEmpty()
-                val body = queryCursor.getString(idBody).orEmpty()
-                val date = queryCursor.getLong(idDate)
-                val isRead = queryCursor.getInt(idRead) != 0
-
-                val aggregate = threads.getOrPut(threadId) {
-                    MutableSmsThread(
-                        threadId = threadId,
-                        address = address,
-                        snippet = body,
-                        dateMillis = date,
-                    )
-                }
-                aggregate.messageCount += 1
-                if (!isRead) {
-                    aggregate.unreadCount += 1
-                }
-            }
-            return threads.values.map { thread ->
-                SmsThreadSummary(
-                    threadId = thread.threadId,
-                    address = thread.address.ifBlank { "UNKNOWN" },
-                    displayName = contactResolver.displayName(thread.address),
-                    snippet = thread.snippet,
-                    dateMillis = thread.dateMillis,
-                    unreadCount = thread.unreadCount,
-                    messageCount = thread.messageCount,
-                )
-            }
-        }
-    }
-
-    fun readThreadMessages(threadId: Long): List<SmsMessageEntry> {
-        if (!hasReadSmsPermission()) {
-            return emptyList()
-        }
-        // Query without a WHERE clause and filter in-process. Some MIUI builds silently
-        // return an empty cursor when a selection parameter is used on content://sms even
-        // though the rows exist — the full scan + filter is safe (same data as readThreads).
-        val cursor = try {
-            contentResolver.query(
-                Telephony.Sms.CONTENT_URI,
-                arrayOf(
-                    Telephony.Sms._ID,
-                    Telephony.Sms.THREAD_ID,
-                    Telephony.Sms.ADDRESS,
-                    Telephony.Sms.BODY,
-                    Telephony.Sms.DATE,
-                    Telephony.Sms.TYPE,
-                    Telephony.Sms.READ,
-                ),
-                null,
-                null,
-                "${Telephony.Sms.DATE} ASC",
-            )
-        } catch (_: SecurityException) {
-            null
-        } ?: return emptyList()
-
-        cursor.use { queryCursor ->
             val idMessage = queryCursor.getColumnIndexOrThrow(Telephony.Sms._ID)
             val idThread = queryCursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
             val idAddress = queryCursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
             val idBody = queryCursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
             val idDate = queryCursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
-            val idType = queryCursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
             val idRead = queryCursor.getColumnIndexOrThrow(Telephony.Sms.READ)
-            val entries = ArrayList<SmsMessageEntry>()
+            val idType = queryCursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+            val messages = ArrayList<SmsMessageEntry>(queryCursor.count.coerceAtLeast(0))
             while (queryCursor.moveToNext()) {
-                val rowThreadId = queryCursor.getLong(idThread)
-                if (rowThreadId != threadId) continue
-                entries += SmsMessageEntry(
+                val address = queryCursor.getString(idAddress).orEmpty()
+                val body = queryCursor.getString(idBody).orEmpty()
+                messages += buildMessageEntry(
                     messageId = queryCursor.getLong(idMessage),
-                    threadId = rowThreadId,
-                    address = queryCursor.getString(idAddress).orEmpty(),
-                    body = queryCursor.getString(idBody).orEmpty(),
+                    threadId = queryCursor.getLong(idThread),
+                    address = address,
+                    body = body,
                     dateMillis = queryCursor.getLong(idDate),
                     type = queryCursor.getInt(idType),
                     isRead = queryCursor.getInt(idRead) != 0,
-                    displayName = contactResolver.displayName(queryCursor.getString(idAddress).orEmpty()),
                 )
             }
-            return entries
+            return messages
         }
     }
 
-    fun findThreadForAddress(address: String): SmsThreadSummary? {
-        val normalizedTarget = normalizeAddress(address)
-        return readThreads().firstOrNull { normalizeAddress(it.address) == normalizedTarget }
+    fun conversationForAddress(address: String): SmsConversationIdentity {
+        return SmsConversationModel.identify(
+            address = address,
+            body = "",
+            contactName = contactResolver.displayName(address),
+            allowSource = false,
+        )
     }
 
-    fun markThreadRead(threadId: Long): Boolean {
-        if (!isDefaultSmsApp()) {
-            Log.d(LOG_TAG, "markThreadRead skipped: not default sms app threadId=$threadId")
+    fun markMessagesRead(messageIds: Collection<Long>): Boolean {
+        if (!isDefaultSmsApp() || messageIds.isEmpty()) {
             return false
         }
         val values = ContentValues().apply {
             put(Telephony.Sms.READ, 1)
             put(Telephony.Sms.SEEN, 1)
         }
-        return try {
-            val updatedRows = contentResolver.update(
-                Telephony.Sms.CONTENT_URI,
-                values,
-                "${Telephony.Sms.THREAD_ID} = ? AND ${Telephony.Sms.READ} = 0",
-                arrayOf(threadId.toString()),
-            )
-            Log.d(LOG_TAG, "markThreadRead threadId=$threadId updatedRows=$updatedRows")
-            updatedRows > 0
-        } catch (_: SecurityException) {
-            Log.d(LOG_TAG, "markThreadRead security exception threadId=$threadId")
-            false
-        }
+        return runCatching {
+            messageIds.distinct().chunked(500).sumOf { ids ->
+                val placeholders = ids.joinToString(",") { "?" }
+                contentResolver.update(
+                    Telephony.Sms.CONTENT_URI,
+                    values,
+                    "${Telephony.Sms._ID} IN ($placeholders) AND ${Telephony.Sms.READ} = 0",
+                    ids.map(Long::toString).toTypedArray(),
+                )
+            } > 0
+        }.getOrDefault(false)
     }
 
     fun markAllRead(): Boolean {
@@ -351,7 +288,7 @@ class SmsRepository(
             }
             val uri = contentResolver.insert(Telephony.Sms.Sent.CONTENT_URI, values)
             val messageId = uri?.lastPathSegment?.toLongOrNull() ?: -1L
-            SmsMessageEntry(
+            buildMessageEntry(
                 messageId = messageId,
                 threadId = threadId,
                 address = address,
@@ -359,7 +296,6 @@ class SmsRepository(
                 dateMillis = now,
                 type = Telephony.Sms.MESSAGE_TYPE_SENT,
                 isRead = true,
-                displayName = contactResolver.displayName(address),
             )
         }
     }
@@ -401,7 +337,7 @@ class SmsRepository(
             }
             val uri = contentResolver.insert(Telephony.Sms.Inbox.CONTENT_URI, values)
             val messageId = uri?.lastPathSegment?.toLongOrNull() ?: -1L
-            SmsMessageEntry(
+            buildMessageEntry(
                 messageId = messageId,
                 threadId = threadId,
                 address = address,
@@ -409,9 +345,40 @@ class SmsRepository(
                 dateMillis = dateMillis,
                 type = Telephony.Sms.MESSAGE_TYPE_INBOX,
                 isRead = false,
-                displayName = contactResolver.displayName(address),
             )
         }.getOrNull()
+    }
+
+    private fun buildMessageEntry(
+        messageId: Long,
+        threadId: Long,
+        address: String,
+        body: String,
+        dateMillis: Long,
+        type: Int,
+        isRead: Boolean,
+    ): SmsMessageEntry {
+        val displayName = contactResolver.displayName(address)
+        val conversation = SmsConversationModel.identify(
+            address = address,
+            body = body,
+            contactName = displayName,
+            allowSource = type != Telephony.Sms.MESSAGE_TYPE_SENT,
+        )
+        val displayBody = if (conversation.isService) SmsConversationModel.stripLeadingSource(body) else body
+        return SmsMessageEntry(
+            messageId = messageId,
+            threadId = threadId,
+            address = address,
+            body = displayBody,
+            dateMillis = dateMillis,
+            type = type,
+            isRead = isRead,
+            displayName = displayName,
+            conversationKey = conversation.key,
+            conversationTitle = conversation.title,
+            isServiceConversation = conversation.isService,
+        )
     }
 
     private fun resolveThreadId(address: String): Long {
@@ -419,25 +386,6 @@ class SmsRepository(
             Telephony.Threads.getOrCreateThreadId(context, address)
         }.getOrDefault(-1L)
     }
-
-    private fun normalizeAddress(address: String): String {
-        return buildString {
-            address.forEach { ch ->
-                if (ch.isDigit() || ch == '+') {
-                    append(ch)
-                }
-            }
-        }.ifBlank { address.trim().uppercase(Locale.US) }
-    }
-
-    private data class MutableSmsThread(
-        val threadId: Long,
-        val address: String,
-        val snippet: String,
-        val dateMillis: Long,
-        var unreadCount: Int = 0,
-        var messageCount: Int = 0,
-    )
 
     companion object {
         private const val LOG_TAG = "SmsRepo"

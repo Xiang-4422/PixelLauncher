@@ -24,6 +24,18 @@ class SmsThreadSearchModelTest {
         assertEquals(messages, SmsThreadSearchModel.filter(messages, " "))
     }
 
+    @Test
+    fun filterMatchesServiceConversationTitle() {
+        val service = message(
+            id = 1,
+            address = "10690001",
+            displayName = "",
+            body = "Your statement is ready",
+        ).copy(conversationTitle = "借呗")
+
+        assertEquals(listOf(service), SmsThreadSearchModel.filter(listOf(service), "借呗"))
+    }
+
     private fun message(
         id: Long,
         address: String,

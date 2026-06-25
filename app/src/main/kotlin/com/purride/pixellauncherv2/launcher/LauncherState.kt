@@ -5,7 +5,6 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
-import com.purride.pixellauncherv2.data.UnreadSmsEntry
 
 data class LauncherState(
     val apps: List<AppEntry> = emptyList(),
@@ -29,7 +28,7 @@ data class LauncherState(
     val appEditorSelectedIndex: Int = 0,
     val appEditorNameDraft: String = "",
     val appEditorAliasDraft: String = "",
-    val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
+    val unreadSmsEntries: List<SmsMessageEntry> = emptyList(),
     val smsPageIndex: Int = SmsPageIndex.UNREAD,
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
@@ -37,6 +36,10 @@ data class LauncherState(
     val isSmsThreadsLoading: Boolean = false,
     val smsThreadSelectedIndex: Int = 0,
     val smsThreadListStartIndex: Int = 0,
+    val smsAllMessages: List<SmsMessageEntry> = emptyList(),
+    val smsCurrentConversationKey: String = "",
+    val smsCurrentConversationTitle: String = "",
+    val smsCurrentIsServiceConversation: Boolean = false,
     val smsCurrentThreadId: Long? = null,
     val smsCurrentAddress: String = "",
     val smsMessages: List<SmsMessageEntry> = emptyList(),

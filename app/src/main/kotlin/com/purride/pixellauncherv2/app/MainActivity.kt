@@ -349,6 +349,7 @@ class MainActivity : AppCompatActivity() {
                 onSmsPageSelected    = smsController::selectPage,
                 onSelectSmsIndex     = smsController::selectIndex,
                 onMarkSmsRead        = smsController::markAllRead,
+                onMarkUnreadMessageRead = smsController::markMessageRead,
                 onDraftChanged       = smsController::draftChanged,
                 onSmsThreadSearchChanged = smsController::threadSearchChanged,
                 onSendDraft          = smsController::sendDraft,
@@ -1020,7 +1021,7 @@ class MainActivity : AppCompatActivity() {
 
     /** SMS 按钮：进入短信模块。 */
     private fun onHomeOpenSms() {
-        smsController.openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)
+        smsController.openModule(initialPage = SmsPageIndex.UNREAD)
     }
 
     private fun onHomeInfoAction(action: HomeInfoAction) {
@@ -1050,7 +1051,7 @@ class MainActivity : AppCompatActivity() {
                 if (state.unreadSmsCount > 0) {
                     smsController.openUnreadSummaryTarget()
                 } else {
-                    smsController.openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)
+                    smsController.openModule(initialPage = SmsPageIndex.UNREAD)
                 }
             }
 
@@ -1376,7 +1377,14 @@ class MainActivity : AppCompatActivity() {
     private fun updateTextInputFocus() {
         val drawerWantsTextInput = state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
         val aiSettingsWantsTextInput = state.mode == LauncherMode.AI_SETTINGS
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL && !drawerWantsTextInput && !aiSettingsWantsTextInput) {
+        val smsSearchWantsTextInput =
+            (state.mode == LauncherMode.SMS_THREADS || state.mode == LauncherMode.SMS_INBOX) &&
+                state.smsPageIndex == SmsPageIndex.ALL
+        val smsDraftWantsTextInput =
+            state.mode == LauncherMode.SMS_THREAD_DETAIL && !state.smsCurrentIsServiceConversation
+        if (!smsSearchWantsTextInput && !smsDraftWantsTextInput &&
+            !drawerWantsTextInput && !aiSettingsWantsTextInput
+        ) {
             hideDrawerKeyboard()
         }
     }

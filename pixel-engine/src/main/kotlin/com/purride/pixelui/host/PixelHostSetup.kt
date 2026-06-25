@@ -27,11 +27,11 @@ public data class PixelHostSetup(
  * 默认宿主配置。
  *
  * 引擎只做一件事：把 widget 树渲染成 ARGB 像素网格。
- * 背景色通过 [backgroundColor] 控制；不再有 palette / themeData / colorMode 概念。
+ * 屏幕外框颜色通过 [bezelColor] 控制；不再有 palette / themeData / colorMode 概念。
  */
 public data class PixelHostSetupConfig(
     val profilePreference: PixelHostProfilePreference? = null,
-    val backgroundColor: PixelColor = PixelColor.Black,
+    val bezelColor: PixelColor = PixelColor.Black,
     val textRasterizer: PixelTextRasterizer? = null,
     val textDirection: TextDirection = TextDirection.LTR,
     val content: RootWidgetProvider? = null,
@@ -75,7 +75,7 @@ public fun createPixelHostSetup(
     hostView.hostBridge = textInputBridge
     config.profilePreference?.let { hostView.profilePreference = it }
     config.textRasterizer?.let { hostView.textRasterizer = it }
-    hostView.backgroundColor = config.backgroundColor
+    hostView.bezelColor = config.bezelColor
     hostView.textDirection = config.textDirection
     hostView.pagerGesturePolicy = config.pagerGesturePolicy
     hostView.nestedScrollPolicy = config.nestedScrollPolicy

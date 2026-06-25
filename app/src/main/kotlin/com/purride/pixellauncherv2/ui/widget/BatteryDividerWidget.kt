@@ -13,7 +13,7 @@ import com.purride.pixelui.advanced.PixelRenderSize
  * 1px 高的电量分隔线。
  *
  * 视觉规格：
- * - 整行底色由 `PixelHostView.pixelGridColor` 填充（透明像素显示为 dead-pixel 格）
+ * - 整行底色由 `PixelHostView.offPixelColor` 填充（透明像素显示为熄灭像素）
  * - 左侧电量段按剩余电量显示绿色、黄色或红色
  * - 充电中：电量段变为半透明，同色实心像素从最左侧移动到电量段末端后循环
  *

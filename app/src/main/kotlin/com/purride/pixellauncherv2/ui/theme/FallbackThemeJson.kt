@@ -10,8 +10,8 @@ internal object FallbackThemeJson {
           "mode": "light",
           "colors": {
             "surface": {
-              "appBackground": "#F8FAFC",
-              "pixelGrid": "#E2E8F0",
+              "bezelColor": "#F8FAFC",
+              "offPixelColor": "#E2E8F0",
               "panel": "#FFFFFF",
               "panelSubtle": "#F1F5F9"
             },
@@ -69,8 +69,8 @@ internal object FallbackThemeJson {
           "mode": "dark",
           "colors": {
             "surface": {
-              "appBackground": "#0B1020",
-              "pixelGrid": "#1E293B",
+              "bezelColor": "#0B1020",
+              "offPixelColor": "#1E293B",
               "panel": "#111827",
               "panelSubtle": "#162033"
             },

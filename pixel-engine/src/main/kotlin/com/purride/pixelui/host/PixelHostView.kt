@@ -50,7 +50,7 @@ import kotlin.math.min
  * pixel-engine UI layer 的最小宿主 View。
  *
  * 引擎是纯像素渲染器——widget 树 → ARGB 像素网格。
- * 背景色通过 [backgroundColor] 属性控制；不再有 colorMode / palette / themeData。
+ * 屏幕外框颜色通过 [bezelColor] 属性控制；不再有 colorMode / palette / themeData。
  */
 public class PixelHostView @JvmOverloads constructor(
     context: Context,
@@ -78,7 +78,7 @@ public class PixelHostView @JvmOverloads constructor(
     /**
      * 画布背景色。像素网格绘制在它之上（也是屏幕外 bezel 的颜色）。
      */
-    public var backgroundColor: PixelColor = PixelColor.Black
+    public var bezelColor: PixelColor = PixelColor.Black
         set(value) {
             field = value
             invalidate()
@@ -90,7 +90,7 @@ public class PixelHostView @JvmOverloads constructor(
      * - 间隙关闭时作为内容区底色，区分屏幕 panel 与外部 bezel（A 方案）
      * 默认 #111111（极深灰），比 bezel 稍亮，不影响显眼颜色的对比度。
      */
-    public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
+    public var offPixelColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
         set(value) {
             field = value
             invalidate()
@@ -129,6 +129,8 @@ public class PixelHostView @JvmOverloads constructor(
     private var pixelGapRatio: Float = 1.0f
     internal var activeSliderTarget: PixelSliderTarget? = null
     internal var activeScrollbarTarget: PixelScrollbarTarget? = null
+    internal var activeSwipeTarget: PixelClickTarget? = null
+    internal var candidateSwipeTarget: PixelClickTarget? = null
     internal var activeRefreshTarget: PixelRefreshTarget? = null
     internal var candidateRefreshTarget: PixelRefreshTarget? = null
     internal var scrollbarDragThumbOffsetY: Int = 0
@@ -417,7 +419,7 @@ public class PixelHostView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val renderResult = renderCoordinator.renderFrame()
-        canvas.drawColor(backgroundColor.argb)
+        canvas.drawColor(bezelColor.argb)
         if (renderResult != null) {
             drawBuffer(canvas, renderResult.buffer)
         }
@@ -545,7 +547,7 @@ public class PixelHostView @JvmOverloads constructor(
      * 把 ARGB PixelBuffer 渲染成 Android Canvas。
      *
      * 两条路径：
-     * - 间隙开启：逐格绘制，熄灭格用 [pixelGridColor]（格点矩阵可见），点亮格用自身颜色
+     * - 间隙开启：逐格绘制，熄灭格用 [offPixelColor]（格点矩阵可见），点亮格用自身颜色
      * - 间隙关闭：先填充内容区底色，再用 Bitmap.setPixels + drawBitmap 快速绘制
      *
      * 两条路径完成后，若 [vignetteEnabled] 则叠加暗角。
@@ -564,8 +566,9 @@ public class PixelHostView @JvmOverloads constructor(
 
         if (pixelGapEnabled) {
             // Gap path — draw every cell as a shaped dot.
-            // Canvas was already cleared to backgroundColor by onDraw().
+            // Canvas was already cleared to bezelColor by onDraw().
             drawPixelShapes(canvas, buffer, geometry)
+            drawBezelOverlay(canvas, buffer, geometry)
         } else {
             // No-gap path — bitmap fast path.
             val existing = reusableBitmap
@@ -585,17 +588,52 @@ public class PixelHostView @JvmOverloads constructor(
                 geometry.originX.toInt() + gridWidth,
                 geometry.originY.toInt() + gridHeight,
             )
-            // Fill content area with pixelGridColor so transparent pixels aren't bare-black
+            // Fill content area with offPixelColor so transparent pixels aren't bare-black
             fillContentArea(canvas, geometry)
             canvas.drawBitmap(bitmap, null, reusableDestRect, null)
         }
 
     }
 
-    /** 用 [pixelGridColor] 填充逻辑像素内容区（screen panel 底色）。 */
+    /**
+     * 最后绘制像素间隙，确保屏幕模拟层覆盖所有 UI 内容。
+     */
+    private fun drawBezelOverlay(
+        canvas: Canvas,
+        buffer: PixelBuffer,
+        geometry: PixelGridGeometry,
+    ) {
+        val gap = geometry.dotInset
+        if (gap <= 0f) return
+        reusablePaint.color = bezelColor.argb
+        val cell = geometry.cellSize
+        val gapWidth = gap * 2f
+        for (x in 0..buffer.width) {
+            val left = geometry.originX + x * cell - gap
+            canvas.drawRect(
+                left,
+                geometry.originY,
+                left + gapWidth,
+                geometry.originY + geometry.contentHeight,
+                reusablePaint,
+            )
+        }
+        for (y in 0..buffer.height) {
+            val top = geometry.originY + y * cell - gap
+            canvas.drawRect(
+                geometry.originX,
+                top,
+                geometry.originX + geometry.contentWidth,
+                top + gapWidth,
+                reusablePaint,
+            )
+        }
+    }
+
+    /** 用 [offPixelColor] 填充逻辑像素内容区（screen panel 底色）。 */
     private fun fillContentArea(canvas: Canvas, geometry: PixelGridGeometry) {
-        if (pixelGridColor.argb == backgroundColor.argb) return
-        reusablePaint.color = pixelGridColor.argb
+        if (offPixelColor.argb == bezelColor.argb) return
+        reusablePaint.color = offPixelColor.argb
         canvas.drawRect(
             geometry.originX,
             geometry.originY,
@@ -609,13 +647,13 @@ public class PixelHostView @JvmOverloads constructor(
      * 逐格绘制像素点（gap 路径专用）。
      *
      * - 点亮格（alpha > 0）：以自身颜色绘制
-     * - 熄灭格（alpha == 0）：以 [pixelGridColor] 绘制（格点矩阵可见）
-     *   当 [pixelGridColor] == [backgroundColor] 时跳过熄灭格（等同旧行为）
+     * - 熄灭格（alpha == 0）：以 [offPixelColor] 绘制（格点矩阵可见）
+     *   当 [offPixelColor] == [bezelColor] 时跳过熄灭格（等同旧行为）
      *
-     * Canvas 在调用前已由 [onDraw] 清为 [backgroundColor]；此处不再重绘背景。
+     * Canvas 在调用前已由 [onDraw] 清为 [bezelColor]；此处不再重绘背景。
      */
     private fun drawPixelShapes(canvas: Canvas, buffer: PixelBuffer, geometry: PixelGridGeometry) {
-        val showDeadPixels = pixelGridColor.argb != backgroundColor.argb
+        val showDeadPixels = offPixelColor.argb != bezelColor.argb
         val shape = screenProfile.pixelShape
         if (showDeadPixels) {
             drawGapBackground(canvas, buffer, geometry, shape)
@@ -662,7 +700,7 @@ public class PixelHostView @JvmOverloads constructor(
             dotInset = geometry.dotInset,
             dotSize = geometry.dotSize,
             pixelShape = shape,
-            pixelGridArgb = pixelGridColor.argb,
+            pixelGridArgb = offPixelColor.argb,
         )
         val existing = gapBackgroundBitmap
         if (existing != null && gapBackgroundKey == key && !existing.isRecycled) {
@@ -673,7 +711,7 @@ public class PixelHostView @JvmOverloads constructor(
         val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.TRANSPARENT)
         reusableGapBackgroundCanvas.setBitmap(bitmap)
-        reusablePaint.color = pixelGridColor.argb
+        reusablePaint.color = offPixelColor.argb
         for (y in 0 until logicalHeight) {
             for (x in 0 until logicalWidth) {
                 val left = x * geometry.cellSize + geometry.dotInset

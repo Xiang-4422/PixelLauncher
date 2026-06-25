@@ -795,7 +795,14 @@ public class PixelTester {
             if (dx != 0 || dy != 0) moved = true
             if (!isPrimaryPointer(pointerId) && target.isPointerExclusive()) return
             when (val activeTarget = target) {
-                is TestGestureTarget.Click -> Unit
+                is TestGestureTarget.Click -> if (isHorizontalSwipe()) {
+                    if (!dragging) {
+                        activeTarget.target.onSwipeStart?.invoke()
+                        dragging = true
+                    }
+                    activeTarget.target.onSwipeUpdate?.invoke(currentX - startX)
+                    needsRender = true
+                }
                 is TestGestureTarget.TextInput -> moveTextInput(activeTarget.target)
                 is TestGestureTarget.List -> moveList(activeTarget.target, dy)
                 is TestGestureTarget.Pager -> movePager(activeTarget.target, dx, dy)
@@ -816,9 +823,22 @@ public class PixelTester {
 
         fun up() {
             when (val activeTarget = target) {
-                is TestGestureTarget.Click -> if (!moved && activeTarget.target.bounds.contains(currentX, currentY)) {
-                    activeTarget.target.onClick()
-                    needsRender = true
+                is TestGestureTarget.Click -> {
+                    if (!moved && activeTarget.target.bounds.contains(currentX, currentY)) {
+                        activeTarget.target.onClick()
+                        needsRender = true
+                    } else if (isHorizontalSwipe()) {
+                        activeTarget.target.onSwipeEnd?.invoke(currentX - startX)
+                        val callback = if (currentX < startX) {
+                            activeTarget.target.onSwipeLeft
+                        } else {
+                            activeTarget.target.onSwipeRight
+                        }
+                        callback?.invoke()
+                        if (callback != null) {
+                            needsRender = true
+                        }
+                    }
                 }
                 is TestGestureTarget.TextInput -> if (!moved) {
                     focusTextInput(activeTarget.target)
@@ -852,7 +872,10 @@ public class PixelTester {
                     )
                     needsRender = true
                 }
-                is TestGestureTarget.Click,
+                is TestGestureTarget.Click -> if (dragging) {
+                    activeTarget.target.onSwipeEnd?.invoke(0)
+                    needsRender = true
+                }
                 is TestGestureTarget.TextInput,
                 is TestGestureTarget.Slider,
                 is TestGestureTarget.Scrollbar,
@@ -902,6 +925,14 @@ public class PixelTester {
                 PixelAxis.HORIZONTAL -> velocityX()
                 PixelAxis.VERTICAL -> velocityY()
             }
+        }
+
+        private fun isHorizontalSwipe(): Boolean {
+            val dx = currentX - startX
+            val dy = currentY - startY
+            val absX = abs(dx)
+            val absY = abs(dy)
+            return absX >= 4 && absX > absY * 1.2f
         }
 
         private fun velocityX(): Float = velocity { it.x }

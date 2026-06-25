@@ -25,8 +25,8 @@ enum class LauncherThemeMode {
 }
 
 data class SurfaceColors(
-    val appBackground: PixelColor,
-    val pixelGrid: PixelColor,
+    val bezelColor: PixelColor,
+    val offPixelColor: PixelColor,
     val panel: PixelColor,
     val panelSubtle: PixelColor,
 )
@@ -105,8 +105,8 @@ object LauncherThemes {
             mode = LauncherThemeMode.valueOf(json.getString("mode").uppercase()),
             surface = colors.getJSONObject("surface").let {
                 SurfaceColors(
-                    appBackground = it.color("appBackground"),
-                    pixelGrid = it.color("pixelGrid"),
+                    bezelColor = it.color("bezelColor"),
+                    offPixelColor = it.color("offPixelColor"),
                     panel = it.color("panel"),
                     panelSubtle = it.color("panelSubtle"),
                 )

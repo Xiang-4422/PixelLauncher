@@ -2,7 +2,6 @@ package com.purride.pixellauncherv2.viewmodel
 
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
-import com.purride.pixellauncherv2.data.UnreadSmsEntry
 import com.purride.pixellauncherv2.data.DeepSeekAiConfig
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
@@ -52,7 +51,7 @@ data class LauncherUiState(
     val appEditorAliasDraft: String = "",
 
     // ── SMS ───────────────────────────────────────────────────────────────────
-    val unreadSmsEntries: List<UnreadSmsEntry> = emptyList(),
+    val unreadSmsEntries: List<SmsMessageEntry> = emptyList(),
     val smsPageIndex: Int = SmsPageIndex.UNREAD,
     val smsSelectedIndex: Int = 0,
     val smsListStartIndex: Int = 0,
@@ -60,6 +59,10 @@ data class LauncherUiState(
     val isSmsThreadsLoading: Boolean = false,
     val smsThreadSelectedIndex: Int = 0,
     val smsThreadListStartIndex: Int = 0,
+    val smsAllMessages: List<SmsMessageEntry> = emptyList(),
+    val smsCurrentConversationKey: String = "",
+    val smsCurrentConversationTitle: String = "",
+    val smsCurrentIsServiceConversation: Boolean = false,
     val smsCurrentThreadId: Long? = null,
     val smsCurrentAddress: String = "",
     val smsMessages: List<SmsMessageEntry> = emptyList(),

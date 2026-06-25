@@ -14,11 +14,16 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
+import com.purride.pixelui.Slidable
+import com.purride.pixelui.SlidableAction
+import com.purride.pixelui.SlidableActionPane
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextButton
 import com.purride.pixelui.TextButtonStyle
+import com.purride.pixelui.TextField
+import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -26,8 +31,10 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
+import com.purride.pixelui.state.PixelTextFieldController
+import com.purride.pixelui.state.PixelTextFieldState
+import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
-import com.purride.pixellauncherv2.data.UnreadSmsEntry
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.BatteryDividerWidget
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -35,6 +42,7 @@ import com.purride.pixellauncherv2.util.SmsTimeFormatter
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
+import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
 import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -59,56 +67,90 @@ fun SmsThreadsScreen(
     unreadListController: PixelListController,
     listState: PixelListState,
     listController: PixelListController,
+    searchController: PixelTextFieldController,
+    searchState: PixelTextFieldState,
     onSmsPageSelected: (Int) -> Unit,
+    onSearchChanged: (String) -> Unit,
     onMarkSmsRead: () -> Unit,
-    onOpenThread: (threadId: Long, address: String) -> Unit,
-): Widget = Column(
-    crossAxisAlignment = CrossAxisAlignment.STRETCH,
-    mainAxisSize = MainAxisSize.MAX,
-    spacing = 0,
-    children = listOf(
-        smsHeader(
-            uiState = uiState,
-            theme = theme,
-            chargeTick = chargeTick,
-            statusBarHeight = statusBarHeight,
-            onMarkSmsRead = onMarkSmsRead,
-        ),
-        Expanded(
-            child = PageView(
-                axis = Axis.HORIZONTAL,
-                controller = pagerController,
-                state = pagerState,
-                pages = listOf(
-                    buildUnreadMessagesPage(
-                        uiState = uiState,
-                        theme = theme,
-                        listState = unreadListState,
-                        listController = unreadListController,
-                        onOpenThread = onOpenThread,
-                    ),
-                    buildAllThreadsPage(
-                        uiState = uiState,
-                        theme = theme,
-                        listState = listState,
-                        listController = listController,
-                        onOpenThread = onOpenThread,
-                    ),
+    onMarkUnreadMessageRead: (Long) -> Unit,
+    onOpenThread: (conversationKey: String) -> Unit,
+): Widget {
+    val showUnreadTabs =
+        uiState.unreadSmsEntries.isNotEmpty() ||
+            (uiState.isSmsThreadsLoading && uiState.smsPageIndex == SmsPageIndex.UNREAD)
+    return Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        mainAxisSize = MainAxisSize.MAX,
+        spacing = 0,
+        children = buildList {
+            add(
+                smsHeader(
+                    uiState = uiState,
+                    theme = theme,
+                    chargeTick = chargeTick,
+                    statusBarHeight = statusBarHeight,
+                    onMarkSmsRead = onMarkSmsRead,
                 ),
-                onPageChanged = onSmsPageSelected,
-            ),
-        ),
-        Padding(
-            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-            vertical = LauncherSpacing.ROW_SPACING,
-            child = smsBottomTabs(
-                selectedIndex = SmsPageIndex.coerce(uiState.smsPageIndex),
-                theme = theme,
-                onSelected = onSmsPageSelected,
-            ),
-        ),
-    ),
-)
+            )
+            add(
+                Expanded(
+                    child = if (showUnreadTabs) {
+                        PageView(
+                            axis = Axis.HORIZONTAL,
+                            controller = pagerController,
+                            state = pagerState,
+                            pages = listOf(
+                                buildUnreadMessagesPage(
+                                    uiState = uiState,
+                                    theme = theme,
+                                    listState = unreadListState,
+                                    listController = unreadListController,
+                                    onOpenThread = onOpenThread,
+                                    onMarkUnreadMessageRead = onMarkUnreadMessageRead,
+                                ),
+                                buildAllThreadsPage(
+                                    uiState = uiState,
+                                    theme = theme,
+                                    listState = listState,
+                                    listController = listController,
+                                    searchController = searchController,
+                                    searchState = searchState,
+                                    onSearchChanged = onSearchChanged,
+                                    onOpenThread = onOpenThread,
+                                ),
+                            ),
+                            onPageChanged = onSmsPageSelected,
+                        )
+                    } else {
+                        buildAllThreadsPage(
+                            uiState = uiState,
+                            theme = theme,
+                            listState = listState,
+                            listController = listController,
+                            searchController = searchController,
+                            searchState = searchState,
+                            onSearchChanged = onSearchChanged,
+                            onOpenThread = onOpenThread,
+                        )
+                    },
+                ),
+            )
+            if (showUnreadTabs) {
+                add(
+                    Padding(
+                        horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                        vertical = LauncherSpacing.ROW_SPACING,
+                        child = smsBottomTabs(
+                            selectedIndex = SmsPageIndex.coerce(uiState.smsPageIndex),
+                            theme = theme,
+                            onSelected = onSmsPageSelected,
+                        ),
+                    ),
+                )
+            }
+        },
+    )
+}
 
 private fun smsHeader(
     uiState: LauncherUiState,
@@ -235,7 +277,8 @@ private fun buildUnreadMessagesPage(
     theme: LauncherTheme,
     listState: PixelListState,
     listController: PixelListController,
-    onOpenThread: (threadId: Long, address: String) -> Unit,
+    onOpenThread: (conversationKey: String) -> Unit,
+    onMarkUnreadMessageRead: (Long) -> Unit,
 ): Widget {
     val entries = uiState.unreadSmsEntries
     if (uiState.isSmsThreadsLoading && entries.isEmpty()) {
@@ -248,10 +291,9 @@ private fun buildUnreadMessagesPage(
         itemCount = entries.size,
         state = listState,
         controller = listController,
-        itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
         spacing = SmsThreadGeometry.ROW_SPACING_PX,
         itemBuilder = { index ->
-            buildUnreadRow(entries[index], theme, onOpenThread)
+            buildUnreadRow(entries[index], theme, onOpenThread, onMarkUnreadMessageRead)
         },
     )
 }
@@ -261,23 +303,55 @@ private fun buildAllThreadsPage(
     theme: LauncherTheme,
     listState: PixelListState,
     listController: PixelListController,
-    onOpenThread: (threadId: Long, address: String) -> Unit,
+    searchController: PixelTextFieldController,
+    searchState: PixelTextFieldState,
+    onSearchChanged: (String) -> Unit,
+    onOpenThread: (conversationKey: String) -> Unit,
 ): Widget {
-    if (uiState.isSmsThreadsLoading) {
-        return centeredSmsStatus("LOADING", theme)
+    val query = uiState.smsThreadSearchQuery
+    val searchResults = SmsThreadSearchModel.filter(uiState.smsAllMessages, query)
+    val content = when {
+        uiState.isSmsThreadsLoading -> centeredSmsStatus("LOADING", theme)
+        query.isNotBlank() && searchResults.isEmpty() -> centeredSmsStatus("NO MATCH", theme)
+        query.isNotBlank() -> ListViewBuilder(
+            itemCount = searchResults.size,
+            state = listState,
+            controller = listController,
+            spacing = SmsThreadGeometry.ROW_SPACING_PX,
+            itemBuilder = { index ->
+                buildSearchResultRow(searchResults[index], theme, onOpenThread)
+            },
+        )
+        uiState.smsThreads.isEmpty() -> centeredSmsStatus("NO MESSAGES", theme)
+        else -> ListViewBuilder(
+            itemCount = uiState.smsThreads.size,
+            state = listState,
+            controller = listController,
+            itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
+            spacing = SmsThreadGeometry.ROW_SPACING_PX,
+            itemBuilder = { index ->
+                buildThreadRow(uiState.smsThreads[index], theme, onOpenThread)
+            },
+        )
     }
-    if (uiState.smsThreads.isEmpty()) {
-        return centeredSmsStatus("NO MESSAGES", theme)
-    }
-    return ListViewBuilder(
-        itemCount = uiState.smsThreads.size,
-        state = listState,
-        controller = listController,
-        itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
-        spacing = SmsThreadGeometry.ROW_SPACING_PX,
-        itemBuilder = { index ->
-            buildThreadRow(uiState.smsThreads[index], theme, onOpenThread)
-        },
+    return Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        mainAxisSize = MainAxisSize.MAX,
+        spacing = 0,
+        children = listOf(
+            Padding(
+                horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                vertical = LauncherSpacing.CONTENT_VERTICAL,
+                child = TextField(
+                    state = searchState,
+                    controller = searchController,
+                    placeholder = "SEARCH ALL SMS",
+                    textInputAction = TextInputAction.SEARCH,
+                    onChanged = onSearchChanged,
+                ),
+            ),
+            Expanded(child = content),
+        ),
     )
 }
 
@@ -295,11 +369,15 @@ private fun centeredSmsStatus(
 )
 
 private fun buildUnreadRow(
-    entry: UnreadSmsEntry,
+    entry: SmsMessageEntry,
     theme: LauncherTheme,
-    onOpenThread: (threadId: Long, address: String) -> Unit,
-): Widget = GestureDetector(
-    onTap = { onOpenThread(entry.threadId, entry.address) },
+    onOpenThread: (conversationKey: String) -> Unit,
+    onMarkUnreadMessageRead: (Long) -> Unit,
+): Widget = Slidable(
+    onTap = { onOpenThread(entry.conversationKey) },
+    startActionPane = unreadReadActionPane(theme) { onMarkUnreadMessageRead(entry.messageId) },
+    endActionPane = unreadReadActionPane(theme) { onMarkUnreadMessageRead(entry.messageId) },
+    onDismissed = { onMarkUnreadMessageRead(entry.messageId) },
     child = Padding(
         horizontal = SMS_THREAD_ROW_PADDING_PX,
         vertical = SMS_THREAD_ROW_PADDING_PX,
@@ -314,7 +392,7 @@ private fun buildUnreadRow(
                     children = listOf(
                         Expanded(
                             child = Text(
-                                entry.address.ifBlank { "UNKNOWN" }.uppercase(),
+                                entry.conversationTitle.ifBlank { entry.address }.uppercase(),
                                 style = TextStyle(color = theme.sms.sender),
                                 overflow = TextOverflow.ELLIPSIS,
                                 softWrap = false,
@@ -333,25 +411,38 @@ private fun buildUnreadRow(
                 Text(
                     entry.body.trim(),
                     style = TextStyle(color = theme.sms.body),
-                    overflow = TextOverflow.ELLIPSIS,
-                    softWrap = false,
-                    maxLines = 1,
+                    softWrap = true,
+                    maxLines = Int.MAX_VALUE,
                 ),
             ),
         ),
     ),
 )
 
+private fun unreadReadActionPane(
+    theme: LauncherTheme,
+    onRead: () -> Unit,
+): SlidableActionPane = SlidableActionPane(
+    children = listOf(
+        SlidableAction(
+            label = "READ",
+            backgroundColor = theme.semantic.success,
+            foregroundColor = theme.text.inverse,
+            onPressed = onRead,
+        ),
+    ),
+    extentRatio = 0.35f,
+    dismissible = true,
+    dismissThreshold = 0.45f,
+)
+
 private fun buildThreadRow(
     thread: SmsThreadSummary,
     theme: LauncherTheme,
-    onOpenThread: (threadId: Long, address: String) -> Unit,
+    onOpenThread: (conversationKey: String) -> Unit,
 ): Widget = GestureDetector(
-    onTap = { onOpenThread(thread.threadId, thread.address) },
-    // 内容优先的两行布局：
-    //  行1 = [未读圆圈徽标(accent)] 号码(dim 次要) ··· 时间(dim)
-    //  行2 = 摘要(body 亮色，主要可读元素)
-    // 取代旧的"号码抢眼蓝 + 每行重复 NEW n 文字"。
+    onTap = { onOpenThread(thread.conversationKey) },
+    // 行1 用更强的 sender 色承载会话标签；行2 预览降为 muted，避免主次反抢。
     child = Padding(
         horizontal = SMS_THREAD_ROW_PADDING_PX,
         vertical = SMS_THREAD_ROW_PADDING_PX,
@@ -378,7 +469,7 @@ private fun buildThreadRow(
                         Expanded(
                             child = Text(
                                 thread.displayName.ifBlank { thread.address }.uppercase(),
-                                style = TextStyle(color = theme.text.muted),
+                                style = TextStyle(color = theme.sms.sender),
                                 overflow = TextOverflow.ELLIPSIS,
                                 softWrap = false,
                                 maxLines = 1,
@@ -395,10 +486,57 @@ private fun buildThreadRow(
                 ),
                 Text(
                     thread.snippet.trim(),
-                    style = TextStyle(color = theme.sms.body),
+                    style = TextStyle(color = theme.text.muted),
                     overflow = TextOverflow.ELLIPSIS,
                     softWrap = false,
                     maxLines = 1,
+                ),
+            ),
+        ),
+    ),
+)
+
+private fun buildSearchResultRow(
+    message: SmsMessageEntry,
+    theme: LauncherTheme,
+    onOpenThread: (conversationKey: String) -> Unit,
+): Widget = GestureDetector(
+    onTap = { onOpenThread(message.conversationKey) },
+    child = Padding(
+        horizontal = SMS_THREAD_ROW_PADDING_PX,
+        vertical = SMS_THREAD_ROW_PADDING_PX,
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            mainAxisSize = MainAxisSize.MIN,
+            spacing = 1,
+            children = listOf(
+                Row(
+                    spacing = LauncherSpacing.ROW_SPACING,
+                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    children = listOf(
+                        Expanded(
+                            child = Text(
+                                message.conversationTitle.ifBlank { message.address }.uppercase(),
+                                style = TextStyle(color = theme.sms.sender),
+                                overflow = TextOverflow.ELLIPSIS,
+                                softWrap = false,
+                                maxLines = 1,
+                            ),
+                        ),
+                        Text(
+                            SmsTimeFormatter.format(message.dateMillis),
+                            style = TextStyle(color = theme.sms.timestamp),
+                            overflow = TextOverflow.ELLIPSIS,
+                            softWrap = false,
+                            maxLines = 1,
+                        ),
+                    ),
+                ),
+                Text(
+                    message.body.trim(),
+                    style = TextStyle(color = theme.text.muted),
+                    softWrap = true,
+                    maxLines = Int.MAX_VALUE,
                 ),
             ),
         ),

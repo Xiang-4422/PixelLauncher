@@ -4,8 +4,8 @@
   "mode": "light",
   "colors": {
     "surface": {
-      "appBackground": "#F8FAFC",
-      "pixelGrid": "#E2E8F0",
+      "bezelColor": "#F8FAFC",
+      "offPixelColor": "#E2E8F0",
       "panel": "#FFFFFF",
       "panelSubtle": "#F1F5F9"
     },

@@ -195,9 +195,24 @@ public fun GestureDetector(
     child: Widget,
     onTap: () -> Unit,
     onLongPress: (() -> Unit)? = null,
+    onSwipeStart: (() -> Unit)? = null,
+    onSwipeUpdate: ((Int) -> Unit)? = null,
+    onSwipeEnd: ((Int) -> Unit)? = null,
+    onSwipeLeft: (() -> Unit)? = null,
+    onSwipeRight: (() -> Unit)? = null,
     key: Any? = null,
 ): Widget {
-    return GestureDetectorWidget(child = child, onTap = onTap, onLongPress = onLongPress, key = key)
+    return GestureDetectorWidget(
+        child = child,
+        onTap = onTap,
+        onLongPress = onLongPress,
+        onSwipeStart = onSwipeStart,
+        onSwipeUpdate = onSwipeUpdate,
+        onSwipeEnd = onSwipeEnd,
+        onSwipeLeft = onSwipeLeft,
+        onSwipeRight = onSwipeRight,
+        key = key,
+    )
 }
 
 /**

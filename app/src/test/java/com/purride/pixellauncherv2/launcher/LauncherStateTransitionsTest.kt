@@ -356,20 +356,26 @@ class LauncherStateTransitionsTest {
                 smsThreadSearchQuery = "old",
                 smsSendStatusText = "FAILED",
             ),
+            conversationKey = "service:china-mobile",
+            conversationTitle = "China Mobile",
+            isServiceConversation = true,
             threadId = 42L,
             address = "10086",
         )
         assertEquals(LauncherMode.SMS_THREAD_DETAIL, result.mode)
+        assertEquals("service:china-mobile", result.smsCurrentConversationKey)
+        assertEquals("China Mobile", result.smsCurrentConversationTitle)
+        assertTrue(result.smsCurrentIsServiceConversation)
         assertEquals(42L, result.smsCurrentThreadId)
         assertEquals("10086", result.smsCurrentAddress)
         assertEquals(LauncherMode.SMS_THREADS, result.returnMode)
-        assertEquals("", result.smsThreadSearchQuery)
+        assertEquals("old", result.smsThreadSearchQuery)
         assertEquals("", result.smsSendStatusText)
         assertTrue(result.smsMessages.isEmpty())
     }
 
     @Test
-    fun hideSmsThreadDetail_returnsToThreadsAndClearsDraftStatus() {
+    fun hideSmsThreadDetail_returnsToThreadsAndKeepsModuleSearch() {
         val state = LauncherState(
             mode = LauncherMode.SMS_THREAD_DETAIL,
             smsThreadSearchQuery = "code",
@@ -378,7 +384,7 @@ class LauncherStateTransitionsTest {
         )
         val result = LauncherStateTransitions.hideSmsThreadDetail(state)
         assertEquals(LauncherMode.SMS_THREADS, result.mode)
-        assertEquals("", result.smsThreadSearchQuery)
+        assertEquals("code", result.smsThreadSearchQuery)
         assertEquals("", result.smsDraftText)
         assertEquals("", result.smsSendStatusText)
     }
@@ -397,9 +403,23 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
-    fun showSmsThreads_defaultsToUnreadPage() {
+    fun showSmsThreads_usesAllPageWhenNoUnreadMessages() {
         val result = LauncherStateTransitions.showSmsThreads(
             state = LauncherState(smsPageIndex = SmsPageIndex.ALL),
+            visibleRows = 4,
+        )
+
+        assertEquals(LauncherMode.SMS_THREADS, result.mode)
+        assertEquals(SmsPageIndex.ALL, result.smsPageIndex)
+    }
+
+    @Test
+    fun showSmsThreads_keepsUnreadPageWhileLoadingMessages() {
+        val result = LauncherStateTransitions.showSmsThreads(
+            state = LauncherState(
+                smsPageIndex = SmsPageIndex.ALL,
+                isSmsThreadsLoading = true,
+            ),
             visibleRows = 4,
         )
 
@@ -411,12 +431,38 @@ class LauncherStateTransitionsTest {
     fun selectSmsPage_coercesToKnownPages() {
         assertEquals(
             SmsPageIndex.UNREAD,
-            LauncherStateTransitions.selectSmsPage(LauncherState(), -1).smsPageIndex,
+            LauncherStateTransitions.selectSmsPage(
+                LauncherState(isSmsThreadsLoading = true),
+                -1,
+            ).smsPageIndex,
         )
         assertEquals(
             SmsPageIndex.ALL,
             LauncherStateTransitions.selectSmsPage(LauncherState(), 99).smsPageIndex,
         )
+    }
+
+    @Test
+    fun selectSmsPage_staysAllWhenNoUnreadMessages() {
+        assertEquals(
+            SmsPageIndex.ALL,
+            LauncherStateTransitions.selectSmsPage(LauncherState(smsPageIndex = SmsPageIndex.ALL), SmsPageIndex.UNREAD).smsPageIndex,
+        )
+    }
+
+    @Test
+    fun updateUnreadSmsEntries_switchesToAllWhenNoUnreadMessagesRemain() {
+        val result = LauncherStateTransitions.updateUnreadSmsEntries(
+            state = LauncherState(
+                mode = LauncherMode.SMS_THREADS,
+                smsPageIndex = SmsPageIndex.UNREAD,
+                isSmsThreadsLoading = false,
+            ),
+            entries = emptyList(),
+            visibleRows = 4,
+        )
+
+        assertEquals(SmsPageIndex.ALL, result.smsPageIndex)
     }
 
     @Test

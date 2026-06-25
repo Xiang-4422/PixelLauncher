@@ -12,6 +12,7 @@ object SmsThreadSearchModel {
         if (normalizedQuery.isEmpty()) return messages
         val digitQuery = query.filter(Char::isDigit)
         return messages.filter { message ->
+            normalize(message.conversationTitle).contains(normalizedQuery) ||
             normalize(message.displayName).contains(normalizedQuery) ||
                 normalize(message.address).contains(normalizedQuery) ||
                 normalize(message.body).contains(normalizedQuery) ||

@@ -133,8 +133,20 @@ internal data class PixelClickTarget(
     val bounds: PixelRect,
     val onClick: () -> Unit,
     val onLongPress: (() -> Unit)? = null,
+    val onSwipeStart: (() -> Unit)? = null,
+    val onSwipeUpdate: ((Int) -> Unit)? = null,
+    val onSwipeEnd: ((Int) -> Unit)? = null,
+    val onSwipeLeft: (() -> Unit)? = null,
+    val onSwipeRight: (() -> Unit)? = null,
     val source: RenderObject? = null,
-)
+) {
+    val hasSwipe: Boolean
+        get() = onSwipeStart != null ||
+            onSwipeUpdate != null ||
+            onSwipeEnd != null ||
+            onSwipeLeft != null ||
+            onSwipeRight != null
+}
 
 /**
  * 分页视口命中目标。

@@ -380,13 +380,18 @@ class UiSpecStaticTest {
             .readText()
 
         assertTrue(
-            "SMS detail messages must keep tap-to-copy and visible verification code hints.",
+            "SMS detail must keep copy/code hints, hide service compose, and avoid the IME.",
             source.contains("onMessagePressed") &&
-                source.contains("SEARCH MSG") &&
-                source.contains("SmsThreadSearchModel.filter") &&
                 source.contains("GestureDetector(") &&
                 source.contains("SmsVerificationCodeModel.extract") &&
-                source.contains("\"CODE "),
+                source.contains("\"CODE ") &&
+                source.contains("messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme)") &&
+                source.contains("private fun messageMetaRow(") &&
+                !source.contains("private fun codeLine(") &&
+                source.contains("smsCurrentIsServiceConversation") &&
+                source.contains("MediaQuery.of(context).viewInsets.bottom") &&
+                !source.contains("SEARCH MSG") &&
+                !source.contains("SmsMessageStatusModel.label"),
         )
     }
 
@@ -399,21 +404,55 @@ class UiSpecStaticTest {
         val controllerSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/SmsController.kt")
             .readText()
+        val activitySource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
+            .readText()
+        val unreadPageSource = Regex(
+            """private fun buildUnreadMessagesPage\([\s\S]*?\n}\n\nprivate fun buildAllThreadsPage""",
+        ).find(source)?.value.orEmpty()
+        val unreadRowSource = Regex(
+            """private fun buildUnreadRow\([\s\S]*?\n\nprivate fun buildThreadRow""",
+        ).find(source)?.value.orEmpty()
 
         assertTrue(
             "SMS home tabs must stay at the bottom with a shared outer border and equal-width tab cells.",
             source.contains("smsBottomTabs(") &&
+                source.contains("(uiState.isSmsThreadsLoading && uiState.smsPageIndex == SmsPageIndex.UNREAD)") &&
+                source.contains("if (showUnreadTabs)") &&
+                source.contains("SEARCH ALL SMS") &&
+                source.contains("SmsThreadSearchModel.filter") &&
+                source.contains("行1 用更强的 sender 色承载会话标签") &&
+                source.contains("thread.snippet.trim()") &&
+                source.contains("message.body.trim()") &&
+                source.contains("maxLines = Int.MAX_VALUE") &&
                 source.contains("borderColor = theme.button.border") &&
                 source.contains("SMS_PAGE_TABS.mapIndexed") &&
                 source.contains("Expanded(") &&
                 !source.contains("import com.purride.pixelui.Tabs"),
         )
         assertTrue(
-            "SMS home must keep a top-right READ action wired to mark all unread messages read.",
+            "SMS home must keep a top-right READ action, expand unread messages, and support row swipe-to-read.",
             source.contains("text = \"READ\"") &&
                 source.contains("onMarkSmsRead") &&
+                source.contains("onMarkUnreadMessageRead") &&
+                unreadPageSource.isNotEmpty() &&
+                !unreadPageSource.contains("itemExtent = SmsThreadGeometry.ROW_EXTENT_PX") &&
+                unreadRowSource.contains("Slidable(") &&
+                unreadRowSource.contains("startActionPane = unreadReadActionPane") &&
+                unreadRowSource.contains("endActionPane = unreadReadActionPane") &&
+                unreadRowSource.contains("onDismissed = { onMarkUnreadMessageRead(entry.messageId) }") &&
+                source.contains("SlidableAction(") &&
+                source.contains("label = \"READ\"") &&
+                unreadRowSource.contains("maxLines = Int.MAX_VALUE") &&
+                controllerSource.contains("val effectiveInitialPage") &&
+                controllerSource.contains("host.state.unreadSmsCount <= 0") &&
+                activitySource.contains("smsController.openModule(initialPage = SmsPageIndex.UNREAD)") &&
+                !activitySource.contains("smsController.openModule(forceRefresh = true, initialPage = SmsPageIndex.UNREAD)") &&
                 controllerSource.contains("fun markAllRead()") &&
-                controllerSource.contains("smsRepository.markAllRead()"),
+                controllerSource.contains("smsRepository.markAllRead()") &&
+                controllerSource.contains("fun markMessageRead(messageId: Long)") &&
+                controllerSource.contains("smsRepository.markMessagesRead(listOf(messageId))") &&
+                activitySource.contains("onMarkUnreadMessageRead = smsController::markMessageRead"),
         )
     }
 

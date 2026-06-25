@@ -81,7 +81,7 @@ internal class LauncherRootHost(
     private val threadListController = ScrollController()
     private val threadListState = threadListController.create()
 
-    // ── SMS_THREAD_DETAIL message list + draft ────────────────────────────────
+    // ── SMS search + detail message list + draft ──────────────────────────────
     private val msgListController = ScrollController()
     private val msgListState = msgListController.create()
     private val smsSearchController = TextEditingController()
@@ -137,8 +137,8 @@ internal class LauncherRootHost(
         )
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
         setup.hostView.setPixelGapRatio(if (pixelGapEnabled) 1f else 0f)
-        setup.hostView.backgroundColor = theme.surface.appBackground
-        setup.hostView.pixelGridColor  = theme.surface.pixelGrid
+        setup.hostView.bezelColor = theme.surface.bezelColor
+        setup.hostView.offPixelColor = theme.surface.offPixelColor
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
             PixelFontCatalog.defaultUiFontSize,
         )
@@ -193,6 +193,8 @@ internal class LauncherRootHost(
             msgListController.jumpToEnd(msgListState)
         }
 
+        syncSmsSearchState()
+
         // ── Sync draft text ───────────────────────────────────────────────────
         syncDraftState()
 
@@ -226,8 +228,12 @@ internal class LauncherRootHost(
             unreadListController = unreadListController,
             listState = threadListState,
             listController = threadListController,
+            searchController = smsSearchController,
+            searchState = smsSearchState,
             onSmsPageSelected = callbacks.onSmsPageSelected,
+            onSearchChanged = callbacks.onSmsThreadSearchChanged,
             onMarkSmsRead = callbacks.onMarkSmsRead,
+            onMarkUnreadMessageRead = callbacks.onMarkUnreadMessageRead,
             onOpenThread = callbacks.onOpenThread,
         )
         LauncherMode.SMS_INBOX         -> SmsThreadsScreen(
@@ -241,8 +247,12 @@ internal class LauncherRootHost(
             unreadListController = unreadListController,
             listState = threadListState,
             listController = threadListController,
+            searchController = smsSearchController,
+            searchState = smsSearchState,
             onSmsPageSelected = callbacks.onSmsPageSelected,
+            onSearchChanged = callbacks.onSmsThreadSearchChanged,
             onMarkSmsRead = callbacks.onMarkSmsRead,
+            onMarkUnreadMessageRead = callbacks.onMarkUnreadMessageRead,
             onOpenThread = callbacks.onOpenThread,
         )
         LauncherMode.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(
@@ -252,11 +262,8 @@ internal class LauncherRootHost(
             statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             msgListState = msgListState,
             msgListController = msgListController,
-            searchController = smsSearchController,
-            searchState = smsSearchState,
             draftController = draftController,
             draftState = draftState,
-            onSearchChanged = callbacks.onSmsThreadSearchChanged,
             onDraftChanged = callbacks.onDraftChanged,
             onSendDraft = callbacks.onSendDraft,
             onMessagePressed = callbacks.onSmsMessagePressed,
@@ -445,6 +452,26 @@ internal class LauncherRootHost(
                 text = text,
                 selectionStart = text.length,
             )
+        }
+        if (uiState.mode != LauncherMode.SMS_THREAD_DETAIL || uiState.smsCurrentIsServiceConversation) {
+            draftController.requestBlur(draftState)
+        }
+    }
+
+    private fun syncSmsSearchState() {
+        val text = uiState.smsThreadSearchQuery
+        if (smsSearchState.text != text) {
+            smsSearchController.updateText(
+                state = smsSearchState,
+                text = text,
+                selectionStart = text.length,
+            )
+        }
+        val searchIsVisible =
+            (uiState.mode == LauncherMode.SMS_THREADS || uiState.mode == LauncherMode.SMS_INBOX) &&
+                uiState.smsPageIndex == SmsPageIndex.ALL
+        if (!searchIsVisible) {
+            smsSearchController.requestBlur(smsSearchState)
         }
     }
 

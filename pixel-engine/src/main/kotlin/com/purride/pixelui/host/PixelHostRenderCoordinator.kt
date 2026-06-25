@@ -38,7 +38,7 @@ internal class PixelHostRenderCoordinator(
         backgroundColor: PixelColor,
     ) {
         host.screenProfile = screenProfile
-        host.backgroundColor = backgroundColor
+        host.bezelColor = backgroundColor
         lastRenderResult = PixelRenderResult(
             buffer = pixelBuffer,
             clickTargets = emptyList(),

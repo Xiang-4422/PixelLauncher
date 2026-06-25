@@ -252,11 +252,21 @@ object LauncherStateTransitions {
         visibleRows: Int,
         pageIndex: Int = SmsPageIndex.UNREAD,
     ): LauncherState {
+        val requestedPageIndex = SmsPageIndex.coerce(pageIndex)
+        val nextPageIndex =
+            if (requestedPageIndex == SmsPageIndex.UNREAD &&
+                state.unreadSmsEntries.isEmpty() &&
+                !state.isSmsThreadsLoading
+            ) {
+                SmsPageIndex.ALL
+            } else {
+                requestedPageIndex
+            }
         return syncSmsThreadWindow(
             state = state.copy(
                 mode = LauncherMode.SMS_THREADS,
                 returnMode = LauncherMode.HOME,
-                smsPageIndex = SmsPageIndex.coerce(pageIndex),
+                smsPageIndex = nextPageIndex,
                 smsThreadSelectedIndex = state.smsThreadSelectedIndex.coerceAtLeast(0),
             ),
             visibleRows = visibleRows,
@@ -276,16 +286,21 @@ object LauncherStateTransitions {
     /** 打开指定短信线程详情页。 */
     fun showSmsThreadDetail(
         state: LauncherState,
+        conversationKey: String,
+        conversationTitle: String,
+        isServiceConversation: Boolean,
         threadId: Long?,
         address: String,
     ): LauncherState {
         return state.copy(
             mode = LauncherMode.SMS_THREAD_DETAIL,
             returnMode = LauncherMode.SMS_THREADS,
+            smsCurrentConversationKey = conversationKey,
+            smsCurrentConversationTitle = conversationTitle,
+            smsCurrentIsServiceConversation = isServiceConversation,
             smsCurrentThreadId = threadId,
             smsCurrentAddress = address,
             smsMessages = emptyList(),
-            smsThreadSearchQuery = "",
             smsSendStatusText = "",
         )
     }
@@ -296,7 +311,6 @@ object LauncherStateTransitions {
             mode = LauncherMode.SMS_THREADS,
             returnMode = LauncherMode.HOME,
             smsDraftText = "",
-            smsThreadSearchQuery = "",
             smsSendStatusText = "",
         )
     }
@@ -685,12 +699,14 @@ object LauncherStateTransitions {
     }
 
     /** 用最新未读短信列表更新短信页状态，并尽量保持当前选中有效。 */
-    fun updateUnreadSmsEntries(state: LauncherState, entries: List<com.purride.pixellauncherv2.data.UnreadSmsEntry>, visibleRows: Int): LauncherState {
+    fun updateUnreadSmsEntries(state: LauncherState, entries: List<com.purride.pixellauncherv2.data.SmsMessageEntry>, visibleRows: Int): LauncherState {
         val safeSelectedIndex = state.smsSelectedIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))
+        val nextPageIndex = if (entries.isEmpty() && !state.isSmsThreadsLoading) SmsPageIndex.ALL else state.smsPageIndex
         return syncSmsWindow(
             state = state.copy(
                 unreadSmsEntries = entries,
                 smsSelectedIndex = safeSelectedIndex,
+                smsPageIndex = nextPageIndex,
             ),
             visibleRows = visibleRows,
         )
@@ -707,7 +723,17 @@ object LauncherStateTransitions {
 
     /** 切换短信首页内部 Tab/Page。 */
     fun selectSmsPage(state: LauncherState, index: Int): LauncherState {
-        return state.copy(smsPageIndex = SmsPageIndex.coerce(index))
+        val requestedPageIndex = SmsPageIndex.coerce(index)
+        val nextPageIndex =
+            if (requestedPageIndex == SmsPageIndex.UNREAD &&
+                state.unreadSmsEntries.isEmpty() &&
+                !state.isSmsThreadsLoading
+            ) {
+                SmsPageIndex.ALL
+            } else {
+                requestedPageIndex
+            }
+        return state.copy(smsPageIndex = nextPageIndex)
     }
 
     /** 按相对行数移动短信页内部焦点。 */
@@ -1015,15 +1041,28 @@ object LauncherStateTransitions {
 
     fun updateSmsMessages(
         state: LauncherState,
+        conversationKey: String = state.smsCurrentConversationKey,
+        conversationTitle: String = state.smsCurrentConversationTitle,
+        isServiceConversation: Boolean = state.smsCurrentIsServiceConversation,
         threadId: Long?,
         address: String,
         messages: List<com.purride.pixellauncherv2.data.SmsMessageEntry>,
     ): LauncherState {
         return state.copy(
+            smsCurrentConversationKey = conversationKey,
+            smsCurrentConversationTitle = conversationTitle,
+            smsCurrentIsServiceConversation = isServiceConversation,
             smsCurrentThreadId = threadId,
             smsCurrentAddress = address,
             smsMessages = messages,
         )
+    }
+
+    fun updateSmsAllMessages(
+        state: LauncherState,
+        messages: List<com.purride.pixellauncherv2.data.SmsMessageEntry>,
+    ): LauncherState {
+        return state.copy(smsAllMessages = messages)
     }
 
     fun updateSmsDraftText(
@@ -1037,7 +1076,11 @@ object LauncherStateTransitions {
         state: LauncherState,
         query: String,
     ): LauncherState {
-        return state.copy(smsThreadSearchQuery = query.take(MAX_SMS_SEARCH_QUERY_LENGTH))
+        return state.copy(
+            smsThreadSearchQuery = query.take(MAX_SMS_SEARCH_QUERY_LENGTH),
+            smsThreadSelectedIndex = 0,
+            smsThreadListStartIndex = 0,
+        )
     }
 
     fun updateSmsSendStatusText(

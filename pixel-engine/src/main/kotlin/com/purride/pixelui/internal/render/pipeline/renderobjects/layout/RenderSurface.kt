@@ -33,6 +33,11 @@ internal class RenderSurface(
     private var contentPaddingBottom: Int = 0,
     private var onClick: (() -> Unit)? = null,
     private var onLongPress: (() -> Unit)? = null,
+    private var onSwipeStart: (() -> Unit)? = null,
+    private var onSwipeUpdate: ((Int) -> Unit)? = null,
+    private var onSwipeEnd: ((Int) -> Unit)? = null,
+    private var onSwipeLeft: (() -> Unit)? = null,
+    private var onSwipeRight: (() -> Unit)? = null,
     private var preserveChildMinConstraints: Boolean = false,
     private var tightChildWidth: Boolean = false,
     private var tightChildHeight: Boolean = false,
@@ -83,6 +88,11 @@ internal class RenderSurface(
         contentPaddingBottom: Int = 0,
         onClick: (() -> Unit)? = null,
         onLongPress: (() -> Unit)? = null,
+        onSwipeStart: (() -> Unit)? = null,
+        onSwipeUpdate: ((Int) -> Unit)? = null,
+        onSwipeEnd: ((Int) -> Unit)? = null,
+        onSwipeLeft: (() -> Unit)? = null,
+        onSwipeRight: (() -> Unit)? = null,
         preserveChildMinConstraints: Boolean = false,
         tightChildWidth: Boolean = false,
         tightChildHeight: Boolean = false,
@@ -123,6 +133,11 @@ internal class RenderSurface(
             this.contentPaddingBottom == contentPaddingBottom &&
             this.onClick == onClick &&
             this.onLongPress == onLongPress &&
+            this.onSwipeStart == onSwipeStart &&
+            this.onSwipeUpdate == onSwipeUpdate &&
+            this.onSwipeEnd == onSwipeEnd &&
+            this.onSwipeLeft == onSwipeLeft &&
+            this.onSwipeRight == onSwipeRight &&
             this.preserveChildMinConstraints == preserveChildMinConstraints &&
             this.tightChildWidth == tightChildWidth &&
             this.tightChildHeight == tightChildHeight &&
@@ -162,6 +177,11 @@ internal class RenderSurface(
         this.contentPaddingBottom = contentPaddingBottom
         this.onClick = onClick
         this.onLongPress = onLongPress
+        this.onSwipeStart = onSwipeStart
+        this.onSwipeUpdate = onSwipeUpdate
+        this.onSwipeEnd = onSwipeEnd
+        this.onSwipeLeft = onSwipeLeft
+        this.onSwipeRight = onSwipeRight
         this.preserveChildMinConstraints = preserveChildMinConstraints
         this.tightChildWidth = tightChildWidth
         this.tightChildHeight = tightChildHeight
@@ -521,7 +541,7 @@ internal class RenderSurface(
             localY = localY - childOffsetY,
             result = result,
         )
-        if (onClick != null || onLongPress != null) {
+        if (hasPointerCallback()) {
             result.add(this)
         }
     }
@@ -534,7 +554,7 @@ internal class RenderSurface(
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
     ) {
-        if (onClick != null || onLongPress != null) {
+        if (hasPointerCallback()) {
             targets += PixelClickTarget(
                 bounds = PixelRect(
                     left = offsetX,
@@ -544,6 +564,11 @@ internal class RenderSurface(
                 ),
                 onClick = onClick ?: {},
                 onLongPress = onLongPress,
+                onSwipeStart = onSwipeStart,
+                onSwipeUpdate = onSwipeUpdate,
+                onSwipeEnd = onSwipeEnd,
+                onSwipeLeft = onSwipeLeft,
+                onSwipeRight = onSwipeRight,
                 source = this,
             )
         }
@@ -737,6 +762,16 @@ internal class RenderSurface(
 
             else -> 0
         }
+    }
+
+    private fun hasPointerCallback(): Boolean {
+        return onClick != null ||
+            onLongPress != null ||
+            onSwipeStart != null ||
+            onSwipeUpdate != null ||
+            onSwipeEnd != null ||
+            onSwipeLeft != null ||
+            onSwipeRight != null
     }
 
     private val renderChild: RenderBox?

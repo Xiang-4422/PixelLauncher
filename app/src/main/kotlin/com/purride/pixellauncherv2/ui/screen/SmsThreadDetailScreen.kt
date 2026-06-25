@@ -1,16 +1,19 @@
 package com.purride.pixellauncherv2.ui.screen
 
+import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.Row
 import com.purride.pixelui.SingleChildScrollView
-import com.purride.pixelui.SizedBox
+import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextInputAction
@@ -25,7 +28,6 @@ import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
-import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -39,9 +41,8 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
  * - 消息列表用变高 lazy list（[ListViewBuilder] 的 estimatedItemExtent 路径），
  *   每条按正文自适应高度，**完整换行显示**，不再 ELLIPSIS 截断——验证码 / 通知
  *   类长短信的关键内容（取件码、链接等）现在能读全。
- * - 每条消息：状态 + 时间一行（dim），下面整段正文；IN 用 body 前景色、SENT 用
- *   muted 前景色区分收发。
- * - 表头显示对方地址（截断防溢出），底部固定草稿栏（TextField + SEND）。
+ * - 每条消息显示时间和完整正文，通过左右对齐与颜色区分收发。
+ * - 服务商聚合会话只读；个人会话底部保留草稿栏并避让输入法。
  */
 fun SmsThreadDetailScreen(
     uiState: LauncherUiState,
@@ -50,116 +51,85 @@ fun SmsThreadDetailScreen(
     statusBarHeight: Int,
     msgListState: PixelListState,
     msgListController: PixelListController,
-    searchController: PixelTextFieldController,
-    searchState: PixelTextFieldState,
     draftController: PixelTextFieldController,
     draftState: PixelTextFieldState,
-    onSearchChanged: (String) -> Unit,
     onDraftChanged: (String) -> Unit,
     onSendDraft: () -> Unit,
     onMessagePressed: (Long) -> Unit,
 ): Widget {
-    val contact = uiState.smsMessages
-        .lastOrNull()
-        ?.displayName
-        ?.trim()
-        .orEmpty()
+    val contact = uiState.smsCurrentConversationTitle
+        .trim()
         .ifBlank { uiState.smsCurrentAddress.trim() }
         .ifBlank { "SMS" }
-    val visibleMessages = SmsThreadSearchModel.filter(
-        messages = uiState.smsMessages,
-        query = uiState.smsThreadSearchQuery,
-    )
     return Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MAX,
         spacing = 0,
-        children = listOf(
-            LauncherHeader(
-                timeText = uiState.currentTimeText.ifEmpty { "--:--" },
-                screenTitle = headerTitle(contact),
-                messageText = uiState.statusBarMessageText,
-                batteryLevel = uiState.batteryLevel,
-                isCharging = uiState.isCharging,
-                chargeTick = chargeTick,
-                theme = theme,
-                statusBarHeight = statusBarHeight,
-            ),
-            buildSearchArea(
-                searchState = searchState,
-                searchController = searchController,
-                onSearchChanged = onSearchChanged,
-            ),
-            Expanded(
-                child = if (uiState.smsMessages.isEmpty()) {
-                    Column(
-                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                        mainAxisSize = MainAxisSize.MAX,
-                        mainAxisAlignment = MainAxisAlignment.CENTER,
-                        spacing = 0,
-                        children = listOf(
-                            smsStatusText("NO MESSAGES", theme),
-                        ),
-                    )
-                } else if (visibleMessages.isEmpty()) {
-                    Column(
-                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                        mainAxisSize = MainAxisSize.MAX,
-                        mainAxisAlignment = MainAxisAlignment.CENTER,
-                        spacing = 0,
-                        children = listOf(
-                            smsStatusText("NO MATCH", theme),
-                        ),
-                    )
-                } else {
-                    // 用 SingleChildScrollView + Column 承载整段消息流：Column 会把每条
-                    // 消息按其完整正文高度排布，不会像变高 lazy list 那样把高消息裁顶，
-                    // 保证长短信（取件码 + 地址 + 链接 + 退订语）完整可读。
-                    SingleChildScrollView(
-                        state = msgListState,
-                        controller = msgListController,
-                        child = Padding(
-                            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-                            vertical = LauncherSpacing.CONTENT_VERTICAL,
-                            child = Column(
-                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
-                                mainAxisSize = MainAxisSize.MIN,
-                                spacing = LauncherSpacing.ROW_SPACING * 2,
-                                children = visibleMessages.map { msg ->
-                                    buildMessage(msg, theme, onMessagePressed)
-                                },
+        children = buildList {
+            add(
+                LauncherHeader(
+                    timeText = uiState.currentTimeText.ifEmpty { "--:--" },
+                    screenTitle = headerTitle(contact),
+                    messageText = uiState.statusBarMessageText,
+                    batteryLevel = uiState.batteryLevel,
+                    isCharging = uiState.isCharging,
+                    chargeTick = chargeTick,
+                    theme = theme,
+                    statusBarHeight = statusBarHeight,
+                ),
+            )
+            add(
+                Expanded(
+                    child = if (uiState.smsMessages.isEmpty()) {
+                        Column(
+                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                            mainAxisSize = MainAxisSize.MAX,
+                            mainAxisAlignment = MainAxisAlignment.CENTER,
+                            spacing = 0,
+                            children = listOf(
+                                smsStatusText("NO MESSAGES", theme),
                             ),
+                        )
+                    } else {
+                        // 用 SingleChildScrollView + Column 承载整段消息流：Column 会把每条
+                        // 消息按其完整正文高度排布，不会像变高 lazy list 那样把高消息裁顶，
+                        // 保证长短信（取件码 + 地址 + 链接 + 退订语）完整可读。
+                        SingleChildScrollView(
+                            state = msgListState,
+                            controller = msgListController,
+                            child = Padding(
+                                horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                                vertical = LauncherSpacing.CONTENT_VERTICAL,
+                                child = Column(
+                                    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                    mainAxisSize = MainAxisSize.MIN,
+                                    spacing = LauncherSpacing.ROW_SPACING * 2,
+                                    children = uiState.smsMessages.map { msg ->
+                                        buildMessage(msg, theme, onMessagePressed)
+                                    },
+                                ),
+                            ),
+                        )
+                    },
+                ),
+            )
+            if (!uiState.smsCurrentIsServiceConversation) {
+                add(
+                    ImeBottomPadding(
+                        child = buildComposeArea(
+                            uiState = uiState,
+                            theme = theme,
+                            draftState = draftState,
+                            draftController = draftController,
+                            onDraftChanged = onDraftChanged,
+                            onSendDraft = onSendDraft,
                         ),
-                    )
-                },
-            ),
-            buildComposeArea(
-                uiState = uiState,
-                theme = theme,
-                draftState = draftState,
-                draftController = draftController,
-                onDraftChanged = onDraftChanged,
-                onSendDraft = onSendDraft,
-            ),
-        ),
+                    ),
+                )
+            }
+        },
     )
 }
-
-private fun buildSearchArea(
-    searchState: PixelTextFieldState,
-    searchController: PixelTextFieldController,
-    onSearchChanged: (String) -> Unit,
-): Widget = Padding(
-    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-    vertical = LauncherSpacing.CONTENT_VERTICAL,
-    child = TextField(
-        state = searchState,
-        controller = searchController,
-        placeholder = "SEARCH MSG",
-        textInputAction = TextInputAction.SEARCH,
-        onChanged = onSearchChanged,
-    ),
-)
 
 private fun buildComposeArea(
     uiState: LauncherUiState,
@@ -214,7 +184,7 @@ private fun buildComposeArea(
     ),
 )
 
-/** 一条消息：方向 + 时间一行，下面整段正文（完整换行，不截断）。 */
+/** 一条消息：时间 + 完整正文，通过左右对齐区分方向。 */
 private fun buildMessage(
     msg: SmsMessageEntry,
     theme: LauncherTheme,
@@ -229,27 +199,7 @@ private fun buildMessage(
             mainAxisSize = MainAxisSize.MIN,
             spacing = 1,
             children = listOf(
-                Row(
-                    spacing = LauncherSpacing.ROW_SPACING,
-                    crossAxisAlignment = CrossAxisAlignment.CENTER,
-                    children = listOf(
-                        Text(
-                            SmsMessageStatusModel.label(msg.type),
-                            style = TextStyle(color = theme.sms.sender),
-                            overflow = TextOverflow.ELLIPSIS,
-                            softWrap = false,
-                            maxLines = 1,
-                        ),
-                        Expanded(child = SizedBox(width = 0, height = 0)),
-                        Text(
-                            SmsTimeFormatter.format(msg.dateMillis),
-                            style = TextStyle(color = theme.sms.timestamp),
-                            overflow = TextOverflow.ELLIPSIS,
-                            softWrap = false,
-                            maxLines = 1,
-                        ),
-                    ),
-                ),
+                messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme),
                 Text(
                     msg.body,
                     style = TextStyle(color = if (isSent) theme.text.muted else theme.sms.body),
@@ -258,28 +208,47 @@ private fun buildMessage(
                     // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
                     textAlign = if (isSent) TextAlign.END else TextAlign.START,
                 ),
-            ) + codeLine(code, theme, isSent),
+            ),
         ),
     )
 }
 
-private fun codeLine(
+private class ImeBottomPadding(
+    private val child: Widget,
+) : StatelessWidget() {
+    override fun build(context: BuildContext): Widget {
+        return Padding(
+            padding = EdgeInsets.only(bottom = MediaQuery.of(context).viewInsets.bottom),
+            child = child,
+        )
+    }
+}
+
+private fun messageMetaRow(
     code: String?,
+    timeText: String,
     theme: LauncherTheme,
-    isSent: Boolean,
-): List<Widget> {
-    if (code.isNullOrBlank()) return emptyList()
-    return listOf(
+): Widget = Row(
+    spacing = LauncherSpacing.ROW_SPACING,
+    children = listOf(
+        Expanded(
+            child = Text(
+                code?.takeIf(String::isNotBlank)?.let { "CODE $it" }.orEmpty(),
+                style = TextStyle(color = theme.semantic.info),
+                overflow = TextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+            ),
+        ),
         Text(
-            "CODE $code",
-            style = TextStyle(color = theme.semantic.info),
+            timeText,
+            style = TextStyle(color = theme.sms.timestamp),
             overflow = TextOverflow.ELLIPSIS,
             softWrap = false,
             maxLines = 1,
-            textAlign = if (isSent) TextAlign.END else TextAlign.START,
         ),
-    )
-}
+    ),
+)
 
 /** 把对方地址收敛成不会撑爆右上角标题区的短串。 */
 private fun headerTitle(contact: String): String {

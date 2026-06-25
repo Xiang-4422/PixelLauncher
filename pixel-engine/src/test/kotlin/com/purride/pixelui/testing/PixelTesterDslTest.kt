@@ -41,6 +41,11 @@ import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Slidable
+import com.purride.pixelui.SlidableAction
+import com.purride.pixelui.SlidableActionPane
+import com.purride.pixelui.SlidableDirection
+import com.purride.pixelui.SlidableMotion
 import com.purride.pixelui.SliverAppBar
 import com.purride.pixelui.SliverList
 import com.purride.pixelui.SliverListBuilder
@@ -166,6 +171,72 @@ class PixelTesterDslTest {
 
         assertEquals(0, tapped)
         assertEquals(1, longPressed)
+        tester.dispose()
+    }
+
+    @Test
+    fun horizontalSwipeInvokesGestureDetectorSwipeCallback() {
+        val tester = PixelTester()
+        var tapped = 0
+        var swipedLeft = 0
+        var swipedRight = 0
+
+        tester.pumpWidget(
+            widget = GestureDetector(
+                child = Text("OPEN"),
+                onTap = { tapped++ },
+                onSwipeLeft = { swipedLeft++ },
+                onSwipeRight = { swipedRight++ },
+                key = "gesture",
+            ),
+            logicalWidth = 32,
+            logicalHeight = 10,
+        )
+
+        tester.startGesture(find.byKey("gesture")).moveBy(-8, 0).up()
+        tester.startGesture(find.byKey("gesture")).moveBy(8, 0).up()
+
+        assertEquals(0, tapped)
+        assertEquals(1, swipedLeft)
+        assertEquals(1, swipedRight)
+        tester.dispose()
+    }
+
+    @Test
+    fun slidableTapAndDismissStayDistinct() {
+        val tester = PixelTester()
+        var tapped = 0
+        var dismissed: SlidableDirection? = null
+
+        tester.pumpWidget(
+            widget = Slidable(
+                onTap = { tapped++ },
+                endActionPane = SlidableActionPane(
+                    children = listOf(
+                        SlidableAction(
+                            label = "READ",
+                            backgroundColor = PixelColor.fromRgb(0, 160, 80),
+                            foregroundColor = PixelColor.Black,
+                            onPressed = {},
+                        ),
+                    ),
+                    motion = SlidableMotion.BEHIND,
+                    dismissible = true,
+                    dismissThreshold = 0.4f,
+                ),
+                onDismissed = { dismissed = it },
+                child = Text("OPEN"),
+                key = "slidable",
+            ),
+            logicalWidth = 40,
+            logicalHeight = 10,
+        )
+
+        tester.tap(find.byKey("slidable:gesture"))
+        tester.startGesture(find.byKey("slidable:gesture")).moveBy(-18, 0).up()
+
+        assertEquals(1, tapped)
+        assertEquals(SlidableDirection.END, dismissed)
         tester.dispose()
     }
 

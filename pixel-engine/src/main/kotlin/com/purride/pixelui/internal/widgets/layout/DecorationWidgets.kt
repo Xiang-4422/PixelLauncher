@@ -13,6 +13,11 @@ internal data class GestureDetectorWidget(
     override val child: Widget,
     val onTap: () -> Unit,
     val onLongPress: (() -> Unit)?,
+    val onSwipeStart: (() -> Unit)?,
+    val onSwipeUpdate: ((Int) -> Unit)?,
+    val onSwipeEnd: ((Int) -> Unit)?,
+    val onSwipeLeft: (() -> Unit)?,
+    val onSwipeRight: (() -> Unit)?,
     override val key: Any? = null,
 ) : SingleChildRenderObjectWidget(child = child, key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
@@ -20,6 +25,11 @@ internal data class GestureDetectorWidget(
             alignment = PixelAlignment.TOP_START,
             onClick = onTap,
             onLongPress = onLongPress,
+            onSwipeStart = onSwipeStart,
+            onSwipeUpdate = onSwipeUpdate,
+            onSwipeEnd = onSwipeEnd,
+            onSwipeLeft = onSwipeLeft,
+            onSwipeRight = onSwipeRight,
             preserveChildMinConstraints = true,
         )
     }
@@ -29,6 +39,11 @@ internal data class GestureDetectorWidget(
             alignment = PixelAlignment.TOP_START,
             onClick = onTap,
             onLongPress = onLongPress,
+            onSwipeStart = onSwipeStart,
+            onSwipeUpdate = onSwipeUpdate,
+            onSwipeEnd = onSwipeEnd,
+            onSwipeLeft = onSwipeLeft,
+            onSwipeRight = onSwipeRight,
             preserveChildMinConstraints = true,
         )
     }
