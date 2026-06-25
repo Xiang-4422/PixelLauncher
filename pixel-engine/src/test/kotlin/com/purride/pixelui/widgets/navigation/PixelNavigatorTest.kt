@@ -21,6 +21,40 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class PixelNavigatorTest {
     @Test
+    fun fadeTransitionKeepsOutgoingAndIncomingRoutesDuringAnimation() {
+        val tester = PixelTester()
+        var navigator: PixelNavigatorState? = null
+        val root = route("root") { context ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
+        val details = PixelRoute(
+            name = "details",
+            transition = PixelRouteTransition.Fade,
+            builder = { Text("DETAILS") },
+        )
+        tester.pumpWidget(
+            PixelNavigator(
+                initialRoute = root,
+                vsync = tester.vsync,
+                transitionDuration = 200.milliseconds,
+            ),
+            32,
+            12,
+        )
+
+        navigator!!.push(details)
+        tester.pumpFrame(100)
+
+        assertTrue(tester.exists(com.purride.pixelui.testing.find.byText("ROOT")))
+        assertTrue(tester.exists(com.purride.pixelui.testing.find.byText("DETAILS")))
+        tester.pumpAndSettle()
+        assertFalse(tester.exists(com.purride.pixelui.testing.find.byText("ROOT")))
+        assertTrue(tester.exists(com.purride.pixelui.testing.find.byText("DETAILS")))
+        tester.dispose()
+    }
+
+    @Test
     fun pushPopPopToRootAndReplaceUpdateStack() {
         val tester = PixelTester()
         var navigator: PixelNavigatorState? = null

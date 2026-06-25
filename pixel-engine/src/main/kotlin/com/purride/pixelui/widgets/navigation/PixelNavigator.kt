@@ -5,8 +5,10 @@ import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Builder
 import com.purride.pixelui.ChangeNotifier
 import com.purride.pixelui.InheritedWidget
+import com.purride.pixelui.Opacity
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Widget
 import com.purride.pixelui.dependOnInheritedWidgetOfExactType
 import com.purride.pixelui.internal.HitTestResult
@@ -22,7 +24,6 @@ import com.purride.pixelui.internal.RenderBox
 import com.purride.pixelui.internal.RenderConstraints
 import com.purride.pixelui.internal.RenderObject
 import com.purride.pixelui.internal.RenderSize
-import com.purride.pixelui.widgets.animated.AnimatedSwitcher
 import com.purride.pixelui.animation.Curve
 import com.purride.pixelui.animation.CurvedAnimation
 import com.purride.pixelui.animation.Curves
@@ -418,16 +419,13 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
                     navigatorState.completeTransition(transitionRecord.id)
                     incoming
                 }
-                PixelRouteTransition.Fade -> PixelRouteSettleTransition(
+                PixelRouteTransition.Fade -> PixelRouteFadeTransition(
                     id = transitionRecord.id,
                     duration = widget.transitionDuration,
                     vsync = widget.vsync,
                     onSettled = { navigatorState.completeTransition(transitionRecord.id) },
-                    child = AnimatedSwitcher(
-                        duration = widget.transitionDuration,
-                        vsync = widget.vsync,
-                        child = incoming,
-                    ),
+                    outgoing = outgoing,
+                    incoming = incoming,
                 )
                 PixelRouteTransition.SlideHorizontal,
                 PixelRouteTransition.SlideVertical,
@@ -518,22 +516,25 @@ private class PixelRouteCustomTransitionState : State<PixelRouteCustomTransition
     }
 }
 
-private class PixelRouteSettleTransition(
+private class PixelRouteFadeTransition(
     val id: Long,
     val duration: Duration,
     val vsync: PixelTickerProvider,
     val onSettled: () -> Unit,
-    val child: Widget,
-) : StatefulWidget(key = "route-settle:$id") {
-    override fun createState(): State<out StatefulWidget> = PixelRouteSettleTransitionState()
+    val outgoing: Widget,
+    val incoming: Widget,
+) : StatefulWidget(key = "route-fade:$id") {
+    override fun createState(): State<out StatefulWidget> = PixelRouteFadeTransitionState()
 }
 
-private class PixelRouteSettleTransitionState : State<PixelRouteSettleTransition>() {
+private class PixelRouteFadeTransitionState : State<PixelRouteFadeTransition>() {
     private lateinit var controller: PixelAnimationController
+    private lateinit var curved: CurvedAnimation
     private var settled = false
 
     override fun initState() {
         controller = PixelAnimationController(duration = widget.duration, vsync = widget.vsync)
+        curved = CurvedAnimation(parent = controller, curve = Curves.Step(8))
         controller.addListener {
             if (!settled && controller.status == PixelAnimationStatus.Completed) {
                 settled = true
@@ -549,7 +550,13 @@ private class PixelRouteSettleTransitionState : State<PixelRouteSettleTransition
 
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
-        return widget.child
+        val progress = curved.value
+        return Stack(
+            children = listOf(
+                Opacity(opacity = 1f - progress, child = widget.outgoing),
+                Opacity(opacity = progress, child = widget.incoming),
+            ),
+        )
     }
 }
 

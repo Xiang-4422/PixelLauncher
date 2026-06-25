@@ -15,4 +15,17 @@ class LauncherRootHostPageOrderTest {
         assertEquals(1, LauncherRootHost.modeToMainPage(LauncherMode.HOME))
         assertEquals(2, LauncherRootHost.modeToMainPage(LauncherMode.APP_DRAWER))
     }
+
+    @Test
+    fun navigatorGroupsPagerAndSmsHomeModes() {
+        assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.HOME))
+        assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.APP_DRAWER))
+        assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.SETTINGS))
+        assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_THREADS))
+        assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_INBOX))
+        assertEquals(
+            LauncherRouteDestination.SMS_THREAD_DETAIL,
+            LauncherRootHost.destinationFor(LauncherMode.SMS_THREAD_DETAIL),
+        )
+    }
 }

@@ -16,11 +16,17 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
+import com.purride.pixelui.PixelNavigator
+import com.purride.pixelui.PixelNavigatorState
+import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.PixelRouteTransition
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.createPixelHostSetup
+import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.showItem
@@ -41,6 +47,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.ui.widget.LauncherSearchHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Phase 8：统一 Launcher 宿主，替换原来 5 个独立 PixelEngineXxxHost。
@@ -62,6 +69,10 @@ internal class LauncherRootHost(
     private var chargeTick: Int = 0
     private var screenProfile: ScreenProfile = ScreenProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
     private val textRasterizers = LauncherTextRasterizers(context)
+    private val frameScheduler = PixelFrameScheduler.Default
+    private val routeTickerProvider = PixelTickerProvider(frameScheduler)
+    private var navigatorState: PixelNavigatorState? = null
+    private var navigatorDestination: LauncherRouteDestination? = null
 
     // ── Main pager: HOME=0, APP_DRAWER=1, SETTINGS=2 ─────────────────────────
     private val mainPagerController = PageController()
@@ -105,6 +116,7 @@ internal class LauncherRootHost(
             textRasterizer = textRasterizers.getRasterizer(
                 PixelFontCatalog.defaultUiFontSize,
             ),
+            frameScheduler = frameScheduler,
             content = { buildRoot() },
         ),
     )
@@ -130,6 +142,7 @@ internal class LauncherRootHost(
         this.theme = theme
         this.chargeTick = chargeTick
         this.screenProfile = screenProfile
+        syncNavigatorRoute(state.mode)
 
         setup.hostView.profilePreference = PixelHostProfilePreference(
             dotSizePx = screenProfile.dotSizePx,
@@ -209,15 +222,34 @@ internal class LauncherRootHost(
 
     // ── Content dispatching ───────────────────────────────────────────────────
 
-    private fun buildRoot(): Widget = when (uiState.mode) {
-        LauncherMode.HOME,
-        LauncherMode.APP_DRAWER,
-        LauncherMode.SETTINGS          -> buildMainPager()
-        LauncherMode.SMS_ROLE_PROMPT   -> SmsRolePromptScreen(
+    private fun buildRoot(): Widget {
+        val initialDestination = navigatorDestination
+            ?: destinationFor(uiState.mode).also { navigatorDestination = it }
+        return PixelNavigator(
+            initialRoute = routeFor(initialDestination),
+            vsync = routeTickerProvider,
+            transitionDuration = ROUTE_TRANSITION_DURATION_MS.milliseconds,
+            defaultTransition = PixelRouteTransition.Fade,
+            key = "launcher-navigator",
+        )
+    }
+
+    private fun routeFor(destination: LauncherRouteDestination): PixelRoute = PixelRoute(
+        name = destination.routeName,
+        transition = PixelRouteTransition.Fade,
+        builder = { context ->
+            navigatorState = PixelNavigator.of(context)
+            buildDestination(destination)
+        },
+    )
+
+    private fun buildDestination(destination: LauncherRouteDestination): Widget = when (destination) {
+        LauncherRouteDestination.MAIN -> buildMainPager()
+        LauncherRouteDestination.SMS_ROLE_PROMPT -> SmsRolePromptScreen(
             theme = theme,
             onRequestRole = callbacks.onRequestSmsRole,
         )
-        LauncherMode.SMS_THREADS       -> SmsThreadsScreen(
+        LauncherRouteDestination.SMS_THREADS -> SmsThreadsScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
@@ -236,26 +268,7 @@ internal class LauncherRootHost(
             onMarkUnreadMessageRead = callbacks.onMarkUnreadMessageRead,
             onOpenThread = callbacks.onOpenThread,
         )
-        LauncherMode.SMS_INBOX         -> SmsThreadsScreen(
-            uiState = uiState,
-            theme = theme,
-            chargeTick = chargeTick,
-            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
-            pagerController = smsPagerController,
-            pagerState = smsPagerState,
-            unreadListState = unreadListState,
-            unreadListController = unreadListController,
-            listState = threadListState,
-            listController = threadListController,
-            searchController = smsSearchController,
-            searchState = smsSearchState,
-            onSmsPageSelected = callbacks.onSmsPageSelected,
-            onSearchChanged = callbacks.onSmsThreadSearchChanged,
-            onMarkSmsRead = callbacks.onMarkSmsRead,
-            onMarkUnreadMessageRead = callbacks.onMarkUnreadMessageRead,
-            onOpenThread = callbacks.onOpenThread,
-        )
-        LauncherMode.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(
+        LauncherRouteDestination.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
@@ -268,28 +281,28 @@ internal class LauncherRootHost(
             onSendDraft = callbacks.onSendDraft,
             onMessagePressed = callbacks.onSmsMessagePressed,
         )
-        LauncherMode.DIAGNOSTICS       -> DiagnosticsScreen(
+        LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
             screenProfile = screenProfile,
             onOpenDataHealth = callbacks.onOpenDataHealth,
         )
-        LauncherMode.DATA_HEALTH       -> DataHealthScreen(
+        LauncherRouteDestination.DATA_HEALTH -> DataHealthScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
             screenProfile = screenProfile,
             onItemPressed = callbacks.onDataHealthItemPressed,
         )
-        LauncherMode.NOTIFICATION_SETTINGS -> NotificationSettingsScreen(
+        LauncherRouteDestination.NOTIFICATION_SETTINGS -> NotificationSettingsScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
             screenProfile = screenProfile,
             onSourcePressed = callbacks.onNotificationSourcePressed,
         )
-        LauncherMode.AI_SETTINGS    -> AiSettingsScreen(
+        LauncherRouteDestination.AI_SETTINGS -> AiSettingsScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
@@ -298,7 +311,7 @@ internal class LauncherRootHost(
             apiKeyState = deepSeekApiKeyState,
             onDeepSeekApiKeyChanged = callbacks.onDeepSeekApiKeyChanged,
         )
-        LauncherMode.APP_MANAGEMENT    -> AppManagementScreen(
+        LauncherRouteDestination.APP_MANAGEMENT -> AppManagementScreen(
             uiState = uiState,
             theme = theme,
             chargeTick = chargeTick,
@@ -315,11 +328,18 @@ internal class LauncherRootHost(
             onReset = callbacks.onAppEditorReset,
             onCacheReset = callbacks.onAppCacheReset,
         )
-        LauncherMode.IDLE              -> IdleScreen(
+        LauncherRouteDestination.IDLE -> IdleScreen(
             uiState = uiState,
             theme = theme,
             statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
         )
+    }
+
+    private fun syncNavigatorRoute(mode: LauncherMode) {
+        val destination = destinationFor(mode)
+        if (navigatorDestination == destination) return
+        navigatorDestination = destination
+        navigatorState?.replace(routeFor(destination), animated = true)
     }
 
     // ── Main pager ────────────────────────────────────────────────────────────
@@ -507,6 +527,7 @@ internal class LauncherRootHost(
 
     companion object {
         const val MAIN_PAGE_COUNT = 3
+        const val ROUTE_TRANSITION_DURATION_MS = 200
         val MAIN_PAGE_MODES = listOf(
             LauncherMode.SETTINGS,
             LauncherMode.HOME,
@@ -514,7 +535,40 @@ internal class LauncherRootHost(
         )
         fun modeToMainPage(mode: LauncherMode): Int? = MAIN_PAGE_MODES.indexOf(mode).takeIf { it >= 0 }
 
+        internal fun destinationFor(mode: LauncherMode): LauncherRouteDestination = when (mode) {
+            LauncherMode.HOME,
+            LauncherMode.APP_DRAWER,
+            LauncherMode.SETTINGS,
+            -> LauncherRouteDestination.MAIN
+            LauncherMode.SMS_ROLE_PROMPT -> LauncherRouteDestination.SMS_ROLE_PROMPT
+            LauncherMode.SMS_THREADS,
+            LauncherMode.SMS_INBOX,
+            -> LauncherRouteDestination.SMS_THREADS
+            LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
+            LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
+            LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
+            LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
+            LauncherMode.AI_SETTINGS -> LauncherRouteDestination.AI_SETTINGS
+            LauncherMode.DIAGNOSTICS -> LauncherRouteDestination.DIAGNOSTICS
+            LauncherMode.IDLE -> LauncherRouteDestination.IDLE
+        }
+
         private fun PixelShape.toEngineShape(): EnginePixelShape =
             EnginePixelShape.valueOf(name)
     }
+}
+
+internal enum class LauncherRouteDestination(
+    val routeName: String,
+) {
+    MAIN("main"),
+    SMS_ROLE_PROMPT("sms-role-prompt"),
+    SMS_THREADS("sms-threads"),
+    SMS_THREAD_DETAIL("sms-thread-detail"),
+    APP_MANAGEMENT("app-management"),
+    DATA_HEALTH("data-health"),
+    NOTIFICATION_SETTINGS("notification-settings"),
+    AI_SETTINGS("ai-settings"),
+    DIAGNOSTICS("diagnostics"),
+    IDLE("idle"),
 }
