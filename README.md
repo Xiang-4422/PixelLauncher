@@ -258,7 +258,7 @@ SDK 发布补充检查：
 ./tools/pixel-soak-test.sh
 ```
 
-`tools/pixel-device-smoke.sh` 需要已连接 Android 设备或设置 `ADB_SERIAL`，因此不放入默认无设备发布门禁。`0.x` SDK 兼容策略和破坏性变更记录见 [CHANGELOG.md](CHANGELOG.md)，长期 SemVer / 弃用 / migration guide 规则见 [pixel-engine/docs/发布与兼容策略.md](pixel-engine/docs/发布与兼容策略.md)。
+`tools/pixel-device-smoke.sh` 需要已连接 Android 设备或设置 `ADB_SERIAL`，因此不放入默认无设备发布门禁。`0.x` SDK 兼容策略和破坏性变更记录见 [CHANGELOG.md](CHANGELOG.md)，当前快照核对见 [pixel-engine/docs/0.1.0-SNAPSHOT发布清单.md](pixel-engine/docs/0.1.0-SNAPSHOT发布清单.md)，长期 SemVer / 弃用 / migration guide 规则见 [pixel-engine/docs/发布与兼容策略.md](pixel-engine/docs/发布与兼容策略.md)。
 
 ### Android Studio 运行
 
