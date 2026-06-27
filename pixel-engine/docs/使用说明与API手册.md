@@ -209,6 +209,36 @@ PixelTheme(
 3. `PixelHostView.textRasterizer`
 4. `PixelBitmapFont.Default`
 
+字体包加载与 fallback：
+
+- `PixelGlyphPackAssetLoader(context).load(assetDirectory)` 会从 `assets/<assetDirectory>/manifest.json` 和 `assets/<assetDirectory>/glyphs.bin` 加载一个 `PixelGlyphPack`，同一路径会在 loader 内缓存。
+- `PixelGlyphPackParser.parseManifest(json)` 只解析字形包元数据；`parseBinary(manifest, inputStream)` 解析二进制字形并校验二进制 `cellHeight` 与 manifest 一致。
+- `BitmapGlyphSource(packs)` 按 pack 顺序查找字符，只消费与当前 `GlyphStyle.cellHeight` 匹配的 pack。
+- `CompositeGlyphProvider(sources)` 按 source 顺序查找字符；全部 source 都缺字时，会返回 engine 内建兜底字形。
+- 兜底字形按 ASCII / 非 ASCII 选择 `narrowAdvanceWidth` 或 `wideAdvanceWidth`；普通缺字会绘制可见方框，空白和控制字符只保留 advance、不绘制墨迹。
+- SDK 不在字体层自动读取 `PixelResourceCatalog.fonts`；catalog 只提供索引，调用方仍需要用 `PixelGlyphPackAssetLoader` 或自定义加载器创建 `PixelGlyphPack`。
+
+字形包 manifest 当前稳定字段：
+
+```json
+{
+  "packId": "ui8",
+  "displayName": "UI 8px",
+  "cellHeight": 16,
+  "baseline": 13,
+  "defaultAdvance": 8,
+  "supportedRanges": ["0020-007E", "4E00-9FFF"]
+}
+```
+
+`glyphs.bin` 当前稳定格式：
+
+1. magic：`0x50474C59`，即 `PGLY`。
+2. version：当前为 `1`。
+3. `cellHeight`：必须等于 manifest 的 `cellHeight`。
+4. `glyphCount`。
+5. 每个 glyph 依次写入 `codePoint`、`advanceWidth`、`width`、`dataLength`、按位压缩的像素数据。
+
 ## 6. 常见页面模式
 
 ### 错误边界

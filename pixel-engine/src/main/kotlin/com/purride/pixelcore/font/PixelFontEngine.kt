@@ -141,7 +141,11 @@ public class BitmapGlyphSource(
             }
 
             val record = pack.glyphs[codePoint] ?: continue
-            val cacheKey = GlyphCacheKey(pack.manifest.packId, codePoint)
+            val cacheKey = GlyphCacheKey(
+                packId = pack.manifest.packId,
+                codePoint = codePoint,
+                narrowAdvanceWidth = style.narrowAdvanceWidth,
+            )
             return unpackedGlyphCache.getOrPut(cacheKey) {
                 val unpackedPixels = unpackBits(
                     packed = record.packedPixels,
@@ -208,6 +212,7 @@ public class BitmapGlyphSource(
     private data class GlyphCacheKey(
         val packId: String,
         val codePoint: Int,
+        val narrowAdvanceWidth: Int,
     )
 }
 

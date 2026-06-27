@@ -200,6 +200,57 @@ class PixelFontEngineTest {
         assertEquals(15, metrics.inkBottom)
     }
 
+    @Test
+    fun bitmapGlyphSourceCachesMetricsPerStyle() {
+        val source = BitmapGlyphSource(
+            packs = listOf(
+                PixelGlyphPack(
+                    manifest = PixelGlyphPackManifest(
+                        packId = "sample",
+                        displayName = "Sample",
+                        cellHeight = 16,
+                        baseline = 13,
+                        defaultAdvance = 8,
+                        supportedRanges = listOf("0041-0041"),
+                    ),
+                    glyphs = mapOf(
+                        0x0041 to PackedGlyphRecord(
+                            codePoint = 0x0041,
+                            advanceWidth = 8,
+                            width = 8,
+                            packedPixels = ByteArray(16) { 0xFF.toByte() },
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val narrowGlyph = source.findGlyph('A', appLabelStyle)
+        val wideGlyph = source.findGlyph('A', appLabelStyle.copy(narrowAdvanceWidth = 4))
+
+        assertEquals(false, narrowGlyph?.metrics?.isWideGlyph)
+        assertEquals(true, wideGlyph?.metrics?.isWideGlyph)
+    }
+
+    @Test
+    fun compositeGlyphProviderFallsBackAcrossSourcesThenToEmptyGlyph() {
+        val provider = CompositeGlyphProvider(
+            sources = listOf(
+                FixedGlyphSource(character = 'A', width = 8),
+                FixedGlyphSource(character = 'B', width = 7),
+            ),
+        )
+
+        val firstSourceGlyph = provider.rasterizeGlyph('A', appLabelStyle)
+        val secondSourceGlyph = provider.rasterizeGlyph('B', appLabelStyle)
+        val emptyFallbackGlyph = provider.rasterizeGlyph('C', appLabelStyle)
+
+        assertEquals(8, firstSourceGlyph.metrics.advanceWidth)
+        assertEquals(7, secondSourceGlyph.metrics.advanceWidth)
+        assertEquals(appLabelStyle.narrowAdvanceWidth, emptyFallbackGlyph.metrics.advanceWidth)
+        assertTrue(emptyFallbackGlyph.pixels.any { pixel -> pixel.toInt() != 0 })
+    }
+
     private class CountingGlyphProvider : GlyphProvider {
         var rasterizeCount: Int = 0
             private set
@@ -221,6 +272,27 @@ class PixelFontEngineTest {
                     requiresVisualGapProtection = isWideGlyph || character.code !in 32..126,
                     inkLeft = if (isBlankGlyph) width else 0,
                     inkRight = if (isBlankGlyph) -1 else width - 1,
+                ),
+            )
+        }
+    }
+
+    private class FixedGlyphSource(
+        private val character: Char,
+        private val width: Int,
+    ) : GlyphSource {
+        override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap? {
+            if (this.character != character) return null
+            return GlyphBitmap(
+                width = width,
+                height = style.cellHeight,
+                pixels = ByteArray(width * style.cellHeight) { 1 },
+                metrics = GlyphMetrics(
+                    advanceWidth = width,
+                    baselineOffset = style.cellHeight - 2,
+                    isWideGlyph = width > style.narrowAdvanceWidth,
+                    inkLeft = 0,
+                    inkRight = width - 1,
                 ),
             )
         }
