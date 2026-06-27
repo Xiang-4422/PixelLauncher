@@ -703,6 +703,18 @@ OptionList(
 )
 ```
 
+`ValueAdjuster` 提供通用的减 / 值 / 加三段式布局，不保存数值、不判断范围；边界由调用方通过
+传入或置空两侧回调控制。`Stepper` 是整数范围包装，会按 `step` 调整并把结果钳位到 `range`。
+
+```kotlin
+Stepper(
+    value = size,
+    range = 0..10,
+    step = 2,
+    onChanged = { next -> size = next },
+)
+```
+
 ### 反馈组件
 
 `Dialog`、`ConfirmDialog`、`Toast` 和 `Snackbar` 本身都是普通 widget，只负责像素风视觉结构，不负责显示队列、
@@ -959,6 +971,8 @@ Form(
 | `ListTile` | 列表行 | `title`、`subtitle`、`leading`、`trailing`、`onTap` |
 | `SelectionList` | 受控单选列表 | `items`、`selectedIndex`、`onSelected`、`itemLabel` |
 | `OptionList` | 字符串选项列表 | `options`、`selectedIndex`、`onSelected` |
+| `ValueAdjuster` | 减 / 值 / 加调节器 | `valueText`、`onDecrease`、`onIncrease` |
+| `Stepper` | 整数范围步进器 | `value`、`range`、`step`、`onChanged` |
 | `Checkbox` | 复选框 | `checked`、`onChanged`、`enabled` |
 | `Switch` | 开关 | `checked`、`onChanged`、`enabled` |
 | `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease` |

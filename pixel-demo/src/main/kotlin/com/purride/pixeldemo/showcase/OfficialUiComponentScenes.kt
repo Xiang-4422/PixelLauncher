@@ -67,6 +67,7 @@ import com.purride.pixelui.Spacer
 import com.purride.pixelui.Stack
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
+import com.purride.pixelui.Stepper
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
@@ -76,6 +77,7 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Toast
 import com.purride.pixelui.Transform
+import com.purride.pixelui.ValueAdjuster
 import com.purride.pixelui.Visibility
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
@@ -339,6 +341,7 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
             ),
         )
     },
+    ComponentExampleScene("controls_value_adjuster", "ValueAdjuster", "减值加三段式数值调节", DemoCatalog.controls, setOf("component", "stepper", "adjuster"), setOf("ValueAdjuster", "Stepper")) { StepperOfficialBody() },
     ComponentExampleScene("controls_checkbox", "Selection", "Checkbox 和 Switch 二元选择", DemoCatalog.controls, setOf("component", "checkbox", "switch"), setOf("Checkbox", "Switch")) {
         officialBody(
             listOf(
@@ -601,6 +604,45 @@ private class SegmentedOfficialBody(
         private var selected = 0
         override fun build(context: BuildContext): Widget =
             officialBody(listOf(samplePanel("Example", color = Pink, child = SegmentedControl(labels = listOf("DAY", "NIGHT", "AUTO"), selectedIndex = selected, onSelected = { index -> selected = index; setState {} }))))
+    }
+}
+
+private class StepperOfficialBody(
+    override val key: Any? = null,
+) : StatefulWidget(key = key) {
+    override fun createState(): State<out StatefulWidget> = StepperOfficialState()
+
+    private class StepperOfficialState : State<StepperOfficialBody>() {
+        private var value = 4
+
+        override fun build(context: BuildContext): Widget =
+            officialBody(
+                listOf(
+                    samplePanel(
+                        title = "Stepper",
+                        color = Accent,
+                        child = Stepper(
+                            value = value,
+                            range = 0..10,
+                            step = 2,
+                            onChanged = { next -> value = next; setState {} },
+                            valueText = "$value PX",
+                            valueWidth = 34,
+                        ),
+                    ),
+                    samplePanel(
+                        title = "ValueAdjuster",
+                        color = Cyan,
+                        child = ValueAdjuster(
+                            valueText = "FAST",
+                            onDecrease = {},
+                            onIncrease = {},
+                            label = "SPEED",
+                            valueWidth = 34,
+                        ),
+                    ),
+                ),
+            )
     }
 }
 

@@ -408,6 +408,106 @@ public fun SegmentedControl(
 )
 
 /**
+ * 通用的减 / 值 / 加像素调节器。
+ *
+ * 组件不保存数值，也不做范围判断；调用方通过 [onDecrease] 和 [onIncrease] 控制边界。
+ * 当某一侧回调为 null 或 [enabled] 为 false 时，对应按钮不可点。
+ */
+public fun ValueAdjuster(
+    valueText: String,
+    onDecrease: (() -> Unit)?,
+    onIncrease: (() -> Unit)?,
+    label: String? = null,
+    enabled: Boolean = true,
+    valueWidth: Int = 24,
+    key: Any? = null,
+): Widget {
+    val controls = Row(
+        children = listOf(
+            OutlinedButton(
+                text = "-",
+                onPressed = onDecrease,
+                enabled = enabled && onDecrease != null,
+                key = key?.let { "$it-decrease" },
+            ),
+            Container(
+                width = valueWidth.coerceAtLeast(1),
+                padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
+                borderColor = PixelColor.White,
+                child = Text(
+                    valueText,
+                    overflow = PixelTextOverflow.ELLIPSIS,
+                    softWrap = false,
+                    maxLines = 1,
+                    textAlign = TextAlign.CENTER,
+                ),
+                key = key?.let { "$it-value" },
+            ),
+            OutlinedButton(
+                text = "+",
+                onPressed = onIncrease,
+                enabled = enabled && onIncrease != null,
+                key = key?.let { "$it-increase" },
+            ),
+        ),
+        spacing = 1,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+        key = key,
+    )
+    return if (label == null) {
+        controls
+    } else {
+        Column(
+            children = listOf(Text(label), controls),
+            spacing = 1,
+            crossAxisAlignment = CrossAxisAlignment.START,
+            key = key,
+        )
+    }
+}
+
+/**
+ * 整数范围步进器。
+ *
+ * [value]、范围和步长都由调用方传入；组件只在点击时把结果钳位到 [range]。
+ * 空范围会禁用两侧按钮，避免把非法边界继续传播给业务状态。
+ */
+public fun Stepper(
+    value: Int,
+    range: IntRange,
+    onChanged: (Int) -> Unit,
+    step: Int = 1,
+    label: String? = null,
+    valueText: String? = null,
+    enabled: Boolean = true,
+    valueWidth: Int = 24,
+    key: Any? = null,
+): Widget {
+    val hasRange = range.first <= range.last
+    val safeStep = step.coerceAtLeast(1)
+    val safeValue = if (hasRange) value.coerceIn(range.first, range.last) else value
+    val decrease = if (enabled && hasRange && safeValue > range.first) {
+        { onChanged((safeValue - safeStep).coerceAtLeast(range.first)) }
+    } else {
+        null
+    }
+    val increase = if (enabled && hasRange && safeValue < range.last) {
+        { onChanged((safeValue + safeStep).coerceAtMost(range.last)) }
+    } else {
+        null
+    }
+    return ValueAdjuster(
+        valueText = valueText ?: safeValue.toString(),
+        onDecrease = decrease,
+        onIncrease = increase,
+        label = label,
+        enabled = enabled && hasRange,
+        valueWidth = valueWidth,
+        key = key,
+    )
+}
+
+/**
  * 固定尺寸的水平进度条。
  *
  * [progress] 会在绘制前钳位到 `0f..1f`；业务侧仍应把它视为受控状态并保存真实进度。

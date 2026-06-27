@@ -28,6 +28,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `Visibility` for simple child/replacement switching.
 - `LoadStateView` for `PixelAsyncSnapshot` loading/empty/error/content rendering.
 - `SelectionList` and `OptionList` for controlled single-choice lists.
+- `ValueAdjuster` and `Stepper` for controlled pixel value editing.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

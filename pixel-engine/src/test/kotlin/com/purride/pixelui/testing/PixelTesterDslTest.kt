@@ -58,6 +58,7 @@ import com.purride.pixelui.SliverList
 import com.purride.pixelui.SliverListBuilder
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Snackbar
+import com.purride.pixelui.Stepper
 import com.purride.pixelui.Switch
 import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
@@ -65,6 +66,7 @@ import com.purride.pixelui.TextButton
 import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
+import com.purride.pixelui.ValueAdjuster
 import com.purride.pixelui.Visibility
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.state.PixelListController
@@ -1441,6 +1443,43 @@ class PixelTesterDslTest {
 
         tester.tap(find.byKey("options-1"))
         assertEquals(1, selectedIndex)
+        tester.dispose()
+    }
+
+    @Test
+    fun valueAdjusterAndStepperTriggerBoundedChanges() {
+        val tester = PixelTester()
+        var value = 5
+
+        tester.pumpWidget(
+            widget = ValueAdjuster(
+                valueText = value.toString(),
+                onDecrease = { value -= 1 },
+                onIncrease = { value += 1 },
+                key = "adjust",
+            ),
+            logicalWidth = 96,
+            logicalHeight = 32,
+        )
+
+        tester.tap(find.byKey("adjust-decrease"))
+        tester.tap(find.byKey("adjust-increase"))
+        assertEquals(5, value)
+
+        tester.pumpWidget(
+            widget = Stepper(
+                value = 9,
+                range = 0..10,
+                step = 5,
+                onChanged = { value = it },
+                key = "stepper",
+            ),
+            logicalWidth = 96,
+            logicalHeight = 32,
+        )
+
+        tester.tap(find.byKey("stepper-increase"))
+        assertEquals(10, value)
         tester.dispose()
     }
 
