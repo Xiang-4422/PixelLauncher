@@ -2210,6 +2210,85 @@ public final class com.purride.pixelui.PixelTextStyle$Companion {
   public final com.purride.pixelui.PixelTextStyle getDefault();
   public com.purride.pixelui.PixelTextStyle$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelui.PixelTheme extends com.purride.pixelui.InheritedWidget {
+  public static final com.purride.pixelui.PixelTheme$Companion Companion;
+  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeData, com.purride.pixelui.Widget, java.lang.Object);
+  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeData, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelui.PixelThemeData getData();
+  public com.purride.pixelui.Widget getChild();
+  public java.lang.Object getKey();
+  public boolean updateShouldNotify(com.purride.pixelui.InheritedWidget);
+}
+public final class com.purride.pixelui.PixelTheme$Companion {
+  public final com.purride.pixelui.PixelThemeData maybeOf(com.purride.pixelui.BuildContext);
+  public final com.purride.pixelui.PixelThemeData of(com.purride.pixelui.BuildContext);
+  public com.purride.pixelui.PixelTheme$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelui.PixelThemeColors {
+  public static final com.purride.pixelui.PixelThemeColors$Companion Companion;
+  public com.purride.pixelui.PixelThemeColors(int, int, int, int, int, int, int, int, int, int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final int getBackground-bODNPuc();
+  public final int getSurface-bODNPuc();
+  public final int getText-bODNPuc();
+  public final int getMutedText-bODNPuc();
+  public final int getBorder-bODNPuc();
+  public final int getAccent-bODNPuc();
+  public final int getDanger-bODNPuc();
+  public final int getWarning-bODNPuc();
+  public final int getDisabled-bODNPuc();
+  public final int getInactive-bODNPuc();
+  public final int getTrack-bODNPuc();
+  public final int getFocus-bODNPuc();
+  public final int getSelection-bODNPuc();
+  public final int component1-bODNPuc();
+  public final int component2-bODNPuc();
+  public final int component3-bODNPuc();
+  public final int component4-bODNPuc();
+  public final int component5-bODNPuc();
+  public final int component6-bODNPuc();
+  public final int component7-bODNPuc();
+  public final int component8-bODNPuc();
+  public final int component9-bODNPuc();
+  public final int component10-bODNPuc();
+  public final int component11-bODNPuc();
+  public final int component12-bODNPuc();
+  public final int component13-bODNPuc();
+  public final com.purride.pixelui.PixelThemeColors copy-j9-aSbk(int, int, int, int, int, int, int, int, int, int, int, int, int);
+  public static com.purride.pixelui.PixelThemeColors copy-j9-aSbk$default(com.purride.pixelui.PixelThemeColors, int, int, int, int, int, int, int, int, int, int, int, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelThemeColors(int, int, int, int, int, int, int, int, int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelui.PixelThemeColors$Companion {
+  public final com.purride.pixelui.PixelThemeColors getDefault();
+  public com.purride.pixelui.PixelThemeColors$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelui.PixelThemeData {
+  public static final com.purride.pixelui.PixelThemeData$Companion Companion;
+  public com.purride.pixelui.PixelThemeData(com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle);
+  public com.purride.pixelui.PixelThemeData(com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelui.PixelThemeColors getColors();
+  public final com.purride.pixelui.PixelTextStyle getTextStyle();
+  public final com.purride.pixelui.PixelButtonStyle getButtonStyle();
+  public final com.purride.pixelui.PixelTextButtonStyle getTextButtonStyle();
+  public final com.purride.pixelui.PixelTextFieldStyle getTextFieldStyle();
+  public final com.purride.pixelui.PixelThemeColors component1();
+  public final com.purride.pixelui.PixelTextStyle component2();
+  public final com.purride.pixelui.PixelButtonStyle component3();
+  public final com.purride.pixelui.PixelTextButtonStyle component4();
+  public final com.purride.pixelui.PixelTextFieldStyle component5();
+  public final com.purride.pixelui.PixelThemeData copy(com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle);
+  public static com.purride.pixelui.PixelThemeData copy$default(com.purride.pixelui.PixelThemeData, com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelThemeData();
+}
+public final class com.purride.pixelui.PixelThemeData$Companion {
+  public final com.purride.pixelui.PixelThemeData getDefault();
+  public com.purride.pixelui.PixelThemeData$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public final class com.purride.pixelui.PixelUiModule {
   public static final com.purride.pixelui.PixelUiModule INSTANCE;
 }

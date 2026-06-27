@@ -8,6 +8,7 @@ import com.purride.pixelui.Directionality
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.internal.toPixelTextAlign
 
@@ -27,7 +28,7 @@ internal data class TextWidget(
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderText(
             text = data,
-            style = resolveStyle(),
+            style = resolveStyle(context),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -40,7 +41,7 @@ internal data class TextWidget(
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderText).updateText(
             text = data,
-            style = resolveStyle(),
+            style = resolveStyle(context),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -50,8 +51,9 @@ internal data class TextWidget(
         )
     }
 
-    private fun resolveStyle(): PixelTextStyle {
-        return if (color != null) style.copy(color = color) else style
+    private fun resolveStyle(context: BuildContext): PixelTextStyle {
+        val themedStyle = if (style == PixelTextStyle.Default) PixelTheme.of(context).textStyle else style
+        return if (color != null) themedStyle.copy(color = color) else themedStyle
     }
 }
 
@@ -68,7 +70,7 @@ internal data class RichTextWidget(
 ) : RenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderRichText(
-            spans = spans,
+            spans = resolveSpans(context),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -80,7 +82,7 @@ internal data class RichTextWidget(
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderRichText).updateRichText(
-            spans = spans,
+            spans = resolveSpans(context),
             textAlign = textAlign.toPixelTextAlign(),
             textDirection = Directionality.of(context),
             softWrap = softWrap,
@@ -88,5 +90,12 @@ internal data class RichTextWidget(
             maxLines = maxLines,
             defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
         )
+    }
+
+    private fun resolveSpans(context: BuildContext): List<PixelTextSpan> {
+        val themeStyle = PixelTheme.of(context).textStyle
+        return spans.map { span ->
+            if (span.style == PixelTextStyle.Default) span.copy(style = themeStyle) else span
+        }
     }
 }

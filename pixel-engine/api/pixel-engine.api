@@ -667,6 +667,17 @@ com.purride.pixelui public data class PixelTextSpan(
 com.purride.pixelui public data class PixelTextStyle(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelTextStyle = PixelTextStyle()
+com.purride.pixelui public data class PixelThemeData(
+com.purride.pixelui public companion object
+com.purride.pixelui public val Default: PixelThemeData = PixelThemeData()
+com.purride.pixelui public data class PixelThemeColors(
+com.purride.pixelui public companion object
+com.purride.pixelui public val Default: PixelThemeColors = PixelThemeColors()
+com.purride.pixelui public class PixelTheme(
+com.purride.pixelui public val data: PixelThemeData,
+com.purride.pixelui public companion object
+com.purride.pixelui public fun maybeOf(context: BuildContext): PixelThemeData?
+com.purride.pixelui public fun of(context: BuildContext): PixelThemeData
 com.purride.pixelui public class AnimatedBuilder(
 com.purride.pixelui public class AsyncBuilder<T>(
 com.purride.pixelui public val source: PixelAsyncSource<T>,

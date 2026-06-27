@@ -15,6 +15,7 @@ import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Text
@@ -50,6 +51,7 @@ internal data class TextFieldWidget(
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
+        val themedStyle = if (style == PixelTextFieldStyle.Default) PixelTheme.of(context).textFieldStyle else style
         val effectiveFocusNode = focusNode ?: context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (effectiveFocusNode != null) {
             context.watch(effectiveFocusNode)
@@ -59,34 +61,34 @@ internal data class TextFieldWidget(
         }
         val effectiveStyle = when {
             !enabled -> PixelTextFieldStyle(
-                fillColor = style.fillColor,
-                borderColor = style.disabledBorderColor,
-                textStyle = style.disabledTextStyle,
-                placeholderStyle = style.disabledPlaceholderStyle,
-                padding = style.padding,
+                fillColor = themedStyle.fillColor,
+                borderColor = themedStyle.disabledBorderColor,
+                textStyle = themedStyle.disabledTextStyle,
+                placeholderStyle = themedStyle.disabledPlaceholderStyle,
+                padding = themedStyle.padding,
             )
-            readOnly -> style.copy(borderColor = style.readOnlyBorderColor)
-            state.isFocused -> style.copy(borderColor = style.focusedBorderColor)
-            else -> style
+            readOnly -> themedStyle.copy(borderColor = themedStyle.readOnlyBorderColor)
+            state.isFocused -> themedStyle.copy(borderColor = themedStyle.focusedBorderColor)
+            else -> themedStyle
         }
         val safeMinLines = minLines.coerceAtLeast(1)
         val safeMaxLines = maxLines.coerceAtLeast(safeMinLines)
         controller.syncCursorBlinkConfig(
             state = state,
-            enabled = enabled && !readOnly && style.cursorBlinkEnabled,
-            periodMs = style.cursorBlinkPeriodMs,
+            enabled = enabled && !readOnly && themedStyle.cursorBlinkEnabled,
+            periodMs = themedStyle.cursorBlinkPeriodMs,
         )
         val text = state.text.ifEmpty { placeholder }
         val textStyle = when {
             !enabled && state.text.isEmpty() -> effectiveStyle.placeholderStyle
             !enabled -> effectiveStyle.textStyle
-            state.text.isEmpty() -> style.placeholderStyle
-            else -> style.textStyle
+            state.text.isEmpty() -> themedStyle.placeholderStyle
+            else -> themedStyle.textStyle
         }
         return TextInputSurfaceWidget(
             fillColor = fillColor ?: effectiveStyle.fillColor,
             borderColor = borderColor ?: effectiveStyle.borderColor,
-            padding = style.padding,
+            padding = themedStyle.padding,
             alignment = when (textAlign) {
                 TextAlign.START -> Alignment.CENTER_START
                 TextAlign.CENTER -> Alignment.CENTER
@@ -103,11 +105,11 @@ internal data class TextFieldWidget(
             focusNode = effectiveFocusNode,
             onChanged = onChanged,
             onSubmitted = onSubmitted,
-            cursorColor = if (enabled && !readOnly) style.cursorColor else null,
+            cursorColor = if (enabled && !readOnly) themedStyle.cursorColor else null,
             cursorVisible = state.cursorVisible,
-            selectionColor = if (enabled && !readOnly) style.selectionColor else null,
-            compositionColor = if (enabled && !readOnly) style.compositionColor else null,
-            selectionHandleColor = if (enabled && !readOnly && style.selectionHandlesEnabled) style.selectionHandleColor else null,
+            selectionColor = if (enabled && !readOnly) themedStyle.selectionColor else null,
+            compositionColor = if (enabled && !readOnly) themedStyle.compositionColor else null,
+            selectionHandleColor = if (enabled && !readOnly && themedStyle.selectionHandlesEnabled) themedStyle.selectionHandleColor else null,
             key = key,
             child = TextWidget(
                 data = text,
@@ -220,22 +222,24 @@ internal data class OutlinedButtonWidget(
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         val effectiveEnabled = enabled && onPressed != null
+        val theme = PixelTheme.of(context)
+        val themedStyle = if (style == PixelButtonStyle.Default) theme.buttonStyle else style
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) {
             context.watch(focusNode)
         }
         val focused = effectiveEnabled && focusNode?.isFocused == true
-        val effectiveFill = fillColor ?: style.fillColor
-        val effectiveBorder = borderColor ?: if (focused) DefaultFocusBorderColor else style.borderColor
+        val effectiveFill = fillColor ?: themedStyle.fillColor
+        val effectiveBorder = borderColor ?: if (focused) theme.colors.focus else themedStyle.borderColor
         val content = Container(
             fillColor = effectiveFill,
             borderColor = effectiveBorder,
             padding = EdgeInsets.all(OUTLINED_BUTTON_PADDING_PX),
-            alignment = style.alignment,
+            alignment = themedStyle.alignment,
             key = key,
             child = Text(
                 text,
-                style = style.textStyle,
+                style = themedStyle.textStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
                 textAlign = TextAlign.CENTER,
                 key = key?.let { "$it-text" },
@@ -267,18 +271,19 @@ internal data class TextButtonWidget(
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         val effectiveEnabled = enabled && onPressed != null
+        val themedStyle = if (style == PixelTextButtonStyle.Default) PixelTheme.of(context).textButtonStyle else style
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) {
             context.watch(focusNode)
         }
         val focused = effectiveEnabled && focusNode?.isFocused == true
         val content = Container(
-            padding = style.padding,
-            alignment = style.alignment,
+            padding = themedStyle.padding,
+            alignment = themedStyle.alignment,
             key = key,
             child = Text(
                 text,
-                style = style.textStyle,
+                style = themedStyle.textStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,
@@ -303,4 +308,3 @@ internal data class TextButtonWidget(
 }
 
 private const val OUTLINED_BUTTON_PADDING_PX: Int = 2
-private val DefaultFocusBorderColor: PixelColor = PixelColor.fromRgb(255, 200, 0)

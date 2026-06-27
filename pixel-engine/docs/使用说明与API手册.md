@@ -169,29 +169,35 @@ ListViewBuilder(
 
 ## 5. 颜色、字体和主题
 
-engine 使用 ARGB `PixelColor`，不内置 `ThemeData`。推荐在 app 层定义主题对象，再显式传入 widget。
+engine 使用 ARGB `PixelColor`。`PixelTheme` 只提供 widget 树内的像素默认样式，
+不接管 Android host 配置；`bezelColor`、`offPixelColor` 仍通过
+`PixelHostSetupConfig` / `PixelHostView` 设置。
 
 ```kotlin
-data class AppTheme(
-    val background: PixelColor,
-    val grid: PixelColor,
-    val text: PixelColor,
-    val accent: PixelColor,
+val theme = PixelThemeData(
+    colors = PixelThemeColors.Default.copy(
+        text = PixelColor.fromRgb(151, 255, 167),
+        border = PixelColor.fromRgb(255, 220, 120),
+        selection = PixelColor.fromRgb(255, 220, 120),
+    ),
 )
 
-val theme = AppTheme(
-    background = PixelColor.Black,
-    grid = PixelColor.fromRgb(8, 37, 13),
-    text = PixelColor.fromRgb(151, 255, 167),
-    accent = PixelColor.fromRgb(255, 220, 120),
+setup.hostView.bezelColor = PixelColor.Black
+setup.hostView.offPixelColor = PixelColor.fromRgb(8, 37, 13)
+
+PixelTheme(
+    data = theme,
+    child = Column(
+        children = listOf(
+            Text("HOME"),
+            OutlinedButton(text = "OPEN", onPressed = {}),
+        ),
+    ),
 )
-
-setup.hostView.bezelColor = theme.background
-setup.hostView.offPixelColor = theme.grid
-
-Text("HOME", color = theme.text)
-Container(borderColor = theme.accent)
 ```
+
+显式参数优先级高于主题，例如 `Text("HOME", color = PixelColor.White)` 不会使用
+`PixelThemeData.textStyle.color`。
 
 字体优先级：
 
