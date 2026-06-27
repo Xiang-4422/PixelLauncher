@@ -1390,11 +1390,28 @@ Finder：
 - `find.byKey("key")`
 - `find.byText("OK").nth(1)`
 
+可用能力：
+
+- 渲染：`pumpWidget` 渲染根 widget，`pumpFrame` / `pumpAndSettle` 推进动画、ticker 和滚动 settling。
+- 交互：`tap`、`doubleTap`、`longPress`、`drag`、`fling`、`cancelDrag` 覆盖常见点击和滚动手势。
+- 手势流：`startGesture` 返回 `PixelTestGesture`，可用 `moveBy`、`up`、`cancel` 验证分步拖动、多指和取消分支。
+- 文本输入：`enterText`、`composeText`、`updateComposition`、`submitTextInput`、`performTextEditAction` 覆盖输入法 composition、提交、复制、剪切、粘贴和全选。
+- 键盘：`pressKey` 向当前 focus tree 发送按键，适合验证 focus 和快捷键路径。
+- 调试树：`dumpElementTree`、`dumpRenderTree`、`dumpSemanticsTree` 用于定位 widget / render / semantics 状态。
+- 生命周期：测试结束后调用 `dispose`，清理 runtime、手动帧调度器和 focus 状态。
+
 像素验证：
 
 - `tester.pixelAt(x, y)`
 - `tester.hasPixel(color)`
 - `tester.dumpPixelsAsAscii()`
+
+边界：
+
+- `PixelTester` 是 JVM 内离屏测试工具，用于验证 widget、layout、输入分发、滚动和像素输出。
+- 它不启动 Android `Activity`，不覆盖真实 `PixelHostView` 接线、Android IME、系统剪贴板、无障碍服务和设备 GPU/刷新率行为。
+- 宿主接线使用 host 单测和 SDK consumer smoke 验证；真实设备交互、性能和渲染节奏使用 `pixel-device-smoke.sh` 与 `pixel-perf-smoke.sh` 验证。
+- golden 文本快照应优先覆盖小尺寸、确定性 UI；复杂动效只断言关键状态和收敛结果。
 
 常用验证：
 
