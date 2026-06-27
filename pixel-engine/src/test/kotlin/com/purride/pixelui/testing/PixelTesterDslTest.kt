@@ -41,6 +41,7 @@ import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SizedBox
+import com.purride.pixelui.Slider
 import com.purride.pixelui.Slidable
 import com.purride.pixelui.SlidableAction
 import com.purride.pixelui.SlidableActionPane
@@ -1421,12 +1422,19 @@ class PixelTesterDslTest {
         val tester = PixelTester()
         var tab = 0
         var segment = 0
+        var dragged = 0f
+        var released = 0f
 
         tester.pumpWidget(
             widget = Column(
                 children = listOf(
                     Tabs(labels = listOf("A", "B"), selectedIndex = tab, onSelected = { tab = it }),
-                    SegmentedControl(labels = listOf("ONE", "TWO"), selectedIndex = segment, onSelected = { segment = it }),
+                    SegmentedControl(
+                        labels = listOf("ONE", "TWO"),
+                        selectedIndex = segment,
+                        onSelected = { segment = it },
+                    ),
+                    Slider(value = 0.25f, onDrag = { dragged = it }, onRelease = { released = it }, key = "slider"),
                     ProgressBar(progress = 0.5f),
                     ActivityIndicator(frame = 1),
                 ),
@@ -1437,9 +1445,13 @@ class PixelTesterDslTest {
         )
 
         tester.tap(find.byText("B"))
+        tester.renderResult!!.clickTargets.last().onClick()
+        tester.drag(find.byKey("slider"), dx = 25, dy = 0)
 
         assertEquals(1, tab)
-        assertEquals(0, segment)
+        assertEquals(1, segment)
+        assertEquals(0.75f, dragged, 0.01f)
+        assertEquals(0.75f, released, 0.01f)
         assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
         tester.dispose()
     }

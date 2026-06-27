@@ -548,6 +548,37 @@ ListTile(
 `Checkbox` / `Switch` 的 `onChanged = null` 或 `enabled = false` 表示只读展示；这时不会导出
 可点击目标，颜色也会降级为 disabled 状态。
 
+### 滑块、标签页和分段选择
+
+`Slider` 是受控滑块，`value` 由调用方保存并限制在 `0.0f..1.0f` 的业务含义内；渲染和手势会把
+实际输出钳位到 `0.0f..1.0f`。`onDrag` 在拖动中实时返回新比例，`onRelease` 在释放时返回最终比例。
+
+```kotlin
+Slider(
+    value = volume,
+    onDrag = { next -> volume = next },
+    onRelease = { next -> saveVolume(next) },
+)
+```
+
+`Tabs` 和 `SegmentedControl` 都使用 `labels` 的位置作为 index，`selectedIndex` 由调用方保存。
+`Tabs` 适合页面/区域切换；`SegmentedControl` 适合同一位置内的紧凑模式切换。调用方应保证
+`selectedIndex` 指向有效 label；`onSelected` 只回传被点击项的 index，不维护内部状态。
+
+```kotlin
+Tabs(
+    labels = listOf("APPS", "WIDGETS"),
+    selectedIndex = page,
+    onSelected = { index -> page = index },
+)
+
+SegmentedControl(
+    labels = listOf("ALL", "PINNED"),
+    selectedIndex = filter,
+    onSelected = { index -> filter = index },
+)
+```
+
 ### 输入框
 
 ```kotlin
