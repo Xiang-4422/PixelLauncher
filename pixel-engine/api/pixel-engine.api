@@ -646,6 +646,9 @@ com.purride.pixelui.state public val isSettling: Boolean
 com.purride.pixelui.state public data class PixelPagerSavedState(
 com.purride.pixelui.state public val currentPage: Int,
 com.purride.pixelui.state public val axis: PixelAxis,
+com.purride.pixelui.state public const val PixelPagerSavedStateBundleKey: String = "com.purride.pixelui.pager.savedState"
+com.purride.pixelui.state public fun PixelPagerSavedState.saveToBundle(
+com.purride.pixelui.state public fun Bundle.getPixelPagerSavedState(
 com.purride.pixelui.state public class PixelRefreshIndicatorController : ChangeNotifier()
 com.purride.pixelui.state public fun create(): PixelRefreshIndicatorState = PixelRefreshIndicatorState()
 com.purride.pixelui.state public fun startPull(state: PixelRefreshIndicatorState)
@@ -662,6 +665,8 @@ com.purride.pixelui public val Clamp: PixelScrollPhysics = PixelScrollPhysics()
 com.purride.pixelui public val Default: PixelScrollPhysics = Clamp
 com.purride.pixelui.state public class PixelTextFieldController : ChangeNotifier()
 com.purride.pixelui.state public fun create(
+com.purride.pixelui.state public fun saveState(state: PixelTextFieldState): PixelTextFieldSavedState
+com.purride.pixelui.state public fun restoreState(
 com.purride.pixelui.state public fun updateText(
 com.purride.pixelui.state public fun updateComposition(
 com.purride.pixelui.state public fun setSelection(
@@ -682,6 +687,13 @@ com.purride.pixelui.state public var selectionEnd: Int = selectionEnd.coerceIn(t
 com.purride.pixelui.state public var isFocused: Boolean = false
 com.purride.pixelui.state public var compositionStart: Int = -1
 com.purride.pixelui.state public var compositionEnd: Int = -1
+com.purride.pixelui.state public data class PixelTextFieldSavedState(
+com.purride.pixelui.state public val text: String,
+com.purride.pixelui.state public val selectionStart: Int = text.length,
+com.purride.pixelui.state public val selectionEnd: Int = selectionStart,
+com.purride.pixelui.state public const val PixelTextFieldSavedStateBundleKey: String = "com.purride.pixelui.textField.savedState"
+com.purride.pixelui.state public fun PixelTextFieldSavedState.saveToBundle(
+com.purride.pixelui.state public fun Bundle.getPixelTextFieldSavedState(
 com.purride.pixelui.testing public class PixelTester
 com.purride.pixelui.testing public val scheduler: ManualFrameScheduler = ManualFrameScheduler()
 com.purride.pixelui.testing public val vsync: PixelTickerProvider = PixelTickerProvider(scheduler)

@@ -25,6 +25,7 @@ dependencies {
 ```kotlin
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.*
+import com.purride.pixelui.state.*
 import com.purride.pixelui.widgets.animated.*
 ```
 
@@ -355,6 +356,38 @@ override fun onDestroyView() {
 `dispose()` 只释放 pixel-engine runtime 和隐藏输入桥接，不移除 Android view 层级；
 view 层级仍交给 Activity / Fragment 自身管理。
 
+### Saved State
+
+pixel-engine 不自动接管 Android `savedInstanceState`。业务侧持有 controller/state，并在
+Activity / Fragment 的生命周期里显式保存和恢复。
+
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    savedInstanceState?.getPixelPagerSavedState("home.pager")?.let {
+        pagerController.restoreState(pagerState, it, pageCount = 3)
+    }
+    savedInstanceState?.getPixelTextFieldSavedState("home.search")?.let {
+        searchController.restoreState(searchState, it)
+    }
+    savedInstanceState?.getPixelListSavedState("home.list")?.let {
+        listController.restoreState(listState, it)
+    }
+}
+
+override fun onSaveInstanceState(outState: Bundle) {
+    super.onSaveInstanceState(outState)
+    pagerController.saveState(pagerState).saveToBundle(outState, "home.pager")
+    searchController.saveState(searchState).saveToBundle(outState, "home.search")
+    listController.saveState(listState).saveToBundle(outState, "home.list")
+}
+```
+
+`PixelNavigatorState.saveToBundle` / `restoreFromBundle` 保存 route stack。路由内滚动位置优先用
+`PixelRouteScrollRestoration`，它只在 route 还留在 navigator stack 内时生效；跨 Activity
+重建仍使用上面的 `PixelListSavedState`。
+
 ### 基础面板
 
 ```kotlin
@@ -675,6 +708,9 @@ scrollController.jumpToEnd(listState)
 | `PixelDeepLink` | deep link 解析 |
 | `PixelDeepLinkResolver` | deep link 到 route stack |
 | `PixelRouteScrollRestoration` | route 内滚动位置恢复 |
+| `PixelListSavedState` | 列表/网格滚动位置保存 |
+| `PixelPagerSavedState` | PageView 当前页保存 |
+| `PixelTextFieldSavedState` | TextField 文本和选区保存 |
 
 ### 动画
 

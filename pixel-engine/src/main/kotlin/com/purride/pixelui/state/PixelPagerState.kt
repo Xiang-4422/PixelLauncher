@@ -1,5 +1,6 @@
 package com.purride.pixelui.state
 
+import android.os.Bundle
 import com.purride.pixelcore.AxisMotionState
 import com.purride.pixelcore.PixelAxis
 
@@ -45,3 +46,37 @@ public data class PixelPagerSavedState(
     public val currentPage: Int,
     public val axis: PixelAxis,
 )
+
+/** [PixelPagerSavedState.saveToBundle] 与 [getPixelPagerSavedState] 使用的默认 key。 */
+public const val PixelPagerSavedStateBundleKey: String = "com.purride.pixelui.pager.savedState"
+
+/** 把分页位置写入 Android [Bundle]，供 Activity / Fragment 保存实例状态。 */
+public fun PixelPagerSavedState.saveToBundle(
+    outState: Bundle,
+    key: String = PixelPagerSavedStateBundleKey,
+) {
+    require(key.isNotBlank()) { "PixelPagerSavedState Bundle key must not be blank" }
+    val bundle = Bundle()
+    bundle.putInt(PixelPagerSavedStateKeys.CurrentPage, currentPage)
+    bundle.putString(PixelPagerSavedStateKeys.Axis, axis.name)
+    outState.putBundle(key, bundle)
+}
+
+/** 从 Android [Bundle] 读取之前保存的分页位置；缺少或损坏时返回 null。 */
+public fun Bundle.getPixelPagerSavedState(
+    key: String = PixelPagerSavedStateBundleKey,
+): PixelPagerSavedState? {
+    require(key.isNotBlank()) { "PixelPagerSavedState Bundle key must not be blank" }
+    val bundle = getBundle(key) ?: return null
+    val axisName = bundle.getString(PixelPagerSavedStateKeys.Axis) ?: return null
+    val axis = runCatching { PixelAxis.valueOf(axisName) }.getOrNull() ?: return null
+    return PixelPagerSavedState(
+        currentPage = bundle.getInt(PixelPagerSavedStateKeys.CurrentPage),
+        axis = axis,
+    )
+}
+
+private object PixelPagerSavedStateKeys {
+    const val CurrentPage = "currentPage"
+    const val Axis = "axis"
+}

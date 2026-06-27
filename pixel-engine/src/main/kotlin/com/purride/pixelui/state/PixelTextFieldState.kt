@@ -1,5 +1,7 @@
 package com.purride.pixelui.state
 
+import android.os.Bundle
+
 /** 通用文本输入状态。 */
 public class PixelTextFieldState(
     initialText: String = "",
@@ -38,4 +40,47 @@ public class PixelTextFieldState(
     internal var cursorBlinkPeriodMs: Long = 1_000L
     internal var cursorBlinkElapsedMs: Long = 0L
     internal var cursorVisible: Boolean = true
+}
+
+/** TextField 的可持久化文本和选区。 */
+public data class PixelTextFieldSavedState(
+    public val text: String,
+    public val selectionStart: Int = text.length,
+    public val selectionEnd: Int = selectionStart,
+)
+
+/** [PixelTextFieldSavedState.saveToBundle] 与 [getPixelTextFieldSavedState] 使用的默认 key。 */
+public const val PixelTextFieldSavedStateBundleKey: String = "com.purride.pixelui.textField.savedState"
+
+/** 把 TextField 文本和选区写入 Android [Bundle]。 */
+public fun PixelTextFieldSavedState.saveToBundle(
+    outState: Bundle,
+    key: String = PixelTextFieldSavedStateBundleKey,
+) {
+    require(key.isNotBlank()) { "PixelTextFieldSavedState Bundle key must not be blank" }
+    val bundle = Bundle()
+    bundle.putString(PixelTextFieldSavedStateKeys.Text, text)
+    bundle.putInt(PixelTextFieldSavedStateKeys.SelectionStart, selectionStart)
+    bundle.putInt(PixelTextFieldSavedStateKeys.SelectionEnd, selectionEnd)
+    outState.putBundle(key, bundle)
+}
+
+/** 从 Android [Bundle] 读取之前保存的 TextField 文本和选区。 */
+public fun Bundle.getPixelTextFieldSavedState(
+    key: String = PixelTextFieldSavedStateBundleKey,
+): PixelTextFieldSavedState? {
+    require(key.isNotBlank()) { "PixelTextFieldSavedState Bundle key must not be blank" }
+    val bundle = getBundle(key) ?: return null
+    val text = bundle.getString(PixelTextFieldSavedStateKeys.Text) ?: return null
+    return PixelTextFieldSavedState(
+        text = text,
+        selectionStart = bundle.getInt(PixelTextFieldSavedStateKeys.SelectionStart, text.length),
+        selectionEnd = bundle.getInt(PixelTextFieldSavedStateKeys.SelectionEnd, text.length),
+    )
+}
+
+private object PixelTextFieldSavedStateKeys {
+    const val Text = "text"
+    const val SelectionStart = "selectionStart"
+    const val SelectionEnd = "selectionEnd"
 }

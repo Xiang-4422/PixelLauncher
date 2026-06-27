@@ -29,6 +29,28 @@ public class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
+    /** 创建可写入 Android Bundle 的文本和选区快照。 */
+    public fun saveState(state: PixelTextFieldState): PixelTextFieldSavedState {
+        return PixelTextFieldSavedState(
+            text = state.text,
+            selectionStart = state.selectionStart,
+            selectionEnd = state.selectionEnd,
+        )
+    }
+
+    /** 恢复保存过的文本和选区；IME composition 不跨 Activity 重建保存。 */
+    public fun restoreState(
+        state: PixelTextFieldState,
+        savedState: PixelTextFieldSavedState,
+    ) {
+        updateText(
+            state = state,
+            text = savedState.text,
+            selectionStart = savedState.selectionStart,
+            selectionEnd = savedState.selectionEnd,
+        )
+    }
+
     /** 更新文本、选区和可选 IME composition 范围。 */
     public fun updateText(
         state: PixelTextFieldState,

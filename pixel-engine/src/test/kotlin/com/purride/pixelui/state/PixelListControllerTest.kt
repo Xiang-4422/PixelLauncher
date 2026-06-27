@@ -161,6 +161,22 @@ class PixelListControllerTest {
     }
 
     @Test
+    fun restoreStateWaitsForNextLayoutWhenGeometryIsMissing() {
+        val restored = controller.create()
+        val savedState = PixelListSavedState(scrollOffsetPx = 25f, maxScrollOffsetPx = 80f)
+
+        controller.restoreState(restored, savedState)
+
+        assertEquals(savedState, restored.pendingRestorationState)
+        assertEquals(0f, restored.scrollOffsetPx, 0.001f)
+
+        controller.sync(restored, viewportHeightPx = 20, contentHeightPx = 100)
+
+        assertEquals(null, restored.pendingRestorationState)
+        assertEquals(25f, restored.scrollOffsetPx, 0.001f)
+    }
+
+    @Test
     fun saveStateCapturesFirstVisibleItemAnchor() {
         val source = controller.create(initialScrollOffsetPx = 25f)
         controller.sync(source, viewportHeightPx = 20, contentHeightPx = 80)

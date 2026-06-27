@@ -29,6 +29,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.
 - `PixelHostBridge.updateTextInput`.
 - `PixelListController.isAtEnd`.
+- `PixelPagerSavedState` / `PixelTextFieldSavedState` Android `Bundle` helpers.
 
 ### Compatibility policy
 

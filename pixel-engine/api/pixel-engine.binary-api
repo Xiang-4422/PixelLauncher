@@ -3007,6 +3007,13 @@ public final class com.purride.pixelui.state.PixelPagerState {
   public final boolean isSettling();
   public com.purride.pixelui.state.PixelPagerState();
 }
+public final class com.purride.pixelui.state.PixelPagerStateKt {
+  public static final java.lang.String PixelPagerSavedStateBundleKey;
+  public static final void saveToBundle(com.purride.pixelui.state.PixelPagerSavedState, android.os.Bundle, java.lang.String);
+  public static void saveToBundle$default(com.purride.pixelui.state.PixelPagerSavedState, android.os.Bundle, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.state.PixelPagerSavedState getPixelPagerSavedState(android.os.Bundle, java.lang.String);
+  public static com.purride.pixelui.state.PixelPagerSavedState getPixelPagerSavedState$default(android.os.Bundle, java.lang.String, int, java.lang.Object);
+}
 public final class com.purride.pixelui.state.PixelPendingSliverScrollIntoView {
   public com.purride.pixelui.state.PixelPendingSliverScrollIntoView(int, int);
   public final int getSliverIndex();
@@ -3080,6 +3087,8 @@ public final class com.purride.pixelui.state.PixelTextFieldController extends co
   public com.purride.pixelui.state.PixelTextFieldController();
   public final com.purride.pixelui.state.PixelTextFieldState create(java.lang.String, int, int);
   public static com.purride.pixelui.state.PixelTextFieldState create$default(com.purride.pixelui.state.PixelTextFieldController, java.lang.String, int, int, int, java.lang.Object);
+  public final com.purride.pixelui.state.PixelTextFieldSavedState saveState(com.purride.pixelui.state.PixelTextFieldState);
+  public final void restoreState(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldSavedState);
   public final void updateText(com.purride.pixelui.state.PixelTextFieldState, java.lang.String, int, int, int, int);
   public static void updateText$default(com.purride.pixelui.state.PixelTextFieldController, com.purride.pixelui.state.PixelTextFieldState, java.lang.String, int, int, int, int, int, java.lang.Object);
   public final void updateComposition(com.purride.pixelui.state.PixelTextFieldState, int, int);
@@ -3096,6 +3105,21 @@ public final class com.purride.pixelui.state.PixelTextFieldController extends co
   public final void requestFocus(com.purride.pixelui.state.PixelTextFieldState);
   public final void requestBlur(com.purride.pixelui.state.PixelTextFieldState);
 }
+public final class com.purride.pixelui.state.PixelTextFieldSavedState {
+  public com.purride.pixelui.state.PixelTextFieldSavedState(java.lang.String, int, int);
+  public com.purride.pixelui.state.PixelTextFieldSavedState(java.lang.String, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getText();
+  public final int getSelectionStart();
+  public final int getSelectionEnd();
+  public final java.lang.String component1();
+  public final int component2();
+  public final int component3();
+  public final com.purride.pixelui.state.PixelTextFieldSavedState copy(java.lang.String, int, int);
+  public static com.purride.pixelui.state.PixelTextFieldSavedState copy$default(com.purride.pixelui.state.PixelTextFieldSavedState, java.lang.String, int, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelui.state.PixelTextFieldState {
   public com.purride.pixelui.state.PixelTextFieldState(java.lang.String, int, int);
   public com.purride.pixelui.state.PixelTextFieldState(java.lang.String, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -3106,6 +3130,13 @@ public final class com.purride.pixelui.state.PixelTextFieldState {
   public final int getCompositionStart();
   public final int getCompositionEnd();
   public com.purride.pixelui.state.PixelTextFieldState();
+}
+public final class com.purride.pixelui.state.PixelTextFieldStateKt {
+  public static final java.lang.String PixelTextFieldSavedStateBundleKey;
+  public static final void saveToBundle(com.purride.pixelui.state.PixelTextFieldSavedState, android.os.Bundle, java.lang.String);
+  public static void saveToBundle$default(com.purride.pixelui.state.PixelTextFieldSavedState, android.os.Bundle, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.state.PixelTextFieldSavedState getPixelTextFieldSavedState(android.os.Bundle, java.lang.String);
+  public static com.purride.pixelui.state.PixelTextFieldSavedState getPixelTextFieldSavedState$default(android.os.Bundle, java.lang.String, int, java.lang.Object);
 }
 public abstract class com.purride.pixelui.testing.PixelFinder {
   public final com.purride.pixelui.testing.PixelFinder nth(int);

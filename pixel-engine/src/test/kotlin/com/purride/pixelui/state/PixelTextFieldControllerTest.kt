@@ -213,6 +213,22 @@ class PixelTextFieldControllerTest {
         assertEquals(2, state.selectionEnd)
     }
 
+    @Test
+    fun saveAndRestoreStateKeepsTextSelectionAndClearsComposition() {
+        val source = controller.create(initialText = "PIXEL", selectionStart = 1, selectionEnd = 4)
+        controller.updateComposition(source, compositionStart = 1, compositionEnd = 3)
+        val savedState = controller.saveState(source)
+        val restored = controller.create(initialText = "OLD")
+
+        controller.restoreState(restored, savedState)
+
+        assertEquals("PIXEL", restored.text)
+        assertEquals(1, restored.selectionStart)
+        assertEquals(4, restored.selectionEnd)
+        assertEquals(-1, restored.compositionStart)
+        assertEquals(-1, restored.compositionEnd)
+    }
+
     // ── 多行 selection clamp（§14 V2）──────────────────────────────────────
 
     /**

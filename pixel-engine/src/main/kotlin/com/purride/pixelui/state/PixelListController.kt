@@ -225,6 +225,23 @@ public class PixelListController(
         policy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset,
     ) {
         state.pendingRestorationState = null
+        // Activity onCreate 恢复时通常还没有 viewport/content 几何，先等下一次 layout。
+        if (
+            savedState.scrollOffsetPx.finiteOrZero() > 0f &&
+            viewportHeightPx <= 0 &&
+            contentHeightPx <= 0 &&
+            state.viewportHeightPx <= 0 &&
+            state.contentHeightPx <= 0
+        ) {
+            state.pendingRestorationState = savedState
+            state.pendingRestorationPolicy = policy
+            state.isDragging = false
+            state.isSettling = false
+            state.scrollVelocityPxPerSecond = 0f
+            state.snapTargetOffsetPx = null
+            notifyListeners()
+            return
+        }
         sync(
             state = state,
             viewportHeightPx = viewportHeightPx,
