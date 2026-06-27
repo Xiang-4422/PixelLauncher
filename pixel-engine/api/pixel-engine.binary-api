@@ -1264,6 +1264,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget Dialog-WmmbFQo$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ConfirmDialog-XOXv8iY(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, java.lang.String, int, int, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object);
   public static com.purride.pixelui.Widget ConfirmDialog-XOXv8iY$default(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, java.lang.String, int, int, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ModalBarrier-SEeGgR8(int, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget ModalBarrier-SEeGgR8$default(int, boolean, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Toast-K2hdtbI(java.lang.String, int, com.purride.pixelui.PixelTextStyle, java.lang.Object);
   public static com.purride.pixelui.Widget Toast-K2hdtbI$default(java.lang.String, int, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Snackbar-7fJbCWk(java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle, java.lang.Object);
@@ -2316,6 +2318,33 @@ public final class com.purride.pixelui.PixelThemeData$Companion {
   public final com.purride.pixelui.PixelThemeData getDefault();
   public com.purride.pixelui.PixelThemeData$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelui.PixelToastQueueController extends com.purride.pixelui.ChangeNotifier {
+  public com.purride.pixelui.PixelToastQueueController();
+  public final int getSize();
+  public final com.purride.pixelui.PixelToastQueueItem getCurrent();
+  public final com.purride.pixelui.PixelToastQueueItem enqueue-ShX4CGY(java.lang.String, int, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelToastQueueItem enqueue-ShX4CGY$default(com.purride.pixelui.PixelToastQueueController, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final boolean dismissCurrent();
+  public final boolean dismiss(int);
+  public final void clear();
+}
+public final class com.purride.pixelui.PixelToastQueueItem {
+  public com.purride.pixelui.PixelToastQueueItem(int, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final int getId();
+  public final java.lang.String getMessage();
+  public final int getFillColor-bODNPuc();
+  public final com.purride.pixelui.PixelTextStyle getTextStyle();
+  public final int component1();
+  public final java.lang.String component2();
+  public final int component3-bODNPuc();
+  public final com.purride.pixelui.PixelTextStyle component4();
+  public final com.purride.pixelui.PixelToastQueueItem copy-YtVJrYg(int, java.lang.String, int, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelToastQueueItem copy-YtVJrYg$default(com.purride.pixelui.PixelToastQueueItem, int, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelToastQueueItem(int, java.lang.String, int, com.purride.pixelui.PixelTextStyle, kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public final class com.purride.pixelui.PixelUiModule {
   public static final com.purride.pixelui.PixelUiModule INSTANCE;
 }
@@ -2605,6 +2634,10 @@ public final class com.purride.pixelui.TextInputSelectionHandle extends java.lan
   public static com.purride.pixelui.TextInputSelectionHandle[] values();
   public static com.purride.pixelui.TextInputSelectionHandle valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.TextInputSelectionHandle> getEntries();
+}
+public final class com.purride.pixelui.ToastQueueKt {
+  public static final com.purride.pixelui.Widget ToastQueue(com.purride.pixelui.PixelToastQueueController, java.lang.Object);
+  public static com.purride.pixelui.Widget ToastQueue$default(com.purride.pixelui.PixelToastQueueController, java.lang.Object, int, java.lang.Object);
 }
 public final class com.purride.pixelui.Transform {
   public static final com.purride.pixelui.Transform INSTANCE;

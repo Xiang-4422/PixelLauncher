@@ -760,6 +760,7 @@ com.purride.pixelui public fun Checkbox(
 com.purride.pixelui public fun Switch(
 com.purride.pixelui public fun Dialog(
 com.purride.pixelui public fun ConfirmDialog(
+com.purride.pixelui public fun ModalBarrier(
 com.purride.pixelui public fun Toast(
 com.purride.pixelui public fun Snackbar(
 com.purride.pixelui public fun Tabs(
@@ -884,6 +885,15 @@ com.purride.pixelui public enum class SlidableMotion
 com.purride.pixelui public data class SlidableActionPane(
 com.purride.pixelui public fun Slidable(
 com.purride.pixelui public fun SlidableAction(
+com.purride.pixelui public data class PixelToastQueueItem(
+com.purride.pixelui public class PixelToastQueueController : ChangeNotifier()
+com.purride.pixelui public val size: Int
+com.purride.pixelui public val current: PixelToastQueueItem?
+com.purride.pixelui public fun enqueue(
+com.purride.pixelui public fun dismissCurrent(): Boolean
+com.purride.pixelui public fun dismiss(id: Int): Boolean
+com.purride.pixelui public fun clear()
+com.purride.pixelui public fun ToastQueue(
 com.purride.pixelui.widgets.animated public fun AnimatedContainer(
 com.purride.pixelui.widgets.animated public fun AnimatedOpacity(
 com.purride.pixelui.widgets.animated public fun quantizeOpacity(t: Float): Float = when

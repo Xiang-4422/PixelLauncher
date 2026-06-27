@@ -339,6 +339,31 @@ public fun ConfirmDialog(
 }
 
 /**
+ * 填满父级 [Stack] 的模态遮罩。
+ *
+ * 该组件只负责绘制遮罩和可选点击关闭；不会自动管理 overlay、back、焦点锁定或动画。
+ * 需要对话框生命周期时，请配合 [PixelOverlayHost] / [PixelOverlayController] 使用。
+ */
+public fun ModalBarrier(
+    color: PixelColor = PixelColor.fromArgb(160, 0, 0, 0),
+    dismissible: Boolean = false,
+    onDismiss: (() -> Unit)? = null,
+    key: Any? = null,
+): Widget {
+    val fill = Container(fillColor = color, key = key?.let { "$it-fill" })
+    val barrier = if (dismissible && onDismiss != null) {
+        GestureDetector(
+            child = fill,
+            onTap = onDismiss,
+            key = key,
+        )
+    } else {
+        fill
+    }
+    return PositionedFill(child = barrier, key = key?.let { "$it-positioned" })
+}
+
+/**
  * 居中的短提示内容。
  *
  * 该函数只创建 toast widget，不内置自动超时或动画。业务需要显示/关闭时长时，应由

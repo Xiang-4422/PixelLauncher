@@ -1,10 +1,14 @@
 package com.purride.pixelui.foundation
 
 import com.purride.pixelui.Builder
+import com.purride.pixelui.ModalBarrier
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelOverlayController
 import com.purride.pixelui.PixelOverlayHost
+import com.purride.pixelui.PixelToastQueueController
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
+import com.purride.pixelui.ToastQueue
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
@@ -13,6 +17,60 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelOverlayTest {
+    @Test
+    fun modalBarrierInvokesDismissWhenDismissible() {
+        val tester = PixelTester()
+        var dismissed = 0
+
+        tester.pumpWidget(
+            widget = Stack(
+                children = listOf(
+                    Text("HOME"),
+                    ModalBarrier(
+                        dismissible = true,
+                        onDismiss = { dismissed += 1 },
+                        key = "barrier",
+                    ),
+                ),
+            ),
+            logicalWidth = 64,
+            logicalHeight = 24,
+        )
+
+        tester.tap(find.byKey("barrier"))
+        assertEquals(1, dismissed)
+        tester.dispose()
+    }
+
+    @Test
+    fun toastQueueShowsCurrentMessageAndAdvances() {
+        val controller = PixelToastQueueController()
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = ToastQueue(controller = controller),
+            logicalWidth = 64,
+            logicalHeight = 24,
+        )
+
+        assertFalse(tester.exists(find.byText("ONE")))
+        val first = controller.enqueue("ONE")
+        controller.enqueue("TWO")
+        tester.pumpFrame(16)
+
+        assertEquals(2, controller.size)
+        assertEquals(first, controller.current)
+        assertTrue(tester.exists(find.byText("ONE")))
+        assertFalse(tester.exists(find.byText("TWO")))
+
+        assertTrue(controller.dismissCurrent())
+        tester.pumpFrame(16)
+
+        assertEquals(1, controller.size)
+        assertTrue(tester.exists(find.byText("TWO")))
+        tester.dispose()
+    }
+
     @Test
     fun controllerShowsAndDismissesToast() {
         val controller = PixelOverlayController()

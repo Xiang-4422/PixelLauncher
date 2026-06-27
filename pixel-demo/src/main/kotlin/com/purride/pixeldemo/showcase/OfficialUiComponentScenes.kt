@@ -39,6 +39,7 @@ import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.ModalBarrier
 import com.purride.pixelui.Opacity
 import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
@@ -53,6 +54,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelToastQueueController
 import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.PositionedDirectional
@@ -81,6 +83,7 @@ import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Toast
+import com.purride.pixelui.ToastQueue
 import com.purride.pixelui.Transform
 import com.purride.pixelui.ValueAdjuster
 import com.purride.pixelui.Visibility
@@ -461,6 +464,7 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
             ),
         )
     },
+    ComponentExampleScene("controls_overlay_tools", "OverlayTools", "模态遮罩与 toast 队列基础能力", DemoCatalog.feedback, setOf("component", "overlay", "toast"), setOf("ModalBarrier", "ToastQueue", "PixelToastQueueController")) { ToastQueueOfficialBody() },
     componentScene("controls_app_scaffold", "AppScaffold", "标题、body、bottomBar 的页面骨架", DemoCatalog.navigation, "AppScaffold") {
         Container(
             width = 100,
@@ -691,6 +695,29 @@ private class StepperOfficialBody(
                             valueWidth = 34,
                         ),
                     ),
+                ),
+            )
+    }
+}
+
+private class ToastQueueOfficialBody(
+    override val key: Any? = null,
+) : StatefulWidget(key = key) {
+    override fun createState(): State<out StatefulWidget> = ToastQueueOfficialState()
+
+    private class ToastQueueOfficialState : State<ToastQueueOfficialBody>() {
+        private val queue = PixelToastQueueController()
+
+        override fun initState() {
+            queue.enqueue("QUEUED", textStyle = TextStyle(color = Accent))
+        }
+
+        override fun build(context: BuildContext): Widget =
+            Stack(
+                children = listOf(
+                    Container(width = 92, height = 38, borderColor = Muted, child = Center(child = Text("CONTENT", style = TextStyle(color = Muted)))),
+                    ModalBarrier(color = PixelColor.fromArgb(90, 0, 0, 0)),
+                    ToastQueue(controller = queue),
                 ),
             )
     }

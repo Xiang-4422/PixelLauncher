@@ -785,6 +785,28 @@ Snackbar(
 取消/确认后的关闭策略由回调显式处理；`Toast` 支持多行文本；`Snackbar` 的 `action`
 由调用方传入任意 widget，常用 `TextButton`。
 
+`ModalBarrier` 是填满父级 `Stack` 的遮罩，可选点击关闭；它不接管 back、焦点锁定、
+overlay 生命周期或动画。`ToastQueue` 渲染 `PixelToastQueueController` 的队首消息；
+控制器只保存队列，不内置自动超时。
+
+```kotlin
+val queue = PixelToastQueueController()
+
+PixelOverlayHost(
+    controller = overlay,
+    child = Stack(
+        children = listOf(
+            AppRoot(),
+            ModalBarrier(dismissible = true, onDismiss = { closeDialog() }),
+            ToastQueue(controller = queue),
+        ),
+    ),
+)
+
+queue.enqueue("SAVED")
+queue.dismissCurrent()
+```
+
 `EmptyState` 是居中的空状态组合组件，只负责标题、说明、可选图标和 action 的像素布局；
 空数据判断、加载状态和重试动作由调用方维护。
 
@@ -1020,7 +1042,11 @@ Form(
 | `Dialog` | 居中对话框 | `title`、`content`、`actions` |
 | `ConfirmDialog` | 确认对话框组合组件 | `title`、`message`、`onConfirm`、`onCancel` |
 | `Toast` | 中央短提示 | `message` |
+| `ToastQueue` | 队首 toast 渲染器 | `controller` |
+| `PixelToastQueueController` | toast 队列状态 | `enqueue`、`dismissCurrent`、`dismiss` |
+| `PixelToastQueueItem` | toast 队列条目 | `id`、`message`、`fillColor`、`textStyle` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
+| `ModalBarrier` | Stack 内模态遮罩 | `color`、`dismissible`、`onDismiss` |
 | `EmptyState` | 居中空状态 | `title`、`message`、`icon`、`action` |
 | `LoadStateView` | loading/empty/error/content 组合视图 | `snapshot`、`content`、`isEmpty` |
 | `PixelErrorPanel` | 错误边界 fallback | `message`、`color` |
