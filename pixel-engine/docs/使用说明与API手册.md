@@ -208,6 +208,19 @@ PixelTheme(
 
 ## 6. 常见页面模式
 
+### 错误边界
+
+`PixelErrorBoundary` 可以捕获后代 widget build 异常，并用像素后备界面替换失败子树。
+没有边界时，异常仍会继续抛给宿主。
+
+```kotlin
+PixelErrorBoundary(
+    onError = { error -> println(error.message) },
+    errorBuilder = { error -> PixelErrorPanel(error.message ?: "UNKNOWN") },
+    child = AppRoot(),
+)
+```
+
 ### 基础面板
 
 ```kotlin

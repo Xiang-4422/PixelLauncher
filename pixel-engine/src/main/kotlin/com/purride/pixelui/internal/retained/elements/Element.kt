@@ -3,6 +3,7 @@ package com.purride.pixelui.internal
 import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.InternalBuildContext
 import com.purride.pixelui.Listenable
+import com.purride.pixelui.PixelErrorBoundary
 import com.purride.pixelui.Widget
 import kotlin.reflect.KClass
 
@@ -185,6 +186,25 @@ internal abstract class Element(
     open fun findRenderObject(): RenderObject? = null
 
     /**
+     * 从最近的 [PixelErrorBoundary] 构建错误后备界面；没有边界时返回 null。
+     */
+    internal fun buildErrorFallback(error: Throwable): Widget? {
+        return findNearestErrorBoundary()?.fallbackFor(error)
+    }
+
+    private fun findNearestErrorBoundary(): PixelErrorBoundary? {
+        var cursor: Element? = this
+        while (cursor != null) {
+            val boundary = (cursor as? InheritedElement)?.widget as? PixelErrorBoundary
+            if (boundary != null) {
+                return boundary
+            }
+            cursor = cursor.parent
+        }
+        return null
+    }
+
+    /**
      * 执行当前 element 的实际重建。
      */
     protected abstract fun performRebuild()
@@ -217,11 +237,24 @@ internal abstract class ComponentElement(
      * 重建当前组件并刷新它的唯一子节点。
      */
     override fun performRebuild() {
-        childSlot.update(
-            owner = owner,
-            parent = this,
-            newWidget = buildWidget(),
-        )
+        val nextWidget = try {
+            buildWidget()
+        } catch (error: Throwable) {
+            buildErrorFallback(error) ?: throw error
+        }
+        try {
+            childSlot.update(
+                owner = owner,
+                parent = this,
+                newWidget = nextWidget,
+            )
+        } catch (error: Throwable) {
+            childSlot.update(
+                owner = owner,
+                parent = this,
+                newWidget = buildErrorFallback(error) ?: throw error,
+            )
+        }
     }
 
     /**

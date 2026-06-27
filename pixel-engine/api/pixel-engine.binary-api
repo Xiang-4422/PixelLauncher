@@ -1272,6 +1272,19 @@ public final class com.purride.pixelui.PixelDebugOverlayKt {
   public static final com.purride.pixelui.Widget PixelDebugOverlay(com.purride.pixelui.PixelHostFrameStats, java.lang.Object, com.purride.pixelui.PixelInspectorSnapshot, java.lang.Integer);
   public static com.purride.pixelui.Widget PixelDebugOverlay$default(com.purride.pixelui.PixelHostFrameStats, java.lang.Object, com.purride.pixelui.PixelInspectorSnapshot, java.lang.Integer, int, java.lang.Object);
 }
+public final class com.purride.pixelui.PixelErrorBoundary extends com.purride.pixelui.InheritedWidget {
+  public com.purride.pixelui.PixelErrorBoundary(kotlin.jvm.functions.Function1<? super java.lang.Throwable, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Throwable, ? extends com.purride.pixelui.Widget>, com.purride.pixelui.Widget, java.lang.Object);
+  public com.purride.pixelui.PixelErrorBoundary(kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final kotlin.jvm.functions.Function1<java.lang.Throwable, kotlin.Unit> getOnError();
+  public final kotlin.jvm.functions.Function1<java.lang.Throwable, com.purride.pixelui.Widget> getErrorBuilder();
+  public com.purride.pixelui.Widget getChild();
+  public java.lang.Object getKey();
+  public boolean updateShouldNotify(com.purride.pixelui.InheritedWidget);
+}
+public final class com.purride.pixelui.PixelErrorBoundaryKt {
+  public static final com.purride.pixelui.Widget PixelErrorPanel-ShX4CGY(java.lang.String, int, java.lang.Object);
+  public static com.purride.pixelui.Widget PixelErrorPanel-ShX4CGY$default(java.lang.String, int, java.lang.Object, int, java.lang.Object);
+}
 public final class com.purride.pixelui.PixelFocusDirection extends java.lang.Enum<com.purride.pixelui.PixelFocusDirection> {
   public static final com.purride.pixelui.PixelFocusDirection NEXT;
   public static final com.purride.pixelui.PixelFocusDirection PREVIOUS;

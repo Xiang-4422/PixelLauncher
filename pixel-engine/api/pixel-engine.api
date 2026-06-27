@@ -354,6 +354,10 @@ com.purride.pixelui public data class Failure(public val error: Throwable) : Pix
 com.purride.pixelui public fun interface PixelAsyncSource<T>
 com.purride.pixelui public fun subscribe(listener: (PixelAsyncSnapshot<T>) -> Unit): () -> Unit
 com.purride.pixelui public fun <T> pixelAsyncSourceOf(value: T): PixelAsyncSource<T>
+com.purride.pixelui public class PixelErrorBoundary(
+com.purride.pixelui public val onError: ((Throwable) -> Unit)? = null,
+com.purride.pixelui public val errorBuilder: (Throwable) -> Widget = { error ->
+com.purride.pixelui public fun PixelErrorPanel(
 com.purride.pixelui public enum class PixelKey
 com.purride.pixelui public data class PixelKeyEvent(
 com.purride.pixelui public enum class PixelFocusDirection
