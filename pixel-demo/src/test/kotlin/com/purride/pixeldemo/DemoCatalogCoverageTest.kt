@@ -85,6 +85,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("Switch", "controls_checkbox")
         assertSearchContains("SegmentedControl", "controls_tabs")
         assertSearchContains("Toast", "controls_dialog")
+        assertSearchContains("LoadStateView", "controls_load_state_view")
         assertSearchContains("ListViewBuilder", "scroll_list_view")
         assertSearchContains("GridViewBuilder", "scroll_grid_view")
         assertSearchContains("PageViewBuilder", "scroll_page_view")
@@ -210,6 +211,7 @@ class DemoCatalogCoverageTest {
                 "controls_slider",
                 "controls_progress_bar",
                 "controls_activity_indicator",
+                "controls_load_state_view",
                 "controls_badge",
                 "controls_dialog",
                 "scroll_single_child_scroll_view",

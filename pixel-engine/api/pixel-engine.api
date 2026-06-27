@@ -762,6 +762,7 @@ com.purride.pixelui public fun Tabs(
 com.purride.pixelui public fun SegmentedControl(
 com.purride.pixelui public fun ProgressBar(
 com.purride.pixelui public fun ActivityIndicator(
+com.purride.pixelui public fun <T> LoadStateView(
 com.purride.pixelui public fun EmptyState(
 com.purride.pixelui public fun Badge(
 com.purride.pixelui public fun Divider(

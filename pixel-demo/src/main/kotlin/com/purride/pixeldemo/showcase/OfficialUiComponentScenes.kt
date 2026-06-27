@@ -33,6 +33,7 @@ import com.purride.pixelui.Flexible
 import com.purride.pixelui.Gap
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Icon
+import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
@@ -44,6 +45,7 @@ import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelIconData
 import com.purride.pixelui.PixelInputType
+import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
@@ -330,6 +332,16 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     ComponentExampleScene("controls_progress_bar", "ProgressBar", "水平进度展示", DemoCatalog.feedback, setOf("component", "progress"), setOf("ProgressBar")) { SliderOfficialBody(showProgress = true) },
     componentScene("controls_activity_indicator", "ActivityIndicator", "四帧像素加载指示器", DemoCatalog.feedback, "ActivityIndicator") {
         Row(children = listOf(ActivityIndicator(frame = 0, color = Yellow), ActivityIndicator(frame = 1, color = Yellow), ActivityIndicator(frame = 2, color = Yellow), ActivityIndicator(frame = 3, color = Yellow)), spacing = 4)
+    },
+    componentScene("controls_load_state_view", "LoadStateView", "统一 loading、empty、error 和 content", DemoCatalog.feedback, "LoadStateView", extraApis = setOf("PixelAsyncSnapshot")) {
+        Row(
+            children = listOf(
+                LoadStateView(snapshot = PixelAsyncSnapshot.Loading, content = { Text(it.toString()) }, loading = Text("LOAD", style = TextStyle(color = Yellow))),
+                LoadStateView(snapshot = PixelAsyncSnapshot.Success(emptyList<String>()), content = { Text("OK") }, isEmpty = { it.isEmpty() }, empty = Text("EMPTY", style = TextStyle(color = Muted))),
+                LoadStateView(snapshot = PixelAsyncSnapshot.Failure(IllegalStateException("BAD")), content = { Text(it.toString()) }, error = { Text("ERR", style = TextStyle(color = Pink)) }),
+            ),
+            spacing = 3,
+        )
     },
     componentScene("controls_badge", "Badge", "在 child 角落叠加小标签", DemoCatalog.feedback, "Badge") {
         Badge(child = OutlinedButton(text = "MAIL", onPressed = {}, borderColor = Pink), label = Text("3", style = TextStyle(color = PixelColor.White)))

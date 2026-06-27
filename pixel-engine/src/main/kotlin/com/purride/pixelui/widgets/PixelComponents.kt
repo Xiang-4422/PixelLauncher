@@ -399,6 +399,31 @@ public fun ActivityIndicator(
 }
 
 /**
+ * 按 [PixelAsyncSnapshot] 呈现 loading / empty / error / content。
+ *
+ * 组件不发起请求、不订阅 source，也不保存数据状态；调用方负责持有 snapshot。
+ * [isEmpty] 只在 [PixelAsyncSnapshot.Success] 时调用，用于把空列表等成功结果映射为空状态。
+ */
+public fun <T> LoadStateView(
+    snapshot: PixelAsyncSnapshot<T>,
+    content: (T) -> Widget,
+    isEmpty: (T) -> Boolean = { false },
+    loading: Widget = Center(child = ActivityIndicator()),
+    empty: Widget = EmptyState(title = "EMPTY"),
+    error: (Throwable) -> Widget = { throwable ->
+        PixelErrorPanel(message = throwable.message ?: throwable::class.simpleName.orEmpty())
+    },
+): Widget {
+    return when (snapshot) {
+        PixelAsyncSnapshot.Loading -> loading
+        is PixelAsyncSnapshot.Failure -> error(snapshot.error)
+        is PixelAsyncSnapshot.Success -> {
+            if (isEmpty(snapshot.value)) empty else content(snapshot.value)
+        }
+    }
+}
+
+/**
  * 居中的像素空状态。
  *
  * 该组件只负责把标题、说明、图标和操作按钮排成紧凑像素布局；空数据判断、加载状态、

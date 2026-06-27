@@ -26,6 +26,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `PixelTester`, `PixelFinder`, and `PixelTestGesture` as SDK testing APIs.
 - `PixelTheme`, `PixelThemeData`, and `PixelThemeColors` for widget-level pixel defaults.
 - `Visibility` for simple child/replacement switching.
+- `LoadStateView` for `PixelAsyncSnapshot` loading/empty/error/content rendering.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

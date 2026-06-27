@@ -739,6 +739,17 @@ EmptyState(
 )
 ```
 
+`LoadStateView` 复用 `PixelAsyncSnapshot`，统一 loading、empty、error 和 content 的像素展示；
+它不发起请求，也不订阅数据源。
+
+```kotlin
+LoadStateView(
+    snapshot = snapshot,
+    isEmpty = { apps -> apps.isEmpty() },
+    content = { apps -> AppList(apps) },
+)
+```
+
 ### 进度和加载指示
 
 `ProgressBar` 是固定尺寸的水平进度条，`progress` 会在绘制时钳位到 `0.0f..1.0f`。调用方负责
@@ -946,6 +957,7 @@ Form(
 | `Toast` | 中央短提示 | `message` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
 | `EmptyState` | 居中空状态 | `title`、`message`、`icon`、`action` |
+| `LoadStateView` | loading/empty/error/content 组合视图 | `snapshot`、`content`、`isEmpty` |
 | `PixelErrorPanel` | 错误边界 fallback | `message`、`color` |
 | `ProgressBar` | 进度条 | `progress`、`width`、`height` |
 | `ActivityIndicator` | 简单加载动画 | `frame` |

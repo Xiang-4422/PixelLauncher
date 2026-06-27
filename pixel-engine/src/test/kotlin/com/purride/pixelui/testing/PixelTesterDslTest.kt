@@ -20,6 +20,7 @@ import com.purride.pixelui.CustomScrollView
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.Gap
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparatedBuilder
@@ -34,6 +35,7 @@ import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelInspectorTargetKind
 import com.purride.pixelui.PixelInspectorTargetSnapshot
+import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.ProgressBar
@@ -1503,6 +1505,56 @@ class PixelTesterDslTest {
         assertTrue(tester.exists(find.byText("PIN OR INSTALL APPS")))
         tester.tap(find.byText("RETRY"))
         assertEquals(1, retries)
+        tester.dispose()
+    }
+
+    @Test
+    fun loadStateViewMapsSnapshotToFallbacksAndContent() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = LoadStateView(
+                snapshot = PixelAsyncSnapshot.Loading,
+                content = { Text("CONTENT $it") },
+                loading = Text("LOADING"),
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+        assertTrue(tester.exists(find.byText("LOADING")))
+
+        tester.pumpWidget(
+            widget = LoadStateView(
+                snapshot = PixelAsyncSnapshot.Success(emptyList<String>()),
+                content = { Text("CONTENT ${it.size}") },
+                isEmpty = { it.isEmpty() },
+                empty = Text("EMPTY"),
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+        assertTrue(tester.exists(find.byText("EMPTY")))
+
+        tester.pumpWidget(
+            widget = LoadStateView(
+                snapshot = PixelAsyncSnapshot.Success(listOf("A")),
+                content = { Text("CONTENT ${it.first()}") },
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+        assertTrue(tester.exists(find.byText("CONTENT A")))
+
+        tester.pumpWidget(
+            widget = LoadStateView(
+                snapshot = PixelAsyncSnapshot.Failure(IllegalStateException("BAD")),
+                content = { Text("CONTENT $it") },
+                error = { Text("ERROR ${it.message}") },
+            ),
+            logicalWidth = 80,
+            logicalHeight = 12,
+        )
+        assertTrue(tester.exists(find.byText("ERROR BAD")))
         tester.dispose()
     }
 
