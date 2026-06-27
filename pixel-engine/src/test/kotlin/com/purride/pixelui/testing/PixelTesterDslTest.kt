@@ -11,6 +11,7 @@ import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.Dialog
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.EmptyState
 import com.purride.pixelui.Badge
 import com.purride.pixelui.Divider
 import com.purride.pixelui.FittedBox
@@ -1414,6 +1415,29 @@ class PixelTesterDslTest {
         )
 
         assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
+        tester.dispose()
+    }
+
+    @Test
+    fun emptyStateRendersTextAndAction() {
+        val tester = PixelTester()
+        var retries = 0
+
+        tester.pumpWidget(
+            widget = EmptyState(
+                title = "NO APPS",
+                message = "PIN OR INSTALL APPS",
+                action = TextButton(text = "RETRY", onPressed = { retries++ }),
+                width = 48,
+            ),
+            logicalWidth = 64,
+            logicalHeight = 32,
+        )
+
+        assertTrue(tester.exists(find.byText("NO APPS")))
+        assertTrue(tester.exists(find.byText("PIN OR INSTALL APPS")))
+        tester.tap(find.byText("RETRY"))
+        assertEquals(1, retries)
         tester.dispose()
     }
 

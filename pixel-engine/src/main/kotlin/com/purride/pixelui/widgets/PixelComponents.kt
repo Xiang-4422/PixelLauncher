@@ -305,6 +305,60 @@ public fun ActivityIndicator(
     return Row(children = dots, spacing = 1, key = key)
 }
 
+/**
+ * 居中的像素空状态。
+ *
+ * 该组件只负责把标题、说明、图标和操作按钮排成紧凑像素布局；空数据判断、加载状态、
+ * 重试动作和路由跳转都由调用方维护。
+ */
+public fun EmptyState(
+    title: String,
+    message: String? = null,
+    icon: Widget? = null,
+    action: Widget? = null,
+    width: Int? = null,
+    titleStyle: PixelTextStyle = PixelTextStyle.Default,
+    messageStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(160, 160, 160)),
+    key: Any? = null,
+): Widget {
+    val children = buildList {
+        if (icon != null) add(icon)
+        add(
+            Text(
+                title,
+                style = titleStyle,
+                textAlign = TextAlign.CENTER,
+                softWrap = true,
+                maxLines = 2,
+                overflow = PixelTextOverflow.ELLIPSIS,
+            ),
+        )
+        if (!message.isNullOrBlank()) {
+            add(
+                Text(
+                    message,
+                    style = messageStyle,
+                    textAlign = TextAlign.CENTER,
+                    softWrap = true,
+                    maxLines = 3,
+                    overflow = PixelTextOverflow.ELLIPSIS,
+                ),
+            )
+        }
+        if (action != null) add(action)
+    }
+    val content = Column(
+        children = children,
+        spacing = 1,
+        mainAxisSize = MainAxisSize.MIN,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+    )
+    return Center(
+        child = if (width == null) content else SizedBox(width = width.coerceAtLeast(1), child = content),
+        key = key,
+    )
+}
+
 public fun Badge(
     child: Widget,
     label: Widget,

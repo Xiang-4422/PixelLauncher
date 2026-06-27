@@ -715,6 +715,17 @@ Snackbar(
 `Dialog` 的 `actions` 会排列在内容下方并右对齐；`Toast` 支持多行文本；`Snackbar` 的 `action`
 由调用方传入任意 widget，常用 `TextButton`。
 
+`EmptyState` 是居中的空状态组合组件，只负责标题、说明、可选图标和 action 的像素布局；
+空数据判断、加载状态和重试动作由调用方维护。
+
+```kotlin
+EmptyState(
+    title = "NO APPS",
+    message = "PIN OR INSTALL APPS",
+    action = TextButton(text = "RETRY", onPressed = { reload() }),
+)
+```
+
 ### 进度和加载指示
 
 `ProgressBar` 是固定尺寸的水平进度条，`progress` 会在绘制时钳位到 `0.0f..1.0f`。调用方负责
@@ -919,6 +930,7 @@ Form(
 | `Dialog` | 居中对话框 | `title`、`content`、`actions` |
 | `Toast` | 中央短提示 | `message` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
+| `EmptyState` | 居中空状态 | `title`、`message`、`icon`、`action` |
 | `ProgressBar` | 进度条 | `progress`、`width`、`height` |
 | `ActivityIndicator` | 简单加载动画 | `frame` |
 | `Badge` | 角标 | `child`、`label` |
