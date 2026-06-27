@@ -30,6 +30,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `PixelHostBridge.updateTextInput`.
 - `PixelListController.isAtEnd`.
 - `PixelPagerSavedState` / `PixelTextFieldSavedState` Android `Bundle` helpers.
+- Android accessibility bridge backed by the existing semantics tree.
 
 ### Compatibility policy
 

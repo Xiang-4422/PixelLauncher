@@ -1629,6 +1629,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setViewInsets(int, int, int, int);
   public static void setViewInsets$default(com.purride.pixelui.PixelHostView, int, int, int, int, int, java.lang.Object);
   public android.view.View asView();
+  public android.view.accessibility.AccessibilityNodeProvider getAccessibilityNodeProvider();
   public final java.lang.String dumpElementTree();
   public final java.lang.String dumpRenderTree();
   public final java.lang.String dumpSemanticsTree();

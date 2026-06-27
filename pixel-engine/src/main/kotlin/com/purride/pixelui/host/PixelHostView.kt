@@ -15,6 +15,7 @@ import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowInsets
+import android.view.accessibility.AccessibilityNodeProvider
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
@@ -39,6 +40,7 @@ import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.host.PixelJoystickFocusRouter
+import com.purride.pixelui.internal.host.PixelHostAccessibilityNodeProvider
 import com.purride.pixelui.internal.host.handlePixelHostBack
 import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelKeyEvent
 import com.purride.pixelui.state.PixelTextFieldState
@@ -170,9 +172,14 @@ public class PixelHostView @JvmOverloads constructor(
         set(value) { nestedScrollSession.focusedTextInputTarget = value }
     private val gestureRouter = PixelHostGestureRouter(this)
     private val joystickFocusRouter = PixelJoystickFocusRouter()
+    private val accessibilityNodeProvider = PixelHostAccessibilityNodeProvider(this)
     private val textInputCoordinator = PixelHostTextInputCoordinator(this)
     private val renderCoordinator = PixelHostRenderCoordinator(this, textInputCoordinator)
     private val lifecycleCoordinator = PixelHostLifecycleCoordinator(disposeRender = renderCoordinator::dispose)
+
+    init {
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+    }
 
     public var hostBridge: PixelHostBridge? = null
     public var backDispatcher: PixelBackDispatcher? = null
@@ -354,6 +361,10 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun asView(): View = this
 
+    override fun getAccessibilityNodeProvider(): AccessibilityNodeProvider {
+        return accessibilityNodeProvider
+    }
+
     /**
      * 把当前 retained element tree 序列化成 ASCII 缩进的字符串，
      * 用于运行时调试 / log dump。仅当至少渲染过一帧后返回非空内容。
@@ -451,6 +462,7 @@ public class PixelHostView @JvmOverloads constructor(
         canvas.drawColor(bezelColor.argb)
         if (renderResult != null) {
             drawBuffer(canvas, renderResult.buffer)
+            accessibilityNodeProvider.notifySemanticsChanged()
         }
     }
 
@@ -557,18 +569,22 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     internal fun rawVelocityToLogical(velocityTracker: VelocityTracker?, axis: PixelAxis): Float {
-        val geometry = PixelGridGeometryResolver.resolve(
-            viewWidth = width,
-            viewHeight = height,
-            profile = screenProfile,
-            pixelGapEnabled = pixelGapEnabled,
-            pixelGapRatio = pixelGapRatio,
-        ) ?: return 0f
+        val geometry = resolveGridGeometry() ?: return 0f
         val rawVelocity = when (axis) {
             PixelAxis.HORIZONTAL -> velocityTracker?.xVelocity ?: 0f
             PixelAxis.VERTICAL -> velocityTracker?.yVelocity ?: 0f
         }
         return rawVelocity / geometry.cellSize.coerceAtLeast(1f)
+    }
+
+    internal fun resolveGridGeometry(): PixelGridGeometry? {
+        return PixelGridGeometryResolver.resolve(
+            viewWidth = width,
+            viewHeight = height,
+            profile = screenProfile,
+            pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
+        )
     }
 
     /**

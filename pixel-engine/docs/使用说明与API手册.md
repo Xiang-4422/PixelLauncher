@@ -388,6 +388,15 @@ override fun onSaveInstanceState(outState: Bundle) {
 `PixelRouteScrollRestoration`，它只在 route 还留在 navigator stack 内时生效；跨 Activity
 重建仍使用上面的 `PixelListSavedState`。
 
+### Accessibility
+
+`PixelHostView` 会把最近一帧的 semantics tree 暴露成 Android virtual accessibility nodes。
+业务侧使用 `Text`、`TextField`、按钮、选择控件或显式 `Semantics(...)` 时，不需要额外接
+Android `AccessibilityNodeProvider`。
+
+当前桥接范围是 label、role、enabled、focused 和 bounds；可点击语义会复用已有 click target，
+`TextField` 语义会复用已有输入焦点目标。
+
 ### 基础面板
 
 ```kotlin
