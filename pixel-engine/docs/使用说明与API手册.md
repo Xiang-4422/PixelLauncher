@@ -499,6 +499,27 @@ RichText(
 )
 ```
 
+### 按钮
+
+`OutlinedButton` 是像素风描边按钮，适合主命令；`TextButton` 是无边框文字按钮，适合对话框、
+toast/snackbar action 和轻量命令。`onPressed = null` 或 `enabled = false` 时按钮不会导出可点击目标。
+
+```kotlin
+OutlinedButton(
+    text = "SAVE",
+    onPressed = { save() },
+    borderColor = PixelColor.fromRgb(255, 220, 120),
+)
+
+TextButton(
+    text = "CANCEL",
+    onPressed = { close() },
+)
+```
+
+`TextButton` 默认零 padding，尺寸由文字自然决定；需要更大的触摸区域时通过
+`TextButtonStyle(padding = EdgeInsets.all(2))` 显式扩大。
+
 ### 输入框
 
 ```kotlin
