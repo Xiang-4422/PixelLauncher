@@ -472,6 +472,33 @@ PageView(
 )
 ```
 
+### 文本和富文本
+
+`Text` 用于普通像素文本，默认单行裁剪；需要多行时显式开启 `softWrap` 并设置
+`maxLines`。`color` 是 `style.color` 的快捷覆盖。
+
+```kotlin
+Text(
+    data = "SYSTEM READY",
+    color = PixelColor.fromRgb(120, 255, 160),
+    overflow = TextOverflow.ELLIPSIS,
+)
+```
+
+`RichText` 只负责 span 样式切换和统一段落布局；它不会引入 Material/Cupertino 的富文本手势、
+链接识别或文本编辑行为。
+
+```kotlin
+RichText(
+    spans = listOf(
+        PixelTextSpan("HP ", style = TextStyle(color = PixelColor.White)),
+        PixelTextSpan("42", style = TextStyle(color = PixelColor.fromRgb(255, 220, 120))),
+    ),
+    maxLines = 1,
+    overflow = TextOverflow.ELLIPSIS,
+)
+```
+
 ### 输入框
 
 ```kotlin
