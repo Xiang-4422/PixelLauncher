@@ -417,6 +417,9 @@ TextField(
 )
 ```
 
+`textInputAction` 的公开类型是 `TextInputAction`，它是 `PixelTextInputAction` 的别名。
+widget 层用它表达键盘动作，自定义宿主在 `PixelTextInputRequest.action` 中接收同一组值。
+
 ### 表单
 
 ```kotlin
@@ -579,6 +582,24 @@ Form(
 | `FormFieldState` | 单字段值和错误 | `value`、`errorText` |
 | `FocusNode` | 单点焦点 | `requestFocus`、`clearFocus` |
 | `FocusScope` / `FocusScopeNode` | 焦点域 | 方向遍历、IME next |
+
+### 输入法与 TextField 宿主契约
+
+默认 Android `PixelTextInputBridge` 使用隐藏 `EditText` 接入系统 IME。普通 Activity 通过
+`createPixelHostSetup` 接入时不需要手动处理输入法；自定义宿主才需要实现
+`PixelHostBridge.showTextInput`、`PixelHostBridge.updateTextInput` 和
+`PixelHostBridge.hideTextInput`。
+
+| 契约 | 行为 |
+|---|---|
+| `PixelInputType` | 映射到 Android 输入面板类型，包括文本、ASCII、数字、邮箱、电话、URL 和密码 |
+| `TextInputAction` / `PixelTextInputAction` | 映射到 IME action，包括 `DONE`、`NEXT`、`GO`、`SEARCH`、`SEND` |
+| `PixelHostView.updateFocusedTextInput` | 宿主把文本、selection 和 composition 同步回当前聚焦的 `TextField` |
+| `PixelHostView.submitFocusedTextInput` | 宿主触发提交；所有 action 都会触发 `onSubmitted`，`NEXT` 会额外发起焦点遍历 |
+| `readOnly` | 宿主回传文本会被忽略；`COPY` / `SELECT_ALL` 这类只读编辑动作仍可使用 |
+
+`PixelTextInputBridge` 只在焦点目标或 editor config 改变时重启 IME；普通文本、selection 和
+composition 更新会走 `updateTextInput`，避免输入过程中反复重建键盘。
 
 ### 剪贴板与文本编辑动作
 
