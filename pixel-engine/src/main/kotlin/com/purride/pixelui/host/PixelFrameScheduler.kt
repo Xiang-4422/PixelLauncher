@@ -32,7 +32,8 @@ public interface PixelFrameScheduler {
         /**
          * 默认实现，走 Android [Choreographer.postFrameCallback]。
          */
-        public val Default: PixelFrameScheduler = ChoreographerFrameScheduler
+        public val Default: PixelFrameScheduler
+            get() = ChoreographerFrameScheduler
     }
 }
 

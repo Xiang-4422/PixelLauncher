@@ -210,20 +210,20 @@ com.purride.pixelui public typealias PixelRouteTransition = com.purride.pixelui.
 com.purride.pixelui public typealias PixelRouteTransitionBuilder = com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder
 com.purride.pixelui public typealias PixelRouteScrollRestoration = com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration
 com.purride.pixelui public object PixelUiModule
-com.purride.pixelui.advanced public typealias PixelRenderObjectWidget = InternalRenderObjectWidget
-com.purride.pixelui.advanced public typealias PixelLeafRenderObjectWidget = InternalLeafRenderObjectWidget
-com.purride.pixelui.advanced public typealias PixelSingleChildRenderObjectWidget = InternalSingleChildRenderObjectWidget
-com.purride.pixelui.advanced public typealias PixelMultiChildRenderObjectWidget = InternalMultiChildRenderObjectWidget
-com.purride.pixelui.advanced public typealias PixelRenderObject = InternalRenderObject
-com.purride.pixelui.advanced public typealias PixelRenderBox = InternalRenderBox
-com.purride.pixelui.advanced public typealias PixelSingleChildRenderObject = InternalSingleChildRenderObject
-com.purride.pixelui.advanced public typealias PixelMultiChildRenderObject = InternalMultiChildRenderObject
-com.purride.pixelui.advanced public typealias PixelRenderConstraints = com.purride.pixelui.internal.RenderConstraints
-com.purride.pixelui.advanced public typealias PixelRenderSize = com.purride.pixelui.internal.RenderSize
-com.purride.pixelui.advanced public typealias PixelPaintContext = com.purride.pixelui.internal.PaintContext
-com.purride.pixelui.advanced public typealias PixelHitTestResult = com.purride.pixelui.internal.HitTestResult
-com.purride.pixelui.advanced public typealias PixelRenderObjectWithChild = InternalRenderObjectWithChild
-com.purride.pixelui.advanced public typealias PixelRenderObjectWithChildren = InternalRenderObjectWithChildren
+com.purride.pixelui.advanced public typealias PixelRenderObjectWidget
+com.purride.pixelui.advanced public typealias PixelLeafRenderObjectWidget
+com.purride.pixelui.advanced public typealias PixelSingleChildRenderObjectWidget
+com.purride.pixelui.advanced public typealias PixelMultiChildRenderObjectWidget
+com.purride.pixelui.advanced public typealias PixelRenderObject
+com.purride.pixelui.advanced public typealias PixelRenderBox
+com.purride.pixelui.advanced public typealias PixelSingleChildRenderObject
+com.purride.pixelui.advanced public typealias PixelMultiChildRenderObject
+com.purride.pixelui.advanced public typealias PixelRenderConstraints
+com.purride.pixelui.advanced public typealias PixelRenderSize
+com.purride.pixelui.advanced public typealias PixelPaintContext
+com.purride.pixelui.advanced public typealias PixelHitTestResult
+com.purride.pixelui.advanced public typealias PixelRenderObjectWithChild
+com.purride.pixelui.advanced public typealias PixelRenderObjectWithChildren
 com.purride.pixelui.animation public class CurvedAnimation(
 com.purride.pixelui.animation public val curve: Curve,
 com.purride.pixelui.animation public val reverseCurve: Curve? = null,
@@ -481,7 +481,7 @@ com.purride.pixelui.gesture public val Default: PagerGesturePolicy = PagerGestur
 com.purride.pixelui.host public interface PixelFrameScheduler
 com.purride.pixelui.host public fun scheduleFrame(callback: (frameTimeNanos: Long) -> Unit)
 com.purride.pixelui.host public companion object
-com.purride.pixelui.host public val Default: PixelFrameScheduler = ChoreographerFrameScheduler
+com.purride.pixelui.host public val Default: PixelFrameScheduler
 com.purride.pixelui.host public class ManualFrameScheduler : PixelFrameScheduler
 com.purride.pixelui.host public fun advanceFrame(frameTimeNanos: Long)
 com.purride.pixelui.host public val pendingCount: Int get() = pending.size
@@ -553,42 +553,6 @@ com.purride.pixelui public companion object
 com.purride.pixelui public val Empty: PixelInspectorTargetCounts = PixelInspectorTargetCounts(
 com.purride.pixelui public class PixelTextInputBridge(
 com.purride.pixelui public val inputView: EditText = EditText(context),
-com.purride.pixelui.internal public data class RenderSize(
-com.purride.pixelui.internal public companion object
-com.purride.pixelui.internal public val Zero: RenderSize = RenderSize(width = 0, height = 0)
-com.purride.pixelui.internal public data class RenderConstraints(
-com.purride.pixelui.internal public fun constrainWidth(width: Int): Int
-com.purride.pixelui.internal public fun constrainHeight(height: Int): Int
-com.purride.pixelui.internal public fun inset(
-com.purride.pixelui.internal public class PaintContext(
-com.purride.pixelui.internal public val buffer: PixelBuffer,
-com.purride.pixelui.internal public val bufferPool: PixelBufferPool = PixelBufferPool(),
-com.purride.pixelui.internal public fun setColor(
-com.purride.pixelui.internal public fun fillRect(
-com.purride.pixelui.internal public fun drawRect(
-com.purride.pixelui.internal public data class HitTestResult(
-com.purride.pixelui.internal public fun add(target: RenderObject)
-com.purride.pixelui.internal public abstract class RenderObject
-com.purride.pixelui.internal public var parent: RenderObject? = null
-com.purride.pixelui.internal public abstract class RenderBox : RenderObject()
-com.purride.pixelui.internal public var size: RenderSize = RenderSize.Zero
-com.purride.pixelui.internal public abstract fun layout(constraints: RenderConstraints)
-com.purride.pixelui.internal public abstract fun paint(
-com.purride.pixelui.internal public open fun hitTest(
-com.purride.pixelui.internal public interface RenderObjectWithChild
-com.purride.pixelui.internal public fun setRenderObjectChild(child: RenderObject?)
-com.purride.pixelui.internal public interface RenderObjectWithChildren
-com.purride.pixelui.internal public fun setRenderObjectChildren(children: List<RenderObject>)
-com.purride.pixelui.internal public abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox()
-com.purride.pixelui.internal public abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox()
-com.purride.pixelui.internal public abstract class RenderObjectWidget(
-com.purride.pixelui.internal public abstract fun createRenderObject(context: BuildContext): RenderObject
-com.purride.pixelui.internal public open fun updateRenderObject(
-com.purride.pixelui.internal public abstract class LeafRenderObjectWidget(
-com.purride.pixelui.internal public abstract class SingleChildRenderObjectWidget(
-com.purride.pixelui.internal public open val child: Widget?,
-com.purride.pixelui.internal public abstract class MultiChildRenderObjectWidget(
-com.purride.pixelui.internal public open val children: List<Widget>,
 com.purride.pixelui.state public class PixelListController(
 com.purride.pixelui.state public fun create(initialScrollOffsetPx: Float = 0f): PixelListState
 com.purride.pixelui.state public fun sync(

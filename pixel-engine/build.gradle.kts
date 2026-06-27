@@ -98,7 +98,8 @@ val dumpPublicApi by tasks.registering {
                                 currentPackage = line.removePrefix("package ").trim()
                                 null
                             }
-                            line.startsWith("public ") -> "$currentPackage ${line.normalizePublicApiLine()}"
+                            line.startsWith("public ") && !currentPackage.contains(".internal") ->
+                                "$currentPackage ${line.normalizePublicApiLine()}"
                             else -> null
                         }
                     }
@@ -286,6 +287,7 @@ publishing {
 fun String.normalizePublicApiLine(): String {
     return replace(Regex("\\s+"), " ")
         .replace(Regex("\\s*\\{\\s*$"), "")
+        .replace(Regex(" = (Internal\\w+|com\\.purride\\.pixelui\\.internal\\.\\w+)$"), "")
         .trim()
 }
 
@@ -298,10 +300,29 @@ fun String.isPublishedBinaryApiClass(): Boolean {
     }
     if (contains("/internal/")) return false
     if (contains("PixelTester\$TestGestureTarget")) return false
+    if (isKotlinInternalBinaryClass()) return false
     if (endsWith("/BuildConfig") || contains("/R$") || endsWith("/R")) return false
     if (substringAfterLast('/').contains("\$WhenMappings")) return false
     if (Regex("\\$\\d+").containsMatchIn(this)) return false
     return true
+}
+
+fun String.isKotlinInternalBinaryClass(): Boolean {
+    val topLevelName = substringAfterLast('/').substringBefore('$')
+    return topLevelName in setOf(
+        "AndroidUptimeClock",
+        "ChoreographerFrameScheduler",
+        "InternalBuildContext",
+        "MonotonicClock",
+        "PixelHostFrameLoop",
+        "PixelHostGestureRouter",
+        "PixelHostGestureRouterModel",
+        "PixelHostLifecycleCoordinator",
+        "PixelHostRenderCoordinator",
+        "PixelHostTextInputCoordinator",
+        "PixelInspectorTargetSnapshotFactoryKt",
+        "PixelTextSelectionActionModeKt",
+    )
 }
 
 fun String.normalizeBinaryApiDump(): String {
@@ -311,6 +332,7 @@ fun String.normalizeBinaryApiDump(): String {
         .filterNot { line -> line.isBlank() }
         .filterNot { line -> line.contains("\$pixel_engine") }
         .filterNot { line -> line.contains(" access\$") }
+        .filterNot { line -> line.contains("com.purride.pixelui.internal.") }
         .joinToString(separator = "\n")
 }
 
