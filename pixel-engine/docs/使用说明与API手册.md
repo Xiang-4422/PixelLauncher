@@ -134,6 +134,34 @@ setup.hostView.setPixelGapRatio(0.6f)
 | `onUnhandledBack` | back 未被 widget 消费时的 app fallback |
 | `content` | 根 widget provider |
 
+### Android 宿主契约
+
+pixel-engine 当前只承诺 Android 宿主。默认路径使用 `createPixelHostSetup`；只有自定义宿主、
+测试宿主或替代输入桥时才直接操作 `PixelHostView` / `PixelHostBridge`。
+
+| 层级 | SDK 负责 | App 负责 |
+|---|---|---|
+| `PixelHostSetup` | 创建 `PixelHostView`、默认 `PixelTextInputBridge` 和根 `FrameLayout` | 把 `rootView` 放进 Activity / Fragment |
+| `PixelHostView` | 渲染、触摸、按键、手柄拖动、insets 注入、accessibility 和调试 dump | 在 Android back 回调里调用 `handleBackPressed()` |
+| `PixelTextInputBridge` | 隐藏 `EditText`、IME 映射、selection / composition 同步、剪贴板和 haptic 默认桥接 | 业务侧决定何时聚焦、提交、保存文本状态 |
+| `PixelBackDispatcher` | 维护 widget 内 back 栈，并按栈顶优先派发 | 提供 `onUnhandledBack` 或回落到系统 back |
+| saved state helpers | 提供 navigator / list / pager / text field 的 `Bundle` 保存恢复 API | 在 Activity / Fragment 生命周期里显式调用保存恢复 |
+
+自定义宿主需要实现的桥接入口集中在 `PixelHostBridge`：
+
+- `showTextInput` / `updateTextInput` / `hideTextInput`
+- `performHapticFeedback`
+- `requestFrame`
+- `dispatchSystemAction`
+- `readClipboardText` / `writeClipboardText`
+
+边界：
+
+- SDK 不接管 Activity / Fragment 生命周期；`PixelHostView` 只在 detach 时自动释放自身 runtime。
+- SDK 不自动保存 Android `savedInstanceState`；业务 controller/state 由 app 显式保存恢复。
+- SDK 不封装权限、Intent、通知、文件选择等 Android 业务能力；这类能力通过 app 层或 `PixelSystemAction` 自行接线。
+- SDK 不提供 Material / Cupertino 组件库；宿主契约只保证像素 UI 引擎和 Android 系统能力的连接。
+
 ## 4. 状态管理
 
 ### `ValueNotifier`
