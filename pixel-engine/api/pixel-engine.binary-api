@@ -1792,6 +1792,34 @@ public final class com.purride.pixelui.PixelKeyEvent {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelOverlayController extends com.purride.pixelui.ChangeNotifier {
+  public static final com.purride.pixelui.PixelOverlayController$Companion Companion;
+  public com.purride.pixelui.PixelOverlayController();
+  public final int getSize();
+  public final com.purride.pixelui.PixelOverlayHandle show(com.purride.pixelui.Widget);
+  public final com.purride.pixelui.PixelOverlayHandle showToast-ShX4CGY(java.lang.String, int, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelOverlayHandle showToast-ShX4CGY$default(com.purride.pixelui.PixelOverlayController, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final com.purride.pixelui.PixelOverlayHandle showDialog-4KCRWhc(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, int, int);
+  public static com.purride.pixelui.PixelOverlayHandle showDialog-4KCRWhc$default(com.purride.pixelui.PixelOverlayController, com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, int, int, int, java.lang.Object);
+  public final com.purride.pixelui.PixelOverlayHandle showSnackbar-YtVJrYg(java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelOverlayHandle showSnackbar-YtVJrYg$default(com.purride.pixelui.PixelOverlayController, java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final boolean dismiss(int);
+  public final boolean dismissTop();
+  public final void clear();
+}
+public final class com.purride.pixelui.PixelOverlayController$Companion {
+  public final com.purride.pixelui.PixelOverlayController maybeOf(com.purride.pixelui.BuildContext);
+  public final com.purride.pixelui.PixelOverlayController of(com.purride.pixelui.BuildContext);
+  public com.purride.pixelui.PixelOverlayController$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public interface com.purride.pixelui.PixelOverlayHandle {
+  public abstract int getId();
+  public abstract boolean dismiss();
+}
+public final class com.purride.pixelui.PixelOverlayKt {
+  public static final com.purride.pixelui.Widget PixelOverlayHost(com.purride.pixelui.PixelOverlayController, com.purride.pixelui.Widget, java.lang.Object);
+  public static com.purride.pixelui.Widget PixelOverlayHost$default(com.purride.pixelui.PixelOverlayController, com.purride.pixelui.Widget, java.lang.Object, int, java.lang.Object);
+}
 public final class com.purride.pixelui.PixelPath {
   public static final com.purride.pixelui.PixelPath$Companion Companion;
   public com.purride.pixelui.PixelPath(java.util.List<? extends com.purride.pixelui.PixelPathCommand>);

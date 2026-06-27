@@ -93,18 +93,25 @@ package com.purride.pixelsdkconsumer
 import android.app.Activity
 import android.os.Bundle
 import com.purride.pixelui.Center
+import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.Text
 import com.purride.pixelui.createPixelHostSetup
 
 class ConsumerActivity : Activity() {
+    private val overlay = PixelOverlayController()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val setup = createPixelHostSetup(
             context = this,
             config = PixelHostSetupConfig(
                 content = {
-                    Center(child = Text("SDK OK"))
+                    PixelOverlayHost(
+                        controller = overlay,
+                        child = Center(child = Text("SDK OK")),
+                    )
                 },
             ),
         )
@@ -117,6 +124,8 @@ cat >"$TMP_DIR/app/src/test/kotlin/com/purride/pixelsdkconsumer/PixelTesterConsu
 package com.purride.pixelsdkconsumer
 
 import com.purride.pixelui.Text
+import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertTrue
@@ -126,14 +135,22 @@ class PixelTesterConsumerTest {
     @Test
     fun canUsePublishedPixelTester() {
         val tester = PixelTester()
+        val overlay = PixelOverlayController()
 
         tester.pumpWidget(
-            widget = Text("SDK OK"),
+            widget = PixelOverlayHost(
+                controller = overlay,
+                child = Text("SDK OK"),
+            ),
             logicalWidth = 32,
             logicalHeight = 8,
         )
 
+        overlay.showToast("SAVED")
+        tester.pumpFrame(16)
+
         assertTrue(tester.exists(find.byText("SDK OK")))
+        assertTrue(tester.exists(find.byText("SAVED")))
         assertTrue(tester.dumpPixelsAsAscii().startsWith("size=32x8\n"))
         tester.dispose()
     }

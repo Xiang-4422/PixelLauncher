@@ -221,6 +221,34 @@ PixelErrorBoundary(
 )
 ```
 
+### Overlay
+
+`PixelOverlayHost` 在页面顶部承载 toast、dialog 和 snackbar。controller 由业务持有；
+当前最小版本只负责 show/dismiss，不自动超时，也不接管 Android back。
+
+```kotlin
+val overlay = PixelOverlayController()
+
+PixelOverlayHost(
+    controller = overlay,
+    child = AppRoot(),
+)
+
+overlay.showToast("SAVED")
+
+val dialog = overlay.showDialog(
+    title = Text("DELETE"),
+    content = Text("ARE YOU SURE"),
+    actions = listOf(TextButton(text = "CANCEL", onPressed = {})),
+)
+dialog.dismiss()
+
+overlay.showSnackbar(
+    message = "QUEUED",
+    action = TextButton(text = "UNDO", onPressed = {}),
+)
+```
+
 ### 基础面板
 
 ```kotlin

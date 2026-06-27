@@ -426,6 +426,22 @@ com.purride.pixelui public val hasError: Boolean
 com.purride.pixelui public fun setValue(value: T)
 com.purride.pixelui public fun Form(
 com.purride.pixelui public fun <T> FormField(
+com.purride.pixelui public class PixelOverlayController : ChangeNotifier()
+com.purride.pixelui public val size: Int
+com.purride.pixelui public fun show(widget: Widget): PixelOverlayHandle
+com.purride.pixelui public fun showToast(
+com.purride.pixelui public fun showDialog(
+com.purride.pixelui public fun showSnackbar(
+com.purride.pixelui public fun dismiss(id: Int): Boolean
+com.purride.pixelui public fun dismissTop(): Boolean
+com.purride.pixelui public fun clear()
+com.purride.pixelui public companion object
+com.purride.pixelui public fun maybeOf(context: BuildContext): PixelOverlayController?
+com.purride.pixelui public fun of(context: BuildContext): PixelOverlayController
+com.purride.pixelui public interface PixelOverlayHandle
+com.purride.pixelui public val id: Int
+com.purride.pixelui public fun dismiss(): Boolean
+com.purride.pixelui public fun PixelOverlayHost(
 com.purride.pixelui public enum class PixelSemanticRole
 com.purride.pixelui public data class PixelSemanticsNode(
 com.purride.pixelui public val label: String,
