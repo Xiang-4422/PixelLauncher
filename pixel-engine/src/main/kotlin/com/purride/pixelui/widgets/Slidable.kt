@@ -19,17 +19,48 @@ import com.purride.pixelui.internal.RenderObject
 import com.purride.pixelui.internal.RenderSize
 import kotlin.math.abs
 
+/**
+ * Slidable 被打开或 dismiss 的方向。
+ */
 public enum class SlidableDirection {
+    /**
+     * 向 start 侧打开，对应正向水平位移。
+     */
     START,
+
+    /**
+     * 向 end 侧打开，对应负向水平位移。
+     */
     END,
 }
 
+/**
+ * action pane 跟随主内容滑动时的运动方式。
+ */
 public enum class SlidableMotion {
+    /**
+     * action pane 固定在内容后方。
+     */
     BEHIND,
+
+    /**
+     * action pane 以抽屉效果半速跟随。
+     */
     DRAWER,
+
+    /**
+     * action pane 和内容一起滚动进入。
+     */
     SCROLL,
 }
 
+/**
+ * Slidable 一侧的操作面板配置。
+ *
+ * [children] 会均分面板宽度；[extentRatio] 会钳位到 `0.1f..1.0f` 后换算为面板宽度。
+ * 当 [dismissible] 为 true 且滑动距离达到 [dismissThreshold] 时，会触发外层 [Slidable]
+ * 的 dismiss 回调。
+ */
 public data class SlidableActionPane(
     val children: List<Widget>,
     val extentRatio: Float = 0.35f,
@@ -38,6 +69,12 @@ public data class SlidableActionPane(
     val dismissThreshold: Float = 0.5f,
 )
 
+/**
+ * 可水平滑出操作面板的像素行容器。
+ *
+ * 向右滑打开 [startActionPane]，向左滑打开 [endActionPane]。组件只管理当前滑动偏移和面板
+ * 呈现，不会删除数据；需要删除或归档时在 [onDismissed] 中更新业务状态。
+ */
 public fun Slidable(
     child: Widget,
     startActionPane: SlidableActionPane? = null,
@@ -54,6 +91,9 @@ public fun Slidable(
     key = key,
 )
 
+/**
+ * Slidable action pane 内的单个像素按钮。
+ */
 public fun SlidableAction(
     label: String,
     backgroundColor: PixelColor,

@@ -338,6 +338,12 @@ public fun Gap(
     key: Any? = null,
 ): Widget = SizedBox(width = width, height = height, key = key)
 
+/**
+ * 简单的像素页面骨架。
+ *
+ * [title] 会渲染为顶部描边区域，[body] 占据剩余空间，[bottomBar] 固定在底部。该组件不提供
+ * navigator、系统 inset、overlay 或 Material 风格 app bar；这些能力由宿主或更高层组件组合。
+ */
 public fun AppScaffold(
     title: Widget? = null,
     body: Widget,

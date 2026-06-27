@@ -634,6 +634,45 @@ ActivityIndicator(
 )
 ```
 
+### 滑动行和页面骨架
+
+`Slidable` 是像素行容器：向右滑打开 `startActionPane`，向左滑打开 `endActionPane`。它只负责滑动
+偏移、action pane 命中和 dismiss 回调，不会删除数据；业务应在 `onDismissed` 中更新列表状态。
+
+```kotlin
+Slidable(
+    child = ListTile(title = Text("MAIL")),
+    endActionPane = SlidableActionPane(
+        children = listOf(
+            SlidableAction(
+                label = "DELETE",
+                backgroundColor = PixelColor.fromRgb(180, 60, 60),
+                foregroundColor = PixelColor.White,
+                onPressed = { deleteMail() },
+            ),
+        ),
+        motion = SlidableMotion.BEHIND,
+        dismissible = true,
+        dismissThreshold = 0.4f,
+    ),
+    onDismissed = { direction -> removeFromList(direction) },
+)
+```
+
+`SlidableActionPane.children` 会均分面板宽度；`extentRatio` 会限制在 `0.1f..1.0f` 后换算宽度。
+`dismissible = true` 且滑动距离达到 `dismissThreshold` 时才触发 `onDismissed`。
+
+`AppScaffold` 是一个轻量页面骨架：`title` 是顶部描边区域，`body` 占据剩余空间，`bottomBar`
+固定在底部。它不提供导航、系统 inset、overlay 或 Material 风格 app bar；这些由宿主或更高层组件组合。
+
+```kotlin
+AppScaffold(
+    title = Text("SETTINGS"),
+    body = SettingsList(),
+    bottomBar = Text("READY"),
+)
+```
+
 ### 输入框
 
 ```kotlin
@@ -772,6 +811,7 @@ Form(
 | `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease` |
 | `Tabs` | 标签页按钮组 | `labels`、`selectedIndex`、`onSelected` |
 | `SegmentedControl` | 分段选择 | `labels`、`selectedIndex`、`onSelected` |
+| `Slidable` | 可滑出操作面板的行容器 | `child`、`startActionPane`、`endActionPane` |
 | `Dialog` | 居中对话框 | `title`、`content`、`actions` |
 | `Toast` | 中央短提示 | `message` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
