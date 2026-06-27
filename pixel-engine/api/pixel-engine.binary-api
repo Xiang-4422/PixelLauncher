@@ -828,6 +828,24 @@ public final class com.purride.pixelui.AlignmentDirectional extends java.lang.En
   public static com.purride.pixelui.AlignmentDirectional valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.AlignmentDirectional> getEntries();
 }
+public final class com.purride.pixelui.AndroidTextInputEditorConfig {
+  public com.purride.pixelui.AndroidTextInputEditorConfig(boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction);
+  public final boolean getReadOnly();
+  public final int getMinLines();
+  public final int getMaxLines();
+  public final com.purride.pixelui.PixelInputType getInputType();
+  public final com.purride.pixelui.PixelTextInputAction getAction();
+  public final boolean component1();
+  public final int component2();
+  public final int component3();
+  public final com.purride.pixelui.PixelInputType component4();
+  public final com.purride.pixelui.PixelTextInputAction component5();
+  public final com.purride.pixelui.AndroidTextInputEditorConfig copy(boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction);
+  public static com.purride.pixelui.AndroidTextInputEditorConfig copy$default(com.purride.pixelui.AndroidTextInputEditorConfig, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
 public final class com.purride.pixelui.AnimatedBuilder extends com.purride.pixelui.StatelessWidget {
   public com.purride.pixelui.AnimatedBuilder(com.purride.pixelui.Listenable, java.lang.Object, com.purride.pixelui.Widget, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super com.purride.pixelui.Widget, ? extends com.purride.pixelui.Widget>);
   public com.purride.pixelui.AnimatedBuilder(com.purride.pixelui.Listenable, java.lang.Object, com.purride.pixelui.Widget, kotlin.jvm.functions.Function2, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -1407,16 +1425,19 @@ public final class com.purride.pixelui.PixelHapticType extends java.lang.Enum<co
 }
 public interface com.purride.pixelui.PixelHostBridge {
   public abstract void showTextInput(com.purride.pixelui.PixelTextInputRequest);
+  public default void updateTextInput(com.purride.pixelui.PixelTextInputRequest);
   public abstract void hideTextInput();
   public abstract void performHapticFeedback(com.purride.pixelui.PixelHapticType);
   public abstract void requestFrame();
   public abstract void dispatchSystemAction(com.purride.pixelui.PixelSystemAction);
   public default java.lang.String readClipboardText();
   public default void writeClipboardText(java.lang.String);
+  public static void access$updateTextInput$jd(com.purride.pixelui.PixelHostBridge, com.purride.pixelui.PixelTextInputRequest);
   public static java.lang.String access$readClipboardText$jd(com.purride.pixelui.PixelHostBridge);
   public static void access$writeClipboardText$jd(com.purride.pixelui.PixelHostBridge, java.lang.String);
 }
 public final class com.purride.pixelui.PixelHostBridge$DefaultImpls {
+  public static void updateTextInput(com.purride.pixelui.PixelHostBridge, com.purride.pixelui.PixelTextInputRequest);
   public static java.lang.String readClipboardText(com.purride.pixelui.PixelHostBridge);
   public static void writeClipboardText(com.purride.pixelui.PixelHostBridge, java.lang.String);
 }
@@ -1520,7 +1541,7 @@ public final class com.purride.pixelui.PixelHostSetup {
 public final class com.purride.pixelui.PixelHostSetupConfig {
   public com.purride.pixelui.PixelHostSetupConfig(com.purride.pixelui.PixelHostProfilePreference, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.TextDirection, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelui.PixelHostProfilePreference getProfilePreference();
-  public final int getBackgroundColor-bODNPuc();
+  public final int getBezelColor-bODNPuc();
   public final com.purride.pixelcore.PixelTextRasterizer getTextRasterizer();
   public final com.purride.pixelui.TextDirection getTextDirection();
   public final kotlin.jvm.functions.Function0<com.purride.pixelui.Widget> getContent();
@@ -1560,6 +1581,10 @@ public final class com.purride.pixelui.PixelHostTextInputCoordinator {
   public final void syncRequestedFocus(java.util.List<com.purride.pixelui.internal.PixelTextInputTarget>);
   public final void focus(com.purride.pixelui.internal.PixelTextInputTarget);
 }
+public final class com.purride.pixelui.PixelHostTextInputCoordinatorKt {
+  public static final com.purride.pixelui.internal.PixelTextInputTarget findTextInputTargetForState(java.util.List<com.purride.pixelui.internal.PixelTextInputTarget>, com.purride.pixelui.state.PixelTextFieldState);
+  public static final com.purride.pixelui.PixelTextInputRequest access$toTextInputRequest(com.purride.pixelui.internal.PixelTextInputTarget);
+}
 public final class com.purride.pixelui.PixelHostView extends android.view.View implements com.purride.pixelcore.PixelFrameView {
   public com.purride.pixelui.PixelHostView(android.content.Context, android.util.AttributeSet);
   public com.purride.pixelui.PixelHostView(android.content.Context, android.util.AttributeSet, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -1569,10 +1594,10 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setScreenProfile(com.purride.pixelcore.ScreenProfile);
   public final com.purride.pixelui.PixelHostProfilePreference getProfilePreference();
   public final void setProfilePreference(com.purride.pixelui.PixelHostProfilePreference);
-  public final int getBackgroundColor-bODNPuc();
-  public final void setBackgroundColor-0S9DSyc(int);
-  public final int getPixelGridColor-bODNPuc();
-  public final void setPixelGridColor-0S9DSyc(int);
+  public final int getBezelColor-bODNPuc();
+  public final void setBezelColor-0S9DSyc(int);
+  public final int getOffPixelColor-bODNPuc();
+  public final void setOffPixelColor-0S9DSyc(int);
   public final com.purride.pixelui.PixelWindowInsets getWindowInsets();
   public final void setWindowInsets(com.purride.pixelui.PixelWindowInsets);
   public final com.purride.pixelui.PixelWindowInsets getViewInsets();
@@ -1583,6 +1608,10 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setActiveSliderTarget$pixel_engine(com.purride.pixelui.internal.PixelSliderTarget);
   public final com.purride.pixelui.internal.PixelScrollbarTarget getActiveScrollbarTarget$pixel_engine();
   public final void setActiveScrollbarTarget$pixel_engine(com.purride.pixelui.internal.PixelScrollbarTarget);
+  public final com.purride.pixelui.internal.PixelClickTarget getActiveSwipeTarget$pixel_engine();
+  public final void setActiveSwipeTarget$pixel_engine(com.purride.pixelui.internal.PixelClickTarget);
+  public final com.purride.pixelui.internal.PixelClickTarget getCandidateSwipeTarget$pixel_engine();
+  public final void setCandidateSwipeTarget$pixel_engine(com.purride.pixelui.internal.PixelClickTarget);
   public final com.purride.pixelui.internal.PixelRefreshTarget getActiveRefreshTarget$pixel_engine();
   public final void setActiveRefreshTarget$pixel_engine(com.purride.pixelui.internal.PixelRefreshTarget);
   public final com.purride.pixelui.internal.PixelRefreshTarget getCandidateRefreshTarget$pixel_engine();
@@ -1697,6 +1726,7 @@ public final class com.purride.pixelui.PixelIconData {
 }
 public final class com.purride.pixelui.PixelInputType extends java.lang.Enum<com.purride.pixelui.PixelInputType> {
   public static final com.purride.pixelui.PixelInputType TEXT;
+  public static final com.purride.pixelui.PixelInputType ASCII;
   public static final com.purride.pixelui.PixelInputType NUMBER;
   public static final com.purride.pixelui.PixelInputType NUMBER_PASSWORD;
   public static final com.purride.pixelui.PixelInputType EMAIL;
@@ -1732,6 +1762,7 @@ public final class com.purride.pixelui.PixelInspectorPanelKt {
   public static final int access$getSelectedBorderColor$p();
   public static final int access$getPanelBorderColor$p();
   public static final long access$formatInspectorKilobytes(long);
+  public static final com.purride.pixelui.Widget access$inspectorLineText(java.lang.String, com.purride.pixelui.PixelTextStyle);
   public static final com.purride.pixelui.PixelTextStyle access$getSelectedTargetStyle$p();
   public static final com.purride.pixelui.PixelTextStyle access$getBodyStyle$p();
 }
@@ -2141,6 +2172,28 @@ public final class com.purride.pixelui.PixelSystemAction {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.PixelTextButtonStyle {
+  public static final com.purride.pixelui.PixelTextButtonStyle$Companion Companion;
+  public com.purride.pixelui.PixelTextButtonStyle(com.purride.pixelui.PixelTextStyle, com.purride.pixelui.Alignment, com.purride.pixelui.EdgeInsets);
+  public com.purride.pixelui.PixelTextButtonStyle(com.purride.pixelui.PixelTextStyle, com.purride.pixelui.Alignment, com.purride.pixelui.EdgeInsets, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelui.PixelTextStyle getTextStyle();
+  public final com.purride.pixelui.Alignment getAlignment();
+  public final com.purride.pixelui.EdgeInsets getPadding();
+  public final com.purride.pixelui.PixelTextStyle component1();
+  public final com.purride.pixelui.Alignment component2();
+  public final com.purride.pixelui.EdgeInsets component3();
+  public final com.purride.pixelui.PixelTextButtonStyle copy(com.purride.pixelui.PixelTextStyle, com.purride.pixelui.Alignment, com.purride.pixelui.EdgeInsets);
+  public static com.purride.pixelui.PixelTextButtonStyle copy$default(com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.Alignment, com.purride.pixelui.EdgeInsets, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.PixelTextButtonStyle();
+  public static final com.purride.pixelui.PixelTextButtonStyle access$getDefault$cp();
+}
+public final class com.purride.pixelui.PixelTextButtonStyle$Companion {
+  public final com.purride.pixelui.PixelTextButtonStyle getDefault();
+  public com.purride.pixelui.PixelTextButtonStyle$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
 public final class com.purride.pixelui.PixelTextEditAction extends java.lang.Enum<com.purride.pixelui.PixelTextEditAction> {
   public static final com.purride.pixelui.PixelTextEditAction COPY;
   public static final com.purride.pixelui.PixelTextEditAction CUT;
@@ -2214,6 +2267,7 @@ public final class com.purride.pixelui.PixelTextInputBridge implements com.purri
   public com.purride.pixelui.PixelTextInputBridge(android.content.Context, com.purride.pixelui.PixelHostView, android.widget.EditText, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final android.widget.EditText getInputView();
   public void showTextInput(com.purride.pixelui.PixelTextInputRequest);
+  public void updateTextInput(com.purride.pixelui.PixelTextInputRequest);
   public void hideTextInput();
   public void performHapticFeedback(com.purride.pixelui.PixelHapticType);
   public void requestFrame();
@@ -2224,7 +2278,13 @@ public final class com.purride.pixelui.PixelTextInputBridge implements com.purri
   public static final com.purride.pixelui.PixelHostView access$getHostView$p(com.purride.pixelui.PixelTextInputBridge);
 }
 public final class com.purride.pixelui.PixelTextInputBridgeKt {
+  public static final com.purride.pixelui.AndroidTextInputEditorConfig toAndroidEditorConfig(com.purride.pixelui.PixelTextInputRequest);
+  public static final boolean shouldRestartAndroidTextInput(boolean, com.purride.pixelui.AndroidTextInputEditorConfig, com.purride.pixelui.AndroidTextInputEditorConfig);
+  public static final java.lang.String normalizePrintableAsciiUppercase(java.lang.CharSequence);
   public static final int resolveAndroidInputType(com.purride.pixelui.PixelInputType, boolean);
+  public static final int resolveAndroidImeOptions(com.purride.pixelui.PixelTextInputAction, com.purride.pixelui.PixelInputType);
+  public static final android.text.InputFilter[] access$getASCII_INPUT_FILTERS$p();
+  public static final android.text.InputFilter[] access$getEMPTY_INPUT_FILTERS$p();
 }
 public final class com.purride.pixelui.PixelTextInputRequest {
   public com.purride.pixelui.PixelTextInputRequest(java.lang.String, int, int, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction);
@@ -2344,8 +2404,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget Flexible$default(com.purride.pixelui.Widget, int, com.purride.pixelui.FlexFit, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Spacer(int, java.lang.Object);
   public static com.purride.pixelui.Widget Spacer$default(int, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget GestureDetector(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
-  public static com.purride.pixelui.Widget GestureDetector$default(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget GestureDetector(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget GestureDetector$default(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Line-nZs-OeI(int, int, int, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget Line-nZs-OeI$default(int, int, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Line(int, int, int, int, com.purride.pixelui.PixelShapeStyle, java.lang.Object);
@@ -2402,10 +2462,10 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget FittedBox$default(com.purride.pixelui.Widget, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Column(java.util.List<? extends com.purride.pixelui.Widget>, int, com.purride.pixelui.MainAxisSize, com.purride.pixelui.MainAxisAlignment, com.purride.pixelui.CrossAxisAlignment, java.lang.Object);
   public static com.purride.pixelui.Widget Column$default(java.util.List, int, com.purride.pixelui.MainAxisSize, com.purride.pixelui.MainAxisAlignment, com.purride.pixelui.CrossAxisAlignment, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget PageView(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, java.util.List<? extends com.purride.pixelui.Widget>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, java.lang.Object);
-  public static com.purride.pixelui.Widget PageView$default(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, java.util.List, kotlin.jvm.functions.Function1, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget PageViewBuilder(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, ? extends com.purride.pixelui.Widget>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, java.lang.Object);
-  public static com.purride.pixelui.Widget PageViewBuilder$default(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, int, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget PageView(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, java.util.List<? extends com.purride.pixelui.Widget>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget PageView$default(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, java.util.List, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget PageViewBuilder(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, ? extends com.purride.pixelui.Widget>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget PageViewBuilder$default(com.purride.pixelcore.PixelAxis, com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, int, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ListView(java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, java.lang.Object);
   public static com.purride.pixelui.Widget ListView$default(java.util.List, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ListViewBuilder(int, kotlin.jvm.functions.Function1<? super java.lang.Integer, ? extends com.purride.pixelui.Widget>, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, java.lang.Integer, java.lang.Integer, int, java.lang.Object);
@@ -2434,12 +2494,14 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget RefreshIndicator-zQGkKWs$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, int, boolean, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SingleChildScrollView(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object);
   public static com.purride.pixelui.Widget SingleChildScrollView$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget TextField-T1ftQuk(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object);
-  public static com.purride.pixelui.Widget TextField-T1ftQuk$default(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget TextField-yr_hfGw(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.TextAlign, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object);
+  public static com.purride.pixelui.Widget TextField-yr_hfGw$default(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.TextAlign, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Slider-WmmbFQo(float, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget Slider-WmmbFQo$default(float, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget OutlinedButton-iU0IJ84(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.PixelButtonStyle, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
   public static com.purride.pixelui.Widget OutlinedButton-iU0IJ84$default(java.lang.String, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelButtonStyle, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget TextButton(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.PixelTextButtonStyle, boolean, java.lang.Object);
+  public static com.purride.pixelui.Widget TextButton$default(java.lang.String, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelTextButtonStyle, boolean, java.lang.Object, int, java.lang.Object);
 }
 public final class com.purride.pixelui.PixelWindowInsets {
   public static final com.purride.pixelui.PixelWindowInsets$Companion Companion;
@@ -2476,6 +2538,46 @@ public final class com.purride.pixelui.ReadingOrderFocusTraversalPolicy implemen
 public final class com.purride.pixelui.SafeAreaKt {
   public static final com.purride.pixelui.Widget SafeArea(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object);
   public static com.purride.pixelui.Widget SafeArea$default(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object, int, java.lang.Object);
+}
+public final class com.purride.pixelui.SlidableActionPane {
+  public com.purride.pixelui.SlidableActionPane(java.util.List<? extends com.purride.pixelui.Widget>, float, com.purride.pixelui.SlidableMotion, boolean, float);
+  public com.purride.pixelui.SlidableActionPane(java.util.List, float, com.purride.pixelui.SlidableMotion, boolean, float, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.util.List<com.purride.pixelui.Widget> getChildren();
+  public final float getExtentRatio();
+  public final com.purride.pixelui.SlidableMotion getMotion();
+  public final boolean getDismissible();
+  public final float getDismissThreshold();
+  public final java.util.List<com.purride.pixelui.Widget> component1();
+  public final float component2();
+  public final com.purride.pixelui.SlidableMotion component3();
+  public final boolean component4();
+  public final float component5();
+  public final com.purride.pixelui.SlidableActionPane copy(java.util.List<? extends com.purride.pixelui.Widget>, float, com.purride.pixelui.SlidableMotion, boolean, float);
+  public static com.purride.pixelui.SlidableActionPane copy$default(com.purride.pixelui.SlidableActionPane, java.util.List, float, com.purride.pixelui.SlidableMotion, boolean, float, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.SlidableDirection extends java.lang.Enum<com.purride.pixelui.SlidableDirection> {
+  public static final com.purride.pixelui.SlidableDirection START;
+  public static final com.purride.pixelui.SlidableDirection END;
+  public static com.purride.pixelui.SlidableDirection[] values();
+  public static com.purride.pixelui.SlidableDirection valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.SlidableDirection> getEntries();
+}
+public final class com.purride.pixelui.SlidableKt {
+  public static final com.purride.pixelui.Widget Slidable(com.purride.pixelui.Widget, com.purride.pixelui.SlidableActionPane, com.purride.pixelui.SlidableActionPane, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function1<? super com.purride.pixelui.SlidableDirection, kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget Slidable$default(com.purride.pixelui.Widget, com.purride.pixelui.SlidableActionPane, com.purride.pixelui.SlidableActionPane, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget SlidableAction-Hyeiq0c(java.lang.String, int, int, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget SlidableAction-Hyeiq0c$default(java.lang.String, int, int, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
+}
+public final class com.purride.pixelui.SlidableMotion extends java.lang.Enum<com.purride.pixelui.SlidableMotion> {
+  public static final com.purride.pixelui.SlidableMotion BEHIND;
+  public static final com.purride.pixelui.SlidableMotion DRAWER;
+  public static final com.purride.pixelui.SlidableMotion SCROLL;
+  public static com.purride.pixelui.SlidableMotion[] values();
+  public static com.purride.pixelui.SlidableMotion valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.SlidableMotion> getEntries();
 }
 public abstract class com.purride.pixelui.State<T extends com.purride.pixelui.StatefulWidget> {
   public T widget;
@@ -2801,6 +2903,9 @@ public final class com.purride.pixelui.state.PixelListController extends com.pur
   public final void startDrag(com.purride.pixelui.state.PixelListState);
   public final boolean canConsumeDrag(com.purride.pixelui.state.PixelListState, float, int, int);
   public final void scrollTo(com.purride.pixelui.state.PixelListState, float, int, int);
+  public final void scheduleJumpToEnd$pixel_engine(com.purride.pixelui.state.PixelListState);
+  public final boolean isAtEnd(com.purride.pixelui.state.PixelListState, float);
+  public static boolean isAtEnd$default(com.purride.pixelui.state.PixelListController, com.purride.pixelui.state.PixelListState, float, int, java.lang.Object);
   public final com.purride.pixelui.state.PixelListSavedState saveState(com.purride.pixelui.state.PixelListState);
   public final void restoreState(com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, com.purride.pixelui.state.PixelListRestorationPolicy);
   public static void restoreState$default(com.purride.pixelui.state.PixelListController, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListSavedState, int, int, com.purride.pixelui.state.PixelListRestorationPolicy, int, java.lang.Object);
@@ -2874,6 +2979,8 @@ public final class com.purride.pixelui.state.PixelListState {
   public final void setPendingRestorationState$pixel_engine(com.purride.pixelui.state.PixelListSavedState);
   public final com.purride.pixelui.state.PixelListRestorationPolicy getPendingRestorationPolicy$pixel_engine();
   public final void setPendingRestorationPolicy$pixel_engine(com.purride.pixelui.state.PixelListRestorationPolicy);
+  public final boolean getPendingJumpToEnd$pixel_engine();
+  public final void setPendingJumpToEnd$pixel_engine(boolean);
   public final java.util.List<com.purride.pixelui.state.PixelScrollSnapRange> getScrollSnapRanges$pixel_engine();
   public final void setScrollSnapRanges$pixel_engine(java.util.List<com.purride.pixelui.state.PixelScrollSnapRange>);
   public final java.lang.Float getSnapTargetOffsetPx$pixel_engine();
@@ -2904,7 +3011,7 @@ public final class com.purride.pixelui.state.PixelPagerController extends com.pu
   public final com.purride.pixelui.state.PixelPagerSavedState saveState(com.purride.pixelui.state.PixelPagerState);
   public final void restoreState(com.purride.pixelui.state.PixelPagerState, com.purride.pixelui.state.PixelPagerSavedState, int, com.purride.pixelcore.PixelAxis);
   public static void restoreState$default(com.purride.pixelui.state.PixelPagerController, com.purride.pixelui.state.PixelPagerState, com.purride.pixelui.state.PixelPagerSavedState, int, com.purride.pixelcore.PixelAxis, int, java.lang.Object);
-  public final void startDrag(com.purride.pixelui.state.PixelPagerState);
+  public final void startDrag(com.purride.pixelui.state.PixelPagerState, int);
   public final void dragBy(com.purride.pixelui.state.PixelPagerState, float, int);
   public final void endDrag(com.purride.pixelui.state.PixelPagerState, int, float);
   public final void cancelDrag(com.purride.pixelui.state.PixelPagerState);
@@ -2961,6 +3068,8 @@ public final class com.purride.pixelui.state.PixelPagerState {
   public final void setLastDispatchedPage$pixel_engine(int);
   public final com.purride.pixelcore.AxisMotionState getMotionState$pixel_engine();
   public final void setMotionState$pixel_engine(com.purride.pixelcore.AxisMotionState);
+  public final float getDragStartOffsetPx$pixel_engine();
+  public final void setDragStartOffsetPx$pixel_engine(float);
   public final boolean isDragging();
   public final boolean isSettling();
   public com.purride.pixelui.state.PixelPagerState();

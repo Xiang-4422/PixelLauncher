@@ -457,6 +457,7 @@ com.purride.pixelui.host public val pendingCount: Int get() = pending.size
 com.purride.pixelui.host public fun clear()
 com.purride.pixelui public interface PixelHostBridge
 com.purride.pixelui public fun showTextInput(request: PixelTextInputRequest)
+com.purride.pixelui public fun updateTextInput(request: PixelTextInputRequest): Unit = Unit
 com.purride.pixelui public fun hideTextInput()
 com.purride.pixelui public fun performHapticFeedback(type: PixelHapticType)
 com.purride.pixelui public fun requestFrame()
@@ -479,8 +480,8 @@ com.purride.pixelui public fun createPixelHostSetup(
 com.purride.pixelui public class PixelHostView @JvmOverloads constructor(
 com.purride.pixelui public var screenProfile: ScreenProfile = ScreenProfile(
 com.purride.pixelui public var profilePreference: PixelHostProfilePreference? = null
-com.purride.pixelui public var backgroundColor: PixelColor = PixelColor.Black
-com.purride.pixelui public var pixelGridColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
+com.purride.pixelui public var bezelColor: PixelColor = PixelColor.Black
+com.purride.pixelui public var offPixelColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
 com.purride.pixelui public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
 com.purride.pixelui public var viewInsets: PixelWindowInsets = PixelWindowInsets.Zero
 com.purride.pixelui public var hostBridge: PixelHostBridge? = null
@@ -557,6 +558,7 @@ com.purride.pixelui.state public fun dragBy(
 com.purride.pixelui.state public fun startDrag(state: PixelListState)
 com.purride.pixelui.state public fun canConsumeDrag(
 com.purride.pixelui.state public fun scrollTo(
+com.purride.pixelui.state public fun isAtEnd(state: PixelListState, tolerancePx: Float = 0.5f): Boolean
 com.purride.pixelui.state public fun saveState(state: PixelListState): PixelListSavedState
 com.purride.pixelui.state public fun restoreState(
 com.purride.pixelui.state public fun endDrag(
@@ -587,7 +589,7 @@ com.purride.pixelui.state public fun sync(
 com.purride.pixelui.state public fun syncToPage(state: PixelPagerState, targetPage: Int)
 com.purride.pixelui.state public fun saveState(state: PixelPagerState): PixelPagerSavedState
 com.purride.pixelui.state public fun restoreState(
-com.purride.pixelui.state public fun startDrag(state: PixelPagerState)
+com.purride.pixelui.state public fun startDrag(state: PixelPagerState, viewportSizePx: Int)
 com.purride.pixelui.state public fun dragBy(
 com.purride.pixelui.state public fun endDrag(
 com.purride.pixelui.state public fun cancelDrag(state: PixelPagerState)
@@ -673,6 +675,9 @@ com.purride.pixelui public val builder: (BuildContext, PixelAsyncSnapshot<T>) ->
 com.purride.pixelui public data class PixelButtonStyle(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelButtonStyle = PixelButtonStyle()
+com.purride.pixelui public data class PixelTextButtonStyle(
+com.purride.pixelui public companion object
+com.purride.pixelui public val Default: PixelTextButtonStyle = PixelTextButtonStyle()
 com.purride.pixelui public data class PixelIconData(
 com.purride.pixelui public fun Icon(
 com.purride.pixelui public fun ListTile(
@@ -725,6 +730,7 @@ com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelTextFieldStyle = PixelTextFieldStyle()
 com.purride.pixelui public typealias TextStyle = PixelTextStyle
 com.purride.pixelui public typealias ButtonStyle = PixelButtonStyle
+com.purride.pixelui public typealias TextButtonStyle = PixelTextButtonStyle
 com.purride.pixelui public typealias TextFieldStyle = PixelTextFieldStyle
 com.purride.pixelui public typealias TextOverflow = PixelTextOverflow
 com.purride.pixelui public typealias TextInputAction = PixelTextInputAction
@@ -789,7 +795,13 @@ com.purride.pixelui public fun SingleChildScrollView(
 com.purride.pixelui public fun TextField(
 com.purride.pixelui public fun Slider(
 com.purride.pixelui public fun OutlinedButton(
+com.purride.pixelui public fun TextButton(
 com.purride.pixelui public fun SafeArea(
+com.purride.pixelui public enum class SlidableDirection
+com.purride.pixelui public enum class SlidableMotion
+com.purride.pixelui public data class SlidableActionPane(
+com.purride.pixelui public fun Slidable(
+com.purride.pixelui public fun SlidableAction(
 com.purride.pixelui.widgets.animated public fun AnimatedContainer(
 com.purride.pixelui.widgets.animated public fun AnimatedOpacity(
 com.purride.pixelui.widgets.animated public fun quantizeOpacity(t: Float): Float = when

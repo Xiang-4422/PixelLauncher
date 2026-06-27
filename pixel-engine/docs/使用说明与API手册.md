@@ -79,13 +79,13 @@ val setup = createPixelHostSetup(
             dotSizePx = 8,
             pixelShape = PixelShape.SQUARE,
         ),
-        backgroundColor = PixelColor.Black,
+        bezelColor = PixelColor.Black,
         textDirection = TextDirection.LTR,
         content = { AppRoot() },
     ),
 )
 
-setup.hostView.pixelGridColor = PixelColor.fromRgb(8, 37, 13)
+setup.hostView.offPixelColor = PixelColor.fromRgb(8, 37, 13)
 setup.hostView.setPixelGapEnabled(true)
 setup.hostView.setPixelGapRatio(0.6f)
 ```
@@ -95,7 +95,7 @@ setup.hostView.setPixelGapRatio(0.6f)
 | 配置 | 说明 |
 |---|---|
 | `profilePreference` | 点大小、像素形状偏好 |
-| `backgroundColor` | Android View 背景色 |
+| `bezelColor` | 屏幕外框和画布背景色 |
 | `textRasterizer` | 默认文本栅格器 |
 | `textDirection` | LTR / RTL |
 | `pagerGesturePolicy` | PageView 手势启动策略 |
@@ -186,8 +186,8 @@ val theme = AppTheme(
     accent = PixelColor.fromRgb(255, 220, 120),
 )
 
-setup.hostView.backgroundColor = theme.background
-setup.hostView.pixelGridColor = theme.grid
+setup.hostView.bezelColor = theme.background
+setup.hostView.offPixelColor = theme.grid
 
 Text("HOME", color = theme.text)
 Container(borderColor = theme.accent)

@@ -127,7 +127,7 @@ object ManualHostConfigScene : ManualDocScene(
                     crossAxisAlignment = CrossAxisAlignment.STRETCH,
                 ),
             ),
-            apiList("Config keys", listOf("backgroundColor", "textDirection", "pagerGesturePolicy", "nestedScrollPolicy", "scrollPhysics", "frameScheduler", "content")),
+            apiList("Config keys", listOf("bezelColor", "textDirection", "pagerGesturePolicy", "nestedScrollPolicy", "scrollPhysics", "frameScheduler", "content")),
         )
     },
 )
