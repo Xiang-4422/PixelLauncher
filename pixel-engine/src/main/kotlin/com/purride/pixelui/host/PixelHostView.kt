@@ -39,6 +39,7 @@ import com.purride.pixelui.internal.PixelScrollbarTarget
 import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.host.PixelJoystickFocusRouter
+import com.purride.pixelui.internal.host.handlePixelHostBack
 import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelKeyEvent
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
@@ -174,6 +175,8 @@ public class PixelHostView @JvmOverloads constructor(
     private val lifecycleCoordinator = PixelHostLifecycleCoordinator(disposeRender = renderCoordinator::dispose)
 
     public var hostBridge: PixelHostBridge? = null
+    public var backDispatcher: PixelBackDispatcher? = null
+    public var onUnhandledBack: (() -> Boolean)? = null
     public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
     public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
     public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
@@ -241,6 +244,21 @@ public class PixelHostView @JvmOverloads constructor(
 
     public fun submitFocusedTextInput() {
         textInputCoordinator.submitFocusedTextInput()
+    }
+
+    /**
+     * 处理宿主 back 事件。
+     *
+     * 顺序固定为：先关闭文本输入，再交给 widget back 栈，最后交给 app fallback。
+     */
+    public fun handleBackPressed(): Boolean {
+        return handlePixelHostBack(
+            hasFocusedTextInput = focusedTextInputTarget != null,
+            clearFocusedTextInput = ::clearFocusedTextInput,
+            backDispatcher = backDispatcher,
+            onUnhandledBack = onUnhandledBack,
+            onHandled = ::invalidate,
+        )
     }
 
     /**

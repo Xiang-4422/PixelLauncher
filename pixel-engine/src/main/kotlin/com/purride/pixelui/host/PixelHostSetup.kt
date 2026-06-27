@@ -21,6 +21,7 @@ public data class PixelHostSetup(
     val rootView: FrameLayout,
     val hostView: PixelHostView,
     val textInputBridge: PixelTextInputBridge,
+    val backDispatcher: PixelBackDispatcher,
 )
 
 /**
@@ -35,6 +36,14 @@ public data class PixelHostSetupConfig(
     val textRasterizer: PixelTextRasterizer? = null,
     val textDirection: TextDirection = TextDirection.LTR,
     val content: RootWidgetProvider? = null,
+    /**
+     * 宿主 back 事件调度器。默认 setup 会用它包一层 [PixelBackHost]。
+     */
+    val backDispatcher: PixelBackDispatcher = PixelBackDispatcher(),
+    /**
+     * widget back 栈未消费时的 app fallback。
+     */
+    val onUnhandledBack: (() -> Boolean)? = null,
     /**
      * 分页拖动启动策略。默认按主轴位移 > touchSlop 且 > 次轴位移 * 1.2 启动。
      * 业务可继承 [PagerGesturePolicy] 重写 shouldStartDrag 提供更激进/保守策略。
@@ -81,7 +90,16 @@ public fun createPixelHostSetup(
     hostView.nestedScrollPolicy = config.nestedScrollPolicy
     hostView.scrollPhysics = config.scrollPhysics
     hostView.frameScheduler = config.frameScheduler
-    config.content?.let { hostView.setContent(it) }
+    hostView.backDispatcher = config.backDispatcher
+    hostView.onUnhandledBack = config.onUnhandledBack
+    config.content?.let { provider ->
+        hostView.setContent {
+            PixelBackHost(
+                dispatcher = config.backDispatcher,
+                child = provider(),
+            )
+        }
+    }
     val rootView = FrameLayout(context).apply {
         addView(
             hostView,
@@ -96,5 +114,6 @@ public fun createPixelHostSetup(
         rootView = rootView,
         hostView = hostView,
         textInputBridge = textInputBridge,
+        backDispatcher = config.backDispatcher,
     )
 }

@@ -63,6 +63,7 @@ android {
 
 dependencies {
     implementation("com.purride:pixel-engine:0.1.0-SNAPSHOT")
+    implementation("androidx.activity:activity:1.13.0")
     testImplementation("junit:junit:4.13.2")
 }
 EOF
@@ -90,23 +91,33 @@ EOF
 cat >"$TMP_DIR/app/src/main/kotlin/com/purride/pixelsdkconsumer/ConsumerActivity.kt" <<'EOF'
 package com.purride.pixelsdkconsumer
 
-import android.app.Activity
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import com.purride.pixelui.PixelBackDispatcher
 import com.purride.pixelui.Center
 import com.purride.pixelui.PixelOverlayController
 import com.purride.pixelui.PixelOverlayHost
+import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.Text
 import com.purride.pixelui.createPixelHostSetup
 
-class ConsumerActivity : Activity() {
+class ConsumerActivity : ComponentActivity() {
     private val overlay = PixelOverlayController()
+    private val backDispatcher = PixelBackDispatcher()
+    private lateinit var setup: PixelHostSetup
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val setup = createPixelHostSetup(
+        setup = createPixelHostSetup(
             context = this,
             config = PixelHostSetupConfig(
+                backDispatcher = backDispatcher,
+                onUnhandledBack = {
+                    finish()
+                    true
+                },
                 content = {
                     PixelOverlayHost(
                         controller = overlay,
@@ -116,6 +127,21 @@ class ConsumerActivity : Activity() {
             ),
         )
         setContentView(setup.rootView)
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (!setup.hostView.handleBackPressed()) {
+                        isEnabled = false
+                        try {
+                            onBackPressedDispatcher.onBackPressed()
+                        } finally {
+                            isEnabled = true
+                        }
+                    }
+                }
+            },
+        )
     }
 }
 EOF
@@ -124,10 +150,13 @@ cat >"$TMP_DIR/app/src/test/kotlin/com/purride/pixelsdkconsumer/PixelTesterConsu
 package com.purride.pixelsdkconsumer
 
 import com.purride.pixelui.Text
+import com.purride.pixelui.PixelBackDispatcher
+import com.purride.pixelui.PixelBackHost
 import com.purride.pixelui.PixelOverlayController
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -136,11 +165,15 @@ class PixelTesterConsumerTest {
     fun canUsePublishedPixelTester() {
         val tester = PixelTester()
         val overlay = PixelOverlayController()
+        val backDispatcher = PixelBackDispatcher()
 
         tester.pumpWidget(
-            widget = PixelOverlayHost(
-                controller = overlay,
-                child = Text("SDK OK"),
+            widget = PixelBackHost(
+                dispatcher = backDispatcher,
+                child = PixelOverlayHost(
+                    controller = overlay,
+                    child = Text("SDK OK"),
+                ),
             ),
             logicalWidth = 32,
             logicalHeight = 8,
@@ -151,6 +184,9 @@ class PixelTesterConsumerTest {
 
         assertTrue(tester.exists(find.byText("SDK OK")))
         assertTrue(tester.exists(find.byText("SAVED")))
+        assertTrue(backDispatcher.handleBack())
+        tester.pumpFrame(16)
+        assertFalse(tester.exists(find.byText("SAVED")))
         assertTrue(tester.dumpPixelsAsAscii().startsWith("size=32x8\n"))
         tester.dispose()
     }

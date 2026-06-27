@@ -354,6 +354,17 @@ com.purride.pixelui public data class Failure(public val error: Throwable) : Pix
 com.purride.pixelui public fun interface PixelAsyncSource<T>
 com.purride.pixelui public fun subscribe(listener: (PixelAsyncSnapshot<T>) -> Unit): () -> Unit
 com.purride.pixelui public fun <T> pixelAsyncSourceOf(value: T): PixelAsyncSource<T>
+com.purride.pixelui public class PixelBackDispatcher
+com.purride.pixelui public fun register(handler: () -> Boolean): PixelBackRegistration
+com.purride.pixelui public fun handleBack(): Boolean
+com.purride.pixelui public companion object
+com.purride.pixelui public fun maybeOf(context: BuildContext): PixelBackDispatcher?
+com.purride.pixelui public fun of(context: BuildContext): PixelBackDispatcher
+com.purride.pixelui public interface PixelBackRegistration
+com.purride.pixelui public val id: Int
+com.purride.pixelui public fun dispose()
+com.purride.pixelui public fun PixelBackHost(
+com.purride.pixelui public fun PixelBackHandler(
 com.purride.pixelui public class PixelErrorBoundary(
 com.purride.pixelui public val onError: ((Throwable) -> Unit)? = null,
 com.purride.pixelui public val errorBuilder: (Throwable) -> Widget = { error ->
@@ -505,6 +516,8 @@ com.purride.pixelui public var offPixelColor: PixelColor = PixelColor.fromRgb(17
 com.purride.pixelui public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
 com.purride.pixelui public var viewInsets: PixelWindowInsets = PixelWindowInsets.Zero
 com.purride.pixelui public var hostBridge: PixelHostBridge? = null
+com.purride.pixelui public var backDispatcher: PixelBackDispatcher? = null
+com.purride.pixelui public var onUnhandledBack: (() -> Boolean)? = null
 com.purride.pixelui public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
 com.purride.pixelui public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
 com.purride.pixelui public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
@@ -516,6 +529,7 @@ com.purride.pixelui public fun setContent(provider: RootWidgetProvider)
 com.purride.pixelui public fun updateFocusedTextInput(
 com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun submitFocusedTextInput()
+com.purride.pixelui public fun handleBackPressed(): Boolean
 com.purride.pixelui public fun performFocusedTextEditAction(action: PixelTextEditAction): Boolean
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
 com.purride.pixelui public fun setWindowInsets(

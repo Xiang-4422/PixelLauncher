@@ -5,8 +5,8 @@ import com.purride.pixelcore.PixelColor
 /**
  * 最小 overlay 控制器。
  *
- * 它只管理当前显示的 overlay widget 列表，不负责动画、超时和 back 行为。
- * 这些宿主策略后续在 Android host contract 中接入。
+ * 它只管理当前显示的 overlay widget 列表，不负责动画和超时。
+ * 当子树内存在 [PixelBackHost] 时，最上层 overlay 会优先响应 back。
  */
 public class PixelOverlayController : ChangeNotifier() {
     private var nextId = 1
@@ -190,11 +190,19 @@ private class PixelOverlayHostWidget(
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
         val overlays = controller.widgets()
-        val content = if (overlays.isEmpty()) {
-            child
-        } else {
-            Stack(children = listOf(child) + overlays)
+        val children = buildList {
+            add(child)
+            if (overlays.isNotEmpty()) {
+                add(
+                    PixelBackHandler(
+                        onBack = { controller.dismissTop() },
+                        child = Stack(children = overlays),
+                        key = "pixel-overlay-back",
+                    ),
+                )
+            }
         }
+        val content = Stack(children = children)
         return PixelOverlayScope(controller = controller, child = content)
     }
 }

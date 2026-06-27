@@ -102,6 +102,8 @@ setup.hostView.setPixelGapRatio(0.6f)
 | `nestedScrollPolicy` | 嵌套滚动仲裁策略 |
 | `scrollPhysics` | 列表滚动物理 |
 | `frameScheduler` | 帧调度器 |
+| `backDispatcher` | widget back 栈调度器 |
+| `onUnhandledBack` | back 未被 widget 消费时的 app fallback |
 | `content` | 根 widget provider |
 
 ## 4. 状态管理
@@ -223,8 +225,8 @@ PixelErrorBoundary(
 
 ### Overlay
 
-`PixelOverlayHost` 在页面顶部承载 toast、dialog 和 snackbar。controller 由业务持有；
-当前最小版本只负责 show/dismiss，不自动超时，也不接管 Android back。
+`PixelOverlayHost` 在页面顶部承载 toast、dialog 和 snackbar。controller 由业务持有。
+当页面接入 `PixelBackHost` 时，back 会优先关闭最上层 overlay。
 
 ```kotlin
 val overlay = PixelOverlayController()
@@ -246,6 +248,62 @@ dialog.dismiss()
 overlay.showSnackbar(
     message = "QUEUED",
     action = TextButton(text = "UNDO", onPressed = {}),
+)
+```
+
+### Back
+
+默认 `createPixelHostSetup` 会创建 `PixelBackDispatcher` 并给 `content` 包一层
+`PixelBackHost`。宿主收到 Android back 时调用 `hostView.handleBackPressed()`。
+处理顺序固定为：文本输入 blur -> overlay dismiss -> navigator pop -> app fallback。
+
+```kotlin
+lateinit var setup: PixelHostSetup
+
+setup = createPixelHostSetup(
+    context = this,
+    config = PixelHostSetupConfig(
+        onUnhandledBack = {
+            finish()
+            true
+        },
+        content = {
+            PixelOverlayHost(
+                controller = overlay,
+                child = PixelNavigator(rootRoute, tickerProvider),
+            )
+        },
+    ),
+)
+
+onBackPressedDispatcher.addCallback(
+    this,
+    object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (!setup.hostView.handleBackPressed()) {
+                isEnabled = false
+                try {
+                    onBackPressedDispatcher.onBackPressed()
+                } finally {
+                    isEnabled = true
+                }
+            }
+        }
+    },
+)
+```
+
+子树需要拦截 back 时使用 `PixelBackHandler`。返回 `true` 表示已经消费，
+返回 `false` 会继续交给下一个 handler 或 app fallback。
+
+```kotlin
+PixelBackHandler(
+    enabled = panelOpen,
+    onBack = {
+        panelOpen = false
+        true
+    },
+    child = settingsPanel,
 )
 ```
 

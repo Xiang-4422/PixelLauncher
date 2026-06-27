@@ -6,6 +6,7 @@ import com.purride.pixelui.Builder
 import com.purride.pixelui.ChangeNotifier
 import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.Opacity
+import com.purride.pixelui.PixelBackHandler
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Stack
@@ -443,7 +444,12 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
         }
         return PixelNavigatorScope(
             navigatorState = navigatorState,
-            child = child,
+            child = PixelBackHandler(
+                enabled = navigatorState.canPop,
+                onBack = { navigatorState.pop() },
+                child = child,
+                key = "navigator-back",
+            ),
             key = "navigator-scope",
         )
     }
