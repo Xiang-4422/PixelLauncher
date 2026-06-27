@@ -34,6 +34,7 @@ public class PixelBufferPool(
      * 把 buffer 归还到池。超过桶上限时直接丢弃。
      */
     public fun release(buffer: PixelBuffer) {
+        if (maxBuffersPerKey <= 0) return
         val key = packKey(buffer.width, buffer.height)
         val bucket = pool.getOrPut(key) { ArrayDeque() }
         if (bucket.size < maxBuffersPerKey) bucket.addLast(buffer)
