@@ -611,6 +611,29 @@ Snackbar(
 `Dialog` 的 `actions` 会排列在内容下方并右对齐；`Toast` 支持多行文本；`Snackbar` 的 `action`
 由调用方传入任意 widget，常用 `TextButton`。
 
+### 进度和加载指示
+
+`ProgressBar` 是固定尺寸的水平进度条，`progress` 会在绘制时钳位到 `0.0f..1.0f`。调用方负责
+维护真实任务进度；组件只根据当前传入值绘制。
+
+```kotlin
+ProgressBar(
+    progress = downloadProgress,
+    width = 48,
+    height = 5,
+)
+```
+
+`ActivityIndicator` 不会自己启动 ticker，也不会持有动画状态；它只根据 `frame` 高亮四个点中的一个。
+调用方可用 `AnimationController`、业务定时器或测试里的 `pumpFrame` 推进 frame。
+
+```kotlin
+ActivityIndicator(
+    frame = loadingFrame,
+    color = PixelColor.White,
+)
+```
+
 ### 输入框
 
 ```kotlin

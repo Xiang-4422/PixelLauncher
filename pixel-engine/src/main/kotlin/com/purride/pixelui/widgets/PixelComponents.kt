@@ -259,6 +259,12 @@ public fun SegmentedControl(
     key = key,
 )
 
+/**
+ * 固定尺寸的水平进度条。
+ *
+ * [progress] 会在绘制前钳位到 `0f..1f`；业务侧仍应把它视为受控状态并保存真实进度。
+ * [width] 和 [height] 使用 pixel-engine 的逻辑像素。
+ */
 public fun ProgressBar(
     progress: Float,
     width: Int = 48,
@@ -278,6 +284,12 @@ public fun ProgressBar(
     )
 }
 
+/**
+ * 由调用方驱动帧序号的四点加载指示器。
+ *
+ * 组件不会自己创建 ticker；调用方可通过动画控制器、定时器或测试里的 `pumpFrame`
+ * 递增 [frame]，当前高亮点由 `frame % 4` 决定。
+ */
 public fun ActivityIndicator(
     frame: Int = 0,
     color: PixelColor = PixelColor.White,
