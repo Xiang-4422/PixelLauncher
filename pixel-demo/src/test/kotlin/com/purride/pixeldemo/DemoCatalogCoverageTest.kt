@@ -143,47 +143,57 @@ class DemoCatalogCoverageTest {
         assertEquals(DemoCatalog.categories.size, columns.first().size)
         assertEquals(
             listOf(
-                "layout_padding",
-                "layout_align",
-                "layout_sized_box",
-                "layout_visibility",
-                "layout_container",
-                "layout_row",
-                "layout_column",
-                "layout_expanded",
-                "layout_flexible",
-                "layout_spacer",
-                "layout_wrap",
+                "layout_box",
+                "layout_flex",
                 "layout_stack",
-                "layout_positioned",
-                "layout_opacity",
-                "layout_clip_rect",
-                "layout_transform_translate",
-                "layout_decorated_box",
-                "layout_aspect_ratio",
-                "layout_constrained_box",
-                "layout_fitted_box",
-                "layout_safe_area",
-                "layout_ime_avoiding",
-                "layout_gesture_detector",
-                "controls_divider",
-                "controls_gap",
+                "layout_system",
             ),
-            columns[1].map { it.scene?.id },
+            columns[1].map { it.id },
         )
-        assertEquals("layout_padding", columns[1].first().scene?.id)
+        assertEquals(
+            listOf("layout_padding", "layout_align", "layout_sized_box", "layout_visibility", "layout_container"),
+            DemoTreeCatalog.visibleColumns(listOf("layout", "layout_box"))[2].take(5).map { it.scene?.id },
+        )
 
         DemoTreeCatalog.categories.forEach { category ->
-            assertTrue("${category.id} must contain leaf scenes", category.children.isNotEmpty())
-            category.children.forEach { leaf ->
-                assertTrue("${leaf.id} must be a leaf scene", leaf.isLeaf)
-                assertNotNull("${leaf.id} must reference a scene", leaf.scene)
+            assertTrue("${category.id} must contain groups", category.children.isNotEmpty())
+            category.children.forEach { group ->
+                assertFalse("${group.id} must be a group", group.isLeaf)
+                assertTrue("${group.id} must contain leaf scenes", group.children.isNotEmpty())
+                group.children.forEach { leaf ->
+                    assertTrue("${leaf.id} must be a leaf scene", leaf.isLeaf)
+                    assertNotNull("${leaf.id} must reference a scene", leaf.scene)
+                }
             }
         }
     }
 
     @Test
-    fun leafOrderMatchesUiUxSections() {
+    fun groupOrderMatchesUiUxSections() {
+        assertEquals(
+            listOf(
+                "layout_box",
+                "layout_flex",
+                "layout_stack",
+                "layout_system",
+                "text_rendering",
+                "input_text",
+                "input_focus",
+                "controls_actions",
+                "controls_selection",
+                "controls_value",
+                "feedback_status",
+                "feedback_overlay",
+                "scroll_views",
+                "scroll_refresh",
+                "paint_primitives",
+                "paint_resources",
+                "animation_widgets",
+                "navigation_runtime",
+                "debug_tools",
+            ),
+            DemoCatalog.groups.map { it.id },
+        )
         assertEquals(
             listOf(
                 "layout_padding",
@@ -191,76 +201,16 @@ class DemoCatalogCoverageTest {
                 "layout_sized_box",
                 "layout_visibility",
                 "layout_container",
-                "layout_row",
-                "layout_column",
-                "layout_expanded",
-                "layout_flexible",
-                "layout_spacer",
-                "layout_wrap",
-                "layout_stack",
-                "layout_positioned",
-                "layout_opacity",
-                "layout_clip_rect",
-                "layout_transform_translate",
                 "layout_decorated_box",
                 "layout_aspect_ratio",
                 "layout_constrained_box",
                 "layout_fitted_box",
-                "layout_safe_area",
-                "layout_ime_avoiding",
-                "layout_gesture_detector",
                 "controls_divider",
                 "controls_gap",
-                "text_text",
-                "text_rich_text",
-                "text_text_field",
-                "nav_focus_scope",
-                "nav_form",
-                "nav_semantics",
-                "controls_outlined_button",
-                "controls_list_tile",
-                "controls_selection_list",
-                "controls_section_list",
-                "controls_value_adjuster",
-                "controls_checkbox",
-                "controls_tabs",
-                "controls_shortcut_hint",
-                "controls_slider",
-                "controls_progress_bar",
-                "controls_activity_indicator",
-                "controls_load_state_view",
-                "controls_badge",
-                "controls_dialog",
-                "controls_overlay_tools",
-                "controls_popover_menu",
-                "scroll_single_child_scroll_view",
-                "scroll_list_view",
-                "scroll_grid_view",
-                "scroll_page_view",
-                "scroll_scrollbar",
-                "scroll_refresh_indicator",
-                "scroll_swipe_refresh_scaffold",
-                "scroll_custom_scroll_view",
-                "deep_state_restoration",
-                "controls_icon",
-                "paint_line",
-                "paint_circle",
-                "paint_polygon",
-                "paint_path",
-                "paint_custom_paint",
-                "paint_image",
-                "deep_resources_sprites",
-                "animation_animated_container",
-                "animation_tween_animation_builder",
-                "controls_app_scaffold",
-                "deep_navigation_runtime",
-                "debug_overlay",
-                "debug_inspector_panel",
-                "deep_inspector_advanced",
-                "deep_performance_lab",
             ),
-            DemoCatalog.allItems.map { it.id },
+            DemoCatalog.groups.first { it.id == "layout_box" }.sceneIds,
         )
+        assertEquals(DemoCatalog.groups.flatMap { it.sceneIds }, DemoCatalog.allItems.map { it.id })
     }
 
     private fun assertSearchContains(query: String, sceneId: String) {

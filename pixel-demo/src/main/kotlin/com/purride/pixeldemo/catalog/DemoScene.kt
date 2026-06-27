@@ -11,6 +11,14 @@ data class DemoCategory(
     val summary: String,
 )
 
+data class DemoGroup(
+    val id: String,
+    val title: String,
+    val summary: String,
+    val category: DemoCategory,
+    val sceneIds: List<String>,
+)
+
 interface DemoScene {
     val id: String
     val title: String

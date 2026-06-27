@@ -20,20 +20,31 @@ object DemoTreeCatalog {
             shortTitle = category.shortTitle(),
             summary = category.summary,
             category = category,
-            children = DemoCatalog.itemsFor(category).map { scene ->
+            children = DemoCatalog.groupsFor(category).map { group ->
                 DemoTreeNode(
-                    id = scene.id,
-                    title = scene.title,
-                    shortTitle = scene.shortTitle(),
-                    summary = scene.summary,
+                    id = group.id,
+                    title = group.title,
+                    shortTitle = group.title,
+                    summary = group.summary,
                     category = category,
-                    scene = scene,
+                    children = group.sceneIds.mapNotNull { sceneId ->
+                        DemoCatalog.findById(sceneId)?.let { scene ->
+                            DemoTreeNode(
+                                id = scene.id,
+                                title = scene.title,
+                                shortTitle = scene.shortTitle(),
+                                summary = scene.summary,
+                                category = category,
+                                scene = scene,
+                            )
+                        }
+                    },
                 )
             },
         )
     }
 
-    val leafScenes: List<DemoScene> = categories.flatMap { category -> category.children.mapNotNull(DemoTreeNode::scene) }
+    val leafScenes: List<DemoScene> = categories.flatMap { category -> category.leafScenes() }
 
     fun defaultSelectedPath(): List<String> = listOf(categories.first().id)
 
@@ -58,6 +69,9 @@ object DemoTreeCatalog {
         }
     }
 }
+
+private fun DemoTreeNode.leafScenes(): List<DemoScene> =
+    scene?.let(::listOf) ?: children.flatMap { it.leafScenes() }
 
 private fun DemoCategory.shortTitle(): String = when (id) {
     DemoCatalog.layout.id -> "布局"
