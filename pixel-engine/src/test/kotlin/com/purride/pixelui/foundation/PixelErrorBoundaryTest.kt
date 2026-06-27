@@ -57,8 +57,4 @@ class PixelErrorBoundaryTest {
             throw error
         }
     }
-
-    private fun PixelTester.hasPixel(color: PixelColor): Boolean {
-        return requireNotNull(renderResult).buffer.pixels.any { it == color.argb }
-    }
 }

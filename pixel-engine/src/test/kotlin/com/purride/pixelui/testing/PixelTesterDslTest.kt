@@ -71,6 +71,23 @@ import org.junit.Test
 
 class PixelTesterDslTest {
     @Test
+    fun pixelQueriesReadLastRenderedBuffer() {
+        val tester = PixelTester()
+        val color = PixelColor.fromRgb(255, 0, 0)
+
+        tester.pumpWidget(
+            widget = Container(width = 3, height = 2, fillColor = color),
+            logicalWidth = 3,
+            logicalHeight = 2,
+        )
+
+        assertEquals(color, tester.pixelAt(1, 1))
+        assertTrue(tester.hasPixel(color))
+        assertEquals("size=3x2\n***\n***\n", tester.dumpPixelsAsAscii())
+        tester.dispose()
+    }
+
+    @Test
     fun textButtonUsesNaturalTextSizeUntilPaddingIsExplicit() {
         val tester = PixelTester()
         var tapped = 0

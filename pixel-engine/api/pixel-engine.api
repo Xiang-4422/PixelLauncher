@@ -648,6 +648,51 @@ com.purride.pixelui.state public var selectionEnd: Int = selectionEnd.coerceIn(t
 com.purride.pixelui.state public var isFocused: Boolean = false
 com.purride.pixelui.state public var compositionStart: Int = -1
 com.purride.pixelui.state public var compositionEnd: Int = -1
+com.purride.pixelui.testing public class PixelTester
+com.purride.pixelui.testing public val scheduler: ManualFrameScheduler = ManualFrameScheduler()
+com.purride.pixelui.testing public val vsync: PixelTickerProvider = PixelTickerProvider(scheduler)
+com.purride.pixelui.testing public var clipboardText: String? = null
+com.purride.pixelui.testing public fun pumpWidget(widget: Widget, logicalWidth: Int, logicalHeight: Int)
+com.purride.pixelui.testing public fun tap(finder: PixelFinder)
+com.purride.pixelui.testing public fun doubleTap(finder: PixelFinder)
+com.purride.pixelui.testing public fun longPress(finder: PixelFinder)
+com.purride.pixelui.testing public fun drag(finder: PixelFinder, dx: Int, dy: Int)
+com.purride.pixelui.testing public fun fling(finder: PixelFinder, dx: Int, dy: Int, velocityPxPerSecond: Float)
+com.purride.pixelui.testing public fun cancelDrag(finder: PixelFinder, dx: Int = 0, dy: Int = 0)
+com.purride.pixelui.testing public fun startGesture(finder: PixelFinder, pointerId: Int = 0): PixelTestGesture
+com.purride.pixelui.testing public fun dragSelectionStartHandle(finder: PixelFinder, dx: Int, dy: Int)
+com.purride.pixelui.testing public fun dragSelectionEndHandle(finder: PixelFinder, dx: Int, dy: Int)
+com.purride.pixelui.testing public fun enterText(finder: PixelFinder, text: String)
+com.purride.pixelui.testing public fun submitTextInput()
+com.purride.pixelui.testing public fun performTextEditAction(
+com.purride.pixelui.testing public fun pressKey(key: PixelKey, character: Char? = null): Boolean
+com.purride.pixelui.testing public fun composeText(finder: PixelFinder, text: String)
+com.purride.pixelui.testing public fun updateComposition(finder: PixelFinder, start: Int, end: Int)
+com.purride.pixelui.testing public fun pumpFrame(deltaMs: Long)
+com.purride.pixelui.testing public fun pumpAndSettle(maxFrames: Int = 60)
+com.purride.pixelui.testing public fun dumpElementTree(): String = runtime.dumpElementTree()
+com.purride.pixelui.testing public fun dumpRenderTree(): String = runtime.dumpRenderTree()
+com.purride.pixelui.testing public fun dumpSemanticsTree(): String
+com.purride.pixelui.testing public fun pixelAt(x: Int, y: Int): PixelColor
+com.purride.pixelui.testing public fun hasPixel(color: PixelColor): Boolean
+com.purride.pixelui.testing public fun dumpPixelsAsAscii(): String
+com.purride.pixelui.testing public fun exists(finder: PixelFinder): Boolean
+com.purride.pixelui.testing public fun dispose()
+com.purride.pixelui.testing public interface PixelTestGesture
+com.purride.pixelui.testing public fun moveBy(dx: Int, dy: Int): PixelTestGesture
+com.purride.pixelui.testing public fun moveBy(dx: Int, dy: Int, deltaMs: Long): PixelTestGesture
+com.purride.pixelui.testing public fun up()
+com.purride.pixelui.testing public fun cancel()
+com.purride.pixelui.testing public object find
+com.purride.pixelui.testing public fun byText(text: String): PixelFinder = PixelFinder.ByText(text)
+com.purride.pixelui.testing public fun byType(type: kotlin.reflect.KClass<*>): PixelFinder = PixelFinder.ByType(type)
+com.purride.pixelui.testing public fun byKey(key: Any): PixelFinder = PixelFinder.ByKey(key)
+com.purride.pixelui.testing public sealed class PixelFinder
+com.purride.pixelui.testing public fun nth(index: Int): PixelFinder
+com.purride.pixelui.testing public data class ByText(public val text: String) : PixelFinder()
+com.purride.pixelui.testing public data class ByType(public val type: kotlin.reflect.KClass<*>) : PixelFinder()
+com.purride.pixelui.testing public data class ByKey(public val key: Any) : PixelFinder()
+com.purride.pixelui.testing public data class Nth(public val finder: PixelFinder, public val index: Int) : PixelFinder()
 com.purride.pixelui public data class EdgeInsets(
 com.purride.pixelui public companion object
 com.purride.pixelui public fun all(value: Int): EdgeInsets

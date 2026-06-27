@@ -13,6 +13,7 @@ trap cleanup EXIT
 ./gradlew :pixel-engine:publishToMavenLocal --no-daemon
 
 mkdir -p "$TMP_DIR/app/src/main/kotlin/com/purride/pixelsdkconsumer"
+mkdir -p "$TMP_DIR/app/src/test/kotlin/com/purride/pixelsdkconsumer"
 
 cat >"$TMP_DIR/settings.gradle.kts" <<'EOF'
 pluginManagement {
@@ -62,6 +63,7 @@ android {
 
 dependencies {
     implementation("com.purride:pixel-engine:0.1.0-SNAPSHOT")
+    testImplementation("junit:junit:4.13.2")
 }
 EOF
 
@@ -111,6 +113,33 @@ class ConsumerActivity : Activity() {
 }
 EOF
 
-"$ROOT_DIR/gradlew" -p "$TMP_DIR" :app:assembleDebug --no-daemon
+cat >"$TMP_DIR/app/src/test/kotlin/com/purride/pixelsdkconsumer/PixelTesterConsumerTest.kt" <<'EOF'
+package com.purride.pixelsdkconsumer
+
+import com.purride.pixelui.Text
+import com.purride.pixelui.testing.PixelTester
+import com.purride.pixelui.testing.find
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PixelTesterConsumerTest {
+    @Test
+    fun canUsePublishedPixelTester() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = Text("SDK OK"),
+            logicalWidth = 32,
+            logicalHeight = 8,
+        )
+
+        assertTrue(tester.exists(find.byText("SDK OK")))
+        assertTrue(tester.dumpPixelsAsAscii().startsWith("size=32x8\n"))
+        tester.dispose()
+    }
+}
+EOF
+
+"$ROOT_DIR/gradlew" -p "$TMP_DIR" :app:testDebugUnitTest :app:assembleDebug --no-daemon
 
 echo "SDK consumer smoke passed: $TMP_DIR"

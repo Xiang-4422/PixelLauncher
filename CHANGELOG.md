@@ -19,6 +19,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 ### Added SDK surface
 
 - `PixelErrorBoundary` and `PixelErrorPanel` for build-time widget fallback.
+- `PixelTester`, `PixelFinder`, and `PixelTestGesture` as SDK testing APIs.
 - `PixelTheme`, `PixelThemeData`, and `PixelThemeColors` for widget-level pixel defaults.
 - `TextButton` and `PixelTextButtonStyle`.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

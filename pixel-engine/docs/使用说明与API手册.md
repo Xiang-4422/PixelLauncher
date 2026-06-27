@@ -583,11 +583,16 @@ private class HollowSquareRender(
 
 ## 9. 测试
 
-`PixelTester` 是 test-only DSL，只存在于 `pixel-engine/src/test`，不会进入 release AAR。
+`PixelTester` 是发布在 SDK 里的离屏测试工具，可在普通单元测试中 pump widget、
+发送输入、推进帧，并读取像素和 semantics 结果。
 
 示例：
 
 ```kotlin
+import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.testing.PixelTester
+import com.purride.pixelui.testing.find
+
 val tester = PixelTester()
 
 tester.pumpWidget(
@@ -600,6 +605,10 @@ tester.tap(find.byText("OK"))
 tester.drag(find.byKey("list"), dx = 0, dy = -12)
 tester.enterText(find.byKey("field"), "hello")
 tester.pumpAndSettle()
+
+check(tester.hasPixel(PixelColor.White))
+check(tester.dumpSemanticsTree().contains("BUTTON"))
+val goldenText = tester.dumpPixelsAsAscii()
 ```
 
 Finder：
@@ -608,6 +617,12 @@ Finder：
 - `find.byType(SomeWidget::class)`
 - `find.byKey("key")`
 - `find.byText("OK").nth(1)`
+
+像素验证：
+
+- `tester.pixelAt(x, y)`
+- `tester.hasPixel(color)`
+- `tester.dumpPixelsAsAscii()`
 
 常用验证：
 

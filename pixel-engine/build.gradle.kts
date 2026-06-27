@@ -297,6 +297,7 @@ fun String.isPublishedBinaryApiClass(): Boolean {
         return false
     }
     if (contains("/internal/")) return false
+    if (contains("PixelTester\$TestGestureTarget")) return false
     if (endsWith("/BuildConfig") || contains("/R$") || endsWith("/R")) return false
     if (substringAfterLast('/').contains("\$WhenMappings")) return false
     if (Regex("\\$\\d+").containsMatchIn(this)) return false

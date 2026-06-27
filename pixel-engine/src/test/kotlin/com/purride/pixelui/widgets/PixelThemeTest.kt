@@ -74,8 +74,4 @@ class PixelThemeTest {
 
         assertTrue(tester.hasPixel(border))
     }
-
-    private fun PixelTester.hasPixel(color: PixelColor): Boolean {
-        return requireNotNull(renderResult).buffer.pixels.any { it == color.argb }
-    }
 }

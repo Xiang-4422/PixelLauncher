@@ -1,6 +1,7 @@
 package com.purride.pixelui.testing
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
 import com.purride.pixelui.PixelKeyEvent
@@ -23,8 +24,21 @@ import com.purride.pixelui.internal.PixelUiRuntime
 import kotlin.math.abs
 import java.util.IdentityHashMap
 
+/**
+ * 离屏驱动 pixel widget 树的 SDK 测试工具。
+ *
+ * 它不依赖 Android View，可以在普通单元测试里 pump widget、发送输入、
+ * 推进帧并读取像素/semantics 结果。
+ */
 public class PixelTester {
+    /**
+     * 控制测试帧时间的手动调度器。
+     */
     public val scheduler: ManualFrameScheduler = ManualFrameScheduler()
+
+    /**
+     * 给动画控制器使用的测试 ticker provider。
+     */
     public val vsync: PixelTickerProvider = PixelTickerProvider(scheduler)
 
     private val runtime = PixelUiRuntime(onVisualUpdate = { needsRender = true })
@@ -33,6 +47,9 @@ public class PixelTester {
     private var logicalHeight: Int = 0
     private var needsRender: Boolean = false
     private var focusedTextInputTarget: PixelTextInputTarget? = null
+    /**
+     * 最近一次复制或剪切得到的文本。
+     */
     public var clipboardText: String? = null
         private set
     private var currentNanos: Long = 0L
@@ -42,6 +59,9 @@ public class PixelTester {
     internal var renderResult: PixelRenderResult? = null
         private set
 
+    /**
+     * 设置根 widget 并立即渲染一帧。
+     */
     public fun pumpWidget(widget: Widget, logicalWidth: Int, logicalHeight: Int) {
         root = widget
         this.logicalWidth = logicalWidth
@@ -50,12 +70,18 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 点击 [finder] 命中的 widget 中心点。
+     */
     public fun tap(finder: PixelFinder) {
         val point = resolvePoint(finder, TargetKind.ANY)
         dispatchTapAt(point.x, point.y)
         render()
     }
 
+    /**
+     * 在文本输入上触发双击选词。
+     */
     public fun doubleTap(finder: PixelFinder) {
         val point = resolvePoint(finder, TargetKind.ANY)
         val target = renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(point.x, point.y) }
@@ -66,6 +92,9 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 长按命中的 widget 或文本输入。
+     */
     public fun longPress(finder: PixelFinder) {
         val point = resolvePoint(finder, TargetKind.ANY)
         renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(point.x, point.y) }?.let { target ->
@@ -83,29 +112,41 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 从命中点拖动指定像素距离。
+     */
     public fun drag(finder: PixelFinder, dx: Int, dy: Int) {
         val point = resolvePoint(finder, TargetKind.DRAG)
         dispatchDrag(point.x, point.y, dx, dy)
         render()
     }
 
+    /**
+     * 从命中点触发一次带速度的 fling。
+     */
     public fun fling(finder: PixelFinder, dx: Int, dy: Int, velocityPxPerSecond: Float) {
         val point = resolvePoint(finder, TargetKind.DRAG)
         dispatchFling(point.x, point.y, dx, dy, velocityPxPerSecond)
         render()
     }
 
+    /**
+     * 启动拖动后立刻取消，用于验证取消分支。
+     */
     public fun cancelDrag(finder: PixelFinder, dx: Int = 0, dy: Int = 0) {
         val point = resolvePoint(finder, TargetKind.DRAG)
         dispatchDragCancel(point.x, point.y, dx, dy)
         render()
     }
 
+    /**
+     * 启动一条可分多步推进的测试手势。
+     */
     public fun startGesture(finder: PixelFinder, pointerId: Int = 0): PixelTestGesture {
         val point = resolvePoint(finder, TargetKind.ANY)
         beginGesture(pointerId, point.x, point.y)
         render()
-        return PixelTestGesture(this, pointerId)
+        return DefaultPixelTestGesture(this, pointerId)
     }
 
     internal fun moveGestureBy(pointerId: Int, dx: Int, dy: Int, deltaMs: Long = 16L) {
@@ -128,14 +169,23 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 拖动文本选区起始手柄。
+     */
     public fun dragSelectionStartHandle(finder: PixelFinder, dx: Int, dy: Int) {
         dragSelectionHandle(finder, TextInputSelectionHandle.START, dx, dy)
     }
 
+    /**
+     * 拖动文本选区结束手柄。
+     */
     public fun dragSelectionEndHandle(finder: PixelFinder, dx: Int, dy: Int) {
         dragSelectionHandle(finder, TextInputSelectionHandle.END, dx, dy)
     }
 
+    /**
+     * 聚焦文本输入并替换全部文本。
+     */
     public fun enterText(finder: PixelFinder, text: String) {
         val target = resolveTextInputTarget(finder)
         ensureTextInputEditable(target)
@@ -145,6 +195,9 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 提交当前聚焦文本输入。
+     */
     public fun submitTextInput() {
         val target = focusedTextInputTarget ?: fail("No focused text input target")
         target.onSubmitted?.invoke(target.state.text)
@@ -155,6 +208,9 @@ public class PixelTester {
         }
     }
 
+    /**
+     * 对文本输入执行复制、剪切、粘贴或全选。
+     */
     public fun performTextEditAction(
         finder: PixelFinder,
         action: PixelTextEditAction,
@@ -193,6 +249,9 @@ public class PixelTester {
         return true
     }
 
+    /**
+     * 向当前 focus tree 发送按键。
+     */
     public fun pressKey(key: PixelKey, character: Char? = null): Boolean {
         val handled = PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(key = key, character = character))
         if (handled) {
@@ -202,6 +261,9 @@ public class PixelTester {
         return handled
     }
 
+    /**
+     * 在文本输入当前位置写入一段输入法 composition 文本。
+     */
     public fun composeText(finder: PixelFinder, text: String) {
         val target = resolveTextInputTarget(finder)
         ensureTextInputEditable(target)
@@ -223,6 +285,9 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 更新文本输入 composition 范围。
+     */
     public fun updateComposition(finder: PixelFinder, start: Int, end: Int) {
         val target = resolveTextInputTarget(finder)
         ensureTextInputEditable(target)
@@ -231,6 +296,9 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 推进一帧并渲染最新 UI。
+     */
     public fun pumpFrame(deltaMs: Long) {
         val nextNanos = currentNanos + deltaMs * 1_000_000L
         currentNanos = nextNanos
@@ -239,6 +307,9 @@ public class PixelTester {
         render()
     }
 
+    /**
+     * 持续推进帧，直到动画、ticker 和滚动活动都停止。
+     */
     public fun pumpAndSettle(maxFrames: Int = 60) {
         repeat(maxFrames) {
             pumpFrame(16)
@@ -249,10 +320,19 @@ public class PixelTester {
         fail("pumpAndSettle did not settle after $maxFrames frames")
     }
 
+    /**
+     * 返回当前 element tree 调试文本。
+     */
     public fun dumpElementTree(): String = runtime.dumpElementTree()
 
+    /**
+     * 返回当前 render tree 调试文本。
+     */
     public fun dumpRenderTree(): String = runtime.dumpRenderTree()
 
+    /**
+     * 返回当前 semantics tree 调试文本。
+     */
     public fun dumpSemanticsTree(): String {
         val nodes = renderResult?.semanticsNodes.orEmpty()
         if (nodes.isEmpty()) return "<empty semantics>"
@@ -261,10 +341,46 @@ public class PixelTester {
         }
     }
 
+    /**
+     * 读取最后一次渲染结果中的单个像素。
+     */
+    public fun pixelAt(x: Int, y: Int): PixelColor {
+        return renderedBuffer().getPixel(x, y)
+    }
+
+    /**
+     * 判断最后一次渲染结果是否包含指定颜色。
+     */
+    public fun hasPixel(color: PixelColor): Boolean {
+        return renderedBuffer().pixels.any { it == color.argb }
+    }
+
+    /**
+     * 把最后一次渲染结果转成稳定的 ASCII 像素快照，供 golden 文本比对。
+     */
+    public fun dumpPixelsAsAscii(): String {
+        val buffer = renderedBuffer()
+        return buildString {
+            append("size=").append(buffer.width).append('x').append(buffer.height).append('\n')
+            for (y in 0 until buffer.height) {
+                for (x in 0 until buffer.width) {
+                    append(pixelChar(buffer.getPixel(x, y)))
+                }
+                append('\n')
+            }
+        }
+    }
+
+    /**
+     * 判断 finder 是否能命中当前 widget tree。
+     */
     public fun exists(finder: PixelFinder): Boolean {
         return finder.resolve(runtime.collectWidgets()) != null || finder.resolve(root) != null
     }
 
+    /**
+     * 释放 tester 持有的运行时和测试调度状态。
+     */
     public fun dispose() {
         runtime.dispose()
         scheduler.clear()
@@ -272,6 +388,8 @@ public class PixelTester {
         activeGestures.clear()
         primaryPointerId = null
     }
+
+    private fun renderedBuffer() = renderResult?.buffer ?: fail("No rendered buffer; call pumpWidget first")
 
     private fun render() {
         val widget = root ?: return
@@ -965,38 +1083,98 @@ public class PixelTester {
         get() = Point(left + width / 2, top + height / 2)
 }
 
-public class PixelTestGesture internal constructor(
+private fun pixelChar(color: PixelColor): Char {
+    val argb = color.argb
+    val alpha = (argb ushr 24) and 0xFF
+    if (alpha == 0) return '.'
+    val red = (argb ushr 16) and 0xFF
+    val green = (argb ushr 8) and 0xFF
+    val blue = argb and 0xFF
+    val brightness = (red * 299 + green * 587 + blue * 114) / 1000
+    return when {
+        brightness >= 200 -> '#'
+        brightness >= 50 -> '*'
+        else -> '.'
+    }
+}
+
+private class DefaultPixelTestGesture(
     private val tester: PixelTester,
     private val pointerId: Int,
-) {
-    public fun moveBy(dx: Int, dy: Int): PixelTestGesture {
+) : PixelTestGesture {
+    override fun moveBy(dx: Int, dy: Int): PixelTestGesture {
         tester.moveGestureBy(pointerId, dx, dy)
         return this
     }
 
-    public fun moveBy(dx: Int, dy: Int, deltaMs: Long): PixelTestGesture {
+    override fun moveBy(dx: Int, dy: Int, deltaMs: Long): PixelTestGesture {
         tester.moveGestureBy(pointerId, dx, dy, deltaMs)
         return this
     }
 
-    public fun up() {
+    override fun up() {
         tester.endGesture(pointerId)
     }
 
-    public fun cancel() {
+    override fun cancel() {
         tester.cancelGesture(pointerId)
     }
 }
 
+/**
+ * [PixelTester.startGesture] 返回的可推进测试手势。
+ */
+public interface PixelTestGesture {
+    /**
+     * 移动当前手势，默认按一帧时间推进。
+     */
+    public fun moveBy(dx: Int, dy: Int): PixelTestGesture
+
+    /**
+     * 移动当前手势，并指定本次移动经过的毫秒数。
+     */
+    public fun moveBy(dx: Int, dy: Int, deltaMs: Long): PixelTestGesture
+
+    /**
+     * 抬起当前手势。
+     */
+    public fun up()
+
+    /**
+     * 取消当前手势。
+     */
+    public fun cancel()
+}
+
+/**
+ * 常用 finder 工厂。
+ */
 public object find {
+    /**
+     * 按文本内容查找 widget。
+     */
     public fun byText(text: String): PixelFinder = PixelFinder.ByText(text)
+
+    /**
+     * 按 Kotlin 类型查找 widget。
+     */
     public fun byType(type: kotlin.reflect.KClass<*>): PixelFinder = PixelFinder.ByType(type)
+
+    /**
+     * 按 widget key 查找 widget。
+     */
     public fun byKey(key: Any): PixelFinder = PixelFinder.ByKey(key)
 }
 
+/**
+ * 从当前 widget tree 中定位目标 widget 的查询对象。
+ */
 public sealed class PixelFinder {
     internal abstract fun matches(widget: Any): Boolean
 
+    /**
+     * 选择当前 finder 命中结果中的第 [index] 项。
+     */
     public fun nth(index: Int): PixelFinder {
         require(index >= 0) { "index must be >= 0" }
         return Nth(this, index)
@@ -1035,7 +1213,7 @@ public sealed class PixelFinder {
                 }
             }
             appendLine("Widget tree:")
-            nodes.take(MAX_DIAGNOSTIC_NODES).forEach { node ->
+            nodes.take(maxDiagnosticNodes).forEach { node ->
                 repeat(node.depth) { append("  ") }
                 append(node.path)
                 append(": ")
@@ -1043,9 +1221,9 @@ public sealed class PixelFinder {
                 if (node.matches) append("  <match>")
                 appendLine()
             }
-            if (nodes.size > MAX_DIAGNOSTIC_NODES) {
+            if (nodes.size > maxDiagnosticNodes) {
                 append("... truncated ")
-                append(nodes.size - MAX_DIAGNOSTIC_NODES)
+                append(nodes.size - maxDiagnosticNodes)
                 append(" nodes")
             }
         }.trimEnd()
@@ -1078,7 +1256,7 @@ public sealed class PixelFinder {
         if (value == null) return
         if (value is String || value is Number || value is Boolean || value is Enum<*>) return
         if (seen.put(value, true) != null) return
-        if (nodes.size >= MAX_DIAGNOSTIC_NODES * 2) return
+        if (nodes.size >= maxDiagnosticNodes * 2) return
         if (value is Iterable<*>) {
             value.forEachIndexed { index, child ->
                 walkDiagnostics(child, "$path[$index]", depth, seen, nodes)
@@ -1105,6 +1283,9 @@ public sealed class PixelFinder {
         }
     }
 
+    /**
+     * 通过 text/data/placeholder/state.text 字段匹配文本。
+     */
     public data class ByText(public val text: String) : PixelFinder() {
         override fun matches(widget: Any): Boolean {
             val state = widget.readField("state")
@@ -1115,14 +1296,23 @@ public sealed class PixelFinder {
         }
     }
 
+    /**
+     * 通过运行时类型匹配 widget。
+     */
     public data class ByType(public val type: kotlin.reflect.KClass<*>) : PixelFinder() {
         override fun matches(widget: Any): Boolean = type.java.isInstance(widget)
     }
 
+    /**
+     * 通过 widget key 匹配 widget。
+     */
     public data class ByKey(public val key: Any) : PixelFinder() {
         override fun matches(widget: Any): Boolean = widget.readField("key") == key
     }
 
+    /**
+     * 包装另一个 finder，只返回指定序号的命中项。
+     */
     public data class Nth(public val finder: PixelFinder, public val index: Int) : PixelFinder() {
         override fun matches(widget: Any): Boolean = finder.matches(widget)
 
@@ -1139,7 +1329,7 @@ public sealed class PixelFinder {
     )
 
     private companion object {
-        const val MAX_DIAGNOSTIC_NODES = 160
+        val maxDiagnosticNodes = 160
     }
 }
 
