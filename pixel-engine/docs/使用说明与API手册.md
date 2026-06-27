@@ -322,6 +322,10 @@ PixelErrorBoundary(
 )
 ```
 
+`PixelErrorPanel` 是 `PixelErrorBoundary` 的默认可见 fallback，只用于呈现 SDK 子树异常。
+业务态的错误页、空数据页或重试页应使用 `EmptyState` 或业务自定义 widget，不要把
+`PixelErrorPanel` 当成通用错误页面组件。
+
 约束：
 
 - `onError` 用于记录日志或上报崩溃系统；不要在里面直接修改 widget tree。
@@ -931,6 +935,7 @@ Form(
 | `Toast` | 中央短提示 | `message` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
 | `EmptyState` | 居中空状态 | `title`、`message`、`icon`、`action` |
+| `PixelErrorPanel` | 错误边界 fallback | `message`、`color` |
 | `ProgressBar` | 进度条 | `progress`、`width`、`height` |
 | `ActivityIndicator` | 简单加载动画 | `frame` |
 | `Badge` | 角标 | `child`、`label` |
