@@ -27,6 +27,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `PixelTheme`, `PixelThemeData`, and `PixelThemeColors` for widget-level pixel defaults.
 - `Visibility` for simple child/replacement switching.
 - `LoadStateView` for `PixelAsyncSnapshot` loading/empty/error/content rendering.
+- `SelectionList` and `OptionList` for controlled single-choice lists.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

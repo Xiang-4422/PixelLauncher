@@ -752,6 +752,8 @@ com.purride.pixelui public data class PixelIconData(
 com.purride.pixelui public fun Icon(
 com.purride.pixelui public fun Visibility(
 com.purride.pixelui public fun ListTile(
+com.purride.pixelui public fun <T> SelectionList(
+com.purride.pixelui public fun OptionList(
 com.purride.pixelui public fun Checkbox(
 com.purride.pixelui public fun Switch(
 com.purride.pixelui public fun Dialog(

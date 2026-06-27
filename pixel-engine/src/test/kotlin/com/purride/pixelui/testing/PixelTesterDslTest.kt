@@ -24,6 +24,7 @@ import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparatedBuilder
+import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelBoxConstraints
@@ -44,6 +45,7 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.SegmentedControl
+import com.purride.pixelui.SelectionList
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Slidable
@@ -1398,6 +1400,47 @@ class PixelTesterDslTest {
         assertTrue(checkbox)
         assertTrue(switch)
         assertEquals(1, tileTapped)
+        tester.dispose()
+    }
+
+    @Test
+    fun selectionListAndOptionListInvokeSelectedIndex() {
+        val tester = PixelTester()
+        var selectedIndex = -1
+        var selectedValue = ""
+
+        tester.pumpWidget(
+            widget = SelectionList(
+                items = listOf("ONE", "TWO"),
+                selectedIndex = 1,
+                onSelected = { index, item ->
+                    selectedIndex = index
+                    selectedValue = item
+                },
+                itemLabel = { it },
+                key = "selection",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 32,
+        )
+
+        tester.tap(find.byKey("selection-0"))
+        assertEquals(0, selectedIndex)
+        assertEquals("ONE", selectedValue)
+
+        tester.pumpWidget(
+            widget = OptionList(
+                options = listOf("A", "B"),
+                selectedIndex = 0,
+                onSelected = { selectedIndex = it },
+                key = "options",
+            ),
+            logicalWidth = 64,
+            logicalHeight = 32,
+        )
+
+        tester.tap(find.byKey("options-1"))
+        assertEquals(1, selectedIndex)
         tester.dispose()
     }
 

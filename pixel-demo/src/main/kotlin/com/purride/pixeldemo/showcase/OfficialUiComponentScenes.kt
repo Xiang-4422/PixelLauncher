@@ -38,6 +38,7 @@ import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Opacity
+import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PaddingDirectional
@@ -58,6 +59,7 @@ import com.purride.pixelui.RichText
 import com.purride.pixelui.Row
 import com.purride.pixelui.SafeArea
 import com.purride.pixelui.SegmentedControl
+import com.purride.pixelui.SelectionList
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Snackbar
@@ -311,6 +313,31 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     ComponentExampleScene("controls_outlined_button", "OutlinedButton", "像素边框按钮，支持 enabled/style/fill/border", DemoCatalog.controls, setOf("component", "button"), setOf("OutlinedButton", "ButtonStyle", "PixelButtonStyle")) { ButtonOfficialBody() },
     componentScene("controls_list_tile", "ListTile", "带 leading/title/subtitle/trailing 的列表行", DemoCatalog.controls, "ListTile") {
         ListTile(leading = Icon(PixelIconData(officialTinyIcon())), title = Text("ListTile", style = TextStyle(color = Cyan)), subtitle = Text("subtitle", style = TextStyle(color = Muted)), trailing = Text(">", style = TextStyle(color = Accent)), onTap = {})
+    },
+    ComponentExampleScene("controls_selection_list", "SelectionList", "受控单选列表与字符串选项列表", DemoCatalog.controls, setOf("component", "selection"), setOf("SelectionList", "OptionList")) {
+        officialBody(
+            listOf(
+                samplePanel(
+                    title = "SelectionList",
+                    color = Cyan,
+                    child = SelectionList(
+                        items = listOf("LOW", "MID", "HIGH"),
+                        selectedIndex = 1,
+                        onSelected = { _, _ -> },
+                        itemLabel = { it },
+                    ),
+                ),
+                samplePanel(
+                    title = "OptionList",
+                    color = Green,
+                    child = OptionList(
+                        options = listOf("A", "B"),
+                        selectedIndex = 0,
+                        onSelected = {},
+                    ),
+                ),
+            ),
+        )
     },
     ComponentExampleScene("controls_checkbox", "Selection", "Checkbox 和 Switch 二元选择", DemoCatalog.controls, setOf("component", "checkbox", "switch"), setOf("Checkbox", "Switch")) {
         officialBody(

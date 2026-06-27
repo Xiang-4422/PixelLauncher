@@ -692,6 +692,17 @@ SegmentedControl(
 )
 ```
 
+`SelectionList` 用于受控单选列表，`OptionList` 是字符串选项的轻量包装。二者不内置滚动；
+长列表应放入现有滚动容器。
+
+```kotlin
+OptionList(
+    options = listOf("LOW", "MID", "HIGH"),
+    selectedIndex = level,
+    onSelected = { index -> level = index },
+)
+```
+
 ### 反馈组件
 
 `Dialog`、`ConfirmDialog`、`Toast` 和 `Snackbar` 本身都是普通 widget，只负责像素风视觉结构，不负责显示队列、
@@ -946,6 +957,8 @@ Form(
 | `TextButton` | 无边框文字按钮，默认零 padding | `text`、`onPressed`、`style`、`enabled` |
 | `OutlinedButton` | 描边按钮 | `text`、`onPressed`、`style`、`enabled` |
 | `ListTile` | 列表行 | `title`、`subtitle`、`leading`、`trailing`、`onTap` |
+| `SelectionList` | 受控单选列表 | `items`、`selectedIndex`、`onSelected`、`itemLabel` |
+| `OptionList` | 字符串选项列表 | `options`、`selectedIndex`、`onSelected` |
 | `Checkbox` | 复选框 | `checked`、`onChanged`、`enabled` |
 | `Switch` | 开关 | `checked`、`onChanged`、`enabled` |
 | `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease` |

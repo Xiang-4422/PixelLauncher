@@ -55,6 +55,61 @@ public fun ListTile(
     )
 }
 
+/**
+ * 受控单选列表。
+ *
+ * [selectedIndex] 只决定当前选中标记；选中状态和列表数据都由调用方持有。
+ * 组件不内置滚动，长列表请放进已有滚动容器。
+ */
+public fun <T> SelectionList(
+    items: List<T>,
+    selectedIndex: Int,
+    onSelected: (index: Int, item: T) -> Unit,
+    itemLabel: (T) -> String,
+    enabled: Boolean = true,
+    key: Any? = null,
+): Widget {
+    return Column(
+        children = items.mapIndexed { index, item ->
+            val label = itemLabel(item)
+            ListTile(
+                leading = Text(if (index == selectedIndex) ">" else " "),
+                title = Text(label),
+                onTap = if (enabled) {
+                    { onSelected(index, item) }
+                } else {
+                    null
+                },
+                enabled = enabled,
+                semanticLabel = if (index == selectedIndex) "$label selected" else label,
+                key = key?.let { "$it-$index" },
+            )
+        },
+        spacing = 1,
+        key = key,
+    )
+}
+
+/**
+ * 字符串选项版 [SelectionList]。
+ */
+public fun OptionList(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    enabled: Boolean = true,
+    key: Any? = null,
+): Widget {
+    return SelectionList(
+        items = options,
+        selectedIndex = selectedIndex,
+        onSelected = { index, _ -> onSelected(index) },
+        itemLabel = { it },
+        enabled = enabled,
+        key = key,
+    )
+}
+
 public fun Checkbox(
     checked: Boolean,
     onChanged: ((Boolean) -> Unit)?,
