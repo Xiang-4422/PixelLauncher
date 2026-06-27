@@ -189,19 +189,64 @@ internal abstract class Element(
      * 从最近的 [PixelErrorBoundary] 构建错误后备界面；没有边界时返回 null。
      */
     internal fun buildErrorFallback(error: Throwable): Widget? {
-        return findNearestErrorBoundary()?.fallbackFor(error)
+        return findNearestErrorBoundaryElement()?.errorBoundary?.fallbackFor(error)
     }
 
-    private fun findNearestErrorBoundary(): PixelErrorBoundary? {
+    /**
+     * render 阶段异常没有 build context；这里用异常堆栈里的 render object 类名
+     * 定位最可能失败的 retained element，再交给它上方最近的错误边界。
+     */
+    internal fun recoverFromRenderError(error: Throwable): Boolean {
+        val classNames = error.renderStackClassNames()
+        val target = findDeepestRenderElementMatching(classNames) ?: this
+        return target.replaceNearestErrorBoundaryChild(error)
+    }
+
+    private fun findDeepestRenderElementMatching(classNames: Set<String>): Element? {
+        var match: Element? = null
+        fun visit(element: Element) {
+            val renderObject = (element as? RenderObjectElement)?.findRenderObject()
+            if (renderObject != null && renderObject.javaClass.name in classNames) {
+                if (match == null || element.depth >= match!!.depth) {
+                    match = element
+                }
+            }
+            element.visitChildren(::visit)
+        }
+        visit(this)
+        return match
+    }
+
+    private fun replaceNearestErrorBoundaryChild(error: Throwable): Boolean {
+        val boundaryElement = findNearestErrorBoundaryElement() ?: return false
+        val fallback = boundaryElement.errorBoundary.fallbackFor(error)
+        boundaryElement.replaceChildForErrorRecovery(fallback)
+        return true
+    }
+
+    private fun findNearestErrorBoundaryElement(): InheritedElement? {
         var cursor: Element? = this
         while (cursor != null) {
             val boundary = (cursor as? InheritedElement)?.widget as? PixelErrorBoundary
             if (boundary != null) {
-                return boundary
+                return cursor as InheritedElement
             }
             cursor = cursor.parent
         }
         return null
+    }
+
+    private val InheritedElement.errorBoundary: PixelErrorBoundary
+        get() = widget as PixelErrorBoundary
+
+    private fun Throwable.renderStackClassNames(): Set<String> {
+        val names = linkedSetOf<String>()
+        var cursor: Throwable? = this
+        while (cursor != null) {
+            cursor.stackTrace.forEach { names += it.className }
+            cursor = cursor.cause
+        }
+        return names
     }
 
     /**
@@ -281,4 +326,15 @@ internal abstract class ComponentElement(
      * 构建当前组件的下一级 widget。
      */
     protected abstract fun buildWidget(): Widget?
+
+    /**
+     * 错误恢复时直接替换当前单 child 子树，避免重新进入原失败 child。
+     */
+    internal fun replaceChildForErrorRecovery(newWidget: Widget?) {
+        childSlot.update(
+            owner = owner,
+            parent = this,
+            newWidget = newWidget,
+        )
+    }
 }

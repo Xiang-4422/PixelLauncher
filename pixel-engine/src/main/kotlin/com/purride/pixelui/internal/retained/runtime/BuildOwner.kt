@@ -61,6 +61,14 @@ internal class BuildOwner(
     }
 
     /**
+     * render 阶段失败后，尝试把异常交给最近的 PixelErrorBoundary。
+     */
+    fun recoverFromRenderError(error: Throwable): Element? {
+        val recovered = rootElement?.recoverFromRenderError(error) == true
+        return if (recovered) rootElement else null
+    }
+
+    /**
      * 把一个 element 加入下一轮 build 调度。
      */
     fun scheduleBuildFor(element: Element) {

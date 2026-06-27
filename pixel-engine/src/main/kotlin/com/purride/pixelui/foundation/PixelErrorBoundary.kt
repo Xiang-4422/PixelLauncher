@@ -3,9 +3,9 @@ package com.purride.pixelui
 import com.purride.pixelcore.PixelColor
 
 /**
- * 捕获后代 widget build 异常，并用像素后备界面替换失败子树。
+ * 捕获后代 widget build / render 异常，并用像素后备界面替换失败子树。
  *
- * 没有边界时，build 异常保持原行为并继续抛给宿主。这个边界只做两件事：
+ * 没有边界时，异常保持原行为并继续抛给宿主。这个边界只做两件事：
  * 通过 [onError] 上报 [Throwable]，再用 [errorBuilder] 构造替换 widget。
  */
 public class PixelErrorBoundary(

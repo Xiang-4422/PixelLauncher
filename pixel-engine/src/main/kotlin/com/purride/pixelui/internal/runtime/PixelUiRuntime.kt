@@ -25,12 +25,10 @@ internal class PixelUiRuntime(
 
     fun render(request: WidgetRenderRequest): PixelRenderResult {
         val root = buildRuntime.resolveElementTree(request.root)
-        return elementTreeRenderer.render(
-            request = ElementTreeRenderRequest(
-                root = root,
-                logicalWidth = request.logicalWidth,
-                logicalHeight = request.logicalHeight,
-            ),
+        return renderElementTreeWithRecovery(
+            root = root,
+            logicalWidth = request.logicalWidth,
+            logicalHeight = request.logicalHeight,
         )
     }
 
@@ -107,6 +105,30 @@ internal class PixelUiRuntime(
                 elementPath = elementPaths[node.renderObject],
                 renderPath = node.path,
             )
+        }
+    }
+
+    private fun renderElementTreeWithRecovery(
+        root: Element?,
+        logicalWidth: Int,
+        logicalHeight: Int,
+    ): PixelRenderResult {
+        val renderRequest = ElementTreeRenderRequest(
+            root = root,
+            logicalWidth = logicalWidth,
+            logicalHeight = logicalHeight,
+        )
+        return try {
+            elementTreeRenderer.render(request = renderRequest)
+        } catch (error: Throwable) {
+            val recoveredRoot = buildRuntime.recoverFromRenderError(error) ?: throw error
+            val recoveredRequest = renderRequest.copy(root = recoveredRoot)
+            try {
+                elementTreeRenderer.render(request = recoveredRequest)
+            } catch (fallbackError: Throwable) {
+                fallbackError.addSuppressed(error)
+                throw fallbackError
+            }
         }
     }
 }

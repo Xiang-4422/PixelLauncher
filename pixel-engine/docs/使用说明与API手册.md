@@ -298,7 +298,7 @@ PixelTheme(
 
 ### 错误边界
 
-`PixelErrorBoundary` 可以捕获后代 widget build 异常，并用像素后备界面替换失败子树。
+`PixelErrorBoundary` 可以捕获后代 widget build / render 异常，并用像素后备界面替换失败子树。
 没有边界时，异常仍会继续抛给宿主。
 
 ```kotlin
@@ -308,6 +308,12 @@ PixelErrorBoundary(
     child = AppRoot(),
 )
 ```
+
+约束：
+
+- `onError` 用于记录日志或上报崩溃系统；不要在里面直接修改 widget tree。
+- `errorBuilder` 应保持简单、确定、低依赖，避免后备界面再次触发异常。
+- 如果 `errorBuilder` 自身在 render 阶段失败，fallback 异常会继续抛给宿主，原异常会作为 suppressed error 保留。
 
 ### Overlay
 
@@ -1063,7 +1069,10 @@ scrollController.jumpToEnd(listState)
 | `PixelInspectorPanel` | 展示 element/render/semantics/target 树 |
 | `PixelInspectorBoundsOverlay` | 在画面上绘制 target bounds |
 | `PixelHostView.frameStatsObserver` | 监听帧统计 |
+| `PixelHostView.inspect()` | 采样 frame、target、element、render、semantics 诊断快照 |
 | `PixelHostView.dumpElementTree()` | dump element tree |
+| `PixelHostView.dumpRenderTree()` | dump render tree |
+| `PixelHostView.dumpSemanticsTree()` | dump semantics tree |
 
 ### pixelcore 常用类型
 

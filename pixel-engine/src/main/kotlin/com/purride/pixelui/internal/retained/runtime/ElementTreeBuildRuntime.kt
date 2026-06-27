@@ -21,6 +21,13 @@ internal interface ElementTreeBuildRuntime {
     }
 
     /**
+     * 尝试用最近的 PixelErrorBoundary 恢复一次 render 阶段异常。
+     *
+     * 返回恢复后的根 element；没有可用边界时返回 null，并由调用方继续抛出原异常。
+     */
+    fun recoverFromRenderError(error: Throwable): Element?
+
+    /**
      * 返回 retained build runtime 的内部诊断快照。
      */
     fun collectDiagnostics(): BuildOwnerDiagnostics

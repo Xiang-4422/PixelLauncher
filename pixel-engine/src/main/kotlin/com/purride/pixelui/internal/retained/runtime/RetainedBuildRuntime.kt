@@ -25,6 +25,10 @@ internal class RetainedBuildRuntime(
         return buildOwner.rootElement
     }
 
+    override fun recoverFromRenderError(error: Throwable): Element? {
+        return buildOwner.recoverFromRenderError(error)
+    }
+
     override fun collectDiagnostics(): BuildOwnerDiagnostics {
         return buildOwner.collectDiagnostics()
     }
