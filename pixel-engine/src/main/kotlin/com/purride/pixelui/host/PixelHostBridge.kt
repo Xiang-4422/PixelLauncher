@@ -1,5 +1,7 @@
 package com.purride.pixelui
 
+import com.purride.pixelui.internal.host.PixelHostBridgeScope
+
 /**
  * 像素 UI runtime 与 Android 宿主之间的桥接协议。
  *
@@ -33,6 +35,22 @@ public interface PixelHostBridge {
      * 把 [text] 写入宿主剪贴板；不支持剪贴板的宿主可以保留默认空实现。
      */
     public fun writeClipboardText(text: String): Unit = Unit
+}
+
+/**
+ * widget 树内的宿主震动反馈入口。
+ *
+ * 返回 `false` 表示当前树没有宿主桥接或宿主不支持该反馈；调用方不需要兜底。
+ */
+public object PixelHapticFeedback {
+    /**
+     * 通过当前宿主执行一次震动反馈。
+     */
+    public fun perform(context: BuildContext, type: PixelHapticType): Boolean {
+        val bridge = context.dependOnInheritedWidgetOfExactType<PixelHostBridgeScope>()?.bridge ?: return false
+        bridge.performHapticFeedback(type)
+        return true
+    }
 }
 
 /**
@@ -115,6 +133,13 @@ public data class PixelSystemAction(
  * 震动反馈类型。
  */
 public enum class PixelHapticType {
+    /**
+     * 短点击反馈。
+     */
     TAP,
+
+    /**
+     * 长按反馈。
+     */
     LONG_PRESS,
 }

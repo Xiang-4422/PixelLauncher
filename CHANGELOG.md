@@ -20,6 +20,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 
 - `PixelErrorBoundary` and `PixelErrorPanel` for build-time widget fallback.
 - `PixelBackDispatcher`, `PixelBackHost`, `PixelBackHandler`, and `PixelHostView.handleBackPressed`.
+- `PixelHapticFeedback` for widget-level host haptic requests.
 - `PixelOverlayController`, `PixelOverlayHost`, and overlay handles for toast/dialog/snackbar.
 - `PixelTester`, `PixelFinder`, and `PixelTestGesture` as SDK testing APIs.
 - `PixelTheme`, `PixelThemeData`, and `PixelThemeColors` for widget-level pixel defaults.

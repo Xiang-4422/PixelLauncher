@@ -150,8 +150,11 @@ cat >"$TMP_DIR/app/src/test/kotlin/com/purride/pixelsdkconsumer/PixelTesterConsu
 package com.purride.pixelsdkconsumer
 
 import com.purride.pixelui.Text
+import com.purride.pixelui.Builder
 import com.purride.pixelui.PixelBackDispatcher
 import com.purride.pixelui.PixelBackHost
+import com.purride.pixelui.PixelHapticFeedback
+import com.purride.pixelui.PixelHapticType
 import com.purride.pixelui.PixelOverlayController
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.testing.PixelTester
@@ -166,13 +169,17 @@ class PixelTesterConsumerTest {
         val tester = PixelTester()
         val overlay = PixelOverlayController()
         val backDispatcher = PixelBackDispatcher()
+        var hapticHandled = true
 
         tester.pumpWidget(
             widget = PixelBackHost(
                 dispatcher = backDispatcher,
                 child = PixelOverlayHost(
                     controller = overlay,
-                    child = Text("SDK OK"),
+                    child = Builder { context ->
+                        hapticHandled = PixelHapticFeedback.perform(context, PixelHapticType.TAP)
+                        Text("SDK OK")
+                    },
                 ),
             ),
             logicalWidth = 32,
@@ -183,6 +190,7 @@ class PixelTesterConsumerTest {
         tester.pumpFrame(16)
 
         assertTrue(tester.exists(find.byText("SDK OK")))
+        assertFalse(hapticHandled)
         assertTrue(tester.exists(find.byText("SAVED")))
         assertTrue(backDispatcher.handleBack())
         tester.pumpFrame(16)

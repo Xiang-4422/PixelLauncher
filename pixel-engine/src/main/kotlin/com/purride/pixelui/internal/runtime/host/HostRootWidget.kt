@@ -6,10 +6,12 @@ import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
+import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
+import com.purride.pixelui.internal.host.PixelHostBridgeScope
 
 /**
  * 宿主级根环境包装。
@@ -22,6 +24,7 @@ internal data class HostRootWidget(
     val textRasterizer: PixelTextRasterizer,
     val windowInsets: PixelWindowInsets,
     val viewInsets: PixelWindowInsets,
+    val hostBridge: PixelHostBridge? = null,
     val child: Widget,
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
@@ -37,9 +40,12 @@ internal data class HostRootWidget(
             ),
             child = Directionality(
                 textDirection = textDirection,
-                child = DefaultTextRasterizer(
-                    rasterizer = textRasterizer,
-                    child = child,
+                child = PixelHostBridgeScope(
+                    bridge = hostBridge,
+                    child = DefaultTextRasterizer(
+                        rasterizer = textRasterizer,
+                        child = child,
+                    ),
                 ),
             ),
         )

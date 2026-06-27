@@ -495,6 +495,8 @@ com.purride.pixelui public fun requestFrame()
 com.purride.pixelui public fun dispatchSystemAction(action: PixelSystemAction)
 com.purride.pixelui public fun readClipboardText(): String? = null
 com.purride.pixelui public fun writeClipboardText(text: String): Unit = Unit
+com.purride.pixelui public object PixelHapticFeedback
+com.purride.pixelui public fun perform(context: BuildContext, type: PixelHapticType): Boolean
 com.purride.pixelui public enum class PixelTextEditAction
 com.purride.pixelui public data class PixelTextInputRequest(
 com.purride.pixelui public enum class PixelInputType

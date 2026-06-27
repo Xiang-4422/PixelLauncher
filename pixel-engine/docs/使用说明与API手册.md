@@ -581,6 +581,27 @@ val handled = setup.hostView.performFocusedTextEditAction(PixelTextEditAction.PA
 自定义宿主只需要实现 `PixelHostBridge.readClipboardText` 和
 `PixelHostBridge.writeClipboardText`；不支持剪贴板时保留默认实现即可。
 
+### Haptic
+
+默认 Android `PixelTextInputBridge` 会把 `PixelHapticType.TAP` /
+`PixelHapticType.LONG_PRESS` 映射到系统 haptic feedback。widget 树需要主动震动时，
+通过 build context 调用 `PixelHapticFeedback.perform`。
+
+```kotlin
+Builder { context ->
+    GestureDetector(
+        onTap = {
+            PixelHapticFeedback.perform(context, PixelHapticType.TAP)
+            submit()
+        },
+        child = Text("SAVE"),
+    )
+}
+```
+
+`perform` 返回 `false` 表示当前宿主没有提供 `PixelHostBridge`。内置长按手势会自动触发
+`LONG_PRESS`，普通点击不自动触发，避免替业务决定交互强度。
+
 ### Controller
 
 | Controller | State | 用途 |

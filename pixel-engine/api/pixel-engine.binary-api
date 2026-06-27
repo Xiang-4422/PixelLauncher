@@ -1402,6 +1402,10 @@ public final class com.purride.pixelui.PixelGradientStop {
   public boolean equals(java.lang.Object);
   public com.purride.pixelui.PixelGradientStop(float, int, kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelui.PixelHapticFeedback {
+  public static final com.purride.pixelui.PixelHapticFeedback INSTANCE;
+  public final boolean perform(com.purride.pixelui.BuildContext, com.purride.pixelui.PixelHapticType);
+}
 public final class com.purride.pixelui.PixelHapticType extends java.lang.Enum<com.purride.pixelui.PixelHapticType> {
   public static final com.purride.pixelui.PixelHapticType TAP;
   public static final com.purride.pixelui.PixelHapticType LONG_PRESS;
