@@ -2,6 +2,7 @@ package com.purride.pixelcore
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PixelResourceCacheTest {
@@ -104,6 +105,25 @@ class PixelResourceCacheTest {
         assertEquals(0, snapshot.spriteSheetCount)
         assertEquals(1, snapshot.removeCount)
         assertEquals(1, snapshot.clearCount)
+    }
+
+    @Test
+    fun blankKeysAreRejectedBeforeLoaderRuns() {
+        val cache = PixelResourceCache()
+        var loads = 0
+
+        try {
+            cache.getBitmap(" ") {
+                loads += 1
+                bitmap()
+            }
+            error("blank key should fail")
+        } catch (error: IllegalArgumentException) {
+            assertTrue(error.message.orEmpty().contains("key"))
+        }
+
+        assertEquals(0, loads)
+        assertEquals(0, cache.bitmapCount)
     }
 
     private fun bitmap(color: PixelColor = PixelColor.White): PixelBitmap {

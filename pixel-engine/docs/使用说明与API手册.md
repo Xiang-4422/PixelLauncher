@@ -1155,6 +1155,38 @@ catalog 额外约束：
 
 建议调用方把 manifest/catalog 当成资源索引，不要把它当成运行时状态存储。真实资源加载仍由 `PixelBitmapAssetLoader`、`PixelBitmapResourceLoader`、`PixelSpriteSheetJsonLoader` 和 `PixelGlyphPackAssetLoader` 完成；缓存复用由 `PixelResourceCache` 管理。
 
+#### Resource cache 行为
+
+`PixelResourceCache` 是一个轻量内存缓存，用于 SDK consumer 在 app 生命周期内复用已加载的 `PixelBitmap` 和 `PixelSpriteSheet`。它不拥有 Android 资源句柄，也不做后台清理。
+
+key 行为：
+
+- key 由调用方提供，必须非空白。
+- bitmap 和 sprite sheet 使用独立命名空间；同一个 key 可以同时缓存一张 bitmap 和一个 sprite sheet。
+- `remove(key)` 会同时移除该 key 下的 bitmap 和 sprite sheet；如果 key 不存在，不增加 `removeCount`。
+
+读取行为：
+
+- `getBitmap(key) { ... }` 和 `getSpriteSheet(key) { ... }` 命中时直接返回已缓存对象，不执行 loader。
+- 未命中时执行 loader，并把返回对象按 key 保存。
+- key 校验发生在 loader 之前，空白 key 不会触发资源加载。
+
+clear 行为：
+
+- `clear()` 只清空当前缓存条目，不重置命中/未命中统计。
+- 只有缓存非空时才增加 `clearCount`；对空缓存重复调用不会增加计数。
+
+snapshot 行为：
+
+- `snapshot()` 返回当前条目数量、命中/未命中次数、remove 次数和 clear 次数。
+- snapshot 是统计快照，不包含缓存对象引用，不估算内存字节数。
+
+memory 边界：
+
+- cache 持有强引用，没有容量限制，也没有 LRU 驱逐。
+- 调用方必须在资源包切换、页面销毁、低内存回调或主题/字体资源变化时主动调用 `remove(key)` 或 `clear()`。
+- 如果需要按字节数或帧数做淘汰，应在 SDK consumer 层包装 `PixelResourceCache`，不要依赖 engine 自动释放。
+
 ## 8. 自定义 RenderObject
 
 用于内置 widget 不够表达的场景。
