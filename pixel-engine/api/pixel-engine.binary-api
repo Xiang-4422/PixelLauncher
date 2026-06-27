@@ -3242,6 +3242,10 @@ public final class com.purride.pixelui.widgets.animated.AnimatedSwitcherKt {
   public static final com.purride.pixelui.Widget AnimatedSwitcher-gRj5Bb8(long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, java.lang.Object, com.purride.pixelui.Widget);
   public static com.purride.pixelui.Widget AnimatedSwitcher-gRj5Bb8$default(long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, java.lang.Object, com.purride.pixelui.Widget, int, java.lang.Object);
 }
+public final class com.purride.pixelui.widgets.animated.AnimatedVisibilityKt {
+  public static final com.purride.pixelui.Widget AnimatedVisibility-nRVORKE(boolean, long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, com.purride.pixelui.Widget, java.lang.Object, com.purride.pixelui.Widget);
+  public static com.purride.pixelui.Widget AnimatedVisibility-nRVORKE$default(boolean, long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, com.purride.pixelui.Widget, java.lang.Object, com.purride.pixelui.Widget, int, java.lang.Object);
+}
 public final class com.purride.pixelui.widgets.animated.TweenAnimationBuilderKt {
   public static final <T> com.purride.pixelui.Widget TweenAnimationBuilder-nRVORKE(com.purride.pixelui.animation.Tween<T>, long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext, ? super T, ? extends com.purride.pixelui.Widget>);
   public static com.purride.pixelui.Widget TweenAnimationBuilder-nRVORKE$default(com.purride.pixelui.animation.Tween, long, com.purride.pixelui.animation.PixelTickerProvider, com.purride.pixelui.animation.Curve, kotlin.jvm.functions.Function0, java.lang.Object, kotlin.jvm.functions.Function2, int, java.lang.Object);

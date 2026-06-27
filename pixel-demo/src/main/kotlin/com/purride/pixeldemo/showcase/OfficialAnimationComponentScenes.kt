@@ -28,6 +28,7 @@ import com.purride.pixelui.widgets.animated.AnimatedOpacity
 import com.purride.pixelui.widgets.animated.AnimatedPadding
 import com.purride.pixelui.widgets.animated.AnimatedPositioned
 import com.purride.pixelui.widgets.animated.AnimatedSwitcher
+import com.purride.pixelui.widgets.animated.AnimatedVisibility
 import com.purride.pixelui.widgets.animated.TweenAnimationBuilder
 import com.purride.pixeldemo.catalog.DemoCatalog
 import com.purride.pixeldemo.catalog.DemoScene
@@ -55,8 +56,9 @@ val AnimationOfficialComponentScenes: List<DemoScene> = listOf(
             "AnimatedAlign" to AnimationKind.Align,
             "AnimatedPositioned" to AnimationKind.Positioned,
             "AnimatedSwitcher" to AnimationKind.Switcher,
+            "AnimatedVisibility" to AnimationKind.Visibility,
         ),
-        apis = setOf("AnimatedContainer", "AnimatedOpacity", "AnimatedPadding", "AnimatedAlign", "AnimatedPositioned", "AnimatedSwitcher", "Curves", "PixelTickerProvider"),
+        apis = setOf("AnimatedContainer", "AnimatedOpacity", "AnimatedPadding", "AnimatedAlign", "AnimatedPositioned", "AnimatedSwitcher", "AnimatedVisibility", "Curves", "PixelTickerProvider"),
     ),
     animationScene(
         id = "animation_tween_animation_builder",
@@ -77,6 +79,7 @@ private enum class AnimationKind {
     Align,
     Positioned,
     Switcher,
+    Visibility,
     TweenBuilder,
     AnimatedBuilder,
 }
@@ -209,6 +212,13 @@ private class AnimationOfficialBody(
                     key = if (expanded) "switch-b" else "switch-a",
                     style = TextStyle(color = if (expanded) Pink else Green),
                 ),
+            )
+            AnimationKind.Visibility -> AnimatedVisibility(
+                visible = expanded,
+                duration = 250.milliseconds,
+                vsync = widget.env.vsync,
+                replacement = Text("HIDDEN", style = TextStyle(color = Muted)),
+                child = Text("VISIBLE", style = TextStyle(color = Accent)),
             )
             AnimationKind.TweenBuilder -> TweenAnimationBuilder(
                 tween = IntTween(0, if (expanded) 88 else 24),

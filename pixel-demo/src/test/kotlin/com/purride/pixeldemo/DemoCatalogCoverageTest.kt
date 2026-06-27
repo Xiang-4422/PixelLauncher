@@ -98,6 +98,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("SliverAppBar", "scroll_custom_scroll_view")
         assertSearchContains("Sprite", "paint_image")
         assertSearchContains("AnimatedPadding", "animation_animated_container")
+        assertSearchContains("AnimatedVisibility", "animation_animated_container")
         assertSearchContains("AnimatedBuilder", "animation_tween_animation_builder")
         assertSearchContains("FocusNode", "nav_focus_scope")
         assertSearchContains("FormFieldState", "nav_form")

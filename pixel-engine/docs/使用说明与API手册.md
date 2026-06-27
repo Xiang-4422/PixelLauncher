@@ -1223,6 +1223,7 @@ scrollController.jumpToEnd(listState)
 | `AnimatedOpacity` | 透明度动画 |
 | `AnimatedPadding` / `AnimatedAlign` / `AnimatedPositioned` | 布局动画 |
 | `AnimatedSwitcher` | child 切换动画 |
+| `AnimatedVisibility` | child / replacement 显隐切换动画 |
 | `AnimatedSprite` | sprite 帧动画 |
 
 ### 调试组件

@@ -903,6 +903,7 @@ com.purride.pixelui.widgets.animated public fun AnimatedAlign(
 com.purride.pixelui.widgets.animated public fun AnimatedPositioned(
 com.purride.pixelui.widgets.animated public fun AnimatedSprite(
 com.purride.pixelui.widgets.animated public fun AnimatedSwitcher(
+com.purride.pixelui.widgets.animated public fun AnimatedVisibility(
 com.purride.pixelui.widgets.animated public fun <T> TweenAnimationBuilder(
 com.purride.pixelui.widgets.navigation public data class PixelDeepLink(
 com.purride.pixelui.widgets.navigation public fun queryParameter(name: String): String? = queryParameters[name]?.firstOrNull()

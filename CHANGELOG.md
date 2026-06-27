@@ -33,6 +33,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `ImeAvoidingView` and `KeyboardAvoidingView` for `MediaQuery.viewInsets` padding.
 - `ModalBarrier`, `ToastQueue`, `PixelToastQueueController`, and `PixelToastQueueItem` for overlay feedback foundations.
 - `SwipeRefreshScaffold` for refreshable screen layout with optional bars.
+- `AnimatedVisibility` for animated child/replacement visibility changes.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.
