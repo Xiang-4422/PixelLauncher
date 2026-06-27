@@ -255,6 +255,7 @@ SDK 发布补充检查：
 ```bash
 ./tools/pixel-sdk-consumer-smoke.sh
 ./tools/pixel-perf-smoke.sh
+./tools/pixel-soak-test.sh
 ```
 
 `tools/pixel-device-smoke.sh` 需要已连接 Android 设备或设置 `ADB_SERIAL`，因此不放入默认无设备发布门禁。`0.x` SDK 兼容策略和破坏性变更记录见 [CHANGELOG.md](CHANGELOG.md)。
