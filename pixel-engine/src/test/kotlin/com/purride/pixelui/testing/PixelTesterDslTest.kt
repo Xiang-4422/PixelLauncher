@@ -62,6 +62,7 @@ import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.Snackbar
 import com.purride.pixelui.Stepper
 import com.purride.pixelui.Switch
+import com.purride.pixelui.SwipeRefreshScaffold
 import com.purride.pixelui.Tabs
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextButton
@@ -1301,6 +1302,42 @@ class PixelTesterDslTest {
         refreshController.completeRefresh(refreshState)
         tester.pumpFrame(16)
         assertEquals(0f, refreshState.pullDistancePx, 0.001f)
+        tester.dispose()
+    }
+
+    @Test
+    fun swipeRefreshScaffoldTriggersRefresh() {
+        val tester = PixelTester()
+        val listController = PixelListController()
+        val listState = listController.create()
+        val refreshController = PixelRefreshIndicatorController()
+        val refreshState = refreshController.create()
+        var refreshes = 0
+
+        tester.pumpWidget(
+            widget = SwipeRefreshScaffold(
+                state = refreshState,
+                controller = refreshController,
+                thresholdPx = 10,
+                onRefresh = { refreshes += 1 },
+                key = "swipe",
+                body = ListViewBuilder(
+                    itemCount = 20,
+                    itemBuilder = { index -> SizedBox(height = 6, child = Text("ROW $index")) },
+                    state = listState,
+                    controller = listController,
+                    itemExtent = 6,
+                    key = "list",
+                ),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 24,
+        )
+
+        tester.drag(find.byKey("swipe"), dx = 0, dy = 14)
+
+        assertEquals(1, refreshes)
+        assertTrue(refreshState.isRefreshing)
         tester.dispose()
     }
 

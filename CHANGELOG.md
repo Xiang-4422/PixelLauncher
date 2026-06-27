@@ -32,6 +32,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `ValueAdjuster` and `Stepper` for controlled pixel value editing.
 - `ImeAvoidingView` and `KeyboardAvoidingView` for `MediaQuery.viewInsets` padding.
 - `ModalBarrier`, `ToastQueue`, `PixelToastQueueController`, and `PixelToastQueueItem` for overlay feedback foundations.
+- `SwipeRefreshScaffold` for refreshable screen layout with optional bars.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

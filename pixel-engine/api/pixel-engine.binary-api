@@ -2613,6 +2613,10 @@ public abstract class com.purride.pixelui.StatelessWidget implements com.purride
   public abstract com.purride.pixelui.Widget build(com.purride.pixelui.BuildContext);
   public com.purride.pixelui.StatelessWidget();
 }
+public final class com.purride.pixelui.SwipeRefreshScaffoldKt {
+  public static final com.purride.pixelui.Widget SwipeRefreshScaffold-kE4OZJA(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, boolean, int, int, int, java.lang.Object);
+  public static com.purride.pixelui.Widget SwipeRefreshScaffold-kE4OZJA$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, boolean, int, int, int, java.lang.Object, int, java.lang.Object);
+}
 public final class com.purride.pixelui.TextAlign extends java.lang.Enum<com.purride.pixelui.TextAlign> {
   public static final com.purride.pixelui.TextAlign START;
   public static final com.purride.pixelui.TextAlign CENTER;

@@ -1059,6 +1059,25 @@ Form(
 
 ### 滚动、网格和分页
 
+`SwipeRefreshScaffold` 是 `RefreshIndicator` 的页面级组合；调用方仍然显式持有
+`PixelRefreshIndicatorState` 和 `PixelRefreshIndicatorController`。它只负责可选上下栏和刷新区域布局，
+不会自动完成刷新或创建隐藏状态。
+
+```kotlin
+SwipeRefreshScaffold(
+    state = refreshState,
+    controller = refreshController,
+    onRefresh = { reload() },
+    topBar = Text("FEED"),
+    body = ListViewBuilder(
+        itemCount = rows.size,
+        itemBuilder = { index -> Text(rows[index]) },
+        state = listState,
+        controller = listController,
+    ),
+)
+```
+
 | 组件 | 用途 | 关键参数 |
 |---|---|---|
 | `ListView` | eager 列表 | `items`、`state`、`controller`、`spacing` |
@@ -1072,6 +1091,7 @@ Form(
 | `PageViewBuilder` | builder 分页 | `itemCount`、`itemBuilder` |
 | `Scrollbar` | 滚动条包装 | `child`、`state`、`thumbColor` |
 | `RefreshIndicator` | 下拉刷新包装 | `child`、`state`、`controller`、`onRefresh` |
+| `SwipeRefreshScaffold` | 带上下栏的下拉刷新骨架 | `body`、`state`、`controller`、`onRefresh` |
 | `CustomScrollView` | sliver 滚动容器 | `slivers`、`state`、`controller` |
 | `SliverList` | eager sliver list | `items` |
 | `SliverListBuilder` | lazy sliver list | `itemCount`、`itemExtent` 或 `estimatedItemExtent` |

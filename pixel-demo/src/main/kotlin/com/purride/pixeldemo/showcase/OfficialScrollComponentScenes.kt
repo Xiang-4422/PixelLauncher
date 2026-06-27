@@ -27,6 +27,7 @@ import com.purride.pixelui.SliverListBuilder
 import com.purride.pixelui.SliverPinnedHeader
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
+import com.purride.pixelui.SwipeRefreshScaffold
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
@@ -87,6 +88,9 @@ val ScrollOfficialComponentScenes: List<DemoScene> = listOf(
     },
     scrollScene("scroll_refresh_indicator", "RefreshIndicator", "下拉刷新容器", setOf("RefreshIndicator", "PixelRefreshIndicatorController")) {
         RefreshIndicatorDemo()
+    },
+    scrollScene("scroll_swipe_refresh_scaffold", "SwipeRefreshScaffold", "带上下栏的下拉刷新页面骨架", setOf("SwipeRefreshScaffold", "RefreshIndicator", "PixelRefreshIndicatorController")) {
+        SwipeRefreshScaffoldDemo()
     },
     scrollGroupScene(
         id = "scroll_custom_scroll_view",
@@ -295,6 +299,38 @@ private class RefreshIndicatorDemo(
         private val refreshState = refreshController.create()
         override fun build(context: com.purride.pixelui.BuildContext): Widget =
             Container(height = 44, borderColor = Accent, child = RefreshIndicator(state = refreshState, controller = refreshController, onRefresh = { refreshController.completeRefresh(refreshState) }, child = ListViewBuilder(itemCount = 20, state = listState, controller = listController, itemExtent = 9, itemBuilder = { index -> row("pull $index", Accent) })))
+    }
+}
+
+private class SwipeRefreshScaffoldDemo(
+    override val key: Any? = null,
+) : StatefulWidget(key = key) {
+    override fun createState(): State<out StatefulWidget> = SwipeRefreshScaffoldState()
+
+    private class SwipeRefreshScaffoldState : State<SwipeRefreshScaffoldDemo>() {
+        private val listState = PixelListState()
+        private val listController = ScrollController()
+        private val refreshController = PixelRefreshIndicatorController()
+        private val refreshState = refreshController.create()
+
+        override fun build(context: com.purride.pixelui.BuildContext): Widget =
+            Container(
+                height = 50,
+                borderColor = Green,
+                child = SwipeRefreshScaffold(
+                    state = refreshState,
+                    controller = refreshController,
+                    onRefresh = { refreshController.completeRefresh(refreshState) },
+                    topBar = Text("PULL FEED", style = TextStyle(color = Green)),
+                    body = ListViewBuilder(
+                        itemCount = 20,
+                        state = listState,
+                        controller = listController,
+                        itemExtent = 9,
+                        itemBuilder = { index -> row("feed $index", Green) },
+                    ),
+                ),
+            )
     }
 }
 

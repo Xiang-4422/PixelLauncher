@@ -885,6 +885,7 @@ com.purride.pixelui public enum class SlidableMotion
 com.purride.pixelui public data class SlidableActionPane(
 com.purride.pixelui public fun Slidable(
 com.purride.pixelui public fun SlidableAction(
+com.purride.pixelui public fun SwipeRefreshScaffold(
 com.purride.pixelui public data class PixelToastQueueItem(
 com.purride.pixelui public class PixelToastQueueController : ChangeNotifier()
 com.purride.pixelui public val size: Int

@@ -94,6 +94,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("ListViewBuilder", "scroll_list_view")
         assertSearchContains("GridViewBuilder", "scroll_grid_view")
         assertSearchContains("PageViewBuilder", "scroll_page_view")
+        assertSearchContains("SwipeRefreshScaffold", "scroll_swipe_refresh_scaffold")
         assertSearchContains("SliverAppBar", "scroll_custom_scroll_view")
         assertSearchContains("Sprite", "paint_image")
         assertSearchContains("AnimatedPadding", "animation_animated_container")
@@ -231,6 +232,7 @@ class DemoCatalogCoverageTest {
                 "scroll_page_view",
                 "scroll_scrollbar",
                 "scroll_refresh_indicator",
+                "scroll_swipe_refresh_scaffold",
                 "scroll_custom_scroll_view",
                 "deep_state_restoration",
                 "controls_icon",
