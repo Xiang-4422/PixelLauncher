@@ -5,10 +5,9 @@ import com.purride.pixelui.internal.host.findTextInputTargetForState
 import com.purride.pixelui.state.PixelTextFieldState
 
 /**
- * Owns PixelHostView text input focus, IME request, submit, and cursor blink coordination.
+ * 管理 PixelHostView 的文本输入焦点、IME 请求、提交和光标闪烁。
  *
- * PixelHostView remains the Android entry point; this class keeps the text input state machine
- * out of the view drawing and gesture routing code.
+ * PixelHostView 仍然是 Android 入口；这里把文本输入状态机从绘制和手势路由中拆出来。
  */
 internal class PixelHostTextInputCoordinator(
     private val host: PixelHostView,

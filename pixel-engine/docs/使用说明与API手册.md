@@ -561,6 +561,26 @@ Form(
 | `FocusNode` | 单点焦点 | `requestFocus`、`clearFocus` |
 | `FocusScope` / `FocusScopeNode` | 焦点域 | 方向遍历、IME next |
 
+### 剪贴板与文本编辑动作
+
+默认 Android `PixelTextInputBridge` 会把 `PixelHostBridge.readClipboardText` /
+`writeClipboardText` 接到系统 `ClipboardManager`。页面或宿主可以通过
+`PixelHostView.performFocusedTextEditAction` 对当前聚焦的 `TextField` 执行标准动作。
+
+| Action | 行为 |
+|---|---|
+| `COPY` | 复制当前选区，不修改文本 |
+| `CUT` | 复制当前选区并删除；`readOnly` 字段不会执行 |
+| `PASTE` | 从宿主剪贴板粘贴；空剪贴板不会执行 |
+| `SELECT_ALL` | 选中当前字段全部文本 |
+
+```kotlin
+val handled = setup.hostView.performFocusedTextEditAction(PixelTextEditAction.PASTE)
+```
+
+自定义宿主只需要实现 `PixelHostBridge.readClipboardText` 和
+`PixelHostBridge.writeClipboardText`；不支持剪贴板时保留默认实现即可。
+
 ### Controller
 
 | Controller | State | 用途 |
