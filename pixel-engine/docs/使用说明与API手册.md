@@ -1187,6 +1187,88 @@ memory 边界：
 - 调用方必须在资源包切换、页面销毁、低内存回调或主题/字体资源变化时主动调用 `remove(key)` 或 `clear()`。
 - 如果需要按字节数或帧数做淘汰，应在 SDK consumer 层包装 `PixelResourceCache`，不要依赖 engine 自动释放。
 
+#### 资源打包工具
+
+当前仓库只提供 glyph pack 打包工具：`tools/generate_pixel_glyph_packs.py`。它把 TTF、OTF 或 BDF 字体转换成 `PixelGlyphPackAssetLoader` 可读取的目录结构。
+
+输出结构：
+
+```text
+<output>/<pack-id>/manifest.json
+<output>/<pack-id>/glyphs.bin
+```
+
+生成 app 内置 Fusion Pixel 字形包：
+
+```bash
+./gradlew :pixel-engine:generatePixelGlyphPacks
+```
+
+这个 Gradle task 不接收参数，默认读取 `app/src/main/assets/fonts` 下的 Fusion Pixel 字体，并写入 `app/src/main/assets/glyphpacks`。这是当前 Launcher app 的内置资源生成入口，不是 SDK consumer 的通用输出目录。
+
+生成自定义 BDF 字形包：
+
+```bash
+python3 tools/generate_pixel_glyph_packs.py \
+  --input path/to/font.bdf \
+  --output app/src/main/assets/glyphpacks \
+  --pack-id ui8 \
+  --display-name "UI 8px" \
+  --cell-height 8 \
+  --baseline 7 \
+  --default-advance 8 \
+  --ranges 0020-007E,4E00-9FFF
+```
+
+生成自定义 TTF / OTF 字形包：
+
+```bash
+python3 tools/generate_pixel_glyph_packs.py \
+  --input path/to/font.ttf \
+  --output app/src/main/assets/glyphpacks \
+  --pack-id ui8 \
+  --display-name "UI 8px" \
+  --cell-height 8 \
+  --baseline 7 \
+  --default-advance 8 \
+  --font-size 8 \
+  --ranges 0020-007E
+```
+
+TTF / OTF 路径依赖 Python 的 Pillow；BDF 路径只依赖标准库。转换器会跳过无法渲染或非空白但没有像素的 glyph，并把实际写入的 code point 汇总到 `manifest.json.supportedRanges`。
+
+验证打包器：
+
+```bash
+./gradlew :pixel-engine:testPixelGlyphPackConverter
+```
+
+接入运行时：
+
+```kotlin
+val pack = PixelGlyphPackAssetLoader(context).load("glyphpacks/ui8")
+val source = BitmapGlyphSource(listOf(pack))
+val rasterizer = PixelStyledTextRasterizer(
+    engine = PixelFontEngine(CompositeGlyphProvider(listOf(source))),
+    style = GlyphStyle(
+        cellHeight = 8,
+        narrowAdvanceWidth = 8,
+        wideAdvanceWidth = 16,
+        oversampleFactor = 1,
+        narrowMinimumSampleRatio = 1f,
+        wideMinimumSampleRatio = 1f,
+        narrowTextSizeRatio = 1f,
+        wideTextSizeRatio = 1f,
+        narrowFontWeight = PixelFontWeight.NORMAL,
+        wideFontWeight = PixelFontWeight.NORMAL,
+        narrowFontFamily = PixelFontFamily.MONOSPACE,
+        wideFontFamily = PixelFontFamily.DEFAULT,
+    ),
+)
+```
+
+`PixelResourceCatalog.fonts` 可以记录 `manifest` 和 `binary` 路径，但它不会自动生成或加载 glyph pack。sprite sheet JSON 和 resource manifest/catalog 当前也没有独立打包器，按本手册 schema 手写并用对应 loader 校验。
+
 ## 8. 自定义 RenderObject
 
 用于内置 widget 不够表达的场景。
