@@ -7,6 +7,7 @@ import com.purride.pixelui.Axis
 import com.purride.pixelui.AspectRatio
 import com.purride.pixelui.Checkbox
 import com.purride.pixelui.Column
+import com.purride.pixelui.ConfirmDialog
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.Dialog
@@ -1415,6 +1416,37 @@ class PixelTesterDslTest {
         )
 
         assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
+        tester.dispose()
+    }
+
+    @Test
+    fun confirmDialogRendersTextAndInvokesActions() {
+        val tester = PixelTester()
+        var confirmed = 0
+        var cancelled = 0
+
+        tester.pumpWidget(
+            widget = ConfirmDialog(
+                title = "DELETE",
+                message = "THIS CANNOT BE UNDONE",
+                onConfirm = { confirmed++ },
+                onCancel = { cancelled++ },
+                confirmText = "DELETE",
+                cancelText = "BACK",
+                width = 56,
+                key = "confirm-dialog",
+            ),
+            logicalWidth = 80,
+            logicalHeight = 48,
+        )
+
+        assertTrue(tester.exists(find.byText("DELETE")))
+        assertTrue(tester.exists(find.byText("THIS CANNOT BE UNDONE")))
+        tester.tap(find.byKey("confirm-dialog-cancel"))
+        tester.tap(find.byKey("confirm-dialog-confirm"))
+
+        assertEquals(1, cancelled)
+        assertEquals(1, confirmed)
         tester.dispose()
     }
 

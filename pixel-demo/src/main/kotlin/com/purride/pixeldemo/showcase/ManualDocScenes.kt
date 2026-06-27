@@ -320,7 +320,7 @@ object ManualApiControlsScene : ManualDocScene(
     title = "选择、反馈和组合组件",
     summary = "按钮、选择控件、反馈组件和页面脚手架",
     category = DemoCatalog.apiReference,
-    apis = setOf("OutlinedButton", "ButtonStyle", "PixelButtonStyle", "ListTile", "Checkbox", "Switch", "Slider", "Tabs", "SegmentedControl", "Dialog", "Toast", "Snackbar", "ProgressBar", "ActivityIndicator", "Badge", "Divider", "Gap", "AppScaffold"),
+    apis = setOf("OutlinedButton", "ButtonStyle", "PixelButtonStyle", "ListTile", "Checkbox", "Switch", "Slider", "Tabs", "SegmentedControl", "Dialog", "ConfirmDialog", "Toast", "Snackbar", "ProgressBar", "ActivityIndicator", "Badge", "Divider", "Gap", "AppScaffold"),
     bodyBuilder = { _ -> docBody(controlsApiPreview()) },
 )
 
@@ -798,6 +798,16 @@ private fun controlsApiPreview(): Widget {
                     content = Text("content", color = PixelColor.White),
                     actions = listOf(OutlinedButton(text = "OK", onPressed = {}, borderColor = Yellow)),
                     borderColor = Yellow,
+                ),
+                ConfirmDialog(
+                    title = "Confirm",
+                    message = "continue?",
+                    onConfirm = {},
+                    onCancel = {},
+                    confirmText = "OK",
+                    cancelText = "NO",
+                    borderColor = Blue,
+                    width = 54,
                 ),
                 Toast("Toast", textStyle = TextStyle(color = Green)),
                 Snackbar(message = "Snackbar", action = OutlinedButton(text = "UNDO", onPressed = {}, borderColor = Accent), textStyle = TextStyle(color = PixelColor.White)),

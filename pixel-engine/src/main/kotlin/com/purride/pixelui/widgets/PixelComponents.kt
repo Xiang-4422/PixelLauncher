@@ -146,6 +146,88 @@ public fun Dialog(
 }
 
 /**
+ * 像素确认对话框。
+ *
+ * 该组件是 [Dialog] 的受控组合封装，只负责标题、说明、取消/确认按钮布局。
+ * overlay 显示、关闭句柄、遮罩、back 行为和危险操作二次校验都由调用方维护。
+ */
+public fun ConfirmDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onCancel: (() -> Unit)? = null,
+    confirmText: String = "OK",
+    cancelText: String? = "CANCEL",
+    fillColor: PixelColor = PixelColor.Black,
+    borderColor: PixelColor = PixelColor.White,
+    titleStyle: PixelTextStyle = PixelTextStyle.Default,
+    messageStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(160, 160, 160)),
+    confirmStyle: ButtonStyle = ButtonStyle.Default,
+    cancelStyle: TextButtonStyle = TextButtonStyle.Default,
+    width: Int? = null,
+    key: Any? = null,
+): Widget {
+    val bodyChildren = buildList {
+        add(
+            Text(
+                title,
+                style = titleStyle,
+                softWrap = true,
+                maxLines = 2,
+                overflow = PixelTextOverflow.ELLIPSIS,
+                textAlign = TextAlign.CENTER,
+            ),
+        )
+        if (message.isNotBlank()) {
+            add(
+                Text(
+                    message,
+                    style = messageStyle,
+                    softWrap = true,
+                    maxLines = 3,
+                    overflow = PixelTextOverflow.ELLIPSIS,
+                    textAlign = TextAlign.CENTER,
+                ),
+            )
+        }
+    }
+    val body = Column(
+        children = bodyChildren,
+        spacing = 1,
+        mainAxisSize = MainAxisSize.MIN,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+    )
+    val actions = buildList {
+        if (cancelText != null) {
+            add(
+                TextButton(
+                    text = cancelText,
+                    onPressed = onCancel,
+                    enabled = onCancel != null,
+                    style = cancelStyle,
+                    key = key?.let { "$it-cancel" },
+                ),
+            )
+        }
+        add(
+            OutlinedButton(
+                text = confirmText,
+                onPressed = onConfirm,
+                style = confirmStyle,
+                key = key?.let { "$it-confirm" },
+            ),
+        )
+    }
+    return Dialog(
+        content = if (width == null) body else SizedBox(width = width.coerceAtLeast(1), child = body),
+        actions = actions,
+        fillColor = fillColor,
+        borderColor = borderColor,
+        key = key,
+    )
+}
+
+/**
  * 居中的短提示内容。
  *
  * 该函数只创建 toast widget，不内置自动超时或动画。业务需要显示/关闭时长时，应由

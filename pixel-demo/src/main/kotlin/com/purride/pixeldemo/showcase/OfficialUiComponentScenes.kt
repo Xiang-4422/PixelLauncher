@@ -16,6 +16,7 @@ import com.purride.pixelui.Center
 import com.purride.pixelui.Checkbox
 import com.purride.pixelui.ClipRect
 import com.purride.pixelui.Column
+import com.purride.pixelui.ConfirmDialog
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.ContainerDirectional
@@ -332,13 +333,18 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     componentScene("controls_icon", "Icon", "用 PixelIconData 渲染小型位图图标", DemoCatalog.paint, "Icon", extraApis = setOf("PixelIconData")) {
         Icon(PixelIconData(officialTinyIcon()))
     },
-    ComponentExampleScene("controls_dialog", "Messages", "Dialog、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "Toast", "Snackbar")) {
+    ComponentExampleScene("controls_dialog", "Messages", "Dialog、ConfirmDialog、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "ConfirmDialog", "Toast", "Snackbar")) {
         officialBody(
             listOf(
                 samplePanel(
                     title = "Dialog",
                     color = Accent,
                     child = Dialog(title = Text("TITLE", style = TextStyle(color = Accent)), content = Text("CONTENT", style = TextStyle(color = Muted)), actions = listOf(OutlinedButton(text = "OK", onPressed = {}, borderColor = Accent))),
+                ),
+                samplePanel(
+                    title = "ConfirmDialog",
+                    color = Blue,
+                    child = ConfirmDialog(title = "DELETE", message = "ARE YOU SURE", onConfirm = {}, onCancel = {}, confirmText = "OK", cancelText = "BACK", borderColor = Blue, width = 54),
                 ),
                 samplePanel(
                     title = "Toast",

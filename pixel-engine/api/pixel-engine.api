@@ -754,6 +754,7 @@ com.purride.pixelui public fun ListTile(
 com.purride.pixelui public fun Checkbox(
 com.purride.pixelui public fun Switch(
 com.purride.pixelui public fun Dialog(
+com.purride.pixelui public fun ConfirmDialog(
 com.purride.pixelui public fun Toast(
 com.purride.pixelui public fun Snackbar(
 com.purride.pixelui public fun Tabs(

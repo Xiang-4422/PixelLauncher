@@ -18,7 +18,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 
 ### Added SDK surface
 
-- `PixelErrorBoundary` and `PixelErrorPanel` for build-time widget fallback.
+- `PixelErrorBoundary` and `PixelErrorPanel` for build/render-time widget fallback.
 - `PixelBackDispatcher`, `PixelBackHost`, `PixelBackHandler`, and `PixelHostView.handleBackPressed`.
 - `PixelHapticFeedback` for widget-level host haptic requests.
 - `PixelHostView.dispose` and `PixelHostSetup.dispose` for explicit host teardown.
@@ -26,6 +26,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `PixelTester`, `PixelFinder`, and `PixelTestGesture` as SDK testing APIs.
 - `PixelTheme`, `PixelThemeData`, and `PixelThemeColors` for widget-level pixel defaults.
 - `TextButton` and `PixelTextButtonStyle`.
+- `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.
 - `PixelHostBridge.updateTextInput`.
 - `PixelListController.isAtEnd`.

@@ -694,7 +694,7 @@ SegmentedControl(
 
 ### 反馈组件
 
-`Dialog`、`Toast` 和 `Snackbar` 本身都是普通 widget，只负责像素风视觉结构，不负责显示队列、
+`Dialog`、`ConfirmDialog`、`Toast` 和 `Snackbar` 本身都是普通 widget，只负责像素风视觉结构，不负责显示队列、
 自动关闭、遮罩、动画或 Android back。需要页面级浮层时使用 `PixelOverlayHost` 和
 `PixelOverlayController`。
 
@@ -708,6 +708,14 @@ Dialog(
     ),
 )
 
+ConfirmDialog(
+    title = "DELETE APP",
+    message = "THIS CANNOT BE UNDONE",
+    onCancel = { close() },
+    onConfirm = { deleteApp() },
+    confirmText = "DELETE",
+)
+
 Toast("SAVED")
 
 Snackbar(
@@ -716,7 +724,8 @@ Snackbar(
 )
 ```
 
-`Dialog` 的 `actions` 会排列在内容下方并右对齐；`Toast` 支持多行文本；`Snackbar` 的 `action`
+`Dialog` 的 `actions` 会排列在内容下方并右对齐；`ConfirmDialog` 是受控组合组件，
+取消/确认后的关闭策略由回调显式处理；`Toast` 支持多行文本；`Snackbar` 的 `action`
 由调用方传入任意 widget，常用 `TextButton`。
 
 `EmptyState` 是居中的空状态组合组件，只负责标题、说明、可选图标和 action 的像素布局；
@@ -932,6 +941,7 @@ Form(
 | `SegmentedControl` | 分段选择 | `labels`、`selectedIndex`、`onSelected` |
 | `Slidable` | 可滑出操作面板的行容器 | `child`、`startActionPane`、`endActionPane` |
 | `Dialog` | 居中对话框 | `title`、`content`、`actions` |
+| `ConfirmDialog` | 确认对话框组合组件 | `title`、`message`、`onConfirm`、`onCancel` |
 | `Toast` | 中央短提示 | `message` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
 | `EmptyState` | 居中空状态 | `title`、`message`、`icon`、`action` |
