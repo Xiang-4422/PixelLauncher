@@ -1517,6 +1517,7 @@ public final class com.purride.pixelui.PixelHostSetup {
   public final com.purride.pixelui.PixelHostView getHostView();
   public final com.purride.pixelui.PixelTextInputBridge getTextInputBridge();
   public final com.purride.pixelui.PixelBackDispatcher getBackDispatcher();
+  public final void dispose();
   public final android.widget.FrameLayout component1();
   public final com.purride.pixelui.PixelHostView component2();
   public final com.purride.pixelui.PixelTextInputBridge component3();
@@ -1633,6 +1634,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final java.lang.String dumpSemanticsTree();
   public final com.purride.pixelui.PixelInspectorSnapshot inspect(boolean, boolean);
   public static com.purride.pixelui.PixelInspectorSnapshot inspect$default(com.purride.pixelui.PixelHostView, boolean, boolean, int, java.lang.Object);
+  public final void dispose();
   public android.view.WindowInsets onApplyWindowInsets(android.view.WindowInsets);
   public boolean onTouchEvent(android.view.MotionEvent);
   public boolean performClick();

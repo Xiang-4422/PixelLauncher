@@ -336,6 +336,25 @@ SafeArea(
 )
 ```
 
+### Lifecycle
+
+`PixelHostView` 会在 Android `onDetachedFromWindow` 时自动释放 retained widget tree、
+render tree 和像素缓存。Activity 直接把 `setup.rootView` 作为 content view 时，通常不需要
+额外处理。
+
+Fragment 或自定义宿主如果有明确的视图销毁点，可以调用 `PixelHostSetup.dispose()`。
+
+```kotlin
+override fun onDestroyView() {
+    setup.dispose()
+    _binding = null
+    super.onDestroyView()
+}
+```
+
+`dispose()` 只释放 pixel-engine runtime 和隐藏输入桥接，不移除 Android view 层级；
+view 层级仍交给 Activity / Fragment 自身管理。
+
 ### 基础面板
 
 ```kotlin

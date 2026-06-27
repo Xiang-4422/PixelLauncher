@@ -143,6 +143,11 @@ class ConsumerActivity : ComponentActivity() {
             },
         )
     }
+
+    override fun onDestroy() {
+        setup.dispose()
+        super.onDestroy()
+    }
 }
 EOF
 

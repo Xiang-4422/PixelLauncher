@@ -423,6 +423,17 @@ public class PixelHostView @JvmOverloads constructor(
         )
     }
 
+    /**
+     * 显式释放当前 host 持有的 retained widget tree、render tree 和像素缓存。
+     *
+     * Activity 场景通常依赖 [onDetachedFromWindow] 自动释放；Fragment 或自定义宿主
+     * 可以在 `onDestroyView` 等明确销毁点调用本方法。
+     */
+    public fun dispose() {
+        recycleGapBackgroundBitmap()
+        lifecycleCoordinator.onDetachedFromWindow()
+    }
+
     private fun snapshotAllocationSample(): PixelInspectorAllocationSample {
         val runtime = Runtime.getRuntime()
         val total = runtime.totalMemory()
@@ -495,8 +506,7 @@ public class PixelHostView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        recycleGapBackgroundBitmap()
-        lifecycleCoordinator.onDetachedFromWindow()
+        dispose()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

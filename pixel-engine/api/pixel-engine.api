@@ -508,6 +508,7 @@ com.purride.pixelui public companion object
 com.purride.pixelui public const val FPS_WINDOW: Int = 30
 com.purride.pixelui public data class PixelHostProfilePreference(
 com.purride.pixelui public data class PixelHostSetup(
+com.purride.pixelui public fun dispose()
 com.purride.pixelui public data class PixelHostSetupConfig(
 com.purride.pixelui public fun createPixelHostSetup(
 com.purride.pixelui public class PixelHostView @JvmOverloads constructor(
@@ -540,6 +541,7 @@ com.purride.pixelui public fun dumpElementTree(): String
 com.purride.pixelui public fun dumpRenderTree(): String
 com.purride.pixelui public fun dumpSemanticsTree(): String
 com.purride.pixelui public fun inspect(
+com.purride.pixelui public fun dispose()
 com.purride.pixelui public data class PixelInspectorSnapshot(
 com.purride.pixelui public enum class PixelInspectorTargetKind
 com.purride.pixelui public data class PixelInspectorTargetSnapshot @JvmOverloads constructor(

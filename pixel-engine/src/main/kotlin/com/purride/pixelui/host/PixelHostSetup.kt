@@ -22,7 +22,18 @@ public data class PixelHostSetup(
     val hostView: PixelHostView,
     val textInputBridge: PixelTextInputBridge,
     val backDispatcher: PixelBackDispatcher,
-)
+) {
+    /**
+     * 显式释放默认宿主装配持有的输入桥接和渲染 runtime。
+     *
+     * Activity 根视图通常可依赖 View detach；Fragment 的 `onDestroyView` 或自定义宿主
+     * 销毁视图时可以调用它。
+     */
+    public fun dispose() {
+        textInputBridge.hideTextInput()
+        hostView.dispose()
+    }
+}
 
 /**
  * 默认宿主配置。

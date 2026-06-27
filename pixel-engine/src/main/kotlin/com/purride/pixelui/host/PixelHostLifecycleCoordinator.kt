@@ -5,8 +5,10 @@ import com.purride.pixelcore.ScreenProfile
 import kotlin.math.ceil
 
 /**
- * Coordinates Android host lifecycle and configuration edge cases that are not part of
- * rendering, gestures, or text input.
+ * 协调 Android 宿主生命周期和配置边界。
+ *
+ * 绘制、手势和文本输入各自有专门 coordinator；这里只保留宿主生命周期相关的
+ * 小型 glue code。
  */
 internal class PixelHostLifecycleCoordinator(
     private val disposeRender: () -> Unit,
