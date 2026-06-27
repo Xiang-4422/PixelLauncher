@@ -520,6 +520,34 @@ TextButton(
 `TextButton` 默认零 padding，尺寸由文字自然决定；需要更大的触摸区域时通过
 `TextButtonStyle(padding = EdgeInsets.all(2))` 显式扩大。
 
+### 列表项和选择控件
+
+`ListTile` 是像素列表行容器，负责 leading/title/subtitle/trailing 排列；只有提供 `onTap`
+且 `enabled = true` 时才是可点击语义。`Checkbox` / `Switch` 是受控组件，当前状态由调用方传入，
+点击后通过 `onChanged` 返回下一状态。
+
+```kotlin
+ListTile(
+    leading = Checkbox(
+        checked = app.enabled,
+        onChanged = { enabled -> updateApp(app.id, enabled) },
+        semanticLabel = "${app.name} enabled",
+    ),
+    title = Text(app.name),
+    subtitle = Text(app.packageName, color = PixelColor.fromRgb(160, 160, 160)),
+    trailing = Switch(
+        checked = app.pinned,
+        onChanged = { pinned -> pinApp(app.id, pinned) },
+        semanticLabel = "${app.name} pinned",
+    ),
+    onTap = { openApp(app.id) },
+    semanticLabel = "Open ${app.name}",
+)
+```
+
+`Checkbox` / `Switch` 的 `onChanged = null` 或 `enabled = false` 表示只读展示；这时不会导出
+可点击目标，颜色也会降级为 disabled 状态。
+
 ### 输入框
 
 ```kotlin
