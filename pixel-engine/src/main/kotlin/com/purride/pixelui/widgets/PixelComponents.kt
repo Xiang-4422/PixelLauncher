@@ -12,6 +12,17 @@ public fun Icon(
     key: Any? = null,
 ): Widget = Image(bitmap = icon.bitmap, key = key)
 
+/**
+ * 按布尔状态选择显示 [child] 或 [replacement]。
+ *
+ * 组件不保留隐藏子树状态，也不做动画；需要过渡效果时使用动画组件包裹它。
+ */
+public fun Visibility(
+    visible: Boolean,
+    child: Widget,
+    replacement: Widget = SizedBox(width = 0, height = 0),
+): Widget = if (visible) child else replacement
+
 public fun ListTile(
     title: Widget,
     subtitle: Widget? = null,

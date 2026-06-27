@@ -72,6 +72,7 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Toast
 import com.purride.pixelui.Transform
+import com.purride.pixelui.Visibility
 import com.purride.pixelui.Widget
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.animation.IntOffset
@@ -150,6 +151,15 @@ val LayoutOfficialComponentScenes: List<DemoScene> = listOf(
     ),
     componentScene("layout_sized_box", "SizedBox", "指定固定宽高或作为空白占位", DemoCatalog.layout, "SizedBox") {
         Row(children = listOf(exampleBox("A", Cyan), SizedBox(width = 10, height = 8), exampleBox("B", Pink)), spacing = 1)
+    },
+    componentScene("layout_visibility", "Visibility", "按状态切换 child 与 replacement", DemoCatalog.layout, "Visibility") {
+        Row(
+            children = listOf(
+                Visibility(visible = true, child = Text("ON", style = TextStyle(color = Green))),
+                Visibility(visible = false, child = Text("OFF"), replacement = Text("HIDDEN", style = TextStyle(color = Muted))),
+            ),
+            spacing = 4,
+        )
     },
     ComponentExampleScene(
         id = "layout_container",

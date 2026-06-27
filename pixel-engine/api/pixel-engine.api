@@ -750,6 +750,7 @@ com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelTextButtonStyle = PixelTextButtonStyle()
 com.purride.pixelui public data class PixelIconData(
 com.purride.pixelui public fun Icon(
+com.purride.pixelui public fun Visibility(
 com.purride.pixelui public fun ListTile(
 com.purride.pixelui public fun Checkbox(
 com.purride.pixelui public fun Switch(

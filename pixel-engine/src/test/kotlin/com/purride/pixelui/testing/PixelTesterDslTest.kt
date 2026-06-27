@@ -61,6 +61,7 @@ import com.purride.pixelui.TextButton
 import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
+import com.purride.pixelui.Visibility
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
@@ -1416,6 +1417,38 @@ class PixelTesterDslTest {
         )
 
         assertTrue(tester.renderResult!!.buffer.pixels.any { it != PixelColor.Transparent.argb })
+        tester.dispose()
+    }
+
+    @Test
+    fun visibilitySwitchesBetweenChildAndReplacement() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = Visibility(
+                visible = false,
+                child = Text("VISIBLE"),
+                replacement = Text("HIDDEN"),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 10,
+        )
+
+        assertFalse(tester.exists(find.byText("VISIBLE")))
+        assertTrue(tester.exists(find.byText("HIDDEN")))
+
+        tester.pumpWidget(
+            widget = Visibility(
+                visible = true,
+                child = Text("VISIBLE"),
+                replacement = Text("HIDDEN"),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 10,
+        )
+
+        assertTrue(tester.exists(find.byText("VISIBLE")))
+        assertFalse(tester.exists(find.byText("HIDDEN")))
         tester.dispose()
     }
 

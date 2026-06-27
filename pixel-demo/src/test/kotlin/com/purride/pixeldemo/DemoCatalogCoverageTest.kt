@@ -79,6 +79,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("AnimatedSprite", "deep_resources_sprites")
         assertSearchContains("PaddingDirectional", "layout_padding")
         assertSearchContains("Center", "layout_align")
+        assertSearchContains("Visibility", "layout_visibility")
         assertSearchContains("ContainerDirectional", "layout_container")
         assertSearchContains("PositionedFill", "layout_positioned")
         assertSearchContains("Switch", "controls_checkbox")
@@ -133,6 +134,7 @@ class DemoCatalogCoverageTest {
                 "layout_padding",
                 "layout_align",
                 "layout_sized_box",
+                "layout_visibility",
                 "layout_container",
                 "layout_row",
                 "layout_column",
@@ -174,6 +176,7 @@ class DemoCatalogCoverageTest {
                 "layout_padding",
                 "layout_align",
                 "layout_sized_box",
+                "layout_visibility",
                 "layout_container",
                 "layout_row",
                 "layout_column",

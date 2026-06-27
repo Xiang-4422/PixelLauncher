@@ -25,6 +25,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `PixelOverlayController`, `PixelOverlayHost`, and overlay handles for toast/dialog/snackbar.
 - `PixelTester`, `PixelFinder`, and `PixelTestGesture` as SDK testing APIs.
 - `PixelTheme`, `PixelThemeData`, and `PixelThemeColors` for widget-level pixel defaults.
+- `Visibility` for simple child/replacement switching.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

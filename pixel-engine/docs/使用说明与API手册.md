@@ -893,6 +893,7 @@ Form(
 | `AlignDirectional` | 方向感知对齐 | `AlignmentDirectional` |
 | `Center` | 居中 child | `child` |
 | `SizedBox` | 固定尺寸/占位 | `width`、`height`、`child` |
+| `Visibility` | 显示 child 或 replacement | `visible`、`child`、`replacement` |
 | `Expanded` | flex 紧约束填充 | `child`、`flex` |
 | `Flexible` | flex 松/紧约束 | `child`、`flex`、`fit` |
 | `Spacer` | flex 空白 | `flex` |
