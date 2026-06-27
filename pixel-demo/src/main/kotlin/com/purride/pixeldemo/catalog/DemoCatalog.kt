@@ -146,8 +146,8 @@ object DemoCatalog {
                 "layout_aspect_ratio",
                 "layout_constrained_box",
                 "layout_fitted_box",
-                "controls_divider",
-                "controls_gap",
+                "layout_divider",
+                "layout_gap",
             ),
         ),
         DemoGroup(
@@ -204,7 +204,7 @@ object DemoCatalog {
             summary = "TextField、controller 和 IME",
             category = input,
             sceneIds = listOf(
-                "text_text_field",
+                "input_text_field",
             ),
         ),
         DemoGroup(
@@ -213,9 +213,9 @@ object DemoCatalog {
             summary = "焦点、表单和语义节点",
             category = input,
             sceneIds = listOf(
-                "nav_focus_scope",
-                "nav_form",
-                "nav_semantics",
+                "input_focus_scope",
+                "input_form",
+                "input_semantics",
             ),
         ),
         DemoGroup(
@@ -257,10 +257,10 @@ object DemoCatalog {
             summary = "进度、加载状态和徽标",
             category = feedback,
             sceneIds = listOf(
-                "controls_progress_bar",
-                "controls_activity_indicator",
-                "controls_load_state_view",
-                "controls_badge",
+                "feedback_progress_bar",
+                "feedback_activity_indicator",
+                "feedback_load_state_view",
+                "feedback_badge",
             ),
         ),
         DemoGroup(
@@ -269,9 +269,9 @@ object DemoCatalog {
             summary = "对话框、消息、菜单和提示",
             category = feedback,
             sceneIds = listOf(
-                "controls_dialog",
-                "controls_overlay_tools",
-                "controls_popover_menu",
+                "feedback_dialog",
+                "feedback_overlay_tools",
+                "feedback_popover_menu",
             ),
         ),
         DemoGroup(
@@ -305,7 +305,7 @@ object DemoCatalog {
             summary = "Icon、线、圆、多边形和路径",
             category = paint,
             sceneIds = listOf(
-                "controls_icon",
+                "paint_icon",
                 "paint_line",
                 "paint_circle",
                 "paint_polygon",
@@ -339,7 +339,7 @@ object DemoCatalog {
             summary = "页面骨架、Navigator 和路由栈",
             category = navigation,
             sceneIds = listOf(
-                "controls_app_scaffold",
+                "navigation_app_scaffold",
                 "deep_navigation_runtime",
             ),
         ),

@@ -71,7 +71,7 @@ class DemoCatalogCoverageTest {
 
     @Test
     fun searchMatchesTitleTagsAndApis() {
-        assertSearchContains("TextField", "text_text_field")
+        assertSearchContains("TextField", "input_text_field")
         assertSearchContains("ListView", "scroll_list_view")
         assertSearchContains("Button", "controls_outlined_button")
         assertSearchContains("Navigator", "deep_navigation_runtime")
@@ -89,11 +89,11 @@ class DemoCatalogCoverageTest {
         assertSearchContains("SegmentedControl", "controls_tabs")
         assertSearchContains("ShortcutHint", "controls_shortcut_hint")
         assertSearchContains("KeyboardAvoidingView", "layout_ime_avoiding")
-        assertSearchContains("Toast", "controls_dialog")
-        assertSearchContains("ToastQueue", "controls_overlay_tools")
-        assertSearchContains("Dropdown", "controls_popover_menu")
-        assertSearchContains("Tooltip", "controls_popover_menu")
-        assertSearchContains("LoadStateView", "controls_load_state_view")
+        assertSearchContains("Toast", "feedback_dialog")
+        assertSearchContains("ToastQueue", "feedback_overlay_tools")
+        assertSearchContains("Dropdown", "feedback_popover_menu")
+        assertSearchContains("Tooltip", "feedback_popover_menu")
+        assertSearchContains("LoadStateView", "feedback_load_state_view")
         assertSearchContains("ListViewBuilder", "scroll_list_view")
         assertSearchContains("GridViewBuilder", "scroll_grid_view")
         assertSearchContains("PageViewBuilder", "scroll_page_view")
@@ -103,13 +103,13 @@ class DemoCatalogCoverageTest {
         assertSearchContains("AnimatedPadding", "animation_animated_container")
         assertSearchContains("AnimatedVisibility", "animation_animated_container")
         assertSearchContains("AnimatedBuilder", "animation_tween_animation_builder")
-        assertSearchContains("FocusNode", "nav_focus_scope")
-        assertSearchContains("FocusTraversalGroup", "nav_focus_scope")
-        assertSearchContains("FormFieldState", "nav_form")
+        assertSearchContains("FocusNode", "input_focus_scope")
+        assertSearchContains("FocusTraversalGroup", "input_focus_scope")
+        assertSearchContains("FormFieldState", "input_form")
         assertSearchContains("PixelInspectorBoundsOverlay", "debug_inspector_panel")
         assertSearchContains("PixelResourceCache", "deep_resources_sprites")
         assertSearchContains("PixelNavigatorSnapshot", "deep_navigation_runtime")
-        assertSearchContains("FormValidator", "nav_form")
+        assertSearchContains("FormValidator", "input_form")
         assertSearchContains("PixelInspectorPanel", "debug_inspector_panel")
         assertSearchContains("PixelLeafRenderObjectWidget", "deep_inspector_advanced")
         assertSearchContains("PixelPagerSavedState", "deep_state_restoration")
@@ -205,8 +205,8 @@ class DemoCatalogCoverageTest {
                 "layout_aspect_ratio",
                 "layout_constrained_box",
                 "layout_fitted_box",
-                "controls_divider",
-                "controls_gap",
+                "layout_divider",
+                "layout_gap",
             ),
             DemoCatalog.groups.first { it.id == "layout_box" }.sceneIds,
         )

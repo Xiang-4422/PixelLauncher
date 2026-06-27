@@ -340,7 +340,7 @@ val TextOfficialComponentScenes: List<DemoScene> = listOf(
         )
     },
     ComponentExampleScene(
-        id = "text_text_field",
+        id = "input_text_field",
         title = "TextField",
         summary = "可编辑输入、placeholder、IME 类型和提交回调",
         category = DemoCatalog.input,
@@ -428,11 +428,11 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
         )
     },
     ComponentExampleScene("controls_slider", "Slider", "连续值拖动控件", DemoCatalog.controls, setOf("component", "slider"), setOf("Slider")) { SliderOfficialBody(showProgress = false) },
-    ComponentExampleScene("controls_progress_bar", "ProgressBar", "水平进度展示", DemoCatalog.feedback, setOf("component", "progress"), setOf("ProgressBar")) { SliderOfficialBody(showProgress = true) },
-    componentScene("controls_activity_indicator", "ActivityIndicator", "四帧像素加载指示器", DemoCatalog.feedback, "ActivityIndicator") {
+    ComponentExampleScene("feedback_progress_bar", "ProgressBar", "水平进度展示", DemoCatalog.feedback, setOf("component", "progress"), setOf("ProgressBar")) { SliderOfficialBody(showProgress = true) },
+    componentScene("feedback_activity_indicator", "ActivityIndicator", "四帧像素加载指示器", DemoCatalog.feedback, "ActivityIndicator") {
         Row(children = listOf(ActivityIndicator(frame = 0, color = Yellow), ActivityIndicator(frame = 1, color = Yellow), ActivityIndicator(frame = 2, color = Yellow), ActivityIndicator(frame = 3, color = Yellow)), spacing = 4)
     },
-    componentScene("controls_load_state_view", "LoadStateView", "统一 loading、empty、error 和 content", DemoCatalog.feedback, "LoadStateView", extraApis = setOf("PixelAsyncSnapshot")) {
+    componentScene("feedback_load_state_view", "LoadStateView", "统一 loading、empty、error 和 content", DemoCatalog.feedback, "LoadStateView", extraApis = setOf("PixelAsyncSnapshot")) {
         Row(
             children = listOf(
                 LoadStateView(snapshot = PixelAsyncSnapshot.Loading, content = { Text(it.toString()) }, loading = Text("LOAD", style = TextStyle(color = Yellow))),
@@ -442,19 +442,19 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
             spacing = 3,
         )
     },
-    componentScene("controls_badge", "Badge", "在 child 角落叠加小标签", DemoCatalog.feedback, "Badge") {
+    componentScene("feedback_badge", "Badge", "在 child 角落叠加小标签", DemoCatalog.feedback, "Badge") {
         Badge(child = OutlinedButton(text = "MAIL", onPressed = {}, borderColor = Pink), label = Text("3", style = TextStyle(color = PixelColor.White)))
     },
-    componentScene("controls_divider", "Divider", "一条水平分隔线", DemoCatalog.layout, "Divider") {
+    componentScene("layout_divider", "Divider", "一条水平分隔线", DemoCatalog.layout, "Divider") {
         Column(children = listOf(Text("ABOVE", style = TextStyle(color = Yellow)), Divider(color = Yellow), Text("BELOW", style = TextStyle(color = Yellow))), spacing = 2)
     },
-    componentScene("controls_gap", "Gap", "固定宽高的空白间隔", DemoCatalog.layout, "Gap") {
+    componentScene("layout_gap", "Gap", "固定宽高的空白间隔", DemoCatalog.layout, "Gap") {
         Row(children = listOf(exampleBox("A", Cyan), Gap(width = 8), exampleBox("B", Pink)), spacing = 1)
     },
-    componentScene("controls_icon", "Icon", "用 PixelIconData 渲染小型位图图标", DemoCatalog.paint, "Icon", extraApis = setOf("PixelIconData")) {
+    componentScene("paint_icon", "Icon", "用 PixelIconData 渲染小型位图图标", DemoCatalog.paint, "Icon", extraApis = setOf("PixelIconData")) {
         Icon(PixelIconData(officialTinyIcon()))
     },
-    ComponentExampleScene("controls_dialog", "Messages", "Dialog、ConfirmDialog、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "ConfirmDialog", "Toast", "Snackbar")) {
+    ComponentExampleScene("feedback_dialog", "Messages", "Dialog、ConfirmDialog、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "ConfirmDialog", "Toast", "Snackbar")) {
         officialBody(
             listOf(
                 samplePanel(
@@ -480,9 +480,9 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
             ),
         )
     },
-    ComponentExampleScene("controls_overlay_tools", "OverlayTools", "模态遮罩与 toast 队列基础能力", DemoCatalog.feedback, setOf("component", "overlay", "toast"), setOf("ModalBarrier", "ToastQueue", "PixelToastQueueController")) { ToastQueueOfficialBody() },
-    ComponentExampleScene("controls_popover_menu", "PopoverMenu", "受控弹出层、菜单、下拉和提示", DemoCatalog.feedback, setOf("component", "overlay", "menu"), setOf("Popover", "Menu", "PixelMenuItem", "Dropdown", "Tooltip")) { OverlayControlsOfficialBody() },
-    componentScene("controls_app_scaffold", "AppScaffold", "标题、body、bottomBar 的页面骨架", DemoCatalog.navigation, "AppScaffold") {
+    ComponentExampleScene("feedback_overlay_tools", "OverlayTools", "模态遮罩与 toast 队列基础能力", DemoCatalog.feedback, setOf("component", "overlay", "toast"), setOf("ModalBarrier", "ToastQueue", "PixelToastQueueController")) { ToastQueueOfficialBody() },
+    ComponentExampleScene("feedback_popover_menu", "PopoverMenu", "受控弹出层、菜单、下拉和提示", DemoCatalog.feedback, setOf("component", "overlay", "menu"), setOf("Popover", "Menu", "PixelMenuItem", "Dropdown", "Tooltip")) { OverlayControlsOfficialBody() },
+    componentScene("navigation_app_scaffold", "AppScaffold", "标题、body、bottomBar 的页面骨架", DemoCatalog.navigation, "AppScaffold") {
         Container(
             width = 100,
             height = 62,

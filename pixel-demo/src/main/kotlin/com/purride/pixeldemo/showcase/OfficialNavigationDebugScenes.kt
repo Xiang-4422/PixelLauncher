@@ -49,7 +49,7 @@ import com.purride.pixeldemo.scaffold.samplePanel
 
 val NavigationInputOfficialComponentScenes: List<DemoScene> = listOf(
     ComponentExampleScene(
-        "nav_focus_scope",
+        "input_focus_scope",
         "Focus",
         "焦点节点、范围和遍历",
         DemoCatalog.input,
@@ -64,7 +64,7 @@ val NavigationInputOfficialComponentScenes: List<DemoScene> = listOf(
         )
     },
     ComponentExampleScene(
-        "nav_form",
+        "input_form",
         "Form",
         "表单控制器、字段状态和校验",
         DemoCatalog.input,
@@ -78,7 +78,7 @@ val NavigationInputOfficialComponentScenes: List<DemoScene> = listOf(
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
         )
     },
-    componentScene("nav_semantics", "Semantics", "为子树导出语义标签和角色", DemoCatalog.input, "Semantics", extraApis = setOf("PixelSemanticRole", "PixelSemanticsNode")) {
+    componentScene("input_semantics", "Semantics", "为子树导出语义标签和角色", DemoCatalog.input, "Semantics", extraApis = setOf("PixelSemanticRole", "PixelSemanticsNode")) {
         Semantics(
             label = "demo button",
             role = PixelSemanticRole.BUTTON,
