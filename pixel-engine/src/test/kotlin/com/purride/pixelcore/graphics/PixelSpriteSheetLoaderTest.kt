@@ -102,6 +102,30 @@ class PixelSpriteSheetLoaderTest {
     }
 
     @Test
+    fun parseAtlasDefinitionDefaultsSourcePivotScaleAndVersionForLegacyFrames() {
+        val definition = PixelSpriteSheetJsonLoader.parseAtlasDefinition(
+            """
+            {
+              "bitmap": "sprites/runner.png",
+              "frames": [
+                {"left": 2, "top": 3, "width": 4, "height": 5}
+              ]
+            }
+            """.trimIndent(),
+        )
+        val frame = definition.frames.single()
+
+        assertEquals(1, definition.version)
+        assertEquals(1, definition.scale)
+        assertEquals(4, frame.sourceWidth)
+        assertEquals(5, frame.sourceHeight)
+        assertEquals(0, frame.trimLeft)
+        assertEquals(0, frame.trimTop)
+        assertEquals(0, frame.pivotX)
+        assertEquals(0, frame.pivotY)
+    }
+
+    @Test
     fun loadAtlasRetainsMetadataWithoutChangingLegacySheetRegions() {
         val bitmap = PixelBitmap(width = 8, height = 8, pixels = IntArray(64))
         val atlas = PixelSpriteSheetJsonLoader.loadAtlas(
@@ -151,6 +175,18 @@ class PixelSpriteSheetLoaderTest {
             error("out-of-bounds trim should fail")
         } catch (error: PixelSpriteSheetLoadException) {
             assertTrue(error.message.orEmpty().contains("sourceWidth"))
+        }
+    }
+
+    @Test
+    fun parseAtlasRejectsNonPositiveScale() {
+        try {
+            PixelSpriteSheetJsonLoader.parseAtlasDefinition(
+                """{"version":2,"bitmap":"runner.png","scale":0,"frames":[{"left":0,"top":0,"width":1,"height":1}]}""",
+            )
+            error("non-positive scale should fail")
+        } catch (error: PixelSpriteSheetLoadException) {
+            assertTrue(error.message.orEmpty().contains("scale"))
         }
     }
 }

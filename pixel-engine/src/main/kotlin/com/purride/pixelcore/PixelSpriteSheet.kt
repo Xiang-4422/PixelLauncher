@@ -1,8 +1,6 @@
 package com.purride.pixelcore
 
-/**
- * Rectangular region inside a [PixelBitmap].
- */
+/** [PixelBitmap] 内的一块矩形区域，用于描述 sprite sheet 单帧。 */
 public data class PixelBitmapRegion(
     val left: Int,
     val top: Int,
@@ -17,9 +15,7 @@ public data class PixelBitmapRegion(
     }
 }
 
-/**
- * Immutable sprite sheet backed by an in-memory [PixelBitmap].
- */
+/** 基于内存 [PixelBitmap] 的不可变 sprite sheet。 */
 public data class PixelSpriteSheet(
     val bitmap: PixelBitmap,
     val frames: List<PixelBitmapRegion>,

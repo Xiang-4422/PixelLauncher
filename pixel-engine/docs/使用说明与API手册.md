@@ -1026,6 +1026,67 @@ scrollController.jumpToEnd(listState)
 | `PixelGlyphPackAssetLoader` | 字形包加载 |
 | `PixelFontEngine` | 字形查询、缓存和绘制 |
 
+#### Sprite sheet schema
+
+`PixelSpriteSheetJsonLoader` 读取 SDK 侧 sprite sheet JSON。它不负责加载 bitmap 文件；调用方需要先通过 `PixelBitmapAssetLoader`、`PixelBitmapResourceLoader` 或自定义加载器拿到 `PixelBitmap`，再调用 `load(json, bitmap)` 或 `loadAtlas(json, bitmap)`。
+
+v1 简单 sheet schema：
+
+```json
+{
+  "version": 1,
+  "bitmap": "sprites/runner.png",
+  "metadata": {
+    "name": "runner",
+    "fps": "8"
+  },
+  "frames": [
+    { "left": 0, "top": 0, "width": 8, "height": 8 },
+    { "left": 8, "top": 0, "width": 8, "height": 8 }
+  ]
+}
+```
+
+v2 atlas schema：
+
+```json
+{
+  "version": 2,
+  "bitmap": "sprites/runner.png",
+  "scale": 2,
+  "frames": [
+    {
+      "left": 0,
+      "top": 0,
+      "width": 6,
+      "height": 8,
+      "sourceWidth": 10,
+      "sourceHeight": 12,
+      "trimLeft": 2,
+      "trimTop": 3,
+      "pivotX": 5,
+      "pivotY": 12
+    }
+  ]
+}
+```
+
+字段约束：
+
+- `version` 支持 1 或 2；未声明时按 1 处理。
+- `bitmap` 是调用方资源路径或资源 id，不能为空。
+- `metadata` 只接受字符串键值对；engine 不解释这些字段。
+- `frames` 必须非空。
+- 每帧 `left/top` 必须大于等于 0，`width/height` 必须大于 0。
+- `PixelSpriteSheet` 构建时会校验每帧不能越过传入 bitmap 的边界。
+- v2 atlas 的 `sourceWidth/sourceHeight` 默认等于裁剪后的 `width/height`，用于记录裁剪前原始帧尺寸。
+- `trimLeft/trimTop` 默认 0，且裁剪区域不能越过 `sourceWidth/sourceHeight`。
+- `pivotX/pivotY` 默认 0，允许落在 `0..sourceWidth` 和 `0..sourceHeight` 范围内。
+- `scale` 默认 1，必须大于 0。
+- 解析或构建失败统一抛出 `PixelSpriteSheetLoadException`。
+
+`parseDefinition(json)` 会把 atlas metadata 降级成 `PixelSpriteSheetDefinition.frames` 的矩形列表；需要保留 trim、pivot、scale 时使用 `parseAtlasDefinition(json)` 或 `loadAtlas(json, bitmap)`。
+
 #### 资源 manifest 与 catalog
 
 `PixelResourceManifestJsonLoader` 是 SDK 侧资源清单入口，用于把调用方打包在 assets 或 raw 目录中的 JSON 转成稳定的资源定义。当前有两个解析入口：
