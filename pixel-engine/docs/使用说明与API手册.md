@@ -20,6 +20,18 @@ dependencies {
 }
 ```
 
+如果按 SDK 包消费本地发布产物：
+
+```kotlin
+repositories {
+    mavenLocal()
+}
+
+dependencies {
+    implementation("com.purride:pixel-engine:0.1.0-SNAPSHOT")
+}
+```
+
 常用 import：
 
 ```kotlin
@@ -36,6 +48,21 @@ import com.purride.pixelui.gesture.*
 import com.purride.pixelui.advanced.*
 import com.purride.pixelui.widgets.navigation.*
 ```
+
+### 主流程覆盖矩阵
+
+| 主流程 | 文档位置 |
+|---|---|
+| SDK 依赖与 import | `1. 快速接入` |
+| Android Activity 宿主 | `2. 最小 Activity` |
+| 宿主配置、背景、字体和手势策略 | `3. 宿主配置` |
+| 状态、Controller 和受控组件 | `4. 状态管理` |
+| 颜色、字体、主题和字形包 | `5. 颜色、字体和主题` |
+| 错误边界、Overlay、Back、Insets、Lifecycle、Saved State、Accessibility | `6. 常见页面模式` |
+| 布局、文本、输入、表单、导航、动画和组件速查 | `7. API 速查` |
+| bitmap、sprite、resource manifest、cache 和资源打包 | `7. API 速查 / pixelcore 常用类型` |
+| 自定义 RenderObject | `8. 自定义 RenderObject` |
+| SDK 离屏测试和发布 smoke | `9. 测试` |
 
 ## 2. 最小 Activity
 
