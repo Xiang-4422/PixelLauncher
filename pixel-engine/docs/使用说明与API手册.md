@@ -326,15 +326,44 @@ PixelBackHandler(
 `setWindowInsets` / `setViewInsets`。
 
 ```kotlin
-SafeArea(
-    minimum = PixelWindowInsets(bottom = 1),
-    child = Column(
-        children = listOf(
-            Text("TITLE"),
-            Expanded(child = content),
-        ),
+val setup = createPixelHostSetup(
+    context = this,
+    config = PixelHostSetupConfig(
+        content = {
+            SafeArea(
+                minimum = PixelWindowInsets(bottom = 1),
+                child = Column(
+                    children = listOf(
+                        Text("TITLE"),
+                        Expanded(child = AppRoot()),
+                    ),
+                ),
+            )
+        },
     ),
 )
+setContentView(setup.rootView)
+```
+
+Fragment 接入时同样把 `setup.rootView` 作为返回 view；`PixelHostView` 会继续接收
+Android window inset 回调。
+
+```kotlin
+override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?,
+): View {
+    setup = createPixelHostSetup(
+        context = requireContext(),
+        config = PixelHostSetupConfig(
+            content = {
+                SafeArea(child = AppRoot())
+            },
+        ),
+    )
+    return setup.rootView
+}
 ```
 
 ### Lifecycle
