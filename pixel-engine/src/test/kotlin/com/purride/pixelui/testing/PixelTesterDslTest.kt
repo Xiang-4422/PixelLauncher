@@ -11,6 +11,7 @@ import com.purride.pixelui.ConfirmDialog
 import com.purride.pixelui.ConstrainedBox
 import com.purride.pixelui.Container
 import com.purride.pixelui.Dialog
+import com.purride.pixelui.Dropdown
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EmptyState
 import com.purride.pixelui.Badge
@@ -24,6 +25,7 @@ import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.ListViewSeparatedBuilder
+import com.purride.pixelui.Menu
 import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
@@ -39,6 +41,8 @@ import com.purride.pixelui.PixelInspectorTargetSnapshot
 import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
+import com.purride.pixelui.PixelMenuItem
+import com.purride.pixelui.Popover
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.RefreshIndicator
 import com.purride.pixelui.Row
@@ -70,9 +74,11 @@ import com.purride.pixelui.TextButton
 import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
+import com.purride.pixelui.Tooltip
 import com.purride.pixelui.ValueAdjuster
 import com.purride.pixelui.Visibility
 import com.purride.pixelui.Wrap
+import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -1566,6 +1572,61 @@ class PixelTesterDslTest {
 
         assertTrue(tester.exists(find.byText("A")))
         assertTrue(tester.exists(find.byText("OPEN")))
+        tester.dispose()
+    }
+
+    @Test
+    fun overlayControlsRenderAndInvokeCallbacks() {
+        val tester = PixelTester()
+        var menuSelection = ""
+        var toggles = 0
+
+        tester.pumpWidget(
+            widget = Column(
+                children = listOf(
+                    Popover(
+                        anchor = Text("ANCHOR"),
+                        content = Text("POP"),
+                        expanded = true,
+                        contentOffset = IntOffset(0, 8),
+                    ),
+                    Menu(
+                        items = listOf(
+                            PixelMenuItem(label = "COPY", onSelected = { menuSelection = "copy" }),
+                        ),
+                        key = "menu",
+                    ),
+                    Dropdown(
+                        label = "MODE",
+                        selectedText = "A",
+                        expanded = true,
+                        onToggle = { toggles += 1 },
+                        items = listOf(
+                            PixelMenuItem(label = "A", onSelected = { menuSelection = "a" }),
+                            PixelMenuItem(label = "B", onSelected = { menuSelection = "b" }),
+                        ),
+                        key = "drop",
+                    ),
+                    Tooltip(
+                        message = "HELP",
+                        visible = true,
+                        child = Text("TARGET"),
+                    ),
+                ),
+                spacing = 10,
+            ),
+            logicalWidth = 120,
+            logicalHeight = 120,
+        )
+
+        assertTrue(tester.exists(find.byText("POP")))
+        assertTrue(tester.exists(find.byText("HELP")))
+        tester.tap(find.byKey("menu-0"))
+        assertEquals("copy", menuSelection)
+        tester.tap(find.byKey("drop-anchor"))
+        assertEquals(1, toggles)
+        tester.tap(find.byKey("drop-menu-1"))
+        assertEquals("b", menuSelection)
         tester.dispose()
     }
 

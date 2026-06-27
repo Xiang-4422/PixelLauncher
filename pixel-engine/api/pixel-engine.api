@@ -743,6 +743,11 @@ com.purride.pixelui public class AsyncBuilder<T>(
 com.purride.pixelui public val source: PixelAsyncSource<T>,
 com.purride.pixelui public val initial: PixelAsyncSnapshot<T> = PixelAsyncSnapshot.Loading,
 com.purride.pixelui public val builder: (BuildContext, PixelAsyncSnapshot<T>) -> Widget,
+com.purride.pixelui public fun Popover(
+com.purride.pixelui public data class PixelMenuItem(
+com.purride.pixelui public fun Menu(
+com.purride.pixelui public fun Dropdown(
+com.purride.pixelui public fun Tooltip(
 com.purride.pixelui public data class PixelButtonStyle(
 com.purride.pixelui public companion object
 com.purride.pixelui public val Default: PixelButtonStyle = PixelButtonStyle()

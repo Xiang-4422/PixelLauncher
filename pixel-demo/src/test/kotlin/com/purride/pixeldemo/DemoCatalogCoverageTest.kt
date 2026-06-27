@@ -91,6 +91,8 @@ class DemoCatalogCoverageTest {
         assertSearchContains("KeyboardAvoidingView", "layout_ime_avoiding")
         assertSearchContains("Toast", "controls_dialog")
         assertSearchContains("ToastQueue", "controls_overlay_tools")
+        assertSearchContains("Dropdown", "controls_popover_menu")
+        assertSearchContains("Tooltip", "controls_popover_menu")
         assertSearchContains("LoadStateView", "controls_load_state_view")
         assertSearchContains("ListViewBuilder", "scroll_list_view")
         assertSearchContains("GridViewBuilder", "scroll_grid_view")
@@ -230,6 +232,7 @@ class DemoCatalogCoverageTest {
                 "controls_badge",
                 "controls_dialog",
                 "controls_overlay_tools",
+                "controls_popover_menu",
                 "scroll_single_child_scroll_view",
                 "scroll_list_view",
                 "scroll_grid_view",

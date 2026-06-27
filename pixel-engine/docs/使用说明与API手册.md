@@ -807,6 +807,22 @@ queue.enqueue("SAVED")
 queue.dismissCurrent()
 ```
 
+`Popover`、`Menu`、`Dropdown` 和 `Tooltip` 都是受控组件。展开状态、选中值、关闭时机和定位 offset
+由调用方维护；组件不做 hover、自动测量、屏幕边缘避让或全局 overlay 管理。
+
+```kotlin
+Dropdown(
+    label = "MODE",
+    selectedText = mode,
+    expanded = menuOpen,
+    onToggle = { menuOpen = !menuOpen },
+    items = listOf(
+        PixelMenuItem("A", onSelected = { mode = "A"; menuOpen = false }),
+        PixelMenuItem("B", onSelected = { mode = "B"; menuOpen = false }),
+    ),
+)
+```
+
 `EmptyState` 是居中的空状态组合组件，只负责标题、说明、可选图标和 action 的像素布局；
 空数据判断、加载状态和重试动作由调用方维护。
 
@@ -1048,6 +1064,11 @@ Form(
 | `PixelToastQueueItem` | toast 队列条目 | `id`、`message`、`fillColor`、`textStyle` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
 | `ModalBarrier` | Stack 内模态遮罩 | `color`、`dismissible`、`onDismiss` |
+| `Popover` | 受控弹出层 | `anchor`、`content`、`expanded`、`contentOffset` |
+| `Menu` | 纵向菜单 | `items`、`enabled` |
+| `PixelMenuItem` | 菜单条目 | `label`、`onSelected`、`enabled`、`shortcut` |
+| `Dropdown` | 受控下拉菜单 | `label`、`selectedText`、`expanded`、`items` |
+| `Tooltip` | 受控提示浮层 | `message`、`visible`、`child` |
 | `EmptyState` | 居中空状态 | `title`、`message`、`icon`、`action` |
 | `LoadStateView` | loading/empty/error/content 组合视图 | `snapshot`、`content`、`isEmpty` |
 | `PixelErrorPanel` | 错误边界 fallback | `message`、`color` |

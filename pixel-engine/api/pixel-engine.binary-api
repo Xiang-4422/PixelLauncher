@@ -1124,6 +1124,16 @@ public final class com.purride.pixelui.MediaQueryData {
   public int hashCode();
   public boolean equals(java.lang.Object);
 }
+public final class com.purride.pixelui.OverlayControlsKt {
+  public static final com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget Popover$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Menu-I8cHwIQ(java.util.List<com.purride.pixelui.PixelMenuItem>, boolean, int, int, java.lang.Object);
+  public static com.purride.pixelui.Widget Menu-I8cHwIQ$default(java.util.List, boolean, int, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Dropdown(java.lang.String, java.lang.String, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.util.List<com.purride.pixelui.PixelMenuItem>, boolean, com.purride.pixelui.animation.IntOffset, java.lang.Object);
+  public static com.purride.pixelui.Widget Dropdown$default(java.lang.String, java.lang.String, boolean, kotlin.jvm.functions.Function0, java.util.List, boolean, com.purride.pixelui.animation.IntOffset, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Tooltip-dr5woJE(java.lang.String, boolean, com.purride.pixelui.Widget, com.purride.pixelui.animation.IntOffset, int, int, com.purride.pixelui.PixelTextStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Tooltip-dr5woJE$default(java.lang.String, boolean, com.purride.pixelui.Widget, com.purride.pixelui.animation.IntOffset, int, int, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
+}
 public final class com.purride.pixelui.PixelAsyncKt {
   public static final <T> com.purride.pixelui.PixelAsyncSource<T> pixelAsyncSourceOf(T);
 }
@@ -1783,6 +1793,23 @@ public final class com.purride.pixelui.PixelKeyEvent {
   public final java.lang.Character component2();
   public final com.purride.pixelui.PixelKeyEvent copy(com.purride.pixelui.PixelKey, java.lang.Character);
   public static com.purride.pixelui.PixelKeyEvent copy$default(com.purride.pixelui.PixelKeyEvent, com.purride.pixelui.PixelKey, java.lang.Character, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.PixelMenuItem {
+  public com.purride.pixelui.PixelMenuItem(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean, java.lang.String);
+  public com.purride.pixelui.PixelMenuItem(java.lang.String, kotlin.jvm.functions.Function0, boolean, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getLabel();
+  public final kotlin.jvm.functions.Function0<kotlin.Unit> getOnSelected();
+  public final boolean getEnabled();
+  public final java.lang.String getShortcut();
+  public final java.lang.String component1();
+  public final kotlin.jvm.functions.Function0<kotlin.Unit> component2();
+  public final boolean component3();
+  public final java.lang.String component4();
+  public final com.purride.pixelui.PixelMenuItem copy(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean, java.lang.String);
+  public static com.purride.pixelui.PixelMenuItem copy$default(com.purride.pixelui.PixelMenuItem, java.lang.String, kotlin.jvm.functions.Function0, boolean, java.lang.String, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);

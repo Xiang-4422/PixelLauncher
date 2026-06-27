@@ -36,6 +36,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `AnimatedVisibility` for animated child/replacement visibility changes.
 - `FocusTraversalGroup` for local focus traversal policy scopes.
 - `ShortcutHint` for visual keyboard/gamepad shortcut hints.
+- `Popover`, `Menu`, `PixelMenuItem`, `Dropdown`, and `Tooltip` for controlled overlay menus and hints.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

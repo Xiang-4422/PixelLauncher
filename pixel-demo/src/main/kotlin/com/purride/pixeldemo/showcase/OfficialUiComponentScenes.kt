@@ -25,6 +25,7 @@ import com.purride.pixelui.DecoratedBox
 import com.purride.pixelui.Dialog
 import com.purride.pixelui.Directionality
 import com.purride.pixelui.Divider
+import com.purride.pixelui.Dropdown
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.EdgeInsetsDirectional
 import com.purride.pixelui.Expanded
@@ -39,6 +40,7 @@ import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Menu
 import com.purride.pixelui.ModalBarrier
 import com.purride.pixelui.Opacity
 import com.purride.pixelui.OptionList
@@ -50,12 +52,14 @@ import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelIconData
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelAsyncSnapshot
+import com.purride.pixelui.PixelMenuItem
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelToastQueueController
 import com.purride.pixelui.PixelWindowInsets
+import com.purride.pixelui.Popover
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.PositionedDirectional
 import com.purride.pixelui.PositionedFill
@@ -85,6 +89,7 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Toast
 import com.purride.pixelui.ToastQueue
+import com.purride.pixelui.Tooltip
 import com.purride.pixelui.Transform
 import com.purride.pixelui.ValueAdjuster
 import com.purride.pixelui.Visibility
@@ -476,6 +481,7 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
         )
     },
     ComponentExampleScene("controls_overlay_tools", "OverlayTools", "模态遮罩与 toast 队列基础能力", DemoCatalog.feedback, setOf("component", "overlay", "toast"), setOf("ModalBarrier", "ToastQueue", "PixelToastQueueController")) { ToastQueueOfficialBody() },
+    ComponentExampleScene("controls_popover_menu", "PopoverMenu", "受控弹出层、菜单、下拉和提示", DemoCatalog.feedback, setOf("component", "overlay", "menu"), setOf("Popover", "Menu", "PixelMenuItem", "Dropdown", "Tooltip")) { OverlayControlsOfficialBody() },
     componentScene("controls_app_scaffold", "AppScaffold", "标题、body、bottomBar 的页面骨架", DemoCatalog.navigation, "AppScaffold") {
         Container(
             width = 100,
@@ -729,6 +735,62 @@ private class ToastQueueOfficialBody(
                     Container(width = 92, height = 38, borderColor = Muted, child = Center(child = Text("CONTENT", style = TextStyle(color = Muted)))),
                     ModalBarrier(color = PixelColor.fromArgb(90, 0, 0, 0)),
                     ToastQueue(controller = queue),
+                ),
+            )
+    }
+}
+
+private class OverlayControlsOfficialBody(
+    override val key: Any? = null,
+) : StatefulWidget(key = key) {
+    override fun createState(): State<out StatefulWidget> = OverlayControlsOfficialState()
+
+    private class OverlayControlsOfficialState : State<OverlayControlsOfficialBody>() {
+        private var expanded = true
+        private var selected = "A"
+
+        override fun build(context: BuildContext): Widget =
+            officialBody(
+                listOf(
+                    samplePanel(
+                        title = "Popover",
+                        color = Accent,
+                        child = Popover(
+                            anchor = Text("ANCHOR", style = TextStyle(color = Accent)),
+                            content = Container(padding = EdgeInsets.all(2), fillColor = PixelColor.Black, borderColor = Accent, child = Text("POP", style = TextStyle(color = Accent))),
+                            expanded = true,
+                            contentOffset = IntOffset(0, 10),
+                        ),
+                    ),
+                    samplePanel(
+                        title = "Menu",
+                        color = Cyan,
+                        child = Menu(
+                            items = listOf(
+                                PixelMenuItem(label = "COPY", shortcut = "A", onSelected = {}),
+                                PixelMenuItem(label = "PASTE", shortcut = "B", onSelected = {}),
+                            ),
+                        ),
+                    ),
+                    samplePanel(
+                        title = "Dropdown",
+                        color = Green,
+                        child = Dropdown(
+                            label = "MODE",
+                            selectedText = selected,
+                            expanded = expanded,
+                            onToggle = { expanded = !expanded; setState {} },
+                            items = listOf(
+                                PixelMenuItem(label = "A", onSelected = { selected = "A"; expanded = false; setState {} }),
+                                PixelMenuItem(label = "B", onSelected = { selected = "B"; expanded = false; setState {} }),
+                            ),
+                        ),
+                    ),
+                    samplePanel(
+                        title = "Tooltip",
+                        color = Pink,
+                        child = Tooltip(message = "HELP", visible = true, child = Text("TARGET", style = TextStyle(color = Pink))),
+                    ),
                 ),
             )
     }
