@@ -12,6 +12,8 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GridViewBuilder
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelNavigator
+import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelPoint
 import com.purride.pixelui.PixelRoute
 import com.purride.pixelui.Polygon
@@ -29,6 +31,7 @@ import com.purride.pixelui.host.ManualFrameScheduler
 import com.purride.pixelui.internal.PixelUiRuntime
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelTextFieldState
+import com.purride.pixelui.widgets.animated.AnimatedSprite
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -58,11 +61,13 @@ class EnginePerformanceSmokeTest {
         var lastWidth = 0
         var lastHeight = 0
         try {
-            repeat(WARMUP_FRAMES) {
+            repeat(WARMUP_FRAMES) { frame ->
+                scene.beforeFrame(frame)
                 runtime.render(scene.build(), scene.width, scene.height)
             }
             val totalNanos = measureNanoTime {
-                repeat(SAMPLE_FRAMES) {
+                repeat(SAMPLE_FRAMES) { frame ->
+                    scene.beforeFrame(WARMUP_FRAMES + frame)
                     val result = runtime.render(scene.build(), scene.width, scene.height)
                     lastWidth = result.buffer.width
                     lastHeight = result.buffer.height
@@ -113,6 +118,7 @@ class EnginePerformanceSmokeTest {
         val name: String,
         val width: Int,
         val height: Int,
+        val beforeFrame: (Int) -> Unit = { },
         val build: () -> Widget,
     )
 
@@ -130,7 +136,7 @@ class EnginePerformanceSmokeTest {
     }
 
     private val scenes: List<PerfScene> = listOf(
-        PerfScene(name = "grid_scrollbar", width = 96, height = 64) {
+        PerfScene(name = "list_scroll", width = 96, height = 64) {
             val controller = PixelListController()
             val state = controller.create(initialScrollOffsetPx = 24f)
             Scrollbar(
@@ -154,7 +160,7 @@ class EnginePerformanceSmokeTest {
                 ),
             )
         },
-        PerfScene(name = "textfield_multiline", width = 96, height = 32) {
+        PerfScene(name = "text_input", width = 96, height = 32) {
             val controller = TextEditingController()
             val state = PixelTextFieldState(
                 initialText = "ALPHA\nBRAVO CHARLIE\nDELTA",
@@ -170,7 +176,19 @@ class EnginePerformanceSmokeTest {
                 maxLines = 3,
             )
         },
-        PerfScene(name = "sprite_shapes", width = 96, height = 24) {
+        run {
+            val scheduler = ManualFrameScheduler()
+            val vsync = PixelTickerProvider(scheduler)
+            PerfScene(
+                name = "animation",
+                width = 24,
+                height = 8,
+                beforeFrame = { frame -> scheduler.advanceFrame((frame.toLong() + 1L) * 83_333_333L) },
+            ) {
+                AnimatedSprite(sheet = sampleSpriteSheet(), fps = 12, vsync = vsync)
+            }
+        },
+        PerfScene(name = "graphics_primitives", width = 96, height = 24) {
             Row(
                 children = listOf(
                     Sprite(sheet = sampleSpriteSheet(), frameIndex = 1),
@@ -183,7 +201,7 @@ class EnginePerformanceSmokeTest {
                 spacing = 4,
             )
         },
-        PerfScene(name = "navigator_route", width = 96, height = 40) {
+        PerfScene(name = "page_transition", width = 96, height = 40) {
             PixelNavigator(
                 initialRoute = PixelRoute(
                     name = "home",
@@ -204,6 +222,19 @@ class EnginePerformanceSmokeTest {
                 ),
                 vsync = PixelTickerProvider(ManualFrameScheduler()),
             )
+        },
+        run {
+            val overlay = PixelOverlayController()
+            overlay.showSnackbar(
+                message = "QUEUED",
+                action = OutlinedButton("UNDO", onPressed = {}),
+            )
+            PerfScene(name = "overlay", width = 108, height = 46) {
+                PixelOverlayHost(
+                    controller = overlay,
+                    child = Text("HOME"),
+                )
+            }
         },
     )
 
