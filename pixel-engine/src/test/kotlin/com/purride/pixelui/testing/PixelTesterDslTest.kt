@@ -48,6 +48,7 @@ import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SelectionList
 import com.purride.pixelui.SectionList
 import com.purride.pixelui.SectionListSection
+import com.purride.pixelui.ShortcutHint
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Slidable
@@ -1550,6 +1551,21 @@ class PixelTesterDslTest {
 
         tester.tap(find.byKey("stepper-increase"))
         assertEquals(10, value)
+        tester.dispose()
+    }
+
+    @Test
+    fun shortcutHintRendersShortcutAndLabel() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = ShortcutHint(shortcut = "A", label = "OPEN"),
+            logicalWidth = 64,
+            logicalHeight = 24,
+        )
+
+        assertTrue(tester.exists(find.byText("A")))
+        assertTrue(tester.exists(find.byText("OPEN")))
         tester.dispose()
     }
 

@@ -400,6 +400,7 @@ com.purride.pixelui public fun setPrimaryFocus(node: FocusNode)
 com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean
 com.purride.pixelui public fun FocusScope(
+com.purride.pixelui public fun FocusTraversalGroup(
 com.purride.pixelui public fun Focus(
 com.purride.pixelui public typealias Validator<T> = (T) -> String?
 com.purride.pixelui public typealias FormValidator = (Map<String, Any?>) -> Map<String, String>
@@ -767,6 +768,7 @@ com.purride.pixelui public fun Tabs(
 com.purride.pixelui public fun SegmentedControl(
 com.purride.pixelui public fun ValueAdjuster(
 com.purride.pixelui public fun Stepper(
+com.purride.pixelui public fun ShortcutHint(
 com.purride.pixelui public fun ProgressBar(
 com.purride.pixelui public fun ActivityIndicator(
 com.purride.pixelui public fun <T> LoadStateView(

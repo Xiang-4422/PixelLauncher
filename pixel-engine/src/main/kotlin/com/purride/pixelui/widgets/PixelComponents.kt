@@ -578,6 +578,49 @@ public fun Stepper(
 }
 
 /**
+ * 像素风快捷键提示。
+ *
+ * 该组件只渲染快捷键和说明文本，不注册键盘事件；实际处理应放在 [Focus] 的 onKeyEvent
+ * 或宿主级快捷键分发中。
+ */
+public fun ShortcutHint(
+    shortcut: String,
+    label: String,
+    shortcutStyle: PixelTextStyle = PixelTextStyle.Default,
+    labelStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(160, 160, 160)),
+    key: Any? = null,
+): Widget {
+    return Row(
+        children = listOf(
+            Container(
+                padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
+                borderColor = PixelColor.White,
+                child = Text(
+                    shortcut,
+                    style = shortcutStyle,
+                    overflow = PixelTextOverflow.ELLIPSIS,
+                    softWrap = false,
+                    maxLines = 1,
+                    textAlign = TextAlign.CENTER,
+                ),
+                key = key?.let { "$it-shortcut" },
+            ),
+            Text(
+                label,
+                style = labelStyle,
+                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+                key = key?.let { "$it-label" },
+            ),
+        ),
+        spacing = 2,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+        key = key,
+    )
+}
+
+/**
  * 固定尺寸的水平进度条。
  *
  * [progress] 会在绘制前钳位到 `0f..1f`；业务侧仍应把它视为受控状态并保存真实进度。

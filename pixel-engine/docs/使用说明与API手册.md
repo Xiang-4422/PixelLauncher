@@ -1038,6 +1038,7 @@ Form(
 | `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease` |
 | `Tabs` | 标签页按钮组 | `labels`、`selectedIndex`、`onSelected` |
 | `SegmentedControl` | 分段选择 | `labels`、`selectedIndex`、`onSelected` |
+| `ShortcutHint` | 快捷键提示文本 | `shortcut`、`label` |
 | `Slidable` | 可滑出操作面板的行容器 | `child`、`startActionPane`、`endActionPane` |
 | `Dialog` | 居中对话框 | `title`、`content`、`actions` |
 | `ConfirmDialog` | 确认对话框组合组件 | `title`、`message`、`onConfirm`、`onCancel` |
@@ -1110,6 +1111,11 @@ SwipeRefreshScaffold(
 | `FormFieldState` | 单字段值和错误 | `value`、`errorText` |
 | `FocusNode` | 单点焦点 | `requestFocus`、`clearFocus` |
 | `FocusScope` / `FocusScopeNode` | 焦点域 | 方向遍历、IME next |
+| `FocusTraversalGroup` | 局部焦点遍历策略域 | `child`、`traversalPolicy`、`node` |
+
+`FocusTraversalGroup` 适合给一块控件设置局部遍历策略；默认内部持有 `FocusScopeNode`，
+需要跨页面保存焦点状态时再把 node 提升到业务层。`ShortcutHint` 只展示快捷键提示，
+实际按键处理仍放在 `Focus(onKeyEvent = ...)` 或宿主级分发里。
 
 ### 输入法与 TextField 宿主契约
 

@@ -8,7 +8,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Focus
 import com.purride.pixelui.FocusNode
-import com.purride.pixelui.FocusScope
+import com.purride.pixelui.FocusTraversalGroup
 import com.purride.pixelui.Form
 import com.purride.pixelui.FormController
 import com.purride.pixelui.FormField
@@ -54,7 +54,7 @@ val NavigationInputOfficialComponentScenes: List<DemoScene> = listOf(
         "焦点节点、范围和遍历",
         DemoCatalog.input,
         setOf("component", "focus"),
-        setOf("Focus", "FocusNode", "FocusScope", "ReadingOrderFocusTraversalPolicy", "PixelFocusDirection"),
+        setOf("Focus", "FocusNode", "FocusScope", "FocusTraversalGroup", "ReadingOrderFocusTraversalPolicy", "PixelFocusDirection"),
     ) {
         Column(
             children = listOf(FocusScopeOfficialBody(), FocusOfficialBody()),
@@ -143,7 +143,7 @@ private class FocusScopeOfficialBody(
             officialNavBody(
                 title = "FocusScope",
                 color = Cyan,
-                child = FocusScope(
+                child = FocusTraversalGroup(
                     node = scope,
                     traversalPolicy = ReadingOrderFocusTraversalPolicy,
                     child = Column(

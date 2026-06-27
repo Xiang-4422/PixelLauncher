@@ -87,6 +87,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("Stepper", "controls_value_adjuster")
         assertSearchContains("Switch", "controls_checkbox")
         assertSearchContains("SegmentedControl", "controls_tabs")
+        assertSearchContains("ShortcutHint", "controls_shortcut_hint")
         assertSearchContains("KeyboardAvoidingView", "layout_ime_avoiding")
         assertSearchContains("Toast", "controls_dialog")
         assertSearchContains("ToastQueue", "controls_overlay_tools")
@@ -101,6 +102,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("AnimatedVisibility", "animation_animated_container")
         assertSearchContains("AnimatedBuilder", "animation_tween_animation_builder")
         assertSearchContains("FocusNode", "nav_focus_scope")
+        assertSearchContains("FocusTraversalGroup", "nav_focus_scope")
         assertSearchContains("FormFieldState", "nav_form")
         assertSearchContains("PixelInspectorBoundsOverlay", "debug_inspector_panel")
         assertSearchContains("PixelResourceCache", "deep_resources_sprites")
@@ -220,6 +222,7 @@ class DemoCatalogCoverageTest {
                 "controls_value_adjuster",
                 "controls_checkbox",
                 "controls_tabs",
+                "controls_shortcut_hint",
                 "controls_slider",
                 "controls_progress_bar",
                 "controls_activity_indicator",

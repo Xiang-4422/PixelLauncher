@@ -67,6 +67,7 @@ import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SelectionList
 import com.purride.pixelui.SectionList
 import com.purride.pixelui.SectionListSection
+import com.purride.pixelui.ShortcutHint
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Snackbar
@@ -409,6 +410,16 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
                 TabsOfficialBody(),
                 SegmentedOfficialBody(),
             ),
+        )
+    },
+    componentScene("controls_shortcut_hint", "ShortcutHint", "只渲染快捷键提示，不绑定事件", DemoCatalog.controls, "ShortcutHint") {
+        Column(
+            children = listOf(
+                ShortcutHint(shortcut = "A", label = "OPEN", shortcutStyle = TextStyle(color = Accent)),
+                ShortcutHint(shortcut = "B", label = "BACK", shortcutStyle = TextStyle(color = Cyan)),
+            ),
+            spacing = 2,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
         )
     },
     ComponentExampleScene("controls_slider", "Slider", "连续值拖动控件", DemoCatalog.controls, setOf("component", "slider"), setOf("Slider")) { SliderOfficialBody(showProgress = false) },

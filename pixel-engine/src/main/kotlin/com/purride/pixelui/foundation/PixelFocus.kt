@@ -244,6 +244,25 @@ public fun FocusScope(
     return FocusScopeWidget(node = node, child = child, key = key)
 }
 
+/**
+ * 为子树提供独立的焦点遍历策略。
+ *
+ * 默认会在组件 state 内持有一个 [FocusScopeNode]；如果业务需要跨页面保存焦点状态，可显式传入 [node]。
+ */
+public fun FocusTraversalGroup(
+    child: Widget,
+    traversalPolicy: FocusTraversalPolicy = ReadingOrderFocusTraversalPolicy,
+    node: FocusScopeNode? = null,
+    key: Any? = null,
+): Widget {
+    return FocusTraversalGroupWidget(
+        child = child,
+        traversalPolicy = traversalPolicy,
+        node = node,
+        key = key,
+    )
+}
+
 public fun Focus(
     child: Widget,
     node: FocusNode = FocusNode(),
@@ -263,6 +282,28 @@ private class FocusScopeWidget(
     override val child: Widget,
     override val key: Any?,
 ) : InheritedNotifier<FocusScopeNode>(notifier = node, child = child, key = key)
+
+private class FocusTraversalGroupWidget(
+    val child: Widget,
+    val traversalPolicy: FocusTraversalPolicy,
+    val node: FocusScopeNode?,
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    override fun createState(): State<out StatefulWidget> = FocusTraversalGroupState()
+}
+
+private class FocusTraversalGroupState : State<FocusTraversalGroupWidget>() {
+    private val ownedNode = FocusScopeNode()
+
+    override fun build(context: BuildContext): Widget {
+        return FocusScope(
+            child = widget.child,
+            node = widget.node ?: ownedNode,
+            traversalPolicy = widget.traversalPolicy,
+            key = widget.key,
+        )
+    }
+}
 
 private class FocusWidget(
     val node: FocusNode,

@@ -9,6 +9,7 @@ import com.purride.pixelui.FocusNode
 import com.purride.pixelui.PixelFocusScrollTarget
 import com.purride.pixelui.FocusScope
 import com.purride.pixelui.FocusScopeNode
+import com.purride.pixelui.FocusTraversalGroup
 import com.purride.pixelui.GridFocusTraversalPolicy
 import com.purride.pixelui.GridView
 import com.purride.pixelui.ListView
@@ -173,6 +174,38 @@ class PixelFocusTest {
             assertTrue(PixelFocusManager.dispatchKeyEvent(com.purride.pixelui.PixelKeyEvent(PixelKey.TAB)))
             assertTrue(third.isFocused)
             assertFalse(disabled.isFocused)
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    @Test
+    fun focusTraversalGroupAppliesLocalPolicy() {
+        val first = FocusNode("first")
+        val second = FocusNode("second")
+        val third = FocusNode("third")
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                FocusTraversalGroup(
+                    traversalPolicy = GridFocusTraversalPolicy(columns = 2),
+                    child = Column(
+                        children = listOf(
+                            Focus(node = first, autofocus = true, child = Text("FIRST")),
+                            Focus(node = second, child = Text("SECOND")),
+                            Focus(node = third, child = Text("THIRD")),
+                        ),
+                    ),
+                ),
+                logicalWidth = 72,
+                logicalHeight = 36,
+            )
+
+            assertTrue(first.isFocused)
+            assertTrue(tester.pressKey(PixelKey.ARROW_RIGHT))
+            assertTrue(second.isFocused)
+            assertFalse(tester.pressKey(PixelKey.ARROW_RIGHT))
+            assertTrue(second.isFocused)
         } finally {
             tester.dispose()
         }

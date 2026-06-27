@@ -1278,6 +1278,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget ValueAdjuster$default(java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, boolean, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Stepper(int, kotlin.ranges.IntRange, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, int, java.lang.String, java.lang.String, boolean, int, java.lang.Object);
   public static com.purride.pixelui.Widget Stepper$default(int, kotlin.ranges.IntRange, kotlin.jvm.functions.Function1, int, java.lang.String, java.lang.String, boolean, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ShortcutHint(java.lang.String, java.lang.String, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget ShortcutHint$default(java.lang.String, java.lang.String, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ProgressBar-WmmbFQo(float, int, int, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget ProgressBar-WmmbFQo$default(float, int, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ActivityIndicator-ShX4CGY(int, int, java.lang.Object);
@@ -1336,6 +1338,8 @@ public final class com.purride.pixelui.PixelFocusDirection extends java.lang.Enu
 public final class com.purride.pixelui.PixelFocusKt {
   public static final com.purride.pixelui.Widget FocusScope(com.purride.pixelui.Widget, com.purride.pixelui.FocusScopeNode, com.purride.pixelui.FocusTraversalPolicy, java.lang.Object);
   public static com.purride.pixelui.Widget FocusScope$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusScopeNode, com.purride.pixelui.FocusTraversalPolicy, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget FocusTraversalGroup(com.purride.pixelui.Widget, com.purride.pixelui.FocusTraversalPolicy, com.purride.pixelui.FocusScopeNode, java.lang.Object);
+  public static com.purride.pixelui.Widget FocusTraversalGroup$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusTraversalPolicy, com.purride.pixelui.FocusScopeNode, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Focus(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelKeyEvent, java.lang.Boolean>, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object);
   public static com.purride.pixelui.Widget Focus$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object, int, java.lang.Object);
 }
