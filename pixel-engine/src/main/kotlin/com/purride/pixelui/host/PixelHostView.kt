@@ -98,10 +98,10 @@ public class PixelHostView @JvmOverloads constructor(
         }
 
     /**
-     * Current system/window insets in pixel-engine logical coordinates.
+     * 当前系统栏 / 窗口 inset，单位是 pixel-engine 逻辑像素。
      *
-     * Android host callbacks update this automatically when [onApplyWindowInsets] runs.
-     * Tests or custom hosts may set it directly or call [setWindowInsets].
+     * Android 宿主会在 [onApplyWindowInsets] 中自动更新；测试或自定义宿主可直接
+     * 赋值，或调用 [setWindowInsets]。
      */
     public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
         set(value) {
@@ -111,10 +111,10 @@ public class PixelHostView @JvmOverloads constructor(
         }
 
     /**
-     * Current obscuring insets in pixel-engine logical coordinates.
+     * 当前临时遮挡 inset，单位是 pixel-engine 逻辑像素。
      *
-     * This is separate from [windowInsets]: [windowInsets] models persistent system safe areas,
-     * while [viewInsets] models transient occlusion such as the IME keyboard.
+     * 它和 [windowInsets] 分开：后者表示系统栏等稳定安全区，前者表示 IME 键盘等
+     * 临时遮挡。
      */
     public var viewInsets: PixelWindowInsets = PixelWindowInsets.Zero
         set(value) {
@@ -323,10 +323,10 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     /**
-     * Sets logical window insets manually.
+     * 手动设置逻辑窗口 inset。
      *
-     * Android hosts usually rely on [onApplyWindowInsets]; tests and custom hosts can use this
-     * method to inject already-converted logical insets.
+     * Android 宿主通常依赖 [onApplyWindowInsets] 自动注入；测试或自定义宿主可用它
+     * 注入已转换好的逻辑 inset。
      */
     public fun setWindowInsets(
         left: Int = 0,
@@ -338,10 +338,10 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     /**
-     * Sets logical view insets manually.
+     * 手动设置逻辑视图遮挡 inset。
      *
-     * Android hosts usually rely on [onApplyWindowInsets]; tests and custom hosts can use this
-     * method to inject already-converted IME or transient occlusion insets.
+     * Android 宿主通常依赖 [onApplyWindowInsets] 自动注入；测试或自定义宿主可用它
+     * 注入已转换好的 IME 或临时遮挡 inset。
      */
     public fun setViewInsets(
         left: Int = 0,

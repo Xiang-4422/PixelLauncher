@@ -307,6 +307,35 @@ PixelBackHandler(
 )
 ```
 
+### Window Insets
+
+`PixelHostView` 会把 Android system bars 和 IME inset 转换成 pixel-engine 逻辑像素，
+并通过 `MediaQuery` 注入 widget 树。
+
+| API | 含义 |
+|---|---|
+| `MediaQuery.of(context).viewPadding` | 系统栏等稳定安全区 |
+| `MediaQuery.of(context).viewInsets` | IME 等临时遮挡 |
+| `MediaQuery.of(context).padding` | `viewPadding` 扣除 `viewInsets` 后的安全区 |
+| `SafeArea` | 把 `padding` 转成普通布局 padding |
+| `PixelHostView.setWindowInsets` | 测试或自定义宿主手动注入稳定安全区 |
+| `PixelHostView.setViewInsets` | 测试或自定义宿主手动注入临时遮挡 |
+
+普通 Activity 不需要手动设置 inset；系统回调会自动更新。自定义宿主或测试才使用
+`setWindowInsets` / `setViewInsets`。
+
+```kotlin
+SafeArea(
+    minimum = PixelWindowInsets(bottom = 1),
+    child = Column(
+        children = listOf(
+            Text("TITLE"),
+            Expanded(child = content),
+        ),
+    ),
+)
+```
+
 ### 基础面板
 
 ```kotlin

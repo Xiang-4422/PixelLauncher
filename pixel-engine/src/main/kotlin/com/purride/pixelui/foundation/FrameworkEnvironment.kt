@@ -31,10 +31,10 @@ public data class MediaQueryData(
 }
 
 /**
- * Logical pixel insets exposed to widgets through [MediaQuery].
+ * 通过 [MediaQuery] 暴露给 widget 的逻辑像素 inset。
  *
- * Values are already converted into pixel-engine logical coordinates. Host integrations should
- * map platform/system insets into this type before injecting them into the widget tree.
+ * 值已经转换到 pixel-engine 逻辑坐标。Android 宿主负责把系统栏、IME 等平台
+ * inset 映射成这个类型，再注入 widget 树。
  */
 public data class PixelWindowInsets(
     val left: Int = 0,
@@ -43,14 +43,14 @@ public data class PixelWindowInsets(
     val bottom: Int = 0,
 ) {
     /**
-     * Converts this inset value into the existing layout padding type.
+     * 转成布局层使用的 [EdgeInsets]。
      */
     public fun toEdgeInsets(): EdgeInsets {
         return EdgeInsets(left = left, top = top, right = right, bottom = bottom)
     }
 
     /**
-     * Returns a copy with disabled sides zeroed out.
+     * 返回只保留指定方向的副本。
      */
     public fun only(
         left: Boolean = true,
@@ -67,7 +67,7 @@ public data class PixelWindowInsets(
     }
 
     /**
-     * Applies per-side minimum inset values.
+     * 对每个方向应用最小 inset。
      */
     public fun atLeast(minimum: PixelWindowInsets): PixelWindowInsets {
         return PixelWindowInsets(
@@ -80,7 +80,7 @@ public data class PixelWindowInsets(
 
     public companion object {
         /**
-         * No system or window inset.
+         * 无系统栏或窗口 inset。
          */
         public val Zero: PixelWindowInsets = PixelWindowInsets()
     }

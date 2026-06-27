@@ -1,10 +1,10 @@
 package com.purride.pixelui
 
 /**
- * Adds padding from [MediaQuery.padding] around [child].
+ * 在 [child] 外侧应用 [MediaQuery.padding]。
  *
- * This is the pixel-engine equivalent of a minimal Flutter `SafeArea`: it consumes logical
- * window inset values injected by [PixelHostView] and turns them into a regular [Padding].
+ * 这是 pixel-engine 的最小安全区组件：消费 [PixelHostView] 注入的逻辑窗口 inset，
+ * 并转换成普通 [Padding]。
  */
 public fun SafeArea(
     child: Widget,
