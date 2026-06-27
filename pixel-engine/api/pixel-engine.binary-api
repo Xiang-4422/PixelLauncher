@@ -1254,6 +1254,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget SelectionList$default(java.util.List, int, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, boolean, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget OptionList(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, boolean, java.lang.Object);
   public static com.purride.pixelui.Widget OptionList$default(java.util.List, int, kotlin.jvm.functions.Function1, boolean, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget SectionList(java.util.List<com.purride.pixelui.SectionListSection>, int, int, java.lang.Object);
+  public static com.purride.pixelui.Widget SectionList$default(java.util.List, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Checkbox-zcjAOrI(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, boolean, int, int, java.lang.String, java.lang.Object);
   public static com.purride.pixelui.Widget Checkbox-zcjAOrI$default(boolean, kotlin.jvm.functions.Function1, boolean, int, int, java.lang.String, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Switch-zcjAOrI(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, boolean, int, int, java.lang.String, java.lang.Object);
@@ -2489,6 +2491,21 @@ public final class com.purride.pixelui.ReadingOrderFocusTraversalPolicy implemen
 public final class com.purride.pixelui.SafeAreaKt {
   public static final com.purride.pixelui.Widget SafeArea(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object);
   public static com.purride.pixelui.Widget SafeArea$default(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object, int, java.lang.Object);
+}
+public final class com.purride.pixelui.SectionListSection {
+  public com.purride.pixelui.SectionListSection(java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelui.Widget, com.purride.pixelui.Widget);
+  public com.purride.pixelui.SectionListSection(java.util.List, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.util.List<com.purride.pixelui.Widget> getChildren();
+  public final com.purride.pixelui.Widget getHeader();
+  public final com.purride.pixelui.Widget getFooter();
+  public final java.util.List<com.purride.pixelui.Widget> component1();
+  public final com.purride.pixelui.Widget component2();
+  public final com.purride.pixelui.Widget component3();
+  public final com.purride.pixelui.SectionListSection copy(java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelui.Widget, com.purride.pixelui.Widget);
+  public static com.purride.pixelui.SectionListSection copy$default(com.purride.pixelui.SectionListSection, java.util.List, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelui.SlidableActionPane {
   public com.purride.pixelui.SlidableActionPane(java.util.List<? extends com.purride.pixelui.Widget>, float, com.purride.pixelui.SlidableMotion, boolean, float);

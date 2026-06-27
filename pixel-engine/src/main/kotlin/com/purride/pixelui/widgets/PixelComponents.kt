@@ -110,6 +110,51 @@ public fun OptionList(
     )
 }
 
+/**
+ * [SectionList] 的一个分组。
+ *
+ * [children] 是该分组的实际内容；[header] 和 [footer] 只作为普通 widget 渲染，
+ * 引擎不为它们附加滚动吸顶、折叠或数据加载语义。
+ */
+public data class SectionListSection(
+    val children: List<Widget>,
+    val header: Widget? = null,
+    val footer: Widget? = null,
+)
+
+/**
+ * 分组列表布局容器。
+ *
+ * 组件只负责把多个 [SectionListSection] 排成纵向分组，不内置滚动、吸顶或懒加载。
+ * 长列表应放入 `ListView`、`SingleChildScrollView` 或业务自有滚动容器。
+ */
+public fun SectionList(
+    sections: List<SectionListSection>,
+    itemSpacing: Int = 1,
+    sectionSpacing: Int = 2,
+    key: Any? = null,
+): Widget {
+    val sectionWidgets = sections.mapIndexed { index, section ->
+        val children = buildList {
+            if (section.header != null) add(section.header)
+            addAll(section.children)
+            if (section.footer != null) add(section.footer)
+        }
+        Column(
+            children = children,
+            spacing = itemSpacing,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            key = key?.let { "$it-$index" },
+        )
+    }
+    return Column(
+        children = sectionWidgets,
+        spacing = sectionSpacing,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        key = key,
+    )
+}
+
 public fun Checkbox(
     checked: Boolean,
     onChanged: ((Boolean) -> Unit)?,

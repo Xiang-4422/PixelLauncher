@@ -46,6 +46,8 @@ import com.purride.pixelui.Scrollbar
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SelectionList
+import com.purride.pixelui.SectionList
+import com.purride.pixelui.SectionListSection
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Slidable
@@ -1443,6 +1445,37 @@ class PixelTesterDslTest {
 
         tester.tap(find.byKey("options-1"))
         assertEquals(1, selectedIndex)
+        tester.dispose()
+    }
+
+    @Test
+    fun sectionListKeepsSectionChildrenInteractive() {
+        val tester = PixelTester()
+        var tapped = 0
+
+        tester.pumpWidget(
+            widget = SectionList(
+                sections = listOf(
+                    SectionListSection(
+                        header = Text("SYSTEM"),
+                        children = listOf(
+                            ListTile(
+                                title = Text("WIFI"),
+                                onTap = { tapped += 1 },
+                                key = "wifi",
+                            ),
+                        ),
+                        footer = Text("READY"),
+                    ),
+                ),
+                key = "sections",
+            ),
+            logicalWidth = 96,
+            logicalHeight = 64,
+        )
+
+        tester.tap(find.byKey("wifi"))
+        assertEquals(1, tapped)
         tester.dispose()
     }
 

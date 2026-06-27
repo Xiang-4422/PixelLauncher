@@ -83,6 +83,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("ContainerDirectional", "layout_container")
         assertSearchContains("PositionedFill", "layout_positioned")
         assertSearchContains("OptionList", "controls_selection_list")
+        assertSearchContains("SectionList", "controls_section_list")
         assertSearchContains("Stepper", "controls_value_adjuster")
         assertSearchContains("Switch", "controls_checkbox")
         assertSearchContains("SegmentedControl", "controls_tabs")
@@ -209,6 +210,7 @@ class DemoCatalogCoverageTest {
                 "controls_outlined_button",
                 "controls_list_tile",
                 "controls_selection_list",
+                "controls_section_list",
                 "controls_value_adjuster",
                 "controls_checkbox",
                 "controls_tabs",

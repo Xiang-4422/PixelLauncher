@@ -60,6 +60,8 @@ import com.purride.pixelui.Row
 import com.purride.pixelui.SafeArea
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SelectionList
+import com.purride.pixelui.SectionList
+import com.purride.pixelui.SectionListSection
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Snackbar
@@ -337,6 +339,26 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
                         selectedIndex = 0,
                         onSelected = {},
                     ),
+                ),
+            ),
+        )
+    },
+    ComponentExampleScene("controls_section_list", "SectionList", "普通 widget 组成的分组列表", DemoCatalog.controls, setOf("component", "section", "list"), setOf("SectionList", "SectionListSection")) {
+        SectionList(
+            sections = listOf(
+                SectionListSection(
+                    header = Text("SYSTEM", style = TextStyle(color = Accent)),
+                    children = listOf(
+                        ListTile(title = Text("AUDIO"), trailing = Text("ON", style = TextStyle(color = Green)), onTap = {}),
+                        ListTile(title = Text("DISPLAY"), trailing = Text("8PX", style = TextStyle(color = Cyan)), onTap = {}),
+                    ),
+                ),
+                SectionListSection(
+                    header = Text("PROFILE", style = TextStyle(color = Pink)),
+                    children = listOf(
+                        ListTile(title = Text("PLAYER"), subtitle = Text("LEVEL 12", style = TextStyle(color = Muted)), onTap = {}),
+                    ),
+                    footer = Text("SYNCED", style = TextStyle(color = Muted)),
                 ),
             ),
         )

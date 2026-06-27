@@ -754,6 +754,8 @@ com.purride.pixelui public fun Visibility(
 com.purride.pixelui public fun ListTile(
 com.purride.pixelui public fun <T> SelectionList(
 com.purride.pixelui public fun OptionList(
+com.purride.pixelui public data class SectionListSection(
+com.purride.pixelui public fun SectionList(
 com.purride.pixelui public fun Checkbox(
 com.purride.pixelui public fun Switch(
 com.purride.pixelui public fun Dialog(
