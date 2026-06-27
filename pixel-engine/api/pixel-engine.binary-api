@@ -2491,6 +2491,10 @@ public final class com.purride.pixelui.ReadingOrderFocusTraversalPolicy implemen
 public final class com.purride.pixelui.SafeAreaKt {
   public static final com.purride.pixelui.Widget SafeArea(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object);
   public static com.purride.pixelui.Widget SafeArea$default(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ImeAvoidingView(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object);
+  public static com.purride.pixelui.Widget ImeAvoidingView$default(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget KeyboardAvoidingView(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object);
+  public static com.purride.pixelui.Widget KeyboardAvoidingView$default(com.purride.pixelui.Widget, boolean, boolean, boolean, boolean, com.purride.pixelui.PixelWindowInsets, java.lang.Object, int, java.lang.Object);
 }
 public final class com.purride.pixelui.SectionListSection {
   public com.purride.pixelui.SectionListSection(java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelui.Widget, com.purride.pixelui.Widget);

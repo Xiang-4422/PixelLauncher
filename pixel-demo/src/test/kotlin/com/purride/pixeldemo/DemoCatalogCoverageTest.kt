@@ -87,6 +87,7 @@ class DemoCatalogCoverageTest {
         assertSearchContains("Stepper", "controls_value_adjuster")
         assertSearchContains("Switch", "controls_checkbox")
         assertSearchContains("SegmentedControl", "controls_tabs")
+        assertSearchContains("KeyboardAvoidingView", "layout_ime_avoiding")
         assertSearchContains("Toast", "controls_dialog")
         assertSearchContains("LoadStateView", "controls_load_state_view")
         assertSearchContains("ListViewBuilder", "scroll_list_view")
@@ -156,6 +157,7 @@ class DemoCatalogCoverageTest {
                 "layout_constrained_box",
                 "layout_fitted_box",
                 "layout_safe_area",
+                "layout_ime_avoiding",
                 "layout_gesture_detector",
                 "controls_divider",
                 "controls_gap",
@@ -198,6 +200,7 @@ class DemoCatalogCoverageTest {
                 "layout_constrained_box",
                 "layout_fitted_box",
                 "layout_safe_area",
+                "layout_ime_avoiding",
                 "layout_gesture_detector",
                 "controls_divider",
                 "controls_gap",

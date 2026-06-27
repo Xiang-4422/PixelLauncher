@@ -432,6 +432,7 @@ PixelBackHandler(
 | `MediaQuery.of(context).viewInsets` | IME 等临时遮挡 |
 | `MediaQuery.of(context).padding` | `viewPadding` 扣除 `viewInsets` 后的安全区 |
 | `SafeArea` | 把 `padding` 转成普通布局 padding |
+| `ImeAvoidingView` / `KeyboardAvoidingView` | 把 `viewInsets` 转成普通布局 padding |
 | `PixelHostView.setWindowInsets` | 测试或自定义宿主手动注入稳定安全区 |
 | `PixelHostView.setViewInsets` | 测试或自定义宿主手动注入临时遮挡 |
 
@@ -456,6 +457,22 @@ val setup = createPixelHostSetup(
     ),
 )
 setContentView(setup.rootView)
+```
+
+输入页通常把系统栏交给 `SafeArea`，把键盘遮挡交给 `KeyboardAvoidingView`。二者都只做
+padding，不负责显示/隐藏软键盘，也不自动滚动聚焦输入框。
+
+```kotlin
+SafeArea(
+    child = KeyboardAvoidingView(
+        child = Column(
+            children = listOf(
+                Expanded(child = messages),
+                TextField(state = inputState, controller = inputController),
+            ),
+        ),
+    ),
+)
 ```
 
 Fragment 接入时同样把 `setup.rootView` 作为返回 view；`PixelHostView` 会继续接收
@@ -952,6 +969,8 @@ Form(
 | `ConstrainedBox` | 施加盒约束 | `PixelBoxConstraints`、`child` |
 | `FittedBox` | contain 缩放并居中 | `child` |
 | `SafeArea` | 避让宿主 insets | `child`、`minimum` |
+| `ImeAvoidingView` | 避让 IME viewInsets | `child`、`bottom`、`minimum` |
+| `KeyboardAvoidingView` | `ImeAvoidingView` 别名 | `child`、`bottom`、`minimum` |
 
 ### 内容与装饰
 

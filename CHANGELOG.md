@@ -30,6 +30,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `SelectionList` and `OptionList` for controlled single-choice lists.
 - `SectionList` and `SectionListSection` for grouped list layout.
 - `ValueAdjuster` and `Stepper` for controlled pixel value editing.
+- `ImeAvoidingView` and `KeyboardAvoidingView` for `MediaQuery.viewInsets` padding.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.

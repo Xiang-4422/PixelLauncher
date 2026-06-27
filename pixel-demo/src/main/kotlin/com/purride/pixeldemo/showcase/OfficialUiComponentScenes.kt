@@ -33,6 +33,8 @@ import com.purride.pixelui.Flexible
 import com.purride.pixelui.Gap
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.Icon
+import com.purride.pixelui.ImeAvoidingView
+import com.purride.pixelui.KeyboardAvoidingView
 import com.purride.pixelui.LoadStateView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
@@ -51,6 +53,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.Positioned
 import com.purride.pixelui.PositionedDirectional
 import com.purride.pixelui.PositionedFill
@@ -276,6 +279,31 @@ val LayoutOfficialComponentScenes: List<DemoScene> = listOf(
     },
     componentScene("layout_safe_area", "SafeArea", "给系统安全区域预留内容边界", DemoCatalog.layout, "SafeArea") {
         SafeArea(child = Container(width = 84, height = 22, borderColor = Muted, child = Center(child = Text("SAFE", style = TextStyle(color = Muted)))))
+    },
+    componentScene("layout_ime_avoiding", "ImeAvoidingView", "根据 IME viewInsets 预留键盘边界", DemoCatalog.layout, "ImeAvoidingView", extraApis = setOf("KeyboardAvoidingView")) {
+        Row(
+            children = listOf(
+                Container(
+                    width = 42,
+                    height = 28,
+                    borderColor = Muted,
+                    child = ImeAvoidingView(
+                        minimum = PixelWindowInsets(bottom = 5),
+                        child = Text("IME", style = TextStyle(color = Cyan)),
+                    ),
+                ),
+                Container(
+                    width = 42,
+                    height = 28,
+                    borderColor = Muted,
+                    child = KeyboardAvoidingView(
+                        minimum = PixelWindowInsets(bottom = 5),
+                        child = Text("KEY", style = TextStyle(color = Green)),
+                    ),
+                ),
+            ),
+            spacing = 2,
+        )
     },
     componentScene("layout_gesture_detector", "GestureDetector", "给任意 child 添加点击回调", DemoCatalog.layout, "GestureDetector") {
         GestureDetector(child = exampleBox("TAP", Yellow), onTap = {})

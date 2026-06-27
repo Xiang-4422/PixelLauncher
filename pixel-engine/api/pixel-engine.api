@@ -877,6 +877,8 @@ com.purride.pixelui public fun Slider(
 com.purride.pixelui public fun OutlinedButton(
 com.purride.pixelui public fun TextButton(
 com.purride.pixelui public fun SafeArea(
+com.purride.pixelui public fun ImeAvoidingView(
+com.purride.pixelui public fun KeyboardAvoidingView(
 com.purride.pixelui public enum class SlidableDirection
 com.purride.pixelui public enum class SlidableMotion
 com.purride.pixelui public data class SlidableActionPane(

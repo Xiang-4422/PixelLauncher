@@ -10,6 +10,8 @@ import com.purride.pixelui.Directionality
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.InheritedNotifier
 import com.purride.pixelui.InheritedWidget
+import com.purride.pixelui.ImeAvoidingView
+import com.purride.pixelui.KeyboardAvoidingView
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.PixelWindowInsets
@@ -169,6 +171,72 @@ class RetainedWidgetRuntimeTest {
         assertEquals(PixelColor.Transparent, result.buffer.getPixel(0, 0))
         assertEquals(PixelColor.White, result.buffer.getPixel(1, 2))
         assertEquals(PixelColor.White, result.buffer.getPixel(2, 3))
+    }
+
+    @Test
+    fun imeAvoidingViewUsesMediaQueryViewInsets() {
+        val runtime = PixelUiRuntime()
+        val screenProfile = ScreenProfile(logicalWidth = 8, logicalHeight = 8, dotSizePx = 8)
+
+        val result = runtime.render(
+            root = MediaQuery(
+                data = MediaQueryData(
+                    logicalWidth = 8,
+                    logicalHeight = 8,
+                    screenProfile = screenProfile,
+                    viewInsets = PixelWindowInsets(left = 1, top = 2, right = 0, bottom = 4),
+                    padding = PixelWindowInsets(left = 3, top = 3),
+                ),
+                child = ImeAvoidingView(
+                    left = true,
+                    top = true,
+                    bottom = false,
+                    child = Container(
+                        width = 2,
+                        height = 2,
+                        fillColor = PixelColor.White,
+                        borderColor = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 8,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelColor.Transparent, result.buffer.getPixel(0, 0))
+        assertEquals(PixelColor.White, result.buffer.getPixel(1, 2))
+    }
+
+    @Test
+    fun keyboardAvoidingViewAliasesImeInsetsPadding() {
+        val runtime = PixelUiRuntime()
+        val screenProfile = ScreenProfile(logicalWidth = 8, logicalHeight = 8, dotSizePx = 8)
+
+        val result = runtime.render(
+            root = MediaQuery(
+                data = MediaQueryData(
+                    logicalWidth = 8,
+                    logicalHeight = 8,
+                    screenProfile = screenProfile,
+                    viewInsets = PixelWindowInsets(left = 2, top = 1),
+                ),
+                child = KeyboardAvoidingView(
+                    left = true,
+                    top = true,
+                    bottom = false,
+                    child = Container(
+                        width = 2,
+                        height = 2,
+                        fillColor = PixelColor.White,
+                        borderColor = null,
+                    ),
+                ),
+            ),
+            logicalWidth = 8,
+            logicalHeight = 8,
+        )
+
+        assertEquals(PixelColor.White, result.buffer.getPixel(2, 1))
     }
 
     @Test
