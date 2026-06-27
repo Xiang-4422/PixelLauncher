@@ -1,10 +1,12 @@
 package com.purride.pixelcore
 
+/** 资源 manifest 或 catalog JSON 解析失败。 */
 public class PixelResourceManifestLoadException(
     message: String,
     cause: Throwable? = null,
 ) : IllegalArgumentException(message, cause)
 
+/** manifest 中的一张 bitmap 资源定义。 */
 public data class PixelBitmapResourceDefinition(
     val id: String,
     val path: String,
@@ -15,6 +17,7 @@ public data class PixelBitmapResourceDefinition(
     }
 }
 
+/** manifest 中的一张 sprite sheet 定义，引用已声明的 bitmap。 */
 public data class PixelSpriteSheetResourceDefinition(
     val id: String,
     val path: String,
@@ -27,6 +30,7 @@ public data class PixelSpriteSheetResourceDefinition(
     }
 }
 
+/** catalog 中的命名颜色资源。 */
 public data class PixelColorResourceDefinition(
     val id: String,
     val color: PixelColor,
@@ -36,6 +40,7 @@ public data class PixelColorResourceDefinition(
     }
 }
 
+/** catalog 中的字形包资源，包含 manifest 和二进制 glyph 路径。 */
 public data class PixelFontResourceDefinition(
     val id: String,
     val manifestPath: String,
@@ -48,6 +53,7 @@ public data class PixelFontResourceDefinition(
     }
 }
 
+/** bitmap 与 sprite sheet 的基础资源清单。 */
 public data class PixelResourceManifest(
     val bitmaps: List<PixelBitmapResourceDefinition>,
     val spriteSheets: List<PixelSpriteSheetResourceDefinition>,
@@ -76,6 +82,7 @@ public data class PixelResourceManifest(
     }
 }
 
+/** 完整资源目录，在基础 manifest 之外增加颜色和字体资源。 */
 public data class PixelResourceCatalog(
     val resources: PixelResourceManifest,
     val colors: List<PixelColorResourceDefinition>,
@@ -96,7 +103,9 @@ public data class PixelResourceCatalog(
     }
 }
 
+/** 轻量 JSON 解析器，用于读取 pixel-engine 资源 manifest。 */
 public object PixelResourceManifestJsonLoader {
+    /** 解析基础 bitmap/sprite manifest。 */
     public fun parse(json: String): PixelResourceManifest {
         return try {
             val version = optionalInt(json, "version") ?: 1
@@ -136,6 +145,7 @@ public object PixelResourceManifestJsonLoader {
         }
     }
 
+    /** 解析完整 catalog，包含 colors 和 fonts。 */
     public fun parseCatalog(json: String): PixelResourceCatalog {
         return try {
             val resources = parse(json)

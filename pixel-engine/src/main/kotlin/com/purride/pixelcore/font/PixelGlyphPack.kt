@@ -49,6 +49,7 @@ public object PixelGlyphPackParser {
     private const val MAGIC = 0x50474C59 // PGLY
     private const val VERSION = 1
 
+    /** 从 manifest.json 文本解析字形包元数据。 */
     public fun parseManifest(json: String): PixelGlyphPackManifest {
         return PixelGlyphPackManifest(
             packId = json.readString("packId"),
@@ -60,6 +61,7 @@ public object PixelGlyphPackParser {
         )
     }
 
+    /** 从 glyphs.bin 二进制流解析字形记录，并校验 manifest 高度。 */
     public fun parseBinary(manifest: PixelGlyphPackManifest, inputStream: InputStream): PixelGlyphPack {
         DataInputStream(inputStream).use { dataInput ->
             val magic = dataInput.readInt()

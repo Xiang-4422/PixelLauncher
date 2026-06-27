@@ -20,6 +20,7 @@ public class PixelPagerController(
     private val velocityThresholdPagesPerSecond: Float = 0.35f,
     private val motionController: AxisMotionController = AxisMotionController(),
 ) : ChangeNotifier() {
+    /** 创建一个 pager 状态，并把页码夹紧到可用页数内。 */
     public fun create(
         pageCount: Int,
         currentPage: Int = 0,
@@ -35,6 +36,7 @@ public class PixelPagerController(
         }
     }
 
+    /** 同步轴向和页数，通常由 PageView layout 阶段调用。 */
     public fun sync(
         state: PixelPagerState,
         axis: PixelAxis,
@@ -46,6 +48,7 @@ public class PixelPagerController(
         state.settleTargetPage = state.settleTargetPage.coerceIn(0, state.pageCount - 1)
     }
 
+    /** 立即跳到指定页并取消正在进行的拖动/吸附。 */
     public fun syncToPage(state: PixelPagerState, targetPage: Int) {
         val safeTargetPage = targetPage.coerceIn(0, state.pageCount - 1)
         state.currentPage = safeTargetPage
@@ -55,6 +58,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 创建可保存到 Bundle 的当前页快照。 */
     public fun saveState(state: PixelPagerState): PixelPagerSavedState {
         return PixelPagerSavedState(
             currentPage = state.currentPage.coerceIn(0, state.pageCount - 1),
@@ -62,6 +66,7 @@ public class PixelPagerController(
         )
     }
 
+    /** 恢复保存过的页位置，并按当前页数夹紧。 */
     public fun restoreState(
         state: PixelPagerState,
         savedState: PixelPagerSavedState,
@@ -78,6 +83,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 开始一次 pager 拖动；若正在 settling，会先接管当前视觉偏移。 */
     public fun startDrag(state: PixelPagerState, viewportSizePx: Int) {
         val safeViewportSizePx = viewportSizePx.coerceAtLeast(1).toFloat()
         var dragStartOffset = motionController.visualOffsetPx(state.motionState)
@@ -95,6 +101,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 按触摸主轴增量更新当前拖动偏移。 */
     public fun dragBy(
         state: PixelPagerState,
         deltaPx: Float,
@@ -112,6 +119,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 结束拖动，并按距离/速度阈值决定目标页。 */
     public fun endDrag(
         state: PixelPagerState,
         viewportSizePx: Int,
@@ -154,6 +162,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 取消拖动并吸附回当前页。 */
     public fun cancelDrag(state: PixelPagerState) {
         state.settleTargetPage = state.currentPage
         state.motionState = motionController.settleTo(
@@ -167,6 +176,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 推进 settling 动画，静止时不通知监听者。 */
     public fun step(state: PixelPagerState, deltaMs: Long) {
         // 没有 settling 动画在跑时，step 不会改变任何状态。此处提前返回、
         // 不调用 notifyListeners()，避免静止的 pager 每帧都触发监听者重建 →
@@ -183,6 +193,7 @@ public class PixelPagerController(
         notifyListeners()
     }
 
+    /** 返回当前渲染帧所需的 anchor/adjacent page 信息。 */
     public fun snapshot(state: PixelPagerState): PixelPagerSnapshot {
         val offsetPx = motionController.visualOffsetPx(state.motionState)
         val adjacentPage = when {
@@ -199,6 +210,7 @@ public class PixelPagerController(
         )
     }
 
+    /** 当前 pager 是否仍有拖动或吸附动画未结束。 */
     public fun isActive(state: PixelPagerState): Boolean = motionController.isActive(state.motionState)
 
     private fun resolveDirection(

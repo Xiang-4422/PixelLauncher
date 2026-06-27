@@ -594,4 +594,6 @@ Finder：
 
 ```bash
 ./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:assembleDebug :pixel-demo:assembleDebug --no-daemon
+./tools/pixel-release-check.sh
+./tools/pixel-sdk-consumer-smoke.sh
 ```

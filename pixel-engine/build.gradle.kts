@@ -50,7 +50,7 @@ dependencies {
 
 val publicApiBaseline = layout.projectDirectory.file("api/pixel-engine.api")
 val binaryApiBaseline = layout.projectDirectory.file("api/pixel-engine.binary-api")
-val kdocCoverageMinimumPercent = 24.0
+val kdocCoverageMinimumPercent = 35.0
 
 tasks.register<Exec>("generatePixelGlyphPacks") {
     group = "build"
@@ -308,14 +308,16 @@ fun String.normalizeBinaryApiDump(): String {
         .map { line -> line.trimEnd() }
         .filterNot { line -> line.startsWith("Compiled from ") }
         .filterNot { line -> line.isBlank() }
+        .filterNot { line -> line.contains("\$pixel_engine") }
+        .filterNot { line -> line.contains(" access\$") }
         .joinToString(separator = "\n")
 }
 
 fun String.isPublicBinaryApiDump(): Boolean {
-    return lineSequence()
-        .firstOrNull()
-        ?.startsWith("public ")
-        ?: false
+    val lines = lineSequence().toList()
+    val first = lines.firstOrNull() ?: return false
+    if (!first.startsWith("public ")) return false
+    return lines.drop(1).any { line -> line.trimStart().startsWith("public ") }
 }
 
 data class KdocCoverageResult(
@@ -357,7 +359,10 @@ fun String.isPublicKdocCandidate(): Boolean {
 fun List<String>.hasKdocBefore(index: Int): Boolean {
     var cursor = index - 1
     while (cursor >= 0 && this[cursor].isBlank()) cursor -= 1
-    if (cursor < 0 || this[cursor].trim() != "*/") return false
+    if (cursor < 0) return false
+    val previous = this[cursor].trim()
+    if (previous.startsWith("/**") && previous.endsWith("*/")) return true
+    if (previous != "*/") return false
     cursor -= 1
     while (cursor >= 0) {
         val line = this[cursor].trim()

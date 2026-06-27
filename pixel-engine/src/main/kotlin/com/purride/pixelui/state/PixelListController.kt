@@ -21,10 +21,12 @@ public class PixelListController(
     private val physics: PixelScrollPhysics = PixelScrollPhysics.Default,
 ) : ChangeNotifier() {
 
+    /** 创建列表滚动状态，可传入初始滚动偏移。 */
     public fun create(initialScrollOffsetPx: Float = 0f): PixelListState {
         return PixelListState(initialScrollOffsetPx = initialScrollOffsetPx)
     }
 
+    /** 同步 viewport/content 几何，并夹紧当前滚动偏移。 */
     public fun sync(
         state: PixelListState,
         viewportHeightPx: Int,
@@ -115,6 +117,7 @@ public class PixelListController(
         return changed
     }
 
+    /** 按触摸拖动增量更新滚动位置。 */
     public fun dragBy(
         state: PixelListState,
         deltaPx: Float,
@@ -138,6 +141,7 @@ public class PixelListController(
         notifyListeners()
     }
 
+    /** 进入拖动状态并取消已有 fling/snap。 */
     public fun startDrag(state: PixelListState) {
         state.pendingJumpToEnd = false
         state.isDragging = true
@@ -173,6 +177,7 @@ public class PixelListController(
         }
     }
 
+    /** 立即滚动到指定绝对偏移，并按内容范围夹紧。 */
     public fun scrollTo(
         state: PixelListState,
         targetOffsetPx: Float,
@@ -196,11 +201,13 @@ public class PixelListController(
         notifyListeners()
     }
 
+    /** 判断当前滚动位置是否接近内容底部。 */
     public fun isAtEnd(state: PixelListState, tolerancePx: Float = 0.5f): Boolean {
         val safeTolerancePx = tolerancePx.takeIf { it.isFinite() }?.coerceAtLeast(0f) ?: 0f
         return state.maxScrollOffsetPx - state.scrollOffsetPx <= safeTolerancePx
     }
 
+    /** 保存当前滚动位置和可选锚点，用于路由恢复。 */
     public fun saveState(state: PixelListState): PixelListSavedState {
         return PixelListSavedState(
             scrollOffsetPx = state.scrollOffsetPx.finiteOrZero().coerceAtLeast(0f),
@@ -209,6 +216,7 @@ public class PixelListController(
         )
     }
 
+    /** 按指定策略恢复之前保存的滚动位置。 */
     public fun restoreState(
         state: PixelListState,
         savedState: PixelListSavedState,
@@ -383,6 +391,7 @@ public class PixelListController(
         return AnchorRestoreOffset.Resolved(offset)
     }
 
+    /** 结束拖动；必要时进入 fling 或 snap settling。 */
     public fun endDrag(
         state: PixelListState,
         velocityPxPerSecond: Float,
@@ -423,6 +432,7 @@ public class PixelListController(
         notifyListeners()
     }
 
+    /** 推进 fling/snap 动画，静止时不通知监听者。 */
     public fun step(
         state: PixelListState,
         deltaMs: Long,
@@ -497,6 +507,7 @@ public class PixelListController(
         notifyListeners()
     }
 
+    /** 当前列表是否仍在拖动或惯性滚动。 */
     public fun isActive(state: PixelListState): Boolean {
         return state.isDragging || state.isSettling
     }

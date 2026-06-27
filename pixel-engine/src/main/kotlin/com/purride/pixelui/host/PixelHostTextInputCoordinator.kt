@@ -1,6 +1,7 @@
 package com.purride.pixelui
 
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.host.findTextInputTargetForState
 import com.purride.pixelui.state.PixelTextFieldState
 
 /**
@@ -150,11 +151,6 @@ internal class PixelHostTextInputCoordinator(
         host.hostBridge?.showTextInput(target.toTextInputRequest())
     }
 }
-
-internal fun findTextInputTargetForState(
-    targets: List<PixelTextInputTarget>,
-    state: PixelTextFieldState,
-): PixelTextInputTarget? = targets.lastOrNull { it.state === state }
 
 private fun PixelTextInputTarget.toTextInputRequest(): PixelTextInputRequest = PixelTextInputRequest(
     text = state.text,

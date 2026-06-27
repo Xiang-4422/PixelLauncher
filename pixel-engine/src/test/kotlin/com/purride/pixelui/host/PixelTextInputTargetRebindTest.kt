@@ -2,6 +2,7 @@ package com.purride.pixelui
 
 import com.purride.pixelui.internal.PixelRect
 import com.purride.pixelui.internal.PixelTextInputTarget
+import com.purride.pixelui.internal.host.findTextInputTargetForState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import org.junit.Assert.assertNull

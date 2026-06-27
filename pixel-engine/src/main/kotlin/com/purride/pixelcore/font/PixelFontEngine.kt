@@ -47,6 +47,7 @@ public data class GlyphMetrics(
     val inkRight: Int = advanceWidth - 1,
 )
 
+/** 解包后的单个字形 bitmap 和度量。 */
 public data class GlyphBitmap(
     val width: Int,
     val height: Int,
@@ -54,15 +55,21 @@ public data class GlyphBitmap(
     val metrics: GlyphMetrics,
 )
 
+/** 可选字形来源；找不到字符时返回 null 让下一个来源兜底。 */
 public interface GlyphSource {
+    /** 查找一个字符对应的字形 bitmap。 */
     public fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap?
 
+    /** 清理来源内部缓存。 */
     public fun clearCache(): Unit = Unit
 }
 
+/** 必须能为任意字符返回字形的最终提供器。 */
 public interface GlyphProvider {
+    /** 栅格化一个字符；找不到真实字形时应返回兜底字形。 */
     public fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap
 
+    /** 清理提供器内部缓存。 */
     public fun clearCache(): Unit = Unit
 }
 
@@ -235,6 +242,7 @@ public class PixelFontEngine(
     private var glyphCacheHits: Long = 0L
     private var glyphCacheMisses: Long = 0L
 
+    /** 测量整段文本在指定样式下需要的像素宽度。 */
     public fun measureText(text: String, style: GlyphStyle): Int {
         var totalWidth = 0
         var previousGlyph: GlyphBitmap? = null
@@ -246,6 +254,7 @@ public class PixelFontEngine(
         return totalWidth
     }
 
+    /** 返回能完整放进 [maxWidth] 的前缀文本。 */
     public fun trimToWidth(text: String, style: GlyphStyle, maxWidth: Int): String {
         if (text.isEmpty() || maxWidth <= 0) {
             return ""
@@ -267,6 +276,7 @@ public class PixelFontEngine(
         return builder.toString()
     }
 
+    /** 计算文本渲染所需的字体度量。 */
     public fun fontMetrics(text: String = " ", style: GlyphStyle): PixelFontMetrics {
         val sample = text.ifEmpty { " " }
         val glyphs = sample.map { character -> glyphFor(character, style) }
@@ -297,6 +307,7 @@ public class PixelFontEngine(
         )
     }
 
+    /** 将文本按指定颜色绘制到 [buffer]，超过 [maxWidth] 的部分会被裁剪。 */
     public fun drawText(
         buffer: PixelBuffer,
         text: String,
@@ -329,6 +340,7 @@ public class PixelFontEngine(
         }
     }
 
+    /** 清空文本引擎和底层 glyph provider 的缓存。 */
     public fun clearCache() {
         glyphCache.clear()
         glyphCacheHits = 0L

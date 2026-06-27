@@ -3,11 +3,11 @@ package com.purride.pixelui.host
 import android.text.InputType
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelTextInputAction
-import com.purride.pixelui.resolveAndroidInputType
-import com.purride.pixelui.resolveAndroidImeOptions
-import com.purride.pixelui.normalizePrintableAsciiUppercase
-import com.purride.pixelui.shouldRestartAndroidTextInput
-import com.purride.pixelui.toAndroidEditorConfig
+import com.purride.pixelui.internal.host.resolveAndroidInputType
+import com.purride.pixelui.internal.host.resolveAndroidImeOptions
+import com.purride.pixelui.internal.host.normalizePrintableAsciiUppercase
+import com.purride.pixelui.internal.host.shouldRestartAndroidTextInput
+import com.purride.pixelui.internal.host.toAndroidEditorConfig
 import android.view.inputmethod.EditorInfo
 import org.junit.Assert.assertEquals
 import org.junit.Test

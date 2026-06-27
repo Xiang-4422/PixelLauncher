@@ -16,6 +16,7 @@ import com.purride.pixelui.ChangeNotifier
  */
 public class PixelTextFieldController : ChangeNotifier() {
 
+    /** 创建文本输入状态，并规范化初始选区。 */
     public fun create(
         initialText: String = "",
         selectionStart: Int = initialText.length,
@@ -28,6 +29,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
+    /** 更新文本、选区和可选 IME composition 范围。 */
     public fun updateText(
         state: PixelTextFieldState,
         text: String,
@@ -130,6 +132,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         return (halfPeriodMs - state.cursorBlinkElapsedMs).coerceIn(1L, halfPeriodMs)
     }
 
+    /** 设置选区；传入单点时表示折叠光标。 */
     public fun setSelection(
         state: PixelTextFieldState,
         selectionStart: Int,
@@ -140,10 +143,12 @@ public class PixelTextFieldController : ChangeNotifier() {
         notifyListeners()
     }
 
+    /** 清空文本并把光标重置到开头。 */
     public fun clear(state: PixelTextFieldState) {
         updateText(state = state, text = "")
     }
 
+    /** 选中当前文本的全部内容。 */
     public fun selectAll(state: PixelTextFieldState) {
         setSelection(
             state = state,
@@ -195,6 +200,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         )
     }
 
+    /** 根据字符位置选择 ASCII 单词、单个非空白字符或折叠到空白处。 */
     public fun selectWordAt(state: PixelTextFieldState, index: Int) {
         val text = state.text
         if (text.isEmpty()) {
@@ -218,6 +224,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         setSelection(state, safeIndex, safeIndex + 1)
     }
 
+    /** 立即把状态标记为已聚焦，并重置光标闪烁。 */
     public fun focus(state: PixelTextFieldState) {
         state.isFocused = true
         state.focusRequested = false
@@ -226,6 +233,7 @@ public class PixelTextFieldController : ChangeNotifier() {
         notifyListeners()
     }
 
+    /** 立即把状态标记为失焦，并取消待处理焦点请求。 */
     public fun blur(state: PixelTextFieldState) {
         state.isFocused = false
         state.focusRequested = false

@@ -17,11 +17,14 @@ public data class AxisMotionState(
     val settleProgress: Float = 1f,
 )
 
+/** 一维拖动和吸附动画控制器，供 pager/list 等上层语义复用。 */
 public class AxisMotionController(
     private val settleDurationMs: Long = 240L,
 ) {
+    /** 创建初始静止状态。 */
     public fun create(): AxisMotionState = AxisMotionState()
 
+    /** 进入拖动状态，并取消正在进行的吸附动画。 */
     public fun startDrag(state: AxisMotionState): AxisMotionState {
         return state.copy(
             isDragging = true,
@@ -32,6 +35,7 @@ public class AxisMotionController(
         )
     }
 
+    /** 按像素增量更新拖动偏移，并夹紧到给定范围。 */
     public fun dragBy(
         state: AxisMotionState,
         deltaPx: Float,
@@ -45,6 +49,7 @@ public class AxisMotionController(
         return state.copy(dragOffsetPx = nextOffset)
     }
 
+    /** 结束拖动并吸附到目标偏移；距离足够小时立即完成。 */
     public fun settleTo(
         state: AxisMotionState,
         targetOffsetPx: Float,
@@ -69,8 +74,10 @@ public class AxisMotionController(
         }
     }
 
+    /** 回到初始静止状态。 */
     public fun reset(): AxisMotionState = create()
 
+    /** 推进吸附动画，未在 settling 时保持原状态。 */
     public fun step(state: AxisMotionState, deltaMs: Long): AxisMotionState {
         if (!state.isSettling) {
             return state
@@ -88,6 +95,7 @@ public class AxisMotionController(
         }
     }
 
+    /** 返回当前应该绘制的视觉偏移，settling 时包含缓动。 */
     public fun visualOffsetPx(state: AxisMotionState): Float {
         return when {
             state.isDragging -> state.dragOffsetPx
@@ -101,6 +109,7 @@ public class AxisMotionController(
         }
     }
 
+    /** 当前是否处于拖动或吸附动画中。 */
     public fun isActive(state: AxisMotionState): Boolean = state.isDragging || state.isSettling
 
     private fun lerp(start: Float, end: Float, progress: Float): Float {

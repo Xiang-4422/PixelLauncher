@@ -1,5 +1,6 @@
 package com.purride.pixelcore
 
+/** 资源缓存计数和命中率快照，用于 diagnostics 与测试断言。 */
 public data class PixelResourceCacheSnapshot(
     val bitmapCount: Int,
     val spriteSheetCount: Int,
@@ -11,6 +12,7 @@ public data class PixelResourceCacheSnapshot(
     val clearCount: Int,
 )
 
+/** 小型内存资源缓存，按调用方提供的 key 复用 bitmap 与 sprite sheet。 */
 public class PixelResourceCache {
     private val bitmaps: MutableMap<String, PixelBitmap> = linkedMapOf()
     private val spriteSheets: MutableMap<String, PixelSpriteSheet> = linkedMapOf()
@@ -21,6 +23,7 @@ public class PixelResourceCache {
     private var removeCount = 0
     private var clearCount = 0
 
+    /** 读取 bitmap 缓存；未命中时执行 [loader] 并保存结果。 */
     public fun getBitmap(key: String, loader: () -> PixelBitmap): PixelBitmap {
         val safeKey = requireKey(key)
         bitmaps[safeKey]?.let { cached ->
@@ -31,6 +34,7 @@ public class PixelResourceCache {
         return loader().also { bitmaps[safeKey] = it }
     }
 
+    /** 读取 sprite sheet 缓存；未命中时执行 [loader] 并保存结果。 */
     public fun getSpriteSheet(key: String, loader: () -> PixelSpriteSheet): PixelSpriteSheet {
         val safeKey = requireKey(key)
         spriteSheets[safeKey]?.let { cached ->
@@ -41,6 +45,7 @@ public class PixelResourceCache {
         return loader().also { spriteSheets[safeKey] = it }
     }
 
+    /** 移除同名 bitmap 和 sprite sheet 条目。 */
     public fun remove(key: String) {
         val safeKey = requireKey(key)
         val removedBitmap = bitmaps.remove(safeKey) != null
@@ -48,6 +53,7 @@ public class PixelResourceCache {
         if (removedBitmap || removedSpriteSheet) removeCount += 1
     }
 
+    /** 清空所有缓存条目并更新清理计数。 */
     public fun clear() {
         if (bitmaps.isNotEmpty() || spriteSheets.isNotEmpty()) {
             clearCount += 1
@@ -56,6 +62,7 @@ public class PixelResourceCache {
         }
     }
 
+    /** 返回当前缓存大小和命中统计。 */
     public fun snapshot(): PixelResourceCacheSnapshot {
         return PixelResourceCacheSnapshot(
             bitmapCount = bitmapCount,
@@ -69,9 +76,11 @@ public class PixelResourceCache {
         )
     }
 
+    /** 当前缓存的 bitmap 数量。 */
     public val bitmapCount: Int
         get() = bitmaps.size
 
+    /** 当前缓存的 sprite sheet 数量。 */
     public val spriteSheetCount: Int
         get() = spriteSheets.size
 

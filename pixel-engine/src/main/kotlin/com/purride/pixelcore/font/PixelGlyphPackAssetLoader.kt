@@ -14,6 +14,7 @@ public class PixelGlyphPackAssetLoader(
 
     private val cache = mutableMapOf<String, PixelGlyphPack>()
 
+    /** 从 assets 目录加载 `manifest.json` 和 `glyphs.bin`，同一路径会被缓存。 */
     public fun load(assetDirectory: String): PixelGlyphPack {
         return cache.getOrPut(assetDirectory) {
             val manifest = context.assets.open("$assetDirectory/manifest.json")

@@ -7,8 +7,10 @@ import com.purride.pixelui.ChangeNotifier
  */
 public class PixelRefreshIndicatorController : ChangeNotifier() {
 
+    /** 创建初始 refresh indicator 状态。 */
     public fun create(): PixelRefreshIndicatorState = PixelRefreshIndicatorState()
 
+    /** 开始下拉手势，正在刷新时忽略。 */
     public fun startPull(state: PixelRefreshIndicatorState) {
         if (state.isRefreshing) return
         state.pullDistancePx = 0f
@@ -16,6 +18,7 @@ public class PixelRefreshIndicatorController : ChangeNotifier() {
         notifyListeners()
     }
 
+    /** 更新下拉距离，并根据阈值设置 armed 状态。 */
     public fun updatePull(
         state: PixelRefreshIndicatorState,
         distancePx: Float,
@@ -31,6 +34,7 @@ public class PixelRefreshIndicatorController : ChangeNotifier() {
         notifyListeners()
     }
 
+    /** 结束下拉；达到阈值时进入 refreshing 并返回 true。 */
     public fun endPull(
         state: PixelRefreshIndicatorState,
         thresholdPx: Int,
@@ -48,6 +52,7 @@ public class PixelRefreshIndicatorController : ChangeNotifier() {
         return shouldRefresh
     }
 
+    /** 结束刷新并把交互状态复位。 */
     public fun completeRefresh(state: PixelRefreshIndicatorState) {
         if (!state.isRefreshing && state.pullDistancePx == 0f && !state.isArmed) return
         state.isRefreshing = false
@@ -56,4 +61,3 @@ public class PixelRefreshIndicatorController : ChangeNotifier() {
         notifyListeners()
     }
 }
-

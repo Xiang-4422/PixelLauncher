@@ -250,6 +250,15 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 
 注意：`:app:testDebugUnitTest` 覆盖 ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等。`pixel-engine` SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，该门禁只覆盖 `:pixel-engine`、`:pixel-demo`、Maven local dry-run 和文档站构建；Launcher 应用仍按上面的 app 命令单独验收。
 
+SDK 发布补充检查：
+
+```bash
+./tools/pixel-sdk-consumer-smoke.sh
+./tools/pixel-perf-smoke.sh
+```
+
+`tools/pixel-device-smoke.sh` 需要已连接 Android 设备或设置 `ADB_SERIAL`，因此不放入默认无设备发布门禁。`0.x` SDK 兼容策略和破坏性变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+
 ### Android Studio 运行
 
 用 Android Studio 打开仓库根目录，等待 Gradle Sync 完成后，Run 配置下拉框应出现：
