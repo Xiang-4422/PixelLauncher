@@ -66,57 +66,6 @@ object DemoCatalog {
         summary = "Inspector、Debug overlay、压测和 frame stats",
     )
 
-    val textInput: DemoCategory = input
-    val lab: DemoCategory = debug
-
-    // Manual/reference categories are kept so reference scenes continue to compile,
-    // but they are no longer registered in the UI/UX browser catalog.
-    val quickStart = DemoCategory(
-        id = "manual_quick_start",
-        title = "快速接入",
-        summary = "模块依赖、常用 import 与子包入口",
-    )
-    val minimalActivity = DemoCategory(
-        id = "manual_minimal_activity",
-        title = "最小 Activity",
-        summary = "createPixelHostSetup 的最小 Android 宿主",
-    )
-    val hostConfig = DemoCategory(
-        id = "manual_host_config",
-        title = "宿主配置",
-        summary = "PixelHostSetupConfig、HostView 与显示偏好",
-    )
-    val stateManagement = DemoCategory(
-        id = "manual_state",
-        title = "状态管理",
-        summary = "ValueNotifier、StatefulWidget 与 controller/state",
-    )
-    val theme = DemoCategory(
-        id = "manual_theme",
-        title = "颜色、字体和主题",
-        summary = "PixelColor、TextStyle、栅格和字体优先级",
-    )
-    val patterns = DemoCategory(
-        id = "manual_patterns",
-        title = "常见页面模式",
-        summary = "面板、列表、分页、输入框和表单",
-    )
-    val apiReference = DemoCategory(
-        id = "manual_api_reference",
-        title = "API 速查",
-        summary = "公开 API 表的可运行索引",
-    )
-    val customRenderObject = DemoCategory(
-        id = "manual_custom_render_object",
-        title = "自定义 RenderObject",
-        summary = "advanced alias、layout、paint 和脏标记规则",
-    )
-    val testing = DemoCategory(
-        id = "manual_testing",
-        title = "测试",
-        summary = "PixelTester DSL、Finder 和验证命令",
-    )
-
     val categories: List<DemoCategory> = listOf(
         layout,
         text,
