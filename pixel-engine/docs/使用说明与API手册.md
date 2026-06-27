@@ -228,6 +228,8 @@ PixelErrorBoundary(
 
 `PixelOverlayHost` 在页面顶部承载 toast、dialog 和 snackbar。controller 由业务持有。
 当页面接入 `PixelBackHost` 时，back 会优先关闭最上层 overlay。
+overlay 只维护当前 item 列表，不内置自动超时、遮罩动画或模态焦点锁定；需要这些策略时由业务层调度
+handle 或自定义 wrapper。
 
 ```kotlin
 val overlay = PixelOverlayController()
@@ -251,6 +253,9 @@ overlay.showSnackbar(
     action = TextButton(text = "UNDO", onPressed = {}),
 )
 ```
+
+`showDialog` 返回的 handle 是关闭对话框的明确所有权；`showToast` 不会自动消失；`showSnackbar`
+会把 `Snackbar` 放到底部，直接使用 `Snackbar` widget 时它只是一个普通条形容器。
 
 ### Back
 
@@ -578,6 +583,33 @@ SegmentedControl(
     onSelected = { index -> filter = index },
 )
 ```
+
+### 反馈组件
+
+`Dialog`、`Toast` 和 `Snackbar` 本身都是普通 widget，只负责像素风视觉结构，不负责显示队列、
+自动关闭、遮罩、动画或 Android back。需要页面级浮层时使用 `PixelOverlayHost` 和
+`PixelOverlayController`。
+
+```kotlin
+Dialog(
+    title = Text("DELETE"),
+    content = Text("ARE YOU SURE"),
+    actions = listOf(
+        TextButton(text = "CANCEL", onPressed = { close() }),
+        OutlinedButton(text = "OK", onPressed = { confirm() }),
+    ),
+)
+
+Toast("SAVED")
+
+Snackbar(
+    message = "QUEUED",
+    action = TextButton(text = "UNDO", onPressed = { undo() }),
+)
+```
+
+`Dialog` 的 `actions` 会排列在内容下方并右对齐；`Toast` 支持多行文本；`Snackbar` 的 `action`
+由调用方传入任意 widget，常用 `TextButton`。
 
 ### 输入框
 

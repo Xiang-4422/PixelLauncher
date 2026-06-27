@@ -115,6 +115,12 @@ public fun Switch(
     )
 }
 
+/**
+ * 居中的像素对话框内容。
+ *
+ * 该函数只负责布局 title/content/actions，不负责遮罩、焦点锁定、back 关闭或生命周期。
+ * 需要 overlay 行为时，通过 [PixelOverlayController.showDialog] 显示并持有返回的 handle。
+ */
 public fun Dialog(
     title: Widget? = null,
     content: Widget,
@@ -139,6 +145,12 @@ public fun Dialog(
     )
 }
 
+/**
+ * 居中的短提示内容。
+ *
+ * 该函数只创建 toast widget，不内置自动超时或动画。业务需要显示/关闭时长时，应由
+ * [PixelOverlayController] 的 handle 或外部计时器控制。
+ */
 public fun Toast(
     message: String,
     fillColor: PixelColor = PixelColor.Black,
@@ -161,6 +173,12 @@ public fun Toast(
     )
 }
 
+/**
+ * 像素风 snackbar 内容。
+ *
+ * 该函数只绘制条形内容本身；贴底定位由 [PixelOverlayController.showSnackbar] 或调用方的
+ * [Positioned] 负责。可通过 [action] 放入一个按钮类 widget。
+ */
 public fun Snackbar(
     message: String,
     action: Widget? = null,
