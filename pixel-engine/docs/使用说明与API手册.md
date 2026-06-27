@@ -257,6 +257,19 @@ PixelTheme(
 显式参数优先级高于主题，例如 `Text("HOME", color = PixelColor.White)` 不会使用
 `PixelThemeData.textStyle.color`。
 
+当前 `PixelThemeData` 边界：
+
+- `textStyle`：`Text` / `RichText` 的默认文字样式。
+- `buttonStyle`：`OutlinedButton` 的默认边框、文字样式和对齐；disabled 默认使用 `colors.disabled`。
+- `textButtonStyle`：`TextButton` 的默认文字样式、padding 和对齐；disabled 默认使用 `colors.disabled`。
+- `textFieldStyle`：`TextField` 的默认边框、文字、placeholder、cursor、selection 和 composition 样式。
+
+不在边界内：
+
+- 不接管 `PixelHostView` 的 `bezelColor` / `offPixelColor` / screen profile。
+- 不为纯函数组件强插 `Builder` 或额外 wrapper；后续组件如果自然重构为 context-aware widget，再顺手接入主题。
+- 不提供 Material / Cupertino token，也不追求通用设计系统。
+
 字体优先级：
 
 1. `TextStyle(textRasterizer = ...)`

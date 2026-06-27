@@ -230,7 +230,16 @@ internal data class OutlinedButtonWidget(
         }
         val focused = effectiveEnabled && focusNode?.isFocused == true
         val effectiveFill = fillColor ?: themedStyle.fillColor
-        val effectiveBorder = borderColor ?: if (focused) theme.colors.focus else themedStyle.borderColor
+        val effectiveTextStyle = if (!effectiveEnabled && style == PixelButtonStyle.Default) {
+            themedStyle.textStyle.copy(color = theme.colors.disabled)
+        } else {
+            themedStyle.textStyle
+        }
+        val effectiveBorder = borderColor ?: when {
+            !effectiveEnabled && style == PixelButtonStyle.Default -> theme.colors.disabled
+            focused -> theme.colors.focus
+            else -> themedStyle.borderColor
+        }
         val content = Container(
             fillColor = effectiveFill,
             borderColor = effectiveBorder,
@@ -239,7 +248,7 @@ internal data class OutlinedButtonWidget(
             key = key,
             child = Text(
                 text,
-                style = themedStyle.textStyle,
+                style = effectiveTextStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
                 textAlign = TextAlign.CENTER,
                 key = key?.let { "$it-text" },
@@ -271,7 +280,13 @@ internal data class TextButtonWidget(
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         val effectiveEnabled = enabled && onPressed != null
-        val themedStyle = if (style == PixelTextButtonStyle.Default) PixelTheme.of(context).textButtonStyle else style
+        val theme = PixelTheme.of(context)
+        val themedStyle = if (style == PixelTextButtonStyle.Default) theme.textButtonStyle else style
+        val effectiveTextStyle = if (!effectiveEnabled && style == PixelTextButtonStyle.Default) {
+            themedStyle.textStyle.copy(color = theme.colors.disabled)
+        } else {
+            themedStyle.textStyle
+        }
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) {
             context.watch(focusNode)
@@ -283,7 +298,7 @@ internal data class TextButtonWidget(
             key = key,
             child = Text(
                 text,
-                style = themedStyle.textStyle,
+                style = effectiveTextStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,

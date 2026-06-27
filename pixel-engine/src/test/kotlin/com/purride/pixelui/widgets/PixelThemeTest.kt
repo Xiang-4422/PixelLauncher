@@ -1,11 +1,13 @@
 package com.purride.pixelui.widgets
 
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.Column
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.PixelThemeColors
 import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
 import com.purride.pixelui.TextField
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.testing.PixelTester
@@ -73,5 +75,29 @@ class PixelThemeTest {
         )
 
         assertTrue(tester.hasPixel(border))
+    }
+
+    @Test
+    fun disabledButtonsUseThemeDisabledColorByDefault() {
+        val disabled = PixelColor.fromRgb(40, 90, 200)
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = PixelTheme(
+                data = PixelThemeData(colors = PixelThemeColors.Default.copy(disabled = disabled)),
+                child = Column(
+                    children = listOf(
+                        OutlinedButton(text = "OK", onPressed = null),
+                        TextButton(text = "NO", onPressed = null),
+                    ),
+                    spacing = 1,
+                ),
+            ),
+            logicalWidth = 48,
+            logicalHeight = 24,
+        )
+
+        assertTrue(tester.hasPixel(disabled))
+        tester.dispose()
     }
 }
