@@ -996,6 +996,74 @@ scrollController.jumpToEnd(listState)
 | `PixelGlyphPackAssetLoader` | 字形包加载 |
 | `PixelFontEngine` | 字形查询、缓存和绘制 |
 
+#### 资源 manifest 与 catalog
+
+`PixelResourceManifestJsonLoader` 是 SDK 侧资源清单入口，用于把调用方打包在 assets 或 raw 目录中的 JSON 转成稳定的资源定义。当前有两个解析入口：
+
+- `parse(json)`：解析基础 manifest，只包含 bitmap、sprite sheet 和 metadata。
+- `parseCatalog(json)`：解析完整 catalog，在基础 manifest 之外增加 color 和 font。
+
+基础 manifest 支持 `version` 1 或 2。未声明 `version` 时按 1 处理。`metadata` 只接受字符串键值对，用于记录 pack、revision、locale 等调用方自定义信息；engine 不解释这些字段。
+
+```json
+{
+  "version": 1,
+  "metadata": {
+    "pack": "demo",
+    "revision": "1"
+  },
+  "bitmaps": [
+    { "id": "runner", "path": "sprites/runner.png" }
+  ],
+  "spriteSheets": [
+    {
+      "id": "runnerRun",
+      "path": "sprites/runner.sheet.json",
+      "bitmap": "runner"
+    }
+  ]
+}
+```
+
+字段约束：
+
+- `bitmaps[].id` 是资源唯一标识，不能为空；`bitmaps[].path` 是调用方资源路径，不能为空。
+- `spriteSheets[].id` 不能为空；`spriteSheets[].path` 指向 sprite sheet JSON；`spriteSheets[].bitmap` 必须引用同一 manifest 中已声明的 bitmap id。
+- 同一类型内不允许重复 id。
+- `parse(json)` 不加载真实 bitmap 或 sprite sheet 文件，只完成清单解析和结构校验。
+- 解析失败统一抛出 `PixelResourceManifestLoadException`。
+
+完整 catalog 必须使用 `version: 2`，用于把颜色和字体也纳入同一个资源目录。
+
+```json
+{
+  "version": 2,
+  "bitmaps": [
+    { "id": "icons", "path": "images/icons.png" }
+  ],
+  "colors": [
+    { "id": "accent", "value": "#22AAFF" },
+    { "id": "overlay", "value": "#80224466" }
+  ],
+  "fonts": [
+    {
+      "id": "ui8",
+      "manifest": "glyphpacks/ui8/manifest.json",
+      "binary": "glyphpacks/ui8/glyphs.bin"
+    }
+  ]
+}
+```
+
+catalog 额外约束：
+
+- `colors[].value` 支持 `#RRGGBB` 和 `#AARRGGBB`。
+- `fonts[].manifest` 指向 glyph pack manifest；`fonts[].binary` 指向 glyph 二进制文件。
+- bitmap、sprite sheet、color、font 的 id 在整个 catalog 内必须唯一。
+- 如果声明 `colors` 或 `fonts`，`version` 必须是 2。
+
+建议调用方把 manifest/catalog 当成资源索引，不要把它当成运行时状态存储。真实资源加载仍由 `PixelBitmapAssetLoader`、`PixelBitmapResourceLoader`、`PixelSpriteSheetJsonLoader` 和 `PixelGlyphPackAssetLoader` 完成；缓存复用由 `PixelResourceCache` 管理。
+
 ## 8. 自定义 RenderObject
 
 用于内置 widget 不够表达的场景。
