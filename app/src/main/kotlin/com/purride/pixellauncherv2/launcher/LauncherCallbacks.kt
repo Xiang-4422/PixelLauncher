@@ -7,8 +7,8 @@ package com.purride.pixellauncherv2.launcher
  */
 data class LauncherCallbacks(
     // ── HOME ──────────────────────────────────────────────────────────────────
-    /** 用户点击 CONTACT 按钮 → 打开通讯录 */
-    val onOpenContacts: () -> Unit,
+    /** 用户点击 CALL 按钮 → 打开通话记录 */
+    val onOpenCall: () -> Unit,
     /** 用户点击 SMS 按钮 → 进入短信模块 */
     val onOpenSms: () -> Unit,
     /** 用户点击 HOME 信息行。 */

@@ -40,7 +40,12 @@ import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelInspectorTargetKind
 import com.purride.pixelui.PixelInspectorTargetSnapshot
+import com.purride.pixelui.PixelSliverAppBar
+import com.purride.pixelui.PixelSliverList
+import com.purride.pixelui.PixelSliverListBuilder
+import com.purride.pixelui.PixelSliverPinnedHeader
 import com.purride.pixelui.PixelAsyncSnapshot
+import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.PixelThemeData
@@ -157,6 +162,54 @@ class PixelTesterDslTest {
         assertEquals(naturalBounds.width + 4, paddedBounds.width)
         assertEquals(naturalBounds.height + 4, paddedBounds.height)
         tester.dispose()
+    }
+
+    @Test
+    fun publicWidgetModelsRemainConstructible() {
+        val textButtonStyle = PixelTextButtonStyle(
+            padding = EdgeInsets.symmetric(horizontal = 2, vertical = 1),
+        )
+        val pinnedHeader = PixelSliverPinnedHeader(
+            child = Text("HEADER"),
+            key = "header",
+        )
+        val list = PixelSliverList(
+            items = listOf(Text("ONE"), Text("TWO")),
+            spacing = 2,
+            key = "list",
+        )
+        val builder = PixelSliverListBuilder(
+            itemCount = 3,
+            itemBuilder = { index -> Text("ROW $index") },
+            itemExtent = null,
+            estimatedItemExtent = 5,
+            spacing = 1,
+            cacheExtent = 8,
+            key = "builder",
+        )
+        val appBar = PixelSliverAppBar(
+            child = Text("APP"),
+            expandedHeight = 16,
+            collapsedHeight = 6,
+            floating = true,
+            snap = false,
+            stretch = true,
+            stretchLimit = 4,
+            key = "app-bar",
+        )
+
+        assertEquals(2, textButtonStyle.padding.left)
+        assertEquals(1, textButtonStyle.padding.top)
+        assertEquals("header", pinnedHeader.key)
+        assertEquals(2, list.items.size)
+        assertEquals(2, list.spacing)
+        assertEquals(3, builder.itemCount)
+        assertEquals(5, builder.estimatedItemExtent)
+        assertEquals(8, builder.cacheExtent)
+        assertEquals(16, appBar.expandedHeight)
+        assertEquals(6, appBar.collapsedHeight)
+        assertTrue(appBar.floating)
+        assertTrue(appBar.stretch)
     }
 
     @Test

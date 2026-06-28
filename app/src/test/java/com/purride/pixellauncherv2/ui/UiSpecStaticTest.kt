@@ -327,6 +327,12 @@ class UiSpecStaticTest {
             "Home content order must remain date, weather, then priority status lines.",
             dateIndex >= 0 && weatherIndex > dateIndex && statusIndex > weatherIndex,
         )
+        assertTrue(
+            "Home information rows must use primary text consistently.",
+            source.contains("style = TextStyle(color = t.text.primary)") &&
+                source.contains("style = TextStyle(color = theme.text.primary)") &&
+                !source.contains("style = TextStyle(color = theme.text.secondary)"),
+        )
     }
 
     @Test
@@ -352,6 +358,37 @@ class UiSpecStaticTest {
         assertTrue(
             "Home actions must use the engine TextButton instead of a local button wrapper.",
             homeSource.contains("TextButton(") && !homeSource.contains("HomeTextButton"),
+        )
+    }
+
+    @Test
+    fun homeCommunicationCountsStayOnBottomActions() {
+        val moduleRoot = resolveModuleRoot()
+        val homeSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt")
+            .readText()
+        val modelSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/HomeInfoModel.kt")
+            .readText()
+
+        assertTrue(
+            "Home missed-call and unread-SMS counts must render on the bottom actions with mirrored positions.",
+            homeSource.contains("count = s.missedCallCount") &&
+                homeSource.contains("countOnStart = false") &&
+                homeSource.contains("count = s.unreadSmsCount") &&
+                homeSource.contains("countOnStart = true"),
+        )
+        assertTrue(
+            "Home action counts must use the ValueAdjuster-style shared border and inverse filled count segment.",
+            homeSource.contains("borderColor = theme.button.border") &&
+                homeSource.contains("fillColor = theme.button.border") &&
+                homeSource.contains("TextStyle(color = theme.text.inverse)") &&
+                homeSource.contains("HOME_ACTION_DIVIDER_PX = 1"),
+        )
+        assertTrue(
+            "Home info rows must not duplicate CALL/SMS counts already shown in the bottom actions.",
+            !modelSource.contains("HomeInfoLine(\"CALL ") &&
+                !modelSource.contains("HomeInfoLine(\"SMS "),
         )
     }
 

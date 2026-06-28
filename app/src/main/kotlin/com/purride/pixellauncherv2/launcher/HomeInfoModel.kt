@@ -20,8 +20,6 @@ data class HomeInfoLine(
 object HomeInfoModel {
 
     fun lines(state: LauncherState): List<HomeInfoLine> = lines(
-        missedCallCount = state.missedCallCount,
-        unreadSmsCount = state.unreadSmsCount,
         nextAlarmText = state.nextAlarmText,
         isCharging = state.isCharging,
         batteryLevel = state.batteryLevel,
@@ -32,8 +30,6 @@ object HomeInfoModel {
     )
 
     fun lines(state: LauncherUiState): List<HomeInfoLine> = lines(
-        missedCallCount = state.missedCallCount,
-        unreadSmsCount = state.unreadSmsCount,
         nextAlarmText = state.nextAlarmText,
         isCharging = state.isCharging,
         batteryLevel = state.batteryLevel,
@@ -58,8 +54,6 @@ object HomeInfoModel {
     )
 
     private fun lines(
-        missedCallCount: Int,
-        unreadSmsCount: Int,
         nextAlarmText: String,
         isCharging: Boolean,
         batteryLevel: Int,
@@ -69,12 +63,6 @@ object HomeInfoModel {
         screenOpenCountText: String,
     ): List<HomeInfoLine> {
         val statusLines = buildList {
-            if (missedCallCount > 0) {
-                add(HomeInfoLine("CALL $missedCallCount", HomeInfoAction.CALL))
-            }
-            if (unreadSmsCount > 0) {
-                add(HomeInfoLine("SMS $unreadSmsCount", HomeInfoAction.SMS))
-            }
             if (nextAlarmText.isNotBlank() && nextAlarmText != "--:--") {
                 add(HomeInfoLine("ALARM $nextAlarmText", HomeInfoAction.ALARM))
             }

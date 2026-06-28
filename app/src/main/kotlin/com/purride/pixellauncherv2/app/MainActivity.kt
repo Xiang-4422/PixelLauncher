@@ -14,7 +14,6 @@ import android.os.SystemClock
 import android.provider.AlarmClock
 import android.provider.CallLog
 import android.provider.Settings
-import android.provider.ContactsContract
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -318,7 +317,7 @@ class MainActivity : AppCompatActivity() {
         launcherRootHost = LauncherRootHost(
             context = this,
             callbacks = LauncherCallbacks(
-                onOpenContacts       = ::onHomeOpenContacts,
+                onOpenCall           = ::onHomeOpenCall,
                 onOpenSms            = ::onHomeOpenSms,
                 onHomeInfoAction     = ::onHomeInfoAction,
                 onHomeInfoDetail     = ::onHomeInfoDetail,
@@ -994,23 +993,18 @@ class MainActivity : AppCompatActivity() {
 
     // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
 
-    /** CONTACT 按钮：打开通讯录（先尝试原生通讯录 app，fallback 到通讯录内容 URI）。 */
-    private fun onHomeOpenContacts() {
-        launchFirstAvailableIntent(
-            Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_APP_CONTACTS)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-            Intent(Intent.ACTION_VIEW).apply {
-                data = ContactsContract.Contacts.CONTENT_URI
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-        )
+    /** CALL 按钮：打开通话记录。 */
+    private fun onHomeOpenCall() {
+        openCallLog()
     }
 
     /** SMS 按钮：进入短信模块。 */
     private fun onHomeOpenSms() {
-        smsController.openModule(initialPage = SmsPageIndex.UNREAD)
+        if (state.unreadSmsCount > 0) {
+            smsController.openUnreadSummaryTarget()
+        } else {
+            smsController.openModule(initialPage = SmsPageIndex.UNREAD)
+        }
     }
 
     private fun onHomeInfoAction(action: HomeInfoAction) {

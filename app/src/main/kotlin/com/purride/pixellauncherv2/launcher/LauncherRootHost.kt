@@ -374,7 +374,7 @@ internal class LauncherRootHost(
     private fun buildHomePage(): Widget = HomeScreen(
         uiState = uiState,
         theme = theme,
-        onOpenContacts = callbacks.onOpenContacts,
+        onOpenCall = callbacks.onOpenCall,
         onOpenSms = callbacks.onOpenSms,
         onInfoAction = callbacks.onHomeInfoAction,
         onInfoDetail = callbacks.onHomeInfoDetail,

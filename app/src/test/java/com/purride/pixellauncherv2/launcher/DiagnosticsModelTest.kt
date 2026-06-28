@@ -79,7 +79,7 @@ class DiagnosticsModelTest {
         )
         val byTitle = DiagnosticsModel.lines(state, profile).associate { it.title to it.value }
 
-        assertEquals("3 ROWS", byTitle["HOME"])
+        assertEquals("1 ROW", byTitle["HOME"])
         assertEquals("OK", byTitle["DATA"])
         assertEquals("EVENTS", byTitle["USAGE"])
     }

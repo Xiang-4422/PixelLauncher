@@ -12,7 +12,6 @@ class DiagnosticsTextSampleModelTest {
     fun samplesMeasureHomeDataAndSettingsTextAgainstContentWidth() {
         val profile = ScreenProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
         val state = LauncherState(
-            missedCallCount = 1,
             hasLocationPermission = true,
             screenUsageTimeText = "00:20",
             screenOpenCountText = "2",
@@ -21,7 +20,6 @@ class DiagnosticsTextSampleModelTest {
         val byText = samples.associateBy { it.text }
 
         assertEquals(116, samples.first().availablePx)
-        assertEquals(36, byText.getValue("CALL 1").widthPx)
         assertEquals(102, byText.getValue("USE 00:20  OPEN 2").widthPx)
         assertEquals(90, byText.getValue("USAGE NO ACCESS").widthPx)
         assertEquals(102, byText.getValue("EFFECT DOT MATRIX").widthPx)

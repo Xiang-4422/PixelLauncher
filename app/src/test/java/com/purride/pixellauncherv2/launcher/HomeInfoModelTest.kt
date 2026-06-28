@@ -30,7 +30,7 @@ class HomeInfoModelTest {
     }
 
     @Test
-    fun communicationRowsKeepPriorityWithoutLineCap() {
+    fun communicationCountsDoNotConsumeHomeInfoRows() {
         val lines = HomeInfoModel.lines(
             LauncherUiState(
                 rainHintText = "RAIN 12:00",
@@ -46,8 +46,6 @@ class HomeInfoModelTest {
 
         assertEquals(
             listOf(
-                "CALL 2" to HomeInfoAction.CALL,
-                "SMS 3" to HomeInfoAction.SMS,
                 "ALARM 07:30" to HomeInfoAction.ALARM,
                 "BATTERY 8%" to HomeInfoAction.BATTERY,
                 "USE 00:10  OPEN 4" to HomeInfoAction.USAGE,
@@ -73,8 +71,6 @@ class HomeInfoModelTest {
 
         assertEquals(
             listOf(
-                "CALL 1" to HomeInfoAction.CALL,
-                "SMS 1" to HomeInfoAction.SMS,
                 "ALARM 07:30" to HomeInfoAction.ALARM,
                 "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
                 "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
@@ -274,7 +270,7 @@ class HomeInfoModelTest {
         )
 
         assertEquals(HomeInfoModel.lines(uiState), HomeInfoModel.lines(launcherState))
-        assertEquals("4 ROWS", HomeInfoModel.summary(launcherState))
+        assertEquals("2 ROWS", HomeInfoModel.summary(launcherState))
         assertEquals(HomeInfoModel.summary(uiState), HomeInfoModel.summary(launcherState))
         assertEquals(HomeInfoModel.weatherLine(uiState), HomeInfoModel.weatherLine(launcherState))
     }
