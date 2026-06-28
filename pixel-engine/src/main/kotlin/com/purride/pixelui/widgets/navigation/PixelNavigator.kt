@@ -92,6 +92,21 @@ public enum class PixelNavigatorOperation {
     Replace,
 }
 
+internal fun resolvePixelRouteTransition(
+    operation: PixelNavigatorOperation,
+    outgoingTransition: PixelRouteTransition?,
+    incomingTransition: PixelRouteTransition?,
+    defaultTransition: PixelRouteTransition,
+): PixelRouteTransition {
+    val routeTransition = when (operation) {
+        PixelNavigatorOperation.Pop -> outgoingTransition
+        PixelNavigatorOperation.Push,
+        PixelNavigatorOperation.Replace,
+        -> incomingTransition
+    }
+    return routeTransition ?: defaultTransition
+}
+
 /**
  * Builds one frame of a custom route transition.
  *
@@ -400,7 +415,7 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
         val child = if (transitionRecord == null) {
             routeChild(currentRoute)
         } else {
-            val transition = transitionRecord.incomingRoute.transition ?: widget.defaultTransition
+            val transition = resolveTransition(transitionRecord)
             val incoming = routeChild(transitionRecord.incomingRoute)
             val outgoing = routeChild(transitionRecord.outgoingRoute, suffix = "outgoing")
             val customBuilder = resolveTransitionBuilder(transitionRecord)
@@ -453,6 +468,15 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
             key = "navigator-scope",
         )
     }
+
+    private fun resolveTransition(
+        transition: PixelNavigatorTransitionRecord,
+    ): PixelRouteTransition = resolvePixelRouteTransition(
+        operation = transition.operation,
+        outgoingTransition = transition.outgoingRoute.transition,
+        incomingTransition = transition.incomingRoute.transition,
+        defaultTransition = widget.defaultTransition,
+    )
 
     private fun resolveTransitionBuilder(
         transition: PixelNavigatorTransitionRecord,

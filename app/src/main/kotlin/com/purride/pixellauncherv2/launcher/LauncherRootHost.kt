@@ -229,14 +229,14 @@ internal class LauncherRootHost(
             initialRoute = routeFor(initialDestination),
             vsync = routeTickerProvider,
             transitionDuration = ROUTE_TRANSITION_DURATION_MS.milliseconds,
-            defaultTransition = PixelRouteTransition.Fade,
+            defaultTransition = PixelRouteTransition.SlideHorizontal,
             key = "launcher-navigator",
         )
     }
 
     private fun routeFor(destination: LauncherRouteDestination): PixelRoute = PixelRoute(
         name = destination.routeName,
-        transition = PixelRouteTransition.Fade,
+        transition = transitionFor(destination),
         builder = { context ->
             navigatorState = PixelNavigator.of(context)
             buildDestination(destination)
@@ -339,7 +339,14 @@ internal class LauncherRootHost(
         val destination = destinationFor(mode)
         if (navigatorDestination == destination) return
         navigatorDestination = destination
-        navigatorState?.replace(routeFor(destination), animated = true)
+        val navigator = navigatorState ?: return
+        when (navigationAction(navigator.stack.map { route -> route.name }, destination)) {
+            LauncherRouteNavigationAction.NONE -> Unit
+            LauncherRouteNavigationAction.PUSH -> navigator.push(routeFor(destination))
+            LauncherRouteNavigationAction.POP -> navigator.pop()
+            LauncherRouteNavigationAction.POP_TO_ROOT -> navigator.popToRoot()
+            LauncherRouteNavigationAction.REPLACE -> navigator.replace(routeFor(destination), animated = true)
+        }
     }
 
     // ── Main pager ────────────────────────────────────────────────────────────
@@ -552,9 +559,54 @@ internal class LauncherRootHost(
             LauncherMode.IDLE -> LauncherRouteDestination.IDLE
         }
 
+        internal fun transitionFor(destination: LauncherRouteDestination): PixelRouteTransition? = when (destination) {
+            LauncherRouteDestination.SMS_ROLE_PROMPT,
+            LauncherRouteDestination.SMS_THREADS,
+            -> PixelRouteTransition.SlideVertical
+
+            LauncherRouteDestination.MAIN,
+            LauncherRouteDestination.SMS_THREAD_DETAIL,
+            LauncherRouteDestination.APP_MANAGEMENT,
+            LauncherRouteDestination.DATA_HEALTH,
+            LauncherRouteDestination.NOTIFICATION_SETTINGS,
+            LauncherRouteDestination.AI_SETTINGS,
+            LauncherRouteDestination.DIAGNOSTICS,
+            LauncherRouteDestination.IDLE,
+            -> null
+        }
+
+        internal fun navigationAction(
+            currentRouteNames: List<String>,
+            destination: LauncherRouteDestination,
+        ): LauncherRouteNavigationAction {
+            val target = destination.routeName
+            if (currentRouteNames.lastOrNull() == target) {
+                return LauncherRouteNavigationAction.NONE
+            }
+            if (destination == LauncherRouteDestination.MAIN && currentRouteNames.size > 1) {
+                return LauncherRouteNavigationAction.POP_TO_ROOT
+            }
+            if (currentRouteNames.dropLast(1).lastOrNull() == target) {
+                return LauncherRouteNavigationAction.POP
+            }
+            return if (currentRouteNames.isNotEmpty()) {
+                LauncherRouteNavigationAction.PUSH
+            } else {
+                LauncherRouteNavigationAction.REPLACE
+            }
+        }
+
         private fun PixelShape.toEngineShape(): EnginePixelShape =
             EnginePixelShape.valueOf(name)
     }
+}
+
+internal enum class LauncherRouteNavigationAction {
+    NONE,
+    PUSH,
+    POP,
+    POP_TO_ROOT,
+    REPLACE,
 }
 
 internal enum class LauncherRouteDestination(

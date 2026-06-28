@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
+import com.purride.pixelui.PixelRouteTransition
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -26,6 +27,61 @@ class LauncherRootHostPageOrderTest {
         assertEquals(
             LauncherRouteDestination.SMS_THREAD_DETAIL,
             LauncherRootHost.destinationFor(LauncherMode.SMS_THREAD_DETAIL),
+        )
+    }
+
+    @Test
+    fun routeTransitionsDefaultToHorizontalButSmsOpensFromBottom() {
+        assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.MAIN))
+        assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.SMS_THREAD_DETAIL))
+        assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.DATA_HEALTH))
+        assertEquals(
+            PixelRouteTransition.SlideVertical,
+            LauncherRootHost.transitionFor(LauncherRouteDestination.SMS_THREADS),
+        )
+        assertEquals(
+            PixelRouteTransition.SlideVertical,
+            LauncherRootHost.transitionFor(LauncherRouteDestination.SMS_ROLE_PROMPT),
+        )
+    }
+
+    @Test
+    fun navigatorRouteChangesUseStackSemanticsForDirectionalTransitions() {
+        assertEquals(
+            LauncherRouteNavigationAction.PUSH,
+            LauncherRootHost.navigationAction(
+                listOf(LauncherRouteDestination.MAIN.routeName),
+                LauncherRouteDestination.DATA_HEALTH,
+            ),
+        )
+        assertEquals(
+            LauncherRouteNavigationAction.POP,
+            LauncherRootHost.navigationAction(
+                listOf(
+                    LauncherRouteDestination.MAIN.routeName,
+                    LauncherRouteDestination.SMS_THREADS.routeName,
+                    LauncherRouteDestination.SMS_THREAD_DETAIL.routeName,
+                ),
+                LauncherRouteDestination.SMS_THREADS,
+            ),
+        )
+        assertEquals(
+            LauncherRouteNavigationAction.POP_TO_ROOT,
+            LauncherRootHost.navigationAction(
+                listOf(
+                    LauncherRouteDestination.MAIN.routeName,
+                    LauncherRouteDestination.DIAGNOSTICS.routeName,
+                    LauncherRouteDestination.DATA_HEALTH.routeName,
+                ),
+                LauncherRouteDestination.MAIN,
+            ),
+        )
+        assertEquals(
+            LauncherRouteNavigationAction.NONE,
+            LauncherRootHost.navigationAction(
+                listOf(LauncherRouteDestination.MAIN.routeName),
+                LauncherRouteDestination.MAIN,
+            ),
         )
     }
 }

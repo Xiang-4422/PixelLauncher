@@ -337,6 +337,37 @@ class PixelNavigatorTest {
     }
 
     @Test
+    fun routeTransitionControlsPopDirectionForBuiltInSlides() {
+        assertEquals(
+            PixelRouteTransition.SlideVertical,
+            resolvePixelRouteTransition(
+                operation = PixelNavigatorOperation.Push,
+                outgoingTransition = null,
+                incomingTransition = PixelRouteTransition.SlideVertical,
+                defaultTransition = PixelRouteTransition.SlideHorizontal,
+            ),
+        )
+        assertEquals(
+            PixelRouteTransition.SlideVertical,
+            resolvePixelRouteTransition(
+                operation = PixelNavigatorOperation.Pop,
+                outgoingTransition = PixelRouteTransition.SlideVertical,
+                incomingTransition = null,
+                defaultTransition = PixelRouteTransition.SlideHorizontal,
+            ),
+        )
+        assertEquals(
+            PixelRouteTransition.SlideHorizontal,
+            resolvePixelRouteTransition(
+                operation = PixelNavigatorOperation.Pop,
+                outgoingTransition = null,
+                incomingTransition = PixelRouteTransition.SlideVertical,
+                defaultTransition = PixelRouteTransition.SlideHorizontal,
+            ),
+        )
+    }
+
+    @Test
     fun popDeliversResultAfterRouteDisposes() {
         val tester = PixelTester()
         val events = mutableListOf<String>()
