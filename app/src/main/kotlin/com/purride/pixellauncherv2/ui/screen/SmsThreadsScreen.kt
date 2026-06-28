@@ -13,7 +13,9 @@ import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.Row
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.Slidable
 import com.purride.pixelui.SlidableAction
 import com.purride.pixelui.SlidableActionPane
@@ -246,24 +248,29 @@ private fun smsBottomTabs(
         spacing = 0,
         children = SMS_PAGE_TABS.mapIndexed { index, label ->
             Expanded(
-                child = GestureDetector(
-                    onTap = { onSelected(index) },
-                    child = Container(
-                        alignment = Alignment.CENTER,
-                        fillColor = if (index == selectedIndex) theme.button.border else PixelColor.Transparent,
-                        padding = EdgeInsets.symmetric(
-                            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-                            vertical = LauncherSpacing.ROW_SPACING,
-                        ),
-                        child = Text(
-                            label,
-                            style = TextStyle(
-                                color = if (index == selectedIndex) theme.text.inverse else theme.button.text,
+                child = Semantics(
+                    label = if (index == selectedIndex) "$label selected" else label,
+                    role = PixelSemanticRole.TAB,
+                    focused = index == selectedIndex,
+                    child = GestureDetector(
+                        onTap = { onSelected(index) },
+                        child = Container(
+                            alignment = Alignment.CENTER,
+                            fillColor = if (index == selectedIndex) theme.button.border else PixelColor.Transparent,
+                            padding = EdgeInsets.symmetric(
+                                horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                                vertical = LauncherSpacing.ROW_SPACING,
                             ),
-                            textAlign = TextAlign.CENTER,
-                            overflow = TextOverflow.ELLIPSIS,
-                            softWrap = false,
-                            maxLines = 1,
+                            child = Text(
+                                label,
+                                style = TextStyle(
+                                    color = if (index == selectedIndex) theme.text.inverse else theme.button.text,
+                                ),
+                                textAlign = TextAlign.CENTER,
+                                overflow = TextOverflow.ELLIPSIS,
+                                softWrap = false,
+                                maxLines = 1,
+                            ),
                         ),
                     ),
                 ),

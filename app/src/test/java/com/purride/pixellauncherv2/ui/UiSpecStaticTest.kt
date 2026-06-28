@@ -428,6 +428,9 @@ class UiSpecStaticTest {
                 source.contains("borderColor = theme.button.border") &&
                 source.contains("SMS_PAGE_TABS.mapIndexed") &&
                 source.contains("Expanded(") &&
+                source.contains("Semantics(") &&
+                source.contains("PixelSemanticRole.TAB") &&
+                source.contains("focused = index == selectedIndex") &&
                 !source.contains("import com.purride.pixelui.Tabs"),
         )
         assertTrue(
