@@ -10,53 +10,53 @@ internal object FallbackThemeJson {
           "mode": "light",
           "colors": {
             "surface": {
-              "bezelColor": "#F8FAFC",
-              "offPixelColor": "#E2E8F0",
+              "bezelColor": "#FFFFFF",
+              "offPixelColor": "#F1F5F9",
               "panel": "#FFFFFF",
-              "panelSubtle": "#F1F5F9"
+              "panelSubtle": "#E2E8F0"
             },
             "text": {
-              "primary": "#0F172A",
-              "secondary": "#334155",
-              "muted": "#64748B",
+              "primary": "#000000",
+              "secondary": "#1E293B",
+              "muted": "#334155",
               "inverse": "#FFFFFF"
             },
             "statusBar": {
-              "text": "#0F172A",
-              "mutedText": "#64748B",
-              "batteryHigh": "#16A34A",
-              "batteryMedium": "#EAB308",
-              "batteryLow": "#DC2626",
-              "searchText": "#0F172A",
-              "searchPlaceholder": "#64748B"
+              "text": "#000000",
+              "mutedText": "#334155",
+              "batteryHigh": "#15803D",
+              "batteryMedium": "#B45309",
+              "batteryLow": "#B91C1C",
+              "searchText": "#000000",
+              "searchPlaceholder": "#334155"
             },
             "drawer": {
-              "itemText": "#0F172A",
-              "itemTextMuted": "#94A3B8",
-              "searchText": "#0F172A",
-              "searchPlaceholder": "#64748B"
+              "itemText": "#000000",
+              "itemTextMuted": "#475569",
+              "searchText": "#000000",
+              "searchPlaceholder": "#334155"
             },
             "settings": {
-              "itemTitle": "#0F172A",
-              "itemValue": "#475569"
+              "itemTitle": "#000000",
+              "itemValue": "#000000"
             },
             "button": {
-              "text": "#0F172A",
-              "border": "#2563EB",
-              "pressedFill": "#DBEAFE",
-              "disabledText": "#94A3B8"
+              "text": "#000000",
+              "border": "#1D4ED8",
+              "pressedFill": "#BFDBFE",
+              "disabledText": "#475569"
             },
             "sms": {
-              "sender": "#2563EB",
-              "timestamp": "#64748B",
-              "body": "#0F172A",
-              "draftBorder": "#2563EB"
+              "sender": "#1D4ED8",
+              "timestamp": "#334155",
+              "body": "#000000",
+              "draftBorder": "#1D4ED8"
             },
             "semantic": {
-              "success": "#16A34A",
-              "warning": "#D97706",
-              "danger": "#DC2626",
-              "info": "#2563EB"
+              "success": "#15803D",
+              "warning": "#B45309",
+              "danger": "#B91C1C",
+              "info": "#1D4ED8"
             }
           }
         }

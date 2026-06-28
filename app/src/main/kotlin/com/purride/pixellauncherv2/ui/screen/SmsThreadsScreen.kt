@@ -353,6 +353,7 @@ private fun buildAllThreadsPage(
                     state = searchState,
                     controller = searchController,
                     placeholder = "SEARCH ALL SMS",
+                    style = smsTextFieldStyle(theme),
                     textInputAction = TextInputAction.SEARCH,
                     onChanged = onSearchChanged,
                 ),
@@ -449,7 +450,6 @@ private fun buildThreadRow(
     onOpenThread: (conversationKey: String) -> Unit,
 ): Widget = GestureDetector(
     onTap = { onOpenThread(thread.conversationKey) },
-    // 行1 用更强的 sender 色承载会话标签；行2 预览降为 muted，避免主次反抢。
     child = Padding(
         horizontal = SMS_THREAD_ROW_PADDING_PX,
         vertical = SMS_THREAD_ROW_PADDING_PX,
@@ -493,7 +493,7 @@ private fun buildThreadRow(
                 ),
                 Text(
                     thread.snippet.trim(),
-                    style = TextStyle(color = theme.text.muted),
+                    style = TextStyle(color = theme.sms.body),
                     overflow = TextOverflow.ELLIPSIS,
                     softWrap = false,
                     maxLines = 1,
@@ -541,7 +541,7 @@ private fun buildSearchResultRow(
                 ),
                 Text(
                     message.body.trim(),
-                    style = TextStyle(color = theme.text.muted),
+                    style = TextStyle(color = theme.sms.body),
                     softWrap = true,
                     maxLines = Int.MAX_VALUE,
                 ),

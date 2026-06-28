@@ -461,8 +461,8 @@ class UiSpecStaticTest {
                 source.contains("if (showUnreadTabs)") &&
                 source.contains("SEARCH ALL SMS") &&
                 source.contains("SmsThreadSearchModel.filter") &&
-                source.contains("行1 用更强的 sender 色承载会话标签") &&
                 source.contains("thread.snippet.trim()") &&
+                source.contains("style = TextStyle(color = theme.sms.body)") &&
                 source.contains("message.body.trim()") &&
                 source.contains("maxLines = Int.MAX_VALUE") &&
                 source.contains("borderColor = theme.button.border") &&

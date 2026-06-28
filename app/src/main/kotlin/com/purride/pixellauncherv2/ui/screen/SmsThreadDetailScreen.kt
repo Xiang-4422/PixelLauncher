@@ -167,6 +167,7 @@ private fun buildComposeArea(
                                 state = draftState,
                                 controller = draftController,
                                 placeholder = "TYPE MSG",
+                                style = smsTextFieldStyle(theme),
                                 textInputAction = TextInputAction.SEND,
                                 onChanged = onDraftChanged,
                                 onSubmitted = { onSendDraft() },
@@ -175,7 +176,7 @@ private fun buildComposeArea(
                         OutlinedButton(
                             text = "SEND",
                             onPressed = onSendDraft,
-                            borderColor = theme.sms.draftBorder,
+                            style = smsSendButtonStyle(theme),
                         ),
                     ),
                 ),
@@ -202,7 +203,7 @@ private fun buildMessage(
                 messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme),
                 Text(
                     msg.body,
-                    style = TextStyle(color = if (isSent) theme.text.muted else theme.sms.body),
+                    style = TextStyle(color = theme.sms.body),
                     softWrap = true,
                     maxLines = Int.MAX_VALUE,
                     // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
