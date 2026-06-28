@@ -75,7 +75,6 @@ data class LauncherUiState(
     // ── Appearance (old render types; migrated to pixel-engine in Phase 1+) ───
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
-    val selectedPixelSizePresetIndex: Int = -1,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
 

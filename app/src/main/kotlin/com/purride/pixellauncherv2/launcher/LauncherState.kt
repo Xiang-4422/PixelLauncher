@@ -50,7 +50,6 @@ data class LauncherState(
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
-    val selectedPixelSizePresetIndex: Int = -1,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,

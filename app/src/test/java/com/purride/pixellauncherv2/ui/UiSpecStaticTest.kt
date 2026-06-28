@@ -176,7 +176,7 @@ class UiSpecStaticTest {
     }
 
     @Test
-    fun pixelAndGapSettingsUseTwoLineControlAndSwitchersInsteadOfSliders() {
+    fun pixelAndGapSettingsUseValueAdjusterAndSwitchersInsteadOfSliders() {
         val moduleRoot = resolveModuleRoot()
         val screenSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
@@ -189,19 +189,22 @@ class UiSpecStaticTest {
             .readText()
 
         assertTrue(
-            "PIXEL must use the two-line size control and GAP must use the ON/OFF switcher.",
+            "PIXEL must use the value adjuster control and GAP must use the ON/OFF switcher.",
             Regex("""SettingsPixelSizeControl\(\s*title = "PIXEL"""").containsMatchIn(screenSource) &&
                 Regex("""SettingsSwitchRow\(\s*title = "GAP"""").containsMatchIn(screenSource),
         )
         assertTrue(
-            "The PIXEL control must show value, S/M/L presets, and manual +/- buttons.",
-            screenSource.contains("valueLabel = selectedDotSizePx.toString()") &&
-                screenSource.contains("presetLabels = SettingsMenuModel.pixelSizePresetLabels") &&
-                screenSource.contains("selectedPresetIndex = selectedPixelSizePresetIndex") &&
+            "The PIXEL control must be one ValueAdjuster row without S/M/L presets.",
+            screenSource.contains("valueLabel = SettingsMenuModel.resolutionLabel(selectedDotSizePx)") &&
                 controlsSource.contains("fun SettingsPixelSizeControl(") &&
-                controlsSource.contains("SegmentedControl(") &&
-                controlsSource.contains("pixelStepButton(text = \"-\"") &&
-                controlsSource.contains("pixelStepButton(text = \"+\""),
+                controlsSource.contains("ValueAdjuster(") &&
+                controlsSource.contains("style = settingsValueAdjusterStyle(theme)") &&
+                controlsSource.contains("buttonFillColor = theme.button.border") &&
+                controlsSource.contains("buttonSymbolColor = theme.text.inverse") &&
+                controlsSource.contains("valueTextColor = theme.settings.itemValue") &&
+                !screenSource.contains("presetLabels =") &&
+                !screenSource.contains("selectedPresetIndex =") &&
+                !controlsSource.contains("pixelStepButton("),
         )
         assertTrue(
             "PIXEL +/- buttons must nudge the current value by 1 instead of cycling preset options.",

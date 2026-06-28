@@ -269,7 +269,6 @@ class MainActivity : AppCompatActivity() {
             state = state,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
-            selectedPixelSizePresetIndex = appearanceSettings.pixelSizePresetIndex,
             isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
         )
@@ -331,7 +330,6 @@ class MainActivity : AppCompatActivity() {
                 onDrawerAppMenuRefresh = ::onDrawerAppMenuRefresh,
                 onDrawerAppMenuDismiss = ::onDrawerAppMenuDismiss,
                 onSettingsItemAction = ::onSettingsItemAction,
-                onPixelSizePresetSelected = ::onPixelSizePresetSelected,
                 onStatusBarAction = ::onStatusBarAction,
                 onAppEditorPrevious = ::onAppEditorPrevious,
                 onAppEditorNext = ::onAppEditorNext,
@@ -916,13 +914,11 @@ class MainActivity : AppCompatActivity() {
         when (item) {
             SettingsMenuItem.RESOLUTION -> applyPixelSizeChange(
                 newDotSizePx = (s.selectedDotSizePx + direction).coerceAtLeast(1),
-                newPresetIndex = -1,
             )
             SettingsMenuItem.PIXEL_GAP -> {
                 val enabled = !s.isPixelGapEnabled
                 applyPixelAppearancePreview(
                     newDotSizePx = s.selectedDotSizePx,
-                    newPresetIndex = s.selectedPixelSizePresetIndex,
                     newPixelGapEnabled = enabled,
                 )
             }
@@ -994,13 +990,6 @@ class MainActivity : AppCompatActivity() {
         if (pendingPixelAppearanceBaseline != null) {
             confirmPendingPixelAppearanceChange()
         }
-    }
-
-    private fun onPixelSizePresetSelected(index: Int) {
-        applyPixelSizeChange(
-            newDotSizePx = SettingsMenuModel.pixelSizePresetValue(index),
-            newPresetIndex = index,
-        )
     }
 
     // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
@@ -1767,26 +1756,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun scrollSmsDetailBy(deltaPx: Int) = Unit
 
-    private fun applyPixelSizeChange(
-        newDotSizePx: Int,
-        newPresetIndex: Int,
-    ) {
+    private fun applyPixelSizeChange(newDotSizePx: Int) {
         applyPixelAppearancePreview(
             newDotSizePx = newDotSizePx,
-            newPresetIndex = newPresetIndex,
             newPixelGapEnabled = state.isPixelGapEnabled,
         )
     }
 
     private fun applyPixelAppearancePreview(
         newDotSizePx: Int,
-        newPresetIndex: Int,
         newPixelGapEnabled: Boolean,
     ) {
         val current = state
         if (
             newDotSizePx == current.selectedDotSizePx &&
-            newPresetIndex == current.selectedPixelSizePresetIndex &&
             newPixelGapEnabled == current.isPixelGapEnabled
         ) {
             return
@@ -1794,21 +1777,18 @@ class MainActivity : AppCompatActivity() {
 
         val baseline = pendingPixelAppearanceBaseline ?: PixelAppearanceBaseline(
             dotSizePx = current.selectedDotSizePx,
-            presetIndex = current.selectedPixelSizePresetIndex,
             pixelGapEnabled = current.isPixelGapEnabled,
         ).also { pendingPixelAppearanceBaseline = it }
 
         applyAppearanceState(
             newPixelShape = current.selectedPixelShape,
             newDotSizePx = newDotSizePx,
-            newPixelSizePresetIndex = newPresetIndex,
             newPixelGapEnabled = newPixelGapEnabled,
             newTheme = current.selectedTheme,
         )
 
         if (
             newDotSizePx == baseline.dotSizePx &&
-            newPresetIndex == baseline.presetIndex &&
             newPixelGapEnabled == baseline.pixelGapEnabled
         ) {
             clearPendingPixelAppearanceChange()
@@ -1820,21 +1800,18 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearance(
         newPixelShape: PixelShape,
         newDotSizePx: Int,
-        newPixelSizePresetIndex: Int = state.selectedPixelSizePresetIndex,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
     ) {
         persistAppearance(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
-            pixelSizePresetIndex = newPixelSizePresetIndex,
             pixelGapEnabled = newPixelGapEnabled,
             theme = newTheme,
         )
         applyAppearanceState(
             newPixelShape = newPixelShape,
             newDotSizePx = newDotSizePx,
-            newPixelSizePresetIndex = newPixelSizePresetIndex,
             newPixelGapEnabled = newPixelGapEnabled,
             newTheme = newTheme,
         )
@@ -1843,14 +1820,12 @@ class MainActivity : AppCompatActivity() {
     private fun persistAppearance(
         pixelShape: PixelShape,
         dotSizePx: Int,
-        pixelSizePresetIndex: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
     ) {
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = pixelShape,
             dotSizePx = dotSizePx,
-            pixelSizePresetIndex = pixelSizePresetIndex,
             pixelGapEnabled = pixelGapEnabled,
             theme = theme,
         )
@@ -1859,7 +1834,6 @@ class MainActivity : AppCompatActivity() {
     private fun applyAppearanceState(
         newPixelShape: PixelShape,
         newDotSizePx: Int,
-        newPixelSizePresetIndex: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
         render: Boolean = true,
@@ -1869,7 +1843,6 @@ class MainActivity : AppCompatActivity() {
             state = state,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
-            selectedPixelSizePresetIndex = newPixelSizePresetIndex,
             isPixelGapEnabled = newPixelGapEnabled,
             selectedTheme = newTheme,
         )
@@ -1915,7 +1888,6 @@ class MainActivity : AppCompatActivity() {
         persistAppearance(
             pixelShape = confirmedState.selectedPixelShape,
             dotSizePx = confirmedState.selectedDotSizePx,
-            pixelSizePresetIndex = confirmedState.selectedPixelSizePresetIndex,
             pixelGapEnabled = confirmedState.isPixelGapEnabled,
             theme = confirmedState.selectedTheme,
         )
@@ -1928,7 +1900,6 @@ class MainActivity : AppCompatActivity() {
         applyAppearanceState(
             newPixelShape = state.selectedPixelShape,
             newDotSizePx = baseline.dotSizePx,
-            newPixelSizePresetIndex = baseline.presetIndex,
             newPixelGapEnabled = baseline.pixelGapEnabled,
             newTheme = state.selectedTheme,
             render = render,
@@ -2372,6 +2343,5 @@ class MainActivity : AppCompatActivity() {
 
 private data class PixelAppearanceBaseline(
     val dotSizePx: Int,
-    val presetIndex: Int,
     val pixelGapEnabled: Boolean,
 )

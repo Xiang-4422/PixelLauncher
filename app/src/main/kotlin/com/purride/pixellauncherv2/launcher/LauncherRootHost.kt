@@ -384,7 +384,6 @@ internal class LauncherRootHost(
         uiState = uiState,
         theme = theme,
         onItemAction = callbacks.onSettingsItemAction,
-        onPixelSizePresetSelected = callbacks.onPixelSizePresetSelected,
     )
 
     private fun buildSharedStatusBar(): Widget =

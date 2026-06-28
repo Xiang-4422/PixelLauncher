@@ -46,7 +46,6 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     smsPermissionState = smsPermissionState,
     selectedPixelShape = selectedPixelShape,
     selectedDotSizePx = selectedDotSizePx,
-    selectedPixelSizePresetIndex = selectedPixelSizePresetIndex,
     isPixelGapEnabled = isPixelGapEnabled,
     selectedTheme = selectedTheme,
     drawerListAlignment = drawerListAlignment,

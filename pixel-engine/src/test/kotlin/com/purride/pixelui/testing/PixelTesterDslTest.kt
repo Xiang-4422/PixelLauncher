@@ -1,5 +1,6 @@
 package com.purride.pixelui.testing
 
+import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.ActivityIndicator
 import com.purride.pixelui.AppScaffold
@@ -29,6 +30,7 @@ import com.purride.pixelui.Menu
 import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
+import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelDebugOverlay
 import com.purride.pixelui.PixelHostFrameStats
@@ -39,6 +41,9 @@ import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelInspectorTargetKind
 import com.purride.pixelui.PixelInspectorTargetSnapshot
 import com.purride.pixelui.PixelAsyncSnapshot
+import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.PixelMenuItem
@@ -76,6 +81,7 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.Toast
 import com.purride.pixelui.Tooltip
 import com.purride.pixelui.ValueAdjuster
+import com.purride.pixelui.ValueAdjusterStyle
 import com.purride.pixelui.Visibility
 import com.purride.pixelui.Wrap
 import com.purride.pixelui.animation.IntOffset
@@ -84,6 +90,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelRefreshIndicatorController
 import com.purride.pixelui.state.PixelTextFieldController
+import com.purride.pixelui.internal.PixelRect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -1539,9 +1546,103 @@ class PixelTesterDslTest {
             logicalHeight = 32,
         )
 
+        val adjustTargets = requireNotNull(tester.renderResult).clickTargets.sortedBy { it.bounds.left }
+        assertEquals(2, adjustTargets.size)
+        val decreaseTarget = adjustTargets[0]
+        val increaseTarget = adjustTargets[1]
+        assertEquals(11, decreaseTarget.bounds.width)
+        assertEquals(11, increaseTarget.bounds.width)
+        assertEquals(decreaseTarget.bounds.height, increaseTarget.bounds.height)
+        val buffer = requireNotNull(tester.renderResult).buffer
+
+        val outerLeft = decreaseTarget.bounds.left - 1
+        val outerTop = decreaseTarget.bounds.top - 1
+        val outerRight = increaseTarget.bounds.right
+        val outerBottom = decreaseTarget.bounds.bottom
+        for (x in outerLeft..outerRight) {
+            assertEquals(PixelColor.White, buffer.getPixel(x, outerTop))
+            assertEquals(PixelColor.White, buffer.getPixel(x, outerBottom))
+        }
+        for (y in outerTop..outerBottom) {
+            assertEquals(PixelColor.White, buffer.getPixel(outerLeft, y))
+            assertEquals(PixelColor.White, buffer.getPixel(outerRight, y))
+            assertEquals(PixelColor.White, buffer.getPixel(decreaseTarget.bounds.right, y))
+            assertEquals(PixelColor.White, buffer.getPixel(increaseTarget.bounds.left - 1, y))
+        }
+        assertFalse(buffer.getPixel(decreaseTarget.bounds.right + 1, outerTop + 1) == PixelColor.White)
+
+        val decreaseSymbol = symbolPixels(buffer, decreaseTarget.bounds, PixelColor.Black)
+        val increaseSymbol = symbolPixels(buffer, increaseTarget.bounds, PixelColor.Black)
+        assertEquals(5, decreaseSymbol.size)
+        assertEquals(9, increaseSymbol.size)
+        assertCenteredSymbol(decreaseSymbol, decreaseTarget.bounds, expectedWidth = 5, expectedHeight = 1)
+        assertCenteredSymbol(increaseSymbol, increaseTarget.bounds, expectedWidth = 5, expectedHeight = 5)
         tester.tap(find.byKey("adjust-decrease"))
         tester.tap(find.byKey("adjust-increase"))
         assertEquals(5, value)
+
+        val tallStyle = PixelTextStyle.Default.copy(lineHeight = 13)
+        tester.pumpWidget(
+            widget = PixelTheme(
+                data = PixelThemeData(
+                    textStyle = tallStyle,
+                    buttonStyle = PixelButtonStyle.Default.copy(
+                        borderColor = PixelColor.White,
+                        textStyle = tallStyle,
+                    ),
+                ),
+                child = ValueAdjuster(
+                    valueText = "10PX",
+                    onDecrease = { value -= 1 },
+                    onIncrease = { value += 1 },
+                    key = "tall-adjust",
+                ),
+            ),
+            logicalWidth = 96,
+            logicalHeight = 32,
+        )
+        val tallTargets = requireNotNull(tester.renderResult).clickTargets.sortedBy { it.bounds.left }
+        val tallLeft = tallTargets[0]
+        val tallRight = tallTargets[1]
+        assertEquals(11, tallLeft.bounds.width)
+        assertTrue("ValueAdjuster buttons must stretch when value text gets taller.", tallLeft.bounds.height > decreaseTarget.bounds.height)
+        val tallBuffer = requireNotNull(tester.renderResult).buffer
+        val tallTop = tallLeft.bounds.top - 1
+        val tallBottom = tallLeft.bounds.bottom
+        val tallLeftDividerX = tallLeft.bounds.right
+        val tallRightDividerX = tallRight.bounds.left - 1
+        listOf(tallTop, (tallTop + tallBottom) / 2, tallBottom).forEach { y ->
+            assertEquals(PixelColor.White, tallBuffer.getPixel(tallLeftDividerX, y))
+            assertEquals(PixelColor.White, tallBuffer.getPixel(tallRightDividerX, y))
+        }
+        assertCenteredSymbol(symbolPixels(tallBuffer, tallLeft.bounds, PixelColor.Black), tallLeft.bounds, expectedWidth = 5, expectedHeight = 1)
+        assertCenteredSymbol(symbolPixels(tallBuffer, tallRight.bounds, PixelColor.Black), tallRight.bounds, expectedWidth = 5, expectedHeight = 5)
+
+        val styledBorder = PixelColor.fromRgb(10, 90, 180)
+        val styledSymbol = PixelColor.fromRgb(250, 250, 250)
+        tester.pumpWidget(
+            widget = ValueAdjuster(
+                valueText = "7",
+                onDecrease = { value -= 1 },
+                onIncrease = { value += 1 },
+                style = ValueAdjusterStyle(
+                    borderColor = styledBorder,
+                    buttonFillColor = styledBorder,
+                    buttonSymbolColor = styledSymbol,
+                    valueTextColor = styledSymbol,
+                    disabledColor = PixelColor.fromRgb(80, 80, 80),
+                    focusColor = styledBorder,
+                ),
+                key = "styled-adjust",
+            ),
+            logicalWidth = 96,
+            logicalHeight = 32,
+        )
+        val styledTargets = requireNotNull(tester.renderResult).clickTargets.sortedBy { it.bounds.left }
+        val styledBuffer = requireNotNull(tester.renderResult).buffer
+        assertEquals(styledBorder, styledBuffer.getPixel(styledTargets[0].bounds.left, styledTargets[0].bounds.top))
+        assertEquals(styledBorder, styledBuffer.getPixel(styledTargets[0].bounds.right, styledTargets[0].bounds.top - 1))
+        assertCenteredSymbol(symbolPixels(styledBuffer, styledTargets[1].bounds, styledSymbol), styledTargets[1].bounds, expectedWidth = 5, expectedHeight = 5)
 
         tester.pumpWidget(
             widget = Stepper(
@@ -1558,6 +1659,35 @@ class PixelTesterDslTest {
         tester.tap(find.byKey("stepper-increase"))
         assertEquals(10, value)
         tester.dispose()
+    }
+
+    private fun symbolPixels(buffer: PixelBuffer, bounds: PixelRect, color: PixelColor): List<Pair<Int, Int>> {
+        return buildList {
+            for (y in bounds.top until bounds.bottom) {
+                for (x in bounds.left until bounds.right) {
+                    if (buffer.getPixel(x, y) == color) {
+                        add(x to y)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun assertCenteredSymbol(
+        pixels: List<Pair<Int, Int>>,
+        bounds: PixelRect,
+        expectedWidth: Int,
+        expectedHeight: Int,
+    ) {
+        assertTrue(pixels.isNotEmpty())
+        val minX = pixels.minOf { it.first }
+        val maxX = pixels.maxOf { it.first }
+        val minY = pixels.minOf { it.second }
+        val maxY = pixels.maxOf { it.second }
+        assertEquals(expectedWidth, maxX - minX + 1)
+        assertEquals(expectedHeight, maxY - minY + 1)
+        assertEquals(minX - bounds.left, bounds.right - 1 - maxX)
+        assertEquals(minY - bounds.top, bounds.bottom - 1 - maxY)
     }
 
     @Test

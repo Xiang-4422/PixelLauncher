@@ -44,7 +44,6 @@ class SettingsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
     private val onItemAction: (SettingsMenuItem, Int) -> Unit,
-    private val onPixelSizePresetSelected: (Int) -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -84,11 +83,8 @@ class SettingsScreen(
             add(
                 SettingsPixelSizeControl(
                     title = "PIXEL",
-                    valueLabel = selectedDotSizePx.toString(),
-                    presetLabels = SettingsMenuModel.pixelSizePresetLabels,
-                    selectedPresetIndex = selectedPixelSizePresetIndex,
+                    valueLabel = SettingsMenuModel.resolutionLabel(selectedDotSizePx),
                     theme = t,
-                    onPresetSelected = widget.onPixelSizePresetSelected,
                     onDecrease = { widget.onItemAction(SettingsMenuItem.RESOLUTION, -1) },
                     onIncrease = { widget.onItemAction(SettingsMenuItem.RESOLUTION, +1) },
                 ),

@@ -17,7 +17,6 @@ class FontSettingsRepository(
     data class AppearanceSettings(
         val pixelShape: PixelShape,
         val dotSizePx: Int,
-        val pixelSizePresetIndex: Int,
         val pixelGapEnabled: Boolean,
         val theme: PixelTheme,
     )
@@ -37,7 +36,6 @@ class FontSettingsRepository(
         return AppearanceSettings(
             pixelShape = readStoredPixelShape() ?: PixelShape.SQUARE,
             dotSizePx = dotSizePx,
-            pixelSizePresetIndex = readStoredPixelSizePresetIndex(dotSizePx),
             pixelGapEnabled = readStoredPixelGapEnabled(),
             theme = readStoredTheme(),
         )
@@ -58,7 +56,6 @@ class FontSettingsRepository(
     fun setAppearanceSettings(
         pixelShape: PixelShape,
         dotSizePx: Int,
-        pixelSizePresetIndex: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
     ) {
@@ -66,7 +63,6 @@ class FontSettingsRepository(
         sharedPreferences.edit()
             .putString(KEY_PIXEL_SHAPE, pixelShape.name)
             .putInt(KEY_DOT_SIZE_PX, safeDotSizePx)
-            .putInt(KEY_PIXEL_SIZE_PRESET_INDEX, normalizePixelSizePresetIndex(pixelSizePresetIndex))
             .putBoolean(KEY_PIXEL_GAP_ENABLED, pixelGapEnabled)
             .putString(KEY_THEME, theme.name)
             .apply()
@@ -110,23 +106,6 @@ class FontSettingsRepository(
         return PixelTheme.entries.firstOrNull { it.name == storedValue } ?: PixelTheme.DAY
     }
 
-    private fun readStoredPixelSizePresetIndex(dotSizePx: Int): Int {
-        val storedValue = sharedPreferences.getInt(KEY_PIXEL_SIZE_PRESET_INDEX, Int.MIN_VALUE)
-        if (storedValue != Int.MIN_VALUE) {
-            return normalizePixelSizePresetIndex(storedValue)
-        }
-        return when (dotSizePx) {
-            7 -> 0
-            8 -> 1
-            10 -> 2
-            else -> -1
-        }
-    }
-
-    private fun normalizePixelSizePresetIndex(index: Int): Int {
-        return if (index in 0..2) index else -1
-    }
-
     private fun readStoredPixelGapEnabled(): Boolean {
         return sharedPreferences.getBoolean(KEY_PIXEL_GAP_ENABLED, true)
     }
@@ -153,7 +132,6 @@ class FontSettingsRepository(
         const val PREFERENCES_NAME = "pixel_launcher_prefs"
         const val KEY_PIXEL_SHAPE = "selected_pixel_shape"
         const val KEY_DOT_SIZE_PX = "selected_dot_size_px"
-        const val KEY_PIXEL_SIZE_PRESET_INDEX = "selected_pixel_size_preset_index"
         const val KEY_PIXEL_GAP_ENABLED = "pixel_gap_enabled"
         const val KEY_THEME = "selected_theme"
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"

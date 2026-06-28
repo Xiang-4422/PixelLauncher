@@ -2,6 +2,18 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.internal.HitTestResult
+import com.purride.pixelui.internal.LeafRenderObjectWidget
+import com.purride.pixelui.internal.MultiChildRenderObject
+import com.purride.pixelui.internal.MultiChildRenderObjectWidget
+import com.purride.pixelui.internal.PaintContext
+import com.purride.pixelui.internal.PixelClickTarget
+import com.purride.pixelui.internal.PixelRect
+import com.purride.pixelui.internal.PixelSemanticsTarget
+import com.purride.pixelui.internal.RenderBox
+import com.purride.pixelui.internal.RenderConstraints
+import com.purride.pixelui.internal.RenderObject
+import com.purride.pixelui.internal.RenderSize
 
 public data class PixelIconData(
     val bitmap: PixelBitmap,
@@ -483,6 +495,19 @@ public fun SegmentedControl(
  * 组件不保存数值，也不做范围判断；调用方通过 [onDecrease] 和 [onIncrease] 控制边界。
  * 当某一侧回调为 null 或 [enabled] 为 false 时，对应按钮不可点。
  */
+public data class ValueAdjusterStyle(
+    val borderColor: PixelColor? = null,
+    val buttonFillColor: PixelColor? = null,
+    val buttonSymbolColor: PixelColor? = null,
+    val valueTextColor: PixelColor? = null,
+    val disabledColor: PixelColor? = null,
+    val focusColor: PixelColor? = null,
+) {
+    public companion object {
+        public val Default: ValueAdjusterStyle = ValueAdjusterStyle()
+    }
+}
+
 public fun ValueAdjuster(
     valueText: String,
     onDecrease: (() -> Unit)?,
@@ -490,50 +515,448 @@ public fun ValueAdjuster(
     label: String? = null,
     enabled: Boolean = true,
     valueWidth: Int = 24,
+    style: ValueAdjusterStyle = ValueAdjusterStyle.Default,
     key: Any? = null,
-): Widget {
-    val controls = Row(
-        children = listOf(
-            OutlinedButton(
-                text = "-",
-                onPressed = onDecrease,
-                enabled = enabled && onDecrease != null,
-                key = key?.let { "$it-decrease" },
-            ),
-            Container(
-                width = valueWidth.coerceAtLeast(1),
-                padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
-                borderColor = PixelColor.White,
-                child = Text(
-                    valueText,
-                    overflow = PixelTextOverflow.ELLIPSIS,
-                    softWrap = false,
-                    maxLines = 1,
-                    textAlign = TextAlign.CENTER,
-                ),
+): Widget = ValueAdjusterWidget(
+    valueText = valueText,
+    onDecrease = onDecrease,
+    onIncrease = onIncrease,
+    label = label,
+    enabled = enabled,
+    valueWidth = valueWidth,
+    style = style,
+    key = key,
+)
+
+private data class ValueAdjusterWidget(
+    val valueText: String,
+    val onDecrease: (() -> Unit)?,
+    val onIncrease: (() -> Unit)?,
+    val label: String?,
+    val enabled: Boolean,
+    val valueWidth: Int,
+    val style: ValueAdjusterStyle,
+    override val key: Any? = null,
+) : StatelessWidget(key = key) {
+    override fun build(context: BuildContext): Widget {
+        val theme = PixelTheme.of(context)
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) {
+            context.watch(focusNode)
+        }
+        val decreaseEnabled = enabled && onDecrease != null
+        val increaseEnabled = enabled && onIncrease != null
+        val focused = focusNode?.isFocused == true && (decreaseEnabled || increaseEnabled)
+        val disabledColor = style.disabledColor ?: theme.colors.disabled
+        val borderColor = when {
+            !enabled -> disabledColor
+            focused -> style.focusColor ?: theme.colors.focus
+            else -> style.borderColor ?: theme.buttonStyle.borderColor ?: theme.colors.border
+        }
+        val buttonFillColor = if (enabled) {
+            style.buttonFillColor ?: borderColor
+        } else {
+            disabledColor
+        }
+        val buttonSymbolColor = if (enabled) {
+            style.buttonSymbolColor ?: theme.buttonStyle.fillColor ?: theme.colors.background
+        } else {
+            theme.colors.background
+        }
+        val valueColor = if (enabled) {
+            style.valueTextColor ?: theme.buttonStyle.textStyle.color
+        } else {
+            disabledColor
+        }
+        val controls = ValueAdjusterRenderWidget(
+            value = Text(
+                valueText,
+                style = theme.buttonStyle.textStyle.copy(color = valueColor),
+                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+                textAlign = TextAlign.CENTER,
                 key = key?.let { "$it-value" },
             ),
-            OutlinedButton(
-                text = "+",
-                onPressed = onIncrease,
-                enabled = enabled && onIncrease != null,
-                key = key?.let { "$it-increase" },
-            ),
-        ),
-        spacing = 1,
-        crossAxisAlignment = CrossAxisAlignment.CENTER,
-        key = key,
-    )
-    return if (label == null) {
-        controls
-    } else {
-        Column(
-            children = listOf(Text(label), controls),
-            spacing = 1,
-            crossAxisAlignment = CrossAxisAlignment.START,
+            onDecrease = onDecrease,
+            onIncrease = onIncrease,
+            decreaseEnabled = decreaseEnabled,
+            increaseEnabled = increaseEnabled,
+            focused = focused,
+            valueWidth = valueWidth,
+            borderColor = borderColor,
+            buttonFillColor = buttonFillColor,
+            buttonSymbolColor = buttonSymbolColor,
+            disabledColor = disabledColor,
             key = key,
         )
+        return if (label == null) {
+            controls
+        } else {
+            Column(
+                children = listOf(Text(label), controls),
+                spacing = 1,
+                crossAxisAlignment = CrossAxisAlignment.START,
+                key = key,
+            )
+        }
     }
+}
+
+private class ValueAdjusterRenderWidget(
+    private val value: Widget,
+    private val onDecrease: (() -> Unit)?,
+    private val onIncrease: (() -> Unit)?,
+    private val decreaseEnabled: Boolean,
+    private val increaseEnabled: Boolean,
+    private val focused: Boolean,
+    private val valueWidth: Int,
+    private val borderColor: PixelColor,
+    private val buttonFillColor: PixelColor,
+    private val buttonSymbolColor: PixelColor,
+    private val disabledColor: PixelColor,
+    override val key: Any? = null,
+) : MultiChildRenderObjectWidget(
+    children = listOf(
+        ValueAdjusterActionSlot(onTap = onDecrease, key = key?.let { "$it-decrease" }),
+        value,
+        ValueAdjusterActionSlot(onTap = onIncrease, key = key?.let { "$it-increase" }),
+    ),
+    key = key,
+) {
+    override fun createRenderObject(context: BuildContext): RenderObject {
+        return RenderValueAdjuster(
+            onDecrease = onDecrease,
+            onIncrease = onIncrease,
+            decreaseEnabled = decreaseEnabled,
+            increaseEnabled = increaseEnabled,
+            focused = focused,
+            valueWidth = valueWidth,
+            borderColor = borderColor,
+            buttonFillColor = buttonFillColor,
+            buttonSymbolColor = buttonSymbolColor,
+            disabledColor = disabledColor,
+        )
+    }
+
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        (renderObject as RenderValueAdjuster).update(
+            onDecrease = onDecrease,
+            onIncrease = onIncrease,
+            decreaseEnabled = decreaseEnabled,
+            increaseEnabled = increaseEnabled,
+            focused = focused,
+            valueWidth = valueWidth,
+            borderColor = borderColor,
+            buttonFillColor = buttonFillColor,
+            buttonSymbolColor = buttonSymbolColor,
+            disabledColor = disabledColor,
+        )
+    }
+}
+
+private data class ValueAdjusterActionSlot(
+    val onTap: (() -> Unit)?,
+    override val key: Any? = null,
+) : LeafRenderObjectWidget(key = key) {
+    override fun createRenderObject(context: BuildContext): RenderObject {
+        return RenderValueAdjusterActionSlot()
+    }
+}
+
+private class RenderValueAdjusterActionSlot : RenderBox() {
+    override fun layout(constraints: RenderConstraints) {
+        size = RenderSize.Zero
+    }
+
+    override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) = Unit
+}
+
+private class RenderValueAdjuster(
+    private var onDecrease: (() -> Unit)?,
+    private var onIncrease: (() -> Unit)?,
+    private var decreaseEnabled: Boolean,
+    private var increaseEnabled: Boolean,
+    private var focused: Boolean,
+    private var valueWidth: Int,
+    private var borderColor: PixelColor,
+    private var buttonFillColor: PixelColor,
+    private var buttonSymbolColor: PixelColor,
+    private var disabledColor: PixelColor,
+) : MultiChildRenderObject() {
+    private var valueOffsetX = 0
+    private var valueOffsetY = 0
+
+    fun update(
+        onDecrease: (() -> Unit)?,
+        onIncrease: (() -> Unit)?,
+        decreaseEnabled: Boolean,
+        increaseEnabled: Boolean,
+        focused: Boolean,
+        valueWidth: Int,
+        borderColor: PixelColor,
+        buttonFillColor: PixelColor,
+        buttonSymbolColor: PixelColor,
+        disabledColor: PixelColor,
+    ) {
+        if (
+            this.onDecrease === onDecrease &&
+            this.onIncrease === onIncrease &&
+            this.decreaseEnabled == decreaseEnabled &&
+            this.increaseEnabled == increaseEnabled &&
+            this.focused == focused &&
+            this.valueWidth == valueWidth &&
+            this.borderColor == borderColor &&
+            this.buttonFillColor == buttonFillColor &&
+            this.buttonSymbolColor == buttonSymbolColor &&
+            this.disabledColor == disabledColor
+        ) {
+            return
+        }
+        val needsLayout = this.valueWidth != valueWidth
+        this.onDecrease = onDecrease
+        this.onIncrease = onIncrease
+        this.decreaseEnabled = decreaseEnabled
+        this.increaseEnabled = increaseEnabled
+        this.focused = focused
+        this.valueWidth = valueWidth
+        this.borderColor = borderColor
+        this.buttonFillColor = buttonFillColor
+        this.buttonSymbolColor = buttonSymbolColor
+        this.disabledColor = disabledColor
+        if (needsLayout) {
+            markNeedsLayout()
+        }
+        markNeedsPaint()
+    }
+
+    override fun layout(constraints: RenderConstraints) {
+        actionSlots.forEach { slot ->
+            slot.layout(RenderConstraints(maxWidth = 0, maxHeight = 0))
+        }
+
+        val safeValueWidth = valueCellWidth()
+        val valueContentWidth = valueContentWidth(safeValueWidth)
+        val value = valueBox
+        value?.layout(
+            RenderConstraints(
+                minWidth = valueContentWidth,
+                maxWidth = valueContentWidth,
+                minHeight = 0,
+                maxHeight = (
+                    constraints.maxHeight -
+                        (VALUE_ADJUSTER_BORDER_PX * 2) -
+                        (VALUE_ADJUSTER_VALUE_VERTICAL_PADDING_PX * 2)
+                    ).coerceAtLeast(0),
+            ),
+        )
+
+        val desiredInnerHeight = centeredSymbolExtent(
+            maxOf(
+                VALUE_ADJUSTER_MIN_HEIGHT_PX - (VALUE_ADJUSTER_BORDER_PX * 2),
+                (value?.size?.height ?: 0) + (VALUE_ADJUSTER_VALUE_VERTICAL_PADDING_PX * 2),
+            ),
+        )
+        val desiredWidth =
+            (VALUE_ADJUSTER_BORDER_PX * 2) +
+                (VALUE_ADJUSTER_BUTTON_WIDTH_PX * 2) +
+                (VALUE_ADJUSTER_DIVIDER_PX * 2) +
+                safeValueWidth
+        size = RenderSize(
+            width = constraints.constrainWidth(desiredWidth),
+            height = constraints.constrainHeight(desiredInnerHeight + (VALUE_ADJUSTER_BORDER_PX * 2)),
+        )
+
+        valueOffsetX = valueContentLeft(safeValueWidth)
+        valueOffsetY = ((size.height - (value?.size?.height ?: 0)) / 2).coerceAtLeast(VALUE_ADJUSTER_BORDER_PX)
+    }
+
+    override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
+        val innerHeight = innerHeight()
+        if (size.width <= 0 || size.height <= 0 || innerHeight <= 0) {
+            return
+        }
+
+        fillButton(context, offsetX, offsetY, leftButtonX(), decreaseEnabled)
+        fillButton(context, offsetX, offsetY, rightButtonX(), increaseEnabled)
+
+        valueBox?.paint(context, offsetX + valueOffsetX, offsetY + valueOffsetY)
+
+        context.fillRect(offsetX + leftDividerX(), offsetY, VALUE_ADJUSTER_DIVIDER_PX, size.height, borderColor)
+        context.fillRect(offsetX + rightDividerX(), offsetY, VALUE_ADJUSTER_DIVIDER_PX, size.height, borderColor)
+        context.drawRect(offsetX, offsetY, size.width, size.height, borderColor)
+
+        drawSymbol(context, offsetX, offsetY, leftButtonX(), plus = false, enabled = decreaseEnabled)
+        drawSymbol(context, offsetX, offsetY, rightButtonX(), plus = true, enabled = increaseEnabled)
+    }
+
+    override fun hitTest(localX: Int, localY: Int, result: HitTestResult) {
+        if (localX !in 0 until size.width || localY !in 0 until size.height) {
+            return
+        }
+        if (
+            (decreaseEnabled && leftButtonRect().contains(localX, localY)) ||
+            (increaseEnabled && rightButtonRect().contains(localX, localY))
+        ) {
+            result.add(this)
+        }
+    }
+
+    override fun collectClickTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelClickTarget>) {
+        if (decreaseEnabled) {
+            onDecrease?.let { callback ->
+                targets += PixelClickTarget(
+                    bounds = leftButtonRect().translate(offsetX, offsetY),
+                    onClick = callback,
+                    source = this,
+                )
+            }
+        }
+        if (increaseEnabled) {
+            onIncrease?.let { callback ->
+                targets += PixelClickTarget(
+                    bounds = rightButtonRect().translate(offsetX, offsetY),
+                    onClick = callback,
+                    source = this,
+                )
+            }
+        }
+    }
+
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        targets += PixelSemanticsTarget(
+            node = PixelSemanticsNode(
+                label = "Decrease",
+                role = PixelSemanticRole.BUTTON,
+                enabled = decreaseEnabled,
+                focused = focused && decreaseEnabled,
+                left = offsetX + leftButtonRect().left,
+                top = offsetY + leftButtonRect().top,
+                width = leftButtonRect().width,
+                height = leftButtonRect().height,
+            ),
+            source = this,
+        )
+        targets += PixelSemanticsTarget(
+            node = PixelSemanticsNode(
+                label = "Increase",
+                role = PixelSemanticRole.BUTTON,
+                enabled = increaseEnabled,
+                focused = focused && increaseEnabled,
+                left = offsetX + rightButtonRect().left,
+                top = offsetY + rightButtonRect().top,
+                width = rightButtonRect().width,
+                height = rightButtonRect().height,
+            ),
+            source = this,
+        )
+        valueBox?.collectSemantics(offsetX + valueOffsetX, offsetY + valueOffsetY, targets)
+    }
+
+    private fun fillButton(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+        buttonX: Int,
+        enabled: Boolean,
+    ) {
+        context.fillRect(
+            offsetX + buttonX,
+            offsetY + VALUE_ADJUSTER_BORDER_PX,
+            VALUE_ADJUSTER_BUTTON_WIDTH_PX,
+            innerHeight(),
+            if (enabled) buttonFillColor else disabledColor,
+        )
+    }
+
+    private fun drawSymbol(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+        buttonX: Int,
+        plus: Boolean,
+        enabled: Boolean,
+    ) {
+        val color = if (enabled) buttonSymbolColor else PixelColor.Black
+        val left = buttonX + ((VALUE_ADJUSTER_BUTTON_WIDTH_PX - VALUE_ADJUSTER_SYMBOL_SIZE_PX) / 2)
+        val top = VALUE_ADJUSTER_BORDER_PX +
+            ((innerHeight() - VALUE_ADJUSTER_SYMBOL_SIZE_PX) / 2).coerceAtLeast(0)
+        val center = VALUE_ADJUSTER_SYMBOL_SIZE_PX / 2
+        context.fillRect(
+            offsetX + left,
+            offsetY + top + center,
+            VALUE_ADJUSTER_SYMBOL_SIZE_PX,
+            VALUE_ADJUSTER_SYMBOL_STROKE_PX,
+            color,
+        )
+        if (plus) {
+            context.fillRect(
+                offsetX + left + center,
+                offsetY + top,
+                VALUE_ADJUSTER_SYMBOL_STROKE_PX,
+                VALUE_ADJUSTER_SYMBOL_SIZE_PX,
+                color,
+            )
+        }
+    }
+
+    private fun valueCellWidth(): Int = valueWidth.coerceAtLeast(1)
+
+    private fun valueContentWidth(valueCellWidth: Int): Int {
+        return (valueCellWidth - (VALUE_ADJUSTER_VALUE_HORIZONTAL_PADDING_PX * 2)).coerceAtLeast(1)
+    }
+
+    private fun valueContentLeft(valueCellWidth: Int): Int {
+        return VALUE_ADJUSTER_BORDER_PX +
+            VALUE_ADJUSTER_BUTTON_WIDTH_PX +
+            VALUE_ADJUSTER_DIVIDER_PX +
+            ((valueCellWidth - valueContentWidth(valueCellWidth)) / 2)
+    }
+
+    private fun leftButtonX(): Int = VALUE_ADJUSTER_BORDER_PX
+
+    private fun leftDividerX(): Int = VALUE_ADJUSTER_BORDER_PX + VALUE_ADJUSTER_BUTTON_WIDTH_PX
+
+    private fun rightDividerX(): Int {
+        return VALUE_ADJUSTER_BORDER_PX +
+            VALUE_ADJUSTER_BUTTON_WIDTH_PX +
+            VALUE_ADJUSTER_DIVIDER_PX +
+            valueCellWidth()
+    }
+
+    private fun rightButtonX(): Int = rightDividerX() + VALUE_ADJUSTER_DIVIDER_PX
+
+    private fun innerHeight(): Int = (size.height - (VALUE_ADJUSTER_BORDER_PX * 2)).coerceAtLeast(0)
+
+    private fun leftButtonRect(): PixelRect {
+        return PixelRect(
+            left = leftButtonX(),
+            top = VALUE_ADJUSTER_BORDER_PX,
+            width = VALUE_ADJUSTER_BUTTON_WIDTH_PX,
+            height = innerHeight(),
+        )
+    }
+
+    private fun rightButtonRect(): PixelRect {
+        return PixelRect(
+            left = rightButtonX(),
+            top = VALUE_ADJUSTER_BORDER_PX,
+            width = VALUE_ADJUSTER_BUTTON_WIDTH_PX,
+            height = innerHeight(),
+        )
+    }
+
+    private fun centeredSymbolExtent(base: Int): Int {
+        val safe = base.coerceAtLeast(VALUE_ADJUSTER_SYMBOL_SIZE_PX)
+        val freeSpace = safe - VALUE_ADJUSTER_SYMBOL_SIZE_PX
+        return if (freeSpace % 2 == 0) safe else safe + 1
+    }
+
+    private val valueBox: RenderBox?
+        get() = children.getOrNull(1) as? RenderBox
+
+    private val actionSlots: List<RenderBox>
+        get() = listOfNotNull(children.getOrNull(0) as? RenderBox, children.getOrNull(2) as? RenderBox)
 }
 
 /**
@@ -816,6 +1239,14 @@ private fun Int.floorMod(divisor: Int): Int {
 }
 
 private const val TEXT_CONTAINER_PADDING_PX = 2
+private const val VALUE_ADJUSTER_BORDER_PX = 1
+private const val VALUE_ADJUSTER_DIVIDER_PX = 1
+private const val VALUE_ADJUSTER_BUTTON_WIDTH_PX = 11
+private const val VALUE_ADJUSTER_MIN_HEIGHT_PX = 13
+private const val VALUE_ADJUSTER_VALUE_HORIZONTAL_PADDING_PX = 2
+private const val VALUE_ADJUSTER_VALUE_VERTICAL_PADDING_PX = 1
+private const val VALUE_ADJUSTER_SYMBOL_SIZE_PX = 5
+private const val VALUE_ADJUSTER_SYMBOL_STROKE_PX = 1
 
 private fun snackbarText(
     message: String,

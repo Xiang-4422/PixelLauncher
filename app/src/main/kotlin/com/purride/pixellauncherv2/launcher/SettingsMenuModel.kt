@@ -48,8 +48,6 @@ object SettingsMenuModel {
         PixelShape.CIRCLE,
         PixelShape.DIAMOND,
     )
-    val pixelSizePresetLabels: List<String> = listOf("S", "M", "L")
-    val pixelSizePresetValues: List<Int> = listOf(7, 8, 10)
     val themeOptions: List<PixelTheme> = PixelTheme.entries
     fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
         return buildList {
@@ -224,14 +222,6 @@ object SettingsMenuModel {
 
     fun resolutionIndex(current: Int, screenProfile: ScreenProfile? = null): Int {
         return resolutionOptions(screenProfile).indexOf(current).takeIf { it >= 0 } ?: 0
-    }
-
-    fun pixelSizePresetIndex(current: Int): Int {
-        return pixelSizePresetValues.indexOf(current)
-    }
-
-    fun pixelSizePresetValue(index: Int): Int {
-        return pixelSizePresetValues[index.coerceIn(0, pixelSizePresetValues.lastIndex)]
     }
 
     fun nextTheme(current: PixelTheme, direction: Int): PixelTheme {
