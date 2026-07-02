@@ -1284,8 +1284,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget Tabs$default(java.util.List, int, kotlin.jvm.functions.Function1, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, java.lang.Object);
   public static com.purride.pixelui.Widget SegmentedControl$default(java.util.List, int, kotlin.jvm.functions.Function1, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget ValueAdjuster(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, boolean, int, java.lang.Object);
-  public static com.purride.pixelui.Widget ValueAdjuster$default(java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, boolean, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ValueAdjuster(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, boolean, int, com.purride.pixelui.ValueAdjusterStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget ValueAdjuster$default(java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, boolean, int, com.purride.pixelui.ValueAdjusterStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Stepper(int, kotlin.ranges.IntRange, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, int, java.lang.String, java.lang.String, boolean, int, java.lang.Object);
   public static com.purride.pixelui.Widget Stepper$default(int, kotlin.ranges.IntRange, kotlin.jvm.functions.Function1, int, java.lang.String, java.lang.String, boolean, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ShortcutHint(java.lang.String, java.lang.String, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, java.lang.Object);
@@ -2418,8 +2418,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget Flexible$default(com.purride.pixelui.Widget, int, com.purride.pixelui.FlexFit, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Spacer(int, java.lang.Object);
   public static com.purride.pixelui.Widget Spacer$default(int, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget GestureDetector(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
-  public static com.purride.pixelui.Widget GestureDetector$default(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget GestureDetector(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget GestureDetector$default(com.purride.pixelui.Widget, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Line-nZs-OeI(int, int, int, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget Line-nZs-OeI$default(int, int, int, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Line(int, int, int, int, com.purride.pixelui.PixelShapeStyle, java.lang.Object);
@@ -2678,6 +2678,32 @@ public final class com.purride.pixelui.Transform {
   public static final com.purride.pixelui.Transform INSTANCE;
   public final com.purride.pixelui.Widget translate(com.purride.pixelui.animation.IntOffset, com.purride.pixelui.Widget, java.lang.Object);
   public static com.purride.pixelui.Widget translate$default(com.purride.pixelui.Transform, com.purride.pixelui.animation.IntOffset, com.purride.pixelui.Widget, java.lang.Object, int, java.lang.Object);
+}
+public final class com.purride.pixelui.ValueAdjusterStyle {
+  public static final com.purride.pixelui.ValueAdjusterStyle$Companion Companion;
+  public com.purride.pixelui.ValueAdjusterStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelcore.PixelColor getBorderColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getButtonFillColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getButtonSymbolColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getValueTextColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getDisabledColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getFocusColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component1-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component2-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component3-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component4-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component5-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component6-BDeX7ZQ();
+  public final com.purride.pixelui.ValueAdjusterStyle copy-fxZ2EX8(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor);
+  public static com.purride.pixelui.ValueAdjusterStyle copy-fxZ2EX8$default(com.purride.pixelui.ValueAdjusterStyle, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.ValueAdjusterStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelui.ValueAdjusterStyle$Companion {
+  public final com.purride.pixelui.ValueAdjusterStyle getDefault();
+  public com.purride.pixelui.ValueAdjusterStyle$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public interface com.purride.pixelui.ValueListenable<T> extends com.purride.pixelui.Listenable {
   public abstract T getValue();
@@ -3333,6 +3359,7 @@ public final class com.purride.pixelui.widgets.navigation.PixelNavigatorKt {
   public static void saveToBundle$default(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, android.os.Bundle, java.lang.String, int, java.lang.Object);
   public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot getPixelNavigatorSnapshot(android.os.Bundle, java.lang.String);
   public static com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot getPixelNavigatorSnapshot$default(android.os.Bundle, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.widgets.navigation.PixelRouteTransition resolvePixelRouteTransition(com.purride.pixelui.widgets.navigation.PixelNavigatorOperation, com.purride.pixelui.widgets.navigation.PixelRouteTransition, com.purride.pixelui.widgets.navigation.PixelRouteTransition, com.purride.pixelui.widgets.navigation.PixelRouteTransition);
 }
 public final class com.purride.pixelui.widgets.navigation.PixelNavigatorOperation extends java.lang.Enum<com.purride.pixelui.widgets.navigation.PixelNavigatorOperation> {
   public static final com.purride.pixelui.widgets.navigation.PixelNavigatorOperation Push;
