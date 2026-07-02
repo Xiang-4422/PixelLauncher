@@ -9,6 +9,8 @@ import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherMode
+import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
+import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -101,9 +103,11 @@ data class LauncherUiState(
     val nextAlarmText: String = "--:--",
     val missedCallCount: Int = 0,
     val unreadSmsCount: Int = 0,
+    val mediaPlayback: MediaPlaybackSnapshot = MediaPlaybackSnapshot(),
     val notificationSummaryText: String = "",
     val notificationCount: Int = 0,
     val notificationSources: List<NotificationSourceInfo> = emptyList(),
+    val notificationItems: List<NotificationSignal> = emptyList(),
     val mutedNotificationSourceIds: Set<String> = emptySet(),
     val priorityNotificationSourceIds: Set<String> = emptySet(),
     val rainHintText: String = "",

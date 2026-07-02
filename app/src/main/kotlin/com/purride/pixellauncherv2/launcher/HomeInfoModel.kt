@@ -23,8 +23,6 @@ object HomeInfoModel {
         nextAlarmText = state.nextAlarmText,
         isCharging = state.isCharging,
         batteryLevel = state.batteryLevel,
-        notificationSummaryText = state.notificationSummaryText,
-        notificationCount = state.notificationCount,
         screenUsageTimeText = state.screenUsageTimeText,
         screenOpenCountText = state.screenOpenCountText,
     )
@@ -33,8 +31,6 @@ object HomeInfoModel {
         nextAlarmText = state.nextAlarmText,
         isCharging = state.isCharging,
         batteryLevel = state.batteryLevel,
-        notificationSummaryText = state.notificationSummaryText,
-        notificationCount = state.notificationCount,
         screenUsageTimeText = state.screenUsageTimeText,
         screenOpenCountText = state.screenOpenCountText,
     )
@@ -57,12 +53,10 @@ object HomeInfoModel {
         nextAlarmText: String,
         isCharging: Boolean,
         batteryLevel: Int,
-        notificationSummaryText: String,
-        notificationCount: Int,
         screenUsageTimeText: String,
         screenOpenCountText: String,
     ): List<HomeInfoLine> {
-        val statusLines = buildList {
+        return buildList {
             if (nextAlarmText.isNotBlank() && nextAlarmText != "--:--") {
                 add(HomeInfoLine("ALARM $nextAlarmText", HomeInfoAction.ALARM))
             }
@@ -78,21 +72,9 @@ object HomeInfoModel {
                 ),
             )
         }
-        val notificationLines = notificationLines(notificationSummaryText, notificationCount)
-        return statusLines + notificationLines
     }
 
     private const val LOW_BATTERY_THRESHOLD = 15
-
-    private fun notificationLines(summaryText: String, count: Int): List<HomeInfoLine> {
-        val summary = summaryText.trim()
-        if (summary.isEmpty() || count <= 0) return emptyList()
-        return summary
-            .split(Regex("\\s{2,}"))
-            .map(String::trim)
-            .filter(String::isNotEmpty)
-            .map { token -> HomeInfoLine("NOTIFY $token", HomeInfoAction.NOTIFICATION) }
-    }
 
     private fun weatherLine(
         hasLocationPermission: Boolean,

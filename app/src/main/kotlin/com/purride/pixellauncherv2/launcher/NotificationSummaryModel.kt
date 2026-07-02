@@ -9,11 +9,35 @@ enum class NotificationSignalPriority {
 data class NotificationSignal(
     val sourceId: String,
     val sourceLabel: String,
+    val key: String = "",
     val title: String = "",
+    val text: String = "",
+    val subText: String = "",
+    val bigText: String = "",
+    val summaryText: String = "",
+    val textLines: List<String> = emptyList(),
+    val category: String = "",
+    val channelId: String = "",
+    val isMediaStyle: Boolean = false,
     val priority: NotificationSignalPriority = NotificationSignalPriority.DEFAULT,
     val isOngoing: Boolean = false,
     val isSilent: Boolean = false,
+    val isClearable: Boolean = true,
+    val progress: NotificationProgressInfo = NotificationProgressInfo(),
+    val actions: List<NotificationActionInfo> = emptyList(),
     val postedAtMillis: Long = 0L,
+)
+
+data class NotificationProgressInfo(
+    val max: Int = 0,
+    val value: Int = 0,
+    val indeterminate: Boolean = false,
+)
+
+data class NotificationActionInfo(
+    val index: Int,
+    val title: String,
+    val requiresInput: Boolean = false,
 )
 
 data class NotificationSummaryRules(
@@ -31,6 +55,7 @@ data class NotificationSummary(
     val count: Int,
     val text: String,
     val sources: List<NotificationSourceInfo> = emptyList(),
+    val items: List<NotificationSignal> = emptyList(),
 )
 
 object NotificationSummaryModel {
@@ -55,7 +80,7 @@ object NotificationSummaryModel {
             .asSequence()
             .filter { signal -> signal.sourceId.isNotBlank() }
             .filterNot { signal -> signal.sourceId in rules.mutedSourceIds }
-            .filter { signal -> signal.isPriorityFor(rules) }
+            .filterNot(NotificationSummaryModel::isMediaControl)
             .sortedWith(
                 compareByDescending<NotificationSignal> { signal -> signal.sourceId in rules.prioritySourceIds }
                     .thenByDescending { signal -> signal.priority == NotificationSignalPriority.HIGH }
@@ -76,15 +101,8 @@ object NotificationSummaryModel {
             count = candidates.size,
             text = visible.joinToString("  ") + suffix,
             sources = sources,
+            items = candidates,
         )
-    }
-
-    private fun NotificationSignal.isPriorityFor(rules: NotificationSummaryRules): Boolean {
-        if (isSilent) return false
-        if (isOngoing) return false
-        if (sourceId in rules.prioritySourceIds) return true
-        if (priority == NotificationSignalPriority.HIGH) return true
-        return false
     }
 
     private fun summaryToken(signal: NotificationSignal): String {
@@ -96,4 +114,10 @@ object NotificationSummaryModel {
             "$source $title"
         }
     }
+
+    private fun isMediaControl(signal: NotificationSignal): Boolean {
+        return signal.isMediaStyle || signal.category == MEDIA_TRANSPORT_CATEGORY
+    }
+
+    private const val MEDIA_TRANSPORT_CATEGORY = "transport"
 }

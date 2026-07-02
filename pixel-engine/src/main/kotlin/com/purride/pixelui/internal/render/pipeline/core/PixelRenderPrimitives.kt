@@ -133,6 +133,7 @@ internal data class PixelClickTarget(
     val bounds: PixelRect,
     val onClick: () -> Unit,
     val onLongPress: (() -> Unit)? = null,
+    val onDoubleTap: (() -> Unit)? = null,
     val onSwipeStart: (() -> Unit)? = null,
     val onSwipeUpdate: ((Int) -> Unit)? = null,
     val onSwipeEnd: ((Int) -> Unit)? = null,

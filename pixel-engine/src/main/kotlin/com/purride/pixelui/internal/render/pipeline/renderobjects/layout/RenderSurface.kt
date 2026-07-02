@@ -33,6 +33,7 @@ internal class RenderSurface(
     private var contentPaddingBottom: Int = 0,
     private var onClick: (() -> Unit)? = null,
     private var onLongPress: (() -> Unit)? = null,
+    private var onDoubleTap: (() -> Unit)? = null,
     private var onSwipeStart: (() -> Unit)? = null,
     private var onSwipeUpdate: ((Int) -> Unit)? = null,
     private var onSwipeEnd: ((Int) -> Unit)? = null,
@@ -88,6 +89,7 @@ internal class RenderSurface(
         contentPaddingBottom: Int = 0,
         onClick: (() -> Unit)? = null,
         onLongPress: (() -> Unit)? = null,
+        onDoubleTap: (() -> Unit)? = null,
         onSwipeStart: (() -> Unit)? = null,
         onSwipeUpdate: ((Int) -> Unit)? = null,
         onSwipeEnd: ((Int) -> Unit)? = null,
@@ -133,6 +135,7 @@ internal class RenderSurface(
             this.contentPaddingBottom == contentPaddingBottom &&
             this.onClick == onClick &&
             this.onLongPress == onLongPress &&
+            this.onDoubleTap == onDoubleTap &&
             this.onSwipeStart == onSwipeStart &&
             this.onSwipeUpdate == onSwipeUpdate &&
             this.onSwipeEnd == onSwipeEnd &&
@@ -177,6 +180,7 @@ internal class RenderSurface(
         this.contentPaddingBottom = contentPaddingBottom
         this.onClick = onClick
         this.onLongPress = onLongPress
+        this.onDoubleTap = onDoubleTap
         this.onSwipeStart = onSwipeStart
         this.onSwipeUpdate = onSwipeUpdate
         this.onSwipeEnd = onSwipeEnd
@@ -564,6 +568,7 @@ internal class RenderSurface(
                 ),
                 onClick = onClick ?: {},
                 onLongPress = onLongPress,
+                onDoubleTap = onDoubleTap,
                 onSwipeStart = onSwipeStart,
                 onSwipeUpdate = onSwipeUpdate,
                 onSwipeEnd = onSwipeEnd,
@@ -767,6 +772,7 @@ internal class RenderSurface(
     private fun hasPointerCallback(): Boolean {
         return onClick != null ||
             onLongPress != null ||
+            onDoubleTap != null ||
             onSwipeStart != null ||
             onSwipeUpdate != null ||
             onSwipeEnd != null ||

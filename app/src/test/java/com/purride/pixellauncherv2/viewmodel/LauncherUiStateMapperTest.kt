@@ -5,7 +5,9 @@ import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -67,9 +69,20 @@ class LauncherUiStateMapperTest {
             nextAlarmText = "07:30",
             missedCallCount = 2,
             unreadSmsCount = 5,
+            mediaPlayback = MediaPlaybackSnapshot(
+                isActive = true,
+                packageName = "music",
+                title = "Track",
+                isPlaying = true,
+                canPlayPause = true,
+                positionMillis = 1000L,
+                durationMillis = 5000L,
+                isFavorite = true,
+            ),
             notificationSummaryText = "BANK OTP",
             notificationCount = 1,
             notificationSources = listOf(NotificationSourceInfo("bank", "BANK")),
+            notificationItems = listOf(NotificationSignal("bank", "BANK", title = "OTP")),
             mutedNotificationSourceIds = setOf("noisy"),
             priorityNotificationSourceIds = setOf("bank"),
             rainHintText = "RAIN 18:00",
@@ -135,9 +148,11 @@ class LauncherUiStateMapperTest {
         assertEquals("07:30", ui.nextAlarmText)
         assertEquals(2, ui.missedCallCount)
         assertEquals(5, ui.unreadSmsCount)
+        assertEquals(state.mediaPlayback, ui.mediaPlayback)
         assertEquals("BANK OTP", ui.notificationSummaryText)
         assertEquals(1, ui.notificationCount)
         assertEquals(listOf(NotificationSourceInfo("bank", "BANK")), ui.notificationSources)
+        assertEquals(listOf(NotificationSignal("bank", "BANK", title = "OTP")), ui.notificationItems)
         assertEquals(setOf("noisy"), ui.mutedNotificationSourceIds)
         assertEquals(setOf("bank"), ui.priorityNotificationSourceIds)
         assertEquals("RAIN 18:00", ui.rainHintText)

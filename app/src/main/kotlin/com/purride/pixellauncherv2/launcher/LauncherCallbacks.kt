@@ -15,6 +15,16 @@ data class LauncherCallbacks(
     val onHomeInfoAction: (HomeInfoAction) -> Unit,
     /** 用户长按 HOME 信息行。 */
     val onHomeInfoDetail: (HomeInfoAction) -> Unit,
+    /** 用户点击状态栏歌曲名或底栏中间区域 → 打开当前播放器。 */
+    val onMediaOpenPlayer: () -> Unit,
+    /** 用户双击状态栏歌曲名 → 切换喜欢状态。 */
+    val onMediaToggleFavorite: () -> Unit,
+    val onMediaTogglePlayPause: () -> Unit,
+    val onMediaSkipPrevious: () -> Unit,
+    val onMediaSkipNext: () -> Unit,
+    val onMediaSeek: (Float) -> Unit,
+    val onHomeNotificationPressed: (String) -> Unit,
+    val onHomeNotificationAction: (String, Int) -> Unit,
 
     // ── APP_DRAWER ────────────────────────────────────────────────────────────
     val onDrawerQueryChanged: (String) -> Unit,

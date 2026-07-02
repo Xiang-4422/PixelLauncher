@@ -272,6 +272,30 @@ class PixelTesterDslTest {
     }
 
     @Test
+    fun doubleTapInvokesGestureDetectorDoubleTapCallback() {
+        val tester = PixelTester()
+        var tapped = 0
+        var doubleTapped = 0
+
+        tester.pumpWidget(
+            widget = GestureDetector(
+                child = Text("OPEN"),
+                onTap = { tapped++ },
+                onDoubleTap = { doubleTapped++ },
+                key = "gesture",
+            ),
+            logicalWidth = 32,
+            logicalHeight = 10,
+        )
+
+        tester.doubleTap(find.byKey("gesture"))
+
+        assertEquals(0, tapped)
+        assertEquals(1, doubleTapped)
+        tester.dispose()
+    }
+
+    @Test
     fun horizontalSwipeInvokesGestureDetectorSwipeCallback() {
         val tester = PixelTester()
         var tapped = 0

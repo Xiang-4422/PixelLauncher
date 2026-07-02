@@ -6,7 +6,7 @@ import org.junit.Test
 class NotificationSummaryModelTest {
 
     @Test
-    fun summarizeDropsSilentMutedAndNormalPrioritySignals() {
+    fun summarizeKeepsActiveNonMutedSignalsForHomeItems() {
         val summary = NotificationSummaryModel.summarize(
             signals = listOf(
                 NotificationSignal(
@@ -14,6 +14,7 @@ class NotificationSummaryModelTest {
                     sourceLabel = "CHAT",
                     title = "PING",
                     priority = NotificationSignalPriority.DEFAULT,
+                    postedAtMillis = 10L,
                 ),
                 NotificationSignal(
                     sourceId = "muted",
@@ -27,6 +28,7 @@ class NotificationSummaryModelTest {
                     title = "HIGH",
                     priority = NotificationSignalPriority.HIGH,
                     isSilent = true,
+                    postedAtMillis = 30L,
                 ),
                 NotificationSignal(
                     sourceId = "service",
@@ -34,13 +36,15 @@ class NotificationSummaryModelTest {
                     title = "RUNNING",
                     priority = NotificationSignalPriority.HIGH,
                     isOngoing = true,
+                    postedAtMillis = 20L,
                 ),
             ),
             rules = NotificationSummaryRules(mutedSourceIds = setOf("muted")),
         )
 
-        assertEquals(0, summary.count)
-        assertEquals("", summary.text)
+        assertEquals(3, summary.count)
+        assertEquals("SILENT HIGH  SERVICE RUNNING +1", summary.text)
+        assertEquals(listOf("silent", "service", "chat"), summary.items.map { it.sourceId })
         assertEquals(4, summary.sources.size)
     }
 
@@ -68,6 +72,7 @@ class NotificationSummaryModelTest {
 
         assertEquals(2, summary.count)
         assertEquals("CAL MEET  BANK OTP", summary.text)
+        assertEquals(listOf("calendar", "bank"), summary.items.map { it.sourceId })
         assertEquals(
             listOf(
                 NotificationSourceInfo(sourceId = "bank", sourceLabel = "BANK"),
@@ -92,7 +97,41 @@ class NotificationSummaryModelTest {
 
         assertEquals(0, summary.count)
         assertEquals("", summary.text)
+        assertEquals(emptyList<NotificationSignal>(), summary.items)
         assertEquals(listOf(NotificationSourceInfo(sourceId = "muted", sourceLabel = "MUTED")), summary.sources)
+    }
+
+    @Test
+    fun summarizeDropsMediaControlsFromHomeItemsButKeepsSourceVisibleForSettings() {
+        val summary = NotificationSummaryModel.summarize(
+            signals = listOf(
+                NotificationSignal(
+                    sourceId = "music",
+                    sourceLabel = "MUSIC",
+                    title = "TRACK",
+                    category = "transport",
+                    isMediaStyle = true,
+                    priority = NotificationSignalPriority.HIGH,
+                ),
+                NotificationSignal(
+                    sourceId = "chat",
+                    sourceLabel = "CHAT",
+                    title = "PING",
+                    priority = NotificationSignalPriority.DEFAULT,
+                ),
+            ),
+        )
+
+        assertEquals(1, summary.count)
+        assertEquals("CHAT PING", summary.text)
+        assertEquals(listOf("chat"), summary.items.map { it.sourceId })
+        assertEquals(
+            listOf(
+                NotificationSourceInfo(sourceId = "chat", sourceLabel = "CHAT"),
+                NotificationSourceInfo(sourceId = "music", sourceLabel = "MUSIC"),
+            ),
+            summary.sources,
+        )
     }
 
     @Test
@@ -108,5 +147,6 @@ class NotificationSummaryModelTest {
 
         assertEquals(3, summary.count)
         assertEquals("C  B +1", summary.text)
+        assertEquals(listOf("c", "b", "a"), summary.items.map { it.sourceId })
     }
 }

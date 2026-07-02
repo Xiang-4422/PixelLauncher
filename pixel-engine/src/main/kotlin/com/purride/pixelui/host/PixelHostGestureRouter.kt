@@ -91,7 +91,7 @@ internal class PixelHostGestureRouter(
         host.activeListTarget = null
         host.activeSwipeTarget = null
         host.candidateSwipeTarget = if (!dragExclusiveTargetActive) {
-            host.resolveClickTarget(logicalPoint.first, logicalPoint.second)?.takeIf { it.hasSwipe }
+            host.resolveSwipeTarget(logicalPoint.first, logicalPoint.second)
         } else {
             null
         }
@@ -421,10 +421,13 @@ internal class PixelHostGestureRouter(
             val clickTarget = host.resolveClickTarget(logicalPoint.first, logicalPoint.second)
             val pressedMs = event.eventTime - event.downTime
             if (pressedMs >= LONG_PRESS_TIMEOUT_MS && clickTarget?.onLongPress != null) {
+                host.cancelPendingClick()
+                host.lastClickTapSource = null
+                host.lastClickTapTimeMs = -1L
                 host.hostBridge?.performHapticFeedback(PixelHapticType.LONG_PRESS)
                 clickTarget.onLongPress.invoke()
             } else {
-                clickTarget?.onClick?.invoke()
+                handleClickTargetTap(clickTarget, event)
             }
             host.invalidate()
         }
@@ -432,6 +435,32 @@ internal class PixelHostGestureRouter(
         clearActiveSelectionHandle()
         recycleVelocityTracker()
         return true
+    }
+
+    private fun handleClickTargetTap(clickTarget: PixelClickTarget?, event: MotionEvent) {
+        if (clickTarget == null) {
+            host.cancelPendingClick()
+            return
+        }
+        val source = clickTarget.source
+        val isDoubleTap = clickTarget.onDoubleTap != null &&
+            host.lastClickTapSource === source &&
+            event.eventTime - host.lastClickTapTimeMs in 0L..DOUBLE_TAP_TIMEOUT_MS
+        if (isDoubleTap) {
+            host.cancelPendingClick()
+            host.lastClickTapSource = null
+            host.lastClickTapTimeMs = -1L
+            clickTarget.onDoubleTap?.invoke()
+            return
+        }
+        host.lastClickTapSource = source
+        host.lastClickTapTimeMs = event.eventTime
+        if (clickTarget.onDoubleTap != null) {
+            host.schedulePendingClick(clickTarget, DOUBLE_TAP_TIMEOUT_MS)
+        } else {
+            host.cancelPendingClick()
+            clickTarget.onClick.invoke()
+        }
     }
 
     private fun onCancel(): Boolean {

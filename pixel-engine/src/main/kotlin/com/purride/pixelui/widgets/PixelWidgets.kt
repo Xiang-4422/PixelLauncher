@@ -200,12 +200,14 @@ public fun GestureDetector(
     onSwipeEnd: ((Int) -> Unit)? = null,
     onSwipeLeft: (() -> Unit)? = null,
     onSwipeRight: (() -> Unit)? = null,
+    onDoubleTap: (() -> Unit)? = null,
     key: Any? = null,
 ): Widget {
     return GestureDetectorWidget(
         child = child,
         onTap = onTap,
         onLongPress = onLongPress,
+        onDoubleTap = onDoubleTap,
         onSwipeStart = onSwipeStart,
         onSwipeUpdate = onSwipeUpdate,
         onSwipeEnd = onSwipeEnd,

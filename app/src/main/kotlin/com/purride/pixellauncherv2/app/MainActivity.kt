@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -35,7 +36,9 @@ import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.GeoPoint
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
+import com.purride.pixellauncherv2.data.MediaPlaybackRepository
 import com.purride.pixellauncherv2.data.NextAlarmRepository
+import com.purride.pixellauncherv2.data.NotificationCommandStore
 import com.purride.pixellauncherv2.data.NotificationSummaryRepository
 import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
 import com.purride.pixellauncherv2.data.NotificationSummaryStore
@@ -60,6 +63,7 @@ import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.LauncherCallbacks
 import com.purride.pixellauncherv2.launcher.LauncherRootHost
+import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSummary
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
@@ -113,6 +117,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var communicationStatusRepository: CommunicationStatusRepository
     private lateinit var notificationSummaryRepository: NotificationSummaryRepository
     private lateinit var notificationSummarySettingsRepository: NotificationSummarySettingsRepository
+    private lateinit var mediaPlaybackRepository: MediaPlaybackRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var smsController: SmsController
     private lateinit var rainForecastRepository: RainForecastRepository
@@ -252,6 +257,11 @@ class MainActivity : AppCompatActivity() {
         communicationStatusRepository = CommunicationStatusRepository(applicationContext)
         notificationSummaryRepository = NotificationSummaryRepository()
         notificationSummarySettingsRepository = NotificationSummarySettingsRepository(applicationContext)
+        mediaPlaybackRepository = MediaPlaybackRepository(
+            context = applicationContext,
+            notificationListener = ComponentName(applicationContext, LauncherNotificationListenerService::class.java),
+            mainHandler = mainHandler,
+        )
         smsController = SmsController(
             context = applicationContext,
             backgroundExecutor = backgroundExecutor,
@@ -321,6 +331,14 @@ class MainActivity : AppCompatActivity() {
                 onOpenSms            = ::onHomeOpenSms,
                 onHomeInfoAction     = ::onHomeInfoAction,
                 onHomeInfoDetail     = ::onHomeInfoDetail,
+                onMediaOpenPlayer    = ::onMediaOpenPlayer,
+                onMediaToggleFavorite = ::onMediaToggleFavorite,
+                onMediaTogglePlayPause = ::onMediaTogglePlayPause,
+                onMediaSkipPrevious  = ::onMediaSkipPrevious,
+                onMediaSkipNext      = ::onMediaSkipNext,
+                onMediaSeek          = ::onMediaSeek,
+                onHomeNotificationPressed = ::onHomeNotificationPressed,
+                onHomeNotificationAction = ::onHomeNotificationAction,
                 onDrawerQueryChanged = ::onPixelEngineDrawerQueryChanged,
                 onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
                 onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
@@ -414,6 +432,7 @@ class MainActivity : AppCompatActivity() {
 
             if (newWidth > 0 && newHeight > 0 && (newWidth != oldWidth || newHeight != oldHeight)) {
                 updateScreenProfile(newWidth, newHeight)
+                updateMediaGestureExclusion(state.mediaPlayback.hasTrack)
             }
         }
 
@@ -432,6 +451,7 @@ class MainActivity : AppCompatActivity() {
         deviceStatusRepository.start(::onDeviceStatusChanged)
         nextAlarmRepository.start(::onNextAlarmChanged)
         notificationSummaryRepository.start(::onNotificationSummaryChanged)
+        mediaPlaybackRepository.start(::onMediaPlaybackChanged)
         resetDrawerVerticalGesture()
         if (
             state.mode != LauncherMode.SMS_ROLE_PROMPT &&
@@ -512,6 +532,7 @@ class MainActivity : AppCompatActivity() {
         deviceStatusRepository.stop()
         nextAlarmRepository.stop()
         notificationSummaryRepository.stop()
+        mediaPlaybackRepository.stop()
         communicationStatusRepository.stop()
         smsController.stop()
         suppressActivityAnimations()
@@ -837,6 +858,15 @@ class MainActivity : AppCompatActivity() {
     private fun renderCurrentFrame() {
         if (!::launcherRootHost.isInitialized) return
         refreshDataHealthState()
+        if (::mediaPlaybackRepository.isInitialized) {
+            val mediaPlayback = mediaPlaybackRepository.current()
+            if (state.mediaPlayback != mediaPlayback) {
+                state = LauncherStateTransitions.updateMediaPlayback(
+                    state = state,
+                    mediaPlayback = mediaPlayback,
+                )
+            }
+        }
         val uiState = state.toLauncherUiState()
         launcherRootHost.update(
             state           = uiState,
@@ -844,6 +874,31 @@ class MainActivity : AppCompatActivity() {
             screenProfile   = screenProfile,
             chargeTick      = animationState.headerChargeTick,
             pixelGapEnabled = uiState.isPixelGapEnabled,
+        )
+        updateMediaGestureExclusion(uiState.mediaPlayback.hasTrack)
+    }
+
+    private fun updateMediaGestureExclusion(showMediaControls: Boolean) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || !::launcherRootHost.isInitialized) {
+            return
+        }
+        val view = launcherRootHost.rootView
+        val widthPx = view.width
+        val heightPx = view.height
+        if (!showMediaControls || widthPx <= 0 || heightPx <= 0) {
+            view.systemGestureExclusionRects = emptyList()
+            return
+        }
+        val exclusionHeightPx = (
+            screenProfile.dotSizePx * MEDIA_BOTTOM_BAR_GESTURE_EXCLUSION_LOGICAL_HEIGHT
+        ).coerceAtLeast(1)
+        view.systemGestureExclusionRects = listOf(
+            Rect(
+                0,
+                (heightPx - exclusionHeightPx).coerceAtLeast(0),
+                widthPx,
+                heightPx,
+            ),
         )
     }
 
@@ -1007,6 +1062,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun onMediaOpenPlayer() {
+        mediaPlaybackRepository.openPlayer()
+    }
+
+    private fun onMediaToggleFavorite() {
+        mediaPlaybackRepository.toggleFavorite()
+        renderCurrentFrame()
+    }
+
+    private fun onMediaTogglePlayPause() {
+        mediaPlaybackRepository.togglePlayPause()
+        renderCurrentFrame()
+    }
+
+    private fun onMediaSkipPrevious() {
+        mediaPlaybackRepository.skipPrevious()
+        renderCurrentFrame()
+    }
+
+    private fun onMediaSkipNext() {
+        mediaPlaybackRepository.skipNext()
+        renderCurrentFrame()
+    }
+
+    private fun onMediaSeek(progress: Float) {
+        mediaPlaybackRepository.seekToProgress(progress)
+        renderCurrentFrame()
+    }
+
     private fun onHomeInfoAction(action: HomeInfoAction) {
         when (action) {
             HomeInfoAction.RAIN -> {
@@ -1120,6 +1204,33 @@ class MainActivity : AppCompatActivity() {
             launchFirstAvailableIntent(sourceIntent, notificationSettingsIntent, systemSettingsIntent)
         } else {
             launchFirstAvailableIntent(notificationSettingsIntent, systemSettingsIntent)
+        }
+    }
+
+    private fun onHomeNotificationPressed(notificationKey: String) {
+        if (NotificationCommandStore.sendContent(notificationKey)) {
+            return
+        }
+        val sourceId = state.notificationItems
+            .firstOrNull { item -> item.key == notificationKey }
+            ?.sourceId
+            ?: NotificationCommandStore.command(notificationKey)?.sourceId
+            ?: ""
+        val sourceIntent = sourceId.takeIf(String::isNotBlank)?.let { packageName ->
+            packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        if (sourceIntent == null) {
+            showStatusBarMessage("OPEN NOTIFY FAILED")
+            return
+        }
+        launchFirstAvailableIntent(sourceIntent)
+    }
+
+    private fun onHomeNotificationAction(notificationKey: String, actionIndex: Int) {
+        if (!NotificationCommandStore.sendAction(notificationKey, actionIndex)) {
+            showStatusBarMessage("NOTIFY ACTION FAILED")
         }
     }
 
@@ -2004,6 +2115,22 @@ class MainActivity : AppCompatActivity() {
             notificationSummaryText = notificationSummary.text,
             notificationCount = notificationSummary.count,
             notificationSources = notificationSummary.sources,
+            notificationItems = notificationSummary.items,
+        )
+        renderCurrentFrame()
+    }
+
+    private fun onMediaPlaybackChanged(mediaPlayback: MediaPlaybackSnapshot) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { onMediaPlaybackChanged(mediaPlayback) }
+            return
+        }
+        if (isDestroyed || isFinishing) {
+            return
+        }
+        state = LauncherStateTransitions.updateMediaPlayback(
+            state = state,
+            mediaPlayback = mediaPlayback,
         )
         renderCurrentFrame()
     }
@@ -2328,6 +2455,7 @@ class MainActivity : AppCompatActivity() {
         const val rainLocationPromptText = "LOC"
         const val statusBarMessageTimeoutMs: Long = 2_500L
         const val pixelAppearanceConfirmTimeoutMs: Long = 5_000L
+        const val MEDIA_BOTTOM_BAR_GESTURE_EXCLUSION_LOGICAL_HEIGHT = 16
         const val ACTION_NOTIFICATION_SETTINGS = "android.settings.NOTIFICATION_SETTINGS"
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"

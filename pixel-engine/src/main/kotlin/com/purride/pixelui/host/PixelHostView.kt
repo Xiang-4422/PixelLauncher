@@ -148,6 +148,10 @@ public class PixelHostView @JvmOverloads constructor(
     internal var lastListLogicalY = 0
     internal var lastTextInputTapTimeMs: Long = -1L
     internal var lastTextInputTapState: PixelTextFieldState? = null
+    internal var lastClickTapTimeMs: Long = -1L
+    internal var lastClickTapSource: Any? = null
+    internal var pendingClickTapSource: Any? = null
+    internal var pendingClickRunnable: Runnable? = null
     internal var activeTextInputSelectionTarget: PixelTextInputTarget? = null
     internal var activeTextInputSelectionHandle: TextInputSelectionHandle? = null
     internal var touchMoved = false
@@ -441,6 +445,7 @@ public class PixelHostView @JvmOverloads constructor(
      * 可以在 `onDestroyView` 等明确销毁点调用本方法。
      */
     public fun dispose() {
+        cancelPendingClick()
         recycleGapBackgroundBitmap()
         lifecycleCoordinator.onDetachedFromWindow()
     }
@@ -543,6 +548,34 @@ public class PixelHostView @JvmOverloads constructor(
 
     internal fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
         return lastRenderResult?.clickTargets?.lastOrNull { it.bounds.contains(logicalX, logicalY) }
+    }
+
+    internal fun resolveSwipeTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
+        return lastRenderResult?.clickTargets?.lastOrNull {
+            it.bounds.contains(logicalX, logicalY) && it.hasSwipe
+        }
+    }
+
+    internal fun cancelPendingClick() {
+        pendingClickRunnable?.let(::removeCallbacks)
+        pendingClickRunnable = null
+        pendingClickTapSource = null
+    }
+
+    internal fun schedulePendingClick(target: PixelClickTarget, delayMillis: Long) {
+        cancelPendingClick()
+        val source = target.source
+        val runnable = Runnable {
+            if (pendingClickTapSource === source) {
+                pendingClickRunnable = null
+                pendingClickTapSource = null
+                target.onClick.invoke()
+                invalidate()
+            }
+        }
+        pendingClickTapSource = source
+        pendingClickRunnable = runnable
+        postDelayed(runnable, delayMillis)
     }
 
     internal fun resolveTextInputTarget(logicalX: Int, logicalY: Int): PixelTextInputTarget? {

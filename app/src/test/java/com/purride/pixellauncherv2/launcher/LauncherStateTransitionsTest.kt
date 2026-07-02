@@ -505,11 +505,13 @@ class LauncherStateTransitionsTest {
             notificationSummaryText = "  BANK OTP  ",
             notificationCount = -1,
             notificationSources = listOf(NotificationSourceInfo("bank", "BANK")),
+            notificationItems = listOf(NotificationSignal("bank", "BANK", title = "OTP")),
         )
 
         assertEquals("BANK OTP", result.notificationSummaryText)
         assertEquals(0, result.notificationCount)
         assertEquals(listOf(NotificationSourceInfo("bank", "BANK")), result.notificationSources)
+        assertEquals(listOf(NotificationSignal("bank", "BANK", title = "OTP")), result.notificationItems)
     }
 
     @Test

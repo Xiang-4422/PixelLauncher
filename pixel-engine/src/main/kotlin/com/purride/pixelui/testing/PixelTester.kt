@@ -84,11 +84,18 @@ public class PixelTester {
      */
     public fun doubleTap(finder: PixelFinder) {
         val point = resolvePoint(finder, TargetKind.ANY)
-        val target = renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(point.x, point.y) }
-            ?: fail("No text input target at (${point.x},${point.y})", finder)
-        if (target.readOnly) return
-        focusTextInput(target)
-        target.controller.selectWordAt(target.state, resolveTextInputSelection(target, point.x, point.y))
+        renderResult?.textInputTargets?.lastOrNull { it.bounds.contains(point.x, point.y) }?.let { target ->
+            if (target.readOnly) return
+            focusTextInput(target)
+            target.controller.selectWordAt(target.state, resolveTextInputSelection(target, point.x, point.y))
+            render()
+            return
+        }
+        val target = renderResult?.clickTargets?.lastOrNull {
+            it.bounds.contains(point.x, point.y) && it.onDoubleTap != null
+        } ?: fail("No double tap target at (${point.x},${point.y})", finder)
+        target.onDoubleTap?.invoke()
+        needsRender = true
         render()
     }
 
@@ -772,8 +779,11 @@ public class PixelTester {
         val callback = widget.readField("onPressed") as? (() -> Unit)
             ?: widget.readField("onTap") as? (() -> Unit)
             ?: widget.readField("onLongPress") as? (() -> Unit)
+            ?: widget.readField("onDoubleTap") as? (() -> Unit)
         return if (callback != null) {
-            renderResult?.clickTargets?.lastOrNull { it.onClick === callback || it.onLongPress === callback }
+            renderResult?.clickTargets?.lastOrNull {
+                it.onClick === callback || it.onLongPress === callback || it.onDoubleTap === callback
+            }
         } else {
             null
         }

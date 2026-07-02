@@ -867,16 +867,25 @@ object LauncherStateTransitions {
         )
     }
 
+    fun updateMediaPlayback(
+        state: LauncherState,
+        mediaPlayback: MediaPlaybackSnapshot,
+    ): LauncherState {
+        return state.copy(mediaPlayback = mediaPlayback)
+    }
+
     fun updateNotificationSummary(
         state: LauncherState,
         notificationSummaryText: String,
         notificationCount: Int,
         notificationSources: List<NotificationSourceInfo> = state.notificationSources,
+        notificationItems: List<NotificationSignal> = state.notificationItems,
     ): LauncherState {
         return state.copy(
             notificationSummaryText = notificationSummaryText.trim(),
             notificationCount = notificationCount.coerceAtLeast(0),
             notificationSources = notificationSources,
+            notificationItems = notificationItems,
         )
     }
 

@@ -55,7 +55,7 @@ class HomeInfoModelTest {
     }
 
     @Test
-    fun notificationSummaryShowsAfterAllHomeStatusLines() {
+    fun notificationSummaryDoesNotConsumeFixedHomeStatusLines() {
         val lines = HomeInfoModel.lines(
             LauncherUiState(
                 missedCallCount = 1,
@@ -73,52 +73,6 @@ class HomeInfoModelTest {
             listOf(
                 "ALARM 07:30" to HomeInfoAction.ALARM,
                 "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
-                "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
-            ),
-            lines.map { it.text to it.action },
-        )
-    }
-
-    @Test
-    fun notificationSummarySplitsVisibleNotificationsIntoTailRows() {
-        val lines = HomeInfoModel.lines(
-            LauncherUiState(
-                notificationSummaryText = "CAL MEET  BANK OTP",
-                notificationCount = 2,
-                nextAlarmText = "07:30",
-                hasLocationPermission = true,
-                screenUsageTimeText = "00:20",
-                screenOpenCountText = "2",
-            ),
-        )
-
-        assertEquals(
-            listOf(
-                "ALARM 07:30" to HomeInfoAction.ALARM,
-                "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
-                "NOTIFY CAL MEET" to HomeInfoAction.NOTIFICATION,
-                "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
-            ),
-            lines.map { it.text to it.action },
-        )
-    }
-
-    @Test
-    fun notificationSummaryIsRenderedAfterUsage() {
-        val lines = HomeInfoModel.lines(
-            LauncherUiState(
-                notificationSummaryText = "BANK OTP",
-                notificationCount = 1,
-                hasLocationPermission = true,
-                screenUsageTimeText = "00:20",
-                screenOpenCountText = "2",
-            ),
-        )
-
-        assertEquals(
-            listOf(
-                "USE 00:20  OPEN 2" to HomeInfoAction.USAGE,
-                "NOTIFY BANK OTP" to HomeInfoAction.NOTIFICATION,
             ),
             lines.map { it.text to it.action },
         )

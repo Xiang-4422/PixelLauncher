@@ -381,10 +381,18 @@ internal class LauncherRootHost(
     private fun buildHomePage(): Widget = HomeScreen(
         uiState = uiState,
         theme = theme,
+        screenWidthPx = screenProfile.logicalWidth,
+        vsync = routeTickerProvider,
         onOpenCall = callbacks.onOpenCall,
         onOpenSms = callbacks.onOpenSms,
         onInfoAction = callbacks.onHomeInfoAction,
         onInfoDetail = callbacks.onHomeInfoDetail,
+        onMediaTogglePlayPause = callbacks.onMediaTogglePlayPause,
+        onMediaSkipPrevious = callbacks.onMediaSkipPrevious,
+        onMediaSkipNext = callbacks.onMediaSkipNext,
+        onMediaSeek = callbacks.onMediaSeek,
+        onNotificationPressed = callbacks.onHomeNotificationPressed,
+        onNotificationAction = callbacks.onHomeNotificationAction,
     )
 
     private fun buildSettingsPage(): Widget = com.purride.pixellauncherv2.ui.screen.SettingsScreen(
@@ -419,6 +427,8 @@ internal class LauncherRootHost(
                 onAction = callbacks.onStatusBarAction,
             )
         } else {
+            val mediaPlayback = uiState.mediaPlayback
+            val showMediaTitle = uiState.mode == LauncherMode.HOME && mediaPlayback.hasTrack
             LauncherHeader(
                 timeText = uiState.currentTimeText.ifEmpty { "--:--" },
                 screenTitle = when (uiState.mode) {
@@ -429,12 +439,24 @@ internal class LauncherRootHost(
                 actionLeadingText = uiState.statusBarActionLeadingText,
                 actionLabel = uiState.statusBarActionLabel,
                 isActionDanger = uiState.isStatusBarActionDanger,
+                centerText = if (showMediaTitle) mediaPlayback.title else "",
+                centerTextColor = if (showMediaTitle && mediaPlayback.isFavorite) {
+                    theme.semantic.danger
+                } else {
+                    null
+                },
                 batteryLevel = uiState.batteryLevel,
                 isCharging = uiState.isCharging,
                 chargeTick = chargeTick,
                 theme = theme,
                 statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
                 onAction = callbacks.onStatusBarAction,
+                onCenterTap = if (showMediaTitle) callbacks.onMediaOpenPlayer else null,
+                onCenterDoubleTap = if (showMediaTitle && mediaPlayback.canToggleFavorite) {
+                    callbacks.onMediaToggleFavorite
+                } else {
+                    null
+                },
             )
         }
 

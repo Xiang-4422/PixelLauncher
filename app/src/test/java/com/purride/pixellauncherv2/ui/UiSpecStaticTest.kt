@@ -350,10 +350,10 @@ class UiSpecStaticTest {
             headerLayoutSource.contains("horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL"),
         )
         assertTrue(
-            "Home CALL and SMS must stay 1px from horizontal and bottom screen edges.",
-            homeSource.contains("left = LauncherSpacing.EDGE_ACTION") &&
-                homeSource.contains("right = LauncherSpacing.EDGE_ACTION") &&
-                homeSource.contains("bottom = LauncherSpacing.EDGE_ACTION"),
+            "Home actions must keep the normal 1px edge spacing, but media controls must occupy the full bottom row.",
+            homeSource.contains("left = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION") &&
+                homeSource.contains("right = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION") &&
+                homeSource.contains("bottom = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION"),
         )
         assertTrue(
             "Home actions must use the engine TextButton instead of a local button wrapper.",
@@ -370,6 +370,9 @@ class UiSpecStaticTest {
         val modelSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/HomeInfoModel.kt")
             .readText()
+        val mainActivitySource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
+            .readText()
 
         assertTrue(
             "Home missed-call and unread-SMS counts must render on the bottom actions with mirrored positions.",
@@ -379,11 +382,39 @@ class UiSpecStaticTest {
                 homeSource.contains("countOnStart = true"),
         )
         assertTrue(
-            "Home action counts must use the ValueAdjuster-style shared border and inverse filled count segment.",
+            "Home action counts must use the ValueAdjuster-style shared border on the normal CALL/SMS actions.",
             homeSource.contains("borderColor = theme.button.border") &&
                 homeSource.contains("fillColor = theme.button.border") &&
                 homeSource.contains("TextStyle(color = theme.text.inverse)") &&
                 homeSource.contains("HOME_ACTION_DIVIDER_PX = 1"),
+        )
+        val mediaBarSource = Regex(
+            "private fun HomeMediaBottomBar[\\s\\S]*?private fun HomeMediaSideAction",
+        ).find(homeSource)?.value.orEmpty()
+        assertTrue(
+            "Home media bottom bar must be independent from the normal CALL/SMS actions and use five equal slots.",
+            homeSource.contains("return HomeMediaBottomBar(") &&
+                !homeSource.contains("forceBorder") &&
+                mediaBarSource.split("Expanded(").size - 1 == 5 &&
+                mediaBarSource.contains("HomeMediaSideAction(") &&
+                mediaBarSource.contains("filled = true") &&
+                mediaBarSource.contains("filled = false") &&
+                mediaBarSource.contains("mediaControlDivider(theme)"),
+        )
+        assertTrue(
+            "Home media bottom bar must consume horizontal scrubs whenever a track is visible, even if the session cannot seek.",
+            homeSource.contains("val canScrub = media.hasTrack") &&
+                homeSource.contains("HOME_MEDIA_EDGE_SWIPE_TARGET_HEIGHT_PX") &&
+                homeSource.contains("bottom = 0") &&
+                homeSource.contains("onSwipeStart = if (canScrub)") &&
+                homeSource.contains("if (media.canSeek)") &&
+                !homeSource.contains("onSwipeStart = if (canSeek)"),
+        )
+        assertTrue(
+            "Home media bottom bar must exclude the Android bottom gesture strip while media controls are visible.",
+            mainActivitySource.contains("updateMediaGestureExclusion(uiState.mediaPlayback.hasTrack)") &&
+                mainActivitySource.contains("view.systemGestureExclusionRects = listOf(") &&
+                mainActivitySource.contains("MEDIA_BOTTOM_BAR_GESTURE_EXCLUSION_LOGICAL_HEIGHT"),
         )
         assertTrue(
             "Home info rows must not duplicate CALL/SMS counts already shown in the bottom actions.",
