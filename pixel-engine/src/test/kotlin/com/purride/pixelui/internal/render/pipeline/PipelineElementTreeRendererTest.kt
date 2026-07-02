@@ -88,6 +88,39 @@ class PipelineElementTreeRendererTest {
     }
 
     /**
+     * 多行文本的 layout 高度必须包含字体栅格器自己的行间距，否则最后一行会被裁掉。
+     */
+    @Test
+    fun renderTextMeasuresPlainMultilineTextWithRasterizerLineSpacing() {
+        val renderText = RenderText(
+            text = "AA",
+            style = com.purride.pixelui.PixelTextStyle.Default,
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            softWrap = true,
+            overflow = TextOverflow.CLIP,
+            maxLines = Int.MAX_VALUE,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
+
+        renderText.layout(
+            constraints = RenderConstraints(
+                maxWidth = PixelBitmapFont.Default.measureText("A"),
+                maxHeight = 32,
+            ),
+        )
+        val buffer = PixelBuffer(width = renderText.size.width, height = renderText.size.height).also { it.clear() }
+        renderText.paint(
+            context = PaintContext(buffer = buffer),
+            offsetX = 0,
+            offsetY = 0,
+        )
+
+        assertEquals(PixelBitmapFont.Default.measureHeight("A\nA"), renderText.size.height)
+        assertTrue(collectActivePixels(buffer).any { it.second == renderText.size.height - 1 })
+    }
+
+    /**
      * 表面对象能够绘制背景、边框、padding 并导出点击目标。
      */
     @Test

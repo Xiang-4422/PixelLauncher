@@ -87,10 +87,11 @@ internal object PixelParagraphLayouter {
             )
         }
         return PixelParagraphLayout(
-            lines = visible.map { line ->
+            lines = visible.mapIndexed { index, line ->
                 toLine(
                     characters = line,
                     defaultTextRasterizer = input.defaultTextRasterizer,
+                    includeTrailingLineSpacing = index < visible.lastIndex,
                 )
             },
         )
@@ -161,6 +162,7 @@ internal object PixelParagraphLayouter {
     private fun toLine(
         characters: List<ParagraphCharacter>,
         defaultTextRasterizer: PixelTextRasterizer,
+        includeTrailingLineSpacing: Boolean,
     ): PixelParagraphLine {
         val runs = mutableListOf<PixelParagraphRun>()
         val builder = StringBuilder()
@@ -184,12 +186,18 @@ internal object PixelParagraphLayouter {
         }
         val height = characters.maxOfOrNull { character ->
             val rasterizer = character.style.textRasterizer ?: defaultTextRasterizer
-            character.style.lineHeight ?: (
-                rasterizer.measureHeight(character.value.toString().ifEmpty { " " }) *
-                    character.style.safeFontScale() +
-                    character.style.lineSpacing
-                )
-        } ?: defaultTextRasterizer.measureHeight(" ")
+            measureLineHeight(
+                rasterizer = rasterizer,
+                text = character.value.toString(),
+                style = character.style,
+                includeTrailingLineSpacing = includeTrailingLineSpacing,
+            )
+        } ?: measureLineHeight(
+            rasterizer = defaultTextRasterizer,
+            text = " ",
+            style = PixelTextStyle.Default,
+            includeTrailingLineSpacing = includeTrailingLineSpacing,
+        )
         return PixelParagraphLine(
             runs = runs,
             width = runs.sumOf { run -> run.width },
@@ -197,6 +205,29 @@ internal object PixelParagraphLayouter {
             sourceStart = characters.minOfOrNull { it.sourceIndex } ?: 0,
             sourceEnd = (characters.maxOfOrNull { it.sourceIndex } ?: -1) + 1,
         )
+    }
+
+    private fun measureLineHeight(
+        rasterizer: PixelTextRasterizer,
+        text: String,
+        style: PixelTextStyle,
+        includeTrailingLineSpacing: Boolean,
+    ): Int {
+        style.lineHeight?.let { return it.coerceAtLeast(1) }
+
+        val sampleText = text.ifEmpty { " " }
+        val glyphHeight = (rasterizer.measureHeight(sampleText).coerceAtLeast(1) * style.safeFontScale())
+            .coerceAtLeast(1)
+        if (!includeTrailingLineSpacing) {
+            return glyphHeight
+        }
+        if (!style.usesPlainMultilineRasterizer()) {
+            return glyphHeight + style.lineSpacing.coerceAtLeast(0)
+        }
+
+        val twoLineHeight = rasterizer.measureHeight("$sampleText\n$sampleText")
+            .coerceAtLeast(glyphHeight)
+        return (twoLineHeight - glyphHeight).coerceAtLeast(glyphHeight)
     }
 
     private fun StringBuilder.toRun(
@@ -272,6 +303,10 @@ internal object PixelParagraphLayouter {
 
     private fun PixelTextStyle.usesPlainRasterizer(): Boolean {
         return letterSpacing <= 0 && fontScale <= 1
+    }
+
+    private fun PixelTextStyle.usesPlainMultilineRasterizer(): Boolean {
+        return letterSpacing <= 0 && fontScale <= 1 && lineSpacing <= 0
     }
 
     private fun flattenSpans(spans: List<PixelTextSpan>): List<ParagraphCharacter> {

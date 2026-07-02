@@ -304,7 +304,7 @@ internal class RenderText(
     }
 
     private fun PixelTextStyle.usesPlainRasterizer(): Boolean {
-        return letterSpacing <= 0 && fontScale <= 1 && lineHeight == null
+        return letterSpacing <= 0 && fontScale <= 1 && lineHeight == null && lineSpacing <= 0
     }
 
     private fun measureTextRange(start: Int, end: Int): Int {
