@@ -229,6 +229,15 @@ class SettingsScreen(
             )
             addSection(SettingsSection.ADVANCED, t)
             add(
+                SettingsSwitchRow(
+                    title = "SHAKE",
+                    checked = isPixelDustEasterEggEnabled,
+                    theme = t,
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_DUST_EASTER_EGG, +1) },
+                ),
+            )
+            add(
                 SettingsActionRow(
                     title = "ADVANCED",
                     valueLabel = "OPEN",

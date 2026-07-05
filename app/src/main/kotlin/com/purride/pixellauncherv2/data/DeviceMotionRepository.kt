@@ -14,6 +14,10 @@ data class DeviceMotionSnapshot(
     val linearAccelX: Float = 0f,
     val linearAccelY: Float = 0f,
     val linearAccelZ: Float = 0f,
+    val screenGravityX: Float = gravityX,
+    val screenGravityY: Float = gravityY,
+    val screenLinearAccelX: Float = linearAccelX,
+    val screenLinearAccelY: Float = linearAccelY,
     val accelMagnitude: Float = staticGravityMagnitude,
     val timestampNanos: Long = 0L,
 ) {

@@ -137,6 +137,7 @@ class SettingsMenuModelTest {
         assertTrue(items.contains(SettingsMenuItem.NOTIFICATIONS))
         assertTrue(items.contains(SettingsMenuItem.DATA_HEALTH))
         assertTrue(items.contains(SettingsMenuItem.DEEPSEEK_API_KEY))
+        assertTrue(items.contains(SettingsMenuItem.PIXEL_DUST_EASTER_EGG))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
         assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
@@ -148,6 +149,7 @@ class SettingsMenuModelTest {
         assertEquals("M1 P1", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
         assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
         assertEquals("SET", rows.first { it.item == SettingsMenuItem.DEEPSEEK_API_KEY }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_DUST_EASTER_EGG }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
     }
 
@@ -180,6 +182,7 @@ class SettingsMenuModelTest {
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.section)
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
         assertEquals(SettingsSection.AI, rows.first { it.item == SettingsMenuItem.DEEPSEEK_API_KEY }.section)
+        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_DUST_EASTER_EGG }.section)
         assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
         assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))
         assertEquals("HOME", SettingsMenuModel.sectionLabel(SettingsSection.HOME))

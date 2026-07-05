@@ -21,6 +21,7 @@ enum class SettingsMenuItem {
     NOTIFICATIONS,
     DATA_HEALTH,
     DEEPSEEK_API_KEY,
+    PIXEL_DUST_EASTER_EGG,
     ADVANCED,
 }
 
@@ -182,6 +183,14 @@ object SettingsMenuModel {
                     title = "DEEPSEEK",
                     value = apiKeyLabel(state.deepSeekApiKey),
                     section = SettingsSection.AI,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.PIXEL_DUST_EASTER_EGG,
+                    title = "SHAKE",
+                    value = onOffLabel(state.isPixelDustEasterEggEnabled),
+                    section = SettingsSection.ADVANCED,
                 ),
             )
             add(

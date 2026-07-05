@@ -29,6 +29,7 @@ class FontSettingsRepository(
         val idleTimeoutSeconds: Int,
         val openDrawerInSearchMode: Boolean,
         val chargeIdleEffect: ChargeIdleEffect,
+        val pixelDustEasterEggEnabled: Boolean,
     )
 
     fun getAppearanceSettings(): AppearanceSettings {
@@ -50,6 +51,7 @@ class FontSettingsRepository(
             idleTimeoutSeconds = readStoredIdleTimeoutSeconds(),
             openDrawerInSearchMode = sharedPreferences.getBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, false),
             chargeIdleEffect = readStoredChargeIdleEffect(),
+            pixelDustEasterEggEnabled = sharedPreferences.getBoolean(KEY_PIXEL_DUST_EASTER_EGG_ENABLED, true),
         )
     }
 
@@ -76,6 +78,7 @@ class FontSettingsRepository(
         idleTimeoutSeconds: Int,
         openDrawerInSearchMode: Boolean,
         chargeIdleEffect: ChargeIdleEffect,
+        pixelDustEasterEggEnabled: Boolean,
     ) {
         sharedPreferences.edit()
             .putString(KEY_DRAWER_LIST_ALIGNMENT, drawerListAlignment.name)
@@ -85,6 +88,7 @@ class FontSettingsRepository(
             .putInt(KEY_IDLE_TIMEOUT_SECONDS, IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds))
             .putBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, openDrawerInSearchMode)
             .putString(KEY_CHARGE_IDLE_EFFECT, chargeIdleEffect.name)
+            .putBoolean(KEY_PIXEL_DUST_EASTER_EGG_ENABLED, pixelDustEasterEggEnabled)
             .apply()
     }
 
@@ -141,5 +145,6 @@ class FontSettingsRepository(
         const val KEY_IDLE_TIMEOUT_SECONDS = "idle_timeout_seconds"
         const val KEY_OPEN_DRAWER_IN_SEARCH_MODE = "open_drawer_in_search_mode"
         const val KEY_CHARGE_IDLE_EFFECT = "charge_idle_effect"
+        const val KEY_PIXEL_DUST_EASTER_EGG_ENABLED = "pixel_dust_easter_egg_enabled"
     }
 }

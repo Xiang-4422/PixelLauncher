@@ -158,12 +158,14 @@ class LauncherStateTransitionsTest {
             chargeAutoIdleEnabled = true,
             inactivityAutoIdleEnabled = true,
             idleTimeoutSeconds = 45,
+            isPixelDustEasterEggEnabled = false,
         )
 
         assertEquals(true, result.isIdlePageEnabled)
         assertEquals(true, result.chargeAutoIdleEnabled)
         assertEquals(true, result.inactivityAutoIdleEnabled)
         assertEquals(30, result.idleTimeoutSeconds)
+        assertEquals(false, result.isPixelDustEasterEggEnabled)
     }
 
     // ── Diagnostics + SMS navigation ──────────────────────────────────────────

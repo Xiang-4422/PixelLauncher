@@ -1,6 +1,8 @@
 package com.purride.pixellauncherv2.launcher
 
 import android.content.Context
+import android.os.SystemClock
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelShape as EnginePixelShape
@@ -16,6 +18,7 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
+import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelNavigatorState
 import com.purride.pixelui.PixelRoute
@@ -46,6 +49,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.ui.widget.LauncherSearchHeader
+import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -71,6 +75,13 @@ internal class LauncherRootHost(
     private val textRasterizers = LauncherTextRasterizers(context)
     private val frameScheduler = PixelFrameScheduler.Default
     private val routeTickerProvider = PixelTickerProvider(frameScheduler)
+    private val hostView = PixelHostView(context)
+    private val pixelDustController = PixelDustEffectController(
+        vsync = routeTickerProvider,
+        onFrame = { hostView.postInvalidateOnAnimation() },
+        onEffectStart = { cancelHostTouchState() },
+        onEffectClear = { cancelHostTouchState() },
+    )
     private var navigatorState: PixelNavigatorState? = null
     private var navigatorDestination: LauncherRouteDestination? = null
 
@@ -112,6 +123,7 @@ internal class LauncherRootHost(
 
     val setup: PixelHostSetup = createPixelHostSetup(
         context = context,
+        hostView = hostView,
         config = PixelHostSetupConfig(
             textRasterizer = textRasterizers.getRasterizer(
                 PixelFontCatalog.defaultUiFontSize,
@@ -223,6 +235,13 @@ internal class LauncherRootHost(
     // ── Content dispatching ───────────────────────────────────────────────────
 
     private fun buildRoot(): Widget {
+        pixelDustController.field?.takeIf { pixelDustController.isVisible() }?.let { field ->
+            return PixelDustEffectLayer(
+                field = field,
+                onTapToRestore = { pixelDustController.requestRestore() },
+                key = "pixel-dust-effect",
+            )
+        }
         val initialDestination = navigatorDestination
             ?: destinationFor(uiState.mode).also { navigatorDestination = it }
         return PixelNavigator(
@@ -232,6 +251,55 @@ internal class LauncherRootHost(
             defaultTransition = PixelRouteTransition.SlideHorizontal,
             key = "launcher-navigator",
         )
+    }
+
+    fun updatePixelDustMotion(snapshot: DeviceMotionSnapshot) {
+        pixelDustController.updateMotion(snapshot)
+    }
+
+    fun triggerPixelDust(snapshot: DeviceMotionSnapshot): Boolean {
+        if (pixelDustController.isVisible()) {
+            return false
+        }
+        val currentFrame = setup.hostView.snapshotCurrentFrameBuffer() ?: return false
+        return pixelDustController.start(
+            buffer = currentFrame,
+            snapshot = snapshot,
+            backgroundColor = setup.hostView.offPixelColor.argb,
+        )
+    }
+
+    fun handlePixelDustBack(): Boolean {
+        return when {
+            pixelDustController.isActive() -> pixelDustController.requestRestore()
+            pixelDustController.isRestoring() -> {
+                pixelDustController.clear()
+                true
+            }
+            else -> false
+        }
+    }
+
+    fun stopPixelDustEffect() {
+        pixelDustController.clear()
+    }
+
+    private fun cancelHostTouchState() {
+        hostView.cancelPendingInputEvents()
+        val now = SystemClock.uptimeMillis()
+        val event = MotionEvent.obtain(
+            now,
+            now,
+            MotionEvent.ACTION_CANCEL,
+            0f,
+            0f,
+            0,
+        )
+        try {
+            hostView.dispatchTouchEvent(event)
+        } finally {
+            event.recycle()
+        }
     }
 
     private fun routeFor(destination: LauncherRouteDestination): PixelRoute = PixelRoute(

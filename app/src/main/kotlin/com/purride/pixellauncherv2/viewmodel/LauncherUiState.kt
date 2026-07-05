@@ -88,6 +88,7 @@ data class LauncherUiState(
     val idleTimeoutSeconds: Int = IdleSettings.DEFAULT_TIMEOUT_SECONDS,
     val openDrawerInSearchMode: Boolean = false,
     val chargeIdleEffect: ChargeIdleEffect = ChargeIdleEffect.FLUID,
+    val isPixelDustEasterEggEnabled: Boolean = true,
 
     // ── Device status ─────────────────────────────────────────────────────────
     val batteryLevel: Int = 100,

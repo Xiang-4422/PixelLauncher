@@ -31,6 +31,8 @@ import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
 import com.purride.pixellauncherv2.data.DeviceLocationRepository
+import com.purride.pixellauncherv2.data.DeviceMotionRepository
+import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.FontSettingsRepository
@@ -65,6 +67,7 @@ import com.purride.pixellauncherv2.launcher.LauncherCallbacks
 import com.purride.pixellauncherv2.launcher.LauncherRootHost
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSummary
+import com.purride.pixellauncherv2.launcher.PixelDustShakeDetector
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
@@ -77,12 +80,14 @@ import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
+import com.purride.pixellauncherv2.system.ScreenGravityMapper
 import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
 import com.purride.pixellauncherv2.viewmodel.LauncherViewModel
 import com.purride.pixellauncherv2.viewmodel.toLauncherUiState
+import com.purride.pixelui.PixelHapticType
 import androidx.lifecycle.ViewModelProvider
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -119,6 +124,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notificationSummarySettingsRepository: NotificationSummarySettingsRepository
     private lateinit var mediaPlaybackRepository: MediaPlaybackRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
+    private lateinit var deviceMotionRepository: DeviceMotionRepository
     private lateinit var smsController: SmsController
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var appLauncher: AndroidAppLauncher
@@ -144,6 +150,9 @@ class MainActivity : AppCompatActivity() {
     private var lastRainRefreshElapsedRealtimeMs: Long = 0L
     private var lastRainLocation: GeoPoint? = null
     private var lastSuccessfulRainHintText: String = ""
+    private val pixelDustShakeDetector = PixelDustShakeDetector()
+    private var pixelDustMotionListening = false
+    private var activityResumed = false
 
     private val smsHost = object : SmsController.Host {
         override var state: LauncherState
@@ -269,6 +278,7 @@ class MainActivity : AppCompatActivity() {
             host = smsHost,
         )
         deviceLocationRepository = DeviceLocationRepository(applicationContext)
+        deviceMotionRepository = DeviceMotionRepository(applicationContext)
         rainForecastRepository = RainForecastRepository()
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
@@ -290,6 +300,7 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = uiBehaviorSettings.idleTimeoutSeconds,
             openDrawerInSearchMode = uiBehaviorSettings.openDrawerInSearchMode,
             chargeIdleEffect = uiBehaviorSettings.chargeIdleEffect,
+            isPixelDustEasterEggEnabled = uiBehaviorSettings.pixelDustEasterEggEnabled,
         )
         state = LauncherStateTransitions.updateAiSettings(
             state = state,
@@ -391,6 +402,9 @@ class MainActivity : AppCompatActivity() {
         updateTextInputFocus()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (::launcherRootHost.isInitialized && launcherRootHost.handlePixelDustBack()) {
+                    return
+                }
                 when (state.mode) {
                     LauncherMode.SETTINGS -> closeSettingsMenu()
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.closeModule()
@@ -446,6 +460,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onResume() {
         super.onResume()
+        activityResumed = true
         windowModeController.hideSystemBars()
         startClockTicker()
         deviceStatusRepository.start(::onDeviceStatusChanged)
@@ -474,6 +489,7 @@ class MainActivity : AppCompatActivity() {
         }
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
+        syncPixelDustMotionListening()
         updateTextInputFocus()
         scheduleIdleCheck()
         loadApps()
@@ -517,6 +533,11 @@ class MainActivity : AppCompatActivity() {
      * 在进入后台时停止前台监听器和不应继续运行的临时 UI 工作。
      */
     override fun onPause() {
+        activityResumed = false
+        syncPixelDustMotionListening()
+        if (::launcherRootHost.isInitialized) {
+            launcherRootHost.stopPixelDustEffect()
+        }
         hideDrawerKeyboard()
         resetDrawerVerticalGesture()
         mainHandler.removeCallbacks(clockTicker)
@@ -537,6 +558,81 @@ class MainActivity : AppCompatActivity() {
         smsController.stop()
         suppressActivityAnimations()
         super.onPause()
+    }
+
+    private fun syncPixelDustMotionListening() {
+        if (!::deviceMotionRepository.isInitialized || !::launcherRootHost.isInitialized) {
+            return
+        }
+        if (!state.isPixelDustEasterEggEnabled) {
+            launcherRootHost.stopPixelDustEffect()
+            stopPixelDustMotionListening()
+            return
+        }
+        if (activityResumed) {
+            startPixelDustMotionListening()
+        } else {
+            stopPixelDustMotionListening()
+        }
+    }
+
+    private fun startPixelDustMotionListening() {
+        if (pixelDustMotionListening) return
+        pixelDustMotionListening = true
+        pixelDustShakeDetector.reset()
+        deviceMotionRepository.start(::onDeviceMotionChanged)
+    }
+
+    private fun stopPixelDustMotionListening() {
+        if (!pixelDustMotionListening) return
+        deviceMotionRepository.stop()
+        pixelDustMotionListening = false
+        pixelDustShakeDetector.reset()
+    }
+
+    private fun onDeviceMotionChanged(snapshot: DeviceMotionSnapshot) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { handleDeviceMotionChanged(snapshot.withCurrentScreenAxes()) }
+        } else {
+            handleDeviceMotionChanged(snapshot.withCurrentScreenAxes())
+        }
+    }
+
+    private fun handleDeviceMotionChanged(snapshot: DeviceMotionSnapshot) {
+        if (!state.isPixelDustEasterEggEnabled || !::launcherRootHost.isInitialized) {
+            return
+        }
+        launcherRootHost.updatePixelDustMotion(snapshot)
+        if (pixelDustShakeDetector.record(snapshot) && launcherRootHost.triggerPixelDust(snapshot)) {
+            launcherRootHost.setup.hostView.hostBridge?.performHapticFeedback(PixelHapticType.TAP)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun DeviceMotionSnapshot.withCurrentScreenAxes(): DeviceMotionSnapshot {
+        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display?.rotation ?: windowManager.defaultDisplay.rotation
+        } else {
+            windowManager.defaultDisplay.rotation
+        }
+        val gravity = ScreenGravityMapper.mapToScreen(
+            rawGravityX = gravityX,
+            rawGravityY = gravityY,
+            rawGravityZ = gravityZ,
+            rotation = rotation,
+        )
+        val linear = ScreenGravityMapper.mapToScreen(
+            rawGravityX = linearAccelX,
+            rawGravityY = linearAccelY,
+            rawGravityZ = linearAccelZ,
+            rotation = rotation,
+        )
+        return copy(
+            screenGravityX = gravity.first,
+            screenGravityY = gravity.second,
+            screenLinearAccelX = linear.first,
+            screenLinearAccelY = linear.second,
+        )
     }
 
     /**
@@ -570,6 +666,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        stopPixelDustMotionListening()
+        if (::launcherRootHost.isInitialized) {
+            launcherRootHost.stopPixelDustEffect()
+        }
         mainHandler.removeCallbacksAndMessages(null)
         backgroundExecutor.shutdownNow()
         super.onDestroy()
@@ -1031,6 +1131,9 @@ class MainActivity : AppCompatActivity() {
                 isIdlePageEnabled = s.isIdlePageEnabled,
                 openDrawerInSearchMode = SettingsMenuModel.toggle(s.openDrawerInSearchMode),
                 chargeIdleEffect = s.chargeIdleEffect,
+            )
+            SettingsMenuItem.PIXEL_DUST_EASTER_EGG -> applyUiBehavior(
+                isPixelDustEasterEggEnabled = SettingsMenuModel.toggle(s.isPixelDustEasterEggEnabled),
             )
             SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
@@ -2033,6 +2136,7 @@ class MainActivity : AppCompatActivity() {
         idleTimeoutSeconds: Int = state.idleTimeoutSeconds,
         openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
         chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
+        isPixelDustEasterEggEnabled: Boolean = state.isPixelDustEasterEggEnabled,
     ) {
         fontSettingsRepository.setUiBehaviorSettings(
             drawerListAlignment = drawerListAlignment,
@@ -2042,6 +2146,7 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
+            pixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
         )
         state = LauncherStateTransitions.updateUiBehavior(
             state = state,
@@ -2052,7 +2157,9 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
+            isPixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
         )
+        syncPixelDustMotionListening()
         if (!isIdlePageEnabled && state.mode == LauncherMode.IDLE) {
             wakeFromIdle()
             return

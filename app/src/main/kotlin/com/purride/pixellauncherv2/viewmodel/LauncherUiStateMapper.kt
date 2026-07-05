@@ -55,6 +55,7 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     idleTimeoutSeconds = idleTimeoutSeconds,
     openDrawerInSearchMode = openDrawerInSearchMode,
     chargeIdleEffect = chargeIdleEffect,
+    isPixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
     batteryLevel = batteryLevel,
     isCharging = isCharging,
     recentApps = recentApps,

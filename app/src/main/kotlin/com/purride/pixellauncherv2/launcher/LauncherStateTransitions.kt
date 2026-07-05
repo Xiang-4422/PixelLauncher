@@ -817,6 +817,7 @@ object LauncherStateTransitions {
         idleTimeoutSeconds: Int = state.idleTimeoutSeconds,
         openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
         chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
+        isPixelDustEasterEggEnabled: Boolean = state.isPixelDustEasterEggEnabled,
     ): LauncherState {
         return state.copy(
             drawerListAlignment = drawerListAlignment,
@@ -826,6 +827,7 @@ object LauncherStateTransitions {
             idleTimeoutSeconds = IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds),
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
+            isPixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
         )
     }
 
