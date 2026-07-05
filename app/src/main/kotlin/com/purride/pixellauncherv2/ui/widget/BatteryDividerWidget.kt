@@ -41,7 +41,7 @@ fun StatusBarBatteryFrame(
  * 视觉规格：
  * - 整行按当前电量等级显示绿色、黄色或红色
  * - 当前电量区域使用不透明颜色，剩余容量区域使用同色 50% 透明度
- * - 充电中：同色实心像素只在剩余容量区域内循环移动
+ * - 充电中：同色实心像素只在剩余容量区域内从右向左循环移动
  *
  * @param batteryLevel  电量百分比 0–100
  * @param isCharging    是否正在充电
@@ -119,7 +119,7 @@ internal class RenderBatteryDivider(
 
         val remainingW = w - filledW
         if (isCharging && remainingW > 0) {
-            val dotX = offsetX + filledW + Math.floorMod(chargeTick, remainingW)
+            val dotX = offsetX + filledW + remainingW - 1 - Math.floorMod(chargeTick, remainingW)
             context.buffer.setPixel(dotX, offsetY, levelColor)
         }
     }

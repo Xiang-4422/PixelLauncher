@@ -53,7 +53,7 @@ class BatteryDividerWidgetTest {
     }
 
     @Test
-    fun chargingDotMovesOnlyInsideRemainingCapacityRange() {
+    fun chargingDotMovesRightToLeftInsideRemainingCapacityRange() {
         val buffer = PixelBuffer(width = 10, height = 1)
         val renderObject = RenderBatteryDivider(
             batteryLevel = 60,
@@ -71,7 +71,8 @@ class BatteryDividerWidgetTest {
         assertEquals(highColor, buffer.getPixel(0, 0))
         assertEquals(highColor, buffer.getPixel(5, 0))
         assertEquals(remainingColor, buffer.getPixel(6, 0))
-        assertEquals(highColor, buffer.getPixel(8, 0))
+        assertEquals(highColor, buffer.getPixel(7, 0))
+        assertEquals(remainingColor, buffer.getPixel(8, 0))
         assertEquals(remainingColor, buffer.getPixel(9, 0))
     }
 
