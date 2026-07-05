@@ -23,6 +23,7 @@ internal data class TextWidget(
     val maxLines: Int,
     val overflow: PixelTextOverflow,
     val textAlign: TextAlign,
+    val paddingRight: Int = 0,
     override val key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
@@ -35,6 +36,7 @@ internal data class TextWidget(
             overflow = overflow,
             maxLines = maxLines,
             defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
+            paddingRight = paddingRight,
         )
     }
 
@@ -48,6 +50,7 @@ internal data class TextWidget(
             overflow = overflow,
             maxLines = maxLines,
             defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
+            paddingRight = paddingRight,
         )
     }
 

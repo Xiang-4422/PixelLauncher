@@ -18,8 +18,8 @@ import org.junit.Test
  * V1 行为合约：
  *  - state.isFocused == false → 不画
  *  - cursorColor == null → 不画
- *  - 空文本时 cursor 在 child 左缘
- *  - 非空文本时 cursor 在 child 文本末端（child.size.width 处）
+ *  - 空文本时 cursor 按正在显示的占位文本对齐语义绘制
+ *  - 非空文本时 cursor 按输入文本和 selectionStart 的输入语义绘制
  *  - 不参与命中测试，不改 layout size
  */
 class RenderSurfaceCursorTest {
@@ -64,6 +64,43 @@ class RenderSurfaceCursorTest {
         surface.setRenderObjectChild(textChild)
         surface.layout(RenderConstraints(maxWidth = 60, maxHeight = 24))
         val buffer = PixelBuffer(width = 60, height = 24).also { it.clear() }
+        return surface to buffer
+    }
+
+    private fun makeTextFieldSurface(
+        backingText: String,
+        renderedText: String,
+        textAlign: PixelTextAlign,
+        fieldWidth: Int,
+    ): Pair<RenderSurface, PixelBuffer> {
+        val state = PixelTextFieldState(
+            initialText = backingText,
+            selectionStart = backingText.length,
+            selectionEnd = backingText.length,
+        )
+        PixelTextFieldController().focus(state)
+        val textChild = RenderText(
+            text = renderedText.ifEmpty { " " },
+            style = PixelTextStyle(color = textColor),
+            textAlign = textAlign,
+            textDirection = TextDirection.LTR,
+            softWrap = false,
+            overflow = TextOverflow.CLIP,
+            maxLines = 1,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+            explicitWidth = fieldWidth,
+            paddingRight = if (textAlign == PixelTextAlign.END) 2 else 0,
+        )
+        val surface = RenderSurface(
+            fillColor = null,
+            borderColor = null,
+            textInputState = state,
+            textInputController = PixelTextFieldController(),
+            textInputCursorColor = cursorColor,
+        )
+        surface.setRenderObjectChild(textChild)
+        surface.layout(RenderConstraints(maxWidth = fieldWidth, maxHeight = 24))
+        val buffer = PixelBuffer(width = fieldWidth, height = 24).also { it.clear() }
         return surface to buffer
     }
 
@@ -129,7 +166,7 @@ class RenderSurfaceCursorTest {
     fun emptyTextDrawsCursorAtFieldOrigin() {
         // 空文本：cursor 应在 X=0（child 左缘）。
         // 注意：当 text 为空时，child 在 makeSurface 里用 " " 占位渲染，size.width > 0；
-        // 但 paintTextInputCursor 检查 state.text.isEmpty() → cursor 落在 cursorBaseX。
+        // 光标仍然应该使用 child 的第 0 个 caret，而不是被占位宽度推到文本末端。
         val (surface, buffer) = makeSurface(text = "", focused = true, cursorColor = cursorColor)
         surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
 
@@ -139,6 +176,104 @@ class RenderSurfaceCursorTest {
         if (firstCursorPixelIndex < 0) return  // 极小概率 child 高度 0；跳过
         val cursorX = firstCursorPixelIndex % width
         assertEquals("empty text: cursor at X=0 (left edge of content area)", 0, cursorX)
+    }
+
+    @Test
+    fun emptyTextCursorUsesPlaceholderEndForRightAlignedPlaceholder() {
+        val placeholder = "SEARCH APP"
+        val fieldWidth = 80
+        val (surface, buffer) = makeTextFieldSurface(
+            backingText = "",
+            renderedText = placeholder,
+            textAlign = PixelTextAlign.END,
+            fieldWidth = fieldWidth,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+
+        val firstCursorPixelIndex = buffer.pixels.indexOfFirst { it == cursorColor.argb }
+        val cursorX = firstCursorPixelIndex % fieldWidth
+        assertEquals(
+            "empty right-aligned field must draw the cursor at the placeholder right side",
+            fieldWidth - 1,
+            cursorX,
+        )
+    }
+
+    @Test
+    fun emptyTextCursorUsesPlaceholderStartForCenteredPlaceholder() {
+        val placeholder = "SEARCH APP"
+        val fieldWidth = 80
+        val (surface, buffer) = makeTextFieldSurface(
+            backingText = "",
+            renderedText = placeholder,
+            textAlign = PixelTextAlign.CENTER,
+            fieldWidth = fieldWidth,
+        )
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+
+        val firstCursorPixelIndex = buffer.pixels.indexOfFirst { it == cursorColor.argb }
+        val cursorX = firstCursorPixelIndex % fieldWidth
+        val expectedX = (fieldWidth - PixelBitmapFont.Default.measureText(placeholder)) / 2
+        assertEquals(
+            "empty centered field must draw the cursor at the placeholder start",
+            expectedX,
+            cursorX,
+        )
+    }
+
+    @Test
+    fun rightAlignedInputCursorStaysAtFieldEndAsTextGrows() {
+        val fieldWidth = 80
+        val shortText = "A"
+        val longText = "ABCD"
+        val (shortSurface, shortBuffer) = makeTextFieldSurface(
+            backingText = shortText,
+            renderedText = shortText,
+            textAlign = PixelTextAlign.END,
+            fieldWidth = fieldWidth,
+        )
+        val (longSurface, longBuffer) = makeTextFieldSurface(
+            backingText = longText,
+            renderedText = longText,
+            textAlign = PixelTextAlign.END,
+            fieldWidth = fieldWidth,
+        )
+
+        shortSurface.paint(PaintContext(shortBuffer), offsetX = 0, offsetY = 0)
+        longSurface.paint(PaintContext(longBuffer), offsetX = 0, offsetY = 0)
+
+        val shortCursorX = shortBuffer.pixels.indexOfFirst { it == cursorColor.argb } % fieldWidth
+        val longCursorX = longBuffer.pixels.indexOfFirst { it == cursorColor.argb } % fieldWidth
+        assertEquals(fieldWidth - 1, shortCursorX)
+        assertEquals(fieldWidth - 1, longCursorX)
+    }
+
+    @Test
+    fun rightAlignedInputTextLeavesOnePixelGapBeforeCaret() {
+        val text = "ABCD"
+        val fieldWidth = 80
+        val renderText = RenderText(
+            text = text,
+            style = PixelTextStyle(color = textColor),
+            textAlign = PixelTextAlign.END,
+            textDirection = TextDirection.LTR,
+            softWrap = false,
+            overflow = TextOverflow.CLIP,
+            maxLines = 1,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+            explicitWidth = fieldWidth,
+            paddingRight = 2,
+        )
+
+        renderText.layout(RenderConstraints(maxWidth = fieldWidth, maxHeight = 24))
+
+        val textRect = renderText.textRangeRects(0, text.length).single()
+        val caret = renderText.textInputCaretRect(
+            backingText = text,
+            selectionStart = text.length,
+        )
+        assertEquals(fieldWidth - 1, caret.x)
+        assertEquals("right-aligned text must leave one empty pixel before the fixed cursor column", caret.x - 1, textRect.x + textRect.width)
     }
 
     @Test

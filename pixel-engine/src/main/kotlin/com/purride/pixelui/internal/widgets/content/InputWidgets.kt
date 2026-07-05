@@ -118,6 +118,7 @@ internal data class TextFieldWidget(
                 maxLines = safeMaxLines,
                 overflow = if (safeMaxLines > 1) PixelTextOverflow.CLIP else PixelTextOverflow.ELLIPSIS,
                 textAlign = textAlign,
+                paddingRight = if (textAlign == TextAlign.END) 2 else 0,
                 key = key?.let { "$it-text" },
             ),
         )

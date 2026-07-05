@@ -318,7 +318,7 @@ internal class RenderSurface(
      *
      * 行为：
      *  - 仅在 `textInputState?.isFocused == true` 且 [textInputCursorColor] 非空时绘制
-     *  - 空文本：光标画在内容区起点（child 左缘）
+     *  - 空文本：光标按占位文本的对齐语义绘制
      *  - 非空文本：光标按 selectionStart 的 caret 位置绘制
      *  - 光标高度 = child 当前测量高度
      *  - 可见性由 host frame loop 推进的 blink state 决定
@@ -337,7 +337,10 @@ internal class RenderSurface(
         child ?: return
         val cursorBaseX = offsetX + childOffsetX
         val cursorBaseY = offsetY + childOffsetY
-        val caret = (child as? RenderText)?.caretRect(state.selectionStart)
+        val caret = (child as? RenderText)?.textInputCaretRect(
+            backingText = state.text,
+            selectionStart = state.selectionStart,
+        )
         val fallbackCaret = if (caret == null) resolveTextInputCaret(state.text, state.selectionStart, child) else 0L
         val cursorX = cursorBaseX + (caret?.x ?: caretX(fallbackCaret))
         val cursorY = cursorBaseY + (caret?.y ?: caretY(fallbackCaret))

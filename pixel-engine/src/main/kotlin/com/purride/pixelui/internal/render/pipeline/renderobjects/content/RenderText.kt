@@ -28,10 +28,10 @@ internal class RenderText(
     private val occupyFullWidth: Boolean = false,
     private val fillMaxWidth: Boolean = false,
     private val fillMaxHeight: Boolean = false,
-    private val paddingLeft: Int = 0,
-    private val paddingTop: Int = 0,
-    private val paddingRight: Int = 0,
-    private val paddingBottom: Int = 0,
+    private var paddingLeft: Int = 0,
+    private var paddingTop: Int = 0,
+    private var paddingRight: Int = 0,
+    private var paddingBottom: Int = 0,
     private val onClick: (() -> Unit)? = null,
 ) : RenderBox() {
     private var rasterizer: PixelTextRasterizer = style.textRasterizer ?: defaultTextRasterizer
@@ -55,12 +55,7 @@ internal class RenderText(
             val overlapStart = safeStart.coerceAtLeast(lineStart)
             val overlapEnd = safeEnd.coerceAtMost(lineEnd)
             if (overlapStart < overlapEnd) {
-                val lineX = drawTextX + ParagraphLayoutSupport.resolveLineStartX(
-                    textAlign = textAlign,
-                    textDirection = textDirection,
-                    availableWidth = size.width - paddingLeft - paddingRight,
-                    lineWidth = line.width,
-                )
+                val lineX = lineStartX(line.width)
                 val startX = lineX + measureTextRange(lineStart, overlapStart)
                 val endX = lineX + measureTextRange(lineStart, overlapEnd)
                 rects += PixelTextRangeRect(
@@ -85,12 +80,7 @@ internal class RenderText(
             val lineStart = line.sourceStart.coerceIn(0, text.length)
             val lineEnd = line.sourceEnd.coerceIn(lineStart, text.length)
             if (caretIndex in lineStart..lineEnd) {
-                val lineX = drawTextX + ParagraphLayoutSupport.resolveLineStartX(
-                    textAlign = textAlign,
-                    textDirection = textDirection,
-                    availableWidth = size.width - paddingLeft - paddingRight,
-                    lineWidth = line.width,
-                )
+                val lineX = lineStartX(line.width)
                 return PixelTextRangeRect(
                     x = lineX + measureTextRange(lineStart, caretIndex.coerceAtMost(lineEnd)),
                     y = y,
@@ -102,11 +92,21 @@ internal class RenderText(
         }
         val lastLine = paragraphLayout.lines.last()
         return PixelTextRangeRect(
-            x = drawTextX + lastLine.width,
+            x = lineStartX(lastLine.width) + lastLine.width,
             y = (textHeight - lastLine.height).coerceAtLeast(0) + drawTextY,
             width = 1,
             height = lastLine.height,
         )
+    }
+
+    fun textInputCaretRect(backingText: String, selectionStart: Int): PixelTextRangeRect {
+        if (backingText.isEmpty()) {
+            return if (textAlign == PixelTextAlign.END) visibleTextEndCaretRect() else caretRect(0)
+        }
+        if (textAlign == PixelTextAlign.END && selectionStart >= backingText.length) {
+            return visibleTextEndCaretRect()
+        }
+        return caretRect(selectionStart)
     }
 
     fun textIndexAt(localX: Int, localY: Int): Int {
@@ -116,12 +116,7 @@ internal class RenderText(
         val lineStart = line.sourceStart.coerceIn(0, text.length)
         val lineEnd = line.sourceEnd.coerceIn(lineStart, text.length)
         if (lineStart >= lineEnd) return lineStart
-        val lineX = drawTextX + ParagraphLayoutSupport.resolveLineStartX(
-            textAlign = textAlign,
-            textDirection = textDirection,
-            availableWidth = size.width - paddingLeft - paddingRight,
-            lineWidth = line.width,
-        )
+        val lineX = lineStartX(line.width)
         val xInLine = (localX - lineX).coerceAtLeast(0)
         if (xInLine <= 0) return lineStart
         if (xInLine >= line.width) return lineEnd
@@ -145,6 +140,10 @@ internal class RenderText(
         overflow: PixelTextOverflow,
         maxLines: Int,
         defaultTextRasterizer: PixelTextRasterizer = this.defaultTextRasterizer,
+        paddingLeft: Int = this.paddingLeft,
+        paddingTop: Int = this.paddingTop,
+        paddingRight: Int = this.paddingRight,
+        paddingBottom: Int = this.paddingBottom,
     ) {
         if (
             this.text == text &&
@@ -154,7 +153,11 @@ internal class RenderText(
             this.softWrap == softWrap &&
             this.overflow == overflow &&
             this.maxLines == maxLines &&
-            this.defaultTextRasterizer === defaultTextRasterizer
+            this.defaultTextRasterizer === defaultTextRasterizer &&
+            this.paddingLeft == paddingLeft &&
+            this.paddingTop == paddingTop &&
+            this.paddingRight == paddingRight &&
+            this.paddingBottom == paddingBottom
         ) {
             return
         }
@@ -166,6 +169,10 @@ internal class RenderText(
         this.overflow = overflow
         this.maxLines = maxLines
         this.defaultTextRasterizer = defaultTextRasterizer
+        this.paddingLeft = paddingLeft
+        this.paddingTop = paddingTop
+        this.paddingRight = paddingRight
+        this.paddingBottom = paddingBottom
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -301,6 +308,25 @@ internal class RenderText(
             cursorY = nextY
         }
         return lines.lastIndex
+    }
+
+    private fun visibleTextEndCaretRect(): PixelTextRangeRect {
+        val caret = caretRect(text.length)
+        val minX = paddingLeft.coerceAtLeast(0)
+        val maxX = (size.width - caret.width).coerceAtLeast(minX)
+        return caret.copy(x = maxX)
+    }
+
+    private fun lineStartX(lineWidth: Int): Int {
+        if (style.usesPlainRasterizer()) {
+            return drawTextX
+        }
+        return paddingLeft + ParagraphLayoutSupport.resolveLineStartX(
+            textAlign = textAlign,
+            textDirection = textDirection,
+            availableWidth = size.width - paddingLeft - paddingRight,
+            lineWidth = lineWidth,
+        )
     }
 
     private fun PixelTextStyle.usesPlainRasterizer(): Boolean {
