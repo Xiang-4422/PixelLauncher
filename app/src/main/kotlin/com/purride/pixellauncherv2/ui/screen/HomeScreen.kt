@@ -219,16 +219,25 @@ class HomeScreen(
                     children = buildList {
                         add(bottomActionRow(s, t))
                         add(
-                            AnimatedContainer(
-                                duration = HOME_MEDIA_PROGRESS_ANIMATION_MS.milliseconds,
-                                vsync = widget.vsync,
-                                width = if (showProgress) barWidth else HOME_MEDIA_PROGRESS_COLLAPSED_WIDTH_PX,
+                            Positioned(
+                                left = 0,
+                                top = 0,
                                 height = HOME_ACTION_TOTAL_HEIGHT_PX,
-                                key = "home-media-progress",
-                                child = HomeMediaProgressBar(
-                                    progress = scrubProgress,
-                                    width = barWidth,
-                                    theme = t,
+                                child = AnimatedContainer(
+                                    duration = HOME_MEDIA_PROGRESS_ANIMATION_MS.milliseconds,
+                                    vsync = widget.vsync,
+                                    width = if (showProgress) {
+                                        barWidth
+                                    } else {
+                                        HOME_MEDIA_PROGRESS_COLLAPSED_WIDTH_PX
+                                    },
+                                    height = HOME_ACTION_TOTAL_HEIGHT_PX,
+                                    key = "home-media-progress",
+                                    child = HomeMediaProgressBar(
+                                        progress = scrubProgress,
+                                        width = barWidth,
+                                        theme = t,
+                                    ),
                                 ),
                             ),
                         )
