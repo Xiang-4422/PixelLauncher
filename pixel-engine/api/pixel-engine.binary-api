@@ -293,6 +293,7 @@ public final class com.purride.pixelcore.PixelBuffer {
   public final void drawRect-nZs-OeI(int, int, int, int, int, com.purride.pixelcore.PixelBlendMode);
   public static void drawRect-nZs-OeI$default(com.purride.pixelcore.PixelBuffer, int, int, int, int, int, com.purride.pixelcore.PixelBlendMode, int, java.lang.Object);
   public final void clear();
+  public final com.purride.pixelcore.PixelBuffer copy();
   public final void blit(com.purride.pixelcore.PixelBuffer, int, int);
   public final void blitRegion(com.purride.pixelcore.PixelBuffer, int, int, int, int, int, int);
 }
@@ -1588,6 +1589,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void submitFocusedTextInput();
   public final boolean handleBackPressed();
   public final boolean performFocusedTextEditAction(com.purride.pixelui.PixelTextEditAction);
+  public final com.purride.pixelcore.PixelBuffer snapshotCurrentFrameBuffer();
   public boolean dispatchKeyEvent(android.view.KeyEvent);
   public boolean dispatchGenericMotionEvent(android.view.MotionEvent);
   public void submitFrame-olPvOxg(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.ScreenProfile, int);

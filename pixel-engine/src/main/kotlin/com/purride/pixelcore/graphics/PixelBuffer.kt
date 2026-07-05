@@ -115,6 +115,18 @@ public class PixelBuffer(
     }
 
     /**
+     * 返回当前缓冲的深拷贝。
+     *
+     * 调用方可以安全地长期持有返回值；后续对源 buffer 或副本的写入不会互相影响。
+     */
+    public fun copy(): PixelBuffer {
+        val next = PixelBuffer(width = width, height = height)
+        System.arraycopy(pixels, 0, next.pixels, 0, pixels.size)
+        next.nonOpaquePixelCount = nonOpaquePixelCount
+        return next
+    }
+
+    /**
      * 把 [source] buffer 的内容复制到当前 buffer 的 ([destX], [destY]) 位置。
      */
     public fun blit(source: PixelBuffer, destX: Int, destY: Int) {

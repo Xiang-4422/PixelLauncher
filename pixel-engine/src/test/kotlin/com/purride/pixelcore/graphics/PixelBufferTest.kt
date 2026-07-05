@@ -56,6 +56,22 @@ class PixelBufferTest {
     }
 
     @Test
+    fun copyReturnsIndependentBuffer() {
+        val buf = PixelBuffer(width = 2, height = 2)
+        buf.setPixel(0, 0, red)
+        buf.setPixel(1, 1, blue)
+
+        val copy = buf.copy()
+        buf.setPixel(0, 0, green)
+        copy.setPixel(1, 1, red)
+
+        assertEquals(red, copy.getPixel(0, 0))
+        assertEquals(red, copy.getPixel(1, 1))
+        assertEquals(green, buf.getPixel(0, 0))
+        assertEquals(blue, buf.getPixel(1, 1))
+    }
+
+    @Test
     fun blitCopiesSourcePixels() {
         val src = PixelBuffer(width = 2, height = 2)
         src.setPixel(0, 0, red)

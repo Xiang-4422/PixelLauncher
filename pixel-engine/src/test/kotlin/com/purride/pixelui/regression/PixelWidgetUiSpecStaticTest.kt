@@ -99,6 +99,66 @@ class PixelWidgetUiSpecStaticTest {
         )
     }
 
+    @Test
+    fun hostGapRendererLeavesViewportEdgesUncovered() {
+        val moduleRoot = resolveModuleRoot()
+        val source = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt")
+            .readText()
+
+        val offenders = listOfNotNull(
+            if (!source.contains("for (x in 1 until buffer.width)")) {
+                "vertical bezel overlay must start at the first internal grid line"
+            } else {
+                null
+            },
+            if (!source.contains("for (y in 1 until buffer.height)")) {
+                "horizontal bezel overlay must start at the first internal grid line"
+            } else {
+                null
+            },
+            if (source.contains("for (x in 0..buffer.width)") || source.contains("for (y in 0..buffer.height)")) {
+                "bezel overlay must not repaint the viewport outer edge"
+            } else {
+                null
+            },
+            if (!source.contains("private fun dotLeft(cell: Float, inset: Float, x: Int): Float =") ||
+                !source.contains("x * cell + if (x == 0) 0f else inset")
+            ) {
+                "left edge dots must not keep an outer inset"
+            } else {
+                null
+            },
+            if (!source.contains("private fun dotTop(cell: Float, inset: Float, y: Int): Float =") ||
+                !source.contains("y * cell + if (y == 0) 0f else inset")
+            ) {
+                "top edge dots must not keep an outer inset"
+            } else {
+                null
+            },
+            if (!source.contains("private fun dotRight(cell: Float, inset: Float, width: Int, x: Int): Float =") ||
+                !source.contains("(x + 1) * cell - if (x == width - 1) 0f else inset")
+            ) {
+                "right edge dots must not keep an outer inset"
+            } else {
+                null
+            },
+            if (!source.contains("private fun dotBottom(cell: Float, inset: Float, height: Int, y: Int): Float =") ||
+                !source.contains("(y + 1) * cell - if (y == height - 1) 0f else inset")
+            ) {
+                "bottom edge dots must not keep an outer inset"
+            } else {
+                null
+            },
+        )
+
+        assertTrue(
+            "PixelHostView gap overlay must not cover full-bleed edge controls:\n" +
+                offenders.joinToString("\n"),
+            offenders.isEmpty(),
+        )
+    }
+
     private fun resolveModuleRoot(): File {
         val cwd = File(".").canonicalFile
         return if (cwd.name == "pixel-engine") cwd else cwd.resolve("pixel-engine")

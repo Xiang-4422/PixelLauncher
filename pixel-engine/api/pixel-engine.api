@@ -115,6 +115,7 @@ com.purride.pixelcore public fun getPixel(x: Int, y: Int): PixelColor
 com.purride.pixelcore public fun fillRect(
 com.purride.pixelcore public fun drawRect(
 com.purride.pixelcore public fun clear()
+com.purride.pixelcore public fun copy(): PixelBuffer
 com.purride.pixelcore public fun blit(source: PixelBuffer, destX: Int, destY: Int)
 com.purride.pixelcore public fun blitRegion(
 com.purride.pixelcore public companion object
@@ -535,6 +536,7 @@ com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun submitFocusedTextInput()
 com.purride.pixelui public fun handleBackPressed(): Boolean
 com.purride.pixelui public fun performFocusedTextEditAction(action: PixelTextEditAction): Boolean
+com.purride.pixelui public fun snapshotCurrentFrameBuffer(): PixelBuffer?
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
 com.purride.pixelui public fun setWindowInsets(
 com.purride.pixelui public fun setViewInsets(

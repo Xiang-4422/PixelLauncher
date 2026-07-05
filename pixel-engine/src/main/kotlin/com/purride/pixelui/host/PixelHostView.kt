@@ -281,6 +281,15 @@ public class PixelHostView @JvmOverloads constructor(
         return textInputCoordinator.performEditAction(action)
     }
 
+    /**
+     * 返回最近一次已提交逻辑像素帧的深拷贝。
+     *
+     * 这是宿主级快照入口，业务层可用于冻结当前画面，而不需要访问 internal render result。
+     */
+    public fun snapshotCurrentFrameBuffer(): PixelBuffer? {
+        return lastRenderResult?.buffer?.copy()
+    }
+
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
         if (event.action == android.view.KeyEvent.ACTION_DOWN) {
             val handled = PixelFocusManager.dispatchKeyEvent(event.toPixelKeyEvent())
@@ -685,7 +694,7 @@ public class PixelHostView @JvmOverloads constructor(
         reusablePaint.color = bezelColor.argb
         val cell = geometry.cellSize
         val gapWidth = gap * 2f
-        for (x in 0..buffer.width) {
+        for (x in 1 until buffer.width) {
             val left = geometry.originX + x * cell - gap
             canvas.drawRect(
                 left,
@@ -695,7 +704,7 @@ public class PixelHostView @JvmOverloads constructor(
                 reusablePaint,
             )
         }
-        for (y in 0..buffer.height) {
+        for (y in 1 until buffer.height) {
             val top = geometry.originY + y * cell - gap
             canvas.drawRect(
                 geometry.originX,
@@ -740,10 +749,10 @@ public class PixelHostView @JvmOverloads constructor(
                 val pixel = buffer.getPixel(x, y)
                 if (pixel.alpha <= 0) continue
 
-                val left = geometry.originX + x * geometry.cellSize + geometry.dotInset
-                val top = geometry.originY + y * geometry.cellSize + geometry.dotInset
-                val right = left + geometry.dotSize
-                val bottom = top + geometry.dotSize
+                val left = geometry.originX + dotLeft(geometry.cellSize, geometry.dotInset, x)
+                val top = geometry.originY + dotTop(geometry.cellSize, geometry.dotInset, y)
+                val right = geometry.originX + dotRight(geometry.cellSize, geometry.dotInset, buffer.width, x)
+                val bottom = geometry.originY + dotBottom(geometry.cellSize, geometry.dotInset, buffer.height, y)
                 reusablePaint.color = pixel.argb
                 drawPixelShape(canvas, left, top, right, bottom, shape)
             }
@@ -791,10 +800,10 @@ public class PixelHostView @JvmOverloads constructor(
         reusablePaint.color = offPixelColor.argb
         for (y in 0 until logicalHeight) {
             for (x in 0 until logicalWidth) {
-                val left = x * geometry.cellSize + geometry.dotInset
-                val top = y * geometry.cellSize + geometry.dotInset
-                val right = left + geometry.dotSize
-                val bottom = top + geometry.dotSize
+                val left = dotLeft(geometry.cellSize, geometry.dotInset, x)
+                val top = dotTop(geometry.cellSize, geometry.dotInset, y)
+                val right = dotRight(geometry.cellSize, geometry.dotInset, logicalWidth, x)
+                val bottom = dotBottom(geometry.cellSize, geometry.dotInset, logicalHeight, y)
                 drawPixelShape(reusableGapBackgroundCanvas, left, top, right, bottom, shape)
             }
         }
@@ -840,6 +849,18 @@ public class PixelHostView @JvmOverloads constructor(
         gapBackgroundBitmap = null
         gapBackgroundKey = null
     }
+
+    private fun dotLeft(cell: Float, inset: Float, x: Int): Float =
+        x * cell + if (x == 0) 0f else inset
+
+    private fun dotTop(cell: Float, inset: Float, y: Int): Float =
+        y * cell + if (y == 0) 0f else inset
+
+    private fun dotRight(cell: Float, inset: Float, width: Int, x: Int): Float =
+        (x + 1) * cell - if (x == width - 1) 0f else inset
+
+    private fun dotBottom(cell: Float, inset: Float, height: Int, y: Int): Float =
+        (y + 1) * cell - if (y == height - 1) 0f else inset
 
     internal fun mapTouchToLogical(touchX: Float, touchY: Float): Pair<Int, Int>? {
         return PixelGridGeometryResolver.mapSurfaceToLogical(
