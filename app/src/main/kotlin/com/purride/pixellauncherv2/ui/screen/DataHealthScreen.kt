@@ -21,18 +21,13 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.DataHealthItem
 import com.purride.pixellauncherv2.launcher.DataHealthLine
 import com.purride.pixellauncherv2.launcher.DataHealthModel
-import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 class DataHealthScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
-    private val chargeTick: Int,
-    private val screenProfile: ScreenProfile,
     private val onItemPressed: (DataHealthItem) -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
@@ -50,16 +45,6 @@ class DataHealthScreen(
                 mainAxisSize = MainAxisSize.MAX,
                 spacing = 0,
                 children = listOf(
-                    LauncherHeader(
-                        timeText = widget.uiState.currentTimeText.ifEmpty { "--:--" },
-                        screenTitle = "DATA",
-                        messageText = widget.uiState.statusBarMessageText,
-                        batteryLevel = widget.uiState.batteryLevel,
-                        isCharging = widget.uiState.isCharging,
-                        chargeTick = widget.chargeTick,
-                        theme = widget.theme,
-                        statusBarHeight = LauncherHeaderLayout.statusBarHeight(widget.screenProfile),
-                    ),
                     Expanded(
                         child = SingleChildScrollView(
                             state = scrollState,

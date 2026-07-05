@@ -18,7 +18,6 @@ import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.launcher.IdlePresentationModel
 import com.purride.pixellauncherv2.launcher.IdleStatusKind
 import com.purride.pixellauncherv2.launcher.IdleStatusModel
-import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -30,7 +29,6 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 fun IdleScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
-    statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
 ): Widget {
     val subtitle = listOf(uiState.currentWeekdayText, uiState.currentDateText)
         .filter { it.isNotBlank() }
@@ -53,7 +51,7 @@ fun IdleScreen(
     return Padding(
         padding = EdgeInsets.only(
             left = LauncherSpacing.CONTENT_HORIZONTAL,
-            top = statusBarHeight + LauncherSpacing.CONTENT_VERTICAL,
+            top = LauncherSpacing.CONTENT_VERTICAL,
             right = LauncherSpacing.CONTENT_HORIZONTAL,
             bottom = LauncherSpacing.CONTENT_VERTICAL,
         ),

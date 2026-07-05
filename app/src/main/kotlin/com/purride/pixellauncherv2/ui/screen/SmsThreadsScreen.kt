@@ -19,11 +19,8 @@ import com.purride.pixelui.Semantics
 import com.purride.pixelui.Slidable
 import com.purride.pixelui.SlidableAction
 import com.purride.pixelui.SlidableActionPane
-import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
-import com.purride.pixelui.TextButton
-import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
@@ -38,10 +35,7 @@ import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.BatteryDividerWidget
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
-import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
@@ -61,8 +55,6 @@ private val SMS_PAGE_TABS = listOf("UNREAD", "ALL")
 fun SmsThreadsScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
-    chargeTick: Int,
-    statusBarHeight: Int,
     pagerController: PixelPagerController,
     pagerState: PixelPagerState,
     unreadListState: PixelListState,
@@ -73,7 +65,6 @@ fun SmsThreadsScreen(
     searchState: PixelTextFieldState,
     onSmsPageSelected: (Int) -> Unit,
     onSearchChanged: (String) -> Unit,
-    onMarkSmsRead: () -> Unit,
     onMarkUnreadMessageRead: (Long) -> Unit,
     onOpenThread: (conversationKey: String) -> Unit,
 ): Widget {
@@ -85,15 +76,6 @@ fun SmsThreadsScreen(
         mainAxisSize = MainAxisSize.MAX,
         spacing = 0,
         children = buildList {
-            add(
-                smsHeader(
-                    uiState = uiState,
-                    theme = theme,
-                    chargeTick = chargeTick,
-                    statusBarHeight = statusBarHeight,
-                    onMarkSmsRead = onMarkSmsRead,
-                ),
-            )
             add(
                 Expanded(
                     child = if (showUnreadTabs) {
@@ -154,90 +136,6 @@ fun SmsThreadsScreen(
     )
 }
 
-private fun smsHeader(
-    uiState: LauncherUiState,
-    theme: LauncherTheme,
-    chargeTick: Int,
-    statusBarHeight: Int,
-    onMarkSmsRead: () -> Unit,
-): Widget {
-    if (uiState.statusBarMessageText.isNotBlank()) {
-        return LauncherHeader(
-            timeText = uiState.currentTimeText.ifEmpty { "--:--" },
-            screenTitle = "SMS",
-            messageText = uiState.statusBarMessageText,
-            batteryLevel = uiState.batteryLevel,
-            isCharging = uiState.isCharging,
-            chargeTick = chargeTick,
-            theme = theme,
-            statusBarHeight = statusBarHeight,
-        )
-    }
-    val topSpacer = (statusBarHeight - LauncherHeaderLayout.headerContentHeight).coerceAtLeast(0)
-    val textStyle = TextStyle(color = theme.statusBar.text)
-    val readEnabled = uiState.unreadSmsEntries.isNotEmpty()
-    return Column(
-        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        mainAxisSize = MainAxisSize.MIN,
-        spacing = 0,
-        children = buildList {
-            if (topSpacer > 0) {
-                add(SizedBox(height = topSpacer))
-            }
-            add(
-                Padding(
-                    horizontal = LauncherHeaderLayout.horizontalPadding,
-                    child = Row(
-                        spacing = 0,
-                        children = listOf(
-                            Text(
-                                uiState.currentTimeText.ifEmpty { "--:--" },
-                                style = textStyle,
-                                overflow = TextOverflow.ELLIPSIS,
-                                softWrap = false,
-                                maxLines = 1,
-                            ),
-                            Expanded(
-                                child = Text(
-                                    "SMS",
-                                    style = textStyle,
-                                    textAlign = TextAlign.CENTER,
-                                    overflow = TextOverflow.ELLIPSIS,
-                                    softWrap = false,
-                                    maxLines = 1,
-                                ),
-                            ),
-                            TextButton(
-                                text = "READ",
-                                onPressed = onMarkSmsRead,
-                                enabled = readEnabled,
-                                style = TextButtonStyle(
-                                    textStyle = TextStyle(
-                                        color = if (readEnabled) theme.statusBar.text else theme.statusBar.mutedText,
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            )
-            if (LauncherHeaderLayout.dividerGap > 0) {
-                add(SizedBox(height = LauncherHeaderLayout.dividerGap))
-            }
-            add(
-                BatteryDividerWidget(
-                    batteryLevel = uiState.batteryLevel,
-                    isCharging = uiState.isCharging,
-                    chargeTick = chargeTick,
-                    highColor = theme.statusBar.batteryHigh,
-                    mediumColor = theme.statusBar.batteryMedium,
-                    lowColor = theme.statusBar.batteryLow,
-                ),
-            )
-        },
-    )
-}
-
 private fun smsBottomTabs(
     selectedIndex: Int,
     theme: LauncherTheme,
@@ -264,7 +162,7 @@ private fun smsBottomTabs(
                             child = Text(
                                 label,
                                 style = TextStyle(
-                                    color = if (index == selectedIndex) theme.text.inverse else theme.button.text,
+                                    color = if (index == selectedIndex) theme.surface.offPixelColor else theme.button.text,
                                 ),
                                 textAlign = TextAlign.CENTER,
                                 overflow = TextOverflow.ELLIPSIS,
@@ -435,7 +333,7 @@ private fun unreadReadActionPane(
         SlidableAction(
             label = "READ",
             backgroundColor = theme.semantic.success,
-            foregroundColor = theme.text.inverse,
+            foregroundColor = theme.surface.offPixelColor,
             onPressed = onRead,
         ),
     ),

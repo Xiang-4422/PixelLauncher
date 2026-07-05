@@ -20,20 +20,15 @@ import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
-import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.NotificationSettingsModel
 import com.purride.pixellauncherv2.launcher.NotificationSettingsRow
-import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 class NotificationSettingsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
-    private val chargeTick: Int,
-    private val screenProfile: ScreenProfile,
     private val onSourcePressed: (String) -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
@@ -56,16 +51,6 @@ class NotificationSettingsScreen(
                 mainAxisSize = MainAxisSize.MAX,
                 spacing = 0,
                 children = listOf(
-                    LauncherHeader(
-                        timeText = widget.uiState.currentTimeText.ifEmpty { "--:--" },
-                        screenTitle = "NOTIFY",
-                        messageText = widget.uiState.statusBarMessageText,
-                        batteryLevel = widget.uiState.batteryLevel,
-                        isCharging = widget.uiState.isCharging,
-                        chargeTick = widget.chargeTick,
-                        theme = widget.theme,
-                        statusBarHeight = LauncherHeaderLayout.statusBarHeight(widget.screenProfile),
-                    ),
                     Expanded(
                         child = SingleChildScrollView(
                             state = scrollState,

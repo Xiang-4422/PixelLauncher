@@ -30,7 +30,6 @@ import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -47,8 +46,6 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 fun SmsThreadDetailScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
-    chargeTick: Int,
-    statusBarHeight: Int,
     msgListState: PixelListState,
     msgListController: PixelListController,
     draftController: PixelTextFieldController,
@@ -57,27 +54,11 @@ fun SmsThreadDetailScreen(
     onSendDraft: () -> Unit,
     onMessagePressed: (Long) -> Unit,
 ): Widget {
-    val contact = uiState.smsCurrentConversationTitle
-        .trim()
-        .ifBlank { uiState.smsCurrentAddress.trim() }
-        .ifBlank { "SMS" }
     return Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MAX,
         spacing = 0,
         children = buildList {
-            add(
-                LauncherHeader(
-                    timeText = uiState.currentTimeText.ifEmpty { "--:--" },
-                    screenTitle = headerTitle(contact),
-                    messageText = uiState.statusBarMessageText,
-                    batteryLevel = uiState.batteryLevel,
-                    isCharging = uiState.isCharging,
-                    chargeTick = chargeTick,
-                    theme = theme,
-                    statusBarHeight = statusBarHeight,
-                ),
-            )
             add(
                 Expanded(
                     child = if (uiState.smsMessages.isEmpty()) {
@@ -250,12 +231,3 @@ private fun messageMetaRow(
         ),
     ),
 )
-
-/** 把对方地址收敛成不会撑爆右上角标题区的短串。 */
-private fun headerTitle(contact: String): String {
-    if (contact == "SMS") return "SMS"
-    val trimmed = contact.take(HEADER_TITLE_MAX)
-    return if (trimmed.length < contact.length) "$trimmed…" else trimmed
-}
-
-private const val HEADER_TITLE_MAX = 12

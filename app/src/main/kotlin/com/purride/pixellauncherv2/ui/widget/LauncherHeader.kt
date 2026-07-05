@@ -5,6 +5,7 @@ import com.purride.pixelui.Alignment
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
@@ -25,9 +26,13 @@ import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelTextFieldState
+import com.purride.pixelui.widgets.animated.AnimatedSwitcher
+import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * 所有 Launcher 屏幕的顶部标题栏。
@@ -35,7 +40,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
  * 视觉结构（宽度 = 屏幕宽度，自动 STRETCH）：
  * ```
  * HH:MM           SCREEN TITLE
- * ████████████░░░░░░░░░░░░░░  ← BatteryDivider（1px 高）
+ * ████████████░░░░░░░░░░░░░░  ← BatteryDivider（1px 高，贴住底边）
  * ```
  *
  * 时间靠左，屏幕标题靠右；电量分隔线位于文字行正下方。
@@ -56,6 +61,8 @@ fun LauncherHeader(
     actionLeadingText: String = "",
     actionLabel: String = "",
     isActionDanger: Boolean = false,
+    centerActionLabel: String = "",
+    isCenterActionEnabled: Boolean = true,
     centerText: String = "",
     centerTextColor: PixelColor? = null,
     batteryLevel: Int,
@@ -63,38 +70,55 @@ fun LauncherHeader(
     chargeTick: Int,
     theme: LauncherTheme,
     statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
+    pageTagVsync: PixelTickerProvider? = null,
     onAction: (() -> Unit)? = null,
+    onCenterAction: (() -> Unit)? = null,
     onCenterTap: (() -> Unit)? = null,
     onCenterDoubleTap: (() -> Unit)? = null,
 ): Widget {
     val message = messageText.trim()
     val action = actionLabel.trim()
+    val centerAction = centerActionLabel.trim()
     val isShowingMessage = message.isNotEmpty()
     val isShowingAction = action.isNotEmpty()
+    val mediaTitle = centerText.trim()
+    val centerContent = when {
+        isShowingAction -> StatusBarCenterContent.FilledAction(
+            leadingText = actionLeadingText,
+            actionLabel = action,
+            isDanger = isActionDanger,
+        )
+        isShowingMessage -> StatusBarCenterContent.Message(message)
+        centerAction.isNotEmpty() -> StatusBarCenterContent.TextAction(
+            actionLabel = centerAction,
+            enabled = isCenterActionEnabled,
+        )
+        mediaTitle.isNotEmpty() -> StatusBarCenterContent.MediaTitle(
+            text = mediaTitle,
+            color = centerTextColor,
+        )
+        else -> StatusBarCenterContent.Empty
+    }
     val header = Column(
         children = statusBarChildren(
             statusBarHeight = statusBarHeight,
-            row = when {
-                isShowingAction -> statusBarAction(
-                    leadingText = actionLeadingText,
-                    actionLabel = action,
-                    onAction = onAction,
-                )
-                isShowingMessage -> statusBarMessage(message, theme)
-                else -> statusBarTitleRow(
-                    timeText = timeText,
-                    screenTitle = screenTitle,
-                    centerText = centerText.trim(),
-                    centerTextColor = centerTextColor,
-                    theme = theme,
-                    onCenterTap = onCenterTap,
-                    onCenterDoubleTap = onCenterDoubleTap,
-                )
-            },
+            contentHeight = STATUS_BAR_TITLE_CONTENT_HEIGHT_PX,
+            row = statusBarTitleRow(
+                timeText = timeText,
+                screenTitle = screenTitle,
+                centerContent = centerContent,
+                theme = theme,
+                pageTagVsync = pageTagVsync,
+                onAction = onAction,
+                onCenterAction = onCenterAction,
+                onCenterTap = onCenterTap,
+                onCenterDoubleTap = onCenterDoubleTap,
+            ),
             divider = BatteryDividerWidget(
                 batteryLevel = batteryLevel,
                 isCharging = isCharging,
                 chargeTick = chargeTick,
+                trackColor = theme.surface.offPixelColor,
                 highColor = theme.statusBar.batteryHigh,
                 mediumColor = theme.statusBar.batteryMedium,
                 lowColor = theme.statusBar.batteryLow,
@@ -104,14 +128,7 @@ fun LauncherHeader(
         mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
     )
-    return if (isShowingAction) {
-        Container(
-            fillColor = statusBarActionBackgroundColor(isActionDanger, theme),
-            child = header,
-        )
-    } else {
-        header
-    }
+    return header
 }
 
 private fun statusBarText(
@@ -128,57 +145,214 @@ private fun statusBarText(
     maxLines = 1,
 )
 
+private sealed class StatusBarCenterContent {
+    data object Empty : StatusBarCenterContent()
+    data class Message(val text: String) : StatusBarCenterContent()
+    data class FilledAction(
+        val leadingText: String,
+        val actionLabel: String,
+        val isDanger: Boolean,
+    ) : StatusBarCenterContent()
+    data class TextAction(
+        val actionLabel: String,
+        val enabled: Boolean,
+    ) : StatusBarCenterContent()
+    data class MediaTitle(
+        val text: String,
+        val color: PixelColor?,
+    ) : StatusBarCenterContent()
+}
+
 private fun statusBarTitleRow(
     timeText: String,
     screenTitle: String,
-    centerText: String,
-    centerTextColor: PixelColor?,
+    centerContent: StatusBarCenterContent,
     theme: LauncherTheme,
+    pageTagVsync: PixelTickerProvider?,
+    onAction: (() -> Unit)?,
+    onCenterAction: (() -> Unit)?,
     onCenterTap: (() -> Unit)?,
     onCenterDoubleTap: (() -> Unit)?,
-): Widget = Padding(
-    horizontal = LauncherHeaderLayout.horizontalPadding,
-    child = Row(
-        children = listOf(
-            statusBarText(timeText, theme),
-            Expanded(
-                child = statusBarCenter(
-                    text = centerText,
-                    color = centerTextColor ?: theme.statusBar.text,
+): Widget {
+    if (centerContent == StatusBarCenterContent.Empty) {
+        return Container(
+            height = STATUS_BAR_TITLE_ROW_HEIGHT_PX,
+            padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX),
+            child = Row(
+                children = listOf(
+                    statusBarSegment(
+                        text = timeText,
+                        theme = theme,
+                        textColor = theme.statusBar.text,
+                        height = STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX,
+                    ),
+                    Expanded(child = SizedBox(width = 0, height = 0)),
+                    statusBarPageTag(
+                        text = screenTitle,
+                        theme = theme,
+                        textColor = theme.statusBar.text,
+                        textAlign = TextAlign.END,
+                        height = STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX,
+                        vsync = pageTagVsync,
+                    ),
+                ),
+                spacing = 0,
+            ),
+        )
+    }
+    return Container(
+        height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX,
+        borderColor = theme.button.border,
+        padding = EdgeInsets.all(STATUS_BAR_MEDIA_BORDER_PX),
+        child = Row(
+            children = listOf(
+                statusBarSegment(
+                    text = timeText,
                     theme = theme,
-                    onTap = onCenterTap,
-                    onDoubleTap = onCenterDoubleTap,
+                    textColor = theme.statusBar.text,
+                    height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+                ),
+                statusBarDivider(theme),
+                Expanded(
+                    child = statusBarCenterContent(
+                        content = centerContent,
+                        theme = theme,
+                        onAction = onAction,
+                        onCenterAction = onCenterAction,
+                        onCenterTap = onCenterTap,
+                        onCenterDoubleTap = onCenterDoubleTap,
+                    ),
+                ),
+                statusBarDivider(theme),
+                statusBarPageTag(
+                    text = screenTitle,
+                    theme = theme,
+                    textColor = theme.statusBar.text,
+                    textAlign = TextAlign.END,
+                    height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+                    vsync = pageTagVsync,
                 ),
             ),
-            statusBarText(
-                text = screenTitle,
-                theme = theme,
-                textAlign = TextAlign.END,
-            ),
+            spacing = 0,
         ),
-        spacing = 0,
-    ),
-)
+    )
+}
+
+private fun statusBarCenterContent(
+    content: StatusBarCenterContent,
+    theme: LauncherTheme,
+    onAction: (() -> Unit)?,
+    onCenterAction: (() -> Unit)?,
+    onCenterTap: (() -> Unit)?,
+    onCenterDoubleTap: (() -> Unit)?,
+): Widget = when (content) {
+    StatusBarCenterContent.Empty -> SizedBox(width = 0, height = 0)
+    is StatusBarCenterContent.Message -> statusBarSegment(
+        text = content.text,
+        theme = theme,
+        textColor = theme.statusBar.text,
+        textAlign = TextAlign.CENTER,
+        height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+    )
+    is StatusBarCenterContent.FilledAction -> statusBarCenterAction(
+        leadingText = content.leadingText,
+        actionLabel = content.actionLabel,
+        enabled = true,
+        filled = true,
+        isDanger = content.isDanger,
+        theme = theme,
+        onAction = onAction,
+    )
+    is StatusBarCenterContent.TextAction -> statusBarCenterAction(
+        leadingText = "",
+        actionLabel = content.actionLabel,
+        enabled = content.enabled,
+        filled = false,
+        isDanger = false,
+        theme = theme,
+        onAction = onCenterAction,
+    )
+    is StatusBarCenterContent.MediaTitle -> statusBarCenter(
+        text = content.text,
+        fillColor = content.color ?: theme.button.border,
+        textColor = theme.surface.offPixelColor,
+        theme = theme,
+        onTap = onCenterTap,
+        onDoubleTap = onCenterDoubleTap,
+        height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+    )
+}
+
+private fun statusBarCenterAction(
+    leadingText: String,
+    actionLabel: String,
+    enabled: Boolean,
+    filled: Boolean,
+    isDanger: Boolean,
+    theme: LauncherTheme,
+    onAction: (() -> Unit)?,
+): Widget {
+    val textColor = when {
+        !enabled -> theme.statusBar.mutedText
+        filled -> PixelColor.White
+        else -> theme.statusBar.text
+    }
+    val actionButton = TextButton(
+        text = actionLabel,
+        onPressed = onAction,
+        enabled = enabled,
+        style = TextButtonStyle(textStyle = TextStyle(color = textColor)),
+    )
+    val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null
+    if (leadingText.isBlank()) {
+        return Container(
+            height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+            fillColor = fillColor,
+            alignment = Alignment.CENTER,
+            child = actionButton,
+        )
+    }
+    return Container(
+        height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+        fillColor = fillColor,
+        padding = EdgeInsets.symmetric(horizontal = STATUS_BAR_SEGMENT_HORIZONTAL_PADDING_PX),
+        child = Row(
+            children = listOf(
+                Text(
+                    leadingText,
+                    style = TextStyle(color = textColor),
+                    overflow = TextOverflow.ELLIPSIS,
+                    softWrap = false,
+                    maxLines = 1,
+                ),
+                Expanded(
+                    child = Container(
+                        alignment = Alignment.CENTER_END,
+                        child = actionButton,
+                    ),
+                ),
+            ),
+            spacing = 0,
+        ),
+    )
+}
 
 private fun statusBarCenter(
     text: String,
-    color: PixelColor,
+    fillColor: PixelColor,
+    textColor: PixelColor,
     theme: LauncherTheme,
     onTap: (() -> Unit)?,
     onDoubleTap: (() -> Unit)?,
+    height: Int? = null,
 ): Widget {
-    val content = Container(
-        alignment = Alignment.CENTER,
-        child = if (text.isBlank()) {
-            SizedBox(width = 0, height = 0)
-        } else {
-            statusBarText(
-                text = text,
-                theme = theme,
-                textAlign = TextAlign.CENTER,
-                color = color,
-            )
-        },
+    val content = statusBarSegment(
+        text = text,
+        theme = theme,
+        fillColor = fillColor,
+        textColor = textColor,
+        textAlign = TextAlign.CENTER,
+        height = height,
     )
     if (text.isBlank() || (onTap == null && onDoubleTap == null)) {
         return content
@@ -195,74 +369,72 @@ private fun statusBarCenter(
     )
 }
 
-private fun statusBarMessage(
+private fun statusBarSegment(
     text: String,
     theme: LauncherTheme,
-): Widget = Padding(
-    horizontal = LauncherHeaderLayout.horizontalPadding,
-    child = Row(
-        children = listOf(
-            Expanded(
-                child = statusBarText(
-                    text = text,
-                    theme = theme,
-                    textAlign = TextAlign.CENTER,
-                ),
-            ),
-        ),
-        spacing = 0,
+    fillColor: PixelColor? = null,
+    textColor: PixelColor,
+    textAlign: TextAlign = TextAlign.START,
+    height: Int? = null,
+    key: Any? = null,
+): Widget = Container(
+    height = height,
+    fillColor = fillColor,
+    alignment = Alignment.CENTER,
+    padding = EdgeInsets.symmetric(horizontal = STATUS_BAR_SEGMENT_HORIZONTAL_PADDING_PX),
+    key = key,
+    child = statusBarText(
+        text = text,
+        theme = theme,
+        textAlign = textAlign,
+        color = textColor,
     ),
 )
 
-private fun statusBarAction(
-    leadingText: String,
-    actionLabel: String,
-    onAction: (() -> Unit)?,
+private fun statusBarPageTag(
+    text: String,
+    theme: LauncherTheme,
+    textColor: PixelColor,
+    textAlign: TextAlign,
+    height: Int,
+    vsync: PixelTickerProvider?,
 ): Widget {
-    val actionTextStyle = TextStyle(color = PixelColor.White)
-    return Container(
-        child = Padding(
-            horizontal = LauncherHeaderLayout.horizontalPadding,
-            child = Row(
-                children = listOf(
-                    Text(
-                        leadingText,
-                        style = actionTextStyle,
-                        overflow = TextOverflow.ELLIPSIS,
-                        softWrap = false,
-                        maxLines = 1,
-                    ),
-                    Expanded(
-                        child = Container(
-                            alignment = Alignment.CENTER_END,
-                            child = TextButton(
-                                text = actionLabel,
-                                onPressed = onAction,
-                                style = TextButtonStyle(textStyle = actionTextStyle),
-                            ),
-                        ),
-                    ),
-                ),
-                spacing = 0,
-            ),
-        ),
+    val tag = statusBarSegment(
+        text = text,
+        theme = theme,
+        textColor = textColor,
+        textAlign = textAlign,
+        height = height,
+        key = "status-bar-page-tag-$text",
     )
+    return if (vsync == null) {
+        tag
+    } else {
+        AnimatedSwitcher(
+            duration = STATUS_BAR_PAGE_TAG_TRANSITION_MS.milliseconds,
+            vsync = vsync,
+            key = "status-bar-page-tag-switcher",
+            child = tag,
+        )
+    }
 }
+
+private fun statusBarDivider(theme: LauncherTheme): Widget = Container(
+    width = STATUS_BAR_SEGMENT_DIVIDER_PX,
+    height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+    fillColor = theme.button.border,
+)
 
 /**
  * 同一套 Launcher 状态栏的搜索态。
  *
- * 外层结构必须和 [LauncherHeader] 保持一致：一行内容 + 一条 BatteryDivider。
+ * 外层结构必须和 [LauncherHeader] 保持一致：一行内容 + 贴底 BatteryDivider。
  * 这样 HOME / DRAWER / SETTINGS 之间切换时，状态栏尺寸不会跳变。
  */
 fun LauncherSearchHeader(
     state: PixelTextFieldState,
     controller: TextEditingController,
     placeholder: String,
-    messageText: String = "",
-    actionLeadingText: String = "",
-    actionLabel: String = "",
-    isActionDanger: Boolean = false,
     autofocus: Boolean,
     textAlign: TextAlign = TextAlign.START,
     batteryLevel: Int,
@@ -272,57 +444,26 @@ fun LauncherSearchHeader(
     statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
     onChanged: (String) -> Unit,
     onSubmitted: () -> Unit,
-    onAction: (() -> Unit)? = null,
 ): Widget {
-    val message = messageText.trim()
-    val action = actionLabel.trim()
-    val isShowingMessage = message.isNotEmpty()
-    val isShowingAction = action.isNotEmpty()
-    val header = Column(
+    return Column(
         children = statusBarChildren(
             statusBarHeight = statusBarHeight,
-            row = when {
-                isShowingAction -> statusBarAction(
-                    leadingText = actionLeadingText,
-                    actionLabel = action,
-                    onAction = onAction,
-                )
-                isShowingMessage -> statusBarMessage(message, theme)
-                else -> {
-                    Padding(
-                        horizontal = LauncherHeaderLayout.horizontalPadding,
-                        child = Row(
-                            children = listOf(
-                                Expanded(
-                                    child = TextField(
-                                        state = state,
-                                        controller = controller,
-                                        placeholder = placeholder,
-                                        autofocus = autofocus,
-                                        inputType = PixelInputType.ASCII,
-                                        textAlign = textAlign,
-                                        textInputAction = TextInputAction.SEARCH,
-                                        style = TextFieldStyle(
-                                            borderColor = null,
-                                            focusedBorderColor = null,
-                                            textStyle = TextStyle(color = theme.statusBar.searchText),
-                                            placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
-                                            padding = 0,
-                                        ),
-                                        onChanged = onChanged,
-                                        onSubmitted = { onSubmitted() },
-                                    ),
-                                ),
-                            ),
-                            spacing = 0,
-                        ),
-                    )
-                }
-            },
+            contentHeight = STATUS_BAR_TITLE_CONTENT_HEIGHT_PX,
+            row = statusBarSearchRow(
+                state = state,
+                controller = controller,
+                placeholder = placeholder,
+                autofocus = autofocus,
+                textAlign = textAlign,
+                theme = theme,
+                onChanged = onChanged,
+                onSubmitted = onSubmitted,
+            ),
             divider = BatteryDividerWidget(
                 batteryLevel = batteryLevel,
                 isCharging = isCharging,
                 chargeTick = chargeTick,
+                trackColor = theme.surface.offPixelColor,
                 highColor = theme.statusBar.batteryHigh,
                 mediumColor = theme.statusBar.batteryMedium,
                 lowColor = theme.statusBar.batteryLow,
@@ -332,15 +473,47 @@ fun LauncherSearchHeader(
         mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
     )
-    return if (isShowingAction) {
-        Container(
-            fillColor = statusBarActionBackgroundColor(isActionDanger, theme),
-            child = header,
-        )
-    } else {
-        header
-    }
 }
+
+private fun statusBarSearchRow(
+    state: PixelTextFieldState,
+    controller: TextEditingController,
+    placeholder: String,
+    autofocus: Boolean,
+    textAlign: TextAlign,
+    theme: LauncherTheme,
+    onChanged: (String) -> Unit,
+    onSubmitted: () -> Unit,
+): Widget = Container(
+    height = STATUS_BAR_TITLE_ROW_HEIGHT_PX,
+    padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX),
+    child = Row(
+        children = listOf(
+            Expanded(
+                child = TextField(
+                    state = state,
+                    controller = controller,
+                    placeholder = placeholder,
+                    autofocus = autofocus,
+                    inputType = PixelInputType.ASCII,
+                    textAlign = textAlign,
+                    textInputAction = TextInputAction.SEARCH,
+                    style = TextFieldStyle(
+                        borderColor = null,
+                        focusedBorderColor = null,
+                        textStyle = TextStyle(color = theme.statusBar.searchText),
+                        placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
+                        padding = 0,
+                    ),
+                    onChanged = onChanged,
+                    onSubmitted = { onSubmitted() },
+                ),
+            ),
+        ),
+        spacing = 0,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    ),
+)
 
 private fun statusBarActionBackgroundColor(
     isDanger: Boolean,
@@ -353,16 +526,31 @@ private fun statusBarActionBackgroundColor(
 
 private fun statusBarChildren(
     statusBarHeight: Int,
+    contentHeight: Int = LauncherHeaderLayout.headerContentHeight,
     row: Widget,
     divider: Widget,
 ): List<Widget> = buildList {
-    val topSpacer = (statusBarHeight - LauncherHeaderLayout.headerContentHeight).coerceAtLeast(0)
+    val topSpacer = (statusBarHeight - contentHeight).coerceAtLeast(0)
     if (topSpacer > 0) {
         add(SizedBox(height = topSpacer))
     }
-    add(row)
-    if (LauncherHeaderLayout.dividerGap > 0) {
-        add(SizedBox(height = LauncherHeaderLayout.dividerGap))
-    }
-    add(divider)
+    add(
+        StatusBarBatteryFrame(
+            contentHeight = contentHeight,
+            row = row,
+            divider = divider,
+        ),
+    )
 }
+
+private const val STATUS_BAR_SEGMENT_HORIZONTAL_PADDING_PX = 2
+private const val STATUS_BAR_SEGMENT_DIVIDER_PX = 1
+private const val STATUS_BAR_MEDIA_BORDER_PX = LauncherChromeLayout.sharedBorderPx
+private const val STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX = LauncherChromeLayout.sharedSegmentHeightPx
+private const val STATUS_BAR_MEDIA_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
+private const val STATUS_BAR_TITLE_EDGE_PADDING_PX = STATUS_BAR_MEDIA_BORDER_PX
+private const val STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX
+private const val STATUS_BAR_TITLE_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
+private const val STATUS_BAR_TITLE_CONTENT_HEIGHT_PX =
+    STATUS_BAR_TITLE_ROW_HEIGHT_PX + LauncherHeaderLayout.dividerHeight
+private const val STATUS_BAR_PAGE_TAG_TRANSITION_MS = 120

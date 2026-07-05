@@ -2,12 +2,38 @@ package com.purride.pixellauncherv2.ui.widget
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
+import com.purride.pixelui.Column
+import com.purride.pixelui.Container
+import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.Widget
 import com.purride.pixelui.advanced.PixelLeafRenderObjectWidget
 import com.purride.pixelui.advanced.PixelPaintContext
 import com.purride.pixelui.advanced.PixelRenderBox
 import com.purride.pixelui.advanced.PixelRenderConstraints
 import com.purride.pixelui.advanced.PixelRenderObject
 import com.purride.pixelui.advanced.PixelRenderSize
+import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
+
+fun StatusBarBatteryFrame(
+    contentHeight: Int,
+    row: Widget,
+    divider: Widget,
+): Widget {
+    val rowHeight = (contentHeight - LauncherHeaderLayout.dividerHeight).coerceAtLeast(0)
+    return Column(
+        children = listOf(
+            Container(
+                height = rowHeight,
+                child = row,
+            ),
+            divider,
+        ),
+        spacing = 0,
+        mainAxisSize = MainAxisSize.MIN,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    )
+}
 
 /**
  * 1px 高的电量分隔线。
@@ -28,6 +54,7 @@ class BatteryDividerWidget(
     val batteryLevel: Int,
     val isCharging: Boolean,
     val chargeTick: Int,
+    val trackColor: PixelColor = PixelColor.Transparent,
     val highColor: PixelColor,
     val mediumColor: PixelColor,
     val lowColor: PixelColor,
@@ -39,6 +66,7 @@ class BatteryDividerWidget(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
+            trackColor = trackColor,
             highColor = highColor,
             mediumColor = mediumColor,
             lowColor = lowColor,
@@ -49,6 +77,7 @@ class BatteryDividerWidget(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
+            trackColor = trackColor,
             highColor = highColor,
             mediumColor = mediumColor,
             lowColor = lowColor,
@@ -62,6 +91,7 @@ internal class RenderBatteryDivider(
     private var batteryLevel: Int,
     private var isCharging: Boolean,
     private var chargeTick: Int,
+    private var trackColor: PixelColor = PixelColor.Transparent,
     private var highColor: PixelColor,
     private var mediumColor: PixelColor,
     private var lowColor: PixelColor,
@@ -84,6 +114,10 @@ internal class RenderBatteryDivider(
             lowColor = lowColor,
         )
 
+        if (trackColor.alpha > 0) {
+            context.fillRect(offsetX, offsetY, w, 1, trackColor)
+        }
+
         if (filledW > 0) {
             context.fillRect(
                 offsetX,
@@ -104,6 +138,7 @@ internal class RenderBatteryDivider(
         batteryLevel: Int,
         isCharging: Boolean,
         chargeTick: Int,
+        trackColor: PixelColor,
         highColor: PixelColor,
         mediumColor: PixelColor,
         lowColor: PixelColor,
@@ -111,6 +146,7 @@ internal class RenderBatteryDivider(
         val changed = this.batteryLevel != batteryLevel ||
             this.isCharging != isCharging ||
             this.chargeTick != chargeTick ||
+            this.trackColor != trackColor ||
             this.highColor != highColor ||
             this.mediumColor != mediumColor ||
             this.lowColor != lowColor
@@ -118,6 +154,7 @@ internal class RenderBatteryDivider(
         this.batteryLevel = batteryLevel
         this.isCharging = isCharging
         this.chargeTick = chargeTick
+        this.trackColor = trackColor
         this.highColor = highColor
         this.mediumColor = mediumColor
         this.lowColor = lowColor

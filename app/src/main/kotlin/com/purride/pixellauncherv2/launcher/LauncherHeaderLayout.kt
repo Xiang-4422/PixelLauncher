@@ -7,7 +7,7 @@ import kotlin.math.max
 object LauncherHeaderLayout {
 
     const val horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL
-    const val dividerGap = 1
+    const val dividerGap = 0
     const val dividerHeight = 1
 
     val rowY: Int

@@ -106,7 +106,7 @@ class DiagnosticsModelTest {
         assertEquals("NO ACCESS", byTitle["USAGE"])
         assertEquals("DATA 138/116", byTitle["TEXT MAX"])
         assertEquals("1", byTitle["TEXT RISK"])
-        assertEquals("0/12", byTitle["STATUS"])
+        assertEquals("0/11", byTitle["STATUS"])
         assertEquals("OK 18 ROW", byTitle["BOUNDS"])
         assertEquals("DATA HEALTH", byTitle["DEBUG"])
     }

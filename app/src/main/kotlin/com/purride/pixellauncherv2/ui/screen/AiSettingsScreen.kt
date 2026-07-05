@@ -25,19 +25,14 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.data.DeepSeekAiConfig
-import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
-import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 class AiSettingsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
-    private val chargeTick: Int,
-    private val screenProfile: ScreenProfile,
     private val apiKeyController: PixelTextFieldController,
     private val apiKeyState: PixelTextFieldState,
     private val onDeepSeekApiKeyChanged: (String) -> Unit,
@@ -56,16 +51,6 @@ class AiSettingsScreen(
                 mainAxisSize = MainAxisSize.MAX,
                 spacing = 0,
                 children = listOf(
-                    LauncherHeader(
-                        timeText = widget.uiState.currentTimeText.ifEmpty { "--:--" },
-                        screenTitle = "AI",
-                        messageText = widget.uiState.statusBarMessageText,
-                        batteryLevel = widget.uiState.batteryLevel,
-                        isCharging = widget.uiState.isCharging,
-                        chargeTick = widget.chargeTick,
-                        theme = widget.theme,
-                        statusBarHeight = LauncherHeaderLayout.statusBarHeight(widget.screenProfile),
-                    ),
                     Expanded(
                         child = SingleChildScrollView(
                             state = scrollState,

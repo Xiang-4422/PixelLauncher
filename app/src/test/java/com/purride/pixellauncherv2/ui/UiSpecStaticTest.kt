@@ -109,7 +109,7 @@ class UiSpecStaticTest {
             if (!settingsSource.contains("LauncherSpacing.SETTINGS_SECTION_GAP") ||
                 !controlsSource.contains("topMargin: Int = 0") ||
                 !controlsSource.contains("fillColor = theme.button.border") ||
-                !controlsSource.contains("style = TextStyle(color = theme.text.inverse)")
+                !controlsSource.contains("style = TextStyle(color = theme.surface.offPixelColor)")
             ) {
                 "Settings section headers must have distinct title bars and section separation"
             } else {
@@ -200,7 +200,7 @@ class UiSpecStaticTest {
                 controlsSource.contains("ValueAdjuster(") &&
                 controlsSource.contains("style = settingsValueAdjusterStyle(theme)") &&
                 controlsSource.contains("buttonFillColor = theme.button.border") &&
-                controlsSource.contains("buttonSymbolColor = theme.text.inverse") &&
+                controlsSource.contains("buttonSymbolColor = theme.surface.offPixelColor") &&
                 controlsSource.contains("valueTextColor = theme.settings.itemValue") &&
                 !screenSource.contains("presetLabels =") &&
                 !screenSource.contains("selectedPresetIndex =") &&
@@ -273,30 +273,50 @@ class UiSpecStaticTest {
         val headerSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/LauncherHeader.kt")
             .readText()
+        val rootHostSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt")
+            .readText()
         val homeSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt")
             .readText()
 
         val offenders = listOfNotNull(
-            if (!headerSource.contains("row = when {")) {
-                "status bar row must switch transient states before normal text"
+            if (!headerSource.contains("centerContent = when {")) {
+                "status bar center slot must switch transient states before normal text"
             } else {
                 null
             },
-            if (!headerSource.contains("isShowingAction -> statusBarAction(")) {
-                "status bar action must take precedence over normal text and message rows"
+            if (!headerSource.contains("isShowingAction -> StatusBarCenterContent.FilledAction(")) {
+                "status bar action must take precedence in the shared center slot"
             } else {
                 null
             },
-            if (!headerSource.contains("fillColor = statusBarActionBackgroundColor(isActionDanger, theme)") ||
+            if (!headerSource.contains("isShowingMessage -> StatusBarCenterContent.Message(message)")) {
+                "status bar messages must use the shared center slot"
+            } else {
+                null
+            },
+            if (!headerSource.contains("val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null") ||
                 !headerSource.contains("PixelColor.fromRgb(255, 0, 0)")
             ) {
-                "status bar action background must cover the whole header in neutral red"
+                "danger status bar actions must keep the neutral red fill inside the center slot"
             } else {
                 null
             },
             if (Regex("""divider = BatteryDividerWidget\(""").findAll(headerSource).count() != 2) {
-                "normal and search status bars must keep their battery divider during messages"
+                "normal and search status bars must keep their battery divider in the global chrome"
+            } else {
+                null
+            },
+            if (!headerSource.contains("StatusBarBatteryFrame(")) {
+                "battery divider must share the status bar frame while staying separate from the row border"
+            } else {
+                null
+            },
+            if (!rootHostSource.contains("buildGlobalStatusBar()") ||
+                !rootHostSource.contains("LauncherStatusBarPresentation.forMode(uiState.mode)")
+            ) {
+                "LauncherRootHost must own the shared status bar presentation"
             } else {
                 null
             },
@@ -310,6 +330,48 @@ class UiSpecStaticTest {
         assertTrue(
             "Transient messages must exclusively use the shared status bar:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
+        )
+    }
+
+    @Test
+    fun globalStatusBarChromeOwnsRouteHeaders() {
+        val moduleRoot = resolveModuleRoot()
+        val rootHostSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt")
+            .readText()
+        val presentationSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStatusBarPresentation.kt")
+            .readText()
+        val screenRoot = moduleRoot.resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen")
+        val screenOffenders = screenRoot.walkTopDown()
+            .filter { file -> file.isFile && file.extension == "kt" }
+            .mapNotNull { file ->
+                val source = file.readText()
+                if (
+                    source.contains("LauncherHeader(") ||
+                    source.contains("LauncherSearchHeader(") ||
+                    source.contains("StatusBarBatteryFrame(") ||
+                    source.contains("BatteryDividerWidget(")
+                ) {
+                    file.relativeTo(moduleRoot).invariantSeparatorsPath
+                } else {
+                    null
+                }
+            }
+            .toList()
+
+        assertTrue(
+            "Route pages must not draw their own status bar or battery divider:\n${screenOffenders.joinToString("\n")}",
+            screenOffenders.isEmpty(),
+        )
+        assertTrue(
+            "LauncherRootHost must keep the global status bar outside route transitions.",
+            rootHostSource.contains("children = listOf(\n                buildGlobalStatusBar(),\n                Expanded(") &&
+                rootHostSource.contains("child = PixelNavigator(") &&
+                !rootHostSource.contains("buildSharedStatusBar()") &&
+                presentationSource.contains("data object Search") &&
+                presentationSource.contains("data class Standard") &&
+                presentationSource.contains("fun pageTitleFor(mode: LauncherMode): String"),
         )
     }
 
@@ -341,6 +403,12 @@ class UiSpecStaticTest {
         val headerLayoutSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherHeaderLayout.kt")
             .readText()
+        val chromeLayoutSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherChromeLayout.kt")
+            .readText()
+        val headerSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/LauncherHeader.kt")
+            .readText()
         val homeSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/HomeScreen.kt")
             .readText()
@@ -350,14 +418,77 @@ class UiSpecStaticTest {
             headerLayoutSource.contains("horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL"),
         )
         assertTrue(
-            "Home actions must keep the normal 1px edge spacing, but media controls must occupy the full bottom row.",
-            homeSource.contains("left = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION") &&
-                homeSource.contains("right = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION") &&
-                homeSource.contains("bottom = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION"),
+            "Home media controls must fill the horizontal and bottom edges while normal actions keep the 1px edge spacing.",
+            homeSource.contains("left = if (s.mediaPlayback.hasTrack) {") &&
+                homeSource.contains("0") &&
+                homeSource.contains("LauncherSpacing.EDGE_ACTION") &&
+                homeSource.contains("right = if (s.mediaPlayback.hasTrack) {") &&
+                homeSource.contains("bottom = if (s.mediaPlayback.hasTrack) {") &&
+                homeSource.contains("val horizontalInset = if (media.hasTrack)") &&
+                homeSource.contains("0\n            } else {\n                LauncherSpacing.EDGE_ACTION") &&
+                homeSource.contains("val barWidth = (widget.screenWidthPx - horizontalInset * 2).coerceAtLeast(1)") &&
+                !homeSource.contains("if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION"),
         )
         assertTrue(
             "Home actions must use the engine TextButton instead of a local button wrapper.",
             homeSource.contains("TextButton(") && !homeSource.contains("HomeTextButton"),
+        )
+        assertTrue(
+            "Status bar title and center-content modes must share the same row box; page tag changes animate independently.",
+            headerSource.contains("if (centerContent == StatusBarCenterContent.Empty)") &&
+                headerSource.contains("if (centerContent == StatusBarCenterContent.Empty) {\n        return Container(") &&
+                headerSource.contains("return Container(") &&
+                headerSource.contains("borderColor = theme.button.border") &&
+                headerSource.contains("height = STATUS_BAR_TITLE_ROW_HEIGHT_PX") &&
+                headerSource.contains("padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX)") &&
+                headerSource.contains("height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX") &&
+                headerSource.contains("padding = EdgeInsets.all(STATUS_BAR_MEDIA_BORDER_PX)") &&
+                headerSource.contains("fillColor = content.color ?: theme.button.border") &&
+                headerSource.contains("textColor = theme.surface.offPixelColor") &&
+                headerSource.contains("StatusBarCenterContent.MediaTitle") &&
+                headerSource.contains("statusBarPageTag(") &&
+                headerSource.contains("AnimatedSwitcher(") &&
+                headerSource.contains("status-bar-page-tag-\$") &&
+                headerSource.contains("STATUS_BAR_SEGMENT_DIVIDER_PX = 1") &&
+                headerSource.contains("STATUS_BAR_MEDIA_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx") &&
+                headerSource.contains("STATUS_BAR_TITLE_EDGE_PADDING_PX = STATUS_BAR_MEDIA_BORDER_PX") &&
+                headerSource.contains("STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX") &&
+                headerSource.contains("STATUS_BAR_TITLE_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx") &&
+                headerSource.contains("STATUS_BAR_TITLE_CONTENT_HEIGHT_PX =") &&
+                headerSource.contains("STATUS_BAR_TITLE_ROW_HEIGHT_PX + LauncherHeaderLayout.dividerHeight") &&
+                headerSource.contains("StatusBarBatteryFrame(") &&
+                homeSource.contains("HOME_ACTION_TOTAL_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx") &&
+                chromeLayoutSource.contains("sharedRowHeightPx = sharedSegmentHeightPx + sharedBorderPx * 2"),
+        )
+        val searchHeaderSource = Regex(
+            "fun LauncherSearchHeader[\\s\\S]*?private fun statusBarSearchRow",
+        ).find(headerSource)?.value.orEmpty()
+        val searchRowSource = Regex(
+            "private fun statusBarSearchRow[\\s\\S]*?private fun statusBarActionBackgroundColor",
+        ).find(headerSource)?.value.orEmpty()
+        assertTrue(
+            "App drawer search header must use the same row box height as the normal status bar.",
+            searchHeaderSource.contains("contentHeight = STATUS_BAR_TITLE_CONTENT_HEIGHT_PX") &&
+                searchHeaderSource.contains("statusBarSearchRow(") &&
+                !searchHeaderSource.contains("messageText") &&
+                !searchHeaderSource.contains("actionLabel") &&
+                searchRowSource.contains("height = STATUS_BAR_TITLE_ROW_HEIGHT_PX") &&
+                searchRowSource.contains("padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX)") &&
+                searchRowSource.contains("child = TextField(") &&
+                searchRowSource.contains("textAlign = textAlign") &&
+                searchRowSource.contains("crossAxisAlignment = CrossAxisAlignment.STRETCH") &&
+                !searchRowSource.contains("TextAlign.CENTER -> Row(") &&
+                !searchRowSource.contains("textAlign = if (textAlign == TextAlign.CENTER)") &&
+                !searchRowSource.contains("alignment = Alignment.CENTER,\n                    child = TextField("),
+        )
+        val notificationItemSource = Regex(
+            "private fun HomeNotificationItem[\\s\\S]*?private fun homeNotificationHeader",
+        ).find(homeSource)?.value.orEmpty()
+        assertTrue(
+            "Home notification items must not add their own border between the full-width media bars.",
+            notificationItemSource.isNotEmpty() &&
+                !notificationItemSource.contains("borderColor = theme.button.border") &&
+                notificationItemSource.contains("padding = EdgeInsets.all(HOME_NOTIFICATION_PADDING_PX)"),
         )
     }
 
@@ -385,7 +516,7 @@ class UiSpecStaticTest {
             "Home action counts must use the ValueAdjuster-style shared border on the normal CALL/SMS actions.",
             homeSource.contains("borderColor = theme.button.border") &&
                 homeSource.contains("fillColor = theme.button.border") &&
-                homeSource.contains("TextStyle(color = theme.text.inverse)") &&
+                homeSource.contains("TextStyle(color = theme.surface.offPixelColor)") &&
                 homeSource.contains("HOME_ACTION_DIVIDER_PX = 1"),
         )
         val mediaBarSource = Regex(
@@ -449,9 +580,12 @@ class UiSpecStaticTest {
         val source = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SmsThreadDetailScreen.kt")
             .readText()
+        val rootHostSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt")
+            .readText()
 
         assertTrue(
-            "SMS detail must keep copy/code hints, hide service compose, and avoid the IME.",
+            "SMS detail must keep copy/code hints, put the conversation title in the global status bar, hide service compose, and avoid the IME.",
             source.contains("onMessagePressed") &&
                 source.contains("GestureDetector(") &&
                 source.contains("SmsVerificationCodeModel.extract") &&
@@ -462,7 +596,12 @@ class UiSpecStaticTest {
                 source.contains("smsCurrentIsServiceConversation") &&
                 source.contains("MediaQuery.of(context).viewInsets.bottom") &&
                 !source.contains("SEARCH MSG") &&
-                !source.contains("SmsMessageStatusModel.label"),
+                !source.contains("SmsMessageStatusModel.label") &&
+                !source.contains("conversationTitle(") &&
+                rootHostSource.contains("statusBarPageTitle(presentation)") &&
+                rootHostSource.contains("LauncherStatusBarPresentation.smsDetailPageTitle(") &&
+                rootHostSource.contains("conversationTitle = uiState.smsCurrentConversationTitle") &&
+                rootHostSource.contains("address = uiState.smsCurrentAddress"),
         )
     }
 
@@ -477,6 +616,12 @@ class UiSpecStaticTest {
             .readText()
         val activitySource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
+            .readText()
+        val rootHostSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt")
+            .readText()
+        val statusPresentationSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStatusBarPresentation.kt")
             .readText()
         val unreadPageSource = Regex(
             """private fun buildUnreadMessagesPage\([\s\S]*?\n}\n\nprivate fun buildAllThreadsPage""",
@@ -505,9 +650,12 @@ class UiSpecStaticTest {
                 !source.contains("import com.purride.pixelui.Tabs"),
         )
         assertTrue(
-            "SMS home must keep a top-right READ action, expand unread messages, and support row swipe-to-read.",
-            source.contains("text = \"READ\"") &&
-                source.contains("onMarkSmsRead") &&
+            "SMS home must expose READ through the global status bar, expand unread messages, and support row swipe-to-read.",
+            rootHostSource.contains("centerActionLabel = if (showSmsReadAction) \"READ\" else \"\"") &&
+                rootHostSource.contains("isCenterActionEnabled = uiState.unreadSmsEntries.isNotEmpty()") &&
+                rootHostSource.contains("onCenterAction = if (showSmsReadAction) callbacks.onMarkSmsRead else null") &&
+                statusPresentationSource.contains("showSmsReadAction = mode == LauncherMode.SMS_THREADS || mode == LauncherMode.SMS_INBOX") &&
+                !source.contains("LauncherHeader(") &&
                 source.contains("onMarkUnreadMessageRead") &&
                 unreadPageSource.isNotEmpty() &&
                 !unreadPageSource.contains("itemExtent = SmsThreadGeometry.ROW_EXTENT_PX") &&

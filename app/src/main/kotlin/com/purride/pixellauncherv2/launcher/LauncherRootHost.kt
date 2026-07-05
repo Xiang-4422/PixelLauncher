@@ -244,12 +244,22 @@ internal class LauncherRootHost(
         }
         val initialDestination = navigatorDestination
             ?: destinationFor(uiState.mode).also { navigatorDestination = it }
-        return PixelNavigator(
-            initialRoute = routeFor(initialDestination),
-            vsync = routeTickerProvider,
-            transitionDuration = ROUTE_TRANSITION_DURATION_MS.milliseconds,
-            defaultTransition = PixelRouteTransition.SlideHorizontal,
-            key = "launcher-navigator",
+        return Column(
+            mainAxisSize = MainAxisSize.MAX,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            spacing = 0,
+            children = listOf(
+                buildGlobalStatusBar(),
+                Expanded(
+                    child = PixelNavigator(
+                        initialRoute = routeFor(initialDestination),
+                        vsync = routeTickerProvider,
+                        transitionDuration = ROUTE_TRANSITION_DURATION_MS.milliseconds,
+                        defaultTransition = PixelRouteTransition.SlideHorizontal,
+                        key = "launcher-navigator",
+                    ),
+                ),
+            ),
         )
     }
 
@@ -320,8 +330,6 @@ internal class LauncherRootHost(
         LauncherRouteDestination.SMS_THREADS -> SmsThreadsScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
-            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             pagerController = smsPagerController,
             pagerState = smsPagerState,
             unreadListState = unreadListState,
@@ -332,15 +340,12 @@ internal class LauncherRootHost(
             searchState = smsSearchState,
             onSmsPageSelected = callbacks.onSmsPageSelected,
             onSearchChanged = callbacks.onSmsThreadSearchChanged,
-            onMarkSmsRead = callbacks.onMarkSmsRead,
             onMarkUnreadMessageRead = callbacks.onMarkUnreadMessageRead,
             onOpenThread = callbacks.onOpenThread,
         )
         LauncherRouteDestination.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
-            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
             msgListState = msgListState,
             msgListController = msgListController,
             draftController = draftController,
@@ -352,29 +357,22 @@ internal class LauncherRootHost(
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
             screenProfile = screenProfile,
             onOpenDataHealth = callbacks.onOpenDataHealth,
         )
         LauncherRouteDestination.DATA_HEALTH -> DataHealthScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
-            screenProfile = screenProfile,
             onItemPressed = callbacks.onDataHealthItemPressed,
         )
         LauncherRouteDestination.NOTIFICATION_SETTINGS -> NotificationSettingsScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
-            screenProfile = screenProfile,
             onSourcePressed = callbacks.onNotificationSourcePressed,
         )
         LauncherRouteDestination.AI_SETTINGS -> AiSettingsScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
-            screenProfile = screenProfile,
             apiKeyController = deepSeekApiKeyController,
             apiKeyState = deepSeekApiKeyState,
             onDeepSeekApiKeyChanged = callbacks.onDeepSeekApiKeyChanged,
@@ -382,8 +380,6 @@ internal class LauncherRootHost(
         LauncherRouteDestination.APP_MANAGEMENT -> AppManagementScreen(
             uiState = uiState,
             theme = theme,
-            chargeTick = chargeTick,
-            screenProfile = screenProfile,
             nameController = appNameController,
             nameState = appNameState,
             aliasController = appAliasController,
@@ -399,7 +395,6 @@ internal class LauncherRootHost(
         LauncherRouteDestination.IDLE -> IdleScreen(
             uiState = uiState,
             theme = theme,
-            statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
         )
     }
 
@@ -419,31 +414,21 @@ internal class LauncherRootHost(
 
     // ── Main pager ────────────────────────────────────────────────────────────
 
-    private fun buildMainPager(): Widget = Column(
-        mainAxisSize = MainAxisSize.MAX,
-        crossAxisAlignment = CrossAxisAlignment.STRETCH,
-        spacing = 0,
-        children = listOf(
-            buildSharedStatusBar(),
-            Expanded(
-                child = PageView(
-                    axis = Axis.HORIZONTAL,
-                    controller = mainPagerController,
-                    state = mainPagerState,
-                    pages = listOf(
-                        buildSettingsPage(),
-                        buildHomePage(),
-                        buildDrawerPage(),
-                    ),
-                    onPageChanged = { page ->
-                        MAIN_PAGE_MODES.getOrNull(page)?.let { mode ->
-                            callbacks.onMainPageChanged(mode)
-                        }
-                    },
-                    onPageDragStart = callbacks.onMainPageDragStart,
-                ),
-            ),
+    private fun buildMainPager(): Widget = PageView(
+        axis = Axis.HORIZONTAL,
+        controller = mainPagerController,
+        state = mainPagerState,
+        pages = listOf(
+            buildSettingsPage(),
+            buildHomePage(),
+            buildDrawerPage(),
         ),
+        onPageChanged = { page ->
+            MAIN_PAGE_MODES.getOrNull(page)?.let { mode ->
+                callbacks.onMainPageChanged(mode)
+            }
+        },
+        onPageDragStart = callbacks.onMainPageDragStart,
     )
 
     private fun buildHomePage(): Widget = HomeScreen(
@@ -469,64 +454,75 @@ internal class LauncherRootHost(
         onItemAction = callbacks.onSettingsItemAction,
     )
 
-    private fun buildSharedStatusBar(): Widget =
-        if (uiState.mode == LauncherMode.APP_DRAWER) {
-            LauncherSearchHeader(
-                state = drawerQueryState,
-                controller = drawerTextController,
-                placeholder = "SEARCH APP",
-                messageText = uiState.statusBarMessageText,
-                actionLeadingText = uiState.statusBarActionLeadingText,
-                actionLabel = uiState.statusBarActionLabel,
-                isActionDanger = uiState.isStatusBarActionDanger,
-                autofocus = uiState.isDrawerSearchFocused,
-                textAlign = when (uiState.drawerListAlignment) {
-                    DrawerListAlignment.LEFT -> TextAlign.START
-                    DrawerListAlignment.CENTER -> TextAlign.CENTER
-                    DrawerListAlignment.RIGHT -> TextAlign.END
-                },
-                batteryLevel = uiState.batteryLevel,
-                isCharging = uiState.isCharging,
-                chargeTick = chargeTick,
-                theme = theme,
-                statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
-                onChanged = callbacks.onDrawerQueryChanged,
-                onSubmitted = callbacks.onDrawerSubmitSearch,
-                onAction = callbacks.onStatusBarAction,
+    private fun buildGlobalStatusBar(): Widget =
+        when (val presentation = LauncherStatusBarPresentation.forMode(uiState.mode)) {
+            LauncherStatusBarPresentation.Search -> {
+                LauncherSearchHeader(
+                    state = drawerQueryState,
+                    controller = drawerTextController,
+                    placeholder = "SEARCH APP",
+                    autofocus = uiState.isDrawerSearchFocused,
+                    textAlign = when (uiState.drawerListAlignment) {
+                        DrawerListAlignment.LEFT -> TextAlign.START
+                        DrawerListAlignment.CENTER -> TextAlign.CENTER
+                        DrawerListAlignment.RIGHT -> TextAlign.END
+                    },
+                    batteryLevel = uiState.batteryLevel,
+                    isCharging = uiState.isCharging,
+                    chargeTick = chargeTick,
+                    theme = theme,
+                    statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
+                    onChanged = callbacks.onDrawerQueryChanged,
+                    onSubmitted = callbacks.onDrawerSubmitSearch,
+                )
+            }
+            is LauncherStatusBarPresentation.Standard -> {
+                val mediaPlayback = uiState.mediaPlayback
+                val showMediaTitle = uiState.mode == LauncherMode.HOME && mediaPlayback.hasTrack
+                val showSmsReadAction = presentation.showSmsReadAction
+                LauncherHeader(
+                    timeText = uiState.currentTimeText.ifEmpty { "--:--" },
+                    screenTitle = statusBarPageTitle(presentation),
+                    messageText = uiState.statusBarMessageText,
+                    actionLeadingText = uiState.statusBarActionLeadingText,
+                    actionLabel = uiState.statusBarActionLabel,
+                    isActionDanger = uiState.isStatusBarActionDanger,
+                    centerActionLabel = if (showSmsReadAction) "READ" else "",
+                    isCenterActionEnabled = uiState.unreadSmsEntries.isNotEmpty(),
+                    centerText = if (showMediaTitle) mediaPlayback.title else "",
+                    centerTextColor = if (showMediaTitle && mediaPlayback.isFavorite) {
+                        theme.semantic.danger
+                    } else {
+                        null
+                    },
+                    batteryLevel = uiState.batteryLevel,
+                    isCharging = uiState.isCharging,
+                    chargeTick = chargeTick,
+                    theme = theme,
+                    statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
+                    pageTagVsync = routeTickerProvider,
+                    onAction = callbacks.onStatusBarAction,
+                    onCenterAction = if (showSmsReadAction) callbacks.onMarkSmsRead else null,
+                    onCenterTap = if (showMediaTitle) callbacks.onMediaOpenPlayer else null,
+                    onCenterDoubleTap = if (showMediaTitle && mediaPlayback.canToggleFavorite) {
+                        callbacks.onMediaToggleFavorite
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+
+    private fun statusBarPageTitle(presentation: LauncherStatusBarPresentation.Standard): String {
+        return if (uiState.mode == LauncherMode.SMS_THREAD_DETAIL) {
+            LauncherStatusBarPresentation.smsDetailPageTitle(
+                conversationTitle = uiState.smsCurrentConversationTitle,
+                address = uiState.smsCurrentAddress,
             )
         } else {
-            val mediaPlayback = uiState.mediaPlayback
-            val showMediaTitle = uiState.mode == LauncherMode.HOME && mediaPlayback.hasTrack
-            LauncherHeader(
-                timeText = uiState.currentTimeText.ifEmpty { "--:--" },
-                screenTitle = when (uiState.mode) {
-                    LauncherMode.SETTINGS -> "SETTINGS"
-                    else -> "HOME"
-                },
-                messageText = uiState.statusBarMessageText,
-                actionLeadingText = uiState.statusBarActionLeadingText,
-                actionLabel = uiState.statusBarActionLabel,
-                isActionDanger = uiState.isStatusBarActionDanger,
-                centerText = if (showMediaTitle) mediaPlayback.title else "",
-                centerTextColor = if (showMediaTitle && mediaPlayback.isFavorite) {
-                    theme.semantic.danger
-                } else {
-                    null
-                },
-                batteryLevel = uiState.batteryLevel,
-                isCharging = uiState.isCharging,
-                chargeTick = chargeTick,
-                theme = theme,
-                statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
-                onAction = callbacks.onStatusBarAction,
-                onCenterTap = if (showMediaTitle) callbacks.onMediaOpenPlayer else null,
-                onCenterDoubleTap = if (showMediaTitle && mediaPlayback.canToggleFavorite) {
-                    callbacks.onMediaToggleFavorite
-                } else {
-                    null
-                },
-            )
+            presentation.pageTitle
         }
+    }
 
     // ── APP_DRAWER content ────────────────────────────────────────────────────
 
