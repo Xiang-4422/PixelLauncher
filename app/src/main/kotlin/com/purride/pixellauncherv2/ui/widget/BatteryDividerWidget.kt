@@ -39,13 +39,13 @@ fun StatusBarBatteryFrame(
  * 1px 高的电量分隔线。
  *
  * 视觉规格：
- * - 整行底色由 `PixelHostView.offPixelColor` 填充（透明像素显示为熄灭像素）
- * - 左侧电量段按剩余电量显示绿色、黄色或红色
- * - 充电中：电量段变为半透明，同色实心像素从最左侧移动到电量段末端后循环
+ * - 整行按当前电量等级显示绿色、黄色或红色
+ * - 当前电量区域使用不透明颜色，剩余容量区域使用同色 50% 透明度
+ * - 充电中：同色实心像素只在剩余容量区域内循环移动
  *
  * @param batteryLevel  电量百分比 0–100
  * @param isCharging    是否正在充电
- * @param chargeTick    外部动画帧计数（增量不限），用于计算闪烁位置；未充电时忽略
+ * @param chargeTick    外部动画帧计数（增量不限），用于计算充电像素位置；未充电时忽略
  * @param highColor     高电量颜色（51%–100%）
  * @param mediumColor   中电量颜色（21%–50%）
  * @param lowColor      低电量颜色（0%–20%）
@@ -54,7 +54,6 @@ class BatteryDividerWidget(
     val batteryLevel: Int,
     val isCharging: Boolean,
     val chargeTick: Int,
-    val trackColor: PixelColor = PixelColor.Transparent,
     val highColor: PixelColor,
     val mediumColor: PixelColor,
     val lowColor: PixelColor,
@@ -66,7 +65,6 @@ class BatteryDividerWidget(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
-            trackColor = trackColor,
             highColor = highColor,
             mediumColor = mediumColor,
             lowColor = lowColor,
@@ -77,7 +75,6 @@ class BatteryDividerWidget(
             batteryLevel = batteryLevel,
             isCharging = isCharging,
             chargeTick = chargeTick,
-            trackColor = trackColor,
             highColor = highColor,
             mediumColor = mediumColor,
             lowColor = lowColor,
@@ -91,7 +88,6 @@ internal class RenderBatteryDivider(
     private var batteryLevel: Int,
     private var isCharging: Boolean,
     private var chargeTick: Int,
-    private var trackColor: PixelColor = PixelColor.Transparent,
     private var highColor: PixelColor,
     private var mediumColor: PixelColor,
     private var lowColor: PixelColor,
@@ -113,23 +109,17 @@ internal class RenderBatteryDivider(
             mediumColor = mediumColor,
             lowColor = lowColor,
         )
+        val remainingColor = levelColor.withAlpha(REMAINING_BATTERY_ALPHA)
 
-        if (trackColor.alpha > 0) {
-            context.fillRect(offsetX, offsetY, w, 1, trackColor)
-        }
+        context.fillRect(offsetX, offsetY, w, 1, remainingColor)
 
         if (filledW > 0) {
-            context.fillRect(
-                offsetX,
-                offsetY,
-                filledW,
-                1,
-                if (isCharging) levelColor.withAlpha(CHARGING_TRACK_ALPHA) else levelColor,
-            )
+            context.fillRect(offsetX, offsetY, filledW, 1, levelColor)
         }
 
-        if (isCharging && filledW > 0) {
-            val dotX = offsetX + Math.floorMod(chargeTick, filledW)
+        val remainingW = w - filledW
+        if (isCharging && remainingW > 0) {
+            val dotX = offsetX + filledW + Math.floorMod(chargeTick, remainingW)
             context.buffer.setPixel(dotX, offsetY, levelColor)
         }
     }
@@ -138,7 +128,6 @@ internal class RenderBatteryDivider(
         batteryLevel: Int,
         isCharging: Boolean,
         chargeTick: Int,
-        trackColor: PixelColor,
         highColor: PixelColor,
         mediumColor: PixelColor,
         lowColor: PixelColor,
@@ -146,7 +135,6 @@ internal class RenderBatteryDivider(
         val changed = this.batteryLevel != batteryLevel ||
             this.isCharging != isCharging ||
             this.chargeTick != chargeTick ||
-            this.trackColor != trackColor ||
             this.highColor != highColor ||
             this.mediumColor != mediumColor ||
             this.lowColor != lowColor
@@ -154,7 +142,6 @@ internal class RenderBatteryDivider(
         this.batteryLevel = batteryLevel
         this.isCharging = isCharging
         this.chargeTick = chargeTick
-        this.trackColor = trackColor
         this.highColor = highColor
         this.mediumColor = mediumColor
         this.lowColor = lowColor
@@ -164,7 +151,7 @@ internal class RenderBatteryDivider(
 
 internal const val LOW_BATTERY_MAX_PERCENT = 20
 internal const val MEDIUM_BATTERY_MAX_PERCENT = 50
-internal const val CHARGING_TRACK_ALPHA = 128
+internal const val REMAINING_BATTERY_ALPHA = 128
 
 internal fun batteryFilledWidth(width: Int, batteryLevel: Int): Int {
     if (width <= 0 || batteryLevel <= 0) return 0

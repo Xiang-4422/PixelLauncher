@@ -12,7 +12,6 @@ class BatteryDividerWidgetTest {
     private val highColor = PixelColor.fromRgb(0, 255, 0)
     private val mediumColor = PixelColor.fromRgb(255, 255, 0)
     private val lowColor = PixelColor.fromRgb(255, 0, 0)
-    private val trackColor = PixelColor.fromRgb(10, 20, 30)
 
     @Test
     fun batteryColorUsesConfiguredLevelThresholds() {
@@ -33,13 +32,12 @@ class BatteryDividerWidgetTest {
     }
 
     @Test
-    fun trackColorPaintsAcrossUnfilledRange() {
+    fun remainingCapacityUsesCurrentLevelColorAtHalfAlpha() {
         val buffer = PixelBuffer(width = 10, height = 1)
         val renderObject = RenderBatteryDivider(
             batteryLevel = 50,
             isCharging = false,
             chargeTick = 0,
-            trackColor = trackColor,
             highColor = highColor,
             mediumColor = mediumColor,
             lowColor = lowColor,
@@ -48,18 +46,19 @@ class BatteryDividerWidgetTest {
         renderObject.layout(PixelRenderConstraints(maxWidth = 10, maxHeight = 1))
         renderObject.paint(PixelPaintContext(buffer), offsetX = 0, offsetY = 0)
 
+        val remainingColor = mediumColor.withAlpha(REMAINING_BATTERY_ALPHA)
         assertEquals(mediumColor, buffer.getPixel(4, 0))
-        assertEquals(trackColor, buffer.getPixel(5, 0))
-        assertEquals(trackColor, buffer.getPixel(9, 0))
+        assertEquals(remainingColor, buffer.getPixel(5, 0))
+        assertEquals(remainingColor, buffer.getPixel(9, 0))
     }
 
     @Test
-    fun chargingPaintsHalfTransparentTrackAndSolidDotInsideLevelRange() {
+    fun chargingDotMovesOnlyInsideRemainingCapacityRange() {
         val buffer = PixelBuffer(width = 10, height = 1)
         val renderObject = RenderBatteryDivider(
-            batteryLevel = 50,
+            batteryLevel = 60,
             isCharging = true,
-            chargeTick = 7,
+            chargeTick = 2,
             highColor = highColor,
             mediumColor = mediumColor,
             lowColor = lowColor,
@@ -68,10 +67,12 @@ class BatteryDividerWidgetTest {
         renderObject.layout(PixelRenderConstraints(maxWidth = 10, maxHeight = 1))
         renderObject.paint(PixelPaintContext(buffer), offsetX = 0, offsetY = 0)
 
-        assertEquals(CHARGING_TRACK_ALPHA, buffer.getPixel(0, 0).alpha)
-        assertEquals(mediumColor, buffer.getPixel(2, 0))
-        assertEquals(CHARGING_TRACK_ALPHA, buffer.getPixel(4, 0).alpha)
-        assertEquals(PixelColor.Transparent, buffer.getPixel(5, 0))
+        val remainingColor = highColor.withAlpha(REMAINING_BATTERY_ALPHA)
+        assertEquals(highColor, buffer.getPixel(0, 0))
+        assertEquals(highColor, buffer.getPixel(5, 0))
+        assertEquals(remainingColor, buffer.getPixel(6, 0))
+        assertEquals(highColor, buffer.getPixel(8, 0))
+        assertEquals(remainingColor, buffer.getPixel(9, 0))
     }
 
     private fun colorAt(level: Int): PixelColor = batteryLevelColor(
@@ -79,5 +80,12 @@ class BatteryDividerWidgetTest {
         highColor = highColor,
         mediumColor = mediumColor,
         lowColor = lowColor,
+    )
+
+    private fun PixelColor.withAlpha(alpha: Int): PixelColor = PixelColor.fromArgb(
+        a = alpha,
+        r = red,
+        g = green,
+        b = blue,
     )
 }
