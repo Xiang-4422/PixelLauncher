@@ -157,7 +157,7 @@ fun SettingsSectionHeader(
     alignment = Alignment.CENTER_START,
     child = Text(
         title,
-        style = TextStyle(color = theme.text.inverse),
+        style = TextStyle(color = theme.surface.offPixelColor),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
@@ -218,7 +218,7 @@ private fun settingsValueCell(
 private fun settingsValueAdjusterStyle(theme: LauncherTheme): ValueAdjusterStyle = ValueAdjusterStyle(
     borderColor = theme.button.border,
     buttonFillColor = theme.button.border,
-    buttonSymbolColor = theme.text.inverse,
+    buttonSymbolColor = theme.surface.offPixelColor,
     valueTextColor = theme.settings.itemValue,
     disabledColor = theme.button.disabledText,
     focusColor = theme.button.border,

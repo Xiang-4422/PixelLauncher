@@ -36,6 +36,7 @@ import com.purride.pixelui.widgets.animated.AnimatedContainer
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoLine
 import com.purride.pixellauncherv2.launcher.HomeInfoModel
+import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationActionInfo
@@ -135,9 +136,21 @@ class HomeScreen(
                     ),
                     Padding(
                         padding = EdgeInsets.only(
-                            left = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION,
-                            right = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION,
-                            bottom = if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION,
+                            left = if (s.mediaPlayback.hasTrack) {
+                                0
+                            } else {
+                                LauncherSpacing.EDGE_ACTION
+                            },
+                            right = if (s.mediaPlayback.hasTrack) {
+                                0
+                            } else {
+                                LauncherSpacing.EDGE_ACTION
+                            },
+                            bottom = if (s.mediaPlayback.hasTrack) {
+                                0
+                            } else {
+                                LauncherSpacing.EDGE_ACTION
+                            },
                         ),
                         child = buildBottomBar(s, t),
                     ),
@@ -148,11 +161,12 @@ class HomeScreen(
         private fun buildBottomBar(s: LauncherUiState, t: LauncherTheme): Widget {
             val media = s.mediaPlayback
             val canScrub = media.hasTrack
-            val barWidth = if (media.hasTrack) {
-                widget.screenWidthPx.coerceAtLeast(1)
+            val horizontalInset = if (media.hasTrack) {
+                0
             } else {
-                (widget.screenWidthPx - LauncherSpacing.EDGE_ACTION * 2).coerceAtLeast(1)
+                LauncherSpacing.EDGE_ACTION
             }
+            val barWidth = (widget.screenWidthPx - horizontalInset * 2).coerceAtLeast(1)
             val showProgress = isScrubbingMedia && canScrub
             fun startScrub() {
                 setState {
@@ -409,8 +423,7 @@ private fun HomeNotificationItem(
     val bodyLines = homeNotificationBodyLines(item, title)
     val hiddenLineCount = homeNotificationHiddenLineCount(item, title, bodyLines.size)
     val content = Container(
-        borderColor = theme.button.border,
-        padding = EdgeInsets.all(HOME_NOTIFICATION_BORDER_PX),
+        padding = EdgeInsets.all(HOME_NOTIFICATION_PADDING_PX),
         child = Column(
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             mainAxisSize = MainAxisSize.MIN,
@@ -532,7 +545,7 @@ private fun homeNotificationActionButton(
         padding = EdgeInsets.symmetric(horizontal = HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX),
         child = Text(
             action.title.uppercase(Locale.getDefault()),
-            style = TextStyle(color = if (enabled) theme.text.inverse else theme.button.disabledText),
+            style = TextStyle(color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText),
             overflow = TextOverflow.ELLIPSIS,
             softWrap = false,
             maxLines = 1,
@@ -686,7 +699,7 @@ private fun HomeActionButton(
     val children = if (count > 0) {
         val countSegment = homeActionSegment(
             text = count.toString(),
-            textStyle = TextStyle(color = theme.text.inverse),
+            textStyle = TextStyle(color = theme.surface.offPixelColor),
             fillColor = theme.button.border,
         )
         val divider = homeActionDivider(theme)
@@ -862,19 +875,19 @@ private fun mediaControlSegment(
     theme: LauncherTheme,
     onPressed: () -> Unit,
 ): Widget {
+    val fillColor = when {
+        filled -> theme.button.border
+        else -> null
+    }
     val content = Container(
         height = HOME_ACTION_SEGMENT_HEIGHT_PX,
-        fillColor = when {
-            !enabled -> theme.surface.panelSubtle
-            filled -> theme.button.border
-            else -> null
-        },
+        fillColor = if (enabled) fillColor else fillColor?.withAlpha(HOME_MEDIA_DISABLED_FILL_ALPHA),
         alignment = Alignment.CENTER,
         child = mediaControlIcon(
             icon = icon,
             color = when {
+                filled -> theme.surface.offPixelColor
                 !enabled -> theme.button.disabledText
-                filled -> theme.text.inverse
                 else -> theme.button.text
             },
         ),
@@ -1026,16 +1039,24 @@ private enum class MediaControlIcon {
     NEXT,
 }
 
-private const val HOME_ACTION_BORDER_PX = 1
+private fun PixelColor.withAlpha(alpha: Int): PixelColor = PixelColor.fromArgb(
+    a = alpha.coerceIn(0, 255),
+    r = red,
+    g = green,
+    b = blue,
+)
+
+private const val HOME_ACTION_BORDER_PX = LauncherChromeLayout.sharedBorderPx
 private const val HOME_ACTION_DIVIDER_PX = 1
-private const val HOME_ACTION_SEGMENT_HEIGHT_PX = 11
-private const val HOME_ACTION_TOTAL_HEIGHT_PX = HOME_ACTION_SEGMENT_HEIGHT_PX + HOME_ACTION_BORDER_PX * 2
+private const val HOME_ACTION_SEGMENT_HEIGHT_PX = LauncherChromeLayout.sharedSegmentHeightPx
+private const val HOME_ACTION_TOTAL_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
 private const val HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX = 2
 private const val HOME_MEDIA_CONTROL_DIVIDER_PX = 1
 private const val HOME_MEDIA_EDGE_SWIPE_TARGET_HEIGHT_PX = 2
 private const val HOME_MEDIA_PROGRESS_COLLAPSED_WIDTH_PX = 0
 private const val HOME_MEDIA_PROGRESS_ANIMATION_MS = 120
-private const val HOME_NOTIFICATION_BORDER_PX = 1
+private const val HOME_MEDIA_DISABLED_FILL_ALPHA = 128
+private const val HOME_NOTIFICATION_PADDING_PX = 1
 private const val HOME_NOTIFICATION_INNER_SPACING_PX = 1
 private const val HOME_NOTIFICATION_HEADER_GAP_PX = 2
 private const val HOME_NOTIFICATION_MAX_BODY_LINES = 4
