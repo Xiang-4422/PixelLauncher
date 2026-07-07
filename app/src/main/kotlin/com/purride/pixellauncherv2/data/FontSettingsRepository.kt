@@ -1,11 +1,12 @@
 package com.purride.pixellauncherv2.data
 
 import android.content.Context
-import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
+import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
-import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 class FontSettingsRepository(
@@ -29,7 +30,10 @@ class FontSettingsRepository(
         val idleTimeoutSeconds: Int,
         val openDrawerInSearchMode: Boolean,
         val chargeIdleEffect: ChargeIdleEffect,
-        val pixelDustEasterEggEnabled: Boolean,
+        val pixelMatterEffectEnabled: Boolean,
+        val pixelMatterEffectMode: PixelMatterEffectMode,
+        val pixelMatterHandControlEnabled: Boolean,
+        val pixelMatterHandDebugEnabled: Boolean,
     )
 
     fun getAppearanceSettings(): AppearanceSettings {
@@ -51,7 +55,10 @@ class FontSettingsRepository(
             idleTimeoutSeconds = readStoredIdleTimeoutSeconds(),
             openDrawerInSearchMode = sharedPreferences.getBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, false),
             chargeIdleEffect = readStoredChargeIdleEffect(),
-            pixelDustEasterEggEnabled = sharedPreferences.getBoolean(KEY_PIXEL_DUST_EASTER_EGG_ENABLED, true),
+            pixelMatterEffectEnabled = readStoredPixelMatterEffectEnabled(),
+            pixelMatterEffectMode = readStoredPixelMatterEffectMode(),
+            pixelMatterHandControlEnabled = sharedPreferences.getBoolean(KEY_PIXEL_MATTER_HAND_CONTROL_ENABLED, false),
+            pixelMatterHandDebugEnabled = sharedPreferences.getBoolean(KEY_PIXEL_MATTER_HAND_DEBUG_ENABLED, true),
         )
     }
 
@@ -78,7 +85,10 @@ class FontSettingsRepository(
         idleTimeoutSeconds: Int,
         openDrawerInSearchMode: Boolean,
         chargeIdleEffect: ChargeIdleEffect,
-        pixelDustEasterEggEnabled: Boolean,
+        pixelMatterEffectEnabled: Boolean,
+        pixelMatterEffectMode: PixelMatterEffectMode,
+        pixelMatterHandControlEnabled: Boolean,
+        pixelMatterHandDebugEnabled: Boolean,
     ) {
         sharedPreferences.edit()
             .putString(KEY_DRAWER_LIST_ALIGNMENT, drawerListAlignment.name)
@@ -88,7 +98,11 @@ class FontSettingsRepository(
             .putInt(KEY_IDLE_TIMEOUT_SECONDS, IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds))
             .putBoolean(KEY_OPEN_DRAWER_IN_SEARCH_MODE, openDrawerInSearchMode)
             .putString(KEY_CHARGE_IDLE_EFFECT, chargeIdleEffect.name)
-            .putBoolean(KEY_PIXEL_DUST_EASTER_EGG_ENABLED, pixelDustEasterEggEnabled)
+            .putBoolean(KEY_PIXEL_MATTER_EFFECT_ENABLED, pixelMatterEffectEnabled)
+            .putBoolean(KEY_PIXEL_DUST_EASTER_EGG_ENABLED, pixelMatterEffectEnabled)
+            .putString(KEY_PIXEL_MATTER_EFFECT_MODE, pixelMatterEffectMode.name)
+            .putBoolean(KEY_PIXEL_MATTER_HAND_CONTROL_ENABLED, pixelMatterHandControlEnabled)
+            .putBoolean(KEY_PIXEL_MATTER_HAND_DEBUG_ENABLED, pixelMatterHandDebugEnabled)
             .apply()
     }
 
@@ -124,6 +138,19 @@ class FontSettingsRepository(
         return ChargeIdleEffect.entries.firstOrNull { it.name == storedValue } ?: ChargeIdleEffect.FLUID
     }
 
+    private fun readStoredPixelMatterEffectEnabled(): Boolean {
+        if (sharedPreferences.contains(KEY_PIXEL_MATTER_EFFECT_ENABLED)) {
+            return sharedPreferences.getBoolean(KEY_PIXEL_MATTER_EFFECT_ENABLED, true)
+        }
+        return sharedPreferences.getBoolean(KEY_PIXEL_DUST_EASTER_EGG_ENABLED, true)
+    }
+
+    private fun readStoredPixelMatterEffectMode(): PixelMatterEffectMode {
+        val storedValue = sharedPreferences.getString(KEY_PIXEL_MATTER_EFFECT_MODE, null)
+        return PixelMatterEffectMode.entries.firstOrNull { it.name == storedValue }
+            ?: PixelMatterEffectMode.SAND
+    }
+
     private fun readStoredIdleTimeoutSeconds(): Int {
         val storedValue = sharedPreferences.getInt(
             KEY_IDLE_TIMEOUT_SECONDS,
@@ -146,5 +173,9 @@ class FontSettingsRepository(
         const val KEY_OPEN_DRAWER_IN_SEARCH_MODE = "open_drawer_in_search_mode"
         const val KEY_CHARGE_IDLE_EFFECT = "charge_idle_effect"
         const val KEY_PIXEL_DUST_EASTER_EGG_ENABLED = "pixel_dust_easter_egg_enabled"
+        const val KEY_PIXEL_MATTER_EFFECT_ENABLED = "pixel_matter_effect_enabled"
+        const val KEY_PIXEL_MATTER_EFFECT_MODE = "pixel_matter_effect_mode"
+        const val KEY_PIXEL_MATTER_HAND_CONTROL_ENABLED = "pixel_matter_hand_control_enabled"
+        const val KEY_PIXEL_MATTER_HAND_DEBUG_ENABLED = "pixel_matter_hand_debug_enabled"
     }
 }

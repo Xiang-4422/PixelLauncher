@@ -37,6 +37,7 @@ import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.GeoPoint
+import com.purride.pixellauncherv2.data.HandTrackingRepository
 import com.purride.pixellauncherv2.data.LauncherStatsRepository
 import com.purride.pixellauncherv2.data.MediaPlaybackRepository
 import com.purride.pixellauncherv2.data.NextAlarmRepository
@@ -67,7 +68,8 @@ import com.purride.pixellauncherv2.launcher.LauncherCallbacks
 import com.purride.pixellauncherv2.launcher.LauncherRootHost
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSummary
-import com.purride.pixellauncherv2.launcher.PixelDustShakeDetector
+import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
+import com.purride.pixellauncherv2.launcher.PixelMatterShakeDetector
 import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
@@ -110,6 +112,7 @@ class MainActivity : AppCompatActivity() {
 
     // Phase 8: unified root host (replaces Phases 3–7 individual hosts)
     private lateinit var launcherRootHost: LauncherRootHost
+    private lateinit var handTrackingDebugOverlayView: HandTrackingDebugOverlayView
 
     private lateinit var appRepository: AppRepository
     private lateinit var appCustomizationRepository: AppCustomizationRepository
@@ -125,6 +128,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mediaPlaybackRepository: MediaPlaybackRepository
     private lateinit var deviceLocationRepository: DeviceLocationRepository
     private lateinit var deviceMotionRepository: DeviceMotionRepository
+    private lateinit var handTrackingRepository: HandTrackingRepository
     private lateinit var smsController: SmsController
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var appLauncher: AndroidAppLauncher
@@ -150,8 +154,9 @@ class MainActivity : AppCompatActivity() {
     private var lastRainRefreshElapsedRealtimeMs: Long = 0L
     private var lastRainLocation: GeoPoint? = null
     private var lastSuccessfulRainHintText: String = ""
-    private val pixelDustShakeDetector = PixelDustShakeDetector()
-    private var pixelDustMotionListening = false
+    private val pixelMatterShakeDetector = PixelMatterShakeDetector()
+    private var pixelMatterMotionListening = false
+    private var pixelMatterHandTracking = false
     private var activityResumed = false
 
     private val smsHost = object : SmsController.Host {
@@ -279,6 +284,11 @@ class MainActivity : AppCompatActivity() {
         )
         deviceLocationRepository = DeviceLocationRepository(applicationContext)
         deviceMotionRepository = DeviceMotionRepository(applicationContext)
+        handTrackingRepository = HandTrackingRepository(
+            context = applicationContext,
+            backgroundExecutor = backgroundExecutor,
+            mainHandler = mainHandler,
+        )
         rainForecastRepository = RainForecastRepository()
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
@@ -300,7 +310,10 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = uiBehaviorSettings.idleTimeoutSeconds,
             openDrawerInSearchMode = uiBehaviorSettings.openDrawerInSearchMode,
             chargeIdleEffect = uiBehaviorSettings.chargeIdleEffect,
-            isPixelDustEasterEggEnabled = uiBehaviorSettings.pixelDustEasterEggEnabled,
+            isPixelMatterEffectEnabled = uiBehaviorSettings.pixelMatterEffectEnabled,
+            pixelMatterEffectMode = uiBehaviorSettings.pixelMatterEffectMode,
+            isPixelMatterHandControlEnabled = uiBehaviorSettings.pixelMatterHandControlEnabled,
+            isPixelMatterHandDebugEnabled = uiBehaviorSettings.pixelMatterHandDebugEnabled,
         )
         state = LauncherStateTransitions.updateAiSettings(
             state = state,
@@ -337,6 +350,9 @@ class MainActivity : AppCompatActivity() {
         // Phase 8: unified root host (single host for all 9 modes)
         launcherRootHost = LauncherRootHost(
             context = this,
+            onPixelMatterEffectStart = ::syncPixelMatterHandTracking,
+            onPixelMatterRestoreStart = ::stopPixelMatterHandTracking,
+            onPixelMatterEffectClear = ::stopPixelMatterHandTracking,
             callbacks = LauncherCallbacks(
                 onOpenCall           = ::onHomeOpenCall,
                 onOpenSms            = ::onHomeOpenSms,
@@ -397,12 +413,20 @@ class MainActivity : AppCompatActivity() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 ),
             )
+            handTrackingDebugOverlayView = HandTrackingDebugOverlayView(this@MainActivity)
+            addView(
+                handTrackingDebugOverlayView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
+            )
         }
         setContentView(rootContainer)
         updateTextInputFocus()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (::launcherRootHost.isInitialized && launcherRootHost.handlePixelDustBack()) {
+                if (::launcherRootHost.isInitialized && launcherRootHost.handlePixelMatterBack()) {
                     return
                 }
                 when (state.mode) {
@@ -489,7 +513,7 @@ class MainActivity : AppCompatActivity() {
         }
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
-        syncPixelDustMotionListening()
+        syncPixelMatterMotionListening()
         updateTextInputFocus()
         scheduleIdleCheck()
         loadApps()
@@ -534,10 +558,11 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onPause() {
         activityResumed = false
-        syncPixelDustMotionListening()
+        syncPixelMatterMotionListening()
         if (::launcherRootHost.isInitialized) {
-            launcherRootHost.stopPixelDustEffect()
+            launcherRootHost.stopPixelMatterEffect()
         }
+        stopPixelMatterHandTracking()
         hideDrawerKeyboard()
         resetDrawerVerticalGesture()
         mainHandler.removeCallbacks(clockTicker)
@@ -560,34 +585,35 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun syncPixelDustMotionListening() {
+    private fun syncPixelMatterMotionListening() {
         if (!::deviceMotionRepository.isInitialized || !::launcherRootHost.isInitialized) {
             return
         }
-        if (!state.isPixelDustEasterEggEnabled) {
-            launcherRootHost.stopPixelDustEffect()
-            stopPixelDustMotionListening()
+        if (!state.isPixelMatterEffectEnabled) {
+            launcherRootHost.stopPixelMatterEffect()
+            stopPixelMatterHandTracking()
+            stopPixelMatterMotionListening()
             return
         }
         if (activityResumed) {
-            startPixelDustMotionListening()
+            startPixelMatterMotionListening()
         } else {
-            stopPixelDustMotionListening()
+            stopPixelMatterMotionListening()
         }
     }
 
-    private fun startPixelDustMotionListening() {
-        if (pixelDustMotionListening) return
-        pixelDustMotionListening = true
-        pixelDustShakeDetector.reset()
+    private fun startPixelMatterMotionListening() {
+        if (pixelMatterMotionListening) return
+        pixelMatterMotionListening = true
+        pixelMatterShakeDetector.reset()
         deviceMotionRepository.start(::onDeviceMotionChanged)
     }
 
-    private fun stopPixelDustMotionListening() {
-        if (!pixelDustMotionListening) return
+    private fun stopPixelMatterMotionListening() {
+        if (!pixelMatterMotionListening) return
         deviceMotionRepository.stop()
-        pixelDustMotionListening = false
-        pixelDustShakeDetector.reset()
+        pixelMatterMotionListening = false
+        pixelMatterShakeDetector.reset()
     }
 
     private fun onDeviceMotionChanged(snapshot: DeviceMotionSnapshot) {
@@ -599,13 +625,78 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleDeviceMotionChanged(snapshot: DeviceMotionSnapshot) {
-        if (!state.isPixelDustEasterEggEnabled || !::launcherRootHost.isInitialized) {
+        if (!state.isPixelMatterEffectEnabled || !::launcherRootHost.isInitialized) {
             return
         }
-        launcherRootHost.updatePixelDustMotion(snapshot)
-        if (pixelDustShakeDetector.record(snapshot) && launcherRootHost.triggerPixelDust(snapshot)) {
+        launcherRootHost.updatePixelMatterMotion(snapshot)
+        if (pixelMatterShakeDetector.record(snapshot) && launcherRootHost.triggerPixelMatter(snapshot)) {
             launcherRootHost.setup.hostView.hostBridge?.performHapticFeedback(PixelHapticType.TAP)
         }
+    }
+
+    private fun syncPixelMatterHandTracking() {
+        if (!::handTrackingRepository.isInitialized || !::launcherRootHost.isInitialized) {
+            return
+        }
+        if (!activityResumed ||
+            !state.isPixelMatterEffectEnabled ||
+            !state.isPixelMatterHandControlEnabled ||
+            !launcherRootHost.isPixelMatterEffectActive() ||
+            !handTrackingRepository.hasCameraPermission()
+        ) {
+            stopPixelMatterHandTracking()
+            return
+        }
+        startPixelMatterHandTracking()
+    }
+
+    private fun startPixelMatterHandTracking() {
+        if (pixelMatterHandTracking) return
+        pixelMatterHandTracking = true
+        handTrackingRepository.start(
+            lifecycleOwner = this,
+            logicalWidth = screenProfile.logicalWidth,
+            logicalHeight = screenProfile.logicalHeight,
+            listener = { snapshot ->
+                launcherRootHost.updatePixelMatterHandInput(snapshot)
+            },
+            onDebugFrame = { frame ->
+                if (::handTrackingDebugOverlayView.isInitialized) {
+                    handTrackingDebugOverlayView.updateFrame(
+                        if (state.isPixelMatterHandDebugEnabled) frame else null,
+                    )
+                }
+            },
+            onError = { message ->
+                onPixelMatterHandTrackingError(message)
+            },
+        )
+    }
+
+    private fun stopPixelMatterHandTracking() {
+        if (!pixelMatterHandTracking && !::handTrackingRepository.isInitialized) return
+        if (::launcherRootHost.isInitialized) {
+            launcherRootHost.updatePixelMatterHandInput(null)
+        }
+        if (::handTrackingRepository.isInitialized) {
+            handTrackingRepository.stop()
+        }
+        if (::handTrackingDebugOverlayView.isInitialized) {
+            handTrackingDebugOverlayView.updateFrame(null)
+        }
+        pixelMatterHandTracking = false
+    }
+
+    private fun syncPixelMatterHandDebugOverlay() {
+        if (!::handTrackingDebugOverlayView.isInitialized) return
+        if (!state.isPixelMatterHandDebugEnabled || !pixelMatterHandTracking) {
+            handTrackingDebugOverlayView.updateFrame(null)
+        }
+    }
+
+    private fun onPixelMatterHandTrackingError(message: String) {
+        stopPixelMatterHandTracking()
+        showStatusBarMessage(message.ifBlank { "CAMERA" })
     }
 
     @Suppress("DEPRECATION")
@@ -653,6 +744,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             smsPermissionRequestCode -> smsController.onPermissionsResult()
+
+            cameraPermissionRequestCode -> {
+                val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    applyUiBehavior(isPixelMatterHandControlEnabled = true)
+                } else {
+                    applyUiBehavior(isPixelMatterHandControlEnabled = false)
+                    showStatusBarMessage("CAMERA")
+                }
+            }
         }
     }
 
@@ -666,9 +767,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        stopPixelDustMotionListening()
+        stopPixelMatterMotionListening()
+        stopPixelMatterHandTracking()
         if (::launcherRootHost.isInitialized) {
-            launcherRootHost.stopPixelDustEffect()
+            launcherRootHost.stopPixelMatterEffect()
         }
         mainHandler.removeCallbacksAndMessages(null)
         backgroundExecutor.shutdownNow()
@@ -1132,8 +1234,21 @@ class MainActivity : AppCompatActivity() {
                 openDrawerInSearchMode = SettingsMenuModel.toggle(s.openDrawerInSearchMode),
                 chargeIdleEffect = s.chargeIdleEffect,
             )
-            SettingsMenuItem.PIXEL_DUST_EASTER_EGG -> applyUiBehavior(
-                isPixelDustEasterEggEnabled = SettingsMenuModel.toggle(s.isPixelDustEasterEggEnabled),
+            SettingsMenuItem.PIXEL_MATTER_EFFECT -> applyUiBehavior(
+                isPixelMatterEffectEnabled = SettingsMenuModel.toggle(s.isPixelMatterEffectEnabled),
+            )
+            SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE -> applyUiBehavior(
+                pixelMatterEffectMode = SettingsMenuModel.nextPixelMatterEffectMode(s.pixelMatterEffectMode, direction),
+            )
+            SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL -> {
+                if (s.isPixelMatterHandControlEnabled) {
+                    applyUiBehavior(isPixelMatterHandControlEnabled = false)
+                } else {
+                    enablePixelMatterHandControl()
+                }
+            }
+            SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG -> applyUiBehavior(
+                isPixelMatterHandDebugEnabled = SettingsMenuModel.toggle(s.isPixelMatterHandDebugEnabled),
             )
             SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
@@ -1141,6 +1256,14 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.DEEPSEEK_API_KEY -> openAiSettings()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
+    }
+
+    private fun enablePixelMatterHandControl() {
+        if (handTrackingRepository.hasCameraPermission()) {
+            applyUiBehavior(isPixelMatterHandControlEnabled = true)
+            return
+        }
+        requestPermissions(arrayOf(Manifest.permission.CAMERA), cameraPermissionRequestCode)
     }
 
     private fun onStatusBarAction() {
@@ -2136,7 +2259,10 @@ class MainActivity : AppCompatActivity() {
         idleTimeoutSeconds: Int = state.idleTimeoutSeconds,
         openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
         chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
-        isPixelDustEasterEggEnabled: Boolean = state.isPixelDustEasterEggEnabled,
+        isPixelMatterEffectEnabled: Boolean = state.isPixelMatterEffectEnabled,
+        pixelMatterEffectMode: PixelMatterEffectMode = state.pixelMatterEffectMode,
+        isPixelMatterHandControlEnabled: Boolean = state.isPixelMatterHandControlEnabled,
+        isPixelMatterHandDebugEnabled: Boolean = state.isPixelMatterHandDebugEnabled,
     ) {
         fontSettingsRepository.setUiBehaviorSettings(
             drawerListAlignment = drawerListAlignment,
@@ -2146,7 +2272,10 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
-            pixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
+            pixelMatterEffectEnabled = isPixelMatterEffectEnabled,
+            pixelMatterEffectMode = pixelMatterEffectMode,
+            pixelMatterHandControlEnabled = isPixelMatterHandControlEnabled,
+            pixelMatterHandDebugEnabled = isPixelMatterHandDebugEnabled,
         )
         state = LauncherStateTransitions.updateUiBehavior(
             state = state,
@@ -2157,9 +2286,14 @@ class MainActivity : AppCompatActivity() {
             idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
-            isPixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
+            isPixelMatterEffectEnabled = isPixelMatterEffectEnabled,
+            pixelMatterEffectMode = pixelMatterEffectMode,
+            isPixelMatterHandControlEnabled = isPixelMatterHandControlEnabled,
+            isPixelMatterHandDebugEnabled = isPixelMatterHandDebugEnabled,
         )
-        syncPixelDustMotionListening()
+        syncPixelMatterMotionListening()
+        syncPixelMatterHandTracking()
+        syncPixelMatterHandDebugOverlay()
         if (!isIdlePageEnabled && state.mode == LauncherMode.IDLE) {
             wakeFromIdle()
             return
@@ -2557,6 +2691,7 @@ class MainActivity : AppCompatActivity() {
         const val homeDataPermissionRequestCode = 1001
         const val smsPermissionRequestCode = 1002
         const val smsRoleRequestCode = 1003
+        const val cameraPermissionRequestCode = 1004
         const val rainRefreshIntervalMs: Long = 30 * 60 * 1000L
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"

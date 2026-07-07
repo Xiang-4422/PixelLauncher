@@ -1,0 +1,3 @@
+Source: https://storage.googleapis.com/mediapipe-assets/hand_landmarker.task?generation=1677051718270846
+Used by MediaPipe Hand Landmarker.
+MediaPipe sample code and task usage are documented under the Apache License 2.0.

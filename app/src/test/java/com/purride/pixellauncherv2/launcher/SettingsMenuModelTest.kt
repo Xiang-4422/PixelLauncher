@@ -37,6 +37,13 @@ class SettingsMenuModelTest {
     }
 
     @Test
+    fun nextPixelMatterEffectMode_cyclesThroughMatterModes() {
+        assertEquals(PixelMatterEffectMode.WATER, SettingsMenuModel.nextPixelMatterEffectMode(PixelMatterEffectMode.SAND, 1))
+        assertEquals(PixelMatterEffectMode.SMOKE, SettingsMenuModel.nextPixelMatterEffectMode(PixelMatterEffectMode.SAND, -1))
+        assertEquals(PixelMatterEffectMode.SAND, SettingsMenuModel.nextPixelMatterEffectMode(PixelMatterEffectMode.SMOKE, 1))
+    }
+
+    @Test
     fun nextIdleTimeoutSeconds_cyclesThroughDiscreteOptions() {
         assertEquals(60, SettingsMenuModel.nextIdleTimeoutSeconds(30, 1))
         assertEquals(120, SettingsMenuModel.nextIdleTimeoutSeconds(15, -1))
@@ -137,7 +144,10 @@ class SettingsMenuModelTest {
         assertTrue(items.contains(SettingsMenuItem.NOTIFICATIONS))
         assertTrue(items.contains(SettingsMenuItem.DATA_HEALTH))
         assertTrue(items.contains(SettingsMenuItem.DEEPSEEK_API_KEY))
-        assertTrue(items.contains(SettingsMenuItem.PIXEL_DUST_EASTER_EGG))
+        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_EFFECT))
+        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE))
+        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL))
+        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
         assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
@@ -149,7 +159,10 @@ class SettingsMenuModelTest {
         assertEquals("M1 P1", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
         assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
         assertEquals("SET", rows.first { it.item == SettingsMenuItem.DEEPSEEK_API_KEY }.value)
-        assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_DUST_EASTER_EGG }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT }.value)
+        assertEquals("SAND", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE }.value)
+        assertEquals("OFF", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
     }
 
@@ -182,7 +195,10 @@ class SettingsMenuModelTest {
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.section)
         assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
         assertEquals(SettingsSection.AI, rows.first { it.item == SettingsMenuItem.DEEPSEEK_API_KEY }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_DUST_EASTER_EGG }.section)
+        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT }.section)
+        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE }.section)
+        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL }.section)
+        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.section)
         assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
         assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))
         assertEquals("HOME", SettingsMenuModel.sectionLabel(SettingsSection.HOME))

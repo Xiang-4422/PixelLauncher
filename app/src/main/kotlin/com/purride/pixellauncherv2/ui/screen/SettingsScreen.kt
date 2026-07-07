@@ -20,6 +20,7 @@ import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.SettingsSection
+import com.purride.pixellauncherv2.launcher.pixelMatterEffectModeLabel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
@@ -231,10 +232,36 @@ class SettingsScreen(
             add(
                 SettingsSwitchRow(
                     title = "SHAKE",
-                    checked = isPixelDustEasterEggEnabled,
+                    checked = isPixelMatterEffectEnabled,
                     theme = t,
                     showLabels = true,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_DUST_EASTER_EGG, +1) },
+                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT, +1) },
+                ),
+            )
+            add(
+                SettingsActionRow(
+                    title = "MODE",
+                    valueLabel = pixelMatterEffectModeLabel(pixelMatterEffectMode),
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE, +1) },
+                ),
+            )
+            add(
+                SettingsSwitchRow(
+                    title = "HAND",
+                    checked = isPixelMatterHandControlEnabled,
+                    theme = t,
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL, +1) },
+                ),
+            )
+            add(
+                SettingsSwitchRow(
+                    title = "HAND DEBUG",
+                    checked = isPixelMatterHandDebugEnabled,
+                    theme = t,
+                    showLabels = true,
+                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG, +1) },
                 ),
             )
             add(

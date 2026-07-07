@@ -158,14 +158,20 @@ class LauncherStateTransitionsTest {
             chargeAutoIdleEnabled = true,
             inactivityAutoIdleEnabled = true,
             idleTimeoutSeconds = 45,
-            isPixelDustEasterEggEnabled = false,
+            isPixelMatterEffectEnabled = false,
+            pixelMatterEffectMode = PixelMatterEffectMode.SMOKE,
+            isPixelMatterHandControlEnabled = true,
+            isPixelMatterHandDebugEnabled = false,
         )
 
         assertEquals(true, result.isIdlePageEnabled)
         assertEquals(true, result.chargeAutoIdleEnabled)
         assertEquals(true, result.inactivityAutoIdleEnabled)
         assertEquals(30, result.idleTimeoutSeconds)
-        assertEquals(false, result.isPixelDustEasterEggEnabled)
+        assertEquals(false, result.isPixelMatterEffectEnabled)
+        assertEquals(PixelMatterEffectMode.SMOKE, result.pixelMatterEffectMode)
+        assertEquals(true, result.isPixelMatterHandControlEnabled)
+        assertEquals(false, result.isPixelMatterHandDebugEnabled)
     }
 
     // ── Diagnostics + SMS navigation ──────────────────────────────────────────

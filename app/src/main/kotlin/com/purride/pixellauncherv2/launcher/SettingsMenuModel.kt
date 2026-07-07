@@ -21,7 +21,10 @@ enum class SettingsMenuItem {
     NOTIFICATIONS,
     DATA_HEALTH,
     DEEPSEEK_API_KEY,
-    PIXEL_DUST_EASTER_EGG,
+    PIXEL_MATTER_EFFECT,
+    PIXEL_MATTER_EFFECT_MODE,
+    PIXEL_MATTER_HAND_CONTROL,
+    PIXEL_MATTER_HAND_DEBUG,
     ADVANCED,
 }
 
@@ -187,9 +190,33 @@ object SettingsMenuModel {
             )
             add(
                 SettingsMenuRow(
-                    item = SettingsMenuItem.PIXEL_DUST_EASTER_EGG,
+                    item = SettingsMenuItem.PIXEL_MATTER_EFFECT,
                     title = "SHAKE",
-                    value = onOffLabel(state.isPixelDustEasterEggEnabled),
+                    value = onOffLabel(state.isPixelMatterEffectEnabled),
+                    section = SettingsSection.ADVANCED,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE,
+                    title = "MODE",
+                    value = pixelMatterEffectModeLabel(state.pixelMatterEffectMode),
+                    section = SettingsSection.ADVANCED,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL,
+                    title = "HAND",
+                    value = onOffLabel(state.isPixelMatterHandControlEnabled),
+                    section = SettingsSection.ADVANCED,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG,
+                    title = "HAND DEBUG",
+                    value = onOffLabel(state.isPixelMatterHandDebugEnabled),
                     section = SettingsSection.ADVANCED,
                 ),
             )
@@ -261,6 +288,15 @@ object SettingsMenuModel {
         val currentIndex = ChargeIdleEffect.entries.indexOf(current).takeIf { it >= 0 } ?: 0
         val nextIndex = wrapIndex(currentIndex + direction, ChargeIdleEffect.entries.size)
         return ChargeIdleEffect.entries[nextIndex]
+    }
+
+    fun nextPixelMatterEffectMode(
+        current: PixelMatterEffectMode,
+        direction: Int,
+    ): PixelMatterEffectMode {
+        val currentIndex = PixelMatterEffectMode.entries.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, PixelMatterEffectMode.entries.size)
+        return PixelMatterEffectMode.entries[nextIndex]
     }
 
     fun nextIdleTimeoutSeconds(current: Int, direction: Int): Int {

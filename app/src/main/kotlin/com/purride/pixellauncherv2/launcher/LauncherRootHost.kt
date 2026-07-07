@@ -66,6 +66,9 @@ import kotlin.time.Duration.Companion.milliseconds
 internal class LauncherRootHost(
     context: Context,
     private val callbacks: LauncherCallbacks,
+    private val onPixelMatterEffectStart: () -> Unit = {},
+    private val onPixelMatterRestoreStart: () -> Unit = {},
+    private val onPixelMatterEffectClear: () -> Unit = {},
 ) {
     // ── Mutable model fields ──────────────────────────────────────────────────
     private var uiState: LauncherUiState = LauncherUiState()
@@ -76,11 +79,17 @@ internal class LauncherRootHost(
     private val frameScheduler = PixelFrameScheduler.Default
     private val routeTickerProvider = PixelTickerProvider(frameScheduler)
     private val hostView = PixelHostView(context)
-    private val pixelDustController = PixelDustEffectController(
+    private val pixelMatterController = PixelMatterController(
         vsync = routeTickerProvider,
         onFrame = { hostView.postInvalidateOnAnimation() },
-        onEffectStart = { cancelHostTouchState() },
-        onEffectClear = { cancelHostTouchState() },
+        onEffectStart = {
+            cancelHostTouchState()
+            onPixelMatterEffectStart()
+        },
+        onEffectClear = {
+            cancelHostTouchState()
+            onPixelMatterEffectClear()
+        },
     )
     private var navigatorState: PixelNavigatorState? = null
     private var navigatorDestination: LauncherRouteDestination? = null
@@ -235,11 +244,11 @@ internal class LauncherRootHost(
     // ── Content dispatching ───────────────────────────────────────────────────
 
     private fun buildRoot(): Widget {
-        pixelDustController.field?.takeIf { pixelDustController.isVisible() }?.let { field ->
-            return PixelDustEffectLayer(
-                field = field,
-                onTapToRestore = { pixelDustController.requestRestore() },
-                key = "pixel-dust-effect",
+        pixelMatterController.simulation?.takeIf { pixelMatterController.isVisible() }?.let { simulation ->
+            return PixelMatterEffectLayer(
+                simulation = simulation,
+                onTapToRestore = { requestPixelMatterRestore() },
+                key = "pixel-matter-effect",
             )
         }
         val initialDestination = navigatorDestination
@@ -263,35 +272,56 @@ internal class LauncherRootHost(
         )
     }
 
-    fun updatePixelDustMotion(snapshot: DeviceMotionSnapshot) {
-        pixelDustController.updateMotion(snapshot)
+    fun updatePixelMatterMotion(snapshot: DeviceMotionSnapshot) {
+        pixelMatterController.updateMotion(snapshot)
     }
 
-    fun triggerPixelDust(snapshot: DeviceMotionSnapshot): Boolean {
-        if (pixelDustController.isVisible()) {
-            return false
+    fun updatePixelMatterHandInput(snapshot: PixelMatterHandSnapshot?) {
+        pixelMatterController.updateHandInput(snapshot)
+    }
+
+    fun isPixelMatterEffectActive(): Boolean = pixelMatterController.isActive()
+
+    fun triggerPixelMatter(snapshot: DeviceMotionSnapshot): Boolean {
+        if (pixelMatterController.isVisible()) {
+            return pixelMatterController.applyShakeImpulse(snapshot)
         }
         val currentFrame = setup.hostView.snapshotCurrentFrameBuffer() ?: return false
-        return pixelDustController.start(
+        return pixelMatterController.start(
+            mode = uiState.pixelMatterEffectMode,
             buffer = currentFrame,
             snapshot = snapshot,
             backgroundColor = setup.hostView.offPixelColor.argb,
+            ignoredBackgroundColors = intArrayOf(
+                setup.hostView.offPixelColor.argb,
+                theme.surface.panel.argb,
+                theme.surface.panelSubtle.argb,
+                theme.surface.bezelColor.argb,
+            ),
         )
     }
 
-    fun handlePixelDustBack(): Boolean {
+    fun handlePixelMatterBack(): Boolean {
         return when {
-            pixelDustController.isActive() -> pixelDustController.requestRestore()
-            pixelDustController.isRestoring() -> {
-                pixelDustController.clear()
+            pixelMatterController.isActive() -> requestPixelMatterRestore()
+            pixelMatterController.isRestoring() -> {
+                pixelMatterController.clear()
                 true
             }
             else -> false
         }
     }
 
-    fun stopPixelDustEffect() {
-        pixelDustController.clear()
+    fun stopPixelMatterEffect() {
+        pixelMatterController.clear()
+    }
+
+    private fun requestPixelMatterRestore(): Boolean {
+        val restored = pixelMatterController.requestRestore()
+        if (restored) {
+            onPixelMatterRestoreStart()
+        }
+        return restored
     }
 
     private fun cancelHostTouchState() {

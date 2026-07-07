@@ -817,7 +817,10 @@ object LauncherStateTransitions {
         idleTimeoutSeconds: Int = state.idleTimeoutSeconds,
         openDrawerInSearchMode: Boolean = state.openDrawerInSearchMode,
         chargeIdleEffect: ChargeIdleEffect = state.chargeIdleEffect,
-        isPixelDustEasterEggEnabled: Boolean = state.isPixelDustEasterEggEnabled,
+        isPixelMatterEffectEnabled: Boolean = state.isPixelMatterEffectEnabled,
+        pixelMatterEffectMode: PixelMatterEffectMode = state.pixelMatterEffectMode,
+        isPixelMatterHandControlEnabled: Boolean = state.isPixelMatterHandControlEnabled,
+        isPixelMatterHandDebugEnabled: Boolean = state.isPixelMatterHandDebugEnabled,
     ): LauncherState {
         return state.copy(
             drawerListAlignment = drawerListAlignment,
@@ -827,7 +830,10 @@ object LauncherStateTransitions {
             idleTimeoutSeconds = IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds),
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
-            isPixelDustEasterEggEnabled = isPixelDustEasterEggEnabled,
+            isPixelMatterEffectEnabled = isPixelMatterEffectEnabled,
+            pixelMatterEffectMode = pixelMatterEffectMode,
+            isPixelMatterHandControlEnabled = isPixelMatterHandControlEnabled,
+            isPixelMatterHandDebugEnabled = isPixelMatterHandDebugEnabled,
         )
     }
 

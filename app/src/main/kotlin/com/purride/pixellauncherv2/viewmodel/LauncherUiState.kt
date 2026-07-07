@@ -12,6 +12,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
+import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.render.PixelShape
@@ -88,7 +89,10 @@ data class LauncherUiState(
     val idleTimeoutSeconds: Int = IdleSettings.DEFAULT_TIMEOUT_SECONDS,
     val openDrawerInSearchMode: Boolean = false,
     val chargeIdleEffect: ChargeIdleEffect = ChargeIdleEffect.FLUID,
-    val isPixelDustEasterEggEnabled: Boolean = true,
+    val isPixelMatterEffectEnabled: Boolean = true,
+    val pixelMatterEffectMode: PixelMatterEffectMode = PixelMatterEffectMode.SAND,
+    val isPixelMatterHandControlEnabled: Boolean = false,
+    val isPixelMatterHandDebugEnabled: Boolean = true,
 
     // ── Device status ─────────────────────────────────────────────────────────
     val batteryLevel: Int = 100,
