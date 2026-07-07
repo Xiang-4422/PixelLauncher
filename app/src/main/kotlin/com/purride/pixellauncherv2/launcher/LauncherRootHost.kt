@@ -40,6 +40,7 @@ import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
 import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
+import com.purride.pixellauncherv2.ui.screen.LoadingPreviewScreen
 import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
@@ -408,6 +409,11 @@ internal class LauncherRootHost(
             apiKeyState = deepSeekApiKeyState,
             onDeepSeekApiKeyChanged = callbacks.onDeepSeekApiKeyChanged,
         )
+        LauncherRouteDestination.LOADING_PREVIEW -> LoadingPreviewScreen(
+            theme = theme,
+            screenProfile = screenProfile,
+            vsync = routeTickerProvider,
+        )
         LauncherRouteDestination.APP_MANAGEMENT -> AppManagementScreen(
             uiState = uiState,
             theme = theme,
@@ -673,6 +679,7 @@ internal class LauncherRootHost(
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
             LauncherMode.AI_SETTINGS -> LauncherRouteDestination.AI_SETTINGS
+            LauncherMode.LOADING_PREVIEW -> LauncherRouteDestination.LOADING_PREVIEW
             LauncherMode.DIAGNOSTICS -> LauncherRouteDestination.DIAGNOSTICS
             LauncherMode.IDLE -> LauncherRouteDestination.IDLE
         }
@@ -688,6 +695,7 @@ internal class LauncherRootHost(
             LauncherRouteDestination.DATA_HEALTH,
             LauncherRouteDestination.NOTIFICATION_SETTINGS,
             LauncherRouteDestination.AI_SETTINGS,
+            LauncherRouteDestination.LOADING_PREVIEW,
             LauncherRouteDestination.DIAGNOSTICS,
             LauncherRouteDestination.IDLE,
             -> null
@@ -738,6 +746,7 @@ internal enum class LauncherRouteDestination(
     DATA_HEALTH("data-health"),
     NOTIFICATION_SETTINGS("notification-settings"),
     AI_SETTINGS("ai-settings"),
+    LOADING_PREVIEW("loading-preview"),
     DIAGNOSTICS("diagnostics"),
     IDLE("idle"),
 }

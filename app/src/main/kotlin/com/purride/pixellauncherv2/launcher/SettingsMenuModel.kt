@@ -21,6 +21,7 @@ enum class SettingsMenuItem {
     NOTIFICATIONS,
     DATA_HEALTH,
     DEEPSEEK_API_KEY,
+    LOADING_PREVIEW,
     PIXEL_MATTER_EFFECT,
     PIXEL_MATTER_EFFECT_MODE,
     PIXEL_MATTER_HAND_CONTROL,
@@ -186,6 +187,14 @@ object SettingsMenuModel {
                     title = "DEEPSEEK",
                     value = apiKeyLabel(state.deepSeekApiKey),
                     section = SettingsSection.AI,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.LOADING_PREVIEW,
+                    title = "LOADING",
+                    value = "OPEN",
+                    section = SettingsSection.ADVANCED,
                 ),
             )
             add(

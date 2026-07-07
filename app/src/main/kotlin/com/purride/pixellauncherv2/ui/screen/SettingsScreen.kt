@@ -230,6 +230,14 @@ class SettingsScreen(
             )
             addSection(SettingsSection.ADVANCED, t)
             add(
+                SettingsActionRow(
+                    title = "LOADING",
+                    valueLabel = "OPEN",
+                    theme = t,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.LOADING_PREVIEW, +1) },
+                ),
+            )
+            add(
                 SettingsSwitchRow(
                     title = "SHAKE",
                     checked = isPixelMatterEffectEnabled,

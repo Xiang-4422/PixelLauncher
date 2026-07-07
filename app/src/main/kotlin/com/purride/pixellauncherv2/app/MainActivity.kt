@@ -439,6 +439,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
                     LauncherMode.AI_SETTINGS -> closeAiSettings()
+                    LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
@@ -840,6 +841,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.AI_SETTINGS,
+                    LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
                     LauncherMode.IDLE,
@@ -869,6 +871,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.AI_SETTINGS,
+                    LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE,
                     LauncherMode.SMS_ROLE_PROMPT -> Unit
@@ -889,6 +892,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.AI_SETTINGS,
+                    LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -908,6 +912,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
                     LauncherMode.AI_SETTINGS,
+                    LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
                 }
@@ -942,6 +947,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
                     LauncherMode.AI_SETTINGS -> closeAiSettings()
+                    LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.HOME -> Unit
@@ -1254,6 +1260,7 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.DEEPSEEK_API_KEY -> openAiSettings()
+            SettingsMenuItem.LOADING_PREVIEW -> openLoadingPreview()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
@@ -1868,6 +1875,19 @@ class MainActivity : AppCompatActivity() {
         updateTextInputFocus()
     }
 
+    private fun openLoadingPreview() {
+        settleSettingsMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.showLoadingPreview(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    private fun closeLoadingPreview() {
+        state = LauncherStateTransitions.hideLoadingPreview(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
     private fun onDeepSeekApiKeyChanged(apiKey: String) {
         aiSettingsRepository.setDeepSeekApiKey(apiKey)
         state = LauncherStateTransitions.updateAiSettings(
@@ -2079,6 +2099,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.AI_SETTINGS,
+            LauncherMode.LOADING_PREVIEW,
             LauncherMode.DIAGNOSTICS -> true
 
             LauncherMode.IDLE -> false

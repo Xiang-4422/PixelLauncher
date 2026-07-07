@@ -22,6 +22,7 @@ class LauncherRootHostPageOrderTest {
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.HOME))
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.APP_DRAWER))
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.SETTINGS))
+        assertEquals(LauncherRouteDestination.LOADING_PREVIEW, LauncherRootHost.destinationFor(LauncherMode.LOADING_PREVIEW))
         assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_THREADS))
         assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_INBOX))
         assertEquals(
@@ -35,6 +36,7 @@ class LauncherRootHostPageOrderTest {
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.MAIN))
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.SMS_THREAD_DETAIL))
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.DATA_HEALTH))
+        assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.LOADING_PREVIEW))
         assertEquals(
             PixelRouteTransition.SlideVertical,
             LauncherRootHost.transitionFor(LauncherRouteDestination.SMS_THREADS),

@@ -50,8 +50,9 @@ fun SettingsPixelSizeControl(
     title: String,
     valueLabel: String,
     theme: LauncherTheme,
-    onDecrease: () -> Unit,
-    onIncrease: () -> Unit,
+    onDecrease: (() -> Unit)?,
+    onIncrease: (() -> Unit)?,
+    key: Any? = null,
 ): Widget {
     return Container(
         child = settingsInlineRow(
@@ -62,6 +63,7 @@ fun SettingsPixelSizeControl(
                 onIncrease = onIncrease,
                 valueWidth = 34,
                 style = settingsValueAdjusterStyle(theme),
+                key = key,
             ),
         ),
     )
@@ -133,8 +135,10 @@ fun SettingsActionRow(
     valueLabel: String,
     theme: LauncherTheme,
     onPressed: () -> Unit,
+    key: Any? = null,
 ): Widget = GestureDetector(
     onTap = onPressed,
+    key = key,
     child = Container(
         child = settingsInlineRow(
             title = settingsTitleCell(title = title, theme = theme),

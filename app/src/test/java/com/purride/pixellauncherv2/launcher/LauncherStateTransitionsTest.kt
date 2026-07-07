@@ -191,6 +191,13 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun loadingPreview_openAndClose() {
+        val opened = LauncherStateTransitions.showLoadingPreview(LauncherState(mode = LauncherMode.SETTINGS))
+        assertEquals(LauncherMode.LOADING_PREVIEW, opened.mode)
+        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideLoadingPreview(opened).mode)
+    }
+
+    @Test
     fun updateDataHealthPreservesOrWritesRefreshTime() {
         val state = LauncherState(dataHealthUpdatedTimeText = "09:40")
 

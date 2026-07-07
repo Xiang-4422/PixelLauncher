@@ -35,6 +35,7 @@ object LauncherStateTransitions {
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.AI_SETTINGS,
+            LauncherMode.LOADING_PREVIEW,
             LauncherMode.DIAGNOSTICS -> state.returnMode
         }
         val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
@@ -70,6 +71,7 @@ object LauncherStateTransitions {
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.AI_SETTINGS,
+            LauncherMode.LOADING_PREVIEW,
             LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
         }
         return state.copy(
@@ -112,6 +114,14 @@ object LauncherStateTransitions {
     }
 
     fun hideAiSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
+    fun showLoadingPreview(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.LOADING_PREVIEW)
+    }
+
+    fun hideLoadingPreview(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
@@ -160,6 +170,7 @@ object LauncherStateTransitions {
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.AI_SETTINGS,
+            LauncherMode.LOADING_PREVIEW,
             LauncherMode.DIAGNOSTICS,
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,

@@ -119,6 +119,7 @@ enum class LauncherMode {
     DATA_HEALTH,
     NOTIFICATION_SETTINGS,
     AI_SETTINGS,
+    LOADING_PREVIEW,
     DIAGNOSTICS,
     IDLE,
 }
