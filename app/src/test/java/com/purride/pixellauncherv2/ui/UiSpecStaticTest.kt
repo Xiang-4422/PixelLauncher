@@ -287,7 +287,7 @@ class UiSpecStaticTest {
                 null
             },
             if (!headerSource.contains("isShowingAction -> StatusBarCenterContent.FilledAction(")) {
-                "status bar action must take precedence in the shared center slot"
+                "status bar action must take precedence over messages and normal text"
             } else {
                 null
             },
@@ -299,7 +299,15 @@ class UiSpecStaticTest {
             if (!headerSource.contains("val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null") ||
                 !headerSource.contains("PixelColor.fromRgb(255, 0, 0)")
             ) {
-                "danger status bar actions must keep the neutral red fill inside the center slot"
+                "danger status bar actions must keep the neutral red fill"
+            } else {
+                null
+            },
+            if (!headerSource.contains("centerContent is StatusBarCenterContent.FilledAction") ||
+                !headerSource.contains("statusBarFullWidthAction(") ||
+                !headerSource.contains("height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX")
+            ) {
+                "filled status bar actions such as CONFIRM must occupy the full status bar row without an inner segment"
             } else {
                 null
             },

@@ -173,6 +173,15 @@ private fun statusBarTitleRow(
     onCenterTap: (() -> Unit)?,
     onCenterDoubleTap: (() -> Unit)?,
 ): Widget {
+    if (centerContent is StatusBarCenterContent.FilledAction) {
+        return statusBarFullWidthAction(
+            leadingText = centerContent.leadingText,
+            actionLabel = centerContent.actionLabel,
+            isDanger = centerContent.isDanger,
+            theme = theme,
+            onAction = onAction,
+        )
+    }
     if (centerContent == StatusBarCenterContent.Empty) {
         return Container(
             height = STATUS_BAR_TITLE_ROW_HEIGHT_PX,
@@ -279,6 +288,72 @@ private fun statusBarCenterContent(
         onTap = onCenterTap,
         onDoubleTap = onCenterDoubleTap,
         height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+    )
+}
+
+private fun statusBarFullWidthAction(
+    leadingText: String,
+    actionLabel: String,
+    isDanger: Boolean,
+    theme: LauncherTheme,
+    onAction: (() -> Unit)?,
+): Widget {
+    val fillColor = statusBarActionBackgroundColor(isDanger, theme)
+    val textColor = PixelColor.White
+    val labelText = Text(
+        actionLabel,
+        style = TextStyle(color = textColor),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    )
+    val children = if (leadingText.isBlank()) {
+        listOf(
+            Expanded(
+                child = Container(
+                    alignment = Alignment.CENTER,
+                    child = labelText,
+                ),
+            ),
+        )
+    } else {
+        listOf(
+            Text(
+                leadingText,
+                style = TextStyle(color = textColor),
+                overflow = TextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+            ),
+            Expanded(
+                child = Container(
+                    alignment = Alignment.CENTER_END,
+                    child = labelText,
+                ),
+            ),
+        )
+    }
+    val content = Container(
+        height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX,
+        fillColor = fillColor,
+        padding = EdgeInsets.symmetric(horizontal = STATUS_BAR_SEGMENT_HORIZONTAL_PADDING_PX),
+        child = Row(
+            children = children,
+            spacing = 0,
+        ),
+    )
+    return Semantics(
+        label = actionLabel,
+        role = PixelSemanticRole.BUTTON,
+        enabled = onAction != null,
+        child = if (onAction == null) {
+            content
+        } else {
+            GestureDetector(
+                onTap = onAction,
+                child = content,
+            )
+        },
     )
 }
 
