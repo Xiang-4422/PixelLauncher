@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.ui.screen
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.AnimatedPixelLoadingBar
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
@@ -22,6 +23,7 @@ import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Stack
 import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
@@ -48,6 +50,7 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 fun DrawerScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
+    vsync: PixelTickerProvider,
     listState: PixelListState,
     listController: ScrollController,
     onAppPressed: (Int) -> Unit,
@@ -58,6 +61,7 @@ fun DrawerScreen(
 ): Widget {
     val apps = drawerApps(uiState)
     val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.defaultUiFontSize.px)
+    val isInitialLoading = uiState.isLoading && apps.isEmpty()
     val content = Column(
         spacing = 0,
         mainAxisSize = MainAxisSize.MAX,
@@ -67,26 +71,30 @@ fun DrawerScreen(
                 child = Padding(
                     horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
                     vertical = LauncherSpacing.CONTENT_VERTICAL,
-                    child = ListViewBuilder(
-                        itemCount = apps.size.coerceAtLeast(1),
-                        state = listState,
-                        controller = listController,
-                        itemExtent = rowHeight,
-                        cacheExtent = 4,
-                        spacing = DrawerListGeometry.ROW_SPACING_PX,
-                        itemBuilder = { index ->
-                            val app = apps.getOrNull(index)
-                            drawerListItem(
-                                label = app?.label?.uppercase() ?: if (uiState.isLoading) "LOADING" else "NO RESULTS",
-                                enabled = app != null,
-                                rowHeight = rowHeight,
-                                alignment = uiState.drawerListAlignment,
-                                theme = theme,
-                                onTap = app?.let { { onAppPressed(index) } },
-                                onLongPress = app?.let { { onAppLongPressed(index) } },
-                            )
-                        },
-                    ),
+                    child = if (isInitialLoading) {
+                        centeredDrawerLoading(theme = theme, vsync = vsync)
+                    } else {
+                        ListViewBuilder(
+                            itemCount = apps.size.coerceAtLeast(1),
+                            state = listState,
+                            controller = listController,
+                            itemExtent = rowHeight,
+                            cacheExtent = 4,
+                            spacing = DrawerListGeometry.ROW_SPACING_PX,
+                            itemBuilder = { index ->
+                                val app = apps.getOrNull(index)
+                                drawerListItem(
+                                    label = app?.label?.uppercase() ?: "NO RESULTS",
+                                    enabled = app != null,
+                                    rowHeight = rowHeight,
+                                    alignment = uiState.drawerListAlignment,
+                                    theme = theme,
+                                    onTap = app?.let { { onAppPressed(index) } },
+                                    onLongPress = app?.let { { onAppLongPressed(index) } },
+                                )
+                            },
+                        )
+                    },
                 ),
             ),
         ),
@@ -121,6 +129,27 @@ private fun drawerApps(uiState: LauncherUiState): List<AppEntry> {
     if (uiState.drawerQuery.isNotBlank()) return emptyList()
     return uiState.apps
 }
+
+private fun centeredDrawerLoading(
+    theme: LauncherTheme,
+    vsync: PixelTickerProvider,
+): Widget = Column(
+    spacing = 0,
+    mainAxisSize = MainAxisSize.MAX,
+    mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    children = listOf(
+        AnimatedPixelLoadingBar(
+            vsync = vsync,
+            color = theme.text.primary,
+            width = 96,
+            height = 9,
+            blockWidth = 9,
+            trailWidth = 5,
+            key = "drawer-loading-bar",
+        ),
+    ),
+)
 
 private fun drawerListItem(
     label: String,

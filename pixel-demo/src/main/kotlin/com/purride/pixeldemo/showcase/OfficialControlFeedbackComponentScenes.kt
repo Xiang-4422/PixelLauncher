@@ -7,6 +7,7 @@ import com.purride.pixelui.Align
 import com.purride.pixelui.AlignDirectional
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.AlignmentDirectional
+import com.purride.pixelui.AnimatedPixelLoadingBar
 import com.purride.pixelui.AppScaffold
 import com.purride.pixelui.AspectRatio
 import com.purride.pixelui.Badge
@@ -57,6 +58,7 @@ import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.PixelLoadingBar
 import com.purride.pixelui.PixelToastQueueController
 import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.Popover
@@ -189,6 +191,17 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     },
     ComponentExampleScene("controls_slider", "Slider", "连续值拖动控件", DemoCatalog.controls, setOf("component", "slider"), setOf("Slider")) { SliderOfficialBody(showProgress = false) },
     ComponentExampleScene("feedback_progress_bar", "ProgressBar", "水平进度展示", DemoCatalog.feedback, setOf("component", "progress"), setOf("ProgressBar")) { SliderOfficialBody(showProgress = true) },
+    officialComponentScene("feedback_pixel_loading_bar", "PixelLoadingBar", "点阵扫描式水平加载条", DemoCatalog.feedback, "PixelLoadingBar", extraApis = setOf("AnimatedPixelLoadingBar")) { env ->
+        Column(
+            children = listOf(
+                AnimatedPixelLoadingBar(vsync = env.vsync, color = Pink, width = 88),
+                PixelLoadingBar(progress = 0.35f, color = Yellow, width = 88),
+                PixelLoadingBar(progress = 0.65f, color = Cyan, width = 88, reversed = true),
+            ),
+            spacing = 3,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        )
+    },
     officialComponentScene("feedback_activity_indicator", "ActivityIndicator", "四帧像素加载指示器", DemoCatalog.feedback, "ActivityIndicator") {
         Row(children = listOf(ActivityIndicator(frame = 0, color = Yellow), ActivityIndicator(frame = 1, color = Yellow), ActivityIndicator(frame = 2, color = Yellow), ActivityIndicator(frame = 3, color = Yellow)), spacing = 4)
     },

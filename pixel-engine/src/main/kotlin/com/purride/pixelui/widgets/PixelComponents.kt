@@ -2,6 +2,8 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelui.animation.PixelTicker
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.internal.HitTestResult
 import com.purride.pixelui.internal.LeafRenderObjectWidget
 import com.purride.pixelui.internal.MultiChildRenderObject
@@ -1069,6 +1071,332 @@ public fun ProgressBar(
 }
 
 /**
+ * 点阵扫描式水平 Loading 条。
+ *
+ * [progress] 表示实心扫描块在轨道中的位置，`0f` 在左侧，`1f` 在右侧；[reversed]
+ * 会把运动方向翻转，并把点阵残影绘制到运动尾部。组件只绘制当前帧，不创建 ticker。
+ * 需要持续播放时使用 [AnimatedPixelLoadingBar]。
+ */
+public fun PixelLoadingBar(
+    progress: Float,
+    width: Int = 96,
+    height: Int = 9,
+    color: PixelColor = PixelColor.White,
+    trackColor: PixelColor = color.withAlpha(96),
+    blockWidth: Int = 9,
+    trailWidth: Int = 5,
+    reversed: Boolean = false,
+    key: Any? = null,
+): Widget = PixelLoadingBarWidget(
+    progress = progress,
+    width = width,
+    height = height,
+    color = color,
+    trackColor = trackColor,
+    blockWidth = blockWidth,
+    trailWidth = trailWidth,
+    reversed = reversed,
+    key = key,
+)
+
+/**
+ * 自带 ticker 的点阵扫描 Loading 条。
+ *
+ * 动画采用左右往返运动，扫描块到达边缘后反向，残影也随方向切换。
+ */
+public fun AnimatedPixelLoadingBar(
+    vsync: PixelTickerProvider,
+    width: Int = 96,
+    height: Int = 9,
+    color: PixelColor = PixelColor.White,
+    trackColor: PixelColor = color.withAlpha(96),
+    blockWidth: Int = 9,
+    trailWidth: Int = 5,
+    fps: Int = 30,
+    cycleFrames: Int = 96,
+    playing: Boolean = true,
+    key: Any? = null,
+): Widget = AnimatedPixelLoadingBarWidget(
+    vsync = vsync,
+    width = width,
+    height = height,
+    color = color,
+    trackColor = trackColor,
+    blockWidth = blockWidth,
+    trailWidth = trailWidth,
+    fps = fps,
+    cycleFrames = cycleFrames,
+    playing = playing,
+    key = key,
+)
+
+private data class PixelLoadingBarWidget(
+    val progress: Float,
+    val width: Int,
+    val height: Int,
+    val color: PixelColor,
+    val trackColor: PixelColor,
+    val blockWidth: Int,
+    val trailWidth: Int,
+    val reversed: Boolean,
+    override val key: Any? = null,
+) : LeafRenderObjectWidget(key = key) {
+    override fun createRenderObject(context: BuildContext): RenderObject =
+        RenderPixelLoadingBar(
+            progress = progress,
+            preferredWidth = width,
+            preferredHeight = height,
+            color = color,
+            trackColor = trackColor,
+            blockWidth = blockWidth,
+            trailWidth = trailWidth,
+            reversed = reversed,
+        )
+
+    override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        (renderObject as RenderPixelLoadingBar).update(
+            progress = progress,
+            preferredWidth = width,
+            preferredHeight = height,
+            color = color,
+            trackColor = trackColor,
+            blockWidth = blockWidth,
+            trailWidth = trailWidth,
+            reversed = reversed,
+        )
+    }
+}
+
+private class RenderPixelLoadingBar(
+    private var progress: Float,
+    private var preferredWidth: Int,
+    private var preferredHeight: Int,
+    private var color: PixelColor,
+    private var trackColor: PixelColor,
+    private var blockWidth: Int,
+    private var trailWidth: Int,
+    private var reversed: Boolean,
+) : RenderBox() {
+    override fun layout(constraints: RenderConstraints) {
+        size = RenderSize(
+            width = constraints.constrainWidth(preferredWidth.coerceAtLeast(0)),
+            height = constraints.constrainHeight(preferredHeight.coerceAtLeast(0)),
+        )
+    }
+
+    override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
+        val width = size.width
+        val height = size.height
+        if (width <= 0 || height <= 0) return
+
+        paintTrackDots(context, offsetX, offsetY, width, height)
+
+        val safeBlockWidth = blockWidth.coerceIn(1, width)
+        val travel = (width - safeBlockWidth).coerceAtLeast(0)
+        val normalized = progress.coerceIn(0f, 1f)
+        val forwardX = (travel * normalized).toInt().coerceIn(0, travel)
+        val blockLeft = if (reversed) travel - forwardX else forwardX
+
+        paintTrail(
+            context = context,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            width = width,
+            height = height,
+            blockLeft = blockLeft,
+            blockWidth = safeBlockWidth,
+        )
+        context.fillRect(offsetX + blockLeft, offsetY, safeBlockWidth, height, color)
+    }
+
+    fun update(
+        progress: Float,
+        preferredWidth: Int,
+        preferredHeight: Int,
+        color: PixelColor,
+        trackColor: PixelColor,
+        blockWidth: Int,
+        trailWidth: Int,
+        reversed: Boolean,
+    ) {
+        val needsLayout = this.preferredWidth != preferredWidth || this.preferredHeight != preferredHeight
+        val changed = needsLayout ||
+            this.progress != progress ||
+            this.color != color ||
+            this.trackColor != trackColor ||
+            this.blockWidth != blockWidth ||
+            this.trailWidth != trailWidth ||
+            this.reversed != reversed
+        if (!changed) return
+        this.progress = progress
+        this.preferredWidth = preferredWidth
+        this.preferredHeight = preferredHeight
+        this.color = color
+        this.trackColor = trackColor
+        this.blockWidth = blockWidth
+        this.trailWidth = trailWidth
+        this.reversed = reversed
+        if (needsLayout) markNeedsLayout()
+        markNeedsPaint()
+    }
+
+    private fun paintTrackDots(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+        width: Int,
+        height: Int,
+    ) {
+        var row = 0
+        var y = if (height <= 2) 0 else 1
+        val lastY = if (height <= 2) height else height - 1
+        while (y < lastY) {
+            val startX = row.floorMod(2)
+            var x = startX
+            while (x < width) {
+                context.buffer.setPixel(offsetX + x, offsetY + y, trackColor)
+                x += PIXEL_LOADING_DOT_STEP_X
+            }
+            y += PIXEL_LOADING_DOT_STEP_Y
+            row++
+        }
+    }
+
+    private fun paintTrail(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+        width: Int,
+        height: Int,
+        blockLeft: Int,
+        blockWidth: Int,
+    ) {
+        val safeTrailWidth = trailWidth.coerceAtLeast(0)
+        if (safeTrailWidth == 0) return
+        for (distance in 1..safeTrailWidth) {
+            val x = if (reversed) blockLeft + blockWidth - 1 + distance else blockLeft - distance
+            if (x !in 0 until width) continue
+            val density = when (distance) {
+                1 -> 2
+                2, 3 -> 3
+                else -> 4
+            }
+            for (y in 0 until height) {
+                if ((x + y + distance).floorMod(density) != 0) {
+                    context.buffer.setPixel(offsetX + x, offsetY + y, color)
+                }
+            }
+        }
+    }
+}
+
+private data class AnimatedPixelLoadingBarWidget(
+    val vsync: PixelTickerProvider,
+    val width: Int,
+    val height: Int,
+    val color: PixelColor,
+    val trackColor: PixelColor,
+    val blockWidth: Int,
+    val trailWidth: Int,
+    val fps: Int,
+    val cycleFrames: Int,
+    val playing: Boolean,
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    init {
+        require(fps > 0) { "fps must be > 0, got $fps" }
+        require(cycleFrames > 1) { "cycleFrames must be > 1, got $cycleFrames" }
+    }
+
+    override fun createState(): State<out StatefulWidget> = AnimatedPixelLoadingBarState()
+}
+
+private class AnimatedPixelLoadingBarState : State<AnimatedPixelLoadingBarWidget>() {
+    private var ticker: PixelTicker? = null
+    private var currentFrame = 0
+    private var lastElapsedNanos = -1L
+    private var carryNanos = 0L
+
+    override fun initState() {
+        createTicker()
+        syncPlaying()
+    }
+
+    override fun didUpdateWidget(oldWidget: AnimatedPixelLoadingBarWidget) {
+        if (widget.fps != oldWidget.fps || widget.vsync !== oldWidget.vsync) {
+            ticker?.dispose()
+            ticker = null
+            lastElapsedNanos = -1L
+            carryNanos = 0L
+            createTicker()
+        }
+        if (widget.cycleFrames != oldWidget.cycleFrames) {
+            currentFrame = currentFrame.floorMod(widget.cycleFrames)
+        }
+        syncPlaying()
+    }
+
+    override fun dispose() {
+        ticker?.dispose()
+    }
+
+    override fun build(context: BuildContext): Widget {
+        val halfCycle = widget.cycleFrames / 2
+        val frame = currentFrame.floorMod(widget.cycleFrames)
+        val reversed = frame >= halfCycle
+        val localFrame = if (reversed) frame - halfCycle else frame
+        val localSpan = (if (reversed) widget.cycleFrames - halfCycle else halfCycle)
+            .coerceAtLeast(1)
+        val progress = localFrame.toFloat() / localSpan.toFloat()
+        return PixelLoadingBar(
+            progress = progress,
+            width = widget.width,
+            height = widget.height,
+            color = widget.color,
+            trackColor = widget.trackColor,
+            blockWidth = widget.blockWidth,
+            trailWidth = widget.trailWidth,
+            reversed = reversed,
+            key = widget.key?.let { "$it-bar" },
+        )
+    }
+
+    private fun createTicker() {
+        ticker = widget.vsync.createTicker { elapsedNanos ->
+            if (!widget.playing) return@createTicker
+            val delta = if (lastElapsedNanos < 0L) 0L else elapsedNanos - lastElapsedNanos
+            lastElapsedNanos = elapsedNanos
+            if (delta <= 0L) return@createTicker
+            advance(delta)
+        }
+    }
+
+    private fun advance(deltaNanos: Long) {
+        val frameNanos = 1_000_000_000L / widget.fps
+        carryNanos += deltaNanos
+        var advanced = false
+        while (carryNanos >= frameNanos) {
+            carryNanos -= frameNanos
+            currentFrame = (currentFrame + 1).floorMod(widget.cycleFrames)
+            advanced = true
+        }
+        if (advanced) {
+            setState { }
+        }
+    }
+
+    private fun syncPlaying() {
+        val activeTicker = ticker ?: return
+        if (widget.playing) {
+            activeTicker.start()
+        } else {
+            activeTicker.stop()
+            lastElapsedNanos = -1L
+        }
+    }
+}
+
+/**
  * 由调用方驱动帧序号的四点加载指示器。
  *
  * 组件不会自己创建 ticker；调用方可通过动画控制器、定时器或测试里的 `pumpFrame`
@@ -1238,6 +1566,15 @@ private fun Int.floorMod(divisor: Int): Int {
     return if (remainder < 0) remainder + divisor else remainder
 }
 
+private fun PixelColor.withAlpha(alpha: Int): PixelColor = PixelColor.fromArgb(
+    a = alpha.coerceIn(0, 255),
+    r = red,
+    g = green,
+    b = blue,
+)
+
+private const val PIXEL_LOADING_DOT_STEP_X = 3
+private const val PIXEL_LOADING_DOT_STEP_Y = 2
 private const val TEXT_CONTAINER_PADDING_PX = 2
 private const val VALUE_ADJUSTER_BORDER_PX = 1
 private const val VALUE_ADJUSTER_DIVIDER_PX = 1

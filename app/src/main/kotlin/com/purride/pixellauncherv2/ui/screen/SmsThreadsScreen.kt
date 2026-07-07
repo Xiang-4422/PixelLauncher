@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.ui.screen
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Alignment
+import com.purride.pixelui.AnimatedPixelLoadingBar
 import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
@@ -26,6 +27,7 @@ import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -55,6 +57,7 @@ private val SMS_PAGE_TABS = listOf("UNREAD", "ALL")
 fun SmsThreadsScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
+    vsync: PixelTickerProvider,
     pagerController: PixelPagerController,
     pagerState: PixelPagerState,
     unreadListState: PixelListState,
@@ -87,6 +90,7 @@ fun SmsThreadsScreen(
                                 buildUnreadMessagesPage(
                                     uiState = uiState,
                                     theme = theme,
+                                    vsync = vsync,
                                     listState = unreadListState,
                                     listController = unreadListController,
                                     onOpenThread = onOpenThread,
@@ -95,6 +99,7 @@ fun SmsThreadsScreen(
                                 buildAllThreadsPage(
                                     uiState = uiState,
                                     theme = theme,
+                                    vsync = vsync,
                                     listState = listState,
                                     listController = listController,
                                     searchController = searchController,
@@ -109,6 +114,7 @@ fun SmsThreadsScreen(
                         buildAllThreadsPage(
                             uiState = uiState,
                             theme = theme,
+                            vsync = vsync,
                             listState = listState,
                             listController = listController,
                             searchController = searchController,
@@ -180,6 +186,7 @@ private fun smsBottomTabs(
 private fun buildUnreadMessagesPage(
     uiState: LauncherUiState,
     theme: LauncherTheme,
+    vsync: PixelTickerProvider,
     listState: PixelListState,
     listController: PixelListController,
     onOpenThread: (conversationKey: String) -> Unit,
@@ -187,7 +194,7 @@ private fun buildUnreadMessagesPage(
 ): Widget {
     val entries = uiState.unreadSmsEntries
     if (uiState.isSmsThreadsLoading && entries.isEmpty()) {
-        return centeredSmsStatus("LOADING", theme)
+        return centeredSmsLoading(theme, vsync)
     }
     if (entries.isEmpty()) {
         return centeredSmsStatus("NO UNREAD MESSAGES", theme)
@@ -206,6 +213,7 @@ private fun buildUnreadMessagesPage(
 private fun buildAllThreadsPage(
     uiState: LauncherUiState,
     theme: LauncherTheme,
+    vsync: PixelTickerProvider,
     listState: PixelListState,
     listController: PixelListController,
     searchController: PixelTextFieldController,
@@ -216,7 +224,7 @@ private fun buildAllThreadsPage(
     val query = uiState.smsThreadSearchQuery
     val searchResults = SmsThreadSearchModel.filter(uiState.smsAllMessages, query)
     val content = when {
-        uiState.isSmsThreadsLoading -> centeredSmsStatus("LOADING", theme)
+        uiState.isSmsThreadsLoading -> centeredSmsLoading(theme, vsync)
         query.isNotBlank() && searchResults.isEmpty() -> centeredSmsStatus("NO MATCH", theme)
         query.isNotBlank() -> ListViewBuilder(
             itemCount = searchResults.size,
@@ -271,6 +279,30 @@ private fun centeredSmsStatus(
     spacing = 0,
     children = listOf(
         smsStatusText(text, theme),
+    ),
+)
+
+private fun centeredSmsLoading(
+    theme: LauncherTheme,
+    vsync: PixelTickerProvider,
+): Widget = Column(
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    mainAxisSize = MainAxisSize.MAX,
+    mainAxisAlignment = com.purride.pixelui.MainAxisAlignment.CENTER,
+    spacing = 0,
+    children = listOf(
+        Padding(
+            horizontal = LauncherSpacing.CONTENT_HORIZONTAL * 2,
+            child = AnimatedPixelLoadingBar(
+                vsync = vsync,
+                color = theme.text.primary,
+                width = 96,
+                height = 9,
+                blockWidth = 9,
+                trailWidth = 5,
+                key = "sms-loading-bar",
+            ),
+        ),
     ),
 )
 

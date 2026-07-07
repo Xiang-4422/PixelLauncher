@@ -780,6 +780,8 @@ com.purride.pixelui public fun ValueAdjuster(
 com.purride.pixelui public fun Stepper(
 com.purride.pixelui public fun ShortcutHint(
 com.purride.pixelui public fun ProgressBar(
+com.purride.pixelui public fun PixelLoadingBar(
+com.purride.pixelui public fun AnimatedPixelLoadingBar(
 com.purride.pixelui public fun ActivityIndicator(
 com.purride.pixelui public fun <T> LoadStateView(
 com.purride.pixelui public fun EmptyState(

@@ -360,6 +360,7 @@ internal class LauncherRootHost(
         LauncherRouteDestination.SMS_THREADS -> SmsThreadsScreen(
             uiState = uiState,
             theme = theme,
+            vsync = routeTickerProvider,
             pagerController = smsPagerController,
             pagerState = smsPagerState,
             unreadListState = unreadListState,
@@ -559,6 +560,7 @@ internal class LauncherRootHost(
     private fun buildDrawerPage(): Widget = DrawerScreen(
         uiState = uiState,
         theme = theme,
+        vsync = routeTickerProvider,
         listState = drawerListState,
         listController = drawerListController,
         onAppPressed = callbacks.onDrawerAppPressed,
