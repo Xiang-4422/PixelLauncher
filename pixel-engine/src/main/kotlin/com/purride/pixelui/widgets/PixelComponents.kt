@@ -16,6 +16,9 @@ import com.purride.pixelui.internal.RenderBox
 import com.purride.pixelui.internal.RenderConstraints
 import com.purride.pixelui.internal.RenderObject
 import com.purride.pixelui.internal.RenderSize
+import kotlin.math.PI
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 public data class PixelIconData(
     val bitmap: PixelBitmap,
@@ -1197,7 +1200,8 @@ private class RenderPixelLoadingBar(
         val forwardX = (travel * normalized).toInt().coerceIn(0, travel)
         val blockLeft = if (reversed) travel - forwardX else forwardX
 
-        paintTrail(
+        val motionFactor = pixelLoadingMotionFactor(normalized)
+        paintElasticTrail(
             context = context,
             offsetX = offsetX,
             offsetY = offsetY,
@@ -1205,6 +1209,7 @@ private class RenderPixelLoadingBar(
             height = height,
             blockLeft = blockLeft,
             blockWidth = safeBlockWidth,
+            motionFactor = motionFactor,
         )
         context.fillRect(offsetX + blockLeft, offsetY, safeBlockWidth, height, color)
     }
@@ -1262,7 +1267,7 @@ private class RenderPixelLoadingBar(
         }
     }
 
-    private fun paintTrail(
+    private fun paintElasticTrail(
         context: PaintContext,
         offsetX: Int,
         offsetY: Int,
@@ -1270,24 +1275,105 @@ private class RenderPixelLoadingBar(
         height: Int,
         blockLeft: Int,
         blockWidth: Int,
+        motionFactor: Float,
     ) {
-        val safeTrailWidth = trailWidth.coerceAtLeast(0)
-        if (safeTrailWidth == 0) return
-        for (distance in 1..safeTrailWidth) {
-            val x = if (reversed) blockLeft + blockWidth - 1 + distance else blockLeft - distance
+        val baseTrailWidth = trailWidth.coerceAtLeast(0)
+        if (baseTrailWidth == 0) return
+        val nearWidth = (
+            baseTrailWidth +
+                (blockWidth * PIXEL_LOADING_NEAR_TRAIL_STRETCH * motionFactor)
+            ).roundToInt().coerceAtLeast(1)
+        val farWidth = (
+            baseTrailWidth * 2 +
+                (blockWidth * PIXEL_LOADING_FAR_TRAIL_STRETCH * motionFactor)
+            ).roundToInt().coerceAtLeast(nearWidth + 1)
+
+        paintSparseWake(
+            context = context,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            width = width,
+            height = height,
+            blockLeft = blockLeft,
+            blockWidth = blockWidth,
+            wakeWidth = farWidth,
+        )
+        paintDenseWake(
+            context = context,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            width = width,
+            height = height,
+            blockLeft = blockLeft,
+            blockWidth = blockWidth,
+            wakeWidth = nearWidth,
+        )
+    }
+
+    private fun paintSparseWake(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+        width: Int,
+        height: Int,
+        blockLeft: Int,
+        blockWidth: Int,
+        wakeWidth: Int,
+    ) {
+        for (distance in 1..wakeWidth) {
+            val x = wakeX(blockLeft, blockWidth, distance)
             if (x !in 0 until width) continue
-            val density = when (distance) {
-                1 -> 2
-                2, 3 -> 3
+            val localProgress = 1f - ((distance - 1).toFloat() / wakeWidth.toFloat())
+            val density = when {
+                localProgress > 0.72f -> 2
+                localProgress > 0.42f -> 3
                 else -> 4
             }
             for (y in 0 until height) {
-                if ((x + y + distance).floorMod(density) != 0) {
+                val rowVisible = if (height <= 3) true else y in 1 until height - 1
+                val clusterVisible = (distance + y * 2).floorMod(density) == 0 ||
+                    (localProgress > 0.58f && (distance + y).floorMod(2) == 0)
+                if (rowVisible && clusterVisible) {
+                    context.buffer.setPixel(offsetX + x, offsetY + y, color)
+                    if (localProgress > 0.55f) {
+                        val nextX = wakeX(blockLeft, blockWidth, distance + 1)
+                        if (nextX in 0 until width) {
+                            context.buffer.setPixel(offsetX + nextX, offsetY + y, color)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun paintDenseWake(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+        width: Int,
+        height: Int,
+        blockLeft: Int,
+        blockWidth: Int,
+        wakeWidth: Int,
+    ) {
+        for (distance in 1..wakeWidth) {
+            val x = wakeX(blockLeft, blockWidth, distance)
+            if (x !in 0 until width) continue
+            for (y in 0 until height) {
+                val isHole = if (height <= 3) {
+                    (distance + y).floorMod(3) == 0
+                } else {
+                    y in 1 until height - 1 && (distance + y).floorMod(3) == 0
+                }
+                if (!isHole) {
                     context.buffer.setPixel(offsetX + x, offsetY + y, color)
                 }
             }
         }
     }
+
+    private fun wakeX(blockLeft: Int, blockWidth: Int, distance: Int): Int =
+        if (reversed) blockLeft + blockWidth - 1 + distance else blockLeft - distance
 }
 
 private data class AnimatedPixelLoadingBarWidget(
@@ -1347,7 +1433,7 @@ private class AnimatedPixelLoadingBarState : State<AnimatedPixelLoadingBarWidget
         val localFrame = if (reversed) frame - halfCycle else frame
         val localSpan = (if (reversed) widget.cycleFrames - halfCycle else halfCycle)
             .coerceAtLeast(1)
-        val progress = localFrame.toFloat() / localSpan.toFloat()
+        val progress = pixelLoadingPositionCurve(localFrame.toFloat() / (localSpan - 1).coerceAtLeast(1).toFloat())
         return PixelLoadingBar(
             progress = progress,
             width = widget.width,
@@ -1573,8 +1659,22 @@ private fun PixelColor.withAlpha(alpha: Int): PixelColor = PixelColor.fromArgb(
     b = blue,
 )
 
+private fun pixelLoadingPositionCurve(t: Float): Float {
+    val x = t.coerceIn(0f, 1f)
+    return x * x * x * (x * (x * 6f - 15f) + 10f)
+}
+
+private fun pixelLoadingMotionFactor(progress: Float): Float {
+    val base = sin(progress.coerceIn(0f, 1f) * PI).toFloat().coerceIn(0f, 1f)
+    return (PIXEL_LOADING_MIN_TRAIL_FACTOR + (1f - PIXEL_LOADING_MIN_TRAIL_FACTOR) * base)
+        .coerceIn(0f, 1f)
+}
+
 private const val PIXEL_LOADING_DOT_STEP_X = 3
 private const val PIXEL_LOADING_DOT_STEP_Y = 2
+private const val PIXEL_LOADING_MIN_TRAIL_FACTOR = 0.18f
+private const val PIXEL_LOADING_NEAR_TRAIL_STRETCH = 0.9f
+private const val PIXEL_LOADING_FAR_TRAIL_STRETCH = 1.8f
 private const val TEXT_CONTAINER_PADDING_PX = 2
 private const val VALUE_ADJUSTER_BORDER_PX = 1
 private const val VALUE_ADJUSTER_DIVIDER_PX = 1

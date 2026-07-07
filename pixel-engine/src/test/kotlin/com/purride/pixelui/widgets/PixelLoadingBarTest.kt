@@ -82,4 +82,42 @@ class PixelLoadingBarTest {
         assertFalse(firstFrame.contentEquals(tester.renderResult!!.buffer.pixels))
         tester.dispose()
     }
+
+    @Test
+    fun loadingBarExpandsDynamicWakeNearMiddleOfTravel() {
+        val tester = PixelTester()
+
+        tester.pumpWidget(
+            widget = PixelLoadingBar(
+                progress = 0f,
+                width = 40,
+                height = 9,
+                color = active,
+                trackColor = track,
+                blockWidth = 7,
+                trailWidth = 4,
+            ),
+            logicalWidth = 40,
+            logicalHeight = 9,
+        )
+        val endpointActivePixels = tester.renderResult!!.buffer.pixels.count { it == active.argb }
+
+        tester.pumpWidget(
+            widget = PixelLoadingBar(
+                progress = 0.5f,
+                width = 40,
+                height = 9,
+                color = active,
+                trackColor = track,
+                blockWidth = 7,
+                trailWidth = 4,
+            ),
+            logicalWidth = 40,
+            logicalHeight = 9,
+        )
+        val middleActivePixels = tester.renderResult!!.buffer.pixels.count { it == active.argb }
+
+        assertFalse(middleActivePixels <= endpointActivePixels)
+        tester.dispose()
+    }
 }
