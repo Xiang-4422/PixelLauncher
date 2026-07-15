@@ -22,17 +22,30 @@ internal class PipelineElementTreeRenderer private constructor(
         }
     }
 
-    fun renderOrNull(request: ElementTreeRenderRequest): PixelRenderResult? {
+    fun renderOrNull(
+        request: ElementTreeRenderRequest,
+        framePhaseSink: PixelFramePhaseSink? = null,
+    ): PixelRenderResult? {
         val renderRoot = request.root.findPipelineRenderRoot() ?: return null
         owner.attachRoot(renderRoot)
         return owner.render(
             logicalWidth = request.logicalWidth,
             logicalHeight = request.logicalHeight,
+            framePhaseSink = framePhaseSink,
         )
     }
 
     override fun render(request: ElementTreeRenderRequest): PixelRenderResult {
         return renderOrNull(request)
+            ?: error("当前 element tree 还不能完整走新渲染管线。")
+    }
+
+    /** Renders one request while emitting phase timings only to an explicitly supplied sink. */
+    fun renderWithDiagnostics(
+        request: ElementTreeRenderRequest,
+        framePhaseSink: PixelFramePhaseSink?,
+    ): PixelRenderResult {
+        return renderOrNull(request = request, framePhaseSink = framePhaseSink)
             ?: error("当前 element tree 还不能完整走新渲染管线。")
     }
 

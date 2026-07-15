@@ -1,3 +1,5 @@
+@file:OptIn(com.purride.pixelui.advanced.PixelExperimentalApi::class)
+
 package com.purride.pixeldemo.showcase
 
 import com.purride.pixelcore.PixelColor
@@ -8,6 +10,10 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PixelDebugOverlay
+import com.purride.pixelui.PixelFrameDropReason
+import com.purride.pixelui.PixelFrameTimings
+import com.purride.pixelui.PixelFrameWorkload
+import com.purride.pixelui.PixelHostFrameDiagnostics
 import com.purride.pixelui.PixelHostFrameStats
 import com.purride.pixelui.PixelInspectorAllocationSample
 import com.purride.pixelui.PixelInspectorBoundsOverlay
@@ -57,7 +63,7 @@ import com.purride.pixeldemo.scaffold.sectionTitle
 object InspectorAdvancedScene : DemoScene {
     override val id = "deep_inspector_advanced"
     override val title = "Inspector 与高级渲染"
-    override val summary = "Debug overlay、Inspector panel、bounds overlay 与自定义 RenderObject"
+    override val summary = "完整帧阶段、Debug overlay、Inspector panel 与自定义 RenderObject"
     override val category = DemoCatalog.debug
     override val tags = setOf("inspector", "debug", "renderobject", "advanced", "hit-test")
     override val apis = setOf(
@@ -66,6 +72,7 @@ object InspectorAdvancedScene : DemoScene {
         "PixelInspectorBoundsOverlay",
         "PixelInspectorSnapshot",
         "PixelInspectorTargetSnapshot",
+        "PixelHostFrameDiagnostics",
         "PixelInspectorTargetKind",
         "PixelInspectorTargetCounts",
         "PixelInspectorAllocationSample",
@@ -396,5 +403,33 @@ private fun demoInspectorSnapshot(): PixelInspectorSnapshot {
         activeSlider = false,
         activeScrollbar = false,
         activeRefresh = false,
+    ).withFrameDiagnostics(
+        PixelHostFrameDiagnostics(
+            frameNumber = 120L,
+            frameIntervalNanos = 16_666_667L,
+            frameBudgetNanos = 16_666_667L,
+            timings = PixelFrameTimings(
+                buildNanos = 210_000L,
+                layoutNanos = 330_000L,
+                paintNanos = 16_640_000L,
+                bufferSubmitNanos = 390_000L,
+                androidDrawNanos = 80_000L,
+                totalFrameNanos = 17_730_000L,
+                unattributedNanos = 80_000L,
+            ),
+            workload = PixelFrameWorkload(
+                dirtyElementCount = 4,
+                dirtyRenderNodeCount = 18,
+                paintedPixelCount = 20_480L,
+                submittedPixelCount = 20_480L,
+                allocatedBytes = 1_024L,
+                garbageCollectionCount = 0L,
+                bufferCacheHitCount = 2L,
+                bufferCacheMissCount = 0L,
+                renderCacheHit = false,
+            ),
+            dropReason = PixelFrameDropReason.PAINT,
+            missedVsyncCount = 1,
+        ),
     )
 }

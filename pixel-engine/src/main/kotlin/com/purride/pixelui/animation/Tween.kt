@@ -7,23 +7,47 @@ import com.purride.pixelui.PixelGradientStop
 import com.purride.pixelui.PixelPoint
 import kotlin.math.roundToInt
 
+/** 表示 `Tween` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
 public data class IntOffset(val x: Int, val y: Int)
 
+/** 定义 `Tween` 的确定性插值过程；相同进度和端点必须得到相同结果。 */
 public abstract class Tween<T>(
-    public val begin: T,
-    public val end: T,
+    begin: T,
+    end: T,
 ) {
+    /** 公开 `Tween` 的 `begin` 配置或运行值。
+ *
+ * Current segment start; implicit-animation widgets may rebase it to a rendered value.
+ */
+    public var begin: T = begin
+
+    /** 公开 `Tween` 的 `end` 配置或运行值。
+ *
+ * Current segment target supplied by the animation consumer.
+ */
+    public var end: T = end
+
+    /** 执行 `Tween` 的 `lerp` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Interpolates this segment at normalized progress [t].
+ */
     public abstract fun lerp(t: Float): T
 
+    /** 执行 `Tween` 的 `evaluate` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Evaluates this segment with the normalized value exposed by [animation].
+ */
     public fun evaluate(animation: Animation<Float>): T = lerp(animation.value)
 }
 
 private fun lerpInt(a: Int, b: Int, t: Float): Int = (a + (b - a) * t).roundToInt()
 
+/** 定义 `Tween` 的确定性插值过程；相同进度和端点必须得到相同结果。 */
 public class IntTween(begin: Int, end: Int) : Tween<Int>(begin, end) {
     override fun lerp(t: Float): Int = lerpInt(begin, end, t)
 }
 
+/** 定义 `Tween` 的确定性插值过程；相同进度和端点必须得到相同结果。 */
 public class EdgeInsetsTween(begin: EdgeInsets, end: EdgeInsets) : Tween<EdgeInsets>(begin, end) {
     override fun lerp(t: Float): EdgeInsets = EdgeInsets(
         left = lerpInt(begin.left, end.left, t),
@@ -33,6 +57,7 @@ public class EdgeInsetsTween(begin: EdgeInsets, end: EdgeInsets) : Tween<EdgeIns
     )
 }
 
+/** 定义 `Tween` 的确定性插值过程；相同进度和端点必须得到相同结果。 */
 public class OffsetTween(begin: IntOffset, end: IntOffset) : Tween<IntOffset>(begin, end) {
     override fun lerp(t: Float): IntOffset = IntOffset(
         x = lerpInt(begin.x, end.x, t),
@@ -40,6 +65,7 @@ public class OffsetTween(begin: IntOffset, end: IntOffset) : Tween<IntOffset>(be
     )
 }
 
+/** 定义 `Tween` 的确定性插值过程；相同进度和端点必须得到相同结果。 */
 public class PixelColorTween(begin: PixelColor, end: PixelColor) : Tween<PixelColor>(begin, end) {
     override fun lerp(t: Float): PixelColor = PixelColor.fromArgb(
         a = lerpInt(begin.alpha, end.alpha, t),
@@ -49,6 +75,7 @@ public class PixelColorTween(begin: PixelColor, end: PixelColor) : Tween<PixelCo
     )
 }
 
+/** 定义 `Tween` 的确定性插值过程；相同进度和端点必须得到相同结果。 */
 public class PixelGradientTween(begin: PixelGradient, end: PixelGradient) : Tween<PixelGradient>(begin, end) {
     init {
         require(begin::class == end::class) {

@@ -20,7 +20,40 @@ public data class PixelInspectorSnapshot(
     val activeSlider: Boolean,
     val activeScrollbar: Boolean,
     val activeRefresh: Boolean,
-)
+) {
+    /** Full-frame diagnostics attached outside the frozen primary constructor for ABI stability. */
+    private var capturedFrameDiagnostics: PixelHostFrameDiagnostics? = null
+
+    /**
+ * 公开 `PixelInspectorSnapshot` 的 `frameDiagnostics` 配置或运行值。
+ *
+     * Latest opt-in full-frame snapshot captured by the inspected Host, if available.
+     *
+     * This additive property is deliberately excluded from generated `copy`, `componentN`, and
+     * equality semantics so the pre-1.0 primary-constructor ABI remains unchanged. Use
+     * [withFrameDiagnostics] when a copied or synthetic Inspector snapshot must retain it.
+     */
+    public val frameDiagnostics: PixelHostFrameDiagnostics?
+        get() = capturedFrameDiagnostics
+
+    /** 执行 `PixelInspectorSnapshot` 的 `withFrameDiagnostics` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns a constructor-compatible copy carrying [frameDiagnostics] for synthetic tooling.
+ */
+    public fun withFrameDiagnostics(
+        frameDiagnostics: PixelHostFrameDiagnostics?,
+    ): PixelInspectorSnapshot {
+        /** Copy preserves the frozen constructor value semantics before attaching additive data. */
+        val snapshot = copy()
+        snapshot.capturedFrameDiagnostics = frameDiagnostics
+        return snapshot
+    }
+
+    /** Attaches Host-owned diagnostics without exposing a mutable public snapshot property. */
+    internal fun attachFrameDiagnostics(frameDiagnostics: PixelHostFrameDiagnostics?) {
+        capturedFrameDiagnostics = frameDiagnostics
+    }
+}
 
 /**
  * Inspector 可展示的命中或语义目标种类。
@@ -51,6 +84,7 @@ public data class PixelInspectorTargetSnapshot @JvmOverloads constructor(
     val elementPath: String? = null,
     val renderPath: String? = null,
 ) {
+    /** 判断 `PixelInspectorSnapshot` 是否满足 `contains` 对应条件，不改变当前状态。 */
     public fun contains(x: Int, y: Int): Boolean {
         return width > 0 &&
             height > 0 &&
@@ -102,7 +136,9 @@ public data class PixelInspectorTargetCounts(
     val slider: Int,
     val semantics: Int,
 ) {
+    /** 集中提供 `PixelInspectorSnapshot` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 提供 `PixelInspectorSnapshot` 的 `Empty` 稳定默认值或常量。 */
         public val Empty: PixelInspectorTargetCounts = PixelInspectorTargetCounts(
             click = 0,
             pager = 0,

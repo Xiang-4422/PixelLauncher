@@ -1,11 +1,15 @@
 package com.purride.pixelui.widgets.animated
 
+import com.purride.pixelui.Text
+import com.purride.pixelui.ValueListenableBuilder
+import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.animation.Curves
 import com.purride.pixelui.animation.IntTween
 import com.purride.pixelui.animation.PixelAnimationController
 import com.purride.pixelui.animation.PixelAnimationStatus
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.ManualFrameScheduler
+import com.purride.pixelui.testing.PixelTester
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -78,6 +82,58 @@ class TweenAnimationBuilderTest {
         val value = tween.lerp(ctrl.value)
         // At t=0.5 with linear curve, value should be ~500
         assertEquals(500, value, 10)
+    }
+
+    /** A changed target starts at the last rendered value instead of the new tween's begin. */
+    @Test
+    fun targetReplacementRebasesTweenWithoutAVisualJump() {
+        // Declarative target drives a fresh Tween instance on every rebuild.
+        val target = ValueNotifier(100)
+        // Tester owns the same virtual frame clock used by the animated widget.
+        val tester = PixelTester()
+        // Last builder value is the exact visual property exposed to the child tree.
+        var renderedValue = Int.MIN_VALUE
+        // Captures the second segment so its rebased begin can be asserted directly.
+        var retargetedTween: IntTween? = null
+        tester.pumpWidget(
+            ValueListenableBuilder(target) { _, end ->
+                val tween = IntTween(begin = 0, end = end)
+                if (end == 200) retargetedTween = tween
+                TweenAnimationBuilder(
+                    tween = tween,
+                    duration = 1_000.milliseconds,
+                    vsync = tester.vsync,
+                    curve = Curves.Linear,
+                    key = "retarget-builder",
+                ) { _, value ->
+                    renderedValue = value
+                    Text(value.toString())
+                }
+            },
+            logicalWidth = 32,
+            logicalHeight = 8,
+        )
+
+        // First frame anchors elapsed time; the next reaches the first segment midpoint.
+        tester.pumpFrame(0)
+        tester.pumpFrame(500)
+        assertEquals(50, renderedValue)
+
+        target.value = 200
+        tester.pumpFrame(0)
+        assertEquals(50, renderedValue)
+        assertEquals(50, checkNotNull(retargetedTween).begin)
+
+        // New segment interpolates 50 -> 200 and reaches its exact target without a jump.
+        tester.pumpFrame(0)
+        tester.pumpFrame(500)
+        assertEquals(125, renderedValue)
+        tester.pumpFrame(500)
+        assertEquals(200, renderedValue)
+        assertEquals(0, tester.vsync.activeTickerCount)
+
+        tester.dispose()
+        assertEquals(0, tester.scheduler.pendingCount)
     }
 
     private fun assertEquals(expected: Int, actual: Int, delta: Int) {

@@ -1,14 +1,39 @@
 site_name: pixel-engine
-docs_dir: docs
+site_description: Android-first 像素 UI 引擎 SDK 1.0 文档
+docs_dir: build/mkdocs-source
 site_dir: build/mkdocs-site
 validation:
   nav:
     omitted_files: ignore
+    not_found: warn
   links:
-    not_found: ignore
-    absolute_links: ignore
-    unrecognized_links: ignore
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: warn
 nav:
-  - 项目总览: 项目总览.md
-  - 设计文档: 设计文档.md
-  - UI 规范: PixelLauncher UI规范.md
+  - SDK 首页: pixel-engine/docs/index.md
+  - 快速开始: pixel-engine/docs/guides/quickstart.md
+  - 接入指南:
+      - Android Host: pixel-engine/docs/guides/host-integration.md
+      - 主题与组件: pixel-engine/docs/guides/theme-and-components.md
+      - 路由与恢复: pixel-engine/docs/guides/navigation.md
+      - 资源与内存: pixel-engine/docs/guides/resources.md
+      - 自定义 RenderObject SPI: pixel-engine/docs/guides/custom-render-spi.md
+      - 测试: pixel-engine/docs/guides/testing.md
+      - 性能: pixel-engine/docs/guides/performance.md
+      - 迁移: pixel-engine/docs/guides/migration.md
+  - API 手册: pixel-engine/docs/使用说明与API手册.md
+  - 架构: pixel-engine/docs/架构与技术实现.md
+  - API 分层与 SPI: pixel-engine/docs/API分层与高级SPI.md
+  - 发布与兼容: pixel-engine/docs/发布与兼容策略.md
+  - 支持矩阵: pixel-engine/docs/support-matrix.md
+  - 发布供应链: pixel-engine/docs/supply-chain.md
+  - 构建来源契约: pixel-engine/docs/build-type-gradle-android.md
+  - 安全修复流程: pixel-engine/docs/security-release-process.md
+  - 1.0 发布清单: pixel-engine/docs/1.0.0发布清单.md
+  - 长期规划: pixel-engine/docs/长期规划.md
+  - 项目文档:
+      - 项目总览: docs/项目总览.md
+      - 设计文档: docs/设计文档.md
+      - UI 规范: docs/PixelLauncher UI规范.md

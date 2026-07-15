@@ -54,6 +54,15 @@ public fun PixelDebugOverlay(
         }
         inspector?.let {
             val targets = it.targetCounts
+            it.frameDiagnostics?.let { diagnostics ->
+                /** Compact exclusive phase summary expressed in microseconds. */
+                val timing = diagnostics.timings
+                add(
+                    "US B${timing.buildNanos / 1_000} L${timing.layoutNanos / 1_000} " +
+                        "P${timing.paintNanos / 1_000} S${timing.bufferSubmitNanos / 1_000}",
+                )
+                add("DROP ${diagnostics.dropReason ?: "NONE"} V${diagnostics.missedVsyncCount}")
+            }
             add("TGT C${targets.click} L${targets.list} P${targets.pager} T${targets.textInput}")
             add("SEM ${targets.semantics} PEND ${if (it.hasPendingBuild) 1 else 0}")
             it.allocationSample?.let { sample ->

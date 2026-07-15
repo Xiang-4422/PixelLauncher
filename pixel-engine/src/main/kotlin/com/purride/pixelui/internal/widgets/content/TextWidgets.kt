@@ -5,6 +5,7 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
+import com.purride.pixelui.HostCapabilities
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
@@ -27,6 +28,9 @@ internal data class TextWidget(
     override val key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
+        /** Host-scaled inherited rasterizer shared by layout and paint. */
+        val defaultRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default)
+            .withHostTextScale(HostCapabilities.of(context).textScaleFactor)
         return RenderText(
             text = data,
             style = resolveStyle(context),
@@ -35,12 +39,15 @@ internal data class TextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
-            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
+            defaultTextRasterizer = defaultRasterizer,
             paddingRight = paddingRight,
         )
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        /** Host-scaled inherited rasterizer refreshed after capability dependency changes. */
+        val defaultRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default)
+            .withHostTextScale(HostCapabilities.of(context).textScaleFactor)
         (renderObject as RenderText).updateText(
             text = data,
             style = resolveStyle(context),
@@ -49,14 +56,19 @@ internal data class TextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
-            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
+            defaultTextRasterizer = defaultRasterizer,
             paddingRight = paddingRight,
         )
     }
 
     private fun resolveStyle(context: BuildContext): PixelTextStyle {
+        /** Complete Host scale read through the inherited dependency boundary. */
+        val textScaleFactor = HostCapabilities.of(context).textScaleFactor
+        /** Theme or explicit style before environment scaling. */
         val themedStyle = if (style == PixelTextStyle.Default) PixelTheme.of(context).textStyle else style
-        return if (color != null) themedStyle.copy(color = color) else themedStyle
+        /** Explicit Text color applied before immutable metric/rasterizer scaling. */
+        val coloredStyle = if (color != null) themedStyle.copy(color = color) else themedStyle
+        return coloredStyle.withHostTextScale(textScaleFactor)
     }
 }
 
@@ -72,6 +84,9 @@ internal data class RichTextWidget(
     override val key: Any? = null,
 ) : RenderObjectWidget(key = key) {
     override fun createRenderObject(context: BuildContext): RenderObject {
+        /** Host-scaled inherited rasterizer shared by every span without an override. */
+        val defaultRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default)
+            .withHostTextScale(HostCapabilities.of(context).textScaleFactor)
         return RenderRichText(
             spans = resolveSpans(context),
             textAlign = textAlign.toPixelTextAlign(),
@@ -79,11 +94,14 @@ internal data class RichTextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
-            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
+            defaultTextRasterizer = defaultRasterizer,
         )
     }
 
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
+        /** Host-scaled inherited rasterizer refreshed after capability dependency changes. */
+        val defaultRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default)
+            .withHostTextScale(HostCapabilities.of(context).textScaleFactor)
         (renderObject as RenderRichText).updateRichText(
             spans = resolveSpans(context),
             textAlign = textAlign.toPixelTextAlign(),
@@ -91,14 +109,19 @@ internal data class RichTextWidget(
             softWrap = softWrap,
             overflow = overflow,
             maxLines = maxLines,
-            defaultTextRasterizer = DefaultTextRasterizer.of(context, fallback = PixelBitmapFont.Default),
+            defaultTextRasterizer = defaultRasterizer,
         )
     }
 
     private fun resolveSpans(context: BuildContext): List<PixelTextSpan> {
+        /** Complete Host scale read through the inherited dependency boundary. */
+        val textScaleFactor = HostCapabilities.of(context).textScaleFactor
+        /** Theme style substituted only for spans using the public default sentinel. */
         val themeStyle = PixelTheme.of(context).textStyle
         return spans.map { span ->
-            if (span.style == PixelTextStyle.Default) span.copy(style = themeStyle) else span
+            /** Concrete span style before Host scaling. */
+            val resolvedStyle = if (span.style == PixelTextStyle.Default) themeStyle else span.style
+            span.copy(style = resolvedStyle.withHostTextScale(textScaleFactor))
         }
     }
 }

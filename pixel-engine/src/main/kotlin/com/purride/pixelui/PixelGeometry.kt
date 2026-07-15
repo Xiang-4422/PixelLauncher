@@ -2,11 +2,13 @@ package com.purride.pixelui
 
 import com.purride.pixelcore.PixelColor
 
+/** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
 public data class PixelPoint(
     val x: Int,
     val y: Int,
 )
 
+/** 表示 `PixelGeometry` 的颜色或渐变模型，插值和采样结果保持确定性。 */
 public data class PixelGradientStop(
     val offset: Float,
     val color: PixelColor,
@@ -17,9 +19,12 @@ public data class PixelGradientStop(
     }
 }
 
+/** 表示 `PixelGeometry` 的颜色或渐变模型，插值和采样结果保持确定性。 */
 public sealed class PixelGradient {
+    /** 保存 `PixelGeometry` 当前的 `stops` 集合；元素顺序和所有权遵守所属类型契约。 */
     public abstract val stops: List<PixelGradientStop>
 
+    /** 定义 `Linear` 在 `PixelGeometry` 中承担的数据或执行职责，并保持公开不变量稳定。 */
     public data class Linear(
         val start: PixelPoint,
         val end: PixelPoint,
@@ -28,6 +33,7 @@ public sealed class PixelGradient {
         internal val sortedStops: List<PixelGradientStop> = normalizeGradientStops(stops)
     }
 
+    /** 定义 `Radial` 在 `PixelGeometry` 中承担的数据或执行职责，并保持公开不变量稳定。 */
     public data class Radial(
         val center: PixelPoint,
         val radius: Int,
@@ -46,27 +52,36 @@ internal fun normalizeGradientStops(stops: List<PixelGradientStop>): List<PixelG
     return stops.sortedBy { it.offset }
 }
 
+/** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
 public sealed class PixelPathCommand {
+    /** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
     public data class MoveTo(val point: PixelPoint) : PixelPathCommand()
+    /** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
     public data class LineTo(val point: PixelPoint) : PixelPathCommand()
+    /** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
     public data class QuadraticTo(
         val control: PixelPoint,
         val end: PixelPoint,
     ) : PixelPathCommand()
 
+    /** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
     public data class CubicTo(
         val control1: PixelPoint,
         val control2: PixelPoint,
         val end: PixelPoint,
     ) : PixelPathCommand()
 
+    /** 集中提供 `PixelGeometry` 共享的工厂、常量或无状态辅助入口。 */
     public data object Close : PixelPathCommand()
 }
 
+/** 表示 `PixelGeometry` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
 public data class PixelPath(
     val commands: List<PixelPathCommand>,
 ) {
+    /** 集中提供 `PixelGeometry` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 按 `rect` 参数创建 `PixelGeometry` 的规范化几何或曲线值。 */
         public fun rect(
             left: Int,
             top: Int,
@@ -87,6 +102,7 @@ public data class PixelPath(
             )
         }
 
+        /** 按 `circle` 参数创建 `PixelGeometry` 的规范化几何或曲线值。 */
         public fun circle(
             centerX: Int,
             centerY: Int,

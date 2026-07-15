@@ -41,7 +41,6 @@ import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Menu
-import com.purride.pixelui.ModalBarrier
 import com.purride.pixelui.Opacity
 import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
@@ -53,11 +52,25 @@ import com.purride.pixelui.PixelIconData
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.PixelMenuItem
+import com.purride.pixelui.PixelOverlayBarrier
+import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayDismissPolicy
+import com.purride.pixelui.PixelOverlayDismissReason
+import com.purride.pixelui.PixelOverlayEntry
+import com.purride.pixelui.PixelOverlayLayer
+import com.purride.pixelui.PixelOverlayLifecycle
+import com.purride.pixelui.PixelOverlayMotion
+import com.purride.pixelui.PixelOverlayOutcome
+import com.purride.pixelui.PixelPopoverAlignment
+import com.purride.pixelui.PixelPopoverPlacement
+import com.purride.pixelui.PixelPopupRoute
+import com.purride.pixelui.PixelSnackbarQueueController
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextOverflow
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelToastQueueController
+import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.Popover
 import com.purride.pixelui.Positioned
@@ -75,6 +88,7 @@ import com.purride.pixelui.ShortcutHint
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slider
 import com.purride.pixelui.Snackbar
+import com.purride.pixelui.SnackbarQueue
 import com.purride.pixelui.Spacer
 import com.purride.pixelui.Stack
 import com.purride.pixelui.State
@@ -87,6 +101,7 @@ import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.TextButton
 import com.purride.pixelui.Toast
 import com.purride.pixelui.ToastQueue
 import com.purride.pixelui.Tooltip
@@ -109,6 +124,8 @@ import com.purride.pixeldemo.scaffold.Pink
 import com.purride.pixeldemo.scaffold.Purple
 import com.purride.pixeldemo.scaffold.Yellow
 import com.purride.pixeldemo.scaffold.samplePanel
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 fun officialComponentScene(
     id: String,
@@ -331,82 +348,576 @@ class StepperOfficialBody(
     }
 }
 
+/**
+ * Interactive Toast/Snackbar FIFO showcase using finite Host active-time dwell periods.
+ *
+ * @param itemTimeout Finite timeout applied independently after each item reaches the queue head.
+ * @param key Optional retained identity supplied by the catalog scene.
+ */
 class ToastQueueOfficialBody(
+    private val itemTimeout: Duration = 6.seconds,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
+    /** Creates the queue owners and monotonic demo batch counters. */
     override fun createState(): State<out StatefulWidget> = ToastQueueOfficialState()
 
+    /** Owns both notification lanes for the complete component-scene lifetime. */
     private class ToastQueueOfficialState : State<ToastQueueOfficialBody>() {
-        private val queue = PixelToastQueueController()
+        /** Toast FIFO retained independently from the bottom Snackbar lane. */
+        private val toastQueue: PixelToastQueueController = PixelToastQueueController()
 
-        override fun initState() {
-            queue.enqueue("QUEUED", textStyle = TextStyle(color = Accent))
-        }
+        /** Snackbar FIFO retaining each action until its item becomes visible. */
+        private val snackbarQueue: PixelSnackbarQueueController = PixelSnackbarQueueController()
 
-        override fun build(context: BuildContext): Widget =
-            Stack(
-                children = listOf(
-                    Container(width = 92, height = 38, borderColor = Muted, child = Center(child = Text("CONTENT", style = TextStyle(color = Muted)))),
-                    ModalBarrier(color = PixelColor.fromArgb(90, 0, 0, 0)),
-                    ToastQueue(controller = queue),
-                ),
-            )
-    }
-}
+        /** Monotonic label source proving two Toast items are appended per interaction. */
+        private var toastBatch: Int = 0
 
-class OverlayControlsOfficialBody(
-    override val key: Any? = null,
-) : StatefulWidget(key = key) {
-    override fun createState(): State<out StatefulWidget> = OverlayControlsOfficialState()
+        /** Monotonic label source proving two Snackbar items are appended per interaction. */
+        private var snackbarBatch: Int = 0
 
-    private class OverlayControlsOfficialState : State<OverlayControlsOfficialBody>() {
-        private var expanded = true
-        private var selected = "A"
+        /** Last explicit queue or Snackbar-action event shown beside the controls. */
+        private var status: String = "READY — EACH ITEM USES ACTIVE-TIME TIMEOUT"
 
+        /** Builds queue controls and the shared non-modal notification presentation lane. */
         override fun build(context: BuildContext): Widget =
             officialBody(
                 listOf(
                     samplePanel(
-                        title = "Popover",
+                        title = "FIFO controls",
                         color = Accent,
-                        child = Popover(
-                            anchor = Text("ANCHOR", style = TextStyle(color = Accent)),
-                            content = Container(padding = EdgeInsets.all(2), fillColor = PixelColor.Black, borderColor = Accent, child = Text("POP", style = TextStyle(color = Accent))),
-                            expanded = true,
-                            contentOffset = IntOffset(0, 10),
+                        child = Column(
+                            children = listOf(
+                                Wrap(
+                                    children = listOf(
+                                        OutlinedButton(
+                                            text = "+2 TOAST",
+                                            onPressed = ::enqueueToastPair,
+                                            borderColor = Accent,
+                                            key = "notification-enqueue-toast-pair",
+                                        ),
+                                        OutlinedButton(
+                                            text = "NEXT TOAST",
+                                            onPressed = ::dismissCurrentToast,
+                                            borderColor = Cyan,
+                                            key = "notification-next-toast",
+                                        ),
+                                        OutlinedButton(
+                                            text = "+2 SNACK",
+                                            onPressed = ::enqueueSnackbarPair,
+                                            borderColor = Green,
+                                            key = "notification-enqueue-snackbar-pair",
+                                        ),
+                                        OutlinedButton(
+                                            text = "NEXT SNACK",
+                                            onPressed = ::dismissCurrentSnackbar,
+                                            borderColor = Pink,
+                                            key = "notification-next-snackbar",
+                                        ),
+                                    ),
+                                    spacing = 2,
+                                    runSpacing = 2,
+                                ),
+                                Text(status, style = TextStyle(color = Muted), key = "notification-status"),
+                                Text(
+                                    "FIFO: SECOND STARTS ONLY AFTER FIRST • PAUSE FREEZES TIME",
+                                    style = TextStyle(color = Muted),
+                                ),
+                            ),
+                            spacing = 2,
+                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
                         ),
                     ),
                     samplePanel(
-                        title = "Menu",
-                        color = Cyan,
-                        child = Menu(
-                            items = listOf(
-                                PixelMenuItem(label = "COPY", shortcut = "A", onSelected = {}),
-                                PixelMenuItem(label = "PASTE", shortcut = "B", onSelected = {}),
+                        title = "Live notification lane",
+                        color = Pink,
+                        child = Container(
+                            width = 96,
+                            height = 42,
+                            borderColor = Muted,
+                            child = Stack(
+                                children = listOf(
+                                    Center(child = Text("NON-MODAL CONTENT", style = TextStyle(color = Muted))),
+                                    ToastQueue(controller = toastQueue, key = "official-toast-queue"),
+                                    Positioned(
+                                        left = 0,
+                                        right = 0,
+                                        bottom = 0,
+                                        child = SnackbarQueue(
+                                            controller = snackbarQueue,
+                                            key = "official-snackbar-queue",
+                                        ),
+                                    ),
+                                ),
                             ),
                         ),
                     ),
+                ),
+            )
+
+        /** Appends two finite-time Toast items in one user action to make FIFO order observable. */
+        private fun enqueueToastPair() {
+            toastBatch += 1
+            /** Human-readable prefix shared by the pair while preserving queue order. */
+            val batchLabel = "TOAST $toastBatch"
+            toastQueue.enqueue(
+                message = "$batchLabel.1",
+                timeout = widget.itemTimeout,
+                textStyle = TextStyle(color = Accent),
+            )
+            toastQueue.enqueue(
+                message = "$batchLabel.2",
+                timeout = widget.itemTimeout,
+                textStyle = TextStyle(color = Cyan),
+            )
+            setState { status = "QUEUED $batchLabel.1 → $batchLabel.2" }
+        }
+
+        /** Appends one actionable Snackbar followed by a second finite-time FIFO item. */
+        private fun enqueueSnackbarPair() {
+            snackbarBatch += 1
+            /** Human-readable prefix shared by the pair while preserving queue order. */
+            val batchLabel = "SNACK $snackbarBatch"
+            snackbarQueue.enqueue(
+                message = "$batchLabel.1",
+                actionLabel = "ACK",
+                onAction = {
+                    setState { status = "ACTION ACK: $batchLabel.1" }
+                },
+                timeout = widget.itemTimeout,
+            )
+            snackbarQueue.enqueue(
+                message = "$batchLabel.2",
+                timeout = widget.itemTimeout,
+            )
+            setState { status = "QUEUED $batchLabel.1 → $batchLabel.2" }
+        }
+
+        /** Manually advances the Toast lane without changing the successor's own timeout. */
+        private fun dismissCurrentToast() {
+            /** Whether a visible or pending Toast was actually removed. */
+            val advanced = toastQueue.dismissCurrent()
+            setState { status = if (advanced) "TOAST ADVANCED" else "TOAST QUEUE EMPTY" }
+        }
+
+        /** Manually advances the Snackbar lane without invoking its optional action. */
+        private fun dismissCurrentSnackbar() {
+            /** Whether a visible or pending Snackbar was actually removed. */
+            val advanced = snackbarQueue.dismissCurrent()
+            setState { status = if (advanced) "SNACKBAR ADVANCED" else "SNACKBAR QUEUE EMPTY" }
+        }
+    }
+}
+
+/**
+ * Unified production-overlay route showcase with typed completion and reasoned dismissal output.
+ *
+ * @param key Optional retained identity supplied by the catalog scene.
+ */
+class ProductionOverlayOfficialBody(
+    override val key: Any? = null,
+) : StatefulWidget(key = key) {
+    /** Creates one retained controller so route identity survives ordinary scene rebuilds. */
+    override fun createState(): State<out StatefulWidget> = ProductionOverlayOfficialState()
+
+    /** Owns route configuration, the active typed entry, and visible outcome history. */
+    private class ProductionOverlayOfficialState : State<ProductionOverlayOfficialBody>() {
+        /** Unified route owner used by the showcase's single PixelOverlayHost. */
+        private val overlayController: PixelOverlayController = PixelOverlayController()
+
+        /** Currently configured paint layer for the next route. */
+        private var selectedLayer: PixelOverlayLayer = PixelOverlayLayer.Modal
+
+        /** Whether the next route consumes Back/barrier taps instead of dismissing. */
+        private var lockedPolicy: Boolean = false
+
+        /** Typed entry retained until its exit presentation has delivered one outcome. */
+        private var activeEntry: PixelOverlayEntry<String>? = null
+
+        /** Latest route lifecycle event rendered outside the modal surface. */
+        private var outcomeText: String = "RESULT: NONE"
+
+        /** Builds route configuration controls under the unified overlay host. */
+        override fun build(context: BuildContext): Widget {
+            /** True while a logical route or its retained exit presentation is still owned here. */
+            val routeBusy = activeEntry?.lifecycle != null &&
+                activeEntry?.lifecycle != PixelOverlayLifecycle.Disposed
+            /** Human-readable next-route policy shown without pretending to fire platform Back. */
+            val policyLabel = if (lockedPolicy) "CONSUME" else "DISMISS"
+            /** Scene content kept under the route so modal isolation is visible during interaction. */
+            val content = samplePanel(
+                title = "Typed PixelPopupRoute",
+                color = Purple,
+                child = Container(
+                    width = 96,
+                    height = 58,
+                    borderColor = Muted,
+                    padding = EdgeInsets.all(2),
+                    child = Column(
+                        children = listOf(
+                            Wrap(
+                                children = listOf(
+                                    OutlinedButton(
+                                        text = "LAYER ${selectedLayer.name.uppercase()}",
+                                        onPressed = if (routeBusy) null else ::toggleLayer,
+                                        enabled = !routeBusy,
+                                        borderColor = Purple,
+                                        key = "overlay-route-layer",
+                                    ),
+                                    OutlinedButton(
+                                        text = "BACK $policyLabel",
+                                        onPressed = if (routeBusy) null else ::togglePolicy,
+                                        enabled = !routeBusy,
+                                        borderColor = Cyan,
+                                        key = "overlay-route-policy",
+                                    ),
+                                    OutlinedButton(
+                                        text = "SHOW ROUTE",
+                                        onPressed = if (routeBusy) null else ::showTypedRoute,
+                                        enabled = !routeBusy,
+                                        borderColor = Accent,
+                                        key = "overlay-route-show",
+                                    ),
+                                    OutlinedButton(
+                                        text = "CLOSE ACTIVE",
+                                        onPressed = if (routeBusy) ::dismissActiveRoute else null,
+                                        enabled = routeBusy,
+                                        borderColor = Pink,
+                                        key = "overlay-route-close",
+                                    ),
+                                ),
+                                spacing = 2,
+                                runSpacing = 2,
+                            ),
+                            Text(
+                                "BARRIER=DIM • BACK/BARRIER=$policyLabel • DEVICE BACK IS REAL INPUT",
+                                style = TextStyle(color = Muted),
+                            ),
+                            Text(outcomeText, style = TextStyle(color = Accent), key = "overlay-route-outcome"),
+                        ),
+                        spacing = 2,
+                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    ),
+                ),
+            )
+            return PixelOverlayHost(
+                controller = overlayController,
+                child = content,
+                key = widget.key?.let { "$it-overlay-host" } ?: "production-overlay-host",
+            )
+        }
+
+        /** Alternates the next route between app-level Modal and topmost System paint layers. */
+        private fun toggleLayer() {
+            setState {
+                selectedLayer = if (selectedLayer == PixelOverlayLayer.Modal) {
+                    PixelOverlayLayer.System
+                } else {
+                    PixelOverlayLayer.Modal
+                }
+            }
+        }
+
+        /** Alternates between dismissible and locked Back/barrier policies for the next route. */
+        private fun togglePolicy() {
+            setState { lockedPolicy = !lockedPolicy }
+        }
+
+        /** Presents one typed modal route whose action, Back, and barrier outcomes stay visible. */
+        private fun showTypedRoute() {
+            if (activeEntry?.lifecycle != null && activeEntry?.lifecycle != PixelOverlayLifecycle.Disposed) return
+            /** Immutable layer snapshot displayed inside the route that owns it. */
+            val routeLayer = selectedLayer
+            /** Immutable dismissal policy snapshot displayed inside the route that owns it. */
+            val routePolicy = if (lockedPolicy) {
+                PixelOverlayDismissPolicy.Locked
+            } else {
+                PixelOverlayDismissPolicy.Dismissible
+            }
+            /** Typed entry assigned immediately after show and captured by its own action buttons. */
+            lateinit var routeEntry: PixelOverlayEntry<String>
+            routeEntry = overlayController.show(
+                PixelPopupRoute(
+                    content = Dialog(
+                        title = Text("TYPED ROUTE", style = TextStyle(color = Accent)),
+                        content = Column(
+                            children = listOf(
+                                Text("LAYER=${routeLayer.name.uppercase()}", style = TextStyle(color = Purple)),
+                                Text(
+                                    if (lockedPolicy) {
+                                        "BACK/BARRIER CONSUME; USE AN ACTION"
+                                    } else {
+                                        "BACK/BARRIER DISMISS WITH A REASON"
+                                    },
+                                    style = TextStyle(color = Muted),
+                                ),
+                            ),
+                            spacing = 2,
+                        ),
+                        actions = listOf(
+                            TextButton(
+                                text = "RETURN YES",
+                                onPressed = { routeEntry.complete("YES") },
+                                key = "overlay-route-complete",
+                            ),
+                            TextButton(
+                                text = "DISMISS",
+                                onPressed = {
+                                    routeEntry.dismiss(PixelOverlayDismissReason.Programmatic)
+                                },
+                                key = "overlay-route-dismiss",
+                            ),
+                        ),
+                        modal = false,
+                    ),
+                    layer = routeLayer,
+                    dismissPolicy = routePolicy,
+                    barrier = PixelOverlayBarrier(color = PixelColor.fromArgb(150, 0, 0, 0)),
+                    modal = true,
+                    motion = PixelOverlayMotion.Dialog,
+                    onOutcome = { outcome ->
+                        activeEntry = null
+                        setState { outcomeText = describeOutcome(outcome) }
+                    },
+                ),
+            )
+            activeEntry = routeEntry
+            setState {
+                outcomeText = "ACTIVE: ${routeLayer.name.uppercase()} / ${if (lockedPolicy) "LOCKED" else "DISMISSIBLE"}"
+            }
+        }
+
+        /** Closes the current route through the explicit reasoned entry API. */
+        private fun dismissActiveRoute() {
+            activeEntry?.dismiss(PixelOverlayDismissReason.Programmatic)
+        }
+
+        /** Formats typed completion or stable dismissal reason for persistent visual evidence. */
+        private fun describeOutcome(outcome: PixelOverlayOutcome<String>): String =
+            when (outcome) {
+                is PixelOverlayOutcome.Completed -> "RESULT: COMPLETED(${outcome.result})"
+                is PixelOverlayOutcome.Dismissed -> "RESULT: DISMISSED(${outcome.reason.name.uppercase()})"
+            }
+    }
+}
+
+/** Controlled overlay kind selected by the official Popover/Menu/Dropdown/Tooltip scene. */
+private enum class OfficialOverlayControl {
+    /** Collision-aware anchored Popover. */
+    Popover,
+
+    /** Menu hosted inside a single owning Popover. */
+    Menu,
+
+    /** Controlled Dropdown and its nested Menu. */
+    Dropdown,
+
+    /** Non-modal informational Tooltip. */
+    Tooltip,
+}
+
+/**
+ * Controlled anchored-overlay showcase that permits at most one expanded presentation at a time.
+ *
+ * @param key Optional retained identity supplied by the catalog scene.
+ */
+class OverlayControlsOfficialBody(
+    override val key: Any? = null,
+) : StatefulWidget(key = key) {
+    /** Creates the single-selection overlay controller state. */
+    override fun createState(): State<out StatefulWidget> = OverlayControlsOfficialState()
+
+    /** Owns the one-active-overlay invariant and structured menu selection. */
+    private class OverlayControlsOfficialState : State<OverlayControlsOfficialBody>() {
+        /** Sole overlay allowed to be logically expanded; null closes every presentation. */
+        private var activeOverlay: OfficialOverlayControl? = null
+
+        /** Current structured value rendered by the controlled Dropdown. */
+        private var selected: String = "A"
+
+        /** Last menu command or explicit close event rendered beside the selector. */
+        private var status: String = "ACTIVE: NONE — OPEN ONE CONTROL"
+
+        /** Builds four controlled anchors backed by one mutually exclusive visibility value. */
+        override fun build(context: BuildContext): Widget =
+            officialBody(
+                listOf(
                     samplePanel(
-                        title = "Dropdown",
+                        title = "One overlay at a time",
+                        color = Purple,
+                        child = Column(
+                            children = listOf(
+                                Text(status, style = TextStyle(color = Muted), key = "overlay-control-status"),
+                                OutlinedButton(
+                                    text = "CLOSE ACTIVE",
+                                    onPressed = if (activeOverlay == null) null else ::closeOverlay,
+                                    enabled = activeOverlay != null,
+                                    borderColor = Purple,
+                                    key = "overlay-control-close",
+                                ),
+                            ),
+                            spacing = 2,
+                            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        ),
+                    ),
+                    samplePanel(
+                        title = "Popover — AUTO flip / CENTER",
+                        color = Accent,
+                        child = Popover(
+                            anchor = OutlinedButton(
+                                text = "OPEN POPOVER",
+                                onPressed = { toggleOverlay(OfficialOverlayControl.Popover) },
+                                borderColor = Accent,
+                                key = "overlay-open-popover",
+                            ),
+                            content = Container(
+                                padding = EdgeInsets.all(2),
+                                fillColor = PixelColor.Black,
+                                borderColor = Accent,
+                                child = Column(
+                                    children = listOf(
+                                        Text("REAL ANCHOR BOUNDS", style = TextStyle(color = Accent)),
+                                        TextButton(
+                                            text = "CLOSE",
+                                            onPressed = ::closeOverlay,
+                                            key = "overlay-popover-close",
+                                        ),
+                                    ),
+                                    spacing = 2,
+                                ),
+                            ),
+                            expanded = activeOverlay == OfficialOverlayControl.Popover,
+                            dismissible = true,
+                            onDismiss = ::closeOverlay,
+                            contentOffset = IntOffset(0, 12),
+                            placement = PixelPopoverPlacement.Auto,
+                            alignment = PixelPopoverAlignment.Center,
+                            key = "official-popover",
+                        ),
+                    ),
+                    samplePanel(
+                        title = "Menu — one modal owner",
+                        color = Cyan,
+                        child = Popover(
+                            anchor = OutlinedButton(
+                                text = "OPEN MENU",
+                                onPressed = { toggleOverlay(OfficialOverlayControl.Menu) },
+                                borderColor = Cyan,
+                                key = "overlay-open-menu",
+                            ),
+                            content = Menu(
+                                items = listOf(
+                                    PixelMenuItem(
+                                        label = "COPY",
+                                        shortcut = "A",
+                                        onSelected = { selectMenuCommand("COPY") },
+                                        key = "overlay-menu-copy",
+                                    ),
+                                    PixelMenuItem(
+                                        label = "PASTE",
+                                        shortcut = "B",
+                                        onSelected = { selectMenuCommand("PASTE") },
+                                        key = "overlay-menu-paste",
+                                    ),
+                                    PixelMenuItem(
+                                        label = "CLOSE",
+                                        onSelected = ::closeOverlay,
+                                        key = "overlay-menu-close",
+                                    ),
+                                ),
+                                onDismissRequest = ::closeOverlay,
+                                modal = false,
+                                key = "official-menu",
+                            ),
+                            expanded = activeOverlay == OfficialOverlayControl.Menu,
+                            dismissible = true,
+                            onDismiss = ::closeOverlay,
+                            contentOffset = IntOffset(0, 12),
+                            placement = PixelPopoverPlacement.Auto,
+                            alignment = PixelPopoverAlignment.Start,
+                            key = "official-menu-popover",
+                        ),
+                    ),
+                    samplePanel(
+                        title = "Dropdown — controlled selection",
                         color = Green,
                         child = Dropdown(
                             label = "MODE",
                             selectedText = selected,
-                            expanded = expanded,
-                            onToggle = { expanded = !expanded; setState {} },
+                            expanded = activeOverlay == OfficialOverlayControl.Dropdown,
+                            onToggle = { toggleOverlay(OfficialOverlayControl.Dropdown) },
                             items = listOf(
-                                PixelMenuItem(label = "A", onSelected = { selected = "A"; expanded = false; setState {} }),
-                                PixelMenuItem(label = "B", onSelected = { selected = "B"; expanded = false; setState {} }),
+                                PixelMenuItem(
+                                    label = "A",
+                                    selected = selected == "A",
+                                    onSelected = { selectDropdownValue("A") },
+                                    key = "overlay-dropdown-a",
+                                ),
+                                PixelMenuItem(
+                                    label = "B",
+                                    selected = selected == "B",
+                                    onSelected = { selectDropdownValue("B") },
+                                    key = "overlay-dropdown-b",
+                                ),
+                                PixelMenuItem(
+                                    label = "CLOSE",
+                                    onSelected = ::closeOverlay,
+                                    key = "overlay-dropdown-close",
+                                ),
                             ),
+                            key = "official-dropdown",
                         ),
                     ),
                     samplePanel(
-                        title = "Tooltip",
+                        title = "Tooltip — non-modal",
                         color = Pink,
-                        child = Tooltip(message = "HELP", visible = true, child = Text("TARGET", style = TextStyle(color = Pink))),
+                        child = Tooltip(
+                            message = "RESIZES WITH THE SAFE VIEWPORT",
+                            visible = activeOverlay == OfficialOverlayControl.Tooltip,
+                            child = OutlinedButton(
+                                text = if (activeOverlay == OfficialOverlayControl.Tooltip) "HIDE TIP" else "SHOW TIP",
+                                onPressed = { toggleOverlay(OfficialOverlayControl.Tooltip) },
+                                borderColor = Pink,
+                                key = "overlay-tooltip-anchor",
+                            ),
+                            key = "official-tooltip",
+                        ),
                     ),
                 ),
             )
+
+        /** Toggles [target] while closing any previously selected overlay in the same rebuild. */
+        private fun toggleOverlay(target: OfficialOverlayControl) {
+            setState {
+                activeOverlay = if (activeOverlay == target) null else target
+                status = activeOverlay?.let { active -> "ACTIVE: ${active.name.uppercase()}" }
+                    ?: "ACTIVE: NONE"
+            }
+        }
+
+        /** Closes the sole active overlay through its explicit controlled callback. */
+        private fun closeOverlay() {
+            setState {
+                activeOverlay = null
+                status = "ACTIVE: NONE — CLOSED"
+            }
+        }
+
+        /** Records a menu command and closes its owning Popover in the same state transition. */
+        private fun selectMenuCommand(command: String) {
+            setState {
+                activeOverlay = null
+                status = "MENU: $command"
+            }
+        }
+
+        /** Applies a structured Dropdown [value] and closes its controlled presentation. */
+        private fun selectDropdownValue(value: String) {
+            setState {
+                selected = value
+                activeOverlay = null
+                status = "DROPDOWN: $value"
+            }
+        }
     }
 }
 

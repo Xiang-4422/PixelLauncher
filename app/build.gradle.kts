@@ -4,16 +4,30 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
-// Optional release signing: drop a gitignored keystore.properties at the repo root
-// (storeFile / storePassword / keyAlias / keyPassword) to produce a signed release
-// build. Without it, release builds stay unsigned and debug / CI are unaffected.
+// 可选正式签名配置文件；缺失时 Release 保持未签名，Debug 与 CI 不受影响。
 val keystorePropertiesFile = rootProject.file("keystore.properties")
+// 签名属性只从被 Git 忽略的本地文件加载，不提供内置凭据。
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
         keystorePropertiesFile.inputStream().use { load(it) }
     }
 }
+// 只有提供 storeFile 时才创建 Release signingConfig。
 val hasReleaseKeystore = keystoreProperties.containsKey("storeFile")
+
+/** 允许备份迁移验收构建高于历史夹具的版本号；普通构建仍保持版本 1。 */
+val pixelAppVersionCode = providers.gradleProperty("pixelAppVersionCode")
+    .map { value -> value.toInt() }
+    .getOrElse(1)
+
+/** 允许备份迁移验收使用独立包名，避免清除日常 debug 应用数据。 */
+val pixelAppDebugApplicationIdSuffix = providers.gradleProperty("pixelAppDebugApplicationIdSuffix")
+    .getOrElse(".debug")
+
+require(pixelAppVersionCode > 0) { "pixelAppVersionCode must be positive." }
+require(pixelAppDebugApplicationIdSuffix.startsWith(".")) {
+    "pixelAppDebugApplicationIdSuffix must start with a dot."
+}
 
 android {
     namespace = "com.purride.pixellauncherv2"
@@ -25,7 +39,7 @@ android {
         applicationId = "com.purride.pixellauncherv2"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
+        versionCode = pixelAppVersionCode
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -48,7 +62,7 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = pixelAppDebugApplicationIdSuffix
             versionNameSuffix = "-debug"
         }
 
@@ -77,7 +91,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":pixel-engine"))
+    // Launcher 直接消费新版最小 Android Host 边界，不再依赖 legacy 聚合 artifact。
+    implementation(project(":pixel-android"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

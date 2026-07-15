@@ -6,9 +6,11 @@ package com.purride.pixelui.internal
  * 当前覆盖 `Row / Column` 的基础主轴排布、交叉轴对齐、spacing 和基础权重分配，
  * 直接服务 retained render object tree。
  */
-internal class RenderFlex(
+public class RenderFlex(
     private var direction: FlexDirection,
     children: List<RenderBox>,
+    /** Whether horizontal visual placement runs opposite declaration and semantics order. */
+    private var reverseChildren: Boolean = false,
     private var spacing: Int = 0,
     private var mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
     private var mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
@@ -32,8 +34,10 @@ internal class RenderFlex(
     /**
      * 更新 flex 布局配置，并触发布局与绘制刷新。
      */
-    fun updateFlex(
+    public fun updateFlex(
         direction: FlexDirection,
+        /** Whether visual placement reverses while retained children remain declaration-ordered. */
+        reverseChildren: Boolean = false,
         spacing: Int = 0,
         mainAxisSize: PixelMainAxisSize = PixelMainAxisSize.MIN,
         mainAxisAlignment: PixelMainAxisAlignment = PixelMainAxisAlignment.START,
@@ -50,6 +54,7 @@ internal class RenderFlex(
     ) {
         if (
             this.direction == direction &&
+            this.reverseChildren == reverseChildren &&
             this.spacing == spacing &&
             this.mainAxisSize == mainAxisSize &&
             this.mainAxisAlignment == mainAxisAlignment &&
@@ -67,6 +72,7 @@ internal class RenderFlex(
             return
         }
         this.direction = direction
+        this.reverseChildren = reverseChildren
         this.spacing = spacing
         this.mainAxisSize = mainAxisSize
         this.mainAxisAlignment = mainAxisAlignment
@@ -214,8 +220,17 @@ internal class RenderFlex(
             childCount = children.size,
         )
 
+        /** Visual traversal indices; render/semantics children themselves remain declaration-ordered. */
+        val visualChildIndices = if (direction == FlexDirection.HORIZONTAL && reverseChildren) {
+            children.indices.reversed()
+        } else {
+            children.indices
+        }
+        /** Main-axis offset assigned to the next child in visual traversal order. */
         var cursor = mainAxisArrangement.start
-        children.forEachIndexed { index, child ->
+        visualChildIndices.forEach { index ->
+            /** Declaration-owned child receiving a possibly reversed visual offset. */
+            val child = children[index]
             val crossOffset = resolveCrossOffset(
                 availableCrossExtent = availableCrossExtent,
                 childCrossExtent = crossExtentOf(child),
@@ -575,10 +590,12 @@ internal class RenderFlex(
 /**
  * 承接 `Expanded / Flexible` parent data 的透明 flex child render object。
  */
-internal class RenderFlexChild(
+public class RenderFlexChild(
     child: RenderBox? = null,
-    var flex: Int,
-    var fit: com.purride.pixelui.FlexFit,
+    /** 记录 `RenderFlex` 的 `flex` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    public var flex: Int,
+    /** 记录 `RenderFlex` 的 `fit` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    public var fit: com.purride.pixelui.FlexFit,
 ) : SingleChildRenderObject() {
     init {
         setRenderObjectChild(child)
@@ -587,7 +604,7 @@ internal class RenderFlexChild(
     /**
      * 更新 flex parent data。
      */
-    fun updateFlexData(
+    public fun updateFlexData(
         flex: Int,
         fit: com.purride.pixelui.FlexFit,
     ) {
@@ -711,8 +728,11 @@ internal class RenderFlexChild(
 /**
  * 最小 flex 方向定义。
  */
-internal enum class FlexDirection {
+public enum class FlexDirection {
+    /** Children occupy one horizontal main axis. */
     HORIZONTAL,
+
+    /** Children occupy one vertical main axis. */
     VERTICAL,
 }
 
@@ -720,7 +740,9 @@ internal enum class FlexDirection {
  * 记录子节点在父 flex 内的绘制偏移。
  */
 private data class ChildOffset(
+    /** Horizontal child origin relative to the flex box. */
     val x: Int = 0,
+    /** Vertical child origin relative to the flex box. */
     val y: Int = 0,
 )
 
@@ -728,6 +750,8 @@ private data class ChildOffset(
  * 主轴排布结果。
  */
 private data class FlexMainAxisArrangement(
+    /** Leading free-space offset before the first visually placed child. */
     val start: Int,
+    /** Fixed or distributed spacing following each visually placed child. */
     val spacingAfterChild: Int,
 )

@@ -1,12 +1,10 @@
 package com.purride.pixelui.host
 
-import android.view.Choreographer
-
 /**
  * 帧调度抽象。
  *
- * pixel-engine 默认依赖 Android `View` 的 `postInvalidateOnAnimation` 触发重绘
- * （间接走 [Choreographer]），但有以下场景需要更细粒度的帧时机控制：
+ * pixel-engine 的 Android Host 默认依赖 `Choreographer` 触发重绘，runtime 只保留本协议，
+ * 避免只使用 runtime 的消费者被迫引入 Android UI 实现。以下场景需要更细粒度的帧时机控制：
  *
  * - **动画引擎**：业务侧实现自定义动画驱动时，需要知道下一帧的精确时间戳
  *   （`frameTimeNanos`）来推进物理或时间曲线；
@@ -28,25 +26,49 @@ public interface PixelFrameScheduler {
      */
     public fun scheduleFrame(callback: (frameTimeNanos: Long) -> Unit)
 
+    /** 集中提供 `PixelFrameScheduler` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /**
-         * 默认实现，走 Android [Choreographer.postFrameCallback]。
+         * 解析由 `pixel-android` 提供的默认帧调度器。
+         *
+         * 未安装 Android 适配 artifact 时访问该属性会明确失败；测试和非 Android 宿主应注入
+         * [ManualFrameScheduler] 或自定义实现。通过类名解析是为了保留已经冻结的 `Default`
+         * JVM 描述符，同时消除 runtime 到 Android artifact 的编译依赖。
          */
         public val Default: PixelFrameScheduler
-            get() = ChoreographerFrameScheduler
+            get() = PixelAndroidFrameSchedulerResolver.resolve()
     }
 }
 
 /**
- * 默认 Android 帧调度器。
+ * 兼容旧 `PixelFrameScheduler.Default` 描述符的 Android 实现解析器。
  *
- * 直接委托给 [Choreographer.getInstance].[postFrameCallback]——与 Android
- * 主帧节拍同步，自动适配 60/90/120Hz 屏。
+ * 解析只发生在显式读取默认值时；runtime 本身不静态引用 Android 类。
  */
-internal object ChoreographerFrameScheduler : PixelFrameScheduler {
-    override fun scheduleFrame(callback: (Long) -> Unit) {
-        Choreographer.getInstance().postFrameCallback { frameTimeNanos ->
-            callback(frameTimeNanos)
+private object PixelAndroidFrameSchedulerResolver {
+    /** `pixel-android` 中默认实现的稳定二进制类名。 */
+    private const val ANDROID_SCHEDULER_CLASS_NAME: String =
+        "com.purride.pixelui.host.ChoreographerFrameScheduler"
+
+    /**
+     * 返回 Android artifact 的单例调度器；缺少适配 artifact 时给出可操作的错误信息。
+     */
+    fun resolve(): PixelFrameScheduler {
+        try {
+            /** 反射类只在默认调度器被请求时加载，纯 runtime 消费者不会触发 Android 类解析。 */
+            val schedulerClass: Class<*> = Class.forName(ANDROID_SCHEDULER_CLASS_NAME)
+            /** Kotlin object 的 `INSTANCE` 字段保存唯一 Android 调度器实例。 */
+            val schedulerInstance: Any? = schedulerClass.getField("INSTANCE").get(null)
+            return schedulerInstance as? PixelFrameScheduler
+                ?: throw IllegalStateException(
+                    "$ANDROID_SCHEDULER_CLASS_NAME does not implement PixelFrameScheduler",
+                )
+        } catch (error: ReflectiveOperationException) {
+            throw IllegalStateException(
+                "PixelFrameScheduler.Default requires the pixel-android artifact; " +
+                    "inject a scheduler when running pixel-runtime without Android Host support.",
+                error,
+            )
         }
     }
 }
@@ -65,11 +87,22 @@ internal object ChoreographerFrameScheduler : PixelFrameScheduler {
  * // 此时 scheduleFrame 注册的所有回调按序执行
  * ```
  */
-public class ManualFrameScheduler : PixelFrameScheduler {
-    private val pending = ArrayDeque<(Long) -> Unit>()
+public class ManualFrameScheduler : PixelCancellableFrameScheduler {
+    /** Pending registrations retained in FIFO order. */
+    private val pending: ArrayDeque<ManualFrameCallbackRegistration> = ArrayDeque()
 
+    /** Preserves the historical fire-and-forget scheduling entry point. */
     override fun scheduleFrame(callback: (Long) -> Unit) {
-        pending.addLast(callback)
+        scheduleCancellableFrame(callback)
+    }
+
+    /** Adds one physically removable callback to the manual FIFO queue. */
+    override fun scheduleCancellableFrame(
+        callback: (Long) -> Unit,
+    ): PixelFrameCallbackRegistration {
+        val registration = ManualFrameCallbackRegistration(callback)
+        pending.addLast(registration)
+        return registration
     }
 
     /**
@@ -78,22 +111,55 @@ public class ManualFrameScheduler : PixelFrameScheduler {
      * 回调内新注册的帧回调不会在本次触发，需要再调一次 advanceFrame（与真实 Choreographer 行为一致）。
      */
     public fun advanceFrame(frameTimeNanos: Long) {
-        val toFire = pending.toList()
+        val toFire: List<ManualFrameCallbackRegistration> = pending.toList()
         pending.clear()
-        for (callback in toFire) {
-            callback(frameTimeNanos)
+        for (registration in toFire) {
+            registration.dispatch(frameTimeNanos)
         }
     }
 
     /**
      * 当前等待触发的回调数量。
      */
-    public val pendingCount: Int get() = pending.size
+    public val pendingCount: Int
+        get() = pending.size
 
     /**
      * 清空待触发队列，丢弃所有已注册的回调。
      */
     public fun clear() {
+        val registrations: List<ManualFrameCallbackRegistration> = pending.toList()
         pending.clear()
+        registrations.forEach(ManualFrameCallbackRegistration::cancelAfterRemoval)
+    }
+
+    /** One physically removable callback owned by this manual scheduler. */
+    private inner class ManualFrameCallbackRegistration(
+        /** Consumer callback delivered at most once. */
+        private val callback: (Long) -> Unit,
+    ) : PixelFrameCallbackRegistration {
+        /** Whether this callback remains queued or eligible in the current dispatch snapshot. */
+        override var isPending: Boolean = true
+            private set
+
+        /** Removes this callback from the pending queue when it has not fired. */
+        override fun cancel(): Boolean {
+            if (!isPending) return false
+            isPending = false
+            pending.remove(this)
+            return true
+        }
+
+        /** Marks a callback cancelled after its queue has already been cleared in bulk. */
+        fun cancelAfterRemoval() {
+            isPending = false
+        }
+
+        /** Claims and delivers one callback from an [advanceFrame] snapshot. */
+        fun dispatch(frameTimeNanos: Long) {
+            if (!isPending) return
+            isPending = false
+            callback(frameTimeNanos)
+        }
     }
 }

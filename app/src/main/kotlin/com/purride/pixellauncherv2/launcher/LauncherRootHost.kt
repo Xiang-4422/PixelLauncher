@@ -15,25 +15,26 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageController
 import com.purride.pixelui.PageView
+import com.purride.pixelui.PixelCapabilityResult
+import com.purride.pixelui.PixelHapticType
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelNavigatorState
-import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.PixelRouteDestination
+import com.purride.pixelui.PixelRouteRequest
 import com.purride.pixelui.PixelRouteTransition
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.Widget
-import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.createPixelHostSetup
-import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixelui.jumpToEnd
 import com.purride.pixelui.jumpToPage
+import com.purride.pixelui.pixelRouteDestination
 import com.purride.pixelui.showItem
-import com.purride.pixellauncherv2.ui.screen.AiSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
@@ -77,9 +78,27 @@ internal class LauncherRootHost(
     private var chargeTick: Int = 0
     private var screenProfile: ScreenProfile = ScreenProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
     private val textRasterizers = LauncherTextRasterizers(context)
-    private val frameScheduler = PixelFrameScheduler.Default
-    private val routeTickerProvider = PixelTickerProvider(frameScheduler)
+    /** Launcher 唯一的 Android Host View。 */
     private val hostView = PixelHostView(context)
+    /** 与当前 Host 一一对应的新版 Engine 实例。 */
+    private val engine = LauncherPixelEngineFactory.create(hostView = hostView)
+
+    /** 已显式绑定 Engine、输入桥和根内容的标准 Android Host 装配。 */
+    val setup: PixelHostSetup = createPixelHostSetup(
+        context = context,
+        engine = engine,
+        hostView = hostView,
+        config = PixelHostSetupConfig(
+            textRasterizer = textRasterizers.getRasterizer(
+                PixelFontCatalog.defaultUiFontSize,
+            ),
+            content = { buildRoot() },
+        ),
+    )
+
+    /** Engine 绑定完成后取得的 Host 私有 ticker provider。 */
+    private val routeTickerProvider = setup.hostView.tickerProvider
+    /** 管理像素物质特效生命周期与帧提交的控制器。 */
     private val pixelMatterController = PixelMatterController(
         vsync = routeTickerProvider,
         onFrame = { hostView.postInvalidateOnAnimation() },
@@ -92,8 +111,12 @@ internal class LauncherRootHost(
             onPixelMatterEffectClear()
         },
     )
+    /** 当前 Widget 树中的 typed Navigator 状态。 */
     private var navigatorState: PixelNavigatorState? = null
+    /** 当前业务状态映射到的目的地。 */
     private var navigatorDestination: LauncherRouteDestination? = null
+    /** 标记 Host 是否已经执行终态释放，确保 dispose 恰好一次。 */
+    private var isDisposed: Boolean = false
 
     // ── Main pager: HOME=0, APP_DRAWER=1, SETTINGS=2 ─────────────────────────
     private val mainPagerController = PageController()
@@ -127,24 +150,39 @@ internal class LauncherRootHost(
     private val appAliasController = TextEditingController()
     private val appAliasState = appAliasController.create()
 
-    // ── AI settings field ───────────────────────────────────────────────────
-    private val deepSeekApiKeyController = TextEditingController()
-    private val deepSeekApiKeyState = deepSeekApiKeyController.create()
+    /** 每个业务目的地对应的可复用 typed route 定义。 */
+    private val routeDestinations: Map<LauncherRouteDestination, PixelRouteDestination<LauncherRouteArguments, Unit>> =
+        LauncherRouteDestination.entries.associateWith { destination ->
+            pixelRouteDestination<LauncherRouteArguments, Unit>(
+                id = destination.routeName,
+                maintainState = true,
+                transition = transitionFor(destination),
+            ) { context, scope ->
+                require(scope.arguments.destination == destination) {
+                    "Launcher route arguments do not match destination ${destination.routeName}."
+                }
+                navigatorState = PixelNavigator.of(context)
+                buildDestination(destination)
+            }
+        }
 
-    val setup: PixelHostSetup = createPixelHostSetup(
-        context = context,
-        hostView = hostView,
-        config = PixelHostSetupConfig(
-            textRasterizer = textRasterizers.getRasterizer(
-                PixelFontCatalog.defaultUiFontSize,
-            ),
-            frameScheduler = frameScheduler,
-            content = { buildRoot() },
-        ),
-    )
-
+    /** Activity 挂载的完整 Launcher 根容器。 */
     val rootView: FrameLayout
         get() = setup.rootView
+
+    /** 通过 Engine 的聚焦 Host capability 执行语义化震动。 */
+    fun performHapticFeedback(type: PixelHapticType): PixelCapabilityResult {
+        return engine.services.hostServices.performHapticFeedback(type)
+    }
+
+    /** 终态释放特效、typed route entry、输入桥和 retained runtime。 */
+    fun dispose() {
+        if (isDisposed) return
+        isDisposed = true
+        pixelMatterController.clear()
+        setup.dispose()
+        navigatorState = null
+    }
 
     /**
      * 每帧调用。更新内部状态并触发重绘。
@@ -236,9 +274,6 @@ internal class LauncherRootHost(
         // ── Sync app editor fields ────────────────────────────────────────────
         syncAppEditorState()
 
-        // ── Sync AI settings field ────────────────────────────────────────────
-        syncAiSettingsState()
-
         setup.hostView.invalidate()
     }
 
@@ -261,8 +296,8 @@ internal class LauncherRootHost(
             children = listOf(
                 buildGlobalStatusBar(),
                 Expanded(
-                    child = PixelNavigator(
-                        initialRoute = routeFor(initialDestination),
+                    child = PixelNavigator.typed(
+                        initialRequest = routeRequestFor(initialDestination),
                         vsync = routeTickerProvider,
                         transitionDuration = ROUTE_TRANSITION_DURATION_MS.milliseconds,
                         defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -343,14 +378,19 @@ internal class LauncherRootHost(
         }
     }
 
-    private fun routeFor(destination: LauncherRouteDestination): PixelRoute = PixelRoute(
-        name = destination.routeName,
-        transition = transitionFor(destination),
-        builder = { context ->
-            navigatorState = PixelNavigator.of(context)
-            buildDestination(destination)
-        },
-    )
+    /** 为一次具体导航操作创建独立 typed entry 请求。 */
+    private fun routeRequestFor(
+        destination: LauncherRouteDestination,
+    ): PixelRouteRequest<LauncherRouteArguments, Unit> {
+        /** 与当前目的地一一对应的可复用定义。 */
+        val routeDestination = checkNotNull(routeDestinations[destination]) {
+            "Missing typed route destination for ${destination.routeName}."
+        }
+        return PixelRouteRequest(
+            destination = routeDestination,
+            arguments = LauncherRouteArguments(destination = destination),
+        )
+    }
 
     private fun buildDestination(destination: LauncherRouteDestination): Widget = when (destination) {
         LauncherRouteDestination.MAIN -> buildMainPager()
@@ -402,13 +442,6 @@ internal class LauncherRootHost(
             theme = theme,
             onSourcePressed = callbacks.onNotificationSourcePressed,
         )
-        LauncherRouteDestination.AI_SETTINGS -> AiSettingsScreen(
-            uiState = uiState,
-            theme = theme,
-            apiKeyController = deepSeekApiKeyController,
-            apiKeyState = deepSeekApiKeyState,
-            onDeepSeekApiKeyChanged = callbacks.onDeepSeekApiKeyChanged,
-        )
         LauncherRouteDestination.LOADING_PREVIEW -> LoadingPreviewScreen(
             theme = theme,
             screenProfile = screenProfile,
@@ -440,12 +473,15 @@ internal class LauncherRootHost(
         if (navigatorDestination == destination) return
         navigatorDestination = destination
         val navigator = navigatorState ?: return
-        when (navigationAction(navigator.stack.map { route -> route.name }, destination)) {
+        when (navigationAction(navigator.entries.map { entry -> entry.destination.id }, destination)) {
             LauncherRouteNavigationAction.NONE -> Unit
-            LauncherRouteNavigationAction.PUSH -> navigator.push(routeFor(destination))
+            LauncherRouteNavigationAction.PUSH -> navigator.push(routeRequestFor(destination))
             LauncherRouteNavigationAction.POP -> navigator.pop()
             LauncherRouteNavigationAction.POP_TO_ROOT -> navigator.popToRoot()
-            LauncherRouteNavigationAction.REPLACE -> navigator.replace(routeFor(destination), animated = true)
+            LauncherRouteNavigationAction.REPLACE -> navigator.replace(
+                request = routeRequestFor(destination),
+                animated = true,
+            )
         }
     }
 
@@ -642,16 +678,6 @@ internal class LauncherRootHost(
         }
     }
 
-    private fun syncAiSettingsState() {
-        if (deepSeekApiKeyState.text != uiState.deepSeekApiKey) {
-            deepSeekApiKeyController.updateText(
-                state = deepSeekApiKeyState,
-                text = uiState.deepSeekApiKey,
-                selectionStart = uiState.deepSeekApiKey.length,
-            )
-        }
-    }
-
     /** 计算当前应显示的 APP 列表（等同于 MainActivity.currentDrawerApps()）。 */
     // ── Companion ─────────────────────────────────────────────────────────────
 
@@ -678,7 +704,6 @@ internal class LauncherRootHost(
             LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
-            LauncherMode.AI_SETTINGS -> LauncherRouteDestination.AI_SETTINGS
             LauncherMode.LOADING_PREVIEW -> LauncherRouteDestination.LOADING_PREVIEW
             LauncherMode.DIAGNOSTICS -> LauncherRouteDestination.DIAGNOSTICS
             LauncherMode.IDLE -> LauncherRouteDestination.IDLE
@@ -694,7 +719,6 @@ internal class LauncherRootHost(
             LauncherRouteDestination.APP_MANAGEMENT,
             LauncherRouteDestination.DATA_HEALTH,
             LauncherRouteDestination.NOTIFICATION_SETTINGS,
-            LauncherRouteDestination.AI_SETTINGS,
             LauncherRouteDestination.LOADING_PREVIEW,
             LauncherRouteDestination.DIAGNOSTICS,
             LauncherRouteDestination.IDLE,
@@ -702,20 +726,20 @@ internal class LauncherRootHost(
         }
 
         internal fun navigationAction(
-            currentRouteNames: List<String>,
+            currentDestinationIds: List<String>,
             destination: LauncherRouteDestination,
         ): LauncherRouteNavigationAction {
             val target = destination.routeName
-            if (currentRouteNames.lastOrNull() == target) {
+            if (currentDestinationIds.lastOrNull() == target) {
                 return LauncherRouteNavigationAction.NONE
             }
-            if (destination == LauncherRouteDestination.MAIN && currentRouteNames.size > 1) {
+            if (destination == LauncherRouteDestination.MAIN && currentDestinationIds.size > 1) {
                 return LauncherRouteNavigationAction.POP_TO_ROOT
             }
-            if (currentRouteNames.dropLast(1).lastOrNull() == target) {
+            if (currentDestinationIds.dropLast(1).lastOrNull() == target) {
                 return LauncherRouteNavigationAction.POP
             }
-            return if (currentRouteNames.isNotEmpty()) {
+            return if (currentDestinationIds.isNotEmpty()) {
                 LauncherRouteNavigationAction.PUSH
             } else {
                 LauncherRouteNavigationAction.REPLACE
@@ -727,6 +751,13 @@ internal class LauncherRootHost(
     }
 }
 
+/** Launcher typed Navigator 使用的封闭业务参数。 */
+internal data class LauncherRouteArguments(
+    /** 当前 entry 应构建的业务目的地。 */
+    val destination: LauncherRouteDestination,
+)
+
+/** Launcher 根据外部状态同步 typed route 栈时使用的操作。 */
 internal enum class LauncherRouteNavigationAction {
     NONE,
     PUSH,
@@ -735,7 +766,9 @@ internal enum class LauncherRouteNavigationAction {
     REPLACE,
 }
 
+/** Launcher 可进入的稳定 typed route 目的地集合。 */
 internal enum class LauncherRouteDestination(
+    /** 持久稳定、用于 entry 诊断和栈比较的目的地 ID。 */
     val routeName: String,
 ) {
     MAIN("main"),
@@ -745,7 +778,6 @@ internal enum class LauncherRouteDestination(
     APP_MANAGEMENT("app-management"),
     DATA_HEALTH("data-health"),
     NOTIFICATION_SETTINGS("notification-settings"),
-    AI_SETTINGS("ai-settings"),
     LOADING_PREVIEW("loading-preview"),
     DIAGNOSTICS("diagnostics"),
     IDLE("idle"),

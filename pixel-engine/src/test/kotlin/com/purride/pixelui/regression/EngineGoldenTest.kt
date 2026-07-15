@@ -67,7 +67,6 @@ import com.purride.pixelui.internal.PixelUiRuntime
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelRefreshIndicatorController
 import com.purride.pixelui.state.PixelTextFieldState
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -79,7 +78,7 @@ import java.io.File
  *
  * 当后续重构（Phase 1+）发生时，若任一像素发生变化都会立刻失败，作为视觉回归探测器。
  *
- * 重新生成基线：设置环境变量 REGEN_GOLDEN=1 再跑该测试，会覆盖磁盘上的 golden 文件。
+ * 失败时只在 `build/reports/golden/engine` 生成候选和差异；基线必须经人工审阅后显式修改。
  */
 class EngineGoldenTest {
 
@@ -573,34 +572,23 @@ class EngineGoldenTest {
      */
     @Test
     fun renderAllScenesMatchGolden() {
-        val regen = System.getenv("REGEN_GOLDEN") == "1"
+        /** 已审阅源码基线所在目录。 */
         val goldenDir = File(GOLDEN_DIR_PATH)
-        if (regen) {
-            goldenDir.mkdirs()
-        }
+        /** 收集全部场景差异，避免第一次失败掩盖后续场景。 */
         val failures = mutableListOf<String>()
         scenes.forEach { scene ->
+            /** 当前场景渲染出的确定性 ASCII 像素。 */
             val actual = renderToAscii(scene)
+            /** 当前场景只读的源码基线。 */
             val goldenFile = File(goldenDir, "${scene.name}.txt")
-            if (regen) {
-                goldenFile.writeText(actual)
-                return@forEach
-            }
-            assertTrue(
-                "缺少 golden 文件 ${goldenFile.absolutePath}，请先以 REGEN_GOLDEN=1 跑一次生成基线。",
-                goldenFile.exists(),
+            /** 候选和 diff 固定写入 build 报告目录。 */
+            val comparison = ReviewedGoldenVerifier.compare(
+                baselineFile = goldenFile,
+                actual = actual,
+                reportStem = File(GOLDEN_REPORT_DIR_PATH, scene.name),
             )
-            val expected = goldenFile.readText()
-            if (expected != actual) {
-                failures += buildString {
-                    append("scene='").append(scene.name).append("' 像素与 golden 不一致。\n")
-                    append("--- expected (")
-                    append(goldenFile.name)
-                    append(") ---\n")
-                    append(expected)
-                    append("\n--- actual ---\n")
-                    append(actual)
-                }
+            if (!comparison.matches) {
+                failures += "scene='${scene.name}': ${comparison.failureMessage}"
             }
         }
         if (failures.isNotEmpty()) {
@@ -681,5 +669,8 @@ class EngineGoldenTest {
          * Gradle 默认以模块目录作为单元测试工作目录，所以这个相对路径同时适用于 R/W。
          */
         private const val GOLDEN_DIR_PATH = "src/test/resources/golden"
+
+        /** ordinary tests 只能写入的候选和差异报告目录。 */
+        private const val GOLDEN_REPORT_DIR_PATH = "build/reports/golden/engine"
     }
 }

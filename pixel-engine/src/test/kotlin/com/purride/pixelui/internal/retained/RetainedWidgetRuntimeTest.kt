@@ -25,7 +25,10 @@ import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.Widget
 import com.purride.pixelui.dependOnInheritedWidgetOfExactType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RetainedWidgetRuntimeTest {
@@ -599,6 +602,70 @@ class RetainedWidgetRuntimeTest {
         }
     }
 
+    /** Throwing State disposal still detaches every sibling and commits the empty child slot. */
+    @Test
+    fun teardownFailureDetachesAllSiblingStatesAndLeavesBuildOwnerReusable() {
+        /** Runtime under test exposes retained-tree and dirty-queue diagnostics after failure. */
+        val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
+            onVisualUpdate = { },
+            widgetAdapter = UnsupportedWidgetAdapter,
+        )
+        /** Exact sibling disposal order proving teardown did not stop at the first exception. */
+        val disposalOrder = mutableListOf<String>()
+        /** Every created State retained only so terminal mounted flags can be asserted. */
+        val createdStates = mutableListOf<ThrowingDisposeState>()
+        /** Stable root configuration reused to remove all children in one retained update. */
+        fun root(children: List<Widget>): Widget = TestMultiChildRenderWidget(
+            label = "teardown-root",
+            children = children,
+        )
+        /** Creates one keyed sibling whose terminal callback may deliberately fail. */
+        fun sibling(label: String, throwsOnDispose: Boolean): Widget = ThrowingDisposeWidget(
+            label = label,
+            throwsOnDispose = throwsOnDispose,
+            disposalOrder = disposalOrder,
+            createdStates = createdStates,
+            key = label,
+        )
+
+        try {
+            buildRuntime.resolveElementTree(
+                root(
+                    listOf(
+                        sibling(label = "first", throwsOnDispose = true),
+                        sibling(label = "second", throwsOnDispose = false),
+                        sibling(label = "third", throwsOnDispose = true),
+                    ),
+                ),
+            )
+
+            /** Primary error rethrown only after the multi-child mutation has fully committed. */
+            val failure = assertThrows(IllegalStateException::class.java) {
+                buildRuntime.resolveElementTree(root(emptyList()))
+            }
+
+            assertEquals("dispose:first", failure.message)
+            assertEquals(listOf("dispose:third"), failure.suppressed.map { error -> error.message })
+            assertEquals(listOf("first", "second", "third"), disposalOrder)
+            assertTrue(createdStates.all { state -> !state.mounted })
+            /** Owner snapshot after the caught exception must contain only the reusable root. */
+            val diagnosticsAfterFailure = buildRuntime.collectDiagnostics()
+            assertEquals(1, diagnosticsAfterFailure.elementDiagnostics.size)
+            assertEquals(0, diagnosticsAfterFailure.dirtyQueueDiagnostics.pendingElementCount)
+
+            /** A later replacement proves no stale slot or deferred owner failure is retained. */
+            buildRuntime.resolveElementTree(
+                root(listOf(sibling(label = "replacement", throwsOnDispose = false))),
+            )
+            assertEquals(3, createdStates.count { state -> !state.mounted })
+            assertTrue(createdStates.last().mounted)
+            assertEquals(0, buildRuntime.collectDiagnostics().dirtyQueueDiagnostics.pendingElementCount)
+        } finally {
+            buildRuntime.dispose()
+        }
+        assertFalse(createdStates.last().mounted)
+    }
+
     private class ToggleToneWidget : StatefulWidget() {
         override fun createState(): State<out StatefulWidget> = ToggleToneState()
     }
@@ -652,6 +719,39 @@ class RetainedWidgetRuntimeTest {
                 fillColor = PixelColor.White,
                 borderColor = null,
             )
+        }
+    }
+
+    /** Stateful sibling fixture whose user disposal callback can fail on demand. */
+    private class ThrowingDisposeWidget(
+        /** Stable label identifying this fixture in callback order and error messages. */
+        val label: String,
+        /** Whether this fixture throws after recording its disposal. */
+        val throwsOnDispose: Boolean,
+        /** Shared callback-order sink owned by the test. */
+        val disposalOrder: MutableList<String>,
+        /** Shared State sink used to verify terminal detachment. */
+        val createdStates: MutableList<ThrowingDisposeState>,
+        /** Stable sibling key preventing reconciliation from migrating State. */
+        override val key: Any,
+    ) : StatefulWidget(key = key) {
+        /** Creates and exposes the exact State paired with this keyed fixture. */
+        override fun createState(): State<out StatefulWidget> {
+            return ThrowingDisposeState().also(createdStates::add)
+        }
+    }
+
+    /** Records terminal order and optionally throws from the public State callback. */
+    private class ThrowingDisposeState : State<ThrowingDisposeWidget>() {
+        /** Builds a concrete render leaf so descendant render teardown is also exercised. */
+        override fun build(context: BuildContext): Widget {
+            return TestRenderWidget(label = "state:${widget.label}")
+        }
+
+        /** Records disposal before raising the configured deterministic failure. */
+        override fun dispose() {
+            widget.disposalOrder += widget.label
+            if (widget.throwsOnDispose) error("dispose:${widget.label}")
         }
     }
 

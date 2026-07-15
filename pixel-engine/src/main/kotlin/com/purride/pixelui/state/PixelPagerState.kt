@@ -3,6 +3,7 @@ package com.purride.pixelui.state
 import android.os.Bundle
 import com.purride.pixelcore.AxisMotionState
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelui.internal.PixelArtifactInternalApi
 
 /**
  * 通用分页状态。
@@ -15,26 +16,34 @@ public class PixelPagerState(
     currentPage: Int = 0,
     pageCount: Int = 1,
 ) {
+    /** 保存 `PixelPagerState` 当前的 `axis` 状态维度；写入后由所属对象在下一次状态同步时生效。 */
     public var axis: PixelAxis = axis
         internal set
 
+    /** 提供 `PixelPagerState` 当前管理的 `currentPage` 内容；写入后由所属对象在下一次状态同步时生效。 */
     public var currentPage: Int = currentPage.coerceAtLeast(0)
         internal set
 
+    /** 保存 `PixelPagerState` 的 `pageCount` 计数或索引边界；写入后由所属对象在下一次状态同步时生效。 */
     public var pageCount: Int = pageCount.coerceAtLeast(1)
         internal set
 
+    /** 提供 `PixelPagerState` 当前管理的 `settleTargetPage` 内容；写入后由所属对象在下一次状态同步时生效。 */
     public var settleTargetPage: Int = this.currentPage
         internal set
 
-    internal var lastDispatchedPage: Int = this.currentPage
+    /** 供 Host 去重分页回调的最近已派发页码。 */
+    @PixelArtifactInternalApi
+    public var lastDispatchedPage: Int = this.currentPage
 
     internal var motionState: AxisMotionState = AxisMotionState()
     internal var dragStartOffsetPx: Float = 0f
 
+    /** 表示 `PixelPagerState` 当前是否满足 `isDragging` 对应条件。 */
     public val isDragging: Boolean
         get() = motionState.isDragging
 
+    /** 表示 `PixelPagerState` 当前是否满足 `isSettling` 对应条件。 */
     public val isSettling: Boolean
         get() = motionState.isSettling
 }
@@ -43,7 +52,9 @@ public class PixelPagerState(
  * PageView 的可持久化页位置。
  */
 public data class PixelPagerSavedState(
+    /** 提供 `PixelPagerState` 当前管理的 `currentPage` 内容。 */
     public val currentPage: Int,
+    /** 保存 `PixelPagerState` 当前的 `axis` 状态维度。 */
     public val axis: PixelAxis,
 )
 

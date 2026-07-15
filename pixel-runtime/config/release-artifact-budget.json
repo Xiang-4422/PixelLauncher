@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "artifact": {
+    "maxAarBytes": 1250000,
+    "maxClassCount": 650,
+    "maxMethodCount": 5600
+  },
+  "dependencies": {
+    "maxPublishedRuntimeDependencyCount": 2,
+    "maxResolvedRuntimeArtifactCount": 3,
+    "expectedPublishedRuntimeDependencies": [
+      "com.purride:pixel-core:1.0.0",
+      "org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
+    ],
+    "expectedResolvedRuntimeArtifacts": [
+      "com.purride:pixel-core:1.0.0",
+      "org.jetbrains.kotlin:kotlin-stdlib:2.2.10",
+      "org.jetbrains:annotations:13.0"
+    ]
+  }
+}

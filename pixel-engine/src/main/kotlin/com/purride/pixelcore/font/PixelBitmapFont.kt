@@ -8,7 +8,9 @@ package com.purride.pixelcore
  * 上层都走同一条文本测量与绘制链路。
  */
 public class PixelBitmapFont(
+    /** 定义 `PixelBitmapFont` 布局中的 `glyphWidth` 逻辑像素度量。 */
     public val glyphWidth: Int = 5,
+    /** 定义 `PixelBitmapFont` 布局中的 `glyphHeight` 逻辑像素度量。 */
     public val glyphHeight: Int = 7,
     private val letterSpacing: Int = 1,
     private val lineSpacing: Int = 2,
@@ -40,15 +42,29 @@ public class PixelBitmapFont(
         ),
     )
 
+    /** 定义 `PixelBitmapFont` 布局中的 `lineHeight` 逻辑像素度量。 */
     public val lineHeight: Int
         get() = glyphHeight + lineSpacing
 
     override fun measureText(text: String): Int {
+        if (!text.hasExplicitCrLfLineBreak()) {
+            return engine.measureText(text, glyphStyle)
+        }
+        /** 仅多行输入才创建显式行集合。 */
         val lines = text.lines()
         return lines.maxOfOrNull { line -> engine.measureText(line, glyphStyle) } ?: 0
     }
 
+    /** 连续测量两个无硬换行片段，避免段落 pair 测量创建拼接字符串。 */
+    internal fun measureAdjacentText(first: String, second: String): Int {
+        return engine.measureAdjacentText(first = first, second = second, style = glyphStyle)
+    }
+
     override fun measureHeight(text: String): Int {
+        if (!text.hasExplicitCrLfLineBreak()) {
+            return glyphHeight
+        }
+        /** 仅多行输入才统计显式行集合。 */
         val lineCount = text.lines().size.coerceAtLeast(1)
         return (lineCount * glyphHeight) + ((lineCount - 1) * lineSpacing)
     }
@@ -64,6 +80,19 @@ public class PixelBitmapFont(
         y: Int,
         color: PixelColor,
     ) {
+        if (!text.hasExplicitCrLfLineBreak()) {
+            engine.drawText(
+                buffer = buffer,
+                text = text,
+                startX = x,
+                startY = y,
+                maxWidth = Int.MAX_VALUE,
+                color = color,
+                style = glyphStyle,
+            )
+            return
+        }
+        /** 下一条显式文本行的纵向原点。 */
         var cursorY = y
         text.lines().forEach { line ->
             engine.drawText(
@@ -79,7 +108,9 @@ public class PixelBitmapFont(
         }
     }
 
+    /** 集中提供 `PixelBitmapFont` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 提供 `PixelBitmapFont` 的 `Default` 稳定默认值或常量。 */
         public val Default: PixelBitmapFont = PixelBitmapFont()
 
         private val GLYPHS = mapOf(

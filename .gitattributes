@@ -1,0 +1,2 @@
+# Unicode 官方一致性语料按固定校验和保存原始字节，不应用 Git 尾随空白检查。
+pixel-engine/src/test/resources/unicode/17.0.0/*.txt -whitespace

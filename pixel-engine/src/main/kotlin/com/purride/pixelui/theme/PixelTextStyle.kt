@@ -16,7 +16,9 @@ public data class PixelTextStyle(
     val lineHeight: Int? = null,
     val fontScale: Int = 1,
 ) {
+    /** 集中提供 `PixelTextStyle` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 提供 `PixelTextStyle` 的 `Default` 稳定默认值或常量。 */
         public val Default: PixelTextStyle = PixelTextStyle()
     }
 }

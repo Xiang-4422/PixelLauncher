@@ -1,11 +1,11 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.data.DeepSeekAiConfig
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
 
+/** 保存 Launcher reducer 使用的完整不可变状态快照。 */
 data class LauncherState(
     val apps: List<AppEntry> = emptyList(),
     val drawerVisibleApps: List<AppEntry> = emptyList(),
@@ -94,7 +94,6 @@ data class LauncherState(
     val hasPostNotificationPermission: Boolean = false,
     val hasNotificationListenerAccess: Boolean = false,
     val dataHealthUpdatedTimeText: String = "",
-    val deepSeekApiKey: String = DeepSeekAiConfig.DEFAULT_API_KEY,
 )
 
 enum class DrawerFocus {
@@ -118,7 +117,6 @@ enum class LauncherMode {
     APP_MANAGEMENT,
     DATA_HEALTH,
     NOTIFICATION_SETTINGS,
-    AI_SETTINGS,
     LOADING_PREVIEW,
     DIAGNOSTICS,
     IDLE,

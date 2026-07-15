@@ -1,4 +1,4 @@
-name: pixel-engine
+name: pixel-engine-required
 
 on:
   pull_request:
@@ -7,22 +7,286 @@ on:
       - main
       - master
       - "codex/**"
+      - "xiangyu/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pixel-engine-required-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  validate:
+  fast:
+    name: Fast unit and golden
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
+        uses: actions/checkout@v6
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up required Android SDK platforms
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Run fast gate from a clean output tree
+        run: bash tools/pixel-ci-fast.sh
+      - name: Upload fast reports and golden diffs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fast-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            **/build/test-results/**
+            **/build/reports/tests/**
+            **/build/reports/golden/**
+            build/reports/security/**
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+  api:
+    name: API ABI and documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up pinned documentation Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up required Android SDK platforms
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Run API and strict documentation gate
+        run: bash tools/pixel-ci-api.sh
+      - name: Upload API signatures and diffs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            **/build/reports/api/**
+            **/build/reports/compatibility/**
+            build/mkdocs-site/**
 
-      - name: Pixel release check
-        run: bash tools/pixel-release-check.sh
+  lint:
+    name: Android lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up required Android SDK platforms
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Run lint gate
+        run: bash tools/pixel-ci-lint.sh
+      - name: Upload lint reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            **/build/reports/lint-results-*
+            **/build/intermediates/lint*/**
+
+  instrumentation:
+    name: API 29 emulator instrumentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Run instrumentation on an isolated emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            rm -rf pixel-engine/build/outputs/androidTest-results pixel-engine/build/reports/androidTests pixel-engine/build/outputs/connected_android_test_additional_output
+            ANDROID_SERIAL=emulator-5554 ./gradlew :pixel-engine:connectedDebugAndroidTest --no-build-cache --no-daemon
+            python3 tools/check_backup_restore_emulator.py --serial emulator-5554
+      - name: Upload instrumentation XML golden diffs and traces
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumentation-api29-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            pixel-engine/build/outputs/androidTest-results/**
+            pixel-engine/build/reports/androidTests/**
+            pixel-engine/build/reports/golden/**
+            pixel-engine/build/outputs/connected_android_test_additional_output/**
+            build/reports/security/m0-1-backup-restore/**
+
+  consumer:
+    name: External consumers
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up required Android SDK platforms
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Run isolated Maven consumers and compatibility matrix
+        run: bash tools/pixel-ci-consumer.sh
+      - name: Upload consumer reports and inspected AAR repository
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: consumer-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            build/reports/compatibility/**
+            build/compatibility-repository/**
+
+  publication:
+    name: Publication metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up required Android SDK platforms
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Publish and inspect all nine coordinates
+        run: bash tools/pixel-publication-validation.sh
+      - name: Upload publication report and Maven payload
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: publication-reports-${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            build/reports/compatibility/publication.json
+            build/compatibility-repository/**
+
+  supply_chain:
+    name: Signed staging and supply chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Set up pinned Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Set up Gradle dependency cache
+        uses: gradle/actions/setup-gradle@v6
+      - name: Set up required Android SDK platforms
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Publish signed staging, scan dependencies, and consume over HTTP
+        env:
+          # 正式供应链门禁必须验证 Apache-2.0 LICENSE、POM 与 SBOM 一致。
+          PIXEL_REQUIRE_LICENSE: "1"
+        run: bash tools/pixel-supply-chain-check.sh
+      - name: Upload SBOM provenance signatures and remote consumer reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: supply-chain-reports-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            build/reports/supply-chain/**
+            build/reports/compatibility/m8-2/**
+            build/m9-staging-repository/**
+
+  required:
+    name: Required pixel-engine gate
+    if: always()
+    needs:
+      - fast
+      - api
+      - lint
+      - instrumentation
+      - consumer
+      - publication
+      - supply_chain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout required gate
+        uses: actions/checkout@v6
+      - name: Reject every non-success upstream result
+        run: >-
+          bash tools/pixel-ci-required-check.sh
+          "${{ needs.fast.result }}"
+          "${{ needs.api.result }}"
+          "${{ needs.lint.result }}"
+          "${{ needs.instrumentation.result }}"
+          "${{ needs.consumer.result }}"
+          "${{ needs.publication.result }}"
+          "${{ needs.supply_chain.result }}"

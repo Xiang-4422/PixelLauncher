@@ -15,7 +15,6 @@ import com.purride.pixelui.GridView
 import com.purride.pixelui.ListView
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.OutlinedButton
-import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.PixelTextInputAction
@@ -171,7 +170,7 @@ class PixelFocusTest {
                 logicalHeight = 36,
             )
 
-            assertTrue(PixelFocusManager.dispatchKeyEvent(com.purride.pixelui.PixelKeyEvent(PixelKey.TAB)))
+            assertTrue(tester.pressKey(PixelKey.TAB))
             assertTrue(third.isFocused)
             assertFalse(disabled.isFocused)
         } finally {

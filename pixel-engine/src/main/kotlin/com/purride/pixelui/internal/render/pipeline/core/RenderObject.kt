@@ -1,15 +1,36 @@
 package com.purride.pixelui.internal
 
+import java.util.concurrent.atomic.AtomicLong
+
 /**
  * 新渲染管线的基础渲染对象。
  *
  * 第一版只稳定 attach/detach、owner 协作、脏标记和子节点遍历协议。
  */
 public abstract class RenderObject {
+    /** Stable semantic identifiers owned by this retained render object and optional local slots. */
+    private val semanticNodeIds: MutableMap<Any, Long> = mutableMapOf()
+
+    /** 记录 `RenderObject` 的 `parent` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
     public var parent: RenderObject? = null
         internal set
 
     private var owner: PipelineOwner? = null
+
+    /** Whether this render object still participates in one live pipeline owner tree. */
+    internal val isAttachedToPipeline: Boolean
+        get() = owner != null
+
+    /**
+ * 执行 `RenderObject` 的 `semanticNodeId` 公开行为；具体参数、返回和副作用见下文。
+ *
+     * Returns a process-unique semantic identifier that remains stable for this retained node.
+     *
+     * [localId] lets one render object own multiple independently addressable virtual nodes.
+     */
+    public fun semanticNodeId(localId: Any = DefaultSemanticNodeSlot): Long {
+        return semanticNodeIds.getOrPut(localId) { NextSemanticNodeId.getAndIncrement() }
+    }
 
     /**
      * 接收一个新的直接子 render object。
@@ -96,6 +117,23 @@ public abstract class RenderObject {
         return collectDiagnostics(depth = 0, path = "0:${javaClass.simpleName}")
     }
 
+    /**
+     * Counts this complete retained subtree without allocating diagnostic node or child lists.
+     *
+     * The current pipeline invalidates layout/paint at owner scope, so every node traversed by the
+     * next whole-tree pass is considered a dirty render node for frame workload diagnostics.
+     */
+    internal fun subtreeNodeCount(): Int {
+        /** Saturated count beginning with this RenderObject. */
+        var count = 1
+        visitChildren { child ->
+            /** Child subtree count, saturated to keep pathological trees from wrapping negative. */
+            val childCount = child.subtreeNodeCount()
+            count = if (count > Int.MAX_VALUE - childCount) Int.MAX_VALUE else count + childCount
+        }
+        return count
+    }
+
     private fun collectDiagnostics(
         depth: Int,
         path: String,
@@ -123,6 +161,14 @@ public abstract class RenderObject {
             }
         }
     }
+
+    private companion object {
+        /** Monotonic id source; zero remains reserved for legacy manually-created snapshots. */
+        val NextSemanticNodeId: AtomicLong = AtomicLong(1L)
+
+        /** Default local slot for render objects that expose exactly one semantic node. */
+        val DefaultSemanticNodeSlot: Any = Any()
+    }
 }
 
 /**
@@ -141,6 +187,7 @@ internal data class RenderDiagnosticsNode(
  * 新渲染管线里的基础盒模型对象。
  */
 public abstract class RenderBox : RenderObject() {
+    /** 定义 `RenderObject` 布局中的 `size` 逻辑像素度量；写入后由所属对象在下一次状态同步时生效。 */
     public var size: RenderSize = RenderSize.Zero
         protected set
 
@@ -170,80 +217,80 @@ public abstract class RenderBox : RenderObject() {
     /**
      * 导出当前子树里的点击目标。
      */
-    internal open fun collectClickTargets(
+    public open fun collectClickTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的分页目标。框架内部使用，不暴露给外部扩展点。
      */
-    internal open fun collectPagerTargets(
+    public open fun collectPagerTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelPagerTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的列表滚动目标。框架内部使用，不暴露给外部扩展点。
      */
-    internal open fun collectListTargets(
+    public open fun collectListTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelListTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的滚动条拖动目标。框架内部使用，不暴露给外部扩展点。
      */
-    internal open fun collectScrollbarTargets(
+    public open fun collectScrollbarTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelScrollbarTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的下拉刷新目标。框架内部使用，不暴露给外部扩展点。
      */
-    internal open fun collectRefreshTargets(
+    public open fun collectRefreshTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelRefreshTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的文本输入目标。框架内部使用，不暴露给外部扩展点。
      */
-    internal open fun collectTextInputTargets(
+    public open fun collectTextInputTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelTextInputTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树里的滑块目标。框架内部使用，不暴露给外部扩展点。
      */
-    internal open fun collectSliderTargets(
+    public open fun collectSliderTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelSliderTarget>,
-    ) = Unit
+    ): Unit = Unit
 
     /**
      * 导出当前子树的基础可访问性语义。
      */
-    internal open fun collectSemantics(
+    public open fun collectSemantics(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelSemanticsTarget>,
-    ) = Unit
+    ): Unit = Unit
 }
 
 /**
  * 可承接单个 render object 子节点的协议。
  */
-public interface RenderObjectWithChild {
+internal interface RenderObjectWithChild {
     /**
      * 替换当前 render object 的唯一子节点。
      */
@@ -253,7 +300,7 @@ public interface RenderObjectWithChild {
 /**
  * 可承接多个 render object 子节点的协议。
  */
-public interface RenderObjectWithChildren {
+internal interface RenderObjectWithChildren {
     /**
      * 替换当前 render object 的所有直接子节点。
      */
@@ -264,6 +311,7 @@ public interface RenderObjectWithChildren {
  * 单 child render object 的基础实现。
  */
 public abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox() {
+    /** 提供 `RenderObject` 当前管理的 `child` 内容；写入后由所属对象在下一次状态同步时生效。 */
     protected var child: RenderObject? = null
         private set
 
@@ -292,6 +340,7 @@ public abstract class SingleChildRenderObject : RenderObjectWithChild, RenderBox
  * 多 child render object 的基础实现。
  */
 public abstract class MultiChildRenderObject : RenderObjectWithChildren, RenderBox() {
+    /** 保存 `RenderObject` 当前的 `children` 集合；元素顺序和所有权遵守所属类型契约；写入后由所属对象在下一次状态同步时生效。 */
     protected var children: List<RenderObject> = emptyList()
         private set
 

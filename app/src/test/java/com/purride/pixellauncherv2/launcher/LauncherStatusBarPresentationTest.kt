@@ -27,7 +27,6 @@ class LauncherStatusBarPresentationTest {
             LauncherMode.APP_MANAGEMENT to "APP",
             LauncherMode.DATA_HEALTH to "DATA",
             LauncherMode.NOTIFICATION_SETTINGS to "NOTIFY",
-            LauncherMode.AI_SETTINGS to "AI",
             LauncherMode.LOADING_PREVIEW to "LOAD",
             LauncherMode.DIAGNOSTICS to "DIAG",
             LauncherMode.IDLE to "IDLE",

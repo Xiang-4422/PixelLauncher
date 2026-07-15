@@ -1,0 +1,90 @@
+name: pixel-engine-docs
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "已经存在的正式版本 tag，例如 v1.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pixel-engine-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build versioned SDK documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # 正式 Release 自动使用其 tag；手动入口只用于从既有 tag 恢复部署。
+      PIXEL_DOCS_REF: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.ref }}
+    steps:
+      - name: Checkout immutable release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.PIXEL_DOCS_REF }}
+          fetch-depth: 0
+      - name: Reject a branch or malformed release ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 只允许从已经存在且精确指向当前 HEAD 的 SemVer tag 部署文档。
+          if [[ ! "$PIXEL_DOCS_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "文档部署只接受 vMAJOR.MINOR.PATCH tag：$PIXEL_DOCS_REF" >&2
+            exit 1
+          fi
+          # 版本 tag 必须真实存在，不能用同名分支或任意提交冒充正式文档来源。
+          if ! git tag --points-at HEAD --list "$PIXEL_DOCS_REF" | grep -Fx "$PIXEL_DOCS_REF" >/dev/null; then
+            echo "当前 HEAD 不对应正式 tag：$PIXEL_DOCS_REF" >&2
+            exit 1
+          fi
+          # CHANGELOG 条目证明 tag 版本与站点内容使用同一发布版本。
+          PIXEL_DOCS_VERSION="${PIXEL_DOCS_REF#v}"
+          if ! grep -F "## $PIXEL_DOCS_VERSION - " CHANGELOG.md >/dev/null; then
+            echo "CHANGELOG 缺少版本条目：$PIXEL_DOCS_VERSION" >&2
+            exit 1
+          fi
+      - name: Set up pinned documentation Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+      - name: Install pinned documentation dependencies
+        run: python3 -m pip install --disable-pip-version-check -r requirements-docs.txt
+      - name: Build strict MkDocs site
+        run: |
+          python3 tools/prepare_mkdocs_docs.py
+          python3 -m mkdocs build --strict
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/mkdocs-site
+
+  deploy:
+    name: Deploy versioned SDK documentation
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

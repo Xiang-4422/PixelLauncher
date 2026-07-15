@@ -3,6 +3,7 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelSpriteSheet
+import com.purride.pixelcore.internal.PixelCoreArtifactAccess
 
 /**
  * [Image] widget 的 render object。
@@ -13,11 +14,12 @@ import com.purride.pixelcore.PixelSpriteSheet
  *
  * 调用方若需缩放，应在构造 [PixelBitmap] 前对源 Android Bitmap 缩放。
  */
-internal class RenderImage(
+public class RenderImage(
     private var bitmap: PixelBitmap,
 ) : RenderBox() {
 
-    fun updateBitmap(next: PixelBitmap) {
+    /** 更新 `RenderImage` 的 `updateBitmap` 状态，并保持相关边界与派生状态一致。 */
+    public fun updateBitmap(next: PixelBitmap) {
         if (bitmap === next) return
         val sizeChanged = bitmap.width != next.width || bitmap.height != next.height
         bitmap = next
@@ -41,6 +43,8 @@ internal class RenderImage(
         if (copyW <= 0 || copyH <= 0) return
 
         val target = context.buffer
+        /** SDK 内部只读源像素；绘制过程不得修改 backing array。 */
+        val sourcePixels = PixelCoreArtifactAccess.pixelsUnsafe(bitmap)
         val targetW = target.width
         val targetH = target.height
         var dstY = offsetY
@@ -58,7 +62,7 @@ internal class RenderImage(
                     for (column in 0 until rowLen) {
                         val dstIndex = dstOffset + column
                         target.pixels[dstIndex] = PixelBuffer.blendSrcOver(
-                            src = bitmap.pixels[srcOffset + column],
+                            src = sourcePixels[srcOffset + column],
                             dst = target.pixels[dstIndex],
                         )
                     }
@@ -71,12 +75,14 @@ internal class RenderImage(
 }
 
 /**
+ * 定义 `RenderSprite` 在 `RenderImage` 中承担的数据与行为边界。
+ *
  * [Sprite] widget render object.
  *
  * Layout uses the selected frame size. Paint clips to the current layout box and
  * copies only the frame region from the backing sprite sheet bitmap.
  */
-internal class RenderSprite(
+public class RenderSprite(
     private var sheet: PixelSpriteSheet,
     private var frameIndex: Int,
 ) : RenderBox() {
@@ -85,7 +91,8 @@ internal class RenderSprite(
         requireFrameIndex(frameIndex, sheet)
     }
 
-    fun update(sheet: PixelSpriteSheet, frameIndex: Int) {
+    /** 更新 `RenderImage` 的 `update` 状态，并保持相关边界与派生状态一致。 */
+    public fun update(sheet: PixelSpriteSheet, frameIndex: Int) {
         requireFrameIndex(frameIndex, sheet)
         val oldFrame = this.sheet.frames[this.frameIndex]
         val newFrame = sheet.frames[frameIndex]
@@ -114,6 +121,8 @@ internal class RenderSprite(
         if (copyW <= 0 || copyH <= 0) return
 
         val target = context.buffer
+        /** SDK 内部只读 atlas 像素；绘制过程不得修改 backing array。 */
+        val sourcePixels = PixelCoreArtifactAccess.pixelsUnsafe(bitmap)
         val targetW = target.width
         val targetH = target.height
         var dstY = offsetY
@@ -131,7 +140,7 @@ internal class RenderSprite(
                     for (column in 0 until rowLen) {
                         val dstIndex = dstOffset + column
                         target.pixels[dstIndex] = PixelBuffer.blendSrcOver(
-                            src = bitmap.pixels[srcOffset + column],
+                            src = sourcePixels[srcOffset + column],
                             dst = target.pixels[dstIndex],
                         )
                     }

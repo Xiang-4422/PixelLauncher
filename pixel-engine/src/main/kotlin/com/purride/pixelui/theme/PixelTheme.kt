@@ -33,7 +33,9 @@ public data class PixelThemeData(
         selectionHandleColor = colors.selection,
     ),
 ) {
+    /** 集中提供 `PixelTheme` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 提供 `PixelTheme` 的 `Default` 稳定默认值或常量。 */
         public val Default: PixelThemeData = PixelThemeData()
     }
 }
@@ -56,30 +58,100 @@ public data class PixelThemeColors(
     val focus: PixelColor = PixelColor.fromRgb(255, 200, 0),
     val selection: PixelColor = PixelColor.fromRgb(255, 255, 0),
 ) {
+    /** 集中提供 `PixelTheme` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 提供 `PixelTheme` 的 `Default` 稳定默认值或常量。 */
         public val Default: PixelThemeColors = PixelThemeColors()
     }
 }
 
 /**
- * 在 widget 子树中提供 [PixelThemeData]。
+ * 定义 `PixelTheme` 在 `PixelTheme` 中承担的数据与行为边界。
+ *
+ * Provides both legacy [PixelThemeData] and complete [PixelThemeTokens] to a widget subtree.
+ *
+ * The public legacy constructor remains a real JVM secondary constructor so already compiled
+ * consumers keep the original `(PixelThemeData, Widget, Object)` descriptor.
  */
-public class PixelTheme(
+public class PixelTheme private constructor(
+    /** 保存 `PixelTheme` 对外传递的 `data` 数据。 */
     public val data: PixelThemeData,
+    /** 公开 `PixelTheme` 的 `tokens` 配置或运行值。
+ *
+ * Complete semantic token graph inherited by new standard components.
+ */
+    public val tokens: PixelThemeTokens,
     override val child: Widget,
-    override val key: Any? = null,
+    override val key: Any?,
 ) : InheritedWidget(child = child, key = key) {
+    /** 创建 `PixelTheme` 实例并建立初始不变量。
+ *
+ * Creates a provider from the unchanged legacy theme model and constructor descriptor.
+ */
+    public constructor(
+        data: PixelThemeData,
+        child: Widget,
+        key: Any? = null,
+    ) : this(
+        data = data,
+        tokens = PixelThemeTokens.fromLegacy(data),
+        child = child,
+        key = key,
+    )
+
+    /** 创建 `PixelTheme` 实例并建立初始不变量。
+ *
+ * Creates a provider from the complete token graph and projects legacy styles once.
+ */
+    public constructor(
+        tokens: PixelThemeTokens,
+        child: Widget,
+        key: Any? = null,
+    ) : this(
+        data = tokens.toLegacyThemeData(),
+        tokens = tokens,
+        child = child,
+        key = key,
+    )
+
+    /** Notifies legacy and token consumers when either immutable theme representation changes. */
     override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
-        return (oldWidget as? PixelTheme)?.data != data
+        val oldTheme = oldWidget as? PixelTheme ?: return true
+        return oldTheme.data != data || oldTheme.tokens != tokens
     }
 
+    /** 集中提供 `PixelTheme` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 执行 `PixelTheme` 的 `maybeOf` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns the nearest legacy theme data, or null when no PixelTheme is inherited.
+ */
         public fun maybeOf(context: BuildContext): PixelThemeData? {
             return context.dependOnInheritedWidgetOfExactType<PixelTheme>()?.data
         }
 
+        /** 执行 `PixelTheme` 的 `of` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns the nearest legacy theme data or [PixelThemeData.Default].
+ */
         public fun of(context: BuildContext): PixelThemeData {
             return maybeOf(context) ?: PixelThemeData.Default
+        }
+
+        /** 执行 `PixelTheme` 的 `maybeTokensOf` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns the nearest complete token graph, or null when no PixelTheme is inherited.
+ */
+        public fun maybeTokensOf(context: BuildContext): PixelThemeTokens? {
+            return context.dependOnInheritedWidgetOfExactType<PixelTheme>()?.tokens
+        }
+
+        /** 执行 `PixelTheme` 的 `tokensOf` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns the nearest complete token graph or [PixelThemeTokens.Default].
+ */
+        public fun tokensOf(context: BuildContext): PixelThemeTokens {
+            return maybeTokensOf(context) ?: PixelThemeTokens.Default
         }
     }
 }

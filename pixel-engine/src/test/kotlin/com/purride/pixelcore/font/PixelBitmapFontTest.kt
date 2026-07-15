@@ -16,6 +16,25 @@ class PixelBitmapFontTest {
         assertEquals(11, font.measureText("aA"))
     }
 
+    /** 无拼接相邻测量必须与普通完整字符串测量保持完全一致。 */
+    @Test
+    fun adjacentMeasurementMatchesCombinedText() {
+        /** 覆盖窄字形、空格、fallback 和 supplementary scalar 的片段组合。 */
+        val pairs = listOf(
+            "A" to "B",
+            "A " to "a",
+            "你" to "A",
+            "🙂" to "B",
+        )
+
+        pairs.forEach { (first, second) ->
+            assertEquals(
+                font.measureText(first + second),
+                font.measureAdjacentText(first, second),
+            )
+        }
+    }
+
     @Test
     fun measureHeightAccountsForMultilineSpacing() {
         assertEquals(7, font.measureHeight("A"))

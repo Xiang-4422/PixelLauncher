@@ -106,7 +106,7 @@ class PixelBackTest {
     }
 
     @Test
-    fun overlayBackRunsBeforeNavigatorPop() {
+    fun passiveNotificationDoesNotInterceptNavigatorBack() {
         val dispatcher = PixelBackDispatcher()
         val overlay = PixelOverlayController()
         val tester = PixelTester()
@@ -143,7 +143,7 @@ class PixelBackTest {
         tester.pumpFrame(16)
         assertTrue(tester.exists(find.byText("DETAIL")))
 
-        overlay.showToast("TOAST")
+        val toast = overlay.showToast("TOAST")
         tester.pumpFrame(16)
 
         assertTrue(tester.exists(find.byText("DETAIL")))
@@ -152,14 +152,13 @@ class PixelBackTest {
         assertTrue(dispatcher.handleBack())
         tester.pumpFrame(16)
 
-        assertTrue(tester.exists(find.byText("DETAIL")))
-        assertFalse(tester.exists(find.byText("TOAST")))
-
-        assertTrue(dispatcher.handleBack())
-        tester.pumpFrame(16)
-
         assertTrue(tester.exists(find.byText("ROOT")))
         assertFalse(tester.exists(find.byText("DETAIL")))
+        assertTrue(tester.exists(find.byText("TOAST")))
+
+        assertTrue(toast.dismiss())
+        tester.pumpFrame(16)
+        assertFalse(tester.exists(find.byText("TOAST")))
         tester.dispose()
     }
 }

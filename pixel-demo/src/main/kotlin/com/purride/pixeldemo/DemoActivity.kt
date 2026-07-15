@@ -7,18 +7,17 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import com.purride.pixelui.PixelHapticType
-import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelHostProfilePreference
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SafeArea
 import com.purride.pixelui.PixelSystemAction
+import com.purride.pixelui.PixelTextEditingHostBridge
+import com.purride.pixelui.PixelTextEditingValue
 import com.purride.pixelui.PixelTextInputRequest
 import com.purride.pixelui.Widget
-import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.createPixelHostSetup
 import com.purride.pixelui.gesture.PagerGesturePolicy
-import com.purride.pixelui.host.PixelFrameScheduler
 import com.purride.pixeldemo.browser.DemoBrowserScene
 import com.purride.pixeldemo.app.DemoTextRasterizers
 import com.purride.pixeldemo.catalog.DemoCatalog
@@ -48,8 +47,6 @@ class DemoActivity : AppCompatActivity() {
 
         rasterizers = DemoTextRasterizers(this)
         val initSettings = DemoAppSettings()
-        val frameScheduler = PixelFrameScheduler.Default
-        val vsync = PixelTickerProvider(frameScheduler)
         val setup = createPixelHostSetup(
             context = this,
             config = PixelHostSetupConfig(
@@ -58,21 +55,63 @@ class DemoActivity : AppCompatActivity() {
                     pixelShape = initSettings.pixelShape,
                 ),
                 textRasterizer = rasterizers.getRasterizer(initSettings.fontSizePx, initSettings.fontStyle),
-                frameScheduler = frameScheduler,
             ),
         )
         hostView = setup.hostView
+        // 动画与 Navigator 共享 Host 私有时钟，Activity 不再维护第二套 ticker 生命周期。
+        val vsync = hostView.tickerProvider
         applySettingsToView(initSettings)
 
+        /** Production bridge retained behind the Demo's system-action decorating adapter. */
         val originalBridge = hostView.hostBridge
-        hostView.hostBridge = object : PixelHostBridge {
+        /** Demo adapter that preserves full composition while intercepting visible system actions. */
+        hostView.hostBridge = object : PixelTextEditingHostBridge {
+            /** Preserves the frozen request-only compatibility entry point. */
             override fun showTextInput(request: PixelTextInputRequest) {
                 originalBridge?.showTextInput(request)
             }
+
+            /** Forwards full composition state when the underlying production bridge supports it. */
+            override fun showTextEditing(
+                request: PixelTextInputRequest,
+                value: PixelTextEditingValue,
+            ) {
+                /** Full-contract production bridge, absent only for a custom legacy setup. */
+                val editingBridge = originalBridge as? PixelTextEditingHostBridge
+                if (editingBridge != null) {
+                    editingBridge.showTextEditing(request, value)
+                } else {
+                    originalBridge?.showTextInput(request)
+                }
+            }
+
+            /** Synchronizes the frozen request subset without forcing a new focus session. */
+            override fun updateTextInput(request: PixelTextInputRequest) {
+                originalBridge?.updateTextInput(request)
+            }
+
+            /** Forwards selection/composition-only updates through the additive host capability. */
+            override fun updateTextEditing(
+                request: PixelTextInputRequest,
+                value: PixelTextEditingValue,
+            ) {
+                /** Full-contract production bridge, absent only for a custom legacy setup. */
+                val editingBridge = originalBridge as? PixelTextEditingHostBridge
+                if (editingBridge != null) {
+                    editingBridge.updateTextEditing(request, value)
+                } else {
+                    originalBridge?.updateTextInput(request)
+                }
+            }
+
+            /** Hides the original production bridge's current IME session. */
             override fun hideTextInput() {
                 originalBridge?.hideTextInput()
             }
+
+            /** Adds visible Demo feedback while retaining the production haptic bridge. */
             override fun performHapticFeedback(type: PixelHapticType) {
+                /** Android feedback constant used for the Demo's immediately visible Host effect. */
                 val constant = when (type) {
                     PixelHapticType.TAP -> HapticFeedbackConstants.VIRTUAL_KEY
                     PixelHapticType.LONG_PRESS -> HapticFeedbackConstants.LONG_PRESS
@@ -80,16 +119,25 @@ class DemoActivity : AppCompatActivity() {
                 hostView.performHapticFeedback(constant)
                 originalBridge?.performHapticFeedback(type)
             }
+
+            /** Delegates frame scheduling to the production bridge. */
             override fun requestFrame() {
                 originalBridge?.requestFrame()
             }
+
+            /** Reads clipboard text through the production bridge. */
             override fun readClipboardText(): String? {
                 return originalBridge?.readClipboardText()
             }
+
+            /** Writes clipboard text through the production bridge. */
             override fun writeClipboardText(text: String) {
                 originalBridge?.writeClipboardText(text)
             }
+
+            /** Displays typed system-action traffic without changing SDK production behavior. */
             override fun dispatchSystemAction(action: PixelSystemAction) {
+                /** Optional payload suffix omitted entirely for payload-free actions. */
                 val payload = action.payload?.let { " payload=$it" }.orEmpty()
                 Toast.makeText(
                     this@DemoActivity,

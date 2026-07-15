@@ -23,9 +23,12 @@ package com.purride.pixelui
  * `Loading` 语义包括"首次加载"与"刷新中"。
  */
 public class AsyncBuilder<T>(
+    /** 提供 `AsyncBuilder` 执行 `source` 职责时使用的协作者。 */
     public val source: PixelAsyncSource<T>,
+    /** 记录 `AsyncBuilder` 的 `initial` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val initial: PixelAsyncSnapshot<T> = PixelAsyncSnapshot.Loading,
     override val key: Any? = null,
+    /** 记录 `AsyncBuilder` 的 `builder` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val builder: (BuildContext, PixelAsyncSnapshot<T>) -> Widget,
 ) : StatefulWidget(key = key) {
     override fun createState(): State<out StatefulWidget> = AsyncBuilderState<T>()

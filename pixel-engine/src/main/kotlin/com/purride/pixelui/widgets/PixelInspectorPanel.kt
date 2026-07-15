@@ -94,6 +94,29 @@ private class PixelInspectorPanelState : State<PixelInspectorPanelWidget>() {
             snapshot.frameStats?.let { stats ->
                 add("FPS ${stats.fpsAvg.toInt()}  MS ${stats.deltaMs}  PAINT ${stats.paintTimeNanos / 1_000_000}M")
             }
+            snapshot.frameDiagnostics?.let { diagnostics ->
+                /** Exclusive phase timings shown in microseconds to retain sub-millisecond detail. */
+                val timing = diagnostics.timings
+                /** Dirty work, pixels, cache, allocation, and GC correlated with the same frame. */
+                val workload = diagnostics.workload
+                add(
+                    "US B${timing.buildNanos / 1_000} L${timing.layoutNanos / 1_000} " +
+                        "P${timing.paintNanos / 1_000}",
+                )
+                add(
+                    "US S${timing.bufferSubmitNanos / 1_000} A${timing.androidDrawNanos / 1_000} " +
+                        "T${timing.totalFrameNanos / 1_000}",
+                )
+                add(
+                    "WORK E${workload.dirtyElementCount} R${workload.dirtyRenderNodeCount} " +
+                        "PX${workload.paintedPixelCount}/${workload.submittedPixelCount}",
+                )
+                add(
+                    "ALLOC ${workload.allocatedBytes ?: -1} GC ${workload.garbageCollectionCount ?: -1} " +
+                        "CACHE ${workload.bufferCacheHitCount}/${workload.bufferCacheMissCount}",
+                )
+                add("DROP ${diagnostics.dropReason ?: "NONE"} VSYNC ${diagnostics.missedVsyncCount}")
+            }
             snapshot.allocationSample?.let { sample ->
                 add("MEM ${formatInspectorKilobytes(sample.usedHeapBytes)}K/${formatInspectorKilobytes(sample.maxHeapBytes)}K")
             }

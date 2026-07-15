@@ -20,6 +20,7 @@ public data class PixelHostFrameStats(
     /** 已观测到的 onDraw 调用总次数。 */
     val frameCount: Long,
 ) {
+    /** 集中提供 `PixelHostFrameStats` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /** FPS 滑动平均窗口长度。 */
         public const val FPS_WINDOW: Int = 30

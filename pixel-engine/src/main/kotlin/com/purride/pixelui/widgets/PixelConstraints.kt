@@ -1,5 +1,6 @@
 package com.purride.pixelui
 
+/** 表示 `PixelConstraints` 使用的不可变几何数据，并以逻辑像素参与布局或绘制。 */
 public data class PixelBoxConstraints(
     val minWidth: Int = 0,
     val maxWidth: Int = Int.MAX_VALUE,

@@ -147,18 +147,21 @@ internal data class RowWidget(
      * 创建横向 flex render object。
      */
     override fun createRenderObject(context: BuildContext): RenderObject {
+        /** Current logical direction controlling horizontal child placement only. */
+        val direction = Directionality.of(context)
         return RenderFlex(
             direction = FlexDirection.HORIZONTAL,
             children = emptyList(),
+            reverseChildren = direction == TextDirection.RTL,
             spacing = spacing,
             mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
             mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
                 axis = Axis.HORIZONTAL,
-                direction = Directionality.of(context),
+                direction = direction,
             ),
             crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
                 axis = Axis.HORIZONTAL,
-                direction = Directionality.of(context),
+                direction = direction,
             ),
         )
     }
@@ -170,17 +173,20 @@ internal data class RowWidget(
         context: BuildContext,
         renderObject: RenderObject,
     ) {
+        /** Current logical direction controlling horizontal child placement only. */
+        val direction = Directionality.of(context)
         (renderObject as RenderFlex).updateFlex(
             direction = FlexDirection.HORIZONTAL,
+            reverseChildren = direction == TextDirection.RTL,
             spacing = spacing,
             mainAxisSize = mainAxisSize.toPixelMainAxisSize(),
             mainAxisAlignment = mainAxisAlignment.toPixelMainAxisAlignment(
                 axis = Axis.HORIZONTAL,
-                direction = Directionality.of(context),
+                direction = direction,
             ),
             crossAxisAlignment = crossAxisAlignment.toPixelCrossAxisAlignment(
                 axis = Axis.HORIZONTAL,
-                direction = Directionality.of(context),
+                direction = direction,
             ),
         )
     }

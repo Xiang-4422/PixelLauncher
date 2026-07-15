@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelBuffer
+import com.purride.pixelui.PixelSemanticsCollectionItemInfo
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 
@@ -71,7 +72,11 @@ internal class RenderSingleChildScrollViewport(
         val scratch = context.bufferPool.acquire(width = size.width, height = scratchHeight)
         try {
             child.paint(
-                context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                context = context.derive(
+                    scratch = scratch,
+                    localOriginX = offsetX,
+                    localOriginY = offsetY - state.scrollOffsetPx.toInt(),
+                ),
                 offsetX = 0,
                 offsetY = 0,
             )
@@ -217,6 +222,21 @@ internal class RenderSingleChildScrollViewport(
         }
     }
 
+    /** Exports only the visible portion of descendant semantics in scrolled coordinates. */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        renderChild?.collectSemantics(
+            offsetX = offsetX,
+            offsetY = offsetY - state.scrollOffsetPx.toInt(),
+            targets = collected,
+        )
+        targets += clipSemanticTargets(collected, globalBounds(offsetX, offsetY))
+    }
+
     /**
      * 读取当前可绘制的盒模型子节点。
      */
@@ -312,7 +332,7 @@ internal class RenderListViewport(
         try {
             visibleRenderChildren().forEach { (index, child) ->
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = context.derive(scratch, offsetX, offsetY),
                     offsetX = 0,
                     offsetY = childOffsets[index] - state.scrollOffsetPx.toInt(),
                 )
@@ -472,6 +492,25 @@ internal class RenderListViewport(
         }
     }
 
+    /** Exports semantics from visible rows and clips partially visible row bounds. */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        visibleRenderChildren().forEach { (index, child) ->
+            val itemTargets = mutableListOf<PixelSemanticsTarget>()
+            child.collectSemantics(
+                offsetX = offsetX,
+                offsetY = offsetY + childOffsets[index] - state.scrollOffsetPx.toInt(),
+                targets = itemTargets,
+            )
+            collected += itemTargets.withCollectionItemInfo(rowIndex = index, columnIndex = 0)
+        }
+        targets += clipSemanticTargets(collected, globalBounds(offsetX, offsetY))
+    }
+
     /**
      * 读取当前列表里可布局的盒模型子节点。
      */
@@ -519,8 +558,38 @@ internal class RenderLazyListViewport(
     private var controller: PixelListController,
     private var spacing: Int = 0,
 ) : MultiChildRenderObject() {
+    /** 最近一次由当前 viewport 发布完整固定列表度量的状态实例。 */
+    private var cachedMetricsState: PixelListState? = null
+
+    /** 最近一次已发布固定列表度量对应的逻辑条目数。 */
+    private var cachedMetricsItemCount: Int = -1
+
+    /** 最近一次已发布固定列表度量对应的安全条目高度。 */
+    private var cachedMetricsItemExtent: Int = -1
+
+    /** 最近一次已发布固定列表度量对应的安全条目间距。 */
+    private var cachedMetricsSpacing: Int = -1
+
+    /** 当前 viewport 最近发布且仍由状态持有的条目顶部数组。 */
+    private var cachedTopOffsets: IntArray? = null
+
+    /** 当前 viewport 最近发布且仍由状态持有的条目高度数组。 */
+    private var cachedItemHeights: IntArray? = null
+
+    /** 当前挂载窗口中过滤后的盒模型子节点，只在子节点协议同步时重建。 */
+    private var renderChildren: List<RenderBox> = emptyList()
+
+    /** 固定条目高度与间距合并后的内容坐标步长，避免各阶段按条目重复规整。 */
+    private var itemStridePx: Int = itemExtent.coerceAtLeast(0) + spacing.coerceAtLeast(0)
+
     init {
         setRenderObjectChildren(children)
+    }
+
+    /** 替换 lazy 窗口子节点，并缓存后续 layout、paint 与语义阶段共享的盒模型列表。 */
+    override fun setRenderObjectChildren(children: List<RenderObject>) {
+        super.setRenderObjectChildren(children)
+        renderChildren = children.filterIsInstance<RenderBox>()
     }
 
     fun updateLazyListViewport(
@@ -547,6 +616,7 @@ internal class RenderLazyListViewport(
         this.state = state
         this.controller = controller
         this.spacing = spacing
+        itemStridePx = itemExtent.coerceAtLeast(0) + spacing.coerceAtLeast(0)
         markNeedsLayout()
         markNeedsPaint()
     }
@@ -577,12 +647,11 @@ internal class RenderLazyListViewport(
             viewportHeightPx = size.height,
             contentHeightPx = contentHeight,
         )
-        state.itemTopOffsetsPx = IntArray(itemCount.coerceAtLeast(0)) { index ->
-            itemTopPx(index)
-        }
-        state.itemHeightsPx = IntArray(itemCount.coerceAtLeast(0)) {
-            safeItemExtent
-        }
+        publishFixedItemMetricsIfNeeded(
+            safeItemCount = itemCount.coerceAtLeast(0),
+            safeItemExtent = safeItemExtent,
+            safeSpacing = safeSpacing,
+        )
     }
 
     override fun paint(
@@ -592,10 +661,12 @@ internal class RenderLazyListViewport(
     ) {
         val scratch = context.bufferPool.acquire(width = size.width, height = size.height)
         try {
+            /** 所有可见条目共享且只需创建一次的 scratch 绘制上下文。 */
+            val scratchContext = context.derive(scratch, offsetX, offsetY)
             renderChildren.forEachIndexed { localIndex, child ->
                 val itemIndex = firstItemIndex + localIndex
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = scratchContext,
                     offsetX = 0,
                     offsetY = itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 )
@@ -746,12 +817,68 @@ internal class RenderLazyListViewport(
         }
     }
 
-    private fun itemTopPx(index: Int): Int {
-        return index * (itemExtent.coerceAtLeast(0) + spacing.coerceAtLeast(0))
+    /** Exports semantics for the mounted lazy window using logical item offsets. */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            val itemTargets = mutableListOf<PixelSemanticsTarget>()
+            child.collectSemantics(
+                offsetX = offsetX,
+                offsetY = offsetY + itemTopPx(itemIndex) - state.scrollOffsetPx.toInt(),
+                targets = itemTargets,
+            )
+            collected += itemTargets.withCollectionItemInfo(rowIndex = itemIndex, columnIndex = 0)
+        }
+        targets += clipSemanticTargets(collected, globalBounds(offsetX, offsetY))
     }
 
-    private val renderChildren: List<RenderBox>
-        get() = children.filterIsInstance<RenderBox>()
+    private fun itemTopPx(index: Int): Int {
+        return index * itemStridePx
+    }
+
+    /**
+     * 仅在状态或固定几何配置变化时重建完整条目度量。
+     *
+     * 滚动帧只改变视口偏移，不改变内容坐标中的固定条目顶部与高度；复用两个大数组可避免
+     * 5,000 行列表在每次 layout 分配并填充 10,000 个整数。若外部替换数组引用，则下一帧
+     * 主动恢复 renderer 所有权，避免缓存掩盖手工状态修改。
+     */
+    private fun publishFixedItemMetricsIfNeeded(
+        safeItemCount: Int,
+        safeItemExtent: Int,
+        safeSpacing: Int,
+    ) {
+        /** 当前状态仍持有上一次由本 viewport 发布数组的判定。 */
+        val ownsPublishedArrays = state.itemTopOffsetsPx === cachedTopOffsets &&
+            state.itemHeightsPx === cachedItemHeights
+        /** 固定度量输入与上一次发布完全一致的判定。 */
+        val sameMetrics = cachedMetricsState === state &&
+            cachedMetricsItemCount == safeItemCount &&
+            cachedMetricsItemExtent == safeItemExtent &&
+            cachedMetricsSpacing == safeSpacing
+        if (ownsPublishedArrays && sameMetrics) return
+
+        /** 按完整逻辑条目数生成、供定位与可访问性共享的顶部数组。 */
+        val topOffsets = IntArray(safeItemCount) { index ->
+            index * (safeItemExtent + safeSpacing)
+        }
+        /** 固定高度列表可跨滚动帧安全复用的完整高度数组。 */
+        val itemHeights = IntArray(safeItemCount) { safeItemExtent }
+        state.itemTopOffsetsPx = topOffsets
+        state.itemHeightsPx = itemHeights
+        cachedMetricsState = state
+        cachedMetricsItemCount = safeItemCount
+        cachedMetricsItemExtent = safeItemExtent
+        cachedMetricsSpacing = safeSpacing
+        cachedTopOffsets = topOffsets
+        cachedItemHeights = itemHeights
+    }
+
 }
 
 /**
@@ -864,7 +991,7 @@ internal class RenderVariableLazyListViewport(
             renderChildren.forEachIndexed { localIndex, child ->
                 val itemIndex = firstItemIndex + localIndex
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = context.derive(scratch, offsetX, offsetY),
                     offsetX = 0,
                     offsetY = state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
                 )
@@ -1015,6 +1142,26 @@ internal class RenderVariableLazyListViewport(
         }
     }
 
+    /** Exports the measured lazy window without exposing cached rows outside the viewport. */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            val itemTargets = mutableListOf<PixelSemanticsTarget>()
+            child.collectSemantics(
+                offsetX = offsetX,
+                offsetY = offsetY + state.itemExtentIndex.topPx(itemIndex) - state.scrollOffsetPx.toInt(),
+                targets = itemTargets,
+            )
+            collected += itemTargets.withCollectionItemInfo(rowIndex = itemIndex, columnIndex = 0)
+        }
+        targets += clipSemanticTargets(collected, globalBounds(offsetX, offsetY))
+    }
+
     private val renderChildren: List<RenderBox>
         get() = children.filterIsInstance<RenderBox>()
 }
@@ -1162,7 +1309,7 @@ internal class RenderLazySeparatedListViewport(
             renderChildren.forEachIndexed { localIndex, child ->
                 val virtualIndex = firstVirtualIndex + localIndex
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = context.derive(scratch, offsetX, offsetY),
                     offsetX = 0,
                     offsetY = virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
                 )
@@ -1313,6 +1460,33 @@ internal class RenderLazySeparatedListViewport(
         }
     }
 
+    /** Exports item and separator semantics from the mounted virtual window with clipping. */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val virtualIndex = firstVirtualIndex + localIndex
+            val itemTargets = mutableListOf<PixelSemanticsTarget>()
+            child.collectSemantics(
+                offsetX = offsetX,
+                offsetY = offsetY + virtualTopPx(virtualIndex) - state.scrollOffsetPx.toInt(),
+                targets = itemTargets,
+            )
+            if (virtualIndex % 2 == 0) {
+                collected += itemTargets.withCollectionItemInfo(
+                    rowIndex = virtualIndex / 2,
+                    columnIndex = 0,
+                )
+            } else {
+                collected += itemTargets
+            }
+        }
+        targets += clipSemanticTargets(collected, globalBounds(offsetX, offsetY))
+    }
+
     private val renderChildren: List<RenderBox>
         get() = children.filterIsInstance<RenderBox>()
 
@@ -1343,6 +1517,47 @@ private fun RenderBox.globalBounds(
     offsetY: Int,
 ): PixelRect {
     return PixelRect(left = offsetX, top = offsetY, width = size.width, height = size.height)
+}
+
+/** 只为语义根补充列表位置，并保留子节点业务键身份。 */
+private fun List<PixelSemanticsTarget>.withCollectionItemInfo(
+    rowIndex: Int,
+    columnIndex: Int,
+): List<PixelSemanticsTarget> {
+    if (size == 1) {
+        /** 单节点列表行中唯一且同时作为语义根的目标。 */
+        val target = first()
+        /** 当前目标公开的不可变语义节点。 */
+        val node = target.node
+        if (node.parentId == node.id) return this
+        return listOf(
+            target.copy(
+                node = node.copy(
+                    collectionItemInfo = PixelSemanticsCollectionItemInfo(
+                        rowIndex = rowIndex,
+                        columnIndex = columnIndex,
+                        selected = node.selected,
+                    ),
+                ),
+            ),
+        )
+    }
+    val localIds = mapTo(mutableSetOf()) { target -> target.node.id }
+    return map { target ->
+        if (target.node.parentId == null || target.node.parentId !in localIds) {
+            target.copy(
+                node = target.node.copy(
+                    collectionItemInfo = PixelSemanticsCollectionItemInfo(
+                        rowIndex = rowIndex,
+                        columnIndex = columnIndex,
+                        selected = target.node.selected,
+                    ),
+                ),
+            )
+        } else {
+            target
+        }
+    }
 }
 
 /**

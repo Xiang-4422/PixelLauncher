@@ -1,0 +1,984 @@
+// Signature format: 4.0
+package com.purride.pixelcore {
+
+  public final class AxisBufferComposer {
+    method public com.purride.pixelcore.PixelBuffer compose(com.purride.pixelcore.PixelBuffer primary, com.purride.pixelcore.PixelBuffer? secondary, com.purride.pixelcore.PixelAxis axis, float offsetPx, optional com.purride.pixelcore.PixelBuffer? out);
+    method public boolean isCompositionNeeded(com.purride.pixelcore.PixelBuffer? secondary, float offsetPx);
+    field public static final com.purride.pixelcore.AxisBufferComposer INSTANCE;
+  }
+
+  public final class AxisMotionController {
+    ctor public AxisMotionController();
+    ctor public AxisMotionController(optional long settleDurationMs);
+    method public com.purride.pixelcore.AxisMotionState create();
+    method public com.purride.pixelcore.AxisMotionState dragBy(com.purride.pixelcore.AxisMotionState state, float deltaPx, float minOffsetPx, float maxOffsetPx);
+    method public boolean isActive(com.purride.pixelcore.AxisMotionState state);
+    method public com.purride.pixelcore.AxisMotionState reset();
+    method public com.purride.pixelcore.AxisMotionState settleTo(com.purride.pixelcore.AxisMotionState state, float targetOffsetPx);
+    method public com.purride.pixelcore.AxisMotionState startDrag(com.purride.pixelcore.AxisMotionState state);
+    method public com.purride.pixelcore.AxisMotionState step(com.purride.pixelcore.AxisMotionState state, long deltaMs);
+    method public float visualOffsetPx(com.purride.pixelcore.AxisMotionState state);
+    field public static final com.purride.pixelcore.AxisMotionController.Companion Companion;
+  }
+
+  public static final class AxisMotionController.Companion {
+  }
+
+  public final class AxisMotionState {
+    ctor public AxisMotionState();
+    ctor public AxisMotionState(optional boolean isDragging, optional float dragOffsetPx, optional boolean isSettling, optional float settleStartOffsetPx, optional float settleEndOffsetPx, optional float settleProgress);
+    method public boolean component1();
+    method public float component2();
+    method public boolean component3();
+    method public float component4();
+    method public float component5();
+    method public float component6();
+    method public com.purride.pixelcore.AxisMotionState copy(optional boolean isDragging, optional float dragOffsetPx, optional boolean isSettling, optional float settleStartOffsetPx, optional float settleEndOffsetPx, optional float settleProgress);
+    method @InaccessibleFromKotlin public float getDragOffsetPx();
+    method @InaccessibleFromKotlin public float getSettleEndOffsetPx();
+    method @InaccessibleFromKotlin public float getSettleProgress();
+    method @InaccessibleFromKotlin public float getSettleStartOffsetPx();
+    method @InaccessibleFromKotlin public boolean isDragging();
+    method @InaccessibleFromKotlin public boolean isSettling();
+    property public float dragOffsetPx;
+    property public boolean isDragging;
+    property public boolean isSettling;
+    property public float settleEndOffsetPx;
+    property public float settleProgress;
+    property public float settleStartOffsetPx;
+  }
+
+  public final class BitmapGlyphSource implements com.purride.pixelcore.GlyphSource {
+    ctor public BitmapGlyphSource(java.util.List<com.purride.pixelcore.PixelGlyphPack> packs);
+    method public com.purride.pixelcore.GlyphBitmap? findGlyph(char character, com.purride.pixelcore.GlyphStyle style);
+  }
+
+  public final class CompositeGlyphProvider implements com.purride.pixelcore.GlyphProvider {
+    ctor public CompositeGlyphProvider(java.util.List<? extends com.purride.pixelcore.GlyphSource> sources);
+    method public com.purride.pixelcore.GlyphBitmap rasterizeGlyph(char character, com.purride.pixelcore.GlyphStyle style);
+  }
+
+  public final class FramePayload {
+    ctor @KotlinOnly public FramePayload(long sequence, com.purride.pixelcore.PixelBuffer pixelBuffer, com.purride.pixelcore.ScreenProfile screenProfile, com.purride.pixelcore.PixelColor backgroundColor);
+    method public long component1();
+    method public com.purride.pixelcore.PixelBuffer component2();
+    method public com.purride.pixelcore.ScreenProfile component3();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component4();
+    method @KotlinOnly public com.purride.pixelcore.FramePayload copy(optional long sequence, optional com.purride.pixelcore.PixelBuffer pixelBuffer, optional com.purride.pixelcore.ScreenProfile screenProfile, optional com.purride.pixelcore.PixelColor backgroundColor);
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelBuffer getPixelBuffer();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.ScreenProfile getScreenProfile();
+    method @InaccessibleFromKotlin public long getSequence();
+    property public com.purride.pixelcore.PixelColor backgroundColor;
+    property public com.purride.pixelcore.PixelBuffer pixelBuffer;
+    property public com.purride.pixelcore.ScreenProfile screenProfile;
+    property public long sequence;
+  }
+
+  public final class FrameSwapBuffer {
+    ctor public FrameSwapBuffer();
+    method @kotlin.jvm.Synchronized public com.purride.pixelcore.FramePayload? consumeLatest(long afterSequence);
+    method @kotlin.jvm.Synchronized public com.purride.pixelcore.FramePayload? latest();
+    method @KotlinOnly @kotlin.jvm.Synchronized public com.purride.pixelcore.FramePayload offer(com.purride.pixelcore.PixelBuffer pixelBuffer, com.purride.pixelcore.ScreenProfile screenProfile, com.purride.pixelcore.PixelColor backgroundColor);
+  }
+
+  public final class GlyphBitmap {
+    ctor public GlyphBitmap(int width, int height, byte[] pixels, com.purride.pixelcore.GlyphMetrics metrics);
+    method public int component1();
+    method public int component2();
+    method public byte[] component3();
+    method public com.purride.pixelcore.GlyphMetrics component4();
+    method public com.purride.pixelcore.GlyphBitmap copy(optional int width, optional int height, optional byte[] pixels, optional com.purride.pixelcore.GlyphMetrics metrics);
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.GlyphMetrics getMetrics();
+    method @InaccessibleFromKotlin public byte[] getPixels();
+    method @InaccessibleFromKotlin public int getWidth();
+    property public int height;
+    property public com.purride.pixelcore.GlyphMetrics metrics;
+    property public byte[] pixels;
+    property public int width;
+  }
+
+  public final class GlyphCacheStats {
+    ctor public GlyphCacheStats(int size, int capacity, long hits, long misses);
+    method public int component1();
+    method public int component2();
+    method public long component3();
+    method public long component4();
+    method public com.purride.pixelcore.GlyphCacheStats copy(optional int size, optional int capacity, optional long hits, optional long misses);
+    method @InaccessibleFromKotlin public int getCapacity();
+    method @InaccessibleFromKotlin public double getHitRate();
+    method @InaccessibleFromKotlin public long getHits();
+    method @InaccessibleFromKotlin public long getMisses();
+    method @InaccessibleFromKotlin public int getSize();
+    method @InaccessibleFromKotlin public long getTotal();
+    property public int capacity;
+    property public double hitRate;
+    property public long hits;
+    property public long misses;
+    property public int size;
+    property public long total;
+  }
+
+  public final class GlyphMetrics {
+    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight);
+    method public int component1();
+    method public int component2();
+    method public boolean component3();
+    method public boolean component4();
+    method public int component5();
+    method public int component6();
+    method public com.purride.pixelcore.GlyphMetrics copy(optional int advanceWidth, optional int baselineOffset, optional boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight);
+    method @InaccessibleFromKotlin public int getAdvanceWidth();
+    method @InaccessibleFromKotlin public int getBaselineOffset();
+    method @InaccessibleFromKotlin public int getInkLeft();
+    method @InaccessibleFromKotlin public int getInkRight();
+    method @InaccessibleFromKotlin public boolean getRequiresVisualGapProtection();
+    method @InaccessibleFromKotlin public boolean isWideGlyph();
+    property public int advanceWidth;
+    property public int baselineOffset;
+    property public int inkLeft;
+    property public int inkRight;
+    property public boolean isWideGlyph;
+    property public boolean requiresVisualGapProtection;
+  }
+
+  public interface GlyphProvider {
+    method public default void clearCache();
+    method public com.purride.pixelcore.GlyphBitmap rasterizeGlyph(char character, com.purride.pixelcore.GlyphStyle style);
+    method public default com.purride.pixelcore.GlyphBitmap rasterizeGlyph(int codePoint, com.purride.pixelcore.GlyphStyle style);
+  }
+
+  public interface GlyphSource {
+    method public default void clearCache();
+    method public com.purride.pixelcore.GlyphBitmap? findGlyph(char character, com.purride.pixelcore.GlyphStyle style);
+    method public default com.purride.pixelcore.GlyphBitmap? findGlyph(int codePoint, com.purride.pixelcore.GlyphStyle style);
+  }
+
+  public final class GlyphStyle {
+    ctor public GlyphStyle(int cellHeight, int narrowAdvanceWidth, int wideAdvanceWidth, int oversampleFactor, float narrowMinimumSampleRatio, float wideMinimumSampleRatio, float narrowTextSizeRatio, float wideTextSizeRatio, com.purride.pixelcore.PixelFontWeight narrowFontWeight, com.purride.pixelcore.PixelFontWeight wideFontWeight, com.purride.pixelcore.PixelFontFamily narrowFontFamily, com.purride.pixelcore.PixelFontFamily wideFontFamily, optional int baseLetterSpacing);
+    method public int component1();
+    method public com.purride.pixelcore.PixelFontWeight component10();
+    method public com.purride.pixelcore.PixelFontFamily component11();
+    method public com.purride.pixelcore.PixelFontFamily component12();
+    method public int component13();
+    method public int component2();
+    method public int component3();
+    method public int component4();
+    method public float component5();
+    method public float component6();
+    method public float component7();
+    method public float component8();
+    method public com.purride.pixelcore.PixelFontWeight component9();
+    method public com.purride.pixelcore.GlyphStyle copy(optional int cellHeight, optional int narrowAdvanceWidth, optional int wideAdvanceWidth, optional int oversampleFactor, optional float narrowMinimumSampleRatio, optional float wideMinimumSampleRatio, optional float narrowTextSizeRatio, optional float wideTextSizeRatio, optional com.purride.pixelcore.PixelFontWeight narrowFontWeight, optional com.purride.pixelcore.PixelFontWeight wideFontWeight, optional com.purride.pixelcore.PixelFontFamily narrowFontFamily, optional com.purride.pixelcore.PixelFontFamily wideFontFamily, optional int baseLetterSpacing);
+    method @InaccessibleFromKotlin public int getBaseLetterSpacing();
+    method @InaccessibleFromKotlin public int getCellHeight();
+    method @InaccessibleFromKotlin public int getNarrowAdvanceWidth();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelFontFamily getNarrowFontFamily();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelFontWeight getNarrowFontWeight();
+    method @InaccessibleFromKotlin public float getNarrowMinimumSampleRatio();
+    method @InaccessibleFromKotlin public float getNarrowTextSizeRatio();
+    method @InaccessibleFromKotlin public int getOversampleFactor();
+    method @InaccessibleFromKotlin public int getWideAdvanceWidth();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelFontFamily getWideFontFamily();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelFontWeight getWideFontWeight();
+    method @InaccessibleFromKotlin public float getWideMinimumSampleRatio();
+    method @InaccessibleFromKotlin public float getWideTextSizeRatio();
+    property public int baseLetterSpacing;
+    property public int cellHeight;
+    property public int narrowAdvanceWidth;
+    property public com.purride.pixelcore.PixelFontFamily narrowFontFamily;
+    property public com.purride.pixelcore.PixelFontWeight narrowFontWeight;
+    property public float narrowMinimumSampleRatio;
+    property public float narrowTextSizeRatio;
+    property public int oversampleFactor;
+    property public int wideAdvanceWidth;
+    property public com.purride.pixelcore.PixelFontFamily wideFontFamily;
+    property public com.purride.pixelcore.PixelFontWeight wideFontWeight;
+    property public float wideMinimumSampleRatio;
+    property public float wideTextSizeRatio;
+  }
+
+  public final class PackedGlyphRecord {
+    ctor public PackedGlyphRecord(int codePoint, int advanceWidth, int width, byte[] packedPixels);
+    method public operator int component1();
+    method public operator int component2();
+    method public operator int component3();
+    method public operator byte[] component4();
+    method public com.purride.pixelcore.PackedGlyphRecord copy(optional int codePoint, optional int advanceWidth, optional int width, optional byte[] packedPixels);
+    method @InaccessibleFromKotlin public int getAdvanceWidth();
+    method @InaccessibleFromKotlin public int getCodePoint();
+    method @InaccessibleFromKotlin public byte[] getPackedPixels();
+    method @InaccessibleFromKotlin public int getWidth();
+    property public int advanceWidth;
+    property public int codePoint;
+    property public byte[] packedPixels;
+    property public int width;
+  }
+
+  public enum PixelAxis {
+    enum_constant public static final com.purride.pixelcore.PixelAxis HORIZONTAL;
+    enum_constant public static final com.purride.pixelcore.PixelAxis VERTICAL;
+  }
+
+  public final class PixelBitmap {
+    ctor public PixelBitmap(int width, int height, int[] pixels);
+    method @InaccessibleFromKotlin public long getByteSize();
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public int[] getPixels();
+    method @InaccessibleFromKotlin public int getWidth();
+    method public int pixelAt(int x, int y);
+    property public long byteSize;
+    property public int height;
+    property public int[] pixels;
+    property public int width;
+    field public static final com.purride.pixelcore.PixelBitmap.Companion Companion;
+  }
+
+  public static final class PixelBitmap.Companion {
+    method public com.purride.pixelcore.PixelBitmap fromAndroidBitmap(android.graphics.Bitmap source);
+  }
+
+  public final class PixelBitmapFont implements com.purride.pixelcore.PixelTextRasterizer {
+    ctor public PixelBitmapFont();
+    ctor public PixelBitmapFont(optional int glyphWidth, optional int glyphHeight, optional int letterSpacing, optional int lineSpacing);
+    method @KotlinOnly public void drawText(com.purride.pixelcore.PixelBuffer buffer, String text, int x, int y, com.purride.pixelcore.PixelColor color);
+    method @InaccessibleFromKotlin public int getGlyphHeight();
+    method @InaccessibleFromKotlin public int getGlyphWidth();
+    method @InaccessibleFromKotlin public int getLineHeight();
+    method public int measureHeight(String text);
+    method public int measureText(String text);
+    property public int glyphHeight;
+    property public int glyphWidth;
+    property public int lineHeight;
+    field public static final com.purride.pixelcore.PixelBitmapFont.Companion Companion;
+  }
+
+  public static final class PixelBitmapFont.Companion {
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelBitmapFont getDefault();
+    property public com.purride.pixelcore.PixelBitmapFont Default;
+  }
+
+  public final class PixelBitmapRegion {
+    ctor public PixelBitmapRegion(int left, int top, int width, int height);
+    method public int component1();
+    method public int component2();
+    method public int component3();
+    method public int component4();
+    method public com.purride.pixelcore.PixelBitmapRegion copy(optional int left, optional int top, optional int width, optional int height);
+    method @InaccessibleFromKotlin public int getHeight();
+    method @InaccessibleFromKotlin public int getLeft();
+    method @InaccessibleFromKotlin public int getTop();
+    method @InaccessibleFromKotlin public int getWidth();
+    property public int height;
+    property public int left;
+    property public int top;
+    property public int width;
+  }
+
+  public final class PixelBitmapResourceDefinition {
+    ctor public PixelBitmapResourceDefinition(String id, String path);
+    ctor public PixelBitmapResourceDefinition(String id, String path, optional String? sha256);
+    method public operator String component1();
+    method public operator String component2();
+    method public operator String? component3();
+    method public com.purride.pixelcore.PixelBitmapResourceDefinition copy(optional String id, optional String path);
+    method @InaccessibleFromKotlin public String getId();
+    method @InaccessibleFromKotlin public String getPath();
+    method @InaccessibleFromKotlin public String? getSha256();
+    property public String id;
+    property public String path;
+    property public String? sha256;
+  }
+
+  public enum PixelBlendMode {
+    enum_constant public static final com.purride.pixelcore.PixelBlendMode Clear;
+    enum_constant public static final com.purride.pixelcore.PixelBlendMode Src;
+    enum_constant public static final com.purride.pixelcore.PixelBlendMode SrcOver;
+  }
+
+  public final class PixelBuffer {
+    ctor public PixelBuffer(int width, int height);
+    method public void blit(com.purride.pixelcore.PixelBuffer source, int destX, int destY);
+    method public void blitRegion(com.purride.pixelcore.PixelBuffer source, int sourceX, int sourceY, int copyWidth, int copyHeight, int destX, int destY);
+    method public void clear();
+    method public com.purride.pixelcore.PixelBuffer copy();
+    method @KotlinOnly public void drawRect(int left, int top, int rectWidth, int rectHeight, com.purride.pixelcore.PixelColor color, optional com.purride.pixelcore.PixelBlendMode blendMode);
+    method @KotlinOnly public void fillRect(int left, int top, int rectWidth, int rectHeight, com.purride.pixelcore.PixelColor color, optional com.purride.pixelcore.PixelBlendMode blendMode);
+    method @InaccessibleFromKotlin public int getHeight();
+    method @KotlinOnly public com.purride.pixelcore.PixelColor getPixel(int x, int y);
+    method @InaccessibleFromKotlin public int[] getPixels();
+    method @InaccessibleFromKotlin public int getWidth();
+    method @KotlinOnly public void setPixel(int x, int y, com.purride.pixelcore.PixelColor color, optional com.purride.pixelcore.PixelBlendMode blendMode);
+    property public int height;
+    property public int[] pixels;
+    property public int width;
+    field public static final com.purride.pixelcore.PixelBuffer.Companion Companion;
+  }
+
+  public static final class PixelBuffer.Companion {
+    method public Integer? blendPixel(int src, int dst, com.purride.pixelcore.PixelBlendMode blendMode);
+    method public int blendSrcOver(int src, int dst);
+  }
+
+  public final class PixelBufferPool {
+    ctor public PixelBufferPool();
+    ctor public PixelBufferPool(optional int maxBuffersPerKey);
+    method public com.purride.pixelcore.PixelBuffer acquire(int width, int height);
+    method public void clear();
+    method public void release(com.purride.pixelcore.PixelBuffer buffer);
+    method public com.purride.pixelcore.PixelBufferPoolStats stats();
+    field public static final com.purride.pixelcore.PixelBufferPool.Companion Companion;
+  }
+
+  public static final class PixelBufferPool.Companion {
+  }
+
+  public final class PixelBufferPoolStats {
+    ctor public PixelBufferPoolStats(int buckets, int cached, long hits, long misses);
+    method public int component1();
+    method public int component2();
+    method public long component3();
+    method public long component4();
+    method public com.purride.pixelcore.PixelBufferPoolStats copy(optional int buckets, optional int cached, optional long hits, optional long misses);
+    method @InaccessibleFromKotlin public int getBuckets();
+    method @InaccessibleFromKotlin public int getCached();
+    method @InaccessibleFromKotlin public double getHitRate();
+    method @InaccessibleFromKotlin public long getHits();
+    method @InaccessibleFromKotlin public long getMisses();
+    method @InaccessibleFromKotlin public long getTotal();
+    property public int buckets;
+    property public int cached;
+    property public double hitRate;
+    property public long hits;
+    property public long misses;
+    property public long total;
+  }
+
+  public interface PixelClusterTextRasterizer extends com.purride.pixelcore.PixelTextRasterizer {
+    method public boolean canRasterizeCluster(String cluster);
+  }
+
+  @kotlin.jvm.JvmInline public final value class PixelColor {
+    ctor @KotlinOnly public PixelColor(int argb);
+    method @InaccessibleFromKotlin public int getArgb();
+    property public int alpha;
+    property public int argb;
+    property public int blue;
+    property public int green;
+    property public int red;
+    field public static final com.purride.pixelcore.PixelColor.Companion Companion;
+  }
+
+  public static final class PixelColor.Companion {
+    method @KotlinOnly public com.purride.pixelcore.PixelColor fromArgb(int a, int r, int g, int b);
+    method @KotlinOnly public com.purride.pixelcore.PixelColor fromRgb(int r, int g, int b);
+    property public com.purride.pixelcore.PixelColor Black;
+    property public com.purride.pixelcore.PixelColor Transparent;
+    property public com.purride.pixelcore.PixelColor White;
+  }
+
+  public final class PixelColorResourceDefinition {
+    ctor @KotlinOnly public PixelColorResourceDefinition(String id, com.purride.pixelcore.PixelColor color);
+    method public String component1();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component2();
+    method @KotlinOnly public com.purride.pixelcore.PixelColorResourceDefinition copy(optional String id, optional com.purride.pixelcore.PixelColor color);
+    method @InaccessibleFromKotlin public String getId();
+    property public com.purride.pixelcore.PixelColor color;
+    property public String id;
+  }
+
+  public final class PixelCoreModule {
+    field public static final com.purride.pixelcore.PixelCoreModule INSTANCE;
+  }
+
+  public final class PixelFontEngine {
+    ctor public PixelFontEngine(com.purride.pixelcore.GlyphProvider glyphProvider);
+    method public void clearCache();
+    method @KotlinOnly public void drawText(com.purride.pixelcore.PixelBuffer buffer, String text, int startX, int startY, int maxWidth, optional com.purride.pixelcore.PixelColor color, com.purride.pixelcore.GlyphStyle style);
+    method public com.purride.pixelcore.PixelFontMetrics fontMetrics(optional String text, com.purride.pixelcore.GlyphStyle style);
+    method public com.purride.pixelcore.GlyphCacheStats glyphCacheStats();
+    method public int measureText(String text, com.purride.pixelcore.GlyphStyle style);
+    method public String trimToWidth(String text, com.purride.pixelcore.GlyphStyle style, int maxWidth);
+    field public static final com.purride.pixelcore.PixelFontEngine.Companion Companion;
+  }
+
+  public static final class PixelFontEngine.Companion {
+  }
+
+  public enum PixelFontFamily {
+    enum_constant public static final com.purride.pixelcore.PixelFontFamily DEFAULT;
+    enum_constant public static final com.purride.pixelcore.PixelFontFamily MONOSPACE;
+  }
+
+  public final class PixelFontMetrics {
+    ctor public PixelFontMetrics(int cellHeight, int baseline, int ascent, int descent, int inkTop, int inkBottom);
+    method public int component1();
+    method public int component2();
+    method public int component3();
+    method public int component4();
+    method public int component5();
+    method public int component6();
+    method public com.purride.pixelcore.PixelFontMetrics copy(optional int cellHeight, optional int baseline, optional int ascent, optional int descent, optional int inkTop, optional int inkBottom);
+    method @InaccessibleFromKotlin public int getAscent();
+    method @InaccessibleFromKotlin public int getBaseline();
+    method @InaccessibleFromKotlin public int getCellHeight();
+    method @InaccessibleFromKotlin public int getDescent();
+    method @InaccessibleFromKotlin public int getInkBottom();
+    method @InaccessibleFromKotlin public int getInkTop();
+    property public int ascent;
+    property public int baseline;
+    property public int cellHeight;
+    property public int descent;
+    property public int inkBottom;
+    property public int inkTop;
+  }
+
+  public final class PixelFontResourceDefinition {
+    ctor public PixelFontResourceDefinition(String id, String manifestPath, String binaryPath);
+    ctor public PixelFontResourceDefinition(String id, String manifestPath, String binaryPath, optional String? manifestSha256);
+    ctor public PixelFontResourceDefinition(String id, String manifestPath, String binaryPath, optional String? manifestSha256, optional String? binarySha256);
+    method public operator String component1();
+    method public operator String component2();
+    method public operator String component3();
+    method public operator String? component4();
+    method public operator String? component5();
+    method public com.purride.pixelcore.PixelFontResourceDefinition copy(optional String id, optional String manifestPath, optional String binaryPath);
+    method @InaccessibleFromKotlin public String getBinaryPath();
+    method @InaccessibleFromKotlin public String? getBinarySha256();
+    method @InaccessibleFromKotlin public String getId();
+    method @InaccessibleFromKotlin public String getManifestPath();
+    method @InaccessibleFromKotlin public String? getManifestSha256();
+    property public String binaryPath;
+    property public String? binarySha256;
+    property public String id;
+    property public String manifestPath;
+    property public String? manifestSha256;
+  }
+
+  public enum PixelFontWeight {
+    enum_constant public static final com.purride.pixelcore.PixelFontWeight BOLD;
+    enum_constant public static final com.purride.pixelcore.PixelFontWeight NORMAL;
+  }
+
+  public final class PixelGlyphPack {
+    ctor public PixelGlyphPack(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.util.Map<java.lang.Integer,com.purride.pixelcore.PackedGlyphRecord> glyphs);
+    method public com.purride.pixelcore.PixelGlyphPackManifest component1();
+    method public java.util.Map<java.lang.Integer,com.purride.pixelcore.PackedGlyphRecord> component2();
+    method public com.purride.pixelcore.PixelGlyphPack copy(optional com.purride.pixelcore.PixelGlyphPackManifest manifest, optional java.util.Map<java.lang.Integer,com.purride.pixelcore.PackedGlyphRecord> glyphs);
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.Integer,com.purride.pixelcore.PackedGlyphRecord> getGlyphs();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelGlyphPackManifest getManifest();
+    property public java.util.Map<java.lang.Integer,com.purride.pixelcore.PackedGlyphRecord> glyphs;
+    property public com.purride.pixelcore.PixelGlyphPackManifest manifest;
+  }
+
+  public final class PixelGlyphPackLoadException extends java.lang.IllegalArgumentException {
+    ctor public PixelGlyphPackLoadException(String message, optional Throwable? cause);
+  }
+
+  public final class PixelGlyphPackManifest {
+    ctor public PixelGlyphPackManifest(String packId, String displayName, int cellHeight, int baseline, int defaultAdvance, java.util.List<java.lang.String> supportedRanges);
+    method public String component1();
+    method public String component2();
+    method public int component3();
+    method public int component4();
+    method public int component5();
+    method public java.util.List<java.lang.String> component6();
+    method public com.purride.pixelcore.PixelGlyphPackManifest copy(optional String packId, optional String displayName, optional int cellHeight, optional int baseline, optional int defaultAdvance, optional java.util.List<java.lang.String> supportedRanges);
+    method @InaccessibleFromKotlin public int getBaseline();
+    method @InaccessibleFromKotlin public int getCellHeight();
+    method @InaccessibleFromKotlin public int getDefaultAdvance();
+    method @InaccessibleFromKotlin public String getDisplayName();
+    method @InaccessibleFromKotlin public String getPackId();
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getSupportedRanges();
+    property public int baseline;
+    property public int cellHeight;
+    property public int defaultAdvance;
+    property public String displayName;
+    property public String packId;
+    property public java.util.List<java.lang.String> supportedRanges;
+  }
+
+  public final class PixelGlyphPackParser {
+    method public com.purride.pixelcore.PixelGlyphPack parseBinary(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.io.InputStream inputStream);
+    method public com.purride.pixelcore.PixelGlyphPack parseBinary(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.io.InputStream inputStream, String? expectedSha256);
+    method public com.purride.pixelcore.PixelGlyphPackManifest parseManifest(String json);
+    method public com.purride.pixelcore.PixelGlyphPackManifest parseManifest(String json, String? expectedSha256);
+    field public static final com.purride.pixelcore.PixelGlyphPackParser INSTANCE;
+  }
+
+  public final class PixelGridGeometry {
+    ctor public PixelGridGeometry(float cellSize, float originX, float originY, float contentWidth, float contentHeight, float dotInset, float dotSize);
+    method public float component1();
+    method public float component2();
+    method public float component3();
+    method public float component4();
+    method public float component5();
+    method public float component6();
+    method public float component7();
+    method public com.purride.pixelcore.PixelGridGeometry copy(optional float cellSize, optional float originX, optional float originY, optional float contentWidth, optional float contentHeight, optional float dotInset, optional float dotSize);
+    method @InaccessibleFromKotlin public float getCellSize();
+    method @InaccessibleFromKotlin public float getContentHeight();
+    method @InaccessibleFromKotlin public float getContentWidth();
+    method @InaccessibleFromKotlin public float getDotInset();
+    method @InaccessibleFromKotlin public float getDotSize();
+    method @InaccessibleFromKotlin public float getOriginX();
+    method @InaccessibleFromKotlin public float getOriginY();
+    property public float cellSize;
+    property public float contentHeight;
+    property public float contentWidth;
+    property public float dotInset;
+    property public float dotSize;
+    property public float originX;
+    property public float originY;
+  }
+
+  public final class PixelGridGeometryResolver {
+    method public kotlin.Pair<java.lang.Integer,java.lang.Integer>? mapSurfaceToLogical(float touchX, float touchY, int viewWidth, int viewHeight, com.purride.pixelcore.ScreenProfile profile, optional boolean pixelGapEnabled, optional float pixelGapRatio);
+    method public kotlin.Pair<java.lang.Integer,java.lang.Integer>? mapSurfaceToLogical(float touchX, float touchY, int viewWidth, int viewHeight, com.purride.pixelcore.ScreenProfile profile, com.purride.pixelcore.PixelViewportPolicy viewportPolicy, optional boolean pixelGapEnabled, optional float pixelGapRatio);
+    method public com.purride.pixelcore.PixelGridGeometry? resolve(int viewWidth, int viewHeight, com.purride.pixelcore.ScreenProfile profile, optional boolean pixelGapEnabled, optional float pixelGapRatio);
+    method public com.purride.pixelcore.PixelGridGeometry? resolve(int viewWidth, int viewHeight, com.purride.pixelcore.ScreenProfile profile, com.purride.pixelcore.PixelViewportPolicy viewportPolicy, optional boolean pixelGapEnabled, optional float pixelGapRatio);
+    field public static final com.purride.pixelcore.PixelGridGeometryResolver INSTANCE;
+  }
+
+  public final class PixelResourceCache {
+    ctor public PixelResourceCache();
+    ctor public PixelResourceCache(optional com.purride.pixelcore.PixelResourceCacheLimits limits);
+    ctor public PixelResourceCache(optional com.purride.pixelcore.PixelResourceCacheLimits limits, optional com.purride.pixelcore.PixelResourceEvictionListener? evictionListener);
+    method public void clear();
+    method public com.purride.pixelcore.PixelResourceCacheDetailedSnapshot detailedSnapshot();
+    method public com.purride.pixelcore.PixelBitmap getBitmap(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelBitmap> loader);
+    method @InaccessibleFromKotlin public int getBitmapCount();
+    method public com.purride.pixelcore.PixelGlyphPack getGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelGlyphPack> loader);
+    method @InaccessibleFromKotlin public int getGlyphPackCount();
+    method public com.purride.pixelcore.PixelSpriteSheet getSpriteSheet(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelSpriteSheet> loader);
+    method @InaccessibleFromKotlin public int getSpriteSheetCount();
+    method public void remove(String key);
+    method public com.purride.pixelcore.PixelResourceCacheSnapshot snapshot();
+    property public int bitmapCount;
+    property public int glyphPackCount;
+    property public int spriteSheetCount;
+  }
+
+  public final class PixelResourceCacheDetailedSnapshot {
+    ctor public PixelResourceCacheDetailedSnapshot(long totalBytes, long bitmapBytes, long spriteSheetBytes, long glyphPackBytes, int bitmapCount, int spriteSheetCount, int glyphPackCount, long hitCount, long missCount, long evictionCount, long rejectedEntryCount, int inFlightLoadCount, java.util.List<com.purride.pixelcore.PixelResourceCacheEntrySnapshot> entries);
+    method public long component1();
+    method public long component10();
+    method public long component11();
+    method public int component12();
+    method public java.util.List<com.purride.pixelcore.PixelResourceCacheEntrySnapshot> component13();
+    method public long component2();
+    method public long component3();
+    method public long component4();
+    method public int component5();
+    method public int component6();
+    method public int component7();
+    method public long component8();
+    method public long component9();
+    method public com.purride.pixelcore.PixelResourceCacheDetailedSnapshot copy(optional long totalBytes, optional long bitmapBytes, optional long spriteSheetBytes, optional long glyphPackBytes, optional int bitmapCount, optional int spriteSheetCount, optional int glyphPackCount, optional long hitCount, optional long missCount, optional long evictionCount, optional long rejectedEntryCount, optional int inFlightLoadCount, optional java.util.List<com.purride.pixelcore.PixelResourceCacheEntrySnapshot> entries);
+    method @InaccessibleFromKotlin public long getBitmapBytes();
+    method @InaccessibleFromKotlin public int getBitmapCount();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelResourceCacheEntrySnapshot> getEntries();
+    method @InaccessibleFromKotlin public long getEvictionCount();
+    method @InaccessibleFromKotlin public long getGlyphPackBytes();
+    method @InaccessibleFromKotlin public int getGlyphPackCount();
+    method @InaccessibleFromKotlin public long getHitCount();
+    method @InaccessibleFromKotlin public int getInFlightLoadCount();
+    method @InaccessibleFromKotlin public long getMissCount();
+    method @InaccessibleFromKotlin public long getRejectedEntryCount();
+    method @InaccessibleFromKotlin public long getSpriteSheetBytes();
+    method @InaccessibleFromKotlin public int getSpriteSheetCount();
+    method @InaccessibleFromKotlin public long getTotalBytes();
+    property public long bitmapBytes;
+    property public int bitmapCount;
+    property public java.util.List<com.purride.pixelcore.PixelResourceCacheEntrySnapshot> entries;
+    property public long evictionCount;
+    property public long glyphPackBytes;
+    property public int glyphPackCount;
+    property public long hitCount;
+    property public int inFlightLoadCount;
+    property public long missCount;
+    property public long rejectedEntryCount;
+    property public long spriteSheetBytes;
+    property public int spriteSheetCount;
+    property public long totalBytes;
+  }
+
+  public final class PixelResourceCacheEntrySnapshot {
+    ctor public PixelResourceCacheEntrySnapshot(String key, com.purride.pixelcore.PixelResourceKind kind, long byteSize, long lastAccessSequence);
+    method public String component1();
+    method public com.purride.pixelcore.PixelResourceKind component2();
+    method public long component3();
+    method public long component4();
+    method public com.purride.pixelcore.PixelResourceCacheEntrySnapshot copy(optional String key, optional com.purride.pixelcore.PixelResourceKind kind, optional long byteSize, optional long lastAccessSequence);
+    method @InaccessibleFromKotlin public long getByteSize();
+    method @InaccessibleFromKotlin public String getKey();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelResourceKind getKind();
+    method @InaccessibleFromKotlin public long getLastAccessSequence();
+    property public long byteSize;
+    property public String key;
+    property public com.purride.pixelcore.PixelResourceKind kind;
+    property public long lastAccessSequence;
+  }
+
+  public final class PixelResourceCacheLimits {
+    ctor public PixelResourceCacheLimits();
+    ctor public PixelResourceCacheLimits(optional long maxTotalBytes, optional long maxBitmapBytes, optional long maxSpriteSheetBytes, optional long maxGlyphPackBytes, optional int maxBitmapEntries, optional int maxSpriteSheetEntries, optional int maxGlyphPackEntries);
+    method public long component1();
+    method public long component2();
+    method public long component3();
+    method public long component4();
+    method public int component5();
+    method public int component6();
+    method public int component7();
+    method public com.purride.pixelcore.PixelResourceCacheLimits copy(optional long maxTotalBytes, optional long maxBitmapBytes, optional long maxSpriteSheetBytes, optional long maxGlyphPackBytes, optional int maxBitmapEntries, optional int maxSpriteSheetEntries, optional int maxGlyphPackEntries);
+    method @InaccessibleFromKotlin public long getMaxBitmapBytes();
+    method @InaccessibleFromKotlin public int getMaxBitmapEntries();
+    method @InaccessibleFromKotlin public long getMaxGlyphPackBytes();
+    method @InaccessibleFromKotlin public int getMaxGlyphPackEntries();
+    method @InaccessibleFromKotlin public long getMaxSpriteSheetBytes();
+    method @InaccessibleFromKotlin public int getMaxSpriteSheetEntries();
+    method @InaccessibleFromKotlin public long getMaxTotalBytes();
+    property public long maxBitmapBytes;
+    property public int maxBitmapEntries;
+    property public long maxGlyphPackBytes;
+    property public int maxGlyphPackEntries;
+    property public long maxSpriteSheetBytes;
+    property public int maxSpriteSheetEntries;
+    property public long maxTotalBytes;
+  }
+
+  public final class PixelResourceCacheSnapshot {
+    ctor public PixelResourceCacheSnapshot(int bitmapCount, int spriteSheetCount, int bitmapHits, int bitmapMisses, int spriteSheetHits, int spriteSheetMisses, int removeCount, int clearCount);
+    method public int component1();
+    method public int component2();
+    method public int component3();
+    method public int component4();
+    method public int component5();
+    method public int component6();
+    method public int component7();
+    method public int component8();
+    method public com.purride.pixelcore.PixelResourceCacheSnapshot copy(optional int bitmapCount, optional int spriteSheetCount, optional int bitmapHits, optional int bitmapMisses, optional int spriteSheetHits, optional int spriteSheetMisses, optional int removeCount, optional int clearCount);
+    method @InaccessibleFromKotlin public int getBitmapCount();
+    method @InaccessibleFromKotlin public int getBitmapHits();
+    method @InaccessibleFromKotlin public int getBitmapMisses();
+    method @InaccessibleFromKotlin public int getClearCount();
+    method @InaccessibleFromKotlin public int getRemoveCount();
+    method @InaccessibleFromKotlin public int getSpriteSheetCount();
+    method @InaccessibleFromKotlin public int getSpriteSheetHits();
+    method @InaccessibleFromKotlin public int getSpriteSheetMisses();
+    property public int bitmapCount;
+    property public int bitmapHits;
+    property public int bitmapMisses;
+    property public int clearCount;
+    property public int removeCount;
+    property public int spriteSheetCount;
+    property public int spriteSheetHits;
+    property public int spriteSheetMisses;
+  }
+
+  public final class PixelResourceCatalog {
+    ctor public PixelResourceCatalog(com.purride.pixelcore.PixelResourceManifest resources, java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> colors, java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> fonts);
+    method public com.purride.pixelcore.PixelResourceManifest component1();
+    method public java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> component2();
+    method public java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> component3();
+    method public com.purride.pixelcore.PixelResourceCatalog copy(optional com.purride.pixelcore.PixelResourceManifest resources, optional java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> colors, optional java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> fonts);
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> getColors();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> getFonts();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelResourceManifest getResources();
+    property public java.util.List<com.purride.pixelcore.PixelColorResourceDefinition> colors;
+    property public java.util.List<com.purride.pixelcore.PixelFontResourceDefinition> fonts;
+    property public com.purride.pixelcore.PixelResourceManifest resources;
+  }
+
+  public final class PixelResourceEviction {
+    ctor public PixelResourceEviction(String key, com.purride.pixelcore.PixelResourceKind kind, long byteSize, com.purride.pixelcore.PixelResourceEvictionReason reason);
+    method public String component1();
+    method public com.purride.pixelcore.PixelResourceKind component2();
+    method public long component3();
+    method public com.purride.pixelcore.PixelResourceEvictionReason component4();
+    method public com.purride.pixelcore.PixelResourceEviction copy(optional String key, optional com.purride.pixelcore.PixelResourceKind kind, optional long byteSize, optional com.purride.pixelcore.PixelResourceEvictionReason reason);
+    method @InaccessibleFromKotlin public long getByteSize();
+    method @InaccessibleFromKotlin public String getKey();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelResourceKind getKind();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelResourceEvictionReason getReason();
+    property public long byteSize;
+    property public String key;
+    property public com.purride.pixelcore.PixelResourceKind kind;
+    property public com.purride.pixelcore.PixelResourceEvictionReason reason;
+  }
+
+  public fun interface PixelResourceEvictionListener {
+    method public void onEvicted(com.purride.pixelcore.PixelResourceEviction eviction);
+  }
+
+  public enum PixelResourceEvictionReason {
+    enum_constant public static final com.purride.pixelcore.PixelResourceEvictionReason ENTRY_TOO_LARGE;
+    enum_constant public static final com.purride.pixelcore.PixelResourceEvictionReason TOTAL_BYTE_BUDGET;
+    enum_constant public static final com.purride.pixelcore.PixelResourceEvictionReason TYPE_BYTE_BUDGET;
+    enum_constant public static final com.purride.pixelcore.PixelResourceEvictionReason TYPE_ENTRY_BUDGET;
+  }
+
+  public enum PixelResourceKind {
+    enum_constant public static final com.purride.pixelcore.PixelResourceKind BITMAP;
+    enum_constant public static final com.purride.pixelcore.PixelResourceKind GLYPH_PACK;
+    enum_constant public static final com.purride.pixelcore.PixelResourceKind SPRITE_SHEET;
+  }
+
+  public final class PixelResourceManifest {
+    ctor public PixelResourceManifest(java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> bitmaps, java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> spriteSheets, optional int version, optional java.util.Map<java.lang.String,java.lang.String> metadata);
+    method public java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> component1();
+    method public java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> component2();
+    method public int component3();
+    method public java.util.Map<java.lang.String,java.lang.String> component4();
+    method public com.purride.pixelcore.PixelResourceManifest copy(optional java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> bitmaps, optional java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> spriteSheets, optional int version, optional java.util.Map<java.lang.String,java.lang.String> metadata);
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> getBitmaps();
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.String> getMetadata();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> getSpriteSheets();
+    method @InaccessibleFromKotlin public int getVersion();
+    property public java.util.List<com.purride.pixelcore.PixelBitmapResourceDefinition> bitmaps;
+    property public java.util.Map<java.lang.String,java.lang.String> metadata;
+    property public java.util.List<com.purride.pixelcore.PixelSpriteSheetResourceDefinition> spriteSheets;
+    property public int version;
+  }
+
+  public final class PixelResourceManifestJsonLoader {
+    method public com.purride.pixelcore.PixelResourceManifest parse(String json);
+    method public com.purride.pixelcore.PixelResourceManifest parse(String json, String? expectedSha256);
+    method public com.purride.pixelcore.PixelResourceCatalog parseCatalog(String json);
+    method public com.purride.pixelcore.PixelResourceCatalog parseCatalog(String json, String? expectedSha256);
+    field public static final com.purride.pixelcore.PixelResourceManifestJsonLoader INSTANCE;
+  }
+
+  public final class PixelResourceManifestLoadException extends java.lang.IllegalArgumentException {
+    ctor public PixelResourceManifestLoadException(String message, optional Throwable? cause);
+  }
+
+  public enum PixelShape {
+    enum_constant public static final com.purride.pixelcore.PixelShape CIRCLE;
+    enum_constant public static final com.purride.pixelcore.PixelShape DIAMOND;
+    enum_constant public static final com.purride.pixelcore.PixelShape SQUARE;
+  }
+
+  public final class PixelSpriteAtlas {
+    ctor public PixelSpriteAtlas(com.purride.pixelcore.PixelSpriteSheet sheet, java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> frames, int scale);
+    method public com.purride.pixelcore.PixelSpriteSheet component1();
+    method public java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> component2();
+    method public int component3();
+    method public com.purride.pixelcore.PixelSpriteAtlas copy(optional com.purride.pixelcore.PixelSpriteSheet sheet, optional java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> frames, optional int scale);
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> getFrames();
+    method @InaccessibleFromKotlin public int getScale();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelSpriteSheet getSheet();
+    property public java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> frames;
+    property public int scale;
+    property public com.purride.pixelcore.PixelSpriteSheet sheet;
+  }
+
+  public final class PixelSpriteAtlasDefinition {
+    ctor public PixelSpriteAtlasDefinition(String bitmap, java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> frames, optional int scale, optional int version, optional java.util.Map<java.lang.String,java.lang.String> metadata);
+    method public String component1();
+    method public java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> component2();
+    method public int component3();
+    method public int component4();
+    method public java.util.Map<java.lang.String,java.lang.String> component5();
+    method public com.purride.pixelcore.PixelSpriteAtlasDefinition copy(optional String bitmap, optional java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> frames, optional int scale, optional int version, optional java.util.Map<java.lang.String,java.lang.String> metadata);
+    method @InaccessibleFromKotlin public String getBitmap();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> getFrames();
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.String> getMetadata();
+    method @InaccessibleFromKotlin public int getScale();
+    method @InaccessibleFromKotlin public int getVersion();
+    property public String bitmap;
+    property public java.util.List<com.purride.pixelcore.PixelSpriteFrameDefinition> frames;
+    property public java.util.Map<java.lang.String,java.lang.String> metadata;
+    property public int scale;
+    property public int version;
+  }
+
+  public final class PixelSpriteFrameDefinition {
+    ctor public PixelSpriteFrameDefinition(com.purride.pixelcore.PixelBitmapRegion region, optional int sourceWidth, optional int sourceHeight, optional int trimLeft, optional int trimTop, optional int pivotX, optional int pivotY);
+    method public com.purride.pixelcore.PixelBitmapRegion component1();
+    method public int component2();
+    method public int component3();
+    method public int component4();
+    method public int component5();
+    method public int component6();
+    method public int component7();
+    method public com.purride.pixelcore.PixelSpriteFrameDefinition copy(optional com.purride.pixelcore.PixelBitmapRegion region, optional int sourceWidth, optional int sourceHeight, optional int trimLeft, optional int trimTop, optional int pivotX, optional int pivotY);
+    method @InaccessibleFromKotlin public int getPivotX();
+    method @InaccessibleFromKotlin public int getPivotY();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelBitmapRegion getRegion();
+    method @InaccessibleFromKotlin public int getSourceHeight();
+    method @InaccessibleFromKotlin public int getSourceWidth();
+    method @InaccessibleFromKotlin public int getTrimLeft();
+    method @InaccessibleFromKotlin public int getTrimTop();
+    property public int pivotX;
+    property public int pivotY;
+    property public com.purride.pixelcore.PixelBitmapRegion region;
+    property public int sourceHeight;
+    property public int sourceWidth;
+    property public int trimLeft;
+    property public int trimTop;
+  }
+
+  public final class PixelSpriteSheet {
+    ctor public PixelSpriteSheet(com.purride.pixelcore.PixelBitmap bitmap, java.util.List<com.purride.pixelcore.PixelBitmapRegion> frames);
+    method public com.purride.pixelcore.PixelBitmap component1();
+    method public java.util.List<com.purride.pixelcore.PixelBitmapRegion> component2();
+    method public com.purride.pixelcore.PixelSpriteSheet copy(optional com.purride.pixelcore.PixelBitmap bitmap, optional java.util.List<com.purride.pixelcore.PixelBitmapRegion> frames);
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelBitmap getBitmap();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelBitmapRegion> getFrames();
+    property public com.purride.pixelcore.PixelBitmap bitmap;
+    property public java.util.List<com.purride.pixelcore.PixelBitmapRegion> frames;
+  }
+
+  public final class PixelSpriteSheetDefinition {
+    ctor public PixelSpriteSheetDefinition(String bitmap, java.util.List<com.purride.pixelcore.PixelBitmapRegion> frames, optional int version, optional java.util.Map<java.lang.String,java.lang.String> metadata);
+    method public String component1();
+    method public java.util.List<com.purride.pixelcore.PixelBitmapRegion> component2();
+    method public int component3();
+    method public java.util.Map<java.lang.String,java.lang.String> component4();
+    method public com.purride.pixelcore.PixelSpriteSheetDefinition copy(optional String bitmap, optional java.util.List<com.purride.pixelcore.PixelBitmapRegion> frames, optional int version, optional java.util.Map<java.lang.String,java.lang.String> metadata);
+    method @InaccessibleFromKotlin public String getBitmap();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelcore.PixelBitmapRegion> getFrames();
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.String> getMetadata();
+    method @InaccessibleFromKotlin public int getVersion();
+    property public String bitmap;
+    property public java.util.List<com.purride.pixelcore.PixelBitmapRegion> frames;
+    property public java.util.Map<java.lang.String,java.lang.String> metadata;
+    property public int version;
+  }
+
+  public final class PixelSpriteSheetJsonLoader {
+    method public com.purride.pixelcore.PixelSpriteSheet load(String json, com.purride.pixelcore.PixelBitmap bitmap);
+    method public com.purride.pixelcore.PixelSpriteSheet load(String json, com.purride.pixelcore.PixelBitmap bitmap, String? expectedSha256);
+    method public com.purride.pixelcore.PixelSpriteAtlas loadAtlas(String json, com.purride.pixelcore.PixelBitmap bitmap);
+    method public com.purride.pixelcore.PixelSpriteAtlas loadAtlas(String json, com.purride.pixelcore.PixelBitmap bitmap, String? expectedSha256);
+    method public com.purride.pixelcore.PixelSpriteAtlasDefinition parseAtlasDefinition(String json);
+    method public com.purride.pixelcore.PixelSpriteAtlasDefinition parseAtlasDefinition(String json, String? expectedSha256);
+    method public com.purride.pixelcore.PixelSpriteSheetDefinition parseDefinition(String json);
+    method public com.purride.pixelcore.PixelSpriteSheetDefinition parseDefinition(String json, String? expectedSha256);
+    field public static final com.purride.pixelcore.PixelSpriteSheetJsonLoader INSTANCE;
+  }
+
+  public final class PixelSpriteSheetLoadException extends java.lang.IllegalArgumentException {
+    ctor public PixelSpriteSheetLoadException(String message, optional Throwable? cause);
+  }
+
+  public final class PixelSpriteSheetResourceDefinition {
+    ctor public PixelSpriteSheetResourceDefinition(String id, String path, String bitmap);
+    ctor public PixelSpriteSheetResourceDefinition(String id, String path, String bitmap, optional String? sha256);
+    method public operator String component1();
+    method public operator String component2();
+    method public operator String component3();
+    method public operator String? component4();
+    method public com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy(optional String id, optional String path, optional String bitmap);
+    method @InaccessibleFromKotlin public String getBitmap();
+    method @InaccessibleFromKotlin public String getId();
+    method @InaccessibleFromKotlin public String getPath();
+    method @InaccessibleFromKotlin public String? getSha256();
+    property public String bitmap;
+    property public String id;
+    property public String path;
+    property public String? sha256;
+  }
+
+  public final class PixelStyledTextRasterizer implements com.purride.pixelcore.PixelClusterTextRasterizer {
+    ctor public PixelStyledTextRasterizer(com.purride.pixelcore.PixelFontEngine engine, com.purride.pixelcore.GlyphStyle style, optional int lineSpacing);
+    method public boolean canRasterizeCluster(String cluster);
+    method @KotlinOnly public void drawText(com.purride.pixelcore.PixelBuffer buffer, String text, int x, int y, com.purride.pixelcore.PixelColor color);
+    method public int measureHeight(String text);
+    method public int measureText(String text);
+  }
+
+  public interface PixelTextRasterizer {
+    method @KotlinOnly public void drawText(com.purride.pixelcore.PixelBuffer buffer, String text, int x, int y, optional com.purride.pixelcore.PixelColor color);
+    method public default com.purride.pixelcore.PixelFontMetrics fontMetrics(optional String text);
+    method public int measureHeight(String text);
+    method public int measureText(String text);
+  }
+
+  public enum PixelViewportAlignment {
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment BOTTOM_CENTER;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment BOTTOM_LEFT;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment BOTTOM_RIGHT;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment CENTER;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment CENTER_LEFT;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment CENTER_RIGHT;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment TOP_CENTER;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment TOP_LEFT;
+    enum_constant public static final com.purride.pixelcore.PixelViewportAlignment TOP_RIGHT;
+  }
+
+  public enum PixelViewportFit {
+    enum_constant public static final com.purride.pixelcore.PixelViewportFit CONTAIN;
+    enum_constant public static final com.purride.pixelcore.PixelViewportFit COVER;
+  }
+
+  public final class PixelViewportPolicy {
+    ctor public PixelViewportPolicy();
+    ctor public PixelViewportPolicy(optional com.purride.pixelcore.PixelViewportFit fit, optional com.purride.pixelcore.PixelViewportQuantization quantization, optional com.purride.pixelcore.PixelViewportAlignment alignment);
+    method public com.purride.pixelcore.PixelViewportFit component1();
+    method public com.purride.pixelcore.PixelViewportQuantization component2();
+    method public com.purride.pixelcore.PixelViewportAlignment component3();
+    method public com.purride.pixelcore.PixelViewportPolicy copy(optional com.purride.pixelcore.PixelViewportFit fit, optional com.purride.pixelcore.PixelViewportQuantization quantization, optional com.purride.pixelcore.PixelViewportAlignment alignment);
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelViewportAlignment getAlignment();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelViewportFit getFit();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelViewportQuantization getQuantization();
+    property public com.purride.pixelcore.PixelViewportAlignment alignment;
+    property public com.purride.pixelcore.PixelViewportFit fit;
+    property public com.purride.pixelcore.PixelViewportQuantization quantization;
+    field public static final com.purride.pixelcore.PixelViewportPolicy.Companion Companion;
+  }
+
+  public static final class PixelViewportPolicy.Companion {
+    method public com.purride.pixelcore.PixelViewportPolicy fromLegacyScaleMode(com.purride.pixelcore.ScaleMode scaleMode);
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelViewportPolicy getLegacyFitCenter();
+    property public com.purride.pixelcore.PixelViewportPolicy LegacyFitCenter;
+  }
+
+  public enum PixelViewportQuantization {
+    enum_constant public static final com.purride.pixelcore.PixelViewportQuantization FRACTIONAL;
+    enum_constant public static final com.purride.pixelcore.PixelViewportQuantization INTEGER;
+  }
+
+  public final class RenderPerfLogger {
+    method public void mark(String event, String detail);
+    method public <T> T measure(String stage, kotlin.jvm.functions.Function0<? extends T> block);
+    method public void record(String stage, long durationNs);
+    field public static final com.purride.pixelcore.RenderPerfLogger INSTANCE;
+  }
+
+  public enum ScaleMode {
+    enum_constant public static final com.purride.pixelcore.ScaleMode FIT_CENTER;
+  }
+
+  public final class ScreenProfile {
+    ctor public ScreenProfile(int logicalWidth, int logicalHeight, int dotSizePx, optional com.purride.pixelcore.PixelShape pixelShape, optional com.purride.pixelcore.ScaleMode scaleMode);
+    method public int component1();
+    method public int component2();
+    method public int component3();
+    method public com.purride.pixelcore.PixelShape component4();
+    method public com.purride.pixelcore.ScaleMode component5();
+    method public com.purride.pixelcore.ScreenProfile copy(optional int logicalWidth, optional int logicalHeight, optional int dotSizePx, optional com.purride.pixelcore.PixelShape pixelShape, optional com.purride.pixelcore.ScaleMode scaleMode);
+    method @InaccessibleFromKotlin public int getDotSizePx();
+    method @InaccessibleFromKotlin public int getLogicalHeight();
+    method @InaccessibleFromKotlin public int getLogicalWidth();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelShape getPixelShape();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.ScaleMode getScaleMode();
+    property public int dotSizePx;
+    property public int logicalHeight;
+    property public int logicalWidth;
+    property public com.purride.pixelcore.PixelShape pixelShape;
+    property public com.purride.pixelcore.ScaleMode scaleMode;
+  }
+
+  public final class ScreenProfileFactory {
+    method public com.purride.pixelcore.ScreenProfile create(int widthPx, int heightPx, optional int dotSizePx, optional com.purride.pixelcore.PixelShape pixelShape);
+    method @InaccessibleFromKotlin public java.util.List<java.lang.Integer> getSupportedDotSizePxOptions();
+    method public java.util.List<java.lang.Integer> resolutionOptions(com.purride.pixelcore.ScreenProfile? currentProfile);
+    property public static int defaultDotSizePx;
+    property public java.util.List<java.lang.Integer> supportedDotSizePxOptions;
+    field public static final com.purride.pixelcore.ScreenProfileFactory INSTANCE;
+    field public static final int defaultDotSizePx = 12; // 0xc
+  }
+
+}

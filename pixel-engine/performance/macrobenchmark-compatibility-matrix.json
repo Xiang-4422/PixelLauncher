@@ -1,0 +1,30 @@
+{
+  "entries": [
+    {
+      "apiLevel": 24,
+      "evidenceDirectory": "build/reports/performance/matrix/api24-final-2026-07-14",
+      "expectedDevice": "Pixel_API_24(AVD) - 7.0",
+      "expectedPageSizeBytes": null
+    },
+    {
+      "apiLevel": 29,
+      "evidenceDirectory": "build/reports/performance/matrix/api29-final-2026-07-14",
+      "expectedDevice": "Pixel_API_29(AVD) - 10",
+      "expectedPageSizeBytes": null
+    },
+    {
+      "apiLevel": 36,
+      "evidenceDirectory": "build/reports/performance/matrix/api36-final-2026-07-14",
+      "expectedDevice": "Pixel_API_36(AVD) - 16",
+      "expectedPageSizeBytes": null
+    },
+    {
+      "apiLevel": 37,
+      "evidenceDirectory": "build/reports/performance/matrix/api37-16kb-final-2026-07-14",
+      "expectedDevice": "Pixel_4(AVD) - 17",
+      "expectedPageSizeBytes": 16384
+    }
+  ],
+  "evidenceMode": "compatibility-dry-run",
+  "schemaVersion": 1
+}

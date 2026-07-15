@@ -1,39 +1,53 @@
 package com.purride.pixelui
 
+/** 保留 `PixelForm` 对 `Validator` 的稳定源码别名，避免 artifact 拆分破坏旧导入路径。 */
 public typealias Validator<T> = (T) -> String?
+/** 保留 `PixelForm` 对 `FormValidator` 的稳定源码别名，避免 artifact 拆分破坏旧导入路径。 */
 public typealias FormValidator = (Map<String, Any?>) -> Map<String, String>
 
 /**
+ * 定义 `AsyncValidator` 在 `PixelForm` 中的可替换调用契约。
+ *
  * Callback-based async field validator.
  *
  * Return a cancellation lambda. Call [complete] with `null` for success or an error string for failure.
  */
 public fun interface AsyncValidator<T> {
+    /** 按 `validate` 规则校验或配置 `PixelForm`，不满足不变量的输入会被明确拒绝。 */
     public fun validate(value: T, complete: (String?) -> Unit): () -> Unit
 }
 
 /**
+ * 定义 `AsyncFormValidator` 在 `PixelForm` 中的可替换调用契约。
+ *
  * Callback-based async cross-field validator.
  *
  * Return a cancellation lambda. Call [complete] with `fieldId -> errorText`; an empty map means success.
  */
 public fun interface AsyncFormValidator {
+    /** 按 `validate` 规则校验或配置 `PixelForm`，不满足不变量的输入会被明确拒绝。 */
     public fun validate(values: Map<String, Any?>, complete: (Map<String, String>) -> Unit): () -> Unit
 }
 
 /**
+ * 定义 `FormSubmitter` 在 `PixelForm` 中的可替换调用契约。
+ *
  * Callback-based form submitter.
  *
  * Return a cancellation lambda. Call [complete] with `null` for success or a submit-level error string.
  */
 public fun interface FormSubmitter {
+    /** 向 `PixelForm` 提交 `submit` 数据或事件，并按所属类型的顺序与所有权规则保存。 */
     public fun submit(values: Map<String, Any?>, complete: (String?) -> Unit): () -> Unit
 }
 
+/** 定义 `FormAsyncOperation` 的调用契约，使 `PixelForm` 实现可以在不泄漏具体类型的情况下替换。 */
 public fun interface FormAsyncOperation {
+    /** 判断 `PixelForm` 是否满足 `cancel` 对应条件，不改变当前状态。 */
     public fun cancel()
 }
 
+/** 保存 `PixelForm` 的可观察或可恢复状态；字段变更必须维持类型声明的不变量。 */
 public enum class FormSubmitState {
     IDLE,
     VALIDATING,
@@ -42,37 +56,50 @@ public enum class FormSubmitState {
     FAILED,
 }
 
+/** 定义 `FormFieldRegistration` 的调用契约，使 `PixelForm` 实现可以在不泄漏具体类型的情况下替换。 */
 public fun interface FormFieldRegistration {
+    /** 从 `PixelForm` 释放 `dispose` 对应内容；重复调用按既有幂等约束处理。 */
     public fun dispose()
 }
 
+/** 协调 `PixelForm` 的状态变更、输入处理与生命周期收敛。 */
 public class FormController(
+    /** 提供 `PixelForm` 用于识别或兼容校验的 `validators` 值；写入后由所属对象在下一次状态同步时生效。 */
     public var validators: List<FormValidator> = emptyList(),
+    /** 提供 `PixelForm` 当前管理的 `focusScopeNode` 内容。 */
     public val focusScopeNode: FocusScopeNode = FocusScopeNode(),
+    /** 提供 `PixelForm` 用于识别或兼容校验的 `asyncValidators` 值；写入后由所属对象在下一次状态同步时生效。 */
     public var asyncValidators: List<AsyncFormValidator> = emptyList(),
 ) : ChangeNotifier() {
     private val fields = linkedSetOf<RegisteredFormField<*>>()
     private var activeOperationId = 0
     private var activeCancels: MutableList<() -> Unit> = mutableListOf()
 
+    /** 保存 `PixelForm` 当前的 `submitState` 状态维度；写入后由所属对象在下一次状态同步时生效。 */
     public var submitState: FormSubmitState = FormSubmitState.IDLE
         private set
 
+    /** 保存 `PixelForm` 的 `submitErrorText` 结果或失败信息；写入后由所属对象在下一次状态同步时生效。 */
     public var submitErrorText: String? = null
         private set
 
+    /** 保存 `PixelForm` 的 `fieldCount` 计数或索引边界。 */
     public val fieldCount: Int
         get() = fields.size
 
+    /** 表示 `PixelForm` 当前是否满足 `isValid` 对应条件。 */
     public val isValid: Boolean
         get() = fields.none { it.hasError }
 
+    /** 表示 `PixelForm` 当前是否满足 `isValidating` 对应条件。 */
     public val isValidating: Boolean
         get() = submitState == FormSubmitState.VALIDATING
 
+    /** 表示 `PixelForm` 当前是否满足 `isSubmitting` 对应条件。 */
     public val isSubmitting: Boolean
         get() = submitState == FormSubmitState.SUBMITTING
 
+    /** 向 `PixelForm` 注册 `registerField` 对应内容，并遵守重复注册与生命周期规则。 */
     public fun <T> registerField(
         state: FormFieldState<T>,
         validator: Validator<T>? = null,
@@ -97,6 +124,7 @@ public class FormController(
         }
     }
 
+    /** 按 `validate` 规则校验或配置 `PixelForm`，不满足不变量的输入会被明确拒绝。 */
     public fun validate(): Boolean {
         cancelActiveOperation()
         setSubmitState(FormSubmitState.IDLE, null, notify = false)
@@ -105,6 +133,7 @@ public class FormController(
         return valid
     }
 
+    /** 按 `validateAsync` 规则校验或配置 `PixelForm`，不满足不变量的输入会被明确拒绝。 */
     public fun validateAsync(onComplete: (Boolean) -> Unit): FormAsyncOperation {
         cancelActiveOperation()
         val operationId = nextOperationId()
@@ -171,6 +200,7 @@ public class FormController(
         }
     }
 
+    /** 向 `PixelForm` 提交 `submit` 数据或事件，并按所属类型的顺序与所有权规则保存。 */
     public fun submit(
         submitter: FormSubmitter,
         onComplete: (Boolean) -> Unit = {},
@@ -205,11 +235,13 @@ public class FormController(
         }
     }
 
+    /** 从 `PixelForm` 释放 `clearSubmitState` 对应内容；重复调用按既有幂等约束处理。 */
     public fun clearSubmitState() {
         cancelActiveOperation()
         setSubmitState(FormSubmitState.IDLE, null)
     }
 
+    /** 把 `PixelForm` 的 `reset` 运行状态恢复到可再次使用的初始边界。 */
     public fun reset() {
         cancelActiveOperation()
         fields.toList().forEach { field -> field.reset() }
@@ -340,20 +372,25 @@ public class FormController(
     }
 }
 
+/** 保存 `PixelForm` 的可观察或可恢复状态；字段变更必须维持类型声明的不变量。 */
 public class FormFieldState<T>(
     initialValue: T,
 ) : ChangeNotifier() {
     private val initialValue: T = initialValue
 
+    /** 保存 `PixelForm` 对外传递的 `value` 数据；写入后由所属对象在下一次状态同步时生效。 */
     public var value: T = initialValue
         private set
 
+    /** 保存 `PixelForm` 的 `errorText` 结果或失败信息；写入后由所属对象在下一次状态同步时生效。 */
     public var errorText: String? = null
         private set
 
+    /** 表示 `PixelForm` 当前是否满足 `hasError` 对应条件。 */
     public val hasError: Boolean
         get() = errorText != null
 
+    /** 更新 `PixelForm` 的 `setValue` 状态，并保持相关边界与派生状态一致。 */
     public fun setValue(value: T) {
         if (this.value == value) return
         this.value = value
@@ -373,6 +410,7 @@ public class FormFieldState<T>(
     }
 }
 
+/** 创建 `Form` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun Form(
     child: Widget,
     controller: FormController = FormController(),
@@ -389,6 +427,7 @@ public fun Form(
     )
 }
 
+/** 创建 `FormField` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun <T> FormField(
     state: FormFieldState<T>,
     validator: Validator<T>? = null,

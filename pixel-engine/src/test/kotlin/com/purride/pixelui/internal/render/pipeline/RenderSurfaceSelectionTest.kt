@@ -295,4 +295,52 @@ class RenderSurfaceSelectionTest {
         val handlePixels = buffer.pixels.count { it == handleColor.argb }
         assertEquals("readOnly field must not draw selection handles", 0, handlePixels)
     }
+
+    /** Mixed-Bidi selection end paints the edge owned by the logically preceding cluster. */
+    @Test
+    fun mixedBidiSelectionEndHandleUsesUpstreamAffinity() {
+        /** Canonical mixed paragraph with dual visual carets around the Hebrew run. */
+        val text = "ABC אבג 123"
+        /** Controller owning the focused non-collapsed selection. */
+        val controller = PixelTextFieldController()
+        /** Selection whose logical end has distinct upstream and downstream positions. */
+        val state = controller.create(initialText = text, selectionStart = 1, selectionEnd = 4)
+        controller.focus(state)
+        /** Exact RenderText instance consumed by selection, pointer, and semantic geometry. */
+        val textChild = RenderText(
+            text = text,
+            style = PixelTextStyle(color = textColor),
+            textAlign = PixelTextAlign.START,
+            textDirection = TextDirection.LTR,
+            softWrap = false,
+            overflow = TextOverflow.CLIP,
+            maxLines = 1,
+            defaultTextRasterizer = PixelBitmapFont.Default,
+        )
+        /** TextField surface painting the two affinity-aware handles. */
+        val surface = RenderSurface(
+            fillColor = null,
+            borderColor = null,
+            textInputState = state,
+            textInputController = controller,
+            textInputReadOnly = false,
+            textInputCursorColor = null,
+            textInputSelectionColor = selectionColor,
+            textInputSelectionHandleColor = handleColor,
+        )
+        surface.setRenderObjectChild(textChild)
+        surface.layout(RenderConstraints(maxWidth = 120, maxHeight = 12))
+        /** Upstream end edge selected by the production handle path. */
+        val expectedEnd = textChild.caretRect(4, PixelTextAffinity.UPSTREAM)
+        /** Downstream edge that would incorrectly attach the handle to unselected content. */
+        val incorrectEnd = textChild.caretRect(4, PixelTextAffinity.DOWNSTREAM)
+        assertNotEquals(expectedEnd.x, incorrectEnd.x)
+
+        /** Buffer retaining the final handle pixels after text and selection painting. */
+        val buffer = PixelBuffer(width = 120, height = 12).also { it.clear() }
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+        /** Handle stem row painted immediately above the caret bottom edge. */
+        val stemY = expectedEnd.y + expectedEnd.height - 1
+        assertEquals(handleColor.argb, buffer.pixels[stemY * buffer.width + expectedEnd.x])
+    }
 }

@@ -3,6 +3,9 @@ package com.purride.pixelui.widgets
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Column
 import com.purride.pixelui.OutlinedButton
+import com.purride.pixelui.Checkbox
+import com.purride.pixelui.FocusNode
+import com.purride.pixelui.FocusScope
 import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.PixelThemeColors
 import com.purride.pixelui.PixelThemeData
@@ -98,6 +101,40 @@ class PixelThemeTest {
         )
 
         assertTrue(tester.hasPixel(disabled))
+        tester.dispose()
+    }
+
+    /** Compound controls use the inherited focus role instead of a fixed yellow outline. */
+    @Test
+    fun compoundControlUsesThemeFocusIndicator() {
+        /** Sentinel color that cannot be confused with the legacy hard-coded focus yellow. */
+        val focus = PixelColor.fromRgb(25, 210, 230)
+        /** Explicit node used to place the compound Checkbox in the focused state. */
+        val node = FocusNode("themed-checkbox")
+        /** Off-screen runtime rendering the exact focused component pixels. */
+        val tester = PixelTester()
+        tester.pumpWidget(
+            widget = PixelTheme(
+                data = PixelThemeData(colors = PixelThemeColors.Default.copy(focus = focus)),
+                child = FocusScope(
+                    child = com.purride.pixelui.Focus(
+                        node = node,
+                        autofocus = true,
+                        child = Checkbox(
+                            checked = false,
+                            onChanged = { },
+                            semanticLabel = "THEMED CHECKBOX",
+                        ),
+                    ),
+                ),
+            ),
+            logicalWidth = 16,
+            logicalHeight = 16,
+        )
+
+        assertTrue(node.isFocused)
+        assertTrue(tester.hasPixel(focus))
+        assertFalse(tester.hasPixel(PixelColor.fromRgb(255, 200, 0)))
         tester.dispose()
     }
 }

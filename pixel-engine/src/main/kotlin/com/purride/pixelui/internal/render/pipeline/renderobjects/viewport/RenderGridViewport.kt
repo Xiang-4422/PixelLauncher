@@ -1,5 +1,6 @@
 package com.purride.pixelui.internal
 
+import com.purride.pixelui.PixelSemanticsCollectionItemInfo
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 
@@ -85,7 +86,7 @@ internal class RenderGridViewport(
                 val itemIndex = firstItemIndex + localIndex
                 val position = itemOffset(itemIndex, columns)
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = context.derive(scratch, offsetX, offsetY),
                     offsetX = position.x,
                     offsetY = position.y - state.scrollOffsetPx.toInt(),
                 )
@@ -171,6 +172,32 @@ internal class RenderGridViewport(
         }
     }
 
+    /** Exports semantics only for mounted grid cells intersecting the viewport. */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        val columns = currentColumns()
+        renderChildren.forEachIndexed { localIndex, child ->
+            val itemIndex = firstItemIndex + localIndex
+            val position = itemOffset(itemIndex, columns)
+            val itemTargets = mutableListOf<PixelSemanticsTarget>()
+            child.collectSemantics(
+                offsetX = offsetX + position.x,
+                offsetY = offsetY + position.y - state.scrollOffsetPx.toInt(),
+                targets = itemTargets,
+            )
+            collected += itemTargets.withGridItemInfo(
+                rowIndex = itemIndex / columns.coerceAtLeast(1),
+                columnIndex = itemIndex % columns.coerceAtLeast(1),
+            )
+        }
+        val clip = globalBounds(offsetX, offsetY)
+        targets += clipSemanticTargets(collected, clip)
+    }
+
     private fun collectChildTargets(
         offsetX: Int,
         offsetY: Int,
@@ -231,3 +258,26 @@ private fun contentHeightPx(itemCount: Int, columns: Int, cellHeight: Int, runSp
 }
 
 private data class GridItemOffset(val x: Int, val y: Int)
+
+/** Adds grid coordinates only to roots so keyed descendant identities remain untouched. */
+private fun List<PixelSemanticsTarget>.withGridItemInfo(
+    rowIndex: Int,
+    columnIndex: Int,
+): List<PixelSemanticsTarget> {
+    val localIds = mapTo(mutableSetOf()) { target -> target.node.id }
+    return map { target ->
+        if (target.node.parentId == null || target.node.parentId !in localIds) {
+            target.copy(
+                node = target.node.copy(
+                    collectionItemInfo = PixelSemanticsCollectionItemInfo(
+                        rowIndex = rowIndex,
+                        columnIndex = columnIndex,
+                        selected = target.node.selected,
+                    ),
+                ),
+            )
+        } else {
+            target
+        }
+    }
+}

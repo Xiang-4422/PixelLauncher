@@ -11,12 +11,28 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelNavigatorOperation
+import com.purride.pixelui.PixelMultiStackNavigator
+import com.purride.pixelui.PixelMultiStackNavigatorController
+import com.purride.pixelui.PixelNavigatorPersistentSnapshotSchemaVersion
+import com.purride.pixelui.PixelNavigatorStack
 import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.PixelRouteRequest
+import com.purride.pixelui.PixelRouteStateKey
 import com.purride.pixelui.PixelRouteTransition
+import com.purride.pixelui.PixelDeepLinkArgumentDecoder
+import com.purride.pixelui.PixelDeepLinkArgumentFailure
+import com.purride.pixelui.PixelDeepLinkArgumentFailureReason
+import com.purride.pixelui.PixelDeepLinkDecodeRejected
+import com.purride.pixelui.PixelDeepLinkDecoded
+import com.purride.pixelui.PixelTypedDeepLinkMatcher
+import com.purride.pixelui.PixelTypedDeepLinkResolver
+import com.purride.pixelui.PixelTypedDeepLinkRoute
 import com.purride.pixelui.Row
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.handleTypedDeepLink
+import com.purride.pixelui.pixelRouteDestination
 import com.purride.pixelui.widgets.navigation.PixelDeepLink
 import com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot
 import com.purride.pixelui.widgets.navigation.getPixelNavigatorSnapshot
@@ -39,15 +55,35 @@ import kotlin.time.Duration.Companion.milliseconds
 object NavigationDeepDiveScene : DemoScene {
     override val id = "deep_navigation_runtime"
     override val title = "导航运行时"
-    override val summary = "PixelNavigator 路由栈、transition、deep link 与 snapshot"
+    override val summary = "RouteEntry、版本化恢复、多返回栈、类型安全 deep link 与 predictive back"
     override val category = DemoCatalog.navigation
-    override val tags = setOf("navigator", "route", "deeplink", "snapshot", "transition")
+    override val tags = setOf(
+        "navigator",
+        "route-entry",
+        "typed-result",
+        "deeplink",
+        "snapshot",
+        "multi-stack",
+        "predictive-back",
+    )
     override val apis = setOf(
         "PixelNavigator",
         "PixelNavigatorState",
         "PixelNavigatorOperation",
         "PixelNavigatorSnapshot",
+        "PixelNavigatorSnapshotCodec",
+        "PixelRouteSnapshotRegistry",
+        "PixelMultiStackNavigator",
+        "PixelMultiStackNavigatorController",
+        "PixelTypedNavigatorStack",
+        "PixelTypedDeepLinkResolver",
+        "PixelPredictiveBackEvent",
         "PixelRoute",
+        "PixelRouteDestination",
+        "PixelRouteEntry",
+        "PixelRouteRequest",
+        "PixelRouteOutcome",
+        "PixelRouteStateBucket",
         "PixelRouteTransition",
         "PixelRouteTransitionBuilder",
         "PixelRouteScrollRestoration",
@@ -91,9 +127,22 @@ object NavigationDeepDiveScene : DemoScene {
                             navMetric("restored", restored?.routeNames?.joinToString(">") ?: "<none>"),
                             navMetric("deeplink", "${deepLink.host}/${deepLink.pathSegments.joinToString("/")}?id=${deepLink.queryParameter("id")}"),
                             navMetric("operation", PixelNavigatorOperation.Push.name),
+                            navMetric(
+                                "schema",
+                                "typed-v$PixelNavigatorPersistentSnapshotSchemaVersion",
+                            ),
                         ),
                         spacing = 1,
                         crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                    ),
+                ),
+                samplePanel(
+                    title = "Retained multi-stack",
+                    color = Cyan,
+                    child = Container(
+                        height = 56,
+                        borderColor = Cyan,
+                        child = multiStackDemo(env),
                     ),
                 ),
             ),
@@ -105,6 +154,62 @@ object NavigationDeepDiveScene : DemoScene {
 }
 
 private fun rootRoute(): PixelRoute {
+    // Shared typed key demonstrates that every concrete entry still receives a separate bucket.
+    val visitKey = PixelRouteStateKey<Int>("visit")
+    // Reusable destination is pushed with different arguments while preserving compile-time result typing.
+    val typedDetails = pixelRouteDestination<String, String?>(
+        id = "typed-details",
+        maintainState = true,
+        transition = PixelRouteTransition.Fade,
+    ) { context, scope ->
+        if (visitKey !in scope.stateBucket) {
+            scope.stateBucket.write(visitKey, 1)
+        }
+        routePanel(
+            title = "TYPED ${scope.arguments}",
+            color = Green,
+            stackLabel = "${entryStackLabel(context)}  bucket=${scope.stateBucket.read(visitKey)}",
+            actions = listOf(
+                OutlinedButton(
+                    text = "SUCCESS NULL",
+                    onPressed = { scope.complete(null) },
+                    borderColor = Green,
+                ),
+                OutlinedButton(
+                    text = "CANCEL",
+                    onPressed = { scope.cancel() },
+                    borderColor = Accent,
+                ),
+            ),
+        )
+    }
+    // Matcher and decoder are paired with typedDetails, so invalid IDs never mutate the stack.
+    val typedDeepLinks = PixelTypedDeepLinkResolver(
+        listOf(
+            PixelTypedDeepLinkRoute(
+                destination = typedDetails,
+                matcher = PixelTypedDeepLinkMatcher { link ->
+                    link.scheme == "pixel" &&
+                        link.host == "demo" &&
+                        link.pathSegments == listOf("details")
+                },
+                argumentDecoder = PixelDeepLinkArgumentDecoder { link ->
+                    val id = link.queryParameter("id")
+                    if (id.isNullOrBlank()) {
+                        PixelDeepLinkDecodeRejected(
+                            PixelDeepLinkArgumentFailure(
+                                reason = PixelDeepLinkArgumentFailureReason.Missing,
+                                parameterName = "id",
+                                message = "details deep link requires id",
+                            ),
+                        )
+                    } else {
+                        PixelDeepLinkDecoded(id)
+                    }
+                },
+            ),
+        ),
+    )
     lateinit var details: PixelRoute
     lateinit var alt: PixelRoute
     val root = PixelRoute(
@@ -120,6 +225,34 @@ private fun rootRoute(): PixelRoute {
                         text = "PUSH",
                         onPressed = { PixelNavigator.of(context).push(details) },
                         borderColor = Accent,
+                    ),
+                    OutlinedButton(
+                        text = "TYPED A",
+                        onPressed = {
+                            PixelNavigator.of(context).push(
+                                PixelRouteRequest(typedDetails, "A"),
+                            )
+                        },
+                        borderColor = Green,
+                    ),
+                    OutlinedButton(
+                        text = "TYPED B",
+                        onPressed = {
+                            PixelNavigator.of(context).push(
+                                PixelRouteRequest(typedDetails, "B"),
+                            )
+                        },
+                        borderColor = Green,
+                    ),
+                    OutlinedButton(
+                        text = "LINK 42",
+                        onPressed = {
+                            PixelNavigator.of(context).handleTypedDeepLink(
+                                "pixel://demo/details?id=42",
+                                typedDeepLinks,
+                            )
+                        },
+                        borderColor = Purple,
                     ),
                     OutlinedButton(
                         text = "REPLACE",
@@ -174,6 +307,59 @@ private fun rootRoute(): PixelRoute {
     return root
 }
 
+/** Builds two always-mounted bottom-navigation-style stacks with isolated back histories. */
+private fun multiStackDemo(env: DemoEnv): Widget {
+    // Demo-local controller owns the selected tab and both independent histories.
+    val controller = PixelMultiStackNavigatorController(initialStackId = "home")
+    // Home root exposes the explicit tab-switch operation.
+    val home = PixelRoute(
+        name = "home",
+        transition = PixelRouteTransition.None,
+        builder = {
+            routePanel(
+                title = "TAB HOME",
+                color = Cyan,
+                stackLabel = "inactive tab remains mounted",
+                actions = listOf(
+                    OutlinedButton(
+                        text = "SETTINGS",
+                        onPressed = { controller.selectStack("settings") },
+                        borderColor = Purple,
+                    ),
+                ),
+            )
+        },
+    )
+    // Settings root proves switching back does not recreate the hidden home Navigator.
+    val settings = PixelRoute(
+        name = "settings",
+        transition = PixelRouteTransition.None,
+        builder = {
+            routePanel(
+                title = "TAB SETTINGS",
+                color = Purple,
+                stackLabel = "back returns to initial tab",
+                actions = listOf(
+                    OutlinedButton(
+                        text = "HOME",
+                        onPressed = { controller.selectStack("home") },
+                        borderColor = Cyan,
+                    ),
+                ),
+            )
+        },
+    )
+    return PixelMultiStackNavigator(
+        stacks = listOf(
+            PixelNavigatorStack("home", home),
+            PixelNavigatorStack("settings", settings),
+        ),
+        controller = controller,
+        vsync = env.vsync,
+        defaultTransition = PixelRouteTransition.None,
+    )
+}
+
 private fun routePanel(
     title: String,
     color: PixelColor,
@@ -196,6 +382,13 @@ private fun routePanel(
 
 private fun stackLabel(context: BuildContext): String {
     return PixelNavigator.of(context).stack.joinToString(">") { it.name }
+}
+
+/** Formats destination and entry identity so duplicate typed pushes remain visibly distinct. */
+private fun entryStackLabel(context: BuildContext): String {
+    return PixelNavigator.of(context).entries.joinToString(">") { entry ->
+        "${entry.destination.id}#${entry.id.value}"
+    }
 }
 
 private fun navMetric(label: String, value: String): Widget =

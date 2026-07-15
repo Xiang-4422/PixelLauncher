@@ -1,12 +1,14 @@
 package com.purride.pixelui
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Rect
+import android.graphics.RectF
 import android.os.Build
 import android.util.AttributeSet
 import android.view.InputDevice
@@ -16,6 +18,8 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowInsets
 import android.view.accessibility.AccessibilityNodeProvider
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
@@ -24,13 +28,23 @@ import com.purride.pixelcore.PixelFrameView
 import com.purride.pixelcore.PixelGridGeometry
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.PixelShape
+import com.purride.pixelcore.PixelViewportPolicy
+import com.purride.pixelcore.PixelViewportQuantization
 import com.purride.pixelcore.ScreenProfile
-import com.purride.pixelcore.ScreenProfileFactory
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixelengine.PixelEngine
+import com.purride.pixelui.animation.PixelTickerProviderFactory
+import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
 import com.purride.pixelui.host.PixelFrameScheduler
+import com.purride.pixelui.host.PixelHostFrameScope
+import com.purride.pixelui.host.PixelHostFrameScopeDiagnostics
+import com.purride.pixelui.host.AndroidPixelMotionSettingsSource
+import com.purride.pixelui.host.AndroidPixelHostCapabilitiesSource
+import com.purride.pixelui.host.PixelHostCapabilitiesSource
+import com.purride.pixelui.host.PixelMotionSettingsSource
 import com.purride.pixelui.PixelScrollPhysics
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRenderResult
@@ -41,8 +55,13 @@ import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.host.PixelJoystickFocusRouter
 import com.purride.pixelui.internal.host.PixelHostAccessibilityNodeProvider
+import com.purride.pixelui.internal.host.AndroidPixelHostBackRegistrar
+import com.purride.pixelui.internal.host.PixelHostPlatformBackCallbacks
+import com.purride.pixelui.internal.host.PixelHostPlatformBackController
+import com.purride.pixelui.internal.host.PixelHostPredictiveBackSession
 import com.purride.pixelui.internal.host.handlePixelHostBack
 import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelKeyEvent
+import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelTextInputEvent
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.internal.NestedScrollSession
 import kotlin.math.abs
@@ -60,22 +79,105 @@ public class PixelHostView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
 ) : View(context, attrs), PixelFrameView {
 
+    /**
+     * 当前 Host 绑定的 Engine 实例。
+     *
+     * 默认每个 Host 创建独立 Engine；赋值时会原子切换后续帧使用的服务、主题和 capability。
+     */
+    public var engine: PixelEngine = PixelEngine.Builder().build()
+        set(value) {
+            if (field === value) return
+            field = value
+            capabilitiesOverride = value.services.hostCapabilities
+            frameScheduler = value.services.frameScheduler
+            invalidateHostServices()
+            invalidate()
+        }
+
+    /** 绑定一个 Engine，并返回当前 Host 以便装配链继续配置。 */
+    public fun bindEngine(engine: PixelEngine): PixelHostView = apply {
+        this.engine = engine
+    }
+
+    /** Guards policy-driven profile assignments from being mistaken for manual fixed profiles. */
+    private var applyingProfilePolicy: Boolean = false
+
+    /** Prevents legacy preference synchronization from recursively changing the new policy. */
+    private var synchronizingLegacyProfilePreference: Boolean = false
+
     override var interactionListener: PixelFrameView.InteractionListener? = null
 
+    /** 记录 `PixelHostView` 的 `screenProfile` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
     public var screenProfile: ScreenProfile = ScreenProfile(
         logicalWidth = 96,
         logicalHeight = 96,
         dotSizePx = 8,
     )
         set(value) {
+            if (field == value) return
             field = value
+            if (!applyingProfilePolicy) {
+                profilePolicy = PixelHostProfilePolicy.Fixed(value)
+            }
+            markEffectiveCapabilitiesDirty()
+            reprojectPlatformInsets()
+            requestApplyInsets()
             invalidate()
         }
 
+    /**
+ * 公开 `PixelHostView` 的 `viewportPolicy` 配置或运行值。
+ *
+     * Optional orthogonal viewport policy for this Host.
+     *
+     * `null` preserves [ScreenProfile.scaleMode] and therefore the exact historical
+     * `FIT_CENTER` transform. A present value controls contain/cover, integer/fractional scale and
+     * alignment without changing the frozen [ScreenProfile] constructor or copy ABI.
+     */
+    public var viewportPolicy: PixelViewportPolicy? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            updateScreenProfileFromPolicy()
+            markEffectiveCapabilitiesDirty()
+            reprojectPlatformInsets()
+            requestApplyInsets()
+            invalidate()
+        }
+
+    /** Explicit Host policy or the stable mapping of the frozen profile scale mode. */
+    private val effectiveViewportPolicy: PixelViewportPolicy
+        get() = viewportPolicy ?: PixelViewportPolicy.fromLegacyScaleMode(screenProfile.scaleMode)
+
+    /** 记录 `PixelHostView` 的 `profilePreference` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
     public var profilePreference: PixelHostProfilePreference? = null
         set(value) {
+            if (field == value) return
             field = value
-            updateScreenProfileFromPreference()
+            if (synchronizingLegacyProfilePreference) return
+            profilePolicy = value?.let { preference ->
+                PixelHostProfilePolicy.AdaptivePixels(
+                    dotSizePx = preference.dotSizePx,
+                    pixelShape = preference.pixelShape,
+                )
+            } ?: PixelHostProfilePolicy.Fixed(screenProfile)
+        }
+
+    /**
+ * 公开 `PixelHostView` 的 `profilePolicy` 配置或运行值。
+ *
+     * Fixed or adaptive logical-screen policy evaluated against current Host environment.
+     *
+     * Assigning [PixelHostProfilePolicy.Fixed] replaces [screenProfile] immediately. Adaptive
+     * policies wait for a non-empty viewport and then re-evaluate after size, density or viewport
+     * policy changes. Direct [screenProfile] assignment switches this property back to Fixed.
+     */
+    public var profilePolicy: PixelHostProfilePolicy = PixelHostProfilePolicy.Fixed(screenProfile)
+        set(value) {
+            if (field == value) return
+            field = value
+            synchronizeLegacyProfilePreference(value)
+            updateScreenProfileFromPolicy()
         }
 
     /**
@@ -107,6 +209,9 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public var windowInsets: PixelWindowInsets = PixelWindowInsets.Zero
         set(value) {
+            if (!applyingProjectedPlatformInsets) {
+                platformWindowInsetsOwned = false
+            }
             if (field == value) return
             field = value
             invalidate()
@@ -120,22 +225,60 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public var viewInsets: PixelWindowInsets = PixelWindowInsets.Zero
         set(value) {
+            if (!applyingProjectedPlatformInsets) {
+                platformViewInsetsOwned = false
+            }
             if (field == value) return
             field = value
             invalidate()
         }
+
+    /** Latest physical system-bar plus cutout-safe inset snapshot supplied by Android. */
+    private var rawPlatformWindowInsets: PixelPhysicalInsets = PixelPhysicalInsets.Zero
+
+    /** Latest physical IME obscuration supplied or inferred from Android WindowInsets. */
+    private var rawPlatformViewInsets: PixelPhysicalInsets = PixelPhysicalInsets.Zero
+
+    /** Physical display-cutout rectangles retained for later logical capability projection. */
+    private var rawPlatformCutoutBounds: List<Rect> = emptyList()
+
+    /** Whether [windowInsets] should be recomputed from [rawPlatformWindowInsets]. */
+    private var platformWindowInsetsOwned: Boolean = false
+
+    /** Whether [viewInsets] should be recomputed from [rawPlatformViewInsets]. */
+    private var platformViewInsetsOwned: Boolean = false
+
+    /** Prevents internal projection assignments from being mistaken for manual public overrides. */
+    private var applyingProjectedPlatformInsets: Boolean = false
 
     internal var lastRenderResult: PixelRenderResult?
         get() = renderCoordinator.lastRenderResult
         set(value) { renderCoordinator.lastRenderResult = value }
     private var pixelGapEnabled: Boolean = true
     private var pixelGapRatio: Float = 1.0f
+    /** Click target captured by the current pointer down; taps never retarget to a later snapshot. */
+    internal var capturedClickTarget: PixelClickTarget? = null
+    /** Slider target captured by the current pointer down and reconciled after every rendered snapshot. */
     internal var activeSliderTarget: PixelSliderTarget? = null
+    /** Click target currently receiving pressed=true until release, cancellation, or takeover. */
+    internal var activePressedClickTarget: PixelClickTarget? = null
+    /** Click target currently receiving mouse or stylus hover feedback. */
+    internal var hoveredClickTarget: PixelClickTarget? = null
+    /** Slider target currently receiving mouse or stylus hover feedback. */
+    internal var hoveredSliderTarget: PixelSliderTarget? = null
+    /** Scrollbar target captured by the current pointer sequence. */
     internal var activeScrollbarTarget: PixelScrollbarTarget? = null
+    /** Scrollbar target currently receiving mouse or stylus hover feedback. */
+    internal var hoveredScrollbarTarget: PixelScrollbarTarget? = null
     internal var activeSwipeTarget: PixelClickTarget? = null
     internal var candidateSwipeTarget: PixelClickTarget? = null
+    /** Refresh target that has crossed gesture arbitration and owns an active pull. */
     internal var activeRefreshTarget: PixelRefreshTarget? = null
+    /** Refresh target captured at down but not yet promoted to an active pull. */
     internal var candidateRefreshTarget: PixelRefreshTarget? = null
+    /** Refresh target currently receiving mouse or stylus hover feedback. */
+    internal var hoveredRefreshTarget: PixelRefreshTarget? = null
+    /** Pointer-to-thumb offset retained so scrollbar drags never jump under the pointer. */
     internal var scrollbarDragThumbOffsetY: Int = 0
     internal var velocityTracker: VelocityTracker? = null
     internal val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
@@ -151,6 +294,8 @@ public class PixelHostView @JvmOverloads constructor(
     internal var lastClickTapTimeMs: Long = -1L
     internal var lastClickTapSource: Any? = null
     internal var pendingClickTapSource: Any? = null
+    /** Delayed single-tap owner, refreshed from each target snapshot before its runnable fires. */
+    internal var pendingClickTarget: PixelClickTarget? = null
     internal var pendingClickRunnable: Runnable? = null
     internal var activeTextInputSelectionTarget: PixelTextInputTarget? = null
     internal var activeTextInputSelectionHandle: TextInputSelectionHandle? = null
@@ -173,32 +318,427 @@ public class PixelHostView @JvmOverloads constructor(
         set(value) { nestedScrollSession.activeListTarget = value }
     internal var focusedTextInputTarget: PixelTextInputTarget?
         get() = nestedScrollSession.focusedTextInputTarget
-        set(value) { nestedScrollSession.focusedTextInputTarget = value }
+        set(value) {
+            nestedScrollSession.focusedTextInputTarget = value
+            platformBackController.refresh()
+        }
     private val gestureRouter = PixelHostGestureRouter(this)
     private val joystickFocusRouter = PixelJoystickFocusRouter()
     private val accessibilityNodeProvider = PixelHostAccessibilityNodeProvider(this)
     private val textInputCoordinator = PixelHostTextInputCoordinator(this)
     private val renderCoordinator = PixelHostRenderCoordinator(this, textInputCoordinator)
-    private val lifecycleCoordinator = PixelHostLifecycleCoordinator(disposeRender = renderCoordinator::dispose)
+    private val lifecycleCoordinator = PixelHostLifecycleCoordinator(::handleLifecycleDiagnosticsChanged)
+
+    /** Platform motion observer; internal replacement keeps Android settings deterministic in tests. */
+    private var motionSettingsSource: PixelMotionSettingsSource = AndroidPixelMotionSettingsSource(context)
+
+    /** Latest platform snapshot retained across ordinary detach/reattach cycles. */
+    private var systemMotionSettings: PixelMotionSettings = motionSettingsSource.currentSettings
+
+    /** Android configuration/contrast/display observer; replaceable only in module tests. */
+    private var hostCapabilitiesSource: PixelHostCapabilitiesSource =
+        AndroidPixelHostCapabilitiesSource(context)
+
+    /** Latest automatic Android capability snapshot retained across ordinary detach cycles. */
+    private var systemHostCapabilities: HostCapabilitiesData =
+        hostCapabilitiesSource.currentCapabilities
+
+    /** Host 级预测返回会话，保证取消手势不会提前修改输入焦点或 widget 返回栈。 */
+    private val predictiveBackSession = PixelHostPredictiveBackSession(
+        hasFocusedTextInput = { focusedTextInputTarget != null },
+        clearFocusedTextInput = ::clearFocusedTextInput,
+        backDispatcher = { backDispatcher },
+        onUnhandledBack = { onUnhandledBack },
+        onSessionChanged = ::invalidate,
+    )
+
+    /** Android API 33/34 平台 callback 的 attach/注册生命周期控制器。 */
+    private val platformBackController = PixelHostPlatformBackController(
+        registrar = AndroidPixelHostBackRegistrar(this),
+        shouldRegister = {
+            lifecycleCoordinator.isInteractive &&
+                androidPredictiveBackEnabled &&
+                (
+                    focusedTextInputTarget != null ||
+                        backDispatcher?.hasRegisteredHandlers == true ||
+                        onUnhandledBack != null
+                )
+        },
+        callbacks = object : PixelHostPlatformBackCallbacks {
+            override fun onBackStarted(event: PixelPredictiveBackEvent) {
+                handlePredictiveBackStarted(event)
+            }
+
+            override fun onBackProgressed(event: PixelPredictiveBackEvent) {
+                handlePredictiveBackProgressed(event)
+            }
+
+            override fun onBackCancelled() {
+                handlePredictiveBackCancelled()
+            }
+
+            override fun onBackInvoked() {
+                handlePredictiveBackCommitted()
+            }
+        },
+    )
+
+    /** 当前 Dispatcher 的 handler 可用性监听句柄。 */
+    private var backAvailabilityRegistration: PixelBackRegistration? = null
+
+    /** terminal destroy 资源是否已经完成一次性释放。 */
+    private var terminalResourcesDisposed: Boolean = false
 
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        isFocusable = true
+        isFocusableInTouchMode = true
     }
 
+    /** 提供 `PixelHostView` 用于识别或兼容校验的 `hostBridge` 值；写入后由所属对象在下一次状态同步时生效。 */
     public var hostBridge: PixelHostBridge? = null
-    public var backDispatcher: PixelBackDispatcher? = null
-    public var onUnhandledBack: (() -> Boolean)? = null
-    public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
-    public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
-    public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
-    public var frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default
-
-    public var textDirection: TextDirection = TextDirection.LTR
         set(value) {
+            if (field === value) return
             field = value
+            invalidateHostServices()
             invalidate()
         }
 
+    /** 上次合并 capability 时读取的 Engine。 */
+    private var cachedHostServicesEngine: PixelEngine? = null
+
+    /** 上次合并 capability 时读取的旧桥接。 */
+    private var cachedHostServicesBridge: PixelHostBridge? = null
+
+    /** 当前 Host 复用的 capability 合并结果，避免逐帧创建适配器。 */
+    private var cachedHostServices: PixelHostCapabilitySet = PixelHostCapabilitySet.Empty
+
+    /** 当前 Engine capability 优先、旧桥接只补缺的有效集合。 */
+    internal val effectiveHostServices: PixelHostCapabilitySet
+        get() {
+            if (cachedHostServicesEngine !== engine || cachedHostServicesBridge !== hostBridge) {
+                cachedHostServices = engine.services.hostServices.withFallback(
+                    PixelHostCapabilitySet.fromLegacyBridge(hostBridge),
+                )
+                cachedHostServicesEngine = engine
+                cachedHostServicesBridge = hostBridge
+            }
+            return cachedHostServices
+        }
+
+    /** 使下一次渲染重新合并 Engine capability 与旧桥接。 */
+    private fun invalidateHostServices() {
+        cachedHostServicesEngine = null
+        cachedHostServicesBridge = null
+    }
+
+    /**
+ * 公开 `PixelHostView` 的 `capabilitiesOverride` 配置或运行值。
+ *
+     * Optional application-owned snapshot for the complete Host environment.
+     *
+     * `null` follows Android locale, direction, text scale, contrast, density and refresh rate,
+     * merged atomically with live motion and logical cutout features. A non-null value is the
+     * authoritative complete snapshot. While present it suppresses [layoutDirectionOverride] and
+     * [motionSettingsOverride] without discarding them. Callers must assign this property on the
+     * thread that owns this Host.
+     */
+    public var capabilitiesOverride: HostCapabilitiesData? = null
+        set(value) {
+            if (field == value) return
+            /** Density visible to adaptive-dp profiles before replacing the complete snapshot. */
+            val previousDensity = effectiveProfileDensity()
+            field = value
+            if (previousDensity != effectiveProfileDensity()) updateScreenProfileFromPolicy()
+            markEffectiveCapabilitiesDirty()
+            invalidate()
+        }
+
+    /**
+ * 公开 `PixelHostView` 的 `motionSettingsOverride` 配置或运行值。
+ *
+     * Optional application override for animator scale and reduce-motion behavior.
+     *
+     * When [capabilitiesOverride] is null, null follows Android's live setting and a non-null value
+     * is injected into [PixelMotionScope]. A complete [capabilitiesOverride] is authoritative and
+     * temporarily suppresses this legacy control without discarding its stored value.
+     */
+    public var motionSettingsOverride: PixelMotionSettings? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            markEffectiveCapabilitiesDirty()
+            if (capabilitiesOverride == null) invalidate()
+        }
+
+    /** Legacy motion fallback used only when no complete capability snapshot is supplied. */
+    internal val effectiveMotionSettings: PixelMotionSettings
+        get() = motionSettingsOverride ?: systemMotionSettings
+
+    /** Whether the next automatic capability read must rebuild its immutable merged snapshot. */
+    private var effectiveCapabilitiesDirty: Boolean = true
+
+    /** Reusable merged snapshot avoiding defensive-list copies on every rendered frame. */
+    private var cachedAutomaticCapabilities: HostCapabilitiesData = HostCapabilitiesData.Default
+
+    /** Complete immutable capability snapshot inherited by the next rendered widget tree. */
+    internal val effectiveCapabilities: HostCapabilitiesData
+        get() {
+            capabilitiesOverride?.let { explicitSnapshot -> return explicitSnapshot }
+            if (effectiveCapabilitiesDirty) {
+                /** Automatic direction unless a consumer deliberately installed a legacy override. */
+                val direction = layoutDirectionOverride ?: systemHostCapabilities.layoutDirection
+                /** Android snapshot plus Host-owned motion and logical display-feature projection. */
+                cachedAutomaticCapabilities = systemHostCapabilities.copy(
+                    layoutDirection = direction,
+                    motionSettings = effectiveMotionSettings,
+                    displayFeatures = resolveLogicalDisplayFeatures(),
+                )
+                effectiveCapabilitiesDirty = false
+            }
+            return cachedAutomaticCapabilities
+        }
+
+    /** Invalidates the lazily merged automatic capability snapshot. */
+    private fun markEffectiveCapabilitiesDirty() {
+        effectiveCapabilitiesDirty = true
+    }
+
+    /**
+     * Replaces the Android observer with a fake source for Host integration tests.
+     *
+     * The previous source is terminally released and the replacement follows current View
+     * attachment immediately. This internal seam is deliberately absent from the public API.
+     */
+    internal fun replaceMotionSettingsSourceForTesting(source: PixelMotionSettingsSource) {
+        if (motionSettingsSource === source || terminalResourcesDisposed) return
+        motionSettingsSource.destroy()
+        motionSettingsSource = source
+        systemMotionSettings = source.currentSettings
+        markEffectiveCapabilitiesDirty()
+        if (isAttachedToWindow) {
+            source.attach(::handleSystemMotionSettingsChanged)
+        }
+        if (motionSettingsOverride == null && capabilitiesOverride == null) invalidate()
+    }
+
+    /** Replaces Android configuration observation with a deterministic source for integration tests. */
+    internal fun replaceHostCapabilitiesSourceForTesting(source: PixelHostCapabilitiesSource) {
+        if (hostCapabilitiesSource === source || terminalResourcesDisposed) return
+        /** Density visible before replacing the automatic Android capability source. */
+        val previousDensity = effectiveProfileDensity()
+        hostCapabilitiesSource.destroy()
+        hostCapabilitiesSource = source
+        systemHostCapabilities = source.currentCapabilities
+        if (capabilitiesOverride == null && previousDensity != effectiveProfileDensity()) {
+            updateScreenProfileFromPolicy()
+        }
+        markEffectiveCapabilitiesDirty()
+        if (isAttachedToWindow) {
+            source.attach(::handleSystemHostCapabilitiesChanged, display?.displayId)
+        }
+        if (capabilitiesOverride == null) invalidate()
+    }
+
+    /** 返回 attachment 与 owner lifecycle 两个状态轴的当前诊断快照。 */
+    public val lifecycleDiagnostics: PixelHostLifecycleDiagnostics
+        get() = lifecycleCoordinator.diagnostics()
+
+    /** 当前 Host 是否同时满足 attach 与 resumed/unmanaged，可供内部输入适配器 gating。 */
+    internal val isLifecycleInteractive: Boolean
+        get() = lifecycleCoordinator.isInteractive
+
+    /**
+     * 显式绑定一个 [LifecycleOwner]。
+     *
+     * 显式 owner 优先于 [androidx.lifecycle.ViewTreeLifecycleOwner]；绑定后会立即同步 owner
+     * 的当前状态，并在 owner destroy 时终结 Host。
+     */
+    public fun bindLifecycleOwner(owner: LifecycleOwner) {
+        lifecycleCoordinator.bindExplicitLifecycleOwner(owner)
+    }
+
+    /**
+     * 解除显式或自动 owner；若 View 已 attach，会优先恢复当前 ViewTree owner。
+     *
+     * 没有 ViewTree owner 时回到 attach 即活跃的 unmanaged 兼容模式。
+     */
+    public fun unbindLifecycleOwner() {
+        lifecycleCoordinator.unbindLifecycleOwner()
+        if (isAttachedToWindow && !lifecycleCoordinator.isDestroyed) {
+            lifecycleCoordinator.updateViewTreeLifecycleOwner(findViewTreeLifecycleOwner())
+        }
+    }
+
+    /** 非 Android-owner 宿主显式进入 started；重复或迟到调用会被安全忽略。 */
+    public fun start() {
+        lifecycleCoordinator.start()
+    }
+
+    /** 非 Android-owner 宿主显式进入 resumed，允许动态渲染、输入和返回处理。 */
+    public fun resume() {
+        lifecycleCoordinator.resume()
+    }
+
+    /** [PixelFrameView] 兼容入口，委托给新的 owner lifecycle 状态机。 */
+    override fun onHostResume() {
+        resume()
+    }
+
+    /** 非 Android-owner 宿主显式暂停动态渲染、输入和返回处理，但保留 retained tree。 */
+    public fun pause() {
+        lifecycleCoordinator.pause()
+    }
+
+    /** [PixelFrameView] 兼容入口，暂停输入、动态渲染与 Host 私有 frame scope。 */
+    override fun onHostPause() {
+        pause()
+    }
+
+    /** 非 Android-owner 宿主显式进入 stopped，但保留 retained tree 供后续恢复。 */
+    public fun stop() {
+        lifecycleCoordinator.stop()
+    }
+
+    /** 进入不可逆终态并释放 observer、retained tree、输入会话和像素缓存。 */
+    public fun destroy() {
+        lifecycleCoordinator.destroy()
+    }
+
+    /**
+     * widget 返回栈调度器。
+     *
+     * 设置后 Host 会只在存在已启用 handler 时注册 Android 33+ 系统 callback，根页面不会
+     * 因空 dispatcher 吞掉系统返回。
+     */
+    public var backDispatcher: PixelBackDispatcher? = null
+        set(value) {
+            if (field === value) return
+            predictiveBackSession.cancel()
+            backAvailabilityRegistration?.dispose()
+            field = value
+            bindBackAvailabilityListener()
+            platformBackController.refresh()
+        }
+
+    /**
+     * 输入与 widget 栈均未处理时的 app fallback。
+     *
+     * 非 `null` 表示 app 主动接管系统返回，因此 API 33+ Host 会保持平台注册；callback
+     * 应在返回 `true` 时完成 app 级动作。
+     */
+    public var onUnhandledBack: (() -> Boolean)? = null
+        set(value) {
+            if (field === value) return
+            predictiveBackSession.cancel()
+            field = value
+            platformBackController.refresh()
+        }
+
+    /**
+     * 是否允许 View 自动接入 Android 系统预测返回。
+     *
+     * API 34+ 提供 start/progress/cancel/commit；API 33 只有 commit；API 24–32 保留
+     * [handleBackPressed] 手动兼容入口。关闭时不会向平台注册 callback。
+     */
+    public var androidPredictiveBackEnabled: Boolean = true
+        set(value) {
+            if (field == value) return
+            field = value
+            platformBackController.refresh()
+        }
+    /** 提供 `PixelHostView` 当前管理的 `pagerGesturePolicy` 内容；写入后由所属对象在下一次状态同步时生效。 */
+    public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
+    /** 记录 `PixelHostView` 的 `nestedScrollPolicy` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
+    /** 记录 `PixelHostView` 的 `scrollPhysics` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
+    /**
+     * 当前 Host 私有 frame scope 的上游帧源。
+     *
+     * 替换帧源会终态释放旧 scope 及其 ticker，并创建一个遵循当前 Host lifecycle 的新 scope。
+     */
+    public var frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default
+        set(value) {
+            /** Engine ticker 工厂变化时，即使上游 scheduler 相同也必须重建 Host scope。 */
+            val tickerProviderFactory = engine.services.tickerProviderFactory
+            if (field === value && frameScopeTickerProviderFactory === tickerProviderFactory) return
+            val previousScope = frameScope
+            val replacementScope = PixelHostFrameScope(value, tickerProviderFactory)
+            when {
+                lifecycleCoordinator.isDestroyed -> replacementScope.dispose()
+                !lifecycleCoordinator.isInteractive -> replacementScope.pause()
+            }
+            field = value
+            frameScopeTickerProviderFactory = tickerProviderFactory
+            frameScope = replacementScope
+            previousScope.dispose()
+            invalidate()
+        }
+
+    /** Host 独占的 frame/ticker 生命周期边界，构造时因尚未 attach 而保持暂停。 */
+    /** 当前 frame scope 创建时使用的 ticker 工厂，用于识别 Engine 服务切换。 */
+    private var frameScopeTickerProviderFactory: PixelTickerProviderFactory =
+        engine.services.tickerProviderFactory
+
+    /** 当前 Host 私有 frame/ticker scope。 */
+    private var frameScope: PixelHostFrameScope = PixelHostFrameScope(
+        frameScheduler,
+        frameScopeTickerProviderFactory,
+    ).apply {
+        pause()
+    }
+
+    /**
+     * 当前 Host 私有的 ticker provider。
+     *
+     * 替换 [frameScheduler] 后该属性会返回新 provider，旧 provider 会随旧 scope 一并 dispose。
+     */
+    public val tickerProvider: PixelTickerProvider
+        get() = frameScope.tickerProvider
+
+    /**
+     * 返回当前 Host 私有 frame scope 的只读资源诊断快照。
+     *
+     * 快照只包含基础类型计数，不暴露 callback、listener 或 ticker 引用；适合在调试、
+     * 生命周期验收和长时 soak 的非热路径中按需读取。
+     */
+    public val frameScopeDiagnostics: PixelHostFrameScopeDiagnostics
+        get() = frameScope.diagnostics()
+
+    /**
+ * 公开 `PixelHostView` 的 `layoutDirectionOverride` 配置或运行值。
+ *
+     * Optional application direction override applied on top of automatic Android configuration.
+     *
+     * `null` follows the platform source. A present value is retained while a complete
+     * [capabilitiesOverride] is installed and becomes visible when that complete override clears.
+     */
+    public var layoutDirectionOverride: TextDirection? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value != null && textDirection != value) textDirection = value
+            markEffectiveCapabilitiesDirty()
+            if (capabilitiesOverride == null) invalidate()
+        }
+
+    /**
+ * 公开 `PixelHostView` 的 `textDirection` 配置或运行值。
+ *
+     * Frozen non-null direction compatibility property.
+     *
+     * Assigning it now installs the equivalent [layoutDirectionOverride]. New code can clear the
+     * override by assigning `null` to [layoutDirectionOverride] and resume automatic Android RTL.
+     */
+    public var textDirection: TextDirection = TextDirection.LTR
+        set(value) {
+            if (field == value && layoutDirectionOverride == value) return
+            field = value
+            layoutDirectionOverride = value
+        }
+
+    /** 保存 `PixelHostView` 对外传递的 `textRasterizer` 数据；写入后由所属对象在下一次状态同步时生效。 */
     public var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
         set(value) {
             if (field === value) return
@@ -215,6 +755,36 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public var frameStatsObserver: ((PixelHostFrameStats) -> Unit)? = null
 
+    /**
+ * 公开 `PixelHostView` 的 `frameDiagnosticsEnabled` 配置或运行值。
+ *
+     * Enables collection of the latest full-pipeline frame diagnostics without requiring an
+     * observer callback.
+     *
+     * The default is false. When this property is false and [frameDiagnosticsObserver] is null,
+     * the Host skips ART sampling, phase clock reads, and diagnostics snapshot allocation. Enable
+     * it only for Inspector, benchmark, or troubleshooting sessions.
+     */
+    public var frameDiagnosticsEnabled: Boolean = false
+
+    /**
+ * 公开 `PixelHostView` 的 `frameDiagnosticsObserver` 配置或运行值。
+ *
+     * Optional UI-thread observer for complete build/layout/paint/submit/Android-draw diagnostics.
+     *
+     * A non-null observer implicitly enables sampling even when [frameDiagnosticsEnabled] is
+     * false. The callback runs synchronously at the end of `onDraw`; it must not block or mutate
+     * the Host recursively. Assign null to restore the allocation-bounded release path.
+     */
+    public var frameDiagnosticsObserver: ((PixelHostFrameDiagnostics) -> Unit)? = null
+
+    /** 公开 `PixelHostView` 的 `latestFrameDiagnostics` 配置或运行值。
+ *
+ * Most recently completed diagnostics snapshot, or null before opt-in sampling produces one.
+ */
+    public val latestFrameDiagnostics: PixelHostFrameDiagnostics?
+        get() = renderCoordinator.snapshotFrameDiagnostics()
+
     private val reusablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         isAntiAlias = false
@@ -226,13 +796,19 @@ public class PixelHostView @JvmOverloads constructor(
     private var gapBackgroundKey: GapBackgroundKey? = null
     private val reusableGapBackgroundCanvas = Canvas()
     private val reusableDestRect = Rect()
+    /** 方形整数提交时复用的非透明逻辑像素边界，避免每帧创建临时 Rect。 */
+    private val reusableActivePixelBounds = Rect()
+    /** 方形 gap 位图提交时复用的浮点目标区域，保留 fractional viewport 的几何精度。 */
+    private val reusableDestRectF = RectF()
 
+    /** 更新 `PixelHostView` 的 `setContent` 状态，并保持相关边界与派生状态一致。 */
     public fun setContent(provider: RootWidgetProvider) {
         renderCoordinator.setContent(provider)
     }
 
     internal fun requestRender() { invalidate() }
 
+    /** 更新 `PixelHostView` 的 `updateFocusedTextInput` 状态，并保持相关边界与派生状态一致。 */
     public fun updateFocusedTextInput(
         text: String,
         selectionStart: Int = text.length,
@@ -240,6 +816,7 @@ public class PixelHostView @JvmOverloads constructor(
         compositionStart: Int = -1,
         compositionEnd: Int = -1,
     ) {
+        if (!lifecycleCoordinator.isInteractive) return
         textInputCoordinator.updateFocusedTextInput(
             text = text,
             selectionStart = selectionStart,
@@ -249,11 +826,14 @@ public class PixelHostView @JvmOverloads constructor(
         )
     }
 
+    /** 从 `PixelHostView` 释放 `clearFocusedTextInput` 对应内容；重复调用按既有幂等约束处理。 */
     public fun clearFocusedTextInput() {
         textInputCoordinator.clearFocusedTextInput()
     }
 
+    /** 向 `PixelHostView` 提交 `submitFocusedTextInput` 数据或事件，并按所属类型的顺序与所有权规则保存。 */
     public fun submitFocusedTextInput() {
+        if (!lifecycleCoordinator.isInteractive) return
         textInputCoordinator.submitFocusedTextInput()
     }
 
@@ -263,6 +843,8 @@ public class PixelHostView @JvmOverloads constructor(
      * 顺序固定为：先关闭文本输入，再交给 widget back 栈，最后交给 app fallback。
      */
     public fun handleBackPressed(): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return false
+        predictiveBackSession.cancel()
         return handlePixelHostBack(
             hasFocusedTextInput = focusedTextInputTarget != null,
             clearFocusedTextInput = ::clearFocusedTextInput,
@@ -273,11 +855,42 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     /**
+     * 开始一条可取消的预测返回会话。
+     *
+     * 自定义非 Android Host 也可调用该入口；返回 `false` 表示当前 Pixel 树没有消费者。
+     */
+    public fun handlePredictiveBackStarted(event: PixelPredictiveBackEvent): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return false
+        return predictiveBackSession.start(event)
+    }
+
+    /** 把同一手势的最新进度发送给 start 时锁定的消费者。 */
+    public fun handlePredictiveBackProgressed(event: PixelPredictiveBackEvent) {
+        if (!lifecycleCoordinator.isInteractive) return
+        predictiveBackSession.progress(event)
+    }
+
+    /** 取消当前预测返回并回滚临时视觉状态；重复调用安全。 */
+    public fun handlePredictiveBackCancelled() {
+        predictiveBackSession.cancel()
+    }
+
+    /** 提交当前预测返回；API 33 或硬件返回在没有 start 时自动走离散兼容路径。 */
+    public fun handlePredictiveBackCommitted(): Boolean {
+        if (!lifecycleCoordinator.isInteractive) {
+            predictiveBackSession.cancel()
+            return false
+        }
+        return predictiveBackSession.commit()
+    }
+
+    /**
      * 对当前聚焦的 TextField 执行 [action]。
      *
      * 没有聚焦字段、选区或剪贴板内容不足以执行该动作时返回 `false`。
      */
     public fun performFocusedTextEditAction(action: PixelTextEditAction): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return false
         return textInputCoordinator.performEditAction(action)
     }
 
@@ -290,18 +903,60 @@ public class PixelHostView @JvmOverloads constructor(
         return lastRenderResult?.buffer?.copy()
     }
 
+    /**
+ * 执行 `PixelHostView` 的 `dispatchPixelKeyEvent` 公开行为；具体参数、返回和副作用见下文。
+ *
+     * Dispatches a normalized key to this Host's runtime-local focus tree.
+     *
+     * Custom Android bridges and tests should use this instance API instead of the legacy
+     * process-global [PixelFocusManager.dispatchKeyEvent].
+     */
+    public fun dispatchPixelKeyEvent(event: PixelKeyEvent): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return false
+        /** Whether this Host's focused node chain consumed the normalized key. */
+        val handled = renderCoordinator.focusOwner.dispatchKeyEvent(event)
+        if (handled) invalidate()
+        return handled
+    }
+
+    /**
+ * 执行 `PixelHostView` 的 `dispatchPixelTextInput` 公开行为；具体参数、返回和副作用见下文。
+ *
+     * Dispatches exact text to this Host's runtime-local focused node chain.
+     *
+     * The String payload is delivered before the legacy character-key path. Supplementary-plane
+     * and multi-code-point input remains one event; only an unconsumed single non-surrogate BMP
+     * character can fall back to [PixelKeyEvent].
+     *
+     * @param event Exact text payload produced by an IME, hardware key, or custom Host bridge.
+     * @return `true` when a text handler or compatible legacy character handler consumed it.
+     */
+    public fun dispatchPixelTextInput(event: PixelTextInputEvent): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return false
+        /** Whether this Host's focused node chain consumed the complete text payload. */
+        val handled = renderCoordinator.focusOwner.dispatchTextInputEvent(event)
+        if (handled) invalidate()
+        return handled
+    }
+
+    /** Routes Android key-down events through exact text first, then non-text key dispatch. */
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return super.dispatchKeyEvent(event)
         if (event.action == android.view.KeyEvent.ACTION_DOWN) {
-            val handled = PixelFocusManager.dispatchKeyEvent(event.toPixelKeyEvent())
-            if (handled) {
-                invalidate()
+            /** Exact scalar payload, or `null` when this Android key has dedicated non-text meaning. */
+            val textInputEvent = event.toPixelTextInputEvent()
+            if (textInputEvent != null) {
+                if (dispatchPixelTextInput(textInputEvent)) return true
+            } else if (dispatchPixelKeyEvent(event.toPixelKeyEvent())) {
                 return true
             }
         }
         return super.dispatchKeyEvent(event)
     }
 
+    /** Routes joystick and gamepad axes through the same runtime-local focus tree. */
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return super.dispatchGenericMotionEvent(event)
         if (
             event.action == MotionEvent.ACTION_MOVE &&
             (event.isFromSource(InputDevice.SOURCE_JOYSTICK) || event.isFromSource(InputDevice.SOURCE_GAMEPAD))
@@ -313,10 +968,7 @@ public class PixelHostView @JvmOverloads constructor(
                 hatY = event.getAxisValue(MotionEvent.AXIS_HAT_Y),
                 eventTimeMs = event.eventTime,
             )
-            if (keyEvent != null && PixelFocusManager.dispatchKeyEvent(keyEvent)) {
-                invalidate()
-                return true
-            }
+            if (keyEvent != null && dispatchPixelKeyEvent(keyEvent)) return true
         }
         return super.dispatchGenericMotionEvent(event)
     }
@@ -326,10 +978,12 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     override fun setPixelGapEnabled(enabled: Boolean) {
+        if (pixelGapEnabled == enabled) return
         pixelGapEnabled = enabled
         if (!enabled) {
             recycleGapBackgroundBitmap()
         }
+        reprojectPlatformInsets()
         invalidate()
     }
 
@@ -339,6 +993,7 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public fun setPixelGapRatio(ratio: Float) {
         pixelGapRatio = ratio.coerceIn(0f, 1f)
+        reprojectPlatformInsets()
         invalidate()
     }
 
@@ -398,12 +1053,51 @@ public class PixelHostView @JvmOverloads constructor(
         return renderCoordinator.dumpRenderTree()
     }
 
+    /** 执行 `PixelHostView` 的 `dumpSemanticsTree` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns an indented stable-id semantic tree with state, actions, and logical bounds.
+ */
     public fun dumpSemanticsTree(): String {
         val nodes = lastRenderResult?.semanticsNodes.orEmpty()
         if (nodes.isEmpty()) return "<empty semantics>"
+        val nodesById = nodes.associateBy(PixelSemanticsNode::id)
         return nodes.joinToString(separator = "\n") { node ->
-            "${node.role} label=\"${node.label}\" enabled=${node.enabled} focused=${node.focused} bounds=${node.left},${node.top},${node.width},${node.height}"
+            buildString {
+                repeat(semanticsDepth(node, nodesById)) { append("  ") }
+                append(node.role)
+                append(" label=\"").append(node.label).append('"')
+                append(" enabled=").append(node.enabled)
+                append(" focused=").append(node.focused)
+                append(" id=").append(node.id)
+                append(" parent=").append(node.parentId ?: "HOST")
+                node.value?.let { value -> append(" value=\"").append(value).append('"') }
+                append(" selected=").append(node.selected)
+                node.checked?.let { checked -> append(" checked=").append(checked) }
+                node.expanded?.let { expanded -> append(" expanded=").append(expanded) }
+                append(" actions=").append(node.actions)
+                append(" bounds=")
+                    .append(node.left).append(',')
+                    .append(node.top).append(',')
+                    .append(node.width).append(',')
+                    .append(node.height)
+            }
         }
+    }
+
+    /** Computes one node's diagnostic depth while tolerating malformed or missing parent links. */
+    private fun semanticsDepth(
+        node: PixelSemanticsNode,
+        nodesById: Map<Long, PixelSemanticsNode>,
+    ): Int {
+        var parentId = node.parentId
+        var depth = 0
+        val visitedIds = mutableSetOf<Long>()
+        while (parentId != null && visitedIds.add(parentId)) {
+            val parent = nodesById[parentId] ?: break
+            depth += 1
+            parentId = parent.parentId
+        }
+        return depth
     }
 
     /**
@@ -429,7 +1123,8 @@ public class PixelHostView @JvmOverloads constructor(
             )
         } ?: PixelInspectorTargetCounts.Empty
         val nodeAssociations = renderCoordinator.collectInspectorNodeAssociations()
-        return PixelInspectorSnapshot(
+        /** Constructor-compatible snapshot before additive full-frame diagnostics are attached. */
+        val snapshot = PixelInspectorSnapshot(
             frameStats = if (includeFrameStats) renderCoordinator.snapshotFrameStats() else null,
             allocationSample = if (includeAllocationSample) snapshotAllocationSample() else null,
             targetCounts = targetCounts,
@@ -445,18 +1140,81 @@ public class PixelHostView @JvmOverloads constructor(
             activeScrollbar = activeScrollbarTarget != null,
             activeRefresh = activeRefreshTarget != null,
         )
+        snapshot.attachFrameDiagnostics(renderCoordinator.snapshotFrameDiagnostics())
+        return snapshot
     }
 
     /**
-     * 显式释放当前 host 持有的 retained widget tree、render tree 和像素缓存。
+     * [destroy] 的终态兼容入口。
      *
-     * Activity 场景通常依赖 [onDetachedFromWindow] 自动释放；Fragment 或自定义宿主
-     * 可以在 `onDestroyView` 等明确销毁点调用本方法。
+     * 普通 detach 不再销毁 retained tree；Fragment 或自定义宿主可在明确终态调用本方法。
      */
     public fun dispose() {
+        destroy()
+    }
+
+    /** 绑定当前 Dispatcher 的可用性变化；View 重新 attach 后可安全重建该监听。 */
+    private fun bindBackAvailabilityListener() {
+        backAvailabilityRegistration?.dispose()
+        if (lifecycleCoordinator.isDestroyed) {
+            backAvailabilityRegistration = null
+            return
+        }
+        backAvailabilityRegistration = backDispatcher?.addAvailabilityListener {
+            platformBackController.refresh()
+        }
+    }
+
+    /** 根据正交生命周期快照同步渲染、输入、手势与系统返回 gating。 */
+    private fun handleLifecycleDiagnosticsChanged(diagnostics: PixelHostLifecycleDiagnostics) {
+        if (diagnostics.isInteractive) {
+            frameScope.resume()
+        } else {
+            frameScope.pause()
+        }
+        renderCoordinator.setLifecycleActive(diagnostics.isInteractive)
+        accessibilityNodeProvider.onHostInteractiveChanged(diagnostics.isInteractive)
+        if (!diagnostics.isInteractive) {
+            predictiveBackSession.cancel()
+            cancelPendingClick()
+            gestureRouter.cancelActiveGesture()
+            hostBridge?.hideTextInput()
+        }
+        platformBackController.refresh()
+        if (diagnostics.lifecycleState == PixelHostLifecycleState.Destroyed) {
+            disposeTerminalResources()
+        }
+    }
+
+    /** 只执行一次终态资源释放；该方法不会反向推进 lifecycle 状态机。 */
+    private fun disposeTerminalResources() {
+        if (terminalResourcesDisposed) return
+        terminalResourcesDisposed = true
+        platformBackController.detach()
+        predictiveBackSession.dispose()
+        backAvailabilityRegistration?.dispose()
+        backAvailabilityRegistration = null
         cancelPendingClick()
+        gestureRouter.cancelActiveGesture()
+        textInputCoordinator.clearFocusedTextInput()
+        hostBridge?.hideTextInput()
+        frameScope.dispose()
+        motionSettingsSource.destroy()
+        hostCapabilitiesSource.destroy()
+        renderCoordinator.dispose()
+        accessibilityNodeProvider.dispose()
         recycleGapBackgroundBitmap()
-        lifecycleCoordinator.onDetachedFromWindow()
+        reusableBitmap?.recycle()
+        reusableBitmap = null
+        lastTextInputTapState = null
+        lastClickTapSource = null
+        backDispatcher = null
+        onUnhandledBack = null
+        hostBridge = null
+        frameStatsObserver = null
+        frameDiagnosticsObserver = null
+        frameDiagnosticsEnabled = false
+        interactionListener = null
     }
 
     private fun snapshotAllocationSample(): PixelInspectorAllocationSample {
@@ -471,72 +1229,173 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val renderResult = renderCoordinator.renderFrame()
-        canvas.drawColor(bezelColor.argb)
-        if (renderResult != null) {
-            drawBuffer(canvas, renderResult.buffer)
-            accessibilityNodeProvider.notifySemanticsChanged()
+        renderCoordinator.beginAndroidFrame()
+        try {
+            renderCoordinator.beginAndroidDraw()
+            try {
+                super.onDraw(canvas)
+            } finally {
+                renderCoordinator.endAndroidDraw()
+            }
+            /** Retained build/layout/paint result measured independently from Android drawing. */
+            val renderResult = renderCoordinator.renderFrame()
+            renderCoordinator.beginAndroidDraw()
+            try {
+                canvas.drawColor(bezelColor.argb)
+            } finally {
+                renderCoordinator.endAndroidDraw()
+            }
+            if (renderResult != null) {
+                renderCoordinator.beginBufferSubmit()
+                try {
+                    drawBuffer(canvas, renderResult.buffer)
+                    renderCoordinator.recordBufferSubmit(renderResult.buffer)
+                } finally {
+                    renderCoordinator.endBufferSubmit()
+                }
+                renderCoordinator.beginAndroidDraw()
+                try {
+                    accessibilityNodeProvider.notifySemanticsChanged()
+                } finally {
+                    renderCoordinator.endAndroidDraw()
+                }
+            }
+        } finally {
+            renderCoordinator.endAndroidFrame()
         }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == oldw && h == oldh) return
-        updateScreenProfileFromPreference()
+        updateScreenProfileFromPolicy()
+        reprojectPlatformInsets()
     }
 
     @Suppress("DEPRECATION")
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            /** Current physical system-bar edges. */
             val systemBars = insets.getInsets(WindowInsets.Type.systemBars())
+            /** Current physical IME obscuration. */
             val ime = insets.getInsets(WindowInsets.Type.ime())
-            windowInsets = lifecycleCoordinator.platformInsetsToLogical(
-                leftPx = systemBars.left,
-                topPx = systemBars.top,
-                rightPx = systemBars.right,
-                bottomPx = systemBars.bottom,
-                viewWidth = width,
-                viewHeight = height,
-                screenProfile = screenProfile,
-                pixelGapEnabled = pixelGapEnabled,
-                pixelGapRatio = pixelGapRatio,
+            /** Physical display-cutout safe edges, independent from bar visibility. */
+            val cutoutSafe = insets.getInsets(WindowInsets.Type.displayCutout())
+            rawPlatformWindowInsets = PixelPhysicalInsets(
+                left = maxOf(systemBars.left, cutoutSafe.left),
+                top = maxOf(systemBars.top, cutoutSafe.top),
+                right = maxOf(systemBars.right, cutoutSafe.right),
+                bottom = maxOf(systemBars.bottom, cutoutSafe.bottom),
             )
-            viewInsets = lifecycleCoordinator.platformInsetsToLogical(
-                leftPx = ime.left,
-                topPx = ime.top,
-                rightPx = ime.right,
-                bottomPx = ime.bottom,
-                viewWidth = width,
-                viewHeight = height,
-                screenProfile = screenProfile,
-                pixelGapEnabled = pixelGapEnabled,
-                pixelGapRatio = pixelGapRatio,
+            rawPlatformViewInsets = PixelPhysicalInsets(
+                left = ime.left,
+                top = ime.top,
+                right = ime.right,
+                bottom = ime.bottom,
             )
+            rawPlatformCutoutBounds = insets.displayCutout?.boundingRects
+                ?.map(::Rect)
+                .orEmpty()
         } else {
-            windowInsets = lifecycleCoordinator.platformInsetsToLogical(
-                leftPx = insets.systemWindowInsetLeft,
-                topPx = insets.systemWindowInsetTop,
-                rightPx = insets.systemWindowInsetRight,
-                bottomPx = insets.systemWindowInsetBottom,
-                viewWidth = width,
-                viewHeight = height,
-                screenProfile = screenProfile,
-                pixelGapEnabled = pixelGapEnabled,
-                pixelGapRatio = pixelGapRatio,
+            /** Legacy combined system/IME inset snapshot. */
+            val systemWindow = PixelPhysicalInsets(
+                left = insets.systemWindowInsetLeft,
+                top = insets.systemWindowInsetTop,
+                right = insets.systemWindowInsetRight,
+                bottom = insets.systemWindowInsetBottom,
             )
-            viewInsets = PixelWindowInsets.Zero
+            /** Legacy stable system-bar baseline used to identify transient IME obscuration. */
+            val stableWindow = PixelPhysicalInsets(
+                left = insets.stableInsetLeft,
+                top = insets.stableInsetTop,
+                right = insets.stableInsetRight,
+                bottom = insets.stableInsetBottom,
+            )
+            /** Version-independent split shared with pure JVM regression tests. */
+            val split = splitLegacyPlatformInsets(
+                systemWindow = systemWindow,
+                stableWindow = stableWindow,
+            )
+            /** API 28–29 cutout object; older releases have no display-cutout API. */
+            val cutout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                insets.displayCutout
+            } else {
+                null
+            }
+            /** Physical cutout-safe edges merged into stable view padding. */
+            val cutoutSafe = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && cutout != null) {
+                PixelPhysicalInsets(
+                    left = cutout.safeInsetLeft,
+                    top = cutout.safeInsetTop,
+                    right = cutout.safeInsetRight,
+                    bottom = cutout.safeInsetBottom,
+                )
+            } else {
+                PixelPhysicalInsets.Zero
+            }
+            rawPlatformWindowInsets = split.systemBars.maxWith(cutoutSafe)
+            rawPlatformViewInsets = split.ime
+            rawPlatformCutoutBounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                cutout?.boundingRects?.map(::Rect).orEmpty()
+            } else {
+                emptyList()
+            }
         }
+        platformWindowInsetsOwned = true
+        platformViewInsetsOwned = true
+        markEffectiveCapabilitiesDirty()
+        reprojectPlatformInsets()
+        hostCapabilitiesSource.refresh()
         return super.onApplyWindowInsets(insets)
     }
 
+    /** View 进入 Window 后再查询 dispatcher，避免在构造期注册到错误或空 Window。 */
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (lifecycleCoordinator.isDestroyed) return
+        motionSettingsSource.attach(::handleSystemMotionSettingsChanged)
+        hostCapabilitiesSource.attach(
+            onChanged = ::handleSystemHostCapabilitiesChanged,
+            displayId = display?.displayId,
+        )
+        lifecycleCoordinator.updateViewTreeLifecycleOwner(findViewTreeLifecycleOwner())
+        lifecycleCoordinator.attach()
+        if (backAvailabilityRegistration == null) {
+            bindBackAvailabilityListener()
+        }
+        platformBackController.attach()
+    }
+
     override fun onDetachedFromWindow() {
+        platformBackController.detach()
+        motionSettingsSource.detach()
+        hostCapabilitiesSource.detach()
+        lifecycleCoordinator.detach()
         super.onDetachedFromWindow()
-        dispose()
+    }
+
+    /** Rebinds automatic capabilities after a View-level configuration or display change. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (terminalResourcesDisposed) return
+        hostCapabilitiesSource.updateDisplay(display?.displayId)
+        hostCapabilitiesSource.refresh()
+        reprojectPlatformInsets()
+        requestApplyInsets()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!lifecycleCoordinator.isInteractive) return super.onTouchEvent(event)
         return gestureRouter.onTouchEvent(event) ?: super.onTouchEvent(event)
+    }
+
+    /** Routes only real mouse/stylus hover; touchscreen hover remains available to TalkBack. */
+    override fun onHoverEvent(event: MotionEvent): Boolean {
+        if (event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+            return accessibilityNodeProvider.dispatchTouchExplorationHover(event) || super.onHoverEvent(event)
+        }
+        if (!lifecycleCoordinator.isInteractive) return super.onHoverEvent(event)
+        return gestureRouter.onHoverEvent(event) ?: super.onHoverEvent(event)
     }
 
     override fun performClick(): Boolean {
@@ -544,15 +1403,149 @@ public class PixelHostView @JvmOverloads constructor(
         return true
     }
 
-    private fun updateScreenProfileFromPreference() {
-        val preference = profilePreference ?: return
-        if (width <= 0 || height <= 0) return
-        screenProfile = ScreenProfileFactory.create(
+    /** Re-evaluates the configured profile policy from one current Host environment snapshot. */
+    private fun updateScreenProfileFromPolicy() {
+        /** Policy captured before resolution so re-entrant View callbacks cannot mix policies. */
+        val policy = profilePolicy
+        if (policy !is PixelHostProfilePolicy.Fixed && (width <= 0 || height <= 0)) return
+        /** Resolved profile derived by the same viewport strategy used for painting and input. */
+        val resolved = PixelHostProfileResolver.resolve(
+            policy = policy,
             widthPx = width,
             heightPx = height,
-            dotSizePx = preference.dotSizePx,
-            pixelShape = preference.pixelShape,
+            density = effectiveProfileDensity(),
+            viewportPolicy = effectiveViewportPolicy,
         )
+        applyingProfilePolicy = true
+        try {
+            screenProfile = resolved
+        } finally {
+            applyingProfilePolicy = false
+        }
+    }
+
+    /** Returns the density currently visible to an adaptive-dp profile. */
+    private fun effectiveProfileDensity(): Float {
+        return capabilitiesOverride?.density ?: systemHostCapabilities.density
+    }
+
+    /** Keeps the frozen pixel preference facade coherent with direct policy assignments. */
+    private fun synchronizeLegacyProfilePreference(policy: PixelHostProfilePolicy) {
+        /** Legacy value representable only by the physical-pixel adaptive policy. */
+        val legacyPreference = when (policy) {
+            is PixelHostProfilePolicy.AdaptivePixels -> PixelHostProfilePreference(
+                dotSizePx = policy.dotSizePx,
+                pixelShape = policy.pixelShape,
+            )
+            else -> null
+        }
+        if (profilePreference == legacyPreference) return
+        synchronizingLegacyProfilePreference = true
+        try {
+            profilePreference = legacyPreference
+        } finally {
+            synchronizingLegacyProfilePreference = false
+        }
+    }
+
+    /**
+     * Recomputes logical insets from retained physical Android data after any geometry change.
+     *
+     * Manually assigned logical [windowInsets] or [viewInsets] remain caller-owned and are not
+     * overwritten. Both platform channels are projected in one guarded block so a frame cannot
+     * observe a new system-bar transform with a stale IME transform.
+     */
+    private fun reprojectPlatformInsets() {
+        if (width <= 0 || height <= 0) return
+        markEffectiveCapabilitiesDirty()
+        if (!platformWindowInsetsOwned && !platformViewInsetsOwned) return
+        applyingProjectedPlatformInsets = true
+        try {
+            if (platformWindowInsetsOwned) {
+                windowInsets = rawPlatformWindowInsets.toLogicalInsets(includeViewportCrop = true)
+            }
+            if (platformViewInsetsOwned) {
+                viewInsets = rawPlatformViewInsets.toLogicalInsets(includeViewportCrop = false)
+            }
+        } finally {
+            applyingProjectedPlatformInsets = false
+        }
+    }
+
+    /** Projects one retained physical edge snapshot through the current viewport geometry. */
+    private fun PixelPhysicalInsets.toLogicalInsets(
+        /** Whether permanent cover cropping contributes to this logical inset channel. */
+        includeViewportCrop: Boolean,
+    ): PixelWindowInsets {
+        return lifecycleCoordinator.platformInsetsToLogical(
+            leftPx = left,
+            topPx = top,
+            rightPx = right,
+            bottomPx = bottom,
+            viewWidth = width,
+            viewHeight = height,
+            screenProfile = screenProfile,
+            viewportPolicy = viewportPolicy,
+            includeViewportCrop = includeViewportCrop,
+            pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
+        )
+    }
+
+    /** Returns defensive physical cutout rectangles for the Android capability adapter. */
+    internal fun rawDisplayCutoutBoundsForCapabilities(): List<Rect> {
+        return rawPlatformCutoutBounds.map(::Rect)
+    }
+
+    /** Returns the retained physical bar/IME channels for version-branch instrumentation tests. */
+    internal fun rawPlatformInsetChannelsForTesting(): PixelLegacyPlatformInsetSplit {
+        return PixelLegacyPlatformInsetSplit(
+            systemBars = rawPlatformWindowInsets,
+            ime = rawPlatformViewInsets,
+        )
+    }
+
+    /** Injects physical platform insets without constructing version-specific WindowInsets tests. */
+    internal fun applyRawPlatformInsetsForTesting(
+        /** Stable system-bar and cutout-safe physical edges. */
+        windowInsets: PixelPhysicalInsets,
+        /** Transient IME physical edges. */
+        viewInsets: PixelPhysicalInsets,
+        /** Physical cutout rectangles retained for capability conversion. */
+        cutoutBounds: List<Rect> = emptyList(),
+    ) {
+        rawPlatformWindowInsets = windowInsets
+        rawPlatformViewInsets = viewInsets
+        rawPlatformCutoutBounds = cutoutBounds.map(::Rect)
+        platformWindowInsetsOwned = true
+        platformViewInsetsOwned = true
+        markEffectiveCapabilitiesDirty()
+        reprojectPlatformInsets()
+    }
+
+    /** Converts retained physical cutout rectangles through the current shared grid geometry. */
+    private fun resolveLogicalDisplayFeatures(): List<PixelDisplayFeature> {
+        /** Platform-neutral features supplied directly by the capability source or a test fake. */
+        val sourceFeatures = systemHostCapabilities.displayFeatures
+        if (rawPlatformCutoutBounds.isEmpty()) return sourceFeatures
+        /** Current physical-to-logical transform shared with paint, pointer and Accessibility. */
+        val geometry = resolveGridGeometry() ?: return sourceFeatures
+        /** Positive uniform cell scale used for exact floating-point feature coordinates. */
+        val cellSize = geometry.cellSize.coerceAtLeast(1f)
+        /** Cutout features derived without retaining mutable Android Rect objects. */
+        val cutoutFeatures = rawPlatformCutoutBounds.map { physicalBounds ->
+            PixelDisplayFeature(
+                bounds = PixelLogicalRect(
+                    left = (physicalBounds.left - geometry.originX) / cellSize,
+                    top = (physicalBounds.top - geometry.originY) / cellSize,
+                    right = (physicalBounds.right - geometry.originX) / cellSize,
+                    bottom = (physicalBounds.bottom - geometry.originY) / cellSize,
+                ),
+                type = PixelDisplayFeatureType.CUTOUT,
+                state = PixelDisplayFeatureState.UNKNOWN,
+            )
+        }
+        return (sourceFeatures + cutoutFeatures).distinct()
     }
 
     internal fun resolveClickTarget(logicalX: Int, logicalY: Int): PixelClickTarget? {
@@ -565,24 +1558,55 @@ public class PixelHostView @JvmOverloads constructor(
         }
     }
 
+    /** Reconciles pointer and hover ownership whenever a new target snapshot becomes current. */
+    internal fun reconcileInteractionTargets(renderResult: PixelRenderResult) {
+        gestureRouter.reconcileTargets(renderResult)
+        pendingClickTarget?.let { previous ->
+            val replacement = renderResult.clickTargets.lastOrNull { candidate ->
+                if (previous.source != null && candidate.source != null) {
+                    previous.source === candidate.source
+                } else {
+                    previous === candidate
+                }
+            }
+            if (replacement != null) {
+                pendingClickTarget = replacement
+            } else {
+                cancelPendingClick()
+            }
+        }
+    }
+
     internal fun cancelPendingClick() {
         pendingClickRunnable?.let(::removeCallbacks)
         pendingClickRunnable = null
         pendingClickTapSource = null
+        pendingClickTarget = null
     }
 
     internal fun schedulePendingClick(target: PixelClickTarget, delayMillis: Long) {
         cancelPendingClick()
         val source = target.source
         val runnable = Runnable {
-            if (pendingClickTapSource === source) {
+            val currentTarget = pendingClickTarget
+            if (
+                lifecycleCoordinator.isInteractive &&
+                pendingClickTapSource === source &&
+                currentTarget != null
+            ) {
                 pendingClickRunnable = null
                 pendingClickTapSource = null
-                target.onClick.invoke()
+                pendingClickTarget = null
+                currentTarget.onClick.invoke()
                 invalidate()
+            } else if (pendingClickTapSource === source) {
+                pendingClickRunnable = null
+                pendingClickTapSource = null
+                pendingClickTarget = null
             }
         }
         pendingClickTapSource = source
+        pendingClickTarget = target
         pendingClickRunnable = runnable
         postDelayed(runnable, delayMillis)
     }
@@ -592,6 +1616,7 @@ public class PixelHostView @JvmOverloads constructor(
     }
 
     internal fun focusTextInput(target: PixelTextInputTarget) {
+        if (!lifecycleCoordinator.isInteractive) return
         textInputCoordinator.focus(target)
     }
 
@@ -624,6 +1649,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
+            viewportPolicy = effectiveViewportPolicy,
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         )
@@ -643,6 +1669,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
+            viewportPolicy = effectiveViewportPolicy,
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         ) ?: return
@@ -657,14 +1684,7 @@ public class PixelHostView @JvmOverloads constructor(
             drawBezelOverlay(canvas, buffer, geometry)
         } else {
             // No-gap path — bitmap fast path.
-            val existing = reusableBitmap
-            val bitmap = if (existing != null && existing.width == bw && existing.height == bh) {
-                existing
-            } else {
-                existing?.recycle()
-                Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888).also { reusableBitmap = it }
-            }
-            bitmap.setPixels(buffer.pixels, 0, bw, 0, 0, bw, bh)
+            val bitmap = updateReusableBufferBitmap(buffer)
 
             val gridWidth = (bw * geometry.cellSize).toInt()
             val gridHeight = (bh * geometry.cellSize).toInt()
@@ -691,11 +1711,12 @@ public class PixelHostView @JvmOverloads constructor(
     ) {
         val gap = geometry.dotInset
         if (gap <= 0f) return
+        /** 一条内部网格线的完整物理宽度。 */
+        val gapWidth = geometry.dotInset * 2f
         reusablePaint.color = bezelColor.argb
         val cell = geometry.cellSize
-        val gapWidth = gap * 2f
         for (x in 1 until buffer.width) {
-            val left = geometry.originX + x * cell - gap
+            val left = geometry.originX + x * cell - geometry.dotInset
             canvas.drawRect(
                 left,
                 geometry.originY,
@@ -705,7 +1726,7 @@ public class PixelHostView @JvmOverloads constructor(
             )
         }
         for (y in 1 until buffer.height) {
-            val top = geometry.originY + y * cell - gap
+            val top = geometry.originY + y * cell - geometry.dotInset
             canvas.drawRect(
                 geometry.originX,
                 top,
@@ -744,6 +1765,13 @@ public class PixelHostView @JvmOverloads constructor(
         if (showDeadPixels) {
             drawGapBackground(canvas, buffer, geometry, shape)
         }
+        if (
+            shape == PixelShape.SQUARE &&
+            effectiveViewportPolicy.quantization == PixelViewportQuantization.INTEGER
+        ) {
+            drawSquarePixelBitmap(canvas = canvas, buffer = buffer, geometry = geometry)
+            return
+        }
         for (y in 0 until buffer.height) {
             for (x in 0 until buffer.width) {
                 val pixel = buffer.getPixel(x, y)
@@ -757,6 +1785,109 @@ public class PixelHostView @JvmOverloads constructor(
                 drawPixelShape(canvas, left, top, right, bottom, shape)
             }
         }
+    }
+
+    /**
+     * 把所有方形逻辑像素合并为一次 Bitmap 提交。
+     *
+     * 透明像素会露出预先缓存的熄灭点阵背景，后续 bezel overlay 再覆盖内部网格线，
+     * 因而最终结果与逐格 `drawRect` 一致，同时避免每个点亮像素一次 Canvas 调用。
+     * 该快速路径只用于整数 viewport；fractional viewport 保留逐格路径以维持子像素栅格化语义。
+     */
+    private fun drawSquarePixelBitmap(
+        canvas: Canvas,
+        buffer: PixelBuffer,
+        geometry: PixelGridGeometry,
+    ) {
+        if (!resolveNonTransparentPixelBounds(buffer, reusableActivePixelBounds)) return
+        /** 只包含当前非透明逻辑边界的复用位图，避免把大面积透明区域上传到 GPU。 */
+        val bitmap = updateReusableBufferBitmapRegion(
+            buffer = buffer,
+            left = reusableActivePixelBounds.left,
+            top = reusableActivePixelBounds.top,
+            regionWidth = reusableActivePixelBounds.width(),
+            regionHeight = reusableActivePixelBounds.height(),
+        )
+        reusableDestRectF.set(
+            geometry.originX + reusableActivePixelBounds.left * geometry.cellSize,
+            geometry.originY + reusableActivePixelBounds.top * geometry.cellSize,
+            geometry.originX + reusableActivePixelBounds.right * geometry.cellSize,
+            geometry.originY + reusableActivePixelBounds.bottom * geometry.cellSize,
+        )
+        canvas.drawBitmap(bitmap, null, reusableDestRectF, null)
+    }
+
+    /** 把当前逻辑 buffer 写入尺寸匹配的复用 Bitmap，并返回可直接提交的实例。 */
+    private fun updateReusableBufferBitmap(buffer: PixelBuffer): Bitmap {
+        return updateReusableBufferBitmapRegion(
+            buffer = buffer,
+            left = 0,
+            top = 0,
+            regionWidth = buffer.width,
+            regionHeight = buffer.height,
+        )
+    }
+
+    /**
+     * 把当前逻辑 buffer 的指定区域写入尺寸匹配的复用 Bitmap。
+     *
+     * [left]、[top] 和区域尺寸只来自本类已经验证的非透明边界或完整 buffer 边界。
+     */
+    private fun updateReusableBufferBitmapRegion(
+        buffer: PixelBuffer,
+        left: Int,
+        top: Int,
+        regionWidth: Int,
+        regionHeight: Int,
+    ): Bitmap {
+        /** 仅在逻辑分辨率变化时替换的上一张复用位图。 */
+        val existing = reusableBitmap
+        /** 与当前待提交区域尺寸完全一致的提交位图。 */
+        val bitmap = if (existing != null && existing.width == regionWidth && existing.height == regionHeight) {
+            existing
+        } else {
+            existing?.recycle()
+            Bitmap.createBitmap(regionWidth, regionHeight, Bitmap.Config.ARGB_8888).also { reusableBitmap = it }
+        }
+        /** 区域首像素在原始整帧数组中的偏移。 */
+        val sourceOffset = top * buffer.width + left
+        bitmap.setPixels(buffer.pixels, sourceOffset, buffer.width, 0, 0, regionWidth, regionHeight)
+        return bitmap
+    }
+
+    /**
+     * 扫描当前 buffer 的非透明像素包围盒并写入 [outBounds]。
+     *
+     * `PixelBuffer.pixels` 是兼容公开 API，调用方可以直接更新数组，因此这里不能依赖仅由
+     * Engine 写入口维护的脏区元数据。单次无分配线性扫描换取更小的 GPU 纹理上传区域。
+     */
+    private fun resolveNonTransparentPixelBounds(buffer: PixelBuffer, outBounds: Rect): Boolean {
+        /** 尚未发现非透明像素时使用的左、上哨兵。 */
+        var minimumX = buffer.width
+        var minimumY = buffer.height
+        /** 尚未发现非透明像素时使用的右、下哨兵。 */
+        var maximumX = -1
+        var maximumY = -1
+        /** 当前线性像素下标，避免热循环重复乘法。 */
+        var pixelIndex = 0
+        for (y in 0 until buffer.height) {
+            for (x in 0 until buffer.width) {
+                /** 当前像素只需检查 alpha；RGB 在完全透明时不会影响最终合成。 */
+                val alpha = buffer.pixels[pixelIndex] ushr 24
+                pixelIndex += 1
+                if (alpha == 0) continue
+                if (x < minimumX) minimumX = x
+                if (x > maximumX) maximumX = x
+                if (y < minimumY) minimumY = y
+                maximumY = y
+            }
+        }
+        if (maximumX < 0) {
+            outBounds.setEmpty()
+            return false
+        }
+        outBounds.set(minimumX, minimumY, maximumX + 1, maximumY + 1)
+        return true
     }
 
     private fun drawGapBackground(
@@ -869,28 +2000,171 @@ public class PixelHostView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
+            viewportPolicy = effectiveViewportPolicy,
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         )
     }
+
+    /** Applies one distinct platform settings snapshot and rebuilds inherited motion consumers. */
+    private fun handleSystemMotionSettingsChanged(settings: PixelMotionSettings) {
+        if (terminalResourcesDisposed || systemMotionSettings == settings) return
+        systemMotionSettings = settings
+        markEffectiveCapabilitiesDirty()
+        if (motionSettingsOverride == null && capabilitiesOverride == null) invalidate()
+    }
+
+    /** Applies one distinct Android configuration/contrast/display snapshot atomically. */
+    private fun handleSystemHostCapabilitiesChanged(capabilities: HostCapabilitiesData) {
+        if (terminalResourcesDisposed || systemHostCapabilities == capabilities) return
+        /** Automatic density visible before applying the distinct platform snapshot. */
+        val previousDensity = effectiveProfileDensity()
+        systemHostCapabilities = capabilities
+        if (capabilitiesOverride == null && previousDensity != effectiveProfileDensity()) {
+            updateScreenProfileFromPolicy()
+        }
+        markEffectiveCapabilitiesDirty()
+        if (capabilitiesOverride == null) invalidate()
+    }
 }
 
+/**
+ * Resolves one atomic Host snapshot without requiring Android View construction in JVM tests.
+ *
+ * A caller-supplied snapshot is authoritative. The compatibility path changes only direction
+ * and motion while retaining every other documented [HostCapabilitiesData.Default] field.
+ */
+internal fun resolveEffectiveHostCapabilities(
+    capabilitiesOverride: HostCapabilitiesData?,
+    textDirection: TextDirection,
+    motionSettings: PixelMotionSettings,
+): HostCapabilitiesData {
+    return capabilitiesOverride ?: HostCapabilitiesData.Default.copy(
+        layoutDirection = textDirection,
+        motionSettings = motionSettings,
+    )
+}
+
+/** Immutable Android edge insets retained in physical pixel coordinates. */
+internal data class PixelPhysicalInsets(
+    /** Physical pixels obscured from the left Host edge. */
+    val left: Int = 0,
+    /** Physical pixels obscured from the top Host edge. */
+    val top: Int = 0,
+    /** Physical pixels obscured from the right Host edge. */
+    val right: Int = 0,
+    /** Physical pixels obscured from the bottom Host edge. */
+    val bottom: Int = 0,
+) {
+    init {
+        require(left >= 0 && top >= 0 && right >= 0 && bottom >= 0) {
+            "PixelPhysicalInsets edges must be >= 0, got ($left, $top, $right, $bottom)"
+        }
+    }
+
+    /** Returns the edge-wise maximum used to combine system bars and display-cutout safety. */
+    fun maxWith(other: PixelPhysicalInsets): PixelPhysicalInsets {
+        return PixelPhysicalInsets(
+            left = maxOf(left, other.left),
+            top = maxOf(top, other.top),
+            right = maxOf(right, other.right),
+            bottom = maxOf(bottom, other.bottom),
+        )
+    }
+
+    /** Canonical empty physical inset snapshot. */
+    companion object {
+        /** Snapshot containing no physical obscuration. */
+        val Zero: PixelPhysicalInsets = PixelPhysicalInsets()
+    }
+}
+
+/** Physical system-bar and IME channels recovered from a pre-API 30 combined inset snapshot. */
+internal data class PixelLegacyPlatformInsetSplit(
+    /** Current system-bar edges with transient IME extent removed. */
+    val systemBars: PixelPhysicalInsets,
+    /** Transient IME edges, or zero when the legacy snapshot reports no larger obscuration. */
+    val ime: PixelPhysicalInsets,
+)
+
+/**
+ * Splits API 24–29 combined system-window insets using stable bar dimensions as the baseline.
+ *
+ * A transient edge larger than its positive stable counterpart is treated as IME and retains the
+ * complete combined extent, matching API 30 `Type.ime()` semantics. When a device supplies no
+ * stable value, the current system edge remains a bar for conservative compatibility.
+ */
+internal fun splitLegacyPlatformInsets(
+    /** Current combined system-window inset snapshot. */
+    systemWindow: PixelPhysicalInsets,
+    /** Stable system-bar dimensions reported by the same WindowInsets object. */
+    stableWindow: PixelPhysicalInsets,
+): PixelLegacyPlatformInsetSplit {
+    /** Resolves one current system-bar edge without including a larger transient IME edge. */
+    fun systemBarEdge(current: Int, stable: Int): Int {
+        return when {
+            current <= 0 -> 0
+            stable <= 0 -> current
+            else -> minOf(current, stable)
+        }
+    }
+
+    /** Returns the complete transient edge only when it exceeds a known stable baseline. */
+    fun imeEdge(current: Int, stable: Int): Int {
+        return if (stable > 0 && current > stable) current else 0
+    }
+
+    return PixelLegacyPlatformInsetSplit(
+        systemBars = PixelPhysicalInsets(
+            left = systemBarEdge(systemWindow.left, stableWindow.left),
+            top = systemBarEdge(systemWindow.top, stableWindow.top),
+            right = systemBarEdge(systemWindow.right, stableWindow.right),
+            bottom = systemBarEdge(systemWindow.bottom, stableWindow.bottom),
+        ),
+        ime = PixelPhysicalInsets(
+            left = imeEdge(systemWindow.left, stableWindow.left),
+            top = imeEdge(systemWindow.top, stableWindow.top),
+            right = imeEdge(systemWindow.right, stableWindow.right),
+            bottom = imeEdge(systemWindow.bottom, stableWindow.bottom),
+        ),
+    )
+}
+
+/** Cached shaped-dot bitmap identity for one complete physical viewport transform. */
 private data class GapBackgroundKey(
+    /** Physical cached bitmap width. */
     val bitmapWidth: Int,
+    /** Physical cached bitmap height. */
     val bitmapHeight: Int,
+    /** Logical grid width represented by the bitmap. */
     val logicalWidth: Int,
+    /** Logical grid height represented by the bitmap. */
     val logicalHeight: Int,
+    /** Physical scale of one logical cell. */
     val cellSize: Float,
+    /** Physical interior inset of one shaped dot. */
     val dotInset: Float,
+    /** Physical painted dot extent. */
     val dotSize: Float,
+    /** Shape rendered for every logical dot. */
     val pixelShape: PixelShape,
+    /** ARGB background color between shaped dots. */
     val pixelGridArgb: Int,
 )
 
+/** Converts one Android key into the frozen navigation/activation/legacy-Char event model. */
 private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {
     return mapAndroidKeyCodeToPixelKeyEvent(
         keyCode = keyCode,
         isShiftPressed = isShiftPressed,
+        unicodeChar = unicodeChar,
+    )
+}
+
+/** Converts one printable Android key to exact text without narrowing supplementary scalars. */
+private fun android.view.KeyEvent.toPixelTextInputEvent(): PixelTextInputEvent? {
+    return mapAndroidKeyCodeToPixelTextInputEvent(
+        keyCode = keyCode,
         unicodeChar = unicodeChar,
     )
 }

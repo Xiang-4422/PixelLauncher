@@ -40,7 +40,9 @@ public data class PixelTextFieldStyle(
     val cursorBlinkPeriodMs: Long = 1_000L,
     val padding: Int = 2,
 ) {
+    /** 集中提供 `PixelTextField` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 提供 `PixelTextField` 的 `Default` 稳定默认值或常量。 */
         public val Default: PixelTextFieldStyle = PixelTextFieldStyle()
     }
 }

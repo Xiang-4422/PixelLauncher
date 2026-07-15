@@ -10,13 +10,16 @@ package com.purride.pixelui
  * `Success` 之后再到 `Loading` 是合法状态机迁移——表示"重新加载中"。
  */
 public sealed class PixelAsyncSnapshot<out T> {
+    /** 集中提供 `PixelAsync` 共享的工厂、常量或无状态辅助入口。 */
     public object Loading : PixelAsyncSnapshot<Nothing>() {
         override fun toString(): String = "PixelAsyncSnapshot.Loading"
     }
 
-    public data class Success<T>(public val value: T) : PixelAsyncSnapshot<T>()
+    /** 定义 `Success` 在 `PixelAsync` 中承担的数据或执行职责，并保持公开不变量稳定。 */
+    public data class Success<T>(/** 保存 `PixelAsync` 对外传递的 `value` 数据。 */ public val value: T) : PixelAsyncSnapshot<T>()
 
-    public data class Failure(public val error: Throwable) : PixelAsyncSnapshot<Nothing>()
+    /** 表示 `PixelAsync` 对外可观察的结果或事件，并保留稳定的分支语义。 */
+    public data class Failure(/** 保存 `PixelAsync` 的 `error` 结果或失败信息。 */ public val error: Throwable) : PixelAsyncSnapshot<Nothing>()
 }
 
 /**
@@ -46,6 +49,7 @@ public sealed class PixelAsyncSnapshot<out T> {
  *    所有 setState 必须在 UI 线程发起
  */
 public fun interface PixelAsyncSource<T> {
+    /** 向 `PixelAsync` 注册 `subscribe` 对应内容，并遵守重复注册与生命周期规则。 */
     public fun subscribe(listener: (PixelAsyncSnapshot<T>) -> Unit): () -> Unit
 }
 

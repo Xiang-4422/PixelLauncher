@@ -1,5 +1,7 @@
 package com.purride.pixelui.regression
 
+import com.purride.pixelui.PixelComponentTokens
+import com.purride.pixelui.PixelSpacingTokens
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -38,9 +40,10 @@ class PixelWidgetUiSpecStaticTest {
     }
 
     @Test
-    fun highRiskWidgetPaddingConstantsRemainAtLeastTwoPixels() {
+    fun highRiskWidgetPaddingTokensRemainAtLeastTwoPixels() {
         val moduleRoot = resolveModuleRoot()
-        val offenders = minPaddingRules.mapNotNull { rule ->
+        /** Remaining non-themed source constants still protected by the legacy static gate. */
+        val constantOffenders = minPaddingRules.mapNotNull { rule ->
             val file = moduleRoot.resolve(rule.path)
             if (!file.exists()) {
                 "${rule.path}: missing file"
@@ -55,9 +58,28 @@ class PixelWidgetUiSpecStaticTest {
                 }
             }
         }
+        /** Canonical spacing scale used to resolve encoded component padding. */
+        val spacing = PixelSpacingTokens.Default
+        /** High-risk bordered text surfaces now governed by component tokens. */
+        val tokenPadding = linkedMapOf(
+            "button" to PixelComponentTokens.Default.button.resolvePadding(spacing),
+            "textField" to PixelComponentTokens.Default.textField.resolvePadding(spacing),
+            "tabs" to PixelComponentTokens.Default.tabs.resolvePadding(spacing),
+            "segmented" to PixelComponentTokens.Default.segmented.resolvePadding(spacing),
+        )
+        /** Token fields whose horizontal or vertical text inset regressed below two pixels. */
+        val tokenOffenders = tokenPadding.mapNotNull { (name, padding) ->
+            if (minOf(padding.left, padding.top, padding.right, padding.bottom) < 2) {
+                "$name token padding must be >= 2px, found $padding"
+            } else {
+                null
+            }
+        }
+        /** Unified static and tokenized padding violations. */
+        val offenders = constantOffenders + tokenOffenders
 
         assertTrue(
-            "pixel-engine widget padding constants must stay >= 2px:\n${offenders.joinToString("\n")}",
+            "pixel-engine widget text padding must stay >= 2px:\n${offenders.joinToString("\n")}",
             offenders.isEmpty(),
         )
     }
@@ -244,19 +266,9 @@ class PixelWidgetUiSpecStaticTest {
 
         private val minPaddingRules = listOf(
             MinPaddingRule(
-                path = "src/main/kotlin/com/purride/pixelui/widgets/PixelComponents.kt",
-                constantName = "TEXT_CONTAINER_PADDING_PX",
-                regex = Regex("""TEXT_CONTAINER_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingRule(
                 path = "src/main/kotlin/com/purride/pixelui/widgets/PixelDebugOverlay.kt",
                 constantName = "DEBUG_OVERLAY_PADDING_PX",
                 regex = Regex("""DEBUG_OVERLAY_PADDING_PX\s*=\s*(\d+)"""),
-            ),
-            MinPaddingRule(
-                path = "src/main/kotlin/com/purride/pixelui/internal/widgets/content/InputWidgets.kt",
-                constantName = "OUTLINED_BUTTON_PADDING_PX",
-                regex = Regex("""OUTLINED_BUTTON_PADDING_PX(?::\s*Int)?\s*=\s*(\d+)"""),
             ),
         )
     }

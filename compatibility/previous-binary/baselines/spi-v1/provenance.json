@@ -1,0 +1,9 @@
+{
+  "artifact": "pixel-engine-spi-v1.aar",
+  "artifactSha256": "a88dd712c4934581a644356780e828b4a1fd1166dccdc9ef7ab54ec5b298bfca",
+  "engineVersion": "0.1.0-SNAPSHOT",
+  "sourceCommit": "a4f74b16",
+  "toolchain": "AGP 9.0.1 built-in Kotlin 2.2.10; JDK 21",
+  "purpose": "First real advanced RenderObject SPI compatibility baseline before an internal adapter rename",
+  "releaseStatus": "pre-release fixture; not an externally published artifact"
+}

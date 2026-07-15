@@ -1,15 +1,47 @@
 # pixel-engine 使用说明与 API 手册
 
-本文面向使用 pixel-engine 构建像素 UI 的开发者。内部实现和维护规则见 [架构与技术实现](架构与技术实现.md)。
+本文面向使用 Pixel Engine 1.0 构建像素 UI 的开发者。首次接入建议先读
+[Quickstart](guides/quickstart.md)，再按需阅读 [Host](guides/host-integration.md)、
+[主题](guides/theme-and-components.md)、[路由](guides/navigation.md)、[资源](guides/resources.md)、
+[SPI](guides/custom-render-spi.md)、[测试](guides/testing.md) 与 [性能](guides/performance.md)。
+内部实现和维护规则见 [架构与技术实现](架构与技术实现.md)。
 
 ## 1. 快速接入
 
-pixel-engine 是 Android library 模块，最低 `minSdk = 24`，当前 `compileSdk = 36`。
+pixel-engine 是 Android library SDK，最低 `minSdk = 24`，当前 `compileSdk = 36`。M7-1 已把 SDK
+拆为按需依赖的独立 artifact。兼容坐标 `com.purride:pixel-engine` 保留旧单依赖体验和历史 API；
+新接入的最小 Android Host 推荐直接依赖 `com.purride:pixel-android`，不会传递 testing、debug 或
+compose。
+
+### 消费者构建环境
+
+1.0 发布物的消费者边界如下；这里描述的是“使用 SDK 的 app/library 构建”，不是本仓库 producer
+自身的构建版本：
+
+| 档位 | Kotlin | AGP | Gradle | compileSdk | JDK |
+|---|---:|---:|---:|---:|---:|
+| 最低支持 | `2.2.10` | `8.10.1` | `8.11.1` | `36` | `17+` |
+| 推荐 | AGP 9 内置 `2.2.10` | `9.1.1` | `9.3.1` | `36.1` | `21` |
+
+全部 AAR 都显式声明 `minAndroidGradlePluginVersion=8.10.0` 和 `minCompileSdk=36`。AGP 低于
+`8.10.0` 或 compileSdk 低于 `36` 时，`checkAarMetadata` 会在编译/R8 前给出升级提示；不应使用
+`android.suppressUnsupportedCompileSdk` 绕过该边界。AGP 8 消费者必须显式应用 Kotlin
+`2.2.10+`，并让 Kotlin/Java JVM target 保持一致；AGP 9 默认使用内置 Kotlin，无需再应用
+`org.jetbrains.kotlin.android`。这些边界分别对应 Android 官方的
+[Kotlin 2.2 D8/R8 最低版本](https://developer.android.com/build/kotlin-support)、
+[AGP 8.10 / Gradle 8.11.1 兼容关系](https://developer.android.com/build/releases/agp-8-10-0-release-notes)、
+[AGP 9.1 / Gradle 9.3.1 兼容关系](https://developer.android.com/build/releases/agp-9-1-0-release-notes)
+与 [Android 36.1 compileSdk 配置](https://developer.android.com/about/versions/16/qpr2/setup-sdk)。
 
 在 `settings.gradle.kts` 中包含模块：
 
 ```kotlin
 include(":pixel-engine")
+include(":pixel-core")
+include(":pixel-runtime")
+include(":pixel-widgets")
+include(":pixel-navigation")
+include(":pixel-android")
 ```
 
 在 app 模块中依赖：
@@ -17,6 +49,22 @@ include(":pixel-engine")
 ```kotlin
 dependencies {
     implementation(project(":pixel-engine"))
+}
+```
+
+仓库内只使用 core 原语的模块可以改为最小依赖：
+
+```kotlin
+dependencies {
+    implementation(project(":pixel-core"))
+}
+```
+
+仓库内最小 Host 接入可以改为：
+
+```kotlin
+dependencies {
+    implementation(project(":pixel-android"))
 }
 ```
 
@@ -28,9 +76,64 @@ repositories {
 }
 
 dependencies {
-    implementation("com.purride:pixel-engine:0.1.0-SNAPSHOT")
+    implementation("com.purride:pixel-engine:1.0.0")
 }
 ```
+
+只使用 `PixelColor`、`PixelBuffer`、字体、bitmap、sprite 或资源解析时：
+
+```kotlin
+dependencies {
+    implementation("com.purride:pixel-core:1.0.0")
+}
+```
+
+按能力选择坐标：
+
+| 坐标 | 用途 | 关键传递边界 |
+|---|---|---|
+| `pixel-core` | 像素、字体、bitmap、sprite、资源 | 不含 UI/Lifecycle/testing/debug/Compose |
+| `pixel-runtime` | Widget/Element/RenderObject 与调度 | 只传递 core |
+| `pixel-widgets` | 标准组件、主题、动画、Overlay | 传递 core/runtime |
+| `pixel-navigation` | route、entry、恢复、转场 | 传递 core/runtime/widgets |
+| `pixel-android` | Host、IME、accessibility、lifecycle、window | 最小 Android Host；不含 testing/debug/compose |
+| `pixel-testing` | `PixelTester`、finder、golden | 测试源码显式依赖 |
+| `pixel-debug` | inspector、bounds、诊断 UI | 调试源码显式依赖 |
+| `pixel-compose` | Compose 页面托管完整 Pixel Host 的可选 wrapper | 只由显式依赖者取得 Compose；不进入最小 Host 或 legacy 聚合图 |
+| `pixel-engine` | 旧单依赖兼容聚合 | 为历史 API 仍传递独立 testing/debug，不含 Compose |
+
+例如最小发布 Host：
+
+```kotlin
+dependencies {
+    implementation("com.purride:pixel-android:1.0.0")
+}
+```
+
+测试和诊断能力按 source set 显式加入：
+
+```kotlin
+dependencies {
+    testImplementation("com.purride:pixel-testing:1.0.0")
+    debugImplementation("com.purride:pixel-debug:1.0.0")
+}
+```
+
+不要同时显式依赖相同版本的 `pixel-engine` 和拆分坐标；聚合 POM 已经传递 legacy API 所需模块。
+发布门禁会在隔离 file-Maven 仓库中逐个编译、测试并执行消费者侧 R8，同时拒绝重复 class 和
+非预期传递依赖。
+
+可单独复现完整消费者矩阵：
+
+```bash
+./tools/pixel-consumer-compatibility-matrix.sh
+```
+
+该命令先向 `build/compatibility-repository` 发布全部九个正式坐标，再校验 AAR、POM、Gradle
+module metadata、sources、Dokka Javadoc/KDoc、consumer ProGuard rules 与传递依赖。随后在最低和
+推荐两档独立工程中构建 debug、minified release，运行 Kotlin 自定义 RenderObject SPI 与 Java
+调用测试；最后确认低 AGP、低 compileSdk 两种组合按预期提前失败。机读结果位于
+`build/reports/compatibility/m8-2/`。
 
 常用 import：
 
@@ -55,7 +158,7 @@ import com.purride.pixelui.widgets.navigation.*
 |---|---|
 | SDK 依赖与 import | `1. 快速接入` |
 | Android Activity 宿主 | `2. 最小 Activity` |
-| 宿主配置、背景、字体和手势策略 | `3. 宿主配置` |
+| Engine 实例、服务注入、宿主配置与平台能力 | `3. 宿主配置` |
 | 状态、Controller 和受控组件 | `4. 状态管理` |
 | 颜色、字体、主题和字形包 | `5. 颜色、字体和主题` |
 | 错误边界、Overlay、Back、Insets、Lifecycle、Saved State、Accessibility | `6. 常见页面模式` |
@@ -97,6 +200,37 @@ class HelloPixelActivity : AppCompatActivity() {
 - 默认 `PixelTextInputBridge`
 - 包含宿主和隐藏输入框的 `FrameLayout`
 
+### Compose 页面托管 Pixel Host
+
+只有 Compose 页面需要增加可选坐标和 Kotlin 2 Compose compiler plugin：
+
+```kotlin
+dependencies {
+    implementation("com.purride:pixel-compose:1.0.0")
+}
+```
+
+```kotlin
+PixelHost(
+    engine = PixelEngine.Builder().build(),
+    modifier = Modifier.fillMaxSize(),
+    stateKey = "settings-pixel-host",
+    content = {
+        Semantics(
+            label = "Pixel settings",
+            child = Center(child = Text("SETTINGS")),
+        )
+    },
+)
+```
+
+`content` 是 `() -> Widget`，不是 `@Composable` slot。wrapper 内部创建标准 `PixelHostSetup`，
+Compose `AndroidView` 自动传递 ViewTree lifecycle、density、焦点、IME 和 accessibility；容器显式转发
+WindowInsets。Compose `rememberSaveable` 提供缺省 saved-state capability，Engine 中调用方显式配置的
+saved state 仍优先。Activity 旋转/重建会创建新 Host，旧 Host 随 owner destroy 释放，状态通过
+SavedStateRegistry 恢复。完整契约见
+[Compose Host 互操作迁移指南](migrations/1.0.0-compose-host.md)。
+
 ## 3. 宿主配置
 
 ```kotlin
@@ -129,10 +263,53 @@ setup.hostView.setPixelGapRatio(0.6f)
 | `pagerGesturePolicy` | PageView 手势启动策略 |
 | `nestedScrollPolicy` | 嵌套滚动仲裁策略 |
 | `scrollPhysics` | 列表滚动物理 |
-| `frameScheduler` | 帧调度器 |
+| `frameScheduler` | Host 私有 frame/ticker scope 的上游帧源；优先在创建 setup 时配置 |
 | `backDispatcher` | widget back 栈调度器 |
 | `onUnhandledBack` | back 未被 widget 消费时的 app fallback |
 | `content` | 根 widget provider |
+
+`createPixelHostSetup(context, engine, ...)` 中 Engine 的 frame scheduler、capability 和其他服务是最终
+权威来源；config 先完成普通 View 装配，随后绑定 Engine，避免默认 config scheduler 掩盖注入服务。
+
+### PixelEngine 实例与服务注入
+
+`PixelEngine` 是不可变的运行实例。Builder 可注入 clock、frame scheduler、ticker factory、结构化
+error reporter、resource resolver/cache、logger、Host 环境、聚焦 Host capability 和主题。默认每次
+`build()` 都创建独立 cache；多个 Engine 只有在应用显式传入同一服务对象时才共享状态。
+
+```kotlin
+/** 当前页面使用的独立 Engine。 */
+val engine = PixelEngine.Builder()
+    .theme(PixelThemeTokens.Dark)
+    .errorReporter { event ->
+        crashSink.record(event.cause, event.phase, event.recoveryResult)
+    }
+    .hostServices(
+        PixelHostCapabilitySet(
+            systemActions = PixelSystemActionCapability { action ->
+                appSystemActions.dispatch(action)
+            },
+        ),
+    )
+    .build()
+
+/** 创建时已经绑定 Engine 的标准 Host。 */
+val setup = createPixelHostSetup(
+    context = this,
+    engine = engine,
+    config = PixelHostSetupConfig(content = { AppRoot() }),
+)
+```
+
+已有 Host 可以调用 `hostView.bindEngine(engine)`。切换实例会让后续帧读取新服务，并释放旧的
+Host frame/ticker scope；不要继续持有切换前的 ticker provider。
+
+`engine.theme` 始终返回完整 token。为了保持旧 facade 的逐像素兼容，默认 Builder 不会自动安装
+“显式主题”作用域；只有调用 `.theme(...)` 才会让旧 facade 进入 token-aware 分支。
+
+纯 JVM 测试应注入 `ManualFrameScheduler` 和 fake `PixelClock`，不要读取 Android 默认调度器。完整
+默认值、共享规则和迁移步骤见
+[PixelEngine 实例与服务迁移指南](migrations/1.0.0-engine-services.md)。
 
 ### Android 宿主契约
 
@@ -142,12 +319,27 @@ pixel-engine 当前只承诺 Android 宿主。默认路径使用 `createPixelHos
 | 层级 | SDK 负责 | App 负责 |
 |---|---|---|
 | `PixelHostSetup` | 创建 `PixelHostView`、默认 `PixelTextInputBridge` 和根 `FrameLayout` | 把 `rootView` 放进 Activity / Fragment |
-| `PixelHostView` | 渲染、触摸、按键、手柄拖动、insets 注入、accessibility 和调试 dump | 在 Android back 回调里调用 `handleBackPressed()` |
+| `PixelHostView` | 渲染、输入、insets、accessibility、ViewTree lifecycle、Host 私有 ticker provider 和调试 dump | 在真实终态释放 setup；需要时提供显式 owner 或 lifecycle |
 | `PixelTextInputBridge` | 隐藏 `EditText`、IME 映射、selection / composition 同步、剪贴板和 haptic 默认桥接 | 业务侧决定何时聚焦、提交、保存文本状态 |
 | `PixelBackDispatcher` | 维护 widget 内 back 栈，并按栈顶优先派发 | 提供 `onUnhandledBack` 或回落到系统 back |
 | saved state helpers | 提供 navigator / list / pager / text field 的 `Bundle` 保存恢复 API | 在 Activity / Fragment 生命周期里显式调用保存恢复 |
 
-自定义宿主需要实现的桥接入口集中在 `PixelHostBridge`：
+新自定义宿主应按需实现聚焦 capability：
+
+- `PixelImeCapability`
+- `PixelClipboardCapability`
+- `PixelHapticCapability`
+- `PixelBackCapability`
+- `PixelAccessibilityCapability`
+- `PixelSavedStateCapability`
+- `PixelSystemActionCapability`
+
+它们由 `PixelHostCapabilitySet` 组合并通过 `PixelEngine.Builder.hostServices(...)` 注入。缺失能力返回
+`Unsupported`，能力异常返回带原始 cause 的 `Failed`，不会用静默空操作伪装成功。系统动作使用
+`PixelOpenUriAction`、`PixelNavigateBackAction`、`PixelOpenAppSettingsAction` 和
+`PixelRequestPermissionAction`，新代码不应新增字符串协议。
+
+已经发布的自定义宿主可以继续实现 `PixelHostBridge`：
 
 - `showTextInput` / `updateTextInput` / `hideTextInput`
 - `performHapticFeedback`
@@ -155,12 +347,39 @@ pixel-engine 当前只承诺 Android 宿主。默认路径使用 `createPixelHos
 - `dispatchSystemAction`
 - `readClipboardText` / `writeClipboardText`
 
+Host 合并时 Engine capability 优先，旧 bridge 只补齐缺失的 IME、clipboard、haptic 和 system
+action；旧接口的源码与 JVM 形状保持不变。
+
 边界：
 
-- SDK 不接管 Activity / Fragment 生命周期；`PixelHostView` 只在 detach 时自动释放自身 runtime。
+- `PixelHostView` attach 时自动绑定 `ViewTreeLifecycleOwner`；普通 detach 只暂停并保留 retained tree，
+  `destroy()` / `dispose()` 才是不可逆释放。
 - SDK 不自动保存 Android `savedInstanceState`；业务 controller/state 由 app 显式保存恢复。
 - SDK 不封装权限、Intent、通知、文件选择等 Android 业务能力；这类能力通过 app 层或 `PixelSystemAction` 自行接线。
 - SDK 不提供 Material / Cupertino 组件库；宿主契约只保证像素 UI 引擎和 Android 系统能力的连接。
+
+### Host-owned ticker 与帧源
+
+需要 vsync 的 Navigator 和动画应使用当前 Host 的 provider：
+
+```kotlin
+/** Builds one Navigator with the ticker provider owned by its Host. */
+fun buildNavigator(hostView: PixelHostView): PixelNavigator {
+    // Re-read this property after replacing the Host frame scheduler.
+    val hostTickerProvider = hostView.tickerProvider
+    return PixelNavigator(
+        initialRoute = PixelRoute(name = "home", builder = { Text("HOME") }),
+        vsync = hostTickerProvider,
+    )
+}
+```
+
+每个 `PixelHostView` 都拥有独立 `PixelHostFrameScope`。pause、stop 或 detach 时 active time
+冻结且不再排上游帧；resume 从暂停前值继续；destroy 取消 callback、ticker 和 listener。
+
+运行时替换 `hostView.frameScheduler` 会 dispose 旧 scope 和旧 `tickerProvider`，不会迁移正在运行的
+动画。换源后必须重新读取 `hostView.tickerProvider` 并重建持有旧 provider 的 Navigator/controller。
+通常应通过 `PixelHostSetupConfig.frameScheduler` 在创建内容前一次性配置。
 
 ## 4. 状态管理
 
@@ -227,24 +446,38 @@ ListViewBuilder(
 
 ## 5. 颜色、字体和主题
 
-engine 使用 ARGB `PixelColor`。`PixelTheme` 只提供 widget 树内的像素默认样式，
-不接管 Android host 配置；`bezelColor`、`offPixelColor` 仍通过
-`PixelHostSetupConfig` / `PixelHostView` 设置。
+engine 使用 ARGB `PixelColor`。`PixelTheme` 向 widget 子树提供完整且不可变的 `PixelThemeTokens`；
+它不接管 Android host 配置，`bezelColor`、`offPixelColor` 仍通过 `PixelHostSetupConfig` /
+`PixelHostView` 设置。
+
+| 根属性 | 内容 |
+|---|---|
+| `brightness` / `contrast` | 明暗与标准/高对比度元数据 |
+| `colors` | `PixelColorScheme` 的 22 个语义颜色角色 |
+| `typography` | body、label、title、caption、button、input 六个排版 token |
+| `spacing` / `sizes` | 6 档间距与 10 个标准组件尺寸 |
+| `radii` / `borders` / `elevations` | 5 档阶梯圆角、4 档整数边框、4 档硬阴影 |
+| `motion` | `PixelMotionThemeData` 的 8 个 motion spec |
+| `components` | 25 个标准组件 token 族 |
+| `labels` | 29 个可本地化的标准文案 |
 
 ```kotlin
-val theme = PixelThemeData(
-    colors = PixelThemeColors.Default.copy(
-        text = PixelColor.fromRgb(151, 255, 167),
-        border = PixelColor.fromRgb(255, 220, 120),
-        selection = PixelColor.fromRgb(255, 220, 120),
+/** Complete consumer theme shared by every standard component. */
+val theme = PixelThemeTokens.Dark.copy(
+    colors = PixelColorScheme.Dark.copy(
+        primary = PixelColor.fromRgb(151, 255, 167),
+        outline = PixelColor.fromRgb(255, 220, 120),
+        focus = PixelColor.fromRgb(0, 224, 255),
     ),
+    spacing = PixelSpacingTokens.Default.copy(small = 3),
+    labels = PixelLabelTokens.Default.copy(confirm = "确定", cancel = "取消"),
 )
 
 setup.hostView.bezelColor = PixelColor.Black
 setup.hostView.offPixelColor = PixelColor.fromRgb(8, 37, 13)
 
 PixelTheme(
-    data = theme,
+    tokens = theme,
     child = Column(
         children = listOf(
             Text("HOME"),
@@ -254,21 +487,116 @@ PixelTheme(
 )
 ```
 
-显式参数优先级高于主题，例如 `Text("HOME", color = PixelColor.White)` 不会使用
-`PixelThemeData.textStyle.color`。
+内置 `Dark`、`Light`、`HighContrastDark`、`HighContrastLight` 四组主题；`Default` 等同于 `Dark`。
+组件保留 `PixelColorRole` 并在 build 时解析当前 scheme，所以只复制一组颜色或 foundation token 就能
+同步改变全部消费者，不需要逐组件覆写。
 
-当前 `PixelThemeData` 边界：
+`PixelTheme(tokens = ..., child = ...)` 会同时提供完整 token 图及其旧 `PixelThemeData` 投影；
+`PixelTheme(data = ..., child = ...)` 则通过 `PixelThemeTokens.fromLegacy(data)` 补齐 token 图。
+新组件使用 `PixelTheme.tokensOf(context)` / `maybeTokensOf(context)`，旧组件继续使用
+`PixelTheme.of(context)` / `maybeOf(context)`。无 provider 时，两个非 nullable 读取方法分别回退到
+`PixelThemeTokens.Default` 和 `PixelThemeData.Default`。局部显式 `PixelMotionTheme` 比
+`PixelThemeTokens.motion` 更近时，以前者为准。
 
-- `textStyle`：`Text` / `RichText` 的默认文字样式。
-- `buttonStyle`：`OutlinedButton` 的默认边框、文字样式和对齐；disabled 默认使用 `colors.disabled`。
-- `textButtonStyle`：`TextButton` 的默认文字样式、padding 和对齐；disabled 默认使用 `colors.disabled`。
-- `textFieldStyle`：`TextField` 的默认边框、文字、placeholder、cursor、selection 和 composition 样式。
+### 八状态解析
 
-不在边界内：
+所有 state-aware 标准组件接受 `PixelControlStateSet`。`Normal` 是空集合；其他状态可以组合。固定
+单值优先级为
+`Disabled > Loading > Error > Pressed > Focused > Hovered > Selected > Normal`；focus indicator 为
+独立叠加层，不会替换 Error/Pressed/Selected 的底色。
+
+优先级按属性逐项解析：`PixelStateMap` 从高到低寻找“当前激活且该属性配置了 override”的第一个
+状态，没有匹配才返回 `normal`。因此最高状态没有该属性的 override 时，会继续寻找较低状态，而不是
+构造一个不存在的值。focus indicator 只在 Focused 激活且组件的 `focusIndicator` 非空时叠加；其标准
+`width = 1` 会解析为当前 `borders.focus`，其他正整数保持字面逻辑像素。
+
+Loading 删除 pointer、keyboard 和 semantics mutation，对本身可聚焦的控件保留已有焦点；Disabled
+还会清除焦点资格。运行时自行合入真实 Hovered、Pressed 和 Focused，业务通常只需提供 Selected、
+Error、Loading 或 Disabled。回调为 `null` 或 `enabled=false` 也会归一化为 Disabled；Error 只改变
+状态呈现，不会自动禁用修复动作。
+
+### 25 个标准组件 token 族
+
+下表是 `PixelComponentTokens` 属性与公开生产工厂的一一映射。每个族都能消费
+`PixelControlStateSet`；既有组件通常通过 `states` 必填的 state-aware 重载保留旧 facade，而 1.0
+新增工厂可直接以默认 `Normal` 调用并按需显式传入 `states`。
+
+| Token 属性 | 标准生产工厂 | 共享该族的相关消费者 |
+|---|---|---|
+| `button` | `OutlinedButton` | — |
+| `textButton` | `TextButton` | — |
+| `iconButton` | `IconButton` | — |
+| `textField` | `TextField` | `FormFieldDecoration` 复用此族，不另增 token |
+| `listTile` | `ListTile` | — |
+| `checkbox` | `Checkbox` | — |
+| `radio` | `Radio` | `RadioGroup` |
+| `switch` | `Switch` | — |
+| `slider` | `Slider` | — |
+| `tabs` | `Tabs` | — |
+| `segmented` | `SegmentedControl` | — |
+| `navigationBar` | `NavigationBar` | `PixelNavigationDestination` |
+| `navigationRail` | `NavigationRail` | `PixelNavigationDestination` |
+| `valueAdjuster` | `ValueAdjuster` | `Stepper`、`ShortcutHint` |
+| `menu` | `Menu` | `PixelMenuItem` |
+| `dropdown` | `Dropdown` | — |
+| `slidable` | `Slidable` | `SlidableAction` |
+| `dialog` | `Dialog` | `ConfirmDialog` |
+| `bottomSheet` | `BottomSheet` | — |
+| `toast` | `Toast` | `ToastQueue`、`Badge` |
+| `snackbar` | `Snackbar` | `SnackbarQueue` |
+| `tooltip` | `Tooltip` | — |
+| `progress` | `ProgressBar` | `PixelLoadingBar`、`AnimatedPixelLoadingBar`、`ActivityIndicator` |
+| `refresh` | `RefreshIndicator` | `SwipeRefreshScaffold` |
+| `scrollbar` | `Scrollbar` | — |
+
+`PixelComponentColorTokens` 为每个族提供 `containerColor`、`contentColor`、`borderColor` 三个
+`PixelStateProperty`，以及独立 `focusIndicator`、padding、最小尺寸、边框、圆角和 elevation role。
+标准 spacing、size、radius、border 编码会读取当前 foundation token；非标准的非负整数保留为字面
+逻辑像素。
+
+### 显式参数与兼容 facade
+
+某个公开覆写通道通常按“该通道适用的显式参数 > component token > foundation token / color
+scheme”解析。它不是“任意显式参数压过所有状态”的全局规则：例如 Checkbox/Switch 旧 facade 的
+active/inactive 颜色只定义 Normal/Selected 基础通道，Error、Loading、Disabled 等状态仍可按组件
+契约覆盖。完整状态/token 契约以 state-aware 重载为准。
+
+旧 `PixelTheme(data = PixelThemeData(...))` 与旧组件 facade 继续可用；其参数类型、默认值、JVM
+descriptor 和 Kotlin `$default` bridge 保持兼容。既有组件的 state-aware 重载在 Kotlin 中使用相同
+工厂名并要求传 `states`，JVM 侧以稳定 `@JvmName` 区分，例如
+`OutlinedButtonWithControlStates`。
+
+无 `PixelTheme` provider 的旧调用保持历史像素。在显式主题内，许多旧默认具体值会作为“未提供
+参数” sentinel，让 token 继续传播；兼容路径不保证每个旧 facade 消费每一种新 token 通道。旧重载
+也无法区分“省略默认值”和“显式传入与旧默认完全相同的值”。要锁定该值，应在 state-aware 重载
+暴露对应 nullable 覆写时传入非空值；否则复制相应 component token。
+
+### Theme Showcase
+
+运行 `pixel-demo`，进入 Theme 分类的 `Theme Showcase`，或搜索 `PixelThemeTokens` / `high-contrast`。
+场景提供 Light、Dark、HighContrastDark、HighContrastLight、Custom 五个切换项；Custom 是 demo
+自定义样例，不是 SDK 的第五个内置 preset。页面同时展示 25 个真实生产组件族、九组 foundation 和
+25×8（200 格）组件状态色板。主题切换会保留 Checkbox、Radio、Switch、Slider、Tabs、NavigationBar、
+Dropdown 等受控状态；主题按钮支持 Tab 聚焦与 Enter 激活。
+
+`ThemeShowcaseScene` 是 demo 内部实现，不属于发布 SDK API。业务应复制它的
+`PixelTheme(tokens = ...)` 与受控状态模式，而不是导入该场景。
+
+```bash
+./gradlew :pixel-demo:assembleDebug
+./gradlew :pixel-demo:testDebugUnitTest --tests 'com.purride.pixeldemo.showcase.ThemeShowcaseSceneTest'
+```
+
+主题边界：
 
 - 不接管 `PixelHostView` 的 `bezelColor` / `offPixelColor` / screen profile。
-- 不为纯函数组件强插 `Builder` 或额外 wrapper；后续组件如果自然重构为 context-aware widget，再顺手接入主题。
 - 不提供 Material / Cupertino token，也不追求通用设计系统。
+- 只接受整数逻辑像素；标准 surface 使用阶梯圆角、整数边框和无模糊硬阴影。
+
+主题基础、最初 21 个组件族的兼容限制和测试方法见
+[主题 Token 与组件状态迁移指南](migrations/1.0.0-theme-tokens-and-component-states.md)；新增 4 个组件族、
+完整 25×8（200 格）生产矩阵和高价值组件迁移见
+[高价值组件迁移指南](migrations/1.0.0-high-value-components.md)。
 
 字体优先级：
 
@@ -279,12 +607,22 @@ PixelTheme(
 
 字体包加载与 fallback：
 
-- `PixelGlyphPackAssetLoader(context).load(assetDirectory)` 会从 `assets/<assetDirectory>/manifest.json` 和 `assets/<assetDirectory>/glyphs.bin` 加载一个 `PixelGlyphPack`，同一路径会在 loader 内缓存。
-- `PixelGlyphPackParser.parseManifest(json)` 只解析字形包元数据；`parseBinary(manifest, inputStream)` 解析二进制字形并校验二进制 `cellHeight` 与 manifest 一致。
-- `BitmapGlyphSource(packs)` 按 pack 顺序查找字符，只消费与当前 `GlyphStyle.cellHeight` 匹配的 pack。
-- `CompositeGlyphProvider(sources)` 按 source 顺序查找字符；全部 source 都缺字时，会返回 engine 内建兜底字形。
-- 兜底字形按 ASCII / 非 ASCII 选择 `narrowAdvanceWidth` 或 `wideAdvanceWidth`；普通缺字会绘制可见方框，空白和控制字符只保留 advance、不绘制墨迹。
+- `PixelGlyphPackAssetLoader(context, cache).load(assetDirectory, manifestSha256, binarySha256)` 会从 `assets/<assetDirectory>/manifest.json` 和 `assets/<assetDirectory>/glyphs.bin` 有界加载一个 `PixelGlyphPack`；缓存由调用方提供或使用 loader 的默认有界缓存，不再创建无容量私有 map。
+- `PixelGlyphPackParser.parseManifest(json, expectedSha256)` 只解析字形包元数据；`parseBinary(manifest, inputStream, expectedSha256)` 会先限制输入总字节并校验 SHA-256，再校验 magic、version、`cellHeight`、glyph count、Unicode scalar、尺寸、精确压缩长度、重复 code point、截断和尾随数据。
+- `BitmapGlyphSource(packs)` 按 pack 顺序查找完整 Unicode scalar `Int`，只消费与当前 `GlyphStyle.cellHeight` 匹配的 pack；supplementary glyph 不会被拆成 surrogate。
+- `CompositeGlyphProvider(sources)` 按 source 顺序查找 scalar；全部 source 都缺字时，会返回 engine 内建兜底字形。
+- scalar 兜底字形按 ASCII / 非 ASCII 选择 `narrowAdvanceWidth` 或 `wideAdvanceWidth`；普通缺字会绘制可见方框，空白和控制字符只保留 advance、不绘制墨迹。段落层的多 code-point cluster fallback 另见下文。
 - SDK 不在字体层自动读取 `PixelResourceCatalog.fonts`；catalog 只提供索引，调用方仍需要用 `PixelGlyphPackAssetLoader` 或自定义加载器创建 `PixelGlyphPack`。
+
+`GlyphSource.findGlyph(Int, ...)` 和 `GlyphProvider.rasterizeGlyph(Int, ...)` 是 1.0 主路径；冻结的
+`Char` 方法继续保留给旧源码和旧二进制消费者。只实现旧入口的 source 对 supplementary scalar
+返回缺字，只实现旧入口的 provider 会收到一次 U+FFFD 请求，不会收到两个 surrogate。公开 `Int`
+入口只接受 Unicode scalar，拒绝负数、U+10FFFF 以上及 surrogate 范围。
+
+多 code-point grapheme 只有在 rasterizer 实现 `PixelClusterTextRasterizer` 且
+`canRasterizeCluster(exactCluster)` 返回 `true` 时才按原始 cluster 测量和绘制。内置
+`PixelStyledTextRasterizer` 只声明单 scalar cluster；unsupported 多 scalar cluster 在 paragraph
+层只生成一个 U+FFFD fallback 单元。
 
 字形包 manifest 当前稳定字段：
 
@@ -306,6 +644,9 @@ PixelTheme(
 3. `cellHeight`：必须等于 manifest 的 `cellHeight`。
 4. `glyphCount`。
 5. 每个 glyph 依次写入 `codePoint`、`advanceWidth`、`width`、`dataLength`、按位压缩的像素数据。
+
+`codePoint` 是完整 Unicode scalar 的 32-bit 整数，不是 UTF-16 `Char`。兼容和自定义字体示例见
+[code-point 字体、cluster 段落与 Bidi 迁移指南](migrations/1.0.0-codepoint-cluster-bidi-text.md)。
 
 ## 6. 常见页面模式
 
@@ -332,12 +673,20 @@ PixelErrorBoundary(
 - `errorBuilder` 应保持简单、确定、低依赖，避免后备界面再次触发异常。
 - 如果 `errorBuilder` 自身在 render 阶段失败，fallback 异常会继续抛给宿主，原异常会作为 suppressed error 保留。
 
+实例级可观测性通过 `PixelEngine.Builder.errorReporter(...)` 注入。`PixelErrorEvent` 保留原始
+`cause`、build/render/fallback 阶段、widget/element/render 上下文、恢复结果和 Engine 单调时间。
+Reporter 或 logger 自身抛异常时会被隔离，不会掩盖原始引擎异常。局部 `PixelErrorBoundary.onError`
+负责子树恢复，实例 reporter 负责统一记录，两者可以同时使用。
+
 ### Overlay
 
-`PixelOverlayHost` 在页面顶部承载 toast、dialog 和 snackbar。controller 由业务持有。
-当页面接入 `PixelBackHost` 时，back 会优先关闭最上层 overlay。
-overlay 只维护当前 item 列表，不内置自动超时、遮罩动画或模态焦点锁定；需要这些策略时由业务层调度
-handle 或自定义 wrapper。
+`PixelOverlayHost` 在页面顶部承载统一的 `PixelPopupRoute<R>`。controller 由业务持有；每个 route
+都有永久 identity、明确 layer、Back/遮罩 dismiss policy、可选 barrier、modal 隔离、motion 和
+typed outcome。`PixelOverlayEntry<R>` 的状态依次为 `Active -> Removing -> Disposed`：逻辑关闭会
+立即退出 Back、焦点和交互栈，但 outcome 只在所有已挂载 Host 的 keyed presentation 真正卸载后
+交付；多个关闭结果始终按逻辑关闭顺序 FIFO 交付，不会被不同退出动画时长重排。
+如果 outcome 回调抛出异常，retained tree 仍会完成 State detach、兄弟卸载、焦点/监听/dirty queue
+清理，再把异常交回本次 build/render 调用；回调因此不得把“抛异常”当成关闭或重试协议。
 
 ```kotlin
 val overlay = PixelOverlayController()
@@ -347,29 +696,46 @@ PixelOverlayHost(
     child = AppRoot(),
 )
 
-overlay.showToast("SAVED")
-
-val dialog = overlay.showDialog(
-    title = Text("DELETE"),
-    content = Text("ARE YOU SURE"),
-    actions = listOf(TextButton(text = "CANCEL", onPressed = {})),
+val picker = overlay.show(
+    PixelPopupRoute<String>(
+        content = Dialog(content = Text("CHOOSE"), modal = false),
+        layer = PixelOverlayLayer.Modal,
+        dismissPolicy = PixelOverlayDismissPolicy.Dismissible,
+        barrier = PixelOverlayBarrier(),
+        modal = true,
+        motion = PixelOverlayMotion.Dialog,
+        onOutcome = { outcome -> saveOutcome(outcome) },
+    ),
 )
-dialog.dismiss()
+picker.complete("A")
 
+// 兼容便捷入口仍可用；通知层默认 Passive，不会抢占 Back。
+overlay.showToast("SAVED")
 overlay.showSnackbar(
     message = "QUEUED",
     action = TextButton(text = "UNDO", onPressed = {}),
 )
 ```
 
-`showDialog` 返回的 handle 是关闭对话框的明确所有权；`showToast` 不会自动消失；`showSnackbar`
-会把 `Snackbar` 放到底部，直接使用 `Snackbar` widget 时它只是一个普通条形容器。
+layer 从低到高为 `Popup`、`Notification`、`Modal`、`System`，同层按插入顺序绘制。
+`PixelOverlayDismissAction` 对每个来源选择 `Ignore`（继续扫描下层）、`Consume`（拦截但不关闭）
+或 `Dismiss`（关闭当前 entry）。不可关闭 modal 应使用 `PixelOverlayDismissPolicy.Locked`，防止 Back
+穿透到 Navigator；Toast/Snackbar 使用 `Passive`。`showDialog`、`showToast` 和 `showSnackbar` 是
+统一 route API 的兼容适配器；便捷通知不会自动超时，需要自动 FIFO 时使用下文的队列组件。
+系统 Back 与焦点系统的 Escape/gamepad Back 共用同一条从顶到底的扫描链；全部为 `Ignore` 时，
+统一 route 不会因为仍有 modal focus trap 就吞掉按键。独立使用且没有 dismiss callback 的
+Dialog/BottomSheet/Popover/Menu 会注册平台 Back 并保持不可关闭模态层的按键陷阱；放入统一
+route 或已合并的 Popover/Menu presentation 后复用外层 handler，不会重复关闭。
+带 barrier 的自定义 route 应用 `PixelOverlaySurface` 包住真实表面；它只在该 measured bounds 内
+吸收空白/disabled 区点击，真实子控件 target 仍位于其上，表面外点击才会到达 barrier。标准
+Dialog、BottomSheet 和 Popover 已自动应用该边界。
 
 ### Back
 
 默认 `createPixelHostSetup` 会创建 `PixelBackDispatcher` 并给 `content` 包一层
 `PixelBackHost`。宿主收到 Android back 时调用 `hostView.handleBackPressed()`。
-处理顺序固定为：文本输入 blur -> overlay dismiss -> navigator pop -> app fallback。
+处理顺序固定为：文本输入 blur -> 顶层 eligible overlay policy -> navigator pop -> app fallback。
+`Ignore` 的通知不会截获返回键；`Consume` 的锁定模态层会阻止返回键继续下传。
 
 ```kotlin
 lateinit var setup: PixelHostSetup
@@ -496,24 +862,107 @@ override fun onCreateView(
 }
 ```
 
-### Lifecycle
+### Viewport、Host capability 与自适应布局
 
-`PixelHostView` 会在 Android `onDetachedFromWindow` 时自动释放 retained widget tree、
-render tree 和像素缓存。Activity 直接把 `setup.rootView` 作为 content view 时，通常不需要
-额外处理。
+物理 View 到逻辑点阵的映射由三个互不替代的维度组成：
 
-Fragment 或自定义宿主如果有明确的视图销毁点，可以调用 `PixelHostSetup.dispose()`。
+- `PixelViewportPolicy`：Contain/Cover、Integer/Fractional 和九宫格 alignment；
+- `PixelHostProfilePolicy`：固定 profile、按物理 px、按 dp 或固定逻辑尺寸；
+- `PixelAdaptiveLayoutData`：当前物理/dp/逻辑尺寸、inset、density、orientation、size class 和
+  display features 的同帧快照。
+
+旧 `ScaleMode.FIT_CENTER` 仍精确映射为 Contain + Integer + Center；不设置
+`PixelHostView.viewportPolicy` 时不会改变既有 paint、touch 或 inset。直接赋值 `screenProfile` 会切回
+`PixelHostProfilePolicy.Fixed`；旧 `profilePreference` 继续兼容并映射为 `AdaptivePixels`。
 
 ```kotlin
+/** Configures a density-aware logical grid and an exact fractional contain viewport. */
+fun configureResponsivePixels(hostView: PixelHostView) {
+    hostView.profilePolicy = PixelHostProfilePolicy.AdaptiveDp(dotSizeDp = 3f)
+    hostView.viewportPolicy = PixelViewportPolicy(
+        fit = PixelViewportFit.CONTAIN,
+        quantization = PixelViewportQuantization.FRACTIONAL,
+        alignment = PixelViewportAlignment.CENTER,
+    )
+}
+```
+
+普通 Android Host 会自动采集 locale、direction、fontScale、density、contrast、motion、refresh 和
+cutout。`capabilitiesOverride` 是测试/调试用的完整快照覆盖；`layoutDirectionOverride = null` 表示
+恢复 Android 自动方向。所有 Host capability source 操作都属于主线程。
+
+`AdaptiveBuilder` 的 `builder` 不是构造器最后一个参数，因此使用显式命名参数：
+
+```kotlin
+AdaptiveBuilder(
+    builder = { _, window ->
+        when (window.widthSizeClass) {
+            PixelWindowSizeClass.COMPACT -> compactContent
+            PixelWindowSizeClass.MEDIUM,
+            PixelWindowSizeClass.EXPANDED,
+            -> expandedContent
+        }
+    },
+    key = "application-adaptive-layout",
+)
+```
+
+环境变化只重建依赖者。保持 type/key/slot 稳定时，State、焦点、滚动位置、TextField selection 和
+Navigation 栈不会因为 resize、IME、density 或 fold 更新而丢失。`Text`、`RichText` 和
+`TextField` 自动消费 `textScaleFactor`；RTL Row 反转视觉顺序但保持声明/semantics 顺序。主题可用
+`PixelThemeTokens.forHost(context, brightness)` 自动选择高对比度 preset。
+
+完整迁移与兼容规则见
+[自适应 Host 与 Viewport 迁移指南](migrations/1.0.0-adaptive-host-viewport.md)。
+
+#### 综合 Demo 与只读 golden
+
+`pixel-demo` 的 `布局 → 系统边界 → Adaptive & Localization` 是这组 API 的真实设备验收入口。
+场景使用 `PixelHostView.capabilitiesOverride` 和 `PixelHostProfilePolicy.AdaptiveDp` 实时切换中文、
+RTL、2× text scale、高对比度、reduce motion、2× density/120Hz 与逻辑 hinge，并显示 physical/
+logical size、window class、SafeArea/IME 和 display features。场景中的 TextField 连接真实 Android
+IME，NavigationBar 绑定两个始终 mounted 的独立 Navigator 栈；切换环境不会重建文本、selection、
+focus、滚动位置、route entry 或 semantic identity。离开场景会恢复进入前的 Host override 与
+profile policy。
+
+对应 JVM 基线为
+`src/test/resources/element-snapshots/m5-3-adaptive-localization.txt` 和
+`src/test/resources/golden/m5-3-adaptive-localization.txt`。普通测试只会把候选差异写入
+`build/reports/acceptance/`，不会创建/修改源码基线，也没有 `REGEN` 自动接受入口。
+
+### Lifecycle
+
+`PixelHostView` 把 Window attachment 与 owner lifecycle 分开保存。普通
+`onDetachedFromWindow` 只会令 Host 非 interactive：暂停动态帧、输入、手势和 back，但继续保留
+retained/render 状态。重新 attach 后，如果 owner 仍是 resumed 或没有 owner，原状态会继续使用。
+
+attach 时会自动发现 `ViewTreeLifecycleOwner`。标准 `ComponentActivity` / Fragment view tree
+通常不需要手工转发 lifecycle；需要覆盖自动 owner 时使用 `bindLifecycleOwner(owner)`，解除后用
+`unbindLifecycleOwner()` 恢复 ViewTree owner 或 unmanaged 兼容模式。
+
+Fragment 每次 view 重建都应创建新 setup，并在明确的视图终态调用 `PixelHostSetup.dispose()`：
+
+```kotlin
+/** Releases the setup owned by the current Fragment view generation. */
 override fun onDestroyView() {
     setup.dispose()
+    // The next Fragment view must create a new setup and Host.
     _binding = null
     super.onDestroyView()
 }
 ```
 
-`dispose()` 只释放 pixel-engine runtime 和隐藏输入桥接，不移除 Android view 层级；
-view 层级仍交给 Activity / Fragment 自身管理。
+没有 `LifecycleOwner` 的自定义宿主使用 `start()`、`resume()`、`pause()`、`stop()` 和
+`destroy()` 显式驱动。`onHostResume()` / `onHostPause()` 仍兼容并分别委托给 resume/pause。
+
+`destroy()` 是不可逆终态，会释放 observer、retained/render tree、frame scope、ticker、输入会话
+和缓存。旧 `PixelHostView.dispose()` 等价于 `destroy()`；`PixelHostSetup.dispose()` 还会先隐藏
+默认输入桥。两者都不负责从父 ViewGroup 移除 Android view 层级。
+
+可通过 `hostView.lifecycleDiagnostics` 检查 attachment、owner 状态、owner 来源、
+`isInteractive` 和各阶段计数；通过 `hostView.tickerProvider.diagnostics()` 检查 active/live ticker、
+pending frame、active time 及 pause/dispose 状态。完整迁移规则见
+[Host 生命周期与调度迁移指南](migrations/1.0.0-host-lifecycle.md)。
 
 ### Saved State
 
@@ -543,9 +992,12 @@ override fun onSaveInstanceState(outState: Bundle) {
 }
 ```
 
-`PixelNavigatorState.saveToBundle` / `restoreFromBundle` 保存 route stack。路由内滚动位置优先用
-`PixelRouteScrollRestoration`，它只在 route 还留在 navigator stack 内时生效；跨 Activity
-重建仍使用上面的 `PixelListSavedState`。
+`PixelNavigatorState.saveToBundle` / `restoreFromBundle` 继续只保存旧版 `PixelRoute.name` 栈。
+需要恢复 typed destination、参数、entry ID 和允许落盘的 bucket 值时，使用
+`PixelNavigator.typed`、`PixelRouteSnapshotAdapter` 与
+`savePersistentSnapshotToBundle / restorePersistentSnapshotFromBundle`。result callback 不跨进程
+恢复。路由内滚动位置可以由 adapter 明确纳入 typed route state；legacy route 仍可使用
+`PixelRouteScrollRestoration`，但它只在 entry 留在当前 Navigator stack 内时生效。
 
 ### Accessibility
 
@@ -553,8 +1005,69 @@ override fun onSaveInstanceState(outState: Bundle) {
 业务侧使用 `Text`、`TextField`、按钮、选择控件或显式 `Semantics(...)` 时，不需要额外接
 Android `AccessibilityNodeProvider`。
 
-当前桥接范围是 label、role、enabled、focused 和 bounds；可点击语义会复用已有 click target，
-`TextField` 语义会复用已有输入焦点目标。
+每个 retained semantics render node 拥有一个稳定 `PixelSemanticsNode.id`；Android Host 再把它
+映射为本 Host 内单调递增且不复用的 virtual node ID。带 `key` 的列表项在前插、删除和重排后
+仍保持原 ID，TalkBack 焦点不会因为展示下标变化而指向另一个项目。`label` 相同不代表身份
+相同；动态集合必须为逻辑项提供业务稳定的 widget/`Semantics` key。
+
+`PixelSemanticsNode` 可以表达：
+
+- `parentId` 与真实父子层级；
+- `label`、`value`、`hint`、`error`；
+- `role`、`enabled`、`focused`、`selected`、`checked`、`expanded`；
+- 文本 selection、`PixelSemanticsRangeInfo`、live region；
+- collection 与 collection-item 的行列、span、heading 和选择信息；
+- click、long click、前后滚动、set text、set selection、set progress、dismiss、expand、
+  collapse 和带稳定 ID/本地化 label 的 custom action。
+
+显式节点使用 `PixelSemanticsActions` 直接持有动作回调。Android bridge 和 `PixelTester` 都按
+稳定 node ID 调用这份回调，不会再从节点中心坐标重新 hit-test：
+
+```kotlin
+Semantics(
+    label = "Volume",
+    value = "${(volume * 100).toInt()}%",
+    role = PixelSemanticRole.SLIDER,
+    rangeInfo = PixelSemanticsRangeInfo(current = volume),
+    actions = PixelSemanticsActions(
+        onSetProgress = { next ->
+            volume = next.coerceIn(0f, 1f)
+            true
+        },
+    ),
+    mergeDescendants = true,
+    key = "settings-volume",
+    child = Slider(value = volume),
+)
+```
+
+`mergeDescendants = true` 把装饰文字和后代动作折叠进当前控件节点，适合 Button、Checkbox、
+Switch、Tab 等单一朗读单元；相同文案只保留一次。`excludeDescendants = true` 保留当前节点、
+隐藏所有后代语义，适合完全由父节点描述的自绘内容。两者不能同时开启。默认值均为 `false`，
+因此自定义复合控件仍会导出真实子树。
+
+Android bridge 为每个虚拟节点维护独立的 accessibility focus，并支持 touch exploration、
+`findFocus`、真实 parent/child、role/class、range、collection、selection 和 action 映射。节点或
+状态变化会按稳定 ID 发送内容、焦点、选择、文本、滚动和窗口事件；一个节点被移除后，旧 ID
+不会落到同位置的新节点。
+
+JVM 测试可以直接读取结构化快照并执行同一份动作：
+
+```kotlin
+val volumeNode = tester.semanticsNodesByLabel("Volume").single()
+check(volumeNode.parentId != null)
+check(
+    tester.performSemanticsAction(
+        volumeNode.id,
+        PixelSemanticsAction.SET_PROGRESS,
+        PixelSemanticsActionArguments(progress = 0.75f),
+    ),
+)
+```
+
+完整迁移说明见 `docs/migrations/1.0.0-accessibility-semantics.md`。键盘/DPAD 的 input focus
+继续与 Android accessibility focus 分离；Dialog、Menu 和模态 Popover 会在各自 runtime 内
+建立闭环焦点域，逻辑关闭时立即恢复打开前的 input focus。
 
 ### 基础面板
 
@@ -650,7 +1163,7 @@ TextButton(
 `TextButton` 默认零 padding，尺寸由文字自然决定；需要更大的触摸区域时通过
 `TextButtonStyle(padding = EdgeInsets.all(2))` 显式扩大。
 
-### 列表项和选择控件
+### 列表项、选择控件和图标按钮
 
 `ListTile` 是像素列表行容器，负责 leading/title/subtitle/trailing 排列；只有提供 `onTap`
 且 `enabled = true` 时才是可点击语义。`Checkbox` / `Switch` 是受控组件，当前状态由调用方传入，
@@ -678,6 +1191,41 @@ ListTile(
 `Checkbox` / `Switch` 的 `onChanged = null` 或 `enabled = false` 表示只读展示；这时不会导出
 可点击目标，颜色也会降级为 disabled 状态。
 
+`Radio` 是一个受控单选指示器；`RadioGroup` 用 `PixelRadioOption<T>.id` 作为选择、回调和 retained
+identity。非空 group 要求 option id 唯一且 `selectedId` 恰好命中一项；只有空 group 才能把
+`selectedId` 设为 `null`。可交互且至少有一项 enabled 时，整组只有一个 Tab stop，方向键循环跳过
+disabled option，Enter/Space 重新请求当前项；所有动作只调用 `onSelected`，组件不会自行改写选择。
+
+```kotlin
+/** Stable business options; their ids do not depend on current visual order. */
+val deliveryOptions = listOf(
+    PixelRadioOption(id = "standard", label = "STANDARD"),
+    PixelRadioOption(id = "express", label = "EXPRESS"),
+)
+
+RadioGroup(
+    options = deliveryOptions,
+    selectedId = selectedDeliveryId,
+    onSelected = { id -> selectedDeliveryId = id },
+    semanticLabel = "DELIVERY SPEED",
+    key = "delivery-speed",
+)
+```
+
+`IconButton` 接受 `PixelIconData` 并用当前 `iconButton` token 为位图 alpha mask 着色。它不从图形
+猜测含义，因此 `semanticLabel` 必须是非空文本；图标后代会合并为一个按钮语义节点。`selected`
+仍由调用方控制，`onPressed = null` 或 `enabled = false` 会归一化为 Disabled。
+
+```kotlin
+IconButton(
+    icon = saveIcon,
+    onPressed = { save() },
+    semanticLabel = "SAVE DOCUMENT",
+    selected = isSaved,
+    key = "save-document",
+)
+```
+
 ### 滑块、标签页和分段选择
 
 `Slider` 是受控滑块，`value` 由调用方保存并限制在 `0.0f..1.0f` 的业务含义内；渲染和手势会把
@@ -691,9 +1239,11 @@ Slider(
 )
 ```
 
-`Tabs` 和 `SegmentedControl` 都使用 `labels` 的位置作为 index，`selectedIndex` 由调用方保存。
-`Tabs` 适合页面/区域切换；`SegmentedControl` 适合同一位置内的紧凑模式切换。调用方应保证
-`selectedIndex` 指向有效 label；`onSelected` 只回传被点击项的 index，不维护内部状态。
+`Tabs` 和 `SegmentedControl` 都是受控的水平 `SINGLE` collection：`selectedIndex` 由调用方保存，
+`onSelected` 只回传请求选择的当前下标。`labels` 同时是可见内容和 retained item identity，因此必须
+非空、互不重复，并在同一逻辑项重排时保持稳定。非空集合要求 `selectedIndex` 指向恰好一项；空集合
+只接受 `selectedIndex = -1`，并导出 0×0 collection。`Tabs` 适合页面/区域切换；
+`SegmentedControl` 适合同一位置内的紧凑模式切换。
 
 ```kotlin
 Tabs(
@@ -708,6 +1258,10 @@ SegmentedControl(
     onSelected = { index -> filter = index },
 )
 ```
+
+两者在非空且可交互时整组各占一个 Tab stop，Left/Right 循环选择；重排后语义位置会更新，但相同
+label 的 retained identity、焦点和状态不会被旧下标重定向。若业务允许重复或频繁变化的显示文案，
+应先在业务层提供稳定且唯一的 label，当前 API 没有独立的 item id 参数。
 
 `SelectionList` 用于受控单选列表，`OptionList` 是字符串选项的轻量包装。二者不内置滚动；
 长列表应放入现有滚动容器。
@@ -738,7 +1292,9 @@ SectionList(
 ```
 
 `ValueAdjuster` 提供通用的减 / 值 / 加三段式布局，不保存数值、不判断范围；边界由调用方通过
-传入或置空两侧回调控制。`Stepper` 是整数范围包装，会按 `step` 调整并把结果钳位到 `range`。
+传入或置空两侧回调控制。它是一个 Tab stop，Left/Down 调用减值、Right/Up 调用加值；对应边界
+回调为 null 时仍消费该方向键，避免焦点意外离开控件。`Stepper` 是整数范围包装，会按 `step`
+调整并把结果钳位到 `range`。
 
 ```kotlin
 Stepper(
@@ -751,9 +1307,13 @@ Stepper(
 
 ### 反馈组件
 
-`Dialog`、`ConfirmDialog`、`Toast` 和 `Snackbar` 本身都是普通 widget，只负责像素风视觉结构，不负责显示队列、
-自动关闭、遮罩、动画或 Android back。需要页面级浮层时使用 `PixelOverlayHost` 和
-`PixelOverlayController`。
+`Dialog`、`ConfirmDialog` 和 `BottomSheet` 会把 stable `viewPadding` 与临时 `viewInsets` 按边
+取最大值，限制并裁切到 SafeArea/IME 之外；paint、pointer、滚动/输入 target 和 semantics 共用
+同一个安全矩形。Dialog 居中，BottomSheet 填满安全宽度并贴安全底边。它们默认建立模态焦点域并
+隔离背景 interaction/semantics；统一显示队列、barrier、motion 和 Android Back 由
+`PixelOverlayHost` / `PixelOverlayController` 管理。`Toast` 和 `Snackbar` 保持非模态普通 widget。
+空间不足时，标题/正文进入弹性裁切区，footer actions 先获得布局空间；被裁掉的正文像素、点击、
+滚动/输入目标与 semantics 会同步移除，关闭按钮不会只剩屏幕外目标。
 
 ```kotlin
 Dialog(
@@ -773,6 +1333,11 @@ ConfirmDialog(
     confirmText = "DELETE",
 )
 
+BottomSheet(
+    content = Text("OPTIONS"),
+    actions = listOf(TextButton(text = "DONE", onPressed = { close() })),
+)
+
 Toast("SAVED")
 
 Snackbar(
@@ -781,16 +1346,20 @@ Snackbar(
 )
 ```
 
-`Dialog` 的 `actions` 会排列在内容下方并右对齐；`ConfirmDialog` 是受控组合组件，
+`Dialog` 和 `BottomSheet` 的 `actions` 会排列在内容下方并右对齐；`ConfirmDialog` 是受控组合组件，
 取消/确认后的关闭策略由回调显式处理；`Toast` 支持多行文本；`Snackbar` 的 `action`
 由调用方传入任意 widget，常用 `TextButton`。
 
-`ModalBarrier` 是填满父级 `Stack` 的遮罩，可选点击关闭；它不接管 back、焦点锁定、
-overlay 生命周期或动画。`ToastQueue` 渲染 `PixelToastQueueController` 的队首消息；
-控制器只保存队列，不内置自动超时。
+`ModalBarrier` 是填满父级 `Stack` 的遮罩，可选点击关闭；它不单独持有 focus scope、back、
+overlay 生命周期或动画。模态焦点所有权属于包含它的 Dialog/Popover presentation。
+`ToastQueue` 和 `SnackbarQueue` 分别渲染 controller 的 FIFO 队首。每条消息从成为队首起使用
+Host active-time ticker 计时：Host pause 期间不流逝，手动 dismiss、action、clear 或 widget
+dispose 会同步取消/转移 ticker；reduce motion 和 animator scale 不会把可读停留时间缩成零。
+没有 `PixelMotionScope` 时不会偷偷创建时钟，队列保持手动控制。
 
 ```kotlin
-val queue = PixelToastQueueController()
+val toasts = PixelToastQueueController()
+val snackbars = PixelSnackbarQueueController()
 
 PixelOverlayHost(
     controller = overlay,
@@ -798,17 +1367,44 @@ PixelOverlayHost(
         children = listOf(
             AppRoot(),
             ModalBarrier(dismissible = true, onDismiss = { closeDialog() }),
-            ToastQueue(controller = queue),
+            ToastQueue(controller = toasts),
+            Positioned(
+                left = 0,
+                right = 0,
+                bottom = 0,
+                child = SnackbarQueue(controller = snackbars),
+            ),
         ),
     ),
 )
 
-queue.enqueue("SAVED")
-queue.dismissCurrent()
+toasts.enqueue("SAVED", timeout = 2.seconds)
+snackbars.enqueue(
+    message = "DELETED",
+    actionLabel = "UNDO",
+    onAction = { undo() },
+    timeout = 4.seconds,
+)
 ```
 
 `Popover`、`Menu`、`Dropdown` 和 `Tooltip` 都是受控组件。展开状态、选中值、关闭时机和定位 offset
-由调用方维护；组件不做 hover、自动测量、屏幕边缘避让或全局 overlay 管理。
+由调用方维护。Popover portal 从 anchor 的真实全局 paint bounds 定位，独立于父级 layout size，并
+把 presentation 提升到 Host 根层，因此可以逃离 List/ClipRect 的局部裁切。内容先在
+`max(viewPadding, viewInsets) + viewportMargin` 的安全视口内测量，再按 `placement` 自动上下翻转、
+按 `alignment`（含 RTL Start/End）对齐并做水平/垂直 collision shift；滚动、IME、旋转或 resize
+都会在下一帧用同一 paint/hit/semantics 变换重定位。`Popover`、`Menu` 和 `Dropdown` 默认是
+模态层：初始焦点进入弹层，Tab/方向遍历不会逃到背景，关闭时恢复 opener，并且背景不再导出
+交互目标或 semantics。`Tooltip` 固定为非模态，不抢焦点也不隔离背景。
+
+自定义非模态 Popover 可显式传 `modal = false`。默认 Menu 直接作为 Popover content 时会自动
+复用外层 modal owner；标准 `Dropdown` 也只持有一个 owner。只有业务自建了框架无法识别的
+modal presentation 时，才为内层 Menu 传 `modal = false`。Dialog 内再打开的 Menu 默认是独立
+顶层 modal，关闭后恢复 Dialog 内 opener。
+
+根 portal 仍服从 route 总序：较低 Popup route 内的 Popover 不会覆盖较高 Modal/System route；
+较高的非模态 route 也会在较低 modal 之上保留像素、点击、semantics 和焦点资格，同时应用背景
+仍被隔离；该 route 关闭后焦点恢复到低层 modal。Opacity、ClipRect、Translate 或缩放 scratch
+中的较高 sibling 会保留原 alpha、裁切和全局变换，paint/target/semantics/raw hit 顺序保持一致。
 
 ```kotlin
 Dropdown(
@@ -820,6 +1416,15 @@ Dropdown(
         PixelMenuItem("A", onSelected = { mode = "A"; menuOpen = false }),
         PixelMenuItem("B", onSelected = { mode = "B"; menuOpen = false }),
     ),
+)
+
+Popover(
+    anchor = anchor,
+    content = popup,
+    expanded = open,
+    placement = PixelPopoverPlacement.Auto,
+    alignment = PixelPopoverAlignment.End,
+    viewportMargin = 2,
 )
 ```
 
@@ -895,6 +1500,14 @@ Slidable(
 
 `SlidableActionPane.children` 会均分面板宽度；`extentRatio` 会限制在 `0.1f..1.0f` 后换算宽度。
 `dismissible = true` 且滑动距离达到 `dismissThreshold` 时才触发 `onDismissed`。
+键盘路径把 Slidable 行作为一个 Tab stop：Enter/Space 触发 `onTap`，Left 打开 end pane，Right
+打开 start pane；打开后 Tab 进入 `SlidableAction`，Action 用 Enter/Space 激活。关闭 pane 会立即
+隐藏其 semantics、阻止旧 Action 再请求焦点，并把焦点恢复到行；视觉 settle 可以继续完成。
+
+无障碍服务使用同一套 pane 状态机：关闭时导出 `EXPAND`（同时存在两侧时优先打开 end pane），
+打开时导出 `COLLAPSE`；只有当前 pane 的 `dismissible = true` 且提供 `onDismissed` 时才导出
+`DISMISS`。语义 dismiss 到达终点后调用一次 `onDismissed`，不会替业务删除数据。Loading 会保留
+行节点和已有焦点，但撤销 expand/collapse/dismiss 等所有变更动作；Disabled 还会移除遍历资格。
 
 `AppScaffold` 是一个轻量页面骨架：`title` 是顶部描边区域，`body` 占据剩余空间，`bottomBar`
 固定在底部。它不提供导航、系统 inset、overlay 或 Material 风格 app bar；这些由宿主或更高层组件组合。
@@ -929,9 +1542,13 @@ widget 层用它表达键盘动作，自定义宿主在 `PixelTextInputRequest.a
 ### 表单
 
 ```kotlin
+/** Form owner coordinating validation and submission. */
 val form = FormController()
+/** Generic business value and validation state for the name field. */
 val nameField = FormFieldState("")
+/** Editable text controller kept separate from generic form validation state. */
 val nameInput = TextEditingController()
+/** Retained text, selection, composition, and IME state. */
 val nameInputState = nameInput.create(initialText = "")
 
 Form(
@@ -946,7 +1563,15 @@ Form(
                     TextField(
                         state = nameInputState,
                         controller = nameInput,
-                        placeholder = field.errorText ?: "NAME",
+                        decoration = FormFieldDecoration(
+                            label = "NAME",
+                            helper = "PUBLIC PROFILE NAME",
+                            error = field.errorText,
+                            required = true,
+                            // The application owns its counting and display policy.
+                            counter = formatNameCounter(field.value),
+                        ),
+                        placeholder = "ENTER NAME",
                         onChanged = { field.setValue(it) },
                     )
                 },
@@ -957,17 +1582,37 @@ Form(
 )
 ```
 
+`FormFieldDecoration` 只描述展示和语义，不执行校验，也不统计字符。非空 `error` 会替换 `helper`，
+但 `counter` 继续保留；`required` 只给可见与朗读 label 添加 `*` 标记，不会自动生成 validator。
+`counter` 是调用方已经格式化好的字符串，SDK 不代替业务选择 UTF-16、Unicode code point 或
+grapheme cluster 计数规则。装饰文本会合入唯一的 TextField 语义节点，error 也会映射为 Android
+content-invalid 状态；不要再把错误塞进 `placeholder`。更新 decoration 不会替换输入 identity、焦点、
+selection、composition 或 IME target。
+
 ## 7. API 速查
 
 ### Host API
 
 | API | 用途 | 关键参数 |
 |---|---|---|
-| `createPixelHostSetup` | 创建默认 Android 宿主 | `context`、`hostView`、`config` |
+| `PixelEngine.Builder` | 创建不可变、可注入的 Engine 实例 | clock、frame/ticker、error/logger、resource、Host capability、theme |
+| `PixelEngineServices` | 当前实例的只读服务集合 | cache 默认按 build 隔离 |
+| `createPixelHostSetup` | 创建默认 Android 宿主 | `context`、可选 `engine`、`hostView`、`config` |
 | `PixelHostSetup` | 宿主装配结果 | `rootView`、`hostView`、`textInputBridge` |
 | `PixelHostSetupConfig` | 宿主配置 | 背景、字体、手势策略、滚动物理、根内容 |
 | `PixelHostProfilePreference` | 点阵显示偏好 | `dotSizePx`、`pixelShape` |
-| `PixelHostView` | Android 像素宿主 | `setContent`、背景、格栅、insets、debug stats |
+| `PixelHostProfilePolicy` | 固定或自适应逻辑 profile | `Fixed`、`AdaptivePixels`、`AdaptiveDp`、`AdaptiveLogicalSize` |
+| `PixelViewportPolicy` | 物理到逻辑的正交映射 | fit、quantization、alignment |
+| `PixelHostView` | Android 像素宿主 | `setContent`、lifecycle、`tickerProvider`、insets、debug stats |
+| `HostCapabilitiesData` | immutable Host 环境 | locale、direction、textScale、contrast、density、motion、refresh、features |
+| `PixelAdaptiveLayoutData` / `AdaptiveBuilder` | 自适应布局快照与依赖 builder | px/dp/logical size、class、orientation、insets、features |
+| `PixelHostLifecycleDiagnostics` | Host 生命周期快照 | attachment、owner、interactive、transition 计数 |
+| `PixelHostFrameScope` | 自定义宿主的 frame/ticker 所有权边界 | pause、resume、dispose、diagnostics |
+| `PixelFrameScheduler` | 上游一次性帧源 | `scheduleFrame` |
+| `PixelCancellableFrameScheduler` | 可移除 pending callback 的 additive capability | `scheduleCancellableFrame` |
+| `PixelHostCapabilitySet` / `PixelHostServices` | 组合并在 widget 树读取聚焦平台能力 | Unsupported / Failed / success 明确分支 |
+| `PixelTypedSystemAction` | 封闭的类型安全系统动作 | URI、back、app settings、permission |
+| `PixelErrorEvent` / `PixelErrorReporter` | 实例级结构化错误通道 | cause、phase、context、recovery、timestamp |
 
 ### 基础类型
 
@@ -981,6 +1626,33 @@ Form(
 | `Builder` / `StatefulBuilder` | 局部构建和局部状态 |
 | `ListenableBuilder` / `ValueListenableBuilder` | 监听状态并重建 |
 | `AsyncBuilder` | 订阅 `PixelAsyncSource` |
+
+### 主题与组件状态
+
+| API | 用途 | 关键成员 / 行为 |
+|---|---|---|
+| `PixelTheme` | 同时提供新 token 图与旧主题投影 | `tokens`、`data`、`tokensOf`、`maybeTokensOf`、`of`、`maybeOf` |
+| `PixelThemeTokens` | 完整不可变主题根节点 | presets、`forCapabilities`、`forHost`、`Default` |
+| `PixelThemeData` / `PixelThemeColors` | 旧主题兼容模型 | `PixelThemeTokens.fromLegacy`、`toLegacyThemeData` |
+| `PixelThemeBrightness` / `PixelThemeContrast` | 主题明暗与对比度元数据 | `Dark` / `Light`；`Standard` / `High` |
+| `PixelColorRole` / `PixelColorScheme` | 22 个语义角色及其 ARGB 解析 | `resolve(role)`、`copy(...)` |
+| `PixelTypographyToken` / `PixelTypographyTokens` | 单个及六类标准排版 token | `resolve(colors)`、body、label、title、caption、button、input |
+| `PixelSpacingTokens` / `PixelSizeTokens` | 共享间距和标准组件尺寸 | 标准组件编码在 build 时解析 |
+| `PixelRadiusTokens` / `PixelBorderTokens` | 阶梯圆角与整数边框 | 非标准非负整数保持字面值 |
+| `PixelElevationRole` / `PixelElevationTokens` | 无模糊硬阴影的语义等级 | `resolve(role)` |
+| `PixelMotionThemeData` / `PixelMotionTheme` | 全局或局部 Motion 策略 | 最近的 `PixelMotionTheme` 覆盖主题根节点 motion |
+| `PixelComponentTokens` | 25 个标准组件族 | `button` 至 `scrollbar`，完整映射见第 5 节 |
+| `PixelComponentColorTokens` | 单族状态颜色和像素几何 | 三个 state property、focus、padding、size、border、radius、elevation |
+| `PixelFocusIndicatorTokens` | Focused 时独立叠加的边框 | `colorRole`、`width`、`inset` |
+| `PixelLabelTokens` | 29 个可本地化默认文案 | 对标准 label 使用 `copy(...)` 覆写 |
+| `PixelControlState` | 八种标准状态枚举 | Normal、Hovered、Pressed、Focused、Selected、Disabled、Error、Loading |
+| `PixelControlStateSet` | 可组合、不可变状态集合 | `Normal` / `Empty`、`of(...)`、`highestPriority()` |
+| `PixelStateProperty<T>` | 状态属性解析接口 | `resolve(states)`、`constant(value)` |
+| `PixelStateMap<T>` | Normal fallback 加显式 override | 按固定优先级寻找第一个已配置且激活的 override |
+
+带兼容 facade 的既有 state-aware 工厂在 Kotlin 中与旧 facade 同名，并用必填 `states` 区分；JVM
+调用方使用对应 `...WithControlStates` 名称。1.0 新增且无需兼容旧 descriptor 的工厂可以让
+`states` 默认取 `Normal`。旧 facade 继续保留原参数、默认值、descriptor 和 `$default` bridge。
 
 ### 布局组件
 
@@ -1026,6 +1698,11 @@ Form(
 | `Sprite` | 绘制 sprite sheet 单帧 | `sheet`、`frameIndex` |
 | `Icon` | 绘制 `PixelIconData` | `icon` |
 
+`Opacity` 会把输入规范化到 `0f..1f`，非有限值按 `0f` 处理。透明度恰为 `0f` 时，child
+仍参与布局并保留 retained State，但不会绘制、参与命中/交互 target 或暴露 semantics；任意
+正透明度都会保留命中和 semantics，只缩放绘制像素的 alpha。`AnimatedOpacity` 使用相同契约，
+中途替换 target 时从当前已经绘制的视觉值继续，不会跳回上一段动画起点。
+
 ### 图形原语
 
 | 组件 | 用途 | 关键参数 |
@@ -1042,6 +1719,7 @@ Form(
 |---|---|---|
 | `TextButton` | 无边框文字按钮，默认零 padding | `text`、`onPressed`、`style`、`enabled` |
 | `OutlinedButton` | 描边按钮 | `text`、`onPressed`、`style`、`enabled` |
+| `IconButton` | 带必填无障碍名称的图标按钮 | `icon`、`onPressed`、`semanticLabel`、`selected`、`states` |
 | `ListTile` | 列表行 | `title`、`subtitle`、`leading`、`trailing`、`onTap` |
 | `SelectionList` | 受控单选列表 | `items`、`selectedIndex`、`onSelected`、`itemLabel` |
 | `OptionList` | 字符串选项列表 | `options`、`selectedIndex`、`onSelected` |
@@ -1050,21 +1728,34 @@ Form(
 | `ValueAdjuster` | 减 / 值 / 加调节器 | `valueText`、`onDecrease`、`onIncrease` |
 | `Stepper` | 整数范围步进器 | `value`、`range`、`step`、`onChanged` |
 | `Checkbox` | 复选框 | `checked`、`onChanged`、`enabled` |
+| `Radio` | 受控单个单选指示器 | `selected`、`onSelected`、`semanticLabel`、`states` |
+| `PixelRadioOption<T>` | RadioGroup 的稳定业务项 | `id`、`label`、`enabled` |
+| `RadioGroup` | 稳定 id 的受控单选集合 | `options`、`selectedId`、`onSelected`、`semanticLabel`、`states` |
 | `Switch` | 开关 | `checked`、`onChanged`、`enabled` |
-| `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease` |
-| `Tabs` | 标签页按钮组 | `labels`、`selectedIndex`、`onSelected` |
-| `SegmentedControl` | 分段选择 | `labels`、`selectedIndex`、`onSelected` |
+| `Slider` | 水平滑块 | `value`、`onDrag`、`onRelease`、`enabled` |
+| `Tabs` | 标签页按钮组 | `labels`、`selectedIndex`、`onSelected`、`enabled` |
+| `SegmentedControl` | 分段选择 | `labels`、`selectedIndex`、`onSelected`、`enabled` |
+| `PixelNavigationDestination` | 稳定 id 的应用导航目的地 | `id`、`label`、`icon`、`selectedIcon`、`enabled` |
+| `NavigationBar` | 水平应用导航；可受控或绑定多栈 controller | `destinations`、`selectedId` / `controller`、`popToRootOnReselect` |
+| `NavigationRail` | 垂直应用导航；可受控或绑定多栈 controller | `destinations`、`selectedId` / `controller`、`popToRootOnReselect` |
 | `ShortcutHint` | 快捷键提示文本 | `shortcut`、`label` |
-| `Slidable` | 可滑出操作面板的行容器 | `child`、`startActionPane`、`endActionPane` |
+| `Slidable` | 可滑出操作面板的行容器 | `child`、`startActionPane`、`endActionPane`、`onDismissed`、`semanticLabel` |
 | `Dialog` | 居中对话框 | `title`、`content`、`actions` |
+| `BottomSheet` | SafeArea/IME 内贴底表面 | `title`、`content`、`actions`、`modal` |
 | `ConfirmDialog` | 确认对话框组合组件 | `title`、`message`、`onConfirm`、`onCancel` |
 | `Toast` | 中央短提示 | `message` |
 | `ToastQueue` | 队首 toast 渲染器 | `controller` |
 | `PixelToastQueueController` | toast 队列状态 | `enqueue`、`dismissCurrent`、`dismiss` |
 | `PixelToastQueueItem` | toast 队列条目 | `id`、`message`、`fillColor`、`textStyle` |
 | `Snackbar` | 底部/容器内提示条 | `message`、`action` |
+| `SnackbarQueue` | 队首 snackbar 渲染器 | `controller` |
+| `PixelSnackbarQueueController` | snackbar FIFO/timeout/action 状态 | `enqueue`、`performAction`、`dismiss`、`clear` |
+| `PixelSnackbarQueueItem` | snackbar 队列条目 | `id`、`message`、`actionLabel`、`fillColor`、`textStyle` |
 | `ModalBarrier` | Stack 内模态遮罩 | `color`、`dismissible`、`onDismiss` |
-| `Popover` | 受控弹出层 | `anchor`、`content`、`expanded`、`contentOffset` |
+| `PixelOverlaySurface` | 阻止表面内空白点击穿透 barrier | `child`、`key` |
+| `Popover` | 根级 anchor 弹出层 | `anchor`、`content`、`expanded`、`placement`、`alignment`、`viewportMargin` |
+| `PixelPopoverPlacement` | Popover 垂直侧策略 | `Auto`、`Below`、`Above` |
+| `PixelPopoverAlignment` | 支持 RTL 的 anchor 横向对齐 | `Start`、`Center`、`End` |
 | `Menu` | 纵向菜单 | `items`、`enabled` |
 | `PixelMenuItem` | 菜单条目 | `label`、`onSelected`、`enabled`、`shortcut` |
 | `Dropdown` | 受控下拉菜单 | `label`、`selectedText`、`expanded`、`items` |
@@ -1083,7 +1774,9 @@ Form(
 
 `SwipeRefreshScaffold` 是 `RefreshIndicator` 的页面级组合；调用方仍然显式持有
 `PixelRefreshIndicatorState` 和 `PixelRefreshIndicatorController`。它只负责可选上下栏和刷新区域布局，
-不会自动完成刷新或创建隐藏状态。
+不会自动完成刷新或创建隐藏状态。除下拉手势外，RefreshIndicator 也是一个可命名的 Tab stop；
+Enter/Space 与 Switch Access click 会进入同一个 refreshing 状态并调用 `onRefresh`，刷新完成后仍由
+业务调用 `controller.completeRefresh(state)`。
 
 ```kotlin
 SwipeRefreshScaffold(
@@ -1112,8 +1805,8 @@ SwipeRefreshScaffold(
 | `PageView` | 页面列表 | `axis`、`controller`、`state`、`pages` |
 | `PageViewBuilder` | builder 分页 | `itemCount`、`itemBuilder` |
 | `Scrollbar` | 滚动条包装 | `child`、`state`、`thumbColor` |
-| `RefreshIndicator` | 下拉刷新包装 | `child`、`state`、`controller`、`onRefresh` |
-| `SwipeRefreshScaffold` | 带上下栏的下拉刷新骨架 | `body`、`state`、`controller`、`onRefresh` |
+| `RefreshIndicator` | 下拉/键盘刷新包装 | `child`、`state`、`controller`、`onRefresh`、`semanticLabel` |
+| `SwipeRefreshScaffold` | 带上下栏的下拉刷新骨架 | `body`、`state`、`controller`、`onRefresh`、`semanticLabel` |
 | `CustomScrollView` | sliver 滚动容器 | `slivers`、`state`、`controller` |
 | `SliverList` | eager sliver list | `items` |
 | `SliverListBuilder` | lazy sliver list | `itemCount`、`itemExtent` 或 `estimatedItemExtent` |
@@ -1124,19 +1817,44 @@ SwipeRefreshScaffold(
 
 | API | 用途 | 关键参数 |
 |---|---|---|
-| `TextField` | 文本输入 | `state`、`controller`、`placeholder`、`enabled`、`readOnly`、`minLines`、`maxLines` |
+| `TextField` | 文本输入 | `state`、`controller`、`decoration`、`placeholder`、`enabled`、`readOnly`、`minLines`、`maxLines` |
 | `TextFieldStyle` | 输入框样式 | 边框、光标、选区、composition、文本样式 |
+| `FormFieldDecoration` | TextField 的 label、helper/error、required 与调用方 counter | `label`、`helper`、`error`、`required`、`counter` |
 | `Form` | 表单容器 | `controller`、`child` |
 | `FormField` | 表单字段 | `controller`、`state`、`fieldId`、`validator`、`builder` |
 | `FormController` | 表单状态 | `validate`、`validateAsync`、`submit`、`reset` |
 | `FormFieldState` | 单字段值和错误 | `value`、`errorText` |
-| `FocusNode` | 单点焦点 | `requestFocus`、`clearFocus` |
+| `FocusNode` | 单点焦点 | `requestFocus`、`unfocus` |
 | `FocusScope` / `FocusScopeNode` | 焦点域 | 方向遍历、IME next |
 | `FocusTraversalGroup` | 局部焦点遍历策略域 | `child`、`traversalPolicy`、`node` |
+| `PixelFocusManager` | 旧版 detached/single-tree 兼容入口 | 新 Host 代码改用实例级分发 |
 
 `FocusTraversalGroup` 适合给一块控件设置局部遍历策略；默认内部持有 `FocusScopeNode`，
 需要跨页面保存焦点状态时再把 node 提升到业务层。`ShortcutHint` 只展示快捷键提示，
 实际按键处理仍放在 `Focus(onKeyEvent = ...)` 或宿主级分发里。
+
+每个 `PixelHostView` 和 `PixelTester` 现在各自拥有独立 focus owner。Android 自定义桥接应调用
+`PixelHostView.dispatchPixelKeyEvent(event)`，测试应调用 `PixelTester.pressKey(...)`；
+`PixelFocusManager` 只保留给尚未挂载到 Runtime 的旧版单树代码，不能用它选择“当前 Host”。
+
+标准交互组件自动创建独立 FocusNode；一个祖先 `Focus` 包住多个控件时，每个控件仍是独立
+Tab stop，disabled 子项不会阻断兄弟控件。应用快捷键会沿当前节点向祖先冒泡，并在任何组件
+默认 Enter/Space/方向动作之前执行。分发顺序如下：
+
+| 优先级 | 处理者 |
+|---|---|
+| 1 | 最上层 modal 的 Escape/Back；不可关闭 modal 也会消费事件 |
+| 2 | 当前 Overlay Host 的 canonical route 扫描；不要求 route 已取得焦点 |
+| 3 | 当前 FocusNode 到祖先 FocusNode 的 `onKeyEvent` |
+| 4 | 当前标准组件的默认激活或调值动作 |
+| 5 | Tab/Shift+Tab 和 reading/grid 方向遍历 |
+
+模态层优先使用后代 `autofocus`，否则选择 reading order 中第一个 enabled 控件作为初始焦点。
+逻辑关闭会立即恢复打开前的节点；该节点已卸载或 disabled 时，回退到原 scope
+内第一个有效节点，否则清除焦点。退出动画期间只保留绘制，不继续占有 input focus、IME、
+pointer target 或 semantics。嵌套 Dialog/Menu 按 LIFO 恢复，且不会影响另一个 Host/runtime。
+低层 modal 仍负责背景隔离，但 canonical 顺序更高的非模态 route 可以直接聚焦或 autofocus；其
+Tab traversal 不会形成新的 trap，逻辑关闭后会恢复低层 modal 的 opener/首个可用节点。
 
 ### 输入法与 TextField 宿主契约
 
@@ -1145,6 +1863,11 @@ SwipeRefreshScaffold(
 `PixelHostBridge.showTextInput`、`PixelHostBridge.updateTextInput` 和
 `PixelHostBridge.hideTextInput`。
 
+默认隐藏 editor 是 engine-owned 实现，并在平台 InputConnection 外增加 grapheme guard。显式传入
+普通自定义 `EditText` 只属于旧版弱兼容路径：它不能保证 selection-only/composition-only 回写，
+也不能保证任意子类的 InputConnection 命令经过 grapheme 规范化。生产代码需要完整 1.0 文本契约时
+应保留默认 editor。
+
 | 契约 | 行为 |
 |---|---|
 | `PixelInputType` | 映射到 Android 输入面板类型，包括文本、ASCII、数字、邮箱、电话、URL 和密码 |
@@ -1152,9 +1875,73 @@ SwipeRefreshScaffold(
 | `PixelHostView.updateFocusedTextInput` | 宿主把文本、selection 和 composition 同步回当前聚焦的 `TextField` |
 | `PixelHostView.submitFocusedTextInput` | 宿主触发提交；所有 action 都会触发 `onSubmitted`，`NEXT` 会额外发起焦点遍历 |
 | `readOnly` | 宿主回传文本会被忽略；`COPY` / `SELECT_ALL` 这类只读编辑动作仍可使用 |
+| `PixelTextEditingHostBridge` | additive 完整宿主能力，通过 `PixelTextEditingValue` 同步 text、selection 和 composition |
 
 `PixelTextInputBridge` 只在焦点目标或 editor config 改变时重启 IME；普通文本、selection 和
-composition 更新会走 `updateTextInput`，避免输入过程中反复重建键盘。
+composition 更新会走 identified `updateTextEditing`，避免输入过程中反复重建键盘。旧
+`PixelHostBridge` 实现继续接收冻结的八字段 request，不需要新增方法，但不能跨 Host 保存
+composition。
+
+TextField 聚焦时，字符、物理键盘方向键与 Enter 由隐藏 editor 优先处理；Tab、Escape，以及
+DPAD/游戏手柄来源的方向、确认和取消键转发给当前 Host 的 focus owner。IME `NEXT` 使用同一
+Host 的 Tab 路由，因此两个同时存在的 Host 不会交换文本、快捷键或 IME 目标。
+
+### Unicode 与 grapheme 编辑边界
+
+selection、composition 和 Accessibility 继续使用 Android 兼容的 UTF-16 offset；光标移动、
+删除、选择和用户可见编辑必须落在 Unicode 17.0.0 extended grapheme boundary。SDK 不执行 NFC
+或其他 Unicode normalization。
+
+`PixelGraphemeBoundaryMap` 提供 `previous`、`next`、`floor`、`ceil`、`nearest`、`expand` 和
+`isBoundary`。非空范围向外扩展；折叠 caret 取最近边界，等距时固定选择更大的 UTF-16 offset：
+
+```kotlin
+/** Expands one Android UTF-16 range to complete visible graphemes. */
+fun normalizeVisibleSelection(text: String, start: Int, end: Int): PixelUtf16Range {
+    /** Fixed Unicode 17 authority built from the exact, non-normalized text. */
+    val boundaries = PixelGraphemeBoundaryMap(text)
+    return boundaries.expand(start, end)
+}
+```
+
+`e\u0301`、supplementary emoji、肤色序列、ZWJ family、variation selector、keycap、RI flag 和
+CRLF 都只能整体编辑。已有非配对 surrogate 会作为隔离恢复单元原样保留；新的平台 commit 不允许
+制造孤立 surrogate，code-point surrounding delete 遇到 malformed traversal 时 no-op。
+
+补充平面和多 code-point 输入使用 `PixelTextInputEvent(text)`、`Focus(onTextInput = ...)`、
+`PixelHostView.dispatchPixelTextInput` 或 `PixelTester.pressText`。旧 `PixelKeyEvent.character` 只为
+一个非 surrogate BMP `Char` 保留，不能承载 emoji surrogate pair。
+
+详细兼容边界和自定义 Host 示例见
+[Unicode 文本编辑迁移指南](migrations/1.0.0-unicode-text-editing.md)。字体、段落和 Bidi 已使用
+同一 cluster 边界，但编辑安全、Bidi 排序和真实 glyph/shaping 覆盖仍是三个独立能力。
+
+### Code-point 字体、cluster 段落与 Bidi 几何
+
+`Text`、`RichText` 和 `TextField` 的 paragraph 以 Unicode 17 extended grapheme cluster 作为
+wrap、ellipsis、letter spacing、caret、hit test、selection/composition rect 和 handle 的最小
+单位。LF、CR、CRLF、NEL、LS、PS、连续空行和首尾空行保留精确 source range。RichText span
+边界位于一个 cluster 内部时，完整 cluster 使用其首个 code unit 对应的 style。
+
+视觉顺序由引擎固定 Unicode 17.0.0、UAX #9 revision 51 解析；不调用设备 ICU、Android
+`java.text.Bidi` 或桌面 JDK。纯 RTL、mixed Bidi 数字/标点和 paired punctuation mirroring 只改变
+视觉 cluster 与 paint payload，backing text 和 UTF-16 offset 保持不变。同一逻辑边界有两个
+Bidi caret 时保留 upstream/downstream affinity，selection start/end 和 handle 使用相应视觉边。
+
+unsupported 非 ignorable 多 scalar cluster 只产生一个 U+FFFD 单元。纯 default-ignorable、ZWJ、
+variation selector 或 Bidi control cluster 留在 backing text 与 Bidi 输入中，但宽度为零且不绘制
+tofu。消费者只有实现 `PixelClusterTextRasterizer` 并真实原子绘制 exact cluster 时，才可声明
+该 cluster 受支持。
+
+Android API 26+ 通过 `AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY` 请求字符
+位置时，普通 Text 与 TextField 都返回同一 paragraph 几何转换后的屏幕坐标 `RectF[]`。数组按
+UTF-16 code unit 索引：一个 grapheme 中的组合 code unit、supplementary surrogate pair 和 CRLF
+共享 rect；被 ellipsis 截掉或不可见的 source 位置返回 `null`。API 24–25 保留 node bounds 和
+既有 Accessibility action 兼容路径。
+
+1.0 不承诺内置 Arabic/Indic contextual shaping、彩色 emoji、全部 ZWJ ligature 资产或脚本专属
+hyphenation。完整能力边界和迁移步骤见
+[code-point 字体、cluster 段落与 Bidi 迁移指南](migrations/1.0.0-codepoint-cluster-bidi-text.md)。
 
 ### 剪贴板与文本编辑动作
 
@@ -1206,6 +1993,7 @@ Builder { context ->
 | `TextEditingController` / `PixelTextFieldController` | `PixelTextFieldState` | TextField 文本、光标、选区 |
 | `PixelRefreshIndicatorController` | `PixelRefreshIndicatorState` | RefreshIndicator 状态 |
 | `PixelAnimationController` | controller 自身 | 动画进度 |
+| `PixelMultiStackNavigatorController` | controller 自身 | active stack、独立子栈选择、重选回根与 Back fallback |
 
 常用扩展：
 
@@ -1222,11 +2010,30 @@ scrollController.jumpToEnd(listState)
 | API | 用途 |
 |---|---|
 | `PixelNavigator` | route stack widget |
-| `PixelNavigatorState` | push/pop/replace/popToRoot |
-| `PixelRoute` | route 定义 |
+| `PixelNavigatorState` | entry stack；push / pop / complete / cancel / replace / remove / clear |
+| `PixelRouteDestination<A, R>` / `pixelRouteDestination` | 可复用的 typed destination 定义 |
+| `PixelRouteRequest<A, R>` | 一次带类型参数的入栈请求 |
+| `PixelRouteEntry<A, R>` / `PixelRouteEntryScope<A, R>` | 独立 stack entry 及其 typed 操作 |
+| `PixelRouteOutcome<R>` | 显式区分 `Success(value)` 与 `Cancelled(reason)` |
+| `PixelRouteSuccess<R>` / `PixelRouteCancelled` | 根包可直接构造并匹配的 outcome 分支别名 |
+| `PixelRouteStateKey<T>` / `PixelRouteStateBucket` | entry 私有的内存状态 |
+| `PixelRouteEntryInspection` / `PixelRouteTransitionInspection` | entry 与转场的无参数诊断快照 |
+| `PixelRoute` | 兼容保留的字符串 route 定义 |
 | `PixelRouteTransition` | None/Fade/SlideHorizontal/SlideVertical |
 | `PixelRouteTransitionBuilder` | 自定义 transition |
-| `PixelNavigatorSnapshot` | route stack 保存 |
+| `PixelNavigationObserver` / `PixelNavigationFailure` | 有序事件与结构化失败诊断 |
+| `PixelNavigatorInspectionSnapshot` | 只读、仅内存的 entry stack 检查快照 |
+| `PixelNavigatorSnapshot` | 旧版 route name 栈保存；不是 typed entry snapshot |
+| `PixelNavigator.typed` | 创建可由 typed snapshot 恢复的 root entry |
+| `PixelNavigatorSnapshotCodec` / `PixelRouteSnapshotRegistry` | 版本化 entry bytes 与 destination allowlist |
+| `PixelRouteSnapshotAdapter<A, R>` / `PixelRoutePayloadCodec<A>` | 参数、迁移和允许恢复的局部状态协议 |
+| `PixelMultiStackNavigator` / `PixelTypedNavigatorStack` | 始终挂载且 back 隔离的多返回栈 |
+| `PixelMultiStackNavigatorController` | 多栈 active id、子 Navigator 与 Back 策略所有者 |
+| `NavigationBar` / `NavigationRail` | 稳定 destination id 的受控或 controller-bound 应用导航 |
+| `PixelNavigationDestination` | 导航 id、label、普通/选中 icon 与单项 enabled 状态 |
+| `PixelNestedNavigator` | 最近 Navigator 语义和 parent inactive back 隔离 |
+| `PixelTypedDeepLinkResolver` / `PixelTypedDeepLinkRoute` | matcher 与 typed 参数 decoder |
+| `PixelPredictiveBackEvent` / `PixelPredictiveBackHandler` | start/progress/cancel/commit 返回手势 |
 | `PixelDeepLink` | deep link 解析 |
 | `PixelDeepLinkResolver` | deep link 到 route stack |
 | `PixelRouteScrollRestoration` | route 内滚动位置恢复 |
@@ -1234,11 +2041,322 @@ scrollController.jumpToEnd(listState)
 | `PixelPagerSavedState` | PageView 当前页保存 |
 | `PixelTextFieldSavedState` | TextField 文本和选区保存 |
 
+#### Typed RouteEntry 快速开始
+
+`PixelRouteDestination<A, R>` 是可复用定义，`PixelRouteEntry<A, R>` 才是一次真实的栈位置。
+即使连续 push 同一个 destination，每次也会获得独立的 entry ID、参数、状态桶、结果通道和
+生命周期。
+
+下面示例定义一个接收 `EditorArgs`、返回 `String?` 的编辑页。成功返回 `null` 仍然是
+`Success(null)`；只有 `cancel()` 或移除类操作才产生 `Cancelled`。
+
+```kotlin
+import com.purride.pixelui.Column
+import com.purride.pixelui.Text
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.PixelTickerProvider
+import com.purride.pixelui.widgets.navigation.PixelNavigator
+import com.purride.pixelui.widgets.navigation.PixelRoute
+import com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason
+import com.purride.pixelui.widgets.navigation.PixelRouteDestination
+import com.purride.pixelui.widgets.navigation.PixelRouteEntry
+import com.purride.pixelui.widgets.navigation.PixelRouteOutcome
+import com.purride.pixelui.widgets.navigation.PixelRouteRequest
+import com.purride.pixelui.widgets.navigation.PixelRouteStateKey
+import com.purride.pixelui.widgets.navigation.pixelRouteDestination
+
+/** Typed arguments captured independently by each editor entry. */
+data class EditorArgs(
+    /** Stable document identifier displayed by the editor page. */
+    val documentId: String,
+)
+
+/** Builds an entry-based navigation example around the host-provided ticker. */
+class RouteEntryExample(
+    /** Ticker provider used by the Navigator's route transitions. */
+    private val tickerProvider: PixelTickerProvider,
+) {
+    /** Identity-based key reused for this entry's in-memory draft. */
+    private val draftKey = PixelRouteStateKey<String>("editor.draft")
+
+    /** Reusable editor definition; every request still creates a fresh entry. */
+    private val editorDestination: PixelRouteDestination<EditorArgs, String?> =
+        pixelRouteDestination(
+            id = "editor",
+            maintainState = true,
+        ) { _, scope ->
+            // A stable key object reads only from this concrete entry's state bucket.
+            val currentDraft = scope.stateBucket.read(draftKey).orEmpty()
+            Column(
+                children = listOf(
+                    Text("EDIT ${scope.arguments.documentId}"),
+                    Text("DRAFT $currentDraft"),
+                    TextButton(
+                        text = "SAVE",
+                        onPressed = {
+                            scope.stateBucket.write(draftKey, "saved draft")
+                            scope.complete("revision-7")
+                        },
+                    ),
+                    TextButton(
+                        text = "SAVE NULL",
+                        onPressed = { scope.complete(null) },
+                    ),
+                    TextButton(
+                        text = "CANCEL",
+                        onPressed = {
+                            scope.cancel(PixelRouteCancellationReason.Explicit)
+                        },
+                    ),
+                ),
+            )
+        }
+
+    /** Compatibility root route used by the current PixelNavigator constructor. */
+    private val homeRoute = PixelRoute(
+        name = "home",
+        builder = { context ->
+            // The mounted Navigator state owns all entry identities and operations.
+            val navigator = PixelNavigator.of(context)
+            TextButton(
+                text = "OPEN EDITOR",
+                onPressed = {
+                    // One request captures typed arguments for one new entry.
+                    val request = PixelRouteRequest(
+                        destination = editorDestination,
+                        arguments = EditorArgs(documentId = "doc-42"),
+                    )
+                    // The returned handle identifies exactly the entry just pushed.
+                    val entry: PixelRouteEntry<EditorArgs, String?> =
+                        navigator.push(request, ::handleEditorOutcome)
+                    println("Opened entry ${entry.id.value}")
+                },
+            )
+        },
+    )
+
+    /** Produces the root Navigator widget for the host content provider. */
+    fun build(): Widget = PixelNavigator(
+        initialRoute = homeRoute,
+        vsync = tickerProvider,
+    )
+
+    /** Handles the editor's explicit success or cancellation outcome. */
+    private fun handleEditorOutcome(outcome: PixelRouteOutcome<String?>) {
+        when (outcome) {
+            is PixelRouteOutcome.Success -> {
+                // This branch also receives Success(null); null is a valid value.
+                println("Editor success: ${outcome.value}")
+            }
+            is PixelRouteOutcome.Cancelled -> {
+                // Cancellation carries the operation-specific terminal reason.
+                println("Editor cancelled: ${outcome.reason}")
+            }
+        }
+    }
+}
+```
+
+在 entry 自己的 builder 内，`PixelRouteEntryScope` 提供三类受 entry 身份保护的操作：
+
+- `complete(result)`：仅当前 active entry 能以 typed success 退出。
+- `cancel(reason)`：取消并移除该 entry；默认 reason 是 `Explicit`。
+- `replaceWith(PixelRouteRequest<NextA, R>)`：创建 replacement entry。参数类型可以改变，
+  但结果类型 `R` 必须与当前 entry 相同，因此调用链不会悄悄改变返回协议。
+
+scope 在 entry 离栈后可能成为 stale；上述方法用 `Boolean` 或 nullable replacement 返回值说明
+操作是否被接受。外部持有 entry 时也可以调用 `navigator.complete(entry, result)`、
+`navigator.cancel(entry)`、`navigator.remove(entry)` 或 `navigator.remove(entry.id)`。
+
+#### Success(null) 与 Cancelled
+
+不要用 nullable result 表示取消。对于 `R = String?`，下面两个终态不同：
+
+```kotlin
+// 业务成功，返回值恰好为 null。
+val successfulNull: PixelRouteOutcome<String?> = PixelRouteOutcome.Success(null)
+
+// 没有业务返回值；原因是调用方显式取消。
+val explicitCancellation: PixelRouteOutcome<String?> =
+    PixelRouteOutcome.Cancelled(PixelRouteCancellationReason.Explicit)
+```
+
+每个 `PixelRouteResultChannel<R>` 只能从 `Pending` 进入一次 `Succeeded` 或 `Cancelled`。
+Navigator 先完成离栈、转场和 `onDispose`，再投递 outcome callback；回调抛错不会让通道回到
+pending，也不会阻断后续 entry 的清理。
+
+#### Entry 状态与 maintainState
+
+`PixelRouteStateBucket` 属于一个具体 entry，而不属于 destination。`PixelRouteStateKey<T>` 按
+key 对象身份寻址，不按 `name` 字符串寻址；应把 key 声明为稳定属性并重复使用。对 nullable
+值需要用 `key in bucket` 区分“没有值”和“存了 null”。entry 永久销毁时，bucket 一定清空。
+
+| `maintainState` | inactive entry 的真实行为 |
+|---|---|
+| `true`（默认） | 真实 `StatefulWidget` subtree 继续挂载，State 实例和值保持；entry host 被隐藏，后台不 layout、不绘制、不命中，也不暴露给 widget finder；state bucket 保留 |
+| `false` | 进入 inactive 时立即清空并暂停 bucket retention，离场转场结束后卸载 subtree；再次回到前台时创建新的 State subtree |
+
+自定义 `PixelRouteTransitionBuilder` 收到的 `outgoing` / `incoming` 是转场展示副本。真实的
+maintained entry host 仍在稳定位置挂载，只是在自定义转场期间隐藏；不要把展示副本的 State
+身份当成 entry 的长期状态，也不要在 transition builder 中持有这些 widget。
+
+#### 生命周期与操作时序
+
+生命周期状态先提交，再调用对应 callback。`onDispose` 对每个 entry 最多一次；结果 callback
+在 `Disposed` 之后最多一次。
+
+| 变化 | 触发场景 | callback 与顺序 |
+|---|---|---|
+| `Created -> Active` | root 初始化、push、replacement 成为前台 | 状态改为 `Active`，再调用 `onEnter` |
+| `Active -> Inactive` | push 新 entry 覆盖当前 entry | 状态改为 `Inactive`，再调用 `onExit` |
+| `Inactive -> Active` | pop/remove/clear 后露出下层 entry | 恢复 retention、改为 `Active`，再调用 `onEnter` |
+| `Active -> Removing` | 当前 entry 被 pop、cancel、replace、remove、clear | 先改为 `Removing`，再调用 `onExit` |
+| `Inactive -> Removing` | 非当前 entry 被 remove/clear/reset | 不重复调用 `onExit` |
+| `Removing -> Disposed` | 离场转场结束，或无动画立即 settle | 改为 `Disposed`、清 bucket、调用一次 `onDispose`，然后才交付 result |
+
+主要操作的结果协议：
+
+| 操作 | stack / lifecycle 行为 | pending typed outcome |
+|---|---|---|
+| `push(request)` | 总是分配新 entry；原 active entry 变为 inactive | 新 entry 保持 pending |
+| `complete(entry, value)` / `scope.complete(value)` | 只接受 exact active entry；按 pop 路径露出下层 entry | `Success(value)`，包括 `Success(null)` |
+| legacy `pop()` / `maybePop()` | 移除当前 entry；最后一个 root 不可移除 | 为兼容旧签名，等价于 `pop(null)`，即 `Success(null)` |
+| Host discrete / predictive back | start/progress/cancel 不改栈；commit 才移除当前 entry | typed channel 为 `Cancelled(Back)`；不伪造 `Success(null)` |
+| `cancel(entry, reason)` | 移除指定 entry；默认 reason 为 `Explicit` | `Cancelled(reason)` |
+| typed `replace(request)` / `replaceWith(request)` | 旧 entry 销毁，新 entry 使用新 ID、bucket 和 channel | 旧 channel 为 `Cancelled(Replaced)`；新 channel 独立 pending |
+| `remove(entry/id)` | inactive entry 立即 settle；active entry 可执行离场转场；最后一个 root 不可移除 | `Cancelled(Removed)` |
+| `clear()` | 保留 root；其余 entry 按 bottom-to-top 顺序销毁；所有 entry 销毁完后才按同序交付结果 | `Cancelled(Cleared)` |
+| Navigator host dispose | 先保留已有 pending finalization 顺序，再把仍在 stack 的 entry 按 top-to-bottom 入队；全部销毁后交付仍 pending 的结果 | `Cancelled(NavigatorDisposed)` |
+| restore / deep-link stack reset | 旧 entry 被完整替换并销毁 | `Cancelled(StackReset)` |
+
+动画操作会把离场 entry 保持在 `Removing`，直到转场 settle。下一次导航操作会先 settle 被打断的
+旧转场；过期的转场完成回调不会重复 dispose 或重复投递结果。
+
+legacy `pop()` 与 typed `complete(...)` 都会执行 destination 的 `canPop(entry)`；返回 false 或 callback
+抛错时不改变 stack。`cancel(...)`、`remove(...)`、`replace(...)` 与 `clear(...)` 是显式管理
+操作，不经过 `canPop`。
+
+#### Legacy PixelRoute 兼容语义
+
+`PixelRoute`、`currentRoute`、`stack`、字符串 deep link 和 route-name snapshot 继续保留。每次
+`push(samePixelRoute)` 仍会创建独立 entry，因此同一个 `PixelRoute` 实例重复入栈不再共享
+bucket、result channel 或生命周期。
+
+- `push(route) { value -> ... }` 保持 `(Any?) -> Unit`；任何取消都映射为 `null`，因此旧 API
+  无法区分成功返回 null 与取消。
+- `replace(route)` 保持旧 stack-slot 约定：把仍 pending 的 legacy callback 转移给新的
+  replacement entry。旧 entry 自己的 channel 终结为 `Cancelled(Replaced)`，但转移出去的
+  callback 要等 replacement 最终退出才收到值或 `null`。
+- typed replace 不转移旧 callback；它取消旧 channel，并为 replacement 创建独立 callback。
+- 新代码应使用 `currentEntry` / `entries`；`currentRoute` / `stack` 只是兼容投影。
+
+#### Observer、失败与 inspection
+
+`addObserver` / `removeObserver` 管理 `PixelNavigationObserver`。事件带单 Navigator 内单调递增的
+`sequence`、`PixelNavigationAction`、`Started` / `Completed` / `Failed` 阶段以及相关 entry ID。
+observer 抛错会被隔离并记录为 `ObserverCallbackFailed`，不会撤销已经接受的导航操作。
+
+被拒绝的 pop/remove、stale entry、destination callback 异常和 result callback 异常会写入
+`lastFailure`。`inspectionSnapshot()` 返回 entry 顺序、destination ID、生命周期、result state、
+state key 名、当前 entry、转场和最近失败；它故意不持有参数或 widget。
+
+`PixelNavigatorInspectionSnapshot`、observer 事件和 `lastFailure` 都只用于当前进程内调试与测试，
+不可写入 Bundle 或作为恢复格式。`PixelNavigatorSnapshot` 继续是旧版 route-name 列表；typed
+持久化使用下面的版本化 codec。
+
+#### 版本化 typed snapshot
+
+需要恢复的 root 必须由 `PixelNavigator.typed(PixelRouteRequest(...))` 创建。每个 destination 用
+`PixelRouteSnapshotAdapter<A, R>` 注册：
+
+- `PixelRoutePayloadCodec<A>` 写入自己的参数 schema，并在 `decode` 中显式迁移旧版本；
+- `encodeRouteState` 只选择允许落盘的 bucket 值；
+- `decodeRouteState` 先校验，再返回 `PixelRouteStateRestorer`；
+- `PixelRouteSnapshotRegistry` 拒绝未知或重复 destination ID。
+
+`persistentSnapshot` / `savePersistentSnapshotToBundle` 保存 entry ID、destination、参数、当前页和
+允许恢复的局部状态。`restorePersistentSnapshot` 会先完成 checksum、长度、stack invariant、
+destination 和 payload 校验，再一次性替换 live stack。未知 route、未来 schema、重复 ID、损坏
+bytes 或迁移拒绝都返回结构化 `Rejected`，原 stack 不变。
+
+pending callback、Widget/State、listener 和 ticker 不跨进程恢复。恢复后的 allocator 从最大 entry
+ID 继续递增，避免新 push 与旧 ID 碰撞。完整 adapter 示例和 Bundle 流程见
+[导航恢复、多返回栈与 Predictive Back 迁移指南](migrations/1.0.0-navigation-restoration.md)。
+
+#### 嵌套和多返回栈
+
+`PixelMultiStackNavigator` 同时挂载所有 child Navigator；inactive stack 保持 Element/State 和
+route history，但不 paint、hit-test、导出 semantics、出现在 finder 或接收 back。controller：
+
+- `selectStack` 切换而不清栈；可选 `popToRootOnReselect`；
+- active secondary root 的 back 先回 initial stack；
+- discrete 和 predictive session 只转发到 start 时锁定的 active stack；
+- `persistentSnapshot(registries)` 批量捕获全部 typed child stack 和 active selection；
+- `PixelMultiStackSnapshot.saveToBundle` / `getPixelMultiStackSnapshot` 使用独立 outer schema；恢复前
+  会先解码所有 child plan。
+
+`NavigationBar` / `NavigationRail` 可以直接绑定这个 controller。每个
+`PixelNavigationDestination.id` 必须稳定、唯一，并在 Host 已挂载后对应一个真实 stack id；label 也必须
+非空且唯一。选择另一目的地只激活已挂载子栈，不清理 inactive history；当
+`popToRootOnReselect = true` 时，重选 active 目的地只清理该子栈 root 以上的 entry。Back 仍由
+`PixelMultiStackNavigatorController` 负责：先 pop active 子栈，再从 secondary root 回到 initial stack。
+
+```kotlin
+/** Stable destinations whose ids match PixelNavigatorStack ids. */
+val appDestinations = listOf(
+    PixelNavigationDestination(id = "home", label = "HOME", icon = homeIcon),
+    PixelNavigationDestination(id = "settings", label = "SETTINGS", icon = settingsIcon),
+)
+
+NavigationBar(
+    destinations = appDestinations,
+    controller = navigationController,
+    popToRootOnReselect = true,
+    animated = true,
+    key = "primary-navigation",
+)
+```
+
+受控重载则传 `selectedId` 与 `onSelected(String)`，不需要 controller。两种重载都按 destination id
+保留 identity：插入或重排只更新当前 collection 位置，不会把旧焦点或回调重定向到相同下标的新项。
+Bar 使用 Left/Right，Rail 使用 Up/Down，都会循环跳过 disabled destination；可交互且至少有一个
+enabled destination 时整组是一个 Tab stop，并始终导出结构化 `SINGLE` collection。
+
+legacy tab root 使用 `PixelNavigatorStack`；需要进程恢复时使用
+`PixelTypedNavigatorStack<A, R>`。`PixelNestedNavigator` 位于 maintained route 中时传入
+`parentEntry`，parent inactive 后 nested back bridge 自动禁用。
+
+#### Typed Deep Link
+
+`PixelTypedDeepLinkRoute<A, R>` 把一个 URI matcher、`PixelDeepLinkArgumentDecoder<A>` 和合法
+destination 绑定。matcher 命中后 decoder 返回 `PixelDeepLinkDecoded(arguments)` 或带
+Missing/Invalid 参数详情的 `PixelDeepLinkDecodeRejected`。malformed、unmatched、missing、invalid
+和 consumer callback exception 都不修改 stack；成功操作以 `PixelNavigationAction.DeepLink`
+通知 observer。多栈 overload 只有在目标 stack 导航成功后才切 tab。
+
+#### Predictive Back
+
+`PixelHostView` 默认在确有输入、widget handler 或 app fallback 时注册平台 callback：API 33
+接离散 `OnBackInvokedCallback`，API 34+ 接完整 `OnBackAnimationCallback`，API 24–32 继续调用
+`handleBackPressed()`。自定义 Host 可以直接调用 `handlePredictiveBackStarted / Progressed /
+Cancelled / Committed`。
+
+Navigator 的 start/progress 只建立 presentation；cancel 不触发 exit/dispose/result；commit 才按
+最新 progress 完成 pop，并对 typed entry 产生 `Cancelled(Back)`。并发 push/replace 会使旧手势
+的迟到 commit 失效。inactive nested/multi-stack handler 不会收到 progress。
+
 ### 动画
 
 | API | 用途 |
 |---|---|
-| `PixelTickerProvider` | ticker 创建与生命周期 |
+| `PixelTickerProvider` | ticker 创建、pause/resume/dispose 与 active-time diagnostics |
+| `PixelTickerProviderDiagnostics` | active/live ticker、pending frame、active time 与累计计数 |
+| `PixelHostFrameScopeDiagnostics` | callback、listener、source frame 与 ticker 所有权计数 |
+| `PixelHostView.frameScopeDiagnostics` | 从真实 Android Host 按需读取 frame scope 的只读基础类型快照 |
+| `PixelMotionTheme` / `PixelMotionThemeData` | 标准组件的 feedback、selection、Overlay、Slidable 和 route token |
+| `PixelMotionSpec` / `PixelResolvedMotion` | duration、curve、delay、preset、spring、role 及系统设置解析结果 |
+| `PixelMotionScope` / `PixelMotionSettings` | Host ticker、animator scale 和 reduce-motion inherited 环境 |
 | `PixelAnimationController` | 动画控制器 |
 | `CurvedAnimation` | 曲线包装 |
 | `Curves` / `Curve` / `Interval` | 曲线 |
@@ -1253,6 +2371,89 @@ scrollController.jumpToEnd(listState)
 | `AnimatedVisibility` | child / replacement 显隐切换动画 |
 | `AnimatedSprite` | sprite 帧动画 |
 
+#### MotionTheme 与标准组件
+
+`PixelHostView` 会自动在根树注入 `PixelMotionScope`，标准组件无需额外传入 vsync。应用只需在
+Widget 树需要覆盖默认 token 的位置提供 `PixelMotionTheme`：
+
+```kotlin
+/** Applies one shared selection token without creating a second ticker provider. */
+fun motionThemedContent(child: Widget): Widget {
+    /** Selection token used by Switch, Slider, and Tabs. */
+    val selection = PixelMotionSpec(
+        duration = 160.milliseconds,
+        delay = 20.milliseconds,
+        curve = Curves.EaseInOut,
+        transition = PixelMotionTransitionPreset.Fade,
+        role = PixelMotionRole.Selection,
+    )
+    return PixelMotionTheme(
+        data = PixelMotionThemeData.Default.copy(selection = selection),
+        child = child,
+    )
+}
+```
+
+标准 token 消费关系：
+
+| Token | 消费者与视觉通道 |
+|---|---|
+| `feedback` | Button/Switch/Slider/Tabs 的 pressed、hover、focus 颜色反馈 |
+| `selection` | Switch thumb/颜色、Slider 程序值、Tabs 交叉选择 |
+| `slidableSettle` | Slidable release 后的 snap/dismiss；拖动仍直接跟手，支持 spring |
+| `dialogEnter/Exit` | `PixelOverlayController.showDialog` 的 retained opacity enter/exit |
+| `popoverEnter/Exit` | Popover retained opacity enter/exit 与 paint-only 退出 |
+| `route` | Navigator 与 MultiStack 的 curve、delay、系统策略；`None` 同步关闭路由转场 |
+
+Android animator scale 会同时缩放 duration 与 delay。scale 0 同步提交终态；reduce motion 按 role
+替换策略：feedback/selection/continuous 立即完成，spatial 变为无 delay、最长 80ms 的线性 fade，
+而不是粗暴延迟逻辑状态。需要设置页预览或截图模式时可设置
+`PixelHostView.motionSettingsOverride`；设为 null 恢复跟随系统。
+
+Navigator 的具体非 `None` 通道仍由 `PixelRoute.transition` / `defaultTransition` 决定，以保持既有
+路由配置兼容；Motion route preset 为 `None` 时优先同步关闭内置和自定义转场，其余 preset 允许
+Navigator 使用该公开路由配置。
+
+运行中切换 theme、scale 或 reduce motion 会从当前视觉帧 retarget。目标在 pointer down 后被移除、
+禁用或变为 opacity 0/paint-only 时，Host 与 `PixelTester` 会取消原 owner；up 不会触发旧 callback，
+也不会落到同坐标背景控件。完整行为、测试方式与迁移清单见
+[MotionTheme 迁移指南](migrations/1.0.0-motion-theme.md)。
+
+#### PixelAnimationController 时间与取消契约
+
+`duration` 表示从 `0f` 到 `1f` 的完整 active-time 时长；从中间值出发时，实际 segment
+按剩余距离等比缩短。`forward(from)` / `reverse(from)` 会先校验 `NaN`，再把显式 `from`
+clamp 到 `0f..1f` 并立即应用；不传 `from` 时从当前视觉值平滑重定向。第一帧只建立时间锚点，
+不会把 value 跳回端点。超大 frame delta 会直接 clamp 到目标，并让 status 与 value 在同一帧
+稳定为 `Completed/1f` 或 `Dismissed/0f`。
+
+`stop()` 是可重复调用的取消操作：它移除待处理 ticker frame、保留当前 value 和
+`Forward/Reverse` 方向 status，同时 `isAnimating == false`；之后再次 forward/reverse 会从保留值
+开始一条新的 segment。Host pause 不等同 stop：pause 保留运行状态并冻结 active time，resume 的
+首帧重新锚定，因此后台 wall-clock 时间不会造成跳帧。
+
+边界输入遵循以下固定规则：
+
+- 负 `duration` 在构造时抛出 `IllegalArgumentException`，且不会先创建 ticker；零或不足 1ns 的
+  duration 同步到目标，不安排 frame。
+- 零时长 `repeat(false)` 稳定在 `Completed/1f`；`repeat(true)` 代表完成一个往返周期，稳定在
+  `Dismissed/0f`，两者都不会形成同帧死循环。
+- `initialValue`、`forward(from)`、`reverse(from)` 和 `setValue` 拒绝 `NaN`；有限值和无穷值按
+  `0f..1f` clamp。
+- controller/provider dispose 后，新的动画或赋值命令抛出 `IllegalStateException`；`stop()` 与
+  `dispose()` 自身保持幂等。
+
+`TweenAnimationBuilder` 和基于它的隐式动画在 target 变化时，会把新 `Tween.begin`
+重定基到最后一次实际 build 的视觉值，再从零进度启动新 segment。因此
+`Tween.begin` / `end` 现为可变属性；不要在多个正在运行的 builder 之间共享同一个
+Tween 实例，每个声明式 target 应提供独立实例。
+
+`AnimatedSwitcher` 使用稳定 `Stack` 同时挂载 outgoing 与 incoming，并为每个视觉
+entry 保留独立 keyed `Opacity`。只有 runtime type 和 key 都相同时才原地更新；快速
+连续切换会保留仍有视觉贡献的所有 outgoing，切回旧 key 则提升原 entry 而不重建
+State。完整的行为差异、迁移步骤和虚拟时钟验证见
+[动画正确性迁移指南](migrations/1.0.0-animation-correctness.md)。
+
 ### 调试组件
 
 | API | 用途 |
@@ -1261,10 +2462,48 @@ scrollController.jumpToEnd(listState)
 | `PixelInspectorPanel` | 展示 element/render/semantics/target 树 |
 | `PixelInspectorBoundsOverlay` | 在画面上绘制 target bounds |
 | `PixelHostView.frameStatsObserver` | 监听帧统计 |
+| `PixelHostView.frameDiagnosticsObserver` | 在 UI 线程监听完整帧阶段、工作量与丢帧归因 |
+| `PixelHostView.frameDiagnosticsEnabled` | 无 observer 时仍保留最近一帧完整诊断，默认关闭 |
+| `PixelHostView.latestFrameDiagnostics` | 读取最近一次已完成的完整帧诊断 |
 | `PixelHostView.inspect()` | 采样 frame、target、element、render、semantics 诊断快照 |
 | `PixelHostView.dumpElementTree()` | dump element tree |
 | `PixelHostView.dumpRenderTree()` | dump render tree |
 | `PixelHostView.dumpSemanticsTree()` | dump semantics tree |
+
+`PixelHostFrameStats` 是兼容入口：`paintTimeNanos` 现在覆盖完整 `onDraw`，包括真实
+`drawBuffer` Canvas 提交，但不能用它区分瓶颈阶段。需要性能定位时使用
+`PixelHostFrameDiagnostics`：
+
+```kotlin
+hostView.frameDiagnosticsObserver = { frame ->
+    val timings = frame.timings
+    logger.log(
+        "build=${timings.buildNanos} layout=${timings.layoutNanos} " +
+            "paint=${timings.paintNanos} submit=${timings.bufferSubmitNanos} " +
+            "android=${timings.androidDrawNanos} total=${timings.totalFrameNanos}",
+    )
+    if (frame.isOverBudget) {
+        logger.log("drop=${frame.dropReason} missed=${frame.missedVsyncCount}")
+    }
+}
+```
+
+五个 phase 都是互斥时间：build 是 Element reconcile/rebuild，layout 是 RenderObject
+layout，paint 是逻辑 `PixelBuffer` 绘制与 target 导出，buffer submit 是
+`PixelBuffer → Android Canvas`，Android draw 是 submit 之外的 View/background/accessibility
+工作。`unattributedNanos` 包含 ticker/controller step、callback、采样和框架开销；五个
+phase 加上 unattributed 必须恰好等于 total。
+
+`PixelFrameWorkload` 同帧记录 dirty Element、owner-wide dirty RenderObject、逻辑 paint/submit
+像素、buffer pool hit/miss 和完整 render cache hit。`allocatedBytes`、
+`garbageCollectionCount` 是 `Debug.getRuntimeStat` 的进程级边界差，不是 UI 线程独占值；运行时
+不提供对应 ART key 时为 null。帧预算优先使用 Host capability 的 refresh rate，缺失时才回退
+60 Hz。observer 在 `onDraw` 尾部同步运行，不能执行 IO、sleep 或递归修改 Host。
+
+默认 `frameDiagnosticsEnabled == false` 且 observer 为 null，此时不读取 ART counter、不创建
+完整诊断快照。只想在 Inspector 中按需读取时可以启用 `frameDiagnosticsEnabled`，再通过
+`inspect().frameDiagnostics` 或 `latestFrameDiagnostics` 读取；完成诊断后应重新关闭。完整迁移和
+线程/成本边界见 [完整帧诊断迁移指南](migrations/1.0.0-frame-diagnostics.md)。
 
 ### pixelcore 常用类型
 
@@ -1285,6 +2524,8 @@ scrollController.jumpToEnd(listState)
 #### Sprite sheet schema
 
 `PixelSpriteSheetJsonLoader` 读取 SDK 侧 sprite sheet JSON。它不负责加载 bitmap 文件；调用方需要先通过 `PixelBitmapAssetLoader`、`PixelBitmapResourceLoader` 或自定义加载器拿到 `PixelBitmap`，再调用 `load(json, bitmap)` 或 `loadAtlas(json, bitmap)`。
+
+所有 sprite JSON 入口都有 `expectedSha256` 重载。解析器是严格有界 JSON，而不是正则提取：重复 key、尾随垃圾、超深嵌套、过长字符串、浮点/溢出整数、超量 frame 和坐标加法溢出都会在构建对象前失败。
 
 v1 简单 sheet schema：
 
@@ -1360,13 +2601,18 @@ v2 atlas schema：
     "revision": "1"
   },
   "bitmaps": [
-    { "id": "runner", "path": "sprites/runner.png" }
+    {
+      "id": "runner",
+      "path": "sprites/runner.png",
+      "sha256": "<64 lowercase or uppercase hex chars>"
+    }
   ],
   "spriteSheets": [
     {
       "id": "runnerRun",
       "path": "sprites/runner.sheet.json",
-      "bitmap": "runner"
+      "bitmap": "runner",
+      "sha256": "<64 hex chars>"
     }
   ]
 }
@@ -1374,8 +2620,9 @@ v2 atlas schema：
 
 字段约束：
 
-- `bitmaps[].id` 是资源唯一标识，不能为空；`bitmaps[].path` 是调用方资源路径，不能为空。
+- `bitmaps[].id` 是资源唯一标识，不能为空；`bitmaps[].path` 必须是无 `.`/`..` 的安全相对路径；可选 `sha256` 校验编码文件。
 - `spriteSheets[].id` 不能为空；`spriteSheets[].path` 指向 sprite sheet JSON；`spriteSheets[].bitmap` 必须引用同一 manifest 中已声明的 bitmap id。
+- `spriteSheets[].sha256` 可记录 sheet JSON 摘要；`parse(json, expectedSha256)` / `parseCatalog(json, expectedSha256)` 还可以校验整个清单文件的外部摘要。
 - 同一类型内不允许重复 id。
 - `parse(json)` 不加载真实 bitmap 或 sprite sheet 文件，只完成清单解析和结构校验。
 - 解析失败统一抛出 `PixelResourceManifestLoadException`。
@@ -1396,7 +2643,9 @@ v2 atlas schema：
     {
       "id": "ui8",
       "manifest": "glyphpacks/ui8/manifest.json",
-      "binary": "glyphpacks/ui8/glyphs.bin"
+      "binary": "glyphpacks/ui8/glyphs.bin",
+      "manifestSha256": "<64 hex chars>",
+      "binarySha256": "<64 hex chars>"
     }
   ]
 }
@@ -1413,35 +2662,72 @@ catalog 额外约束：
 
 #### Resource cache 行为
 
-`PixelResourceCache` 是一个轻量内存缓存，用于 SDK consumer 在 app 生命周期内复用已加载的 `PixelBitmap` 和 `PixelSpriteSheet`。它不拥有 Android 资源句柄，也不做后台清理。
+`PixelResourceCache` 是线程安全、按字节受限的强引用 LRU，用于 SDK consumer 在 app 生命周期内复用 `PixelBitmap`、`PixelSpriteSheet` 和 `PixelGlyphPack`。它不持有 Android `Context`/资源句柄，也不创建后台线程。
 
 key 行为：
 
 - key 由调用方提供，必须非空白。
-- bitmap 和 sprite sheet 使用独立命名空间；同一个 key 可以同时缓存一张 bitmap 和一个 sprite sheet。
-- `remove(key)` 会同时移除该 key 下的 bitmap 和 sprite sheet；如果 key 不存在，不增加 `removeCount`。
+- bitmap、sprite sheet 和 glyph pack 使用独立命名空间；同一个 key 可以同时存在于三类缓存。
+- `remove(key)` 会移除三类同名条目，并阻止此前开始的同名在途加载重新写回；如果 key 不存在，不增加 `removeCount`。
 
 读取行为：
 
-- `getBitmap(key) { ... }` 和 `getSpriteSheet(key) { ... }` 命中时直接返回已缓存对象，不执行 loader。
-- 未命中时执行 loader，并把返回对象按 key 保存。
+- `getBitmap`、`getSpriteSheet` 和 `getGlyphPack` 命中时直接返回已缓存对象，不执行 loader。
+- 同类型、同 key 的并发未命中共享一次 loader；loader 在缓存锁外执行，其他 key 不被 IO 阻塞。
+- 结果按保守字节估算写入；单条超过逐类或总预算时仍返回当前调用方，但不驻留缓存。
 - key 校验发生在 loader 之前，空白 key 不会触发资源加载。
 
 clear 行为：
 
-- `clear()` 只清空当前缓存条目，不重置命中/未命中统计。
+- `clear()` 清空当前缓存条目、不重置统计，并阻止清理前已经开始的在途结果重新写回。
 - 只有缓存非空时才增加 `clearCount`；对空缓存重复调用不会增加计数。
 
 snapshot 行为：
 
-- `snapshot()` 返回当前条目数量、命中/未命中次数、remove 次数和 clear 次数。
-- snapshot 是统计快照，不包含缓存对象引用，不估算内存字节数。
+- `snapshot()` 保留旧的 bitmap/sprite 计数、命中率和生命周期计数契约。
+- `detailedSnapshot()` 额外返回逐类/总字节、glyph 数量、全局命中/未命中、淘汰、过大拒绝、在途数量和按 LRU 顺序排列的无引用条目快照。
+- `PixelResourceEvictionListener` 在缓存锁外收到 `ENTRY_TOO_LARGE`、逐类字节/条目预算和总字节预算原因；监听器异常不会破坏缓存。
 
 memory 边界：
 
-- cache 持有强引用，没有容量限制，也没有 LRU 驱逐。
-- 调用方必须在资源包切换、页面销毁、低内存回调或主题/字体资源变化时主动调用 `remove(key)` 或 `clear()`。
-- 如果需要按字节数或帧数做淘汰，应在 SDK consumer 层包装 `PixelResourceCache`，不要依赖 engine 自动释放。
+- 默认 `PixelResourceCacheLimits` 为总计 128 MiB、bitmap/sprite 各 96 MiB、glyph 48 MiB，并同时限制每类条目数；宿主应按进程预算显式下调，而不是依赖默认值承担所有应用缓存。
+- 超过逐类预算时淘汰该类最久未访问条目；超过总预算时按三类共享访问序淘汰全局最久未访问条目，行为可预测。
+- 资源包切换、页面销毁、`onTrimMemory` 或主题/字体资源变化时仍应调用 `remove` / `clear`，及时释放强引用。
+
+#### 正式同步/异步资源加载
+
+`PixelResourceLoader` 把线程策略、缓存单飞、订阅取消、预取和短期失败缓存统一到一个入口。executor 的生命周期归宿主持有，SDK 不创建或关闭全局线程池。
+
+```kotlin
+val cache = PixelResourceCache(
+    limits = PixelResourceCacheLimits(maxTotalBytes = 48L * 1024L * 1024L),
+    evictionListener = PixelResourceEvictionListener { event ->
+        logger.log("resource eviction: ${event.kind}/${event.key}/${event.reason}")
+    },
+)
+val resourceLoader = PixelResourceLoader(
+    cache = cache,
+    executor = resourceExecutor,
+    policy = PixelResourceLoadingPolicy(failureCacheDurationMillis = 5_000L),
+)
+val bitmapLoader = PixelBitmapAssetLoader(context.assets)
+
+val handle = resourceLoader.loadBitmapAsync("runner@v3") {
+    bitmapLoader.load(
+        path = "sprites/runner.png",
+        expectedSha256 = manifest.bitmaps.single().sha256,
+    )
+}
+```
+
+- `load*` 同步入口默认拒绝 Android 主线程；只有已经在后台线程的调用方才应使用。确需特殊测试环境时，可显式设置 `allowSynchronousMainThread`，生产 UI 不建议开启。
+- `load*Async` 在调用方 executor 执行 IO/校验/解析；同类型、同 key 的订阅共享任务。
+- `PixelResourceLoadHandle.cancel()` 只取消当前订阅等待，不取消共享 IO，也不影响其他订阅者和成功后的缓存写入。
+- `prefetch*` 使用相同异步契约，返回可观察句柄。
+- loader 失败默认缓存 5 秒，避免损坏文件或临时 IO 故障造成重试风暴；`clearFailure` / `clearFailures` 可显式解除。
+- 未完成句柄禁止在 Android 主线程 `await()`；已经完成的结果可以无阻塞读取。
+
+完整行为变化和迁移方式见 [资源加载与内存边界迁移指南](migrations/1.0.0-resource-loading-memory.md)。
 
 #### 资源打包工具
 
@@ -1624,7 +2910,7 @@ Finder：
 - 渲染：`pumpWidget` 渲染根 widget，`pumpFrame` / `pumpAndSettle` 推进动画、ticker 和滚动 settling。
 - 交互：`tap`、`doubleTap`、`longPress`、`drag`、`fling`、`cancelDrag` 覆盖常见点击和滚动手势。
 - 手势流：`startGesture` 返回 `PixelTestGesture`，可用 `moveBy`、`up`、`cancel` 验证分步拖动、多指和取消分支。
-- 文本输入：`enterText`、`composeText`、`updateComposition`、`submitTextInput`、`performTextEditAction` 覆盖输入法 composition、提交、复制、剪切、粘贴和全选。
+- 文本输入：`enterText`、`pressText`、`composeText`、`updateComposition`、`submitTextInput`、`performTextEditAction` 覆盖 supplementary/multi-code-point 输入、composition、提交、复制、剪切、粘贴和全选。
 - 键盘：`pressKey` 向当前 focus tree 发送按键，适合验证 focus 和快捷键路径。
 - 调试树：`dumpElementTree`、`dumpRenderTree`、`dumpSemanticsTree` 用于定位 widget / render / semantics 状态。
 - 生命周期：测试结束后调用 `dispose`，清理 runtime、手动帧调度器和 focus 状态。
@@ -1634,6 +2920,30 @@ Finder：
 - `tester.pixelAt(x, y)`
 - `tester.hasPixel(color)`
 - `tester.dumpPixelsAsAscii()`
+
+#### 确定性 golden 与审阅流程
+
+M8-1 的综合像素基线使用仓库内置 `PixelBitmapFont.Default`、`PixelTester` 手动时钟和固定
+`ScreenProfile`。标准组件状态、Light/Dark/HighContrast 主题、LTR/RTL、1×/2× textScale，以及
+动画 0/500/1000 ms 关键帧，都编码为保留坐标与完整颜色的 exact-ARGB 行程，不使用亮度分桶或
+设备字体。
+
+源码基线是只读评审输入。`ReviewedGoldenVerifier` 每次都把实际结果写到 `build/reports/golden/`
+下的 `.actual.txt`；不一致时还会生成带共同上下文、删除行和新增行的 `.diff`，然后让测试失败。
+测试代码没有 `REGEN_GOLDEN`、`UPDATE_GOLDEN` 或其他自动接受分支，也不会在基线缺失时创建源码
+文件。
+
+更新流程：
+
+1. 运行受影响的定向 golden 测试，确认失败报告同时给出源码基线、候选和 diff 路径。
+2. 人工检查 `.diff` 中每个像素、semantics action 和生命周期顺序变化，确认它与预期设计一致。
+3. 通过可审阅的源码 patch 修改对应 `src/test/resources/` 基线；不要直接把候选无条件复制为基线。
+4. 重跑定向测试和完整 `:pixel-engine:testDebugUnitTest`。匹配后候选仍保留用于追溯，过期 `.diff`
+   必须被删除。
+
+M8-1 综合基线位于 `src/test/resources/golden/m8-1-deterministic-pixels.txt`，其候选默认位于
+`build/reports/golden/m8-1/deterministic-pixels.actual.txt`。`ReviewedGoldenVerifierTest` 还会主动注入
+单像素变化、删除 semantics action、交换生命周期顺序，验证三类错误都失败且源码基线不变。
 
 边界：
 

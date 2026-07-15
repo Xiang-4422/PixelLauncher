@@ -8,18 +8,30 @@ import com.purride.pixelui.TextDirection
 /**
  * 新渲染管线里的富文本对象。
  */
-internal class RenderRichText(
+public class RenderRichText(
+    /** Ordered styled spans whose text concatenation forms the exact backing paragraph. */
     private var spans: List<PixelTextSpan>,
+    /** Logical alignment applied independently to each visible line. */
     private var textAlign: PixelTextAlign,
+    /** Explicit paragraph base direction used by Unicode Bidi resolution. */
     private var textDirection: TextDirection,
+    /** Whether wrapping may occur between complete grapheme clusters. */
     private var softWrap: Boolean,
+    /** Whole-cluster clipping or ellipsis policy. */
     private var overflow: PixelTextOverflow,
+    /** Maximum number of visible lines. */
     private var maxLines: Int,
+    /** Inherited rasterizer for spans without an explicit style override. */
     private var defaultTextRasterizer: PixelTextRasterizer,
 ) : RenderBox() {
+    /** Shared immutable cluster/Bidi geometry for the current layout. */
     private var paragraphLayout: PixelParagraphLayout = PixelParagraphLayout(lines = emptyList())
 
-    fun updateRichText(
+    /** 更新 `RenderRichText` 的 `updateRichText` 状态并保持派生数据一致。
+ *
+ * Replaces rich-text inputs and invalidates layout only when a value actually changes.
+ */
+    public fun updateRichText(
         spans: List<PixelTextSpan>,
         textAlign: PixelTextAlign,
         textDirection: TextDirection,
@@ -35,7 +47,7 @@ internal class RenderRichText(
             this.softWrap == softWrap &&
             this.overflow == overflow &&
             this.maxLines == maxLines &&
-            this.defaultTextRasterizer === defaultTextRasterizer
+            this.defaultTextRasterizer == defaultTextRasterizer
         ) {
             return
         }
@@ -50,7 +62,9 @@ internal class RenderRichText(
         markNeedsPaint()
     }
 
+    /** Builds styled cluster/Bidi geometry and resolves the constrained paragraph size. */
     override fun layout(constraints: RenderConstraints) {
+        /** Non-negative width available to paragraph layout. */
         val availableWidth = constraints.maxWidth.coerceAtLeast(0)
         paragraphLayout = PixelParagraphLayouter.layout(
             input = PixelParagraphInput(
@@ -70,17 +84,23 @@ internal class RenderRichText(
         )
     }
 
+    /** Paints style-homogeneous visual runs using paragraph-owned cluster positions. */
     override fun paint(
         context: PaintContext,
         offsetX: Int,
         offsetY: Int,
     ) {
+        /** Destination buffer supplied by the current pipeline frame. */
         val buffer = context.buffer
+        /** Absolute top edge of the line currently being painted. */
         var cursorY = offsetY
+        /** Horizontal clipping extent of this render box. */
         val contentWidth = size.width
+        /** Vertical clipping extent of this render box. */
         val contentHeight = size.height
         paragraphLayout.lines.forEach { line ->
             if (cursorY - offsetY >= contentHeight) return
+            /** Absolute left edge of the next visual run on the aligned line. */
             var cursorX = offsetX + ParagraphLayoutSupport.resolveLineStartX(
                 textAlign = textAlign,
                 textDirection = textDirection,
@@ -89,24 +109,14 @@ internal class RenderRichText(
             )
             line.runs.forEach { run ->
                 if (cursorX - offsetX >= contentWidth) return@forEach
-                if (run.style.letterSpacing > 0 || run.style.fontScale > 1 || run.style.lineHeight != null) {
-                    PixelParagraphPainter.drawRun(
-                        buffer = buffer,
-                        run = run,
-                        defaultTextRasterizer = defaultTextRasterizer,
-                        x = cursorX,
-                        y = cursorY,
-                    )
-                } else {
-                    val rasterizer = run.style.textRasterizer ?: defaultTextRasterizer
-                    val color = run.style.color
-                    run.text.forEach { character ->
-                        val text = character.toString()
-                        rasterizer.drawText(buffer = buffer, text = text, x = cursorX, y = cursorY, color = color)
-                        cursorX += rasterizer.measureText(text)
-                    }
-                    return@forEach
-                }
+                PixelParagraphPainter.drawRun(
+                    buffer = buffer,
+                    bufferPool = context.bufferPool,
+                    run = run,
+                    defaultTextRasterizer = defaultTextRasterizer,
+                    x = cursorX,
+                    y = cursorY,
+                )
                 cursorX += run.width
             }
             cursorY += line.height

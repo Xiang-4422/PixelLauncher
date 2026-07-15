@@ -1,0 +1,130 @@
+# pixel-testing binary API baseline
+public abstract class com.purride.pixelui.testing.PixelFinder {
+  public final com.purride.pixelui.testing.PixelFinder nth(int);
+  public com.purride.pixelui.testing.PixelFinder(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelui.testing.PixelFinder$ByKey extends com.purride.pixelui.testing.PixelFinder {
+  public com.purride.pixelui.testing.PixelFinder$ByKey(java.lang.Object);
+  public final java.lang.Object getKey();
+  public final java.lang.Object component1();
+  public final com.purride.pixelui.testing.PixelFinder$ByKey copy(java.lang.Object);
+  public static com.purride.pixelui.testing.PixelFinder$ByKey copy$default(com.purride.pixelui.testing.PixelFinder$ByKey, java.lang.Object, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.testing.PixelFinder$ByText extends com.purride.pixelui.testing.PixelFinder {
+  public com.purride.pixelui.testing.PixelFinder$ByText(java.lang.String);
+  public final java.lang.String getText();
+  public final java.lang.String component1();
+  public final com.purride.pixelui.testing.PixelFinder$ByText copy(java.lang.String);
+  public static com.purride.pixelui.testing.PixelFinder$ByText copy$default(com.purride.pixelui.testing.PixelFinder$ByText, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.testing.PixelFinder$ByType extends com.purride.pixelui.testing.PixelFinder {
+  public com.purride.pixelui.testing.PixelFinder$ByType(kotlin.reflect.KClass<?>);
+  public final kotlin.reflect.KClass<?> getType();
+  public final kotlin.reflect.KClass<?> component1();
+  public final com.purride.pixelui.testing.PixelFinder$ByType copy(kotlin.reflect.KClass<?>);
+  public static com.purride.pixelui.testing.PixelFinder$ByType copy$default(com.purride.pixelui.testing.PixelFinder$ByType, kotlin.reflect.KClass, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.testing.PixelFinder$Nth extends com.purride.pixelui.testing.PixelFinder {
+  public com.purride.pixelui.testing.PixelFinder$Nth(com.purride.pixelui.testing.PixelFinder, int);
+  public final com.purride.pixelui.testing.PixelFinder getFinder();
+  public final int getIndex();
+  public final com.purride.pixelui.testing.PixelFinder component1();
+  public final int component2();
+  public final com.purride.pixelui.testing.PixelFinder$Nth copy(com.purride.pixelui.testing.PixelFinder, int);
+  public static com.purride.pixelui.testing.PixelFinder$Nth copy$default(com.purride.pixelui.testing.PixelFinder$Nth, com.purride.pixelui.testing.PixelFinder, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.testing.PixelSemanticsActionArguments {
+  public com.purride.pixelui.testing.PixelSemanticsActionArguments(java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Float, java.lang.String);
+  public com.purride.pixelui.testing.PixelSemanticsActionArguments(java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Float, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getText();
+  public final java.lang.Integer getSelectionStart();
+  public final java.lang.Integer getSelectionEnd();
+  public final java.lang.Float getProgress();
+  public final java.lang.String getCustomActionId();
+  public final java.lang.String component1();
+  public final java.lang.Integer component2();
+  public final java.lang.Integer component3();
+  public final java.lang.Float component4();
+  public final java.lang.String component5();
+  public final com.purride.pixelui.testing.PixelSemanticsActionArguments copy(java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Float, java.lang.String);
+  public static com.purride.pixelui.testing.PixelSemanticsActionArguments copy$default(com.purride.pixelui.testing.PixelSemanticsActionArguments, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Float, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.testing.PixelSemanticsActionArguments();
+}
+public interface com.purride.pixelui.testing.PixelTestGesture {
+  public abstract com.purride.pixelui.testing.PixelTestGesture moveBy(int, int);
+  public abstract com.purride.pixelui.testing.PixelTestGesture moveBy(int, int, long);
+  public abstract void up();
+  public abstract void cancel();
+}
+public final class com.purride.pixelui.testing.PixelTester {
+  public com.purride.pixelui.testing.PixelTester();
+  public final com.purride.pixelui.host.ManualFrameScheduler getScheduler();
+  public final com.purride.pixelui.animation.PixelTickerProvider getVsync();
+  public final java.lang.String getClipboardText();
+  public final void pumpWidget(com.purride.pixelui.Widget, int, int);
+  public final void tap(com.purride.pixelui.testing.PixelFinder);
+  public final void doubleTap(com.purride.pixelui.testing.PixelFinder);
+  public final void longPress(com.purride.pixelui.testing.PixelFinder);
+  public final void drag(com.purride.pixelui.testing.PixelFinder, int, int);
+  public final void fling(com.purride.pixelui.testing.PixelFinder, int, int, float);
+  public final void cancelDrag(com.purride.pixelui.testing.PixelFinder, int, int);
+  public static void cancelDrag$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.testing.PixelFinder, int, int, int, java.lang.Object);
+  public final com.purride.pixelui.testing.PixelTestGesture startGesture(com.purride.pixelui.testing.PixelFinder, int);
+  public static com.purride.pixelui.testing.PixelTestGesture startGesture$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.testing.PixelFinder, int, int, java.lang.Object);
+  public final com.purride.pixelui.testing.PixelTestGesture down(com.purride.pixelui.testing.PixelFinder, int);
+  public static com.purride.pixelui.testing.PixelTestGesture down$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.testing.PixelFinder, int, int, java.lang.Object);
+  public final void up(int);
+  public static void up$default(com.purride.pixelui.testing.PixelTester, int, int, java.lang.Object);
+  public final void cancel(int);
+  public static void cancel$default(com.purride.pixelui.testing.PixelTester, int, int, java.lang.Object);
+  public final void hover(com.purride.pixelui.testing.PixelFinder);
+  public final void exitHover();
+  public final void dragSelectionStartHandle(com.purride.pixelui.testing.PixelFinder, int, int);
+  public final void dragSelectionEndHandle(com.purride.pixelui.testing.PixelFinder, int, int);
+  public final void enterText(com.purride.pixelui.testing.PixelFinder, java.lang.String);
+  public final void submitTextInput();
+  public final boolean performTextEditAction(com.purride.pixelui.testing.PixelFinder, com.purride.pixelui.PixelTextEditAction, java.lang.String);
+  public static boolean performTextEditAction$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.testing.PixelFinder, com.purride.pixelui.PixelTextEditAction, java.lang.String, int, java.lang.Object);
+  public final boolean pressKey(com.purride.pixelui.PixelKey, java.lang.Character);
+  public static boolean pressKey$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.PixelKey, java.lang.Character, int, java.lang.Object);
+  public final boolean pressText(java.lang.String);
+  public final void composeText(com.purride.pixelui.testing.PixelFinder, java.lang.String);
+  public final void updateComposition(com.purride.pixelui.testing.PixelFinder, int, int);
+  public final void pumpFrame(long);
+  public final void pumpAndSettle(int);
+  public static void pumpAndSettle$default(com.purride.pixelui.testing.PixelTester, int, int, java.lang.Object);
+  public final java.lang.String dumpElementTree();
+  public final java.lang.String dumpRenderTree();
+  public final java.lang.String dumpSemanticsTree();
+  public final java.util.List<com.purride.pixelui.PixelSemanticsNode> semanticsNodes();
+  public final com.purride.pixelui.PixelSemanticsNode semanticsNode(long);
+  public final java.util.List<com.purride.pixelui.PixelSemanticsNode> semanticsNodesByLabel(java.lang.String);
+  public final boolean performSemanticsAction(long, com.purride.pixelui.PixelSemanticsAction, com.purride.pixelui.testing.PixelSemanticsActionArguments);
+  public static boolean performSemanticsAction$default(com.purride.pixelui.testing.PixelTester, long, com.purride.pixelui.PixelSemanticsAction, com.purride.pixelui.testing.PixelSemanticsActionArguments, int, java.lang.Object);
+  public final int pixelAt-6yzbreg(int, int);
+  public final boolean hasPixel-0S9DSyc(int);
+  public final java.lang.String dumpPixelsAsAscii();
+  public final boolean exists(com.purride.pixelui.testing.PixelFinder);
+  public final void dispose();
+}
+public final class com.purride.pixelui.testing.find {
+  public static final com.purride.pixelui.testing.find INSTANCE;
+  public final com.purride.pixelui.testing.PixelFinder byText(java.lang.String);
+  public final com.purride.pixelui.testing.PixelFinder byType(kotlin.reflect.KClass<?>);
+  public final com.purride.pixelui.testing.PixelFinder byKey(java.lang.Object);
+}

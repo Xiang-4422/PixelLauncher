@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelSemanticsNode
+import com.purride.pixelui.PixelSemanticsActions
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelPagerController
@@ -25,7 +26,7 @@ internal data class PixelSize(
 /**
  * 像素渲染阶段使用的矩形区域。
  */
-internal data class PixelRect(
+public data class PixelRect(
     val left: Int,
     val top: Int,
     val width: Int,
@@ -46,14 +47,14 @@ internal data class PixelRect(
     /**
      * 判断指定点是否位于当前矩形内部。
      */
-    fun contains(x: Int, y: Int): Boolean {
+    public fun contains(x: Int, y: Int): Boolean {
         return x in left until right && y in top until bottom
     }
 
     /**
      * 按四边内缩矩形，并保证结果不会产生负尺寸。
      */
-    fun inset(
+    public fun inset(
         paddingLeft: Int,
         paddingTop: Int,
         paddingRight: Int,
@@ -74,7 +75,7 @@ internal data class PixelRect(
     /**
      * 平移当前矩形。
      */
-    fun translate(deltaX: Int, deltaY: Int): PixelRect {
+    public fun translate(deltaX: Int, deltaY: Int): PixelRect {
         return PixelRect(
             left = left + deltaX,
             top = top + deltaY,
@@ -86,7 +87,7 @@ internal data class PixelRect(
     /**
      * 计算当前矩形与另一个矩形的交集。
      */
-    fun intersect(other: PixelRect): PixelRect? {
+    public fun intersect(other: PixelRect): PixelRect? {
         val nextLeft = max(left, other.left)
         val nextTop = max(top, other.top)
         val nextRight = minOf(right, other.right)
@@ -129,9 +130,13 @@ internal data class PixelConstraints(
 /**
  * 点击命中目标。
  */
-internal data class PixelClickTarget(
+public data class PixelClickTarget(
     val bounds: PixelRect,
     val onClick: () -> Unit,
+    /** Reports pointer press ownership changes for component micro-state animation. */
+    val onPressedChanged: ((Boolean) -> Unit)? = null,
+    /** Reports mouse or stylus hover ownership changes without consuming touch exploration. */
+    val onHoveredChanged: ((Boolean) -> Unit)? = null,
     val onLongPress: (() -> Unit)? = null,
     val onDoubleTap: (() -> Unit)? = null,
     val onSwipeStart: (() -> Unit)? = null,
@@ -152,7 +157,7 @@ internal data class PixelClickTarget(
 /**
  * 分页视口命中目标。
  */
-internal data class PixelPagerTarget(
+public data class PixelPagerTarget(
     val bounds: PixelRect,
     val axis: PixelAxis,
     val state: PixelPagerState,
@@ -165,7 +170,7 @@ internal data class PixelPagerTarget(
 /**
  * 列表视口命中目标。
  */
-internal data class PixelListTarget(
+public data class PixelListTarget(
     val bounds: PixelRect,
     val viewportHeightPx: Int,
     val contentHeightPx: Int,
@@ -177,30 +182,57 @@ internal data class PixelListTarget(
 /**
  * 滚动条命中目标。
  */
-internal data class PixelScrollbarTarget(
+public data class PixelScrollbarTarget(
+    /** Full logical hit bounds of the scrollbar track. */
     val bounds: PixelRect,
+    /** Current proportional thumb bounds used to preserve pointer grab offset. */
     val thumbBounds: PixelRect,
+    /** Visible list extent used by controller clamping. */
     val viewportHeightPx: Int,
+    /** Total list extent used by controller clamping. */
     val contentHeightPx: Int,
+    /** Mutable list state shared with the wrapped viewport. */
     val state: PixelListState,
+    /** Controller that owns scrollbar drag mutation. */
     val controller: PixelListController,
+    /** Optional retained callback for pressed-state ownership. */
+    val onPressedChanged: ((Boolean) -> Unit)? = null,
+    /** Optional retained callback for mouse/stylus hover ownership. */
+    val onHoveredChanged: ((Boolean) -> Unit)? = null,
+    /** Retained render identity used to migrate ownership between snapshots. */
     val source: RenderObject? = null,
 )
 
 /**
  * 下拉刷新命中目标。
  */
-internal data class PixelRefreshTarget(
+public data class PixelRefreshTarget(
+    /** Full logical refresh-boundary hit bounds. */
     val bounds: PixelRect,
+    /** Positive pull distance required to enter the armed phase. */
     val thresholdPx: Int,
+    /** Whether this snapshot accepts a new pull lifecycle. */
     val enabled: Boolean,
+    /** Optional wrapped list used to reject pulls away from its leading edge. */
     val sourceListState: PixelListState?,
+    /** Mutable pull and refresh lifecycle state. */
     val state: PixelRefreshIndicatorState,
+    /** Controller that owns lifecycle mutation and notifications. */
     val controller: PixelRefreshIndicatorController,
+    /** Business callback invoked after a unique successful pull. */
     val onRefresh: () -> Unit,
+    /** Optional retained callback for pressed-state ownership. */
+    val onPressedChanged: ((Boolean) -> Unit)? = null,
+    /** Optional retained callback for mouse/stylus hover ownership. */
+    val onHoveredChanged: ((Boolean) -> Unit)? = null,
+    /** Retained render identity used to migrate ownership between snapshots. */
     val source: RenderObject? = null,
 ) {
-    fun canStartPull(deltaPx: Float): Boolean {
+    /** 判断 `PixelRenderPrimitives` 是否满足 `canStartPull` 条件，不修改现有状态。
+ *
+ * Returns whether [deltaPx] may begin a new pull from the wrapped list's leading edge.
+ */
+    public fun canStartPull(deltaPx: Float): Boolean {
         if (!enabled || state.isRefreshing || deltaPx <= 0f) return false
         val listState = sourceListState ?: return true
         return listState.scrollOffsetPx <= 0f
@@ -210,43 +242,71 @@ internal data class PixelRefreshTarget(
 /**
  * 滑块命中目标。onDrag 在手指移动时调用（值 0..1），onRelease 在抬手时调用。
  */
-internal data class PixelSliderTarget(
+public data class PixelSliderTarget(
     val bounds: PixelRect,
     val onDrag: (Float) -> Unit,
     val onRelease: (Float) -> Unit,
+    /** Reports whether this slider currently owns an active pointer press. */
+    val onPressedChanged: ((Boolean) -> Unit)? = null,
+    /** Reports mouse or stylus hover entry and exit for slider visual feedback. */
+    val onHoveredChanged: ((Boolean) -> Unit)? = null,
     val source: RenderObject? = null,
 )
 
 /**
  * 文本输入命中目标。
  */
-internal data class PixelTextInputTarget(
+public data class PixelTextInputTarget(
+    /** Absolute logical hit and semantic bounds of the editable surface. */
     val bounds: PixelRect,
+    /** Immutable editing value captured for this render frame. */
     val state: PixelTextFieldState,
+    /** Controller that applies normalized editing commands. */
     val controller: PixelTextFieldController,
+    /** Whether mutating text actions are disabled. */
     val readOnly: Boolean,
+    /** Whether this target requests focus when first mounted. */
     val autofocus: Boolean,
+    /** Minimum visible text line count. */
     val minLines: Int,
+    /** Maximum visible text line count. */
     val maxLines: Int,
+    /** Platform input classification requested by this target. */
     val inputType: com.purride.pixelui.PixelInputType,
+    /** IME action requested by this target. */
     val action: PixelTextInputAction,
+    /** Host-local focus node owning this target. */
     val focusNode: com.purride.pixelui.FocusNode? = null,
+    /** Callback receiving accepted backing-text changes. */
     val onChanged: ((String) -> Unit)?,
+    /** Callback receiving accepted IME submissions. */
     val onSubmitted: ((String) -> Unit)?,
+    /** Maps an absolute logical point to a grapheme-safe UTF-16 boundary. */
     val textIndexAt: ((Int, Int) -> Int)? = null,
+    /** Returns the absolute logical caret bounds for one UTF-16 boundary. */
     val caretBoundsForIndex: ((Int) -> PixelRect)? = null,
+    /** Returns one absolute logical rectangle per requested UTF-16 code unit. */
+    val characterBoundsForRange: ((Int, Int) -> List<PixelRect?>)? = null,
+    /** Retained render owner used for exact target association. */
     val source: RenderObject? = null,
 )
 
-internal data class PixelSemanticsTarget(
+/** 定义 `PixelSemanticsTarget` 在 `PixelRenderPrimitives` 中承担的数据或执行职责，并保持公开不变量稳定。 */
+public data class PixelSemanticsTarget(
+    /** Immutable node properties exported in the current frame. */
     val node: PixelSemanticsNode,
+    /** Retained render owner used to correlate actions and diagnostics. */
     val source: RenderObject? = null,
+    /** Executable callbacks corresponding to [PixelSemanticsNode.actions]. */
+    val actions: PixelSemanticsActions = PixelSemanticsActions(),
+    /** Returns one absolute logical rectangle per requested UTF-16 code unit. */
+    val characterBoundsForRange: ((Int, Int) -> List<PixelRect?>)? = null,
 )
 
 /**
  * pipeline 渲染结果。
  */
-internal data class PixelRenderResult(
+public data class PixelRenderResult(
     val buffer: PixelBuffer,
     val clickTargets: List<PixelClickTarget>,
     val pagerTargets: List<PixelPagerTarget>,
@@ -277,17 +337,71 @@ internal data class PixelRenderSession(
      * 固化当前会话为对外渲染结果。
      */
     fun toRenderResult(): PixelRenderResult {
+        /** Every target source participates in selecting the newest active modal boundary. */
+        val targetSources = buildList {
+            addAll(clickTargets.map(PixelClickTarget::source))
+            addAll(pagerTargets.map(PixelPagerTarget::source))
+            addAll(listTargets.map(PixelListTarget::source))
+            addAll(scrollbarTargets.map(PixelScrollbarTarget::source))
+            addAll(refreshTargets.map(PixelRefreshTarget::source))
+            addAll(textInputTargets.map(PixelTextInputTarget::source))
+            addAll(sliderTargets.map(PixelSliderTarget::source))
+            addAll(semanticsTargets.map(PixelSemanticsTarget::source))
+        }
+        /** Selected activation and route order represent the top logical modal for this frame. */
+        val modalFilter = highestActiveModalFilter(targetSources)
+        /** Click targets exported after a modal sibling are still removed by ancestry, not order. */
+        val effectiveClickTargets = clickTargets.filterForModal(modalFilter, PixelClickTarget::source)
+        /** Pager targets outside the active modal cannot retain gesture ownership. */
+        val effectivePagerTargets = pagerTargets.filterForModal(modalFilter, PixelPagerTarget::source)
+        /** List targets outside the active modal cannot retain scroll ownership. */
+        val effectiveListTargets = listTargets.filterForModal(modalFilter, PixelListTarget::source)
+        /** Scrollbar targets outside the active modal cannot retain drag ownership. */
+        val effectiveScrollbarTargets = scrollbarTargets.filterForModal(modalFilter, PixelScrollbarTarget::source)
+        /** Refresh targets outside the active modal cannot retain pull ownership. */
+        val effectiveRefreshTargets = refreshTargets.filterForModal(modalFilter, PixelRefreshTarget::source)
+        /** Text fields outside the active modal cannot retain IME ownership. */
+        val effectiveTextInputTargets = textInputTargets.filterForModal(modalFilter, PixelTextInputTarget::source)
+        /** Sliders outside the active modal cannot retain direct-manipulation ownership. */
+        val effectiveSliderTargets = sliderTargets.filterForModal(modalFilter, PixelSliderTarget::source)
+        /** Private modal markers select the scope but are never exposed to clients or Android. */
+        val effectiveSemanticsTargets = semanticsTargets
+            .filterNot { target -> target.source is RenderModalInteractionScope }
+            .filterForModal(modalFilter, PixelSemanticsTarget::source)
+            .repairParentsAfterModalFiltering()
         return PixelRenderResult(
             buffer = buffer,
-            clickTargets = clickTargets,
-            pagerTargets = pagerTargets,
-            listTargets = listTargets,
-            scrollbarTargets = scrollbarTargets,
-            refreshTargets = refreshTargets,
-            textInputTargets = textInputTargets,
-            sliderTargets = sliderTargets,
-            semanticsNodes = semanticsTargets.map(PixelSemanticsTarget::node),
-            semanticsTargets = semanticsTargets,
+            clickTargets = effectiveClickTargets,
+            pagerTargets = effectivePagerTargets,
+            listTargets = effectiveListTargets,
+            scrollbarTargets = effectiveScrollbarTargets,
+            refreshTargets = effectiveRefreshTargets,
+            textInputTargets = effectiveTextInputTargets,
+            sliderTargets = effectiveSliderTargets,
+            semanticsNodes = effectiveSemanticsTargets.map(PixelSemanticsTarget::node),
+            semanticsTargets = effectiveSemanticsTargets,
         )
+    }
+}
+
+/** Keeps every target without a modal, otherwise only the modal and higher hosted routes. */
+private fun <T> Iterable<T>.filterForModal(
+    modalFilter: ActiveModalFilter?,
+    source: (T) -> RenderObject?,
+): List<T> {
+    if (modalFilter == null) return toList()
+    return filter { target -> sourceAllowedByModal(source(target), modalFilter) }
+}
+
+/** Removes parent references to semantic nodes excluded by the selected modal scope. */
+private fun List<PixelSemanticsTarget>.repairParentsAfterModalFiltering(): List<PixelSemanticsTarget> {
+    val retainedIds = mapTo(mutableSetOf()) { target -> target.node.id }
+    return map { target ->
+        val parentId = target.node.parentId
+        if (parentId == null || parentId in retainedIds) {
+            target
+        } else {
+            target.copy(node = target.node.copy(parentId = null))
+        }
     }
 }

@@ -1,0 +1,1238 @@
+// Signature format: 4.0
+package com.purride.pixelui {
+
+  public final class NavigationControlsKt {
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<? super java.lang.String,kotlin.Unit> onSelected, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSelected, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationBarWithController(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<? super java.lang.String,kotlin.Unit> onSelected, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSelected, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationRailWithController(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+  }
+
+  public final class PixelNavigationDestination {
+    ctor public PixelNavigationDestination(String id, String label, com.purride.pixelui.PixelIconData icon, optional com.purride.pixelui.PixelIconData? selectedIcon, optional boolean enabled);
+    method public String component1();
+    method public String component2();
+    method public com.purride.pixelui.PixelIconData component3();
+    method public com.purride.pixelui.PixelIconData? component4();
+    method public boolean component5();
+    method public com.purride.pixelui.PixelNavigationDestination copy(optional String id, optional String label, optional com.purride.pixelui.PixelIconData icon, optional com.purride.pixelui.PixelIconData? selectedIcon, optional boolean enabled);
+    method @InaccessibleFromKotlin public boolean getEnabled();
+    method @InaccessibleFromKotlin public com.purride.pixelui.PixelIconData getIcon();
+    method @InaccessibleFromKotlin public String getId();
+    method @InaccessibleFromKotlin public String getLabel();
+    method @InaccessibleFromKotlin public com.purride.pixelui.PixelIconData? getSelectedIcon();
+    property public boolean enabled;
+    property public com.purride.pixelui.PixelIconData icon;
+    property public String id;
+    property public String label;
+    property public com.purride.pixelui.PixelIconData? selectedIcon;
+  }
+
+  public final class PixelNavigatorAliasesKt {
+    method public static com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult? getPixelMultiStackSnapshot(android.os.Bundle, optional String key);
+    method public static byte[]? getPixelNavigatorPersistentSnapshotBytes(android.os.Bundle, optional String key);
+    method public static com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController, String stackId, String uri, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver resolver, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode, optional boolean selectStackOnSuccess);
+    method public static com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.widgets.navigation.PixelNavigatorState, com.purride.pixelui.widgets.navigation.PixelDeepLink link, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver resolver, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode);
+    method public static com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.widgets.navigation.PixelNavigatorState, String uri, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver resolver, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode);
+    method public static com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult persistentSnapshot(com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController, java.util.Map<java.lang.String,com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry> registries, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public static <A, R> com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> pixelRouteDestination(String id, optional boolean maintainState, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition? transition, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,java.lang.Boolean> canPop, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,kotlin.Unit> onEnter, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,kotlin.Unit> onExit, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,kotlin.Unit> onDispose, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext,? super com.purride.pixelui.widgets.navigation.PixelRouteEntryScope<A,R>,? extends com.purride.pixelui.Widget> builder);
+    method public static com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult restorePersistentSnapshot(com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController, com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot, java.util.Map<java.lang.String,com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry> registries, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public static void saveToBundle(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot, android.os.Bundle outState, optional String key);
+    method public static void saveToBundle(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult.Encoded, android.os.Bundle outState, optional String key);
+    property public static String PixelMultiStackSnapshotBundleKey;
+    property public static int PixelMultiStackSnapshotSchemaVersion;
+    property public static String PixelNavigatorPersistentSnapshotBundleKey;
+    property public static int PixelNavigatorPersistentSnapshotSchemaVersion;
+    field public static final String PixelMultiStackSnapshotBundleKey = "com.purride.pixelui.navigator.multiStackSnapshot";
+    field public static final int PixelMultiStackSnapshotSchemaVersion = 1; // 0x1
+    field public static final String PixelNavigatorPersistentSnapshotBundleKey = "com.purride.pixelui.navigator.persistentSnapshot";
+    field public static final int PixelNavigatorPersistentSnapshotSchemaVersion = 2; // 0x2
+  }
+
+  public typealias PixelDeepLink = com.purride.pixelui.widgets.navigation.PixelDeepLink;
+
+  public typealias PixelDeepLinkArgumentDecoder<A> = com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentDecoder<A>;
+
+  public typealias PixelDeepLinkArgumentFailure = com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure;
+
+  public typealias PixelDeepLinkArgumentFailureReason = com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason;
+
+  public typealias PixelDeepLinkDecodeRejected = com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeRejected;
+
+  public typealias PixelDeepLinkDecodeResult<A> = com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeResult<A>;
+
+  public typealias PixelDeepLinkDecoded<A> = com.purride.pixelui.widgets.navigation.PixelDeepLinkDecoded<A>;
+
+  public typealias PixelDeepLinkResolver = com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver;
+
+  public typealias PixelMultiStackNavigator = com.purride.pixelui.widgets.navigation.PixelMultiStackNavigator;
+
+  public typealias PixelMultiStackNavigatorController = com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController;
+
+  public typealias PixelMultiStackRestoreRejected = com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult.Rejected;
+
+  public typealias PixelMultiStackRestoreResult = com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult;
+
+  public typealias PixelMultiStackRestored = com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult.Restored;
+
+  public typealias PixelMultiStackSnapshot = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot;
+
+  public typealias PixelMultiStackSnapshotDecodeRejected = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult.Rejected;
+
+  public typealias PixelMultiStackSnapshotDecodeResult = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult;
+
+  public typealias PixelMultiStackSnapshotDecoded = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult.Decoded;
+
+  public typealias PixelMultiStackSnapshotEncodeRejected = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult.Rejected;
+
+  public typealias PixelMultiStackSnapshotEncodeResult = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult;
+
+  public typealias PixelMultiStackSnapshotEncoded = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult.Encoded;
+
+  public typealias PixelMultiStackSnapshotFailure = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure;
+
+  public typealias PixelMultiStackSnapshotFailureReason = com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason;
+
+  public typealias PixelNavigationAction = com.purride.pixelui.widgets.navigation.PixelNavigationAction;
+
+  public typealias PixelNavigationEvent = com.purride.pixelui.widgets.navigation.PixelNavigationEvent;
+
+  public typealias PixelNavigationEventType = com.purride.pixelui.widgets.navigation.PixelNavigationEventType;
+
+  public typealias PixelNavigationFailure = com.purride.pixelui.widgets.navigation.PixelNavigationFailure;
+
+  public typealias PixelNavigationFailureReason = com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason;
+
+  public typealias PixelNavigationObserver = com.purride.pixelui.widgets.navigation.PixelNavigationObserver;
+
+  public typealias PixelNavigator = com.purride.pixelui.widgets.navigation.PixelNavigator;
+
+  public typealias PixelNavigatorInspectionSnapshot = com.purride.pixelui.widgets.navigation.PixelNavigatorInspectionSnapshot;
+
+  public typealias PixelNavigatorOperation = com.purride.pixelui.widgets.navigation.PixelNavigatorOperation;
+
+  public typealias PixelNavigatorRestorePlan = com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan;
+
+  public typealias PixelNavigatorRestoredEntryInspection = com.purride.pixelui.widgets.navigation.PixelNavigatorRestoredEntryInspection;
+
+  public typealias PixelNavigatorSnapshot = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot;
+
+  public typealias PixelNavigatorSnapshotCodec = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec;
+
+  public typealias PixelNavigatorSnapshotDecodeRejected = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult.Rejected;
+
+  public typealias PixelNavigatorSnapshotDecodeResult = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult;
+
+  public typealias PixelNavigatorSnapshotDecoded = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult.Decoded;
+
+  public typealias PixelNavigatorSnapshotEncodeRejected = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult.Rejected;
+
+  public typealias PixelNavigatorSnapshotEncodeResult = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult;
+
+  public typealias PixelNavigatorSnapshotEncoded = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult.Encoded;
+
+  public typealias PixelNavigatorSnapshotFailure = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure;
+
+  public typealias PixelNavigatorSnapshotFailureReason = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason;
+
+  public typealias PixelNavigatorStack = com.purride.pixelui.widgets.navigation.PixelNavigatorStack;
+
+  public typealias PixelNavigatorStackDefinition = com.purride.pixelui.widgets.navigation.PixelNavigatorStackDefinition;
+
+  public typealias PixelNavigatorState = com.purride.pixelui.widgets.navigation.PixelNavigatorState;
+
+  public typealias PixelNestedNavigator = com.purride.pixelui.widgets.navigation.PixelNestedNavigator;
+
+  public typealias PixelNestedNavigatorController = com.purride.pixelui.widgets.navigation.PixelNestedNavigatorController;
+
+  public typealias PixelRoute = com.purride.pixelui.widgets.navigation.PixelRoute;
+
+  public typealias PixelRouteCancellationReason = com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason;
+
+  public typealias PixelRouteCancelled = com.purride.pixelui.widgets.navigation.PixelRouteOutcome.Cancelled;
+
+  public typealias PixelRouteDestination<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R>;
+
+  public typealias PixelRouteEntry<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>;
+
+  public typealias PixelRouteEntryId = com.purride.pixelui.widgets.navigation.PixelRouteEntryId;
+
+  public typealias PixelRouteEntryInspection = com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection;
+
+  public typealias PixelRouteEntryScope<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteEntryScope<A,R>;
+
+  public typealias PixelRouteLifecycleState = com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState;
+
+  public typealias PixelRouteOutcome<R> = com.purride.pixelui.widgets.navigation.PixelRouteOutcome<R>;
+
+  public typealias PixelRoutePayloadCodec<T> = com.purride.pixelui.widgets.navigation.PixelRoutePayloadCodec<T>;
+
+  public typealias PixelRoutePayloadDecodeResult<T> = com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult<T>;
+
+  public typealias PixelRoutePayloadDecoded<T> = com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult.Decoded<T>;
+
+  public typealias PixelRoutePayloadRejected = com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult.Rejected;
+
+  public typealias PixelRouteRequest<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R>;
+
+  public typealias PixelRouteResultChannel<R> = com.purride.pixelui.widgets.navigation.PixelRouteResultChannel<R>;
+
+  public typealias PixelRouteResultState = com.purride.pixelui.widgets.navigation.PixelRouteResultState;
+
+  public typealias PixelRouteScrollRestoration = com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration;
+
+  public typealias PixelRouteSnapshotAdapter<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteSnapshotAdapter<A,R>;
+
+  public typealias PixelRouteSnapshotRegistry = com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry;
+
+  public typealias PixelRouteStateBucket = com.purride.pixelui.widgets.navigation.PixelRouteStateBucket;
+
+  public typealias PixelRouteStateDecodeResult = com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult;
+
+  public typealias PixelRouteStateDecoded = com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult.Decoded;
+
+  public typealias PixelRouteStateKey<T> = com.purride.pixelui.widgets.navigation.PixelRouteStateKey<T>;
+
+  public typealias PixelRouteStateRejected = com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult.Rejected;
+
+  public typealias PixelRouteStateRestorer = com.purride.pixelui.widgets.navigation.PixelRouteStateRestorer;
+
+  public typealias PixelRouteSuccess<R> = com.purride.pixelui.widgets.navigation.PixelRouteOutcome.Success<R>;
+
+  public typealias PixelRouteTransition = com.purride.pixelui.widgets.navigation.PixelRouteTransition;
+
+  public typealias PixelRouteTransitionBuilder = com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder;
+
+  public typealias PixelRouteTransitionInspection = com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection;
+
+  public typealias PixelStackSelectionResult = com.purride.pixelui.widgets.navigation.PixelStackSelectionResult;
+
+  public typealias PixelTypedDeepLinkMatcher = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkMatcher;
+
+  public typealias PixelTypedDeepLinkNavigated = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigated;
+
+  public typealias PixelTypedDeepLinkNavigationMode = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode;
+
+  public typealias PixelTypedDeepLinkNotMatched = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNotMatched;
+
+  public typealias PixelTypedDeepLinkRejected = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejected;
+
+  public typealias PixelTypedDeepLinkRejectionReason = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason;
+
+  public typealias PixelTypedDeepLinkResolver = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver;
+
+  public typealias PixelTypedDeepLinkResult = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult;
+
+  public typealias PixelTypedDeepLinkRoute<A, R> = com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRoute<A,R>;
+
+  public typealias PixelTypedNavigatorStack<A, R> = com.purride.pixelui.widgets.navigation.PixelTypedNavigatorStack<A,R>;
+
+}
+
+package com.purride.pixelui.widgets.navigation {
+
+  public final class PixelDeepLink {
+    ctor public PixelDeepLink(String rawUri, String? scheme, String? host, java.util.List<java.lang.String> pathSegments, java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> queryParameters, String? fragment);
+    method public String component1();
+    method public String? component2();
+    method public String? component3();
+    method public java.util.List<java.lang.String> component4();
+    method public java.util.Map<java.lang.String,java.util.List<java.lang.String>> component5();
+    method public String? component6();
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLink copy(optional String rawUri, optional String? scheme, optional String? host, optional java.util.List<java.lang.String> pathSegments, optional java.util.Map<java.lang.String,? extends java.util.List<java.lang.String>> queryParameters, optional String? fragment);
+    method @InaccessibleFromKotlin public String? getFragment();
+    method @InaccessibleFromKotlin public String? getHost();
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getPathSegments();
+    method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.util.List<java.lang.String>> getQueryParameters();
+    method @InaccessibleFromKotlin public String getRawUri();
+    method @InaccessibleFromKotlin public String? getScheme();
+    method public String? queryParameter(String name);
+    property public String? fragment;
+    property public String? host;
+    property public java.util.List<java.lang.String> pathSegments;
+    property public java.util.Map<java.lang.String,java.util.List<java.lang.String>> queryParameters;
+    property public String rawUri;
+    property public String? scheme;
+    field public static final com.purride.pixelui.widgets.navigation.PixelDeepLink.Companion Companion;
+  }
+
+  public static final class PixelDeepLink.Companion {
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLink parse(String uri);
+  }
+
+  public fun interface PixelDeepLinkArgumentDecoder<A> {
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeResult<A> decode(com.purride.pixelui.widgets.navigation.PixelDeepLink link);
+  }
+
+  public final class PixelDeepLinkArgumentFailure {
+    ctor public PixelDeepLinkArgumentFailure(com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason reason, String parameterName, optional String? rawValue, String message);
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason component1();
+    method public String component2();
+    method public String? component3();
+    method public String component4();
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure copy(optional com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason reason, optional String parameterName, optional String? rawValue, optional String message);
+    method @InaccessibleFromKotlin public String getMessage();
+    method @InaccessibleFromKotlin public String getParameterName();
+    method @InaccessibleFromKotlin public String? getRawValue();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason getReason();
+    property public String message;
+    property public String parameterName;
+    property public String? rawValue;
+    property public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason reason;
+  }
+
+  public enum PixelDeepLinkArgumentFailureReason {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason Invalid;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailureReason Missing;
+  }
+
+  public final class PixelDeepLinkDecodeRejected implements com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeResult {
+    ctor public PixelDeepLinkDecodeRejected(com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure failure);
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure component1();
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeRejected copy(optional com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure getFailure();
+    property public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure failure;
+  }
+
+  public sealed exhaustive interface PixelDeepLinkDecodeResult<A> {
+  }
+
+  public final class PixelDeepLinkDecoded<A> implements com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeResult<A> {
+    ctor public PixelDeepLinkDecoded(A arguments);
+    method public A component1();
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkDecoded<A> copy(optional A arguments);
+    method @InaccessibleFromKotlin public A getArguments();
+    property public A arguments;
+  }
+
+  public fun interface PixelDeepLinkResolver {
+    method public java.util.List<com.purride.pixelui.widgets.navigation.PixelRoute>? resolve(com.purride.pixelui.widgets.navigation.PixelDeepLink link);
+  }
+
+  public final class PixelMultiStackNavigator extends com.purride.pixelui.StatefulWidget {
+    ctor @KotlinOnly public PixelMultiStackNavigator(java.util.List<com.purride.pixelui.widgets.navigation.PixelNavigatorStackDefinition> stacks, com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController controller, com.purride.pixelui.animation.PixelTickerProvider vsync, optional kotlin.time.Duration transitionDuration, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder, optional boolean backEnabled, optional com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? parentEntry, optional Object? key);
+    method public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
+    method @InaccessibleFromKotlin public boolean getBackEnabled();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController getController();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransition getDefaultTransition();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? getParentEntry();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelui.widgets.navigation.PixelNavigatorStackDefinition> getStacks();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? getTransitionBuilder();
+    method @InaccessibleFromKotlin public com.purride.pixelui.animation.PixelTickerProvider getVsync();
+    property public boolean backEnabled;
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController controller;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition;
+    property public Object? key;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? parentEntry;
+    property public java.util.List<com.purride.pixelui.widgets.navigation.PixelNavigatorStackDefinition> stacks;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder;
+    property public kotlin.time.Duration transitionDuration;
+    property public com.purride.pixelui.animation.PixelTickerProvider vsync;
+  }
+
+  public final class PixelMultiStackNavigatorController extends com.purride.pixelui.ChangeNotifier implements com.purride.pixelui.PixelPredictiveBackCallback {
+    ctor public PixelMultiStackNavigatorController(String initialStackId);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorState? getActiveNavigatorState();
+    method @InaccessibleFromKotlin public String getActiveStackId();
+    method @InaccessibleFromKotlin public boolean getCanHandleBack();
+    method @InaccessibleFromKotlin public String getInitialStackId();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getStackIds();
+    method public boolean handleBack(optional boolean switchToInitialStack);
+    method @InaccessibleFromKotlin public boolean isAttached();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorState? navigatorState(String stackId);
+    method public void onBackCancelled();
+    method public boolean onBackCommitted();
+    method public void onBackProgressed(com.purride.pixelui.PixelPredictiveBackEvent event);
+    method public boolean onBackStarted(com.purride.pixelui.PixelPredictiveBackEvent event);
+    method public com.purride.pixelui.widgets.navigation.PixelStackSelectionResult selectStack(String stackId, optional boolean popToRootOnReselect, optional boolean animated);
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorState? activeNavigatorState;
+    property public String activeStackId;
+    property public boolean canHandleBack;
+    property public String initialStackId;
+    property public boolean isAttached;
+    property public java.util.Set<java.lang.String> stackIds;
+  }
+
+  public sealed exhaustive interface PixelMultiStackRestoreResult {
+  }
+
+  public static final class PixelMultiStackRestoreResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult {
+    ctor public PixelMultiStackRestoreResult.Rejected(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure);
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure component1();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult.Rejected copy(optional com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure getFailure();
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure;
+  }
+
+  public static final class PixelMultiStackRestoreResult.Restored implements com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult {
+    ctor public PixelMultiStackRestoreResult.Restored(String activeStackId, java.util.Set<java.lang.String> stackIds);
+    method public String component1();
+    method public java.util.Set<java.lang.String> component2();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult.Restored copy(optional String activeStackId, optional java.util.Set<java.lang.String> stackIds);
+    method @InaccessibleFromKotlin public String getActiveStackId();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getStackIds();
+    property public String activeStackId;
+    property public java.util.Set<java.lang.String> stackIds;
+  }
+
+  public final class PixelMultiStackSnapshot {
+    method @InaccessibleFromKotlin public String getActiveStackId();
+    method @InaccessibleFromKotlin public int getSchemaVersion();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getStackIds();
+    method public byte[]? snapshotBytes(String stackId);
+    property public String activeStackId;
+    property public int schemaVersion;
+    property public java.util.Set<java.lang.String> stackIds;
+  }
+
+  public sealed exhaustive interface PixelMultiStackSnapshotDecodeResult {
+  }
+
+  public static final class PixelMultiStackSnapshotDecodeResult.Decoded implements com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult {
+    ctor public PixelMultiStackSnapshotDecodeResult.Decoded(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot);
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot component1();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult.Decoded copy(optional com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot getSnapshot();
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot;
+  }
+
+  public static final class PixelMultiStackSnapshotDecodeResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult {
+    ctor public PixelMultiStackSnapshotDecodeResult.Rejected(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure);
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure component1();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult.Rejected copy(optional com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure getFailure();
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure;
+  }
+
+  public sealed exhaustive interface PixelMultiStackSnapshotEncodeResult {
+  }
+
+  public static final class PixelMultiStackSnapshotEncodeResult.Encoded implements com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult {
+    ctor public PixelMultiStackSnapshotEncodeResult.Encoded(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot);
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot component1();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult.Encoded copy(optional com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot getSnapshot();
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot;
+  }
+
+  public static final class PixelMultiStackSnapshotEncodeResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult {
+    ctor public PixelMultiStackSnapshotEncodeResult.Rejected(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure);
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure component1();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult.Rejected copy(optional com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure getFailure();
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure failure;
+  }
+
+  public final class PixelMultiStackSnapshotFailure {
+    ctor public PixelMultiStackSnapshotFailure(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason reason, String message, optional String? stackId, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure? childFailure);
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason component1();
+    method public String component2();
+    method public String? component3();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure? component4();
+    method public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailure copy(optional com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason reason, optional String message, optional String? stackId, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure? childFailure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure? getChildFailure();
+    method @InaccessibleFromKotlin public String getMessage();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason getReason();
+    method @InaccessibleFromKotlin public String? getStackId();
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure? childFailure;
+    property public String message;
+    property public com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason reason;
+    property public String? stackId;
+  }
+
+  public enum PixelMultiStackSnapshotFailureReason {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason ChildSnapshotRejected;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason InvalidEnvelope;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason LimitExceeded;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason MissingRegistry;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason NotAttached;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason RestoreRejected;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason StackMismatch;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotFailureReason UnsupportedSchema;
+  }
+
+  public final class PixelMultiStackSnapshotKt {
+    method public static com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotDecodeResult? getPixelMultiStackSnapshot(android.os.Bundle, optional String key);
+    method public static com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshotEncodeResult persistentSnapshot(com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController, java.util.Map<java.lang.String,com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry> registries, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public static com.purride.pixelui.widgets.navigation.PixelMultiStackRestoreResult restorePersistentSnapshot(com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController, com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot snapshot, java.util.Map<java.lang.String,com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry> registries, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public static void saveToBundle(com.purride.pixelui.widgets.navigation.PixelMultiStackSnapshot, android.os.Bundle outState, optional String key);
+    property public static String PixelMultiStackSnapshotBundleKey;
+    property public static int PixelMultiStackSnapshotSchemaVersion;
+    field public static final String PixelMultiStackSnapshotBundleKey = "com.purride.pixelui.navigator.multiStackSnapshot";
+    field public static final int PixelMultiStackSnapshotSchemaVersion = 1; // 0x1
+  }
+
+  public enum PixelNavigationAction {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Cancel;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Clear;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction DeepLink;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Dispose;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Pop;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Push;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Remove;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Replace;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Restore;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationAction Result;
+  }
+
+  public final class PixelNavigationEvent {
+    ctor public PixelNavigationEvent(long sequence, com.purride.pixelui.widgets.navigation.PixelNavigationAction action, com.purride.pixelui.widgets.navigation.PixelNavigationEventType type, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? entryId, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? fromEntryId, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? toEntryId, optional com.purride.pixelui.widgets.navigation.PixelNavigationFailure? failure);
+    method public long component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationAction component2();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationEventType component3();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? component4();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? component5();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? component6();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? component7();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationEvent copy(optional long sequence, optional com.purride.pixelui.widgets.navigation.PixelNavigationAction action, optional com.purride.pixelui.widgets.navigation.PixelNavigationEventType type, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? entryId, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? fromEntryId, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? toEntryId, optional com.purride.pixelui.widgets.navigation.PixelNavigationFailure? failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationAction getAction();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? getEntryId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? getFailure();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? getFromEntryId();
+    method @InaccessibleFromKotlin public long getSequence();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? getToEntryId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationEventType getType();
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationAction action;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? entryId;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? failure;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? fromEntryId;
+    property public long sequence;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? toEntryId;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationEventType type;
+  }
+
+  public enum PixelNavigationEventType {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationEventType Completed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationEventType Failed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationEventType Started;
+  }
+
+  public final class PixelNavigationFailure {
+    ctor public PixelNavigationFailure(com.purride.pixelui.widgets.navigation.PixelNavigationAction action, com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason reason, String message, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? entryId, optional String? destinationId);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationAction component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason component2();
+    method public String component3();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? component4();
+    method public String? component5();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationFailure copy(optional com.purride.pixelui.widgets.navigation.PixelNavigationAction action, optional com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason reason, optional String message, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? entryId, optional String? destinationId);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationAction getAction();
+    method @InaccessibleFromKotlin public String? getDestinationId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? getEntryId();
+    method @InaccessibleFromKotlin public String getMessage();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason getReason();
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationAction action;
+    property public String? destinationId;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? entryId;
+    property public String message;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason reason;
+  }
+
+  public enum PixelNavigationFailureReason {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason CannotPopRoot;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason EntryNotActive;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason EntryNotFound;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason InvalidStack;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason LifecycleCallbackFailed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason NavigatorDisposed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason ObserverCallbackFailed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason PopRejected;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason ResultAlreadyResolved;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason ResultCallbackFailed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason UnknownDestination;
+  }
+
+  public fun interface PixelNavigationObserver {
+    method public void onNavigationEvent(com.purride.pixelui.widgets.navigation.PixelNavigationEvent event);
+  }
+
+  public final class PixelNavigator extends com.purride.pixelui.StatefulWidget {
+    ctor @KotlinOnly public PixelNavigator(com.purride.pixelui.widgets.navigation.PixelRoute initialRoute, com.purride.pixelui.animation.PixelTickerProvider vsync, optional kotlin.time.Duration transitionDuration, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition, optional Object? key, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder);
+    method public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransition getDefaultTransition();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRoute getInitialRoute();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? getTransitionBuilder();
+    method @InaccessibleFromKotlin public com.purride.pixelui.animation.PixelTickerProvider getVsync();
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition;
+    property public com.purride.pixelui.widgets.navigation.PixelRoute initialRoute;
+    property public Object? key;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder;
+    property public kotlin.time.Duration transitionDuration;
+    property public com.purride.pixelui.animation.PixelTickerProvider vsync;
+    field public static final com.purride.pixelui.widgets.navigation.PixelNavigator.Companion Companion;
+  }
+
+  public static final class PixelNavigator.Companion {
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorState? maybeOf(com.purride.pixelui.BuildContext context);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorState of(com.purride.pixelui.BuildContext context);
+    method @KotlinOnly public <A, R> com.purride.pixelui.widgets.navigation.PixelNavigator typed(com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> initialRequest, com.purride.pixelui.animation.PixelTickerProvider vsync, optional kotlin.time.Duration transitionDuration, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition, optional Object? key, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder);
+  }
+
+  public final class PixelNavigatorInspectionSnapshot {
+    ctor public PixelNavigatorInspectionSnapshot(java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection> entries, com.purride.pixelui.widgets.navigation.PixelRouteEntryId? currentEntryId, boolean canPop, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection? transition, optional com.purride.pixelui.widgets.navigation.PixelNavigationFailure? lastFailure, optional boolean isDisposed);
+    method public java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection> component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? component2();
+    method public boolean component3();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection? component4();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? component5();
+    method public boolean component6();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorInspectionSnapshot copy(optional java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection> entries, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId? currentEntryId, optional boolean canPop, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection? transition, optional com.purride.pixelui.widgets.navigation.PixelNavigationFailure? lastFailure, optional boolean isDisposed);
+    method @InaccessibleFromKotlin public boolean getCanPop();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? getCurrentEntryId();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection> getEntries();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? getLastFailure();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection? getTransition();
+    method @InaccessibleFromKotlin public boolean isDisposed();
+    property public boolean canPop;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId? currentEntryId;
+    property public java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection> entries;
+    property public boolean isDisposed;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? lastFailure;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection? transition;
+  }
+
+  public final class PixelNavigatorKt {
+    method public static com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot? getPixelNavigatorSnapshot(android.os.Bundle, optional String key);
+    method public static void saveToBundle(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot, android.os.Bundle outState, optional String key);
+    property public static String PixelNavigatorBundleKey;
+    field public static final String PixelNavigatorBundleKey = "com.purride.pixelui.navigator.routeNames";
+  }
+
+  public enum PixelNavigatorOperation {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorOperation Pop;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorOperation Push;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorOperation Replace;
+  }
+
+  public final class PixelNavigatorRestorePlan {
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId getCurrentEntryId();
+    method @InaccessibleFromKotlin public int getCurrentSchemaVersion();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelui.widgets.navigation.PixelNavigatorRestoredEntryInspection> getEntries();
+    method @InaccessibleFromKotlin public boolean getMigratedFromOlderSchema();
+    method @InaccessibleFromKotlin public int getSourceSchemaVersion();
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId currentEntryId;
+    property public int currentSchemaVersion;
+    property public java.util.List<com.purride.pixelui.widgets.navigation.PixelNavigatorRestoredEntryInspection> entries;
+    property public boolean migratedFromOlderSchema;
+    property public int sourceSchemaVersion;
+  }
+
+  public final class PixelNavigatorRestoredEntryInspection {
+    ctor public PixelNavigatorRestoredEntryInspection(com.purride.pixelui.widgets.navigation.PixelRouteEntryId id, String destinationId, int argumentSchemaVersion, int stateSchemaVersion, java.util.Set<java.lang.String> stateKeys);
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId component1();
+    method public String component2();
+    method public int component3();
+    method public int component4();
+    method public java.util.Set<java.lang.String> component5();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorRestoredEntryInspection copy(optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId id, optional String destinationId, optional int argumentSchemaVersion, optional int stateSchemaVersion, optional java.util.Set<java.lang.String> stateKeys);
+    method @InaccessibleFromKotlin public int getArgumentSchemaVersion();
+    method @InaccessibleFromKotlin public String getDestinationId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId getId();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getStateKeys();
+    method @InaccessibleFromKotlin public int getStateSchemaVersion();
+    property public int argumentSchemaVersion;
+    property public String destinationId;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId id;
+    property public java.util.Set<java.lang.String> stateKeys;
+    property public int stateSchemaVersion;
+  }
+
+  public final class PixelNavigatorSnapshot {
+    ctor public PixelNavigatorSnapshot(java.util.List<java.lang.String> routeNames);
+    method public java.util.List<java.lang.String> component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot copy(optional java.util.List<java.lang.String> routeNames);
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getRouteNames();
+    property public java.util.List<java.lang.String> routeNames;
+  }
+
+  public final class PixelNavigatorSnapshotCodec {
+    ctor public PixelNavigatorSnapshotCodec();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult decode(byte[] bytes, com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult encode(java.util.List<? extends com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>> entries, com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry);
+  }
+
+  public final class PixelNavigatorSnapshotCodecKt {
+    method public static byte[]? getPixelNavigatorPersistentSnapshotBytes(android.os.Bundle, optional String key);
+    method public static void saveToBundle(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult.Encoded, android.os.Bundle outState, optional String key);
+    property public static String PixelNavigatorPersistentSnapshotBundleKey;
+    property public static int PixelNavigatorPersistentSnapshotSchemaVersion;
+    field public static final String PixelNavigatorPersistentSnapshotBundleKey = "com.purride.pixelui.navigator.persistentSnapshot";
+    field public static final int PixelNavigatorPersistentSnapshotSchemaVersion = 2; // 0x2
+  }
+
+  public sealed exhaustive interface PixelNavigatorSnapshotDecodeResult {
+  }
+
+  public static final class PixelNavigatorSnapshotDecodeResult.Decoded implements com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult {
+    ctor public PixelNavigatorSnapshotDecodeResult.Decoded(com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan plan);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult.Decoded copy(optional com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan plan);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan getPlan();
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan plan;
+  }
+
+  public static final class PixelNavigatorSnapshotDecodeResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult {
+    ctor public PixelNavigatorSnapshotDecodeResult.Rejected(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure failure);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult.Rejected copy(optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure getFailure();
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure failure;
+  }
+
+  public sealed exhaustive interface PixelNavigatorSnapshotEncodeResult {
+  }
+
+  public static final class PixelNavigatorSnapshotEncodeResult.Encoded implements com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult {
+    method @InaccessibleFromKotlin public byte[] getBytes();
+    method @InaccessibleFromKotlin public int getEntryCount();
+    method @InaccessibleFromKotlin public int getSchemaVersion();
+    property public byte[] bytes;
+    property public int entryCount;
+    property public int schemaVersion;
+  }
+
+  public static final class PixelNavigatorSnapshotEncodeResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult {
+    ctor public PixelNavigatorSnapshotEncodeResult.Rejected(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure failure);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult.Rejected copy(optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure failure);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure getFailure();
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure failure;
+  }
+
+  public final class PixelNavigatorSnapshotFailure {
+    ctor public PixelNavigatorSnapshotFailure(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason reason, String message, optional Integer? entryIndex, optional String? destinationId);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason component1();
+    method public String component2();
+    method public Integer? component3();
+    method public String? component4();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailure copy(optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason reason, optional String message, optional Integer? entryIndex, optional String? destinationId);
+    method @InaccessibleFromKotlin public String? getDestinationId();
+    method @InaccessibleFromKotlin public Integer? getEntryIndex();
+    method @InaccessibleFromKotlin public String getMessage();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason getReason();
+    property public String? destinationId;
+    property public Integer? entryIndex;
+    property public String message;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason reason;
+  }
+
+  public enum PixelNavigatorSnapshotFailureReason {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason ArgumentPayloadRejected;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason CorruptData;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason EmptyStack;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason InvalidStack;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason LimitExceeded;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason RouteStateRejected;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason UnknownDestination;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotFailureReason UnsupportedSchema;
+  }
+
+  public final class PixelNavigatorStack implements com.purride.pixelui.widgets.navigation.PixelNavigatorStackDefinition {
+    ctor public PixelNavigatorStack(String id, com.purride.pixelui.widgets.navigation.PixelRoute initialRoute);
+    method public String component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRoute component2();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorStack copy(optional String id, optional com.purride.pixelui.widgets.navigation.PixelRoute initialRoute);
+    method @InaccessibleFromKotlin public String getId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRoute getInitialRoute();
+    property public String id;
+    property public com.purride.pixelui.widgets.navigation.PixelRoute initialRoute;
+  }
+
+  public sealed exhaustive interface PixelNavigatorStackDefinition {
+    method @InaccessibleFromKotlin public String getId();
+    property public abstract String id;
+  }
+
+  public final class PixelNavigatorState extends com.purride.pixelui.ChangeNotifier implements com.purride.pixelui.PixelPredictiveBackCallback {
+    method public void addObserver(com.purride.pixelui.widgets.navigation.PixelNavigationObserver observer);
+    method public boolean cancel(com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> entry, optional com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason reason, optional boolean animated);
+    method public boolean clear(optional boolean animated);
+    method public <R> boolean complete(com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,R> entry, R result);
+    method @InaccessibleFromKotlin public boolean getCanPop();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> getCurrentEntry();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRoute getCurrentRoute();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>> getEntries();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? getLastFailure();
+    method @InaccessibleFromKotlin public Float? getPredictiveBackProgress();
+    method @InaccessibleFromKotlin public java.util.List<com.purride.pixelui.widgets.navigation.PixelRoute> getStack();
+    method public boolean handleDeepLink(com.purride.pixelui.widgets.navigation.PixelDeepLink link, com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver resolver, optional boolean animated);
+    method public boolean handleDeepLink(String uri, com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver resolver, optional boolean animated);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorInspectionSnapshot inspectionSnapshot();
+    method public boolean maybePop();
+    method public boolean maybePop(Object? result);
+    method public void onBackCancelled();
+    method public boolean onBackCommitted();
+    method public void onBackProgressed(com.purride.pixelui.PixelPredictiveBackEvent event);
+    method public boolean onBackStarted(com.purride.pixelui.PixelPredictiveBackEvent event);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult persistentSnapshot(com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public boolean pop();
+    method public boolean pop(Object? result);
+    method public void popToRoot(optional boolean animated);
+    method public void push(com.purride.pixelui.widgets.navigation.PixelRoute route);
+    method public void push(com.purride.pixelui.widgets.navigation.PixelRoute route, kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> onResult);
+    method public <A, R> com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> push(com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> request);
+    method public <A, R> com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> push(com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> request, kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteOutcome<? extends R>,kotlin.Unit> onOutcome);
+    method public boolean remove(com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> entry, optional boolean animated);
+    method public boolean remove(com.purride.pixelui.widgets.navigation.PixelRouteEntryId entryId, optional boolean animated);
+    method public void removeObserver(com.purride.pixelui.widgets.navigation.PixelNavigationObserver observer);
+    method public void replace(com.purride.pixelui.widgets.navigation.PixelRoute route, optional boolean animated);
+    method public <A, R> com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> replace(com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> request, optional boolean animated);
+    method public <A, R> com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> replace(com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> request, kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteOutcome<? extends R>,kotlin.Unit> onOutcome, optional boolean animated);
+    method public boolean restore(com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan plan);
+    method public void restore(com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot snapshot, java.util.Map<java.lang.String,com.purride.pixelui.widgets.navigation.PixelRoute> routeRegistry);
+    method public boolean restoreFromBundle(android.os.Bundle? savedInstanceState, java.util.Map<java.lang.String,com.purride.pixelui.widgets.navigation.PixelRoute> routeRegistry, optional String key);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult restorePersistentSnapshot(byte[] bytes, com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult? restorePersistentSnapshotFromBundle(android.os.Bundle? savedInstanceState, com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec, optional String key);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult savePersistentSnapshotToBundle(android.os.Bundle outState, com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec, optional String key);
+    method public void saveToBundle(android.os.Bundle outState, optional String key);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot snapshot();
+    property public boolean canPop;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> currentEntry;
+    property public com.purride.pixelui.widgets.navigation.PixelRoute currentRoute;
+    property public java.util.List<com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>> entries;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigationFailure? lastFailure;
+    property public Float? predictiveBackProgress;
+    property public java.util.List<com.purride.pixelui.widgets.navigation.PixelRoute> stack;
+  }
+
+  public final class PixelNestedNavigator extends com.purride.pixelui.StatefulWidget {
+    ctor @KotlinOnly public PixelNestedNavigator(com.purride.pixelui.widgets.navigation.PixelRoute initialRoute, com.purride.pixelui.animation.PixelTickerProvider vsync, optional kotlin.time.Duration transitionDuration, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder, optional boolean backEnabled, optional com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? parentEntry, optional Object? key);
+    method public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
+    method @InaccessibleFromKotlin public boolean getBackEnabled();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransition getDefaultTransition();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRoute getInitialRoute();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? getParentEntry();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? getTransitionBuilder();
+    method @InaccessibleFromKotlin public com.purride.pixelui.animation.PixelTickerProvider getVsync();
+    property public boolean backEnabled;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition;
+    property public com.purride.pixelui.widgets.navigation.PixelRoute initialRoute;
+    property public Object? key;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? parentEntry;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder;
+    property public kotlin.time.Duration transitionDuration;
+    property public com.purride.pixelui.animation.PixelTickerProvider vsync;
+    field public static final com.purride.pixelui.widgets.navigation.PixelNestedNavigator.Companion Companion;
+  }
+
+  public static final class PixelNestedNavigator.Companion {
+    method @KotlinOnly public <A, R> com.purride.pixelui.widgets.navigation.PixelNestedNavigator typed(com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> initialRequest, com.purride.pixelui.widgets.navigation.PixelNestedNavigatorController controller, com.purride.pixelui.animation.PixelTickerProvider vsync, optional kotlin.time.Duration transitionDuration, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition defaultTransition, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder, optional boolean backEnabled, optional com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?>? parentEntry, optional Object? key);
+  }
+
+  public final class PixelNestedNavigatorController {
+    ctor public PixelNestedNavigatorController();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorState? getNavigatorState();
+    method @InaccessibleFromKotlin public boolean isAttached();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotEncodeResult persistentSnapshot(com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    method public boolean restore(com.purride.pixelui.widgets.navigation.PixelNavigatorRestorePlan plan);
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotDecodeResult restorePersistentSnapshot(byte[] bytes, com.purride.pixelui.widgets.navigation.PixelRouteSnapshotRegistry registry, optional com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshotCodec codec);
+    property public boolean isAttached;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorState? navigatorState;
+  }
+
+  public final class PixelRoute {
+    ctor public PixelRoute(String name, kotlin.jvm.functions.Function1<? super com.purride.pixelui.BuildContext,? extends com.purride.pixelui.Widget> builder, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition? transition, optional kotlin.jvm.functions.Function0<java.lang.Boolean>? canPop, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onEnter, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onExit, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDispose, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder);
+    method public String component1();
+    method public kotlin.jvm.functions.Function1<com.purride.pixelui.BuildContext,com.purride.pixelui.Widget> component2();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteTransition? component3();
+    method public kotlin.jvm.functions.Function0<java.lang.Boolean>? component4();
+    method public kotlin.jvm.functions.Function0<kotlin.Unit>? component5();
+    method public kotlin.jvm.functions.Function0<kotlin.Unit>? component6();
+    method public kotlin.jvm.functions.Function0<kotlin.Unit>? component7();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? component8();
+    method public com.purride.pixelui.widgets.navigation.PixelRoute copy(optional String name, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.BuildContext,? extends com.purride.pixelui.Widget> builder, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition? transition, optional kotlin.jvm.functions.Function0<java.lang.Boolean>? canPop, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onEnter, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onExit, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDispose, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder);
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<com.purride.pixelui.BuildContext,com.purride.pixelui.Widget> getBuilder();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<java.lang.Boolean>? getCanPop();
+    method @InaccessibleFromKotlin public String getName();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<kotlin.Unit>? getOnDispose();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<kotlin.Unit>? getOnEnter();
+    method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<kotlin.Unit>? getOnExit();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransition? getTransition();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? getTransitionBuilder();
+    property public kotlin.jvm.functions.Function1<com.purride.pixelui.BuildContext,com.purride.pixelui.Widget> builder;
+    property public kotlin.jvm.functions.Function0<java.lang.Boolean>? canPop;
+    property public String name;
+    property public kotlin.jvm.functions.Function0<kotlin.Unit>? onDispose;
+    property public kotlin.jvm.functions.Function0<kotlin.Unit>? onEnter;
+    property public kotlin.jvm.functions.Function0<kotlin.Unit>? onExit;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransition? transition;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder;
+  }
+
+  public enum PixelRouteCancellationReason {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason Back;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason Cleared;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason Explicit;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason NavigatorDisposed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason Removed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason Replaced;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason StackReset;
+  }
+
+  public abstract class PixelRouteDestination<A, R> {
+    ctor public PixelRouteDestination(String id);
+    method public abstract com.purride.pixelui.Widget build(com.purride.pixelui.BuildContext context, com.purride.pixelui.widgets.navigation.PixelRouteEntryScope<A,R> scope);
+    method public boolean canPop(com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> entry);
+    method @InaccessibleFromKotlin public final String getId();
+    method @InaccessibleFromKotlin public boolean getMaintainState();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransition? getTransition();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? getTransitionBuilder();
+    method public void onDispose(com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> entry);
+    method public void onEnter(com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> entry);
+    method public void onExit(com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> entry);
+    property public final String id;
+    property public boolean maintainState;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransition? transition;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder;
+  }
+
+  public final class PixelRouteEntry<A, R> {
+    method @InaccessibleFromKotlin public A getArguments();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> getDestination();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId getId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState getLifecycleState();
+    method @InaccessibleFromKotlin public boolean getMaintainState();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteResultChannel<R> getResultChannel();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteStateBucket getStateBucket();
+    property public A arguments;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId id;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState lifecycleState;
+    property public boolean maintainState;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteResultChannel<R> resultChannel;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteStateBucket stateBucket;
+  }
+
+  public final class PixelRouteEntryId {
+    ctor public PixelRouteEntryId(long value);
+    method public long component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId copy(optional long value);
+    method @InaccessibleFromKotlin public long getValue();
+    property public long value;
+  }
+
+  public final class PixelRouteEntryInspection {
+    ctor public PixelRouteEntryInspection(com.purride.pixelui.widgets.navigation.PixelRouteEntryId id, String destinationId, com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState lifecycleState, com.purride.pixelui.widgets.navigation.PixelRouteResultState resultState, boolean maintainState, java.util.Set<java.lang.String> stateKeyNames);
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId component1();
+    method public String component2();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState component3();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteResultState component4();
+    method public boolean component5();
+    method public java.util.Set<java.lang.String> component6();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection copy(optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId id, optional String destinationId, optional com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState lifecycleState, optional com.purride.pixelui.widgets.navigation.PixelRouteResultState resultState, optional boolean maintainState, optional java.util.Set<java.lang.String> stateKeyNames);
+    method @InaccessibleFromKotlin public String getDestinationId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId getId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState getLifecycleState();
+    method @InaccessibleFromKotlin public boolean getMaintainState();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteResultState getResultState();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getStateKeyNames();
+    property public String destinationId;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId id;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState lifecycleState;
+    property public boolean maintainState;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteResultState resultState;
+    property public java.util.Set<java.lang.String> stateKeyNames;
+  }
+
+  public final class PixelRouteEntryKt {
+    method public static <A, R> com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> pixelRouteDestination(String id, optional boolean maintainState, optional com.purride.pixelui.widgets.navigation.PixelRouteTransition? transition, optional com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder? transitionBuilder, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,java.lang.Boolean> canPop, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,kotlin.Unit> onEnter, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,kotlin.Unit> onExit, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R>,kotlin.Unit> onDispose, kotlin.jvm.functions.Function2<? super com.purride.pixelui.BuildContext,? super com.purride.pixelui.widgets.navigation.PixelRouteEntryScope<A,R>,? extends com.purride.pixelui.Widget> builder);
+  }
+
+  public final class PixelRouteEntryScope<A, R> {
+    method public boolean cancel(optional com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason reason);
+    method public boolean complete(R result);
+    method @InaccessibleFromKotlin public A getArguments();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> getEntry();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteStateBucket getStateBucket();
+    method public <NextA> com.purride.pixelui.widgets.navigation.PixelRouteEntry<NextA,R>? replaceWith(com.purride.pixelui.widgets.navigation.PixelRouteRequest<NextA,R> request, optional kotlin.jvm.functions.Function1<? super com.purride.pixelui.widgets.navigation.PixelRouteOutcome<? extends R>,kotlin.Unit>? onOutcome);
+    property public A arguments;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> entry;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteStateBucket stateBucket;
+  }
+
+  public enum PixelRouteLifecycleState {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState Active;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState Created;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState Disposed;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState Inactive;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState Removing;
+  }
+
+  public sealed exhaustive interface PixelRouteOutcome<R> {
+  }
+
+  public static final class PixelRouteOutcome.Cancelled implements com.purride.pixelui.widgets.navigation.PixelRouteOutcome {
+    ctor public PixelRouteOutcome.Cancelled(com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason reason);
+    method public com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteOutcome.Cancelled copy(optional com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason reason);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason getReason();
+    property public com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason reason;
+  }
+
+  public static final class PixelRouteOutcome.Success<R> implements com.purride.pixelui.widgets.navigation.PixelRouteOutcome<R> {
+    ctor public PixelRouteOutcome.Success(R value);
+    method public R component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteOutcome.Success<R> copy(optional R value);
+    method @InaccessibleFromKotlin public R getValue();
+    property public R value;
+  }
+
+  public interface PixelRoutePayloadCodec<T> {
+    method public com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult<T> decode(int schemaVersion, byte[] payload);
+    method public byte[] encode(T value);
+    method @InaccessibleFromKotlin public int getSchemaVersion();
+    property public abstract int schemaVersion;
+  }
+
+  public sealed exhaustive interface PixelRoutePayloadDecodeResult<T> {
+  }
+
+  public static final class PixelRoutePayloadDecodeResult.Decoded<T> implements com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult<T> {
+    ctor public PixelRoutePayloadDecodeResult.Decoded(T value);
+    method public T component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult.Decoded<T> copy(optional T value);
+    method @InaccessibleFromKotlin public T getValue();
+    property public T value;
+  }
+
+  public static final class PixelRoutePayloadDecodeResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult {
+    ctor public PixelRoutePayloadDecodeResult.Rejected(String message);
+    method public String component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRoutePayloadDecodeResult.Rejected copy(optional String message);
+    method @InaccessibleFromKotlin public String getMessage();
+    property public String message;
+  }
+
+  public final class PixelRouteRequest<A, R> {
+    ctor public PixelRouteRequest(com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination, A arguments);
+    method public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> component1();
+    method public A component2();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> copy(optional com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination, optional A arguments);
+    method @InaccessibleFromKotlin public A getArguments();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> getDestination();
+    property public A arguments;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination;
+  }
+
+  public final class PixelRouteResultChannel<R> {
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteOutcome<R>? getOutcome();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteResultState getState();
+    property public com.purride.pixelui.widgets.navigation.PixelRouteOutcome<R>? outcome;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteResultState state;
+  }
+
+  public enum PixelRouteResultState {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteResultState Cancelled;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteResultState Pending;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteResultState Succeeded;
+  }
+
+  public final class PixelRouteScrollRestoration extends com.purride.pixelui.StatefulWidget {
+    ctor public PixelRouteScrollRestoration(String restorationId, com.purride.pixelui.state.PixelListState state, com.purride.pixelui.state.PixelListController controller, com.purride.pixelui.Widget child, optional com.purride.pixelui.state.PixelListRestorationPolicy policy, optional Object? key);
+    method public com.purride.pixelui.State<? extends com.purride.pixelui.StatefulWidget> createState();
+    method @InaccessibleFromKotlin public com.purride.pixelui.Widget getChild();
+    method @InaccessibleFromKotlin public com.purride.pixelui.state.PixelListController getController();
+    method @InaccessibleFromKotlin public com.purride.pixelui.state.PixelListRestorationPolicy getPolicy();
+    method @InaccessibleFromKotlin public String getRestorationId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.state.PixelListState getState();
+    property public com.purride.pixelui.Widget child;
+    property public com.purride.pixelui.state.PixelListController controller;
+    property public Object? key;
+    property public com.purride.pixelui.state.PixelListRestorationPolicy policy;
+    property public String restorationId;
+    property public com.purride.pixelui.state.PixelListState state;
+  }
+
+  public abstract class PixelRouteSnapshotAdapter<A, R> {
+    ctor public PixelRouteSnapshotAdapter(com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination, com.purride.pixelui.widgets.navigation.PixelRoutePayloadCodec<A> argumentCodec);
+    method public com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult decodeRouteState(int schemaVersion, java.util.Map<java.lang.String,byte[]> payloads);
+    method public java.util.Map<java.lang.String,byte[]> encodeRouteState(com.purride.pixelui.widgets.navigation.PixelRouteEntry<A,R> entry);
+    method @InaccessibleFromKotlin public final com.purride.pixelui.widgets.navigation.PixelRoutePayloadCodec<A> getArgumentCodec();
+    method @InaccessibleFromKotlin public final com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> getDestination();
+    method @InaccessibleFromKotlin public int getStateSchemaVersion();
+    property public final com.purride.pixelui.widgets.navigation.PixelRoutePayloadCodec<A> argumentCodec;
+    property public final com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination;
+    property public int stateSchemaVersion;
+  }
+
+  public final class PixelRouteSnapshotRegistry {
+    ctor public PixelRouteSnapshotRegistry(Iterable<? extends com.purride.pixelui.widgets.navigation.PixelRouteSnapshotAdapter<? extends java.lang.Object?,? extends java.lang.Object?>> adapters);
+    method public boolean contains(String destinationId);
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getDestinationIds();
+    property public java.util.Set<java.lang.String> destinationIds;
+  }
+
+  public final class PixelRouteStateBucket {
+    method public void clear();
+    method public operator <T> boolean contains(com.purride.pixelui.widgets.navigation.PixelRouteStateKey<T> key);
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getKeyNames();
+    method public <T> T? read(com.purride.pixelui.widgets.navigation.PixelRouteStateKey<T> key);
+    method public <T> T? remove(com.purride.pixelui.widgets.navigation.PixelRouteStateKey<T> key);
+    method public <T> void write(com.purride.pixelui.widgets.navigation.PixelRouteStateKey<T> key, T value);
+    property public java.util.Set<java.lang.String> keyNames;
+  }
+
+  public sealed exhaustive interface PixelRouteStateDecodeResult {
+  }
+
+  public static final class PixelRouteStateDecodeResult.Decoded implements com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult {
+    ctor public PixelRouteStateDecodeResult.Decoded(com.purride.pixelui.widgets.navigation.PixelRouteStateRestorer restorer);
+    method public com.purride.pixelui.widgets.navigation.PixelRouteStateRestorer component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult.Decoded copy(optional com.purride.pixelui.widgets.navigation.PixelRouteStateRestorer restorer);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteStateRestorer getRestorer();
+    property public com.purride.pixelui.widgets.navigation.PixelRouteStateRestorer restorer;
+  }
+
+  public static final class PixelRouteStateDecodeResult.Rejected implements com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult {
+    ctor public PixelRouteStateDecodeResult.Rejected(String message);
+    method public String component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteStateDecodeResult.Rejected copy(optional String message);
+    method @InaccessibleFromKotlin public String getMessage();
+    property public String message;
+  }
+
+  public final class PixelRouteStateKey<T> {
+    ctor public PixelRouteStateKey(String name);
+    method @InaccessibleFromKotlin public String getName();
+    property public String name;
+  }
+
+  public fun interface PixelRouteStateRestorer {
+    method public void restore(com.purride.pixelui.widgets.navigation.PixelRouteStateBucket stateBucket);
+  }
+
+  public enum PixelRouteTransition {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteTransition Fade;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteTransition None;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteTransition SlideHorizontal;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelRouteTransition SlideVertical;
+  }
+
+  public fun interface PixelRouteTransitionBuilder {
+    method public com.purride.pixelui.Widget build(float progress, com.purride.pixelui.widgets.navigation.PixelNavigatorOperation operation, com.purride.pixelui.Widget outgoing, com.purride.pixelui.Widget incoming);
+  }
+
+  public final class PixelRouteTransitionInspection {
+    ctor public PixelRouteTransitionInspection(long id, com.purride.pixelui.widgets.navigation.PixelNavigatorOperation operation, com.purride.pixelui.widgets.navigation.PixelRouteEntryId outgoingEntryId, com.purride.pixelui.widgets.navigation.PixelRouteEntryId incomingEntryId);
+    method public long component1();
+    method public com.purride.pixelui.widgets.navigation.PixelNavigatorOperation component2();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId component3();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntryId component4();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection copy(optional long id, optional com.purride.pixelui.widgets.navigation.PixelNavigatorOperation operation, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId outgoingEntryId, optional com.purride.pixelui.widgets.navigation.PixelRouteEntryId incomingEntryId);
+    method @InaccessibleFromKotlin public long getId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId getIncomingEntryId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelNavigatorOperation getOperation();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntryId getOutgoingEntryId();
+    property public long id;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId incomingEntryId;
+    property public com.purride.pixelui.widgets.navigation.PixelNavigatorOperation operation;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntryId outgoingEntryId;
+  }
+
+  public enum PixelStackSelectionResult {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelStackSelectionResult Activated;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelStackSelectionResult AlreadyActive;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelStackSelectionResult PoppedToRoot;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelStackSelectionResult UnknownStack;
+  }
+
+  public final class PixelTypedDeepLinkKt {
+    method public static com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.widgets.navigation.PixelMultiStackNavigatorController, String stackId, String uri, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver resolver, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode, optional boolean selectStackOnSuccess);
+    method public static com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.widgets.navigation.PixelNavigatorState, com.purride.pixelui.widgets.navigation.PixelDeepLink link, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver resolver, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode);
+    method public static com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.widgets.navigation.PixelNavigatorState, String uri, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResolver resolver, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode);
+  }
+
+  public fun interface PixelTypedDeepLinkMatcher {
+    method public boolean matches(com.purride.pixelui.widgets.navigation.PixelDeepLink link);
+  }
+
+  public final class PixelTypedDeepLinkNavigated implements com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult {
+    ctor public PixelTypedDeepLinkNavigated(String rawUri, String destinationId, com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> entry, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode);
+    method public String component1();
+    method public String component2();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> component3();
+    method public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode component4();
+    method public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigated copy(optional String rawUri, optional String destinationId, optional com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> entry, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode);
+    method @InaccessibleFromKotlin public String getDestinationId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> getEntry();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode getMode();
+    method @InaccessibleFromKotlin public String getRawUri();
+    property public String destinationId;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteEntry<? extends java.lang.Object?,? extends java.lang.Object?> entry;
+    property public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode mode;
+    property public String rawUri;
+  }
+
+  public enum PixelTypedDeepLinkNavigationMode {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode Push;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNavigationMode Replace;
+  }
+
+  public final class PixelTypedDeepLinkNotMatched implements com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult {
+    ctor public PixelTypedDeepLinkNotMatched(String rawUri);
+    method public String component1();
+    method public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkNotMatched copy(optional String rawUri);
+    method @InaccessibleFromKotlin public String getRawUri();
+    property public String rawUri;
+  }
+
+  public final class PixelTypedDeepLinkRejected implements com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkResult {
+    ctor public PixelTypedDeepLinkRejected(String rawUri, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason reason, optional String? destinationId, optional com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure? argumentFailure, String message);
+    method public String component1();
+    method public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason component2();
+    method public String? component3();
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure? component4();
+    method public String component5();
+    method public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejected copy(optional String rawUri, optional com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason reason, optional String? destinationId, optional com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure? argumentFailure, optional String message);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure? getArgumentFailure();
+    method @InaccessibleFromKotlin public String? getDestinationId();
+    method @InaccessibleFromKotlin public String getMessage();
+    method @InaccessibleFromKotlin public String getRawUri();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason getReason();
+    property public com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentFailure? argumentFailure;
+    property public String? destinationId;
+    property public String message;
+    property public String rawUri;
+    property public com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason reason;
+  }
+
+  public enum PixelTypedDeepLinkRejectionReason {
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason InvalidArgument;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason MalformedUri;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason MissingArgument;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason ResolverFailure;
+    enum_constant public static final com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRejectionReason StackUnavailable;
+  }
+
+  public final class PixelTypedDeepLinkResolver {
+    ctor public PixelTypedDeepLinkResolver(java.util.List<? extends com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkRoute<? extends java.lang.Object?,? extends java.lang.Object?>> routes);
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getDestinationIds();
+    property public java.util.List<java.lang.String> destinationIds;
+  }
+
+  public sealed exhaustive interface PixelTypedDeepLinkResult {
+  }
+
+  public final class PixelTypedDeepLinkRoute<A, R> {
+    ctor public PixelTypedDeepLinkRoute(com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination, com.purride.pixelui.widgets.navigation.PixelTypedDeepLinkMatcher matcher, com.purride.pixelui.widgets.navigation.PixelDeepLinkArgumentDecoder<A> argumentDecoder);
+    method public com.purride.pixelui.widgets.navigation.PixelDeepLinkDecodeResult<A> decodeArguments(com.purride.pixelui.widgets.navigation.PixelDeepLink link);
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> getDestination();
+    method public boolean matches(com.purride.pixelui.widgets.navigation.PixelDeepLink link);
+    property public com.purride.pixelui.widgets.navigation.PixelRouteDestination<A,R> destination;
+  }
+
+  public final class PixelTypedNavigatorStack<A, R> implements com.purride.pixelui.widgets.navigation.PixelNavigatorStackDefinition {
+    ctor public PixelTypedNavigatorStack(String id, com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> initialRequest);
+    method public String component1();
+    method public com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> component2();
+    method public com.purride.pixelui.widgets.navigation.PixelTypedNavigatorStack<A,R> copy(optional String id, optional com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> initialRequest);
+    method @InaccessibleFromKotlin public String getId();
+    method @InaccessibleFromKotlin public com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> getInitialRequest();
+    property public String id;
+    property public com.purride.pixelui.widgets.navigation.PixelRouteRequest<A,R> initialRequest;
+  }
+
+}

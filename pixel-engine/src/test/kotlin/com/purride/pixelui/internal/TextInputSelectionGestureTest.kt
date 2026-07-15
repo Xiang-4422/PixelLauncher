@@ -64,9 +64,71 @@ class TextInputSelectionGestureTest {
         assertEquals(2, state.selectionEnd)
     }
 
+    /** Tap offsets inside decomposed or supplementary graphemes use controller caret affinity. */
+    @Test
+    fun collapsedTapSelectionNeverStopsInsideAGrapheme(): Unit {
+        /** Decomposed Latin followed by a supplementary emoji supplies two interior UTF-16 offsets. */
+        val text = "e\u0301😀"
+        /** Controller owning the public grapheme-boundary normalization contract. */
+        val controller = PixelTextFieldController()
+        /** Initial caret starts after the full source so both tap cases must move it. */
+        val state = controller.create(initialText = text, selectionStart = text.length)
+        /** Target mapper deliberately returns the interior of the decomposed cluster. */
+        val decomposedTarget = textInputTarget(controller, state) { _, _ -> 1 }
+
+        PixelTextInputSelectionGesture.setCollapsedSelection(decomposedTarget, 0, 0)
+        assertEquals(2, state.selectionStart)
+        assertEquals(2, state.selectionEnd)
+
+        /** Target mapper now returns the interior low-surrogate boundary of the emoji. */
+        val emojiTarget = textInputTarget(controller, state) { _, _ -> 3 }
+        PixelTextInputSelectionGesture.setCollapsedSelection(emojiTarget, 0, 0)
+        assertEquals(4, state.selectionStart)
+        assertEquals(4, state.selectionEnd)
+    }
+
+    /** Dragging either handle through a decomposed cluster expands to its outer boundaries. */
+    @Test
+    fun dragHandleExpandsInteriorOffsetsToWholeGraphemes(): Unit {
+        /** ASCII guards make the decomposed cluster boundaries observable as 1..3. */
+        val text = "Ae\u0301B"
+        /** Controller applying the same boundary map as IME and Accessibility paths. */
+        val controller = PixelTextFieldController()
+        /** Full-range state used to drag each endpoint independently. */
+        val state = controller.create(initialText = text, selectionStart = 0, selectionEnd = text.length)
+        /** Mapper always lands at UTF-16 offset 2, inside the decomposed cluster. */
+        val target = textInputTarget(controller, state) { _, _ -> 2 }
+
+        assertEquals(
+            true,
+            PixelTextInputSelectionGesture.dragHandle(
+                target = target,
+                handle = TextInputSelectionHandle.START,
+                logicalX = 0,
+                logicalY = 0,
+            ),
+        )
+        assertEquals(1, state.selectionStart)
+        assertEquals(4, state.selectionEnd)
+
+        controller.setSelection(state, 0, text.length)
+        assertEquals(
+            true,
+            PixelTextInputSelectionGesture.dragHandle(
+                target = target,
+                handle = TextInputSelectionHandle.END,
+                logicalX = 0,
+                logicalY = 0,
+            ),
+        )
+        assertEquals(0, state.selectionStart)
+        assertEquals(3, state.selectionEnd)
+    }
+
     private fun textInputTarget(
         controller: PixelTextFieldController,
         state: com.purride.pixelui.state.PixelTextFieldState,
+        textIndexAt: ((Int, Int) -> Int)? = null,
     ): PixelTextInputTarget {
         return PixelTextInputTarget(
             bounds = PixelRect(left = 0, top = 0, width = 70, height = 20),
@@ -80,6 +142,7 @@ class TextInputSelectionGestureTest {
             action = PixelTextInputAction.DONE,
             onChanged = null,
             onSubmitted = null,
+            textIndexAt = textIndexAt,
         )
     }
 }

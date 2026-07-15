@@ -2,9 +2,11 @@ package com.purride.pixelui.testing
 
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelui.PixelFocusManager
 import com.purride.pixelui.PixelKey
 import com.purride.pixelui.PixelKeyEvent
+import com.purride.pixelui.PixelTextInputEvent
+import com.purride.pixelui.PixelSemanticsAction
+import com.purride.pixelui.PixelSemanticsNode
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.TextInputSelectionHandle
 import com.purride.pixelui.Widget
@@ -21,6 +23,7 @@ import com.purride.pixelui.internal.PixelSliderTarget
 import com.purride.pixelui.internal.PixelTextInputSelectionGesture
 import com.purride.pixelui.internal.PixelTextInputTarget
 import com.purride.pixelui.internal.PixelUiRuntime
+import com.purride.pixelui.internal.TeardownFailureCollector
 import kotlin.math.abs
 import java.util.IdentityHashMap
 
@@ -55,6 +58,18 @@ public class PixelTester {
     private var currentNanos: Long = 0L
     private val activeGestures = mutableMapOf<Int, ActiveTestGesture>()
     private var primaryPointerId: Int? = null
+    /** Click target currently receiving virtual mouse/stylus hover feedback. */
+    private var hoveredClickTarget: PixelClickTarget? = null
+    /** Slider target currently receiving virtual mouse/stylus hover feedback. */
+    private var hoveredSliderTarget: PixelSliderTarget? = null
+    /** Scrollbar target currently receiving virtual mouse/stylus hover feedback. */
+    private var hoveredScrollbarTarget: PixelScrollbarTarget? = null
+    /** Refresh target currently receiving virtual mouse/stylus hover feedback. */
+    private var hoveredRefreshTarget: PixelRefreshTarget? = null
+    /** Horizontal logical coordinate of the current virtual hover pointer. */
+    private var hoveredLogicalX: Int? = null
+    /** Vertical logical coordinate of the current virtual hover pointer. */
+    private var hoveredLogicalY: Int? = null
 
     internal var renderResult: PixelRenderResult? = null
         private set
@@ -156,6 +171,52 @@ public class PixelTester {
         return DefaultPixelTestGesture(this, pointerId)
     }
 
+    /**
+ * 执行 `PixelTester` 的 `down` 公开行为；具体参数、返回和副作用见下文。
+ *
+     * Sends a virtual pointer down and returns the gesture that owns the matching up or cancel.
+     *
+     * This is an explicit interaction-state alias for [startGesture].
+     */
+    public fun down(finder: PixelFinder, pointerId: Int = 0): PixelTestGesture {
+        return startGesture(finder, pointerId)
+    }
+
+    /** 执行 `PixelTester` 的 `up` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Sends a virtual pointer up for [pointerId].
+ */
+    public fun up(pointerId: Int = 0) {
+        endGesture(pointerId)
+    }
+
+    /** 判断 `PixelTester` 是否满足 `cancel` 条件，不修改现有状态。
+ *
+ * Sends a virtual pointer cancel for [pointerId].
+ */
+    public fun cancel(pointerId: Int = 0) {
+        cancelGesture(pointerId)
+    }
+
+    /** 执行 `PixelTester` 的 `hover` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Moves a virtual mouse/stylus hover pointer to the center of [finder].
+ */
+    public fun hover(finder: PixelFinder) {
+        val point = resolvePoint(finder, TargetKind.ANY)
+        updateHover(point.x, point.y)
+        render()
+    }
+
+    /** 执行 `PixelTester` 的 `exitHover` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Removes the current virtual mouse/stylus hover pointer.
+ */
+    public fun exitHover() {
+        clearHover()
+        render()
+    }
+
     internal fun moveGestureBy(pointerId: Int, dx: Int, dy: Int, deltaMs: Long = 16L) {
         val gesture = activeGestures[pointerId] ?: fail("No active gesture for pointer $pointerId")
         gesture.moveBy(dx, dy, deltaMs.coerceAtLeast(1L))
@@ -209,7 +270,7 @@ public class PixelTester {
         val target = focusedTextInputTarget ?: fail("No focused text input target")
         target.onSubmitted?.invoke(target.state.text)
         if (target.action == com.purride.pixelui.PixelTextInputAction.NEXT) {
-            PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(PixelKey.TAB))
+            runtime.focusOwner.dispatchKeyEvent(PixelKeyEvent(PixelKey.TAB))
             needsRender = true
             render()
         }
@@ -260,7 +321,31 @@ public class PixelTester {
      * 向当前 focus tree 发送按键。
      */
     public fun pressKey(key: PixelKey, character: Char? = null): Boolean {
-        val handled = PixelFocusManager.dispatchKeyEvent(PixelKeyEvent(key = key, character = character))
+        /** Whether this tester's focused node chain consumed the normalized legacy key event. */
+        val handled = runtime.focusOwner.dispatchKeyEvent(PixelKeyEvent(key = key, character = character))
+        if (handled) {
+            needsRender = true
+            render()
+        }
+        return handled
+    }
+
+    /**
+ * 执行 `PixelTester` 的 `pressText` 公开行为；具体参数、返回和副作用见下文。
+ *
+     * Sends one exact text payload to this tester's runtime-local focused node chain.
+     *
+     * Supplementary-plane and multi-code-point text remains one event. An unconsumed payload falls
+     * back to [pressKey] semantics only when it consists of exactly one non-surrogate BMP [Char].
+     *
+     * @param text Exact UTF-16 text supplied by the simulated input source.
+     * @return `true` when a text handler or compatible legacy character handler consumed it.
+     */
+    public fun pressText(text: String): Boolean {
+        /** Exact platform-independent event retained as one unit throughout focus dispatch. */
+        val event = PixelTextInputEvent(text)
+        /** Whether this tester's focused node chain consumed the event or its eligible fallback. */
+        val handled = runtime.focusOwner.dispatchTextInputEvent(event)
         if (handled) {
             needsRender = true
             render()
@@ -343,9 +428,112 @@ public class PixelTester {
     public fun dumpSemanticsTree(): String {
         val nodes = renderResult?.semanticsNodes.orEmpty()
         if (nodes.isEmpty()) return "<empty semantics>"
+        val nodesById = nodes.associateBy(PixelSemanticsNode::id)
         return nodes.joinToString(separator = "\n") { node ->
-            "${node.role} label=\"${node.label}\" enabled=${node.enabled} focused=${node.focused} bounds=${node.left},${node.top},${node.width},${node.height}"
+            val depth = semanticDepth(node = node, nodesById = nodesById)
+            buildString {
+                repeat(depth) { append("  ") }
+                append(node.role)
+                append(" label=\"").append(node.label).append('"')
+                append(" enabled=").append(node.enabled)
+                append(" focused=").append(node.focused)
+                append(" id=").append(node.id)
+                append(" parent=").append(node.parentId ?: "HOST")
+                node.value?.let { value -> append(" value=\"").append(value).append('"') }
+                append(" selected=").append(node.selected)
+                node.checked?.let { checked -> append(" checked=").append(checked) }
+                node.expanded?.let { expanded -> append(" expanded=").append(expanded) }
+                append(" actions=").append(node.actions)
+                append(" bounds=")
+                    .append(node.left).append(',')
+                    .append(node.top).append(',')
+                    .append(node.width).append(',')
+                    .append(node.height)
+            }
         }
+    }
+
+    /** 执行 `PixelTester` 的 `semanticsNodes` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns the immutable semantic nodes from the most recently rendered frame.
+ */
+    public fun semanticsNodes(): List<PixelSemanticsNode> = renderResult?.semanticsNodes.orEmpty()
+
+    /** 执行 `PixelTester` 的 `semanticsNode` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns the node with [id], or `null` when that logical node is not in the current tree.
+ */
+    public fun semanticsNode(id: Long): PixelSemanticsNode? {
+        return renderResult?.semanticsNodes?.firstOrNull { node -> node.id == id }
+    }
+
+    /** 执行 `PixelTester` 的 `semanticsNodesByLabel` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Returns all current nodes whose spoken label exactly equals [label], preserving tree order.
+ */
+    public fun semanticsNodesByLabel(label: String): List<PixelSemanticsNode> {
+        return renderResult?.semanticsNodes.orEmpty().filter { node -> node.label == label }
+    }
+
+    /**
+ * 执行 `PixelTester` 的 `performSemanticsAction` 公开行为；具体参数、返回和副作用见下文。
+ *
+     * Invokes one typed semantic action by stable node id and renders any resulting state change.
+     *
+     * This executes the callback owned by the semantic target; it never re-hit-tests a coordinate.
+     */
+    public fun performSemanticsAction(
+        id: Long,
+        action: PixelSemanticsAction,
+        arguments: PixelSemanticsActionArguments = PixelSemanticsActionArguments(),
+    ): Boolean {
+        val target = renderResult?.semanticsTargets?.firstOrNull { candidate -> candidate.node.id == id }
+            ?: return false
+        if (!target.node.enabled) return false
+        val handled = when (action) {
+            PixelSemanticsAction.CLICK -> target.actions.onClick?.invoke()
+            PixelSemanticsAction.LONG_CLICK -> target.actions.onLongClick?.invoke()
+            PixelSemanticsAction.SCROLL_FORWARD -> target.actions.onScrollForward?.invoke()
+            PixelSemanticsAction.SCROLL_BACKWARD -> target.actions.onScrollBackward?.invoke()
+            PixelSemanticsAction.SET_TEXT -> arguments.text?.let { text -> target.actions.onSetText?.invoke(text) }
+            PixelSemanticsAction.SET_SELECTION -> {
+                val start = arguments.selectionStart
+                val end = arguments.selectionEnd
+                if (start == null || end == null) false else target.actions.onSetSelection?.invoke(start, end)
+            }
+            PixelSemanticsAction.SET_PROGRESS -> {
+                arguments.progress?.takeIf(Float::isFinite)?.let { progress ->
+                    target.actions.onSetProgress?.invoke(progress)
+                }
+            }
+            PixelSemanticsAction.DISMISS -> target.actions.onDismiss?.invoke()
+            PixelSemanticsAction.EXPAND -> target.actions.onExpand?.invoke()
+            PixelSemanticsAction.COLLAPSE -> target.actions.onCollapse?.invoke()
+            PixelSemanticsAction.CUSTOM -> arguments.customActionId?.let { customActionId ->
+                target.actions.customActions
+                    .firstOrNull { customAction -> customAction.id == customActionId }
+                    ?.onInvoke
+                    ?.invoke()
+            }
+        } ?: false
+        if (handled) render()
+        return handled
+    }
+
+    /** Computes debug indentation while defending against malformed parent cycles. */
+    private fun semanticDepth(
+        node: PixelSemanticsNode,
+        nodesById: Map<Long, PixelSemanticsNode>,
+    ): Int {
+        var parentId = node.parentId
+        var depth = 0
+        val visited = mutableSetOf<Long>()
+        while (parentId != null && visited.add(parentId)) {
+            val parent = nodesById[parentId] ?: break
+            depth += 1
+            parentId = parent.parentId
+        }
+        return depth
     }
 
     /**
@@ -389,11 +577,17 @@ public class PixelTester {
      * 释放 tester 持有的运行时和测试调度状态。
      */
     public fun dispose() {
-        runtime.dispose()
-        scheduler.clear()
-        PixelFocusManager.clearFocus()
+        /** Terminal collector keeps test scheduler cleanup deterministic after user dispose errors. */
+        val failures = TeardownFailureCollector()
+        activeGestures.values.toList().forEach { gesture ->
+            failures.capture { gesture.cancel() }
+        }
+        failures.capture { clearHover() }
+        failures.capture { runtime.dispose() }
+        failures.capture { scheduler.clear() }
         activeGestures.clear()
         primaryPointerId = null
+        failures.throwIfAny()
     }
 
     private fun renderedBuffer() = renderResult?.buffer ?: fail("No rendered buffer; call pumpWidget first")
@@ -403,6 +597,7 @@ public class PixelTester {
         var pass = 0
         do {
             renderResult = runtime.render(widget, logicalWidth, logicalHeight)
+            renderResult?.let(::reconcileInteractionTargets)
             val requestedTarget = renderResult
                 ?.textInputTargets
                 ?.lastOrNull { it.state.focusRequested }
@@ -419,6 +614,12 @@ public class PixelTester {
                 renderResult?.textInputTargets?.lastOrNull { it.state === previous.state }
             }
         needsRender = false
+    }
+
+    /** Rebinds every virtual interaction owner to the newly published render snapshot. */
+    private fun reconcileInteractionTargets(result: PixelRenderResult) {
+        activeGestures.values.toList().forEach { gesture -> gesture.reconcileTargets(result) }
+        reconcileHoverTargets(result)
     }
 
     private fun stepActiveScrollTargets(deltaMs: Long) {
@@ -466,15 +667,25 @@ public class PixelTester {
             fail("Pointer $pointerId already has an active gesture")
         }
         val target = resolveGestureTarget(x, y) ?: fail("No gesture target at ($x,$y)")
+        val pressedClickTarget = if (target is TestGestureTarget.Slider || target is TestGestureTarget.Scrollbar) {
+            null
+        } else {
+            renderResult?.clickTargets?.lastOrNull { clickTarget ->
+                clickTarget.bounds.contains(x, y) && clickTarget.onPressedChanged != null
+            }
+        }
         if (primaryPointerId == null) primaryPointerId = pointerId
-        activeGestures[pointerId] = ActiveTestGesture(
+        val gesture = ActiveTestGesture(
             pointerId = pointerId,
             startX = x,
             startY = y,
             currentX = x,
             currentY = y,
             target = target,
+            pressedClickTarget = pressedClickTarget,
         )
+        activeGestures[pointerId] = gesture
+        gesture.down()
     }
 
     private fun promotePrimaryPointer() {
@@ -583,6 +794,25 @@ public class PixelTester {
     }
 
     private fun dispatchDragCancel(startX: Int, startY: Int, dx: Int, dy: Int) {
+        renderResult?.scrollbarTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
+            target.onPressedChanged?.invoke(true)
+            dispatchScrollbarDragUpdate(target, startY, startY + dy)
+            target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
+            target.onPressedChanged?.invoke(false)
+            needsRender = true
+            return
+        }
+        renderResult?.refreshTargets?.lastOrNull { it.bounds.contains(startX, startY) }?.let { target ->
+            if (dy > 0 && abs(dy) >= abs(dx) && target.canStartPull(dy.toFloat())) {
+                target.controller.startPull(target.state)
+                target.onPressedChanged?.invoke(true)
+                target.controller.updatePull(target.state, dy.toFloat(), target.thresholdPx)
+                cancelRefreshPull(target)
+                target.onPressedChanged?.invoke(false)
+                needsRender = true
+                return
+            }
+        }
         val listTarget = renderResult?.listTargets?.lastOrNull { it.bounds.contains(startX, startY) }
         val pagerTarget = renderResult?.pagerTargets?.lastOrNull { it.bounds.contains(startX, startY) }
         if (listTarget != null && shouldStartListDrag(dx, dy)) {
@@ -643,31 +873,309 @@ public class PixelTester {
         needsRender = true
     }
 
+    /** Updates an active slider without incorrectly synthesizing release on every move. */
+    private fun dispatchSliderDragUpdate(target: PixelSliderTarget, x: Int) {
+        val ratio = ((x - target.bounds.left).toFloat() / target.bounds.width.coerceAtLeast(1)).coerceIn(0f, 1f)
+        target.onDrag(ratio)
+        needsRender = true
+    }
+
+    /** Completes an active slider at its latest virtual pointer position. */
+    private fun dispatchSliderRelease(target: PixelSliderTarget, x: Int) {
+        val ratio = ((x - target.bounds.left).toFloat() / target.bounds.width.coerceAtLeast(1)).coerceIn(0f, 1f)
+        target.onRelease(ratio)
+        needsRender = true
+    }
+
+    /** Transfers virtual hover ownership with Host slider/scrollbar/click/refresh precedence. */
+    private fun updateHover(x: Int, y: Int) {
+        /** Highest-priority compact value-control target under the virtual pointer. */
+        val sliderTarget = renderResult?.sliderTargets?.lastOrNull { target ->
+            target.bounds.contains(x, y) && target.onHoveredChanged != null
+        }
+        /** Overlay scrollbar considered only when no slider owns the point. */
+        val scrollbarTarget = if (sliderTarget == null) {
+            renderResult?.scrollbarTargets?.lastOrNull { target ->
+                target.bounds.contains(x, y) && target.onHoveredChanged != null
+            }
+        } else {
+            null
+        }
+        /** Nested click content takes precedence over its enclosing refresh boundary. */
+        val clickTarget = if (sliderTarget == null && scrollbarTarget == null) {
+            renderResult?.clickTargets?.lastOrNull { target ->
+                target.bounds.contains(x, y) && target.onHoveredChanged != null
+            }
+        } else {
+            null
+        }
+        /** Lowest-priority refresh boundary under otherwise passive content. */
+        val refreshTarget = if (sliderTarget == null && scrollbarTarget == null && clickTarget == null) {
+            renderResult?.refreshTargets?.lastOrNull { target ->
+                target.bounds.contains(x, y) && target.onHoveredChanged != null
+            }
+        } else {
+            null
+        }
+        if (!sameSliderTarget(hoveredSliderTarget, sliderTarget)) {
+            hoveredSliderTarget?.onHoveredChanged?.invoke(false)
+            hoveredSliderTarget = sliderTarget
+            sliderTarget?.onHoveredChanged?.invoke(true)
+            needsRender = true
+        } else if (sliderTarget != null) {
+            hoveredSliderTarget = sliderTarget
+        }
+        if (!sameScrollbarTarget(hoveredScrollbarTarget, scrollbarTarget)) {
+            hoveredScrollbarTarget?.onHoveredChanged?.invoke(false)
+            hoveredScrollbarTarget = scrollbarTarget
+            scrollbarTarget?.onHoveredChanged?.invoke(true)
+            needsRender = true
+        } else if (scrollbarTarget != null) {
+            hoveredScrollbarTarget = scrollbarTarget
+        }
+        if (!sameClickTarget(hoveredClickTarget, clickTarget)) {
+            hoveredClickTarget?.onHoveredChanged?.invoke(false)
+            hoveredClickTarget = clickTarget
+            clickTarget?.onHoveredChanged?.invoke(true)
+            needsRender = true
+        } else if (clickTarget != null) {
+            hoveredClickTarget = clickTarget
+        }
+        if (!sameRefreshTarget(hoveredRefreshTarget, refreshTarget)) {
+            hoveredRefreshTarget?.onHoveredChanged?.invoke(false)
+            hoveredRefreshTarget = refreshTarget
+            refreshTarget?.onHoveredChanged?.invoke(true)
+            needsRender = true
+        } else if (refreshTarget != null) {
+            hoveredRefreshTarget = refreshTarget
+        }
+        /** Whether any retained component owns this virtual hover point. */
+        val ownsHover = sliderTarget != null || scrollbarTarget != null ||
+            clickTarget != null || refreshTarget != null
+        hoveredLogicalX = if (ownsHover) x else null
+        hoveredLogicalY = if (ownsHover) y else null
+    }
+
+    /** Keeps hover only when the same retained source is still interactive under the pointer. */
+    private fun reconcileHoverTargets(result: PixelRenderResult) {
+        val logicalX = hoveredLogicalX
+        val logicalY = hoveredLogicalY
+        hoveredClickTarget?.let { previous ->
+            val replacement = result.clickTargets
+                .lastOrNull { candidate -> sameClickTarget(previous, candidate) }
+                ?.takeIf { target ->
+                    target.onHoveredChanged != null &&
+                        logicalX != null &&
+                        logicalY != null &&
+                        target.bounds.contains(logicalX, logicalY)
+                }
+            if (replacement != null) {
+                hoveredClickTarget = replacement
+            } else {
+                hoveredClickTarget = null
+                previous.onHoveredChanged?.invoke(false)
+                needsRender = true
+            }
+        }
+        hoveredSliderTarget?.let { previous ->
+            val replacement = result.sliderTargets
+                .lastOrNull { candidate -> sameSliderTarget(previous, candidate) }
+                ?.takeIf { target ->
+                    target.onHoveredChanged != null &&
+                        logicalX != null &&
+                        logicalY != null &&
+                        target.bounds.contains(logicalX, logicalY)
+                }
+            if (replacement != null) {
+                hoveredSliderTarget = replacement
+            } else {
+                hoveredSliderTarget = null
+                previous.onHoveredChanged?.invoke(false)
+                needsRender = true
+            }
+        }
+        hoveredScrollbarTarget?.let { previous ->
+            /** Matching enabled scrollbar still under the virtual pointer. */
+            val replacement = result.scrollbarTargets
+                .lastOrNull { candidate -> sameScrollbarTarget(previous, candidate) }
+                ?.takeIf { target ->
+                    target.onHoveredChanged != null &&
+                        logicalX != null &&
+                        logicalY != null &&
+                        target.bounds.contains(logicalX, logicalY)
+                }
+            if (replacement != null) {
+                hoveredScrollbarTarget = replacement
+            } else {
+                hoveredScrollbarTarget = null
+                previous.onHoveredChanged?.invoke(false)
+                needsRender = true
+            }
+        }
+        hoveredRefreshTarget?.let { previous ->
+            /** Matching enabled refresh boundary still under the virtual pointer. */
+            val replacement = result.refreshTargets
+                .lastOrNull { candidate -> sameRefreshTarget(previous, candidate) }
+                ?.takeIf { target ->
+                    target.onHoveredChanged != null &&
+                        logicalX != null &&
+                        logicalY != null &&
+                        target.bounds.contains(logicalX, logicalY)
+                }
+            if (replacement != null) {
+                hoveredRefreshTarget = replacement
+            } else {
+                hoveredRefreshTarget = null
+                previous.onHoveredChanged?.invoke(false)
+                needsRender = true
+            }
+        }
+        if (
+            hoveredClickTarget == null &&
+            hoveredSliderTarget == null &&
+            hoveredScrollbarTarget == null &&
+            hoveredRefreshTarget == null
+        ) {
+            hoveredLogicalX = null
+            hoveredLogicalY = null
+        }
+    }
+
+    /** Clears virtual hover callbacks exactly once. */
+    private fun clearHover() {
+        val sliderTarget = hoveredSliderTarget
+        val scrollbarTarget = hoveredScrollbarTarget
+        val clickTarget = hoveredClickTarget
+        val refreshTarget = hoveredRefreshTarget
+        hoveredSliderTarget = null
+        hoveredScrollbarTarget = null
+        hoveredClickTarget = null
+        hoveredRefreshTarget = null
+        hoveredLogicalX = null
+        hoveredLogicalY = null
+        sliderTarget?.onHoveredChanged?.invoke(false)
+        scrollbarTarget?.onHoveredChanged?.invoke(false)
+        clickTarget?.onHoveredChanged?.invoke(false)
+        refreshTarget?.onHoveredChanged?.invoke(false)
+        if (sliderTarget != null || scrollbarTarget != null || clickTarget != null || refreshTarget != null) {
+            needsRender = true
+        }
+    }
+
+    /** Compares retained click identity across an interaction-triggered rebuild. */
+    private fun sameClickTarget(first: PixelClickTarget?, second: PixelClickTarget?): Boolean {
+        if (first == null || second == null) return first == null && second == null
+        return if (first.source != null && second.source != null) first.source === second.source else first === second
+    }
+
+    /** Compares retained slider identity across an interaction-triggered rebuild. */
+    private fun sameSliderTarget(first: PixelSliderTarget?, second: PixelSliderTarget?): Boolean {
+        if (first == null || second == null) return first == null && second == null
+        return if (first.source != null && second.source != null) first.source === second.source else first === second
+    }
+
+    /** Compares retained scrollbar identity across an interaction-triggered rebuild. */
+    private fun sameScrollbarTarget(first: PixelScrollbarTarget?, second: PixelScrollbarTarget?): Boolean {
+        if (first == null || second == null) return first == null && second == null
+        return if (first.source != null && second.source != null) {
+            first.source === second.source
+        } else {
+            first.state === second.state
+        }
+    }
+
+    /** Compares retained refresh identity across an interaction-triggered rebuild. */
+    private fun sameRefreshTarget(first: PixelRefreshTarget?, second: PixelRefreshTarget?): Boolean {
+        if (first == null || second == null) return first == null && second == null
+        return if (first.source != null && second.source != null) {
+            first.source === second.source
+        } else {
+            first.state === second.state
+        }
+    }
+
+    /** Resolves the matching target snapshot for one active virtual gesture. */
+    private fun reconcileGestureTarget(
+        previous: TestGestureTarget,
+        result: PixelRenderResult,
+    ): TestGestureTarget? {
+        return when (previous) {
+            is TestGestureTarget.Click -> result.clickTargets
+                .lastOrNull { candidate -> sameClickTarget(previous.target, candidate) }
+                ?.let(TestGestureTarget::Click)
+            is TestGestureTarget.Slider -> result.sliderTargets
+                .lastOrNull { candidate -> sameSliderTarget(previous.target, candidate) }
+                ?.let(TestGestureTarget::Slider)
+            is TestGestureTarget.TextInput -> result.textInputTargets
+                .lastOrNull { candidate -> sameRetainedSource(previous.target.source, candidate.source, previous.target === candidate) }
+                ?.let(TestGestureTarget::TextInput)
+            is TestGestureTarget.List -> result.listTargets
+                .lastOrNull { candidate -> sameRetainedSource(previous.target.source, candidate.source, previous.target.state === candidate.state) }
+                ?.let(TestGestureTarget::List)
+            is TestGestureTarget.Pager -> result.pagerTargets
+                .lastOrNull { candidate -> sameRetainedSource(previous.target.source, candidate.source, previous.target.state === candidate.state) }
+                ?.let(TestGestureTarget::Pager)
+            is TestGestureTarget.Scrollbar -> result.scrollbarTargets
+                .lastOrNull { candidate -> sameRetainedSource(previous.target.source, candidate.source, previous.target.state === candidate.state) }
+                ?.let(TestGestureTarget::Scrollbar)
+            is TestGestureTarget.Refresh -> result.refreshTargets
+                .lastOrNull { candidate -> sameRetainedSource(previous.target.source, candidate.source, previous.target.state === candidate.state) }
+                ?.let(TestGestureTarget::Refresh)
+        }
+    }
+
+    /** Compares optional RenderObject sources and uses [fallback] only when either source is absent. */
+    private fun sameRetainedSource(first: Any?, second: Any?, fallback: Boolean): Boolean {
+        return if (first != null && second != null) first === second else fallback
+    }
+
     private fun dispatchScrollbarDrag(target: PixelScrollbarTarget, startY: Int, endY: Int) {
+        target.onPressedChanged?.invoke(true)
+        dispatchScrollbarDragUpdate(target, startY, endY)
+        target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
+        target.onPressedChanged?.invoke(false)
+        needsRender = true
+    }
+
+    /** Updates one active scrollbar drag without synthesizing release on every move. */
+    private fun dispatchScrollbarDragUpdate(target: PixelScrollbarTarget, startY: Int, endY: Int) {
+        /** Pointer-to-thumb offset preserving the original grab point. */
         val dragOffset = if (target.thumbBounds.contains(target.bounds.left, startY)) {
             startY - target.thumbBounds.top
         } else {
             target.thumbBounds.height / 2
         }.coerceIn(0, target.thumbBounds.height.coerceAtLeast(1))
+        /** Available thumb travel within the track. */
         val thumbTravel = (target.bounds.height - target.thumbBounds.height).coerceAtLeast(0)
+        /** Maximum controlled list offset. */
         val maxOffset = (target.contentHeightPx - target.viewportHeightPx).coerceAtLeast(0)
         if (thumbTravel > 0 && maxOffset > 0) {
+            /** Requested thumb top clamped to the track. */
             val thumbTop = (endY - target.bounds.top - dragOffset).coerceIn(0, thumbTravel)
+            /** Absolute list offset mapped from the thumb position. */
             val targetOffset = (thumbTop.toFloat() / thumbTravel.toFloat()) * maxOffset.toFloat()
             target.controller.startDrag(target.state)
             target.controller.scrollTo(target.state, targetOffset, target.viewportHeightPx, target.contentHeightPx)
-            target.controller.endDrag(target.state, 0f, target.viewportHeightPx, target.contentHeightPx)
         }
         needsRender = true
     }
 
     private fun dispatchRefreshDrag(target: PixelRefreshTarget, dy: Int) {
         target.controller.startPull(target.state)
+        target.onPressedChanged?.invoke(true)
         target.controller.updatePull(target.state, dy.toFloat().coerceAtLeast(0f), target.thresholdPx)
+        target.onPressedChanged?.invoke(false)
         if (target.controller.endPull(target.state, target.thresholdPx)) {
             target.onRefresh()
         }
         needsRender = true
+    }
+
+    /** Cancels a non-refreshing pull below threshold so removal never invokes business logic. */
+    private fun cancelRefreshPull(target: PixelRefreshTarget) {
+        if (target.state.isRefreshing) return
+        target.controller.updatePull(target.state, 0f, target.thresholdPx)
+        target.controller.endPull(target.state, target.thresholdPx)
     }
 
     private fun dispatchListDrag(target: PixelListTarget, dy: Float) {
@@ -776,22 +1284,78 @@ public class PixelTester {
     }
 
     private fun resolveClickTargetOrNull(widget: Any): PixelClickTarget? {
-        val callback = widget.readField("onPressed") as? (() -> Unit)
-            ?: widget.readField("onTap") as? (() -> Unit)
-            ?: widget.readField("onLongPress") as? (() -> Unit)
-            ?: widget.readField("onDoubleTap") as? (() -> Unit)
-        return if (callback != null) {
-            renderResult?.clickTargets?.lastOrNull {
+        val targets = renderResult?.clickTargets.orEmpty()
+        val callback = widget.clickCallbackOrNull()
+        if (callback != null) {
+            targets.lastOrNull {
                 it.onClick === callback || it.onLongPress === callback || it.onDoubleTap === callback
+            }?.let { return it }
+        }
+
+        // Stateful controls retain the public configuration widget and build an internal
+        // InteractionDetector whose forwarding onTap owns the render target. Match that retained
+        // descendant by the same key so find.byKey keeps its historical behavior.
+        val widgetKey = widget.readField("key")
+        if (widgetKey != null) {
+            runtime.collectWidgets()
+                .asSequence()
+                .filter { candidate -> candidate !== widget && candidate.readField("key") == widgetKey }
+                .mapNotNull(Any::clickCallbackOrNull)
+                .forEach { forwardedCallback ->
+                    targets.lastOrNull { target ->
+                        target.onClick === forwardedCallback ||
+                            target.onLongPress === forwardedCallback ||
+                            target.onDoubleTap === forwardedCallback
+                    }?.let { return it }
+                }
+        }
+        /** Visible text exposed by leaf Text widgets after stateful control indirection. */
+        val visibleText = (widget.readField("data") ?: widget.readField("text")) as? String
+        if (visibleText != null) {
+            /** Unique actionable semantic node whose public label matches the located text. */
+            val semanticNode = renderResult?.semanticsNodes.orEmpty().singleOrNull { node ->
+                node.label == visibleText &&
+                    node.enabled &&
+                    PixelSemanticsAction.CLICK in node.actions
             }
+            if (semanticNode != null) {
+                /** Logical center guaranteed to belong to the semantic node's pointer surface. */
+                val centerX = semanticNode.left + semanticNode.width / 2
+                /** Logical vertical center paired with [centerX]. */
+                val centerY = semanticNode.top + semanticNode.height / 2
+                targets.lastOrNull { target -> target.bounds.contains(centerX, centerY) }
+                    ?.let { return it }
+            }
+        }
+        return null
+    }
+
+    /** Correlates a public or retained Slider widget with its current render target snapshot. */
+    @Suppress("UNCHECKED_CAST")
+    private fun resolveSliderTargetOrNull(widget: Any): PixelSliderTarget? {
+        val onDrag = widget.readField("onDrag") as? ((Float) -> Unit)
+        val targets = renderResult?.sliderTargets.orEmpty()
+        if (onDrag != null) {
+            targets.lastOrNull { it.onDrag === onDrag }?.let { return it }
+        }
+
+        // Stateful Slider keeps the public callback on its owner while RenderSlider exports the
+        // State's forwarding callback. Correlate the retained inner render widget by the same key.
+        val widgetKey = widget.readField("key")
+        if (widgetKey != null) {
+            runtime.collectWidgets()
+                .asSequence()
+                .filter { candidate -> candidate !== widget && candidate.readField("key") == widgetKey }
+                .mapNotNull { candidate -> candidate.readField("onDrag") as? ((Float) -> Unit) }
+                .forEach { forwardedDrag ->
+                    targets.lastOrNull { target -> target.onDrag === forwardedDrag }?.let { return it }
+                }
+        }
+        return if (targets.size == 1 && widget::class.java.simpleName.contains("Slider")) {
+            targets.single()
         } else {
             null
         }
-    }
-
-    private fun resolveSliderTargetOrNull(widget: Any): PixelSliderTarget? {
-        val onDrag = widget.readField("onDrag") as? ((Float) -> Unit)
-        return if (onDrag != null) renderResult?.sliderTargets?.lastOrNull { it.onDrag === onDrag } else null
     }
 
     private fun resolveListTargetOrNull(widget: Any): PixelListTarget? {
@@ -902,18 +1466,103 @@ public class PixelTester {
         data class Refresh(val target: PixelRefreshTarget) : TestGestureTarget()
     }
 
+    /** Identifies the exact callback channel currently owning virtual pressed feedback. */
+    private enum class TestPressedFeedbackOwner {
+        /** Simultaneous ordinary click target under a drag candidate. */
+        Click,
+
+        /** Slider target captured directly at pointer down. */
+        Slider,
+
+        /** Scrollbar target captured directly at pointer down. */
+        Scrollbar,
+
+        /** Refresh target promoted only after vertical pull arbitration. */
+        Refresh,
+    }
+
     private inner class ActiveTestGesture(
         val pointerId: Int,
         val startX: Int,
         val startY: Int,
         var currentX: Int,
         var currentY: Int,
-        val target: TestGestureTarget,
+        /** Current snapshot of the gesture owner, or null after that owner disappears. */
+        private var target: TestGestureTarget?,
+        /** Simultaneous clickable target retained while a list/pager remains a drag candidate. */
+        private var pressedClickTarget: PixelClickTarget?,
     ) {
         private var moved = false
         private var dragging = false
         private var elapsedMs = 0L
         private val samples = mutableListOf(GestureSample(elapsedMs = 0L, x = startX, y = startY))
+        /** Exact feedback channel that must receive one matching pressed=false. */
+        private var pressedFeedbackOwner: TestPressedFeedbackOwner? = null
+
+        /** Sends pressed=true to direct targets or the simultaneous click candidate at down. */
+        fun down() {
+            when (val activeTarget = target) {
+                is TestGestureTarget.Slider -> activeTarget.target.onPressedChanged?.let { callback ->
+                    callback(true)
+                    pressedFeedbackOwner = TestPressedFeedbackOwner.Slider
+                    needsRender = true
+                }
+                is TestGestureTarget.Scrollbar -> activeTarget.target.onPressedChanged?.let { callback ->
+                    callback(true)
+                    pressedFeedbackOwner = TestPressedFeedbackOwner.Scrollbar
+                    needsRender = true
+                }
+                else -> (pressedClickTarget ?: (activeTarget as? TestGestureTarget.Click)?.target)
+                    ?.onPressedChanged
+                    ?.let { callback ->
+                    callback(true)
+                    pressedFeedbackOwner = TestPressedFeedbackOwner.Click
+                    needsRender = true
+                }
+            }
+        }
+
+        /** Migrates this gesture to [result], cancelling stale pressed ownership exactly once. */
+        fun reconcileTargets(result: PixelRenderResult) {
+            val previousTarget = target
+            val replacementTarget = previousTarget?.let { owner -> reconcileGestureTarget(owner, result) }
+            val previousPressedTarget = pressedClickTarget
+            val replacementPressedTarget = previousPressedTarget?.let { previous ->
+                result.clickTargets
+                    .lastOrNull { candidate -> sameClickTarget(previous, candidate) }
+                    ?.takeIf { candidate -> candidate.onPressedChanged != null }
+            }
+            /** Whether the exact pressed callback owner disappeared or became inert. */
+            val feedbackOwnerDisappeared = when (pressedFeedbackOwner) {
+                TestPressedFeedbackOwner.Click -> replacementPressedTarget == null
+                TestPressedFeedbackOwner.Slider -> replacementTarget !is TestGestureTarget.Slider ||
+                    replacementTarget.target.onPressedChanged == null
+                TestPressedFeedbackOwner.Scrollbar -> replacementTarget !is TestGestureTarget.Scrollbar ||
+                    replacementTarget.target.onPressedChanged == null
+                TestPressedFeedbackOwner.Refresh -> replacementTarget !is TestGestureTarget.Refresh ||
+                    replacementTarget.target.onPressedChanged == null
+                null -> false
+            }
+            if (feedbackOwnerDisappeared) {
+                clearPressedFeedback()
+            }
+            if (previousTarget is TestGestureTarget.Scrollbar && replacementTarget !is TestGestureTarget.Scrollbar) {
+                previousTarget.target.controller.endDrag(
+                    previousTarget.target.state,
+                    0f,
+                    previousTarget.target.viewportHeightPx,
+                    previousTarget.target.contentHeightPx,
+                )
+                needsRender = true
+            }
+            if (previousTarget is TestGestureTarget.Refresh && replacementTarget !is TestGestureTarget.Refresh && dragging) {
+                cancelRefreshPull(previousTarget.target)
+                dragging = false
+                needsRender = true
+            }
+            target = replacementTarget
+            pressedClickTarget = replacementPressedTarget
+        }
 
         fun moveBy(dx: Int, dy: Int, deltaMs: Long) {
             currentX += dx
@@ -921,8 +1570,18 @@ public class PixelTester {
             elapsedMs += deltaMs
             samples += GestureSample(elapsedMs = elapsedMs, x = currentX, y = currentY)
             if (dx != 0 || dy != 0) moved = true
-            if (!isPrimaryPointer(pointerId) && target.isPointerExclusive()) return
-            when (val activeTarget = target) {
+            val activeTarget = target
+            if (
+                moved &&
+                activeTarget !is TestGestureTarget.Slider &&
+                activeTarget !is TestGestureTarget.Scrollbar &&
+                activeTarget !is TestGestureTarget.Refresh
+            ) {
+                clearPressedFeedback()
+            }
+            if (activeTarget == null) return
+            if (!isPrimaryPointer(pointerId) && activeTarget.isPointerExclusive()) return
+            when (activeTarget) {
                 is TestGestureTarget.Click -> if (isHorizontalSwipe()) {
                     if (!dragging) {
                         activeTarget.target.onSwipeStart?.invoke()
@@ -935,22 +1594,46 @@ public class PixelTester {
                 is TestGestureTarget.List -> moveList(activeTarget.target, dy)
                 is TestGestureTarget.Pager -> movePager(activeTarget.target, dx, dy)
                 is TestGestureTarget.Slider -> {
-                    dispatchSliderDrag(activeTarget.target, currentX)
+                    dispatchSliderDragUpdate(activeTarget.target, currentX)
                     dragging = true
                 }
                 is TestGestureTarget.Scrollbar -> {
-                    dispatchScrollbarDrag(activeTarget.target, startY, currentY)
+                    dispatchScrollbarDragUpdate(activeTarget.target, startY, currentY)
                     dragging = true
                 }
-                is TestGestureTarget.Refresh -> if (dy > 0) {
-                    dispatchRefreshDrag(activeTarget.target, currentY - startY)
-                    dragging = true
+                is TestGestureTarget.Refresh -> {
+                    /** Total pull vector used for the same directional arbitration as Host. */
+                    val totalDx = currentX - startX
+                    /** Positive total vertical pull distance from pointer down. */
+                    val totalDy = currentY - startY
+                    if (
+                        !dragging &&
+                        totalDy > 0 &&
+                        abs(totalDy) >= abs(totalDx) &&
+                        activeTarget.target.canStartPull(totalDy.toFloat())
+                    ) {
+                        clearPressedFeedback()
+                        activeTarget.target.controller.startPull(activeTarget.target.state)
+                        activeTarget.target.onPressedChanged?.invoke(true)
+                        pressedFeedbackOwner = TestPressedFeedbackOwner.Refresh
+                        dragging = true
+                    }
+                    if (dragging) {
+                        activeTarget.target.controller.updatePull(
+                            activeTarget.target.state,
+                            totalDy.toFloat().coerceAtLeast(0f),
+                            activeTarget.target.thresholdPx,
+                        )
+                        needsRender = true
+                    }
                 }
             }
         }
 
         fun up() {
-            when (val activeTarget = target) {
+            clearPressedFeedback()
+            val activeTarget = target
+            when (activeTarget) {
                 is TestGestureTarget.Click -> {
                     if (!moved && activeTarget.target.bounds.contains(currentX, currentY)) {
                         activeTarget.target.onClick()
@@ -981,14 +1664,44 @@ public class PixelTester {
                     needsRender = true
                 }
                 is TestGestureTarget.Pager -> if (dragging) endPagerDrag(activeTarget.target, velocityFor(activeTarget.target.axis))
-                is TestGestureTarget.Slider,
-                is TestGestureTarget.Scrollbar,
-                is TestGestureTarget.Refresh,
-                -> Unit
+                is TestGestureTarget.Slider -> dispatchSliderRelease(activeTarget.target, currentX)
+                is TestGestureTarget.Scrollbar -> if (dragging) {
+                    activeTarget.target.controller.endDrag(
+                        activeTarget.target.state,
+                        0f,
+                        activeTarget.target.viewportHeightPx,
+                        activeTarget.target.contentHeightPx,
+                    )
+                    needsRender = true
+                }
+                is TestGestureTarget.Refresh -> if (dragging) {
+                    if (activeTarget.target.controller.endPull(
+                            activeTarget.target.state,
+                            activeTarget.target.thresholdPx,
+                        )
+                    ) {
+                        activeTarget.target.onRefresh()
+                    }
+                    needsRender = true
+                }
+                null -> Unit
+            }
+            val currentPressedClickTarget = pressedClickTarget
+            if (
+                !moved &&
+                activeTarget !is TestGestureTarget.Click &&
+                activeTarget !is TestGestureTarget.TextInput &&
+                activeTarget !is TestGestureTarget.Slider &&
+                activeTarget !is TestGestureTarget.Scrollbar &&
+                currentPressedClickTarget?.bounds?.contains(currentX, currentY) == true
+            ) {
+                currentPressedClickTarget.onClick.invoke()
+                needsRender = true
             }
         }
 
         fun cancel() {
+            clearPressedFeedback()
             when (val activeTarget = target) {
                 is TestGestureTarget.Pager -> if (dragging) cancelPagerDrag(activeTarget.target)
                 is TestGestureTarget.List -> if (dragging) {
@@ -1004,12 +1717,48 @@ public class PixelTester {
                     activeTarget.target.onSwipeEnd?.invoke(0)
                     needsRender = true
                 }
+                is TestGestureTarget.Scrollbar -> if (dragging) {
+                    activeTarget.target.controller.endDrag(
+                        activeTarget.target.state,
+                        0f,
+                        activeTarget.target.viewportHeightPx,
+                        activeTarget.target.contentHeightPx,
+                    )
+                    needsRender = true
+                }
+                is TestGestureTarget.Refresh -> if (dragging) {
+                    cancelRefreshPull(activeTarget.target)
+                    needsRender = true
+                }
                 is TestGestureTarget.TextInput,
                 is TestGestureTarget.Slider,
-                is TestGestureTarget.Scrollbar,
-                is TestGestureTarget.Refresh,
                 -> Unit
+                null -> Unit
             }
+        }
+
+        /** Sends the matching pressed=false exactly once on release, cancel, or drag takeover. */
+        private fun clearPressedFeedback() {
+            val owner = pressedFeedbackOwner ?: return
+            pressedFeedbackOwner = null
+            when (owner) {
+                TestPressedFeedbackOwner.Click -> {
+                    val activeTarget = target
+                    (pressedClickTarget ?: (activeTarget as? TestGestureTarget.Click)?.target)
+                        ?.onPressedChanged
+                        ?.invoke(false)
+                }
+                TestPressedFeedbackOwner.Slider -> {
+                    (target as? TestGestureTarget.Slider)?.target?.onPressedChanged?.invoke(false)
+                }
+                TestPressedFeedbackOwner.Scrollbar -> {
+                    (target as? TestGestureTarget.Scrollbar)?.target?.onPressedChanged?.invoke(false)
+                }
+                TestPressedFeedbackOwner.Refresh -> {
+                    (target as? TestGestureTarget.Refresh)?.target?.onPressedChanged?.invoke(false)
+                }
+            }
+            needsRender = true
         }
 
         private fun moveTextInput(target: PixelTextInputTarget) {
@@ -1130,6 +1879,41 @@ private class DefaultPixelTestGesture(
         tester.cancelGesture(pointerId)
     }
 }
+
+/**
+ * 定义 `PixelSemanticsActionArguments` 在 `PixelTester` 中承担的数据与行为边界。
+ *
+ * Optional values consumed by parameterized [PixelTester.performSemanticsAction] requests.
+ *
+ * Only the field corresponding to the requested action is read.
+ */
+public data class PixelSemanticsActionArguments(
+    /** 公开 `PixelTester` 的 `text` 配置或运行值。
+ *
+ * Replacement value for `SET_TEXT`.
+ */
+    public val text: String? = null,
+    /** 公开 `PixelTester` 的 `selectionStart` 配置或运行值。
+ *
+ * Inclusive start for `SET_SELECTION`.
+ */
+    public val selectionStart: Int? = null,
+    /** 公开 `PixelTester` 的 `selectionEnd` 配置或运行值。
+ *
+ * Exclusive end for `SET_SELECTION`.
+ */
+    public val selectionEnd: Int? = null,
+    /** 公开 `PixelTester` 的 `progress` 配置或运行值。
+ *
+ * Requested numeric value for `SET_PROGRESS`.
+ */
+    public val progress: Float? = null,
+    /** 公开 `PixelTester` 的 `customActionId` 配置或运行值。
+ *
+ * Stable custom action id for `CUSTOM`.
+ */
+    public val customActionId: String? = null,
+)
 
 /**
  * [PixelTester.startGesture] 返回的可推进测试手势。
@@ -1296,7 +2080,7 @@ public sealed class PixelFinder {
     /**
      * 通过 text/data/placeholder/state.text 字段匹配文本。
      */
-    public data class ByText(public val text: String) : PixelFinder() {
+    public data class ByText(/** 保存 `PixelTester` 对外传递的 `text` 数据。 */ public val text: String) : PixelFinder() {
         override fun matches(widget: Any): Boolean {
             val state = widget.readField("state")
             return widget.readField("text") == text ||
@@ -1309,25 +2093,45 @@ public sealed class PixelFinder {
     /**
      * 通过运行时类型匹配 widget。
      */
-    public data class ByType(public val type: kotlin.reflect.KClass<*>) : PixelFinder() {
+    public data class ByType(/** 提供 `PixelTester` 用于识别或兼容校验的 `type` 值。 */ public val type: kotlin.reflect.KClass<*>) : PixelFinder() {
         override fun matches(widget: Any): Boolean = type.java.isInstance(widget)
     }
 
     /**
      * 通过 widget key 匹配 widget。
      */
-    public data class ByKey(public val key: Any) : PixelFinder() {
+    public data class ByKey(/** 提供 `PixelTester` 用于识别或兼容校验的 `key` 值。 */ public val key: Any) : PixelFinder() {
         override fun matches(widget: Any): Boolean = widget.readField("key") == key
     }
 
     /**
      * 包装另一个 finder，只返回指定序号的命中项。
      */
-    public data class Nth(public val finder: PixelFinder, public val index: Int) : PixelFinder() {
+    public data class Nth(/** 记录 `PixelTester` 的 `finder` 配置或运行值，读取与更新均遵守所属类型约束。 */ public val finder: PixelFinder, /** 保存 `PixelTester` 的 `index` 计数或索引边界。 */ public val index: Int) : PixelFinder() {
+        /** Delegates matching to the wrapped finder for diagnostics. */
         override fun matches(widget: Any): Boolean = finder.matches(widget)
 
-        override fun resolve(root: Any?): Any? = finder.resolveAll(root).getOrNull(index)
+        /**
+         * Selects logical text controls without double-counting their decorative Text child.
+         *
+         * Stateful standard controls retain a configuration widget and render a nested TextWidget;
+         * both expose the same string. When at least one non-text owner matches, prefer those owners
+         * so `find.byText("OK").nth(1)` still means the second button rather than button one's label.
+         */
+        override fun resolve(root: Any?): Any? {
+            val matches = finder.resolveAll(root)
+            val logicalMatches = if (finder is ByText) {
+                val nonTextMatches = matches.filterNot { candidate ->
+                    candidate::class.java.simpleName == "TextWidget"
+                }
+                nonTextMatches.ifEmpty { matches }
+            } else {
+                matches
+            }
+            return logicalMatches.getOrNull(index)
+        }
 
+        /** Returns only the selected logical occurrence. */
         override fun resolveAll(root: Any?): List<Any> = listOfNotNull(resolve(root))
     }
 
@@ -1383,4 +2187,13 @@ private fun Any.readField(name: String): Any? {
             field.isAccessible = true
             field.get(this)
         }
+}
+
+/** Reads the first click-like callback carried by a public or internal interaction widget. */
+@Suppress("UNCHECKED_CAST")
+private fun Any.clickCallbackOrNull(): (() -> Unit)? {
+    return readField("onPressed") as? (() -> Unit)
+        ?: readField("onTap") as? (() -> Unit)
+        ?: readField("onLongPress") as? (() -> Unit)
+        ?: readField("onDoubleTap") as? (() -> Unit)
 }

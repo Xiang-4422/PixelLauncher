@@ -16,6 +16,7 @@ public object RenderPerfLogger {
     private val statsByStage = linkedMapOf<String, StageStats>()
     private var lastFlushUptimeMs = nowMs()
 
+    /** 向 `RenderPerfLogger` 提交 `mark` 数据或事件，并按所属类型的顺序与所有权规则保存。 */
     public fun mark(event: String, detail: String) {
         if (!enabled) {
             return
@@ -23,6 +24,7 @@ public object RenderPerfLogger {
         emit("$event | $detail")
     }
 
+    /** 依据约束计算 `RenderPerfLogger` 的 `measure` 布局结果，不越过调用方上界。 */
     public fun <T> measure(stage: String, block: () -> T): T {
         if (!enabled) {
             return block()
@@ -35,6 +37,7 @@ public object RenderPerfLogger {
         }
     }
 
+    /** 向 `RenderPerfLogger` 提交 `record` 数据或事件，并按所属类型的顺序与所有权规则保存。 */
     public fun record(stage: String, durationNs: Long) {
         if (!enabled) {
             return

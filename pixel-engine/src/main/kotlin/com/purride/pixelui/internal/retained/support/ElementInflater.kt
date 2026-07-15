@@ -1,3 +1,5 @@
+@file:OptIn(com.purride.pixelui.advanced.PixelExperimentalApi::class)
+
 package com.purride.pixelui.internal
 
 import com.purride.pixelui.InheritedNotifier
@@ -5,6 +7,9 @@ import com.purride.pixelui.InheritedWidget
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.Widget
+import com.purride.pixelui.advanced.PixelMultiChildRenderObjectWidget
+import com.purride.pixelui.advanced.PixelRenderObjectWidget
+import com.purride.pixelui.advanced.PixelSingleChildRenderObjectWidget
 
 /**
  * retained element 的构建协议。
@@ -32,6 +37,9 @@ internal class DefaultElementInflater(
         return when (widget) {
             is InheritedNotifier<*> -> InheritedNotifierElement(widget)
             is InheritedWidget -> InheritedElement(widget)
+            is PixelSingleChildRenderObjectWidget -> AdvancedSingleChildRenderObjectElement(widget)
+            is PixelMultiChildRenderObjectWidget -> AdvancedMultiChildRenderObjectElement(widget)
+            is PixelRenderObjectWidget -> AdvancedRenderObjectElement(widget)
             is RenderObjectWidget -> widget.createElement()
             is StatefulWidget -> StatefulElement(widget)
             is StatelessWidget -> StatelessElement(widget)

@@ -40,7 +40,9 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -797,6 +799,51 @@ class PipelineElementTreeRendererTest {
         assertEquals(listOf(2, 3, 4, 5, 6), builtItems)
         assertEquals(1_000, state.itemTopOffsetsPx.size)
         assertEquals(12_997, state.contentHeightPx)
+    }
+
+    /** 固定高度 lazy 列表在纯滚动 layout 中复用完整度量数组，并在几何变化后重建。 */
+    @Test
+    fun fixedLazyListReusesMetricsUntilGeometryChanges() {
+        /** 驱动固定列表状态同步的生产控制器。 */
+        val controller = PixelListController()
+        /** 接收完整顶部与高度度量的 retained 列表状态。 */
+        val state = controller.create()
+        /** 不需要真实子节点即可验证完整度量数组所有权的固定列表 viewport。 */
+        val viewport = RenderLazyListViewport(
+            firstItemIndex = 0,
+            itemCount = 5_000,
+            itemExtent = 8,
+            state = state,
+            controller = controller,
+            spacing = 1,
+        )
+        /** 两次 layout 共用的稳定视口约束。 */
+        val constraints = RenderConstraints(maxWidth = 32, maxHeight = 24)
+
+        viewport.layout(constraints)
+        /** 首次 layout 发布的顶部数组引用。 */
+        val firstTopOffsets = state.itemTopOffsetsPx
+        /** 首次 layout 发布的高度数组引用。 */
+        val firstItemHeights = state.itemHeightsPx
+        viewport.layout(constraints)
+
+        assertSame(firstTopOffsets, state.itemTopOffsetsPx)
+        assertSame(firstItemHeights, state.itemHeightsPx)
+
+        viewport.updateLazyListViewport(
+            firstItemIndex = 0,
+            itemCount = 5_000,
+            itemExtent = 9,
+            state = state,
+            controller = controller,
+            spacing = 1,
+        )
+        viewport.layout(constraints)
+
+        assertNotSame(firstTopOffsets, state.itemTopOffsetsPx)
+        assertNotSame(firstItemHeights, state.itemHeightsPx)
+        assertEquals(9, state.itemHeightsPx.first())
+        assertEquals(10, state.itemTopOffsetsPx[1])
     }
 
     /**

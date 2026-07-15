@@ -1,6 +1,7 @@
 package com.purride.pixelui.state
 
 import android.os.Bundle
+import com.purride.pixelui.internal.PixelArtifactInternalApi
 
 /**
  * 通用列表状态。
@@ -12,22 +13,34 @@ import android.os.Bundle
 public class PixelListState(
     initialScrollOffsetPx: Float = 0f,
 ) {
+    /** 保存 `PixelListState` 的 `scrollOffsetPx` 逻辑坐标或位移；写入后由所属对象在下一次状态同步时生效。 */
     public var scrollOffsetPx: Float = initialScrollOffsetPx.coerceAtLeast(0f)
         internal set
 
+    /** 表示 `PixelListState` 当前是否满足 `isDragging` 对应条件；写入后由所属对象在下一次状态同步时生效。 */
     public var isDragging: Boolean = false
         internal set
 
+    /** 表示 `PixelListState` 当前是否满足 `isSettling` 对应条件；写入后由所属对象在下一次状态同步时生效。 */
     public var isSettling: Boolean = false
         internal set
 
+    /** 记录 `PixelListState` 的 `scrollVelocityPxPerSecond` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
     public var scrollVelocityPxPerSecond: Float = 0f
         internal set
 
-    internal var maxScrollOffsetPx: Float = 0f
-    internal var viewportWidthPx: Int = 0
-    internal var viewportHeightPx: Int = 0
-    internal var contentHeightPx: Int = 0
+    /** 供 runtime 视口回填的最大滚动边界。 */
+    @PixelArtifactInternalApi
+    public var maxScrollOffsetPx: Float = 0f
+    /** 供 runtime 视口回填的最近布局宽度。 */
+    @PixelArtifactInternalApi
+    public var viewportWidthPx: Int = 0
+    /** 供 runtime 视口回填的最近布局高度。 */
+    @PixelArtifactInternalApi
+    public var viewportHeightPx: Int = 0
+    /** 供 runtime 视口回填的最近内容高度。 */
+    @PixelArtifactInternalApi
+    public var contentHeightPx: Int = 0
 
     /**
      * 列表运行时最近一次测量出的项布局信息。
@@ -35,20 +48,34 @@ public class PixelListState(
      * 当前先把每一项在内容坐标系里的顶部位置和高度回填进状态，
      * 这样控制器就能在不依赖业务侧布局代码的前提下做“滚动到某一项”。
      */
-    internal var itemTopOffsetsPx: IntArray = intArrayOf()
-    internal var itemHeightsPx: IntArray = intArrayOf()
+    @PixelArtifactInternalApi
+    public var itemTopOffsetsPx: IntArray = intArrayOf()
+    @PixelArtifactInternalApi
+    /** 定义 `PixelListState` 布局中的 `itemHeightsPx` 逻辑像素度量；写入后由所属对象在下一次状态同步时生效。 */
+    public var itemHeightsPx: IntArray = intArrayOf()
 
     /**
      * 变高 lazy list 的内部测量缓存。
      *
      * 0 表示该 item 尚未测量；render layout 会在真实子节点完成布局后回写。
      */
-    internal var measuredItemHeightsPx: IntArray = intArrayOf()
-    internal val itemExtentIndex: PixelItemExtentIndex = PixelItemExtentIndex()
-    internal var measuredSeparatedVirtualHeightsPx: IntArray = intArrayOf()
-    internal val separatedExtentIndex: PixelSeparatedExtentIndex = PixelSeparatedExtentIndex()
-    internal var separatedItemGeometryActive: Boolean = false
-    internal var separatedItemExtentVariable: Boolean = false
+    @PixelArtifactInternalApi
+    public var measuredItemHeightsPx: IntArray = intArrayOf()
+    @PixelArtifactInternalApi
+    /** 定义 `PixelListState` 布局中的 `itemExtentIndex` 逻辑像素度量。 */
+    public val itemExtentIndex: PixelItemExtentIndex = PixelItemExtentIndex()
+    @PixelArtifactInternalApi
+    /** 定义 `PixelListState` 布局中的 `measuredSeparatedVirtualHeightsPx` 逻辑像素度量；写入后由所属对象在下一次状态同步时生效。 */
+    public var measuredSeparatedVirtualHeightsPx: IntArray = intArrayOf()
+    @PixelArtifactInternalApi
+    /** 定义 `PixelListState` 布局中的 `separatedExtentIndex` 逻辑像素度量。 */
+    public val separatedExtentIndex: PixelSeparatedExtentIndex = PixelSeparatedExtentIndex()
+    @PixelArtifactInternalApi
+    /** 表示 `PixelListState` 当前是否满足 `separatedItemGeometryActive` 对应条件；写入后由所属对象在下一次状态同步时生效。 */
+    public var separatedItemGeometryActive: Boolean = false
+    @PixelArtifactInternalApi
+    /** 表示 `PixelListState` 当前是否满足 `separatedItemExtentVariable` 对应条件；写入后由所属对象在下一次状态同步时生效。 */
+    public var separatedItemExtentVariable: Boolean = false
 
     /**
      * 变高 lazy list 的"远端目标项尚未测量，等下一帧重测后微调"标记。
@@ -58,26 +85,40 @@ public class PixelListState(
      * RenderVariableLazyListViewport 在下一次 layout 完成测量后会重新调用一次
      * scrollItemIntoView，使用真实测量值进行二次微调；测量到位即清空。
      */
-    internal var pendingScrollIntoViewItemIndex: Int? = null
+    @PixelArtifactInternalApi
+    public var pendingScrollIntoViewItemIndex: Int? = null
     internal var pendingRestorationState: PixelListSavedState? = null
     internal var pendingRestorationPolicy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset
     internal var pendingJumpToEnd: Boolean = false
-    internal var scrollSnapRanges: List<PixelScrollSnapRange> = emptyList()
+    @PixelArtifactInternalApi
+    /** 保存 `PixelListState` 当前的 `scrollSnapRanges` 集合；元素顺序和所有权遵守所属类型契约；写入后由所属对象在下一次状态同步时生效。 */
+    public var scrollSnapRanges: List<PixelScrollSnapRange> = emptyList()
     internal var snapTargetOffsetPx: Float? = null
-    internal var lastFloatingScrollOffsetPx: Float? = null
-    internal val floatingRevealBySliverIndex: MutableMap<Int, Int> = mutableMapOf()
-    internal val sliverListGeometries: MutableMap<Int, PixelSliverListGeometry> = mutableMapOf()
-    internal var pendingSliverScrollIntoView: PixelPendingSliverScrollIntoView? = null
+    @PixelArtifactInternalApi
+    /** 保存 `PixelListState` 的 `lastFloatingScrollOffsetPx` 逻辑坐标或位移；写入后由所属对象在下一次状态同步时生效。 */
+    public var lastFloatingScrollOffsetPx: Float? = null
+    @PixelArtifactInternalApi
+    /** 保存 `PixelListState` 的 `floatingRevealBySliverIndex` 计数或索引边界。 */
+    public val floatingRevealBySliverIndex: MutableMap<Int, Int> = mutableMapOf()
+    @PixelArtifactInternalApi
+    /** 保存 `PixelListState` 当前的 `sliverListGeometries` 集合；元素顺序和所有权遵守所属类型契约。 */
+    public val sliverListGeometries: MutableMap<Int, PixelSliverListGeometry> = mutableMapOf()
+    @PixelArtifactInternalApi
+    /** 记录 `PixelListState` 的 `pendingSliverScrollIntoView` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    public var pendingSliverScrollIntoView: PixelPendingSliverScrollIntoView? = null
 }
 
-internal class PixelItemExtentIndex {
+/** 供 runtime 视口跨 artifact 复用的 Fenwick item 高度索引。 */
+@PixelArtifactInternalApi
+public class PixelItemExtentIndex {
     private var itemCount: Int = 0
     private var estimatedItemExtent: Int = 1
     private var spacing: Int = 0
     private var extents: IntArray = intArrayOf()
     private var fenwickTree: IntArray = intArrayOf()
 
-    fun configure(
+    /** 按 `configure` 规则校验或配置 `PixelListState`，不满足不变量的输入会被明确拒绝。 */
+    public fun configure(
         itemCount: Int,
         estimatedItemExtent: Int,
         spacing: Int,
@@ -108,7 +149,8 @@ internal class PixelItemExtentIndex {
         }
     }
 
-    fun updateMeasured(itemIndex: Int, measuredExtent: Int) {
+    /** 更新 `PixelListState` 的 `updateMeasured` 状态，并保持相关边界与派生状态一致。 */
+    public fun updateMeasured(itemIndex: Int, measuredExtent: Int) {
         if (itemIndex !in 0 until itemCount) return
         val safeExtent = measuredExtent.coerceAtLeast(1)
         val delta = safeExtent - extents[itemIndex]
@@ -117,21 +159,26 @@ internal class PixelItemExtentIndex {
         addToFenwick(itemIndex, delta)
     }
 
-    fun extentPx(itemIndex: Int): Int = extents.getOrElse(itemIndex) { 0 }
+    /** 查询 `PixelListState` 的 `extentPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun extentPx(itemIndex: Int): Int = extents.getOrElse(itemIndex) { 0 }
 
-    fun topPx(itemIndex: Int): Int {
+    /** 查询 `PixelListState` 的 `topPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun topPx(itemIndex: Int): Int {
         val safeIndex = itemIndex.coerceIn(0, itemCount)
         return prefixSum(safeIndex) + safeIndex * spacing
     }
 
-    fun bottomPx(itemIndex: Int): Int = topPx(itemIndex) + extentPx(itemIndex)
+    /** 查询 `PixelListState` 的 `bottomPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun bottomPx(itemIndex: Int): Int = topPx(itemIndex) + extentPx(itemIndex)
 
-    fun totalHeightPx(): Int {
+    /** 查询 `PixelListState` 的 `totalHeightPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun totalHeightPx(): Int {
         if (itemCount <= 0) return 0
         return prefixSum(itemCount) + (itemCount - 1) * spacing
     }
 
-    fun indexAtOffsetPx(offsetPx: Int): Int {
+    /** 依据 `PixelListState` 的公开契约执行 `indexAtOffsetPx`，并返回或提交经过边界校验的结果。 */
+    public fun indexAtOffsetPx(offsetPx: Int): Int {
         if (itemCount <= 0) return 0
         val target = offsetPx.coerceIn(0, (totalHeightPx() - 1).coerceAtLeast(0))
         var low = 0
@@ -169,25 +216,38 @@ internal class PixelItemExtentIndex {
     }
 }
 
-internal data class PixelScrollSnapRange(
-    val startOffsetPx: Float,
-    val endOffsetPx: Float,
+/** runtime 计算滚动吸附时使用的闭区间。 */
+@PixelArtifactInternalApi
+public data class PixelScrollSnapRange(
+    /** 保存 `PixelListState` 的 `startOffsetPx` 逻辑坐标或位移。 */
+    public val startOffsetPx: Float,
+    /** 保存 `PixelListState` 的 `endOffsetPx` 逻辑坐标或位移。 */
+    public val endOffsetPx: Float,
 )
 
-internal class PixelSliverListGeometry(
-    var contentStartPx: Int,
-    var itemCount: Int,
-    var estimatedItemExtent: Int,
-    var spacing: Int,
-    var variableHeight: Boolean,
+/** runtime 在 sliver 之间共享的列表测量几何。 */
+@PixelArtifactInternalApi
+public class PixelSliverListGeometry(
+    /** 记录 `PixelListState` 的 `contentStartPx` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    public var contentStartPx: Int,
+    /** 保存 `PixelListState` 的 `itemCount` 计数或索引边界；写入后由所属对象在下一次状态同步时生效。 */
+    public var itemCount: Int,
+    /** 定义 `PixelListState` 布局中的 `estimatedItemExtent` 逻辑像素度量；写入后由所属对象在下一次状态同步时生效。 */
+    public var estimatedItemExtent: Int,
+    /** 定义 `PixelListState` 布局中的 `spacing` 逻辑像素度量；写入后由所属对象在下一次状态同步时生效。 */
+    public var spacing: Int,
+    /** 表示 `PixelListState` 当前是否满足 `variableHeight` 对应条件；写入后由所属对象在下一次状态同步时生效。 */
+    public var variableHeight: Boolean,
     measuredItemHeightsPx: IntArray = intArrayOf(),
 ) {
-    var measuredItemHeightsPx: IntArray = IntArray(itemCount.coerceAtLeast(0)) { index ->
+    /** 定义 `PixelListState` 布局中的 `measuredItemHeightsPx` 逻辑像素度量；写入后由所属对象在下一次状态同步时生效。 */
+    public var measuredItemHeightsPx: IntArray = IntArray(itemCount.coerceAtLeast(0)) { index ->
         measuredItemHeightsPx.getOrNull(index) ?: 0
     }
         private set
 
-    fun update(
+    /** 更新 `PixelListState` 的 `update` 状态，并保持相关边界与派生状态一致。 */
+    public fun update(
         contentStartPx: Int,
         itemCount: Int,
         estimatedItemExtent: Int,
@@ -207,12 +267,14 @@ internal class PixelSliverListGeometry(
         }
     }
 
-    fun itemHeightPx(itemIndex: Int): Int {
+    /** 查询 `PixelListState` 的 `itemHeightPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun itemHeightPx(itemIndex: Int): Int {
         val measured = measuredItemHeightsPx.getOrNull(itemIndex) ?: 0
         return if (variableHeight && measured > 0) measured else estimatedItemExtent
     }
 
-    fun itemTopPx(itemIndex: Int): Int {
+    /** 查询 `PixelListState` 的 `itemTopPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun itemTopPx(itemIndex: Int): Int {
         var top = contentStartPx
         for (index in 0 until itemIndex.coerceIn(0, itemCount)) {
             top += itemHeightPx(index)
@@ -221,9 +283,11 @@ internal class PixelSliverListGeometry(
         return top
     }
 
-    fun itemBottomPx(itemIndex: Int): Int = itemTopPx(itemIndex) + itemHeightPx(itemIndex)
+    /** 查询 `PixelListState` 的 `itemBottomPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun itemBottomPx(itemIndex: Int): Int = itemTopPx(itemIndex) + itemHeightPx(itemIndex)
 
-    fun indexAtOffsetPx(offsetPx: Int): Int {
+    /** 依据 `PixelListState` 的公开契约执行 `indexAtOffsetPx`，并返回或提交经过边界校验的结果。 */
+    public fun indexAtOffsetPx(offsetPx: Int): Int {
         if (itemCount <= 0) return 0
         val localOffsetPx = (offsetPx - contentStartPx).coerceIn(0, (contentHeightPx() - 1).coerceAtLeast(0))
         var cursor = 0
@@ -242,7 +306,8 @@ internal class PixelSliverListGeometry(
         return itemCount - 1
     }
 
-    fun contentHeightPx(): Int {
+    /** 查询 `PixelListState` 的 `contentHeightPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun contentHeightPx(): Int {
         if (itemCount <= 0) return 0
         var height = 0
         repeat(itemCount) { index ->
@@ -253,12 +318,18 @@ internal class PixelSliverListGeometry(
     }
 }
 
-internal data class PixelPendingSliverScrollIntoView(
-    val sliverIndex: Int,
-    val itemIndex: Int,
+/** 等待 sliver 完成真实测量后再次校正的滚动目标。 */
+@PixelArtifactInternalApi
+public data class PixelPendingSliverScrollIntoView(
+    /** 保存 `PixelListState` 的 `sliverIndex` 计数或索引边界。 */
+    public val sliverIndex: Int,
+    /** 保存 `PixelListState` 的 `itemIndex` 计数或索引边界。 */
+    public val itemIndex: Int,
 )
 
-internal class PixelSeparatedExtentIndex {
+/** 供 separated list 跨 artifact 复用的虚拟项高度索引。 */
+@PixelArtifactInternalApi
+public class PixelSeparatedExtentIndex {
     private var virtualCount: Int = 0
     private var itemExtent: Int? = null
     private var separatorExtent: Int? = null
@@ -267,7 +338,8 @@ internal class PixelSeparatedExtentIndex {
     private var extents: IntArray = intArrayOf()
     private var fenwickTree: IntArray = intArrayOf()
 
-    fun configure(
+    /** 按 `configure` 规则校验或配置 `PixelListState`，不满足不变量的输入会被明确拒绝。 */
+    public fun configure(
         itemCount: Int,
         itemExtent: Int?,
         separatorExtent: Int?,
@@ -308,7 +380,8 @@ internal class PixelSeparatedExtentIndex {
         }
     }
 
-    fun updateMeasured(virtualIndex: Int, measuredExtent: Int) {
+    /** 更新 `PixelListState` 的 `updateMeasured` 状态，并保持相关边界与派生状态一致。 */
+    public fun updateMeasured(virtualIndex: Int, measuredExtent: Int) {
         if (virtualIndex !in 0 until virtualCount) return
         val fixedExtent = if (virtualIndex % 2 == 0) itemExtent else separatorExtent
         if (fixedExtent != null) return
@@ -319,15 +392,20 @@ internal class PixelSeparatedExtentIndex {
         addToFenwick(virtualIndex, delta)
     }
 
-    fun extentPx(virtualIndex: Int): Int = extents.getOrElse(virtualIndex) { 0 }
+    /** 查询 `PixelListState` 的 `extentPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun extentPx(virtualIndex: Int): Int = extents.getOrElse(virtualIndex) { 0 }
 
-    fun topPx(virtualIndex: Int): Int = prefixSum(virtualIndex.coerceIn(0, virtualCount))
+    /** 查询 `PixelListState` 的 `topPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun topPx(virtualIndex: Int): Int = prefixSum(virtualIndex.coerceIn(0, virtualCount))
 
-    fun bottomPx(virtualIndex: Int): Int = topPx(virtualIndex) + extentPx(virtualIndex)
+    /** 查询 `PixelListState` 的 `bottomPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun bottomPx(virtualIndex: Int): Int = topPx(virtualIndex) + extentPx(virtualIndex)
 
-    fun totalHeightPx(): Int = prefixSum(virtualCount)
+    /** 查询 `PixelListState` 的 `totalHeightPx` 派生结果；该读取不会改变已保存状态。 */
+    public fun totalHeightPx(): Int = prefixSum(virtualCount)
 
-    fun indexAtOffsetPx(offsetPx: Int): Int {
+    /** 依据 `PixelListState` 的公开契约执行 `indexAtOffsetPx`，并返回或提交经过边界校验的结果。 */
+    public fun indexAtOffsetPx(offsetPx: Int): Int {
         if (virtualCount <= 0) return 0
         val target = offsetPx.coerceIn(0, (totalHeightPx() - 1).coerceAtLeast(0))
         var index = 0
@@ -364,11 +442,15 @@ internal class PixelSeparatedExtentIndex {
 }
 
 /**
+ * 公开 `PixelListState` 当前的 `PixelListSavedStateBundleKey` 状态维度。
+ *
  * Android [Bundle] key used by [PixelListSavedState.saveToBundle] and [getPixelListSavedState].
  */
 public const val PixelListSavedStateBundleKey: String = "com.purride.pixelui.list.savedState"
 
 /**
+ * 定义 `PixelListAnchor` 在 `PixelListState` 中承担的数据与行为边界。
+ *
  * A stable item anchor captured with [PixelListSavedState].
  *
  * [itemIndex] is the first visible item at save time. [itemOffsetPx] is the number of pixels
@@ -376,8 +458,11 @@ public const val PixelListSavedStateBundleKey: String = "com.purride.pixelui.lis
  * lazy sliver inside `CustomScrollView`.
  */
 public data class PixelListAnchor(
+    /** 保存 `PixelListState` 的 `itemIndex` 计数或索引边界。 */
     public val itemIndex: Int,
+    /** 保存 `PixelListState` 的 `itemOffsetPx` 逻辑坐标或位移。 */
     public val itemOffsetPx: Float,
+    /** 保存 `PixelListState` 的 `sliverIndex` 计数或索引边界。 */
     public val sliverIndex: Int? = null,
 )
 
@@ -385,12 +470,17 @@ public data class PixelListAnchor(
  * List/Grid/SingleChildScrollView 的可持久化滚动位置。
  */
 public data class PixelListSavedState(
+    /** 保存 `PixelListState` 的 `scrollOffsetPx` 逻辑坐标或位移。 */
     public val scrollOffsetPx: Float,
+    /** 保存 `PixelListState` 的 `maxScrollOffsetPx` 逻辑坐标或位移。 */
     public val maxScrollOffsetPx: Float = 0f,
+    /** 记录 `PixelListState` 的 `anchor` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val anchor: PixelListAnchor? = null,
 )
 
 /**
+ * 执行 `PixelListState` 的 `saveToBundle` 公开行为；具体参数、返回和副作用见下文。
+ *
  * Saves this list scroll snapshot into an Android [Bundle].
  */
 public fun PixelListSavedState.saveToBundle(
@@ -416,6 +506,8 @@ public fun PixelListSavedState.saveToBundle(
 }
 
 /**
+ * 查询 `PixelListState` 的 `getPixelListSavedState` 结果，不产生额外状态变更。
+ *
  * Reads a [PixelListSavedState] previously saved into this Android [Bundle].
  */
 public fun Bundle.getPixelListSavedState(

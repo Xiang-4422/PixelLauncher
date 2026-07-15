@@ -21,6 +21,7 @@ class DemoCatalogCoverageTest {
                 "输入",
                 "控件",
                 "反馈",
+                "主题",
                 "滚动",
                 "绘制",
                 "动效",
@@ -89,8 +90,15 @@ class DemoCatalogCoverageTest {
         assertSearchContains("SegmentedControl", "controls_tabs")
         assertSearchContains("ShortcutHint", "controls_shortcut_hint")
         assertSearchContains("KeyboardAvoidingView", "layout_ime_avoiding")
+        assertSearchContains("AdaptiveBuilder", "adaptive_localization")
+        assertSearchContains("localization", "adaptive_localization")
+        assertSearchContains("multi-stack", "adaptive_localization")
         assertSearchContains("Toast", "feedback_dialog")
         assertSearchContains("ToastQueue", "feedback_overlay_tools")
+        assertSearchContains("PixelThemeTokens", "theme_showcase")
+        assertSearchContains("high-contrast", "theme_showcase")
+        assertSearchContains("PixelPopupRoute", "feedback_overlay_tools")
+        assertSearchContains("PixelOverlayDismissPolicy", "feedback_overlay_tools")
         assertSearchContains("Dropdown", "feedback_popover_menu")
         assertSearchContains("Tooltip", "feedback_popover_menu")
         assertSearchContains("LoadStateView", "feedback_load_state_view")
@@ -103,6 +111,9 @@ class DemoCatalogCoverageTest {
         assertSearchContains("AnimatedPadding", "animation_animated_container")
         assertSearchContains("AnimatedVisibility", "animation_animated_container")
         assertSearchContains("AnimatedBuilder", "animation_tween_animation_builder")
+        assertSearchContains("PixelMotionTheme", "animation_motion_showcase")
+        assertSearchContains("reduce-motion", "animation_motion_showcase")
+        assertSearchContains("Slidable", "animation_motion_showcase")
         assertSearchContains("FocusNode", "input_focus_scope")
         assertSearchContains("FocusTraversalGroup", "input_focus_scope")
         assertSearchContains("FormFieldState", "input_form")
@@ -110,9 +121,49 @@ class DemoCatalogCoverageTest {
         assertSearchContains("PixelResourceCache", "deep_resources_sprites")
         assertSearchContains("PixelNavigatorSnapshot", "deep_navigation_runtime")
         assertSearchContains("FormValidator", "input_form")
+        assertSearchContains("TalkBack", "input_accessibility_flow")
         assertSearchContains("PixelInspectorPanel", "debug_inspector_panel")
         assertSearchContains("PixelLeafRenderObjectWidget", "deep_inspector_advanced")
         assertSearchContains("PixelPagerSavedState", "deep_state_restoration")
+    }
+
+    /** Accessibility showcase remains discoverable with every API required by its core flow. */
+    @Test
+    fun accessibilityFlowSceneIsRegisteredWithEndToEndApis() {
+        val scene = DemoCatalog.findById("input_accessibility_flow")
+        assertNotNull(scene)
+        assertEquals(DemoCatalog.input.id, scene?.category?.id)
+        assertTrue(scene?.tags?.contains("accessibility") == true)
+        assertTrue(
+            scene?.apis?.containsAll(
+                setOf("TextField", "ListViewBuilder", "Slider", "Dropdown", "PixelOverlayHost"),
+            ) == true,
+        )
+    }
+
+    /** Production-overlay scene remains discoverable with route lifecycle and both FIFO lanes. */
+    @Test
+    fun productionOverlaySceneExposesM43Apis() {
+        /** Registered scene whose metadata drives catalog search and API documentation links. */
+        val scene = requireNotNull(DemoCatalog.findById("feedback_overlay_tools"))
+
+        assertEquals("ProductionOverlay", scene.title)
+        assertTrue("typed-result" in scene.tags)
+        assertTrue(
+            scene.apis.containsAll(
+                setOf(
+                    "PixelOverlayHost",
+                    "PixelPopupRoute",
+                    "PixelOverlayEntry",
+                    "PixelOverlayOutcome",
+                    "PixelOverlayLayer",
+                    "PixelOverlayBarrier",
+                    "PixelOverlayDismissPolicy",
+                    "ToastQueue",
+                    "SnackbarQueue",
+                ),
+            ),
+        )
     }
 
     @Test
@@ -184,6 +235,7 @@ class DemoCatalogCoverageTest {
                 "controls_value",
                 "feedback_status",
                 "feedback_overlay",
+                "theme_tokens",
                 "scroll_views",
                 "scroll_refresh",
                 "paint_primitives",
@@ -211,6 +263,43 @@ class DemoCatalogCoverageTest {
             DemoCatalog.groups.first { it.id == "layout_box" }.sceneIds,
         )
         assertEquals(DemoCatalog.groups.flatMap { it.sceneIds }, DemoCatalog.allItems.map { it.id })
+    }
+
+    /** 验证独立 Motion showcase 可从动效分组发现且暴露关键交互 API。 */
+    @Test
+    fun motionShowcaseIsDiscoverableFromAnimationGroup() {
+        val motionScene = requireNotNull(DemoCatalog.findById("animation_motion_showcase"))
+        val animationGroup = DemoCatalog.groups.first { it.id == "animation_widgets" }
+
+        assertEquals(DemoCatalog.animation, motionScene.category)
+        assertTrue("Motion scene must belong to animation_widgets", motionScene.id in animationGroup.sceneIds)
+        assertTrue("Motion scene must expose PixelMotionScope", "PixelMotionScope" in motionScene.apis)
+        assertTrue("Motion scene must expose Popover", "Popover" in motionScene.apis)
+        assertTrue("Motion scene must expose Slidable", "Slidable" in motionScene.apis)
+    }
+
+    /** Integrated adaptive/localization scene remains discoverable with its retained Host flows. */
+    @Test
+    fun adaptiveLocalizationSceneExposesM53IntegrationApis() {
+        /** Registered scene used by the M5-3F interactive acceptance path. */
+        val scene = requireNotNull(DemoCatalog.findById("adaptive_localization"))
+        /** Layout system group that owns SafeArea, IME and adaptive viewport examples. */
+        val layoutSystemGroup = DemoCatalog.groups.first { it.id == "layout_system" }
+
+        assertEquals(DemoCatalog.layout, scene.category)
+        assertTrue(scene.id in layoutSystemGroup.sceneIds)
+        assertTrue(
+            scene.apis.containsAll(
+                setOf(
+                    "AdaptiveBuilder",
+                    "PixelLocalizationProvider",
+                    "TextField",
+                    "SafeArea",
+                    "PixelMultiStackNavigator",
+                    "NavigationBar",
+                ),
+            ),
+        )
     }
 
     private fun assertSearchContains(query: String, sceneId: String) {

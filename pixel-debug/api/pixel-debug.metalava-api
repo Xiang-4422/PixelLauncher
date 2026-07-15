@@ -1,0 +1,16 @@
+// Signature format: 4.0
+package com.purride.pixelui {
+
+  public final class PixelDebugOverlayKt {
+    method public static com.purride.pixelui.Widget PixelDebugOverlay(com.purride.pixelui.PixelHostFrameStats? stats, optional Object? key, optional com.purride.pixelui.PixelInspectorSnapshot? inspector, optional Integer? activeTickerCount);
+  }
+
+  public final class PixelInspectorBoundsOverlayKt {
+    method public static com.purride.pixelui.Widget PixelInspectorBoundsOverlay(com.purride.pixelui.PixelInspectorSnapshot snapshot, int width, int height, optional java.util.Set<? extends com.purride.pixelui.PixelInspectorTargetKind> kinds, optional int strokeWidth, optional Object? key, optional com.purride.pixelui.PixelInspectorTargetSnapshot? selectedTarget);
+  }
+
+  public final class PixelInspectorPanelKt {
+    method public static com.purride.pixelui.Widget PixelInspectorPanel(com.purride.pixelui.PixelInspectorSnapshot snapshot, optional Object? key, optional int maxTreeLines, optional com.purride.pixelui.PixelInspectorTargetSnapshot? selectedTarget);
+  }
+
+}

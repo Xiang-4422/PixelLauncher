@@ -122,6 +122,7 @@ public class AxisMotionController(
         return 1f - (oneMinusT * oneMinusT * oneMinusT)
     }
 
+    /** 集中提供 `AxisMotion` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         private const val SETTLE_EPSILON_PX = 0.25f
     }

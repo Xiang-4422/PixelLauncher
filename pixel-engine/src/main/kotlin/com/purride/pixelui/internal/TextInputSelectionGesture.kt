@@ -2,8 +2,10 @@ package com.purride.pixelui.internal
 
 import com.purride.pixelui.TextInputSelectionHandle
 
-internal object PixelTextInputSelectionGesture {
-    fun resolveSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
+/** 集中提供 `TextInputSelectionGesture` 共享的工厂、常量或无状态辅助入口。 */
+public object PixelTextInputSelectionGesture {
+    /** 按 `TextInputSelectionGesture` 的规则解析 `resolveSelection` 目标，并返回稳定的匹配结果。 */
+    public fun resolveSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): Int {
         target.textIndexAt?.let { mapper ->
             return mapper(logicalX, logicalY).coerceIn(0, target.state.text.length)
         }
@@ -28,7 +30,8 @@ internal object PixelTextInputSelectionGesture {
         return (index + column.coerceIn(0, line.length)).coerceIn(0, text.length)
     }
 
-    fun nearestHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): TextInputSelectionHandle? {
+    /** 查询 `TextInputSelectionGesture` 的 `nearestHandle` 派生结果；该读取不会改变已保存状态。 */
+    public fun nearestHandle(target: PixelTextInputTarget, logicalX: Int, logicalY: Int): TextInputSelectionHandle? {
         val state = target.state
         if (state.selectionStart == state.selectionEnd) return null
         val selection = resolveSelection(target, logicalX, logicalY)
@@ -41,12 +44,14 @@ internal object PixelTextInputSelectionGesture {
         }
     }
 
-    fun setCollapsedSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int) {
+    /** 更新 `TextInputSelectionGesture` 的 `setCollapsedSelection` 状态，并保持相关边界与派生状态一致。 */
+    public fun setCollapsedSelection(target: PixelTextInputTarget, logicalX: Int, logicalY: Int) {
         val selection = resolveSelection(target, logicalX, logicalY)
         target.controller.setSelection(target.state, selection)
     }
 
-    fun dragHandle(
+    /** 处理 `TextInputSelectionGesture` 的 `dragHandle` 手势阶段，并保持命中目标与消费状态一致。 */
+    public fun dragHandle(
         target: PixelTextInputTarget,
         handle: TextInputSelectionHandle?,
         logicalX: Int,

@@ -1,6 +1,7 @@
 package com.purride.pixelui.host
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -69,5 +70,59 @@ class ManualFrameSchedulerTest {
         scheduler.clear()
         scheduler.advanceFrame(0L)
         assertTrue("Cleared callbacks must not fire", !fired)
+    }
+
+    /** Cancellable registrations are physically removed from the manual queue. */
+    @Test
+    fun cancellableCallbackIsRemovedBeforeAdvance() {
+        // Explicit capability type proves the additive scheduler interface is consumable.
+        val scheduler: PixelCancellableFrameScheduler = ManualFrameScheduler()
+        // Delivery flag must remain false after cancellation and source advancement.
+        var fired = false
+        val registration: PixelFrameCallbackRegistration = scheduler.scheduleCancellableFrame {
+            fired = true
+        }
+
+        assertTrue(registration.isPending)
+        assertTrue(registration.cancel())
+        assertFalse(registration.isPending)
+        assertFalse(registration.cancel())
+        val manualScheduler = scheduler as ManualFrameScheduler
+        assertEquals(0, manualScheduler.pendingCount)
+        manualScheduler.advanceFrame(1L)
+        assertFalse(fired)
+    }
+
+    /** Third-party legacy schedulers receive logical cancellation without an ABI change. */
+    @Test
+    fun legacySchedulerFallbackSuppressesCancelledCallback() {
+        // Minimal scheduler implements only the original Unit-returning method.
+        val scheduler = LegacyTestFrameScheduler()
+        // Extension registration guards the old callback when physical removal is unavailable.
+        var fired = false
+        val registration: PixelFrameCallbackRegistration =
+            scheduler.scheduleCancellableFrame { fired = true }
+
+        assertTrue(registration.cancel())
+        scheduler.fire(2L)
+        assertFalse(fired)
+    }
+
+    /** Test scheduler representing an existing third-party implementation of the old interface. */
+    private class LegacyTestFrameScheduler : PixelFrameScheduler {
+        /** Single callback retained by this minimal compatibility fixture. */
+        private var callback: ((Long) -> Unit)? = null
+
+        /** Implements the unchanged historical scheduler method. */
+        override fun scheduleFrame(callback: (Long) -> Unit) {
+            this.callback = callback
+        }
+
+        /** Delivers the retained callback once. */
+        fun fire(frameTimeNanos: Long) {
+            val pendingCallback = callback
+            callback = null
+            pendingCallback?.invoke(frameTimeNanos)
+        }
     }
 }

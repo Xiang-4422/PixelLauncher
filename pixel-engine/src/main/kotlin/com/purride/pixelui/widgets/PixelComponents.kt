@@ -4,11 +4,16 @@ import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.animation.PixelTicker
 import com.purride.pixelui.animation.PixelTickerProvider
+import com.purride.pixelui.animation.PixelColorTween
 import com.purride.pixelui.internal.HitTestResult
+import com.purride.pixelui.internal.InteractionDetector
+import com.purride.pixelui.internal.AutomaticFocusAction
 import com.purride.pixelui.internal.LeafRenderObjectWidget
 import com.purride.pixelui.internal.MultiChildRenderObject
 import com.purride.pixelui.internal.MultiChildRenderObjectWidget
+import com.purride.pixelui.internal.ModalInteractionScopeWidget
 import com.purride.pixelui.internal.PaintContext
+import com.purride.pixelui.internal.PixelArtifactInternalApi
 import com.purride.pixelui.internal.PixelClickTarget
 import com.purride.pixelui.internal.PixelRect
 import com.purride.pixelui.internal.PixelSemanticsTarget
@@ -16,16 +21,36 @@ import com.purride.pixelui.internal.RenderBox
 import com.purride.pixelui.internal.RenderConstraints
 import com.purride.pixelui.internal.RenderObject
 import com.purride.pixelui.internal.RenderSize
+import com.purride.pixelui.internal.SafeOverlayAlignment
+import com.purride.pixelui.internal.SafeOverlayBodyViewportWidget
+import com.purride.pixelui.internal.SafeOverlayViewportWidget
+import com.purride.pixelui.internal.activationKeyHandler
+import com.purride.pixelui.internal.withControlFocusIndicator
 import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.time.Duration
 
+/** 定义 `PixelIconData` 在 `PixelComponents` 中承担的数据与行为边界。
+ *
+ * Immutable pixel bitmap used by Icon and icon-bearing production controls.
+ */
 public data class PixelIconData(
-    val bitmap: PixelBitmap,
+    /** 公开 `PixelComponents` 的 `bitmap` 配置或运行值。
+ *
+ * Source bitmap whose dimensions and alpha are preserved by the basic Icon renderer.
+ */
+    public val bitmap: PixelBitmap,
 )
 
+/** 执行 `PixelComponents` 的 `Icon` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * Renders one semantic-free bitmap icon; its owning control must provide an accessible label.
+ */
 public fun Icon(
+    /** Immutable pixel bitmap descriptor to paint. */
     icon: PixelIconData,
+    /** Stable retained identity for the image render object. */
     key: Any? = null,
 ): Widget = Image(bitmap = icon.bitmap, key = key)
 
@@ -40,6 +65,22 @@ public fun Visibility(
     replacement: Widget = SizedBox(width = 0, height = 0),
 ): Widget = if (visible) child else replacement
 
+/**
+ * 组合 leading、文字区和 trailing，并为整行提供统一点击、焦点与结构化语义。
+ *
+ * @param title 必需的主标题内容。
+ * @param subtitle 可选的第二行内容。
+ * @param leading 可选的行首内容。
+ * @param trailing 可选的行尾内容。
+ * @param onTap 点击、键盘或无障碍激活时执行的回调；null 表示不可交互。
+ * @param enabled 调用方声明的启用状态。
+ * @param semanticLabel 整行的无障碍名称。
+ * @param key 行内容、焦点与语义边界共用的稳定 identity。
+ * @param semanticRole 整行导出的无障碍角色。
+ * @param semanticSelected 是否导出结构化选中状态。
+ * @param semanticChecked 可选的结构化勾选状态。
+ * @param semanticExpanded 可选的结构化展开状态。
+ */
 public fun ListTile(
     title: Widget,
     subtitle: Widget? = null,
@@ -49,27 +90,336 @@ public fun ListTile(
     enabled: Boolean = true,
     semanticLabel: String = "ListTile",
     key: Any? = null,
+    semanticRole: PixelSemanticRole = PixelSemanticRole.BUTTON,
+    semanticSelected: Boolean = false,
+    semanticChecked: Boolean? = null,
+    semanticExpanded: Boolean? = null,
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { context ->
+        /** Default theme graph used only as the legacy text fallback, never branch selection. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Text-only resolver owned by the existing compatibility switch element. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        legacyListTile(
+            title = title,
+            subtitle = subtitle,
+            leading = leading,
+            trailing = trailing,
+            onTap = onTap,
+            enabled = enabled,
+            semanticLabel = localization.resolveLabel(
+                explicitText = semanticLabel.takeUnless { label ->
+                    label == LEGACY_LIST_TILE_LABEL
+                },
+                selector = PixelLabelTokens::listTile,
+            ),
+            key = key,
+            semanticRole = semanticRole,
+            semanticSelected = semanticSelected,
+            semanticChecked = semanticChecked,
+            semanticExpanded = semanticExpanded,
+        )
+    },
+    themedBuilder = { _ ->
+        ListTile(
+            title = title,
+            states = PixelControlStateSet.Normal,
+            subtitle = subtitle,
+            leading = leading,
+            trailing = trailing,
+            onTap = onTap,
+            enabled = enabled,
+            semanticLabel = semanticLabel.takeUnless { label -> label == LEGACY_LIST_TILE_LABEL },
+            key = key,
+            semanticRole = semanticRole,
+            semanticSelected = semanticSelected,
+            semanticChecked = semanticChecked,
+            semanticExpanded = semanticExpanded,
+        )
+    },
+)
+
+/** Legacy ListTile label used only to detect an omitted theme-localized fallback. */
+private const val LEGACY_LIST_TILE_LABEL: String = "ListTile"
+
+/** Builds the exact scope-less ListTile surface while retaining modern structured semantics. */
+@Suppress("LongParameterList")
+private fun legacyListTile(
+    title: Widget,
+    subtitle: Widget?,
+    leading: Widget?,
+    trailing: Widget?,
+    onTap: (() -> Unit)?,
+    enabled: Boolean,
+    semanticLabel: String,
+    key: Any?,
+    semanticRole: PixelSemanticRole,
+    semanticSelected: Boolean,
+    semanticChecked: Boolean?,
+    semanticExpanded: Boolean?,
 ): Widget {
-    val texts = if (subtitle == null) title else Column(children = listOf(title, subtitle), spacing = 1)
-    val rowChildren = buildList {
-        if (leading != null) add(leading)
-        add(Expanded(child = texts))
-        if (trailing != null) add(trailing)
+    /** Historical one- or two-line text region. */
+    val texts = if (subtitle == null) {
+        title
+    } else {
+        Column(children = listOf(title, subtitle), spacing = 1)
     }
+    /** Historical leading, elastic text, and trailing order. */
+    val rowChildren = buildList {
+        leading?.let(::add)
+        add(Expanded(child = texts))
+        trailing?.let(::add)
+    }
+    /** Historical paint enabled flag, intentionally independent from callback availability. */
+    val legacyFill = if (enabled) null else PixelColor.fromArgb(80, 80, 80, 80)
+    /** Exact historical two-pixel inset and borderless row surface. */
     val content = Container(
-        child = Row(children = rowChildren, spacing = 2, crossAxisAlignment = CrossAxisAlignment.CENTER),
-        padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
-        fillColor = if (enabled) null else PixelColor.fromArgb(80, 80, 80, 80),
+        child = Row(
+            children = rowChildren,
+            spacing = 2,
+            crossAxisAlignment = CrossAxisAlignment.CENTER,
+        ),
+        padding = EdgeInsets.symmetric(horizontal = 2, vertical = 2),
+        fillColor = legacyFill,
         key = key,
     )
-    val effectiveEnabled = enabled && onTap != null
-    val interactive = if (effectiveEnabled) GestureDetector(child = content, onTap = onTap, key = key) else content
+    /** Actual mutation availability shared by pointer, keyboard, and accessibility. */
+    val interactive = enabled && onTap != null
+    /** Boolean activation action shared by every non-pointer input path. */
+    val activate = onTap?.takeIf { interactive }?.let { callback ->
+        {
+            callback()
+            true
+        }
+    }
+    /** Historical pointer wrapper retained only while mutation is available. */
+    val interactiveContent = activate?.let { action ->
+        GestureDetector(child = content, onTap = { action.invoke() }, key = key)
+    } ?: content
     return FocusableControl(
         label = semanticLabel,
-        role = if (effectiveEnabled) PixelSemanticRole.BUTTON else PixelSemanticRole.GENERIC,
-        enabled = effectiveEnabled,
-        child = interactive,
+        role = semanticRole,
+        enabled = interactive,
+        semanticsEnabled = interactive,
+        selected = semanticSelected,
+        checked = semanticChecked,
+        expanded = semanticExpanded,
+        actions = PixelSemanticsActions(onClick = activate),
+        child = interactiveContent,
+        key = key,
     )
+}
+
+/**
+ * 执行 `PixelComponents` 的 `ListTile` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware ListTile whose surface, spacing, focus layer, and labels resolve from [PixelTheme].
+ *
+ * Loading keeps the row in focus traversal but blocks pointer, keyboard, and semantic activation.
+ * A null [onTap] or false [enabled] derives Disabled and removes the row from traversal.
+ */
+@Suppress("LongParameterList")
+@kotlin.jvm.JvmName("ListTileWithControlStates")
+public fun ListTile(
+    title: Widget,
+    states: PixelControlStateSet,
+    subtitle: Widget? = null,
+    leading: Widget? = null,
+    trailing: Widget? = null,
+    onTap: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    semanticLabel: String? = null,
+    key: Any? = null,
+    semanticRole: PixelSemanticRole = PixelSemanticRole.BUTTON,
+    semanticSelected: Boolean = false,
+    semanticChecked: Boolean? = null,
+    semanticExpanded: Boolean? = null,
+): Widget {
+    /** Caller states normalized with controlled selection and actual activation availability. */
+    var effectiveStates = states
+    if (semanticSelected) effectiveStates += PixelControlState.Selected
+    if (!enabled || onTap == null) effectiveStates += PixelControlState.Disabled
+    /** Disabled removes traversal while Loading intentionally retains it. */
+    val focusable = PixelControlState.Disabled !in effectiveStates
+    /** Loading and Disabled both suppress every activation channel. */
+    val interactive = focusable && PixelControlState.Loading !in effectiveStates
+    /** Shared pointer, keyboard, and semantics activation action. */
+    val activate: (() -> Boolean)? = onTap?.takeIf { interactive }?.let { callback ->
+        {
+            callback()
+            true
+        }
+    }
+    return AutomaticFocusAction(
+        enabled = focusable,
+        debugLabel = semanticLabel ?: LEGACY_LIST_TILE_LABEL,
+        onKeyEvent = activate?.let(::activationKeyHandler),
+        key = key,
+    ) { _, _ ->
+        PixelListTileStateWidget(
+            title = title,
+            subtitle = subtitle,
+            leading = leading,
+            trailing = trailing,
+            states = effectiveStates,
+            activate = activate,
+            semanticLabel = semanticLabel,
+            semanticRole = semanticRole,
+            semanticSelected = semanticSelected,
+            semanticChecked = semanticChecked,
+            semanticExpanded = semanticExpanded,
+            key = key,
+        )
+    }
+}
+
+/** Retained ListTile configuration whose pointer interaction states are runtime-owned. */
+private data class PixelListTileStateWidget(
+    /** Primary row content. */
+    val title: Widget,
+    /** Optional secondary row content. */
+    val subtitle: Widget?,
+    /** Optional leading content. */
+    val leading: Widget?,
+    /** Optional trailing content. */
+    val trailing: Widget?,
+    /** Persistent normalized caller states. */
+    val states: PixelControlStateSet,
+    /** Shared activation action, or null while non-interactive. */
+    val activate: (() -> Boolean)?,
+    /** Optional caller label; null resolves from theme labels. */
+    val semanticLabel: String?,
+    /** Structured semantics role for the complete row. */
+    val semanticRole: PixelSemanticRole,
+    /** Controlled structured selection state. */
+    val semanticSelected: Boolean,
+    /** Optional controlled checked state. */
+    val semanticChecked: Boolean?,
+    /** Optional controlled expanded state. */
+    val semanticExpanded: Boolean?,
+    /** Stable retained identity for interaction, focus, and semantics. */
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    /** Creates the retained hover and press owner. */
+    override fun createState(): State<out StatefulWidget> = PixelListTileState()
+}
+
+/** ListTile runtime hover and press state merged with persistent semantic states. */
+private class PixelListTileState : State<PixelListTileStateWidget>() {
+    /** Whether the row currently owns a captured pointer press. */
+    private var pressed: Boolean = false
+
+    /** Whether a pointing device currently hovers over the row. */
+    private var hovered: Boolean = false
+
+    /** Resolves the current theme surface and all interaction boundaries. */
+    override fun build(context: BuildContext): Widget {
+        /** Complete inherited theme token graph. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Provider-aware labels independent from ListTile visual token selection. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** ListTile-specific state and geometry tokens. */
+        val tokens = theme.components.listTile
+        /** Focus supplied by the public automatic focus boundary. */
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) context.watch(focusNode)
+        /** Combined persistent, focus, hover, and press states. */
+        var resolvedStates = widget.states
+        if (focusNode?.isFocused == true) resolvedStates += PixelControlState.Focused
+        if (pressed) resolvedStates += PixelControlState.Pressed
+        if (hovered) resolvedStates += PixelControlState.Hovered
+        if (
+            PixelControlState.Disabled in resolvedStates ||
+            PixelControlState.Loading in resolvedStates
+        ) {
+            pressed = false
+            hovered = false
+            resolvedStates -= PixelControlState.Pressed
+            resolvedStates -= PixelControlState.Hovered
+        }
+        /** Title and optional subtitle grouped into the elastic middle column. */
+        val subtitle = widget.subtitle
+        val texts = if (subtitle == null) {
+            widget.title
+        } else {
+            Column(
+                children = listOf(widget.title, subtitle),
+                spacing = theme.spacing.extraSmall,
+            )
+        }
+        /** Leading, elastic text, and trailing content in visual order. */
+        val rowChildren = buildList {
+            widget.leading?.let(::add)
+            add(Expanded(child = texts))
+            widget.trailing?.let(::add)
+        }
+        /** Theme-resolved row surface before transient pointer behavior. */
+        val surface = PixelSurface(
+            child = Row(
+                children = rowChildren,
+                spacing = theme.spacing.small,
+                crossAxisAlignment = CrossAxisAlignment.CENTER,
+            ),
+            padding = tokens.resolvePadding(theme.spacing),
+            decoration = PixelSurfaceDecoration(
+                fillColor = tokens.resolveContainerColor(resolvedStates, theme.colors),
+                borderColor = tokens.resolveBorderColor(resolvedStates, theme.colors),
+                borderWidth = tokens.resolveBorderWidth(theme.borders),
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                shadowColor = theme.colors.shadow,
+                shadowOffset = tokens.resolveElevation(theme.elevations),
+            ),
+            key = widget.key?.let { "$it-surface" },
+        )
+        /** Pointer wrapper omitted while Loading or Disabled. */
+        val interactiveSurface = widget.activate?.let { activate ->
+            InteractionDetector(
+                child = surface,
+                onTap = { activate.invoke() },
+                onPressedChanged = ::updatePressed,
+                onHoveredChanged = ::updateHovered,
+                key = widget.key,
+            )
+        } ?: surface
+        return FocusableControl(
+            label = localization.resolveLabel(
+                explicitText = widget.semanticLabel,
+                selector = PixelLabelTokens::listTile,
+            ),
+            role = widget.semanticRole,
+            enabled = PixelControlState.Disabled !in resolvedStates,
+            semanticsEnabled = widget.activate != null,
+            automaticallyFocusable = false,
+            selected = widget.semanticSelected,
+            checked = widget.semanticChecked,
+            expanded = widget.semanticExpanded,
+            value = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::loading,
+            ).takeIf { PixelControlState.Loading in resolvedStates },
+            error = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::error,
+            ).takeIf { PixelControlState.Error in resolvedStates },
+            focusIndicator = tokens.focusIndicator ?: PixelFocusIndicatorTokens.Default,
+            actions = PixelSemanticsActions(onClick = widget.activate),
+            child = interactiveSurface,
+            key = widget.key,
+        )
+    }
+
+    /** Updates captured press state exactly once per transition. */
+    private fun updatePressed(nextPressed: Boolean) {
+        if (pressed == nextPressed) return
+        setState { pressed = nextPressed }
+    }
+
+    /** Updates hover state exactly once per boundary transition. */
+    private fun updateHovered(nextHovered: Boolean) {
+        if (hovered == nextHovered) return
+        setState { hovered = nextHovered }
+    }
 }
 
 /**
@@ -98,7 +448,8 @@ public fun <T> SelectionList(
                     null
                 },
                 enabled = enabled,
-                semanticLabel = if (index == selectedIndex) "$label selected" else label,
+                semanticLabel = label,
+                semanticSelected = index == selectedIndex,
                 key = key?.let { "$it-$index" },
             )
         },
@@ -172,82 +523,866 @@ public fun SectionList(
     )
 }
 
+/** Legacy checked color used only to detect an omitted Checkbox theme override. */
+private val LEGACY_CHECKBOX_ACTIVE_COLOR: PixelColor = PixelColor.White
+
+/** Legacy unchecked color used only to detect an omitted Checkbox theme override. */
+private val LEGACY_CHECKBOX_INACTIVE_COLOR: PixelColor = PixelColor.fromRgb(120, 120, 120)
+
+/** Legacy default label used only to defer an omitted Checkbox label to theme localization. */
+private const val LEGACY_CHECKBOX_LABEL: String = "Checkbox"
+
+/**
+ * 受控像素复选框，统一 pointer、keyboard 与无障碍 toggle 动作。
+ *
+ * @param checked 调用方持有的当前勾选状态。
+ * @param onChanged 请求新勾选状态的回调；null 表示只读。
+ * @param enabled 调用方声明的启用状态。
+ * @param activeColor 勾选时的边框与标记颜色。
+ * @param inactiveColor 未勾选时的边框颜色。
+ * @param semanticLabel 与勾选状态分离的无障碍名称。
+ * @param key 视觉、焦点与语义边界共用的稳定 identity。
+ */
 public fun Checkbox(
     checked: Boolean,
     onChanged: ((Boolean) -> Unit)?,
     enabled: Boolean = true,
     activeColor: PixelColor = PixelColor.White,
     inactiveColor: PixelColor = PixelColor.fromRgb(120, 120, 120),
-    semanticLabel: String = if (checked) "Checkbox checked" else "Checkbox unchecked",
+    semanticLabel: String = "Checkbox",
     key: Any? = null,
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { context ->
+        /** Default theme graph used only as the legacy text fallback, never branch selection. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Text-only resolver owned by the existing compatibility switch element. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        legacyCheckbox(
+            checked = checked,
+            onChanged = onChanged,
+            enabled = enabled,
+            activeColor = activeColor,
+            inactiveColor = inactiveColor,
+            semanticLabel = localization.resolveLabel(
+                explicitText = semanticLabel.takeUnless { label ->
+                    label == LEGACY_CHECKBOX_LABEL
+                },
+                selector = PixelLabelTokens::checkbox,
+            ),
+            key = key,
+        )
+    },
+    themedBuilder = { _ ->
+        Checkbox(
+            checked = checked,
+            onChanged = onChanged,
+            states = PixelControlStateSet.Normal,
+            enabled = enabled,
+            activeColor = activeColor.takeUnless { color -> color == LEGACY_CHECKBOX_ACTIVE_COLOR },
+            inactiveColor = inactiveColor.takeUnless { color -> color == LEGACY_CHECKBOX_INACTIVE_COLOR },
+            semanticLabel = semanticLabel.takeUnless { label -> label == LEGACY_CHECKBOX_LABEL },
+            key = key,
+        )
+    },
+)
+
+/** Builds the exact scope-less Checkbox pixels while retaining typed actions and checked state. */
+private fun legacyCheckbox(
+    checked: Boolean,
+    onChanged: ((Boolean) -> Unit)?,
+    enabled: Boolean,
+    activeColor: PixelColor,
+    inactiveColor: PixelColor,
+    semanticLabel: String,
+    key: Any?,
 ): Widget {
-    val color = if (!enabled) PixelColor.fromRgb(80, 80, 80) else if (checked) activeColor else inactiveColor
+    /** Historical disabled color used only when the explicit enabled flag is false. */
+    val disabledColor = PixelColor.fromRgb(80, 80, 80)
+    /** Historical single color shared by outline and checked glyph. */
+    val visualColor = when {
+        !enabled -> disabledColor
+        checked -> activeColor
+        else -> inactiveColor
+    }
+    /** Historical checked glyph; an unchecked box retains one blank text cell. */
     val mark = if (checked) "X" else " "
+    /** Exact transparent 9x9 historical box. */
     val box = Container(
         width = 9,
         height = 9,
-        borderColor = color,
-        child = Center(child = Text(mark, style = TextStyle(color = color))),
+        borderColor = visualColor,
+        child = Center(child = Text(mark, style = TextStyle(color = visualColor))),
     )
-    val effectiveEnabled = enabled && onChanged != null
-    val interactive = if (effectiveEnabled) {
-        GestureDetector(child = box, onTap = { onChanged(!checked) }, key = key)
-    } else {
-        box
+    /** Actual mutation availability, deliberately separate from the visual enabled flag. */
+    val interactive = enabled && onChanged != null
+    /** Shared toggle action for pointer, keyboard, and accessibility. */
+    val toggle = onChanged?.takeIf { interactive }?.let { callback ->
+        {
+            callback(!checked)
+            true
+        }
     }
+    /** Historical pointer wrapper retained only for a mutable Checkbox. */
+    val interactiveBox = toggle?.let { action ->
+        GestureDetector(child = box, onTap = { action.invoke() }, key = key)
+    } ?: box
     return FocusableControl(
         label = semanticLabel,
         role = PixelSemanticRole.CHECKBOX,
-        enabled = effectiveEnabled,
-        child = interactive,
+        enabled = interactive,
+        semanticsEnabled = interactive,
+        checked = checked,
+        actions = PixelSemanticsActions(onClick = toggle),
+        child = interactiveBox,
+        key = key,
     )
 }
 
+/**
+ * 执行 `PixelComponents` 的 `Checkbox` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware Checkbox that resolves every visual channel from the active theme.
+ *
+ * [PixelControlState.Loading] blocks new activation while retaining focus. Disabled is derived
+ * when [enabled] is false or [onChanged] is null. Checked remains an independent selected state,
+ * so checked+disabled and checked+error preserve both geometry and status color.
+ */
+@kotlin.jvm.JvmName("CheckboxWithControlStates")
+public fun Checkbox(
+    checked: Boolean,
+    onChanged: ((Boolean) -> Unit)?,
+    states: PixelControlStateSet,
+    enabled: Boolean = true,
+    activeColor: PixelColor? = null,
+    inactiveColor: PixelColor? = null,
+    semanticLabel: String? = null,
+    key: Any? = null,
+): Widget {
+    /** Persistent caller states normalized with controlled selection and actual availability. */
+    var effectiveStates = states
+    if (checked) effectiveStates += PixelControlState.Selected
+    if (!enabled || onChanged == null) effectiveStates += PixelControlState.Disabled
+    /** Disabled removes traversal; Loading deliberately preserves an already focused control. */
+    val focusable = PixelControlState.Disabled !in effectiveStates
+    /** Activation is unavailable while either capability state is active. */
+    val interactive = focusable && PixelControlState.Loading !in effectiveStates
+    /** Pointer、keyboard 与 semantics 共用的状态翻转动作。 */
+    val toggle: (() -> Boolean)? = onChanged?.takeIf { interactive }?.let { callback ->
+        {
+            callback(!checked)
+            true
+        }
+    }
+    return AutomaticFocusAction(
+        enabled = focusable,
+        debugLabel = semanticLabel ?: LEGACY_CHECKBOX_LABEL,
+        onKeyEvent = toggle?.let(::activationKeyHandler),
+        key = key,
+    ) { _, _ ->
+        PixelCheckboxStateWidget(
+            checked = checked,
+            states = effectiveStates,
+            toggle = toggle,
+            activeColor = activeColor,
+            inactiveColor = inactiveColor,
+            semanticLabel = semanticLabel,
+            key = key,
+        )
+    }
+}
+
+/** Retained Checkbox configuration whose transient pointer states are runtime-owned. */
+private data class PixelCheckboxStateWidget(
+    /** Controlled checked state represented by selected geometry. */
+    val checked: Boolean,
+    /** Persistent normalized states supplied by the public facade. */
+    val states: PixelControlStateSet,
+    /** Shared pointer, keyboard, and semantics toggle action. */
+    val toggle: (() -> Boolean)?,
+    /** Optional explicit checked-state color override. */
+    val activeColor: PixelColor?,
+    /** Optional explicit unchecked-state color override. */
+    val inactiveColor: PixelColor?,
+    /** Optional caller label; null resolves from theme labels. */
+    val semanticLabel: String?,
+    /** Stable retained identity for state, focus, and semantics. */
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    /** Creates the retained pointer interaction owner. */
+    override fun createState(): State<out StatefulWidget> = PixelCheckboxState()
+}
+
+/** Checkbox hover and press state merged with persistent selected/error/capability states. */
+private class PixelCheckboxState : State<PixelCheckboxStateWidget>() {
+    /** Whether this Checkbox currently owns a captured pointer press. */
+    private var pressed: Boolean = false
+
+    /** Whether a mouse or stylus currently hovers over the Checkbox. */
+    private var hovered: Boolean = false
+
+    /** Resolves theme roles, independent focus geometry, pointer callbacks, and semantics. */
+    override fun build(context: BuildContext): Widget {
+        /** Complete token graph inherited by this exact runtime subtree. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Provider-aware semantic labels kept separate from Checkbox visual roles. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Component-specific visual and geometry tokens. */
+        val tokens = theme.components.checkbox
+        /** Focus node provided by the public AutomaticFocusAction boundary. */
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) context.watch(focusNode)
+        /** Runtime states after actual focus and pointer ownership are merged. */
+        var resolvedStates = widget.states
+        if (focusNode?.isFocused == true) resolvedStates += PixelControlState.Focused
+        if (pressed) resolvedStates += PixelControlState.Pressed
+        if (hovered) resolvedStates += PixelControlState.Hovered
+        /** Capability state forces stale interaction ownership to its terminal false state. */
+        if (
+            PixelControlState.Disabled in resolvedStates ||
+            PixelControlState.Loading in resolvedStates
+        ) {
+            pressed = false
+            hovered = false
+            resolvedStates -= PixelControlState.Pressed
+            resolvedStates -= PixelControlState.Hovered
+        }
+        /** Whether a non-normal state must override legacy checked/unchecked colors. */
+        val usesStateRole = resolvedStates.highestPriority() !in setOf(
+            PixelControlState.Normal,
+            PixelControlState.Selected,
+        )
+        /** Optional legacy base color preserved only for Normal or Selected. */
+        val explicitBaseColor = if (widget.checked) widget.activeColor else widget.inactiveColor
+        /** Resolved surface fill for the current combined state. */
+        val fillColor = tokens.resolveContainerColor(resolvedStates, theme.colors)
+        /** Resolved outline with explicit legacy precedence for base states. */
+        val borderColor = if (usesStateRole) {
+            tokens.resolveBorderColor(resolvedStates, theme.colors)
+        } else {
+            explicitBaseColor ?: tokens.resolveBorderColor(resolvedStates, theme.colors)
+        }
+        /** Resolved glyph color with the same compatibility precedence as the outline. */
+        val contentColor = if (usesStateRole) {
+            tokens.resolveContentColor(resolvedStates, theme.colors)
+        } else {
+            explicitBaseColor ?: tokens.resolveContentColor(resolvedStates, theme.colors)
+        } ?: theme.colors.onSurface
+        /** Checked geometry remains visible even when another persistent state has priority. */
+        val mark = if (widget.checked) "X" else " "
+        /** Token-sized Checkbox surface before pointer behavior is applied. */
+        val box = PixelSurface(
+            width = tokens.resolveMinimumWidth(theme.sizes),
+            height = tokens.resolveMinimumHeight(theme.sizes),
+            decoration = PixelSurfaceDecoration(
+                fillColor = fillColor,
+                borderColor = borderColor,
+                borderWidth = tokens.resolveBorderWidth(theme.borders),
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                shadowColor = theme.colors.shadow,
+                shadowOffset = tokens.resolveElevation(theme.elevations),
+            ),
+            child = Center(child = Text(mark, style = TextStyle(color = contentColor))),
+        )
+        /** Pointer target exists only while the normalized activation action is available. */
+        val interactiveBox = widget.toggle?.let { toggle ->
+            InteractionDetector(
+                child = box,
+                onTap = { toggle.invoke() },
+                onPressedChanged = ::updatePressed,
+                onHoveredChanged = ::updateHovered,
+                key = widget.key,
+            )
+        } ?: box
+        /** Localized loading value announced without replacing the stable control label. */
+        val semanticValue = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ).takeIf {
+            PixelControlState.Loading in resolvedStates
+        }
+        /** Localized validation error announced while Error is active. */
+        val semanticError = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf {
+            PixelControlState.Error in resolvedStates
+        }
+        return FocusableControl(
+            label = localization.resolveLabel(
+                explicitText = widget.semanticLabel,
+                selector = PixelLabelTokens::checkbox,
+            ),
+            role = PixelSemanticRole.CHECKBOX,
+            enabled = PixelControlState.Disabled !in resolvedStates,
+            semanticsEnabled = widget.toggle != null,
+            automaticallyFocusable = false,
+            checked = widget.checked,
+            value = semanticValue,
+            error = semanticError,
+            focusIndicator = tokens.focusIndicator ?: PixelFocusIndicatorTokens.Default,
+            actions = PixelSemanticsActions(onClick = widget.toggle),
+            child = interactiveBox,
+            key = widget.key,
+        )
+    }
+
+    /** Updates captured press state exactly once per pointer ownership transition. */
+    private fun updatePressed(nextPressed: Boolean) {
+        if (pressed == nextPressed) return
+        setState { pressed = nextPressed }
+    }
+
+    /** Updates hover state exactly once per mouse or stylus boundary transition. */
+    private fun updateHovered(nextHovered: Boolean) {
+        if (hovered == nextHovered) return
+        setState { hovered = nextHovered }
+    }
+}
+
+/**
+ * 受控像素开关，以 Motion token 驱动 thumb、颜色与交互反馈。
+ *
+ * @param checked 调用方持有的当前开关状态。
+ * @param onChanged 请求新开关状态的回调；null 表示只读。
+ * @param enabled 调用方声明的启用状态。
+ * @param activeColor 开启端点的基础颜色。
+ * @param inactiveColor 关闭端点的基础颜色。
+ * @param semanticLabel 与开关状态分离的无障碍名称。
+ * @param key 视觉状态、焦点与语义边界共用的稳定 identity。
+ */
+/** Legacy selected color used only to detect an omitted Switch theme override. */
+private val LEGACY_SWITCH_ACTIVE_COLOR: PixelColor = PixelColor.fromRgb(80, 180, 110)
+
+/** Legacy unselected color used only to detect an omitted Switch theme override. */
+private val LEGACY_SWITCH_INACTIVE_COLOR: PixelColor = PixelColor.fromRgb(120, 120, 120)
+
+/** Legacy Switch label used only to detect an omitted localized theme label. */
+private const val LEGACY_SWITCH_LABEL: String = "Switch"
+
+/** 创建 `Switch` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun Switch(
     checked: Boolean,
     onChanged: ((Boolean) -> Unit)?,
     enabled: Boolean = true,
     activeColor: PixelColor = PixelColor.fromRgb(80, 180, 110),
     inactiveColor: PixelColor = PixelColor.fromRgb(120, 120, 120),
-    semanticLabel: String = if (checked) "Switch on" else "Switch off",
+    semanticLabel: String = "Switch",
     key: Any? = null,
+): Widget = buildSwitch(
+    checked = checked,
+    onChanged = onChanged,
+    states = PixelControlStateSet.Normal,
+    enabled = enabled,
+    activeColor = activeColor.takeUnless { color -> color == LEGACY_SWITCH_ACTIVE_COLOR },
+    inactiveColor = inactiveColor.takeUnless { color -> color == LEGACY_SWITCH_INACTIVE_COLOR },
+    semanticLabel = semanticLabel.takeUnless { label -> label == LEGACY_SWITCH_LABEL },
+    key = key,
+    legacyVisuals = LegacySwitchVisuals(
+        enabled = enabled,
+        activeColor = activeColor,
+        inactiveColor = inactiveColor,
+    ),
+)
+
+/**
+ * 执行 `PixelComponents` 的 `Switch` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware Switch that resolves state colors, geometry, labels, and focus from theme tokens.
+ *
+ * Checked is represented as Selected without replacing Error or capability states. Loading blocks
+ * activation but retains focus; Disabled removes the complete switch from traversal.
+ */
+@kotlin.jvm.JvmName("SwitchWithControlStates")
+public fun Switch(
+    checked: Boolean,
+    onChanged: ((Boolean) -> Unit)?,
+    states: PixelControlStateSet,
+    enabled: Boolean = true,
+    activeColor: PixelColor? = null,
+    inactiveColor: PixelColor? = null,
+    semanticLabel: String? = null,
+    key: Any? = null,
+): Widget = buildSwitch(
+    checked = checked,
+    onChanged = onChanged,
+    states = states,
+    enabled = enabled,
+    activeColor = activeColor,
+    inactiveColor = inactiveColor,
+    semanticLabel = semanticLabel,
+    key = key,
+    legacyVisuals = null,
+)
+
+/** Scope-less compatibility colors that remain independent from callback availability. */
+private data class LegacySwitchVisuals(
+    /** Caller-authored visual enabled flag from the binary compatibility facade. */
+    val enabled: Boolean,
+    /** Historical selected endpoint, including a caller override. */
+    val activeColor: PixelColor,
+    /** Historical unselected endpoint, including a caller override. */
+    val inactiveColor: PixelColor,
+)
+
+/** Normalizes Switch capability states and installs one retained motion/focus owner. */
+@Suppress("LongParameterList")
+private fun buildSwitch(
+    checked: Boolean,
+    onChanged: ((Boolean) -> Unit)?,
+    states: PixelControlStateSet,
+    enabled: Boolean,
+    activeColor: PixelColor?,
+    inactiveColor: PixelColor?,
+    semanticLabel: String?,
+    key: Any?,
+    legacyVisuals: LegacySwitchVisuals?,
 ): Widget {
-    val border = if (!enabled) PixelColor.fromRgb(80, 80, 80) else if (checked) activeColor else inactiveColor
-    val thumb = Container(width = 5, height = 5, fillColor = border)
-    val track = Container(
-        width = 14,
-        height = 7,
-        borderColor = border,
-        child = Stack(
+    /** Persistent states normalized with checked selection and callback availability. */
+    var effectiveStates = states
+    if (checked) effectiveStates += PixelControlState.Selected
+    if (!enabled || onChanged == null) effectiveStates += PixelControlState.Disabled
+    /** Disabled removes traversal while Loading intentionally retains focus ownership. */
+    val focusable = PixelControlState.Disabled !in effectiveStates
+    /** Activation is unavailable for both capability states. */
+    val interactive = focusable && PixelControlState.Loading !in effectiveStates
+    /** Pointer、keyboard 与 semantics 共用的状态翻转动作。 */
+    val toggle: (() -> Boolean)? = onChanged?.takeIf { interactive }?.let { callback ->
+        {
+            callback(!checked)
+            true
+        }
+    }
+    return AutomaticFocusAction(
+        enabled = focusable,
+        debugLabel = semanticLabel ?: LEGACY_SWITCH_LABEL,
+        onKeyEvent = toggle?.let(::activationKeyHandler),
+        key = key,
+    ) { _, _ ->
+        PixelSwitchMotionWidget(
+            checked = checked,
+            states = effectiveStates,
+            semanticAction = toggle,
+            activeColor = activeColor,
+            inactiveColor = inactiveColor,
+            semanticLabel = semanticLabel,
+            legacyVisuals = legacyVisuals,
+            key = key,
+        )
+    }
+}
+
+/** Switch 的受控逻辑参数与 retained 运动状态边界。 */
+private data class PixelSwitchMotionWidget(
+    /** 调用方立即拥有的逻辑选中状态。 */
+    val checked: Boolean,
+    /** Persistent normalized states supplied by the public facade. */
+    val states: PixelControlStateSet,
+    /** Pointer、semantics 与 keyboard 共享的 toggle action。 */
+    val semanticAction: (() -> Boolean)?,
+    /** Optional explicit selected endpoint color. */
+    val activeColor: PixelColor?,
+    /** Optional explicit unselected endpoint color. */
+    val inactiveColor: PixelColor?,
+    /** Optional caller label; null resolves from theme labels. */
+    val semanticLabel: String?,
+    /** Historical visual inputs used only by a scope-less compatibility facade. */
+    val legacyVisuals: LegacySwitchVisuals?,
+    /** retained identity。 */
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    /** 创建 thumb selection 与交互反馈的 retained 状态。 */
+    override fun createState(): State<out StatefulWidget> = PixelSwitchMotionState()
+}
+
+/** Switch 的 thumb 位置、颜色 selection 与 pressed/hover/focus 反馈状态。 */
+private class PixelSwitchMotionState : State<PixelSwitchMotionWidget>() {
+    /** thumb 与选中颜色的 `0f..1f` 视觉进度。 */
+    private lateinit var selectionMotion: PixelControlMotionValue
+
+    /** Hover/press feedback intensity layered above the selection transition. */
+    private val feedbackMotion: PixelControlMotionValue = PixelControlMotionValue(0f)
+
+    /** 指针当前是否保持按下。 */
+    private var pressed: Boolean = false
+
+    /** 鼠标或触控笔当前是否悬停。 */
+    private var hovered: Boolean = false
+
+    /** 用首次受控值初始化 selection，避免 mount 时从错误端点补动画。 */
+    override fun initState() {
+        selectionMotion = PixelControlMotionValue(if (widget.checked) 1f else 0f)
+    }
+
+    /** 释放 selection 与 feedback 驱动器拥有的 ticker。 */
+    override fun dispose() {
+        selectionMotion.dispose()
+        feedbackMotion.dispose()
+    }
+
+    /**
+     * 逻辑 checked/semantics 立即取新 widget，视觉 thumb 和颜色则按 selection token 连续追赶。
+     */
+    override fun build(context: BuildContext): Widget {
+        /** Complete theme token graph inherited by this retained switch. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Provider-aware labels that never participate in Switch visual branch selection. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Switch-specific state and geometry tokens. */
+        val tokens = theme.components.switch
+        /** Historical visuals are active only when the old facade has no explicit theme provider. */
+        val scopeLessLegacyVisuals = widget.legacyVisuals.takeIf {
+            PixelTheme.maybeTokensOf(context) == null
+        }
+        /** Whether pointer and semantic activation are currently available. */
+        val interactive = widget.semanticAction != null
+        /** selection 与 feedback 动画规格来源。 */
+        val motionTheme = PixelMotionTheme.of(context)
+        /** 可选统一 ticker 与 reduced-motion 设置来源。 */
+        val motionScope = PixelMotionScope.maybeOf(context)
+        configureControlMotion(selectionMotion, motionScope, motionTheme.selection)
+        configureControlMotion(feedbackMotion, motionScope, motionTheme.feedback)
+
+        /** 复用外层自动焦点边界提供的节点。 */
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) context.watch(focusNode)
+        /** Runtime states after independent focus, hover, and press are merged. */
+        var resolvedStates = widget.states
+        if (focusNode?.isFocused == true) resolvedStates += PixelControlState.Focused
+        if (pressed) resolvedStates += PixelControlState.Pressed
+        if (hovered) resolvedStates += PixelControlState.Hovered
+        if (
+            PixelControlState.Disabled in resolvedStates ||
+            PixelControlState.Loading in resolvedStates
+        ) {
+            pressed = false
+            hovered = false
+            resolvedStates -= PixelControlState.Pressed
+            resolvedStates -= PixelControlState.Hovered
+        }
+        /** Whether a caller-forced interaction state must resolve synchronously for snapshots. */
+        val hasPersistentFeedbackState = PixelControlState.Hovered in widget.states ||
+            PixelControlState.Pressed in widget.states
+        if (PixelControlState.Disabled !in resolvedStates) {
+            selectionMotion.animateTo(if (widget.checked) 1f else 0f)
+            when {
+                hasPersistentFeedbackState -> feedbackMotion.snapTo(1f)
+                else -> feedbackMotion.animateTo(
+                    controlFeedbackTarget(pressed = pressed, hovered = hovered, focused = false),
+                )
+            }
+        } else {
+            pressed = false
+            hovered = false
+            selectionMotion.snapTo(if (widget.checked) 1f else 0f)
+            feedbackMotion.snapTo(0f)
+        }
+        selectionMotion.watch(context)
+        feedbackMotion.watch(context)
+
+        /** 当前 thumb 位置与选中色插值共用的视觉进度。 */
+        val selection = selectionMotion.value
+        /** Base endpoint states exclude transient and priority states from both selection endpoints. */
+        val baseEndpointStates = widget.states -
+            PixelControlState.Selected -
+            PixelControlState.Disabled -
+            PixelControlState.Loading -
+            PixelControlState.Error -
+            PixelControlState.Pressed -
+            PixelControlState.Hovered -
+            PixelControlState.Focused
+        /** Unselected outline endpoint with the legacy explicit override at highest precedence. */
+        val inactiveBorderColor = scopeLessLegacyVisuals?.inactiveColor
+            ?: widget.inactiveColor
+            ?: tokens.resolveBorderColor(baseEndpointStates, theme.colors)
+            ?: theme.colors.inactive
+        /** Selected outline endpoint with the legacy explicit override at highest precedence. */
+        val activeBorderColor = scopeLessLegacyVisuals?.activeColor
+            ?: widget.activeColor
+            ?: tokens.resolveBorderColor(baseEndpointStates + PixelControlState.Selected, theme.colors)
+            ?: theme.colors.primary
+        /** Selection-motion outline resolved only from the border token field. */
+        val selectedBorderColor = PixelColorTween(
+            inactiveBorderColor,
+            activeBorderColor,
+        ).lerp(selection)
+        /** Unselected thumb endpoint resolved independently through the content token field. */
+        val inactiveContentColor = scopeLessLegacyVisuals?.inactiveColor
+            ?: widget.inactiveColor
+            ?: tokens.resolveContentColor(baseEndpointStates, theme.colors)
+            ?: theme.colors.inactive
+        /** Selected thumb endpoint resolved independently through the content token field. */
+        val activeContentColor = scopeLessLegacyVisuals?.activeColor
+            ?: widget.activeColor
+            ?: tokens.resolveContentColor(baseEndpointStates + PixelControlState.Selected, theme.colors)
+            ?: theme.colors.primary
+        /** Selection-motion thumb foreground isolated from track and outline fields. */
+        val selectedContentColor = PixelColorTween(
+            inactiveContentColor,
+            activeContentColor,
+        ).lerp(selection)
+        /** State resolution excludes Focused because focus is painted as an independent layer. */
+        val colorStates = resolvedStates - PixelControlState.Focused
+        /** Current state target resolved only from the outline token field. */
+        val stateBorderColor = tokens.resolveBorderColor(colorStates, theme.colors)
+            ?: selectedBorderColor
+        /** Hover and press transition from the controlled outline endpoint to its state role. */
+        /** Historical disabled paint is based on enabled, not callback availability. */
+        val legacyDisabledColor = PixelColor.fromRgb(80, 80, 80)
+        val visualBorderColor = scopeLessLegacyVisuals?.let { legacy ->
+            when {
+                !legacy.enabled -> legacyDisabledColor
+                colorStates.highestPriority() == PixelControlState.Hovered ||
+                    colorStates.highestPriority() == PixelControlState.Pressed -> {
+                    PixelColorTween(selectedBorderColor, stateBorderColor).lerp(feedbackMotion.value)
+                }
+                else -> selectedBorderColor
+            }
+        } ?: when (colorStates.highestPriority()) {
+            PixelControlState.Normal,
+            PixelControlState.Selected,
+            -> selectedBorderColor
+            PixelControlState.Hovered,
+            PixelControlState.Pressed,
+            -> PixelColorTween(selectedBorderColor, stateBorderColor).lerp(feedbackMotion.value)
+            else -> stateBorderColor
+        }
+        /** Current thumb target resolved only from the content token field. */
+        val stateContentColor = tokens.resolveContentColor(colorStates, theme.colors)
+            ?: selectedContentColor
+        /** Thumb feedback follows its own field without leaking outline or container changes. */
+        val thumbColor = scopeLessLegacyVisuals?.let { legacy ->
+            when {
+                !legacy.enabled -> legacyDisabledColor
+                colorStates.highestPriority() == PixelControlState.Hovered ||
+                    colorStates.highestPriority() == PixelControlState.Pressed -> {
+                    PixelColorTween(selectedContentColor, stateContentColor).lerp(feedbackMotion.value)
+                }
+                else -> selectedContentColor
+            }
+        } ?: when (colorStates.highestPriority()) {
+            PixelControlState.Normal,
+            PixelControlState.Selected,
+            -> selectedContentColor
+            PixelControlState.Hovered,
+            PixelControlState.Pressed,
+            -> PixelColorTween(selectedContentColor, stateContentColor).lerp(feedbackMotion.value)
+            else -> stateContentColor
+        }
+        /** Track fill consumes only the component container channel. */
+        val trackFillColor = if (scopeLessLegacyVisuals == null) {
+            tokens.resolveContainerColor(colorStates, theme.colors)
+        } else {
+            null
+        }
+        /** Token-sized track width preserving a usable one-pixel interior. */
+        val trackWidth = scopeLessLegacyVisuals?.let { SWITCH_TRACK_WIDTH_PX }
+            ?: tokens.resolveMinimumWidth(theme.sizes).coerceAtLeast(3)
+        /** Token-sized track height preserving a usable one-pixel interior. */
+        val trackHeight = scopeLessLegacyVisuals?.let { SWITCH_TRACK_HEIGHT_PX }
+            ?: tokens.resolveMinimumHeight(theme.sizes).coerceAtLeast(3)
+        /** Border-derived inset used by both geometry endpoints. */
+        val thumbInset = scopeLessLegacyVisuals?.let { SWITCH_THUMB_INSET_PX }
+            ?: tokens.resolveBorderWidth(theme.borders).coerceIn(1, (trackHeight - 1) / 2)
+        /** Square thumb extent constrained to the token-sized track. */
+        val thumbSize = (trackHeight - thumbInset * 2).coerceAtLeast(1)
+        /** Final selected endpoint inside the token-sized track. */
+        val thumbEnd = (trackWidth - thumbInset - thumbSize).coerceAtLeast(thumbInset)
+        /** Total token-sized thumb travel. */
+        val thumbTravel = thumbEnd - thumbInset
+        /** 将 selection 进度量化并限制到轨道内的 thumb 左坐标。 */
+        val thumbLeft = (thumbInset + thumbTravel * selection)
+            .roundToInt()
+            .coerceIn(thumbInset, thumbEnd)
+        /** 固定尺寸且不改变布局的 thumb 表面。 */
+        val thumb = if (scopeLessLegacyVisuals == null) {
+            PixelSurface(
+                width = thumbSize,
+                height = thumbSize,
+                decoration = PixelSurfaceDecoration(
+                    fillColor = thumbColor,
+                    borderWidth = 0,
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                ),
+                key = widget.key?.let { "$it-thumb" },
+            )
+        } else {
+            Container(
+                width = thumbSize,
+                height = thumbSize,
+                fillColor = thumbColor,
+                key = widget.key?.let { "$it-thumb" },
+            )
+        }
+        /** 包含动画 thumb 的固定尺寸开关轨道。 */
+        val thumbStack = Stack(
             children = listOf(
                 Positioned(
-                    left = if (checked) null else 1,
-                    right = if (checked) 1 else null,
-                    top = 1,
+                    left = thumbLeft,
+                    top = thumbInset,
                     child = thumb,
+                    key = widget.key?.let { "$it-thumb-position" },
                 ),
             ),
-        ),
-    )
-    val effectiveEnabled = enabled && onChanged != null
-    val interactive = if (effectiveEnabled) {
-        GestureDetector(child = track, onTap = { onChanged(!checked) }, key = key)
-    } else {
-        track
+        )
+        /** Historical Container or token-aware PixelSurface sharing the same moving thumb. */
+        val track = if (scopeLessLegacyVisuals == null) {
+            PixelSurface(
+                width = trackWidth,
+                height = trackHeight,
+                decoration = PixelSurfaceDecoration(
+                    fillColor = trackFillColor,
+                    borderColor = visualBorderColor,
+                    borderWidth = tokens.resolveBorderWidth(theme.borders),
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                    shadowColor = theme.colors.shadow,
+                    shadowOffset = tokens.resolveElevation(theme.elevations),
+                ),
+                child = thumbStack,
+                key = widget.key?.let { "$it-track" },
+            )
+        } else {
+            Container(
+                width = trackWidth,
+                height = trackHeight,
+                borderColor = visualBorderColor,
+                child = thumbStack,
+                key = widget.key?.let { "$it-track" },
+            )
+        }
+        /** 仅在实际可交互时导出 pointer pressed、hover 与点击回调。 */
+        val interactiveTrack = if (interactive) {
+            InteractionDetector(
+                child = track,
+                onTap = { widget.semanticAction?.invoke() },
+                onPressedChanged = ::updatePressed,
+                onHoveredChanged = ::updateHovered,
+                key = widget.key,
+            )
+        } else {
+            track
+        }
+        return FocusableControl(
+            label = localization.resolveLabel(
+                explicitText = widget.semanticLabel,
+                selector = PixelLabelTokens::switch,
+            ),
+            role = PixelSemanticRole.SWITCH,
+            enabled = PixelControlState.Disabled !in resolvedStates,
+            semanticsEnabled = widget.semanticAction != null,
+            automaticallyFocusable = false,
+            checked = widget.checked,
+            value = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::loading,
+            ).takeIf { PixelControlState.Loading in resolvedStates },
+            error = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::error,
+            ).takeIf { PixelControlState.Error in resolvedStates },
+            focusIndicator = tokens.focusIndicator ?: PixelFocusIndicatorTokens.Default,
+            actions = PixelSemanticsActions(onClick = widget.semanticAction),
+            child = interactiveTrack,
+            key = widget.key,
+        )
     }
-    return FocusableControl(
-        label = semanticLabel,
-        role = PixelSemanticRole.SWITCH,
-        enabled = effectiveEnabled,
-        child = interactive,
+
+    /** 更新 pressed 状态；router 会在 up、cancel 和移出时归零。 */
+    private fun updatePressed(nextPressed: Boolean) {
+        if (pressed == nextPressed) return
+        setState { pressed = nextPressed }
+    }
+
+    /** 更新 hover 状态。 */
+    private fun updateHovered(nextHovered: Boolean) {
+        if (hovered == nextHovered) return
+        setState { hovered = nextHovered }
+    }
+}
+
+/**
+ * 使用当前 theme token 和可选 Motion scope 配置一个标准控件驱动器。
+ *
+ * @param motion 待配置的 retained 动画值。
+ * @param scope 可选统一时钟与运动偏好来源。
+ * @param spec 当前状态通道使用的主题运动规格。
+ */
+private fun configureControlMotion(
+    motion: PixelControlMotionValue,
+    scope: PixelMotionScope?,
+    spec: PixelMotionSpec,
+) {
+    /** 已应用 scope 设置的运行时规格；无 scope 时走即时更新。 */
+    val resolved = scope?.let { availableScope -> spec.resolve(availableScope.settings) }
+    motion.configure(
+        nextVsync = scope?.vsync,
+        nextDuration = resolved?.duration ?: Duration.ZERO,
+        nextDelay = resolved?.delay ?: Duration.ZERO,
+        nextCurve = resolved?.curve ?: spec.curve,
+        nextImmediate = resolved?.let { motion ->
+            motion.isImmediate || motion.transition == PixelMotionTransitionPreset.None
+        } ?: true,
     )
 }
 
 /**
+ * 把可并存的 Switch/Tab 交互状态压缩为单一反馈目标。
+ *
+ * @param pressed 指针当前是否按下。
+ * @param hovered 指针当前是否悬停。
+ * @param focused 控件当前是否获得键盘焦点。
+ */
+private fun controlFeedbackTarget(
+    pressed: Boolean,
+    hovered: Boolean,
+    focused: Boolean,
+): Float = when {
+    pressed -> 1f
+    focused -> 1f
+    hovered -> 0.5f
+    else -> 0f
+}
+
+/** Switch 轨道宽度。 */
+private const val SWITCH_TRACK_WIDTH_PX: Int = 14
+
+/** Switch 轨道高度。 */
+private const val SWITCH_TRACK_HEIGHT_PX: Int = 7
+
+/** Switch thumb 的正方形边长。 */
+private const val SWITCH_THUMB_SIZE_PX: Int = 5
+
+/** Switch thumb 的上下及起点内边距。 */
+private const val SWITCH_THUMB_INSET_PX: Int = 1
+
+/** 未选中时 thumb 的左坐标。 */
+private const val SWITCH_THUMB_START_PX: Int = SWITCH_THUMB_INSET_PX
+
+/** 选中时 thumb 的左坐标。 */
+private const val SWITCH_THUMB_END_PX: Int =
+    SWITCH_TRACK_WIDTH_PX - SWITCH_THUMB_INSET_PX - SWITCH_THUMB_SIZE_PX
+
+/** thumb 两个端点之间的像素行程。 */
+private const val SWITCH_THUMB_TRAVEL_PX: Int = SWITCH_THUMB_END_PX - SWITCH_THUMB_START_PX
+
+/**
  * 居中的像素对话框内容。
  *
- * 该函数只负责布局 title/content/actions，不负责遮罩、焦点锁定、back 关闭或生命周期。
- * 需要 overlay 行为时，通过 [PixelOverlayController.showDialog] 显示并持有返回的 handle。
+ * 该函数负责布局 title/content/actions，将表面限制在稳定系统栏与 IME 共同决定的安全
+ * 视口内，并在 [modal] 为 true 时建立焦点与交互边界；遮罩、呈现生命周期仍由调用方维护。需要 overlay 行为时，通过
+ * [PixelOverlayController.showDialog] 显示并持有返回的 handle。
+ * [semanticLabel] 命名 Android Dialog virtual node；提供 [onDismissRequest] 时同时导出
+ * accessibility dismiss action。
+ *
+ * @param title 可选的标题 widget。
+ * @param content 必需的对话框正文。
+ * @param actions 排列在正文下方并右对齐的操作 widget。
+ * @param fillColor 对话框表面填充色。
+ * @param borderColor 对话框边框色。
+ * @param key 表面、交互、焦点与语义边界共用的稳定 identity。
+ * @param semanticLabel 对话框虚拟节点的无障碍名称。
+ * @param onDismissRequest back 或无障碍 dismiss 请求的受控回调。
+ * @param modal 是否隔离对话框外的焦点、指针、文本输入与无障碍交互。
  */
 public fun Dialog(
     title: Widget? = null,
@@ -256,21 +1391,413 @@ public fun Dialog(
     fillColor: PixelColor = PixelColor.Black,
     borderColor: PixelColor = PixelColor.White,
     key: Any? = null,
-): Widget {
-    val children = buildList {
-        if (title != null) add(title)
-        add(content)
-        if (actions.isNotEmpty()) add(Row(children = actions, spacing = 2, mainAxisAlignment = MainAxisAlignment.END))
-    }
-    return Center(
-        child = Container(
-            padding = EdgeInsets.all(3),
+    semanticLabel: String = "Dialog",
+    onDismissRequest: (() -> Unit)? = null,
+    modal: Boolean = true,
+): Widget = LegacyFacadeThemeSwitch(
+    key = PixelThemeResolverKey(ownerKey = key, component = "LegacyDialog", mode = modal),
+    legacyBuilder = { context ->
+        /** Default theme graph used only as the legacy text fallback, never branch selection. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Text-only resolver owned by the existing compatibility switch element. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        legacyDialog(
+            title = title,
+            content = content,
+            actions = actions,
             fillColor = fillColor,
             borderColor = borderColor,
-            child = Column(children = children, spacing = 2),
             key = key,
+            semanticLabel = localization.resolveLabel(
+                explicitText = semanticLabel.takeUnless { label ->
+                    label == LEGACY_DIALOG_LABEL
+                },
+                selector = PixelLabelTokens::dialog,
+            ),
+            onDismissRequest = onDismissRequest,
+            modal = modal,
+        )
+    },
+    themedBuilder = { _ ->
+        Dialog(
+            content = content,
+            states = PixelControlStateSet.Normal,
+            title = title,
+            actions = actions,
+            fillColor = fillColor.takeUnless { color -> color == LEGACY_OVERLAY_FILL_COLOR },
+            borderColor = borderColor.takeUnless { color -> color == LEGACY_OVERLAY_BORDER_COLOR },
+            key = key,
+            semanticLabel = semanticLabel.takeUnless { label -> label == LEGACY_DIALOG_LABEL },
+            onDismissRequest = onDismissRequest,
+            modal = modal,
+        )
+    },
+)
+
+/** Legacy overlay fill used only to detect an omitted theme override. */
+private val LEGACY_OVERLAY_FILL_COLOR: PixelColor = PixelColor.Black
+
+/** Legacy overlay border used only to detect an omitted theme override. */
+private val LEGACY_OVERLAY_BORDER_COLOR: PixelColor = PixelColor.White
+
+/** Legacy Dialog label used only to detect an omitted localized theme label. */
+private const val LEGACY_DIALOG_LABEL: String = "Dialog"
+
+/** Builds the historical Dialog surface inside the production safe/modal presentation chain. */
+@Suppress("LongParameterList")
+private fun legacyDialog(
+    title: Widget?,
+    content: Widget,
+    actions: List<Widget>,
+    fillColor: PixelColor,
+    borderColor: PixelColor,
+    key: Any?,
+    semanticLabel: String,
+    onDismissRequest: (() -> Unit)?,
+    modal: Boolean,
+): Widget = safeOverlaySurface(
+    title = title,
+    content = content,
+    actions = actions,
+    decoration = PixelSurfaceDecoration(
+        fillColor = fillColor,
+        borderColor = borderColor,
+        borderWidth = 1,
+        cornerRadius = 0,
+        shadowColor = null,
+        shadowOffset = 0,
+    ),
+    surfacePadding = EdgeInsets.all(3),
+    contentSpacing = 2,
+    actionSpacing = 2,
+    key = key,
+    semanticLabel = semanticLabel,
+    semanticValue = null,
+    semanticError = null,
+    onDismissRequest = onDismissRequest,
+    modal = modal,
+    alignment = SafeOverlayAlignment.Center,
+    fillSafeWidth = false,
+    legacyContainer = true,
+)
+
+/**
+ * 执行 `PixelComponents` 的 `Dialog` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware Dialog with token-resolved surface, spacing, label, and capability semantics.
+ */
+@kotlin.jvm.JvmName("DialogWithControlStates")
+public fun Dialog(
+    content: Widget,
+    states: PixelControlStateSet,
+    title: Widget? = null,
+    actions: List<Widget> = emptyList(),
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
+    key: Any? = null,
+    semanticLabel: String? = null,
+    onDismissRequest: (() -> Unit)? = null,
+    modal: Boolean = true,
+): Widget = PixelThemeResolvedWidget(
+    key = PixelThemeResolverKey(ownerKey = key, component = "Dialog", mode = modal),
+) { context, theme ->
+    /** Provider-aware Dialog and status labels independent from modal visual tokens. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Dialog-specific passive overlay tokens. */
+    val tokens = theme.components.dialog
+    /** Dismiss remains available unless a capability state blocks it. */
+    val effectiveDismiss = onDismissRequest.takeIf {
+        PixelControlState.Disabled !in states && PixelControlState.Loading !in states
+    }
+    safeOverlaySurface(
+        title = title,
+        content = content,
+        actions = actions,
+        decoration = PixelSurfaceDecoration(
+            fillColor = fillColor ?: tokens.resolveContainerColor(states, theme.colors),
+            borderColor = borderColor ?: tokens.resolveBorderColor(states, theme.colors),
+            borderWidth = tokens.resolveBorderWidth(theme.borders),
+            cornerRadius = tokens.resolveCornerRadius(theme.radii),
+            shadowColor = theme.colors.shadow,
+            shadowOffset = tokens.resolveElevation(theme.elevations),
         ),
+        surfacePadding = tokens.resolvePadding(theme.spacing),
+        contentSpacing = theme.spacing.small,
+        actionSpacing = theme.spacing.small,
+        key = key,
+        semanticLabel = localization.resolveLabel(
+            explicitText = semanticLabel,
+            selector = PixelLabelTokens::dialog,
+        ),
+        semanticValue = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ).takeIf { PixelControlState.Loading in states },
+        semanticError = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        onDismissRequest = effectiveDismiss,
+        modal = modal,
+        alignment = SafeOverlayAlignment.Center,
+        fillSafeWidth = false,
     )
+}
+
+/**
+ * 贴近安全视口底部的像素 Bottom Sheet。
+ *
+ * Sheet 会填满稳定系统栏与 IME 共同确定的安全宽度，并把底边停在 IME 顶部；超出安全
+ * 高度的像素、命中区与 semantics 均被裁切。[modal] 为 true 时同时隔离背景焦点、指针、
+ * 文本输入和无障碍交互。该函数是受控内容组件，overlay 路由、遮罩和关闭生命周期仍由
+ * 调用方维护。
+ *
+ * @param title 可选的 Sheet 标题 widget。
+ * @param content 必需的 Sheet 正文。
+ * @param actions 排列在正文下方并右对齐的操作 widget。
+ * @param fillColor Sheet 表面填充色。
+ * @param borderColor Sheet 表面边框色。
+ * @param key 表面、布局、交互、焦点与语义边界共用的稳定 identity。
+ * @param semanticLabel Sheet 虚拟节点的无障碍名称。
+ * @param onDismissRequest back 或无障碍 dismiss 请求的受控回调。
+ * @param modal 是否隔离 Sheet 外的焦点、指针、文本输入与无障碍交互。
+ */
+public fun BottomSheet(
+    title: Widget? = null,
+    content: Widget,
+    actions: List<Widget> = emptyList(),
+    fillColor: PixelColor = PixelColor.Black,
+    borderColor: PixelColor = PixelColor.White,
+    key: Any? = null,
+    semanticLabel: String = "Bottom sheet",
+    onDismissRequest: (() -> Unit)? = null,
+    modal: Boolean = true,
+): Widget = BottomSheet(
+    content = content,
+    states = PixelControlStateSet.Normal,
+    title = title,
+    actions = actions,
+    fillColor = fillColor.takeUnless { color -> color == LEGACY_OVERLAY_FILL_COLOR },
+    borderColor = borderColor.takeUnless { color -> color == LEGACY_OVERLAY_BORDER_COLOR },
+    key = key,
+    semanticLabel = semanticLabel.takeUnless { label -> label == LEGACY_BOTTOM_SHEET_LABEL },
+    onDismissRequest = onDismissRequest,
+    modal = modal,
+)
+
+/** Legacy BottomSheet label used only to detect an omitted localized theme label. */
+private const val LEGACY_BOTTOM_SHEET_LABEL: String = "Bottom sheet"
+
+/** 执行 `PixelComponents` 的 `BottomSheet` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware BottomSheet with token-resolved surface, spacing, and capability semantics.
+ */
+@kotlin.jvm.JvmName("BottomSheetWithControlStates")
+public fun BottomSheet(
+    content: Widget,
+    states: PixelControlStateSet,
+    title: Widget? = null,
+    actions: List<Widget> = emptyList(),
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
+    key: Any? = null,
+    semanticLabel: String? = null,
+    onDismissRequest: (() -> Unit)? = null,
+    modal: Boolean = true,
+): Widget = PixelThemeResolvedWidget(
+    key = PixelThemeResolverKey(ownerKey = key, component = "BottomSheet", mode = modal),
+) { context, theme ->
+    /** Provider-aware BottomSheet and status labels independent from modal visual tokens. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** BottomSheet-specific passive overlay tokens. */
+    val tokens = theme.components.bottomSheet
+    /** Dismiss remains available unless a capability state blocks it. */
+    val effectiveDismiss = onDismissRequest.takeIf {
+        PixelControlState.Disabled !in states && PixelControlState.Loading !in states
+    }
+    safeOverlaySurface(
+        title = title,
+        content = content,
+        actions = actions,
+        decoration = PixelSurfaceDecoration(
+            fillColor = fillColor ?: tokens.resolveContainerColor(states, theme.colors),
+            borderColor = borderColor ?: tokens.resolveBorderColor(states, theme.colors),
+            borderWidth = tokens.resolveBorderWidth(theme.borders),
+            cornerRadius = tokens.resolveCornerRadius(theme.radii),
+            shadowColor = theme.colors.shadow,
+            shadowOffset = tokens.resolveElevation(theme.elevations),
+        ),
+        surfacePadding = tokens.resolvePadding(theme.spacing),
+        contentSpacing = theme.spacing.small,
+        actionSpacing = theme.spacing.small,
+        key = key,
+        semanticLabel = localization.resolveLabel(
+            explicitText = semanticLabel,
+            selector = PixelLabelTokens::bottomSheet,
+        ),
+        semanticValue = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ).takeIf { PixelControlState.Loading in states },
+        semanticError = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        onDismissRequest = effectiveDismiss,
+        modal = modal,
+        alignment = SafeOverlayAlignment.BottomCenter,
+        fillSafeWidth = true,
+    )
+}
+
+/** Builds the shared safe surface, semantics, interaction boundary, and optional focus scope. */
+@Suppress("LongParameterList")
+private fun safeOverlaySurface(
+    /** Optional heading rendered before [content]. */
+    title: Widget?,
+    /** Primary overlay body. */
+    content: Widget,
+    /** Optional actions rendered after [content]. */
+    actions: List<Widget>,
+    /** Concrete surface paint, radius, border, and elevation decoration. */
+    decoration: PixelSurfaceDecoration,
+    /** Theme-resolved content padding. */
+    surfacePadding: EdgeInsets,
+    /** Theme-resolved title/body/footer spacing. */
+    contentSpacing: Int,
+    /** Theme-resolved spacing between footer actions. */
+    actionSpacing: Int,
+    /** Stable public identity used to derive internal boundary keys. */
+    key: Any?,
+    /** Accessible overlay name. */
+    semanticLabel: String,
+    /** Optional dynamic loading value. */
+    semanticValue: String?,
+    /** Optional validation or status error. */
+    semanticError: String?,
+    /** Optional controlled dismiss callback. */
+    onDismissRequest: (() -> Unit)?,
+    /** Whether background interaction and focus are isolated. */
+    modal: Boolean,
+    /** Center or bottom-center placement inside safe bounds. */
+    alignment: SafeOverlayAlignment,
+    /** Whether the surface fills the safe viewport width. */
+    fillSafeWidth: Boolean,
+    /** Whether exact historical square Container measurement replaces the token surface. */
+    legacyContainer: Boolean = false,
+): Widget {
+    /** Title and body share the elastic region so the fixed action footer wins scarce height. */
+    val bodyChildren = buildList {
+        if (title != null) add(title)
+        add(content)
+        if (actions.isNotEmpty()) {
+            /** Zero-sized tail turns normal 2px footer spacing into compressible body space. */
+            add(SizedBox(width = 0, height = 0, key = key?.let { "$it-footer-gap" }))
+        }
+    }
+    /** Clipped elastic body prevents oversized descendants from painting or targeting the footer. */
+    val elasticBody = Flexible(
+        child = SafeOverlayBodyViewportWidget(
+            child = Column(children = bodyChildren, spacing = contentSpacing),
+            key = key?.let { "$it-body-viewport" },
+        ),
+        fit = FlexFit.LOOSE,
+        key = key?.let { "$it-body-flex" },
+    )
+    /** Surface children keep the action footer after the lower-priority elastic body. */
+    val children = buildList {
+        add(elasticBody)
+        if (actions.isNotEmpty()) {
+            add(Row(children = actions, spacing = actionSpacing, mainAxisAlignment = MainAxisAlignment.END))
+        }
+    }
+    /** Constrained visual surface measured before safe-viewport placement. */
+    val surface = if (legacyContainer) {
+        Container(
+            padding = surfacePadding,
+            fillColor = decoration.fillColor,
+            borderColor = decoration.borderColor,
+            child = Column(children = children),
+            key = key,
+        )
+    } else {
+        PixelSurface(
+            padding = surfacePadding,
+            decoration = decoration,
+            child = Column(children = children),
+            key = key,
+        )
+    }
+    /** No-op target covering only the measured surface, before descendant real action targets. */
+    val absorbingSurface = PixelOverlaySurface(
+        child = surface,
+        key = key?.let { "$it-overlay-surface" },
+    )
+    /** Semantic boundary follows the actual surface instead of claiming the complete Host area. */
+    val semanticSurface = Semantics(
+        label = semanticLabel,
+        role = PixelSemanticRole.DIALOG,
+        value = semanticValue,
+        error = semanticError,
+        mergeDescendants = false,
+        actions = PixelSemanticsActions(
+            onDismiss = onDismissRequest?.let { dismiss ->
+                {
+                    dismiss()
+                    true
+                }
+            },
+        ),
+        child = absorbingSurface,
+        key = key?.let { "$it-semantics" },
+    )
+    /** Safe layout merges stable padding with IME insets and clips all output channels. */
+    val safePresentation = SafeOverlayViewportWidget(
+        child = semanticSurface,
+        alignment = alignment,
+        fillSafeWidth = fillSafeWidth,
+        key = key?.let { "$it-safe-layout" },
+    )
+    return if (modal) {
+        ContextualSafeSurfaceModalBoundary(
+            child = safePresentation,
+            onDismissRequest = onDismissRequest,
+            key = key?.let { "$it-modal-boundary" },
+        )
+    } else {
+        ModalInteractionScopeWidget(
+            active = false,
+            child = safePresentation,
+            key = key?.let { "$it-interaction" },
+        )
+    }
+}
+
+/** Lets a standard safe surface reuse the canonical modal owner of an enclosing popup route. */
+private class ContextualSafeSurfaceModalBoundary(
+    /** Safe-area-aware Dialog or BottomSheet subtree. */
+    val child: Widget,
+    /** Escape/Back callback used only when this surface owns the modal. */
+    val onDismissRequest: (() -> Unit)?,
+    /** Stable identity for the contextual modal decision. */
+    override val key: Any?,
+) : StatelessWidget(key = key) {
+    /** Creates a modal owner only when no enclosing route already owns this presentation. */
+    override fun build(context: BuildContext): Widget {
+        /** Nearest route policy that permits standard nested surfaces to share its token. */
+        val modalPresence = context.getInheritedWidgetOfExactType<PixelModalFocusPresence>()
+        if (modalPresence?.coalesceNestedModal == true) return child
+        return StandaloneModalBoundaryFactory.create(
+            active = true,
+            onDismissRequest = onDismissRequest,
+            child = ModalInteractionScopeWidget(
+                active = true,
+                child = child,
+                key = key?.let { "$it-interaction" },
+            ),
+            key = key,
+        )
+    }
 }
 
 /**
@@ -294,12 +1821,81 @@ public fun ConfirmDialog(
     cancelStyle: TextButtonStyle = TextButtonStyle.Default,
     width: Int? = null,
     key: Any? = null,
-): Widget {
+): Widget = ConfirmDialog(
+    title = title,
+    message = message,
+    onConfirm = onConfirm,
+    states = PixelControlStateSet.Normal,
+    onCancel = onCancel,
+    showCancel = cancelText != null,
+    confirmText = confirmText.takeUnless { label -> label == LEGACY_CONFIRM_LABEL },
+    cancelText = cancelText?.takeUnless { label -> label == LEGACY_CANCEL_LABEL },
+    fillColor = fillColor.takeUnless { color -> color == LEGACY_OVERLAY_FILL_COLOR },
+    borderColor = borderColor.takeUnless { color -> color == LEGACY_OVERLAY_BORDER_COLOR },
+    titleStyle = titleStyle.takeUnless { style -> style == PixelTextStyle.Default },
+    messageStyle = messageStyle.takeUnless { style -> style == LEGACY_DIALOG_MESSAGE_STYLE },
+    confirmStyle = confirmStyle,
+    cancelStyle = cancelStyle,
+    width = width,
+    key = key,
+)
+
+/** Legacy confirmation label used only to detect an omitted localized theme label. */
+private const val LEGACY_CONFIRM_LABEL: String = "OK"
+
+/** Legacy cancellation label used only to detect an omitted localized theme label. */
+private const val LEGACY_CANCEL_LABEL: String = "CANCEL"
+
+/** Legacy secondary message style used only to detect an omitted typography token. */
+private val LEGACY_DIALOG_MESSAGE_STYLE: PixelTextStyle = PixelTextStyle(
+    color = PixelColor.fromRgb(160, 160, 160),
+)
+
+/** 执行 `PixelComponents` 的 `ConfirmDialog` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware ConfirmDialog whose text, action labels, spacing, and surface inherit theme tokens.
+ */
+@kotlin.jvm.JvmName("ConfirmDialogWithControlStates")
+public fun ConfirmDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    states: PixelControlStateSet,
+    onCancel: (() -> Unit)? = null,
+    showCancel: Boolean = true,
+    confirmText: String? = null,
+    cancelText: String? = null,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
+    titleStyle: PixelTextStyle? = null,
+    messageStyle: PixelTextStyle? = null,
+    confirmStyle: ButtonStyle = ButtonStyle.Default,
+    cancelStyle: TextButtonStyle = TextButtonStyle.Default,
+    width: Int? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware action labels independent from the Dialog surface theme. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Confirmation label resolved after an optional caller override. */
+    val resolvedConfirmText = localization.resolveLabel(
+        explicitText = confirmText,
+        selector = PixelLabelTokens::confirm,
+    )
+    /** Cancellation label resolved after an optional caller override. */
+    val resolvedCancelText = localization.resolveLabel(
+        explicitText = cancelText,
+        selector = PixelLabelTokens::cancel,
+    )
+    /** Theme title typography unless explicitly overridden. */
+    val resolvedTitleStyle = titleStyle ?: theme.typography.title.resolve(theme.colors)
+    /** Theme caption typography unless explicitly overridden. */
+    val resolvedMessageStyle = messageStyle ?: theme.typography.caption.resolve(theme.colors)
+    /** Compact title and optional message column. */
     val bodyChildren = buildList {
         add(
             Text(
                 title,
-                style = titleStyle,
+                style = resolvedTitleStyle,
                 softWrap = true,
                 maxLines = 2,
                 overflow = PixelTextOverflow.ELLIPSIS,
@@ -310,7 +1906,7 @@ public fun ConfirmDialog(
             add(
                 Text(
                     message,
-                    style = messageStyle,
+                    style = resolvedMessageStyle,
                     softWrap = true,
                     maxLines = 3,
                     overflow = PixelTextOverflow.ELLIPSIS,
@@ -321,16 +1917,18 @@ public fun ConfirmDialog(
     }
     val body = Column(
         children = bodyChildren,
-        spacing = 1,
+        spacing = theme.spacing.extraSmall,
         mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.CENTER,
     )
+    /** Theme-aware cancel and confirm action row. */
     val actions = buildList {
-        if (cancelText != null) {
+        if (showCancel) {
             add(
                 TextButton(
-                    text = cancelText,
+                    text = resolvedCancelText,
                     onPressed = onCancel,
+                    states = states,
                     enabled = onCancel != null,
                     style = cancelStyle,
                     key = key?.let { "$it-cancel" },
@@ -339,19 +1937,23 @@ public fun ConfirmDialog(
         }
         add(
             OutlinedButton(
-                text = confirmText,
+                text = resolvedConfirmText,
                 onPressed = onConfirm,
+                states = states,
                 style = confirmStyle,
                 key = key?.let { "$it-confirm" },
             ),
         )
     }
-    return Dialog(
+    Dialog(
         content = if (width == null) body else SizedBox(width = width.coerceAtLeast(1), child = body),
+        states = states,
         actions = actions,
         fillColor = fillColor,
         borderColor = borderColor,
         key = key,
+        semanticLabel = title,
+        onDismissRequest = onCancel,
     )
 }
 
@@ -366,33 +1968,119 @@ public fun ModalBarrier(
     dismissible: Boolean = false,
     onDismiss: (() -> Unit)? = null,
     key: Any? = null,
-): Widget {
-    val fill = Container(fillColor = color, key = key?.let { "$it-fill" })
-    val barrier = if (dismissible && onDismiss != null) {
+): Widget = ModalBarrier(
+    states = PixelControlStateSet.Normal,
+    color = color.takeUnless { value -> value == LEGACY_MODAL_BARRIER_COLOR },
+    dismissible = dismissible,
+    onDismiss = onDismiss,
+    key = key,
+)
+
+/** Legacy modal-barrier color used only to detect an omitted scrim token. */
+private val LEGACY_MODAL_BARRIER_COLOR: PixelColor = PixelColor.fromArgb(160, 0, 0, 0)
+
+/** 执行 `PixelComponents` 的 `ModalBarrier` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware modal barrier using the current scrim and localized dismiss label tokens.
+ */
+@kotlin.jvm.JvmName("ModalBarrierWithControlStates")
+public fun ModalBarrier(
+    states: PixelControlStateSet,
+    color: PixelColor? = null,
+    dismissible: Boolean = false,
+    onDismiss: (() -> Unit)? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware dismiss label kept separate from the scrim color branch. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Effective dismiss callback suppressed by Loading or Disabled. */
+    val effectiveDismiss = onDismiss.takeIf {
+        dismissible &&
+            PixelControlState.Disabled !in states &&
+            PixelControlState.Loading !in states
+    }
+    /** Full-parent scrim paint. */
+    val fill = Container(fillColor = color ?: theme.colors.scrim, key = key?.let { "$it-fill" })
+    /** Optional pointer dismissal wrapper. */
+    val barrier = if (effectiveDismiss != null) {
         GestureDetector(
             child = fill,
-            onTap = onDismiss,
+            onTap = effectiveDismiss,
             key = key,
         )
     } else {
         fill
     }
-    return PositionedFill(child = barrier, key = key?.let { "$it-positioned" })
+    /** Semantic dismissal boundary is exported only when dismissal is actually available. */
+    val semanticBarrier = if (effectiveDismiss == null) {
+        barrier
+    } else {
+        Semantics(
+            label = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::dismiss,
+            ),
+            role = PixelSemanticRole.BUTTON,
+            excludeDescendants = true,
+            actions = PixelSemanticsActions(
+                onClick = {
+                    effectiveDismiss()
+                    true
+                },
+                onDismiss = {
+                    effectiveDismiss()
+                    true
+                },
+            ),
+            child = barrier,
+            key = key?.let { "$it-semantics" },
+        )
+    }
+    PositionedFill(child = semanticBarrier, key = key?.let { "$it-positioned" })
 }
 
 /**
  * 居中的短提示内容。
  *
- * 该函数只创建 toast widget，不内置自动超时或动画。业务需要显示/关闭时长时，应由
- * [PixelOverlayController] 的 handle 或外部计时器控制。
+ * 该函数只创建 toast widget，不内置自动超时或动画。需要 FIFO 与 Host active-time 超时时，
+ * 使用 [ToastQueue] 和 [PixelToastQueueController]；自定义 route 生命周期可由
+ * [PixelOverlayController] 的 entry 控制。
  */
 public fun Toast(
     message: String,
     fillColor: PixelColor = PixelColor.Black,
     textStyle: PixelTextStyle = PixelTextStyle.Default,
     key: Any? = null,
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { _ ->
+        legacyToast(
+            message = message,
+            fillColor = fillColor,
+            textStyle = textStyle,
+            key = key,
+        )
+    },
+    themedBuilder = { _ ->
+        Toast(
+            message = message,
+            states = PixelControlStateSet.Normal,
+            fillColor = fillColor.takeUnless { color -> color == LEGACY_OVERLAY_FILL_COLOR },
+            textStyle = textStyle.takeUnless { style -> style == PixelTextStyle.Default },
+            key = key,
+        )
+    },
+)
+
+/** Builds the exact scope-less Toast pixels retained by the compatibility facade. */
+private fun legacyToast(
+    message: String,
+    fillColor: PixelColor,
+    textStyle: PixelTextStyle,
+    key: Any?,
 ): Widget {
-    return Center(
+    /** Historical centered surface and spacing, intentionally independent from M5 tokens. */
+    val surface = Center(
         child = Container(
             padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
             fillColor = fillColor,
@@ -406,13 +2094,87 @@ public fun Toast(
             key = key,
         ),
     )
+    return Semantics(
+        label = message,
+        role = PixelSemanticRole.GENERIC,
+        liveRegion = PixelSemanticsLiveRegion.POLITE,
+        excludeDescendants = true,
+        child = surface,
+        key = key?.let { "$it-semantics" },
+    )
+}
+
+/** 执行 `PixelComponents` 的 `Toast` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware Toast with token-resolved notification surface, typography, and live semantics.
+ */
+@kotlin.jvm.JvmName("ToastWithControlStates")
+public fun Toast(
+    message: String,
+    states: PixelControlStateSet,
+    fillColor: PixelColor? = null,
+    textStyle: PixelTextStyle? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware Toast and status labels independent from notification visuals. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Toast-specific notification tokens. */
+    val tokens = theme.components.toast
+    /** Blank message falls back to the localized Toast label. */
+    val resolvedMessage = localization.resolveLabel(
+        explicitText = message.takeIf { value -> value.isNotBlank() },
+        selector = PixelLabelTokens::toast,
+    )
+    /** State-resolved foreground unless explicitly overridden by a complete text style. */
+    val contentColor = tokens.resolveContentColor(states, theme.colors) ?: theme.colors.onSurface
+    /** Theme caption typography with the current state foreground. */
+    val resolvedTextStyle = textStyle
+        ?: theme.typography.caption.resolve(theme.colors).copy(color = contentColor)
+    /** live-region 语义包装前的居中 toast 表面。 */
+    val toastSurface = Center(
+        child = PixelSurface(
+            padding = tokens.resolvePadding(theme.spacing),
+            decoration = PixelSurfaceDecoration(
+                fillColor = fillColor ?: tokens.resolveContainerColor(states, theme.colors),
+                borderColor = tokens.resolveBorderColor(states, theme.colors),
+                borderWidth = tokens.resolveBorderWidth(theme.borders),
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                shadowColor = theme.colors.shadow,
+                shadowOffset = tokens.resolveElevation(theme.elevations),
+            ),
+            child = Text(
+                resolvedMessage,
+                style = resolvedTextStyle,
+                softWrap = true,
+                maxLines = Int.MAX_VALUE,
+            ),
+            key = key,
+        ),
+    )
+    Semantics(
+        label = resolvedMessage,
+        role = PixelSemanticRole.GENERIC,
+        value = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ).takeIf { PixelControlState.Loading in states },
+        error = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        liveRegion = PixelSemanticsLiveRegion.POLITE,
+        excludeDescendants = true,
+        child = toastSurface,
+        key = key?.let { "$it-semantics" },
+    )
 }
 
 /**
  * 像素风 snackbar 内容。
  *
  * 该函数只绘制条形内容本身；贴底定位由 [PixelOverlayController.showSnackbar] 或调用方的
- * [Positioned] 负责。可通过 [action] 放入一个按钮类 widget。
+ * [Positioned] 负责。可通过 [action] 放入一个按钮类 widget；需要 FIFO、一次性 action 与
+ * active-time timeout 时使用 [SnackbarQueue] 和 [PixelSnackbarQueueController]。
  */
 public fun Snackbar(
     message: String,
@@ -420,7 +2182,38 @@ public fun Snackbar(
     fillColor: PixelColor = PixelColor.fromRgb(40, 40, 40),
     textStyle: PixelTextStyle = PixelTextStyle.Default,
     key: Any? = null,
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { _ ->
+        legacySnackbar(
+            message = message,
+            action = action,
+            fillColor = fillColor,
+            textStyle = textStyle,
+            key = key,
+        )
+    },
+    themedBuilder = { _ ->
+        Snackbar(
+            message = message,
+            states = PixelControlStateSet.Normal,
+            action = action,
+            fillColor = fillColor.takeUnless { color -> color == LEGACY_SNACKBAR_FILL_COLOR },
+            textStyle = textStyle.takeUnless { style -> style == PixelTextStyle.Default },
+            key = key,
+        )
+    },
+)
+
+/** Builds the historical scope-less Snackbar surface while retaining its message live region. */
+private fun legacySnackbar(
+    message: String,
+    action: Widget?,
+    fillColor: PixelColor,
+    textStyle: PixelTextStyle,
+    key: Any?,
 ): Widget {
+    /** Historical row order with a flexible message and optional action. */
     val rowChildren = if (action == null) {
         listOf<Widget>(Expanded(child = snackbarText(message, textStyle)))
     } else {
@@ -430,75 +2223,742 @@ public fun Snackbar(
         padding = EdgeInsets.symmetric(horizontal = 3, vertical = 2),
         fillColor = fillColor,
         borderColor = PixelColor.White,
-        child = Row(children = rowChildren, spacing = 2, crossAxisAlignment = CrossAxisAlignment.CENTER),
+        child = Row(
+            children = rowChildren,
+            spacing = 2,
+            crossAxisAlignment = CrossAxisAlignment.CENTER,
+        ),
         key = key,
     )
 }
 
+/** Legacy Snackbar fill used only to detect an omitted notification token. */
+private val LEGACY_SNACKBAR_FILL_COLOR: PixelColor = PixelColor.fromRgb(40, 40, 40)
+
+/** 执行 `PixelComponents` 的 `Snackbar` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware Snackbar with token-resolved notification surface and typography.
+ */
+@kotlin.jvm.JvmName("SnackbarWithControlStates")
+public fun Snackbar(
+    message: String,
+    states: PixelControlStateSet,
+    action: Widget? = null,
+    fillColor: PixelColor? = null,
+    textStyle: PixelTextStyle? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware Snackbar and status labels independent from notification visuals. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Snackbar-specific state and geometry tokens. */
+    val tokens = theme.components.snackbar
+    /** Blank message falls back to the localized Snackbar label. */
+    val resolvedMessage = localization.resolveLabel(
+        explicitText = message.takeIf { value -> value.isNotBlank() },
+        selector = PixelLabelTokens::snackbar,
+    )
+    /** Capability states remove an arbitrary action subtree instead of leaving hidden mutations. */
+    val effectiveAction = action.takeIf {
+        PixelControlState.Disabled !in states && PixelControlState.Loading !in states
+    }
+    /** State-resolved foreground unless a full text style is explicit. */
+    val contentColor = tokens.resolveContentColor(states, theme.colors) ?: theme.colors.onSurface
+    /** Theme body typography with state foreground. */
+    val resolvedTextStyle = textStyle
+        ?: theme.typography.body.resolve(theme.colors).copy(color = contentColor)
+    /** Message and optional action retain their visual order. */
+    val rowChildren = if (effectiveAction == null) {
+        listOf<Widget>(Expanded(child = snackbarText(resolvedMessage, resolvedTextStyle)))
+    } else {
+        listOf(Expanded(child = snackbarText(resolvedMessage, resolvedTextStyle)), effectiveAction)
+    }
+    /** Token-resolved visual surface retained beneath structured live semantics. */
+    val snackbarSurface = PixelSurface(
+        padding = tokens.resolvePadding(theme.spacing),
+        decoration = PixelSurfaceDecoration(
+            fillColor = fillColor ?: tokens.resolveContainerColor(states, theme.colors),
+            borderColor = tokens.resolveBorderColor(states, theme.colors),
+            borderWidth = tokens.resolveBorderWidth(theme.borders),
+            cornerRadius = tokens.resolveCornerRadius(theme.radii),
+            shadowColor = theme.colors.shadow,
+            shadowOffset = tokens.resolveElevation(theme.elevations),
+        ),
+        child = Row(
+            children = rowChildren,
+            spacing = theme.spacing.small,
+            crossAxisAlignment = CrossAxisAlignment.CENTER,
+        ),
+        key = key,
+    )
+    Semantics(
+        label = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::snackbar,
+        ),
+        role = PixelSemanticRole.GENERIC,
+        enabled = PixelControlState.Disabled !in states && PixelControlState.Loading !in states,
+        value = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ).takeIf { PixelControlState.Loading in states },
+        error = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        mergeDescendants = false,
+        child = snackbarSurface,
+        key = key?.let { "$it-semantics" },
+    )
+}
+
+/**
+ * 渲染受控标签条，并把指针、键盘与无障碍选择统一为单一回调。
+ *
+ * Renders one controlled tab strip as a single keyboard stop.
+ *
+ * Left/Right choose an adjacent label, Enter/Space reselect the current label, and [enabled]
+ * removes the complete strip from pointer, semantic-action, and focus traversal when false.
+ *
+ * @param labels 按视觉顺序显示并作为无障碍名称的标签。
+ * 每个非空标签同时作为动态重排时的稳定唯一身份。
+ * @param selectedIndex 调用方持有的当前选中下标；空列表必须使用 `-1`。
+ * @param onSelected Pointer、keyboard 或无障碍选择标签时回传其下标。
+ * @param key 整个标签条及子项 retained 状态的稳定 identity。
+ * @param enabled 是否启用整组 pointer、keyboard、DPAD 与无障碍选择。
+ */
 public fun Tabs(
     labels: List<String>,
     selectedIndex: Int,
     onSelected: (Int) -> Unit,
     key: Any? = null,
-): Widget = Row(
-    children = labels.mapIndexed { index, label ->
-        FocusableControl(
-            label = label,
-            role = PixelSemanticRole.TAB,
-            enabled = true,
-            focusWhenParentFocused = index == selectedIndex,
-            child = OutlinedButton(
-                text = label,
-                onPressed = { onSelected(index) },
-                borderColor = if (index == selectedIndex) PixelColor.fromRgb(80, 180, 110) else PixelColor.White,
-            ),
-        )
-    },
-    spacing = 1,
+    enabled: Boolean = true,
+): Widget = Tabs(
+    labels = labels,
+    selectedIndex = selectedIndex,
+    onSelected = onSelected,
+    states = PixelControlStateSet.Normal,
     key = key,
+    enabled = enabled,
 )
 
+/**
+ * 执行 `PixelComponents` 的 `Tabs` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware tab strip using component state, motion, focus, and localized label tokens.
+ *
+ * Loading retains the group's single keyboard stop but suppresses all selection actions.
+ */
+@kotlin.jvm.JvmName("TabsWithControlStates")
+public fun Tabs(
+    labels: List<String>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    states: PixelControlStateSet,
+    key: Any? = null,
+    enabled: Boolean = true,
+): Widget {
+    validateSingleSelectionLabels(
+        componentName = "Tabs",
+        labels = labels,
+        selectedIndex = selectedIndex,
+    )
+    /** Persistent strip states normalized with caller availability. */
+    var effectiveStates = states
+    if (!enabled) effectiveStates += PixelControlState.Disabled
+    /** Disabled removes traversal while Loading retains it. */
+    val focusable = PixelControlState.Disabled !in effectiveStates && labels.isNotEmpty()
+    /** Selection actions are suppressed for Loading and Disabled. */
+    val interactive = focusable && PixelControlState.Loading !in effectiveStates
+    /** Enter/Space 与当前选中 Tab 语义点击共用的重新选择动作。 */
+    val selectCurrent: (() -> Boolean)? = labels.getOrNull(selectedIndex)?.takeIf { interactive }?.let {
+        {
+            onSelected(selectedIndex)
+            true
+        }
+    }
+    /** 整组唯一焦点节点使用的循环方向键与激活处理器。 */
+    val keyHandler = tabSelectionKeyHandler(
+        labels = labels,
+        selectedIndex = selectedIndex,
+        onSelected = onSelected,
+        onActivate = selectCurrent,
+    ).takeIf { interactive }
+    return AutomaticFocusAction(
+        enabled = focusable,
+        debugLabel = LEGACY_TABS_LABEL,
+        onKeyEvent = keyHandler,
+        key = key,
+    ) { _, _ ->
+        PixelThemeResolvedWidget(key = key?.let { "$it-tabs-layout" }) { context, theme ->
+            /** Provider-aware group label independent from tab layout and selection motion. */
+            val localization = pixelComponentLocalizationOf(context, theme)
+            /** Production tab row retained beneath a localized group semantic node. */
+            val tabsRow = Row(
+                children = labels.mapIndexed { index, label ->
+                    /** 保留此槽位 selection 动画且避免内容替换时错误复用的 key。 */
+                    val childKey = PixelTabMotionKey(parentKey = key, label = label)
+                    PixelTabMotionItem(
+                        label = label,
+                        index = index,
+                        selected = index == selectedIndex,
+                        states = if (index == selectedIndex) {
+                            effectiveStates + PixelControlState.Selected
+                        } else {
+                            effectiveStates
+                        },
+                        enabled = focusable,
+                        interactive = interactive,
+                        onSelected = onSelected,
+                        key = childKey,
+                    )
+                },
+                spacing = theme.spacing.extraSmall,
+                key = key,
+            )
+            Semantics(
+                label = localization.resolveLabel(
+                    explicitText = null,
+                    selector = PixelLabelTokens::tabs,
+                ),
+                role = PixelSemanticRole.GENERIC,
+                enabled = interactive,
+                collectionInfo = horizontalSingleSelectionCollection(labels.size),
+                mergeDescendants = false,
+                child = tabsRow,
+                key = key?.let { "$it-group-semantics" },
+            )
+        }
+    }
+}
+
+/** Legacy tab-strip label used for the focus debug fallback. */
+private const val LEGACY_TABS_LABEL: String = "Tabs"
+
+/** 值相等即可跨父级 rebuild 保持同一 Tab state 的稳定 key。 */
+private data class PixelTabMotionKey(
+    /** Tabs 调用方提供的父 identity。 */
+    val parentKey: Any?,
+    /** 唯一标签作为动态重排时的稳定业务 identity。 */
+    val label: String,
+)
+
+/** 单个 Tab 的 selection 运动参数。 */
+private data class PixelTabMotionItem(
+    /** 显示及 semantics 标签。 */
+    val label: String,
+    /** 点击时回传的受控下标。 */
+    val index: Int,
+    /** 调用方立即拥有的逻辑选中状态。 */
+    val selected: Boolean,
+    /** Persistent normalized states for this tab, including controlled selection. */
+    val states: PixelControlStateSet,
+    /** Whether pointer, semantic, and parent keyboard selection remain available. */
+    val enabled: Boolean,
+    /** Whether Loading/Disabled currently permits selection. */
+    val interactive: Boolean,
+    /** 最新的 selection 回调。 */
+    val onSelected: (Int) -> Unit,
+    /** 跨快速切换保留视觉进度的稳定 identity。 */
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    /** 创建此 Tab 独立的 selection 强度状态。 */
+    override fun createState(): State<out StatefulWidget> = PixelTabMotionItemState()
+}
+
+/** 单个 Tab 的白色到选中色交叉变化状态。 */
+private class PixelTabMotionItemState : State<PixelTabMotionItem>() {
+    /** 当前 Tab 的 `0f..1f` selection 视觉强度。 */
+    private lateinit var selectionMotion: PixelControlMotionValue
+
+    /** Whether this tab currently owns a captured pointer press. */
+    private var pressed: Boolean = false
+
+    /** Whether a pointing device currently hovers over this tab. */
+    private var hovered: Boolean = false
+
+    /** mount 时直接使用逻辑状态，避免首帧出现错误选中色。 */
+    override fun initState() {
+        selectionMotion = PixelControlMotionValue(if (widget.selected) 1f else 0f)
+    }
+
+    /** 释放此 Tab selection 片段拥有的 ticker。 */
+    override fun dispose() {
+        selectionMotion.dispose()
+    }
+
+    /**
+     * selection 只改变固定 1px 边框颜色；布局、按钮命中区域和逻辑 semantics 立即稳定。
+     */
+    override fun build(context: BuildContext): Widget {
+        /** Complete theme token graph inherited by this retained tab. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Provider-aware status labels while each visible tab label remains caller-owned. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Tab-specific visual and focus tokens. */
+        val tokens = theme.components.tabs
+        /** 当前主题为 Tab selection 通道提供的运动规格。 */
+        val selectionSpec = PixelMotionTheme.of(context).selection
+        /** 可选统一 ticker 与 reduced-motion 设置来源。 */
+        val motionScope = PixelMotionScope.maybeOf(context)
+        configureControlMotion(selectionMotion, motionScope, selectionSpec)
+        selectionMotion.animateTo(if (widget.selected) 1f else 0f)
+        selectionMotion.watch(context)
+        /** Theme-resolved normal border endpoint. */
+        val normalBorder = tokens.resolveBorderColor(
+            widget.states - PixelControlState.Selected,
+            theme.colors,
+        ) ?: theme.colors.outline
+        /** Theme-resolved selected border endpoint. */
+        val selectedBorder = tokens.resolveBorderColor(
+            (widget.states - PixelControlState.Disabled - PixelControlState.Loading - PixelControlState.Error) +
+                PixelControlState.Selected,
+            theme.colors,
+        ) ?: theme.colors.primary
+        /** Motion-preserving border used only for Normal/Selected base states. */
+        val animatedBorder = PixelColorTween(normalBorder, selectedBorder)
+            .lerp(selectionMotion.value)
+        /** Runtime visual states after retained pointer microstates are merged. */
+        var visualStates = widget.states
+        if (pressed) visualStates += PixelControlState.Pressed
+        if (hovered) visualStates += PixelControlState.Hovered
+        if (
+            PixelControlState.Disabled in visualStates ||
+            PixelControlState.Loading in visualStates
+        ) {
+            pressed = false
+            hovered = false
+            visualStates -= PixelControlState.Pressed
+            visualStates -= PixelControlState.Hovered
+        }
+        /** Shared pointer and semantic selection action for this retained Tab item. */
+        val select: (() -> Boolean)? = if (widget.interactive) {
+            {
+                widget.onSelected(widget.index)
+                true
+            }
+        } else {
+            null
+        }
+        /** Border keeps the historical selection motion for base states and token priority otherwise. */
+        val borderColor = when (visualStates.highestPriority()) {
+            PixelControlState.Normal,
+            PixelControlState.Selected,
+            -> animatedBorder
+            else -> tokens.resolveBorderColor(visualStates, theme.colors)
+        }
+        /** State-resolved text foreground isolated to the content token field. */
+        val contentColor = tokens.resolveContentColor(visualStates, theme.colors)
+            ?: theme.colors.onSurface
+        /** Token-resolved tab surface without a second internal feedback animation. */
+        val surface = PixelSurface(
+            decoration = PixelSurfaceDecoration(
+                fillColor = tokens.resolveContainerColor(visualStates, theme.colors),
+                borderColor = borderColor,
+                borderWidth = tokens.resolveBorderWidth(theme.borders),
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                shadowColor = theme.colors.shadow,
+                shadowOffset = tokens.resolveElevation(theme.elevations),
+            ),
+            padding = tokens.resolvePadding(theme.spacing),
+            child = Text(
+                widget.label,
+                style = theme.typography.label.resolve(theme.colors).copy(color = contentColor),
+                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+                textAlign = TextAlign.CENTER,
+            ),
+            key = widget.key?.let { "$it-surface" },
+        )
+        /** Pointer microstate wrapper omitted while Loading or Disabled. */
+        val interactiveSurface = select?.let { action ->
+            InteractionDetector(
+                child = surface,
+                onTap = { action.invoke() },
+                onPressedChanged = ::updatePressed,
+                onHoveredChanged = ::updateHovered,
+                key = widget.key,
+            )
+        } ?: surface
+        return FocusableControl(
+            label = widget.label,
+            role = PixelSemanticRole.TAB,
+            enabled = widget.enabled,
+            semanticsEnabled = select != null,
+            automaticallyFocusable = false,
+            focusWhenParentFocused = widget.selected,
+            selected = widget.selected,
+            value = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::loading,
+            ).takeIf { PixelControlState.Loading in widget.states },
+            error = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::error,
+            ).takeIf { PixelControlState.Error in widget.states },
+            collectionItemInfo = PixelSemanticsCollectionItemInfo(
+                rowIndex = 0,
+                columnIndex = widget.index,
+                selected = widget.selected,
+            ),
+            focusIndicator = tokens.focusIndicator ?: PixelFocusIndicatorTokens.Default,
+            actions = PixelSemanticsActions(onClick = select),
+            child = interactiveSurface,
+            key = widget.key?.let { "$it-focusable" },
+        )
+    }
+
+    /** Updates captured press ownership exactly once per transition. */
+    private fun updatePressed(nextPressed: Boolean) {
+        if (pressed == nextPressed) return
+        setState { pressed = nextPressed }
+    }
+
+    /** Updates hover membership exactly once per pointer boundary transition. */
+    private fun updateHovered(nextHovered: Boolean) {
+        if (hovered == nextHovered) return
+        setState { hovered = nextHovered }
+    }
+}
+
+/**
+ * 渲染受控分段选择器，并以整组为单位处理启用状态和方向键导航。
+ *
+ * Renders one controlled segmented selector as a single keyboard stop.
+ *
+ * [enabled] applies atomically to every segment and its shared directional key handler.
+ *
+ * @param labels 按视觉顺序显示并作为无障碍名称的分段标签；每项必须非空且唯一。
+ * @param selectedIndex 调用方持有的当前选中下标；空列表必须使用 `-1`。
+ * @param onSelected Pointer、keyboard 或无障碍选择分段时回传其下标。
+ * @param key 整个分段组及子语义节点的稳定 identity。
+ * @param enabled 是否启用整组 pointer、keyboard、DPAD 与无障碍选择。
+ */
 public fun SegmentedControl(
     labels: List<String>,
     selectedIndex: Int,
     onSelected: (Int) -> Unit,
     key: Any? = null,
-): Widget = Row(
-    children = labels.mapIndexed { index, label ->
-        FocusableControl(
-            label = label,
-            role = PixelSemanticRole.TAB,
-            enabled = true,
-            focusWhenParentFocused = index == selectedIndex,
-            child = GestureDetector(
-                child = Container(
-                    fillColor = if (index == selectedIndex) PixelColor.White else PixelColor.Transparent,
-                    borderColor = PixelColor.White,
-                    child = Padding(
-                        child = Text(
-                            label,
-                            style = TextStyle(color = if (index == selectedIndex) PixelColor.Black else PixelColor.White),
-                            overflow = PixelTextOverflow.ELLIPSIS,
-                            softWrap = false,
-                            maxLines = 1,
-                        ),
-                        horizontal = 2,
-                        vertical = TEXT_CONTAINER_PADDING_PX,
-                    ),
-                ),
-                onTap = { onSelected(index) },
-            ),
-        )
-    },
-    spacing = 0,
+    enabled: Boolean = true,
+): Widget = SegmentedControl(
+    labels = labels,
+    selectedIndex = selectedIndex,
+    onSelected = onSelected,
+    states = PixelControlStateSet.Normal,
     key = key,
+    enabled = enabled,
 )
 
 /**
- * 通用的减 / 值 / 加像素调节器。
+ * 执行 `PixelComponents` 的 `SegmentedControl` 公开行为；具体参数、返回和副作用见下文。
  *
- * 组件不保存数值，也不做范围判断；调用方通过 [onDecrease] 和 [onIncrease] 控制边界。
- * 当某一侧回调为 null 或 [enabled] 为 false 时，对应按钮不可点。
+ * State-aware segmented selector with token-resolved per-segment interaction surfaces.
+ *
+ * The group remains one keyboard stop. Loading preserves that stop while blocking selection.
+ */
+@kotlin.jvm.JvmName("SegmentedControlWithControlStates")
+public fun SegmentedControl(
+    labels: List<String>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    states: PixelControlStateSet,
+    key: Any? = null,
+    enabled: Boolean = true,
+): Widget {
+    validateSingleSelectionLabels(
+        componentName = "SegmentedControl",
+        labels = labels,
+        selectedIndex = selectedIndex,
+    )
+    /** Persistent group states normalized with caller availability. */
+    var effectiveStates = states
+    if (!enabled) effectiveStates += PixelControlState.Disabled
+    /** Disabled removes traversal while Loading retains focus ownership. */
+    val focusable = PixelControlState.Disabled !in effectiveStates && labels.isNotEmpty()
+    /** Selection actions are unavailable for Loading and Disabled. */
+    val interactive = focusable && PixelControlState.Loading !in effectiveStates
+    /** Enter/Space 与当前选中分段语义点击共用的重新选择动作。 */
+    val selectCurrent: (() -> Boolean)? = labels.getOrNull(selectedIndex)?.takeIf { interactive }?.let {
+        {
+            onSelected(selectedIndex)
+            true
+        }
+    }
+    return AutomaticFocusAction(
+        enabled = focusable,
+        debugLabel = LEGACY_SEGMENTED_CONTROL_LABEL,
+        onKeyEvent = tabSelectionKeyHandler(
+            labels,
+            selectedIndex,
+            onSelected,
+            selectCurrent,
+        ).takeIf { interactive },
+        key = key,
+    ) { _, _ ->
+        PixelThemeResolvedWidget(key = key?.let { "$it-segmented-layout" }) { context, theme ->
+            /** Provider-aware group label independent from segmented-control layout. */
+            val localization = pixelComponentLocalizationOf(context, theme)
+            /** Production segment row retained beneath a localized group semantic node. */
+            val segmentRow = Row(
+                children = labels.mapIndexed { index, label ->
+                    /** 当前分段的 pointer 与语义选择动作；禁用时统一为 null。 */
+                    val select: (() -> Boolean)? = if (interactive) {
+                        {
+                            onSelected(index)
+                            true
+                        }
+                    } else {
+                        null
+                    }
+                    /** Controlled selection merged independently into this segment's persistent states. */
+                    val segmentStates = if (index == selectedIndex) {
+                        effectiveStates + PixelControlState.Selected
+                    } else {
+                        effectiveStates
+                    }
+                    PixelSegmentStateWidget(
+                        label = label,
+                        index = index,
+                        selected = index == selectedIndex,
+                        states = segmentStates,
+                        select = select,
+                        key = PixelSegmentKey(parentKey = key, label = label),
+                    )
+                },
+                spacing = 0,
+                key = key,
+            )
+            Semantics(
+                label = localization.resolveLabel(
+                    explicitText = null,
+                    selector = PixelLabelTokens::segmentedControl,
+                ),
+                role = PixelSemanticRole.GENERIC,
+                enabled = interactive,
+                collectionInfo = horizontalSingleSelectionCollection(labels.size),
+                mergeDescendants = false,
+                child = segmentRow,
+                key = key?.let { "$it-group-semantics" },
+            )
+        }
+    }
+}
+
+/** Legacy segmented-control debug label. */
+private const val LEGACY_SEGMENTED_CONTROL_LABEL: String = "SegmentedControl"
+
+/** Stable segment identity derived from the parent control and unique visible label. */
+private data class PixelSegmentKey(
+    /** Caller-owned group identity retained across list updates. */
+    val parentKey: Any?,
+    /** Unique segment label retained when its visual index changes. */
+    val label: String,
+)
+
+/** Retained per-segment configuration with runtime-owned hover and press states. */
+private data class PixelSegmentStateWidget(
+    /** Visible and accessible segment label. */
+    val label: String,
+    /** Current zero-based visual column exported through collection semantics. */
+    val index: Int,
+    /** Controlled selection state. */
+    val selected: Boolean,
+    /** Persistent normalized states including controlled selection. */
+    val states: PixelControlStateSet,
+    /** Shared pointer and semantics selection action. */
+    val select: (() -> Boolean)?,
+    /** Stable segment identity. */
+    override val key: Any?,
+) : StatefulWidget(key = key) {
+    /** Creates runtime pointer-state ownership for this segment. */
+    override fun createState(): State<out StatefulWidget> = PixelSegmentState()
+}
+
+/** Runtime hover and press state for one segmented-control item. */
+private class PixelSegmentState : State<PixelSegmentStateWidget>() {
+    /** Whether this segment currently owns a pointer press. */
+    private var pressed: Boolean = false
+
+    /** Whether a pointer currently hovers over this segment. */
+    private var hovered: Boolean = false
+
+    /** Resolves the segment theme, transient states, semantics, and pointer wrapper. */
+    override fun build(context: BuildContext): Widget {
+        /** Complete inherited theme graph. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Provider-aware status labels while segment names remain caller-owned. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Segmented-control visual and geometry tokens. */
+        val tokens = theme.components.segmented
+        /** Parent strip focus shared by the selected segment's focus visual. */
+        val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
+        if (focusNode != null) context.watch(focusNode)
+        /** Runtime state set after focus and pointer microstates. */
+        var resolvedStates = widget.states
+        if (widget.selected && focusNode?.isFocused == true) {
+            resolvedStates += PixelControlState.Focused
+        }
+        if (pressed) resolvedStates += PixelControlState.Pressed
+        if (hovered) resolvedStates += PixelControlState.Hovered
+        if (
+            PixelControlState.Disabled in resolvedStates ||
+            PixelControlState.Loading in resolvedStates
+        ) {
+            pressed = false
+            hovered = false
+            resolvedStates -= PixelControlState.Pressed
+            resolvedStates -= PixelControlState.Hovered
+        }
+        /** Concrete foreground resolved after the fixed state priority. */
+        val contentColor = tokens.resolveContentColor(resolvedStates, theme.colors)
+            ?: theme.colors.onSurface
+        /** Token-resolved segment surface. */
+        val surface = PixelSurface(
+            decoration = PixelSurfaceDecoration(
+                fillColor = tokens.resolveContainerColor(resolvedStates, theme.colors),
+                borderColor = tokens.resolveBorderColor(resolvedStates, theme.colors),
+                borderWidth = tokens.resolveBorderWidth(theme.borders),
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                shadowColor = theme.colors.shadow,
+                shadowOffset = tokens.resolveElevation(theme.elevations),
+            ),
+            padding = tokens.resolvePadding(theme.spacing),
+            child = Text(
+                widget.label,
+                style = theme.typography.label.resolve(theme.colors).copy(color = contentColor),
+                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+            ),
+            key = widget.key?.let { "$it-surface" },
+        )
+        /** Pointer wrapper omitted for Loading and Disabled. */
+        val interactiveSurface = widget.select?.let { select ->
+            InteractionDetector(
+                child = surface,
+                onTap = { select.invoke() },
+                onPressedChanged = ::updatePressed,
+                onHoveredChanged = ::updateHovered,
+                key = widget.key,
+            )
+        } ?: surface
+        return FocusableControl(
+            label = widget.label,
+            role = PixelSemanticRole.TAB,
+            enabled = PixelControlState.Disabled !in resolvedStates,
+            semanticsEnabled = widget.select != null,
+            automaticallyFocusable = false,
+            focusWhenParentFocused = widget.selected,
+            selected = widget.selected,
+            value = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::loading,
+            ).takeIf { PixelControlState.Loading in resolvedStates },
+            error = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::error,
+            ).takeIf { PixelControlState.Error in resolvedStates },
+            collectionItemInfo = PixelSemanticsCollectionItemInfo(
+                rowIndex = 0,
+                columnIndex = widget.index,
+                selected = widget.selected,
+            ),
+            focusIndicator = tokens.focusIndicator ?: PixelFocusIndicatorTokens.Default,
+            actions = PixelSemanticsActions(onClick = widget.select),
+            child = interactiveSurface,
+            key = widget.key,
+        )
+    }
+
+    /** Updates press ownership exactly once per transition. */
+    private fun updatePressed(nextPressed: Boolean) {
+        if (pressed == nextPressed) return
+        setState { pressed = nextPressed }
+    }
+
+    /** Updates hover membership exactly once per boundary transition. */
+    private fun updateHovered(nextHovered: Boolean) {
+        if (hovered == nextHovered) return
+        setState { hovered = nextHovered }
+    }
+}
+
+/**
+ * Creates cyclic horizontal selection actions for Tabs and SegmentedControl.
+ *
+ * @param labels 用于确定可选数量及循环边界的标签列表。
+ * @param selectedIndex 已由 [validateSingleSelectionLabels] 验证的受控选中下标。
+ * @param onSelected 左右方向键选择新下标时调用。
+ * @param onActivate Enter/Space 重新选择当前项时调用。
+ * @return 消费支持按键并回报动作是否执行的处理器。
+ */
+private fun tabSelectionKeyHandler(
+    labels: List<String>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    onActivate: (() -> Boolean)?,
+): (PixelKeyEvent) -> Boolean = { event ->
+    if (labels.isEmpty()) {
+        false
+    } else {
+        /** Current index is safe because public construction validates it before mounting. */
+        val currentIndex = selectedIndex
+        when (event.key) {
+            PixelKey.ARROW_LEFT -> {
+                onSelected((currentIndex - 1).floorMod(labels.size))
+                true
+            }
+            PixelKey.ARROW_RIGHT -> {
+                onSelected((currentIndex + 1).floorMod(labels.size))
+                true
+            }
+            PixelKey.ENTER,
+            PixelKey.SPACE,
+            -> onActivate?.invoke() == true
+            else -> false
+        }
+    }
+}
+
+/** Validates exact-one selection and stable label identity for a controlled selector. */
+private fun validateSingleSelectionLabels(
+    componentName: String,
+    labels: List<String>,
+    selectedIndex: Int,
+) {
+    require(labels.all(String::isNotBlank)) { "$componentName labels must not be blank." }
+    require(labels.distinct().size == labels.size) {
+        "$componentName labels must be unique because they are retained identities."
+    }
+    if (labels.isEmpty()) {
+        require(selectedIndex == -1) { "An empty $componentName must use selectedIndex = -1." }
+    } else {
+        require(selectedIndex in labels.indices) {
+            "$componentName selectedIndex must identify exactly one label."
+        }
+    }
+}
+
+/** Creates horizontal SINGLE collection metadata, including a structurally empty collection. */
+private fun horizontalSingleSelectionCollection(itemCount: Int): PixelSemanticsCollectionInfo {
+    /** Empty selectors expose zero rows as well as zero columns instead of a phantom row. */
+    val rowCount = if (itemCount == 0) 0 else 1
+    return PixelSemanticsCollectionInfo(
+        rowCount = rowCount,
+        columnCount = itemCount,
+        selectionMode = PixelSemanticsSelectionMode.SINGLE,
+    )
+}
+
+/**
+ * [ValueAdjuster] 的可选颜色覆盖；null 字段回退到当前 [PixelTheme]。
+ *
+ * @param borderColor 外边框和分隔线颜色。
+ * @param buttonFillColor 两侧操作按钮填充色。
+ * @param buttonSymbolColor 加减符号颜色。
+ * @param valueTextColor 中央值文本颜色。
+ * @param disabledColor 禁用按钮、边框和值文本的颜色。
+ * @param focusColor 整组获得焦点时的边框强调色。
  */
 public data class ValueAdjusterStyle(
     val borderColor: PixelColor? = null,
@@ -508,11 +2968,29 @@ public data class ValueAdjusterStyle(
     val disabledColor: PixelColor? = null,
     val focusColor: PixelColor? = null,
 ) {
+    /** 集中提供 `PixelComponents` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 完全继承当前主题 token 的默认样式。 */
         public val Default: ValueAdjusterStyle = ValueAdjusterStyle()
     }
 }
 
+/**
+ * 通用的减 / 值 / 加受控像素调节器。
+ *
+ * 组件不保存数值，也不做范围判断；调用方通过 [onDecrease] 和 [onIncrease] 控制边界。
+ * 当某一侧回调为 null 或 [enabled] 为 false 时，对应按钮不可点。
+ * 无显式 [PixelTheme] 时保留历史像素；挂载显式主题后，即使使用此旧签名也会消费组件 token。
+ *
+ * @param valueText 中央显示的受控值文本。
+ * @param onDecrease 左侧按钮及向左/向下键执行的减值回调；null 表示该方向不可用。
+ * @param onIncrease 右侧按钮及向右/向上键执行的增值回调；null 表示该方向不可用。
+ * @param label 可选的组标题；同时作为自动焦点节点调试名称。
+ * @param enabled 是否允许任一侧 pointer、keyboard 与无障碍动作。
+ * @param valueWidth 中央值单元格的目标像素宽度，内部至少按 1px 处理。
+ * @param style 颜色覆盖；未指定字段回退到当前主题。
+ * @param key 视觉、焦点、命中与虚拟语义节点共用的稳定 identity。
+ */
 public fun ValueAdjuster(
     valueText: String,
     onDecrease: (() -> Unit)?,
@@ -522,61 +3000,231 @@ public fun ValueAdjuster(
     valueWidth: Int = 24,
     style: ValueAdjusterStyle = ValueAdjusterStyle.Default,
     key: Any? = null,
-): Widget = ValueAdjusterWidget(
+): Widget = buildValueAdjuster(
     valueText = valueText,
     onDecrease = onDecrease,
     onIncrease = onIncrease,
+    states = PixelControlStateSet.Normal,
     label = label,
     enabled = enabled,
     valueWidth = valueWidth,
     style = style,
     key = key,
+    legacyFacade = true,
 )
 
+/**
+ * 执行 `PixelComponents` 的 `ValueAdjuster` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware ValueAdjuster resolving colors, labels, spacing, and focus from theme tokens.
+ *
+ * Loading retains focus and value semantics while every value-changing action is suppressed.
+ */
+@kotlin.jvm.JvmName("ValueAdjusterWithControlStates")
+public fun ValueAdjuster(
+    valueText: String,
+    onDecrease: (() -> Unit)?,
+    onIncrease: (() -> Unit)?,
+    states: PixelControlStateSet,
+    label: String? = null,
+    enabled: Boolean = true,
+    valueWidth: Int = 24,
+    style: ValueAdjusterStyle = ValueAdjusterStyle.Default,
+    key: Any? = null,
+): Widget {
+    return buildValueAdjuster(
+        valueText = valueText,
+        onDecrease = onDecrease,
+        onIncrease = onIncrease,
+        states = states,
+        label = label,
+        enabled = enabled,
+        valueWidth = valueWidth,
+        style = style,
+        key = key,
+        legacyFacade = false,
+    )
+}
+
+/** Normalizes ValueAdjuster capability once for both binary and state-aware public facades. */
+private fun buildValueAdjuster(
+    valueText: String,
+    onDecrease: (() -> Unit)?,
+    onIncrease: (() -> Unit)?,
+    states: PixelControlStateSet,
+    label: String?,
+    enabled: Boolean,
+    valueWidth: Int,
+    style: ValueAdjusterStyle,
+    key: Any?,
+    legacyFacade: Boolean,
+): Widget {
+    /** Persistent states normalized with actual action availability. */
+    var effectiveStates = states
+    if (!enabled || (onDecrease == null && onIncrease == null)) {
+        effectiveStates += PixelControlState.Disabled
+    }
+    /** Disabled removes traversal while Loading retains the current focus node. */
+    val focusable = PixelControlState.Disabled !in effectiveStates
+    /** Value-changing actions are blocked while Loading or Disabled. */
+    val interactive = focusable && PixelControlState.Loading !in effectiveStates
+    /** Runtime-safe decrement callback. */
+    val effectiveDecrease = onDecrease.takeIf { interactive }
+    /** Runtime-safe increment callback. */
+    val effectiveIncrease = onIncrease.takeIf { interactive }
+    /** Creates one shared focus boundary for both directional actions and group semantics. */
+    return AutomaticFocusAction(
+        enabled = focusable,
+        debugLabel = label ?: LEGACY_VALUE_ADJUSTER_LABEL,
+        onKeyEvent = { event ->
+            when (event.key) {
+                PixelKey.ARROW_LEFT,
+                PixelKey.ARROW_DOWN,
+                -> {
+                    effectiveDecrease?.invoke()
+                    effectiveDecrease != null
+                }
+                PixelKey.ARROW_RIGHT,
+                PixelKey.ARROW_UP,
+                -> {
+                    effectiveIncrease?.invoke()
+                    effectiveIncrease != null
+                }
+                else -> false
+            }
+        },
+        key = key,
+    ) { _, _ ->
+        ValueAdjusterWidget(
+            valueText = valueText,
+            onDecrease = effectiveDecrease,
+            onIncrease = effectiveIncrease,
+            states = effectiveStates,
+            label = label,
+            valueWidth = valueWidth,
+            style = style,
+            legacyFacade = legacyFacade,
+            key = key,
+        )
+    }
+}
+
+/** Legacy ValueAdjuster focus debug label. */
+private const val LEGACY_VALUE_ADJUSTER_LABEL: String = "ValueAdjuster"
+
+/** Theme-resolving ValueAdjuster configuration. */
 private data class ValueAdjusterWidget(
+    /** Controlled visible value. */
     val valueText: String,
+    /** Effective decrement callback, or null when unavailable. */
     val onDecrease: (() -> Unit)?,
+    /** Effective increment callback, or null when unavailable. */
     val onIncrease: (() -> Unit)?,
+    /** Persistent normalized component states. */
+    val states: PixelControlStateSet,
+    /** Optional caller-visible group label. */
     val label: String?,
-    val enabled: Boolean,
+    /** Requested center value-cell width. */
     val valueWidth: Int,
+    /** Explicit caller color overrides. */
     val style: ValueAdjusterStyle,
+    /** Whether this configuration originated from the binary-compatible public facade. */
+    val legacyFacade: Boolean,
+    /** Stable visual, focus, hit, and semantics identity. */
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
+    /** Resolves state colors and creates the retained custom render widget. */
     override fun build(context: BuildContext): Widget {
-        val theme = PixelTheme.of(context)
+        /** Scope-less compatibility mode; an explicit provider always opts into component tokens. */
+        val useLegacyVisuals = legacyFacade && PixelTheme.maybeTokensOf(context) == null
+        /** Complete theme token graph. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Provider-aware group, action, and status labels independent from adjuster visuals. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Historical style graph used only by the binary-compatible facade. */
+        val legacyTheme = PixelTheme.of(context)
+        /** ValueAdjuster-specific state and geometry tokens. */
+        val tokens = theme.components.valueAdjuster
+        /** Focus inherited from the public automatic focus boundary. */
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) {
             context.watch(focusNode)
         }
-        val decreaseEnabled = enabled && onDecrease != null
-        val increaseEnabled = enabled && onIncrease != null
-        val focused = focusNode?.isFocused == true && (decreaseEnabled || increaseEnabled)
-        val disabledColor = style.disabledColor ?: theme.colors.disabled
-        val borderColor = when {
-            !enabled -> disabledColor
-            focused -> style.focusColor ?: theme.colors.focus
-            else -> style.borderColor ?: theme.buttonStyle.borderColor ?: theme.colors.border
+        /** Runtime state set with independent focus membership. */
+        var resolvedStates = states
+        if (focusNode?.isFocused == true) resolvedStates += PixelControlState.Focused
+        /** Whether decrement is currently actionable. */
+        val decreaseEnabled = onDecrease != null
+        /** Whether increment is currently actionable. */
+        val increaseEnabled = onIncrease != null
+        /** Canonical Disabled state used to resolve the two passive action-slot channels. */
+        val disabledStates = PixelControlStateSet.of(PixelControlState.Disabled)
+        /** Whole-control disabled override promised by the legacy style contract. */
+        val wholeControlDisabledColor = style.disabledColor.takeIf {
+            PixelControlState.Disabled in resolvedStates
         }
-        val buttonFillColor = if (enabled) {
-            style.buttonFillColor ?: borderColor
+        /** Concrete disabled action fill with explicit legacy style precedence. */
+        val disabledFillColor = style.disabledColor ?: if (useLegacyVisuals) {
+            legacyTheme.colors.disabled
         } else {
-            disabledColor
+            tokens.resolveContainerColor(disabledStates, theme.colors) ?: theme.colors.disabled
         }
-        val buttonSymbolColor = if (enabled) {
-            style.buttonSymbolColor ?: theme.buttonStyle.fillColor ?: theme.colors.background
+        /** Concrete disabled action glyph resolved independently from its fill. */
+        val disabledSymbolColor = style.disabledColor ?: if (useLegacyVisuals) {
+            PixelColor.Black
         } else {
-            theme.colors.background
+            tokens.resolveContentColor(disabledStates, theme.colors) ?: theme.colors.onDisabled
         }
-        val valueColor = if (enabled) {
-            style.valueTextColor ?: theme.buttonStyle.textStyle.color
+        /** Base state excludes Focused because focus is an additive paint layer. */
+        val baseStates = resolvedStates - PixelControlState.Focused
+        /** Concrete outline color following explicit style then component token precedence. */
+        val borderColor = wholeControlDisabledColor ?: style.borderColor ?: if (useLegacyVisuals) {
+            legacyTheme.buttonStyle.borderColor ?: legacyTheme.colors.border
         } else {
-            disabledColor
+            tokens.resolveBorderColor(baseStates, theme.colors) ?: theme.colors.outline
+        }
+        /** Concrete action fill following explicit style then component token precedence. */
+        val buttonFillColor = wholeControlDisabledColor ?: style.buttonFillColor ?: if (useLegacyVisuals) {
+            borderColor
+        } else {
+            tokens.resolveContainerColor(baseStates, theme.colors) ?: borderColor
+        }
+        /** Concrete action glyph color following explicit style then component token precedence. */
+        val buttonSymbolColor = style.buttonSymbolColor ?: if (useLegacyVisuals) {
+            legacyTheme.buttonStyle.fillColor ?: legacyTheme.colors.background
+        } else {
+            tokens.resolveContentColor(baseStates, theme.colors) ?: theme.colors.onSurface
+        }
+        /** Concrete controlled-value foreground. */
+        val valueColor = wholeControlDisabledColor ?: style.valueTextColor ?: if (useLegacyVisuals) {
+            legacyTheme.buttonStyle.textStyle.color
+        } else {
+            tokens.resolveContentColor(baseStates, theme.colors) ?: theme.colors.onSurface
+        }
+        /** Foundation-resolved outer outline and divider thickness. */
+        val resolvedBorderWidth = tokens.resolveBorderWidth(theme.borders)
+        /** Foundation-resolved value-cell padding. */
+        val resolvedValuePadding = tokens.resolvePadding(theme.spacing)
+        /** Action-cell width preserving the historical 11px result for default 9px size + border. */
+        val resolvedButtonWidth = (
+            tokens.resolveMinimumWidth(theme.sizes) + resolvedBorderWidth * 2
+            ).coerceAtLeast(resolvedBorderWidth * 2 + 1)
+        /** Total minimum height preserving the historical 13px result for compact height 12. */
+        val resolvedMinimumHeight = (
+            tokens.resolveMinimumHeight(theme.sizes) + resolvedBorderWidth
+            ).coerceAtLeast(resolvedBorderWidth * 2 + 1)
+        /** Foundation-resolved stair-step corner radius. */
+        val resolvedCornerRadius = tokens.resolveCornerRadius(theme.radii)
+        /** Theme typography used for the controlled value. */
+        val valueStyle = if (useLegacyVisuals) {
+            legacyTheme.buttonStyle.textStyle.copy(color = valueColor)
+        } else {
+            theme.typography.label.resolve(theme.colors).copy(color = valueColor)
         }
         val controls = ValueAdjusterRenderWidget(
             value = Text(
                 valueText,
-                style = theme.buttonStyle.textStyle.copy(color = valueColor),
+                style = valueStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,
@@ -587,39 +3235,117 @@ private data class ValueAdjusterWidget(
             onIncrease = onIncrease,
             decreaseEnabled = decreaseEnabled,
             increaseEnabled = increaseEnabled,
-            focused = focused,
             valueWidth = valueWidth,
+            borderWidth = resolvedBorderWidth,
+            buttonWidth = resolvedButtonWidth,
+            minimumHeight = resolvedMinimumHeight,
+            valuePadding = resolvedValuePadding,
+            cornerRadius = resolvedCornerRadius,
             borderColor = borderColor,
             buttonFillColor = buttonFillColor,
             buttonSymbolColor = buttonSymbolColor,
-            disabledColor = disabledColor,
+            disabledFillColor = disabledFillColor,
+            disabledSymbolColor = disabledSymbolColor,
+            decreaseLabel = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::decrease,
+            ),
+            increaseLabel = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::increase,
+            ),
             key = key,
         )
-        return if (label == null) {
-            controls
+        /** Independent shrink-wrapping focus layer that preserves virtual action geometry. */
+        val focusedControls = withControlFocusIndicator(
+            child = controls,
+            states = resolvedStates,
+            componentTokens = tokens,
+            colors = theme.colors,
+            borders = theme.borders,
+            key = key?.let { "$it-focus-indicator" },
+            colorOverride = style.focusColor,
+        )
+        /** Optional visible label uses localized fallback only for semantics, not visual insertion. */
+        val labeledControls = if (label == null) {
+            focusedControls
         } else {
             Column(
-                children = listOf(Text(label), controls),
-                spacing = 1,
+                children = listOf(
+                    Text(label, style = theme.typography.label.resolve(theme.colors)),
+                    focusedControls,
+                ),
+                spacing = theme.spacing.extraSmall,
                 crossAxisAlignment = CrossAxisAlignment.START,
                 key = key,
             )
         }
+        return Semantics(
+            label = localization.resolveLabel(
+                explicitText = label,
+                selector = PixelLabelTokens::valueAdjuster,
+            ),
+            role = PixelSemanticRole.GENERIC,
+            enabled = PixelControlState.Disabled !in resolvedStates &&
+                PixelControlState.Loading !in resolvedStates,
+            focused = PixelControlState.Focused in resolvedStates,
+            value = if (PixelControlState.Loading in resolvedStates) {
+                localization.resolveLabel(
+                    explicitText = null,
+                    selector = PixelLabelTokens::loading,
+                )
+            } else {
+                valueText
+            },
+            error = localization.resolveLabel(
+                explicitText = null,
+                selector = PixelLabelTokens::error,
+            ).takeIf { PixelControlState.Error in resolvedStates },
+            mergeDescendants = false,
+            child = labeledControls,
+            key = key?.let { "$it-group-semantics" },
+        )
     }
 }
 
 private class ValueAdjusterRenderWidget(
+    /** Controlled value widget occupying the center cell. */
     private val value: Widget,
+    /** Effective decrement callback. */
     private val onDecrease: (() -> Unit)?,
+    /** Effective increment callback. */
     private val onIncrease: (() -> Unit)?,
+    /** Whether the decrement slot is actionable. */
     private val decreaseEnabled: Boolean,
+    /** Whether the increment slot is actionable. */
     private val increaseEnabled: Boolean,
-    private val focused: Boolean,
+    /** Requested center value-cell width. */
     private val valueWidth: Int,
+    /** Foundation-resolved outer outline and divider thickness. */
+    private val borderWidth: Int,
+    /** Foundation-resolved width of each action cell. */
+    private val buttonWidth: Int,
+    /** Foundation-resolved minimum total control height. */
+    private val minimumHeight: Int,
+    /** Foundation-resolved padding inside the center value cell. */
+    private val valuePadding: EdgeInsets,
+    /** Foundation-resolved outer stair-step corner radius. */
+    private val cornerRadius: Int,
+    /** Concrete outer border and divider color. */
     private val borderColor: PixelColor,
+    /** Concrete enabled action-slot fill. */
     private val buttonFillColor: PixelColor,
+    /** Concrete enabled action glyph color. */
     private val buttonSymbolColor: PixelColor,
-    private val disabledColor: PixelColor,
+    /** Concrete disabled action-slot fill color. */
+    private val disabledFillColor: PixelColor,
+    /** Concrete disabled action glyph color. */
+    private val disabledSymbolColor: PixelColor,
+    /** Localized decrement virtual-node label. */
+    private val decreaseLabel: String,
+    /** Localized increment virtual-node label. */
+    private val increaseLabel: String,
+    /** Stable retained render identity. */
     override val key: Any? = null,
 ) : MultiChildRenderObjectWidget(
     children = listOf(
@@ -629,119 +3355,224 @@ private class ValueAdjusterRenderWidget(
     ),
     key = key,
 ) {
+    /** Creates the retained renderer with the first resolved geometry and paint snapshot. */
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderValueAdjuster(
             onDecrease = onDecrease,
             onIncrease = onIncrease,
             decreaseEnabled = decreaseEnabled,
             increaseEnabled = increaseEnabled,
-            focused = focused,
             valueWidth = valueWidth,
+            borderWidth = borderWidth,
+            buttonWidth = buttonWidth,
+            minimumHeight = minimumHeight,
+            valuePadding = valuePadding,
+            cornerRadius = cornerRadius,
             borderColor = borderColor,
             buttonFillColor = buttonFillColor,
             buttonSymbolColor = buttonSymbolColor,
-            disabledColor = disabledColor,
+            disabledFillColor = disabledFillColor,
+            disabledSymbolColor = disabledSymbolColor,
+            decreaseLabel = decreaseLabel,
+            increaseLabel = increaseLabel,
         )
     }
 
+    /** Updates the retained renderer without replacing action or value child identity. */
     override fun updateRenderObject(context: BuildContext, renderObject: RenderObject) {
         (renderObject as RenderValueAdjuster).update(
             onDecrease = onDecrease,
             onIncrease = onIncrease,
             decreaseEnabled = decreaseEnabled,
             increaseEnabled = increaseEnabled,
-            focused = focused,
             valueWidth = valueWidth,
+            borderWidth = borderWidth,
+            buttonWidth = buttonWidth,
+            minimumHeight = minimumHeight,
+            valuePadding = valuePadding,
+            cornerRadius = cornerRadius,
             borderColor = borderColor,
             buttonFillColor = buttonFillColor,
             buttonSymbolColor = buttonSymbolColor,
-            disabledColor = disabledColor,
+            disabledFillColor = disabledFillColor,
+            disabledSymbolColor = disabledSymbolColor,
+            decreaseLabel = decreaseLabel,
+            increaseLabel = increaseLabel,
         )
     }
 }
 
 private data class ValueAdjusterActionSlot(
+    /** Slot callback retained solely for element identity and diagnostics. */
     val onTap: (() -> Unit)?,
+    /** Stable slot identity. */
     override val key: Any? = null,
 ) : LeafRenderObjectWidget(key = key) {
+    /** Creates a zero-sized placeholder; the parent owns actual hit geometry. */
     override fun createRenderObject(context: BuildContext): RenderObject {
         return RenderValueAdjusterActionSlot()
     }
 }
 
 private class RenderValueAdjusterActionSlot : RenderBox() {
+    /** Keeps this placeholder out of parent layout calculations. */
     override fun layout(constraints: RenderConstraints) {
         size = RenderSize.Zero
     }
 
+    /** The parent custom renderer paints the action slot. */
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) = Unit
 }
 
+/** Custom three-cell renderer for ValueAdjuster geometry, paint, hit, and virtual semantics. */
 private class RenderValueAdjuster(
+    /** Latest decrement callback. */
     private var onDecrease: (() -> Unit)?,
+    /** Latest increment callback. */
     private var onIncrease: (() -> Unit)?,
+    /** Latest decrement availability. */
     private var decreaseEnabled: Boolean,
+    /** Latest increment availability. */
     private var increaseEnabled: Boolean,
-    private var focused: Boolean,
+    /** Requested center value-cell width. */
     private var valueWidth: Int,
+    /** Current outer outline and divider thickness. */
+    private var borderWidth: Int,
+    /** Current width of each action cell. */
+    private var buttonWidth: Int,
+    /** Current minimum total control height. */
+    private var minimumHeight: Int,
+    /** Current padding inside the center value cell. */
+    private var valuePadding: EdgeInsets,
+    /** Current outer stair-step corner radius. */
+    private var cornerRadius: Int,
+    /** Concrete outer border and divider color. */
     private var borderColor: PixelColor,
+    /** Concrete action-slot fill. */
     private var buttonFillColor: PixelColor,
+    /** Concrete action glyph color. */
     private var buttonSymbolColor: PixelColor,
-    private var disabledColor: PixelColor,
+    /** Concrete disabled action-slot fill color. */
+    private var disabledFillColor: PixelColor,
+    /** Concrete disabled action glyph color. */
+    private var disabledSymbolColor: PixelColor,
+    /** Localized decrement semantics label. */
+    private var decreaseLabel: String,
+    /** Localized increment semantics label. */
+    private var increaseLabel: String,
 ) : MultiChildRenderObject() {
+    /** Measured center-value horizontal offset. */
     private var valueOffsetX = 0
+    /** Measured center-value vertical offset. */
     private var valueOffsetY = 0
+    /** Outer border width after fitting the latest parent constraints. */
+    private var layoutBorderWidth = borderWidth.coerceAtLeast(0)
+    /** Divider width after preserving space for both action cells. */
+    private var layoutDividerWidth = borderWidth.coerceAtLeast(0)
+    /** Symmetric action-cell width after fitting the latest parent constraints. */
+    private var layoutButtonWidth = buttonWidth.coerceAtLeast(0)
+    /** Center value-cell width after fitting the latest parent constraints. */
+    private var layoutValueCellWidth = valueWidth.coerceAtLeast(0)
 
+    /** Applies new callbacks, state colors, and localized labels to this retained renderer. */
     fun update(
         onDecrease: (() -> Unit)?,
         onIncrease: (() -> Unit)?,
         decreaseEnabled: Boolean,
         increaseEnabled: Boolean,
-        focused: Boolean,
         valueWidth: Int,
+        borderWidth: Int,
+        buttonWidth: Int,
+        minimumHeight: Int,
+        valuePadding: EdgeInsets,
+        cornerRadius: Int,
         borderColor: PixelColor,
         buttonFillColor: PixelColor,
         buttonSymbolColor: PixelColor,
-        disabledColor: PixelColor,
+        disabledFillColor: PixelColor,
+        disabledSymbolColor: PixelColor,
+        decreaseLabel: String,
+        increaseLabel: String,
     ) {
         if (
             this.onDecrease === onDecrease &&
             this.onIncrease === onIncrease &&
             this.decreaseEnabled == decreaseEnabled &&
             this.increaseEnabled == increaseEnabled &&
-            this.focused == focused &&
             this.valueWidth == valueWidth &&
+            this.borderWidth == borderWidth &&
+            this.buttonWidth == buttonWidth &&
+            this.minimumHeight == minimumHeight &&
+            this.valuePadding == valuePadding &&
+            this.cornerRadius == cornerRadius &&
             this.borderColor == borderColor &&
             this.buttonFillColor == buttonFillColor &&
             this.buttonSymbolColor == buttonSymbolColor &&
-            this.disabledColor == disabledColor
+            this.disabledFillColor == disabledFillColor &&
+            this.disabledSymbolColor == disabledSymbolColor &&
+            this.decreaseLabel == decreaseLabel &&
+            this.increaseLabel == increaseLabel
         ) {
             return
         }
-        val needsLayout = this.valueWidth != valueWidth
+        val needsLayout = this.valueWidth != valueWidth ||
+            this.borderWidth != borderWidth ||
+            this.buttonWidth != buttonWidth ||
+            this.minimumHeight != minimumHeight ||
+            this.valuePadding != valuePadding
         this.onDecrease = onDecrease
         this.onIncrease = onIncrease
         this.decreaseEnabled = decreaseEnabled
         this.increaseEnabled = increaseEnabled
-        this.focused = focused
         this.valueWidth = valueWidth
+        this.borderWidth = borderWidth.coerceAtLeast(0)
+        this.buttonWidth = buttonWidth.coerceAtLeast(1)
+        this.minimumHeight = minimumHeight.coerceAtLeast(1)
+        this.valuePadding = valuePadding
+        this.cornerRadius = cornerRadius.coerceAtLeast(0)
         this.borderColor = borderColor
         this.buttonFillColor = buttonFillColor
         this.buttonSymbolColor = buttonSymbolColor
-        this.disabledColor = disabledColor
+        this.disabledFillColor = disabledFillColor
+        this.disabledSymbolColor = disabledSymbolColor
+        this.decreaseLabel = decreaseLabel
+        this.increaseLabel = increaseLabel
         if (needsLayout) {
             markNeedsLayout()
         }
         markNeedsPaint()
     }
 
+    /** Resolves token-driven cells, padding, and minimum height under the parent constraints. */
     override fun layout(constraints: RenderConstraints) {
         actionSlots.forEach { slot ->
             slot.layout(RenderConstraints(maxWidth = 0, maxHeight = 0))
         }
 
-        val safeValueWidth = valueCellWidth()
-        val valueContentWidth = valueContentWidth(safeValueWidth)
+        /** Caller-requested center width with the historical one-pixel unconstrained floor. */
+        val requestedValueWidth = valueWidth.coerceAtLeast(1)
+        /** Non-negative configured border used only to calculate the natural width. */
+        val requestedBorderWidth = borderWidth.coerceAtLeast(0)
+        /** Non-negative configured action extent used only to calculate the natural width. */
+        val requestedButtonWidth = buttonWidth.coerceAtLeast(0)
+        /** Natural width before the parent applies a potentially narrower viewport. */
+        val desiredWidth =
+            (requestedBorderWidth * 2) +
+                (requestedButtonWidth * 2) +
+                (requestedBorderWidth * 2) +
+                requestedValueWidth
+        /** Actual width owned by this renderer and therefore by every exported geometry channel. */
+        val constrainedWidth = constraints.constrainWidth(desiredWidth)
+        /** Border layers cannot consume more than half of either constrained axis. */
+        val fittedBorderWidth = minOf(
+            requestedBorderWidth,
+            constrainedWidth / 2,
+            constraints.maxHeight.coerceAtLeast(0) / 2,
+        )
+        resolveHorizontalGeometry(totalWidth = constrainedWidth, outerBorderWidth = fittedBorderWidth)
+
+        /** Width still available to the text after its token-resolved horizontal padding. */
+        val valueContentWidth = valueContentWidth(layoutValueCellWidth)
         val value = valueBox
         value?.layout(
             RenderConstraints(
@@ -750,32 +3581,36 @@ private class RenderValueAdjuster(
                 minHeight = 0,
                 maxHeight = (
                     constraints.maxHeight -
-                        (VALUE_ADJUSTER_BORDER_PX * 2) -
-                        (VALUE_ADJUSTER_VALUE_VERTICAL_PADDING_PX * 2)
+                        (layoutBorderWidth * 2) -
+                        valuePadding.top -
+                        valuePadding.bottom
                     ).coerceAtLeast(0),
             ),
         )
 
+        /** Natural inner height large enough for both the text and the centered action glyph. */
         val desiredInnerHeight = centeredSymbolExtent(
             maxOf(
-                VALUE_ADJUSTER_MIN_HEIGHT_PX - (VALUE_ADJUSTER_BORDER_PX * 2),
-                (value?.size?.height ?: 0) + (VALUE_ADJUSTER_VALUE_VERTICAL_PADDING_PX * 2),
+                minimumHeight - (layoutBorderWidth * 2),
+                (value?.size?.height ?: 0) + valuePadding.top + valuePadding.bottom,
             ),
         )
-        val desiredWidth =
-            (VALUE_ADJUSTER_BORDER_PX * 2) +
-                (VALUE_ADJUSTER_BUTTON_WIDTH_PX * 2) +
-                (VALUE_ADJUSTER_DIVIDER_PX * 2) +
-                safeValueWidth
+        /** Final constrained size shared by paint, hit testing, click targets, and semantics. */
         size = RenderSize(
-            width = constraints.constrainWidth(desiredWidth),
-            height = constraints.constrainHeight(desiredInnerHeight + (VALUE_ADJUSTER_BORDER_PX * 2)),
+            width = constrainedWidth,
+            height = constraints.constrainHeight(desiredInnerHeight + (layoutBorderWidth * 2)),
         )
 
-        valueOffsetX = valueContentLeft(safeValueWidth)
-        valueOffsetY = ((size.height - (value?.size?.height ?: 0)) / 2).coerceAtLeast(VALUE_ADJUSTER_BORDER_PX)
+        /** Center text offset clamped so even a zero-height parent cannot leak child paint. */
+        val valueHeight = value?.size?.height ?: 0
+        valueOffsetX = valueContentLeft(layoutValueCellWidth)
+        valueOffsetY = ((size.height - valueHeight) / 2).coerceIn(
+            minimumValue = 0,
+            maximumValue = (size.height - valueHeight).coerceAtLeast(0),
+        )
     }
 
+    /** Paints cells, value, dividers, rounded border, and derived action glyphs in order. */
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
         val innerHeight = innerHeight()
         if (size.width <= 0 || size.height <= 0 || innerHeight <= 0) {
@@ -785,16 +3620,23 @@ private class RenderValueAdjuster(
         fillButton(context, offsetX, offsetY, leftButtonX(), decreaseEnabled)
         fillButton(context, offsetX, offsetY, rightButtonX(), increaseEnabled)
 
-        valueBox?.paint(context, offsetX + valueOffsetX, offsetY + valueOffsetY)
+        if (layoutValueCellWidth > 0) {
+            valueBox?.paint(context, offsetX + valueOffsetX, offsetY + valueOffsetY)
+        }
 
-        context.fillRect(offsetX + leftDividerX(), offsetY, VALUE_ADJUSTER_DIVIDER_PX, size.height, borderColor)
-        context.fillRect(offsetX + rightDividerX(), offsetY, VALUE_ADJUSTER_DIVIDER_PX, size.height, borderColor)
-        context.drawRect(offsetX, offsetY, size.width, size.height, borderColor)
+        /** Divider thickness shares the component border scale. */
+        val dividerWidth = dividerWidth()
+        if (dividerWidth > 0) {
+            context.fillRect(offsetX + leftDividerX(), offsetY, dividerWidth, size.height, borderColor)
+            context.fillRect(offsetX + rightDividerX(), offsetY, dividerWidth, size.height, borderColor)
+        }
+        paintValueAdjusterBorder(context, offsetX, offsetY)
 
         drawSymbol(context, offsetX, offsetY, leftButtonX(), plus = false, enabled = decreaseEnabled)
         drawSymbol(context, offsetX, offsetY, rightButtonX(), plus = true, enabled = increaseEnabled)
     }
 
+    /** Adds this renderer only for an enabled action cell inside the resolved control bounds. */
     override fun hitTest(localX: Int, localY: Int, result: HitTestResult) {
         if (localX !in 0 until size.width || localY !in 0 until size.height) {
             return
@@ -807,57 +3649,94 @@ private class RenderValueAdjuster(
         }
     }
 
+    /** Exports token-resolved click rectangles only for currently available actions. */
     override fun collectClickTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelClickTarget>) {
         if (decreaseEnabled) {
             onDecrease?.let { callback ->
-                targets += PixelClickTarget(
-                    bounds = leftButtonRect().translate(offsetX, offsetY),
-                    onClick = callback,
-                    source = this,
-                )
+                visibleRect(leftButtonRect())?.let { visibleBounds ->
+                    targets += PixelClickTarget(
+                        bounds = visibleBounds.translate(offsetX, offsetY),
+                        onClick = callback,
+                        source = this,
+                    )
+                }
             }
         }
         if (increaseEnabled) {
             onIncrease?.let { callback ->
-                targets += PixelClickTarget(
-                    bounds = rightButtonRect().translate(offsetX, offsetY),
-                    onClick = callback,
-                    source = this,
-                )
+                visibleRect(rightButtonRect())?.let { visibleBounds ->
+                    targets += PixelClickTarget(
+                        bounds = visibleBounds.translate(offsetX, offsetY),
+                        onClick = callback,
+                        source = this,
+                    )
+                }
             }
         }
     }
 
+    /** Exports one localized virtual button per action cell plus the center value semantics. */
     override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
-        targets += PixelSemanticsTarget(
-            node = PixelSemanticsNode(
-                label = "Decrease",
-                role = PixelSemanticRole.BUTTON,
-                enabled = decreaseEnabled,
-                focused = focused && decreaseEnabled,
-                left = offsetX + leftButtonRect().left,
-                top = offsetY + leftButtonRect().top,
-                width = leftButtonRect().width,
-                height = leftButtonRect().height,
-            ),
-            source = this,
+        /** Decrement action is owned by the left virtual node, independent of its geometry. */
+        val decreaseActions = PixelSemanticsActions(
+            onClick = onDecrease?.takeIf { decreaseEnabled }?.let { callback ->
+                {
+                    callback()
+                    true
+                }
+            },
         )
-        targets += PixelSemanticsTarget(
-            node = PixelSemanticsNode(
-                label = "Increase",
-                role = PixelSemanticRole.BUTTON,
-                enabled = increaseEnabled,
-                focused = focused && increaseEnabled,
-                left = offsetX + rightButtonRect().left,
-                top = offsetY + rightButtonRect().top,
-                width = rightButtonRect().width,
-                height = rightButtonRect().height,
-            ),
-            source = this,
+        /** Increment action is owned by the right virtual node, independent of its geometry. */
+        val increaseActions = PixelSemanticsActions(
+            onClick = onIncrease?.takeIf { increaseEnabled }?.let { callback ->
+                {
+                    callback()
+                    true
+                }
+            },
         )
-        valueBox?.collectSemantics(offsetX + valueOffsetX, offsetY + valueOffsetY, targets)
+        visibleRect(leftButtonRect())?.let { visibleBounds ->
+            targets += PixelSemanticsTarget(
+                node = PixelSemanticsNode(
+                    label = decreaseLabel,
+                    role = PixelSemanticRole.BUTTON,
+                    enabled = decreaseEnabled,
+                    focused = false,
+                    left = offsetX + visibleBounds.left,
+                    top = offsetY + visibleBounds.top,
+                    width = visibleBounds.width,
+                    height = visibleBounds.height,
+                    id = semanticNodeId(DECREASE_SEMANTIC_SLOT),
+                    actions = decreaseActions.capabilitySet(),
+                ),
+                source = this,
+                actions = decreaseActions,
+            )
+        }
+        visibleRect(rightButtonRect())?.let { visibleBounds ->
+            targets += PixelSemanticsTarget(
+                node = PixelSemanticsNode(
+                    label = increaseLabel,
+                    role = PixelSemanticRole.BUTTON,
+                    enabled = increaseEnabled,
+                    focused = false,
+                    left = offsetX + visibleBounds.left,
+                    top = offsetY + visibleBounds.top,
+                    width = visibleBounds.width,
+                    height = visibleBounds.height,
+                    id = semanticNodeId(INCREASE_SEMANTIC_SLOT),
+                    actions = increaseActions.capabilitySet(),
+                ),
+                source = this,
+                actions = increaseActions,
+            )
+        }
+        if (layoutValueCellWidth > 0) {
+            valueBox?.collectSemantics(offsetX + valueOffsetX, offsetY + valueOffsetY, targets)
+        }
     }
 
+    /** Paints one action cell with its enabled or disabled resolved fill. */
     private fun fillButton(
         context: PaintContext,
         offsetX: Int,
@@ -865,15 +3744,19 @@ private class RenderValueAdjuster(
         buttonX: Int,
         enabled: Boolean,
     ) {
+        /** Action rectangle already fitted to the renderer's current layout bounds. */
+        val buttonRect = if (buttonX == leftButtonX()) leftButtonRect() else rightButtonRect()
+        if (buttonRect.width <= 0 || buttonRect.height <= 0) return
         context.fillRect(
-            offsetX + buttonX,
-            offsetY + VALUE_ADJUSTER_BORDER_PX,
-            VALUE_ADJUSTER_BUTTON_WIDTH_PX,
-            innerHeight(),
-            if (enabled) buttonFillColor else disabledColor,
+            offsetX + buttonRect.left,
+            offsetY + buttonRect.top,
+            buttonRect.width,
+            buttonRect.height,
+            if (enabled) buttonFillColor else disabledFillColor,
         )
     }
 
+    /** Paints one centered minus or plus glyph from the resolved action geometry. */
     private fun drawSymbol(
         context: PaintContext,
         offsetX: Int,
@@ -882,86 +3765,205 @@ private class RenderValueAdjuster(
         plus: Boolean,
         enabled: Boolean,
     ) {
-        val color = if (enabled) buttonSymbolColor else PixelColor.Black
-        val left = buttonX + ((VALUE_ADJUSTER_BUTTON_WIDTH_PX - VALUE_ADJUSTER_SYMBOL_SIZE_PX) / 2)
-        val top = VALUE_ADJUSTER_BORDER_PX +
-            ((innerHeight() - VALUE_ADJUSTER_SYMBOL_SIZE_PX) / 2).coerceAtLeast(0)
-        val center = VALUE_ADJUSTER_SYMBOL_SIZE_PX / 2
+        if (layoutButtonWidth <= 0 || innerHeight() <= 0) return
+        val color = if (enabled) buttonSymbolColor else disabledSymbolColor
+        /** Largest glyph extent fitting both the horizontal action inset and current inner height. */
+        val availableSymbolSize = minOf(symbolSize(), innerHeight())
+        /** Odd fitted extent prevents either glyph arm from escaping a short constrained control. */
+        val symbolSize = if (availableSymbolSize > 1 && availableSymbolSize % 2 == 0) {
+            availableSymbolSize - 1
+        } else {
+            availableSymbolSize
+        }
+        if (symbolSize <= 0) return
+        /** Positive glyph stroke following the outline scale without disappearing at border none. */
+        val symbolStroke = layoutBorderWidth.coerceAtLeast(1).coerceAtMost(symbolSize)
+        val left = buttonX + ((layoutButtonWidth - symbolSize) / 2)
+        val top = layoutBorderWidth + ((innerHeight() - symbolSize) / 2).coerceAtLeast(0)
+        val center = symbolSize / 2
         context.fillRect(
             offsetX + left,
             offsetY + top + center,
-            VALUE_ADJUSTER_SYMBOL_SIZE_PX,
-            VALUE_ADJUSTER_SYMBOL_STROKE_PX,
+            symbolSize,
+            symbolStroke,
             color,
         )
         if (plus) {
             context.fillRect(
                 offsetX + left + center,
                 offsetY + top,
-                VALUE_ADJUSTER_SYMBOL_STROKE_PX,
-                VALUE_ADJUSTER_SYMBOL_SIZE_PX,
+                symbolStroke,
+                symbolSize,
                 color,
             )
         }
     }
 
-    private fun valueCellWidth(): Int = valueWidth.coerceAtLeast(1)
+    /** Divider width follows the same foundation border channel as the outer outline. */
+    private fun dividerWidth(): Int = layoutDividerWidth
 
+    /** Derives a centered odd glyph extent from button, padding, and outline geometry. */
+    private fun symbolSize(): Int {
+        /** Positive space left after the action cell's visual insets. */
+        val available = (
+            layoutButtonWidth - valuePadding.left - valuePadding.right - layoutBorderWidth * 2
+            ).coerceAtLeast(0)
+        if (available == 0) return 0
+        return if (available > 1 && available % 2 == 0) available - 1 else available
+    }
+
+    /** Paints every border layer with the token-resolved stair-step corner radius. */
+    private fun paintValueAdjusterBorder(
+        context: PaintContext,
+        offsetX: Int,
+        offsetY: Int,
+    ) {
+        /** Layer count clamped so no outline has empty or inverted geometry. */
+        val layers = layoutBorderWidth.coerceIn(0, (minOf(size.width, size.height) + 1) / 2)
+        repeat(layers) { layer ->
+            /** Current inset outline width after consuming both horizontal edges. */
+            val layerWidth = size.width - layer * 2
+            /** Current inset outline height after consuming both vertical edges. */
+            val layerHeight = size.height - layer * 2
+            if (layerWidth <= 0 || layerHeight <= 0) return@repeat
+            /** Radius shrunk with the current nested outline layer. */
+            val radius = (cornerRadius - layer)
+                .coerceIn(0, minOf(layerWidth, layerHeight) / 2)
+            if (radius == 0) {
+                context.drawRect(
+                    x = offsetX + layer,
+                    y = offsetY + layer,
+                    w = layerWidth,
+                    h = layerHeight,
+                    color = borderColor,
+                )
+                return@repeat
+            }
+            repeat(layerHeight) { row ->
+                /** Distance to the nearest horizontal edge of this outline layer. */
+                val edgeDistance = minOf(row, layerHeight - 1 - row)
+                /** Stair-step inset for the current scan line. */
+                val rowInset = (radius - edgeDistance).coerceAtLeast(0)
+                /** Inclusive left pixel of the rounded outline scan line. */
+                val left = offsetX + layer + rowInset
+                /** Inclusive right pixel of the rounded outline scan line. */
+                val right = offsetX + layer + layerWidth - rowInset - 1
+                if (right < left) return@repeat
+                /** Top and bottom scans are continuous; middle scans paint only both sides. */
+                if (row == 0 || row == layerHeight - 1) {
+                    context.fillRect(left, offsetY + layer + row, right - left + 1, 1, borderColor)
+                } else {
+                    context.fillRect(left, offsetY + layer + row, 1, 1, borderColor)
+                    if (right != left) {
+                        context.fillRect(right, offsetY + layer + row, 1, 1, borderColor)
+                    }
+                }
+            }
+        }
+    }
+
+    /** Fits border, dividers, symmetric action cells, and the value cell into [totalWidth]. */
+    private fun resolveHorizontalGeometry(totalWidth: Int, outerBorderWidth: Int) {
+        /** Safe outer outline consuming no more than the available horizontal extent. */
+        layoutBorderWidth = outerBorderWidth.coerceIn(0, totalWidth.coerceAtLeast(0) / 2)
+        /** Width remaining after the two outer border edges. */
+        val innerWidth = (totalWidth - layoutBorderWidth * 2).coerceAtLeast(0)
+        /** Dividers shrink first while retaining one pixel for each action whenever possible. */
+        layoutDividerWidth = minOf(
+            borderWidth.coerceAtLeast(0),
+            ((innerWidth - 2).coerceAtLeast(0)) / 2,
+        )
+        /** Cell width after both dividers are removed. */
+        val cellWidth = (innerWidth - layoutDividerWidth * 2).coerceAtLeast(0)
+        /** Equal action widths consume at most half so the center receives every remainder pixel. */
+        layoutButtonWidth = minOf(buttonWidth.coerceAtLeast(0), cellWidth / 2)
+        /** Center cell absorbs constrained-width rounding without escaping this renderer. */
+        layoutValueCellWidth = (cellWidth - layoutButtonWidth * 2).coerceAtLeast(0)
+    }
+
+    /** Removes the resolved horizontal padding from the controlled center-cell width. */
     private fun valueContentWidth(valueCellWidth: Int): Int {
-        return (valueCellWidth - (VALUE_ADJUSTER_VALUE_HORIZONTAL_PADDING_PX * 2)).coerceAtLeast(1)
+        return (valueCellWidth - valuePadding.left - valuePadding.right).coerceAtLeast(0)
     }
 
+    /** Returns the centered value child's x offset after the leading action and divider. */
     private fun valueContentLeft(valueCellWidth: Int): Int {
-        return VALUE_ADJUSTER_BORDER_PX +
-            VALUE_ADJUSTER_BUTTON_WIDTH_PX +
-            VALUE_ADJUSTER_DIVIDER_PX +
-            ((valueCellWidth - valueContentWidth(valueCellWidth)) / 2)
+        /** Padding cannot move zero-width text beyond the center cell's trailing edge. */
+        val fittedLeftPadding = valuePadding.left.coerceIn(0, valueCellWidth.coerceAtLeast(0))
+        return layoutBorderWidth +
+            layoutButtonWidth +
+            dividerWidth() +
+            fittedLeftPadding
     }
 
-    private fun leftButtonX(): Int = VALUE_ADJUSTER_BORDER_PX
+    /** Returns the leading action cell's x origin inside the outer border. */
+    private fun leftButtonX(): Int = layoutBorderWidth
 
-    private fun leftDividerX(): Int = VALUE_ADJUSTER_BORDER_PX + VALUE_ADJUSTER_BUTTON_WIDTH_PX
+    /** Returns the leading divider's x origin. */
+    private fun leftDividerX(): Int = layoutBorderWidth + layoutButtonWidth
 
+    /** Returns the trailing divider's x origin after the controlled center cell. */
     private fun rightDividerX(): Int {
-        return VALUE_ADJUSTER_BORDER_PX +
-            VALUE_ADJUSTER_BUTTON_WIDTH_PX +
-            VALUE_ADJUSTER_DIVIDER_PX +
-            valueCellWidth()
+        return layoutBorderWidth +
+            layoutButtonWidth +
+            dividerWidth() +
+            layoutValueCellWidth
     }
 
-    private fun rightButtonX(): Int = rightDividerX() + VALUE_ADJUSTER_DIVIDER_PX
+    /** Returns the trailing action cell's x origin. */
+    private fun rightButtonX(): Int = rightDividerX() + dividerWidth()
 
-    private fun innerHeight(): Int = (size.height - (VALUE_ADJUSTER_BORDER_PX * 2)).coerceAtLeast(0)
+    /** Returns the drawable height between the resolved top and bottom borders. */
+    private fun innerHeight(): Int = (size.height - (layoutBorderWidth * 2)).coerceAtLeast(0)
 
+    /** Returns the leading action's local hit and semantics rectangle. */
     private fun leftButtonRect(): PixelRect {
         return PixelRect(
             left = leftButtonX(),
-            top = VALUE_ADJUSTER_BORDER_PX,
-            width = VALUE_ADJUSTER_BUTTON_WIDTH_PX,
+            top = layoutBorderWidth,
+            width = layoutButtonWidth,
             height = innerHeight(),
         )
     }
 
+    /** Returns the trailing action's local hit and semantics rectangle. */
     private fun rightButtonRect(): PixelRect {
         return PixelRect(
             left = rightButtonX(),
-            top = VALUE_ADJUSTER_BORDER_PX,
-            width = VALUE_ADJUSTER_BUTTON_WIDTH_PX,
+            top = layoutBorderWidth,
+            width = layoutButtonWidth,
             height = innerHeight(),
         )
     }
 
+    /** Adjusts inner height so the derived odd-sized symbol remains exactly centered. */
     private fun centeredSymbolExtent(base: Int): Int {
-        val safe = base.coerceAtLeast(VALUE_ADJUSTER_SYMBOL_SIZE_PX)
-        val freeSpace = safe - VALUE_ADJUSTER_SYMBOL_SIZE_PX
+        val symbolSize = symbolSize()
+        val safe = base.coerceAtLeast(symbolSize)
+        val freeSpace = safe - symbolSize
         return if (freeSpace % 2 == 0) safe else safe + 1
     }
 
+    /** Intersects one local rectangle with this renderer's exact current bounds. */
+    private fun visibleRect(rect: PixelRect): PixelRect? {
+        return rect.intersect(PixelRect(left = 0, top = 0, width = size.width, height = size.height))
+    }
+
+    /** Center value child viewed through the render-box protocol. */
     private val valueBox: RenderBox?
         get() = children.getOrNull(1) as? RenderBox
 
+    /** Zero-sized action identity children kept outside the measured center content. */
     private val actionSlots: List<RenderBox>
         get() = listOfNotNull(children.getOrNull(0) as? RenderBox, children.getOrNull(2) as? RenderBox)
+
+    private companion object {
+        /** Stable local identity for the decrement virtual node. */
+        const val DECREASE_SEMANTIC_SLOT: String = "decrease"
+
+        /** Stable local identity for the increment virtual node. */
+        const val INCREASE_SEMANTIC_SLOT: String = "increase"
+    }
 }
 
 /**
@@ -980,29 +3982,70 @@ public fun Stepper(
     enabled: Boolean = true,
     valueWidth: Int = 24,
     key: Any? = null,
+): Widget = Stepper(
+    value = value,
+    range = range,
+    onChanged = onChanged,
+    states = PixelControlStateSet.Normal,
+    step = step,
+    label = label,
+    valueText = valueText,
+    enabled = enabled,
+    valueWidth = valueWidth,
+    key = key,
+)
+
+/** 执行 `PixelComponents` 的 `Stepper` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware integer Stepper delegating controlled behavior to [ValueAdjuster].
+ */
+@kotlin.jvm.JvmName("StepperWithControlStates")
+public fun Stepper(
+    value: Int,
+    range: IntRange,
+    onChanged: (Int) -> Unit,
+    states: PixelControlStateSet,
+    step: Int = 1,
+    label: String? = null,
+    valueText: String? = null,
+    enabled: Boolean = true,
+    valueWidth: Int = 24,
+    key: Any? = null,
 ): Widget {
+    /** Whether the caller supplied a non-empty inclusive range. */
     val hasRange = range.first <= range.last
+    /** Positive step used for both directions. */
     val safeStep = step.coerceAtLeast(1)
+    /** Controlled value clamped only while the range is valid. */
     val safeValue = if (hasRange) value.coerceIn(range.first, range.last) else value
+    /** Controlled decrement callback available only above the lower bound. */
     val decrease = if (enabled && hasRange && safeValue > range.first) {
         { onChanged((safeValue - safeStep).coerceAtLeast(range.first)) }
     } else {
         null
     }
+    /** Controlled increment callback available only below the upper bound. */
     val increase = if (enabled && hasRange && safeValue < range.last) {
         { onChanged((safeValue + safeStep).coerceAtMost(range.last)) }
     } else {
         null
     }
-    return ValueAdjuster(
-        valueText = valueText ?: safeValue.toString(),
-        onDecrease = decrease,
-        onIncrease = increase,
-        label = label,
-        enabled = enabled && hasRange,
-        valueWidth = valueWidth,
-        key = key,
-    )
+    return PixelThemeResolvedWidget(key = key?.let { "$it-stepper-localization" }) { context, theme ->
+        /** Provider-aware integer formatter that never replaces an explicit value string. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Caller text wins; only the generated integer value is locale formatted. */
+        val resolvedValueText = valueText ?: localization.formatInteger(safeValue)
+        ValueAdjuster(
+            valueText = resolvedValueText,
+            onDecrease = decrease,
+            onIncrease = increase,
+            states = states,
+            label = label,
+            enabled = enabled && hasRange,
+            valueWidth = valueWidth,
+            key = key,
+        )
+    }
 }
 
 /**
@@ -1015,17 +4058,42 @@ public fun ShortcutHint(
     shortcut: String,
     label: String,
     shortcutStyle: PixelTextStyle = PixelTextStyle.Default,
-    labelStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(160, 160, 160)),
+    labelStyle: PixelTextStyle = LEGACY_SHORTCUT_LABEL_STYLE,
     key: Any? = null,
-): Widget {
-    return Row(
+): Widget = PixelThemeResolvedWidget(key = key) { _, theme ->
+    /** Value-adjuster surface tokens provide the compact key-cap visual channels. */
+    val tokens = theme.components.valueAdjuster
+    /** Canonical passive state used by the non-interactive hint. */
+    val states = PixelControlStateSet.Normal
+    /** Theme label typography used only when the unchanged legacy default was omitted. */
+    val resolvedShortcutStyle = if (shortcutStyle == PixelTextStyle.Default) {
+        theme.typography.label.resolve(theme.colors).copy(
+            color = tokens.resolveContentColor(states, theme.colors) ?: theme.colors.onSurface,
+        )
+    } else {
+        shortcutStyle
+    }
+    /** Theme caption typography used only when the unchanged legacy muted style was omitted. */
+    val resolvedLabelStyle = if (labelStyle == LEGACY_SHORTCUT_LABEL_STYLE) {
+        theme.typography.caption.resolve(theme.colors)
+    } else {
+        labelStyle
+    }
+    Row(
         children = listOf(
-            Container(
-                padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
-                borderColor = PixelColor.White,
+            PixelSurface(
+                padding = EdgeInsets.all(theme.spacing.small),
+                decoration = PixelSurfaceDecoration(
+                    fillColor = tokens.resolveContainerColor(states, theme.colors),
+                    borderColor = tokens.resolveBorderColor(states, theme.colors),
+                    borderWidth = tokens.resolveBorderWidth(theme.borders),
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                    shadowColor = theme.colors.shadow,
+                    shadowOffset = tokens.resolveElevation(theme.elevations),
+                ),
                 child = Text(
                     shortcut,
-                    style = shortcutStyle,
+                    style = resolvedShortcutStyle,
                     overflow = PixelTextOverflow.ELLIPSIS,
                     softWrap = false,
                     maxLines = 1,
@@ -1035,24 +4103,29 @@ public fun ShortcutHint(
             ),
             Text(
                 label,
-                style = labelStyle,
+                style = resolvedLabelStyle,
                 overflow = PixelTextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,
                 key = key?.let { "$it-label" },
             ),
         ),
-        spacing = 2,
+        spacing = theme.spacing.small,
         crossAxisAlignment = CrossAxisAlignment.CENTER,
         key = key,
     )
 }
 
+/** Legacy muted ShortcutHint label style used only to detect an omitted typography token. */
+private val LEGACY_SHORTCUT_LABEL_STYLE: PixelTextStyle = PixelTextStyle(
+    color = PixelColor.fromRgb(160, 160, 160),
+)
+
 /**
  * 固定尺寸的水平进度条。
  *
- * [progress] 会在绘制前钳位到 `0f..1f`；业务侧仍应把它视为受控状态并保存真实进度。
- * [width] 和 [height] 使用 pixel-engine 的逻辑像素。
+ * [progress] 会在绘制前钳位到 `0f..1f`：NaN 与负无穷归零，正无穷取一。
+ * [width] 和 [height] 使用 pixel-engine 的逻辑像素，非正输入安全收敛且不会进入负尺寸布局。
  */
 public fun ProgressBar(
     progress: Float,
@@ -1061,15 +4134,193 @@ public fun ProgressBar(
     color: PixelColor = PixelColor.fromRgb(80, 180, 110),
     trackColor: PixelColor = PixelColor.fromRgb(60, 60, 60),
     key: Any? = null,
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { context ->
+        /** Default theme graph used only as the legacy text fallback, never branch selection. */
+        val theme = PixelTheme.tokensOf(context)
+        /** Localization snapshot owned by the existing compatibility switch element. */
+        val localization = pixelComponentLocalizationOf(context, theme)
+        /** Exact historical progress pixels retained with or without localization. */
+        val legacyBar = legacyProgressBar(
+            progress = progress,
+            width = width,
+            height = height,
+            color = color,
+            trackColor = trackColor,
+            key = key,
+        )
+        if (!localization.hasProvider) {
+            legacyBar
+        } else {
+            /** Normalized fraction shared by legacy geometry and localized semantic value. */
+            val safeProgress = normalizeDeterminateProgress(progress)
+            Semantics(
+                label = localization.resolveLabel(
+                    explicitText = null,
+                    selector = PixelLabelTokens::progress,
+                ),
+                role = PixelSemanticRole.PROGRESS_BAR,
+                value = localization.formatPercent(safeProgress),
+                excludeDescendants = true,
+                child = legacyBar,
+                key = key?.let { "$it-semantics" },
+            )
+        }
+    },
+    themedBuilder = { _ ->
+        ProgressBar(
+            progress = progress,
+            states = PixelControlStateSet.Normal,
+            width = width.takeUnless { value -> value == LEGACY_PROGRESS_WIDTH },
+            height = height.takeUnless { value -> value == LEGACY_PROGRESS_HEIGHT },
+            color = color.takeUnless { value -> value == LEGACY_PROGRESS_COLOR },
+            trackColor = trackColor.takeUnless { value -> value == LEGACY_PROGRESS_TRACK_COLOR },
+            key = key,
+        )
+    },
+)
+
+/** Builds the historical determinate bar used when no explicit PixelTheme is mounted. */
+private fun legacyProgressBar(
+    progress: Float,
+    width: Int,
+    height: Int,
+    color: PixelColor,
+    trackColor: PixelColor,
+    key: Any?,
 ): Widget {
-    val safeProgress = progress.coerceIn(0f, 1f)
-    val fillWidth = (width * safeProgress).toInt().coerceIn(0, width)
+    /** Non-negative historical width accepted by the retained layout primitives. */
+    val safeWidth = width.coerceAtLeast(0)
+    /** Non-negative historical height accepted by the retained layout primitives. */
+    val safeHeight = height.coerceAtLeast(0)
+    /** Finite historical fill fraction constrained to the public visual interval. */
+    val safeProgress = normalizeDeterminateProgress(progress)
+    /** Historical integer fill extent derived from the caller-owned dimensions. */
+    val fillWidth = (safeWidth * safeProgress).toInt().coerceIn(0, safeWidth)
     return Stack(
         children = listOf(
-            Container(width = width, height = height, fillColor = trackColor, borderColor = PixelColor.White),
-            Container(width = fillWidth, height = height, fillColor = color),
+            Container(
+                width = safeWidth,
+                height = safeHeight,
+                fillColor = trackColor,
+                borderColor = PixelColor.White,
+            ),
+            Container(width = fillWidth, height = safeHeight, fillColor = color),
         ),
         key = key,
+    )
+}
+
+/** Normalizes malformed determinate input without allowing NaN or infinity into geometry. */
+private fun normalizeDeterminateProgress(progress: Float): Float {
+    return when {
+        progress.isNaN() -> 0f
+        progress <= 0f -> 0f
+        progress >= 1f -> 1f
+        else -> progress
+    }
+}
+
+/** Legacy determinate progress width used only to detect an omitted size token. */
+private const val LEGACY_PROGRESS_WIDTH: Int = 48
+
+/** Legacy determinate progress height used only to detect an omitted size token. */
+private const val LEGACY_PROGRESS_HEIGHT: Int = 5
+
+/** Legacy progress foreground used only to detect an omitted color token. */
+private val LEGACY_PROGRESS_COLOR: PixelColor = PixelColor.fromRgb(80, 180, 110)
+
+/** Legacy progress track used only to detect an omitted color token. */
+private val LEGACY_PROGRESS_TRACK_COLOR: PixelColor = PixelColor.fromRgb(60, 60, 60)
+
+/** 执行 `PixelComponents` 的 `ProgressBar` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware determinate progress bar with token-resolved color, size, border, and semantics.
+ */
+@kotlin.jvm.JvmName("ProgressBarWithControlStates")
+public fun ProgressBar(
+    progress: Float,
+    states: PixelControlStateSet,
+    width: Int? = null,
+    height: Int? = null,
+    color: PixelColor? = null,
+    trackColor: PixelColor? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware progress labels and percentage formatter independent from bar visuals. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Progress-specific state and geometry tokens. */
+    val tokens = theme.components.progress
+    /** Caller or foundation-derived non-negative width before the component minimum is applied. */
+    val requestedWidth = (width ?: (theme.sizes.overlayMinimumWidth + theme.spacing.large)).coerceAtLeast(0)
+    /** Component-level minimum width, now observable independently from foundation overlay sizes. */
+    val tokenMinimumWidth = tokens.resolveMinimumWidth(theme.sizes).coerceAtLeast(0)
+    /** Final width honoring both explicit geometry and the component minimum contract. */
+    val resolvedWidth = maxOf(requestedWidth, tokenMinimumWidth)
+    /** Caller or foundation-derived non-negative height before the component minimum is applied. */
+    val requestedHeight = (height ?: theme.borders.thin).coerceAtLeast(0)
+    /** Component-level minimum height retained as the lower bound for every facade. */
+    val tokenMinimumHeight = tokens.resolveMinimumHeight(theme.sizes).coerceAtLeast(0)
+    /** Final height safe for malformed caller dimensions and token-controlled minimum geometry. */
+    val resolvedHeight = maxOf(requestedHeight, tokenMinimumHeight)
+    /** Finite controlled progress constrained to the visual interval. */
+    val safeProgress = normalizeDeterminateProgress(progress)
+    /** Filled logical width derived from the controlled progress. */
+    val fillWidth = (resolvedWidth * safeProgress).toInt().coerceIn(0, resolvedWidth)
+    /** Theme-resolved track color. */
+    val resolvedTrackColor = trackColor
+        ?: tokens.resolveContainerColor(states, theme.colors)
+        ?: theme.colors.track
+    /** Theme-resolved active progress color. */
+    val resolvedColor = color
+        ?: tokens.resolveContentColor(states, theme.colors)
+        ?: theme.colors.primary
+    /** Fixed boundary preventing Stack from expanding beyond the resolved progress geometry. */
+    val bar = SizedBox(
+        width = resolvedWidth,
+        height = resolvedHeight,
+        child = Stack(
+            children = listOf(
+                PixelSurface(
+                    width = resolvedWidth,
+                    height = resolvedHeight,
+                    decoration = PixelSurfaceDecoration(
+                        fillColor = resolvedTrackColor,
+                        borderColor = tokens.resolveBorderColor(states, theme.colors),
+                        borderWidth = tokens.resolveBorderWidth(theme.borders),
+                        cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                    ),
+                ),
+                PixelSurface(
+                    width = fillWidth,
+                    height = resolvedHeight,
+                    decoration = PixelSurfaceDecoration(
+                        fillColor = resolvedColor,
+                        borderWidth = 0,
+                        cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                    ),
+                ),
+            ),
+            key = key?.let { "$it-stack" },
+        ),
+        key = key,
+    )
+    Semantics(
+        label = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::progress,
+        ),
+        role = PixelSemanticRole.PROGRESS_BAR,
+        enabled = PixelControlState.Disabled !in states,
+        value = localization.formatPercent(safeProgress),
+        error = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        excludeDescendants = true,
+        child = bar,
+        key = key?.let { "$it-semantics" },
     )
 }
 
@@ -1090,8 +4341,61 @@ public fun PixelLoadingBar(
     trailWidth: Int = 5,
     reversed: Boolean = false,
     key: Any? = null,
-): Widget = PixelLoadingBarWidget(
+): Widget = buildPixelLoadingBar(
     progress = progress,
+    states = PixelControlStateSet.of(PixelControlState.Loading),
+    width = width.takeUnless { value -> value == LEGACY_LOADING_WIDTH },
+    height = height.takeUnless { value -> value == LEGACY_LOADING_HEIGHT },
+    color = color.takeUnless { value -> value == LEGACY_LOADING_COLOR },
+    trackColor = trackColor.takeUnless { value -> value == color },
+    blockWidth = blockWidth.takeUnless { value -> value == LEGACY_LOADING_BLOCK_WIDTH },
+    trailWidth = trailWidth.takeUnless { value -> value == LEGACY_LOADING_TRAIL_WIDTH },
+    reversed = reversed,
+    key = key,
+    legacyDefaults = LegacyLoadingBarDefaults(
+        width = width,
+        height = height,
+        color = color,
+        trackColor = trackColor,
+        blockWidth = blockWidth,
+        trailWidth = trailWidth,
+    ),
+)
+
+/** Legacy loading-bar width used only to detect an omitted size token. */
+private const val LEGACY_LOADING_WIDTH: Int = 96
+
+/** Legacy loading-bar height used only to detect an omitted size token. */
+private const val LEGACY_LOADING_HEIGHT: Int = 9
+
+/** Legacy loading scan color used only to detect an omitted progress token. */
+private val LEGACY_LOADING_COLOR: PixelColor = PixelColor.White
+
+/** Legacy loading scan-block width used only to detect an omitted size token. */
+private const val LEGACY_LOADING_BLOCK_WIDTH: Int = 9
+
+/** Legacy loading wake width used only to detect an omitted spacing token. */
+private const val LEGACY_LOADING_TRAIL_WIDTH: Int = 5
+
+/** 执行 `PixelComponents` 的 `PixelLoadingBar` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware point-grid loading bar with token-resolved colors, geometry, and semantics.
+ */
+@kotlin.jvm.JvmName("PixelLoadingBarWithControlStates")
+public fun PixelLoadingBar(
+    progress: Float,
+    states: PixelControlStateSet,
+    width: Int? = null,
+    height: Int? = null,
+    color: PixelColor? = null,
+    trackColor: PixelColor? = null,
+    blockWidth: Int? = null,
+    trailWidth: Int? = null,
+    reversed: Boolean = false,
+    key: Any? = null,
+): Widget = buildPixelLoadingBar(
+    progress = progress,
+    states = states,
     width = width,
     height = height,
     color = color,
@@ -1100,6 +4404,94 @@ public fun PixelLoadingBar(
     trailWidth = trailWidth,
     reversed = reversed,
     key = key,
+    legacyDefaults = null,
+)
+
+/** Resolves loading-bar defaults at mount time so scope-less legacy pixels remain exact. */
+private fun buildPixelLoadingBar(
+    progress: Float,
+    states: PixelControlStateSet,
+    width: Int?,
+    height: Int?,
+    color: PixelColor?,
+    trackColor: PixelColor?,
+    blockWidth: Int?,
+    trailWidth: Int?,
+    reversed: Boolean,
+    key: Any?,
+    legacyDefaults: LegacyLoadingBarDefaults?,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware progress and status labels independent from legacy loading geometry. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Loading uses the progress component token family. */
+    val tokens = theme.components.progress
+    /** Scope-less compatibility mode; an explicit PixelTheme always opts into live tokens. */
+    val mountedLegacyDefaults = legacyDefaults.takeIf { PixelTheme.maybeTokensOf(context) == null }
+    /** Theme-derived concrete loading geometry. */
+    val resolvedWidth = width
+        ?: mountedLegacyDefaults?.width
+        ?: theme.sizes.overlayMinimumWidth * 2
+    val resolvedHeight = height
+        ?: mountedLegacyDefaults?.height
+        ?: tokens.resolveMinimumHeight(theme.sizes).coerceAtLeast(theme.sizes.iconSmall)
+    val resolvedBlockWidth = blockWidth ?: mountedLegacyDefaults?.blockWidth ?: resolvedHeight
+    val resolvedTrailWidth = trailWidth ?: mountedLegacyDefaults?.trailWidth ?: theme.spacing.medium
+    /** Theme-derived active and background dot colors. */
+    val resolvedColor = color
+        ?: mountedLegacyDefaults?.color
+        ?: tokens.resolveContentColor(states, theme.colors)
+        ?: theme.colors.onWarning
+    val resolvedTrackColor = trackColor
+        ?: mountedLegacyDefaults?.trackColor
+        ?: tokens.resolveContainerColor(states, theme.colors)
+        ?: theme.colors.warning
+    /** Paint-only loading primitive. */
+    val bar = PixelLoadingBarWidget(
+        progress = progress,
+        width = resolvedWidth,
+        height = resolvedHeight,
+        color = resolvedColor,
+        trackColor = resolvedTrackColor,
+        blockWidth = resolvedBlockWidth,
+        trailWidth = resolvedTrailWidth,
+        reversed = reversed,
+        key = key,
+    )
+    Semantics(
+        label = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::progress,
+        ),
+        role = PixelSemanticRole.PROGRESS_BAR,
+        enabled = PixelControlState.Disabled !in states,
+        value = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ),
+        error = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        excludeDescendants = true,
+        child = bar,
+        key = key?.let { "$it-semantics" },
+    )
+}
+
+/** Exact values received by the historical loading-bar facade before sentinel normalization. */
+private data class LegacyLoadingBarDefaults(
+    /** Historical or explicitly supplied width. */
+    val width: Int,
+    /** Historical or explicitly supplied height. */
+    val height: Int,
+    /** Historical or explicitly supplied active color. */
+    val color: PixelColor,
+    /** Historical or explicitly supplied track-dot color. */
+    val trackColor: PixelColor,
+    /** Historical or explicitly supplied solid block width. */
+    val blockWidth: Int,
+    /** Historical or explicitly supplied wake width. */
+    val trailWidth: Int,
 )
 
 /**
@@ -1119,8 +4511,50 @@ public fun AnimatedPixelLoadingBar(
     cycleFrames: Int = 96,
     playing: Boolean = true,
     key: Any? = null,
-): Widget = AnimatedPixelLoadingBarWidget(
+): Widget = buildAnimatedPixelLoadingBar(
     vsync = vsync,
+    states = PixelControlStateSet.of(PixelControlState.Loading),
+    width = width.takeUnless { value -> value == LEGACY_LOADING_WIDTH },
+    height = height.takeUnless { value -> value == LEGACY_LOADING_HEIGHT },
+    color = color.takeUnless { value -> value == LEGACY_LOADING_COLOR },
+    trackColor = trackColor.takeUnless { value -> value == color },
+    blockWidth = blockWidth.takeUnless { value -> value == LEGACY_LOADING_BLOCK_WIDTH },
+    trailWidth = trailWidth.takeUnless { value -> value == LEGACY_LOADING_TRAIL_WIDTH },
+    fps = fps,
+    cycleFrames = cycleFrames,
+    playing = playing,
+    key = key,
+    legacyDefaults = LegacyLoadingBarDefaults(
+        width = width,
+        height = height,
+        color = color,
+        trackColor = trackColor,
+        blockWidth = blockWidth,
+        trailWidth = trailWidth,
+    ),
+)
+
+/** 执行 `PixelComponents` 的 `AnimatedPixelLoadingBar` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware animated loading bar resolving all visual defaults before creating its ticker.
+ */
+@kotlin.jvm.JvmName("AnimatedPixelLoadingBarWithControlStates")
+public fun AnimatedPixelLoadingBar(
+    vsync: PixelTickerProvider,
+    states: PixelControlStateSet,
+    width: Int? = null,
+    height: Int? = null,
+    color: PixelColor? = null,
+    trackColor: PixelColor? = null,
+    blockWidth: Int? = null,
+    trailWidth: Int? = null,
+    fps: Int = 30,
+    cycleFrames: Int = 96,
+    playing: Boolean = true,
+    key: Any? = null,
+): Widget = buildAnimatedPixelLoadingBar(
+    vsync = vsync,
+    states = states,
     width = width,
     height = height,
     color = color,
@@ -1131,7 +4565,60 @@ public fun AnimatedPixelLoadingBar(
     cycleFrames = cycleFrames,
     playing = playing,
     key = key,
+    legacyDefaults = null,
 )
+
+/** Resolves animated loading-bar defaults with the same mounted compatibility policy. */
+private fun buildAnimatedPixelLoadingBar(
+    vsync: PixelTickerProvider,
+    states: PixelControlStateSet,
+    width: Int?,
+    height: Int?,
+    color: PixelColor?,
+    trackColor: PixelColor?,
+    blockWidth: Int?,
+    trailWidth: Int?,
+    fps: Int,
+    cycleFrames: Int,
+    playing: Boolean,
+    key: Any?,
+    legacyDefaults: LegacyLoadingBarDefaults?,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Loading uses the progress component token family. */
+    val tokens = theme.components.progress
+    /** Scope-less legacy mode disabled as soon as a real PixelTheme is inherited. */
+    val mountedLegacyDefaults = legacyDefaults.takeIf { PixelTheme.maybeTokensOf(context) == null }
+    /** Concrete theme-derived scan geometry. */
+    val resolvedWidth = width
+        ?: mountedLegacyDefaults?.width
+        ?: theme.sizes.overlayMinimumWidth * 2
+    val resolvedHeight = height
+        ?: mountedLegacyDefaults?.height
+        ?: tokens.resolveMinimumHeight(theme.sizes).coerceAtLeast(theme.sizes.iconSmall)
+    /** Concrete theme-derived scan and background-dot colors. */
+    val resolvedColor = color
+        ?: mountedLegacyDefaults?.color
+        ?: tokens.resolveContentColor(states, theme.colors)
+        ?: theme.colors.onWarning
+    val resolvedTrackColor = trackColor
+        ?: mountedLegacyDefaults?.trackColor
+        ?: tokens.resolveContainerColor(states, theme.colors)
+        ?: theme.colors.warning
+    AnimatedPixelLoadingBarWidget(
+        vsync = vsync,
+        width = resolvedWidth,
+        height = resolvedHeight,
+        color = resolvedColor,
+        trackColor = resolvedTrackColor,
+        blockWidth = blockWidth ?: mountedLegacyDefaults?.blockWidth ?: resolvedHeight,
+        trailWidth = trailWidth ?: mountedLegacyDefaults?.trailWidth ?: theme.spacing.medium,
+        fps = fps,
+        cycleFrames = cycleFrames,
+        playing = playing && PixelControlState.Disabled !in states,
+        states = states,
+        key = key,
+    )
+}
 
 private data class PixelLoadingBarWidget(
     val progress: Float,
@@ -1321,17 +4808,31 @@ private class RenderPixelLoadingBar(
     }
 }
 
+/** Retained ticker-backed loading bar with already-resolved theme values. */
 private data class AnimatedPixelLoadingBarWidget(
+    /** Shared caller-provided ticker source. */
     val vsync: PixelTickerProvider,
+    /** Concrete visual width. */
     val width: Int,
+    /** Concrete visual height. */
     val height: Int,
+    /** Concrete scan color. */
     val color: PixelColor,
+    /** Concrete background-dot color. */
     val trackColor: PixelColor,
+    /** Concrete scan-block width. */
     val blockWidth: Int,
+    /** Concrete wake width. */
     val trailWidth: Int,
+    /** Requested logical animation frame rate. */
     val fps: Int,
+    /** Frames in one complete bidirectional cycle. */
     val cycleFrames: Int,
+    /** Whether ticker advancement is currently enabled. */
     val playing: Boolean,
+    /** Persistent normalized visual and capability states. */
+    val states: PixelControlStateSet,
+    /** Stable retained ticker and visual identity. */
     override val key: Any?,
 ) : StatefulWidget(key = key) {
     init {
@@ -1342,10 +4843,15 @@ private data class AnimatedPixelLoadingBarWidget(
     override fun createState(): State<out StatefulWidget> = AnimatedPixelLoadingBarState()
 }
 
+/** Ticker ownership and deterministic frame advancement for AnimatedPixelLoadingBar. */
 private class AnimatedPixelLoadingBarState : State<AnimatedPixelLoadingBarWidget>() {
+    /** Owned ticker, created from the latest caller provider. */
     private var ticker: PixelTicker? = null
+    /** Current frame within the complete bidirectional cycle. */
     private var currentFrame = 0
+    /** Last observed ticker elapsed time, or -1 before anchoring. */
     private var lastElapsedNanos = -1L
+    /** Sub-frame nanoseconds carried into the next callback. */
     private var carryNanos = 0L
 
     override fun initState() {
@@ -1381,6 +4887,7 @@ private class AnimatedPixelLoadingBarState : State<AnimatedPixelLoadingBarWidget
         val progress = pixelLoadingPositionCurve(localFrame.toFloat() / (localSpan - 1).coerceAtLeast(1).toFloat())
         return PixelLoadingBar(
             progress = progress,
+            states = widget.states,
             width = widget.width,
             height = widget.height,
             color = widget.color,
@@ -1437,15 +4944,74 @@ public fun ActivityIndicator(
     frame: Int = 0,
     color: PixelColor = PixelColor.White,
     key: Any? = null,
-): Widget {
+): Widget = ActivityIndicator(
+    states = PixelControlStateSet.of(PixelControlState.Loading),
+    frame = frame,
+    color = color.takeUnless { value -> value == PixelColor.White },
+    key = key,
+)
+
+/** 执行 `PixelComponents` 的 `ActivityIndicator` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware activity indicator with token-resolved colors, geometry, and progress semantics.
+ */
+@kotlin.jvm.JvmName("ActivityIndicatorWithControlStates")
+public fun ActivityIndicator(
+    states: PixelControlStateSet,
+    frame: Int = 0,
+    color: PixelColor? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware progress and status labels independent from indicator geometry. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Progress token family shared by all activity indicators. */
+    val tokens = theme.components.progress
+    /** Concrete active dot color. */
+    val activeColor = color
+        ?: tokens.resolveContentColor(states, theme.colors)
+        ?: theme.colors.onWarning
+    /** Concrete inactive dot color. */
+    val inactiveColor = tokens.resolveContainerColor(states, theme.colors) ?: theme.colors.track
+    /** Dot extent scales with the standard medium-icon envelope. */
+    val dotExtent = (theme.sizes.iconMedium / 4).coerceAtLeast(theme.borders.thin)
+    /** Four deterministic loading dots. */
     val dots = List(4) { index ->
-        Container(
-            width = 3,
-            height = 3,
-            fillColor = if (index == frame.floorMod(4)) color else PixelColor.fromRgb(60, 60, 60),
+        PixelSurface(
+            width = dotExtent,
+            height = dotExtent,
+            decoration = PixelSurfaceDecoration(
+                fillColor = if (index == frame.floorMod(4)) activeColor else inactiveColor,
+                borderWidth = 0,
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+            ),
         )
     }
-    return Row(children = dots, spacing = 1, key = key)
+    /** Natural four-dot row width before applying the large-icon envelope floor. */
+    val naturalWidth = dotExtent * 4 + theme.spacing.extraSmall * 3
+    /** Large-icon envelope keeps activity indicators aligned with adjacent icon slots. */
+    val indicatorWidth = maxOf(theme.sizes.iconLarge, naturalWidth)
+    Semantics(
+        label = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::progress,
+        ),
+        role = PixelSemanticRole.PROGRESS_BAR,
+        enabled = PixelControlState.Disabled !in states,
+        value = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ),
+        error = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        excludeDescendants = true,
+        child = SizedBox(
+            width = indicatorWidth,
+            child = Row(children = dots, spacing = theme.spacing.extraSmall, key = key),
+        ),
+        key = key?.let { "$it-semantics" },
+    )
 }
 
 /**
@@ -1474,6 +5040,42 @@ public fun <T> LoadStateView(
 }
 
 /**
+ * 执行 `PixelComponents` 的 `LoadStateView` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware async snapshot presenter that propagates Loading, Error, and Disabled states.
+ *
+ * Caller-supplied [loading], [empty], and [error] widgets retain full precedence. Null defaults are
+ * resolved through the current theme-aware standard components.
+ */
+@kotlin.jvm.JvmName("LoadStateViewWithControlStates")
+public fun <T> LoadStateView(
+    snapshot: PixelAsyncSnapshot<T>,
+    states: PixelControlStateSet,
+    content: (T) -> Widget,
+    isEmpty: (T) -> Boolean = { false },
+    loading: Widget? = null,
+    empty: Widget? = null,
+    error: ((Throwable) -> Widget)? = null,
+): Widget {
+    return when (snapshot) {
+        PixelAsyncSnapshot.Loading -> loading ?: Center(
+            child = ActivityIndicator(states = states + PixelControlState.Loading),
+        )
+        is PixelAsyncSnapshot.Failure -> error?.invoke(snapshot.error) ?: EmptyState(
+            states = states + PixelControlState.Error,
+            title = snapshot.error.message ?: snapshot.error::class.simpleName.orEmpty(),
+        )
+        is PixelAsyncSnapshot.Success -> {
+            if (isEmpty(snapshot.value)) {
+                empty ?: EmptyState(states = states)
+            } else {
+                content(snapshot.value)
+            }
+        }
+    }
+}
+
+/**
  * 居中的像素空状态。
  *
  * 该组件只负责把标题、说明、图标和操作按钮排成紧凑像素布局；空数据判断、加载状态、
@@ -1488,13 +5090,55 @@ public fun EmptyState(
     titleStyle: PixelTextStyle = PixelTextStyle.Default,
     messageStyle: PixelTextStyle = PixelTextStyle(color = PixelColor.fromRgb(160, 160, 160)),
     key: Any? = null,
-): Widget {
+): Widget = EmptyState(
+    states = PixelControlStateSet.Normal,
+    title = title.takeUnless { value -> value == LEGACY_EMPTY_TITLE },
+    message = message,
+    icon = icon,
+    action = action,
+    width = width,
+    titleStyle = titleStyle.takeUnless { style -> style == PixelTextStyle.Default },
+    messageStyle = messageStyle.takeUnless { style -> style == LEGACY_DIALOG_MESSAGE_STYLE },
+    key = key,
+)
+
+/** Legacy empty title used only to detect an omitted localized label. */
+private const val LEGACY_EMPTY_TITLE: String = "EMPTY"
+
+/** 执行 `PixelComponents` 的 `EmptyState` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware EmptyState with token-resolved labels, typography, spacing, and semantics.
+ */
+@kotlin.jvm.JvmName("EmptyStateWithControlStates")
+public fun EmptyState(
+    states: PixelControlStateSet,
+    title: String? = null,
+    message: String? = null,
+    icon: Widget? = null,
+    action: Widget? = null,
+    width: Int? = null,
+    titleStyle: PixelTextStyle? = null,
+    messageStyle: PixelTextStyle? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { context, theme ->
+    /** Provider-aware empty and status labels independent from EmptyState visuals. */
+    val localization = pixelComponentLocalizationOf(context, theme)
+    /** Localized fallback title. */
+    val resolvedTitle = localization.resolveLabel(
+        explicitText = title,
+        selector = PixelLabelTokens::empty,
+    )
+    /** Theme title typography unless explicitly overridden. */
+    val resolvedTitleStyle = titleStyle ?: theme.typography.title.resolve(theme.colors)
+    /** Theme caption typography unless explicitly overridden. */
+    val resolvedMessageStyle = messageStyle ?: theme.typography.caption.resolve(theme.colors)
+    /** Compact empty-state children in visual order. */
     val children = buildList {
         if (icon != null) add(icon)
         add(
             Text(
-                title,
-                style = titleStyle,
+                resolvedTitle,
+                style = resolvedTitleStyle,
                 textAlign = TextAlign.CENTER,
                 softWrap = true,
                 maxLines = 2,
@@ -1505,7 +5149,7 @@ public fun EmptyState(
             add(
                 Text(
                     message,
-                    style = messageStyle,
+                    style = resolvedMessageStyle,
                     textAlign = TextAlign.CENTER,
                     softWrap = true,
                     maxLines = 3,
@@ -1517,43 +5161,154 @@ public fun EmptyState(
     }
     val content = Column(
         children = children,
-        spacing = 1,
+        spacing = theme.spacing.extraSmall,
         mainAxisSize = MainAxisSize.MIN,
         crossAxisAlignment = CrossAxisAlignment.CENTER,
     )
-    return Center(
-        child = if (width == null) content else SizedBox(width = width.coerceAtLeast(1), child = content),
+    Semantics(
+        label = resolvedTitle,
+        role = PixelSemanticRole.GENERIC,
+        enabled = PixelControlState.Disabled !in states,
+        value = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::loading,
+        ).takeIf { PixelControlState.Loading in states },
+        error = localization.resolveLabel(
+            explicitText = null,
+            selector = PixelLabelTokens::error,
+        ).takeIf { PixelControlState.Error in states },
+        mergeDescendants = false,
+        child = Center(
+            child = if (width == null) {
+                content
+            } else {
+                SizedBox(width = width.coerceAtLeast(1), child = content)
+            },
+        ),
         key = key,
     )
 }
 
+/** 创建 `Badge` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun Badge(
     child: Widget,
     label: Widget,
     key: Any? = null,
-): Widget = Stack(
-    children = listOf(
-        child,
-        Positioned(
-            top = 0,
-            right = 0,
-            child = Container(
-                padding = EdgeInsets.symmetric(horizontal = 1, vertical = 0),
-                fillColor = PixelColor.fromRgb(220, 90, 80),
-                borderColor = PixelColor.White,
-                child = label,
-            ),
-        ),
-    ),
+): Widget = LegacyFacadeThemeSwitch(
     key = key,
+    legacyBuilder = { _ ->
+        Stack(
+            children = listOf(
+                child,
+                Positioned(
+                    top = 0,
+                    right = 0,
+                    child = Container(
+                        padding = EdgeInsets.symmetric(horizontal = 1, vertical = 0),
+                        fillColor = PixelColor.fromRgb(220, 90, 80),
+                        borderColor = PixelColor.White,
+                        child = label,
+                    ),
+                ),
+            ),
+            key = key,
+        )
+    },
+    themedBuilder = { _ ->
+        Badge(
+            child = child,
+            label = label,
+            states = PixelControlStateSet.of(PixelControlState.Error),
+            key = key,
+        )
+    },
 )
 
+/** 执行 `PixelComponents` 的 `Badge` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware Badge using notification and foundation tokens for its compact status surface.
+ */
+@kotlin.jvm.JvmName("BadgeWithControlStates")
+public fun Badge(
+    child: Widget,
+    label: Widget,
+    states: PixelControlStateSet,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { _, theme ->
+    /** Notification tokens provide compact status geometry. */
+    val tokens = theme.components.toast
+    Stack(
+        children = listOf(
+            child,
+            Positioned(
+                top = 0,
+                right = 0,
+                child = PixelSurface(
+                    padding = EdgeInsets.symmetric(horizontal = theme.spacing.extraSmall, vertical = 0),
+                    decoration = PixelSurfaceDecoration(
+                        fillColor = tokens.resolveContainerColor(states, theme.colors)
+                            ?: theme.colors.surface,
+                        borderColor = tokens.resolveBorderColor(states, theme.colors),
+                        borderWidth = tokens.resolveBorderWidth(theme.borders),
+                        cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                        shadowColor = theme.colors.shadow,
+                        shadowOffset = tokens.resolveElevation(theme.elevations),
+                    ),
+                    child = label,
+                ),
+            ),
+        ),
+        key = key,
+    )
+}
+
+/** 创建 `Divider` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun Divider(
     color: PixelColor = PixelColor.White,
     thickness: Int = 1,
     key: Any? = null,
-): Widget = Container(height = thickness.coerceAtLeast(1), fillColor = color, key = key)
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { _ ->
+        Container(height = thickness.coerceAtLeast(1), fillColor = color, key = key)
+    },
+    themedBuilder = { _ ->
+        Divider(
+            states = PixelControlStateSet.Normal,
+            color = color.takeUnless { value -> value == PixelColor.White },
+            thickness = thickness.takeUnless { value -> value == 1 },
+            key = key,
+        )
+    },
+)
 
+/** 执行 `PixelComponents` 的 `Divider` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware divider resolving outline color and thickness from foundation tokens.
+ */
+@kotlin.jvm.JvmName("DividerWithControlStates")
+public fun Divider(
+    states: PixelControlStateSet,
+    color: PixelColor? = null,
+    thickness: Int? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { _, theme ->
+    /** State-aware color falls back to disabled when capability is unavailable. */
+    val resolvedColor = color ?: if (PixelControlState.Disabled in states) {
+        theme.colors.disabled
+    } else {
+        theme.colors.outline
+    }
+    /** Foundation border width used when the legacy default is omitted. */
+    val resolvedThickness = thickness ?: theme.borders.thin
+    PixelSurface(
+        height = resolvedThickness.coerceAtLeast(1),
+        decoration = PixelSurfaceDecoration(fillColor = resolvedColor, borderWidth = 0),
+        key = key,
+    )
+}
+
+/** 创建 `Gap` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun Gap(
     width: Int = 0,
     height: Int = 0,
@@ -1571,12 +5326,40 @@ public fun AppScaffold(
     body: Widget,
     bottomBar: Widget? = null,
     key: Any? = null,
+): Widget = LegacyFacadeThemeSwitch(
+    key = key,
+    legacyBuilder = { _ ->
+        legacyAppScaffold(
+            title = title,
+            body = body,
+            bottomBar = bottomBar,
+            key = key,
+        )
+    },
+    themedBuilder = { _ ->
+        AppScaffold(
+            body = body,
+            states = PixelControlStateSet.Normal,
+            title = title,
+            bottomBar = bottomBar,
+            key = key,
+        )
+    },
+)
+
+/** Builds the historical scope-less page chrome with exact two-pixel title padding. */
+private fun legacyAppScaffold(
+    title: Widget?,
+    body: Widget,
+    bottomBar: Widget?,
+    key: Any?,
 ): Widget {
+    /** Historical fixed and elastic scaffold children in paint order. */
     val children = buildList {
         if (title != null) {
             add(
                 Container(
-                    padding = EdgeInsets.symmetric(horizontal = 2, vertical = TEXT_CONTAINER_PADDING_PX),
+                    padding = EdgeInsets.all(2),
                     borderColor = PixelColor.White,
                     child = title,
                 ),
@@ -1589,7 +5372,57 @@ public fun AppScaffold(
             add(bottomBar)
         }
     }
-    return Column(children = children, mainAxisSize = MainAxisSize.MAX, crossAxisAlignment = CrossAxisAlignment.STRETCH, key = key)
+    return Column(
+        children = children,
+        mainAxisSize = MainAxisSize.MAX,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        key = key,
+    )
+}
+
+/** 执行 `PixelComponents` 的 `AppScaffold` 公开行为；具体参数、返回和副作用见下文。
+ *
+ * State-aware page scaffold whose chrome consumes list-surface and foundation spacing tokens.
+ */
+@kotlin.jvm.JvmName("AppScaffoldWithControlStates")
+public fun AppScaffold(
+    body: Widget,
+    states: PixelControlStateSet,
+    title: Widget? = null,
+    bottomBar: Widget? = null,
+    key: Any? = null,
+): Widget = PixelThemeResolvedWidget(key = key) { _, theme ->
+    /** List-style surface tokens used by the compact top chrome. */
+    val tokens = theme.components.listTile
+    /** Scaffold vertical children in visual order. */
+    val children = buildList {
+        if (title != null) {
+            add(
+                PixelSurface(
+                    padding = tokens.resolvePadding(theme.spacing),
+                    decoration = PixelSurfaceDecoration(
+                        fillColor = tokens.resolveContainerColor(states, theme.colors),
+                        borderColor = tokens.resolveBorderColor(states, theme.colors),
+                        borderWidth = tokens.resolveBorderWidth(theme.borders),
+                        cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                    ),
+                    child = title,
+                ),
+            )
+            add(Gap(height = theme.spacing.extraSmall))
+        }
+        add(Expanded(child = body))
+        if (bottomBar != null) {
+            add(Gap(height = theme.spacing.extraSmall))
+            add(bottomBar)
+        }
+    }
+    Column(
+        children = children,
+        mainAxisSize = MainAxisSize.MAX,
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        key = key,
+    )
 }
 
 private fun Int.floorMod(divisor: Int): Int {
@@ -1611,57 +5444,250 @@ private const val PIXEL_LOADING_DOT_STEP_Y = 2
 private const val PIXEL_LOADING_TRAIL_SEGMENT_MAX_NUMERATOR = 2
 private const val PIXEL_LOADING_TRAIL_SEGMENT_MAX_DENOMINATOR = 3
 private const val PIXEL_LOADING_WAKE_DOT_STEP_X = 2
-private const val TEXT_CONTAINER_PADDING_PX = 2
-private const val VALUE_ADJUSTER_BORDER_PX = 1
-private const val VALUE_ADJUSTER_DIVIDER_PX = 1
-private const val VALUE_ADJUSTER_BUTTON_WIDTH_PX = 11
-private const val VALUE_ADJUSTER_MIN_HEIGHT_PX = 13
-private const val VALUE_ADJUSTER_VALUE_HORIZONTAL_PADDING_PX = 2
-private const val VALUE_ADJUSTER_VALUE_VERTICAL_PADDING_PX = 1
-private const val VALUE_ADJUSTER_SYMBOL_SIZE_PX = 5
-private const val VALUE_ADJUSTER_SYMBOL_STROKE_PX = 1
+
+/**
+ * Compatibility bridge that keeps scope-less facade pixels exact while allowing an explicit
+ * [PixelTheme] provider to opt the same facade into token propagation.
+ *
+ * The decision is made during retained build so inherited-theme dependency tracking remains local
+ * to the component and a provider inserted or removed above it rebuilds the correct subtree.
+ */
+private data class LegacyFacadeThemeSwitch(
+    /** Stable retained identity supplied by the public compatibility facade. */
+    override val key: Any?,
+    /** Exact historical widget tree built from this switch's existing inherited context. */
+    val legacyBuilder: (BuildContext) -> Widget,
+    /** Token-aware widget tree built from the same retained inherited context. */
+    val themedBuilder: (BuildContext) -> Widget,
+) : StatelessWidget(key = key) {
+    /** Selects the compatibility or token-aware branch from the nearest explicit theme scope. */
+    override fun build(context: BuildContext): Widget {
+        /** Explicit-provider presence, independent from the always-available default token graph. */
+        val hasExplicitTheme = PixelTheme.maybeTokensOf(context) != null
+        return if (hasExplicitTheme) themedBuilder(context) else legacyBuilder(context)
+    }
+}
+
+/**
+ * Retained build-context bridge for public component functions that must resolve theme tokens.
+ *
+ * The bridge does not cache concrete theme values; dependency tracking in [PixelTheme.tokensOf]
+ * rebuilds the exact component subtree when the nearest theme provider changes.
+ */
+private data class PixelThemeResolvedWidget(
+    /** Stable retained identity supplied by the public component. */
+    override val key: Any?,
+    /** Component-specific resolver receiving the current context and complete theme graph. */
+    val resolver: (BuildContext, PixelThemeTokens) -> Widget,
+) : StatelessWidget(key = key) {
+    /** Resolves the latest inherited theme and delegates construction to [resolver]. */
+    override fun build(context: BuildContext): Widget {
+        /** Complete token graph from the nearest PixelTheme provider. */
+        val theme = PixelTheme.tokensOf(context)
+        return resolver(context, theme)
+    }
+}
+
+/**
+ * Context-bound localization inputs shared by production components in this file.
+ *
+ * The optional provider remains independent from theme resolution so mounting localization never
+ * changes a legacy facade's visual branch. Theme labels remain the compatibility fallback and the
+ * immutable English bundle supplies the final deterministic fallback and number formatting.
+ */
+private data class PixelComponentLocalization(
+    /** Explicitly installed localization bundle, or null for legacy opt-out behavior. */
+    private val providerBundle: PixelLocalizationBundle?,
+    /** Current theme labels used after an absent provider. */
+    private val themeLabels: PixelLabelTokens,
+) {
+    /** Whether an application explicitly installed a localization provider. */
+    val hasProvider: Boolean
+        get() = providerBundle != null
+
+    /**
+     * Resolves one optional caller label through provider, theme, and English precedence.
+     *
+     * Existing component overloads historically allowed an explicitly supplied blank label. That
+     * exact caller value therefore returns before the stricter additive resolver is invoked. Blank
+     * provider and theme values remain impossible through their validated public constructors.
+     */
+    fun resolveLabel(
+        /** Caller-authored text, or null when the component default was omitted. */
+        explicitText: String?,
+        /** Label-token property selecting the same semantic role at every fallback layer. */
+        selector: (PixelLabelTokens) -> String,
+    ): String {
+        if (explicitText != null && explicitText.isBlank()) return explicitText
+        return PixelLocalizationResolver.resolveText(
+            explicitText = explicitText,
+            providerText = providerBundle?.labels?.let(selector),
+            themeText = selector(themeLabels),
+            englishFallback = selector(PixelLabelTokens.Default),
+        )
+    }
+
+    /** Formats a normalized progress fraction through the provider or deterministic English. */
+    fun formatPercent(fraction: Float): String {
+        return (providerBundle ?: PixelLocalizationBundle.English).formatPercent(fraction)
+    }
+
+    /** Formats an integer through the provider or deterministic English. */
+    fun formatInteger(value: Int): String {
+        return (providerBundle ?: PixelLocalizationBundle.English).formatInteger(value)
+    }
+}
+
+/** Captures the nearest explicit localization bundle without altering current theme selection. */
+private fun pixelComponentLocalizationOf(
+    context: BuildContext,
+    theme: PixelThemeTokens,
+): PixelComponentLocalization {
+    return PixelComponentLocalization(
+        providerBundle = PixelLocalizations.maybeOf(context),
+        themeLabels = theme.labels,
+    )
+}
+
+/** Stable resolver identity that replaces modal wrappers when their isolation mode changes. */
+private data class PixelThemeResolverKey(
+    /** Public component identity retained inside one isolation mode. */
+    val ownerKey: Any?,
+    /** Component family separating otherwise equal public keys. */
+    val component: String,
+    /** Mode bit whose change must dispose the previous modal boundary immediately. */
+    val mode: Boolean,
+)
 
 private fun snackbarText(
     message: String,
     textStyle: PixelTextStyle,
-): Widget = Text(
-    message,
-    style = textStyle,
-    softWrap = true,
-    maxLines = 2,
-    overflow = PixelTextOverflow.ELLIPSIS,
+): Widget = Semantics(
+    label = message,
+    role = PixelSemanticRole.GENERIC,
+    liveRegion = PixelSemanticsLiveRegion.POLITE,
+    excludeDescendants = true,
+    child = Text(
+        message,
+        style = textStyle,
+        softWrap = true,
+        maxLines = 2,
+        overflow = PixelTextOverflow.ELLIPSIS,
+    ),
 )
 
-private data class FocusableControl(
-    val label: String,
-    val role: PixelSemanticRole,
-    val child: Widget,
-    val enabled: Boolean,
-    val focusWhenParentFocused: Boolean = true,
-    override val key: Any? = null,
+/**
+ * 标准叶子控件和复合选择器条目共用的焦点与语义外壳。
+ *
+ * 可选集合字段默认值为 null，使已有控件保留原语义树；RadioGroup、Tabs 和
+ * SegmentedControl 则可以发布结构化条目元数据。该类型仅用于 Pixel SDK 兄弟 artifact
+ * 之间互操作，不属于消费者稳定 API。
+ */
+@PixelArtifactInternalApi
+public data class FocusableControl(
+    /** 与动态值及校验状态相互独立的控件朗读标签。 */
+    public val label: String,
+    /** 该复合控件导出的平台语义角色。 */
+    public val role: PixelSemanticRole,
+    /** 被焦点与语义边界包裹的可视子树。 */
+    public val child: Widget,
+    /** 控件是否仍可获得焦点所有权并参与焦点遍历。 */
+    public val enabled: Boolean,
+    /** 语义是否独立于焦点资格报告可变更能力。 */
+    public val semanticsEnabled: Boolean = enabled,
+    /** 该叶子是否拥有自动焦点边界，而不是复用复合父控件的边界。 */
+    public val automaticallyFocusable: Boolean = true,
+    /** 继承的父控件获得焦点时是否同时聚焦该语义子项。 */
+    public val focusWhenParentFocused: Boolean = true,
+    /** 与朗读标签相互独立的结构化选中状态。 */
+    public val selected: Boolean = false,
+    /** 结构化勾选状态；不可勾选的控件使用 null。 */
+    public val checked: Boolean? = null,
+    /** 结构化展开状态；不适用时使用 null。 */
+    public val expanded: Boolean? = null,
+    /** 可选动态值，包括本地化的加载状态。 */
+    public val value: String? = null,
+    /** 与 [label] 分开播报的可选校验错误。 */
+    public val error: String? = null,
+    /** 与 [label]、[value] 分开播报的可选使用提示。 */
+    public val hint: String? = null,
+    /** 当该边界拥有复合选择器时使用的可选集合元数据。 */
+    public val collectionInfo: PixelSemanticsCollectionInfo? = null,
+    /** 当该边界表示集合条目时使用的可选位置元数据。 */
+    public val collectionItemInfo: PixelSemanticsCollectionItemInfo? = null,
+    /** 不会覆盖选中或错误视觉的叠加焦点几何参数。 */
+    public val focusIndicator: PixelFocusIndicatorTokens = PixelFocusIndicatorTokens.Default,
+    /** 由该控件边界拥有的类型化语义回调。 */
+    public val actions: PixelSemanticsActions = PixelSemanticsActions(),
+    /** 在通用激活兜底逻辑前执行的可选专用按键行为。 */
+    public val onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
+    /** retained 控件、焦点与语义边界共用的稳定标识。 */
+    public override val key: Any? = null,
 ) : StatelessWidget(key = key) {
-    override fun build(context: BuildContext): Widget {
+    /** 为普通叶子添加 retained 焦点节点，并允许复合控件显式退出。 */
+    public override fun build(context: BuildContext): Widget {
+        if (!automaticallyFocusable) return buildControl(context)
+        /** 从精确语义点击动作派生的 Enter/Space 兜底处理器。 */
+        val activationHandler = actions.onClick?.let(::activationKeyHandler)
+        /** 专用组件按键的优先级高于通用激活动作。 */
+        val specializedHandler = onKeyEvent
+        /** 安装在调用方自定义 Focus 快捷键之后的组件默认处理器。 */
+        val componentHandler: ((PixelKeyEvent) -> Boolean)? = when {
+            specializedHandler == null -> activationHandler
+            activationHandler == null -> specializedHandler
+            else -> { event -> specializedHandler.invoke(event) || activationHandler.invoke(event) }
+        }
+        return AutomaticFocusAction(
+            enabled = enabled,
+            debugLabel = label,
+            onKeyEvent = componentHandler,
+            key = key,
+        ) { focusedContext, _ ->
+            buildControl(focusedContext)
+        }
+    }
+
+    /** 基于最终继承的焦点节点构建视觉与语义边界。 */
+    private fun buildControl(context: BuildContext): Widget {
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) {
             context.watch(focusNode)
         }
         val focused = enabled && focusWhenParentFocused && focusNode?.isFocused == true
-        val highlighted = if (focused) {
-            Stack(
-                children = listOf(
-                    child,
-                    PositionedFill(child = Container(borderColor = PixelColor.fromRgb(255, 200, 0))),
-                ),
-            )
-        } else {
-            child
-        }
+        /** 用于解析独立焦点指示器的完整 token 图。 */
+        val theme = PixelTheme.tokensOf(context)
+        /** 仅用于传递独立焦点规格的最小组件包装。 */
+        val focusComponentTokens = PixelComponentColorTokens(focusIndicator = focusIndicator)
+        /** 保持子项尺寸和全部目标边界不变的紧缩包裹纯绘制焦点层。 */
+        val highlighted = withControlFocusIndicator(
+            child = child,
+            states = if (focused) {
+                PixelControlStateSet.of(PixelControlState.Focused)
+            } else {
+                PixelControlStateSet.Normal
+            },
+            componentTokens = focusComponentTokens,
+            colors = theme.colors,
+            borders = theme.borders,
+            key = key?.let { "$it-focus-indicator" },
+        )
         return Semantics(
             label = label,
             role = role,
-            enabled = enabled,
+            enabled = semanticsEnabled,
             focused = focused,
+            value = value,
+            hint = hint,
+            error = error,
+            selected = selected,
+            checked = checked,
+            expanded = expanded,
+            collectionInfo = collectionInfo,
+            collectionItemInfo = collectionItemInfo,
+            excludeDescendants = true,
+            actions = actions,
             child = highlighted,
+            key = key?.let { "$it-semantics" },
         )
     }
 }

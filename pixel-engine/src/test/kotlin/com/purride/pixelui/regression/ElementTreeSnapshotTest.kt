@@ -333,6 +333,8 @@ class ElementTreeSnapshotTest {
         val buildRuntime = ElementTreeBuildRuntimeFactory.createDefault(
             onVisualUpdate = { },
             widgetAdapter = UnsupportedWidgetAdapter,
+            // Structural snapshots exclude focus gained only as a runtime modal side effect.
+            automaticallyFocusModalDescendants = false,
         )
         try {
             buildRuntime.resolveElementTree(scene.build())

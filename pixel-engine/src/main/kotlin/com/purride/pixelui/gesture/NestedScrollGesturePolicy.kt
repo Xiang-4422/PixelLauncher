@@ -42,6 +42,7 @@ public open class NestedScrollGesturePolicy {
             deltaPx != 0f
     }
 
+    /** 集中提供 `NestedScrollGesturePolicy` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /**
          * 默认策略实例。绝大多数宿主直接复用即可。

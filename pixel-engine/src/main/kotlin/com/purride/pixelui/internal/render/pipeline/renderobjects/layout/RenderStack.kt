@@ -1,12 +1,19 @@
 package com.purride.pixelui.internal
 
+import java.util.IdentityHashMap
+
 /**
  * 新渲染管线里的最小叠放布局对象。
  */
-internal class RenderStack(
+public class RenderStack(
+    /** Initial retained children ordered from back to front. */
     children: List<RenderBox> = emptyList(),
+    /** Alignment applied to every non-positioned child. */
     private var alignment: PixelAlignment = PixelAlignment.TOP_START,
 ) : MultiChildRenderObject() {
+    /** Higher siblings deferred after a lower sibling registered a root-lifted presentation. */
+    private var deferredPaintChildren: IdentityHashMap<RenderBox, Boolean> = IdentityHashMap()
+
     init {
         setRenderObjectChildren(children)
     }
@@ -14,7 +21,7 @@ internal class RenderStack(
     /**
      * 更新 stack 对齐配置。
      */
-    fun updateStack(alignment: PixelAlignment) {
+    public fun updateStack(alignment: PixelAlignment) {
         if (this.alignment == alignment) {
             return
         }
@@ -49,14 +56,38 @@ internal class RenderStack(
         offsetX: Int,
         offsetY: Int,
     ) {
+        /** Root-plane count before this Stack starts traversing its own ordered children. */
+        val layerCheckpoint = RenderOverlayLayerRegistry.layerCheckpoint()
+        /** New identity set published after this paint for matching target and hit traversal. */
+        val nextDeferredChildren = IdentityHashMap<RenderBox, Boolean>()
         renderChildren.forEach { child ->
+            /** Stable local placement shared by immediate and deferred painting. */
             val childOffset = resolveChildOffset(child)
-            child.paint(
-                context = context,
-                offsetX = offsetX + childOffset.x,
-                offsetY = offsetY + childOffset.y,
-            )
+            /** Whether an earlier child inserted a lifted plane that this sibling must cover. */
+            val shouldDefer = layerCheckpoint != null &&
+                RenderOverlayLayerRegistry.hasLayersAfter(layerCheckpoint)
+            /** Deferral mode distinguishing retained root subtrees from scratch raster captures. */
+            val deferredMode = if (shouldDefer) {
+                RenderOverlayLayerRegistry.registerDeferredSibling(
+                    layer = child,
+                    context = context,
+                    offsetX = offsetX + childOffset.x,
+                    offsetY = offsetY + childOffset.y,
+                )
+            } else {
+                RenderDeferredSiblingMode.Rejected
+            }
+            when (deferredMode) {
+                RenderDeferredSiblingMode.DeferredSubtree -> nextDeferredChildren[child] = true
+                RenderDeferredSiblingMode.CapturedRaster -> Unit
+                RenderDeferredSiblingMode.Rejected -> child.paint(
+                    context = context,
+                    offsetX = offsetX + childOffset.x,
+                    offsetY = offsetY + childOffset.y,
+                )
+            }
         }
+        deferredPaintChildren = nextDeferredChildren
     }
 
     /**
@@ -70,7 +101,7 @@ internal class RenderStack(
         if (localX !in 0 until size.width || localY !in 0 until size.height) {
             return
         }
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.hitTest(
                 localX = localX - childOffset.x,
@@ -88,7 +119,7 @@ internal class RenderStack(
         offsetY: Int,
         targets: MutableList<PixelClickTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectClickTargets(
                 offsetX = offsetX + childOffset.x,
@@ -106,7 +137,7 @@ internal class RenderStack(
         offsetY: Int,
         targets: MutableList<PixelPagerTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectPagerTargets(
                 offsetX = offsetX + childOffset.x,
@@ -124,7 +155,7 @@ internal class RenderStack(
         offsetY: Int,
         targets: MutableList<PixelListTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectListTargets(
                 offsetX = offsetX + childOffset.x,
@@ -134,12 +165,13 @@ internal class RenderStack(
         }
     }
 
+    /** Exports scrollbar targets from children that remain in the in-flow paint plane. */
     override fun collectScrollbarTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelScrollbarTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectScrollbarTargets(
                 offsetX = offsetX + childOffset.x,
@@ -149,12 +181,13 @@ internal class RenderStack(
         }
     }
 
+    /** Exports refresh targets from children that remain in the in-flow paint plane. */
     override fun collectRefreshTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelRefreshTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectRefreshTargets(
                 offsetX = offsetX + childOffset.x,
@@ -172,7 +205,7 @@ internal class RenderStack(
         offsetY: Int,
         targets: MutableList<PixelTextInputTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectTextInputTargets(
                 offsetX = offsetX + childOffset.x,
@@ -182,12 +215,13 @@ internal class RenderStack(
         }
     }
 
+    /** Exports slider targets from children that remain in the in-flow paint plane. */
     override fun collectSliderTargets(
         offsetX: Int,
         offsetY: Int,
         targets: MutableList<PixelSliderTarget>,
     ) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectSliderTargets(
                 offsetX = offsetX + childOffset.x,
@@ -197,8 +231,9 @@ internal class RenderStack(
         }
     }
 
+    /** Exports semantics from children that remain in the in-flow paint plane. */
     override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
-        renderChildren.forEach { child ->
+        forEachInFlowPaintChild { child ->
             val childOffset = resolveChildOffset(child)
             child.collectSemantics(offsetX + childOffset.x, offsetY + childOffset.y, targets)
         }
@@ -244,6 +279,13 @@ internal class RenderStack(
      */
     private val renderChildren: List<RenderBox>
         get() = children.filterIsInstance<RenderBox>()
+
+    /** Visits only children still painted inline; deferred siblings are replayed by PipelineOwner. */
+    private inline fun forEachInFlowPaintChild(block: (RenderBox) -> Unit) {
+        renderChildren.forEach { child ->
+            if (!deferredPaintChildren.containsKey(child)) block(child)
+        }
+    }
 }
 
 /**
@@ -257,7 +299,7 @@ private data class StackChildOffset(
 /**
  * `Positioned` 对应的透明定位 render object。
  */
-internal class RenderPositioned(
+public class RenderPositioned(
     child: RenderBox? = null,
     private var left: Int? = null,
     private var top: Int? = null,
@@ -276,7 +318,7 @@ internal class RenderPositioned(
     /**
      * 更新定位配置。
      */
-    fun updatePosition(
+    public fun updatePosition(
         left: Int?,
         top: Int?,
         right: Int?,

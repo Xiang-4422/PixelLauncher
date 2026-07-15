@@ -1,0 +1,31 @@
+# GraphemeBreakTest-17.0.0 reviewed cross-version subset runnable on API 24+
+# Source: https://www.unicode.org/Public/17.0.0/ucd/auxiliary/GraphemeBreakTest.txt
+# Source date: 2025-03-24, 14:45:55 GMT
+# License: Unicode-3.0; repository copy at src/test/resources/unicode/17.0.0/LICENSE-UNICODE.txt
+# Format: stable-case-id|verbatim break expression extracted from the official corpus
+# "Runnable" does not imply identical old-ICU behavior: differences require a separate exact record.
+# This file is reviewed test input. Tests must never append or rewrite it at runtime.
+official-gb3-crlf|÷ 000D × 000A ÷
+official-controls-and-extend|÷ 000D ÷ 0308 ÷ 000D ÷
+official-crlf-mixed-line|÷ 000D × 000A ÷ 0061 ÷ 000A ÷ 0308 ÷
+official-decomposed-latin|÷ 0061 × 0308 ÷
+official-zwj-after-latin|÷ 0061 × 200D ÷
+official-zwj-before-arabic|÷ 0020 × 200D ÷ 0646 ÷
+official-arabic-before-zwj|÷ 0646 × 200D ÷ 0020 ÷
+official-spacing-mark|÷ 0061 × 0903 ÷ 0062 ÷
+official-prepend|÷ 0061 ÷ 0600 × 0062 ÷
+official-hangul-l-l|÷ 1100 × 1100 ÷
+official-hangul-lv-t-l|÷ AC00 × 11A8 ÷ 1100 ÷
+official-hangul-lvt-t-l|÷ AC01 × 11A8 ÷ 1100 ÷
+official-ri-triple|÷ 1F1E6 × 1F1E7 ÷ 1F1E8 ÷ 0062 ÷
+official-ri-leading-ascii|÷ 0061 ÷ 1F1E6 × 1F1E7 ÷ 1F1E8 ÷ 0062 ÷
+official-ri-zwj-parity-one|÷ 0061 ÷ 1F1E6 × 1F1E7 × 200D ÷ 1F1E8 ÷ 0062 ÷
+official-ri-zwj-parity-two|÷ 0061 ÷ 1F1E6 × 200D ÷ 1F1E7 × 1F1E8 ÷ 0062 ÷
+official-ri-four|÷ 0061 ÷ 1F1E6 × 1F1E7 ÷ 1F1E8 × 1F1E9 ÷ 0062 ÷
+official-emoji-modifier|÷ 1F476 × 1F3FF ÷ 1F476 ÷
+official-modifier-after-latin|÷ 0061 × 1F3FF ÷ 1F476 ÷
+official-emoji-zwj-stop-sign|÷ 0061 × 1F3FF ÷ 1F476 × 200D × 1F6D1 ÷
+official-emoji-extend-zwj|÷ 1F476 × 1F3FF × 0308 × 200D × 1F476 × 1F3FF ÷
+official-stop-sign-zwj|÷ 1F6D1 × 200D × 1F6D1 ÷
+official-non-pictographic-zwj-stop|÷ 0061 × 200D ÷ 1F6D1 ÷
+official-scissors-non-pictographic|÷ 2701 × 200D ÷ 2701 ÷

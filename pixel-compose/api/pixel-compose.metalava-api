@@ -1,0 +1,8 @@
+// Signature format: 4.0
+package com.purride.pixelcompose {
+
+  public final class PixelComposeHostKt {
+    method @KotlinOnly @androidx.compose.runtime.Composable public static void PixelHost(com.purride.pixelengine.PixelEngine engine, kotlin.jvm.functions.Function0<com.purride.pixelui.Widget> content, optional androidx.compose.ui.Modifier modifier, optional String stateKey, optional com.purride.pixelui.PixelHostSetupConfig config, optional kotlin.jvm.functions.Function1<com.purride.pixelui.PixelHostView,kotlin.Unit> onHostReady);
+  }
+
+}

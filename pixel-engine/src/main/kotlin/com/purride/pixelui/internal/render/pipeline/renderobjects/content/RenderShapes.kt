@@ -15,7 +15,7 @@ import kotlin.math.min
  * Layout：`(maxOf(startX, endX) + 1, maxOf(startY, endY) + 1)` 截到 constraints。
  * Paint：逐像素 `buffer.setPixel`，越界由 PixelBuffer 内部裁剪。
  */
-internal class RenderLine(
+public class RenderLine(
     private var startX: Int,
     private var startY: Int,
     private var endX: Int,
@@ -25,7 +25,8 @@ internal class RenderLine(
     private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
 
-    fun update(
+    /** 更新 `RenderShapes` 的 `update` 状态，并保持相关边界与派生状态一致。 */
+    public fun update(
         startX: Int,
         startY: Int,
         endX: Int,
@@ -137,7 +138,7 @@ internal fun paintStrokePoint(
  * Paint：[filled]=true 时逐 scanline 填充；否则只画轮廓。
  *        中心 = 当前 layout box 的中点。
  */
-internal class RenderCircle(
+public class RenderCircle(
     private var radius: Int,
     private var color: PixelColor,
     private var filled: Boolean,
@@ -145,7 +146,8 @@ internal class RenderCircle(
     private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
 
-    fun update(
+    /** 更新 `RenderShapes` 的 `update` 状态，并保持相关边界与派生状态一致。 */
+    public fun update(
         radius: Int,
         color: PixelColor,
         filled: Boolean,
@@ -216,7 +218,8 @@ internal class RenderCircle(
     }
 }
 
-internal class RenderPolygon(
+/** 实现 `RenderShapes` 在 retained render pipeline 中的布局、绘制与命中职责。 */
+public class RenderPolygon(
     private var points: List<PixelPoint>,
     private var color: PixelColor,
     private var filled: Boolean,
@@ -225,7 +228,8 @@ internal class RenderPolygon(
 ) : RenderBox() {
     private val rasterizer = PixelPolygonRasterizer()
 
-    fun update(
+    /** 更新 `RenderShapes` 的 `update` 状态，并保持相关边界与派生状态一致。 */
+    public fun update(
         points: List<PixelPoint>,
         color: PixelColor,
         filled: Boolean,
@@ -270,7 +274,8 @@ internal class RenderPolygon(
     }
 }
 
-internal class RenderPath(
+/** 实现 `RenderShapes` 在 retained render pipeline 中的布局、绘制与命中职责。 */
+public class RenderPath(
     private var path: PixelPath,
     private var color: PixelColor,
     private var closed: Boolean,
@@ -278,7 +283,8 @@ internal class RenderPath(
     private var blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 ) : RenderBox() {
 
-    fun update(
+    /** 更新 `RenderShapes` 的 `update` 状态，并保持相关边界与派生状态一致。 */
+    public fun update(
         path: PixelPath,
         color: PixelColor,
         closed: Boolean,

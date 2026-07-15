@@ -2,6 +2,7 @@ package com.purride.pixelui.state
 
 import com.purride.pixelui.ChangeNotifier
 import com.purride.pixelui.PixelScrollPhysics
+import com.purride.pixelui.internal.PixelArtifactInternalApi
 import kotlin.math.abs
 
 /**
@@ -267,7 +268,9 @@ public class PixelListController(
         notifyListeners()
     }
 
-    internal fun scheduleRestoreState(
+    /** 供 navigation artifact 在布局完成前登记延迟恢复状态的内部 SPI。 */
+    @PixelArtifactInternalApi
+    public fun scheduleRestoreState(
         state: PixelListState,
         savedState: PixelListSavedState,
         policy: PixelListRestorationPolicy,

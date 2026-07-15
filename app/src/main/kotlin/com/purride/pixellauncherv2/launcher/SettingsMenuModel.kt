@@ -20,7 +20,6 @@ enum class SettingsMenuItem {
     APP_MANAGEMENT,
     NOTIFICATIONS,
     DATA_HEALTH,
-    DEEPSEEK_API_KEY,
     LOADING_PREVIEW,
     PIXEL_MATTER_EFFECT,
     PIXEL_MATTER_EFFECT_MODE,
@@ -35,7 +34,6 @@ enum class SettingsSection {
     DRAWER,
     IDLE,
     DATA,
-    AI,
     ADVANCED,
 }
 
@@ -179,14 +177,6 @@ object SettingsMenuModel {
                     title = "DATA HEALTH",
                     value = DataHealthModel.summary(state),
                     section = SettingsSection.DATA,
-                ),
-            )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.DEEPSEEK_API_KEY,
-                    title = "DEEPSEEK",
-                    value = apiKeyLabel(state.deepSeekApiKey),
-                    section = SettingsSection.AI,
                 ),
             )
             add(
@@ -340,7 +330,6 @@ object SettingsMenuModel {
             SettingsSection.DRAWER -> "DRAWER"
             SettingsSection.IDLE -> "IDLE"
             SettingsSection.DATA -> "DATA"
-            SettingsSection.AI -> "AI"
             SettingsSection.ADVANCED -> "ADVANCED"
         }
     }
@@ -349,10 +338,6 @@ object SettingsMenuModel {
 
     fun onOffLabel(value: Boolean): String {
         return if (value) "ON" else "OFF"
-    }
-
-    fun apiKeyLabel(apiKey: String): String {
-        return if (apiKey.isBlank()) "EMPTY" else "SET"
     }
 
     fun resolutionLabel(dotSizePx: Int, screenProfile: ScreenProfile? = null): String {

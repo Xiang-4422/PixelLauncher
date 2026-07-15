@@ -4,53 +4,133 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.DefaultTextRasterizer
 import com.purride.pixelui.Directionality
+import com.purride.pixelui.PixelAdaptiveEnvironment
+import com.purride.pixelui.PixelAdaptiveLayoutData
+import com.purride.pixelui.HostCapabilities
+import com.purride.pixelui.HostCapabilitiesData
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.PixelHostBridge
+import com.purride.pixelui.PixelHostCapabilitySet
+import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.PixelThemeTokens
+import com.purride.pixelui.PixelMotionScope
+import com.purride.pixelui.PixelMotionSettings
 import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
 import com.purride.pixelui.internal.host.PixelHostBridgeScope
+import com.purride.pixelui.internal.host.PixelHostCapabilityScope
+import com.purride.pixelui.animation.PixelTickerProvider
 
 /**
  * 宿主级根环境包装。
  *
- * 注入 MediaQuery、Directionality 和默认文本栅格器，供 widget 树中任意节点消费。
+ * 注入 HostCapabilities、MediaQuery、Directionality、motion scope 和默认文本栅格器，
+ * 供 widget 树中任意节点消费。
  */
 internal data class HostRootWidget(
+    /** Logical screen metrics inherited by layout widgets. */
     val screenProfile: ScreenProfile,
-    val textDirection: TextDirection,
+    /** Current physical Host width used for dp size classes. */
+    val physicalWidthPx: Int = 0,
+    /** Current physical Host height used for dp size classes. */
+    val physicalHeightPx: Int = 0,
+    /** Host text direction inherited by direction-aware widgets. */
+    val textDirection: TextDirection = TextDirection.LTR,
+    /** Host default bitmap text rasterizer. */
     val textRasterizer: PixelTextRasterizer,
+    /** Stable system-bar padding in logical pixels. */
     val windowInsets: PixelWindowInsets,
+    /** Temporary IME or obstruction inset in logical pixels. */
     val viewInsets: PixelWindowInsets,
+    /** Optional bridge to Android input and haptic services. */
     val hostBridge: PixelHostBridge? = null,
+    /** 当前 Engine 与本地桥接合并后的聚焦 Host capability。 */
+    val hostServices: PixelHostCapabilitySet = PixelHostCapabilitySet.Empty,
+    /** 当前 Engine 注入根树的主题 token；null 保留历史无显式 Theme 包装行为。 */
+    val themeTokens: PixelThemeTokens? = null,
+    /** Lifecycle-bound ticker provider inherited by motion-aware widgets. */
+    val motionVsync: PixelTickerProvider? = null,
+    /** Effective platform or explicitly overridden motion settings. */
+    val motionSettings: PixelMotionSettings = PixelMotionSettings.Default,
+    /**
+     * Atomic Host environment snapshot used by every capability-aware root provider.
+     *
+     * The compatibility default derives the direction and motion fields from the legacy
+     * parameters above, while new Host callers pass their already-resolved snapshot directly.
+     */
+    val capabilities: HostCapabilitiesData = HostCapabilitiesData.Default.copy(
+        layoutDirection = textDirection,
+        motionSettings = motionSettings,
+    ),
+    /** Application widget subtree receiving the complete Host environment. */
     val child: Widget,
     override val key: Any? = null,
 ) : StatelessWidget(key = key) {
+    /** Builds the inherited Host environment around the application subtree. */
     override fun build(context: com.purride.pixelui.BuildContext): Widget {
-        return MediaQuery(
-            data = MediaQueryData(
-                logicalWidth = screenProfile.logicalWidth,
-                logicalHeight = screenProfile.logicalHeight,
-                screenProfile = screenProfile,
-                viewInsets = viewInsets,
-                viewPadding = windowInsets,
-                padding = windowInsets.exclude(viewInsets),
+        /** Stable safe padding after transient obstruction overlap is removed. */
+        val padding = windowInsets.exclude(viewInsets)
+        /** Atomic physical/logical adaptive snapshot parallel to HostCapabilities and MediaQuery. */
+        val adaptiveData = PixelAdaptiveLayoutData(
+            physicalWidthPx = physicalWidthPx.coerceAtLeast(0),
+            physicalHeightPx = physicalHeightPx.coerceAtLeast(0),
+            logicalWidth = screenProfile.logicalWidth,
+            logicalHeight = screenProfile.logicalHeight,
+            density = capabilities.density,
+            viewInsets = viewInsets,
+            viewPadding = windowInsets,
+            padding = padding,
+            displayFeatures = capabilities.displayFeatures,
+        )
+        /** Engine 主题只包装当前 Host 子树，不会进入其他 Engine 或 Host。 */
+        val themedChild: Widget = themeTokens?.let { tokens ->
+            PixelTheme(tokens = tokens, child = child)
+        } ?: child
+        /** 旧桥接与新 capability 同时发布，保证冻结 API 和新能力模型都可用。 */
+        val bridgedChild = PixelHostBridgeScope(
+            bridge = hostBridge,
+            child = PixelHostCapabilityScope(
+                capabilities = hostServices,
+                child = DefaultTextRasterizer(
+                    rasterizer = textRasterizer,
+                    child = themedChild,
+                ),
             ),
-            child = Directionality(
-                textDirection = textDirection,
-                child = PixelHostBridgeScope(
-                    bridge = hostBridge,
-                    child = DefaultTextRasterizer(
-                        rasterizer = textRasterizer,
-                        child = child,
+        )
+        /** 有 ticker 时再追加 motion scope；其余环境顺序保持历史语义。 */
+        val motionChild = motionVsync?.let { vsync ->
+            PixelMotionScope(
+                vsync = vsync,
+                settings = capabilities.motionSettings,
+                child = bridgedChild,
+            )
+        } ?: bridgedChild
+        return HostCapabilities(
+            data = capabilities,
+            child = PixelAdaptiveEnvironment(
+                data = adaptiveData,
+                child = MediaQuery(
+                    data = MediaQueryData(
+                        logicalWidth = screenProfile.logicalWidth,
+                        logicalHeight = screenProfile.logicalHeight,
+                        screenProfile = screenProfile,
+                        viewInsets = viewInsets,
+                        viewPadding = windowInsets,
+                        padding = padding,
+                    ),
+                    child = Directionality(
+                        textDirection = capabilities.layoutDirection,
+                        child = motionChild,
                     ),
                 ),
             ),
         )
     }
 
+    /** Removes transient overlap from stable padding without producing negative logical insets. */
     private fun PixelWindowInsets.exclude(overlap: PixelWindowInsets): PixelWindowInsets {
         return PixelWindowInsets(
             left = (left - overlap.left).coerceAtLeast(0),

@@ -8,9 +8,12 @@ package com.purride.pixelcore
  */
 public object ScreenProfileFactory {
 
+    /** 定义 `ScreenProfileFactory` 布局中的 `defaultDotSizePx` 逻辑像素度量。 */
     public const val defaultDotSizePx: Int = 12
+    /** 定义 `ScreenProfileFactory` 布局中的 `supportedDotSizePxOptions` 逻辑像素度量。 */
     public val supportedDotSizePxOptions: List<Int> = listOf(7, 8, 10, 12, 14, 16)
 
+    /** 创建 `ScreenProfileFactory` 所需的新对象，并在返回前建立其初始不变量。 */
     public fun create(
         widthPx: Int,
         heightPx: Int,

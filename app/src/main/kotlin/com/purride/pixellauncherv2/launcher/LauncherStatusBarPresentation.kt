@@ -30,7 +30,6 @@ internal sealed class LauncherStatusBarPresentation {
             -> "SMS"
             LauncherMode.DATA_HEALTH -> "DATA"
             LauncherMode.NOTIFICATION_SETTINGS -> "NOTIFY"
-            LauncherMode.AI_SETTINGS -> "AI"
             LauncherMode.LOADING_PREVIEW -> "LOAD"
             LauncherMode.DIAGNOSTICS -> "DIAG"
             LauncherMode.IDLE -> "IDLE"

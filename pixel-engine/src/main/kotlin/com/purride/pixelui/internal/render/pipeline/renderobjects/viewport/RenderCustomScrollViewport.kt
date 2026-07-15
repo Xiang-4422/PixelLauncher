@@ -115,14 +115,14 @@ internal class RenderCustomScrollViewport(
             scratch.clear()
             visibleChildren(includePinned = false).forEach { (index, child) ->
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = context.derive(scratch, offsetX, offsetY),
                     offsetX = 0,
                     offsetY = scrolledChildTop(index),
                 )
             }
             pinnedChildren().forEach { (index, child) ->
                 child.paint(
-                    context = PaintContext(buffer = scratch, bufferPool = context.bufferPool),
+                    context = context.derive(scratch, offsetX, offsetY),
                     offsetX = 0,
                     offsetY = pinnedChildTop(index),
                 )
@@ -207,9 +207,12 @@ internal class RenderCustomScrollViewport(
     }
 
     override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) {
+        val collected = mutableListOf<PixelSemanticsTarget>()
         visibleChildren(includePinned = true).forEach { (index, child) ->
-            child.collectSemantics(offsetX, offsetY + resolvedChildTop(index), targets)
+            child.collectSemantics(offsetX, offsetY + resolvedChildTop(index), collected)
         }
+        val clip = globalBounds(offsetX, offsetY)
+        targets += clipSemanticTargets(collected, clip)
     }
 
     private inline fun <T> collectChildTargets(

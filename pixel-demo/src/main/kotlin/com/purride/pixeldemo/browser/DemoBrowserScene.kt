@@ -13,7 +13,10 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelSemanticsActions
 import com.purride.pixelui.Row
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.SingleChildScrollView
 import com.purride.pixelui.State
@@ -203,8 +206,8 @@ private class BrowserWidget(
             depth: Int,
             selected: Boolean,
             color: PixelColor,
-        ): Widget =
-            GestureDetector(
+        ): Widget {
+            val rowSurface = GestureDetector(
                 onTap = { selectNode(node = node, depth = depth) },
                 child = Container(
                     padding = EdgeInsets.all(2),
@@ -218,6 +221,21 @@ private class BrowserWidget(
                     ),
                 ),
             )
+            return Semantics(
+                label = node.shortTitle,
+                role = PixelSemanticRole.BUTTON,
+                selected = selected,
+                excludeDescendants = true,
+                actions = PixelSemanticsActions(
+                    onClick = {
+                        selectNode(node = node, depth = depth)
+                        true
+                    },
+                ),
+                child = rowSurface,
+                key = "browser-node-${node.id}",
+            )
+        }
 
         private fun selectNode(
             node: DemoTreeNode,
@@ -244,6 +262,7 @@ private fun DemoCategory.categoryColor(): PixelColor = when (id) {
     DemoCatalog.input.id -> PixelColor.fromRgb(120, 180, 255)
     DemoCatalog.controls.id -> PixelColor.fromRgb(120, 245, 150)
     DemoCatalog.feedback.id -> PixelColor.fromRgb(255, 120, 160)
+    DemoCatalog.theme.id -> PixelColor.fromRgb(90, 235, 210)
     DemoCatalog.scroll.id -> PixelColor.fromRgb(255, 230, 100)
     DemoCatalog.paint.id -> PixelColor.fromRgb(180, 150, 255)
     DemoCatalog.animation.id -> PixelColor.fromRgb(255, 120, 160)

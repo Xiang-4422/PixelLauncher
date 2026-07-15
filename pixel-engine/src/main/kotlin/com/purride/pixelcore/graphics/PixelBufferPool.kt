@@ -62,6 +62,7 @@ public class PixelBufferPool(
     private fun packKey(width: Int, height: Int): Long =
         (width.toLong() shl 32) or (height.toLong() and 0xFFFFFFFFL)
 
+    /** 集中提供 `PixelBufferPool` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         private const val DEFAULT_MAX_BUFFERS_PER_KEY = 4
     }

@@ -19,7 +19,7 @@ import com.purride.pixelui.TextDirection
 // ╰─────────────────────────────────────────────────────────────────────╯
 
 /** 像素 UI 内部布局对齐方式。 */
-internal enum class PixelAlignment {
+public enum class PixelAlignment {
     TOP_START,
     TOP_CENTER,
     TOP_END,
@@ -32,7 +32,7 @@ internal enum class PixelAlignment {
 }
 
 /** `Row/Column` 的交叉轴对齐方式。 */
-internal enum class PixelCrossAxisAlignment {
+public enum class PixelCrossAxisAlignment {
     START,
     CENTER,
     END,
@@ -40,7 +40,7 @@ internal enum class PixelCrossAxisAlignment {
 }
 
 /** `Row/Column` 的主轴排布方式。 */
-internal enum class PixelMainAxisAlignment {
+public enum class PixelMainAxisAlignment {
     START,
     CENTER,
     END,
@@ -50,13 +50,13 @@ internal enum class PixelMainAxisAlignment {
 }
 
 /** `Row/Column` 的主轴尺寸策略。 */
-internal enum class PixelMainAxisSize {
+public enum class PixelMainAxisSize {
     MIN,
     MAX,
 }
 
 /** 像素文本对齐方式。 */
-internal enum class PixelTextAlign {
+public enum class PixelTextAlign {
     START,
     CENTER,
     END,
@@ -76,7 +76,7 @@ internal enum class PixelFlexFit {
 // ╰─────────────────────────────────────────────────────────────────────╯
 
 /** 把公开文本对齐值转换成 pipeline 内部文本对齐值。 */
-internal fun TextAlign.toPixelTextAlign(): PixelTextAlign {
+public fun TextAlign.toPixelTextAlign(): PixelTextAlign {
     return when (this) {
         TextAlign.START -> PixelTextAlign.START
         TextAlign.CENTER -> PixelTextAlign.CENTER
@@ -85,7 +85,7 @@ internal fun TextAlign.toPixelTextAlign(): PixelTextAlign {
 }
 
 /** 把公开对齐值转换成 pipeline 内部对齐值。 */
-internal fun Alignment.toPixelAlignment(): PixelAlignment {
+public fun Alignment.toPixelAlignment(): PixelAlignment {
     return when (this) {
         Alignment.TOP_START -> PixelAlignment.TOP_START
         Alignment.TOP_CENTER -> PixelAlignment.TOP_CENTER
@@ -100,7 +100,7 @@ internal fun Alignment.toPixelAlignment(): PixelAlignment {
 }
 
 /** 按文本方向把公开方向性对齐值转换成 pipeline 内部对齐值。 */
-internal fun AlignmentDirectional.toPixelAlignment(
+public fun AlignmentDirectional.toPixelAlignment(
     direction: TextDirection,
 ): PixelAlignment {
     return when (this) {
@@ -117,7 +117,7 @@ internal fun AlignmentDirectional.toPixelAlignment(
 }
 
 /** 把公开主轴排布值转换成 pipeline 内部主轴排布值。 */
-internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignment {
+public fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignment {
     return when (this) {
         MainAxisAlignment.START -> PixelMainAxisAlignment.START
         MainAxisAlignment.CENTER -> PixelMainAxisAlignment.CENTER
@@ -129,7 +129,7 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(): PixelMainAxisAlignmen
 }
 
 /** 按轴向和文本方向把公开主轴排布值转换成 pipeline 内部主轴排布值。 */
-internal fun MainAxisAlignment.toPixelMainAxisAlignment(
+public fun MainAxisAlignment.toPixelMainAxisAlignment(
     axis: Axis,
     direction: TextDirection,
 ): PixelMainAxisAlignment {
@@ -148,7 +148,7 @@ internal fun MainAxisAlignment.toPixelMainAxisAlignment(
 }
 
 /** 把公开主轴尺寸策略转换成 pipeline 内部主轴尺寸策略。 */
-internal fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
+public fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
     return when (this) {
         MainAxisSize.MIN -> PixelMainAxisSize.MIN
         MainAxisSize.MAX -> PixelMainAxisSize.MAX
@@ -156,7 +156,7 @@ internal fun MainAxisSize.toPixelMainAxisSize(): PixelMainAxisSize {
 }
 
 /** 把公开交叉轴对齐值转换成 pipeline 内部交叉轴对齐值。 */
-internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlignment {
+public fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlignment {
     return when (this) {
         CrossAxisAlignment.START -> PixelCrossAxisAlignment.START
         CrossAxisAlignment.CENTER -> PixelCrossAxisAlignment.CENTER
@@ -166,7 +166,7 @@ internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(): PixelCrossAxisAlign
 }
 
 /** 按轴向和文本方向把公开交叉轴对齐值转换成 pipeline 内部交叉轴对齐值。 */
-internal fun CrossAxisAlignment.toPixelCrossAxisAlignment(
+public fun CrossAxisAlignment.toPixelCrossAxisAlignment(
     axis: Axis,
     direction: TextDirection,
 ): PixelCrossAxisAlignment {

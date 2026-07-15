@@ -12,12 +12,16 @@ import com.purride.pixelui.Widget
 internal class BuildOwner(
     private val onVisualUpdate: () -> Unit,
     private val elementChildUpdater: ElementChildUpdater,
+    /** 已由 ErrorBoundary 生成 fallback 的 build 错误通知。 */
+    private val onRecoveredBuildError: (Throwable, String) -> Unit,
 ) {
     private val rootElementSlot = RootElementSlot(elementChildUpdater)
     private val dirtyElementScheduler = DirtyElementScheduler()
     private val listenableRegistry = ListenableDependencyRegistry(
         requestVisualUpdate = ::requestVisualUpdate,
     )
+    /** Failures deferred until the current retained-tree mutation has committed every slot. */
+    private val teardownFailures = TeardownFailureCollector()
 
     /**
      * 当前保留的根 element。
@@ -52,20 +56,35 @@ internal class BuildOwner(
      */
     fun renderPass(widget: Widget) {
         inRenderPass = true
+        /** Pass-local failures combine normal build errors with deferred teardown callbacks. */
+        val passFailures = TeardownFailureCollector()
         try {
             updateRootWidget(widget)
             buildScope()
+        } catch (failure: Throwable) {
+            passFailures.record(failure)
         } finally {
             inRenderPass = false
         }
+        teardownFailures.takeFailure()?.let(passFailures::record)
+        passFailures.throwIfAny()
     }
 
     /**
      * render 阶段失败后，尝试把异常交给最近的 PixelErrorBoundary。
      */
     fun recoverFromRenderError(error: Throwable): Element? {
-        val recovered = rootElement?.recoverFromRenderError(error) == true
-        return if (recovered) rootElement else null
+        /** Recovery-local collector also reports teardown triggered by fallback replacement. */
+        val failures = TeardownFailureCollector()
+        /** Recovered root captured only when the nearest boundary accepted the render failure. */
+        var recoveredRoot: Element? = null
+        failures.capture {
+            val recovered = rootElement?.recoverFromRenderError(error) == true
+            recoveredRoot = if (recovered) rootElement else null
+        }
+        teardownFailures.takeFailure()?.let(failures::record)
+        failures.throwIfAny()
+        return recoveredRoot
     }
 
     /**
@@ -74,6 +93,21 @@ internal class BuildOwner(
     fun scheduleBuildFor(element: Element) {
         dirtyElementScheduler.schedule(element)
         requestVisualUpdate()
+    }
+
+    /** Removes a terminal Element from any still-pending build queue entry. */
+    internal fun unscheduleBuildFor(element: Element) {
+        dirtyElementScheduler.unschedule(element)
+    }
+
+    /** Defers one terminal callback failure until the current retained mutation is committed. */
+    internal fun recordTeardownFailure(failure: Throwable) {
+        teardownFailures.record(failure)
+    }
+
+    /** 发布已经成功构造 fallback 的 build 错误，不暴露 Widget 实例。 */
+    internal fun reportRecoveredBuildError(failure: Throwable, widgetType: String) {
+        onRecoveredBuildError(failure, widgetType)
     }
 
     /**
@@ -132,9 +166,14 @@ internal class BuildOwner(
      * 释放 retained tree 和 owner 持有的所有调度状态。
      */
     fun dispose() {
-        rootElementSlot.clear()
-        listenableRegistry.dispose()
-        dirtyElementScheduler.clear()
+        /** Owner-terminal collector ensures every registry is empty before reporting failure. */
+        val failures = TeardownFailureCollector()
+        failures.capture { rootElementSlot.clear() }
+        failures.capture { listenableRegistry.dispose() }
+        failures.capture { dirtyElementScheduler.clear() }
+        inRenderPass = false
+        teardownFailures.takeFailure()?.let(failures::record)
+        failures.throwIfAny()
     }
 
     fun collectDiagnostics(): BuildOwnerDiagnostics {
@@ -145,6 +184,10 @@ internal class BuildOwner(
         )
     }
 
+    /** Exposes a primitive rebuild counter for allocation-bounded frame diagnostics. */
+    fun cumulativeRebuiltElementCount(): Long = dirtyElementScheduler.cumulativeRebuiltElementCount()
+
+    /** Returns every retained Widget in root-first order for internal testing and inspection. */
     fun collectWidgets(): List<Widget> {
         return rootElement?.collectWidgets().orEmpty()
     }

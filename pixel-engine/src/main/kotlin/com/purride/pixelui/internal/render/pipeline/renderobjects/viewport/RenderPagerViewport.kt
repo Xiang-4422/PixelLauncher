@@ -3,7 +3,7 @@ package com.purride.pixelui.internal
 import com.purride.pixelcore.AxisBufferComposer
 import com.purride.pixelcore.PixelAxis
 import com.purride.pixelcore.PixelBuffer
-import com.purride.pixelcore.PixelBufferPool
+import com.purride.pixelui.PixelSemanticsCollectionItemInfo
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerSnapshot
 import com.purride.pixelui.state.PixelPagerState
@@ -11,7 +11,7 @@ import com.purride.pixelui.state.PixelPagerState
 /**
  * 新渲染管线里的分页视口。
  */
-internal class RenderPagerViewport(
+public class RenderPagerViewport(
     children: List<RenderBox> = emptyList(),
     private var axis: PixelAxis,
     private var state: PixelPagerState,
@@ -26,7 +26,7 @@ internal class RenderPagerViewport(
     /**
      * 同步分页视口配置。
      */
-    fun updatePagerViewport(
+    public fun updatePagerViewport(
         axis: PixelAxis,
         state: PixelPagerState,
         controller: PixelPagerController,
@@ -85,8 +85,20 @@ internal class RenderPagerViewport(
     ) {
         val snapshot = controller.snapshot(state)
         val pool = context.bufferPool
-        val primary = renderPage(snapshot.anchorPage, pool) ?: return
-        val secondary = snapshot.adjacentPage?.let { renderPage(it, pool) }
+        val primary = renderPage(
+            pageIndex = snapshot.anchorPage,
+            parentContext = context,
+            childOriginX = offsetX + anchorShiftX(snapshot),
+            childOriginY = offsetY + anchorShiftY(snapshot),
+        ) ?: return
+        val secondary = snapshot.adjacentPage?.let { pageIndex ->
+            renderPage(
+                pageIndex = pageIndex,
+                parentContext = context,
+                childOriginX = offsetX + adjacentShiftX(snapshot),
+                childOriginY = offsetY + adjacentShiftY(snapshot),
+            )
+        }
         val needsCompose = AxisBufferComposer.isCompositionNeeded(secondary, snapshot.dragOffsetPx)
         val composeOut = if (needsCompose) pool.acquire(primary.width, primary.height) else null
         try {
@@ -257,13 +269,55 @@ internal class RenderPagerViewport(
     }
 
     /**
+     * Exports only the logical anchor page so an in-progress drag never creates two competing
+     * accessibility traversal roots.
+     */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val snapshot = controller.snapshot(state)
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        renderChildren.getOrNull(snapshot.anchorPage)?.collectSemantics(
+            offsetX = offsetX + anchorShiftX(snapshot),
+            offsetY = offsetY + anchorShiftY(snapshot),
+            targets = collected,
+        )
+        val localIds = collected.mapTo(mutableSetOf()) { target -> target.node.id }
+        val positioned = collected.map { target ->
+            if (target.node.parentId == null || target.node.parentId !in localIds) {
+                val itemInfo = if (axis == PixelAxis.VERTICAL) {
+                    PixelSemanticsCollectionItemInfo(rowIndex = snapshot.anchorPage, columnIndex = 0)
+                } else {
+                    PixelSemanticsCollectionItemInfo(rowIndex = 0, columnIndex = snapshot.anchorPage)
+                }
+                target.copy(node = target.node.copy(collectionItemInfo = itemInfo))
+            } else {
+                target
+            }
+        }
+        val clip = globalBounds(offsetX, offsetY)
+        targets += clipSemanticTargets(positioned, clip)
+    }
+
+    /**
      * 渲染指定页到从池借出的独立缓冲。调用方必须在用完后释放回 [pool]。
      */
-    private fun renderPage(pageIndex: Int, pool: PixelBufferPool): PixelBuffer? {
+    private fun renderPage(
+        pageIndex: Int,
+        parentContext: PaintContext,
+        childOriginX: Int,
+        childOriginY: Int,
+    ): PixelBuffer? {
+        /** Retained page selected from the current anchor or adjacent transition slot. */
         val page = renderChildren.getOrNull(pageIndex) ?: return null
+        /** Shared pool retained by the parent paint context for this complete render frame. */
+        val pool = parentContext.bufferPool
+        /** Isolated page buffer later composed at [childOriginX]/[childOriginY]. */
         val pageBuffer = pool.acquire(width = size.width, height = size.height)
         page.paint(
-            context = PaintContext(buffer = pageBuffer, bufferPool = pool),
+            context = parentContext.derive(pageBuffer, childOriginX, childOriginY),
             offsetX = 0,
             offsetY = 0,
         )

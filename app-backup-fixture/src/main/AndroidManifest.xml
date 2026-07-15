@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 该夹具故意模拟尚未排除明文偏好的历史版本，只能用于本地/CI 迁移验收。 -->
+    <application
+        android:allowBackup="true"
+        android:label="Pixel Backup Fixture"
+        android:name=".LegacyBackupFixtureApplication"
+        android:supportsRtl="true">
+        <activity
+            android:name=".LegacySeedActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

@@ -8,6 +8,22 @@ import com.purride.pixelui.Widget
 import kotlin.reflect.KClass
 
 /**
+ * 定义 `ElementSubtreeVisibility` 在 `Element` 中的可替换调用契约。
+ *
+ * Internal marker for mounted subtrees that are intentionally offstage.
+ *
+ * Retained navigation entries use it so test finders observe only logically presented pages while
+ * the hidden element subtree remains alive for state retention.
+ */
+public interface ElementSubtreeVisibility {
+    /** 公开 `Element` 的 `exposesSubtreeToWidgetCollection` 配置或运行值。
+ *
+ * Whether widget collection should descend into this mounted subtree.
+ */
+    public val exposesSubtreeToWidgetCollection: Boolean
+}
+
+/**
  * retained build tree 中的基础 element。
  *
  * 它负责承接 widget、父子关系和 owner 协作，并把具体的状态绑定、
@@ -31,6 +47,8 @@ internal abstract class Element(
     internal val listenedObjects = linkedSetOf<Listenable>()
     private val inheritedLookupBinding = InheritedLookupBinding(this)
     private var dirty = true
+    /** Terminal guard preventing detached States or listeners from rescheduling this element. */
+    private var unmounted = false
 
     /**
      * 挂载 element 并加入下一轮 build 调度。
@@ -39,6 +57,7 @@ internal abstract class Element(
         parent: Element?,
         owner: BuildOwner,
     ) {
+        check(!unmounted) { "An unmounted Element cannot be mounted again." }
         this.parent = parent
         this.owner = owner
         owner.scheduleBuildFor(this)
@@ -56,6 +75,9 @@ internal abstract class Element(
      * 标记当前 element 需要在下一轮 build scope 中重建。
      */
     fun markNeedsBuild() {
+        if (unmounted) {
+            return
+        }
         if (!dirty) {
             dirty = true
         }
@@ -66,7 +88,7 @@ internal abstract class Element(
      * 在 dirty 时执行真正的重建逻辑。
      */
     fun rebuildIfNeeded() {
-        if (!dirty) {
+        if (unmounted || !dirty) {
             return
         }
         dirty = false
@@ -88,7 +110,7 @@ internal abstract class Element(
         val children = mutableListOf<Element>()
         visitChildren(children::add)
         return buildList {
-            val renderObject = if (this@Element is RenderObjectElement) findRenderObject() else null
+            val renderObject = if (this@Element is DirectRenderObjectElement) findRenderObject() else null
             val resolvedRenderObjectName = findRenderObject()?.javaClass?.simpleName
             add(
                 ElementDiagnosticsNode(
@@ -117,10 +139,15 @@ internal abstract class Element(
     internal fun collectWidgets(): List<Widget> {
         val children = mutableListOf<Element>()
         visitChildren(children::add)
+        // Offstage retained subtrees stay mounted but must remain invisible to test finders.
+        val exposesChildren =
+            (widget as? ElementSubtreeVisibility)?.exposesSubtreeToWidgetCollection ?: true
         return buildList {
             add(widget)
-            children.forEach { child ->
-                addAll(child.collectWidgets())
+            if (exposesChildren) {
+                children.forEach { child ->
+                    addAll(child.collectWidgets())
+                }
             }
         }
     }
@@ -161,11 +188,32 @@ internal abstract class Element(
      * 卸载当前 element 并释放其关联资源。
      */
     open fun unmount() {
-        inheritedLookupBinding.clear()
-        owner.clearListenableDependencies(this)
-        visitChildren { child -> child.unmount() }
-        onUnmount()
+        if (unmounted) return
+        unmounted = true
+        /** Direct children snapshotted before any slot clears its retained references. */
+        val children = mutableListOf<Element>()
+        /** Collector preserving the first failure while every terminal cleanup still executes. */
+        val failures = TeardownFailureCollector()
+        failures.capture { visitChildren(children::add) }
+        failures.capture { inheritedLookupBinding.clear() }
+        failures.capture { owner.clearListenableDependencies(this) }
+        children.forEach { child ->
+            failures.capture { child.unmount() }
+        }
+        failures.capture { clearChildReferences() }
+        failures.capture { onUnmount() }
+        // State.dispose is allowed to call setState; the terminal unschedule closes that race.
+        failures.capture { owner.unscheduleBuildFor(this) }
+        dirty = false
+        parent = null
+        failures.takeFailure()?.let(owner::recordTeardownFailure)
     }
+
+    /** 从 `Element` 释放 `clearChildReferences` 内容并收敛相关所有权。
+ *
+ * Clears child slots after their complete snapshot has received terminal unmount callbacks.
+ */
+    protected open fun clearChildReferences(): Unit = Unit
 
     /**
      * 为子类提供卸载扩展点。
@@ -189,7 +237,11 @@ internal abstract class Element(
      * 从最近的 [PixelErrorBoundary] 构建错误后备界面；没有边界时返回 null。
      */
     internal fun buildErrorFallback(error: Throwable): Widget? {
-        return findNearestErrorBoundaryElement()?.errorBoundary?.fallbackFor(error)
+        val boundary = findNearestErrorBoundaryElement() ?: return null
+        /** 先成功构造 fallback，再发布 RECOVERED，避免把 fallback 构造失败误报成已恢复。 */
+        val fallback = boundary.errorBoundary.fallbackFor(error)
+        owner.reportRecoveredBuildError(error, widget.javaClass.name)
+        return fallback
     }
 
     /**
@@ -198,14 +250,34 @@ internal abstract class Element(
      */
     internal fun recoverFromRenderError(error: Throwable): Boolean {
         val classNames = error.renderStackClassNames()
-        val target = findDeepestRenderElementMatching(classNames) ?: this
+        val target = findDeepestRenderElementMatching(classNames)
+            ?: findDeepestErrorBoundaryElement()
+            ?: this
         return target.replaceNearestErrorBoundaryChild(error)
+    }
+
+    /**
+     * Finds the deepest fallback boundary when an exception carries no render-class stack frame.
+     *
+     * Runtime-owned inherited wrappers may now sit above the application root, so falling back to
+     * `this` alone would miss a root application boundary below that wrapper.
+     */
+    private fun findDeepestErrorBoundaryElement(): Element? {
+        var match: Element? = null
+        fun visit(element: Element) {
+            if ((element as? InheritedElement)?.widget is PixelErrorBoundary) {
+                if (match == null || element.depth >= checkNotNull(match).depth) match = element
+            }
+            element.visitChildren(::visit)
+        }
+        visit(this)
+        return match
     }
 
     private fun findDeepestRenderElementMatching(classNames: Set<String>): Element? {
         var match: Element? = null
         fun visit(element: Element) {
-            val renderObject = (element as? RenderObjectElement)?.findRenderObject()
+            val renderObject = (element as? DirectRenderObjectElement)?.findRenderObject()
             if (renderObject != null && renderObject.javaClass.name in classNames) {
                 if (match == null || element.depth >= match!!.depth) {
                     match = element
@@ -253,6 +325,14 @@ internal abstract class Element(
      * 执行当前 element 的实际重建。
      */
     protected abstract fun performRebuild()
+}
+
+/**
+ * Marker for an Element that directly owns a render object instead of forwarding to a child Element.
+ */
+internal interface DirectRenderObjectElement {
+    /** Returns the render object directly owned by the implementing Element. */
+    fun findRenderObject(): RenderObject
 }
 
 /**
@@ -307,6 +387,11 @@ internal abstract class ComponentElement(
      */
     override fun visitChildren(visitor: (Element) -> Unit) {
         childSlot.visit(visitor)
+    }
+
+    /** Releases the single-child slot after its child has completed unmount. */
+    override fun clearChildReferences() {
+        childSlot.clearReference()
     }
 
     /**

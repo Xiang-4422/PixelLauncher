@@ -5,7 +5,8 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelBoxConstraints
 import kotlin.math.min
 
-internal class RenderWrap(
+/** 实现 `RenderConstraintWidgets` 在 retained render pipeline 中的布局、绘制与命中职责。 */
+public class RenderWrap(
     children: List<RenderBox> = emptyList(),
     private var spacing: Int = 0,
     private var runSpacing: Int = 0,
@@ -16,7 +17,8 @@ internal class RenderWrap(
         setRenderObjectChildren(children)
     }
 
-    fun updateWrap(spacing: Int, runSpacing: Int) {
+    /** 更新 `RenderConstraintWidgets` 的 `updateWrap` 状态，并保持相关边界与派生状态一致。 */
+    public fun updateWrap(spacing: Int, runSpacing: Int) {
         if (this.spacing == spacing && this.runSpacing == runSpacing) return
         this.spacing = spacing
         this.runSpacing = runSpacing
@@ -78,12 +80,12 @@ internal class RenderWrap(
         }
     }
 
-    override fun collectPagerTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelPagerTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectPagerTargets(x, y, targets) }
-    override fun collectListTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelListTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectListTargets(x, y, targets) }
-    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectScrollbarTargets(x, y, targets) }
-    override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectTextInputTargets(x, y, targets) }
-    override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectSliderTargets(x, y, targets) }
-    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) = collect(offsetX, offsetY) { child, x, y -> child.collectSemantics(x, y, targets) }
+    override fun collectPagerTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelPagerTarget>): Unit = collect(offsetX, offsetY) { child, x, y -> child.collectPagerTargets(x, y, targets) }
+    override fun collectListTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelListTarget>): Unit = collect(offsetX, offsetY) { child, x, y -> child.collectListTargets(x, y, targets) }
+    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>): Unit = collect(offsetX, offsetY) { child, x, y -> child.collectScrollbarTargets(x, y, targets) }
+    override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>): Unit = collect(offsetX, offsetY) { child, x, y -> child.collectTextInputTargets(x, y, targets) }
+    override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>): Unit = collect(offsetX, offsetY) { child, x, y -> child.collectSliderTargets(x, y, targets) }
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>): Unit = collect(offsetX, offsetY) { child, x, y -> child.collectSemantics(x, y, targets) }
 
     private fun collect(offsetX: Int, offsetY: Int, block: (RenderBox, Int, Int) -> Unit) {
         renderChildren.forEachIndexed { index, child ->
@@ -96,7 +98,8 @@ internal class RenderWrap(
         get() = children.filterIsInstance<RenderBox>()
 }
 
-internal class RenderAspectRatio(
+/** 实现 `RenderConstraintWidgets` 在 retained render pipeline 中的布局、绘制与命中职责。 */
+public class RenderAspectRatio(
     child: RenderBox? = null,
     private var aspectRatio: Float,
 ) : SingleChildRenderObject() {
@@ -105,7 +108,8 @@ internal class RenderAspectRatio(
         setRenderObjectChild(child)
     }
 
-    fun updateAspectRatio(aspectRatio: Float) {
+    /** 更新 `RenderConstraintWidgets` 的 `updateAspectRatio` 状态，并保持相关边界与派生状态一致。 */
+    public fun updateAspectRatio(aspectRatio: Float) {
         require(aspectRatio > 0f) { "aspectRatio must be > 0" }
         if (this.aspectRatio == aspectRatio) return
         this.aspectRatio = aspectRatio
@@ -134,19 +138,20 @@ internal class RenderAspectRatio(
         if (localX in 0 until size.width && localY in 0 until size.height) renderChild?.hitTest(localX, localY, result)
     }
 
-    override fun collectClickTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelClickTarget>) = renderChild?.collectClickTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectPagerTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelPagerTarget>) = renderChild?.collectPagerTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectListTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelListTarget>) = renderChild?.collectListTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) = renderChild?.collectScrollbarTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) = renderChild?.collectSemantics(offsetX, offsetY, targets) ?: Unit
+    override fun collectClickTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelClickTarget>): Unit = renderChild?.collectClickTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectPagerTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelPagerTarget>): Unit = renderChild?.collectPagerTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectListTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelListTarget>): Unit = renderChild?.collectListTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>): Unit = renderChild?.collectScrollbarTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>): Unit = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>): Unit = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>): Unit = renderChild?.collectSemantics(offsetX, offsetY, targets) ?: Unit
 
     private val renderChild: RenderBox?
         get() = child as? RenderBox
 }
 
-internal class RenderConstrainedBox(
+/** 实现 `RenderConstraintWidgets` 在 retained render pipeline 中的布局、绘制与命中职责。 */
+public class RenderConstrainedBox(
     child: RenderBox? = null,
     private var additionalConstraints: PixelBoxConstraints,
 ) : SingleChildRenderObject() {
@@ -154,7 +159,8 @@ internal class RenderConstrainedBox(
         setRenderObjectChild(child)
     }
 
-    fun updateConstrainedBox(constraints: PixelBoxConstraints) {
+    /** 更新 `RenderConstraintWidgets` 的 `updateConstrainedBox` 状态，并保持相关边界与派生状态一致。 */
+    public fun updateConstrainedBox(constraints: PixelBoxConstraints) {
         if (additionalConstraints == constraints) return
         additionalConstraints = constraints
         markNeedsLayout()
@@ -183,27 +189,36 @@ internal class RenderConstrainedBox(
         renderChild?.paint(context, offsetX, offsetY)
     }
 
-    override fun hitTest(localX: Int, localY: Int, result: HitTestResult) = renderChild?.hitTest(localX, localY, result) ?: Unit
-    override fun collectClickTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelClickTarget>) = renderChild?.collectClickTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectPagerTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelPagerTarget>) = renderChild?.collectPagerTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectListTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelListTarget>) = renderChild?.collectListTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>) = renderChild?.collectScrollbarTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>) = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>) = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
-    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>) = renderChild?.collectSemantics(offsetX, offsetY, targets) ?: Unit
+    override fun hitTest(localX: Int, localY: Int, result: HitTestResult): Unit =
+        renderChild?.hitTest(localX, localY, result) ?: Unit
+    override fun collectClickTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelClickTarget>): Unit = renderChild?.collectClickTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectPagerTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelPagerTarget>): Unit = renderChild?.collectPagerTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectListTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelListTarget>): Unit = renderChild?.collectListTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectScrollbarTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelScrollbarTarget>): Unit = renderChild?.collectScrollbarTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectTextInputTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelTextInputTarget>): Unit = renderChild?.collectTextInputTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectSliderTargets(offsetX: Int, offsetY: Int, targets: MutableList<PixelSliderTarget>): Unit = renderChild?.collectSliderTargets(offsetX, offsetY, targets) ?: Unit
+    override fun collectSemantics(offsetX: Int, offsetY: Int, targets: MutableList<PixelSemanticsTarget>): Unit = renderChild?.collectSemantics(offsetX, offsetY, targets) ?: Unit
 
     private val renderChild: RenderBox?
         get() = child as? RenderBox
 }
 
-internal class RenderFittedBox(child: RenderBox? = null) : SingleChildRenderObject() {
+/** 定义 `RenderFittedBox` 在 `RenderConstraintWidgets` 中承担的数据与行为边界。
+ *
+ * Scales one child with contain fitting while preserving its retained semantic identities.
+ */
+public class RenderFittedBox(child: RenderBox? = null) : SingleChildRenderObject() {
+    /** Fixed-point numerator used by paint and semantic geometry transformation. */
     private var scaleNumerator = 1
+
+    /** Fixed-point denominator used by paint and semantic geometry transformation. */
     private var scaleDenominator = 1
 
     init {
         setRenderObjectChild(child)
     }
 
+    /** Measures the natural child and resolves one uniform contain scale. */
     override fun layout(constraints: RenderConstraints) {
         val childConstraints = RenderConstraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
         renderChild?.layout(childConstraints)
@@ -221,25 +236,87 @@ internal class RenderFittedBox(child: RenderBox? = null) : SingleChildRenderObje
         scaleNumerator = (ratio * scaleDenominator).toInt().coerceAtLeast(1)
     }
 
+    /** Paints the child into the centered contain-fitted destination rectangle. */
     override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
         val child = renderChild ?: return
         if (child.size.width <= 0 || child.size.height <= 0) return
         val scratch = context.bufferPool.acquire(child.size.width, child.size.height)
         try {
-            child.paint(PaintContext(scratch, context.bufferPool), 0, 0)
+            /** Exact destination extent used by the fixed-point contain transform. */
+            val scaledWidth = scaledContentWidth(child)
+            /** Exact destination extent used by the fixed-point contain transform. */
+            val scaledHeight = scaledContentHeight(child)
+            /** Centered destination origin shared with [blitScaledContain]. */
+            val childOriginX = offsetX + (size.width - scaledWidth) / 2
+            /** Centered destination origin shared with [blitScaledContain]. */
+            val childOriginY = offsetY + (size.height - scaledHeight) / 2
+            child.paint(
+                context.deriveScaled(
+                    scratch = scratch,
+                    localOriginX = childOriginX,
+                    localOriginY = childOriginY,
+                    scaleNumeratorX = scaledWidth,
+                    scaleDenominatorX = child.size.width,
+                    scaleNumeratorY = scaledHeight,
+                    scaleDenominatorY = child.size.height,
+                ),
+                0,
+                0,
+            )
             blitScaledContain(scratch, context, offsetX, offsetY)
         } finally {
             context.bufferPool.release(scratch)
         }
     }
 
+    /** Maps pointer coordinates back into the child's existing local coordinate system. */
     override fun hitTest(localX: Int, localY: Int, result: HitTestResult) {
         renderChild?.hitTest(localX * scaleDenominator / scaleNumerator, localY * scaleDenominator / scaleNumerator, result)
     }
 
+    /**
+     * Transforms semantic rectangles through the same centered contain fit used by paint.
+     *
+     * Collection starts at child-local zero so nested layout offsets are scaled exactly once.
+     * Stable ids, parent ids, state, and executable callbacks are retained by target copies.
+     */
+    override fun collectSemantics(
+        offsetX: Int,
+        offsetY: Int,
+        targets: MutableList<PixelSemanticsTarget>,
+    ) {
+        val child = renderChild ?: return
+        if (child.size.width <= 0 || child.size.height <= 0) return
+        /** Integer destination dimensions match the nearest-neighbor paint loop exactly. */
+        val scaledWidth = scaledContentWidth(child)
+        val scaledHeight = scaledContentHeight(child)
+        /** Center offsets are part of the visual transform and therefore part of semantic bounds. */
+        val startX = offsetX + (size.width - scaledWidth) / 2
+        val startY = offsetY + (size.height - scaledHeight) / 2
+        /** Local collection avoids applying the host offset before fixed-point scaling. */
+        val collected = mutableListOf<PixelSemanticsTarget>()
+        child.collectSemantics(offsetX = 0, offsetY = 0, targets = collected)
+        val transformed = collected.mapNotNull { target ->
+            transformSemanticTarget(
+                target = target,
+                sourceWidth = child.size.width,
+                sourceHeight = child.size.height,
+                destinationLeft = startX,
+                destinationTop = startY,
+                destinationWidth = scaledWidth,
+                destinationHeight = scaledHeight,
+            )
+        }
+        targets += clipSemanticTargets(
+            collected = transformed,
+            clip = PixelRect(left = startX, top = startY, width = scaledWidth, height = scaledHeight),
+        )
+    }
+
+    /** Copies scaled pixels into the same centered rectangle used by semantic transformation. */
     private fun blitScaledContain(source: PixelBuffer, context: PaintContext, offsetX: Int, offsetY: Int) {
-        val scaledWidth = (source.width * scaleNumerator / scaleDenominator).coerceAtLeast(1)
-        val scaledHeight = (source.height * scaleNumerator / scaleDenominator).coerceAtLeast(1)
+        val scaledWidth = scaledContentWidth(source.width)
+        val scaledHeight = scaledContentHeight(source.height)
         val startX = offsetX + (size.width - scaledWidth) / 2
         val startY = offsetY + (size.height - scaledHeight) / 2
         for (y in 0 until scaledHeight) {
@@ -252,6 +329,98 @@ internal class RenderFittedBox(child: RenderBox? = null) : SingleChildRenderObje
         }
     }
 
+    /** Returns the paint width produced for [child] by the resolved fixed-point scale. */
+    private fun scaledContentWidth(child: RenderBox): Int = scaledContentWidth(child.size.width)
+
+    /** Returns the paint width produced for [sourceWidth] by the resolved fixed-point scale. */
+    private fun scaledContentWidth(sourceWidth: Int): Int {
+        return (sourceWidth.toLong() * scaleNumerator.toLong() / scaleDenominator.toLong())
+            .coerceIn(1L, Int.MAX_VALUE.toLong())
+            .toInt()
+    }
+
+    /** Returns the paint height produced for [child] by the resolved fixed-point scale. */
+    private fun scaledContentHeight(child: RenderBox): Int = scaledContentHeight(child.size.height)
+
+    /** Returns the paint height produced for [sourceHeight] by the resolved fixed-point scale. */
+    private fun scaledContentHeight(sourceHeight: Int): Int {
+        return (sourceHeight.toLong() * scaleNumerator.toLong() / scaleDenominator.toLong())
+            .coerceIn(1L, Int.MAX_VALUE.toLong())
+            .toInt()
+    }
+
+    /** Current child participating in layout, paint, hit testing, and semantic transformation. */
     private val renderChild: RenderBox?
         get() = child as? RenderBox
+}
+
+/** Scales one local semantic rectangle into a fitted destination rectangle. */
+@Suppress("LongParameterList")
+private fun transformSemanticTarget(
+    target: PixelSemanticsTarget,
+    sourceWidth: Int,
+    sourceHeight: Int,
+    destinationLeft: Int,
+    destinationTop: Int,
+    destinationWidth: Int,
+    destinationHeight: Int,
+): PixelSemanticsTarget? {
+    val node = target.node
+    if (node.width <= 0 || node.height <= 0) return null
+    /** Floor on leading edges and ceil on trailing edges retain every painted source cell. */
+    val transformedLeft = destinationLeft + scaleBoundaryFloor(
+        coordinate = node.left.toLong(),
+        sourceExtent = sourceWidth,
+        destinationExtent = destinationWidth,
+    )
+    val transformedTop = destinationTop + scaleBoundaryFloor(
+        coordinate = node.top.toLong(),
+        sourceExtent = sourceHeight,
+        destinationExtent = destinationHeight,
+    )
+    val transformedRight = destinationLeft + scaleBoundaryCeil(
+        coordinate = node.left.toLong() + node.width.toLong(),
+        sourceExtent = sourceWidth,
+        destinationExtent = destinationWidth,
+    )
+    val transformedBottom = destinationTop + scaleBoundaryCeil(
+        coordinate = node.top.toLong() + node.height.toLong(),
+        sourceExtent = sourceHeight,
+        destinationExtent = destinationHeight,
+    )
+    if (transformedRight <= transformedLeft || transformedBottom <= transformedTop) return null
+    return target.copy(
+        node = node.copy(
+            left = transformedLeft,
+            top = transformedTop,
+            width = transformedRight - transformedLeft,
+            height = transformedBottom - transformedTop,
+        ),
+    )
+}
+
+/** Maps a leading source boundary using mathematical floor, including negative overflow offsets. */
+private fun scaleBoundaryFloor(
+    coordinate: Long,
+    sourceExtent: Int,
+    destinationExtent: Int,
+): Int {
+    val scaled = coordinate * destinationExtent.toLong()
+    return Math.floorDiv(scaled, sourceExtent.coerceAtLeast(1).toLong()).coerceToInt()
+}
+
+/** Maps a trailing source boundary using mathematical ceil, including negative overflow offsets. */
+private fun scaleBoundaryCeil(
+    coordinate: Long,
+    sourceExtent: Int,
+    destinationExtent: Int,
+): Int {
+    val scaled = coordinate * destinationExtent.toLong()
+    val denominator = sourceExtent.coerceAtLeast(1).toLong()
+    return (-Math.floorDiv(-scaled, denominator)).coerceToInt()
+}
+
+/** Saturates transformed coordinates before they enter the Int-based render geometry model. */
+private fun Long.coerceToInt(): Int {
+    return coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt()
 }

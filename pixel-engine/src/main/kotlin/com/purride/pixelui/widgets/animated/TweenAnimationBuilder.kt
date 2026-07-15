@@ -13,6 +13,7 @@ import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.animation.Tween
 import kotlin.time.Duration
 
+/** 创建 `TweenAnimationBuilder` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun <T> TweenAnimationBuilder(
     tween: Tween<T>,
     duration: Duration,
@@ -44,10 +45,26 @@ private class TweenAnimationBuilderWidget<T>(
 }
 
 private class TweenAnimationBuilderState<T> : State<TweenAnimationBuilderWidget<T>>() {
+    /** Normalized clock shared by the currently owned tween segment. */
     private lateinit var controller: PixelAnimationController
+
+    /** Curve projection applied to the normalized controller value. */
     private lateinit var curved: CurvedAnimation
 
+    /** Tween segment owned and, on retarget, rebased by this State. */
+    private lateinit var activeTween: Tween<T>
+
+    /** Target used to detect changes even when callers reuse a mutable Tween instance. */
+    private var activeTarget: Any? = null
+
+    /** Last value actually built, used as the next segment's visually continuous origin. */
+    private var renderedValue: Any? = null
+
+    /** Creates the first segment and starts it from its declared begin value. */
     override fun initState() {
+        activeTween = widget.tween
+        activeTarget = activeTween.end
+        renderedValue = activeTween.begin
         controller = PixelAnimationController(duration = widget.duration, vsync = widget.vsync)
         curved = CurvedAnimation(parent = controller, curve = widget.curve)
         controller.addListener {
@@ -58,18 +75,28 @@ private class TweenAnimationBuilderState<T> : State<TweenAnimationBuilderWidget<
         controller.forward()
     }
 
+    /** Rebases a changed target to the last rendered value before restarting normalized progress. */
+    @Suppress("UNCHECKED_CAST")
     override fun didUpdateWidget(oldWidget: TweenAnimationBuilderWidget<T>) {
-        if (widget.tween.end != oldWidget.tween.end) {
-            controller.forward(from = controller.value)
+        if (widget.tween.end != activeTarget) {
+            val visualOrigin = renderedValue as T
+            activeTween = widget.tween
+            activeTween.begin = visualOrigin
+            activeTarget = activeTween.end
+            controller.forward(from = 0f)
         }
     }
 
+    /** Releases the owned normalized clock and its ticker. */
     override fun dispose() {
         controller.dispose()
     }
 
+    /** Builds the current segment and records the exact value used for future retargeting. */
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
-        return widget.builderFn(context, widget.tween.lerp(curved.value))
+        val value = activeTween.lerp(curved.value)
+        renderedValue = value
+        return widget.builderFn(context, value)
     }
 }

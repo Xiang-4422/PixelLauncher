@@ -1,5 +1,7 @@
 package com.purride.pixelui
 
+import com.purride.pixelui.internal.PixelArtifactInternalApi
+
 /**
  * Flutter 风格边距对象。
  *
@@ -12,15 +14,19 @@ public data class EdgeInsets(
     val right: Int,
     val bottom: Int,
 ) {
+    /** 集中提供 `EdgeInsets` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 按 `all` 参数创建 `EdgeInsets` 的规范化几何或曲线值。 */
         public fun all(value: Int): EdgeInsets {
             return EdgeInsets(left = value, top = value, right = value, bottom = value)
         }
 
+        /** 按 `symmetric` 参数创建 `EdgeInsets` 的规范化几何或曲线值。 */
         public fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsets {
             return EdgeInsets(left = horizontal, top = vertical, right = horizontal, bottom = vertical)
         }
 
+        /** 处理 `EdgeInsets` 的 `only` 输入或事件，并按消费结果决定后续传播。 */
         public fun only(
             left: Int = 0,
             top: Int = 0,
@@ -44,15 +50,19 @@ public data class EdgeInsetsDirectional(
     val end: Int,
     val bottom: Int,
 ) {
+    /** 集中提供 `EdgeInsets` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 按 `all` 参数创建 `EdgeInsets` 的规范化几何或曲线值。 */
         public fun all(value: Int): EdgeInsetsDirectional {
             return EdgeInsetsDirectional(start = value, top = value, end = value, bottom = value)
         }
 
+        /** 按 `symmetric` 参数创建 `EdgeInsets` 的规范化几何或曲线值。 */
         public fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsetsDirectional {
             return EdgeInsetsDirectional(start = horizontal, top = vertical, end = horizontal, bottom = vertical)
         }
 
+        /** 处理 `EdgeInsets` 的 `only` 输入或事件，并按消费结果决定后续传播。 */
         public fun only(
             start: Int = 0,
             top: Int = 0,
@@ -64,7 +74,9 @@ public data class EdgeInsetsDirectional(
     }
 }
 
-internal fun EdgeInsetsDirectional.resolve(
+/** 将逻辑方向边距解析为 runtime 布局使用的物理方向边距。 */
+@PixelArtifactInternalApi
+public fun EdgeInsetsDirectional.resolve(
     direction: TextDirection,
 ): EdgeInsets {
     return when (direction) {

@@ -2,10 +2,10 @@ package com.purride.pixelui
 
 import android.content.Context
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixelengine.PixelEngine
 import com.purride.pixelui.gesture.NestedScrollGesturePolicy
 import com.purride.pixelui.gesture.PagerGesturePolicy
 import com.purride.pixelui.host.PixelFrameScheduler
@@ -26,8 +26,8 @@ public data class PixelHostSetup(
     /**
      * 显式释放默认宿主装配持有的输入桥接和渲染 runtime。
      *
-     * Activity 根视图通常可依赖 View detach；Fragment 的 `onDestroyView` 或自定义宿主
-     * 销毁视图时可以调用它。
+     * 普通 View detach 只会暂停并保留 retained tree；Activity/Fragment 或自定义宿主应在
+     * owner 终态或明确销毁视图时调用它。
      */
     public fun dispose() {
         textInputBridge.hideTextInput()
@@ -96,7 +96,9 @@ public fun createPixelHostSetup(
     config.profilePreference?.let { hostView.profilePreference = it }
     config.textRasterizer?.let { hostView.textRasterizer = it }
     hostView.bezelColor = config.bezelColor
-    hostView.textDirection = config.textDirection
+    if (config.textDirection != TextDirection.LTR) {
+        hostView.textDirection = config.textDirection
+    }
     hostView.pagerGesturePolicy = config.pagerGesturePolicy
     hostView.nestedScrollPolicy = config.nestedScrollPolicy
     hostView.scrollPhysics = config.scrollPhysics
@@ -118,7 +120,8 @@ public fun createPixelHostSetup(
         )
         addView(
             textInputBridge.inputView,
-            FrameLayout.LayoutParams(1, WRAP_CONTENT),
+            // 隐藏编辑器不展示文本；固定 1×1 可保留可见焦点锚点，并跳过 WRAP_CONTENT 字体测量。
+            FrameLayout.LayoutParams(1, 1),
         )
     }
     return PixelHostSetup(
@@ -127,4 +130,25 @@ public fun createPixelHostSetup(
         textInputBridge = textInputBridge,
         backDispatcher = config.backDispatcher,
     )
+}
+
+/**
+ * 使用指定 [PixelEngine] 创建默认宿主装配。
+ *
+ * 该重载不会改变冻结的 config 构造器；Engine 会在输入桥接和内容安装前绑定到 Host。
+ */
+public fun createPixelHostSetup(
+    context: Context,
+    engine: PixelEngine,
+    hostView: PixelHostView = PixelHostView(context),
+    config: PixelHostSetupConfig = PixelHostSetupConfig(),
+): PixelHostSetup {
+    /** 先完成旧 config 装配，再让 Engine 服务成为最终权威来源。 */
+    val setup = createPixelHostSetup(
+        context = context,
+        hostView = hostView,
+        config = config,
+    )
+    setup.hostView.bindEngine(engine)
+    return setup
 }

@@ -77,9 +77,14 @@ PixelLauncher 是一个面向 Android 手机的像素风桌面启动器。
   - 新像素 UI 引擎，当前作为单一 Gradle 模块维护
   - `pixelcore` package 承接像素缓冲、字体、几何、调色板和轴向原语
   - `pixelui` package 承接 Widget/runtime、布局、输入、分页、列表、滚动和宿主桥接
+  - 完整 `PixelThemeTokens` 覆盖 light/dark、高对比度、自定义主题、25 个组件族和统一八状态契约
+  - TextField 使用固定 Unicode 17 grapheme 边界，并在 API 24+ 默认 InputConnection 上保护 selection、composition、删除和补充平面文本
+  - 字体以完整 Unicode scalar `Int` 查找，Text/RichText/TextField 使用 grapheme cluster 与固定 Unicode 17 UBA 共享 wrap、ellipsis、caret、hit-test、selection 和 Accessibility 几何
 - `pixel-demo/src/main/kotlin/com/purride/pixeldemo`
   - 新引擎的真实设备验收宿主，后续 engine 能力先在这里 gate
   - 已包含 `ENGINE_STABILITY_GATE`，聚合验证布局、lazy list、富文本、多行输入、主题状态和嵌套滚动
+  - `Theme Showcase` 可视化 94 个基础 token 与 25×8（200 格）生产组件状态矩阵，并支持键盘切换五套主题
+  - `Adaptive & Localization` 综合场景可实时切换 locale、RTL、textScale、高对比度、reduce motion、density/refresh 和 hinge，并验证真实 IME、Unicode 输入与双独立导航栈状态保持
 
 ## 4. 当前页面与实现入口
 
@@ -228,6 +233,10 @@ sdkmanager --licenses
 - release `applicationId = com.purride.pixellauncherv2`
 - debug `applicationId = com.purride.pixellauncherv2.debug`
 
+Pixel Engine SDK 的最低/推荐 AGP、Gradle、Kotlin、compileSdk 与 JDK 组合以
+[支持矩阵](pixel-engine/docs/support-matrix.md)为准；发布签名、SBOM、依赖锁定和 OSV 流程见
+[发布元数据与供应链](pixel-engine/docs/supply-chain.md)。
+
 配置入口：
 
 - [app/build.gradle.kts](app/build.gradle.kts)
@@ -248,17 +257,89 @@ adb shell am start -W -n com.purride.pixellauncherv2/.app.MainActivity
 ./gradlew testDebugUnitTest
 ```
 
-注意：`:app:testDebugUnitTest` 覆盖 ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等。`pixel-engine` SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)，该门禁只覆盖 `:pixel-engine`、`:pixel-demo`、Maven local dry-run 和文档站构建；Launcher 应用仍按上面的 app 命令单独验收。
+注意：`:app:testDebugUnitTest` 覆盖 ViewModel 投影、状态机迁移与视口计算、Drawer 索引/搜索、设置模型、工具格式化等。完整 SDK 发布门禁见 [tools/pixel-release-check.sh](tools/pixel-release-check.sh)；它同时覆盖 `:pixel-engine`、`:pixel-demo`、Launcher app、API/安全/性能门禁、隔离 file-Maven 消费者（含 RouteEntry 类型负例与旧二进制运行）以及文档站构建，不使用 `mavenLocal()` 作为兼容证据。
 
 SDK 发布补充检查：
 
 ```bash
 ./tools/pixel-sdk-consumer-smoke.sh
+./tools/pixel-docs-consumer-smoke.sh
 ./tools/pixel-perf-smoke.sh
 ./tools/pixel-soak-test.sh
 ```
 
-`tools/pixel-device-smoke.sh` 需要已连接 Android 设备或设置 `ADB_SERIAL`，因此不放入默认无设备发布门禁。`0.x` SDK 兼容策略和破坏性变更记录见 [CHANGELOG.md](CHANGELOG.md)，当前快照核对见 [pixel-engine/docs/0.1.0-SNAPSHOT发布清单.md](pixel-engine/docs/0.1.0-SNAPSHOT发布清单.md)，长期 SemVer / 弃用 / migration guide 规则见 [pixel-engine/docs/发布与兼容策略.md](pixel-engine/docs/发布与兼容策略.md)。
+`pixel-soak-test.sh` 是 PR/本地发布门禁使用的精确 10,000 次快速资源压力测试。30–60 分钟真实
+Android Host 长跑使用专用模拟器入口，必须显式绑定设备；默认执行 30 分钟并每分钟采集一次 PSS：
+
+```bash
+PIXEL_BENCHMARK_SERIAL=emulator-5554 bash tools/pixel-device-soak.sh
+```
+
+接线调试可以同时设置 `PIXEL_SOAK_ALLOW_SHORT=1` 与较短的
+`PIXEL_SOAK_DURATION_SECONDS`，但机器报告会保持 `qualifiesForGoal=false`，不能作为发布证据。
+
+### SDK CI 与干净环境复现
+
+GitHub Actions 使用 JDK 21、Python 3.12、`requirements-docs.txt` 中固定的 MkDocs 1.6.1，
+并显式安装 `platforms;android-36` 与 `platforms;android-36.1`。本地首次复现前需要安装相同平台和
+文档依赖：
+
+```bash
+sdkmanager "platform-tools" "platforms;android-36" "platforms;android-36.1"
+python3 -m pip install --user -r requirements-docs.txt
+python3 tools/prepare_mkdocs_docs.py
+python3 -m mkdocs build --strict
+```
+
+PR/主分支工作流 `.github/workflows/pixel-engine.yml` 把门禁拆为七个相互独立的 required job；对应
+本地入口如下。多个会清理 `build` 的入口应在同一 worktree 中顺序执行，不要并行：
+
+```bash
+bash tools/pixel-ci-fast.sh
+bash tools/pixel-ci-api.sh
+bash tools/pixel-ci-lint.sh
+bash tools/pixel-publication-validation.sh
+bash tools/pixel-ci-consumer.sh
+bash tools/pixel-ci-performance.sh
+```
+
+设备 job 使用 API 29 独立模拟器。启动 AVD 后必须显式指定 emulator serial，避免连接了实体手机时误选
+设备：
+
+```bash
+rm -rf pixel-engine/build/outputs/androidTest-results \
+  pixel-engine/build/reports/androidTests \
+  pixel-engine/build/outputs/connected_android_test_additional_output
+ANDROID_SERIAL=emulator-5556 ./gradlew \
+  :pixel-engine:connectedDebugAndroidTest \
+  --no-build-cache \
+  --no-daemon
+```
+
+`Required pixel-engine gate` 聚合 fast、API/ABI/documentation、Lint、API 29 instrumentation、
+consumer、publication 和 performance；任一上游结果为 `failure`、`cancelled` 或 `skipped` 都会失败。
+仓库分支保护应只把这个聚合 job 设为必需状态检查，避免矩阵 job 名称变化造成配置漂移。
+
+定时工作流 `.github/workflows/pixel-engine-nightly.yml` 每天执行 API 24/29/36 instrumentation、API 36
+Macrobenchmark、精确 10,000 次生命周期压力和 API 36 模拟器 30 分钟设备 soak。长跑逐轮执行真实
+启动、列表、文本、动画、页面转场和 Overlay，并要求 callback/listener/ticker/retained tree 终态归零、
+PSS 首尾趋势有界。两个工作流不配置自动重试或 `continue-on-error`；Gradle dependency
+cache 只缓存下载与 Gradle User Home，关键任务使用 `clean`、`--no-build-cache`、隔离临时工程、稳定
+runId 或主动删除旧报告，不能用旧构建产物产生假绿。测试 XML/HTML、API diff、golden diff、trace、
+benchmark、publication JSON 和隔离 Maven 仓库在成功或失败时都会作为 Actions artifact 上传。
+
+发布前的一站式无凭据复核仍是：
+
+```bash
+bash tools/pixel-release-check.sh
+```
+
+该入口聚合安全/备份、单测、API/ABI/Metalava/KDoc、Lint、Release、SPI/RouteEntry/旧二进制、真实
+Maven 消费者矩阵、只依据文档完成 Host/路由/SPI/测试的全新消费者、性能、soak、Baseline Profile 和
+严格 MkDocs。它不包含真实中央仓库发布、签名密钥、
+GitHub 分支保护写入等需要外部凭据或管理员权限的操作。
+
+`tools/pixel-device-smoke.sh` 需要已连接 Android 设备或设置 `ADB_SERIAL`，因此不放入默认无设备发布门禁。`0.x` SDK 兼容策略和破坏性变更记录见 [CHANGELOG.md](CHANGELOG.md)，当前候选核对见 [pixel-engine/docs/1.0.0发布清单.md](pixel-engine/docs/1.0.0发布清单.md)，长期 SemVer / 弃用 / migration guide 规则见 [pixel-engine/docs/发布与兼容策略.md](pixel-engine/docs/发布与兼容策略.md)。
 
 ### Android Studio 运行
 
@@ -300,8 +381,9 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 注释约定：
 
 - 优先写高质量 `KDoc`
-- 不追求每个方法都写注释
-- 只给复杂、关键、非直观的方法补说明
+- 所有类、变量和方法都需要有与职责相称的必要注释；简单声明可以使用一句精确说明
+- public / protected API 必须使用 `KDoc` 说明适用的参数、返回值、生命周期和兼容约束
+- 内部状态、缓存、所有权转移和非直观局部变量必须说明用途与不变量
 - 注释应说明职责、调用时机、关键约束和回退行为，不重复代码表意
 
 ## 9. 文档入口
@@ -311,8 +393,18 @@ debug 包使用 `applicationIdSuffix = ".debug"`，因此会安装为 `com.purri
 - [项目总览](docs/项目总览.md)：项目现状、模块架构、engine 原理、demo 职责、Launcher 核心模块和开发路径
 - [设计文档](docs/设计文档.md)：PixelLauncher 产品目标、app 侧架构、页面职责和开发约束
 - [PixelLauncher UI 规范](docs/PixelLauncher%20UI规范.md)：Launcher 页面、字体、间距、控件和真机问题反馈规则
+- [Pixel Engine 1.0 SDK 首页](pixel-engine/docs/index.md)：模块选择、质量承诺和 Quickstart/Host/主题/路由/资源/SPI/测试/性能/迁移入口
 - [pixel-engine 架构与技术实现](pixel-engine/docs/架构与技术实现.md)：engine 内部架构、渲染管线、runtime 和维护规则
 - [pixel-engine 使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)：engine 接入方式、常见用法、组件与 API 速查
+- [pixel-engine API 分层与高级 SPI](pixel-engine/docs/API分层与高级SPI.md)：stable / experimental / testing / debug / internal 边界、兼容承诺与自定义 RenderObject 示例
+- [pixel-engine 1.0 高价值组件迁移指南](pixel-engine/docs/migrations/1.0.0-high-value-components.md)：Radio、IconButton、表单装饰、单选集合、Slidable 与多栈导航组件的迁移契约
+- [pixel-engine 1.0 Unicode 文本编辑迁移指南](pixel-engine/docs/migrations/1.0.0-unicode-text-editing.md)：UTF-16 offset、grapheme 编辑、InputConnection、自定义 Host 与补充平面输入契约
+- [pixel-engine 1.0 字体、cluster 与 Bidi 迁移指南](pixel-engine/docs/migrations/1.0.0-codepoint-cluster-bidi-text.md)：code-point 字体 SPI、整 cluster rasterizer、固定 Unicode 17 Bidi、fallback 与共享几何契约
+- [pixel-engine 1.0 自适应 Host 与 Viewport 迁移指南](pixel-engine/docs/migrations/1.0.0-adaptive-host-viewport.md)：正交 viewport、profile policy、Android capability、raw inset、textScale、RTL 与 AdaptiveBuilder 契约
+- [pixel-engine 1.0 Engine Services 迁移指南](pixel-engine/docs/migrations/1.0.0-engine-services.md)：实例 Builder、服务注入、多 Host 隔离、聚焦 capability、类型安全 action 与结构化错误契约
+- [pixel-engine 1.0 Compose Host 互操作迁移指南](pixel-engine/docs/migrations/1.0.0-compose-host.md)：可选 wrapper、生命周期/Insets/输入/无障碍传递、saved state 与非 Compose 依赖隔离
+- [pixel-engine 1.0 完整帧诊断迁移指南](pixel-engine/docs/migrations/1.0.0-frame-diagnostics.md)：build/layout/paint/Canvas submit、allocation/GC、cache、丢帧归因和默认关闭成本边界
+- [pixel-engine 1.0 SDK Goal](pixel-engine/docs/1.0-GOAL.md)：从当前 0.x 状态推进到可对外发布 1.0 SDK 的工作包、依赖顺序和验收标准
 
 根目录 `README.md` 只作为项目入口和运行指南。详细 SDK 文档集中在 `pixel-engine/docs`。
 

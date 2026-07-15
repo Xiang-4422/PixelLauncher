@@ -38,6 +38,7 @@ public enum class Alignment {
     BOTTOM_END,
 }
 
+/** 枚举 `PixelLayoutPrimitives` 支持的 `AlignmentDirectional` 策略，序号不作为持久化协议。 */
 public enum class AlignmentDirectional {
     TOP_START,
     TOP_CENTER,
@@ -50,6 +51,7 @@ public enum class AlignmentDirectional {
     BOTTOM_END,
 }
 
+/** 枚举 `PixelLayoutPrimitives` 支持的 `MainAxisAlignment` 策略，序号不作为持久化协议。 */
 public enum class MainAxisAlignment {
     START,
     CENTER,
@@ -59,11 +61,13 @@ public enum class MainAxisAlignment {
     SPACE_EVENLY,
 }
 
+/** 枚举 `PixelLayoutPrimitives` 支持的 `MainAxisSize` 策略，序号不作为持久化协议。 */
 public enum class MainAxisSize {
     MIN,
     MAX,
 }
 
+/** 枚举 `PixelLayoutPrimitives` 支持的 `CrossAxisAlignment` 策略，序号不作为持久化协议。 */
 public enum class CrossAxisAlignment {
     START,
     CENTER,
@@ -71,11 +75,13 @@ public enum class CrossAxisAlignment {
     STRETCH,
 }
 
+/** 枚举 `PixelLayoutPrimitives` 支持的 `FlexFit` 策略，序号不作为持久化协议。 */
 public enum class FlexFit {
     TIGHT,
     LOOSE,
 }
 
+/** 枚举 `PixelLayoutPrimitives` 支持的 `TextAlign` 策略，序号不作为持久化协议。 */
 public enum class TextAlign {
     START,
     CENTER,

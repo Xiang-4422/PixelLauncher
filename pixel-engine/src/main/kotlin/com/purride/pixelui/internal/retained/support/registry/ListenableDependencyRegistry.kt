@@ -42,22 +42,30 @@ internal class ListenableDependencyRegistry(
     }
 
     fun clear(element: Element) {
+        /** Failures from consumer listeners must not retain later listener bindings. */
+        val failures = TeardownFailureCollector()
         element.listenedObjects.toList().forEach { listenable ->
             val binding = listenableCallbacks[listenable] ?: return@forEach
             binding.elements -= element
             if (binding.elements.isEmpty()) {
-                listenable.removeListener(binding.callback)
                 listenableCallbacks -= listenable
+                failures.capture { listenable.removeListener(binding.callback) }
             }
         }
         element.listenedObjects.clear()
+        failures.throwIfAny()
     }
 
     fun dispose() {
-        listenableCallbacks.forEach { (listenable, binding) ->
-            listenable.removeListener(binding.callback)
-        }
+        /** Snapshot detached before callbacks so a failure cannot leave the registry populated. */
+        val bindings = listenableCallbacks.toList()
         listenableCallbacks.clear()
+        /** Failure collector allowing every distinct listenable to release its callback. */
+        val failures = TeardownFailureCollector()
+        bindings.forEach { (listenable, binding) ->
+            failures.capture { listenable.removeListener(binding.callback) }
+        }
+        failures.throwIfAny()
     }
 
     private data class ListenerBinding(

@@ -1,0 +1,48 @@
+## ltr-en-1x
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-ltr-en-1x" value="en|LTR|1.0|contrast=false|COMPACT/COMPACT|ime=0|features=0" bounds=1,1,42,24 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,1,42,7 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="Checkbox" value=NA bounds=1,16,42,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,26,42,11 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]
+
+## ltr-zh-1x
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-ltr-zh-1x" value="zh-CN|LTR|1.0|contrast=false|COMPACT/COMPACT|ime=0|features=0" bounds=1,1,42,24 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,1,42,7 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="复选框" value=NA bounds=1,16,42,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,26,42,11 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]
+
+## rtl-ar-1x
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-rtl-ar-1x" value="ar|RTL|1.0|contrast=false|COMPACT/COMPACT|ime=0|features=0" bounds=1,1,42,24 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,1,42,7 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="Checkbox" value=NA bounds=1,16,42,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,26,42,11 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]
+
+## ltr-en-2x-text
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-ltr-en-2x-text" value="en|LTR|2.0|contrast=false|COMPACT/COMPACT|ime=0|features=0" bounds=1,1,42,24 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,1,42,14 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="Checkbox" value=NA bounds=1,23,42,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,33,42,18 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]
+
+## ltr-en-high-contrast
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-ltr-en-high-contrast" value="en|LTR|1.0|contrast=true|COMPACT/COMPACT|ime=0|features=0" bounds=1,1,42,24 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,1,42,7 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="Checkbox" value=NA bounds=1,16,42,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,26,42,11 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]
+
+## compact-hinge
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-compact-hinge" value="en|LTR|1.0|contrast=false|COMPACT/COMPACT|ime=0|features=1" bounds=1,1,26,18 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,1,26,7 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="Checkbox" value=NA bounds=1,16,26,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,26,26,11 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]
+
+## small-window-ime
+nodes=4
+[0] parent=HOST role=GENERIC label="adaptive-small-window-ime" value="en|LTR|1.0|contrast=false|COMPACT/COMPACT|ime=7|features=0" bounds=1,2,30,13 checked=NA selection=-1..-1 actions=[]
+[1] parent=0 role=TEXT label="中文 Café" value=NA bounds=1,2,30,7 checked=NA selection=-1..-1 actions=[]
+[2] parent=0 role=CHECKBOX label="Checkbox" value=NA bounds=1,17,30,9 checked=true selection=-1..-1 actions=[CLICK]
+[3] parent=0 role=TEXT_FIELD label="golden-input" value="Café 👨‍👩‍👧‍👦 אבג" bounds=1,27,30,11 checked=NA selection=3..5 actions=[CLICK, SET_SELECTION, SET_TEXT]

@@ -1,0 +1,21 @@
+# Android ICU grapheme expected differences against Pixel Unicode 17.0.0
+# Format: sdk=<n>;icu=<version>;unicode=<version>|case-id|engine-boundaries|platform-boundaries|reviewed rationale
+# Boundary lists are comma-separated UTF-16 offsets. Profiles and records must match exactly.
+# This file is manually reviewed test input. Instrumentation must fail rather than append or rewrite it.
+
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|controlled-skin-tone|0,4|0,2,4|ICU 56 character iteration splits the emoji modifier; Unicode 17 classifies the modifier for GB9 attachment to the preceding emoji.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|controlled-family-zwj|0,11|0,3,6,9,11|ICU 56 predates the Unicode 17 GB11 Extended_Pictographic ZWJ rule and breaks before each following family emoji.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|controlled-gb9c-devanagari|0,3|0,2,3|Unicode 8 predates GB9c Indic_Conjunct_Break; Unicode 17 keeps consonant virama consonant in one grapheme.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|controlled-unicode15-pictographic-zwj|0,5|0,3,5|Unicode 8 has no Extended_Pictographic assignment for Unicode 15 U+1FAE8 and ICU 56 predates the Unicode 17 GB11 behavior.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-prepend|0,1,3|0,1,2,3|ICU 56 does not apply Unicode 17 GB9b Prepend attachment to U+0600 in this sequence.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-ri-triple|0,4,6,7|0,6,7|ICU 56 groups the full RI run; Unicode 17 GB12/GB13 pairs regional indicators by odd/even parity.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-ri-leading-ascii|0,1,5,7,8|0,1,7,8|ICU 56 groups the three-code-point RI run; Unicode 17 GB12/GB13 emits a pair followed by one RI.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-ri-four|0,1,5,9,10|0,1,9,10|ICU 56 groups all four regional indicators; Unicode 17 GB12/GB13 emits two RI pairs.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-emoji-modifier|0,4,6|0,2,4,6|ICU 56 splits the Fitzpatrick modifier from the first baby; Unicode 17 GB9 keeps it in that grapheme.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-modifier-after-latin|0,3,5|0,1,3,5|ICU 56 splits the modifier after Latin a; Unicode 17 GB9 applies the modifier's Extend behavior independent of the preceding base.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-emoji-zwj-stop-sign|0,3,8|0,1,3,6,8|ICU 56 splits the modifier after Latin and predates GB11 for the baby ZWJ stop-sign sequence; Unicode 17 applies GB9 and GB11.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-emoji-extend-zwj|0,10|0,2,6,8,10|ICU 56 predates the Unicode 17 emoji-modifier and GB11 combination across Extend plus ZWJ.
+sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-stop-sign-zwj|0,5|0,3,5|Unicode 8 predates U+1F6D1 and GB11 Extended_Pictographic handling; ICU 56 breaks after the ZWJ.
+sdk=29;icu=63.2.0.0;unicode=11.0.0.0|controlled-gb9c-devanagari|0,3|0,2,3|Unicode 11 predates GB9c Indic_Conjunct_Break; Unicode 17 keeps consonant virama consonant in one grapheme.
+sdk=29;icu=63.2.0.0;unicode=11.0.0.0|official-scissors-non-pictographic|0,2,3|0,3|ICU 63 applies its older emoji ZWJ behavior to U+2701; the reviewed Unicode 17 conformance case breaks before the second non-pictographic scissors character.
+sdk=36;icu=76.1.0.0;unicode=16.0.0.0|official-scissors-non-pictographic|0,2,3|0,3|ICU 76 applies its Unicode 16 emoji ZWJ behavior to U+2701; the reviewed Unicode 17 conformance case breaks before the second non-pictographic scissors character.

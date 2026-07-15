@@ -2,7 +2,6 @@ package com.purride.pixellauncherv2.viewmodel
 
 import com.purride.pixellauncherv2.data.SmsMessageEntry
 import com.purride.pixellauncherv2.data.SmsThreadSummary
-import com.purride.pixellauncherv2.data.DeepSeekAiConfig
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
@@ -130,5 +129,4 @@ data class LauncherUiState(
     val hasPostNotificationPermission: Boolean = false,
     val hasNotificationListenerAccess: Boolean = false,
     val dataHealthUpdatedTimeText: String = "",
-    val deepSeekApiKey: String = DeepSeekAiConfig.DEFAULT_API_KEY,
 )

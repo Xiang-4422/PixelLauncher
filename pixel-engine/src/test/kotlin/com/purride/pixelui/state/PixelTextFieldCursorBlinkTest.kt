@@ -93,6 +93,28 @@ class PixelTextFieldCursorBlinkTest {
         assertFalse(state.cursorVisible)
     }
 
+    /** Host 静默推进在边界翻转可见态，但不会广播 controller 监听通知。 */
+    @Test
+    fun stepCursorBlinkForHostTogglesWithoutControllerNotification() {
+        /** 承载公开监听语义与 Host 内部推进路径的同一个控制器。 */
+        val controller = PixelTextFieldController()
+        /** 已聚焦且启用一秒闪烁周期的文本状态。 */
+        val state = controller.create("abc")
+        controller.focus(state)
+        controller.syncCursorBlinkConfig(state, enabled = true, periodMs = 1_000)
+
+        /** 记录内部 Host 推进是否错误广播了 widget 重建通知。 */
+        var notifications = 0
+        controller.addListener { notifications++ }
+
+        /** 半周期边界必须只翻转 retained 绘制状态。 */
+        val changed = controller.stepCursorBlinkForHost(state, 500L)
+
+        assertTrue(changed)
+        assertFalse(state.cursorVisible)
+        assertEquals(0, notifications)
+    }
+
     /**
      * 宿主调度合约：聚焦时 millisUntilNextCursorBlink 给出距下一次翻转的剩余毫秒
      * （onDraw 据此 postInvalidateDelayed，取代每帧 postInvalidateOnAnimation）；

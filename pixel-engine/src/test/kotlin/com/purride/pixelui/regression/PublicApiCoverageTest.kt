@@ -75,12 +75,15 @@ class PublicApiCoverageTest {
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheet.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheetLoader.kt"),
         )
-        val widgetFunctionPattern = Regex("^public fun ([A-Z][A-Za-z0-9_]*)\\(", RegexOption.MULTILINE)
+        /** 排除明确标记为兄弟 artifact 内部 SPI 的 public JVM 声明。 */
+        val stablePublicPrefix = "(?<!@PixelArtifactInternalApi\\n)^public "
+        val widgetFunctionPattern =
+            Regex("${stablePublicPrefix}fun ([A-Z][A-Za-z0-9_]*)\\(", RegexOption.MULTILINE)
         val otherPatterns = listOf(
-            Regex("^public (?:data |sealed )?class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
-            Regex("^public enum class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
-            Regex("^public object ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
-            Regex("^public typealias ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
+            Regex("${stablePublicPrefix}(?:data |sealed )?class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
+            Regex("${stablePublicPrefix}enum class ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
+            Regex("${stablePublicPrefix}object ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
+            Regex("${stablePublicPrefix}typealias ([A-Za-z][A-Za-z0-9_]*)", RegexOption.MULTILINE),
         )
         val widgetFunctions = mutableSetOf<String>()
         val otherApis = mutableSetOf<String>()

@@ -232,6 +232,7 @@ public class PixelPagerController(
         else -> 0
     }
 
+    /** 集中提供 `PixelPagerController` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         private const val DRAG_EPSILON_PX = 0.5f
     }

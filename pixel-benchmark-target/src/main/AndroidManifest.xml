@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:label="Pixel Benchmark Target"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PixelBenchmark">
+        <profileable android:shell="true" />
+
+        <activity
+            android:name=".PixelBenchmarkActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="true"
+            android:windowSoftInputMode="stateAlwaysHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".PixelBenchmarkDiagnosticsReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.purride.pixelbenchmark.target.action.COLLECT_TERMINAL_DIAGNOSTICS" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

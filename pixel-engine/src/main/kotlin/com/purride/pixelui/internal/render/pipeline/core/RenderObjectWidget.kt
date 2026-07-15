@@ -54,7 +54,8 @@ public abstract class RenderObjectWidget(
  */
 internal open class RenderObjectElement(
     widget: RenderObjectWidget,
-) : Element(widget) {
+) : Element(widget), DirectRenderObjectElement {
+    /** 记录 `RenderObjectWidget` 的 `renderObject` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
     protected lateinit var renderObject: RenderObject
 
     /**
@@ -114,6 +115,7 @@ public abstract class LeafRenderObjectWidget(
  * （通常是 [SingleChildRenderObject] 的子类）。
  */
 public abstract class SingleChildRenderObjectWidget(
+    /** 提供 `RenderObjectWidget` 当前管理的 `child` 内容。 */
     public open val child: Widget?,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
@@ -153,6 +155,11 @@ internal class SingleChildRenderObjectElement(
         child?.let(visitor)
     }
 
+    /** Releases the terminal child reference after the child Element has unmounted. */
+    override fun clearChildReferences() {
+        child = null
+    }
+
     /**
      * 把 child element 找到的 render object 挂接到当前 render object。
      */
@@ -170,6 +177,7 @@ internal class SingleChildRenderObjectElement(
  * （通常是 [MultiChildRenderObject] 的子类）。
  */
 public abstract class MultiChildRenderObjectWidget(
+    /** 保存 `RenderObjectWidget` 当前的 `children` 集合；元素顺序和所有权遵守所属类型契约。 */
     public open val children: List<Widget>,
     key: Any? = null,
 ) : RenderObjectWidget(key = key) {
@@ -207,6 +215,11 @@ internal class MultiChildRenderObjectElement(
      */
     override fun visitChildren(visitor: (Element) -> Unit) {
         childSlot.visit(visitor)
+    }
+
+    /** Releases all terminal sibling references after their Element teardown completes. */
+    override fun clearChildReferences() {
+        childSlot.clearReferences()
     }
 
     /**

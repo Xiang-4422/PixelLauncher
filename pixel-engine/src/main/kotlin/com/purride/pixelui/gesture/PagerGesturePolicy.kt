@@ -36,7 +36,9 @@ public open class PagerGesturePolicy {
         }
     }
 
+    /** 集中提供 `PagerGesturePolicy` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 保存 `PagerGesturePolicy` 当前的 `DEFAULT_AXIS_BIAS` 状态维度。 */
         public const val DEFAULT_AXIS_BIAS: Float = 1.2f
 
         /**

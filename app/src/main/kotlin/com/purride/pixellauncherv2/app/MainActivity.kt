@@ -25,7 +25,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.purride.pixellauncherv2.data.AiSettingsRepository
 import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
@@ -116,7 +115,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var appRepository: AppRepository
     private lateinit var appCustomizationRepository: AppCustomizationRepository
-    private lateinit var aiSettingsRepository: AiSettingsRepository
     private lateinit var fontSettingsRepository: FontSettingsRepository
     private lateinit var launcherStatsRepository: LauncherStatsRepository
     private lateinit var deviceStatusRepository: DeviceStatusRepository
@@ -262,7 +260,6 @@ class MainActivity : AppCompatActivity() {
 
         appRepository = PackageManagerAppRepository(applicationContext)
         appCustomizationRepository = AppCustomizationRepository(applicationContext)
-        aiSettingsRepository = AiSettingsRepository(applicationContext)
         fontSettingsRepository = FontSettingsRepository(applicationContext)
         launcherStatsRepository = LauncherStatsRepository(applicationContext)
         deviceStatusRepository = DeviceStatusRepository(applicationContext)
@@ -292,7 +289,6 @@ class MainActivity : AppCompatActivity() {
         rainForecastRepository = RainForecastRepository()
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
-        val aiSettings = aiSettingsRepository.getSettings()
         selectedTheme = appearanceSettings.theme
         state = LauncherStateTransitions.updateAppearance(
             state = state,
@@ -314,10 +310,6 @@ class MainActivity : AppCompatActivity() {
             pixelMatterEffectMode = uiBehaviorSettings.pixelMatterEffectMode,
             isPixelMatterHandControlEnabled = uiBehaviorSettings.pixelMatterHandControlEnabled,
             isPixelMatterHandDebugEnabled = uiBehaviorSettings.pixelMatterHandDebugEnabled,
-        )
-        state = LauncherStateTransitions.updateAiSettings(
-            state = state,
-            deepSeekApiKey = aiSettings.deepSeekApiKey,
         )
         state = notificationSummarySettingsRepository.rules().let { rules ->
             LauncherStateTransitions.updateNotificationRules(
@@ -385,7 +377,6 @@ class MainActivity : AppCompatActivity() {
                 onOpenDataHealth = ::openDataHealth,
                 onDataHealthItemPressed = ::onDataHealthItemPressed,
                 onNotificationSourcePressed = ::onNotificationSourcePressed,
-                onDeepSeekApiKeyChanged = ::onDeepSeekApiKeyChanged,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,
                 onSmsPageSelected    = smsController::selectPage,
@@ -438,7 +429,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
-                    LauncherMode.AI_SETTINGS -> closeAiSettings()
                     LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
                     LauncherMode.APP_DRAWER -> {
@@ -631,7 +621,7 @@ class MainActivity : AppCompatActivity() {
         }
         launcherRootHost.updatePixelMatterMotion(snapshot)
         if (pixelMatterShakeDetector.record(snapshot) && launcherRootHost.triggerPixelMatter(snapshot)) {
-            launcherRootHost.setup.hostView.hostBridge?.performHapticFeedback(PixelHapticType.TAP)
+            launcherRootHost.performHapticFeedback(PixelHapticType.TAP)
         }
     }
 
@@ -771,7 +761,7 @@ class MainActivity : AppCompatActivity() {
         stopPixelMatterMotionListening()
         stopPixelMatterHandTracking()
         if (::launcherRootHost.isInitialized) {
-            launcherRootHost.stopPixelMatterEffect()
+            launcherRootHost.dispose()
         }
         mainHandler.removeCallbacksAndMessages(null)
         backgroundExecutor.shutdownNow()
@@ -840,7 +830,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
-                    LauncherMode.AI_SETTINGS,
                     LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.HOME,
@@ -870,7 +859,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
-                    LauncherMode.AI_SETTINGS,
                     LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE,
@@ -891,7 +879,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
-                    LauncherMode.AI_SETTINGS,
                     LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
@@ -911,7 +898,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
-                    LauncherMode.AI_SETTINGS,
                     LauncherMode.LOADING_PREVIEW,
                     LauncherMode.DIAGNOSTICS,
                     LauncherMode.IDLE -> Unit
@@ -946,7 +932,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
-                    LauncherMode.AI_SETTINGS -> closeAiSettings()
                     LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
@@ -1259,7 +1244,6 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
-            SettingsMenuItem.DEEPSEEK_API_KEY -> openAiSettings()
             SettingsMenuItem.LOADING_PREVIEW -> openLoadingPreview()
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
@@ -1703,15 +1687,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateTextInputFocus() {
         val drawerWantsTextInput = state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
-        val aiSettingsWantsTextInput = state.mode == LauncherMode.AI_SETTINGS
         val smsSearchWantsTextInput =
             (state.mode == LauncherMode.SMS_THREADS || state.mode == LauncherMode.SMS_INBOX) &&
                 state.smsPageIndex == SmsPageIndex.ALL
         val smsDraftWantsTextInput =
             state.mode == LauncherMode.SMS_THREAD_DETAIL && !state.smsCurrentIsServiceConversation
-        if (!smsSearchWantsTextInput && !smsDraftWantsTextInput &&
-            !drawerWantsTextInput && !aiSettingsWantsTextInput
-        ) {
+        if (!smsSearchWantsTextInput && !smsDraftWantsTextInput && !drawerWantsTextInput) {
             hideDrawerKeyboard()
         }
     }
@@ -1862,19 +1843,6 @@ class MainActivity : AppCompatActivity() {
         renderCurrentFrame()
     }
 
-    private fun openAiSettings() {
-        settleSettingsMotionBeforeExplicitAction()
-        state = LauncherStateTransitions.showAiSettings(state)
-        renderCurrentFrame()
-        updateTextInputFocus()
-    }
-
-    private fun closeAiSettings() {
-        state = LauncherStateTransitions.hideAiSettings(state)
-        renderCurrentFrame()
-        updateTextInputFocus()
-    }
-
     private fun openLoadingPreview() {
         settleSettingsMotionBeforeExplicitAction()
         state = LauncherStateTransitions.showLoadingPreview(state)
@@ -1886,14 +1854,6 @@ class MainActivity : AppCompatActivity() {
         state = LauncherStateTransitions.hideLoadingPreview(state)
         renderCurrentFrame()
         updateDrawerInputFocus()
-    }
-
-    private fun onDeepSeekApiKeyChanged(apiKey: String) {
-        aiSettingsRepository.setDeepSeekApiKey(apiKey)
-        state = LauncherStateTransitions.updateAiSettings(
-            state = state,
-            deepSeekApiKey = apiKey.trim(),
-        )
     }
 
     private fun openAppManagement(selectedIndex: Int = state.appEditorSelectedIndex) {
@@ -2098,7 +2058,6 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
-            LauncherMode.AI_SETTINGS,
             LauncherMode.LOADING_PREVIEW,
             LauncherMode.DIAGNOSTICS -> true
 

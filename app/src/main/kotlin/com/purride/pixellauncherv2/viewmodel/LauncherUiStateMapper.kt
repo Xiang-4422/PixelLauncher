@@ -90,5 +90,4 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     hasPostNotificationPermission = hasPostNotificationPermission,
     hasNotificationListenerAccess = hasNotificationListenerAccess,
     dataHealthUpdatedTimeText = dataHealthUpdatedTimeText,
-    deepSeekApiKey = deepSeekApiKey,
 )

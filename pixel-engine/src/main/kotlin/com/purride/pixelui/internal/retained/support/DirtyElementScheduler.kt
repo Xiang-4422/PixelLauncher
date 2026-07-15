@@ -19,6 +19,11 @@ internal class DirtyElementScheduler {
         scheduledCount += 1
     }
 
+    /** Removes one terminal Element without disturbing other pending sibling builds. */
+    fun unschedule(element: Element) {
+        dirtyElements -= element
+    }
+
     fun buildScope() {
         buildScopeCount += 1
         while (true) {
@@ -49,6 +54,9 @@ internal class DirtyElementScheduler {
             rebuiltElementCount = rebuiltElementCount,
         )
     }
+
+    /** Returns the cumulative rebuild count without allocating a diagnostics snapshot. */
+    fun cumulativeRebuiltElementCount(): Long = rebuiltElementCount.toLong()
 }
 
 /**

@@ -96,6 +96,21 @@ class PipelineOwnerTest {
         assertEquals(2, root.paintCount)
     }
 
+    /** A changed logical viewport invalidates layout even when no RenderObject marked itself dirty. */
+    @Test
+    fun renderRelayoutsWhenLogicalViewportChanges() {
+        /** Root whose counters expose the owner's cache and invalidation decisions. */
+        val root = CountingRenderBox()
+        /** Pipeline owner retained across the simulated window resize. */
+        val owner = PipelineOwner(root = root)
+
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+        owner.render(logicalWidth = 5, logicalHeight = 4)
+
+        assertEquals(2, root.layoutCount)
+        assertEquals(2, root.paintCount)
+    }
+
     /**
      * 已挂载 parent 后新增 child 应该自动 attach child，并触发下一次 layout。
      */
@@ -205,6 +220,173 @@ class PipelineOwnerTest {
         assertEquals(2, afterSecondRender.paintPassCount)
     }
 
+    /** 纯文本光标显隐变化只能增加 paint 次数，不能增加 layout 次数。 */
+    @Test
+    fun textInputCursorVisibilityMarksPaintWithoutLayout() {
+        /** 可直接验证光标 dirty 分类的 retained surface。 */
+        val root = RenderSurface(alignment = PixelAlignment.TOP_START)
+        /** 记录 owner 级 layout 与 paint pass 的测试管线。 */
+        val owner = PipelineOwner(root = root)
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+        /** 首帧完成后的稳定 pass 计数。 */
+        val beforeCursorChange = owner.collectPipelineDiagnostics()
+
+        root.updateTextInputCursorVisibility(visible = false)
+        /** 重绘前应当只有 paint 被标脏。 */
+        val dirtyAfterCursorChange = owner.collectPipelineDiagnostics()
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+        /** 光标帧完成后的最终 pass 计数。 */
+        val afterCursorChange = owner.collectPipelineDiagnostics()
+
+        assertEquals(false, dirtyAfterCursorChange.needsLayout)
+        assertEquals(true, dirtyAfterCursorChange.needsPaint)
+        assertEquals(beforeCursorChange.layoutPassCount, afterCursorChange.layoutPassCount)
+        assertEquals(beforeCursorChange.paintPassCount + 1, afterCursorChange.paintPassCount)
+    }
+
+    /**
+     * terminal dispose 应该清除 cached targets，并递归 detach owner 持有的 render tree。
+     */
+    @Test
+    fun disposeDetachesRenderTreeAndClearsTargetDiagnostics() {
+        val child = CountingRenderBox(clickable = true)
+        val root = CountingSingleChildRenderBox(child)
+        val owner = PipelineOwner(root = root)
+        owner.render(logicalWidth = 8, logicalHeight = 6)
+
+        owner.dispose()
+
+        val diagnostics = owner.collectPipelineDiagnostics()
+        assertEquals(false, diagnostics.hasRoot)
+        assertEquals(0, diagnostics.targetDiagnostics.clickTargets)
+        assertEquals(1, root.detachCount)
+        assertEquals(1, child.detachCount)
+        assertNull(child.parent)
+        assertEquals(emptyList<RenderDiagnosticsNode>(), owner.collectDiagnostics())
+    }
+
+    /** Emits layout, paint, dirty-node, pixel, and cache evidence from the real pipeline path. */
+    @Test
+    fun renderEmitsFramePhaseAndWorkloadDiagnostics() {
+        /** Two-node retained render tree used to verify subtree workload counting. */
+        val root = CountingSingleChildRenderBox(CountingRenderBox())
+        /** Owner under test, retained across a dirty frame and a complete cache-hit frame. */
+        val owner = PipelineOwner(root = root)
+        /** Sink receiving the first frame's real pipeline phase callbacks. */
+        val firstFrame = RecordingFramePhaseSink()
+
+        owner.render(logicalWidth = 8, logicalHeight = 6, framePhaseSink = firstFrame)
+
+        assertEquals(1, firstFrame.layoutBeginCount)
+        assertEquals(1, firstFrame.layoutEndCount)
+        assertEquals(1, firstFrame.paintBeginCount)
+        assertEquals(1, firstFrame.paintEndCount)
+        assertEquals(2, firstFrame.dirtyRenderNodeCount)
+        assertEquals(48L, firstFrame.paintedPixelCount)
+        assertEquals(false, firstFrame.renderCacheHit)
+
+        /** Independent sink proving an unchanged second render is attributed as a cache hit. */
+        val cachedFrame = RecordingFramePhaseSink()
+        owner.render(logicalWidth = 8, logicalHeight = 6, framePhaseSink = cachedFrame)
+
+        assertEquals(0, cachedFrame.layoutBeginCount)
+        assertEquals(0, cachedFrame.paintBeginCount)
+        assertEquals(0, cachedFrame.dirtyRenderNodeCount)
+        assertEquals(0L, cachedFrame.paintedPixelCount)
+        assertEquals(true, cachedFrame.renderCacheHit)
+    }
+
+    /** Test sink retaining primitive callback counts without measuring wall-clock time. */
+    private class RecordingFramePhaseSink : PixelFramePhaseSink {
+        /** Number of retained build segments opened by the tested layer. */
+        var buildBeginCount: Int = 0
+
+        /** Number of retained build segments closed by the tested layer. */
+        var buildEndCount: Int = 0
+
+        /** Number of rebuilt Elements reported by the tested layer. */
+        var dirtyElementCount: Int = 0
+
+        /** Number of layout segments opened by the pipeline. */
+        var layoutBeginCount: Int = 0
+
+        /** Number of layout segments closed by the pipeline. */
+        var layoutEndCount: Int = 0
+
+        /** Number of engine-paint segments opened by the pipeline. */
+        var paintBeginCount: Int = 0
+
+        /** Number of engine-paint segments closed by the pipeline. */
+        var paintEndCount: Int = 0
+
+        /** Dirty RenderObjects participating in the most recent pipeline result. */
+        var dirtyRenderNodeCount: Int = 0
+
+        /** Logical pixels repainted by the most recent pipeline result. */
+        var paintedPixelCount: Long = 0L
+
+        /** Whether the most recent pipeline result reused its complete cache. */
+        var renderCacheHit: Boolean = false
+
+        /** PixelBuffer pool hits reported by a surrounding runtime. */
+        var bufferHitCount: Long = 0L
+
+        /** PixelBuffer pool misses reported by a surrounding runtime. */
+        var bufferMissCount: Long = 0L
+
+        /** Records one opened retained build phase. */
+        override fun beginBuild() {
+            buildBeginCount += 1
+        }
+
+        /** Records one closed retained build phase. */
+        override fun endBuild() {
+            buildEndCount += 1
+        }
+
+        /** Accumulates rebuilt Element work. */
+        override fun recordBuildWork(dirtyElementCount: Int) {
+            this.dirtyElementCount += dirtyElementCount
+        }
+
+        /** Records one opened layout phase. */
+        override fun beginLayout() {
+            layoutBeginCount += 1
+        }
+
+        /** Records one closed layout phase. */
+        override fun endLayout() {
+            layoutEndCount += 1
+        }
+
+        /** Records one opened logical paint phase. */
+        override fun beginPaint() {
+            paintBeginCount += 1
+        }
+
+        /** Records one closed logical paint phase. */
+        override fun endPaint() {
+            paintEndCount += 1
+        }
+
+        /** Retains the pipeline workload emitted by the tested render call. */
+        override fun recordPipelineWork(
+            dirtyRenderNodeCount: Int,
+            paintedPixelCount: Long,
+            renderCacheHit: Boolean,
+        ) {
+            this.dirtyRenderNodeCount += dirtyRenderNodeCount
+            this.paintedPixelCount += paintedPixelCount
+            this.renderCacheHit = this.renderCacheHit || renderCacheHit
+        }
+
+        /** Retains buffer-pool deltas when a surrounding runtime emits them. */
+        override fun recordBufferPoolActivity(hitCount: Long, missCount: Long) {
+            bufferHitCount += hitCount
+            bufferMissCount += missCount
+        }
+    }
+
     /**
      * 测试用的可计数单 child render box。
      */
@@ -289,6 +471,7 @@ class PipelineOwnerTest {
             markNeedsLayout()
         }
 
+        /** 对外暴露 paint 脏标记入口。 */
         fun requestPaint() {
             markNeedsPaint()
         }

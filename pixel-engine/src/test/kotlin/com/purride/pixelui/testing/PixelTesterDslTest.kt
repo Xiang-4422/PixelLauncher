@@ -33,6 +33,10 @@ import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelButtonStyle
 import com.purride.pixelui.PixelBoxConstraints
 import com.purride.pixelui.PixelDebugOverlay
+import com.purride.pixelui.PixelFrameDropReason
+import com.purride.pixelui.PixelFrameTimings
+import com.purride.pixelui.PixelFrameWorkload
+import com.purride.pixelui.PixelHostFrameDiagnostics
 import com.purride.pixelui.PixelHostFrameStats
 import com.purride.pixelui.PixelInspectorAllocationSample
 import com.purride.pixelui.PixelInspectorPanel
@@ -40,6 +44,7 @@ import com.purride.pixelui.PixelInspectorSnapshot
 import com.purride.pixelui.PixelInspectorTargetCounts
 import com.purride.pixelui.PixelInspectorTargetKind
 import com.purride.pixelui.PixelInspectorTargetSnapshot
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSliverAppBar
 import com.purride.pixelui.PixelSliverList
 import com.purride.pixelui.PixelSliverListBuilder
@@ -98,6 +103,7 @@ import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.internal.PixelRect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -583,7 +589,12 @@ class PixelTesterDslTest {
                 children = listOf(
                     Text("TITLE"),
                     OutlinedButton(text = "SAVE", onPressed = {}),
-                    TextField(state = state, controller = controller, key = "field"),
+                    TextField(
+                        state = state,
+                        controller = controller,
+                        key = "field",
+                        semanticLabel = "Name",
+                    ),
                 ),
                 spacing = 1,
             ),
@@ -594,7 +605,9 @@ class PixelTesterDslTest {
         val semantics = tester.dumpSemanticsTree()
         assertTrue(semantics.contains("TEXT label=\"TITLE\""))
         assertTrue(semantics.contains("BUTTON label=\"SAVE\" enabled=true"))
-        assertTrue(semantics.contains("TEXT_FIELD label=\"NAME\""))
+        val textFieldNode = tester.semanticsNodesByLabel("Name").single()
+        assertEquals(PixelSemanticRole.TEXT_FIELD, textFieldNode.role)
+        assertEquals("NAME", textFieldNode.value)
         assertTrue(semantics.contains("focused=true"))
         tester.dispose()
     }
@@ -1692,8 +1705,9 @@ class PixelTesterDslTest {
             assertEquals(PixelColor.White, tallBuffer.getPixel(tallLeftDividerX, y))
             assertEquals(PixelColor.White, tallBuffer.getPixel(tallRightDividerX, y))
         }
-        assertCenteredSymbol(symbolPixels(tallBuffer, tallLeft.bounds, PixelColor.Black), tallLeft.bounds, expectedWidth = 5, expectedHeight = 1)
-        assertCenteredSymbol(symbolPixels(tallBuffer, tallRight.bounds, PixelColor.Black), tallRight.bounds, expectedWidth = 5, expectedHeight = 5)
+        // An explicit PixelTheme opts the compatibility facade into token-resolved foregrounds.
+        assertCenteredSymbol(symbolPixels(tallBuffer, tallLeft.bounds, PixelColor.White), tallLeft.bounds, expectedWidth = 5, expectedHeight = 1)
+        assertCenteredSymbol(symbolPixels(tallBuffer, tallRight.bounds, PixelColor.White), tallRight.bounds, expectedWidth = 5, expectedHeight = 5)
 
         val styledBorder = PixelColor.fromRgb(10, 90, 180)
         val styledSymbol = PixelColor.fromRgb(250, 250, 250)
@@ -1796,23 +1810,14 @@ class PixelTesterDslTest {
                         content = Text("POP"),
                         expanded = true,
                         contentOffset = IntOffset(0, 8),
+                        modal = false,
                     ),
                     Menu(
                         items = listOf(
                             PixelMenuItem(label = "COPY", onSelected = { menuSelection = "copy" }),
                         ),
                         key = "menu",
-                    ),
-                    Dropdown(
-                        label = "MODE",
-                        selectedText = "A",
-                        expanded = true,
-                        onToggle = { toggles += 1 },
-                        items = listOf(
-                            PixelMenuItem(label = "A", onSelected = { menuSelection = "a" }),
-                            PixelMenuItem(label = "B", onSelected = { menuSelection = "b" }),
-                        ),
-                        key = "drop",
+                        modal = true,
                     ),
                     Tooltip(
                         message = "HELP",
@@ -1830,8 +1835,40 @@ class PixelTesterDslTest {
         assertTrue(tester.exists(find.byText("HELP")))
         tester.tap(find.byKey("menu-0"))
         assertEquals("copy", menuSelection)
+
+        tester.pumpWidget(
+            widget = Dropdown(
+                label = "MODE",
+                selectedText = "A",
+                expanded = false,
+                onToggle = { toggles += 1 },
+                items = listOf(
+                    PixelMenuItem(label = "A", onSelected = { menuSelection = "a" }),
+                    PixelMenuItem(label = "B", onSelected = { menuSelection = "b" }),
+                ),
+                key = "drop",
+            ),
+            logicalWidth = 120,
+            logicalHeight = 120,
+        )
         tester.tap(find.byKey("drop-anchor"))
         assertEquals(1, toggles)
+
+        tester.pumpWidget(
+            widget = Dropdown(
+                label = "MODE",
+                selectedText = "A",
+                expanded = true,
+                onToggle = { toggles += 1 },
+                items = listOf(
+                    PixelMenuItem(label = "A", onSelected = { menuSelection = "a" }),
+                    PixelMenuItem(label = "B", onSelected = { menuSelection = "b" }),
+                ),
+                key = "drop",
+            ),
+            logicalWidth = 120,
+            logicalHeight = 120,
+        )
         tester.tap(find.byKey("drop-menu-1"))
         assertEquals("b", menuSelection)
         tester.dispose()
@@ -2129,6 +2166,42 @@ class PixelTesterDslTest {
         tester.dispose()
     }
 
+    /** Tester composition preserves exact UTF-16 text and expands interior ranges to graphemes. */
+    @Test
+    fun unicodeCompositionUsesTheSameBoundaryContractAsProductionInput(): Unit {
+        /** Runtime-local tester exercising only public TextField testing operations. */
+        val tester = PixelTester()
+        /** Controller shared by the rendered field and Tester input facade. */
+        val controller = PixelTextFieldController()
+        /** Initial ASCII prefix makes the inserted Unicode range begin at offset one. */
+        val state = controller.create(initialText = "A", selectionStart = 1)
+        /** Exact callback payload used to prove no hidden NFC normalization occurred. */
+        var changed = ""
+        tester.pumpWidget(
+            widget = TextField(
+                state = state,
+                controller = controller,
+                onChanged = { value -> changed = value },
+                key = "unicode-field",
+            ),
+            logicalWidth = 48,
+            logicalHeight = 12,
+        )
+
+        tester.composeText(find.byKey("unicode-field"), "e\u0301😀")
+        assertEquals("Ae\u0301😀", state.text)
+        assertEquals("Ae\u0301😀", changed)
+        assertEquals(1, state.compositionStart)
+        assertEquals(5, state.compositionEnd)
+
+        tester.updateComposition(find.byKey("unicode-field"), start = 2, end = 4)
+        assertEquals(1, state.compositionStart)
+        assertEquals(5, state.compositionEnd)
+        assertEquals(5, state.selectionStart)
+        assertEquals(5, state.selectionEnd)
+        tester.dispose()
+    }
+
     @Test
     fun tapAndDragTextFieldFocusAndUpdateSelection() {
         val tester = PixelTester()
@@ -2243,9 +2316,9 @@ class PixelTesterDslTest {
             logicalHeight = 12,
         )
 
-        tester.tap(find.byKey("field"))
-        tester.doubleTap(find.byKey("field"))
-        tester.longPress(find.byKey("field"))
+        assertThrows(IllegalStateException::class.java) { tester.tap(find.byKey("field")) }
+        assertThrows(IllegalStateException::class.java) { tester.doubleTap(find.byKey("field")) }
+        assertThrows(IllegalStateException::class.java) { tester.longPress(find.byKey("field")) }
 
         assertFalse(state.isFocused)
         assertEquals(8, state.selectionStart)
@@ -2606,6 +2679,34 @@ class PixelTesterDslTest {
                     activeSlider = false,
                     activeScrollbar = false,
                     activeRefresh = false,
+                ).withFrameDiagnostics(
+                    PixelHostFrameDiagnostics(
+                        frameNumber = 4L,
+                        frameIntervalNanos = 100_000L,
+                        frameBudgetNanos = 100_000L,
+                        timings = PixelFrameTimings(
+                            buildNanos = 10_000L,
+                            layoutNanos = 20_000L,
+                            paintNanos = 30_000L,
+                            bufferSubmitNanos = 40_000L,
+                            androidDrawNanos = 50_000L,
+                            totalFrameNanos = 160_000L,
+                            unattributedNanos = 10_000L,
+                        ),
+                        workload = PixelFrameWorkload(
+                            dirtyElementCount = 2,
+                            dirtyRenderNodeCount = 3,
+                            paintedPixelCount = 32L,
+                            submittedPixelCount = 32L,
+                            allocatedBytes = 64L,
+                            garbageCollectionCount = 0L,
+                            bufferCacheHitCount = 1L,
+                            bufferCacheMissCount = 0L,
+                            renderCacheHit = false,
+                        ),
+                        dropReason = PixelFrameDropReason.ANDROID_DRAW,
+                        missedVsyncCount = 1,
+                    ),
                 ),
                 activeTickerCount = 5,
             ),
@@ -2614,6 +2715,8 @@ class PixelTesterDslTest {
         )
 
         assertTrue(tester.exists(find.byText("FPS 60")))
+        assertTrue(tester.exists(find.byText("US B10 L20 P30 S40")))
+        assertTrue(tester.exists(find.byText("DROP ANDROID_DRAW V1")))
         assertTrue(tester.exists(find.byText("TGT C2 L3 P1 T1")))
         assertTrue(tester.exists(find.byText("SEM 4 PEND 1")))
         assertTrue(tester.exists(find.byText("ACT P1 L2")))
@@ -2670,6 +2773,34 @@ class PixelTesterDslTest {
                     activeSlider = true,
                     activeScrollbar = false,
                     activeRefresh = true,
+                ).withFrameDiagnostics(
+                    PixelHostFrameDiagnostics(
+                        frameNumber = 9L,
+                        frameIntervalNanos = 16_000L,
+                        frameBudgetNanos = 20_000L,
+                        timings = PixelFrameTimings(
+                            buildNanos = 1_000L,
+                            layoutNanos = 2_000L,
+                            paintNanos = 3_000L,
+                            bufferSubmitNanos = 4_000L,
+                            androidDrawNanos = 5_000L,
+                            totalFrameNanos = 16_000L,
+                            unattributedNanos = 1_000L,
+                        ),
+                        workload = PixelFrameWorkload(
+                            dirtyElementCount = 2,
+                            dirtyRenderNodeCount = 3,
+                            paintedPixelCount = 64L,
+                            submittedPixelCount = 64L,
+                            allocatedBytes = 128L,
+                            garbageCollectionCount = 0L,
+                            bufferCacheHitCount = 1L,
+                            bufferCacheMissCount = 0L,
+                            renderCacheHit = false,
+                        ),
+                        dropReason = null,
+                        missedVsyncCount = 0,
+                    ),
                 ),
                 maxTreeLines = 3,
                 selectedTarget = selectedTarget,
@@ -2680,6 +2811,11 @@ class PixelTesterDslTest {
 
         assertTrue(tester.exists(find.byText("INSPECTOR")))
         assertTrue(tester.exists(find.byText("MEM 1K/4K")))
+        assertTrue(tester.exists(find.byText("US B1 L2 P3")))
+        assertTrue(tester.exists(find.byText("US S4 A5 T16")))
+        assertTrue(tester.exists(find.byText("WORK E2 R3 PX64/64")))
+        assertTrue(tester.exists(find.byText("ALLOC 128 GC 0 CACHE 1/0")))
+        assertTrue(tester.exists(find.byText("DROP NONE VSYNC 0")))
         tester.tap(find.byText("RENDER"))
         assertTrue(tester.exists(find.byText("RENDER TREE")))
         assertTrue(tester.exists(find.byText("RenderRoot")))

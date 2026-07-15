@@ -38,7 +38,9 @@ internal class RootElementSlot(
      * 卸载当前保留的根 element。
      */
     fun clear() {
-        element?.unmount()
+        /** Root detached from the slot before user disposal code can fail or re-enter teardown. */
+        val removedElement = element
         element = null
+        removedElement?.unmount()
     }
 }

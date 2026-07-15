@@ -1,0 +1,48 @@
+## selection-controls
+nodes=6
+[0] parent=HOST role=RADIO_BUTTON label="Standalone favorite" enabled=true focused=false bounds=0,0,9,9 value=NA hint=NA error=NA selected=true checked=true expanded=NA selection=-1..-1 live=NONE collection=NA item=NA actions=[CLICK] custom=[]
+[1] parent=HOST role=GENERIC label="Delivery mode" enabled=true focused=false bounds=0,11,57,29 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=3x1:SINGLE:hierarchical=false item=NA actions=[] custom=[]
+[2] parent=1 role=RADIO_BUTTON label="Standard" enabled=true focused=false bounds=0,11,57,9 value=NA hint=NA error=NA selected=false checked=false expanded=NA selection=-1..-1 live=NONE collection=NA item=0,0:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[3] parent=1 role=RADIO_BUTTON label="Priority" enabled=true focused=false bounds=0,21,57,9 value=NA hint=NA error=NA selected=true checked=true expanded=NA selection=-1..-1 live=NONE collection=NA item=1,0:span=1x1:heading=false:selected=true actions=[CLICK] custom=[]
+[4] parent=1 role=RADIO_BUTTON label="Paused" enabled=false focused=false bounds=0,31,45,9 value=NA hint=NA error=NA selected=false checked=false expanded=NA selection=-1..-1 live=NONE collection=NA item=2,0:span=1x1:heading=false:selected=false actions=[] custom=[]
+[5] parent=HOST role=BUTTON label="Save item" enabled=true focused=false bounds=0,42,24,24 value=NA hint=NA error=NA selected=true checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=NA actions=[CLICK] custom=[]
+
+## decorated-text-field
+nodes=1
+[0] parent=HOST role=TEXT_FIELD label="Account *" enabled=true focused=false bounds=0,8,112,11 value="Ada" hint="Profile identity. 3/20" error="Account is invalid" selected=false checked=NA expanded=NA selection=1..3 live=NONE collection=NA item=NA actions=[CLICK, SET_SELECTION, SET_TEXT] custom=[]
+
+## navigation-bar
+nodes=4
+[0] parent=HOST role=GENERIC label="Primary destinations" enabled=true focused=false bounds=0,0,120,44 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=1x3:SINGLE:hierarchical=false item=NA actions=[] custom=[]
+[1] parent=0 role=TAB label="Home" enabled=true focused=false bounds=0,0,40,44 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,0:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[2] parent=0 role=TAB label="Search" enabled=false focused=false bounds=40,0,40,44 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,1:span=1x1:heading=false:selected=false actions=[] custom=[]
+[3] parent=0 role=TAB label="Settings" enabled=true focused=false bounds=80,0,40,44 value=NA hint=NA error=NA selected=true checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,2:span=1x1:heading=false:selected=true actions=[CLICK] custom=[]
+
+## navigation-rail
+nodes=4
+[0] parent=HOST role=GENERIC label="Primary rail" enabled=true focused=false bounds=0,0,72,27 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=3x1:SINGLE:hierarchical=false item=NA actions=[] custom=[]
+[1] parent=0 role=TAB label="Home" enabled=true focused=false bounds=0,0,72,9 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,0:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[2] parent=0 role=TAB label="Search" enabled=false focused=false bounds=0,9,72,9 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=1,0:span=1x1:heading=false:selected=false actions=[] custom=[]
+[3] parent=0 role=TAB label="Settings" enabled=true focused=false bounds=0,18,72,9 value=NA hint=NA error=NA selected=true checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=2,0:span=1x1:heading=false:selected=true actions=[CLICK] custom=[]
+
+## single-selection-collections
+nodes=8
+[0] parent=HOST role=GENERIC label="Tabs" enabled=true focused=false bounds=0,0,112,11 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=1x3:SINGLE:hierarchical=false item=NA actions=[] custom=[]
+[1] parent=0 role=TAB label="Recent" enabled=true focused=false bounds=0,0,39,11 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,0:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[2] parent=0 role=TAB label="Pinned" enabled=true focused=false bounds=40,0,39,11 value=NA hint=NA error=NA selected=true checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,1:span=1x1:heading=false:selected=true actions=[CLICK] custom=[]
+[3] parent=0 role=TAB label="Shared" enabled=true focused=false bounds=80,0,39,11 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,2:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[4] parent=HOST role=GENERIC label="SegmentedControl" enabled=true focused=false bounds=0,14,81,11 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=1x3:SINGLE:hierarchical=false item=NA actions=[] custom=[]
+[5] parent=4 role=TAB label="Day" enabled=true focused=false bounds=0,14,21,11 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,0:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[6] parent=4 role=TAB label="Week" enabled=true focused=false bounds=21,14,27,11 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,1:span=1x1:heading=false:selected=false actions=[CLICK] custom=[]
+[7] parent=4 role=TAB label="Month" enabled=true focused=false bounds=48,14,33,11 value=NA hint=NA error=NA selected=true checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=0,2:span=1x1:heading=false:selected=true actions=[CLICK] custom=[]
+
+## slidable-closed
+nodes=2
+[0] parent=HOST role=BUTTON label="Message actions" enabled=true focused=false bounds=0,0,72,9 value=NA hint=NA error=NA selected=false checked=NA expanded=false selection=-1..-1 live=NONE collection=NA item=NA actions=[EXPAND] custom=[]
+[1] parent=0 role=TEXT label="MESSAGE" enabled=true focused=false bounds=15,1,41,7 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=NA actions=[] custom=[]
+
+## slidable-expanded
+nodes=3
+[0] parent=HOST role=BUTTON label="Message actions" enabled=true focused=false bounds=0,0,72,9 value=NA hint=NA error=NA selected=true checked=NA expanded=true selection=-1..-1 live=NONE collection=NA item=NA actions=[COLLAPSE, DISMISS] custom=[]
+[1] parent=0 role=BUTTON label="Delete" enabled=true focused=false bounds=36,0,36,9 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=NA actions=[CLICK] custom=[]
+[2] parent=0 role=TEXT label="MESSAGE" enabled=true focused=false bounds=-21,1,41,7 value=NA hint=NA error=NA selected=false checked=NA expanded=NA selection=-1..-1 live=NONE collection=NA item=NA actions=[] custom=[]

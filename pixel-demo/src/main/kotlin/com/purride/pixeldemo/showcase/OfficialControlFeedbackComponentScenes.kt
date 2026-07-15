@@ -11,6 +11,7 @@ import com.purride.pixelui.AnimatedPixelLoadingBar
 import com.purride.pixelui.AppScaffold
 import com.purride.pixelui.AspectRatio
 import com.purride.pixelui.Badge
+import com.purride.pixelui.BottomSheet
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.ButtonStyle
 import com.purride.pixelui.Center
@@ -42,7 +43,6 @@ import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Menu
-import com.purride.pixelui.ModalBarrier
 import com.purride.pixelui.Opacity
 import com.purride.pixelui.OptionList
 import com.purride.pixelui.OutlinedButton
@@ -89,6 +89,7 @@ import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextStyle
+import com.purride.pixelui.TextButton
 import com.purride.pixelui.Toast
 import com.purride.pixelui.ToastQueue
 import com.purride.pixelui.Tooltip
@@ -227,7 +228,7 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
     officialComponentScene("paint_icon", "Icon", "用 PixelIconData 渲染小型位图图标", DemoCatalog.paint, "Icon", extraApis = setOf("PixelIconData")) {
         Icon(PixelIconData(officialTinyIcon()))
     },
-    ComponentExampleScene("feedback_dialog", "Messages", "Dialog、ConfirmDialog、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "ConfirmDialog", "Toast", "Snackbar")) {
+    ComponentExampleScene("feedback_dialog", "Messages", "Dialog、BottomSheet、Toast 和 Snackbar", DemoCatalog.feedback, setOf("component", "feedback", "message"), setOf("Dialog", "BottomSheet", "ConfirmDialog", "Toast", "Snackbar")) {
         officialBody(
             listOf(
                 samplePanel(
@@ -239,6 +240,15 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
                     title = "ConfirmDialog",
                     color = Blue,
                     child = ConfirmDialog(title = "DELETE", message = "ARE YOU SURE", onConfirm = {}, onCancel = {}, confirmText = "OK", cancelText = "BACK", borderColor = Blue, width = 54),
+                ),
+                samplePanel(
+                    title = "BottomSheet",
+                    color = Green,
+                    child = BottomSheet(
+                        content = Text("IME SAFE SHEET", style = TextStyle(color = Green)),
+                        actions = listOf(TextButton(text = "DONE", onPressed = {})),
+                        modal = false,
+                    ),
                 ),
                 samplePanel(
                     title = "Toast",
@@ -253,7 +263,33 @@ val ControlOfficialComponentScenes: List<DemoScene> = listOf(
             ),
         )
     },
-    ComponentExampleScene("feedback_overlay_tools", "OverlayTools", "模态遮罩与 toast 队列基础能力", DemoCatalog.feedback, setOf("component", "overlay", "toast"), setOf("ModalBarrier", "ToastQueue", "PixelToastQueueController")) { ToastQueueOfficialBody() },
+    ComponentExampleScene(
+        "feedback_overlay_tools",
+        "ProductionOverlay",
+        "typed route、layer/barrier/dismiss policy 与 Toast/Snackbar FIFO active-time 超时",
+        DemoCatalog.feedback,
+        setOf("component", "overlay", "notification", "typed-result"),
+        setOf(
+            "PixelOverlayHost",
+            "PixelPopupRoute",
+            "PixelOverlayEntry",
+            "PixelOverlayOutcome",
+            "PixelOverlayLayer",
+            "PixelOverlayBarrier",
+            "PixelOverlayDismissPolicy",
+            "ToastQueue",
+            "PixelToastQueueController",
+            "SnackbarQueue",
+            "PixelSnackbarQueueController",
+        ),
+    ) {
+        officialBody(
+            listOf(
+                ProductionOverlayOfficialBody(),
+                ToastQueueOfficialBody(),
+            ),
+        )
+    },
     ComponentExampleScene("feedback_popover_menu", "PopoverMenu", "受控弹出层、菜单、下拉和提示", DemoCatalog.feedback, setOf("component", "overlay", "menu"), setOf("Popover", "Menu", "PixelMenuItem", "Dropdown", "Tooltip")) { OverlayControlsOfficialBody() },
     officialComponentScene("navigation_app_scaffold", "AppScaffold", "标题、body、bottomBar 的页面骨架", DemoCatalog.navigation, "AppScaffold") {
         Container(

@@ -16,14 +16,17 @@ public fun PageController.jumpToPage(
     syncToPage(state = state, targetPage = page)
 }
 
+/** 推进 `PixelControllerExtensions` 的 `nextPage` 页面或滚动目标，并把越界输入限制到有效范围。 */
 public fun PageController.nextPage(state: PixelPagerState) {
     jumpToPage(state = state, page = state.currentPage + 1)
 }
 
+/** 推进 `PixelControllerExtensions` 的 `previousPage` 页面或滚动目标，并把越界输入限制到有效范围。 */
 public fun PageController.previousPage(state: PixelPagerState) {
     jumpToPage(state = state, page = state.currentPage - 1)
 }
 
+/** 推进 `PixelControllerExtensions` 的 `showItem` 页面或滚动目标，并把越界输入限制到有效范围。 */
 public fun ScrollController.showItem(
     state: PixelListState,
     itemIndex: Int,
@@ -34,6 +37,7 @@ public fun ScrollController.showItem(
     )
 }
 
+/** 推进 `PixelControllerExtensions` 的 `jumpToStart` 页面或滚动目标，并把越界输入限制到有效范围。 */
 public fun ScrollController.jumpToStart(state: PixelListState) {
     scrollTo(
         state = state,
@@ -43,10 +47,12 @@ public fun ScrollController.jumpToStart(state: PixelListState) {
     )
 }
 
+/** 推进 `PixelControllerExtensions` 的 `jumpToEnd` 页面或滚动目标，并把越界输入限制到有效范围。 */
 public fun ScrollController.jumpToEnd(state: PixelListState) {
     scheduleJumpToEnd(state)
 }
 
+/** 推进 `PixelControllerExtensions` 的 `fling` 页面或滚动目标，并把越界输入限制到有效范围。 */
 public fun ScrollController.fling(
     state: PixelListState,
     velocityPxPerSecond: Float,

@@ -1,0 +1,67 @@
+{
+  "approval": {
+    "approvedAtUtc": "2026-07-14T08:34:21Z",
+    "approvedBy": "pixel-engine-maintainers",
+    "status": "approved",
+    "technicalReason": "The JVM smoke is a cross-host regression sentinel, not the release device metric. Each approved value is the slowest batch from the initial seven-batch run, while the measured key is the median batch; the fixed 10% comparison is therefore robust to isolated JIT, GC, and host scheduling spikes and remains materially tighter than the former 25-50 ms magnitude ceilings. Physical Macrobenchmark thresholds remain independently mandatory."
+  },
+  "kind": "pixel-jvm-smoke-baseline",
+  "maximumRegressionPercent": 10.0,
+  "scenes": {
+    "animation": {
+      "approvedBaselineAverageNanos": 72656,
+      "height": 8,
+      "initialMeasuredMedianNanos": 44837,
+      "initialObservedMaximumBatchNanos": 72656,
+      "width": 24
+    },
+    "graphics_primitives": {
+      "approvedBaselineAverageNanos": 316797,
+      "height": 24,
+      "initialMeasuredMedianNanos": 212835,
+      "initialObservedMaximumBatchNanos": 316797,
+      "width": 96
+    },
+    "list_scroll": {
+      "approvedBaselineAverageNanos": 4017060,
+      "height": 64,
+      "initialMeasuredMedianNanos": 1841856,
+      "initialObservedMaximumBatchNanos": 4017060,
+      "width": 96
+    },
+    "overlay": {
+      "approvedBaselineAverageNanos": 367962,
+      "height": 46,
+      "initialMeasuredMedianNanos": 278989,
+      "initialObservedMaximumBatchNanos": 367962,
+      "width": 108
+    },
+    "page_transition": {
+      "approvedBaselineAverageNanos": 1081579,
+      "height": 40,
+      "initialMeasuredMedianNanos": 416791,
+      "initialObservedMaximumBatchNanos": 1081579,
+      "width": 96
+    },
+    "text_input": {
+      "approvedBaselineAverageNanos": 847235,
+      "height": 32,
+      "initialMeasuredMedianNanos": 574683,
+      "initialObservedMaximumBatchNanos": 847235,
+      "width": 96
+    }
+  },
+  "schemaVersion": 1,
+  "sourceEvidence": {
+    "measurementId": "20260714T083256Z-36736-15176",
+    "reportPath": "pixel-engine/build/reports/perf/pixel-engine-render-smoke.txt",
+    "reportSha256": "dda4119afcd4da76ec7f03a367a9d906b299d94d1ff6df0909429ba2442df22e"
+  },
+  "workload": {
+    "reportFormatVersion": 2,
+    "sampleBatches": 7,
+    "sampleFrames": 20,
+    "sceneCount": 6,
+    "warmupFrames": 10
+  }
+}

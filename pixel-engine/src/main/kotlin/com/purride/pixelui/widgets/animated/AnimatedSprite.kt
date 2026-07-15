@@ -9,6 +9,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTicker
 import com.purride.pixelui.animation.PixelTickerProvider
 
+/** 创建 `AnimatedSprite` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun AnimatedSprite(
     sheet: PixelSpriteSheet,
     fps: Int,

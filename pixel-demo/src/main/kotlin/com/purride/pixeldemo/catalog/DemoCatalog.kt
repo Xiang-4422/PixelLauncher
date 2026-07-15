@@ -1,10 +1,13 @@
 package com.purride.pixeldemo.catalog
 
 import com.purride.pixeldemo.showcase.AnimationOfficialComponentScenes
+import com.purride.pixeldemo.showcase.AccessibilityFlowScene
+import com.purride.pixeldemo.showcase.AdaptiveLocalizationScene
 import com.purride.pixeldemo.showcase.ControlOfficialComponentScenes
 import com.purride.pixeldemo.showcase.DebugOfficialComponentScenes
 import com.purride.pixeldemo.showcase.InspectorAdvancedScene
 import com.purride.pixeldemo.showcase.LayoutOfficialComponentScenes
+import com.purride.pixeldemo.showcase.MotionShowcaseScene
 import com.purride.pixeldemo.showcase.NavigationDeepDiveScene
 import com.purride.pixeldemo.showcase.NavigationInputOfficialComponentScenes
 import com.purride.pixeldemo.showcase.PaintOfficialComponentScenes
@@ -13,6 +16,7 @@ import com.purride.pixeldemo.showcase.ResourcesSpritesShowcaseScene
 import com.purride.pixeldemo.showcase.ScrollOfficialComponentScenes
 import com.purride.pixeldemo.showcase.StateRestorationScene
 import com.purride.pixeldemo.showcase.TextOfficialComponentScenes
+import com.purride.pixeldemo.showcase.ThemeShowcaseScene
 
 object DemoCatalog {
     val layout = DemoCategory(
@@ -39,6 +43,12 @@ object DemoCatalog {
         id = "feedback",
         title = "反馈",
         summary = "进度、提示、徽标和浮层",
+    )
+    /** 主题、设计 token 与标准组件状态矩阵分类。 */
+    val theme = DemoCategory(
+        id = "theme",
+        title = "主题",
+        summary = "主题预设、基础 token 和标准组件状态矩阵",
     )
     val scroll = DemoCategory(
         id = "scroll",
@@ -72,6 +82,7 @@ object DemoCatalog {
         input,
         controls,
         feedback,
+        theme,
         scroll,
         paint,
         animation,
@@ -135,6 +146,7 @@ object DemoCatalog {
                 "layout_safe_area",
                 "layout_ime_avoiding",
                 "layout_gesture_detector",
+                "adaptive_localization",
             ),
         ),
         DemoGroup(
@@ -165,6 +177,7 @@ object DemoCatalog {
                 "input_focus_scope",
                 "input_form",
                 "input_semantics",
+                "input_accessibility_flow",
             ),
         ),
         DemoGroup(
@@ -224,6 +237,15 @@ object DemoCatalog {
             ),
         ),
         DemoGroup(
+            id = "theme_tokens",
+            title = "主题与 Token",
+            summary = "五套主题、完整基础 token 和 25 个组件族状态矩阵",
+            category = theme,
+            sceneIds = listOf(
+                "theme_showcase",
+            ),
+        ),
+        DemoGroup(
             id = "scroll_views",
             title = "滚动视图",
             summary = "单子级滚动、列表、网格和分页",
@@ -275,11 +297,12 @@ object DemoCatalog {
         DemoGroup(
             id = "animation_widgets",
             title = "组件动效",
-            summary = "隐式动画和动画构建器",
+            summary = "隐式动画、标准组件微状态和无障碍动效策略",
             category = animation,
             sceneIds = listOf(
                 "animation_animated_container",
                 "animation_tween_animation_builder",
+                "animation_motion_showcase",
             ),
         ),
         DemoGroup(
@@ -308,6 +331,7 @@ object DemoCatalog {
 
     private val registeredItems: List<DemoScene> =
         LayoutOfficialComponentScenes +
+            listOf(AdaptiveLocalizationScene) +
             TextOfficialComponentScenes +
             ControlOfficialComponentScenes +
             ScrollOfficialComponentScenes +
@@ -317,7 +341,10 @@ object DemoCatalog {
                 ResourcesSpritesShowcaseScene,
             ) +
             AnimationOfficialComponentScenes +
+            listOf(MotionShowcaseScene) +
             NavigationInputOfficialComponentScenes +
+            listOf(AccessibilityFlowScene) +
+            listOf(ThemeShowcaseScene) +
             listOf(
                 NavigationDeepDiveScene,
             ) +

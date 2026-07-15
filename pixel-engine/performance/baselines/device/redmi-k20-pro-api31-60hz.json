@@ -1,0 +1,123 @@
+{
+  "absoluteGatePassed": true,
+  "approval": {
+    "approvedAtUtc": "2026-07-15T15:57:46Z",
+    "approvedBy": "repository-owner (explicit Codex approval)",
+    "status": "approved",
+    "technicalReason": "用户在审阅 Redmi K20 Pro API 31/60Hz 的完整实体设备证据、固定绝对阈值结果、70 份 Macro Perfetto、11 份 Micro Perfetto、9 份 Method Trace 与 2 份 AndroidX ANR 安全跳过后明确批准该候选；基线只适用于完全相同的设备与基准配置，回退上限保持 10%。"
+  },
+  "evidenceMode": "physical",
+  "identity": {
+    "configuration": {
+      "compilationPolicy": "partial-baseline-profile-required",
+      "macroBuildVariant": "benchmarkRelease",
+      "macroSourceSha256": "f943dabd61df30f5fd5b9cece6dc475424b2f39284c2ea2732cfb3b9dbde515e",
+      "microBuildVariant": "releaseAndroidTest",
+      "reportedMacroCompilationMode": "run-from-apk",
+      "reportedMicroCompilationMode": "speed",
+      "targetBuildType": "benchmark"
+    },
+    "device": {
+      "apiLevel": 31,
+      "brand": "Xiaomi",
+      "buildId": "SKQ1.220303.001",
+      "device": "raphael",
+      "fingerprint": "Xiaomi/raphael/raphael:12/SKQ1.220303.001/V14.0.23.2.6.DEV:user/release-keys",
+      "model": "Redmi K20 Pro",
+      "refreshRateHz": 60.000004
+    }
+  },
+  "kind": "pixel-device-benchmark-baseline",
+  "measurementId": "redmi-k20-pro-api31-60hz-miui-runner-final-20260715",
+  "referenceMetrics": {
+    "macroFrames": {
+      "animation": {
+        "cpuFrameDurationP95Ms": 4.95262855,
+        "cpuFrameDurationP99Ms": 7.26796075,
+        "jankPercent": 0.0
+      },
+      "listScroll": {
+        "cpuFrameDurationP95Ms": 11.570917549999999,
+        "cpuFrameDurationP99Ms": 13.170737929999996,
+        "jankPercent": 0.4807692307692308
+      },
+      "overlay": {
+        "cpuFrameDurationP95Ms": 8.3110867,
+        "cpuFrameDurationP99Ms": 8.37607215,
+        "jankPercent": 0.0
+      },
+      "pageTransition": {
+        "cpuFrameDurationP95Ms": 5.9491415,
+        "cpuFrameDurationP99Ms": 6.1375530000000005,
+        "jankPercent": 0.0
+      },
+      "textInput": {
+        "cpuFrameDurationP95Ms": 10.315571199999999,
+        "cpuFrameDurationP99Ms": 10.5274382,
+        "jankPercent": 0.0
+      }
+    },
+    "macroStartup": {
+      "coldStartup": {
+        "medianMs": 512.103671
+      },
+      "hotStartup": {
+        "medianMs": 219.8620795
+      }
+    },
+    "micro": {
+      "clippedOverflowPaint": {
+        "allocationMedian": 2896.046511627907,
+        "timeMedianNs": 1203238.668604651
+      },
+      "complexTextLayoutAndPaint": {
+        "allocationMedian": 34236.61538461538,
+        "timeMedianNs": 7589778.423076923
+      },
+      "fastLazyListScrollPaint": {
+        "allocationMedian": 19271.74074074074,
+        "timeMedianNs": 3856018.9074074076
+      },
+      "fullBrightnessNoGapCanvasSubmit": {
+        "allocationMedian": 3.1176470588235294,
+        "timeMedianNs": 5951311.852941176
+      },
+      "graphemeBoundaryMap": {
+        "allocationMedian": 3.0027285129604366,
+        "timeMedianNs": 135597.62141882675
+      },
+      "mixedBidiParagraphLayout": {
+        "allocationMedian": 2334.078651685393,
+        "timeMedianNs": 518041.36516853934
+      },
+      "nestedOpacityPaint": {
+        "allocationMedian": 1771.060606060606,
+        "timeMedianNs": 3011034.090909091
+      },
+      "pixelBufferOperations": {
+        "allocationMedian": 17.005839416058393,
+        "timeMedianNs": 79361.77810218978
+      },
+      "resourceCatalogParsing": {
+        "allocationMedian": 745.0015003750938,
+        "timeMedianNs": 80074.46024006003
+      },
+      "retainedLayoutAndPaint": {
+        "allocationMedian": 27613.14814814815,
+        "timeMedianNs": 3757302.6481481483
+      },
+      "squareGapGridCanvasSubmit": {
+        "allocationMedian": 4.285714285714286,
+        "timeMedianNs": 13928624.857142856
+      }
+    }
+  },
+  "representativePerformanceEvidence": true,
+  "schemaVersion": 1,
+  "sourceEvidence": {
+    "macroJsonSha256": "2c32eee25f3b72f4109b1353b4914cdd8f3cb60bb8692d45084c1b4e4b99b75c",
+    "macroTraceAggregateSha256": "8b882fee3ae6b12f4085faa1aceb5353266d1804b2020c5efd03ced967f01bd2",
+    "microJsonSha256": "0a48e64cb396005534559c06fc3fc4c7656c91fe003437710cfbb9ef1d3fa062",
+    "microTraceAggregateSha256": "f13b823f27119eb63aed7387658dd0ebaaeee0682f4a91e3ef0d7a16001a203d"
+  }
+}

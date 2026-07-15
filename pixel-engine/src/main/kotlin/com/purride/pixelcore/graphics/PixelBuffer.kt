@@ -7,12 +7,16 @@ package com.purride.pixelcore
  * Engine 渲染层只使用此类型，不再区分单色 / 彩色模式。
  */
 public class PixelBuffer(
+    /** 定义 `PixelBuffer` 布局中的 `width` 逻辑像素度量。 */
     public val width: Int,
+    /** 定义 `PixelBuffer` 布局中的 `height` 逻辑像素度量。 */
     public val height: Int,
 ) {
+    /** 记录 `PixelBuffer` 的 `pixels` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val pixels: IntArray = IntArray(width * height)
     private var nonOpaquePixelCount: Int = width * height
 
+    /** 更新 `PixelBuffer` 的 `setPixel` 状态，并保持相关边界与派生状态一致。 */
     public fun setPixel(
         x: Int,
         y: Int,
@@ -25,11 +29,13 @@ public class PixelBuffer(
         writePixel(index, result)
     }
 
+    /** 读取 `PixelBuffer` 的 `getPixel` 结果，不产生额外状态变更。 */
     public fun getPixel(x: Int, y: Int): PixelColor {
         if (x !in 0 until width || y !in 0 until height) return PixelColor.Transparent
         return PixelColor(pixels[y * width + x])
     }
 
+    /** 按裁剪和混合规则把 `fillRect` 应用到 `PixelBuffer` 像素数据。 */
     public fun fillRect(
         left: Int,
         top: Int,
@@ -69,6 +75,7 @@ public class PixelBuffer(
         }
     }
 
+    /** 把 `PixelBuffer` 按当前样式和裁剪边界执行 `drawRect` 像素绘制。 */
     public fun drawRect(
         left: Int,
         top: Int,
@@ -109,6 +116,7 @@ public class PixelBuffer(
         }
     }
 
+    /** 从 `PixelBuffer` 释放 `clear` 对应内容；重复调用按既有幂等约束处理。 */
     public fun clear() {
         pixels.fill(PixelColor.Transparent.argb)
         nonOpaquePixelCount = width * height
@@ -190,8 +198,11 @@ public class PixelBuffer(
             val srcOffset = (srcY + row) * source.width + srcX
             val dstOffset = (dstY + row) * width + dstX
             for (blendColumn in 0 until w) {
+                /** 当前源像素；完全透明时 SrcOver 必然保持目标不变。 */
+                val sourcePixel = source.pixels[srcOffset + blendColumn]
+                if ((sourcePixel ushr 24) == 0) continue
                 val dstIndex = dstOffset + blendColumn
-                writePixel(dstIndex, blendSrcOver(src = source.pixels[srcOffset + blendColumn], dst = pixels[dstIndex]))
+                writePixel(dstIndex, blendSrcOver(src = sourcePixel, dst = pixels[dstIndex]))
             }
         }
     }
@@ -204,7 +215,9 @@ public class PixelBuffer(
         pixels[index] = argb
     }
 
+    /** 集中提供 `PixelBuffer` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
+        /** 按裁剪和混合规则把 `blendPixel` 应用到 `PixelBuffer` 像素数据。 */
         public fun blendPixel(src: Int, dst: Int, blendMode: PixelBlendMode): Int? {
             return when (blendMode) {
                 PixelBlendMode.SrcOver -> {
@@ -219,6 +232,7 @@ public class PixelBuffer(
             }
         }
 
+        /** 按裁剪和混合规则把 `blendSrcOver` 应用到 `PixelBuffer` 像素数据。 */
         public fun blendSrcOver(src: Int, dst: Int): Int {
             val sa = (src ushr 24) and 0xFF
             if (sa == 0) return dst

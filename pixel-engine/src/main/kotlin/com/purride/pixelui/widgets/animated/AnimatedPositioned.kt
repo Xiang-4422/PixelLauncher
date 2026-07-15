@@ -13,6 +13,7 @@ import com.purride.pixelui.animation.PixelAnimationController
 import com.purride.pixelui.animation.PixelTickerProvider
 import kotlin.time.Duration
 
+/** 创建 `AnimatedPositioned` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun AnimatedPositioned(
     duration: Duration,
     vsync: PixelTickerProvider,
