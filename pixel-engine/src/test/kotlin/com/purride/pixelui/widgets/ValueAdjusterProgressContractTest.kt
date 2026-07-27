@@ -21,10 +21,13 @@ import org.junit.Test
 
 /** Focused regression coverage for ValueAdjuster and determinate ProgressBar production contracts. */
 class ValueAdjusterProgressContractTest {
-    /** The old adjuster facade preserves scope-less pixels but consumes an explicit token provider. */
+    /**
+     * 简洁 ValueAdjuster 入口等价于 `states = Normal` 的状态化入口；挂载 `PixelTheme` 只改变
+     * token 解析结果，不改变入口选择或 widget 树。
+     */
     @Test
-    fun valueAdjusterLegacyFacadeSwitchesOnlyAtAnExplicitThemeBoundary() {
-        /** Reused off-screen runtime for both compatibility and explicit-theme branches. */
+    fun valueAdjusterConciseFacadeMatchesNormalStatesAndResolvesTokens() {
+        /** 同时用于等价性比较与显式主题分支的复用离屏运行时。 */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
@@ -32,26 +35,77 @@ class ValueAdjusterProgressContractTest {
                     valueText = "5",
                     onDecrease = {},
                     onIncrease = {},
-                    key = "legacy-adjuster",
+                    key = "adjuster",
                 ),
                 logicalWidth = 96,
                 logicalHeight = 32,
             )
-            /** Historical action targets proving the old 9px action size plus one-pixel outline. */
-            val legacyTargets = requireNotNull(tester.renderResult).clickTargets.sortedBy { target ->
+            /** 简洁入口在无提供者时的完整帧。 */
+            val concisePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            /** 简洁入口导出的两个动作命中目标。 */
+            val conciseTargets = requireNotNull(tester.renderResult).clickTargets.sortedBy { target ->
                 target.bounds.left
             }
-            assertEquals(2, legacyTargets.size)
-            assertEquals(11, legacyTargets[0].bounds.width)
-            assertEquals(11, legacyTargets[1].bounds.width)
-            /** Historical group geometry must remain pixel-for-pixel stable without a provider. */
-            val legacyGroup = tester.semanticsNodesByLabel("ValueAdjuster").single()
-            assertEquals(50, legacyGroup.width)
-            assertEquals(13, legacyGroup.height)
+            /** 简洁入口导出的整组语义节点。 */
+            val conciseGroup = tester
+                .semanticsNodesByLabel(PixelLabelTokens.Default.valueAdjuster)
+                .single()
+
+            tester.pumpWidget(
+                ValueAdjuster(
+                    valueText = "5",
+                    onDecrease = {},
+                    onIncrease = {},
+                    states = PixelControlStateSet.Normal,
+                    key = "adjuster",
+                ),
+                logicalWidth = 96,
+                logicalHeight = 32,
+            )
+            /** 状态化入口在同一输入下的参考帧。 */
+            val stateAwarePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            /** 状态化入口导出的参考命中目标。 */
+            val stateAwareTargets = requireNotNull(tester.renderResult).clickTargets
+                .sortedBy { target -> target.bounds.left }
+            /** 状态化入口导出的参考整组语义节点。 */
+            val stateAwareGroup = tester
+                .semanticsNodesByLabel(PixelLabelTokens.Default.valueAdjuster)
+                .single()
+
+            assertTrue(concisePixels.contentEquals(stateAwarePixels))
+            assertEquals(stateAwareTargets.size, conciseTargets.size)
+            assertEquals(stateAwareTargets[0].bounds, conciseTargets[0].bounds)
+            assertEquals(stateAwareTargets[1].bounds, conciseTargets[1].bounds)
+            assertEquals(stateAwareGroup.width, conciseGroup.width)
+            assertEquals(stateAwareGroup.height, conciseGroup.height)
+            // 默认 token 解析出的动作单元宽度：9px 最小宽度加两侧一像素边框。
+            assertEquals(2, conciseTargets.size)
+            assertEquals(11, conciseTargets[0].bounds.width)
+            assertEquals(11, conciseTargets[1].bounds.width)
+            assertEquals(50, conciseGroup.width)
+            assertEquals(13, conciseGroup.height)
+
+            tester.pumpWidget(
+                PixelTheme(
+                    tokens = PixelThemeTokens.Default,
+                    child = ValueAdjuster(
+                        valueText = "5",
+                        onDecrease = {},
+                        onIncrease = {},
+                        key = "adjuster",
+                    ),
+                ),
+                logicalWidth = 96,
+                logicalHeight = 32,
+            )
+            /** 挂载与默认值相同的 token 图后，同一简洁入口的帧。 */
+            val defaultProviderPixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            // 挂载 PixelTheme 只改变 token 解析结果；提供 Default 图与不提供必须完全一致。
+            assertTrue(defaultProviderPixels.contentEquals(concisePixels))
 
             /** Disabled action fill sentinel resolved from the explicit theme. */
             val disabledFill = PixelColor.fromRgb(173, 43, 67)
-            /** Disabled glyph sentinel proving the old hard-coded black fallback is bypassed. */
+            /** 禁用态字形哨兵色，证明前景来自 onDisabled 角色而不是任何固定值。 */
             val disabledGlyph = PixelColor.fromRgb(211, 223, 79)
             /** Explicit token graph with independently observable labels, geometry, and colors. */
             val themedTokens = PixelThemeTokens.Default.copy(
@@ -78,7 +132,7 @@ class ValueAdjusterProgressContractTest {
                         valueText = "5",
                         onDecrease = null,
                         onIncrease = {},
-                        key = "themed-legacy-adjuster",
+                        key = "themed-adjuster",
                     ),
                 ),
                 logicalWidth = 96,
@@ -91,6 +145,8 @@ class ValueAdjusterProgressContractTest {
             val themedIncrease = tester.semanticsNodesByLabel("TOKEN INCREASE").single()
             assertEquals(19, themedIncrease.width)
             assertEquals(15, themedIncrease.height)
+            // 主题只替换解析结果；默认 token 下的整组几何不再出现。
+            assertTrue(tester.semanticsNodesByLabel(PixelLabelTokens.Default.valueAdjuster).isEmpty())
         } finally {
             tester.dispose()
         }
@@ -269,7 +325,7 @@ class ValueAdjusterProgressContractTest {
             assertEquals(0, malformedNode.width)
             assertTrue(malformedNode.height >= 0)
 
-            /** Scope-less old facade must also accept malformed dimensions without throwing. */
+            /** 无提供者的简洁入口同样必须接受畸形尺寸且不抛异常。 */
             tester.pumpWidget(
                 ProgressBar(progress = 0.5f, width = -20, height = -4),
                 logicalWidth = 8,
@@ -281,14 +337,14 @@ class ValueAdjusterProgressContractTest {
         }
     }
 
-    /** Progress minimum-width tokens are observable while scope-less legacy pixels stay unchanged. */
+    /** 简洁 ProgressBar 与状态化实现等价，并同样消费组件 minimumWidth token。 */
     @Test
-    fun progressBarConsumesMinimumWidthWithoutChangingScopeLessLegacyPixels() {
-        /** Historical active fill sentinel. */
+    fun progressBarConciseFacadeMatchesStateAwareAndConsumesMinimumWidth() {
+        /** 显式填充哨兵色。 Explicit active fill sentinel. */
         val active = PixelColor.fromRgb(23, 149, 83)
-        /** Historical track sentinel. */
+        /** 显式轨道哨兵色。 Explicit track sentinel. */
         val track = PixelColor.fromRgb(41, 43, 47)
-        /** Runtime reused for exact legacy pixels and the explicit-theme branch. */
+        /** 同时用于等价性比较与显式主题分支的复用运行时。 Runtime reused for the equivalence comparison and the explicit-theme branch. */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
@@ -302,13 +358,30 @@ class ValueAdjusterProgressContractTest {
                 logicalWidth = 16,
                 logicalHeight = 8,
             )
-            /** Historical stack paint remains unchanged when no PixelTheme provider exists. */
-            val legacyBuffer = requireNotNull(tester.renderResult).buffer
-            assertEquals(active, legacyBuffer.getPixel(0, 0))
-            assertEquals(active, legacyBuffer.getPixel(4, 4))
-            assertEquals(PixelColor.White, legacyBuffer.getPixel(5, 0))
-            assertEquals(track, legacyBuffer.getPixel(6, 2))
-            assertTrue(tester.semanticsNodesByLabel("Progress").isEmpty())
+            /** 简洁入口在无提供者时的像素与语义节点。 */
+            val concisePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            val conciseNode = tester.semanticsNodesByLabel(PixelLabelTokens.Default.progress).single()
+
+            tester.pumpWidget(
+                ProgressBar(
+                    progress = 0.5f,
+                    states = PixelControlStateSet.Normal,
+                    width = 10,
+                    height = 5,
+                    color = active,
+                    trackColor = track,
+                ),
+                logicalWidth = 16,
+                logicalHeight = 8,
+            )
+            /** 状态化入口在同一输入下的参考像素与语义节点。 */
+            val stateAwarePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            val stateAwareNode = tester.semanticsNodesByLabel(PixelLabelTokens.Default.progress).single()
+            assertTrue(concisePixels.contentEquals(stateAwarePixels))
+            assertEquals(stateAwareNode.width, conciseNode.width)
+            assertEquals(stateAwareNode.height, conciseNode.height)
+            assertTrue(tester.hasPixel(active))
+            assertTrue(tester.hasPixel(track))
 
             /** Explicit progress token with a minimum wider than both caller and foundation defaults. */
             val progressTokens = PixelThemeTokens.Default.copy(
@@ -325,7 +398,7 @@ class ValueAdjusterProgressContractTest {
                 logicalWidth = 80,
                 logicalHeight = 16,
             )
-            /** Old facade inside an explicit provider delegates to the token-aware implementation. */
+            /** 简洁入口在显式提供者下同样委托到 token 实现。 */
             val themedNode = tester.semanticsNodesByLabel("TOKEN PROGRESS").single()
             assertEquals(63, themedNode.width)
             assertEquals(7, themedNode.height)

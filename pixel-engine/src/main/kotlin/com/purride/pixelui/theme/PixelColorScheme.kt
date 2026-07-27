@@ -160,33 +160,11 @@ public data class PixelColorScheme(
         }
     }
 
-    /** 执行 `PixelColorScheme` 的 `toLegacyColors` 公开行为；具体参数、返回和副作用见下文。
- *
- * Converts this scheme to the legacy thirteen-color palette.
- */
-    public fun toLegacyColors(): PixelThemeColors {
-        return PixelThemeColors(
-            background = background,
-            surface = surface,
-            text = onBackground,
-            mutedText = onSurfaceVariant,
-            border = outline,
-            accent = primary,
-            danger = danger,
-            warning = warning,
-            disabled = disabled,
-            inactive = inactive,
-            track = track,
-            focus = focus,
-            selection = selection,
-        )
-    }
-
     /** 集中提供 `PixelColorScheme` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /** 公开 `PixelColorScheme` 的 `Dark` 配置或运行值。
  *
- * Dark preset that preserves the original PixelThemeData.Default palette exactly.
+ * Dark preset used as the default palette.
  */
         public val Dark: PixelColorScheme = PixelColorScheme(
             background = PixelColor.Black,
@@ -302,34 +280,8 @@ public data class PixelColorScheme(
 
         /** 公开 `PixelColorScheme` 的 `Default` 配置或运行值。
  *
- * Default scheme retained for source compatibility; it is identical to [Dark].
+ * Default scheme identical to [Dark].
  */
         public val Default: PixelColorScheme = Dark
-
-        /** 创建或解析 `PixelColorScheme` 的 `fromLegacy` 结果，并在返回前校验输入。
- *
- * Creates a semantic scheme from the legacy PixelTheme palette.
- */
-        public fun fromLegacy(colors: PixelThemeColors): PixelColorScheme {
-            return Dark.copy(
-                background = colors.background,
-                onBackground = colors.text,
-                surface = colors.surface,
-                onSurface = colors.text,
-                surfaceVariant = colors.track,
-                onSurfaceVariant = colors.mutedText,
-                outline = colors.border,
-                outlineVariant = colors.inactive,
-                primary = colors.accent,
-                danger = colors.danger,
-                warning = colors.warning,
-                disabled = colors.disabled,
-                onDisabled = colors.disabled,
-                inactive = colors.inactive,
-                track = colors.track,
-                focus = colors.focus,
-                selection = colors.selection,
-            )
-        }
     }
 }

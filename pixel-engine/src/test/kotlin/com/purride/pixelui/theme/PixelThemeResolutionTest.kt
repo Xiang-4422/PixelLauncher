@@ -11,11 +11,11 @@ import org.junit.Test
 import java.lang.reflect.Modifier
 import kotlin.time.Duration.Companion.milliseconds
 
-/** Locks inherited token behavior and the legacy JVM constructor surface. */
-class PixelThemeCompatibilityTest {
-    /** Complete tokens project legacy data and provide motion when no explicit motion theme exists. */
+/** 锁定唯一主题模型的继承解析行为与 token 数据类的 JVM 表面。 */
+class PixelThemeResolutionTest {
+    /** 唯一的 token 构造入口既提供完整 token 图，也为缺省 Motion 提供回落。 */
     @Test
-    fun tokenConstructorProvidesTokensLegacyProjectionAndMotionFallback() {
+    fun tokenProviderSuppliesTokensAndMotionFallback() {
         /** Motion value that identifies the complete theme fallback path. */
         val themedMotion = PixelMotionThemeData.Default.copy(
             feedback = PixelMotionSpec(
@@ -40,7 +40,7 @@ class PixelThemeCompatibilityTest {
         )
 
         assertSame(expectedTokens, capture.tokens)
-        assertEquals(expectedTokens.toLegacyThemeData(), capture.legacyData)
+        assertSame(expectedTokens, capture.maybeTokens)
         assertSame(themedMotion, capture.motion)
         assertSame(themedMotion, capture.maybeMotion)
         tester.dispose()
@@ -79,9 +79,9 @@ class PixelThemeCompatibilityTest {
         tester.dispose()
     }
 
-    /** Missing providers retain safe Default values for both legacy and complete accessors. */
+    /** 缺少提供者时 `of` 回落到 Default，`maybeOf` 仍然报告 null。 */
     @Test
-    fun missingThemeUsesLegacyAndCompleteDefaults() {
+    fun missingThemeUsesTokenDefaults() {
         /** Mutable capture populated during retained build. */
         val capture = TokenThemeCapture()
         /** Retained test harness. */
@@ -90,132 +90,133 @@ class PixelThemeCompatibilityTest {
         tester.pumpWidget(TokenThemeProbe(capture), logicalWidth = 2, logicalHeight = 2)
 
         assertSame(PixelThemeTokens.Default, capture.tokens)
-        assertSame(PixelThemeData.Default, capture.legacyData)
+        assertNull(capture.maybeTokens)
         assertSame(PixelMotionThemeData.Default, capture.motion)
         assertNull(capture.maybeMotion)
         tester.dispose()
     }
 
-    /** PixelTheme retains its exact old JVM constructor and adds a distinct token overload. */
+    /** PixelTheme 只暴露一个 token 构造入口，不再保留任何旧主题模型入口。 */
     @Test
-    fun pixelThemeRetainsLegacyJvmConstructorDescriptor() {
-        /** Kotlin marker class used by the original default-argument constructor bridge. */
+    fun pixelThemeExposesOnlyTokenConstructorAndAccessor() {
+        /** 默认实参构造桥接使用的 Kotlin marker 类。 Kotlin marker class used by the default-argument constructor bridge. */
         val markerClass = Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
-        /** Original public constructor looked up by its exact erased JVM parameter types. */
-        val legacyConstructor = PixelTheme::class.java.getConstructor(
-            PixelThemeData::class.java,
-            Widget::class.java,
-            Any::class.java,
-        )
-        /** Original default-key constructor bridge retained for compiled Kotlin call sites. */
-        val legacyDefaultConstructor = PixelTheme::class.java.getConstructor(
-            PixelThemeData::class.java,
-            Widget::class.java,
-            Any::class.java,
-            Int::class.javaPrimitiveType!!,
-            markerClass,
-        )
-        /** New constructor whose first parameter type makes the overload binary-distinct. */
+        /** 唯一的公开构造函数，参数为完整 token 图。 */
         val tokenConstructor = PixelTheme::class.java.getConstructor(
             PixelThemeTokens::class.java,
             Widget::class.java,
             Any::class.java,
         )
-
-        assertTrue(Modifier.isPublic(legacyConstructor.modifiers))
-        assertTrue(Modifier.isPublic(legacyDefaultConstructor.modifiers))
-        assertTrue(Modifier.isPublic(tokenConstructor.modifiers))
-        assertNotNull(PixelTheme::class.java.getDeclaredMethod("getData"))
-    }
-
-    /** PixelThemeData retains its five-value constructor, component methods, copy, and no-arg ABI. */
-    @Test
-    fun pixelThemeDataRetainsLegacyDataClassJvmSurface() {
-        /** Kotlin marker class used by the original default-argument constructor bridge. */
-        val markerClass = Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
-        /** Exact original five-parameter constructor. */
-        val primaryConstructor = PixelThemeData::class.java.getConstructor(
-            PixelThemeColors::class.java,
-            PixelTextStyle::class.java,
-            PixelButtonStyle::class.java,
-            PixelTextButtonStyle::class.java,
-            PixelTextFieldStyle::class.java,
-        )
-        /** Original all-default no-argument constructor. */
-        val noArgConstructor = PixelThemeData::class.java.getConstructor()
-        /** Original all-default bit-mask constructor used by compiled Kotlin call sites. */
-        val defaultConstructor = PixelThemeData::class.java.getConstructor(
-            PixelThemeColors::class.java,
-            PixelTextStyle::class.java,
-            PixelButtonStyle::class.java,
-            PixelTextButtonStyle::class.java,
-            PixelTextFieldStyle::class.java,
+        /** 默认 key 的构造桥接，供编译期使用默认实参的 Kotlin 调用点。 */
+        val tokenDefaultConstructor = PixelTheme::class.java.getConstructor(
+            PixelThemeTokens::class.java,
+            Widget::class.java,
+            Any::class.java,
             Int::class.javaPrimitiveType!!,
             markerClass,
         )
-        /** Exact original data-class copy method. */
-        val copyMethod = PixelThemeData::class.java.getDeclaredMethod(
+        /** 首参不是 token 图的公开构造函数，用于证明没有第二种主题模型入口。 */
+        val nonTokenConstructors = PixelTheme::class.java.constructors.filterNot { constructor ->
+            constructor.parameterTypes.firstOrNull() == PixelThemeTokens::class.java
+        }
+
+        assertTrue(Modifier.isPublic(tokenConstructor.modifiers))
+        assertTrue(Modifier.isPublic(tokenDefaultConstructor.modifiers))
+        assertEquals(emptyList<Any>(), nonTokenConstructors)
+        assertNotNull(PixelTheme::class.java.getDeclaredMethod("getTokens"))
+        assertTrue(
+            PixelTheme::class.java.declaredMethods.none { method -> method.name == "getData" },
+        )
+    }
+
+    /** PixelThemeTokens 保持十二字段数据类的构造、component 与 copy 表面。 */
+    @Test
+    fun pixelThemeTokensExposesCompleteDataClassJvmSurface() {
+        /** 默认实参构造桥接使用的 Kotlin marker 类。 Kotlin marker class used by the default-argument constructor bridge. */
+        val markerClass = Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
+        /** token 图的有序构造参数类型。 */
+        val tokenParameterTypes = listOf(
+            PixelThemeBrightness::class.java,
+            PixelThemeContrast::class.java,
+            PixelColorScheme::class.java,
+            PixelTypographyTokens::class.java,
+            PixelSpacingTokens::class.java,
+            PixelSizeTokens::class.java,
+            PixelRadiusTokens::class.java,
+            PixelBorderTokens::class.java,
+            PixelElevationTokens::class.java,
+            PixelMotionThemeData::class.java,
+            PixelComponentTokens::class.java,
+            PixelLabelTokens::class.java,
+        )
+        /** 完整参数的主构造函数。 */
+        val primaryConstructor = PixelThemeTokens::class.java.getConstructor(
+            *tokenParameterTypes.toTypedArray(),
+        )
+        /** 全默认无参构造函数。 */
+        val noArgConstructor = PixelThemeTokens::class.java.getConstructor()
+        /** 位掩码默认实参构造桥接。 */
+        val defaultConstructor = PixelThemeTokens::class.java.getConstructor(
+            *(tokenParameterTypes + Int::class.javaPrimitiveType!! + markerClass).toTypedArray(),
+        )
+        /** 完整参数的数据类 copy 方法。 */
+        val copyMethod = PixelThemeTokens::class.java.getDeclaredMethod(
             "copy",
-            PixelThemeColors::class.java,
-            PixelTextStyle::class.java,
-            PixelButtonStyle::class.java,
-            PixelTextButtonStyle::class.java,
-            PixelTextFieldStyle::class.java,
+            *tokenParameterTypes.toTypedArray(),
         )
 
         assertTrue(Modifier.isPublic(primaryConstructor.modifiers))
         assertTrue(Modifier.isPublic(noArgConstructor.modifiers))
         assertTrue(Modifier.isPublic(defaultConstructor.modifiers))
         assertTrue(Modifier.isPublic(copyMethod.modifiers))
-        (1..5).forEach { componentIndex ->
-            assertNotNull(PixelThemeData::class.java.getDeclaredMethod("component$componentIndex"))
+        (1..tokenParameterTypes.size).forEach { componentIndex ->
+            assertNotNull(
+                PixelThemeTokens::class.java.getDeclaredMethod("component$componentIndex"),
+            )
         }
     }
 
-    /** PixelThemeColors retains thirteen inline-color components, copy, and constructor bridges. */
+    /** PixelColorScheme 保持二十二个语义颜色角色的 inline-value 数据类表面。 */
     @Test
-    fun pixelThemeColorsRetainsLegacyInlineValueJvmSurface() {
-        /** Public constructor parameter signatures emitted around the private inline-value primary. */
-        val publicSignatures = PixelThemeColors::class.java.constructors.map { constructor ->
+    fun pixelColorSchemeExposesTwentyTwoInlineValueRoles() {
+        /** 内联颜色主构造函数外围生成的公开构造签名。 */
+        val publicSignatures = PixelColorScheme::class.java.constructors.map { constructor ->
             constructor.parameterTypes.map(Class<*>::getName)
         }
-        /** Thirteen unboxed PixelColor values followed by the synthetic marker. */
-        val primaryBridge = List(13) { "int" } + "kotlin.jvm.internal.DefaultConstructorMarker"
-        /** Thirteen colors, one default mask, and the synthetic marker. */
-        val defaultBridge = List(14) { "int" } + "kotlin.jvm.internal.DefaultConstructorMarker"
-        /** Mangled data-class copy method retaining thirteen unboxed colors. */
-        val copyMethod = PixelThemeColors::class.java.declaredMethods.single { method ->
+        /** 二十二个 unbox 后的 PixelColor 值加上合成 marker。 */
+        val primaryBridge = List(22) { "int" } + "kotlin.jvm.internal.DefaultConstructorMarker"
+        /** 名称被 mangle 的 copy 方法，保留二十二个 unbox 颜色。 */
+        val copyMethod = PixelColorScheme::class.java.declaredMethods.single { method ->
             method.name.startsWith("copy-") && !method.name.contains("\$default")
         }
-        /** Mangled component methods emitted for every legacy palette property. */
-        val componentMethods = PixelThemeColors::class.java.declaredMethods.filter { method ->
+        /** 为每个语义颜色角色生成的 component 方法。 */
+        val componentMethods = PixelColorScheme::class.java.declaredMethods.filter { method ->
             method.name.startsWith("component") && !method.name.contains("\$default")
         }
 
         assertTrue(primaryBridge in publicSignatures)
-        assertTrue(defaultBridge in publicSignatures)
-        assertEquals(13, copyMethod.parameterCount)
-        assertEquals(13, componentMethods.size)
+        assertEquals(22, copyMethod.parameterCount)
+        assertEquals(22, componentMethods.size)
     }
 
-    /** PixelLabelTokens retains its original 29-label data-class JVM surface. */
+    /** PixelLabelTokens 保持二十九个标签的数据类 JVM 表面。 */
     @Test
-    fun pixelLabelTokensRetainsLegacyDataClassJvmSurface() {
-        /** Kotlin marker class used by the original default-argument constructor bridge. */
+    fun pixelLabelTokensRetainsDataClassJvmSurface() {
+        /** 默认实参构造桥接使用的 Kotlin marker 类。 Kotlin marker class used by the default-argument constructor bridge. */
         val markerClass = Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
-        /** Exact ordered parameter types of the original 29-label primary constructor and copy. */
+        /** 29 个标签的主构造函数与 copy 的精确有序参数类型。 Exact ordered parameter types of the 29-label primary constructor and copy. */
         val labelParameterTypes = List(29) { String::class.java }
-        /** Original public primary constructor containing exactly the frozen label set. */
+        /** 恰好包含冻结标签集合的公开主构造函数。 Public primary constructor containing exactly the frozen label set. */
         val primaryConstructor = PixelLabelTokens::class.java.getConstructor(
             *labelParameterTypes.toTypedArray(),
         )
-        /** Original all-default no-argument constructor. */
+        /** 全默认无参构造函数。 All-default no-argument constructor. */
         val noArgConstructor = PixelLabelTokens::class.java.getConstructor()
-        /** Original one-mask default-argument constructor used by compiled Kotlin call sites. */
+        /** 编译期 Kotlin 调用点使用的单掩码默认实参构造函数。 One-mask default-argument constructor used by compiled Kotlin call sites. */
         val defaultConstructor = PixelLabelTokens::class.java.getConstructor(
             *(labelParameterTypes + Int::class.javaPrimitiveType!! + markerClass).toTypedArray(),
         )
-        /** Exact original data-class copy method. */
+        /** 完整参数的数据类 copy 方法。 Complete data-class copy method. */
         val copyMethod = PixelLabelTokens::class.java.getDeclaredMethod(
             "copy",
             *labelParameterTypes.toTypedArray(),
@@ -247,8 +248,8 @@ private class TokenThemeCapture {
     /** Complete tokens resolved by the probe. */
     var tokens: PixelThemeTokens? = null
 
-    /** Legacy data resolved by the probe. */
-    var legacyData: PixelThemeData? = null
+    /** 探针解析出的可空继承 token 图。 Nullable inherited tokens resolved by the probe. */
+    var maybeTokens: PixelThemeTokens? = null
 
     /** Effective motion tokens resolved by the probe. */
     var motion: PixelMotionThemeData? = null
@@ -257,15 +258,15 @@ private class TokenThemeCapture {
     var maybeMotion: PixelMotionThemeData? = null
 }
 
-/** Stateless retained probe that reads all theme compatibility accessors. */
+/** 读取全部继承主题访问器的无状态 retained 探针。 Stateless retained probe that reads every inherited theme accessor. */
 private class TokenThemeProbe(
     /** Sink receiving values read during build. */
     private val capture: TokenThemeCapture,
 ) : StatelessWidget() {
     /** Captures inherited theme values and returns a fixed paintable leaf. */
     override fun build(context: BuildContext): Widget {
-        capture.tokens = PixelTheme.tokensOf(context)
-        capture.legacyData = PixelTheme.of(context)
+        capture.tokens = PixelTheme.of(context)
+        capture.maybeTokens = PixelTheme.maybeOf(context)
         capture.motion = PixelMotionTheme.of(context)
         capture.maybeMotion = PixelMotionTheme.maybeOf(context)
         return Container(width = 1, height = 1, fillColor = PixelColor.White, borderColor = null)

@@ -5,7 +5,6 @@ import com.purride.pixelcore.GlyphStyle
 import com.purride.pixelcore.PixelFontEngine
 import com.purride.pixelcore.PixelFontFamily
 import com.purride.pixelcore.PixelFontWeight
-import java.lang.reflect.InvocationTargetException
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -63,29 +62,5 @@ class LegacyBinaryRuntimeTest {
         val summary = probeMethod.invoke(null) as String
 
         assertEquals("create=1;update=2;first=true;second=true", summary)
-    }
-
-    /** Invokes every frozen Theme constructor and data-class call site on the current engine. */
-    @Test
-    fun oldThemeBinaryRunsOnCurrentEngine() {
-        /** Old Theme probe loaded exclusively from the precompiled consumer AAR. */
-        val probeClass = Class.forName("com.purride.pixelcompat.legacy.LegacyThemeBinaryProbe")
-        /** Static no-argument probe method whose Theme call sites were compiled against the old AAR. */
-        val probeMethod = probeClass.getMethod("run")
-        /** Primitive/String-only result that also proves every old call completed without linkage errors. */
-        val summary = try {
-            probeMethod.invoke(null) as String
-        } catch (invocationFailure: InvocationTargetException) {
-            /** Original legacy linkage or runtime failure hidden by Java reflection. */
-            val legacyFailure = invocationFailure.targetException
-            throw legacyFailure
-        }
-
-        assertEquals(
-            "colors=true,true,true,true;" +
-                "data=true,true,true,true;" +
-                "theme=true",
-            summary,
-        )
     }
 }

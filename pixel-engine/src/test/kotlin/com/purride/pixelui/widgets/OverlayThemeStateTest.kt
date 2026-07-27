@@ -181,9 +181,12 @@ class OverlayThemeStateTest {
         }
     }
 
-    /** Legacy factories treat unchanged defaults as sentinels under an explicit token theme. */
+    /**
+     * 简洁 overlay 入口在显式 token 主题下解析各自组件族的 container 角色，并与
+     * `states = Normal` 的状态化入口渲染完全一致。
+     */
     @Test
-    fun legacyOverlayFactoriesAdoptComponentTokensInsideTheme() {
+    fun conciseOverlayFactoriesMatchNormalStatesAndResolveComponentTokens() {
         /** Unique Menu surface color resolved from its custom Normal role. */
         val menuColor = PixelColor.fromRgb(19, 61, 103)
         /** Unique Dropdown surface color resolved from its custom Normal role. */
@@ -208,9 +211,9 @@ class OverlayThemeStateTest {
                 containerColor = PixelStateMap<PixelColorRole?>(PixelColorRole.Primary),
             ),
         )
-        /** Localized collection label proving the old default string also defers to tokens. */
+        /** 自定义集合标签，证明省略的 Menu 标签同样由 token 解析。 */
         val labels = PixelLabelTokens.Default.copy(menu = "COMMANDS")
-        /** Complete custom graph mounted above unchanged legacy factory calls. */
+        /** 挂载在两条公开入口之上的完整自定义 token 图。 */
         val tokens = PixelThemeTokens.Default.copy(
             colors = colors,
             components = components,
@@ -247,9 +250,48 @@ class OverlayThemeStateTest {
                 logicalHeight = 72,
             )
 
+            /** 简洁入口在显式主题下的完整帧。 */
+            val concisePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
             assertTrue(tester.hasPixel(menuColor))
             assertTrue(tester.hasPixel(dropdownColor))
             assertTrue(tester.hasPixel(tooltipColor))
+            assertEquals(1, tester.semanticsNodesByLabel("COMMANDS").size)
+
+            tester.pumpWidget(
+                widget = PixelTheme(
+                    tokens = tokens,
+                    child = Column(
+                        children = listOf(
+                            Menu(
+                                items = listOf(PixelMenuItem("OPEN", onSelected = {})),
+                                states = PixelControlStateSet.Normal,
+                                modal = false,
+                            ),
+                            Dropdown(
+                                label = "Mode",
+                                selectedText = "A",
+                                expanded = false,
+                                onToggle = {},
+                                items = listOf(PixelMenuItem("A", onSelected = {})),
+                                states = PixelControlStateSet.Normal,
+                            ),
+                            Tooltip(
+                                message = "HELP",
+                                visible = true,
+                                child = SizedBox(width = 4, height = 4, child = Text("?")),
+                                states = PixelControlStateSet.Normal,
+                            ),
+                        ),
+                    ),
+                ),
+                logicalWidth = 120,
+                logicalHeight = 72,
+            )
+            /** 状态化入口在同一输入下的参考帧。 */
+            val stateAwarePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+
+            // 简洁入口直接委托到 Normal states，因此两条入口逐像素一致。
+            assertTrue(concisePixels.contentEquals(stateAwarePixels))
             assertEquals(1, tester.semanticsNodesByLabel("COMMANDS").size)
         } finally {
             tester.dispose()

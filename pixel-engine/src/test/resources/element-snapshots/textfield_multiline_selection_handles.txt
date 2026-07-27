@@ -4,5 +4,6 @@ StatefulElement(widget=AutomaticFocusActionWidget, children=1, listened=0, rende
       StatelessElement(widget=Builder, children=1, listened=1, render=RenderSemantics)
         StatelessElement(widget=TextFieldWidget, children=1, listened=2, render=RenderSemantics)
           SingleChildRenderObjectElement(widget=SemanticsWidget, children=1, listened=0, render=RenderSemantics)
-            SingleChildRenderObjectElement(widget=TextInputSurfaceWidget, children=1, listened=0, render=RenderSurface)
-              RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)
+            SingleChildRenderObjectElement(widget=PixelControlFocusIndicatorWidget, children=1, listened=0, render=RenderPixelControlFocusIndicator)
+              SingleChildRenderObjectElement(widget=TextInputSurfaceWidget, children=1, listened=0, render=RenderSurface)
+                RenderObjectElement(widget=TextWidget, children=0, listened=0, render=RenderText)

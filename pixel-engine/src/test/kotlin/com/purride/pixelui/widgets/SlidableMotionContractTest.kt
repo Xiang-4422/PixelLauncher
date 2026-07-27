@@ -4,6 +4,9 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Align
 import com.purride.pixelui.Alignment
 import com.purride.pixelui.Container
+import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.PixelComponentColorTokens
+import com.purride.pixelui.PixelComponentTokens
 import com.purride.pixelui.PixelMotionRole
 import com.purride.pixelui.PixelMotionScope
 import com.purride.pixelui.PixelMotionSettings
@@ -12,6 +15,9 @@ import com.purride.pixelui.PixelMotionTheme
 import com.purride.pixelui.PixelMotionThemeData
 import com.purride.pixelui.PixelMotionTransitionPreset
 import com.purride.pixelui.PixelSpringSpec
+import com.purride.pixelui.PixelStateProperty
+import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Slidable
 import com.purride.pixelui.SlidableAction
@@ -244,17 +250,37 @@ class SlidableMotionContractTest {
         dismissible: Boolean,
         action: Widget = Container(fillColor = actionColor),
     ): Widget {
-        return Slidable(
-            child = Container(width = width, height = 10, fillColor = foregroundColor),
-            endActionPane = SlidableActionPane(
-                children = listOf(action),
-                extentRatio = 0.5f,
-                dismissible = dismissible,
-                dismissThreshold = 0.5f,
+        return PixelTheme(
+            tokens = undecoratedSlidableTheme,
+            child = Slidable(
+                child = Container(width = width, height = 10, fillColor = foregroundColor),
+                endActionPane = SlidableActionPane(
+                    children = listOf(action),
+                    extentRatio = 0.5f,
+                    dismissible = dismissible,
+                    dismissThreshold = 0.5f,
+                ),
+                key = "slidable",
             ),
-            key = "slidable",
         )
     }
+
+    /**
+     * 去除 Slidable 表面装饰的 token 图，使断言只测量水平位移而不受内边距与边框影响。
+     */
+    private val undecoratedSlidableTheme: PixelThemeTokens = PixelThemeTokens.Dark.copy(
+        components = PixelComponentTokens.Default.copy(
+            slidable = PixelComponentColorTokens(
+                containerColor = PixelStateProperty.constant(null),
+                contentColor = PixelComponentTokens.Default.slidable.contentColor,
+                borderColor = PixelStateProperty.constant(null),
+                focusIndicator = null,
+                padding = EdgeInsets.all(0),
+                borderWidth = 0,
+                cornerRadius = 0,
+            ),
+        ),
+    )
 
     /** Wraps one Slidable in deterministic theme and Host motion inherited scopes. */
     private fun motionRoot(

@@ -49,9 +49,8 @@ public data class PixelNavigationDestination(
  * @param onSelected Pointer, keyboard, or accessibility selection request by stable id.
  * @param states Persistent component states inherited by every destination.
  * @param enabled Whole-bar capability gate; Disabled also removes its single Tab stop.
- * @param semanticLabel Non-blank collection name announced before destination items. The
- * historical `"Navigation bar"` default is also the old-overload omission sentinel, so an
- * installed localization provider replaces that exact value; any other explicit value wins.
+ * @param semanticLabel 可选集合朗读名称；`null` 表示省略，由本地化提供者或内置英文兜底解析。
+ * 任意显式字符串（包括与英文兜底完全相同的文本）都具有最高优先级；显式空白值按契约在构建时拒绝。
  * @param key Stable group identity retained independently from destination order.
  */
 @JvmName("NavigationBar")
@@ -61,7 +60,7 @@ public fun NavigationBar(
     onSelected: (String) -> Unit,
     states: PixelControlStateSet = PixelControlStateSet.Normal,
     enabled: Boolean = true,
-    semanticLabel: String = DEFAULT_NAVIGATION_BAR_LABEL,
+    semanticLabel: String? = null,
     key: Any? = null,
 ): Widget = buildNavigationControl(
     destinations = destinations,
@@ -92,9 +91,8 @@ public fun NavigationBar(
  * @param animated Whether a reselect pop-to-root uses the child Navigator transition policy.
  * @param states Persistent component states inherited by every destination.
  * @param enabled Whole-bar capability gate.
- * @param semanticLabel Non-blank collection name announced before destination items. The
- * historical `"Navigation bar"` default is also the old-overload omission sentinel, so an
- * installed localization provider replaces that exact value; any other explicit value wins.
+ * @param semanticLabel 可选集合朗读名称；`null` 表示省略，由本地化提供者或内置英文兜底解析。
+ * 任意显式字符串（包括与英文兜底完全相同的文本）都具有最高优先级；显式空白值按契约在构建时拒绝。
  * @param key Stable binding and group identity.
  */
 @JvmName("NavigationBarWithController")
@@ -105,7 +103,7 @@ public fun NavigationBar(
     animated: Boolean = true,
     states: PixelControlStateSet = PixelControlStateSet.Normal,
     enabled: Boolean = true,
-    semanticLabel: String = DEFAULT_NAVIGATION_BAR_LABEL,
+    semanticLabel: String? = null,
     key: Any? = null,
 ): Widget = PixelControllerNavigationBinding(
     destinations = destinations,
@@ -133,9 +131,8 @@ public fun NavigationBar(
  * @param onSelected Pointer, keyboard, or accessibility selection request by stable id.
  * @param states Persistent component states inherited by every destination.
  * @param enabled Whole-rail capability gate; Disabled removes its single Tab stop.
- * @param semanticLabel Non-blank collection name announced before destination items. The
- * historical `"Navigation rail"` default is also the old-overload omission sentinel, so an
- * installed localization provider replaces that exact value; any other explicit value wins.
+ * @param semanticLabel 可选集合朗读名称；`null` 表示省略，由本地化提供者或内置英文兜底解析。
+ * 任意显式字符串（包括与英文兜底完全相同的文本）都具有最高优先级；显式空白值按契约在构建时拒绝。
  * @param key Stable group identity retained independently from destination order.
  */
 @JvmName("NavigationRail")
@@ -145,7 +142,7 @@ public fun NavigationRail(
     onSelected: (String) -> Unit,
     states: PixelControlStateSet = PixelControlStateSet.Normal,
     enabled: Boolean = true,
-    semanticLabel: String = DEFAULT_NAVIGATION_RAIL_LABEL,
+    semanticLabel: String? = null,
     key: Any? = null,
 ): Widget = buildNavigationControl(
     destinations = destinations,
@@ -176,9 +173,8 @@ public fun NavigationRail(
  * @param animated Whether a reselect pop-to-root uses the child Navigator transition policy.
  * @param states Persistent component states inherited by every destination.
  * @param enabled Whole-rail capability gate.
- * @param semanticLabel Non-blank collection name announced before destination items. The
- * historical `"Navigation rail"` default is also the old-overload omission sentinel, so an
- * installed localization provider replaces that exact value; any other explicit value wins.
+ * @param semanticLabel 可选集合朗读名称；`null` 表示省略，由本地化提供者或内置英文兜底解析。
+ * 任意显式字符串（包括与英文兜底完全相同的文本）都具有最高优先级；显式空白值按契约在构建时拒绝。
  * @param key Stable binding and group identity.
  */
 @JvmName("NavigationRailWithController")
@@ -189,7 +185,7 @@ public fun NavigationRail(
     animated: Boolean = true,
     states: PixelControlStateSet = PixelControlStateSet.Normal,
     enabled: Boolean = true,
-    semanticLabel: String = DEFAULT_NAVIGATION_RAIL_LABEL,
+    semanticLabel: String? = null,
     key: Any? = null,
 ): Widget = PixelControllerNavigationBinding(
     destinations = destinations,
@@ -226,8 +222,8 @@ private data class PixelControllerNavigationBinding(
     val states: PixelControlStateSet,
     /** Whole-group capability gate. */
     val enabled: Boolean,
-    /** Spoken collection label. */
-    val semanticLabel: String,
+    /** 可选朗读集合名称；null 表示省略并交由本地化解析。 */
+    val semanticLabel: String?,
     /** Bar or rail layout and keyboard axis. */
     val orientation: PixelNavigationOrientation,
     /** Stable public binding identity. */
@@ -267,7 +263,7 @@ private data class PixelNavigationControlKey(
 )
 
 /**
- * Preserves eager legacy validation before mounting the context-bound localization resolver.
+ * 在挂载 context 绑定的本地化解析器之前先完成构建期校验。
  */
 private fun buildNavigationControl(
     destinations: List<PixelNavigationDestination>,
@@ -275,12 +271,15 @@ private fun buildNavigationControl(
     onRequestSelection: (String) -> Boolean,
     states: PixelControlStateSet,
     enabled: Boolean,
-    semanticLabel: String,
+    semanticLabel: String?,
     orientation: PixelNavigationOrientation,
     key: Any?,
 ): Widget {
-    require(semanticLabel.isNotBlank()) { "Navigation semanticLabel must not be blank." }
-    /** Eager compatibility validation retained for callers that expect construction-time failure. */
+    // 省略用 null 表达；显式空白值仍按公开契约在构建时拒绝。
+    require(semanticLabel == null || semanticLabel.isNotBlank()) {
+        "Navigation semanticLabel must not be blank."
+    }
+    /** 构建期即失败的目的地校验，让调用点保持可预期。 */
     validateNavigationDestinations(destinations = destinations, selectedId = selectedId)
     return PixelLocalizedNavigationControl(
         destinations = destinations,
@@ -306,8 +305,8 @@ private data class PixelLocalizedNavigationControl(
     val states: PixelControlStateSet,
     /** Whole-group capability gate. */
     val enabled: Boolean,
-    /** Explicit label or historical default-string sentinel from the public overload. */
-    val semanticLabel: String,
+    /** 来自公开入口的显式朗读名称；null 表示省略。 */
+    val semanticLabel: String?,
     /** Bar or rail family selecting both layout and localized container label. */
     val orientation: PixelNavigationOrientation,
     /** Stable focus, semantics, and retained group identity. */
@@ -318,24 +317,20 @@ private data class PixelLocalizedNavigationControl(
         /** Explicitly installed bundle; null preserves the opt-in localization boundary. */
         val localizationBundle = PixelLocalizations.maybeOf(context)
         /** Theme remains the fallback source for Loading and Error state labels. */
-        val theme = PixelTheme.tokensOf(context)
-        /** Historical English collection name and old-overload omission sentinel. */
+        val theme = PixelTheme.of(context)
+        /** 内置英文集合名称，作为确定性最终兜底。 */
         val englishContainerLabel = when (orientation) {
-            PixelNavigationOrientation.Bar -> DEFAULT_NAVIGATION_BAR_LABEL
-            PixelNavigationOrientation.Rail -> DEFAULT_NAVIGATION_RAIL_LABEL
+            PixelNavigationOrientation.Bar -> PixelLocalizationBundle.English.navigationBar
+            PixelNavigationOrientation.Rail -> PixelLocalizationBundle.English.navigationRail
         }
         /** Provider collection name selected independently for Bar and Rail. */
         val providerContainerLabel = when (orientation) {
             PixelNavigationOrientation.Bar -> localizationBundle?.navigationBar
             PixelNavigationOrientation.Rail -> localizationBundle?.navigationRail
         }
-        /** A non-sentinel caller label is the only distinguishable explicit old-overload value. */
-        val explicitContainerLabel = semanticLabel.takeUnless { label ->
-            label == englishContainerLabel
-        }
         /** Fixed explicit → provider → English precedence for the collection boundary. */
         val resolvedContainerLabel = PixelLocalizationResolver.resolveText(
-            explicitText = explicitContainerLabel,
+            explicitText = semanticLabel,
             providerText = providerContainerLabel,
             themeText = null,
             englishFallback = englishContainerLabel,
@@ -416,7 +411,7 @@ private fun buildResolvedNavigationControl(
         key = key,
     ) { context, _ ->
         /** Active token graph supplying geometry, typography, and semantic labels. */
-        val theme = PixelTheme.tokensOf(context)
+        val theme = PixelTheme.of(context)
         /** Stable-id keyed items retaining pointer state through insertion and reordering. */
         val itemWidgets = destinations.mapIndexed { index, destination ->
             /** Caller-controlled logical selection for this exact business destination. */
@@ -578,7 +573,7 @@ private class PixelNavigationDestinationItemState : State<PixelNavigationDestina
     /** Resolves current theme, state, layout, pointer behavior, and structured semantics. */
     override fun build(context: BuildContext): Widget {
         /** Complete inherited design-token graph. */
-        val theme = PixelTheme.tokensOf(context)
+        val theme = PixelTheme.of(context)
         /** Component family selected solely from the public bar/rail entry point. */
         val tokens = when (widget.orientation) {
             PixelNavigationOrientation.Bar -> theme.components.navigationBar
@@ -854,8 +849,3 @@ private fun requestAdjacentNavigationDestination(
     return false
 }
 
-/** Default configurable collection label for the horizontal component. */
-private const val DEFAULT_NAVIGATION_BAR_LABEL: String = "Navigation bar"
-
-/** Default configurable collection label for the vertical component. */
-private const val DEFAULT_NAVIGATION_RAIL_LABEL: String = "Navigation rail"

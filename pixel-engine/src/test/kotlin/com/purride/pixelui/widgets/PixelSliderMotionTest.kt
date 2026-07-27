@@ -7,6 +7,7 @@ import com.purride.pixelui.PixelMotionSettings
 import com.purride.pixelui.PixelMotionSpec
 import com.purride.pixelui.PixelMotionTheme
 import com.purride.pixelui.PixelMotionThemeData
+import com.purride.pixelui.PixelColorScheme
 import com.purride.pixelui.PixelMotionTransitionPreset
 import com.purride.pixelui.Slider
 import com.purride.pixelui.ValueListenableBuilder
@@ -203,34 +204,49 @@ class PixelSliderMotionTest {
         tester.pumpFrame(0)
     }
 
-    /** 验证 active 填充终点、thumb 和下一空像素表达的实际绘制值。 */
+    /**
+     * 验证 token 解析出的 active 区段范围、thumb 覆盖列和其后的轨道像素。
+     *
+     * 默认 Slider token 没有 padding 与边框，因此 active 区段宽度等于整条轨道宽度；
+     * 非端点进度时最后一列会被 thumb 覆盖，所以可见 active 像素数为 `fillWidth - 1`。
+     */
     private fun assertSliderFrame(
         tester: PixelTester,
         progress: Float,
         allowFeedbackColor: Boolean = false,
     ) {
-        val innerWidth = SliderWidth - 2
-        val fillWidth = (innerWidth * progress).roundToInt().coerceIn(0, innerWidth)
-        if (fillWidth == 0) {
-            assertEquals(PixelColor.Transparent, tester.pixelAt(1, 2))
+        /** Token 解析后的可绘制区段宽度，等于轨道整宽。 */
+        val rangeWidth = SliderWidth
+        /** 当前进度覆盖的整数像素宽度。 */
+        val fillWidth = (rangeWidth * progress).roundToInt().coerceIn(0, rangeWidth)
+        /** thumb 覆盖后仍然可见的 active 像素数量。 */
+        val visibleActive = when {
+            fillWidth == 0 -> 0
+            fillWidth == rangeWidth -> rangeWidth
+            else -> fillWidth - 1
+        }
+        if (visibleActive == 0) {
+            assertEquals(TrackColor, tester.pixelAt(0, 2))
             return
         }
-        val expectedActive = if (allowFeedbackColor) tester.pixelAt(1, 2) else ActiveColor
-        if (fillWidth == innerWidth) {
-            assertEquals(expectedActive, tester.pixelAt(innerWidth, 2))
-        } else {
-            if (fillWidth > 1) assertEquals(expectedActive, tester.pixelAt(fillWidth - 1, 2))
-            // thumb 覆盖 fill 的最后一列；反馈态允许颜色变化但位置必须准确。
-            assertTrue(tester.pixelAt(fillWidth, 2) != PixelColor.Transparent)
-            assertEquals(PixelColor.Transparent, tester.pixelAt(fillWidth + 1, 2))
+        /** 反馈态允许 active 颜色变化，但区段范围必须精确。 */
+        val expectedActive = if (allowFeedbackColor) tester.pixelAt(0, 2) else ActiveColor
+        assertTrue(expectedActive != TrackColor)
+        assertEquals(expectedActive, tester.pixelAt(visibleActive - 1, 2))
+        if (visibleActive < rangeWidth) {
+            // thumb 覆盖 active 区段的最后一列，其后必须是轨道色。
+            assertEquals(TrackColor, tester.pixelAt(visibleActive, 2))
         }
     }
 
     private companion object {
-        /** 测试轨道宽度，内部可绘制宽度固定为 10px。 */
+        /** 测试轨道宽度；默认 Slider token 无 padding，可绘制宽度等于该值。 */
         const val SliderWidth: Int = 12
 
-        /** Scope-less legacy Slider retains its historical orange active fill. */
-        val ActiveColor: PixelColor = PixelColor.fromRgb(200, 100, 0)
+        /** 默认深色主题解析出的 Slider active 前景（primary 角色）。 */
+        val ActiveColor: PixelColor = PixelColorScheme.Dark.primary
+
+        /** 默认深色主题解析出的 Slider 轨道填充（track 角色）。 */
+        val TrackColor: PixelColor = PixelColorScheme.Dark.track
     }
 }

@@ -43,19 +43,19 @@ import org.junit.Test
 
 /** State, token, semantics, and interaction-owner contracts for Scrollbar and RefreshIndicator. */
 class ScrollbarRefreshStateTest {
-    /** Legacy sentinels resolve theme labels and geometry while explicit labels remain dominant. */
+    /** 省略的标签与尺寸由主题 token 解析，显式标签始终优先。 */
     @Test
-    fun legacySentinelsResolveThemeLabelsAndFoundationGeometry() {
+    fun omittedLabelsAndGeometryResolveThemeAndFoundationTokens() {
         /** Custom localizable labels proving mounted theme lookup. */
         val labels = PixelLabelTokens.Default.copy(
             scrollbar = "TOKEN SCROLLBAR",
             refresh = "TOKEN REFRESH",
         )
-        /** Custom width proving the omitted historical one-pixel scrollbar width is tokenized. */
+        /** 自定义宽度，证明省略的滚动条宽度由组件尺寸 token 解析。 */
         val scrollbarTokens = PixelComponentTokens.Default.scrollbar.copy(minimumWidth = 3)
         /** Custom indicator height used as one threshold floor. */
         val refreshTokens = PixelComponentTokens.Default.refresh.copy(minimumHeight = 5)
-        /** Custom compact height proving the historical twelve-pixel threshold is tokenized. */
+        /** 自定义紧凑高度，证明省略的刷新触发距离由 foundation 尺寸 token 解析。 */
         val sizes = PixelSizeTokens.Default.copy(compactControlHeight = 17)
         /** Theme containing every sentinel override under test. */
         val tokens = PixelThemeTokens.Default.copy(
@@ -696,7 +696,7 @@ class ScrollbarRefreshStateTest {
         )
     }
 
-    /** Builds the legacy Scrollbar facade around [listViewport]. */
+    /** 围绕 [listViewport] 构建简洁 Scrollbar 入口。 */
     private fun scrollableScrollbar(
         state: PixelListState,
         controller: PixelListController,

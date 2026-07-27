@@ -73,6 +73,8 @@ class LoadingPreviewScreen(
                                                 width = barWidth,
                                                 height = previewHeight,
                                                 color = widget.theme.semantic.info,
+                                                // 点阵背景显式沿用扫描色。
+                                                trackColor = widget.theme.semantic.info,
                                                 blockWidth = blockWidth,
                                                 trailWidth = trailWidth,
                                                 cycleFrames = speed.cycleFrames,
@@ -87,6 +89,8 @@ class LoadingPreviewScreen(
                                                 width = barWidth,
                                                 height = previewHeight,
                                                 color = widget.theme.semantic.warning,
+                                                // 点阵背景显式沿用扫描色。
+                                                trackColor = widget.theme.semantic.warning,
                                                 blockWidth = blockWidth,
                                                 trailWidth = trailWidth,
                                                 key = "loading-preview-35",
@@ -100,6 +104,8 @@ class LoadingPreviewScreen(
                                                 width = barWidth,
                                                 height = previewHeight,
                                                 color = widget.theme.semantic.success,
+                                                // 点阵背景显式沿用扫描色。
+                                                trackColor = widget.theme.semantic.success,
                                                 blockWidth = blockWidth,
                                                 trailWidth = trailWidth,
                                                 reversed = true,

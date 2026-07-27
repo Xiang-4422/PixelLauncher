@@ -34,7 +34,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Provider precedence, formatting, retained state, and legacy visuals for input/scroll families. */
+/** 输入与滚动家族的提供者优先级、格式化、retained 状态与渲染中立性覆盖。 */
 class InputScrollLocalizationTest {
     /** Provider defaults beat theme labels while explicit values remain caller-owned. */
     @Test
@@ -280,16 +280,16 @@ class InputScrollLocalizationTest {
         }
     }
 
-    /** Localization presence cannot select token visuals for a scope-less legacy facade. */
+    /** 挂载本地化提供者不会改变简洁按钮入口的任何输出像素。 */
     @Test
-    fun providerPresenceDoesNotChangeScopeLessLegacyButtonPixels() {
+    fun providerPresenceDoesNotChangeConciseButtonPixels() {
         /** Explicit fill sentinel makes a visual-branch regression immediately observable. */
         val fill = PixelColor.fromRgb(37, 83, 149)
-        /** Explicit border sentinel belongs to the historical concrete style path. */
+        /** 显式边框哨兵色属于调用方具体样式通道。 */
         val border = PixelColor.fromRgb(227, 61, 89)
         /** Explicit text sentinel ensures provider text resolution is a no-op for this comparison. */
         val text = PixelColor.fromRgb(247, 193, 41)
-        /** Historical facade declaration reused verbatim inside both inherited trees. */
+        /** 在两棵继承树中逐字复用的简洁入口声明。 */
         val button = OutlinedButton(
             text = "UNCHANGED",
             onPressed = {},
@@ -303,8 +303,8 @@ class InputScrollLocalizationTest {
         val tester = PixelTester()
         try {
             tester.pumpWidget(button, logicalWidth = 96, logicalHeight = 20)
-            /** Complete pre-provider frame is the exact scope-less legacy reference. */
-            val legacyPixels = capturePixels(tester = tester, width = 96, height = 20)
+            /** 挂载提供者前的完整帧作为精确参考。 */
+            val baselinePixels = capturePixels(tester = tester, width = 96, height = 20)
 
             tester.pumpWidget(
                 PixelLocalizations(
@@ -315,9 +315,9 @@ class InputScrollLocalizationTest {
                 logicalWidth = 96,
                 logicalHeight = 20,
             )
-            /** English provider changes no explicit text, so every historical pixel must match. */
+            /** 英文提供者不改变任何显式文本，因此每个像素都必须一致。 */
             val localizedPixels = capturePixels(tester = tester, width = 96, height = 20)
-            assertEquals(legacyPixels, localizedPixels)
+            assertEquals(baselinePixels, localizedPixels)
             assertEquals(1, tester.semanticsNodesByLabel("UNCHANGED").size)
         } finally {
             tester.dispose()

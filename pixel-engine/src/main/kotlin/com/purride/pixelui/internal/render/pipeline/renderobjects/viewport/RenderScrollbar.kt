@@ -17,7 +17,7 @@ public class RenderScrollbar(
     private var trackColor: PixelColor,
     /** Optional state-resolved outline color. */
     private var borderColor: PixelColor?,
-    /** Foundation-resolved outline width. */
+    /** 由 foundation token 解析出的边框宽度。 Foundation-resolved outline width. */
     private var borderWidth: Int,
     /** Foundation-resolved pixel stair-step radius. */
     private var cornerRadius: Int,

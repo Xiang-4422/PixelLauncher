@@ -42,7 +42,7 @@ class PixelWidgetUiSpecStaticTest {
     @Test
     fun highRiskWidgetPaddingTokensRemainAtLeastTwoPixels() {
         val moduleRoot = resolveModuleRoot()
-        /** Remaining non-themed source constants still protected by the legacy static gate. */
+        /** 仍以源码常量表达的非主题化内边距，由该静态门禁继续保护。 */
         val constantOffenders = minPaddingRules.mapNotNull { rule ->
             val file = moduleRoot.resolve(rule.path)
             if (!file.exists()) {

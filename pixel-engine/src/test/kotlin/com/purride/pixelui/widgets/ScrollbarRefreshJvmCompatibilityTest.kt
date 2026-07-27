@@ -13,23 +13,35 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Locks legacy scrollbar/refresh JVM descriptors beside stable state-aware entry names. */
+/** 锁定 scrollbar/refresh 简洁入口与稳定状态化入口名称并存的二进制表面。 */
 class ScrollbarRefreshJvmCompatibilityTest {
-    /** All three legacy methods and Kotlin default bridges retain their exact descriptors. */
+    /** 三个家族都同时暴露简洁入口与状态化入口，且两者 JVM 描述符互不相同。 */
     @Test
-    fun legacyDescriptorsAndDefaultBridgesRemainExact() {
-        LEGACY_DESCRIPTORS.forEach { (facadeName, expectedMethods) ->
-            /** Runtime top-level facade selected by the expected descriptor group. */
-            val facade = Class.forName(facadeName)
-            /** Exact descriptors indexed by generated JVM method name. */
-            val actual = facade.declaredMethods.associate { method -> method.name to method.jvmDescriptor() }
-            expectedMethods.forEach { (methodName, expectedDescriptor) ->
-                assertEquals(
-                    "Legacy descriptor changed for $facadeName#$methodName",
-                    expectedDescriptor,
-                    actual[methodName],
-                )
+    fun conciseAndStateAwareOverloadsExposeDistinctJvmEntryPoints() {
+        REQUIRED_STATE_METHODS.forEach { (facadeName, stableName) ->
+            /** 该家族的简洁入口基础名。 */
+            val family = stableName.removeSuffix("WithControlStates")
+            /** 同时包含两个入口的运行时顶层 facade。 Runtime top-level facade containing both entry points. */
+            val methods = Class.forName(facadeName).declaredMethods
+            /** 简洁入口方法；含 inline value class 参数时名称会被 mangle。 */
+            val conciseCandidates = methods.filter { method ->
+                (method.name == family || method.name.startsWith("$family-")) &&
+                    !method.name.endsWith("\$default")
             }
+            assertEquals("Expected one concise entry point for $family", 1, conciseCandidates.size)
+            /** 唯一的简洁入口方法。 */
+            val concise = conciseCandidates.single()
+            assertEquals(Widget::class.java, concise.returnType)
+            assertTrue(
+                "Missing default bridge for ${concise.name}",
+                methods.any { method -> method.name == "${concise.name}\$default" },
+            )
+            /** 对应的状态化入口方法。 */
+            val stateAware = methods.single { method -> method.name == stableName }
+            assertTrue(
+                "$family concise and state-aware descriptors must differ",
+                concise.jvmDescriptor() != stateAware.jvmDescriptor(),
+            )
         }
     }
 
@@ -54,9 +66,9 @@ class ScrollbarRefreshJvmCompatibilityTest {
         }
     }
 
-    /** Kotlin source resolves every old call and every required-state overload together. */
+    /** Kotlin 源码同时解析全部简洁调用与必填状态重载。 Kotlin source resolves every concise call and every required-state overload together. */
     @Test
-    fun legacyAndStateAwareCallsCompileTogether() {
+    fun conciseAndStateAwareCallsCompileTogether() {
         /** Shared list controller used only to construct both scrollbar call forms. */
         val listController = PixelListController()
         /** Shared list state used by the source-level overload check. */
@@ -69,7 +81,7 @@ class ScrollbarRefreshJvmCompatibilityTest {
         val states = PixelControlStateSet.Normal
         /** Passive child sufficient for source overload resolution. */
         val child = SizedBox(width = 8, height = 8)
-        /** Six constructions proving legacy and new source signatures coexist. */
+        /** 六个构造证明简洁与状态化源码签名可以共存。 Six constructions proving concise and state-aware source signatures coexist. */
         val widgets = listOf(
             Scrollbar(child = child, state = listState),
             Scrollbar(child = child, state = listState, states = states),
@@ -142,18 +154,5 @@ class ScrollbarRefreshJvmCompatibilityTest {
             SWIPE_REFRESH_FACADE to "SwipeRefreshScaffoldWithControlStates",
         )
 
-        /** Exact pre-state descriptors grouped by generated top-level facade. */
-        val LEGACY_DESCRIPTORS: Map<String, Map<String, String>> = linkedMapOf(
-            PIXEL_WIDGETS_FACADE to linkedMapOf(
-                "Scrollbar-AD1dkFU" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/state/PixelListState;ILcom/purride/pixelcore/PixelColor;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-                "Scrollbar-AD1dkFU\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/state/PixelListState;ILcom/purride/pixelcore/PixelColor;ILjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-                "RefreshIndicator-swMSA7U" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/state/PixelRefreshIndicatorState;Lcom/purride/pixelui/state/PixelRefreshIndicatorController;Lkotlin/jvm/functions/Function0;IZIIILjava/lang/Object;Ljava/lang/String;)Lcom/purride/pixelui/Widget;",
-                "RefreshIndicator-swMSA7U\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/state/PixelRefreshIndicatorState;Lcom/purride/pixelui/state/PixelRefreshIndicatorController;Lkotlin/jvm/functions/Function0;IZIIILjava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            ),
-            SWIPE_REFRESH_FACADE to linkedMapOf(
-                "SwipeRefreshScaffold-1vmSQpk" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/state/PixelRefreshIndicatorState;Lcom/purride/pixelui/state/PixelRefreshIndicatorController;Lkotlin/jvm/functions/Function0;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;IZIIILjava/lang/Object;Ljava/lang/String;)Lcom/purride/pixelui/Widget;",
-                "SwipeRefreshScaffold-1vmSQpk\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/state/PixelRefreshIndicatorState;Lcom/purride/pixelui/state/PixelRefreshIndicatorController;Lkotlin/jvm/functions/Function0;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;IZIIILjava/lang/Object;Ljava/lang/String;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            ),
-        )
     }
 }

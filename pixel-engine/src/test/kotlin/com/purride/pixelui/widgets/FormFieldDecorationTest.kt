@@ -30,7 +30,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Production contract for decorated TextField layout, semantics, state, and compatibility. */
+/** 带装饰 TextField 的布局、语义、状态与 JVM 表面生产契约。 */
 class FormFieldDecorationTest {
     /** Visible decoration is paint-only and folds into one actionable TextField semantic node. */
     @Test
@@ -404,8 +404,12 @@ class FormFieldDecorationTest {
         val widgetDescriptors = widgetFacade.declaredMethods.associate { method ->
             method.name to method.jvmDescriptor()
         }
-        LEGACY_TEXT_FIELD_DESCRIPTORS.forEach { (name, descriptor) ->
-            assertEquals("Legacy TextField descriptor changed for $name", descriptor, widgetDescriptors[name])
+        EXISTING_TEXT_FIELD_DESCRIPTORS.forEach { (name, descriptor) ->
+            assertEquals(
+                "Existing TextField descriptor changed for $name",
+                descriptor,
+                widgetDescriptors[name],
+            )
         }
         DECORATED_TEXT_FIELD_NAMES.forEach { name ->
             assertNotNull("Missing additive JVM method $name", widgetDescriptors[name])
@@ -492,8 +496,8 @@ class FormFieldDecorationTest {
             "TextFieldWithControlStatesAndDecoration",
         )
 
-        /** Exact pre-M5-2 TextField methods and Kotlin default bridges. */
-        val LEGACY_TEXT_FIELD_DESCRIPTORS: Map<String, String> = linkedMapOf(
+        /** 未带装饰的两个 TextField 入口及其 Kotlin 默认实参桥接的精确描述符。 */
+        val EXISTING_TEXT_FIELD_DESCRIPTORS: Map<String, String> = linkedMapOf(
             "TextField-6rZe5Dk" to "(Lcom/purride/pixelui/state/PixelTextFieldState;Lcom/purride/pixelui/state/PixelTextFieldController;Ljava/lang/String;Lcom/purride/pixelui/PixelTextFieldStyle;ZZZIILcom/purride/pixelui/PixelInputType;Lcom/purride/pixelui/TextAlign;Lcom/purride/pixelui/PixelTextInputAction;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/purride/pixelcore/PixelColor;Lcom/purride/pixelcore/PixelColor;Lcom/purride/pixelui/FocusNode;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/purride/pixelui/Widget;",
             "TextField-6rZe5Dk\$default" to "(Lcom/purride/pixelui/state/PixelTextFieldState;Lcom/purride/pixelui/state/PixelTextFieldController;Ljava/lang/String;Lcom/purride/pixelui/PixelTextFieldStyle;ZZZIILcom/purride/pixelui/PixelInputType;Lcom/purride/pixelui/TextAlign;Lcom/purride/pixelui/PixelTextInputAction;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/purride/pixelcore/PixelColor;Lcom/purride/pixelcore/PixelColor;Lcom/purride/pixelui/FocusNode;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
             "TextFieldWithControlStates" to "(Lcom/purride/pixelui/state/PixelTextFieldState;Lcom/purride/pixelui/state/PixelTextFieldController;ILjava/lang/String;Lcom/purride/pixelui/PixelTextFieldStyle;ZZZIILcom/purride/pixelui/PixelInputType;Lcom/purride/pixelui/TextAlign;Lcom/purride/pixelui/PixelTextInputAction;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/purride/pixelcore/PixelColor;Lcom/purride/pixelcore/PixelColor;Lcom/purride/pixelui/FocusNode;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/purride/pixelui/Widget;",

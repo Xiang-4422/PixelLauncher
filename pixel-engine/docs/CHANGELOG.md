@@ -18,6 +18,27 @@ First public stable release of the Android-first Pixel Engine SDK.
   accept only typed `PixelRouteRequest` roots. The pre-release string-route layer (`PixelRoute`,
   `currentRoute`, `stack`, `PixelNavigatorSnapshot`, `PixelDeepLinkResolver`, the
   `widgets.navigation` package and its root-package typealiases) is removed.
+- Theming exposes exactly one model and one query pair: `PixelTheme(tokens = ..., child = ...)`
+  provides `PixelThemeTokens`, and `PixelTheme.of` / `PixelTheme.maybeOf` return it. The
+  pre-release dual model (`PixelThemeData`, `PixelThemeColors`, `PixelThemeTokens.fromLegacy`,
+  `PixelThemeTokens.toLegacyThemeData`, `PixelColorScheme.fromLegacy`,
+  `PixelColorScheme.toLegacyColors`, `PixelTypographyToken.fromLegacy`) and the
+  `tokensOf` / `maybeTokensOf` second query pair are removed.
+- Concise component APIs (`OutlinedButton`, `TextButton`, `Checkbox`, `Switch`, `ListTile`,
+  `Dialog`, `BottomSheet`, `ConfirmDialog`, `ModalBarrier`, `Toast`, `Snackbar`, `ProgressBar`,
+  `PixelLoadingBar`, `AnimatedPixelLoadingBar`, `Badge`, `Divider`, `AppScaffold`, `EmptyState`,
+  `ShortcutHint`, `Scrollbar`, `RefreshIndicator`, `SwipeRefreshScaffold`, `TextField`, `Slider`,
+  `ValueAdjuster`, `Menu`, `Dropdown`, `Tooltip`, `Slidable`, `SlidableAction`) are retained and
+  now delegate to the same state-aware token implementation. Their optional visual parameters are
+  nullable with a `null` default, meaning "resolve from tokens"; explicit caller values keep exact
+  precedence. The pre-release scope-less legacy visual branches are removed, so a concise call
+  builds an identical widget tree with or without a `PixelTheme` provider and resolves
+  `PixelThemeTokens.Default` when no provider is mounted.
+- Optional accessibility names follow the same rule: every `semanticLabel` is nullable with a
+  `null` default meaning "omitted". `NavigationBar` and `NavigationRail` no longer compare the
+  caller value against a `"Navigation bar"` / `"Navigation rail"` default-string sentinel, so an
+  explicit label always outranks the localization provider even when it equals the English
+  fallback; an explicit blank collection name is still rejected at construction time.
 
 ### Compatibility
 
@@ -114,7 +135,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
   `pixel-engine/docs/guides/migration.md`.
 - `PixelThemeTokens` with semantic light/dark/high-contrast color schemes, typography, spacing,
   sizes, stair-step radii, integer borders, hard-shadow elevation, motion, labels, and 21 component
-  token families; legacy `PixelThemeData` remains available through a compatibility projection.
+  token families. It is the only theme model.
 - `PixelControlStateSet`, `PixelStateProperty`, and `PixelStateMap` with one shared eight-state
   priority contract, additive focus indicators, Loading focus retention, and Disabled traversal
   removal. See `pixel-engine/docs/guides/migration.md`.

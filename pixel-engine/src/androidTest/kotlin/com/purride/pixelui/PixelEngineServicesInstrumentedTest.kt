@@ -162,7 +162,7 @@ private class EngineServiceProbeWidget(
 ) : StatelessWidget() {
     /** 记录 inherited 环境并返回最小可绘制内容。 */
     override fun build(context: BuildContext): Widget {
-        probe.theme = PixelTheme.tokensOf(context)
+        probe.theme = PixelTheme.of(context)
         probe.capabilities = HostCapabilities.of(context)
         probe.hostServices = PixelHostServices.of(context)
         return Text("ENGINE")

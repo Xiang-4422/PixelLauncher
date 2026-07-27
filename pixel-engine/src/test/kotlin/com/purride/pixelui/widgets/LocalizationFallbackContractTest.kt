@@ -22,37 +22,37 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Runtime compatibility contract when no localization provider is installed.
+ * Runtime fallback contract when no localization provider is installed.
  *
- * These tests intentionally use only historical facades, [PixelTheme], and [PixelTester]. They
- * freeze the pre-localization fallback boundary without coupling to the new localization API.
+ * These tests intentionally use only the concise facades, [PixelTheme], and [PixelTester]. They
+ * freeze the label fallback boundary without coupling to the localization API.
  */
-class LegacyLocalizationFallbackCompatibilityTest {
-    /** Scope-less legacy facades retain historical pixels and English semantic defaults. */
+class LocalizationFallbackContractTest {
+    /** 无提供者时简洁入口保留调用方显式样式并使用英文语义兜底。 */
     @Test
-    fun scopeLessLegacyFacadesRetainHistoricalPixelsAndSemanticFallbacks() {
-        /** Unique outlined-button surface color proving its historical visual branch painted. */
+    fun conciseFacadesKeepExplicitStylesAndEnglishSemanticFallbacks() {
+        /** 唯一描边按钮表面色，证明显式样式已绘制。 Unique outlined-button surface color proving the explicit style painted. */
         val buttonFill = PixelColor.fromRgb(31, 73, 127)
-        /** Unique outlined-button border color proving explicit legacy style precedence. */
+        /** 唯一描边按钮边框色，证明显式样式优先。 Unique outlined-button border color proving explicit style precedence. */
         val buttonBorder = PixelColor.fromRgb(211, 59, 83)
-        /** Unique outlined-button glyph color proving legacy typography remains active. */
+        /** 唯一描边按钮字形色，证明显式排版仍生效。 Unique outlined-button glyph color proving explicit typography remains active. */
         val buttonText = PixelColor.fromRgb(239, 193, 47)
-        /** Unique TextButton glyph color proving its scope-less natural-size branch painted. */
+        /** 唯一 TextButton 字形色，证明其显式样式已绘制。 Unique TextButton glyph color proving its explicit style painted. */
         val textButtonText = PixelColor.fromRgb(53, 227, 173)
-        /** Historical progress foreground sentinel. */
+        /** 显式进度前景哨兵色。 Explicit progress foreground sentinel. */
         val progressFill = PixelColor.fromRgb(23, 149, 83)
-        /** Historical progress track sentinel. */
+        /** 显式进度轨道哨兵色。 Explicit progress track sentinel. */
         val progressTrack = PixelColor.fromRgb(41, 43, 47)
-        /** Unique Dialog surface sentinel proving the legacy overlay path remained mounted. */
+        /** 唯一 Dialog 表面哨兵色，证明浮层表面仍被挂载。 Unique Dialog surface sentinel proving the overlay surface remained mounted. */
         val dialogFill = PixelColor.fromRgb(17, 29, 71)
-        /** Unique Dialog outline sentinel proving legacy overlay styling remained active. */
+        /** 唯一 Dialog 边框哨兵色，证明显式浮层样式仍生效。 Unique Dialog outline sentinel proving explicit overlay styling remained active. */
         val dialogBorder = PixelColor.fromRgb(197, 181, 37)
         /** Reused off-screen runtime prevents platform fonts or Android accessibility from intervening. */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
                 widget = OutlinedButton(
-                    text = "LEGACY BUTTON",
+                    text = "EXPLICIT BUTTON",
                     onPressed = {},
                     style = PixelButtonStyle(
                         fillColor = buttonFill,
@@ -63,8 +63,8 @@ class LegacyLocalizationFallbackCompatibilityTest {
                 logicalWidth = 96,
                 logicalHeight = 20,
             )
-            /** Caller text remains both the visible content and the spoken legacy label. */
-            val outlinedNode = tester.semanticsNodesByLabel("LEGACY BUTTON").single()
+            /** 调用方文本同时作为可见内容与朗读标签。 Caller text remains both the visible content and the spoken label. */
+            val outlinedNode = tester.semanticsNodesByLabel("EXPLICIT BUTTON").single()
             assertEquals(PixelSemanticRole.BUTTON, outlinedNode.role)
             assertTrue(outlinedNode.enabled)
             assertTrue(tester.hasPixel(buttonFill))
@@ -73,7 +73,7 @@ class LegacyLocalizationFallbackCompatibilityTest {
 
             tester.pumpWidget(
                 widget = TextButton(
-                    text = "LEGACY TEXT BUTTON",
+                    text = "EXPLICIT TEXT BUTTON",
                     onPressed = {},
                     style = PixelTextButtonStyle(
                         textStyle = PixelTextStyle(color = textButtonText),
@@ -83,7 +83,7 @@ class LegacyLocalizationFallbackCompatibilityTest {
                 logicalHeight = 16,
             )
             /** TextButton keeps caller text instead of consulting a hidden default provider. */
-            val textButtonNode = tester.semanticsNodesByLabel("LEGACY TEXT BUTTON").single()
+            val textButtonNode = tester.semanticsNodesByLabel("EXPLICIT TEXT BUTTON").single()
             assertEquals(PixelSemanticRole.BUTTON, textButtonNode.role)
             assertTrue(tester.hasPixel(textButtonText))
 
@@ -98,12 +98,10 @@ class LegacyLocalizationFallbackCompatibilityTest {
                 logicalWidth = 16,
                 logicalHeight = 8,
             )
-            /** Scope-less legacy ProgressBar remains paint-only and exports no token-era semantics. */
-            assertTrue(tester.semanticsNodesByLabel("Progress").isEmpty())
-            assertEquals(progressFill, tester.pixelAt(0, 0))
-            assertEquals(progressFill, tester.pixelAt(4, 4))
-            assertEquals(PixelColor.White, tester.pixelAt(5, 0))
-            assertEquals(progressTrack, tester.pixelAt(6, 2))
+            /** 无提供者的 ProgressBar 使用英文 label token 兜底，并保留显式颜色。 */
+            assertEquals(1, tester.semanticsNodesByLabel(PixelLabelTokens.Default.progress).size)
+            assertTrue(tester.hasPixel(progressFill))
+            assertTrue(tester.hasPixel(progressTrack))
 
             tester.pumpWidget(
                 widget = Dialog(
@@ -115,7 +113,7 @@ class LegacyLocalizationFallbackCompatibilityTest {
                 logicalWidth = 40,
                 logicalHeight = 28,
             )
-            /** Omitted Dialog semantics retain the published English legacy default. */
+            /** 省略 Dialog 语义名称时保留公开的英文默认值。 Omitted Dialog semantics retain the published English default. */
             val dialogNode = tester.semanticsNodesByLabel("Dialog").single()
             assertEquals(PixelSemanticRole.DIALOG, dialogNode.role)
             assertTrue(tester.hasPixel(dialogFill))
@@ -130,7 +128,7 @@ class LegacyLocalizationFallbackCompatibilityTest {
                 logicalWidth = 40,
                 logicalHeight = 28,
             )
-            /** Empty legacy Tooltip messages use the documented English accessibility fallback. */
+            /** 空 Tooltip 消息使用文档规定的英文无障碍兜底。 Empty Tooltip messages use the documented English accessibility fallback. */
             val tooltipNode = tester.semanticsNodesByLabel("Tooltip").single()
             assertEquals(PixelSemanticRole.GENERIC, tooltipNode.role)
         } finally {
@@ -151,35 +149,35 @@ class LegacyLocalizationFallbackCompatibilityTest {
         )
         /** Complete token graph installed directly, with no localization provider ancestor. */
         val tokens = PixelThemeTokens.Default.copy(labels = labels)
-        /** Reused runtime exercises each historical facade at an explicit theme boundary. */
+        /** 复用运行时在显式主题边界上逐个验证简洁入口。 Reused runtime exercises each concise facade at an explicit theme boundary. */
         val tester = PixelTester()
         try {
             assertSingleThemedSemanticLabel(
                 tester = tester,
                 tokens = tokens,
                 expectedLabel = labels.button,
-                legacyFallbackLabel = "Button",
+                englishFallbackLabel = "Button",
                 child = OutlinedButton(text = "", onPressed = {}),
             )
             assertSingleThemedSemanticLabel(
                 tester = tester,
                 tokens = tokens,
                 expectedLabel = labels.textButton,
-                legacyFallbackLabel = "Text button",
+                englishFallbackLabel = "Text button",
                 child = TextButton(text = "", onPressed = {}),
             )
             assertSingleThemedSemanticLabel(
                 tester = tester,
                 tokens = tokens,
                 expectedLabel = labels.progress,
-                legacyFallbackLabel = "Progress",
+                englishFallbackLabel = "Progress",
                 child = ProgressBar(progress = 0.5f),
             )
             assertSingleThemedSemanticLabel(
                 tester = tester,
                 tokens = tokens,
                 expectedLabel = labels.dialog,
-                legacyFallbackLabel = "Dialog",
+                englishFallbackLabel = "Dialog",
                 child = Dialog(
                     content = SizedBox(width = 4, height = 3),
                     modal = false,
@@ -189,7 +187,7 @@ class LegacyLocalizationFallbackCompatibilityTest {
                 tester = tester,
                 tokens = tokens,
                 expectedLabel = labels.tooltip,
-                legacyFallbackLabel = "Tooltip",
+                englishFallbackLabel = "Tooltip",
                 child = Tooltip(
                     message = "",
                     visible = true,
@@ -207,7 +205,7 @@ class LegacyLocalizationFallbackCompatibilityTest {
         tester: PixelTester,
         tokens: PixelThemeTokens,
         expectedLabel: String,
-        legacyFallbackLabel: String,
+        englishFallbackLabel: String,
         child: Widget,
     ) {
         tester.pumpWidget(
@@ -217,8 +215,8 @@ class LegacyLocalizationFallbackCompatibilityTest {
         )
         assertEquals(1, tester.semanticsNodesByLabel(expectedLabel).size)
         assertFalse(
-            "Unexpected legacy fallback '$legacyFallbackLabel'",
-            tester.semanticsNodesByLabel(legacyFallbackLabel).isNotEmpty(),
+            "Unexpected English fallback '$englishFallbackLabel'",
+            tester.semanticsNodesByLabel(englishFallbackLabel).isNotEmpty(),
         )
     }
 }

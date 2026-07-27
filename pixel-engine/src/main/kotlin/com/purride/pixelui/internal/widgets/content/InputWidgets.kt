@@ -28,7 +28,9 @@ import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.PixelTextOverflow
+import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
@@ -51,8 +53,6 @@ internal data class TextFieldWidget(
     val controller: PixelTextFieldController,
     /** Persistent caller states merged with retained focus before token resolution. */
     val states: PixelControlStateSet = PixelControlStateSet.Normal,
-    /** Marks the old public facade so a scope-less mount can retain its historical pixels. */
-    val legacyFacade: Boolean = false,
     val placeholder: String,
     val style: PixelTextFieldStyle,
     val enabled: Boolean,
@@ -80,22 +80,16 @@ internal data class TextFieldWidget(
 ) : StatelessWidget(key = key) {
     override fun build(context: BuildContext): Widget {
         context.watch(controller)
-        /** Old facades use historical visuals only when no explicit PixelTheme provider exists. */
-        val usesScopeLessLegacyVisuals = legacyFacade && PixelTheme.maybeTokensOf(context) == null
         /** Complete semantic token graph resolved from the nearest provider. */
-        val themeTokens = PixelTheme.tokensOf(context)
+        val themeTokens = PixelTheme.of(context)
         /** Explicit localization labels, absent until an application opts into the provider. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels
-        /** Exact legacy style retained because arbitrary component colors cannot become roles. */
-        val legacyStyle = PixelTheme.of(context).textFieldStyle
         /** Text-field component roles and geometry. */
         val componentTokens = themeTokens.components.textField
-        /** Explicit legacy style; Default allows component tokens to remain live. */
+        /** 调用方显式样式；Default 视为省略，让组件 token 继续生效。 */
         val explicitStyle = style.takeUnless { candidate -> candidate == PixelTextFieldStyle.Default }
-        /** Exact style selected by the pre-token facade contract. */
-        val compatibilityStyle = explicitStyle ?: legacyStyle
-        /** Legacy style retained for cursor, selection, composition, and blink compatibility. */
-        val inputBehaviorStyle = explicitStyle ?: legacyStyle
+        /** 光标、选区与闪烁行为样式；缺少显式样式时由 token 解析出选区颜色。 */
+        val inputBehaviorStyle = explicitStyle ?: themeTokens.resolveInputBehaviorStyle()
         /** Disabled state normalized by the public facade and guarded for direct internal callers. */
         val disabled = PixelControlState.Disabled in states || !enabled
         /** Loading retains focus but makes the field read-only and removes mutation actions. */
@@ -136,86 +130,42 @@ internal data class TextFieldWidget(
         val text = state.text.ifEmpty { placeholder }
         /** State-resolved component content color. */
         val tokenContentColor = componentTokens.resolveContentColor(baseStates, themeTokens.colors)
-        /** Base input text metrics and explicit color override. */
-        val inputTextStyle = if (usesScopeLessLegacyVisuals) {
-            if (disabled) compatibilityStyle.disabledTextStyle else compatibilityStyle.textStyle
-        } else {
-            explicitStyle?.let { explicit ->
-                if (disabled) explicit.disabledTextStyle else explicit.textStyle
-            } ?: legacyStyle.let { inherited ->
-                /** Normal keeps the exact inherited color; non-Normal applies the semantic role color. */
-                val baseStyle = if (disabled) inherited.disabledTextStyle else inherited.textStyle
-                if (usesTokenState) {
-                    tokenContentColor?.let { color -> baseStyle.copy(color = color) } ?: baseStyle
-                } else {
-                    baseStyle
-                }
-            }
-        }
-        /** Base placeholder metrics and state-resolved content color. */
-        val placeholderTextStyle = if (usesScopeLessLegacyVisuals) {
-            if (disabled) compatibilityStyle.disabledPlaceholderStyle else compatibilityStyle.placeholderStyle
-        } else {
-            explicitStyle?.let { explicit ->
-                if (disabled) explicit.disabledPlaceholderStyle else explicit.placeholderStyle
-            } ?: legacyStyle.let { inherited ->
-                /** Placeholder metrics and Normal color remain exact for custom legacy themes. */
-                val baseStyle = if (disabled) inherited.disabledPlaceholderStyle else inherited.placeholderStyle
-                if (usesTokenState) {
-                    tokenContentColor?.let { color -> baseStyle.copy(color = color) } ?: baseStyle
-                } else {
-                    baseStyle
-                }
-            }
+        /** 输入文本的基础度量与状态解析出的前景色。 Base input text metrics and state-resolved content color. */
+        val inputTextStyle = explicitStyle?.let { explicit ->
+            if (disabled) explicit.disabledTextStyle else explicit.textStyle
+        } ?: themeTokens.typography.input.resolve(themeTokens.colors)
+            .withOptionalColor(tokenContentColor)
+        /** placeholder 静止态保留自身弱化角色，其他状态改用状态前景色。 Base placeholder metrics with its own muted role at rest and state colors otherwise. */
+        val placeholderTextStyle = explicitStyle?.let { explicit ->
+            if (disabled) explicit.disabledPlaceholderStyle else explicit.placeholderStyle
+        } ?: themeTokens.typography.caption.resolve(themeTokens.colors).let { base ->
+            if (usesTokenState) base.withOptionalColor(tokenContentColor) else base
         }
         /** Concrete text style selected by whether the controlled value is empty. */
         val textStyle = if (state.text.isEmpty()) placeholderTextStyle else inputTextStyle
         /** Explicit fill parameter/style before the component token. */
         val resolvedFillColor = when {
             fillColor != null -> fillColor
-            usesScopeLessLegacyVisuals -> compatibilityStyle.fillColor
             explicitStyle != null -> explicitStyle.fillColor
-            usesTokenState -> componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
-            else -> legacyStyle.fillColor
+            else -> componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
         }
-        /** Explicit border parameter, compatible style state, then component token. */
+        /** 按显式边框参数、显式样式状态、组件 token 顺序解析。 Explicit border parameter, explicit style state, then component token. */
         val resolvedBorderColor = borderColor ?: when {
-            usesScopeLessLegacyVisuals && disabled -> compatibilityStyle.disabledBorderColor
-            usesScopeLessLegacyVisuals && readOnly -> compatibilityStyle.readOnlyBorderColor
-            usesScopeLessLegacyVisuals && focused -> compatibilityStyle.focusedBorderColor
-            usesScopeLessLegacyVisuals -> compatibilityStyle.borderColor
             explicitStyle != null && disabled -> explicitStyle.disabledBorderColor
             explicitStyle != null && readOnly -> explicitStyle.readOnlyBorderColor
             explicitStyle != null && focused -> explicitStyle.focusedBorderColor
             explicitStyle != null -> explicitStyle.borderColor
-            usesTokenState -> componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
-            else -> legacyStyle.borderColor
+            else -> componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
         }
-        /** Explicit uniform padding or the complete component inset projected from legacy themes. */
-        val resolvedPadding = if (usesScopeLessLegacyVisuals) {
-            EdgeInsets.all(compatibilityStyle.padding)
-        } else {
-            explicitStyle?.padding?.let { inset -> EdgeInsets.all(inset) }
-                ?: componentTokens.resolvePadding(themeTokens.spacing)
-        }
+        /** 显式统一内边距，或由 token 解析出的完整组件内边距。 Explicit uniform padding or the complete component inset resolved from tokens. */
+        val resolvedPadding = explicitStyle?.padding?.let { inset -> EdgeInsets.all(inset) }
+            ?: componentTokens.resolvePadding(themeTokens.spacing)
         /** Border width resolved through the current foundation border scale. */
-        val resolvedBorderWidth = if (usesScopeLessLegacyVisuals) {
-            LEGACY_INPUT_BORDER_WIDTH_PX
-        } else {
-            componentTokens.resolveBorderWidth(themeTokens.borders)
-        }
+        val resolvedBorderWidth = componentTokens.resolveBorderWidth(themeTokens.borders)
         /** Corner radius resolved through the current foundation radius scale. */
-        val resolvedCornerRadius = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveCornerRadius(themeTokens.radii)
-        }
+        val resolvedCornerRadius = componentTokens.resolveCornerRadius(themeTokens.radii)
         /** Hard pixel elevation offset resolved from the shared elevation scale. */
-        val elevationOffset = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveElevation(themeTokens.elevations)
-        }
+        val elevationOffset = componentTokens.resolveElevation(themeTokens.elevations)
         val inputSurface = TextInputSurfaceWidget(
             fillColor = resolvedFillColor,
             borderColor = resolvedBorderColor,
@@ -256,29 +206,21 @@ internal data class TextFieldWidget(
                 maxLines = safeMaxLines,
                 overflow = if (safeMaxLines > 1) PixelTextOverflow.CLIP else PixelTextOverflow.ELLIPSIS,
                 textAlign = textAlign,
-                paddingRight = if (textAlign == TextAlign.END) {
-                    if (usesScopeLessLegacyVisuals) LEGACY_INPUT_END_TEXT_PADDING_PX else resolvedPadding.right
-                } else {
-                    0
-                },
+                paddingRight = if (textAlign == TextAlign.END) resolvedPadding.right else 0,
                 key = key?.let { "$it-text" },
             ),
         )
         /** Focus indicator is additive to error/loading/read-only base colors. */
-        val surface = if (usesScopeLessLegacyVisuals) {
-            inputSurface
-        } else {
-            withControlFocusIndicator(
-                child = inputSurface,
-                states = runtimeStates,
-                componentTokens = componentTokens,
-                colors = themeTokens.colors,
-                borders = themeTokens.borders,
-                key = key?.let { "$it-focus-indicator" },
-                colorOverride = explicitStyle?.focusedBorderColor,
-            )
-        }
-        /** Explicit non-blank labels win; omitted legacy defaults use the localizable token. */
+        val surface = withControlFocusIndicator(
+            child = inputSurface,
+            states = runtimeStates,
+            componentTokens = componentTokens,
+            colors = themeTokens.colors,
+            borders = themeTokens.borders,
+            key = key?.let { "$it-focus-indicator" },
+            colorOverride = explicitStyle?.focusedBorderColor,
+        )
+        /** 非空白显式标签优先；省略时使用可本地化的 token。 Explicit non-blank labels win; omitted defaults use the localizable token. */
         /** Base label resolved before the optional locale-neutral required marker is appended. */
         val baseSpokenLabel = semanticLabel?.takeIf { label -> label.isNotBlank() }
             ?: localizedLabels?.textField
@@ -453,8 +395,6 @@ internal data class OutlinedButtonWidget(
     val onPressed: (() -> Unit)?,
     /** Persistent caller states merged with retained pointer and focus states. */
     val states: PixelControlStateSet = PixelControlStateSet.Normal,
-    /** Marks the old public facade so a scope-less mount can retain its historical pixels. */
-    val legacyFacade: Boolean = false,
     val style: PixelButtonStyle,
     val enabled: Boolean,
     val fillColor: PixelColor? = null,
@@ -495,26 +435,18 @@ private class OutlinedButtonWidgetState : State<OutlinedButtonWidget>() {
 
     /** 绘制固定布局尺寸的边框反馈，并导出即时逻辑 semantics。 */
     override fun build(context: BuildContext): Widget {
-        /** Old facades use historical visuals only when no explicit PixelTheme provider exists. */
-        val usesScopeLessLegacyVisuals = widget.legacyFacade && PixelTheme.maybeTokensOf(context) == null
         /** Complete token graph resolved from the nearest provider. */
-        val themeTokens = PixelTheme.tokensOf(context)
-        /** Optional provider labels affect text only and never select the legacy visual branch. */
+        val themeTokens = PixelTheme.of(context)
+        /** 可选提供者标签只影响文本，不改变视觉 token 解析。 Optional provider labels affect text only and never change visual token resolution. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels
-        /** Exact inherited legacy theme used by the old disabled and focus color precedence. */
-        val legacyTheme = PixelTheme.of(context)
-        /** Exact inherited legacy style used for the Normal compatibility baseline. */
-        val legacyStyle = legacyTheme.buttonStyle
         /** Button-specific role and geometry tokens. */
         val componentTokens = themeTokens.components.button
         /** Blank caller text falls back to the localized generic button label. */
         val resolvedText = widget.text.takeIf { text -> text.isNotBlank() }
             ?: localizedLabels?.button
-            ?: if (usesScopeLessLegacyVisuals) widget.text else themeTokens.labels.button
-        /** Explicit legacy style; Default is treated as absence so component tokens can propagate. */
+            ?: themeTokens.labels.button
+        /** 调用方显式样式；Default 视为省略，让组件 token 继续生效。 */
         val explicitStyle = widget.style.takeUnless { style -> style == PixelButtonStyle.Default }
-        /** Exact style selected by the pre-token facade contract. */
-        val compatibilityStyle = explicitStyle ?: legacyStyle
         /** Disabled state normalized by the public facade and guarded again for internal callers. */
         val disabled = PixelControlState.Disabled in widget.states ||
             !widget.enabled ||
@@ -537,49 +469,28 @@ private class OutlinedButtonWidgetState : State<OutlinedButtonWidget>() {
             hovered = interactive && hovered,
             focused = focused,
         )
-        /** Focus is additive; it must never displace the current base role or legacy Normal style. */
+        /** 焦点是叠加层，绝不替换当前基础角色。 Focus is additive; it must never displace the current base role. */
         val baseStates = runtimeStates - PixelControlState.Focused
-        /**
-         * Whether a non-focus state should resolve through component roles. Scope-less legacy
-         * facades retain only their resting/disabled pixels; new hover and press feedback remains
-         * available without changing the historical first frame.
-         */
-        val usesTokenState = !baseStates.isNormal && !(usesScopeLessLegacyVisuals && disabled)
         /** Target container color following explicit parameter/style/token precedence. */
         val targetContainerColor = when {
             widget.fillColor != null -> widget.fillColor
             explicitStyle != null -> explicitStyle.fillColor
-            usesTokenState -> componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
-            usesScopeLessLegacyVisuals -> compatibilityStyle.fillColor
-            else -> legacyStyle.fillColor
+            else -> componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
         } ?: PixelColor.Transparent
         /** Target border color following explicit parameter/style/token precedence. */
         val targetBorderColor = when {
             widget.borderColor != null -> widget.borderColor
-            usesScopeLessLegacyVisuals && disabled && widget.style == PixelButtonStyle.Default -> {
-                legacyTheme.colors.disabled
-            }
             explicitStyle != null -> explicitStyle.borderColor
-            usesTokenState -> componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
-            usesScopeLessLegacyVisuals -> compatibilityStyle.borderColor
-            else -> legacyStyle.borderColor
+            else -> componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
         } ?: PixelColor.Transparent
         /** Base typography whose metrics come from an explicit style or the theme role. */
-        val baseTextStyle = if (usesScopeLessLegacyVisuals) {
-            compatibilityStyle.textStyle
-        } else {
-            explicitStyle?.textStyle ?: legacyStyle.textStyle
-        }
+        val baseTextStyle = explicitStyle?.textStyle
+            ?: themeTokens.typography.button.resolve(themeTokens.colors)
         /** Target content color following explicit style before the component role map. */
         val targetContentColor = when {
-            usesScopeLessLegacyVisuals && disabled && widget.style == PixelButtonStyle.Default -> {
-                legacyTheme.colors.disabled
-            }
             explicitStyle != null -> explicitStyle.textStyle.color
-            usesTokenState -> componentTokens.resolveContentColor(baseStates, themeTokens.colors)
+            else -> componentTokens.resolveContentColor(baseStates, themeTokens.colors)
                 ?: baseTextStyle.color
-            usesScopeLessLegacyVisuals -> baseTextStyle.color
-            else -> baseTextStyle.color
         }
         val feedbackSpec = PixelMotionTheme.of(context).feedback
         val motionScope = PixelMotionScope.maybeOf(context)
@@ -618,42 +529,18 @@ private class OutlinedButtonWidgetState : State<OutlinedButtonWidget>() {
             motion.watch(context)
         }
         /** Hard pixel elevation offset resolved from the shared elevation scale. */
-        val elevationOffset = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveElevation(themeTokens.elevations)
-        }
+        val elevationOffset = componentTokens.resolveElevation(themeTokens.elevations)
         /** Content padding resolved through the current foundation spacing scale. */
-        val resolvedPadding = if (usesScopeLessLegacyVisuals) {
-            EdgeInsets.all(LEGACY_OUTLINED_BUTTON_PADDING_PX)
-        } else {
-            componentTokens.resolvePadding(themeTokens.spacing)
-        }
+        val resolvedPadding = componentTokens.resolvePadding(themeTokens.spacing)
         /** Border width resolved through the current foundation border scale. */
-        val resolvedBorderWidth = if (usesScopeLessLegacyVisuals) {
-            LEGACY_OUTLINED_BUTTON_BORDER_WIDTH_PX
-        } else {
-            componentTokens.resolveBorderWidth(themeTokens.borders)
-        }
+        val resolvedBorderWidth = componentTokens.resolveBorderWidth(themeTokens.borders)
         /** Corner radius resolved through the current foundation radius scale. */
-        val resolvedCornerRadius = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveCornerRadius(themeTokens.radii)
-        }
+        val resolvedCornerRadius = componentTokens.resolveCornerRadius(themeTokens.radii)
         /** Theme-sized surface before the independent focus overlay is applied. */
         val content = ConstrainedBox(
             constraints = PixelBoxConstraints(
-                minWidth = if (usesScopeLessLegacyVisuals) {
-                    0
-                } else {
-                    componentTokens.resolveMinimumWidth(themeTokens.sizes)
-                },
-                minHeight = if (usesScopeLessLegacyVisuals) {
-                    0
-                } else {
-                    componentTokens.resolveMinimumHeight(themeTokens.sizes)
-                },
+                minWidth = componentTokens.resolveMinimumWidth(themeTokens.sizes),
+                minHeight = componentTokens.resolveMinimumHeight(themeTokens.sizes),
             ),
             child = PixelSurface(
                 decoration = PixelSurfaceDecoration(
@@ -665,11 +552,7 @@ private class OutlinedButtonWidgetState : State<OutlinedButtonWidget>() {
                     shadowOffset = elevationOffset,
                 ),
                 padding = resolvedPadding,
-                alignment = if (usesScopeLessLegacyVisuals) {
-                    compatibilityStyle.alignment
-                } else {
-                    explicitStyle?.alignment ?: PixelButtonStyle.Default.alignment
-                },
+                alignment = explicitStyle?.alignment ?: PixelButtonStyle.Default.alignment,
                 key = widget.key,
                 child = Text(
                     resolvedText,
@@ -735,8 +618,6 @@ internal data class TextButtonWidget(
     val onPressed: (() -> Unit)?,
     /** Persistent caller states merged with retained pointer and focus states. */
     val states: PixelControlStateSet = PixelControlStateSet.Normal,
-    /** Marks the old public facade so a scope-less mount can retain its historical pixels. */
-    val legacyFacade: Boolean = false,
     val style: PixelTextButtonStyle,
     val enabled: Boolean,
     /** Shared activation callback used by semantics and keyboard adapters. */
@@ -773,26 +654,18 @@ private class TextButtonWidgetState : State<TextButtonWidget>() {
 
     /** 绘制颜色反馈并保持文字按钮的自然尺寸不变。 */
     override fun build(context: BuildContext): Widget {
-        /** Old facades use historical visuals only when no explicit PixelTheme provider exists. */
-        val usesScopeLessLegacyVisuals = widget.legacyFacade && PixelTheme.maybeTokensOf(context) == null
         /** Complete token graph resolved from the nearest provider. */
-        val themeTokens = PixelTheme.tokensOf(context)
-        /** Optional provider labels affect text only and never select the legacy visual branch. */
+        val themeTokens = PixelTheme.of(context)
+        /** 可选提供者标签只影响文本，不改变视觉 token 解析。 Optional provider labels affect text only and never change visual token resolution. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels
-        /** Exact inherited legacy theme used by the old disabled color precedence. */
-        val legacyTheme = PixelTheme.of(context)
-        /** Exact inherited legacy style used for the Normal compatibility baseline. */
-        val legacyStyle = legacyTheme.textButtonStyle
         /** Text-button-specific role and geometry tokens. */
         val componentTokens = themeTokens.components.textButton
         /** Blank caller text falls back to the localized text-button label. */
         val resolvedText = widget.text.takeIf { text -> text.isNotBlank() }
             ?: localizedLabels?.textButton
-            ?: if (usesScopeLessLegacyVisuals) widget.text else themeTokens.labels.textButton
-        /** Explicit legacy style; Default is absence so tokens remain live. */
+            ?: themeTokens.labels.textButton
+        /** 调用方显式样式；Default 视为省略，让组件 token 继续生效。 */
         val explicitStyle = widget.style.takeUnless { style -> style == PixelTextButtonStyle.Default }
-        /** Exact style selected by the pre-token facade contract. */
-        val compatibilityStyle = explicitStyle ?: legacyStyle
         /** Disabled state normalized by the public facade and guarded for direct internal callers. */
         val disabled = PixelControlState.Disabled in widget.states ||
             !widget.enabled ||
@@ -817,37 +690,21 @@ private class TextButtonWidgetState : State<TextButtonWidget>() {
         )
         /** Focus is additive and therefore removed before resolving the foreground base role. */
         val baseStates = runtimeStates - PixelControlState.Focused
-        /** Whether a non-focus state should resolve through the component foreground map. */
-        val usesTokenState = !baseStates.isNormal
         /** Typography metrics resolved from explicit style before the theme role. */
-        val baseTextStyle = if (usesScopeLessLegacyVisuals) {
-            compatibilityStyle.textStyle
-        } else {
-            explicitStyle?.textStyle ?: legacyStyle.textStyle
-        }
+        val baseTextStyle = explicitStyle?.textStyle
+            ?: themeTokens.typography.button.resolve(themeTokens.colors)
         /** Foreground target resolved using explicit style above component state tokens. */
         val targetContentColor = when {
-            usesScopeLessLegacyVisuals && disabled && widget.style == PixelTextButtonStyle.Default -> {
-                legacyTheme.colors.disabled
-            }
-            usesScopeLessLegacyVisuals -> baseTextStyle.color
             explicitStyle != null -> explicitStyle.textStyle.color
-            usesTokenState -> componentTokens.resolveContentColor(baseStates, themeTokens.colors)
+            else -> componentTokens.resolveContentColor(baseStates, themeTokens.colors)
                 ?: baseTextStyle.color
-            else -> baseTextStyle.color
         }
-        /** Optional token container channel; legacy TextButton styles have no corresponding field. */
-        val targetContainerColor = if (usesScopeLessLegacyVisuals) {
-            PixelColor.Transparent
-        } else {
-            componentTokens.resolveContainerColor(baseStates, themeTokens.colors) ?: PixelColor.Transparent
-        }
-        /** Optional token outline channel; legacy TextButton styles have no corresponding field. */
-        val targetBorderColor = if (usesScopeLessLegacyVisuals) {
-            PixelColor.Transparent
-        } else {
-            componentTokens.resolveBorderColor(baseStates, themeTokens.colors) ?: PixelColor.Transparent
-        }
+        /** 可选的 token 容器通道；无边框 TextButton 通常解析为透明。 Optional token container channel; a borderless TextButton usually resolves transparent. */
+        val targetContainerColor = componentTokens
+            .resolveContainerColor(baseStates, themeTokens.colors) ?: PixelColor.Transparent
+        /** 可选的 token 边框通道；无边框 TextButton 通常解析为透明。 Optional token outline channel; a borderless TextButton usually resolves transparent. */
+        val targetBorderColor = componentTokens
+            .resolveBorderColor(baseStates, themeTokens.colors) ?: PixelColor.Transparent
         val feedbackSpec = PixelMotionTheme.of(context).feedback
         val motionScope = PixelMotionScope.maybeOf(context)
         val resolvedFeedback = motionScope?.let { scope -> feedbackSpec.resolve(scope.settings) }
@@ -886,42 +743,18 @@ private class TextButtonWidgetState : State<TextButtonWidget>() {
             motion.watch(context)
         }
         /** Hard pixel elevation offset resolved from the shared elevation scale. */
-        val elevationOffset = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveElevation(themeTokens.elevations)
-        }
+        val elevationOffset = componentTokens.resolveElevation(themeTokens.elevations)
         /** Default component padding resolved through the current foundation spacing scale. */
-        val tokenPadding = if (usesScopeLessLegacyVisuals) {
-            compatibilityStyle.padding
-        } else {
-            componentTokens.resolvePadding(themeTokens.spacing)
-        }
+        val tokenPadding = componentTokens.resolvePadding(themeTokens.spacing)
         /** Border width resolved through the current foundation border scale. */
-        val resolvedBorderWidth = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveBorderWidth(themeTokens.borders)
-        }
+        val resolvedBorderWidth = componentTokens.resolveBorderWidth(themeTokens.borders)
         /** Corner radius resolved through the current foundation radius scale. */
-        val resolvedCornerRadius = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveCornerRadius(themeTokens.radii)
-        }
+        val resolvedCornerRadius = componentTokens.resolveCornerRadius(themeTokens.radii)
         /** Theme-sized content before the independent focus indicator is applied. */
         val content = ConstrainedBox(
             constraints = PixelBoxConstraints(
-                minWidth = if (usesScopeLessLegacyVisuals) {
-                    0
-                } else {
-                    componentTokens.resolveMinimumWidth(themeTokens.sizes)
-                },
-                minHeight = if (usesScopeLessLegacyVisuals) {
-                    0
-                } else {
-                    componentTokens.resolveMinimumHeight(themeTokens.sizes)
-                },
+                minWidth = componentTokens.resolveMinimumWidth(themeTokens.sizes),
+                minHeight = componentTokens.resolveMinimumHeight(themeTokens.sizes),
             ),
             child = PixelSurface(
                 decoration = PixelSurfaceDecoration(
@@ -932,16 +765,8 @@ private class TextButtonWidgetState : State<TextButtonWidget>() {
                     shadowColor = themeTokens.colors.shadow.takeIf { elevationOffset > 0 },
                     shadowOffset = elevationOffset,
                 ),
-                padding = if (usesScopeLessLegacyVisuals) {
-                    compatibilityStyle.padding
-                } else {
-                    explicitStyle?.padding ?: tokenPadding
-                },
-                alignment = if (usesScopeLessLegacyVisuals) {
-                    compatibilityStyle.alignment
-                } else {
-                    explicitStyle?.alignment ?: PixelTextButtonStyle.Default.alignment
-                },
+                padding = explicitStyle?.padding ?: tokenPadding,
+                alignment = explicitStyle?.alignment ?: PixelTextButtonStyle.Default.alignment,
                 key = widget.key,
                 child = Text(
                     resolvedText,
@@ -1210,14 +1035,22 @@ private class RenderPixelControlFocusIndicator(
         get() = child as? RenderBox
 }
 
-/** Historical uniform TextField outline width used before component border tokens. */
-private const val LEGACY_INPUT_BORDER_WIDTH_PX: Int = 1
+/**
+ * 从 token 图解析 TextField 的光标与选区行为样式。
+ *
+ * 颜色通道来自 [PixelColorScheme.selection]；闪烁周期与 handle 开关等非颜色行为沿用
+ * [PixelTextFieldStyle] 的稳定默认值。
+ */
+private fun PixelThemeTokens.resolveInputBehaviorStyle(): PixelTextFieldStyle {
+    return PixelTextFieldStyle.Default.copy(
+        cursorColor = colors.selection,
+        selectionColor = colors.selection,
+        compositionColor = colors.selection,
+        selectionHandleColor = colors.selection,
+    )
+}
 
-/** Historical trailing text inset used by end-aligned TextField content. */
-private const val LEGACY_INPUT_END_TEXT_PADDING_PX: Int = 2
-
-/** Historical uniform OutlinedButton content inset. */
-private const val LEGACY_OUTLINED_BUTTON_PADDING_PX: Int = 2
-
-/** Historical single-pixel OutlinedButton outline width. */
-private const val LEGACY_OUTLINED_BUTTON_BORDER_WIDTH_PX: Int = 1
+/** 存在解析出的状态颜色时覆盖文本色，否则保留 typography 自带的语义色。 */
+private fun PixelTextStyle.withOptionalColor(color: PixelColor?): PixelTextStyle {
+    return color?.let { resolvedColor -> copy(color = resolvedColor) } ?: this
+}

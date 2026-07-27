@@ -19,6 +19,16 @@ import 需要改写为根包 import。其余公开 package import 保持不变�
 
 - 自定义渲染只使用 `com.purride.pixelui.advanced` 的真实 RenderObject SPI，不 import `internal.*`。
 - Host 统一使用 `PixelEngine`、`PixelHostSetup` 和显式 owner 生命周期。
+- 主题只有 `PixelThemeTokens` 一个模型：`PixelTheme(tokens = ...)` 提供，`PixelTheme.of` /
+  `PixelTheme.maybeOf` 查询；不再存在 `PixelThemeData` / `PixelThemeColors` 与
+  `fromLegacy` / `toLegacyThemeData` 投影，也不再有 `tokensOf` / `maybeTokensOf` 双入口。
+- 简洁组件 API 全部保留，但可选视觉参数改为 nullable 且默认 `null`（由 token 解析）；不再有
+  “无 `PixelTheme` 时保持旧像素”的 scope-less 分支，简洁入口与 state-aware 实现渲染一致。
+  依赖旧默认具体值（如 Slider 橙色填充、LoadingBar 以 `color` 作为 `trackColor`、Slidable 无表面
+  装饰）的调用方需要显式传入对应参数，或复制相应 component token。
+- 可选 `semanticLabel` 同样改为 nullable 且默认 `null`。`NavigationBar` / `NavigationRail` 删除了
+  `"Navigation bar"` / `"Navigation rail"` 默认字符串 sentinel：显式传入该文本现在优先于本地化
+  provider；需要 provider 解析的调用方应改为省略该参数。显式空白集合名称仍在构建时被拒绝。
 - 主题使用语义 token 与组件状态集合，不复制旧固定颜色。
 - 路由使用 typed destination/request/entry/outcome 和版本化 snapshot adapter。
 - 文本 offset 对外保持 UTF-16，但 selection、caret、编辑和 hit test 必须落在 grapheme 边界。

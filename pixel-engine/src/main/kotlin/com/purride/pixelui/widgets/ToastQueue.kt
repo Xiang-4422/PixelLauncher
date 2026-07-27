@@ -16,14 +16,11 @@ public data class PixelToastQueueItem(
     val id: Int,
     /** Toast 展示的可读消息。 */
     val message: String,
-    /** Toast 表面的填充色。 */
-    val fillColor: PixelColor = PixelColor.Black,
-    /** Toast 消息使用的文字样式。 */
-    val textStyle: PixelTextStyle = PixelTextStyle.Default,
+    /** 可选 Toast 表面填充色；null 时由挂载的 Toast 解析通知容器角色。 */
+    val fillColor: PixelColor? = null,
+    /** 可选 Toast 文字样式；null 时由挂载的 Toast 解析 caption typography。 */
+    val textStyle: PixelTextStyle? = null,
 )
-
-/** Legacy Toast fill used only to recognize an omitted queue-item theme override. */
-private val LEGACY_TOAST_QUEUE_FILL_COLOR: PixelColor = PixelColor.Black
 
 /**
  * Immutable presentation metadata kept outside public queue item constructors for binary safety.
@@ -80,12 +77,12 @@ public class PixelToastQueueController : ChangeNotifier() {
         get() = entries.firstOrNull()?.visualConfig
 
     /**
-     * 使用 [DefaultTimeout] 追加一条 toast，并保留 0.1 版本的调用与 JVM 签名。
+     * 使用 [DefaultTimeout] 追加一条 toast；省略的视觉字段由挂载的 Toast 解析 token。
      */
     public fun enqueue(
         message: String,
-        fillColor: PixelColor = PixelColor.Black,
-        textStyle: PixelTextStyle = PixelTextStyle.Default,
+        fillColor: PixelColor? = null,
+        textStyle: PixelTextStyle? = null,
     ): PixelToastQueueItem {
         return enqueue(
             message = message,
@@ -104,15 +101,15 @@ public class PixelToastQueueController : ChangeNotifier() {
     public fun enqueue(
         message: String,
         timeout: Duration,
-        fillColor: PixelColor = PixelColor.Black,
-        textStyle: PixelTextStyle = PixelTextStyle.Default,
+        fillColor: PixelColor? = null,
+        textStyle: PixelTextStyle? = null,
     ): PixelToastQueueItem {
         return enqueueItem(
             message = message,
             timeout = timeout,
             states = PixelControlStateSet.Normal,
-            fillColor = fillColor.takeUnless { color -> color == LEGACY_TOAST_QUEUE_FILL_COLOR },
-            textStyle = textStyle.takeUnless { style -> style == PixelTextStyle.Default },
+            fillColor = fillColor,
+            textStyle = textStyle,
         )
     }
 
@@ -154,8 +151,8 @@ public class PixelToastQueueController : ChangeNotifier() {
         val item = PixelToastQueueItem(
             id = nextId++,
             message = message,
-            fillColor = fillColor ?: LEGACY_TOAST_QUEUE_FILL_COLOR,
-            textStyle = textStyle ?: PixelTextStyle.Default,
+            fillColor = fillColor,
+            textStyle = textStyle,
         )
         /** Binary-safe presentation metadata resolved only after mounting. */
         val visualConfig = PixelNotificationVisualConfig(

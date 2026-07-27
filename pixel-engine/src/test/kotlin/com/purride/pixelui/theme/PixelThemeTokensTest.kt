@@ -10,16 +10,21 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 
-/** Locks theme presets, role propagation, validation, and legacy visual compatibility. */
+/** 锁定主题预设、角色传播与 token 校验。 Locks theme presets, role propagation, and token validation. */
 class PixelThemeTokensTest {
-    /** Default remains the original dark palette and projects to the exact legacy style graph. */
+    /** Default 仍是原有的深色调色板，正文排版解析出白色前景。 */
     @Test
-    fun defaultPresetPreservesLegacyDarkVisuals() {
+    fun defaultPresetPreservesDarkVisuals() {
         assertSame(PixelThemeTokens.Dark, PixelThemeTokens.Default)
         assertSame(PixelColorScheme.Dark, PixelThemeTokens.Default.colors)
         assertEquals(PixelThemeBrightness.Dark, PixelThemeTokens.Default.brightness)
         assertEquals(PixelThemeContrast.Standard, PixelThemeTokens.Default.contrast)
-        assertEquals(PixelThemeData.Default, PixelThemeTokens.Default.toLegacyThemeData())
+        assertEquals(
+            PixelColor.White,
+            PixelThemeTokens.Default.typography.body
+                .resolve(PixelThemeTokens.Default.colors)
+                .color,
+        )
     }
 
     /** Four presets expose correct brightness and contrast metadata with distinct schemes. */

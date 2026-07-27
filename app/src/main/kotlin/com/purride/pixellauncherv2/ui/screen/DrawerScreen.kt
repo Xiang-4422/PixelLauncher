@@ -142,6 +142,8 @@ private fun centeredDrawerLoading(
         AnimatedPixelLoadingBar(
             vsync = vsync,
             color = theme.text.primary,
+            // 点阵背景显式沿用扫描色，避免回落到组件 track 角色。
+            trackColor = theme.text.primary,
             width = 96,
             height = 9,
             blockWidth = 9,

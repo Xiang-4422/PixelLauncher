@@ -17,13 +17,13 @@ import com.purride.pixelui.state.PixelRefreshIndicatorState
  * @param onRefresh 成功进入刷新阶段时调用一次的业务回调。
  * @param topBar 可选固定顶部栏。
  * @param bottomBar 可选固定底部栏。
- * @param thresholdPx 从拉动进入 armed 状态所需的像素距离。
+ * @param thresholdPx 可选触发距离；null 时由 foundation 尺寸 token 解析。
  * @param enabled 是否接受下拉、键盘与无障碍刷新动作。
- * @param indicatorColor 普通拉动阶段的指示器颜色。
- * @param armedColor 达到触发阈值后的指示器颜色。
- * @param refreshingColor 正在刷新阶段的指示器颜色。
+ * @param indicatorColor 可选普通拉动阶段颜色；null 时解析组件前景角色。
+ * @param armedColor 可选 armed 阶段颜色；null 时回落到 [indicatorColor] 或组件角色。
+ * @param refreshingColor 可选刷新阶段颜色；null 时回落到 [indicatorColor] 或组件角色。
  * @param key scaffold 与刷新子边界的稳定 identity。
- * @param semanticLabel 与主体内容分离的刷新动作无障碍名称。
+ * @param semanticLabel 可选无障碍名称；null 或空白时解析主题 label token。
  */
 public fun SwipeRefreshScaffold(
     body: Widget,
@@ -32,13 +32,13 @@ public fun SwipeRefreshScaffold(
     onRefresh: () -> Unit,
     topBar: Widget? = null,
     bottomBar: Widget? = null,
-    thresholdPx: Int = 12,
+    thresholdPx: Int? = null,
     enabled: Boolean = true,
-    indicatorColor: PixelColor = PixelColor.White,
-    armedColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
-    refreshingColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    indicatorColor: PixelColor? = null,
+    armedColor: PixelColor? = null,
+    refreshingColor: PixelColor? = null,
     key: Any? = null,
-    semanticLabel: String = "Refresh",
+    semanticLabel: String? = null,
 ): Widget {
     return SwipeRefreshScaffold(
         body = body,
@@ -48,21 +48,20 @@ public fun SwipeRefreshScaffold(
         onRefresh = onRefresh,
         topBar = topBar,
         bottomBar = bottomBar,
-        // Historical defaults are omission sentinels for live theme resolution.
-        thresholdPx = thresholdPx.takeUnless { value -> value == 12 },
+        thresholdPx = thresholdPx,
         enabled = enabled,
-        indicatorColor = indicatorColor.takeUnless { color -> color == PixelColor.White },
-        armedColor = armedColor.takeUnless { color -> color == SwipeRefreshLegacyArmedColor },
-        refreshingColor = refreshingColor.takeUnless { color -> color == SwipeRefreshLegacyLoadingColor },
+        indicatorColor = indicatorColor,
+        armedColor = armedColor,
+        refreshingColor = refreshingColor,
         key = key,
-        semanticLabel = semanticLabel.takeUnless { label -> label == "Refresh" },
+        semanticLabel = semanticLabel,
     )
 }
 
 /**
  * 执行 `SwipeRefreshScaffold` 的 `SwipeRefreshScaffold` 公开行为；具体参数、返回和副作用见下文。
  *
- * Builds a themed state-aware refresh scaffold while preserving the legacy binary facade.
+ * Builds a themed state-aware refresh scaffold shared with the concise facade.
  *
  * [states] is required and the explicit JVM name remains stable independently from Kotlin default
  * arguments. Bars remain outside the refresh target, while the body delegates every state, token,
@@ -119,8 +118,8 @@ public fun SwipeRefreshScaffold(
     )
     if (!hasBars) return refresh
     return Builder(key = key?.let(::SwipeRefreshBarsThemeKey)) { context ->
-        /** Live foundation spacing preserving the historical one-pixel Default gap. */
-        val barGap = PixelTheme.tokensOf(context).spacing.extraSmall
+        /** 为栏位间距提供实时 foundation 间距。 Live foundation spacing supplying the bar gap. */
+        val barGap = PixelTheme.of(context).spacing.extraSmall
         /** 按顶部栏、可扩展主体和底部栏顺序构建的 scaffold 子节点。 */
         val children = buildList {
             if (topBar != null) {
@@ -147,9 +146,3 @@ private data class SwipeRefreshBarsThemeKey(
     /** Original caller-owned scaffold identity. */
     val scaffoldKey: Any,
 )
-
-/** Historical armed-color sentinel retained by the compatibility facade only. */
-private val SwipeRefreshLegacyArmedColor: PixelColor = PixelColor.fromRgb(200, 100, 0)
-
-/** Historical refreshing-color sentinel retained by the compatibility facade only. */
-private val SwipeRefreshLegacyLoadingColor: PixelColor = PixelColor.fromRgb(255, 255, 0)

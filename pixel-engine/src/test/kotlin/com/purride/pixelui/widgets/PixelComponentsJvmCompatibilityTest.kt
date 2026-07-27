@@ -33,23 +33,34 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Locks legacy PixelComponents binary entry points beside the explicit state-aware JVM names. */
+/** 锁定 PixelComponents 简洁入口与显式状态化 JVM 名称并存的二进制表面。 */
 class PixelComponentsJvmCompatibilityTest {
-    /** Every legacy method and Kotlin default bridge retains its exact pre-state JVM descriptor. */
+    /** 每个组件家族都同时暴露简洁入口与状态化入口，且两者 JVM 描述符互不相同。 */
     @Test
-    fun legacyDescriptorsAndDefaultBridgesRemainExact() {
+    fun conciseAndStateAwareOverloadsExposeDistinctJvmEntryPoints() {
         /** Runtime facade class generated for the top-level PixelComponents declarations. */
-        val facade = Class.forName(PIXEL_COMPONENTS_FACADE)
-        /** Exact runtime descriptor snapshot indexed by unmangled or value-class-mangled JVM name. */
-        val actualDescriptors = facade.declaredMethods.associate { method ->
-            method.name to method.jvmDescriptor()
-        }
-
-        LEGACY_DESCRIPTORS.forEach { (methodName, expectedDescriptor) ->
-            assertEquals(
-                "Legacy descriptor changed for $methodName",
-                expectedDescriptor,
-                actualDescriptors[methodName],
+        val methods = Class.forName(PIXEL_COMPONENTS_FACADE).declaredMethods
+        CONCISE_FAMILIES.forEach { family ->
+            /** 简洁入口方法；含 inline value class 参数时名称会被 mangle。 */
+            val conciseCandidates = methods.filter { method ->
+                (method.name == family || method.name.startsWith("$family-")) &&
+                    !method.name.endsWith("\$default")
+            }
+            assertEquals("Expected one concise entry point for $family", 1, conciseCandidates.size)
+            /** 唯一的简洁入口方法。 */
+            val concise = conciseCandidates.single()
+            assertEquals(Widget::class.java, concise.returnType)
+            assertTrue(
+                "Missing default bridge for ${concise.name}",
+                methods.any { method -> method.name == "${concise.name}\$default" },
+            )
+            /** 对应的状态化入口方法。 */
+            val stateAware = methods.single { method ->
+                method.name == "${family}WithControlStates"
+            }
+            assertTrue(
+                "$family concise and state-aware descriptors must differ",
+                concise.jvmDescriptor() != stateAware.jvmDescriptor(),
             )
         }
     }
@@ -82,15 +93,15 @@ class PixelComponentsJvmCompatibilityTest {
         }
     }
 
-    /** Kotlin source can resolve both old calls and all new state-aware overloads in one module. */
+    /** 同一模块的 Kotlin 源码能同时解析简洁调用与全部状态化重载。 Kotlin source can resolve both concise calls and all state-aware overloads in one module. */
     @Test
-    fun legacyAndStateAwareKotlinCallsCompileTogether() {
+    fun conciseAndStateAwareKotlinCallsCompileTogether() {
         /** Tester supplies the ticker provider required by the animated loading-bar source calls. */
         val tester = PixelTester()
         try {
             /** Canonical state argument that selects every required state-aware overload. */
             val states = PixelControlStateSet.Normal
-            /** Source-level constructions spanning every migrated public component family. */
+            /** 覆盖全部公开组件家族的源码级构造。 Source-level constructions spanning every public component family. */
             val widgets = listOf<Widget>(
                 ListTile(title = Text("L"), onTap = {}),
                 ListTile(title = Text("L"), states = states, onTap = {}),
@@ -137,7 +148,7 @@ class PixelComponentsJvmCompatibilityTest {
                 ActivityIndicator(),
                 ActivityIndicator(states = states),
                 LoadStateView(
-                    snapshot = PixelAsyncSnapshot.Success("legacy"),
+                    snapshot = PixelAsyncSnapshot.Success("concise"),
                     content = { value -> Text(value) },
                 ),
                 LoadStateView(
@@ -191,7 +202,7 @@ class PixelComponentsJvmCompatibilityTest {
         /** Generated top-level facade containing all PixelComponents JVM methods. */
         const val PIXEL_COMPONENTS_FACADE: String = "com.purride.pixelui.PixelComponentsKt"
 
-        /** Stable readable names assigned to every state-aware overload in this milestone. */
+        /** 为每个状态化重载分配的稳定可读名称。 Stable readable names assigned to every state-aware overload. */
         val REQUIRED_STATE_JVM_NAMES: Set<String> = linkedSetOf(
             "ListTileWithControlStates",
             "CheckboxWithControlStates",
@@ -217,52 +228,9 @@ class PixelComponentsJvmCompatibilityTest {
             "AppScaffoldWithControlStates",
         )
 
-        /** Exact pre-migration method and `$default` descriptors for all migrated legacy facades. */
-        val LEGACY_DESCRIPTORS: Map<String, String> = linkedMapOf(
-            "ListTile" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lkotlin/jvm/functions/Function0;ZLjava/lang/String;Ljava/lang/Object;Lcom/purride/pixelui/PixelSemanticRole;ZLjava/lang/Boolean;Ljava/lang/Boolean;)Lcom/purride/pixelui/Widget;",
-            "ListTile\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lkotlin/jvm/functions/Function0;ZLjava/lang/String;Ljava/lang/Object;Lcom/purride/pixelui/PixelSemanticRole;ZLjava/lang/Boolean;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Checkbox-zcjAOrI" to "(ZLkotlin/jvm/functions/Function1;ZIILjava/lang/String;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Checkbox-zcjAOrI\$default" to "(ZLkotlin/jvm/functions/Function1;ZIILjava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Switch-zcjAOrI" to "(ZLkotlin/jvm/functions/Function1;ZIILjava/lang/String;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Switch-zcjAOrI\$default" to "(ZLkotlin/jvm/functions/Function1;ZIILjava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Dialog-nipCVRc" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/util/List;IILjava/lang/Object;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Z)Lcom/purride/pixelui/Widget;",
-            "Dialog-nipCVRc\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/util/List;IILjava/lang/Object;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ZILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "BottomSheet-nipCVRc" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/util/List;IILjava/lang/Object;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Z)Lcom/purride/pixelui/Widget;",
-            "BottomSheet-nipCVRc\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/util/List;IILjava/lang/Object;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ZILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ConfirmDialog-XOXv8iY" to "(Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;IILcom/purride/pixelui/PixelTextStyle;Lcom/purride/pixelui/PixelTextStyle;Lcom/purride/pixelui/PixelButtonStyle;Lcom/purride/pixelui/PixelTextButtonStyle;Ljava/lang/Integer;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ConfirmDialog-XOXv8iY\$default" to "(Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Ljava/lang/String;Ljava/lang/String;IILcom/purride/pixelui/PixelTextStyle;Lcom/purride/pixelui/PixelTextStyle;Lcom/purride/pixelui/PixelButtonStyle;Lcom/purride/pixelui/PixelTextButtonStyle;Ljava/lang/Integer;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ModalBarrier-SEeGgR8" to "(IZLkotlin/jvm/functions/Function0;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ModalBarrier-SEeGgR8\$default" to "(IZLkotlin/jvm/functions/Function0;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Toast-K2hdtbI" to "(Ljava/lang/String;ILcom/purride/pixelui/PixelTextStyle;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Toast-K2hdtbI\$default" to "(Ljava/lang/String;ILcom/purride/pixelui/PixelTextStyle;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Snackbar-7fJbCWk" to "(Ljava/lang/String;Lcom/purride/pixelui/Widget;ILcom/purride/pixelui/PixelTextStyle;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Snackbar-7fJbCWk\$default" to "(Ljava/lang/String;Lcom/purride/pixelui/Widget;ILcom/purride/pixelui/PixelTextStyle;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Tabs" to "(Ljava/util/List;ILkotlin/jvm/functions/Function1;Ljava/lang/Object;Z)Lcom/purride/pixelui/Widget;",
-            "Tabs\$default" to "(Ljava/util/List;ILkotlin/jvm/functions/Function1;Ljava/lang/Object;ZILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "SegmentedControl" to "(Ljava/util/List;ILkotlin/jvm/functions/Function1;Ljava/lang/Object;Z)Lcom/purride/pixelui/Widget;",
-            "SegmentedControl\$default" to "(Ljava/util/List;ILkotlin/jvm/functions/Function1;Ljava/lang/Object;ZILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ValueAdjuster" to "(Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Ljava/lang/String;ZILcom/purride/pixelui/ValueAdjusterStyle;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ValueAdjuster\$default" to "(Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Ljava/lang/String;ZILcom/purride/pixelui/ValueAdjusterStyle;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Stepper" to "(ILkotlin/ranges/IntRange;Lkotlin/jvm/functions/Function1;ILjava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Stepper\$default" to "(ILkotlin/ranges/IntRange;Lkotlin/jvm/functions/Function1;ILjava/lang/String;Ljava/lang/String;ZILjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ProgressBar-WmmbFQo" to "(FIIIILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ProgressBar-WmmbFQo\$default" to "(FIIIILjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "PixelLoadingBar-nipCVRc" to "(FIIIIIIZLjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "PixelLoadingBar-nipCVRc\$default" to "(FIIIIIIZLjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "AnimatedPixelLoadingBar-SnMDlrA" to "(Lcom/purride/pixelui/animation/PixelTickerProvider;IIIIIIIIZLjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "AnimatedPixelLoadingBar-SnMDlrA\$default" to "(Lcom/purride/pixelui/animation/PixelTickerProvider;IIIIIIIIZLjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ActivityIndicator-ShX4CGY" to "(IILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "ActivityIndicator-ShX4CGY\$default" to "(IILjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "LoadStateView" to "(Lcom/purride/pixelui/PixelAsyncSnapshot;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lkotlin/jvm/functions/Function1;)Lcom/purride/pixelui/Widget;",
-            "LoadStateView\$default" to "(Lcom/purride/pixelui/PixelAsyncSnapshot;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "EmptyState" to "(Ljava/lang/String;Ljava/lang/String;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/lang/Integer;Lcom/purride/pixelui/PixelTextStyle;Lcom/purride/pixelui/PixelTextStyle;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "EmptyState\$default" to "(Ljava/lang/String;Ljava/lang/String;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/lang/Integer;Lcom/purride/pixelui/PixelTextStyle;Lcom/purride/pixelui/PixelTextStyle;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Badge" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Badge\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Divider-eccRPRw" to "(IILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "Divider-eccRPRw\$default" to "(IILjava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "AppScaffold" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;",
-            "AppScaffold\$default" to "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/Widget;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;",
-        )
+        /** 每个同时提供简洁入口与状态化入口的组件家族基础名。 */
+        val CONCISE_FAMILIES: Set<String> = REQUIRED_STATE_JVM_NAMES.mapTo(linkedSetOf()) { name ->
+            name.removeSuffix("WithControlStates")
+        }
     }
 }

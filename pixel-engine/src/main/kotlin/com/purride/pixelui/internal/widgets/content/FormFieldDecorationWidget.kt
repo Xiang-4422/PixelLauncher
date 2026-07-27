@@ -134,7 +134,7 @@ internal data class FormFieldDecorationWidget(
     /** Resolves live theme roles and builds the fixed three-slot decoration layout. */
     override fun build(context: BuildContext): Widget {
         /** Complete theme graph watched by this decoration frame. */
-        val theme = PixelTheme.tokensOf(context)
+        val theme = PixelTheme.of(context)
         /** Existing TextField component family reused for every decoration state color. */
         val componentTokens = theme.components.textField
         /** Read-only participates in the same selected base state as the input surface. */

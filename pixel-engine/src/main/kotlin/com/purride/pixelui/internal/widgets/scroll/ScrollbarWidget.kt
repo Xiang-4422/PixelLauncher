@@ -43,14 +43,6 @@ internal data class ScrollbarWidget(
     val enabled: Boolean,
     /** Optional spoken label taking precedence over the theme label token. */
     val semanticLabel: String?,
-    /** Whether a mount without an explicit PixelTheme uses historical paint defaults. */
-    val legacyFacade: Boolean = false,
-    /** Exact historical thumb color retained before facade sentinel conversion. */
-    val legacyThumbColor: PixelColor = PixelColor.White,
-    /** Exact historical optional track color; null means the track is not painted. */
-    val legacyTrackColor: PixelColor? = null,
-    /** Exact historical logical scrollbar width. */
-    val legacyWidth: Int = 1,
     /** Stable retained identity shared by semantics and the render leaf. */
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
@@ -84,11 +76,9 @@ private class ScrollbarWidgetState : State<ScrollbarWidget>() {
 
     /** Resolves theme roles, geometry, semantics, and the render-target callback snapshot. */
     override fun build(context: BuildContext): Widget {
-        /** Old facades use exact historical visuals only when no explicit theme is mounted. */
-        val usesScopeLessLegacyVisuals = widget.legacyFacade && PixelTheme.maybeTokensOf(context) == null
         /** Complete token graph from the nearest theme boundary. */
-        val themeTokens = PixelTheme.tokensOf(context)
-        /** Provider labels override semantic text without affecting legacy paint selection. */
+        val themeTokens = PixelTheme.of(context)
+        /** 提供者标签只覆盖语义文本，不影响视觉 token 解析。 Provider labels override semantic text without affecting visual token resolution. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels ?: themeTokens.labels
         /** Scrollbar-specific state-role and geometry tokens. */
         val componentTokens = themeTokens.components.scrollbar
@@ -118,29 +108,15 @@ private class ScrollbarWidgetState : State<ScrollbarWidget>() {
         /** Focus is an independent concept and must not displace the active base role. */
         val baseStates = runtimeStates - PixelControlState.Focused
         /** Concrete thumb target honoring the public override before semantic roles. */
-        val targetThumbColor = if (usesScopeLessLegacyVisuals) {
-            widget.legacyThumbColor
-        } else {
-            widget.thumbColor
-                ?: componentTokens.resolveContentColor(baseStates, themeTokens.colors)
-                ?: themeTokens.colors.onSurface
-        }
-        /** Optional track target; null preserves the old scope-less no-track contract. */
-        val targetTrackColor = if (usesScopeLessLegacyVisuals) {
-            widget.legacyTrackColor
-        } else {
-            widget.trackColor
-                ?: componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
-                ?: themeTokens.colors.track
-        }
-        /** Concrete transparent endpoint used only to retain one animation channel for no-track. */
-        val concreteTrackColor = targetTrackColor ?: PixelColor.Transparent
+        val targetThumbColor = widget.thumbColor
+            ?: componentTokens.resolveContentColor(baseStates, themeTokens.colors)
+            ?: themeTokens.colors.onSurface
+        /** 轨道目标色；公开覆写优先于语义角色。 Concrete track target honoring the public override before semantic roles. */
+        val concreteTrackColor = widget.trackColor
+            ?: componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
+            ?: themeTokens.colors.track
         /** Optional state-aware border role resolved independently from track and thumb. */
-        val targetBorderColor = if (usesScopeLessLegacyVisuals) {
-            null
-        } else {
-            componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
-        }
+        val targetBorderColor = componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
         /** Transparent motion target used only when the theme intentionally omits a border. */
         val concreteBorderColor = targetBorderColor ?: PixelColor.Transparent
         /** Thumb feedback channel retained across rapid state retargets. */
@@ -183,24 +159,13 @@ private class ScrollbarWidgetState : State<ScrollbarWidget>() {
         listOf(resolvedThumbMotion, resolvedTrackMotion, resolvedBorderMotion).forEach { motion ->
             motion.watch(context)
         }
-        /** Width resolved through component-size tokens when the facade omitted its sentinel. */
-        val resolvedWidth = if (usesScopeLessLegacyVisuals) {
-            widget.legacyWidth.coerceAtLeast(1)
-        } else {
-            (widget.width ?: componentTokens.resolveMinimumWidth(themeTokens.sizes)).coerceAtLeast(1)
-        }
+        /** 调用方省略覆写时，由组件尺寸 token 解析宽度。 Width resolved through component-size tokens when the caller omitted an override. */
+        val resolvedWidth = (widget.width ?: componentTokens.resolveMinimumWidth(themeTokens.sizes))
+            .coerceAtLeast(1)
         /** Border width resolved through the foundation border scale. */
-        val resolvedBorderWidth = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveBorderWidth(themeTokens.borders)
-        }
+        val resolvedBorderWidth = componentTokens.resolveBorderWidth(themeTokens.borders)
         /** Pixel stair-step radius resolved through the foundation radius scale. */
-        val resolvedCornerRadius = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveCornerRadius(themeTokens.radii)
-        }
+        val resolvedCornerRadius = componentTokens.resolveCornerRadius(themeTokens.radii)
         /** Final spoken label after explicit non-blank text wins over the localizable token. */
         val resolvedLabel = widget.semanticLabel?.takeIf { label -> label.isNotBlank() }
             ?: localizedLabels.scrollbar
@@ -209,7 +174,6 @@ private class ScrollbarWidgetState : State<ScrollbarWidget>() {
             child = widget.child,
             state = widget.state,
             thumbColor = resolvedThumbMotion.value,
-            // Transparent SrcOver paint is a no-op when the legacy facade omitted its track.
             trackColor = resolvedTrackMotion.value,
             borderColor = resolvedBorderMotion.value.takeIf { targetBorderColor != null },
             borderWidth = resolvedBorderWidth,
@@ -221,18 +185,14 @@ private class ScrollbarWidgetState : State<ScrollbarWidget>() {
             key = widget.key,
         )
         /** Optional additive focus layer supplied by custom scrollbar component tokens. */
-        val focusedScrollbar = if (usesScopeLessLegacyVisuals) {
-            renderScrollbar
-        } else {
-            withControlFocusIndicator(
-                child = renderScrollbar,
-                states = runtimeStates,
-                componentTokens = componentTokens,
-                colors = themeTokens.colors,
-                borders = themeTokens.borders,
-                key = widget.key?.let { "$it-focus-indicator" },
-            )
-        }
+        val focusedScrollbar = withControlFocusIndicator(
+            child = renderScrollbar,
+            states = runtimeStates,
+            componentTokens = componentTokens,
+            colors = themeTokens.colors,
+            borders = themeTokens.borders,
+            key = widget.key?.let { "$it-focus-indicator" },
+        )
         return Semantics(
             label = resolvedLabel,
             role = PixelSemanticRole.SCROLL_VIEW,

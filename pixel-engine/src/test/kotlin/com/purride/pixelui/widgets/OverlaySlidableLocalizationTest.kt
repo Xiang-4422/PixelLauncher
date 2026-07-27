@@ -25,16 +25,16 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Localization precedence and visual-compatibility coverage for overlay and Slidable families. */
+/** overlay 与 Slidable 家族的本地化优先级及渲染中立性覆盖。 */
 class OverlaySlidableLocalizationTest {
-    /** Scope-less providers change only semantic fallback text, never legacy rendered pixels. */
+    /** 挂载本地化提供者只改变语义兜底文本，绝不改变任何渲染像素。 */
     @Test
-    fun scopeLessEnglishAndChineseProvidersPreserveLegacyPixels() {
-        /** Public legacy facades whose fallback labels never paint visible localized glyphs. */
+    fun localizationProvidersChangeSemanticFallbacksWithoutChangingPixels() {
+        /** 简洁公开入口；其兜底标签不会绘制任何可见本地化字形。 */
         val cases = listOf(
             LocalizationPixelCase(
                 name = "Menu",
-                legacyLabel = "Menu",
+                englishLabel = "Menu",
                 chineseLabel = "菜单",
                 build = {
                     Menu(
@@ -45,7 +45,7 @@ class OverlaySlidableLocalizationTest {
             ),
             LocalizationPixelCase(
                 name = "Dropdown",
-                legacyLabel = "Dropdown",
+                englishLabel = "Dropdown",
                 chineseLabel = "下拉菜单",
                 build = {
                     Dropdown(
@@ -59,7 +59,7 @@ class OverlaySlidableLocalizationTest {
             ),
             LocalizationPixelCase(
                 name = "Tooltip",
-                legacyLabel = "Tooltip",
+                englishLabel = "Tooltip",
                 chineseLabel = "工具提示",
                 build = {
                     Tooltip(
@@ -71,7 +71,7 @@ class OverlaySlidableLocalizationTest {
             ),
             LocalizationPixelCase(
                 name = "Slidable",
-                legacyLabel = "Slidable",
+                englishLabel = "Slidable",
                 chineseLabel = "滑动操作",
                 build = {
                     Slidable(
@@ -83,17 +83,28 @@ class OverlaySlidableLocalizationTest {
         )
 
         cases.forEach { case ->
-            /** Historical provider-free frame and English semantic baseline. */
-            val legacy = captureFrame(bundle = null, build = case.build)
+            /** 未挂载提供者时的帧与英文语义基线。 */
+            val withoutProvider = captureFrame(bundle = null, build = case.build)
             /** Explicit English provider frame proving the inherited boundary is paint-neutral. */
             val english = captureFrame(bundle = PixelLocalizationBundle.English, build = case.build)
             /** Chinese provider frame proving different text remains paint-neutral. */
             val chinese = captureFrame(bundle = PixelLocalizationBundle.Chinese, build = case.build)
 
-            assertArrayEquals("${case.name} English provider changed pixels", legacy.pixels, english.pixels)
-            assertArrayEquals("${case.name} Chinese provider changed pixels", legacy.pixels, chinese.pixels)
-            assertTrue("${case.name} lost legacy fallback", case.legacyLabel in legacy.labels)
-            assertTrue("${case.name} lost English provider fallback", case.legacyLabel in english.labels)
+            assertArrayEquals(
+                "${case.name} English provider changed pixels",
+                withoutProvider.pixels,
+                english.pixels,
+            )
+            assertArrayEquals(
+                "${case.name} Chinese provider changed pixels",
+                withoutProvider.pixels,
+                chinese.pixels,
+            )
+            assertTrue(
+                "${case.name} lost token label fallback",
+                case.englishLabel in withoutProvider.labels,
+            )
+            assertTrue("${case.name} lost English provider fallback", case.englishLabel in english.labels)
             assertTrue("${case.name} ignored Chinese provider", case.chineseLabel in chinese.labels)
         }
     }
@@ -248,7 +259,7 @@ class OverlaySlidableLocalizationTest {
         }
     }
 
-    /** Explicit semantic text, including historical blank values, wins over a provider. */
+    /** 显式语义文本（含显式空白值）优先于任何提供者。 */
     @Test
     fun explicitAndVisibleTextPrecedeProviderWhileBlankExplicitValuesRemainValid() {
         /** Chinese bundle makes every accidental provider fallback immediately observable. */
@@ -455,7 +466,7 @@ class OverlaySlidableLocalizationTest {
         )
     }
 
-    /** Captures defensive pixels and labels for one fresh public legacy declaration. */
+    /** 为一次全新的简洁公开入口声明捕获防御性像素与语义标签。 */
     private fun captureFrame(
         bundle: PixelLocalizationBundle?,
         build: () -> Widget,
@@ -465,7 +476,7 @@ class OverlaySlidableLocalizationTest {
         return try {
             /** Fresh declaration avoids reusing one widget instance under different ancestors. */
             val child = build()
-            /** Optional explicit provider distinguishes the historical scope-less baseline. */
+            /** 可选显式提供者用于区分未挂载提供者的基线。 */
             val root = bundle?.let { installed -> localized(installed, child) } ?: child
             tester.pumpWidget(root, logicalWidth = 96, logicalHeight = 48)
             LocalizationFrame(
@@ -477,15 +488,15 @@ class OverlaySlidableLocalizationTest {
         }
     }
 
-    /** One scope-less pixel comparison declaration and its expected fallback names. */
+    /** 一组像素比较声明及其预期兜底名称。 */
     private data class LocalizationPixelCase(
         /** Human-readable component family included in assertion failures. */
         val name: String,
-        /** Historical and English-provider semantic fallback. */
-        val legacyLabel: String,
+        /** 未挂载提供者与英文提供者共用的语义兜底标签。 */
+        val englishLabel: String,
         /** Built-in Chinese-provider semantic fallback. */
         val chineseLabel: String,
-        /** Fresh public facade declaration created for each provider variant. */
+        /** 为每个提供者变体新建一次的简洁公开入口声明。 */
         val build: () -> Widget,
     )
 

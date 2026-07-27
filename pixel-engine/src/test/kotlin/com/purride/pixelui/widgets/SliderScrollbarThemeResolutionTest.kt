@@ -28,24 +28,39 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Compatibility and live-token contracts for Slider, Scrollbar, and legacy field labels. */
-class SliderScrollbarThemeCompatibilityTest {
-    /** Scope-less legacy Slider colors stay exact, while explicit themes resolve each sentinel alone. */
+/** 简洁与状态化 Slider、Scrollbar 的等价性与实时 token 解析契约。 */
+class SliderScrollbarThemeResolutionTest {
+    /** 简洁 Slider 与状态化实现等价，显式主题下每个颜色通道独立解析。 */
     @Test
-    fun sliderLegacyAndThemedColorChannelsResolveIndependently() {
-        /** Scope-less runtime proving that no implicit default token recolors the old facade. */
-        val legacyTester = PixelTester()
+    fun sliderConciseAndThemedColorChannelsResolveIndependently() {
+        /** 无提供者时验证简洁入口与状态化入口渲染一致的运行时。 */
+        val equivalenceTester = PixelTester()
         try {
-            legacyTester.pumpWidget(
+            equivalenceTester.pumpWidget(
                 widget = Slider(value = 0.5f),
                 logicalWidth = SliderWidth,
-                logicalHeight = LegacySliderHeight,
+                logicalHeight = SliderHeight,
             )
-            assertEquals(LegacyTrackColor, legacyTester.pixelAt(0, 0))
-            assertEquals(LegacyActiveColor, legacyTester.pixelAt(1, 2))
-            assertEquals(PixelColor.Transparent, legacyTester.pixelAt(SliderWidth - 2, 2))
+            /** 简洁入口的当前帧。 */
+            val concisePixels = requireNotNull(equivalenceTester.renderResult).buffer.pixels.copyOf()
+            equivalenceTester.pumpWidget(
+                widget = Slider(
+                    value = 0.5f,
+                    states = PixelControlStateSet.Normal,
+                    onDrag = {},
+                    onRelease = {},
+                ),
+                logicalWidth = SliderWidth,
+                logicalHeight = SliderHeight,
+            )
+            /** 状态化入口在同一输入下的参考帧。 */
+            val stateAwarePixels = requireNotNull(equivalenceTester.renderResult).buffer.pixels.copyOf()
+            assertTrue(concisePixels.contentEquals(stateAwarePixels))
+            // 无显式主题时两条入口都解析默认 token：primary 前景与 track 容器。
+            assertEquals(PixelColorScheme.Dark.primary, equivalenceTester.pixelAt(1, 2))
+            assertEquals(PixelColorScheme.Dark.track, equivalenceTester.pixelAt(SliderWidth - 2, 2))
         } finally {
-            legacyTester.dispose()
+            equivalenceTester.dispose()
         }
 
         /** Explicit-theme runtime checking both default sentinel channels. */
@@ -54,7 +69,7 @@ class SliderScrollbarThemeCompatibilityTest {
             themedTester.pumpWidget(
                 widget = sliderTheme(Slider(value = 0.5f)),
                 logicalWidth = SliderWidth,
-                logicalHeight = LegacySliderHeight,
+                logicalHeight = SliderHeight,
             )
             assertEquals(TokenActiveColor, themedTester.pixelAt(1, 2))
             assertEquals(TokenTrackColor, themedTester.pixelAt(SliderWidth - 2, 2))
@@ -70,7 +85,7 @@ class SliderScrollbarThemeCompatibilityTest {
                     Slider(value = 0.5f, activeColor = ExplicitActiveColor),
                 ),
                 logicalWidth = SliderWidth,
-                logicalHeight = LegacySliderHeight,
+                logicalHeight = SliderHeight,
             )
             assertEquals(ExplicitActiveColor, activeOverrideTester.pixelAt(1, 2))
             assertEquals(TokenTrackColor, activeOverrideTester.pixelAt(SliderWidth - 2, 2))
@@ -86,7 +101,7 @@ class SliderScrollbarThemeCompatibilityTest {
                     Slider(value = 0.5f, trackColor = ExplicitTrackColor),
                 ),
                 logicalWidth = SliderWidth,
-                logicalHeight = LegacySliderHeight,
+                logicalHeight = SliderHeight,
             )
             assertEquals(TokenActiveColor, trackOverrideTester.pixelAt(1, 2))
             assertEquals(ExplicitTrackColor, trackOverrideTester.pixelAt(SliderWidth - 2, 2))
@@ -154,37 +169,43 @@ class SliderScrollbarThemeCompatibilityTest {
         }
     }
 
-    /** A null old Scrollbar track remains absent scope-less and becomes token-backed in a theme. */
+    /** 省略 Scrollbar 颜色与宽度时统一由组件 token 解析，显式主题继续替换全部通道。 */
     @Test
-    fun scrollbarNullTrackSeparatesLegacyAndThemedPaths() {
-        /** Legacy scroll owner used to derive proportional thumb geometry. */
-        val legacyController = PixelListController()
-        /** Legacy list state paired with the old facade. */
-        val legacyState = legacyController.create()
-        /** Runtime proving that child pixels remain visible beneath the omitted track. */
-        val legacyTester = PixelTester()
+    fun scrollbarOmittedChannelsResolveComponentTokens() {
+        /** 用于推导等比 thumb 几何的滚动所有者。 Scroll owner used to derive proportional thumb geometry. */
+        val defaultController = PixelListController()
+        /** 与简洁入口配对的列表状态。 List state paired with the concise facade. */
+        val defaultState = defaultController.create()
+        /** 证明省略通道会解析默认 token 图的运行时。 Runtime proving omitted channels resolve the default token graph. */
+        val defaultTester = PixelTester()
         try {
-            legacyTester.pumpWidget(
-                widget = legacyScrollbar(legacyState, legacyController),
+            defaultTester.pumpWidget(
+                widget = conciseScrollbar(defaultState, defaultController),
                 logicalWidth = ScrollbarViewportWidth,
                 logicalHeight = ScrollbarViewportHeight,
             )
-            assertEquals(LegacyTrackColor, legacyTester.pixelAt(ScrollbarViewportWidth - 1, 0))
-            assertEquals(ScrollContentColor, legacyTester.pixelAt(ScrollbarViewportWidth - 1, 6))
-            assertEquals(1, legacyTester.renderResult!!.scrollbarTargets.single().bounds.width)
+            assertEquals(
+                PixelColorScheme.Dark.onSurface,
+                defaultTester.pixelAt(ScrollbarViewportWidth - 1, 0),
+            )
+            assertEquals(
+                PixelColorScheme.Dark.track,
+                defaultTester.pixelAt(ScrollbarViewportWidth - 1, 6),
+            )
+            assertEquals(1, defaultTester.renderResult!!.scrollbarTargets.single().bounds.width)
         } finally {
-            legacyTester.dispose()
+            defaultTester.dispose()
         }
 
-        /** Themed scroll owner used to verify old-facade omission sentinels. */
+        /** 用于验证简洁入口 token 解析的主题化滚动所有者。 Themed scroll owner used to verify concise-facade token resolution. */
         val themedController = PixelListController()
-        /** Themed list state paired with the old facade. */
+        /** 与简洁入口配对的主题化列表状态。 Themed list state paired with the concise facade. */
         val themedState = themedController.create()
-        /** Runtime proving explicit theme roles replace all omitted historical defaults. */
+        /** 证明显式主题角色会替换全部省略通道的运行时。 */
         val themedTester = PixelTester()
         try {
             themedTester.pumpWidget(
-                widget = scrollbarTheme(legacyScrollbar(themedState, themedController)),
+                widget = scrollbarTheme(conciseScrollbar(themedState, themedController)),
                 logicalWidth = ScrollbarViewportWidth,
                 logicalHeight = ScrollbarViewportHeight,
             )
@@ -199,7 +220,7 @@ class SliderScrollbarThemeCompatibilityTest {
         val stateAwareController = PixelListController()
         /** State-aware list state paired with the required-states overload. */
         val stateAwareState = stateAwareController.create()
-        /** Runtime guarding the themed API against compatibility-path regression. */
+        /** 守护状态化入口自身 token 解析不回归的运行时。 */
         val stateAwareTester = PixelTester()
         try {
             stateAwareTester.pumpWidget(
@@ -219,10 +240,10 @@ class SliderScrollbarThemeCompatibilityTest {
         }
     }
 
-    /** The old TextField default keeps a non-blank placeholder as its spoken label. */
+    /** 简洁 TextField 默认把非空 placeholder 作为朗读标签。 */
     @Test
     fun textFieldPlaceholderDefaultRemainsSpokenLabel() {
-        /** Controlled field owner used by the public legacy facade. */
+        /** 简洁公开入口使用的受控字段所有者。 Controlled field owner used by the concise public facade. */
         val controller = PixelTextFieldController()
         /** Empty controlled value allowing the placeholder to remain visible. */
         val state = controller.create()
@@ -257,7 +278,7 @@ class SliderScrollbarThemeCompatibilityTest {
     private fun scrollbarTheme(child: Widget): Widget {
         /** Scrollbar tokens with an observable two-pixel width and both paint roles. */
         val scrollbarTokens = PixelComponentTokens.Default.scrollbar.copy(minimumWidth = 2)
-        /** Complete token graph installed around the public old or state-aware facade. */
+        /** 安装在简洁入口或状态化入口之外的完整 token 图。 */
         val tokens = PixelThemeTokens.Default.copy(
             colors = PixelColorScheme.Dark.copy(
                 onSurface = TokenScrollbarThumbColor,
@@ -268,8 +289,8 @@ class SliderScrollbarThemeCompatibilityTest {
         return PixelTheme(tokens = tokens, child = child)
     }
 
-    /** Builds the old Scrollbar facade with its null track and one-pixel width defaults. */
-    private fun legacyScrollbar(state: PixelListState, controller: PixelListController): Widget {
+    /** 构建省略全部可选视觉通道的简洁 Scrollbar 入口。 Builds the concise Scrollbar facade with every optional visual channel omitted. */
+    private fun conciseScrollbar(state: PixelListState, controller: PixelListController): Widget {
         return Scrollbar(
             child = scrollViewport(state, controller),
             state = state,
@@ -300,8 +321,8 @@ class SliderScrollbarThemeCompatibilityTest {
         /** Shared Slider render width used by exact pixel assertions. */
         const val SliderWidth: Int = 12
 
-        /** Exact legacy Slider height. */
-        const val LegacySliderHeight: Int = 7
+        /** 默认 Slider token 解析出的轨道高度。 */
+        const val SliderHeight: Int = 7
 
         /** Scrollable viewport width. */
         const val ScrollbarViewportWidth: Int = 12
@@ -309,22 +330,16 @@ class SliderScrollbarThemeCompatibilityTest {
         /** Scrollable viewport height. */
         const val ScrollbarViewportHeight: Int = 12
 
-        /** Historical old-facade Slider active color. */
-        val LegacyActiveColor: PixelColor = PixelColor.fromRgb(200, 100, 0)
-
-        /** Historical white Slider frame and Scrollbar thumb. */
-        val LegacyTrackColor: PixelColor = PixelColor.White
-
         /** Theme-resolved Slider active color. */
         val TokenActiveColor: PixelColor = PixelColor.fromRgb(19, 181, 103)
 
         /** Theme-resolved Slider track color. */
         val TokenTrackColor: PixelColor = PixelColor.fromRgb(23, 41, 73)
 
-        /** Explicit old-facade active override. */
+        /** 调用方显式传入的填充色覆写。 */
         val ExplicitActiveColor: PixelColor = PixelColor.fromRgb(211, 61, 83)
 
-        /** Explicit old-facade track override. */
+        /** 调用方显式传入的轨道色覆写。 */
         val ExplicitTrackColor: PixelColor = PixelColor.fromRgb(73, 113, 229)
 
         /** Theme-resolved Slider border color. */
@@ -333,7 +348,7 @@ class SliderScrollbarThemeCompatibilityTest {
         /** Theme-resolved Slider hard-shadow color. */
         val TokenShadowColor: PixelColor = PixelColor.fromRgb(103, 43, 137)
 
-        /** Solid child color visible when the legacy Scrollbar track is omitted. */
+        /** 用于与滚动条轨道区分的实心子内容颜色。 */
         val ScrollContentColor: PixelColor = PixelColor.fromRgb(31, 79, 127)
 
         /** Theme-resolved Scrollbar thumb color. */

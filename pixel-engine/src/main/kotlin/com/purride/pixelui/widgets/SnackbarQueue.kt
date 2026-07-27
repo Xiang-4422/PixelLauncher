@@ -17,14 +17,11 @@ public data class PixelSnackbarQueueItem(
     val message: String,
     /** 可选操作按钮文字；null 表示没有操作按钮。 */
     val actionLabel: String? = null,
-    /** Snackbar 表面的填充色。 */
-    val fillColor: PixelColor = PixelColor.fromRgb(40, 40, 40),
-    /** Snackbar 消息使用的文字样式。 */
-    val textStyle: PixelTextStyle = PixelTextStyle.Default,
+    /** 可选 Snackbar 表面填充色；null 时由挂载的 Snackbar 解析通知容器角色。 */
+    val fillColor: PixelColor? = null,
+    /** 可选 Snackbar 文字样式；null 时由挂载的 Snackbar 解析 body typography。 */
+    val textStyle: PixelTextStyle? = null,
 )
-
-/** Legacy Snackbar fill used only to recognize an omitted queue-item theme override. */
-private val LEGACY_SNACKBAR_QUEUE_FILL_COLOR: PixelColor = PixelColor.fromRgb(40, 40, 40)
 
 /**
  * FIFO snackbar 队列控制器。
@@ -77,8 +74,8 @@ public class PixelSnackbarQueueController : ChangeNotifier() {
         message: String,
         actionLabel: String? = null,
         onAction: (() -> Unit)? = null,
-        fillColor: PixelColor = PixelColor.fromRgb(40, 40, 40),
-        textStyle: PixelTextStyle = PixelTextStyle.Default,
+        fillColor: PixelColor? = null,
+        textStyle: PixelTextStyle? = null,
         timeout: Duration = DefaultTimeout,
     ): PixelSnackbarQueueItem {
         return enqueueItem(
@@ -86,8 +83,8 @@ public class PixelSnackbarQueueController : ChangeNotifier() {
             states = PixelControlStateSet.Normal,
             actionLabel = actionLabel,
             onAction = onAction,
-            fillColor = fillColor.takeUnless { color -> color == LEGACY_SNACKBAR_QUEUE_FILL_COLOR },
-            textStyle = textStyle.takeUnless { style -> style == PixelTextStyle.Default },
+            fillColor = fillColor,
+            textStyle = textStyle,
             timeout = timeout,
         )
     }
@@ -143,8 +140,8 @@ public class PixelSnackbarQueueController : ChangeNotifier() {
             id = nextId++,
             message = message,
             actionLabel = actionLabel,
-            fillColor = fillColor ?: LEGACY_SNACKBAR_QUEUE_FILL_COLOR,
-            textStyle = textStyle ?: PixelTextStyle.Default,
+            fillColor = fillColor,
+            textStyle = textStyle,
         )
         /** Binary-safe presentation metadata resolved only after mounting. */
         val visualConfig = PixelNotificationVisualConfig(

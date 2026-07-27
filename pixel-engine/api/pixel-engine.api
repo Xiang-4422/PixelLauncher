@@ -375,7 +375,7 @@ com.purride.pixelui public class PixelRouteStateKey<T>(public val name: String)
 com.purride.pixelui public class PixelSnackbarQueueController : ChangeNotifier()
 com.purride.pixelui public class PixelStateMap<T>(
 com.purride.pixelui public class PixelTextInputBridge(
-com.purride.pixelui public class PixelTheme private constructor(
+com.purride.pixelui public class PixelTheme(
 com.purride.pixelui public class PixelToastQueueController : ChangeNotifier()
 com.purride.pixelui public class PixelTypedDeepLinkResolver(
 com.purride.pixelui public class PixelTypedDeepLinkRoute<A : Any, R>(
@@ -438,16 +438,12 @@ com.purride.pixelui public companion object
 com.purride.pixelui public companion object
 com.purride.pixelui public companion object
 com.purride.pixelui public companion object
-com.purride.pixelui public companion object
-com.purride.pixelui public companion object
 com.purride.pixelui public const val FPS_WINDOW: Int = 30
 com.purride.pixelui public const val PixelMultiStackSnapshotBundleKey: String =
 com.purride.pixelui public const val PixelMultiStackSnapshotSchemaVersion: Int = 1
 com.purride.pixelui public const val PixelNavigatorPersistentSnapshotBundleKey: String =
 com.purride.pixelui public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 2
 com.purride.pixelui public const val UnicodeVersion: String = "17.0.0"
-com.purride.pixelui public constructor(
-com.purride.pixelui public constructor(
 com.purride.pixelui public constructor(
 com.purride.pixelui public constructor(
 com.purride.pixelui public data class AdaptiveDp(
@@ -556,8 +552,6 @@ com.purride.pixelui public data class PixelTextInputEvent(
 com.purride.pixelui public data class PixelTextInputRequest(
 com.purride.pixelui public data class PixelTextSpan(
 com.purride.pixelui public data class PixelTextStyle(
-com.purride.pixelui public data class PixelThemeColors(
-com.purride.pixelui public data class PixelThemeData(
 com.purride.pixelui public data class PixelThemeTokens(
 com.purride.pixelui public data class PixelToastQueueItem(
 com.purride.pixelui public data class PixelTypedDeepLinkNavigated(
@@ -943,9 +937,6 @@ com.purride.pixelui public fun formatInteger(value: Long): String
 com.purride.pixelui public fun formatPercent(fraction: Float): String
 com.purride.pixelui public fun fromBundles(bundles: List<PixelLocalizationBundle>): PixelLocalizationDelegate
 com.purride.pixelui public fun fromBundles(vararg bundles: PixelLocalizationBundle): PixelLocalizationDelegate
-com.purride.pixelui public fun fromLegacy(
-com.purride.pixelui public fun fromLegacy(colors: PixelThemeColors): PixelColorScheme
-com.purride.pixelui public fun fromLegacy(data: PixelThemeData): PixelThemeTokens
 com.purride.pixelui public fun fromLegacyBridge(bridge: PixelHostBridge?): PixelHostCapabilitySet
 com.purride.pixelui public fun handleBack(): Boolean
 com.purride.pixelui public fun handleBack(switchToInitialStack: Boolean = true): Boolean
@@ -999,11 +990,10 @@ com.purride.pixelui public fun maybeOf(context: BuildContext): PixelMotionThemeD
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelNavigatorState?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelOverlayController?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelTextRasterizer?
-com.purride.pixelui public fun maybeOf(context: BuildContext): PixelThemeData?
+com.purride.pixelui public fun maybeOf(context: BuildContext): PixelThemeTokens?
 com.purride.pixelui public fun maybeOf(context: BuildContext): TextDirection?
 com.purride.pixelui public fun maybePop(): Boolean = pop()
 com.purride.pixelui public fun maybePop(result: Any?): Boolean = pop(result)
-com.purride.pixelui public fun maybeTokensOf(context: BuildContext): PixelThemeTokens?
 com.purride.pixelui public fun navigatorState(stackId: String): PixelNavigatorState? = navigatorStates[stackId]
 com.purride.pixelui public fun nearest(offset: Int): Int
 com.purride.pixelui public fun next(
@@ -1018,7 +1008,7 @@ com.purride.pixelui public fun of(context: BuildContext): PixelMotionScope
 com.purride.pixelui public fun of(context: BuildContext): PixelMotionThemeData
 com.purride.pixelui public fun of(context: BuildContext): PixelNavigatorState
 com.purride.pixelui public fun of(context: BuildContext): PixelOverlayController
-com.purride.pixelui public fun of(context: BuildContext): PixelThemeData
+com.purride.pixelui public fun of(context: BuildContext): PixelThemeTokens
 com.purride.pixelui public fun of(context: BuildContext): TextDirection
 com.purride.pixelui public fun of(context: BuildContext, fallback: PixelTextRasterizer): PixelTextRasterizer
 com.purride.pixelui public fun of(vararg states: PixelControlState): PixelControlStateSet
@@ -1124,10 +1114,7 @@ com.purride.pixelui public fun subscribe(listener: (PixelAsyncSnapshot<T>) -> Un
 com.purride.pixelui public fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsets
 com.purride.pixelui public fun symmetric(horizontal: Int = 0, vertical: Int = 0): EdgeInsetsDirectional
 com.purride.pixelui public fun toEdgeInsets(): EdgeInsets
-com.purride.pixelui public fun toLegacyColors(): PixelThemeColors
-com.purride.pixelui public fun toLegacyThemeData(): PixelThemeData
 com.purride.pixelui public fun toSet(): Set<PixelControlState>
-com.purride.pixelui public fun tokensOf(context: BuildContext): PixelThemeTokens
 com.purride.pixelui public fun translate(
 com.purride.pixelui public fun unbindLifecycleOwner()
 com.purride.pixelui public fun unfocus()
@@ -1278,8 +1265,6 @@ com.purride.pixelui public val Default: PixelSpacingTokens = PixelSpacingTokens(
 com.purride.pixelui public val Default: PixelTextButtonStyle = PixelTextButtonStyle()
 com.purride.pixelui public val Default: PixelTextFieldStyle = PixelTextFieldStyle()
 com.purride.pixelui public val Default: PixelTextStyle = PixelTextStyle()
-com.purride.pixelui public val Default: PixelThemeColors = PixelThemeColors()
-com.purride.pixelui public val Default: PixelThemeData = PixelThemeData()
 com.purride.pixelui public val Default: PixelThemeTokens = Dark
 com.purride.pixelui public val Default: PixelTypographyToken = PixelTypographyToken()
 com.purride.pixelui public val Default: PixelTypographyTokens = PixelTypographyTokens()
@@ -1429,7 +1414,6 @@ com.purride.pixelui public val data: HostCapabilitiesData,
 com.purride.pixelui public val data: MediaQueryData,
 com.purride.pixelui public val data: PixelAdaptiveLayoutData,
 com.purride.pixelui public val data: PixelMotionThemeData,
-com.purride.pixelui public val data: PixelThemeData,
 com.purride.pixelui public val debugLabel: String? = null,
 com.purride.pixelui public val decrease: String = "Decrease",
 com.purride.pixelui public val defaultLocale: PixelLocale = PixelLocale.English,

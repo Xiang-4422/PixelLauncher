@@ -68,12 +68,6 @@ internal data class SliderWidget(
     val activeColor: PixelColor? = null,
     /** 空轨道、边框和 thumb 的基础颜色。 */
     val trackColor: PixelColor? = null,
-    /** Whether a mount without an explicit PixelTheme uses pre-token paint and geometry. */
-    val legacyFacade: Boolean = false,
-    /** Exact historical active color retained before facade sentinel conversion. */
-    val legacyActiveColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
-    /** Exact historical track color retained before facade sentinel conversion. */
-    val legacyTrackColor: PixelColor = PixelColor.White,
     /** Spoken control label. */
     val semanticLabel: String? = null,
     /** Optional spoken value; a percentage is generated when null. */
@@ -134,15 +128,13 @@ private class SliderMotionState : State<SliderWidget>() {
      * 区分程序更新和直接拖动，并只把最终视觉颜色交给无状态 RenderSlider 绘制。
      */
     override fun build(context: BuildContext): com.purride.pixelui.Widget {
-        /** Old facades preserve exact historical pixels only outside an explicit theme boundary. */
-        val usesScopeLessLegacyVisuals = widget.legacyFacade && PixelTheme.maybeTokensOf(context) == null
         /** 当前主题提供的 selection 与 feedback 运动 token。 */
         val motionTheme = PixelMotionTheme.of(context)
         /** 可选的统一 ticker 与 reduced-motion 设置来源。 */
         val motionScope = PixelMotionScope.maybeOf(context)
         configureSliderMotion(selectionMotion, motionScope, motionTheme.selection)
         /** Complete semantic token graph resolved from the nearest provider. */
-        val themeTokens = PixelTheme.tokensOf(context)
+        val themeTokens = PixelTheme.of(context)
         /** Optional bundle supplies provider-aware labels and percentage formatting. */
         val localization = PixelLocalizations.maybeOf(context)
         /** Slider-specific role and geometry tokens. */
@@ -177,27 +169,15 @@ private class SliderMotionState : State<SliderWidget>() {
         /** Focus is rendered as an additive outline rather than replacing a track color role. */
         val baseStates = runtimeStates - com.purride.pixelui.PixelControlState.Focused
         /** Theme target for the active value region unless the public color overrides it. */
-        val targetActiveColor = if (usesScopeLessLegacyVisuals) {
-            widget.legacyActiveColor
-        } else {
-            widget.activeColor
-                ?: componentTokens.resolveContentColor(baseStates, themeTokens.colors)
-                ?: themeTokens.colors.primary
-        }
+        val targetActiveColor = widget.activeColor
+            ?: componentTokens.resolveContentColor(baseStates, themeTokens.colors)
+            ?: themeTokens.colors.primary
         /** Theme target for the empty track unless the public color overrides it. */
-        val targetTrackColor = if (usesScopeLessLegacyVisuals) {
-            widget.legacyTrackColor
-        } else {
-            widget.trackColor
-                ?: componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
-                ?: themeTokens.colors.track
-        }
-        /** Optional themed outline; legacy paint owns its historical one-pixel white frame. */
-        val targetBorderColor = if (usesScopeLessLegacyVisuals) {
-            null
-        } else {
-            componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
-        }
+        val targetTrackColor = widget.trackColor
+            ?: componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
+            ?: themeTokens.colors.track
+        /** 由组件边框角色解析出的可选主题边框色。 Optional themed outline resolved from the component border role. */
+        val targetBorderColor = componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
         /** Transparent endpoint retained when the component intentionally omits an outline. */
         val concreteBorderColor = targetBorderColor ?: PixelColor.Transparent
         /** Retained channels initialized from the exact first resolved colors. */
@@ -239,41 +219,17 @@ private class SliderMotionState : State<SliderWidget>() {
         resolvedTrackMotion.watch(context)
         resolvedBorderMotion.watch(context)
         /** Themed content padding projected from the shared spacing scale. */
-        val resolvedPadding = if (usesScopeLessLegacyVisuals) {
-            EdgeInsets.all(0)
-        } else {
-            componentTokens.resolvePadding(themeTokens.spacing)
-        }
+        val resolvedPadding = componentTokens.resolvePadding(themeTokens.spacing)
         /** Themed minimum width; zero retains the traditional fill-available-width behavior. */
-        val resolvedMinimumWidth = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveMinimumWidth(themeTokens.sizes)
-        }
-        /** Historical height remains seven pixels outside an explicit theme boundary. */
-        val resolvedHeight = if (usesScopeLessLegacyVisuals) {
-            LEGACY_SLIDER_HEIGHT_PX
-        } else {
-            componentTokens.resolveMinimumHeight(themeTokens.sizes).coerceAtLeast(1)
-        }
-        /** Foundation-resolved outline width, unused by the dedicated legacy painter. */
-        val resolvedBorderWidth = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveBorderWidth(themeTokens.borders)
-        }
+        val resolvedMinimumWidth = componentTokens.resolveMinimumWidth(themeTokens.sizes)
+        /** 由 foundation token 解析出的控件高度。 Foundation-resolved control height. */
+        val resolvedHeight = componentTokens.resolveMinimumHeight(themeTokens.sizes).coerceAtLeast(1)
+        /** 由 foundation token 解析出的边框宽度。 Foundation-resolved outline width. */
+        val resolvedBorderWidth = componentTokens.resolveBorderWidth(themeTokens.borders)
         /** Foundation-resolved pixel stair-step radius. */
-        val resolvedCornerRadius = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveCornerRadius(themeTokens.radii)
-        }
+        val resolvedCornerRadius = componentTokens.resolveCornerRadius(themeTokens.radii)
         /** Hard shadow offset selected by the semantic elevation role. */
-        val resolvedElevation = if (usesScopeLessLegacyVisuals) {
-            0
-        } else {
-            componentTokens.resolveElevation(themeTokens.elevations)
-        }
+        val resolvedElevation = componentTokens.resolveElevation(themeTokens.elevations)
         /** 只接收最终视觉值与底层指针回调的 render leaf。 */
         val sliderSurface = SliderRenderWidget(
             value = selectionMotion.value,
@@ -282,7 +238,6 @@ private class SliderMotionState : State<SliderWidget>() {
             onPressedChanged = ::handlePressedChanged,
             onHoveredChanged = ::handleHoveredChanged,
             enabled = widget.enabled,
-            legacyVisuals = usesScopeLessLegacyVisuals,
             minimumWidth = resolvedMinimumWidth,
             height = resolvedHeight,
             padding = resolvedPadding,
@@ -308,7 +263,7 @@ private class SliderMotionState : State<SliderWidget>() {
         val semanticValue = widget.semanticValue
             ?: localization?.formatPercent(controlledValue)
             ?: "${(controlledValue * 100f).roundToInt()}%"
-        /** Explicit non-blank labels win; omitted facade defaults use the localizable theme token. */
+        /** 非空白显式标签优先；省略时使用可本地化的主题 token。 Explicit non-blank labels win; omitted defaults use the localizable theme token. */
         val semanticLabel = widget.semanticLabel?.takeIf { label -> label.isNotBlank() }
             ?: localization?.labels?.slider
             ?: themeTokens.labels.slider
@@ -431,8 +386,6 @@ private data class SliderRenderWidget(
     val onHoveredChanged: ((Boolean) -> Unit)?,
     /** Whether this render object exports a pointer Slider target. */
     val enabled: Boolean,
-    /** Whether paint and sizing must use the exact pre-token algorithm. */
-    val legacyVisuals: Boolean,
     /** Theme-resolved minimum logical width; zero preserves fill-available sizing. */
     val minimumWidth: Int,
     /** Theme-resolved logical track height. */
@@ -466,7 +419,6 @@ private data class SliderRenderWidget(
             onPressedChanged = onPressedChanged,
             onHoveredChanged = onHoveredChanged,
             enabled = enabled,
-            legacyVisuals = legacyVisuals,
             minimumWidth = minimumWidth,
             height = height,
             padding = padding,
@@ -488,7 +440,6 @@ private data class SliderRenderWidget(
             onPressedChanged = onPressedChanged,
             onHoveredChanged = onHoveredChanged,
             enabled = enabled,
-            legacyVisuals = legacyVisuals,
             minimumWidth = minimumWidth,
             height = height,
             padding = padding,
@@ -516,7 +467,6 @@ private data class SliderRenderWidget(
  * @param onPressedChanged 按压微状态回调。
  * @param onHoveredChanged 悬停微状态回调。
  * @param enabled 是否导出指针命中目标。
- * @param legacyVisuals 是否使用精确的 pre-token 布局与绘制算法。
  * @param minimumWidth 主题解析后的最小逻辑宽度。
  * @param height 主题解析后的轨道高度。
  * @param padding 组件表面与 active range 之间的主题内边距。
@@ -541,8 +491,6 @@ internal class RenderSlider(
     private var onHoveredChanged: ((Boolean) -> Unit)?,
     /** Whether this render object currently exports pointer interaction. */
     private var enabled: Boolean,
-    /** Whether this instance paints with the exact historical algorithm. */
-    private var legacyVisuals: Boolean,
     /** Theme-resolved minimum logical width. */
     private var minimumWidth: Int,
     /** Current theme-resolved logical track height. */
@@ -565,15 +513,8 @@ internal class RenderSlider(
     private var shadowOffset: Int,
 ) : RenderBox() {
 
-    /** Uses legacy fill sizing or a token minimum-width surface with measured elevation extent. */
+    /** 按 token 最小宽度与实测阴影范围确定尺寸。 Sizes a token minimum-width surface with its measured elevation extent. */
     override fun layout(constraints: RenderConstraints) {
-        if (legacyVisuals) {
-            size = RenderSize(
-                width = constraints.maxWidth,
-                height = constraints.constrainHeight(LEGACY_SLIDER_HEIGHT_PX),
-            )
-            return
-        }
         /** Shadow extent is layout-neutral when no concrete shadow color is available. */
         val decorationExtent = shadowOffset.coerceAtLeast(0).takeIf { shadowColor != null } ?: 0
         /** Safe outline width used to keep active paint out of the component border. */
@@ -598,50 +539,8 @@ internal class RenderSlider(
         )
     }
 
-    /** Draws the historical frame or every themed surface, range, outline, and elevation layer. */
-    override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
-        if (legacyVisuals) {
-            paintLegacySlider(context, offsetX, offsetY)
-            return
-        }
-        paintThemedSlider(context, offsetX, offsetY)
-    }
-
-    /** Draws the exact pre-token white frame, orange range, and one-pixel thumb algorithm. */
-    private fun paintLegacySlider(context: PaintContext, offsetX: Int, offsetY: Int) {
-        /** 已布局的轨道宽度。 */
-        val w = size.width
-        /** 固定轨道高度。 */
-        val h = size.height
-        if (w < 3 || h < 3) return
-
-        /** 钳位后的最终绘制进度。 */
-        val v = value.coerceIn(0f, 1f)
-
-        // Outer border
-        context.drawRect(offsetX, offsetY, w, h, trackColor)
-
-        // Filled (active) region: inside the border, left portion
-        /** 去除左右边框后的内部轨道宽度。 */
-        val innerW = w - 2
-        /** 当前进度覆盖的整数像素宽度。 */
-        val fillW = (innerW * v).roundToInt().coerceIn(0, innerW)
-        if (fillW > 0) {
-            context.fillRect(offsetX + 1, offsetY + 1, fillW, h - 2, activeColor)
-        }
-
-        // Thumb: 1-px-wide bright column at the fill edge (only if not at extremes)
-        if (fillW in 1 until innerW) {
-            /** thumb 在缓冲区中的绝对横坐标。 */
-            val thumbX = offsetX + 1 + fillW - 1
-            for (y in offsetY + 1 until offsetY + h - 1) {
-                context.buffer.setPixel(thumbX, y, trackColor)
-            }
-        }
-    }
-
     /** Draws token-resolved fill, range, outline, radius, padding, and hard elevation. */
-    private fun paintThemedSlider(context: PaintContext, offsetX: Int, offsetY: Int) {
+    override fun paint(context: PaintContext, offsetX: Int, offsetY: Int) {
         /** Shadow extent is included only while a concrete shadow is painted. */
         val decorationExtent = shadowOffset.coerceAtLeast(0).takeIf { shadowColor != null } ?: 0
         /** Main themed surface width excluding the reserved shadow extension. */
@@ -725,11 +624,7 @@ internal class RenderSlider(
     ) {
         if (!enabled) return
         /** Shadow pixels are visual-only and excluded from drag value conversion. */
-        val decorationExtent = if (legacyVisuals) {
-            0
-        } else {
-            shadowOffset.coerceAtLeast(0).takeIf { shadowColor != null } ?: 0
-        }
+        val decorationExtent = shadowOffset.coerceAtLeast(0).takeIf { shadowColor != null } ?: 0
         targets += PixelSliderTarget(
             bounds = PixelRect(
                 left = offsetX,
@@ -753,7 +648,6 @@ internal class RenderSlider(
         onPressedChanged: ((Boolean) -> Unit)?,
         onHoveredChanged: ((Boolean) -> Unit)?,
         enabled: Boolean,
-        legacyVisuals: Boolean,
         minimumWidth: Int,
         height: Int,
         padding: EdgeInsets,
@@ -772,7 +666,6 @@ internal class RenderSlider(
             this.onPressedChanged !== onPressedChanged ||
             this.onHoveredChanged !== onHoveredChanged ||
             this.enabled != enabled ||
-            this.legacyVisuals != legacyVisuals ||
             this.minimumWidth != minimumWidth ||
             this.height != height ||
             this.padding != padding ||
@@ -791,15 +684,13 @@ internal class RenderSlider(
         this.onHoveredChanged = onHoveredChanged
         this.enabled = enabled
         /** Whether any geometry or elevation field requires a fresh layout pass. */
-        val needsLayout = this.legacyVisuals != legacyVisuals ||
-            this.minimumWidth != minimumWidth ||
+        val needsLayout = this.minimumWidth != minimumWidth ||
             this.height != height ||
             this.padding != padding ||
             (this.borderColor == null) != (borderColor == null) ||
             this.borderWidth != borderWidth ||
             this.shadowColor != shadowColor ||
             this.shadowOffset != shadowOffset
-        this.legacyVisuals = legacyVisuals
         this.minimumWidth = minimumWidth.coerceAtLeast(0)
         this.height = height
         this.padding = padding
@@ -815,9 +706,6 @@ internal class RenderSlider(
     }
 
 }
-
-/** Exact fixed height used by the public Slider facade before component geometry tokens existed. */
-private const val LEGACY_SLIDER_HEIGHT_PX: Int = 7
 
 /** Paints one square or stair-step rounded Slider rectangle without anti-aliasing. */
 private fun paintSliderRoundedRect(

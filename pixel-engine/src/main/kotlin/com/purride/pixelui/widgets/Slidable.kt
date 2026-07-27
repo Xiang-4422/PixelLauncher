@@ -113,7 +113,6 @@ public fun Slidable(
         onDismissed = onDismissed,
         states = PixelControlStateSet.Normal,
         semanticLabel = null,
-        legacyGeometry = true,
         key = key,
     )
 }
@@ -161,7 +160,6 @@ public fun Slidable(
         onDismissed = onDismissed,
         states = effectiveStates,
         semanticLabel = semanticLabel,
-        legacyGeometry = false,
         key = key,
     )
 }
@@ -185,7 +183,6 @@ public fun SlidableAction(
         enabled = true,
         backgroundColor = backgroundColor,
         foregroundColor = foregroundColor,
-        legacyGeometry = true,
         key = key,
     )
 }
@@ -220,7 +217,6 @@ public fun SlidableAction(
         enabled = enabled,
         backgroundColor = backgroundColor,
         foregroundColor = foregroundColor,
-        legacyGeometry = false,
         key = key,
     )
 }
@@ -233,7 +229,6 @@ private fun buildSlidableAction(
     enabled: Boolean,
     backgroundColor: PixelColor?,
     foregroundColor: PixelColor?,
-    legacyGeometry: Boolean,
     key: Any?,
 ): Widget {
     /** Persistent states after callback and explicit enabled capability are normalized. */
@@ -263,7 +258,6 @@ private fun buildSlidableAction(
             pointerAction = onPressed?.takeIf { interactive },
             backgroundColor = backgroundColor,
             foregroundColor = foregroundColor,
-            legacyGeometry = legacyGeometry,
             key = key,
         )
     }
@@ -283,8 +277,6 @@ private data class PixelSlidableActionWidget(
     val backgroundColor: PixelColor?,
     /** Optional explicit foreground color. */
     val foregroundColor: PixelColor?,
-    /** Whether the old required-color overload must preserve zero-padding geometry. */
-    val legacyGeometry: Boolean,
     /** Stable retained, render, and semantics identity. */
     override val key: Any?,
 ) : StatefulWidget(key = key) {
@@ -302,8 +294,8 @@ private class PixelSlidableActionState : State<PixelSlidableActionWidget>() {
 
     /** Resolves current state roles, pixel geometry, input, focus, and semantics. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited theme, kept nullable to preserve scope-less legacy geometry. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
+        /** 继承的显式主题；保持可空以便本地化独立兜底。 Explicit inherited theme, kept nullable so localization can fall back independently. */
+        val inheritedTheme = PixelTheme.maybeOf(context)
         /** Complete graph used for colors, typography, labels, and state-aware fallbacks. */
         val theme = inheritedTheme ?: PixelThemeTokens.Default
         /** Explicit localization bundle used only for semantic status text. */
@@ -318,8 +310,6 @@ private class PixelSlidableActionState : State<PixelSlidableActionWidget>() {
             ?: PixelLabelTokens.Default.error
         /** Slidable-family component roles and geometry. */
         val tokens = theme.components.slidable
-        /** State-aware actions and explicitly themed legacy actions consume token geometry. */
-        val usesThemedGeometry = !widget.legacyGeometry || inheritedTheme != null
         /** Automatic focus node provided by the public action boundary. */
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) context.watch(focusNode)
@@ -344,20 +334,16 @@ private class PixelSlidableActionState : State<PixelSlidableActionWidget>() {
         /** Explicit background override, then state-aware theme container role. */
         val containerColor = widget.backgroundColor
             ?: tokens.resolveContainerColor(resolvedStates, theme.colors)
-        /** Scope-less legacy actions remain borderless; explicit themes enable token geometry. */
+        /** 两个公开动作重载共用的 token 化表面装饰。 Token-resolved surface decoration shared by both public action overloads. */
         val decoration = PixelSurfaceDecoration(
             fillColor = containerColor,
-            borderColor = if (usesThemedGeometry) {
-                tokens.resolveBorderColor(resolvedStates, theme.colors)
-            } else {
-                null
-            },
-            borderWidth = if (usesThemedGeometry) tokens.resolveBorderWidth(theme.borders) else 0,
-            cornerRadius = if (usesThemedGeometry) tokens.resolveCornerRadius(theme.radii) else 0,
+            borderColor = tokens.resolveBorderColor(resolvedStates, theme.colors),
+            borderWidth = tokens.resolveBorderWidth(theme.borders),
+            cornerRadius = tokens.resolveCornerRadius(theme.radii),
             shadowColor = theme.colors.shadow.takeIf {
-                usesThemedGeometry && tokens.resolveElevation(theme.elevations) > 0
+                tokens.resolveElevation(theme.elevations) > 0
             },
-            shadowOffset = if (usesThemedGeometry) tokens.resolveElevation(theme.elevations) else 0,
+            shadowOffset = tokens.resolveElevation(theme.elevations),
         )
         /** Theme-resolved action label before pointer and focus decoration. */
         val label = Text(
@@ -368,26 +354,22 @@ private class PixelSlidableActionState : State<PixelSlidableActionWidget>() {
             softWrap = false,
             maxLines = 1,
         )
-        /** Surface geometry for legacy or complete theme-aware action paths. */
+        /** 由 token 解析出的动作表面几何。 Token-resolved action surface geometry. */
         val surface = PixelSurface(
             decoration = decoration,
-            padding = if (usesThemedGeometry) tokens.resolvePadding(theme.spacing) else null,
+            padding = tokens.resolvePadding(theme.spacing),
             alignment = Alignment.CENTER,
             child = label,
         )
-        /** Explicit themes opt the legacy facade into the Slidable focus token as well. */
-        val focusedSurface = if (usesThemedGeometry) {
-            withControlFocusIndicator(
-                child = surface,
-                states = resolvedStates,
-                componentTokens = tokens,
-                colors = theme.colors,
-                borders = theme.borders,
-                key = widget.key?.let { "$it-focus-indicator" },
-            )
-        } else {
-            surface
-        }
+        /** 叠加式焦点层保留 selected/error/loading/pressed 的底色。 Additive focus layer preserving selected, error, loading, and pressed base colors. */
+        val focusedSurface = withControlFocusIndicator(
+            child = surface,
+            states = resolvedStates,
+            componentTokens = tokens,
+            colors = theme.colors,
+            borders = theme.borders,
+            key = widget.key?.let { "$it-focus-indicator" },
+        )
         /** Pointer wrapper exists only while the normalized activation action is available. */
         val interactiveSurface = widget.pointerAction?.let { pointerAction ->
             InteractionDetector(
@@ -442,7 +424,6 @@ private class SlidableWidget(
     /** Optional caller semantics label; null resolves from theme localization. */
     val semanticLabel: String?,
     /** Whether the legacy overload must retain its original undecorated row geometry. */
-    val legacyGeometry: Boolean,
     /** Stable retained identity shared by focus, semantics, gestures, and render state. */
     key: Any?,
 ) : StatefulWidget(key = key) {
@@ -541,16 +522,14 @@ private class SlidableState : State<SlidableWidget>() {
 
     /** Builds direct-manipulation gesture handling and the current retained render presentation. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited theme, kept nullable to preserve scope-less legacy row geometry. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
+        /** 继承的显式主题；保持可空以便本地化独立兜底。 Explicit inherited theme, kept nullable so localization can fall back independently. */
+        val inheritedTheme = PixelTheme.maybeOf(context)
         /** Complete graph used by state-aware rows and all semantic/color fallbacks. */
         val theme = inheritedTheme ?: PixelThemeTokens.Default
         /** Explicit localization bundle used only for fallback and state semantics. */
         val localizations = PixelLocalizations.maybeOf(context)
         /** Slidable-specific state, geometry, and elevation tokens. */
         val tokens = theme.components.slidable
-        /** State-aware rows and explicitly themed legacy rows consume complete token geometry. */
-        val usesThemedGeometry = !widget.legacyGeometry || inheritedTheme != null
         /** Disabled removes focus; Loading retains it while blocking every mutation path. */
         val disabled = PixelControlState.Disabled in widget.states
         /** Loading capability state retained independently from Disabled. */
@@ -572,36 +551,31 @@ private class SlidableState : State<SlidableWidget>() {
         if (interactive && pressed) resolvedStates += PixelControlState.Pressed
         if (interactive && hovered) resolvedStates += PixelControlState.Hovered
         if (activePane != null) resolvedStates += PixelControlState.Selected
-        /** Scope-less old facade stays undecorated; an explicit theme opts it into token geometry. */
-        val rowChild = if (!usesThemedGeometry) {
-            widget.child
-        } else {
-            /** Hard-shadow extent resolved once for both color presence and layout. */
-            val elevation = tokens.resolveElevation(theme.elevations)
-            /** Complete concrete surface derived from component and foundation tokens. */
-            val surface = PixelSurface(
-                decoration = PixelSurfaceDecoration(
-                    fillColor = tokens.resolveContainerColor(resolvedStates, theme.colors),
-                    borderColor = tokens.resolveBorderColor(resolvedStates, theme.colors),
-                    borderWidth = tokens.resolveBorderWidth(theme.borders),
-                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
-                    shadowColor = theme.colors.shadow.takeIf { elevation > 0 },
-                    shadowOffset = elevation,
-                ),
-                padding = tokens.resolvePadding(theme.spacing),
-                child = widget.child,
-                key = widget.key?.let { "$it-surface" },
-            )
-            /** Additive focus layer preserves selected, error, loading, and pressed base colors. */
-            withControlFocusIndicator(
-                child = surface,
-                states = resolvedStates,
-                componentTokens = tokens,
-                colors = theme.colors,
-                borders = theme.borders,
-                key = widget.key?.let { "$it-focus-indicator" },
-            )
-        }
+        /** 硬阴影范围只解析一次，同时用于颜色判断与布局。 Hard-shadow extent resolved once for both color presence and layout. */
+        val elevation = tokens.resolveElevation(theme.elevations)
+        /** 由组件与 foundation token 解析出的完整具体表面。 Complete concrete surface derived from component and foundation tokens. */
+        val rowSurface = PixelSurface(
+            decoration = PixelSurfaceDecoration(
+                fillColor = tokens.resolveContainerColor(resolvedStates, theme.colors),
+                borderColor = tokens.resolveBorderColor(resolvedStates, theme.colors),
+                borderWidth = tokens.resolveBorderWidth(theme.borders),
+                cornerRadius = tokens.resolveCornerRadius(theme.radii),
+                shadowColor = theme.colors.shadow.takeIf { elevation > 0 },
+                shadowOffset = elevation,
+            ),
+            padding = tokens.resolvePadding(theme.spacing),
+            child = widget.child,
+            key = widget.key?.let { "$it-surface" },
+        )
+        /** 叠加式焦点层保留 selected/error/loading/pressed 的底色。 Additive focus layer preserves selected, error, loading, and pressed base colors. */
+        val rowChild = withControlFocusIndicator(
+            child = rowSurface,
+            states = resolvedStates,
+            componentTokens = tokens,
+            colors = theme.colors,
+            borders = theme.borders,
+            key = widget.key?.let { "$it-focus-indicator" },
+        )
         /** Render presentation beneath the optional pointer target. */
         val renderContent = SlidableRenderWidget(
             startPane = widget.startActionPane?.toWidget(

@@ -1,8 +1,15 @@
 # 主题与组件
 
-`PixelThemeTokens` 是 1.0 的主题事实源，包含颜色、排版、间距、尺寸、圆角、焦点、动画和 25 个
-组件 token 族。标准组件按八状态集合解析 token：enabled、pressed、focused、hovered、selected、
-checked、error、loading。显式组件参数优先于主题，旧 facade 只保留兼容语义。
+`PixelThemeTokens` 是唯一的主题模型，包含颜色、排版、间距、尺寸、圆角、焦点、动画和 25 个
+组件 token 族。`PixelTheme(tokens = ..., child = ...)` 是唯一的提供入口，`PixelTheme.of(context)` /
+`PixelTheme.maybeOf(context)` 是唯一的查询入口。标准组件按八状态集合解析 token：enabled、
+pressed、focused、hovered、selected、checked、error、loading。显式组件参数优先于主题。
+
+简洁组件 API（如 `OutlinedButton`、`Checkbox`、`Dialog`、`Toast`、`Snackbar`、`ProgressBar`、
+`Badge`、`Divider`、`AppScaffold`、`Scrollbar`、`RefreshIndicator`、`TextField`、`Slider`）与
+state-aware 重载共用同一实现：可选视觉参数默认 `null`，由 token 解析；非 null 时保持调用方精确值。
+无论是否挂载 `PixelTheme`，同一输入都构建完全相同的 widget 树；缺少 provider 时统一解析
+`PixelThemeTokens.Default`。
 
 ```kotlin
 val engine = PixelEngine.Builder()

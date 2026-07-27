@@ -1623,26 +1623,26 @@ package com.purride.pixelui {
   }
 
   public final class NavigationControlsKt {
-    method @KotlinOnly public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<? super java.lang.String,kotlin.Unit> onSelected, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSelected, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationBarWithController(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<? super java.lang.String,kotlin.Unit> onSelected, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSelected, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String semanticLabel, optional Object? key);
-    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationRailWithController(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional int states, optional boolean enabled, optional String semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<? super java.lang.String,kotlin.Unit> onSelected, optional int states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationBar(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSelected, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationBarWithController(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional int states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<? super java.lang.String,kotlin.Unit> onSelected, optional int states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget NavigationRail(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, String selectedId, kotlin.jvm.functions.Function1<java.lang.String,kotlin.Unit> onSelected, optional com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget NavigationRailWithController(java.util.List<com.purride.pixelui.PixelNavigationDestination> destinations, com.purride.pixelui.PixelMultiStackNavigatorController controller, optional boolean popToRootOnReselect, optional boolean animated, optional int states, optional boolean enabled, optional String? semanticLabel, optional Object? key);
   }
 
   public final class OverlayControlsKt {
-    method public static com.purride.pixelui.Widget Dropdown(String label, String selectedText, boolean expanded, kotlin.jvm.functions.Function0<kotlin.Unit>? onToggle, java.util.List<com.purride.pixelui.PixelMenuItem> items, optional boolean enabled, optional com.purride.pixelui.animation.IntOffset contentOffset, optional Object? key);
+    method public static com.purride.pixelui.Widget Dropdown(String label, String selectedText, boolean expanded, kotlin.jvm.functions.Function0<kotlin.Unit>? onToggle, java.util.List<com.purride.pixelui.PixelMenuItem> items, optional boolean enabled, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Dropdown(String label, String selectedText, boolean expanded, kotlin.jvm.functions.Function0<kotlin.Unit>? onToggle, java.util.List<com.purride.pixelui.PixelMenuItem> items, com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional String? semanticLabel, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget DropdownWithControlStates(String label, String selectedText, boolean expanded, kotlin.jvm.functions.Function0<kotlin.Unit>? onToggle, java.util.List<com.purride.pixelui.PixelMenuItem> items, int states, optional boolean enabled, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional String? semanticLabel, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget Menu(java.util.List<com.purride.pixelui.PixelMenuItem> items, optional boolean enabled, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelcore.PixelColor borderColor, optional Object? key, optional String semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
+    method @KotlinOnly public static com.purride.pixelui.Widget Menu(java.util.List<com.purride.pixelui.PixelMenuItem> items, optional boolean enabled, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method @KotlinOnly public static com.purride.pixelui.Widget Menu(java.util.List<com.purride.pixelui.PixelMenuItem> items, com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget MenuWithControlStates(java.util.List<com.purride.pixelui.PixelMenuItem> items, int states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method public static com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget anchor, com.purride.pixelui.Widget content, boolean expanded, optional com.purride.pixelui.animation.IntOffset contentOffset, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key, optional boolean modal);
     method public static com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget anchor, com.purride.pixelui.Widget content, boolean expanded, optional com.purride.pixelui.animation.IntOffset contentOffset, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key, optional boolean modal, com.purride.pixelui.PixelPopoverPlacement placement, optional com.purride.pixelui.PixelPopoverAlignment alignment, optional int viewportMargin);
-    method @KotlinOnly public static com.purride.pixelui.Widget Tooltip(String message, boolean visible, com.purride.pixelui.Widget child, optional com.purride.pixelui.animation.IntOffset contentOffset, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelcore.PixelColor borderColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Tooltip(String message, boolean visible, com.purride.pixelui.Widget child, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Tooltip(String message, boolean visible, com.purride.pixelui.Widget child, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional String? semanticLabel, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget TooltipWithControlStates(String message, boolean visible, com.purride.pixelui.Widget child, int states, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional String? semanticLabel, optional Object? key);
   }
@@ -1962,7 +1962,6 @@ package com.purride.pixelui {
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor component9();
     method @KotlinOnly public com.purride.pixelui.PixelColorScheme copy(optional com.purride.pixelcore.PixelColor background, optional com.purride.pixelcore.PixelColor onBackground, optional com.purride.pixelcore.PixelColor surface, optional com.purride.pixelcore.PixelColor onSurface, optional com.purride.pixelcore.PixelColor surfaceVariant, optional com.purride.pixelcore.PixelColor onSurfaceVariant, optional com.purride.pixelcore.PixelColor outline, optional com.purride.pixelcore.PixelColor outlineVariant, optional com.purride.pixelcore.PixelColor primary, optional com.purride.pixelcore.PixelColor onPrimary, optional com.purride.pixelcore.PixelColor danger, optional com.purride.pixelcore.PixelColor onDanger, optional com.purride.pixelcore.PixelColor warning, optional com.purride.pixelcore.PixelColor onWarning, optional com.purride.pixelcore.PixelColor disabled, optional com.purride.pixelcore.PixelColor onDisabled, optional com.purride.pixelcore.PixelColor inactive, optional com.purride.pixelcore.PixelColor track, optional com.purride.pixelcore.PixelColor focus, optional com.purride.pixelcore.PixelColor selection, optional com.purride.pixelcore.PixelColor scrim, optional com.purride.pixelcore.PixelColor shadow);
     method @KotlinOnly public com.purride.pixelcore.PixelColor resolve(com.purride.pixelui.PixelColorRole role);
-    method public com.purride.pixelui.PixelThemeColors toLegacyColors();
     property public com.purride.pixelcore.PixelColor background;
     property public com.purride.pixelcore.PixelColor danger;
     property public com.purride.pixelcore.PixelColor disabled;
@@ -1989,7 +1988,6 @@ package com.purride.pixelui {
   }
 
   public static final class PixelColorScheme.Companion {
-    method public com.purride.pixelui.PixelColorScheme fromLegacy(com.purride.pixelui.PixelThemeColors colors);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelColorScheme getDark();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelColorScheme getDefault();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelColorScheme getHighContrastDark();
@@ -2164,7 +2162,7 @@ package com.purride.pixelui {
     method @KotlinOnly public static com.purride.pixelui.Widget ActivityIndicator(optional int frame, optional com.purride.pixelcore.PixelColor color, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ActivityIndicatorWithControlStates(int states, optional int frame, optional com.purride.pixelcore.PixelColor? color, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget AnimatedPixelLoadingBar(com.purride.pixelui.animation.PixelTickerProvider vsync, com.purride.pixelui.PixelControlStateSet states, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? blockWidth, optional Integer? trailWidth, optional int fps, optional int cycleFrames, optional boolean playing, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget AnimatedPixelLoadingBar(com.purride.pixelui.animation.PixelTickerProvider vsync, optional int width, optional int height, optional com.purride.pixelcore.PixelColor color, optional com.purride.pixelcore.PixelColor trackColor, optional int blockWidth, optional int trailWidth, optional int fps, optional int cycleFrames, optional boolean playing, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget AnimatedPixelLoadingBar(com.purride.pixelui.animation.PixelTickerProvider vsync, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? blockWidth, optional Integer? trailWidth, optional int fps, optional int cycleFrames, optional boolean playing, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget AnimatedPixelLoadingBarWithControlStates(com.purride.pixelui.animation.PixelTickerProvider vsync, int states, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? blockWidth, optional Integer? trailWidth, optional int fps, optional int cycleFrames, optional boolean playing, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget AppScaffold(com.purride.pixelui.Widget body, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? title, optional com.purride.pixelui.Widget? bottomBar, optional Object? key);
     method public static com.purride.pixelui.Widget AppScaffold(optional com.purride.pixelui.Widget? title, com.purride.pixelui.Widget body, optional com.purride.pixelui.Widget? bottomBar, optional Object? key);
@@ -2173,60 +2171,60 @@ package com.purride.pixelui {
     method public static com.purride.pixelui.Widget Badge(com.purride.pixelui.Widget child, com.purride.pixelui.Widget label, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget BadgeWithControlStates(com.purride.pixelui.Widget child, com.purride.pixelui.Widget label, int states, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget BottomSheet(com.purride.pixelui.Widget content, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? title, optional java.util.List<com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
-    method @KotlinOnly public static com.purride.pixelui.Widget BottomSheet(optional com.purride.pixelui.Widget? title, com.purride.pixelui.Widget content, optional java.util.List<com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelcore.PixelColor borderColor, optional Object? key, optional String semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
+    method @KotlinOnly public static com.purride.pixelui.Widget BottomSheet(optional com.purride.pixelui.Widget? title, com.purride.pixelui.Widget content, optional java.util.List<com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget BottomSheetWithControlStates(com.purride.pixelui.Widget content, int states, optional com.purride.pixelui.Widget? title, optional java.util.List<? extends com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
-    method @KotlinOnly public static com.purride.pixelui.Widget Checkbox(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onChanged, optional boolean enabled, optional com.purride.pixelcore.PixelColor activeColor, optional com.purride.pixelcore.PixelColor inactiveColor, optional String semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Checkbox(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onChanged, optional boolean enabled, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? inactiveColor, optional String? semanticLabel, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Checkbox(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onChanged, com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? inactiveColor, optional String? semanticLabel, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget CheckboxWithControlStates(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit>? onChanged, int states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? inactiveColor, optional String? semanticLabel, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget ConfirmDialog(String title, String message, kotlin.jvm.functions.Function0<kotlin.Unit> onConfirm, com.purride.pixelui.PixelControlStateSet states, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onCancel, optional boolean showCancel, optional String? confirmText, optional String? cancelText, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional com.purride.pixelui.PixelButtonStyle confirmStyle, optional com.purride.pixelui.PixelTextButtonStyle cancelStyle, optional Integer? width, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget ConfirmDialog(String title, String message, kotlin.jvm.functions.Function0<kotlin.Unit> onConfirm, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onCancel, optional String confirmText, optional String? cancelText, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelcore.PixelColor borderColor, optional com.purride.pixelui.PixelTextStyle titleStyle, optional com.purride.pixelui.PixelTextStyle messageStyle, optional com.purride.pixelui.PixelButtonStyle confirmStyle, optional com.purride.pixelui.PixelTextButtonStyle cancelStyle, optional Integer? width, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget ConfirmDialog(String title, String message, kotlin.jvm.functions.Function0<kotlin.Unit> onConfirm, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onCancel, optional String? confirmText, optional String? cancelText, optional boolean showCancel, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional com.purride.pixelui.PixelButtonStyle confirmStyle, optional com.purride.pixelui.PixelTextButtonStyle cancelStyle, optional Integer? width, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ConfirmDialogWithControlStates(String title, String message, kotlin.jvm.functions.Function0<kotlin.Unit> onConfirm, int states, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onCancel, optional boolean showCancel, optional String? confirmText, optional String? cancelText, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional com.purride.pixelui.PixelButtonStyle confirmStyle, optional com.purride.pixelui.PixelTextButtonStyle cancelStyle, optional Integer? width, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Dialog(com.purride.pixelui.Widget content, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? title, optional java.util.List<com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
-    method @KotlinOnly public static com.purride.pixelui.Widget Dialog(optional com.purride.pixelui.Widget? title, com.purride.pixelui.Widget content, optional java.util.List<com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelcore.PixelColor borderColor, optional Object? key, optional String semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
+    method @KotlinOnly public static com.purride.pixelui.Widget Dialog(optional com.purride.pixelui.Widget? title, com.purride.pixelui.Widget content, optional java.util.List<com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget DialogWithControlStates(com.purride.pixelui.Widget content, int states, optional com.purride.pixelui.Widget? title, optional java.util.List<? extends com.purride.pixelui.Widget> actions, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
-    method @KotlinOnly public static com.purride.pixelui.Widget Divider(optional com.purride.pixelcore.PixelColor color, optional int thickness, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Divider(optional com.purride.pixelcore.PixelColor? color, optional Integer? thickness, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Divider(com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelcore.PixelColor? color, optional Integer? thickness, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget DividerWithControlStates(int states, optional com.purride.pixelcore.PixelColor? color, optional Integer? thickness, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget EmptyState(com.purride.pixelui.PixelControlStateSet states, optional String? title, optional String? message, optional com.purride.pixelui.Widget? icon, optional com.purride.pixelui.Widget? action, optional Integer? width, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional Object? key);
-    method public static com.purride.pixelui.Widget EmptyState(String title, optional String? message, optional com.purride.pixelui.Widget? icon, optional com.purride.pixelui.Widget? action, optional Integer? width, optional com.purride.pixelui.PixelTextStyle titleStyle, optional com.purride.pixelui.PixelTextStyle messageStyle, optional Object? key);
+    method public static com.purride.pixelui.Widget EmptyState(optional String? title, optional String? message, optional com.purride.pixelui.Widget? icon, optional com.purride.pixelui.Widget? action, optional Integer? width, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget EmptyStateWithControlStates(int states, optional String? title, optional String? message, optional com.purride.pixelui.Widget? icon, optional com.purride.pixelui.Widget? action, optional Integer? width, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional Object? key);
     method public static com.purride.pixelui.Widget Gap(optional int width, optional int height, optional Object? key);
     method public static com.purride.pixelui.Widget Icon(com.purride.pixelui.PixelIconData icon, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget ListTile(com.purride.pixelui.Widget title, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String? semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
-    method public static com.purride.pixelui.Widget ListTile(com.purride.pixelui.Widget title, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
+    method public static com.purride.pixelui.Widget ListTile(com.purride.pixelui.Widget title, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String? semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ListTileWithControlStates(com.purride.pixelui.Widget title, int states, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String? semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
     method public static <T> com.purride.pixelui.Widget LoadStateView(com.purride.pixelui.PixelAsyncSnapshot<? extends T> snapshot, kotlin.jvm.functions.Function1<? super T,? extends com.purride.pixelui.Widget> content, optional kotlin.jvm.functions.Function1<? super T,java.lang.Boolean> isEmpty, optional com.purride.pixelui.Widget loading, optional com.purride.pixelui.Widget empty, optional kotlin.jvm.functions.Function1<? super java.lang.Throwable,? extends com.purride.pixelui.Widget> error);
     method @KotlinOnly public static <T> com.purride.pixelui.Widget LoadStateView(com.purride.pixelui.PixelAsyncSnapshot<T> snapshot, com.purride.pixelui.PixelControlStateSet states, kotlin.jvm.functions.Function1<T,com.purride.pixelui.Widget> content, optional kotlin.jvm.functions.Function1<T,java.lang.Boolean> isEmpty, optional com.purride.pixelui.Widget? loading, optional com.purride.pixelui.Widget? empty, optional kotlin.jvm.functions.Function1<java.lang.Throwable,com.purride.pixelui.Widget>? error);
     method @InaccessibleFromKotlin public static <T> com.purride.pixelui.Widget LoadStateViewWithControlStates(com.purride.pixelui.PixelAsyncSnapshot<? extends T> snapshot, int states, kotlin.jvm.functions.Function1<? super T,? extends com.purride.pixelui.Widget> content, optional kotlin.jvm.functions.Function1<? super T,java.lang.Boolean> isEmpty, optional com.purride.pixelui.Widget? loading, optional com.purride.pixelui.Widget? empty, optional kotlin.jvm.functions.Function1<? super java.lang.Throwable,? extends com.purride.pixelui.Widget>? error);
-    method @KotlinOnly public static com.purride.pixelui.Widget ModalBarrier(optional com.purride.pixelcore.PixelColor color, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget ModalBarrier(optional com.purride.pixelcore.PixelColor? color, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget ModalBarrier(com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelcore.PixelColor? color, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ModalBarrierWithControlStates(int states, optional com.purride.pixelcore.PixelColor? color, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key);
     method public static com.purride.pixelui.Widget OptionList(java.util.List<java.lang.String> options, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, optional boolean enabled, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget PixelLoadingBar(float progress, com.purride.pixelui.PixelControlStateSet states, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? blockWidth, optional Integer? trailWidth, optional boolean reversed, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget PixelLoadingBar(float progress, optional int width, optional int height, optional com.purride.pixelcore.PixelColor color, optional com.purride.pixelcore.PixelColor trackColor, optional int blockWidth, optional int trailWidth, optional boolean reversed, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget PixelLoadingBar(float progress, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? blockWidth, optional Integer? trailWidth, optional boolean reversed, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget PixelLoadingBarWithControlStates(float progress, int states, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? blockWidth, optional Integer? trailWidth, optional boolean reversed, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget ProgressBar(float progress, com.purride.pixelui.PixelControlStateSet states, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget ProgressBar(float progress, optional int width, optional int height, optional com.purride.pixelcore.PixelColor color, optional com.purride.pixelcore.PixelColor trackColor, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget ProgressBar(float progress, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ProgressBarWithControlStates(float progress, int states, optional Integer? width, optional Integer? height, optional com.purride.pixelcore.PixelColor? color, optional com.purride.pixelcore.PixelColor? trackColor, optional Object? key);
     method public static com.purride.pixelui.Widget SectionList(java.util.List<com.purride.pixelui.SectionListSection> sections, optional int itemSpacing, optional int sectionSpacing, optional Object? key);
     method public static com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, optional Object? key, optional boolean enabled);
     method @KotlinOnly public static com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<java.lang.Integer,kotlin.Unit> onSelected, com.purride.pixelui.PixelControlStateSet states, optional Object? key, optional boolean enabled);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SegmentedControlWithControlStates(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, int states, optional Object? key, optional boolean enabled);
     method public static <T> com.purride.pixelui.Widget SelectionList(java.util.List<? extends T> items, int selectedIndex, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,kotlin.Unit> onSelected, kotlin.jvm.functions.Function1<? super T,java.lang.String> itemLabel, optional boolean enabled, optional Object? key);
-    method public static com.purride.pixelui.Widget ShortcutHint(String shortcut, String label, optional com.purride.pixelui.PixelTextStyle shortcutStyle, optional com.purride.pixelui.PixelTextStyle labelStyle, optional Object? key);
+    method public static com.purride.pixelui.Widget ShortcutHint(String shortcut, String label, optional com.purride.pixelui.PixelTextStyle? shortcutStyle, optional com.purride.pixelui.PixelTextStyle? labelStyle, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Snackbar(String message, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? action, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget Snackbar(String message, optional com.purride.pixelui.Widget? action, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Snackbar(String message, optional com.purride.pixelui.Widget? action, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SnackbarWithControlStates(String message, int states, optional com.purride.pixelui.Widget? action, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method public static com.purride.pixelui.Widget Stepper(int value, kotlin.ranges.IntRange range, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onChanged, optional int step, optional String? label, optional String? valueText, optional boolean enabled, optional int valueWidth, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Stepper(int value, kotlin.ranges.IntRange range, kotlin.jvm.functions.Function1<java.lang.Integer,kotlin.Unit> onChanged, com.purride.pixelui.PixelControlStateSet states, optional int step, optional String? label, optional String? valueText, optional boolean enabled, optional int valueWidth, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget StepperWithControlStates(int value, kotlin.ranges.IntRange range, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onChanged, int states, optional int step, optional String? label, optional String? valueText, optional boolean enabled, optional int valueWidth, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget Switch(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onChanged, optional boolean enabled, optional com.purride.pixelcore.PixelColor activeColor, optional com.purride.pixelcore.PixelColor inactiveColor, optional String semanticLabel, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Switch(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onChanged, optional boolean enabled, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? inactiveColor, optional String? semanticLabel, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Switch(boolean checked, kotlin.jvm.functions.Function1<java.lang.Boolean,kotlin.Unit>? onChanged, com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? inactiveColor, optional String? semanticLabel, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SwitchWithControlStates(boolean checked, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit>? onChanged, int states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? inactiveColor, optional String? semanticLabel, optional Object? key);
     method public static com.purride.pixelui.Widget Tabs(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, optional Object? key, optional boolean enabled);
     method @KotlinOnly public static com.purride.pixelui.Widget Tabs(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<java.lang.Integer,kotlin.Unit> onSelected, com.purride.pixelui.PixelControlStateSet states, optional Object? key, optional boolean enabled);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget TabsWithControlStates(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, int states, optional Object? key, optional boolean enabled);
-    method @KotlinOnly public static com.purride.pixelui.Widget Toast(String message, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Toast(String message, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Toast(String message, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ToastWithControlStates(String message, int states, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget ValueAdjuster(String valueText, kotlin.jvm.functions.Function0<kotlin.Unit>? onDecrease, kotlin.jvm.functions.Function0<kotlin.Unit>? onIncrease, com.purride.pixelui.PixelControlStateSet states, optional String? label, optional boolean enabled, optional int valueWidth, optional com.purride.pixelui.ValueAdjusterStyle style, optional Object? key);
@@ -5210,7 +5208,7 @@ package com.purride.pixelui {
     method public boolean dismiss(int id);
     method public boolean dismissCurrent();
     method @KotlinOnly public com.purride.pixelui.PixelSnackbarQueueItem enqueue(String message, com.purride.pixelui.PixelControlStateSet states, optional String? actionLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onAction, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional kotlin.time.Duration timeout);
-    method @KotlinOnly public com.purride.pixelui.PixelSnackbarQueueItem enqueue(String message, optional String? actionLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onAction, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional kotlin.time.Duration timeout);
+    method @KotlinOnly public com.purride.pixelui.PixelSnackbarQueueItem enqueue(String message, optional String? actionLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onAction, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional kotlin.time.Duration timeout);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelSnackbarQueueItem enqueueWithControlStates(String message, int states, optional String? actionLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onAction, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional long timeout);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelSnackbarQueueItem? getCurrent();
     method @InaccessibleFromKotlin public int getSize();
@@ -5227,22 +5225,22 @@ package com.purride.pixelui {
   }
 
   public final class PixelSnackbarQueueItem {
-    ctor @KotlinOnly public PixelSnackbarQueueItem(int id, String message, optional String? actionLabel, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle);
+    ctor @KotlinOnly public PixelSnackbarQueueItem(int id, String message, optional String? actionLabel, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method public int component1();
     method public String component2();
     method public String? component3();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component4();
-    method public com.purride.pixelui.PixelTextStyle component5();
-    method @KotlinOnly public com.purride.pixelui.PixelSnackbarQueueItem copy(optional int id, optional String message, optional String? actionLabel, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle);
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component4();
+    method public com.purride.pixelui.PixelTextStyle? component5();
+    method @KotlinOnly public com.purride.pixelui.PixelSnackbarQueueItem copy(optional int id, optional String message, optional String? actionLabel, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method @InaccessibleFromKotlin public String? getActionLabel();
     method @InaccessibleFromKotlin public int getId();
     method @InaccessibleFromKotlin public String getMessage();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle getTextStyle();
+    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle? getTextStyle();
     property public String? actionLabel;
-    property public com.purride.pixelcore.PixelColor fillColor;
+    property public com.purride.pixelcore.PixelColor? fillColor;
     property public int id;
     property public String message;
-    property public com.purride.pixelui.PixelTextStyle textStyle;
+    property public com.purride.pixelui.PixelTextStyle? textStyle;
   }
 
   public final class PixelSpacingTokens {
@@ -5572,22 +5570,17 @@ package com.purride.pixelui {
   }
 
   public final class PixelTheme extends com.purride.pixelui.InheritedWidget {
-    ctor public PixelTheme(com.purride.pixelui.PixelThemeData data, com.purride.pixelui.Widget child, optional Object? key);
     ctor public PixelTheme(com.purride.pixelui.PixelThemeTokens tokens, com.purride.pixelui.Widget child, optional Object? key);
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeData getData();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeTokens getTokens();
     property public com.purride.pixelui.Widget child;
-    property public com.purride.pixelui.PixelThemeData data;
     property public Object? key;
     property public com.purride.pixelui.PixelThemeTokens tokens;
     field public static final com.purride.pixelui.PixelTheme.Companion Companion;
   }
 
   public static final class PixelTheme.Companion {
-    method public com.purride.pixelui.PixelThemeData? maybeOf(com.purride.pixelui.BuildContext context);
-    method public com.purride.pixelui.PixelThemeTokens? maybeTokensOf(com.purride.pixelui.BuildContext context);
-    method public com.purride.pixelui.PixelThemeData of(com.purride.pixelui.BuildContext context);
-    method public com.purride.pixelui.PixelThemeTokens tokensOf(com.purride.pixelui.BuildContext context);
+    method public com.purride.pixelui.PixelThemeTokens? maybeOf(com.purride.pixelui.BuildContext context);
+    method public com.purride.pixelui.PixelThemeTokens of(com.purride.pixelui.BuildContext context);
   }
 
   public enum PixelThemeBrightness {
@@ -5595,74 +5588,9 @@ package com.purride.pixelui {
     enum_constant public static final com.purride.pixelui.PixelThemeBrightness Light;
   }
 
-  public final class PixelThemeColors {
-    ctor public PixelThemeColors();
-    ctor @KotlinOnly public PixelThemeColors(optional com.purride.pixelcore.PixelColor background, optional com.purride.pixelcore.PixelColor surface, optional com.purride.pixelcore.PixelColor text, optional com.purride.pixelcore.PixelColor mutedText, optional com.purride.pixelcore.PixelColor border, optional com.purride.pixelcore.PixelColor accent, optional com.purride.pixelcore.PixelColor danger, optional com.purride.pixelcore.PixelColor warning, optional com.purride.pixelcore.PixelColor disabled, optional com.purride.pixelcore.PixelColor inactive, optional com.purride.pixelcore.PixelColor track, optional com.purride.pixelcore.PixelColor focus, optional com.purride.pixelcore.PixelColor selection);
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component1();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component10();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component11();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component12();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component13();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component2();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component3();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component4();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component5();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component6();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component7();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component8();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component9();
-    method @KotlinOnly public com.purride.pixelui.PixelThemeColors copy(optional com.purride.pixelcore.PixelColor background, optional com.purride.pixelcore.PixelColor surface, optional com.purride.pixelcore.PixelColor text, optional com.purride.pixelcore.PixelColor mutedText, optional com.purride.pixelcore.PixelColor border, optional com.purride.pixelcore.PixelColor accent, optional com.purride.pixelcore.PixelColor danger, optional com.purride.pixelcore.PixelColor warning, optional com.purride.pixelcore.PixelColor disabled, optional com.purride.pixelcore.PixelColor inactive, optional com.purride.pixelcore.PixelColor track, optional com.purride.pixelcore.PixelColor focus, optional com.purride.pixelcore.PixelColor selection);
-    property public com.purride.pixelcore.PixelColor accent;
-    property public com.purride.pixelcore.PixelColor background;
-    property public com.purride.pixelcore.PixelColor border;
-    property public com.purride.pixelcore.PixelColor danger;
-    property public com.purride.pixelcore.PixelColor disabled;
-    property public com.purride.pixelcore.PixelColor focus;
-    property public com.purride.pixelcore.PixelColor inactive;
-    property public com.purride.pixelcore.PixelColor mutedText;
-    property public com.purride.pixelcore.PixelColor selection;
-    property public com.purride.pixelcore.PixelColor surface;
-    property public com.purride.pixelcore.PixelColor text;
-    property public com.purride.pixelcore.PixelColor track;
-    property public com.purride.pixelcore.PixelColor warning;
-    field public static final com.purride.pixelui.PixelThemeColors.Companion Companion;
-  }
-
-  public static final class PixelThemeColors.Companion {
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeColors getDefault();
-    property public com.purride.pixelui.PixelThemeColors Default;
-  }
-
   public enum PixelThemeContrast {
     enum_constant public static final com.purride.pixelui.PixelThemeContrast High;
     enum_constant public static final com.purride.pixelui.PixelThemeContrast Standard;
-  }
-
-  public final class PixelThemeData {
-    ctor public PixelThemeData();
-    ctor public PixelThemeData(optional com.purride.pixelui.PixelThemeColors colors, optional com.purride.pixelui.PixelTextStyle textStyle, optional com.purride.pixelui.PixelButtonStyle buttonStyle, optional com.purride.pixelui.PixelTextButtonStyle textButtonStyle, optional com.purride.pixelui.PixelTextFieldStyle textFieldStyle);
-    method public com.purride.pixelui.PixelThemeColors component1();
-    method public com.purride.pixelui.PixelTextStyle component2();
-    method public com.purride.pixelui.PixelButtonStyle component3();
-    method public com.purride.pixelui.PixelTextButtonStyle component4();
-    method public com.purride.pixelui.PixelTextFieldStyle component5();
-    method public com.purride.pixelui.PixelThemeData copy(optional com.purride.pixelui.PixelThemeColors colors, optional com.purride.pixelui.PixelTextStyle textStyle, optional com.purride.pixelui.PixelButtonStyle buttonStyle, optional com.purride.pixelui.PixelTextButtonStyle textButtonStyle, optional com.purride.pixelui.PixelTextFieldStyle textFieldStyle);
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelButtonStyle getButtonStyle();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeColors getColors();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextButtonStyle getTextButtonStyle();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextFieldStyle getTextFieldStyle();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle getTextStyle();
-    property public com.purride.pixelui.PixelButtonStyle buttonStyle;
-    property public com.purride.pixelui.PixelThemeColors colors;
-    property public com.purride.pixelui.PixelTextButtonStyle textButtonStyle;
-    property public com.purride.pixelui.PixelTextFieldStyle textFieldStyle;
-    property public com.purride.pixelui.PixelTextStyle textStyle;
-    field public static final com.purride.pixelui.PixelThemeData.Companion Companion;
-  }
-
-  public static final class PixelThemeData.Companion {
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeData getDefault();
-    property public com.purride.pixelui.PixelThemeData Default;
   }
 
   public final class PixelThemeTokens {
@@ -5693,7 +5621,6 @@ package com.purride.pixelui {
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelSizeTokens getSizes();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelSpacingTokens getSpacing();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelTypographyTokens getTypography();
-    method public com.purride.pixelui.PixelThemeData toLegacyThemeData();
     property public com.purride.pixelui.PixelBorderTokens borders;
     property public com.purride.pixelui.PixelThemeBrightness brightness;
     property public com.purride.pixelui.PixelColorScheme colors;
@@ -5712,7 +5639,6 @@ package com.purride.pixelui {
   public static final class PixelThemeTokens.Companion {
     method public com.purride.pixelui.PixelThemeTokens forCapabilities(com.purride.pixelui.HostCapabilitiesData capabilities, optional com.purride.pixelui.PixelThemeBrightness brightness);
     method public com.purride.pixelui.PixelThemeTokens forHost(com.purride.pixelui.BuildContext context, optional com.purride.pixelui.PixelThemeBrightness brightness);
-    method public com.purride.pixelui.PixelThemeTokens fromLegacy(com.purride.pixelui.PixelThemeData data);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeTokens getDark();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeTokens getDefault();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelThemeTokens getHighContrastDark();
@@ -5730,9 +5656,9 @@ package com.purride.pixelui {
     method public void clear();
     method public boolean dismiss(int id);
     method public boolean dismissCurrent();
-    method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem enqueue(String message, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle);
+    method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem enqueue(String message, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem enqueue(String message, com.purride.pixelui.PixelControlStateSet states, optional kotlin.time.Duration timeout, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
-    method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem enqueue(String message, kotlin.time.Duration timeout, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle);
+    method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem enqueue(String message, kotlin.time.Duration timeout, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelToastQueueItem enqueueWithControlStates(String message, int states, optional long timeout, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelToastQueueItem? getCurrent();
     method @InaccessibleFromKotlin public int getSize();
@@ -5747,19 +5673,19 @@ package com.purride.pixelui {
   }
 
   public final class PixelToastQueueItem {
-    ctor @KotlinOnly public PixelToastQueueItem(int id, String message, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle);
+    ctor @KotlinOnly public PixelToastQueueItem(int id, String message, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method public int component1();
     method public String component2();
-    method @KotlinOnly public operator com.purride.pixelcore.PixelColor component3();
-    method public com.purride.pixelui.PixelTextStyle component4();
-    method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem copy(optional int id, optional String message, optional com.purride.pixelcore.PixelColor fillColor, optional com.purride.pixelui.PixelTextStyle textStyle);
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component3();
+    method public com.purride.pixelui.PixelTextStyle? component4();
+    method @KotlinOnly public com.purride.pixelui.PixelToastQueueItem copy(optional int id, optional String message, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle);
     method @InaccessibleFromKotlin public int getId();
     method @InaccessibleFromKotlin public String getMessage();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle getTextStyle();
-    property public com.purride.pixelcore.PixelColor fillColor;
+    method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle? getTextStyle();
+    property public com.purride.pixelcore.PixelColor? fillColor;
     property public int id;
     property public String message;
-    property public com.purride.pixelui.PixelTextStyle textStyle;
+    property public com.purride.pixelui.PixelTextStyle? textStyle;
   }
 
   public final class PixelTypedDeepLinkKt {
@@ -5888,7 +5814,6 @@ package com.purride.pixelui {
   }
 
   public static final class PixelTypographyToken.Companion {
-    method public com.purride.pixelui.PixelTypographyToken fromLegacy(com.purride.pixelui.PixelTextStyle style, com.purride.pixelui.PixelColorRole colorRole);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelTypographyToken getDefault();
     property public com.purride.pixelui.PixelTypographyToken Default;
   }
@@ -6003,17 +5928,17 @@ package com.purride.pixelui {
     method public static com.purride.pixelui.Widget PositionedDirectional(com.purride.pixelui.Widget child, optional Integer? start, optional Integer? top, optional Integer? end, optional Integer? bottom, optional Integer? width, optional Integer? height, optional Object? key);
     method public static com.purride.pixelui.Widget PositionedFill(com.purride.pixelui.Widget child, optional int left, optional int top, optional int right, optional int bottom, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget RefreshIndicator(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, com.purride.pixelui.PixelControlStateSet states, kotlin.jvm.functions.Function0<kotlin.Unit>? onRefresh, optional Integer? thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor? indicatorColor, optional com.purride.pixelcore.PixelColor? armedColor, optional com.purride.pixelcore.PixelColor? refreshingColor, optional Object? key, optional String? semanticLabel);
-    method @KotlinOnly public static com.purride.pixelui.Widget RefreshIndicator(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, kotlin.jvm.functions.Function0<kotlin.Unit> onRefresh, optional int thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor indicatorColor, optional com.purride.pixelcore.PixelColor armedColor, optional com.purride.pixelcore.PixelColor refreshingColor, optional Object? key, optional String semanticLabel);
+    method @KotlinOnly public static com.purride.pixelui.Widget RefreshIndicator(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, kotlin.jvm.functions.Function0<kotlin.Unit> onRefresh, optional Integer? thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor? indicatorColor, optional com.purride.pixelcore.PixelColor? armedColor, optional com.purride.pixelcore.PixelColor? refreshingColor, optional Object? key, optional String? semanticLabel);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget RefreshIndicatorWithControlStates(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, int states, kotlin.jvm.functions.Function0<kotlin.Unit>? onRefresh, optional Integer? thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor? indicatorColor, optional com.purride.pixelcore.PixelColor? armedColor, optional com.purride.pixelcore.PixelColor? refreshingColor, optional Object? key, optional String? semanticLabel);
     method public static com.purride.pixelui.Widget RichText(java.util.List<com.purride.pixelui.PixelTextSpan> spans, optional boolean softWrap, optional int maxLines, optional com.purride.pixelui.PixelTextOverflow overflow, optional com.purride.pixelui.TextAlign textAlign, optional Object? key);
     method public static com.purride.pixelui.Widget Row(java.util.List<? extends com.purride.pixelui.Widget> children, optional int spacing, optional com.purride.pixelui.MainAxisSize mainAxisSize, optional com.purride.pixelui.MainAxisAlignment mainAxisAlignment, optional com.purride.pixelui.CrossAxisAlignment crossAxisAlignment, optional Object? key);
-    method @KotlinOnly public static com.purride.pixelui.Widget Scrollbar(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelListState state, optional com.purride.pixelcore.PixelColor thumbColor, optional com.purride.pixelcore.PixelColor? trackColor, optional int width, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget Scrollbar(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelListState state, optional com.purride.pixelcore.PixelColor? thumbColor, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? width, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Scrollbar(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelListState state, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelcore.PixelColor? thumbColor, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? width, optional boolean enabled, optional Object? key, optional String? semanticLabel);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ScrollbarWithControlStates(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelListState state, int states, optional com.purride.pixelcore.PixelColor? thumbColor, optional com.purride.pixelcore.PixelColor? trackColor, optional Integer? width, optional boolean enabled, optional Object? key, optional String? semanticLabel);
     method public static com.purride.pixelui.Widget SingleChildScrollView(com.purride.pixelui.Widget child, com.purride.pixelui.state.PixelListState state, com.purride.pixelui.state.PixelListController controller, optional Object? key);
     method public static com.purride.pixelui.Widget SizedBox(optional Integer? width, optional Integer? height, optional com.purride.pixelui.Widget? child, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Slider(float value, com.purride.pixelui.PixelControlStateSet states, optional kotlin.jvm.functions.Function1<java.lang.Float,kotlin.Unit>? onDrag, optional kotlin.jvm.functions.Function1<java.lang.Float,kotlin.Unit>? onRelease, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? trackColor, optional Object? key, optional String? semanticLabel, optional String? semanticValue, optional int semanticSteps, optional boolean enabled);
-    method @KotlinOnly public static com.purride.pixelui.Widget Slider(float value, optional kotlin.jvm.functions.Function1<java.lang.Float,kotlin.Unit> onDrag, optional kotlin.jvm.functions.Function1<java.lang.Float,kotlin.Unit> onRelease, optional com.purride.pixelcore.PixelColor activeColor, optional com.purride.pixelcore.PixelColor trackColor, optional Object? key, optional String semanticLabel, optional String? semanticValue, optional int semanticSteps, optional boolean enabled);
+    method @KotlinOnly public static com.purride.pixelui.Widget Slider(float value, optional kotlin.jvm.functions.Function1<java.lang.Float,kotlin.Unit> onDrag, optional kotlin.jvm.functions.Function1<java.lang.Float,kotlin.Unit> onRelease, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? trackColor, optional Object? key, optional String? semanticLabel, optional String? semanticValue, optional int semanticSteps, optional boolean enabled);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SliderWithControlStates(float value, int states, optional kotlin.jvm.functions.Function1<? super java.lang.Float,kotlin.Unit>? onDrag, optional kotlin.jvm.functions.Function1<? super java.lang.Float,kotlin.Unit>? onRelease, optional com.purride.pixelcore.PixelColor? activeColor, optional com.purride.pixelcore.PixelColor? trackColor, optional Object? key, optional String? semanticLabel, optional String? semanticValue, optional int semanticSteps, optional boolean enabled);
     method public static com.purride.pixelui.PixelSliver SliverAppBar(com.purride.pixelui.Widget child, int expandedHeight, int collapsedHeight, optional boolean floating, optional boolean snap, optional boolean stretch, optional int stretchLimit, optional Object? key);
     method public static com.purride.pixelui.PixelSliver SliverList(java.util.List<? extends com.purride.pixelui.Widget> items, optional int spacing, optional Object? key);
@@ -6198,7 +6123,7 @@ package com.purride.pixelui {
 
   public final class SwipeRefreshScaffoldKt {
     method @KotlinOnly public static com.purride.pixelui.Widget SwipeRefreshScaffold(com.purride.pixelui.Widget body, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, com.purride.pixelui.PixelControlStateSet states, kotlin.jvm.functions.Function0<kotlin.Unit>? onRefresh, optional com.purride.pixelui.Widget? topBar, optional com.purride.pixelui.Widget? bottomBar, optional Integer? thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor? indicatorColor, optional com.purride.pixelcore.PixelColor? armedColor, optional com.purride.pixelcore.PixelColor? refreshingColor, optional Object? key, optional String? semanticLabel);
-    method @KotlinOnly public static com.purride.pixelui.Widget SwipeRefreshScaffold(com.purride.pixelui.Widget body, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, kotlin.jvm.functions.Function0<kotlin.Unit> onRefresh, optional com.purride.pixelui.Widget? topBar, optional com.purride.pixelui.Widget? bottomBar, optional int thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor indicatorColor, optional com.purride.pixelcore.PixelColor armedColor, optional com.purride.pixelcore.PixelColor refreshingColor, optional Object? key, optional String semanticLabel);
+    method @KotlinOnly public static com.purride.pixelui.Widget SwipeRefreshScaffold(com.purride.pixelui.Widget body, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, kotlin.jvm.functions.Function0<kotlin.Unit> onRefresh, optional com.purride.pixelui.Widget? topBar, optional com.purride.pixelui.Widget? bottomBar, optional Integer? thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor? indicatorColor, optional com.purride.pixelcore.PixelColor? armedColor, optional com.purride.pixelcore.PixelColor? refreshingColor, optional Object? key, optional String? semanticLabel);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SwipeRefreshScaffoldWithControlStates(com.purride.pixelui.Widget body, com.purride.pixelui.state.PixelRefreshIndicatorState state, com.purride.pixelui.state.PixelRefreshIndicatorController controller, int states, kotlin.jvm.functions.Function0<kotlin.Unit>? onRefresh, optional com.purride.pixelui.Widget? topBar, optional com.purride.pixelui.Widget? bottomBar, optional Integer? thresholdPx, optional boolean enabled, optional com.purride.pixelcore.PixelColor? indicatorColor, optional com.purride.pixelcore.PixelColor? armedColor, optional com.purride.pixelcore.PixelColor? refreshingColor, optional Object? key, optional String? semanticLabel);
   }
 

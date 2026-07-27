@@ -22,7 +22,6 @@ import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.PixelTextFieldStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTheme
-import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Slider
 import com.purride.pixelui.TextButton
@@ -40,11 +39,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration.Companion.milliseconds
 
-/** Focused state and theme-compatibility contracts for Button, TextField, and Slider. */
+/** Button、TextField 与 Slider 的状态与主题解析契约。 Focused state and theme-resolution contracts for Button, TextField, and Slider. */
 class StandardComponentStateGroupATest {
-    /** Exact component-specific legacy colors survive the Normal token compatibility bridge. */
+    /** 调用方显式样式在现代 token 主题下仍保持精确颜色，不被组件角色覆盖。 */
     @Test
-    fun legacyThemeKeepsExactNormalComponentStyles() {
+    fun explicitStylesSurviveTokenThemeResolution() {
         /** Unique OutlinedButton fill sentinel. */
         val buttonFill = PixelColor.fromRgb(91, 17, 33)
         /** Unique OutlinedButton outline sentinel. */
@@ -61,40 +60,51 @@ class StandardComponentStateGroupATest {
         val fieldText = PixelColor.fromRgb(193, 137, 23)
         /** Controlled field owner used to paint non-placeholder content. */
         val controller = PixelTextFieldController()
-        /** Non-empty field state that exercises the exact legacy textStyle color. */
+        /** 非空字段状态，用于验证显式 textStyle 的精确颜色。 Non-empty field state that exercises the exact explicit textStyle color. */
         val state = controller.create(initialText = "I")
-        /** Legacy data with component colors that cannot be represented by finite semantic roles. */
-        val legacyTheme = PixelThemeData(
-            buttonStyle = PixelButtonStyle(
-                fillColor = buttonFill,
-                borderColor = buttonBorder,
-                textStyle = PixelTextStyle(color = buttonText),
-            ),
-            textButtonStyle = PixelTextButtonStyle(
-                textStyle = PixelTextStyle(color = textButtonText),
-                padding = EdgeInsets.all(1),
-            ),
-            textFieldStyle = PixelTextFieldStyle(
-                fillColor = fieldFill,
-                borderColor = fieldBorder,
-                textStyle = PixelTextStyle(color = fieldText),
-            ),
+        /** 调用方显式的 OutlinedButton 样式，颜色无法由有限语义角色表达。 */
+        val buttonStyle = PixelButtonStyle(
+            fillColor = buttonFill,
+            borderColor = buttonBorder,
+            textStyle = PixelTextStyle(color = buttonText),
         )
-        /** Off-screen runtime rendering every affected Normal compatibility path. */
+        /** 调用方显式的 TextButton 样式。 */
+        val textButtonStyle = PixelTextButtonStyle(
+            textStyle = PixelTextStyle(color = textButtonText),
+            padding = EdgeInsets.all(1),
+        )
+        /** 调用方显式的 TextField 样式。 */
+        val textFieldStyle = PixelTextFieldStyle(
+            fillColor = fieldFill,
+            borderColor = fieldBorder,
+            textStyle = PixelTextStyle(color = fieldText),
+        )
+        /** 在 token 主题下渲染全部显式覆写路径的离屏运行时。 Off-screen runtime rendering every explicit-override path under a token theme. */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
                 widget = PixelTheme(
-                    data = legacyTheme,
+                    tokens = PixelThemeTokens.Default,
                     child = Column(
                         children = listOf(
-                            OutlinedButton(text = "I", onPressed = {}, key = "legacy-button"),
-                            TextButton(text = "I", onPressed = {}, key = "legacy-text-button"),
+                            OutlinedButton(
+                                text = "I",
+                                onPressed = {},
+                                style = buttonStyle,
+                                key = "explicit-button",
+                            ),
+                            TextButton(
+                                text = "I",
+                                onPressed = {},
+                                style = textButtonStyle,
+                                key = "explicit-text-button",
+                            ),
                             TextField(
                                 state = state,
                                 controller = controller,
-                                semanticLabel = "Legacy field",
-                                key = "legacy-field",
+                                style = textFieldStyle,
+                                semanticLabel = "Explicit field",
+                                key = "explicit-styled-field",
                             ),
                         ),
                         spacing = 1,
@@ -113,22 +123,22 @@ class StandardComponentStateGroupATest {
                 fieldBorder,
                 fieldText,
             ).forEach { sentinel ->
-                assertTrue("Missing exact legacy sentinel $sentinel", tester.hasPixel(sentinel))
+                assertTrue("Missing exact explicit sentinel $sentinel", tester.hasPixel(sentinel))
             }
         } finally {
             tester.dispose()
         }
     }
 
-    /** Localizable token labels replace only omitted legacy defaults, never explicit labels. */
+    /** 可本地化 token 标签只替换省略的标签，绝不替换显式标签。 Localizable token labels replace only omitted labels, never explicit ones. */
     @Test
-    fun tokenLabelsReplaceLegacyDefaultSentinelsOnly() {
+    fun tokenLabelsReplaceOmittedLabelsOnly() {
         /** Custom labels proving the components resolve semantics inside their themed build context. */
         val labels = PixelLabelTokens.Default.copy(
             slider = "TOKEN VOLUME",
             textField = "TOKEN FIELD",
         )
-        /** First controlled field whose old empty default becomes an omitted sentinel. */
+        /** 第一个受控字段，其省略的标签由主题 token 解析。 First controlled field whose omitted label resolves from theme tokens. */
         val tokenController = PixelTextFieldController()
         /** Empty state for the theme-label field. */
         val tokenState = tokenController.create()

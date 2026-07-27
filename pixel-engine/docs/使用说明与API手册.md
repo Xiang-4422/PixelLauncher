@@ -223,8 +223,8 @@ val setup = createPixelHostSetup(
 已有 Host 可以调用 `hostView.bindEngine(engine)`。切换实例会让后续帧读取新服务，并释放旧的
 Host frame/ticker scope；不要继续持有切换前的 ticker provider。
 
-`engine.theme` 始终返回完整 token。为了保持旧 facade 的逐像素兼容，默认 Builder 不会自动安装
-“显式主题”作用域；只有调用 `.theme(...)` 才会让旧 facade 进入 token-aware 分支。
+`engine.theme` 始终返回完整 token。默认 Builder 不会自动安装 `PixelTheme` 作用域，组件此时解析
+`PixelThemeTokens.Default`；调用 `.theme(...)` 才会把自定义 token 图注入整棵树。
 
 纯 JVM 测试应注入 `ManualFrameScheduler` 和 fake `PixelClock`，不要读取 Android 默认调度器。完整
 默认值、共享规则和迁移步骤见 [Android Host 指南](guides/host-integration.md)。
@@ -409,12 +409,10 @@ PixelTheme(
 组件保留 `PixelColorRole` 并在 build 时解析当前 scheme，所以只复制一组颜色或 foundation token 就能
 同步改变全部消费者，不需要逐组件覆写。
 
-`PixelTheme(tokens = ..., child = ...)` 会同时提供完整 token 图及其旧 `PixelThemeData` 投影；
-`PixelTheme(data = ..., child = ...)` 则通过 `PixelThemeTokens.fromLegacy(data)` 补齐 token 图。
-新组件使用 `PixelTheme.tokensOf(context)` / `maybeTokensOf(context)`，旧组件继续使用
-`PixelTheme.of(context)` / `maybeOf(context)`。无 provider 时，两个非 nullable 读取方法分别回退到
-`PixelThemeTokens.Default` 和 `PixelThemeData.Default`。局部显式 `PixelMotionTheme` 比
-`PixelThemeTokens.motion` 更近时，以前者为准。
+`PixelTheme(tokens = ..., child = ...)` 是唯一的主题提供入口，只承载 `PixelThemeTokens`。
+全部组件统一使用 `PixelTheme.of(context)` / `PixelTheme.maybeOf(context)` 读取该 token 图；
+`of` 在没有 provider 时回退到 `PixelThemeTokens.Default`，`maybeOf` 返回 `null`。局部显式
+`PixelMotionTheme` 比 `PixelThemeTokens.motion` 更近时，以前者为准。
 
 ### 八状态解析
 
@@ -436,7 +434,7 @@ Error、Loading 或 Disabled。回调为 `null` 或 `enabled=false` 也会归一
 ### 25 个标准组件 token 族
 
 下表是 `PixelComponentTokens` 属性与公开生产工厂的一一映射。每个族都能消费
-`PixelControlStateSet`；既有组件通常通过 `states` 必填的 state-aware 重载保留旧 facade，而 1.0
+`PixelControlStateSet`；既有组件通过 `states` 必填的 state-aware 重载与简洁入口并存，而 1.0
 新增工厂可直接以默认 `Normal` 调用并按需显式传入 `states`。
 
 | Token 属性 | 标准生产工厂 | 共享该族的相关消费者 |
@@ -472,22 +470,28 @@ Error、Loading 或 Disabled。回调为 `null` 或 `enabled=false` 也会归一
 标准 spacing、size、radius、border 编码会读取当前 foundation token；非标准的非负整数保留为字面
 逻辑像素。
 
-### 显式参数与兼容 facade
+### 显式参数与简洁 API
 
-某个公开覆写通道通常按“该通道适用的显式参数 > component token > foundation token / color
-scheme”解析。它不是“任意显式参数压过所有状态”的全局规则：例如 Checkbox/Switch 旧 facade 的
-active/inactive 颜色只定义 Normal/Selected 基础通道，Error、Loading、Disabled 等状态仍可按组件
-契约覆盖。完整状态/token 契约以 state-aware 重载为准。
+某个公开覆写通道按“该通道适用的显式参数 > component token > foundation token / color
+scheme”解析。它不是“任意显式参数压过所有状态”的全局规则：例如 Checkbox/Switch 的
+active/inactive 颜色只定义 Normal/Selected 基础通道，Error、Loading、Disabled 等状态仍按组件
+契约覆盖。
 
-旧 `PixelTheme(data = PixelThemeData(...))` 与旧组件 facade 继续可用；其参数类型、默认值、JVM
-descriptor 和 Kotlin `$default` bridge 保持兼容。既有组件的 state-aware 重载在 Kotlin 中使用相同
-工厂名并要求传 `states`，JVM 侧以稳定 `@JvmName` 区分，例如
-`OutlinedButtonWithControlStates`。
+`OutlinedButton`、`Checkbox`、`Dialog`、`Toast`、`Snackbar`、`ProgressBar`、`Badge`、`Divider`、
+`AppScaffold`、`Scrollbar`、`RefreshIndicator`、`TextField`、`Slider` 等简洁 API 全部保留，并统一
+委托到同一套 state-aware token 实现。简洁入口的可选视觉参数一律是 nullable 且默认 `null`：
+`null` 表示由 token 解析，非 null 则保持调用方精确值。因此不再需要用“默认具体值”当作省略
+sentinel，也不存在“省略默认值”与“显式传入与默认相同的值”无法区分的问题。
 
-无 `PixelTheme` provider 的旧调用保持历史像素。在显式主题内，许多旧默认具体值会作为“未提供
-参数” sentinel，让 token 继续传播；兼容路径不保证每个旧 facade 消费每一种新 token 通道。旧重载
-也无法区分“省略默认值”和“显式传入与旧默认完全相同的值”。要锁定该值，应在 state-aware 重载
-暴露对应 nullable 覆写时传入非空值；否则复制相应 component token。
+简洁入口与 state-aware 重载在 Kotlin 中共用工厂名，state-aware 重载要求传 `states`，JVM 侧以稳定
+`@JvmName` 区分，例如 `OutlinedButtonWithControlStates`。两条入口在同一输入下构建完全相同的
+widget 树，无论是否存在 `PixelTheme` provider；缺少 provider 时二者都解析
+`PixelThemeTokens.Default`。
+
+可选的无障碍名称遵循同一规则：`semanticLabel` 一律是 nullable 且默认 `null`。`null` 表示省略，
+按“本地化 provider > 主题 label token > 内置英文”解析；任意显式字符串都是最高优先级，包括与
+内置英文兜底完全相同的文本。`NavigationBar` / `NavigationRail` 额外要求集合名称非空白，显式空白
+值会在构建时抛出 `IllegalArgumentException`；其余组件保留调用方显式传入的空白值。
 
 ### 主题验证
 
@@ -1533,9 +1537,8 @@ selection、composition 或 IME target。
 
 | API | 用途 | 关键成员 / 行为 |
 |---|---|---|
-| `PixelTheme` | 同时提供新 token 图与旧主题投影 | `tokens`、`data`、`tokensOf`、`maybeTokensOf`、`of`、`maybeOf` |
+| `PixelTheme` | 向子树提供唯一 token 图 | `tokens`、`of`、`maybeOf` |
 | `PixelThemeTokens` | 完整不可变主题根节点 | presets、`forCapabilities`、`forHost`、`Default` |
-| `PixelThemeData` / `PixelThemeColors` | 旧主题兼容模型 | `PixelThemeTokens.fromLegacy`、`toLegacyThemeData` |
 | `PixelThemeBrightness` / `PixelThemeContrast` | 主题明暗与对比度元数据 | `Dark` / `Light`；`Standard` / `High` |
 | `PixelColorRole` / `PixelColorScheme` | 22 个语义角色及其 ARGB 解析 | `resolve(role)`、`copy(...)` |
 | `PixelTypographyToken` / `PixelTypographyTokens` | 单个及六类标准排版 token | `resolve(colors)`、body、label、title、caption、button、input |
@@ -1552,9 +1555,9 @@ selection、composition 或 IME target。
 | `PixelStateProperty<T>` | 状态属性解析接口 | `resolve(states)`、`constant(value)` |
 | `PixelStateMap<T>` | Normal fallback 加显式 override | 按固定优先级寻找第一个已配置且激活的 override |
 
-带兼容 facade 的既有 state-aware 工厂在 Kotlin 中与旧 facade 同名，并用必填 `states` 区分；JVM
-调用方使用对应 `...WithControlStates` 名称。1.0 新增且无需兼容旧 descriptor 的工厂可以让
-`states` 默认取 `Normal`。旧 facade 继续保留原参数、默认值、descriptor 和 `$default` bridge。
+带简洁入口的 state-aware 工厂在 Kotlin 中与简洁入口同名，并用必填 `states` 区分；JVM 调用方
+使用对应 `...WithControlStates` 名称。只提供单一入口的工厂可以让 `states` 默认取 `Normal`。
+简洁入口的可选视觉参数一律 nullable 且默认 `null`，表示交由 token 解析。
 
 ### 布局组件
 

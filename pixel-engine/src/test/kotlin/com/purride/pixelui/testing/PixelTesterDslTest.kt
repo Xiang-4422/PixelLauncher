@@ -53,7 +53,7 @@ import com.purride.pixelui.PixelAsyncSnapshot
 import com.purride.pixelui.PixelTextButtonStyle
 import com.purride.pixelui.PixelTextStyle
 import com.purride.pixelui.PixelTheme
-import com.purride.pixelui.PixelThemeData
+import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.PixelTextInputAction
 import com.purride.pixelui.PixelTextEditAction
 import com.purride.pixelui.PixelMenuItem
@@ -1661,8 +1661,9 @@ class PixelTesterDslTest {
         }
         assertFalse(buffer.getPixel(decreaseTarget.bounds.right + 1, outerTop + 1) == PixelColor.White)
 
-        val decreaseSymbol = symbolPixels(buffer, decreaseTarget.bounds, PixelColor.Black)
-        val increaseSymbol = symbolPixels(buffer, increaseTarget.bounds, PixelColor.Black)
+        // 无显式主题时按钮前景由 valueAdjuster 组件的 onSurface 角色解析。
+        val decreaseSymbol = symbolPixels(buffer, decreaseTarget.bounds, PixelColor.White)
+        val increaseSymbol = symbolPixels(buffer, increaseTarget.bounds, PixelColor.White)
         assertEquals(5, decreaseSymbol.size)
         assertEquals(9, increaseSymbol.size)
         assertCenteredSymbol(decreaseSymbol, decreaseTarget.bounds, expectedWidth = 5, expectedHeight = 1)
@@ -1674,11 +1675,9 @@ class PixelTesterDslTest {
         val tallStyle = PixelTextStyle.Default.copy(lineHeight = 13)
         tester.pumpWidget(
             widget = PixelTheme(
-                data = PixelThemeData(
-                    textStyle = tallStyle,
-                    buttonStyle = PixelButtonStyle.Default.copy(
-                        borderColor = PixelColor.White,
-                        textStyle = tallStyle,
+                tokens = PixelThemeTokens.Default.copy(
+                    typography = PixelThemeTokens.Default.typography.copy(
+                        label = PixelThemeTokens.Default.typography.label.copy(lineHeight = 13),
                     ),
                 ),
                 child = ValueAdjuster(
@@ -1705,7 +1704,7 @@ class PixelTesterDslTest {
             assertEquals(PixelColor.White, tallBuffer.getPixel(tallLeftDividerX, y))
             assertEquals(PixelColor.White, tallBuffer.getPixel(tallRightDividerX, y))
         }
-        // An explicit PixelTheme opts the compatibility facade into token-resolved foregrounds.
+        // 简洁入口在显式 PixelTheme 下同样使用 token 解析出的前景色。
         assertCenteredSymbol(symbolPixels(tallBuffer, tallLeft.bounds, PixelColor.White), tallLeft.bounds, expectedWidth = 5, expectedHeight = 1)
         assertCenteredSymbol(symbolPixels(tallBuffer, tallRight.bounds, PixelColor.White), tallRight.bounds, expectedWidth = 5, expectedHeight = 5)
 

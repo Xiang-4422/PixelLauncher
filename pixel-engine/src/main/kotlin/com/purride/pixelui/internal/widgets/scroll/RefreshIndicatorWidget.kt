@@ -49,14 +49,6 @@ internal data class RefreshIndicatorWidget(
     val armedColor: PixelColor?,
     /** Optional concrete refreshing/Loading foreground override. */
     val refreshingColor: PixelColor?,
-    /** Whether this instance originated from the binary compatibility facade. */
-    val legacyFacade: Boolean = false,
-    /** Historical ordinary-pull color retained for a scope-less compatibility facade. */
-    val legacyIndicatorColor: PixelColor = PixelColor.White,
-    /** Historical armed color retained for a scope-less compatibility facade. */
-    val legacyArmedColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
-    /** Historical refreshing color retained for a scope-less compatibility facade. */
-    val legacyRefreshingColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
     /** Shared keyboard and semantic lifecycle action. */
     val semanticAction: () -> Boolean,
     /** Business callback used only by a completed pointer pull. */
@@ -98,13 +90,11 @@ private class RefreshIndicatorWidgetState : State<RefreshIndicatorWidget>() {
     override fun build(context: BuildContext): Widget {
         context.watch(widget.controller)
         /** Complete token graph from the nearest theme boundary. */
-        val themeTokens = PixelTheme.tokensOf(context)
-        /** Provider labels override semantic status text without affecting paint provenance. */
+        val themeTokens = PixelTheme.of(context)
+        /** 提供者标签只覆盖语义状态文本，不影响 token 解析。 Provider labels override semantic status text without affecting token resolution. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels ?: themeTokens.labels
         /** Refresh-specific role and geometry token family. */
         val componentTokens = themeTokens.components.refresh
-        /** Historical paint is selected only without an explicit inherited theme provider. */
-        val scopeLessLegacy = widget.legacyFacade && PixelTheme.maybeTokensOf(context) == null
         /** Effective node supplied by the public automatic-focus boundary. */
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) context.watch(focusNode)
@@ -134,37 +124,21 @@ private class RefreshIndicatorWidgetState : State<RefreshIndicatorWidget>() {
         if (loading) runtimeStates += PixelControlState.Loading
         /** Focus remains additive and cannot replace error/selected/loading base roles. */
         val baseStates = runtimeStates - PixelControlState.Focused
-        /** Stage-specific concrete override preserving the historical three-color API. */
-        val explicitIndicatorColor = if (scopeLessLegacy) {
-            when {
-                PixelControlState.Loading in baseStates -> widget.legacyRefreshingColor
-                PixelControlState.Selected in baseStates -> widget.legacyArmedColor
-                else -> widget.legacyIndicatorColor
-            }
-        } else {
-            when {
-                PixelControlState.Loading in baseStates -> widget.refreshingColor ?: widget.indicatorColor
-                PixelControlState.Selected in baseStates -> widget.armedColor ?: widget.indicatorColor
-                else -> widget.indicatorColor
-            }
+        /** 按阶段区分的具体覆写，保留公开三色 API。 Stage-specific concrete override preserving the public three-color API. */
+        val explicitIndicatorColor = when {
+            PixelControlState.Loading in baseStates -> widget.refreshingColor ?: widget.indicatorColor
+            PixelControlState.Selected in baseStates -> widget.armedColor ?: widget.indicatorColor
+            else -> widget.indicatorColor
         }
         /** Final progress foreground after explicit-over-token precedence. */
         val targetIndicatorColor = explicitIndicatorColor
             ?: componentTokens.resolveContentColor(baseStates, themeTokens.colors)
             ?: themeTokens.colors.primary
         /** Final track fill resolved independently from the progress foreground. */
-        val targetTrackColor = if (scopeLessLegacy) {
-            PixelColor.Transparent
-        } else {
-            componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
-                ?: themeTokens.colors.track
-        }
+        val targetTrackColor = componentTokens.resolveContainerColor(baseStates, themeTokens.colors)
+            ?: themeTokens.colors.track
         /** Optional component outline role for custom token families. */
-        val targetBorderColor = if (scopeLessLegacy) {
-            null
-        } else {
-            componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
-        }
+        val targetBorderColor = componentTokens.resolveBorderColor(baseStates, themeTokens.colors)
         /** Concrete transparent target used only by the retained border motion channel. */
         val concreteBorderColor = targetBorderColor ?: PixelColor.Transparent
         /** Foreground feedback channel retained across rapid state retargets. */
@@ -208,15 +182,11 @@ private class RefreshIndicatorWidgetState : State<RefreshIndicatorWidget>() {
             motion.watch(context)
         }
         /** Foundation-resolved indicator height, constrained by the render viewport at paint time. */
-        val indicatorHeight = if (scopeLessLegacy) {
-            1
-        } else {
-            componentTokens.resolveMinimumHeight(themeTokens.sizes).coerceAtLeast(1)
-        }
-        /** Foundation-resolved outline width. */
-        val borderWidth = if (scopeLessLegacy) 0 else componentTokens.resolveBorderWidth(themeTokens.borders)
+        val indicatorHeight = componentTokens.resolveMinimumHeight(themeTokens.sizes).coerceAtLeast(1)
+        /** 由 foundation token 解析出的边框宽度。 Foundation-resolved outline width. */
+        val borderWidth = componentTokens.resolveBorderWidth(themeTokens.borders)
         /** Foundation-resolved pixel stair-step radius. */
-        val cornerRadius = if (scopeLessLegacy) 0 else componentTokens.resolveCornerRadius(themeTokens.radii)
+        val cornerRadius = componentTokens.resolveCornerRadius(themeTokens.radii)
         /** Render leaf exporting a pointer target only while mutation remains available. */
         val renderIndicator = RefreshIndicatorRenderWidget(
             child = widget.child,
@@ -231,25 +201,20 @@ private class RefreshIndicatorWidgetState : State<RefreshIndicatorWidget>() {
             borderWidth = borderWidth,
             cornerRadius = cornerRadius,
             indicatorHeight = indicatorHeight,
-            legacyPaint = scopeLessLegacy,
             onPressedChanged = ::updatePressed,
             onHoveredChanged = ::updateHovered,
             onRefresh = widget.onRefresh,
             key = widget.key,
         )
         /** Optional additive focus layer supplied by custom refresh component tokens. */
-        val focusedIndicator = if (scopeLessLegacy) {
-            renderIndicator
-        } else {
-            withControlFocusIndicator(
-                child = renderIndicator,
-                states = runtimeStates,
-                componentTokens = componentTokens,
-                colors = themeTokens.colors,
-                borders = themeTokens.borders,
-                key = widget.key?.let { "$it-focus-indicator" },
-            )
-        }
+        val focusedIndicator = withControlFocusIndicator(
+            child = renderIndicator,
+            states = runtimeStates,
+            componentTokens = componentTokens,
+            colors = themeTokens.colors,
+            borders = themeTokens.borders,
+            key = widget.key?.let { "$it-focus-indicator" },
+        )
         return Semantics(
             label = widget.semanticLabel,
             role = PixelSemanticRole.BUTTON,
@@ -311,8 +276,6 @@ private data class RefreshIndicatorRenderWidget(
     val cornerRadius: Int,
     /** Resolved maximum indicator height. */
     val indicatorHeight: Int,
-    /** Whether the render object must reproduce the historical one-/two-row paint algorithm. */
-    val legacyPaint: Boolean,
     /** Retained press callback receiving Host and tester ownership changes. */
     val onPressedChanged: (Boolean) -> Unit,
     /** Retained hover callback receiving Host and tester ownership changes. */
@@ -336,7 +299,6 @@ private data class RefreshIndicatorRenderWidget(
             borderWidth = borderWidth,
             cornerRadius = cornerRadius,
             indicatorHeight = indicatorHeight,
-            legacyPaint = legacyPaint,
             onPressedChanged = onPressedChanged,
             onHoveredChanged = onHoveredChanged,
             onRefresh = onRefresh,
@@ -357,7 +319,6 @@ private data class RefreshIndicatorRenderWidget(
             borderWidth = borderWidth,
             cornerRadius = cornerRadius,
             indicatorHeight = indicatorHeight,
-            legacyPaint = legacyPaint,
             onPressedChanged = onPressedChanged,
             onHoveredChanged = onHoveredChanged,
             onRefresh = onRefresh,

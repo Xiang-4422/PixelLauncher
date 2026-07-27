@@ -2,6 +2,7 @@ package com.purride.pixelui.widgets
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.AnimatedPixelLoadingBar
+import com.purride.pixelui.PixelColorScheme
 import com.purride.pixelui.PixelLoadingBar
 import com.purride.pixelui.testing.PixelTester
 import org.junit.Assert.assertEquals
@@ -57,7 +58,7 @@ class PixelLoadingBarTest {
     }
 
     @Test
-    fun loadingBarDefaultsTrackDotsToActiveColor() {
+    fun loadingBarResolvesOmittedTrackDotsFromProgressTokens() {
         val tester = PixelTester()
 
         tester.pumpWidget(
@@ -73,6 +74,24 @@ class PixelLoadingBarTest {
             logicalHeight = 7,
         )
 
+        // 省略 trackColor 时点阵背景由 progress 组件的 container 角色解析。
+        assertEquals(PixelColorScheme.Dark.warning, tester.renderResult!!.buffer.getPixel(8, 0))
+
+        tester.pumpWidget(
+            widget = PixelLoadingBar(
+                progress = 0f,
+                width = 24,
+                height = 7,
+                color = active,
+                trackColor = active,
+                blockWidth = 5,
+                trailWidth = 0,
+            ),
+            logicalWidth = 24,
+            logicalHeight = 7,
+        )
+
+        // 显式 trackColor 仍然优先于解析出的角色颜色。
         assertEquals(active, tester.renderResult!!.buffer.getPixel(8, 0))
         tester.dispose()
     }

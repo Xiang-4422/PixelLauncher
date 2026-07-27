@@ -1569,16 +1569,16 @@ public final class com.purride.pixelui.OverlayControlsKt {
   public static com.purride.pixelui.Widget Popover$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object, boolean, com.purride.pixelui.PixelPopoverPlacement, com.purride.pixelui.PixelPopoverAlignment, int);
   public static com.purride.pixelui.Widget Popover$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0, java.lang.Object, boolean, com.purride.pixelui.PixelPopoverPlacement, com.purride.pixelui.PixelPopoverAlignment, int, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Menu-oRNGqmc(java.util.List<com.purride.pixelui.PixelMenuItem>, boolean, int, int, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
-  public static com.purride.pixelui.Widget Menu-oRNGqmc$default(java.util.List, boolean, int, int, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Menu-2_wJP-4(java.util.List<com.purride.pixelui.PixelMenuItem>, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
+  public static com.purride.pixelui.Widget Menu-2_wJP-4$default(java.util.List, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget MenuWithControlStates(java.util.List<com.purride.pixelui.PixelMenuItem>, int, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
   public static com.purride.pixelui.Widget MenuWithControlStates$default(java.util.List, int, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Dropdown(java.lang.String, java.lang.String, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.util.List<com.purride.pixelui.PixelMenuItem>, boolean, com.purride.pixelui.animation.IntOffset, java.lang.Object);
   public static com.purride.pixelui.Widget Dropdown$default(java.lang.String, java.lang.String, boolean, kotlin.jvm.functions.Function0, java.util.List, boolean, com.purride.pixelui.animation.IntOffset, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget DropdownWithControlStates(java.lang.String, java.lang.String, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.util.List<com.purride.pixelui.PixelMenuItem>, int, boolean, com.purride.pixelui.animation.IntOffset, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.String, java.lang.Object);
   public static com.purride.pixelui.Widget DropdownWithControlStates$default(java.lang.String, java.lang.String, boolean, kotlin.jvm.functions.Function0, java.util.List, int, boolean, com.purride.pixelui.animation.IntOffset, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.String, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Tooltip-dr5woJE(java.lang.String, boolean, com.purride.pixelui.Widget, com.purride.pixelui.animation.IntOffset, int, int, com.purride.pixelui.PixelTextStyle, java.lang.Object);
-  public static com.purride.pixelui.Widget Tooltip-dr5woJE$default(java.lang.String, boolean, com.purride.pixelui.Widget, com.purride.pixelui.animation.IntOffset, int, int, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Tooltip-Z74Odp4(java.lang.String, boolean, com.purride.pixelui.Widget, com.purride.pixelui.animation.IntOffset, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Tooltip-Z74Odp4$default(java.lang.String, boolean, com.purride.pixelui.Widget, com.purride.pixelui.animation.IntOffset, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget TooltipWithControlStates(java.lang.String, boolean, com.purride.pixelui.Widget, int, com.purride.pixelui.animation.IntOffset, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.String, java.lang.Object);
   public static com.purride.pixelui.Widget TooltipWithControlStates$default(java.lang.String, boolean, com.purride.pixelui.Widget, int, com.purride.pixelui.animation.IntOffset, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.String, java.lang.Object, int, java.lang.Object);
 }
@@ -1894,7 +1894,6 @@ public final class com.purride.pixelui.PixelColorScheme {
   public final int getScrim-bODNPuc();
   public final int getShadow-bODNPuc();
   public final int resolve-s7e8XLk(com.purride.pixelui.PixelColorRole);
-  public final com.purride.pixelui.PixelThemeColors toLegacyColors();
   public final int component1-bODNPuc();
   public final int component2-bODNPuc();
   public final int component3-bODNPuc();
@@ -1930,7 +1929,6 @@ public final class com.purride.pixelui.PixelColorScheme$Companion {
   public final com.purride.pixelui.PixelColorScheme getHighContrastDark();
   public final com.purride.pixelui.PixelColorScheme getHighContrastLight();
   public final com.purride.pixelui.PixelColorScheme getDefault();
-  public final com.purride.pixelui.PixelColorScheme fromLegacy(com.purride.pixelui.PixelThemeColors);
   public com.purride.pixelui.PixelColorScheme$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelComponentColorTokens {
@@ -2067,36 +2065,36 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget OptionList$default(java.util.List, int, kotlin.jvm.functions.Function1, boolean, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SectionList(java.util.List<com.purride.pixelui.SectionListSection>, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget SectionList$default(java.util.List, int, int, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Checkbox-zcjAOrI(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, boolean, int, int, java.lang.String, java.lang.Object);
-  public static com.purride.pixelui.Widget Checkbox-zcjAOrI$default(boolean, kotlin.jvm.functions.Function1, boolean, int, int, java.lang.String, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Checkbox-ENLy2gY(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object);
+  public static com.purride.pixelui.Widget Checkbox-ENLy2gY$default(boolean, kotlin.jvm.functions.Function1, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget CheckboxWithControlStates(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, int, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object);
   public static com.purride.pixelui.Widget CheckboxWithControlStates$default(boolean, kotlin.jvm.functions.Function1, int, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Switch-zcjAOrI(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, boolean, int, int, java.lang.String, java.lang.Object);
-  public static com.purride.pixelui.Widget Switch-zcjAOrI$default(boolean, kotlin.jvm.functions.Function1, boolean, int, int, java.lang.String, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Switch-ENLy2gY(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object);
+  public static com.purride.pixelui.Widget Switch-ENLy2gY$default(boolean, kotlin.jvm.functions.Function1, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SwitchWithControlStates(boolean, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, int, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object);
   public static com.purride.pixelui.Widget SwitchWithControlStates$default(boolean, kotlin.jvm.functions.Function1, int, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.String, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Dialog-nipCVRc(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, int, int, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
-  public static com.purride.pixelui.Widget Dialog-nipCVRc$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, int, int, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Dialog-Lr--HHw(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
+  public static com.purride.pixelui.Widget Dialog-Lr--HHw$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget DialogWithControlStates(com.purride.pixelui.Widget, int, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
   public static com.purride.pixelui.Widget DialogWithControlStates$default(com.purride.pixelui.Widget, int, com.purride.pixelui.Widget, java.util.List, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget BottomSheet-nipCVRc(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, int, int, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
-  public static com.purride.pixelui.Widget BottomSheet-nipCVRc$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, int, int, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget BottomSheet-Lr--HHw(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
+  public static com.purride.pixelui.Widget BottomSheet-Lr--HHw$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget BottomSheetWithControlStates(com.purride.pixelui.Widget, int, com.purride.pixelui.Widget, java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
   public static com.purride.pixelui.Widget BottomSheetWithControlStates$default(com.purride.pixelui.Widget, int, com.purride.pixelui.Widget, java.util.List, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0, boolean, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget ConfirmDialog-XOXv8iY(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, java.lang.String, int, int, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object);
-  public static com.purride.pixelui.Widget ConfirmDialog-XOXv8iY$default(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, java.lang.String, int, int, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ConfirmDialog-bWcTJ7Y(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, java.lang.String, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object);
+  public static com.purride.pixelui.Widget ConfirmDialog-bWcTJ7Y$default(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, java.lang.String, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ConfirmDialogWithControlStates(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, int, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean, java.lang.String, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object);
   public static com.purride.pixelui.Widget ConfirmDialogWithControlStates$default(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0, int, kotlin.jvm.functions.Function0, boolean, java.lang.String, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, java.lang.Integer, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget ModalBarrier-SEeGgR8(int, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
-  public static com.purride.pixelui.Widget ModalBarrier-SEeGgR8$default(int, boolean, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ModalBarrier-4Oz5dbA(com.purride.pixelcore.PixelColor, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
+  public static com.purride.pixelui.Widget ModalBarrier-4Oz5dbA$default(com.purride.pixelcore.PixelColor, boolean, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ModalBarrierWithControlStates(int, com.purride.pixelcore.PixelColor, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object);
   public static com.purride.pixelui.Widget ModalBarrierWithControlStates$default(int, com.purride.pixelcore.PixelColor, boolean, kotlin.jvm.functions.Function0, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Toast-K2hdtbI(java.lang.String, int, com.purride.pixelui.PixelTextStyle, java.lang.Object);
-  public static com.purride.pixelui.Widget Toast-K2hdtbI$default(java.lang.String, int, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Toast-UOkFFdg(java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Toast-UOkFFdg$default(java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ToastWithControlStates(java.lang.String, int, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object);
   public static com.purride.pixelui.Widget ToastWithControlStates$default(java.lang.String, int, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Snackbar-7fJbCWk(java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle, java.lang.Object);
-  public static com.purride.pixelui.Widget Snackbar-7fJbCWk$default(java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Snackbar-BvdslAI(java.lang.String, com.purride.pixelui.Widget, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object);
+  public static com.purride.pixelui.Widget Snackbar-BvdslAI$default(java.lang.String, com.purride.pixelui.Widget, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SnackbarWithControlStates(java.lang.String, int, com.purride.pixelui.Widget, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object);
   public static com.purride.pixelui.Widget SnackbarWithControlStates$default(java.lang.String, int, com.purride.pixelui.Widget, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Tabs(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, java.lang.Object, boolean);
@@ -2117,16 +2115,16 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget StepperWithControlStates$default(int, kotlin.ranges.IntRange, kotlin.jvm.functions.Function1, int, int, java.lang.String, java.lang.String, boolean, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ShortcutHint(java.lang.String, java.lang.String, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, java.lang.Object);
   public static com.purride.pixelui.Widget ShortcutHint$default(java.lang.String, java.lang.String, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget ProgressBar-WmmbFQo(float, int, int, int, int, java.lang.Object);
-  public static com.purride.pixelui.Widget ProgressBar-WmmbFQo$default(float, int, int, int, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget ProgressBar-ML-9dvw(float, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
+  public static com.purride.pixelui.Widget ProgressBar-ML-9dvw$default(float, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ProgressBarWithControlStates(float, int, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
   public static com.purride.pixelui.Widget ProgressBarWithControlStates$default(float, int, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget PixelLoadingBar-nipCVRc(float, int, int, int, int, int, int, boolean, java.lang.Object);
-  public static com.purride.pixelui.Widget PixelLoadingBar-nipCVRc$default(float, int, int, int, int, int, int, boolean, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget PixelLoadingBar-Lr--HHw(float, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, boolean, java.lang.Object);
+  public static com.purride.pixelui.Widget PixelLoadingBar-Lr--HHw$default(float, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, boolean, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget PixelLoadingBarWithControlStates(float, int, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, boolean, java.lang.Object);
   public static com.purride.pixelui.Widget PixelLoadingBarWithControlStates$default(float, int, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, boolean, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget AnimatedPixelLoadingBar-SnMDlrA(com.purride.pixelui.animation.PixelTickerProvider, int, int, int, int, int, int, int, int, boolean, java.lang.Object);
-  public static com.purride.pixelui.Widget AnimatedPixelLoadingBar-SnMDlrA$default(com.purride.pixelui.animation.PixelTickerProvider, int, int, int, int, int, int, int, int, boolean, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget AnimatedPixelLoadingBar-BIEp6Qk(com.purride.pixelui.animation.PixelTickerProvider, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, int, int, boolean, java.lang.Object);
+  public static com.purride.pixelui.Widget AnimatedPixelLoadingBar-BIEp6Qk$default(com.purride.pixelui.animation.PixelTickerProvider, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, int, int, boolean, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget AnimatedPixelLoadingBarWithControlStates(com.purride.pixelui.animation.PixelTickerProvider, int, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, int, int, boolean, java.lang.Object);
   public static com.purride.pixelui.Widget AnimatedPixelLoadingBarWithControlStates$default(com.purride.pixelui.animation.PixelTickerProvider, int, java.lang.Integer, java.lang.Integer, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Integer, int, int, boolean, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ActivityIndicator-ShX4CGY(int, int, java.lang.Object);
@@ -2145,8 +2143,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget Badge$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget BadgeWithControlStates(com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, java.lang.Object);
   public static com.purride.pixelui.Widget BadgeWithControlStates$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Divider-eccRPRw(int, int, java.lang.Object);
-  public static com.purride.pixelui.Widget Divider-eccRPRw$default(int, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Divider-UXhF7lI(com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Object);
+  public static com.purride.pixelui.Widget Divider-UXhF7lI$default(com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget DividerWithControlStates(int, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Object);
   public static com.purride.pixelui.Widget DividerWithControlStates$default(int, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Gap(int, int, java.lang.Object);
@@ -5006,8 +5004,8 @@ public final class com.purride.pixelui.PixelSnackbarQueueController extends com.
   public final int getSize();
   public final com.purride.pixelui.PixelSnackbarQueueItem getCurrent();
   public final kotlin.time.Duration getCurrentTimeout-FghU774();
-  public final com.purride.pixelui.PixelSnackbarQueueItem enqueue-FUuiKLc(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, int, com.purride.pixelui.PixelTextStyle, long);
-  public static com.purride.pixelui.PixelSnackbarQueueItem enqueue-FUuiKLc$default(com.purride.pixelui.PixelSnackbarQueueController, java.lang.String, java.lang.String, kotlin.jvm.functions.Function0, int, com.purride.pixelui.PixelTextStyle, long, int, java.lang.Object);
+  public final com.purride.pixelui.PixelSnackbarQueueItem enqueue-L32S4Zs(java.lang.String, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, long);
+  public static com.purride.pixelui.PixelSnackbarQueueItem enqueue-L32S4Zs$default(com.purride.pixelui.PixelSnackbarQueueController, java.lang.String, java.lang.String, kotlin.jvm.functions.Function0, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, long, int, java.lang.Object);
   public final com.purride.pixelui.PixelSnackbarQueueItem enqueueWithControlStates(java.lang.String, int, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, long);
   public static com.purride.pixelui.PixelSnackbarQueueItem enqueueWithControlStates$default(com.purride.pixelui.PixelSnackbarQueueController, java.lang.String, int, java.lang.String, kotlin.jvm.functions.Function0, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, long, int, java.lang.Object);
   public final boolean dismissCurrent();
@@ -5021,23 +5019,23 @@ public final class com.purride.pixelui.PixelSnackbarQueueController$Companion {
   public com.purride.pixelui.PixelSnackbarQueueController$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelSnackbarQueueItem {
-  public com.purride.pixelui.PixelSnackbarQueueItem(int, java.lang.String, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelSnackbarQueueItem(int, java.lang.String, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final int getId();
   public final java.lang.String getMessage();
   public final java.lang.String getActionLabel();
-  public final int getFillColor-bODNPuc();
+  public final com.purride.pixelcore.PixelColor getFillColor-BDeX7ZQ();
   public final com.purride.pixelui.PixelTextStyle getTextStyle();
   public final int component1();
   public final java.lang.String component2();
   public final java.lang.String component3();
-  public final int component4-bODNPuc();
+  public final com.purride.pixelcore.PixelColor component4-BDeX7ZQ();
   public final com.purride.pixelui.PixelTextStyle component5();
-  public final com.purride.pixelui.PixelSnackbarQueueItem copy-j8g7060(int, java.lang.String, java.lang.String, int, com.purride.pixelui.PixelTextStyle);
-  public static com.purride.pixelui.PixelSnackbarQueueItem copy-j8g7060$default(com.purride.pixelui.PixelSnackbarQueueItem, int, java.lang.String, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final com.purride.pixelui.PixelSnackbarQueueItem copy-yDxWoxo(int, java.lang.String, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelSnackbarQueueItem copy-yDxWoxo$default(com.purride.pixelui.PixelSnackbarQueueItem, int, java.lang.String, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
-  public com.purride.pixelui.PixelSnackbarQueueItem(int, java.lang.String, java.lang.String, int, com.purride.pixelui.PixelTextStyle, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelSnackbarQueueItem(int, java.lang.String, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelSpacingTokens {
   public static final com.purride.pixelui.PixelSpacingTokens$Companion Companion;
@@ -5367,21 +5365,16 @@ public final class com.purride.pixelui.PixelTextStyle$Companion {
 }
 public final class com.purride.pixelui.PixelTheme extends com.purride.pixelui.InheritedWidget {
   public static final com.purride.pixelui.PixelTheme$Companion Companion;
-  public final com.purride.pixelui.PixelThemeData getData();
+  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeTokens, com.purride.pixelui.Widget, java.lang.Object);
+  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeTokens, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelui.PixelThemeTokens getTokens();
   public com.purride.pixelui.Widget getChild();
   public java.lang.Object getKey();
-  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeData, com.purride.pixelui.Widget, java.lang.Object);
-  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeData, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
-  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeTokens, com.purride.pixelui.Widget, java.lang.Object);
-  public com.purride.pixelui.PixelTheme(com.purride.pixelui.PixelThemeTokens, com.purride.pixelui.Widget, java.lang.Object, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public boolean updateShouldNotify(com.purride.pixelui.InheritedWidget);
 }
 public final class com.purride.pixelui.PixelTheme$Companion {
-  public final com.purride.pixelui.PixelThemeData maybeOf(com.purride.pixelui.BuildContext);
-  public final com.purride.pixelui.PixelThemeData of(com.purride.pixelui.BuildContext);
-  public final com.purride.pixelui.PixelThemeTokens maybeTokensOf(com.purride.pixelui.BuildContext);
-  public final com.purride.pixelui.PixelThemeTokens tokensOf(com.purride.pixelui.BuildContext);
+  public final com.purride.pixelui.PixelThemeTokens maybeOf(com.purride.pixelui.BuildContext);
+  public final com.purride.pixelui.PixelThemeTokens of(com.purride.pixelui.BuildContext);
   public com.purride.pixelui.PixelTheme$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelThemeBrightness extends java.lang.Enum<com.purride.pixelui.PixelThemeBrightness> {
@@ -5391,77 +5384,12 @@ public final class com.purride.pixelui.PixelThemeBrightness extends java.lang.En
   public static com.purride.pixelui.PixelThemeBrightness valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelThemeBrightness> getEntries();
 }
-public final class com.purride.pixelui.PixelThemeColors {
-  public static final com.purride.pixelui.PixelThemeColors$Companion Companion;
-  public com.purride.pixelui.PixelThemeColors(int, int, int, int, int, int, int, int, int, int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
-  public final int getBackground-bODNPuc();
-  public final int getSurface-bODNPuc();
-  public final int getText-bODNPuc();
-  public final int getMutedText-bODNPuc();
-  public final int getBorder-bODNPuc();
-  public final int getAccent-bODNPuc();
-  public final int getDanger-bODNPuc();
-  public final int getWarning-bODNPuc();
-  public final int getDisabled-bODNPuc();
-  public final int getInactive-bODNPuc();
-  public final int getTrack-bODNPuc();
-  public final int getFocus-bODNPuc();
-  public final int getSelection-bODNPuc();
-  public final int component1-bODNPuc();
-  public final int component2-bODNPuc();
-  public final int component3-bODNPuc();
-  public final int component4-bODNPuc();
-  public final int component5-bODNPuc();
-  public final int component6-bODNPuc();
-  public final int component7-bODNPuc();
-  public final int component8-bODNPuc();
-  public final int component9-bODNPuc();
-  public final int component10-bODNPuc();
-  public final int component11-bODNPuc();
-  public final int component12-bODNPuc();
-  public final int component13-bODNPuc();
-  public final com.purride.pixelui.PixelThemeColors copy-j9-aSbk(int, int, int, int, int, int, int, int, int, int, int, int, int);
-  public static com.purride.pixelui.PixelThemeColors copy-j9-aSbk$default(com.purride.pixelui.PixelThemeColors, int, int, int, int, int, int, int, int, int, int, int, int, int, int, java.lang.Object);
-  public java.lang.String toString();
-  public int hashCode();
-  public boolean equals(java.lang.Object);
-  public com.purride.pixelui.PixelThemeColors(int, int, int, int, int, int, int, int, int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
-}
-public final class com.purride.pixelui.PixelThemeColors$Companion {
-  public final com.purride.pixelui.PixelThemeColors getDefault();
-  public com.purride.pixelui.PixelThemeColors$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
-}
 public final class com.purride.pixelui.PixelThemeContrast extends java.lang.Enum<com.purride.pixelui.PixelThemeContrast> {
   public static final com.purride.pixelui.PixelThemeContrast Standard;
   public static final com.purride.pixelui.PixelThemeContrast High;
   public static com.purride.pixelui.PixelThemeContrast[] values();
   public static com.purride.pixelui.PixelThemeContrast valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelThemeContrast> getEntries();
-}
-public final class com.purride.pixelui.PixelThemeData {
-  public static final com.purride.pixelui.PixelThemeData$Companion Companion;
-  public com.purride.pixelui.PixelThemeData(com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle);
-  public com.purride.pixelui.PixelThemeData(com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
-  public final com.purride.pixelui.PixelThemeColors getColors();
-  public final com.purride.pixelui.PixelTextStyle getTextStyle();
-  public final com.purride.pixelui.PixelButtonStyle getButtonStyle();
-  public final com.purride.pixelui.PixelTextButtonStyle getTextButtonStyle();
-  public final com.purride.pixelui.PixelTextFieldStyle getTextFieldStyle();
-  public final com.purride.pixelui.PixelThemeColors component1();
-  public final com.purride.pixelui.PixelTextStyle component2();
-  public final com.purride.pixelui.PixelButtonStyle component3();
-  public final com.purride.pixelui.PixelTextButtonStyle component4();
-  public final com.purride.pixelui.PixelTextFieldStyle component5();
-  public final com.purride.pixelui.PixelThemeData copy(com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle);
-  public static com.purride.pixelui.PixelThemeData copy$default(com.purride.pixelui.PixelThemeData, com.purride.pixelui.PixelThemeColors, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelButtonStyle, com.purride.pixelui.PixelTextButtonStyle, com.purride.pixelui.PixelTextFieldStyle, int, java.lang.Object);
-  public java.lang.String toString();
-  public int hashCode();
-  public boolean equals(java.lang.Object);
-  public com.purride.pixelui.PixelThemeData();
-}
-public final class com.purride.pixelui.PixelThemeData$Companion {
-  public final com.purride.pixelui.PixelThemeData getDefault();
-  public com.purride.pixelui.PixelThemeData$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelThemeTokens {
   public static final com.purride.pixelui.PixelThemeTokens$Companion Companion;
@@ -5479,7 +5407,6 @@ public final class com.purride.pixelui.PixelThemeTokens {
   public final com.purride.pixelui.PixelMotionThemeData getMotion();
   public final com.purride.pixelui.PixelComponentTokens getComponents();
   public final com.purride.pixelui.PixelLabelTokens getLabels();
-  public final com.purride.pixelui.PixelThemeData toLegacyThemeData();
   public final com.purride.pixelui.PixelThemeBrightness component1();
   public final com.purride.pixelui.PixelThemeContrast component2();
   public final com.purride.pixelui.PixelColorScheme component3();
@@ -5509,7 +5436,6 @@ public final class com.purride.pixelui.PixelThemeTokens$Companion {
   public static com.purride.pixelui.PixelThemeTokens forCapabilities$default(com.purride.pixelui.PixelThemeTokens$Companion, com.purride.pixelui.HostCapabilitiesData, com.purride.pixelui.PixelThemeBrightness, int, java.lang.Object);
   public final com.purride.pixelui.PixelThemeTokens forHost(com.purride.pixelui.BuildContext, com.purride.pixelui.PixelThemeBrightness);
   public static com.purride.pixelui.PixelThemeTokens forHost$default(com.purride.pixelui.PixelThemeTokens$Companion, com.purride.pixelui.BuildContext, com.purride.pixelui.PixelThemeBrightness, int, java.lang.Object);
-  public final com.purride.pixelui.PixelThemeTokens fromLegacy(com.purride.pixelui.PixelThemeData);
   public com.purride.pixelui.PixelThemeTokens$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelToastQueueController extends com.purride.pixelui.ChangeNotifier {
@@ -5518,10 +5444,10 @@ public final class com.purride.pixelui.PixelToastQueueController extends com.pur
   public final int getSize();
   public final com.purride.pixelui.PixelToastQueueItem getCurrent();
   public final kotlin.time.Duration getCurrentTimeout-FghU774();
-  public final com.purride.pixelui.PixelToastQueueItem enqueue-ShX4CGY(java.lang.String, int, com.purride.pixelui.PixelTextStyle);
-  public static com.purride.pixelui.PixelToastQueueItem enqueue-ShX4CGY$default(com.purride.pixelui.PixelToastQueueController, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
-  public final com.purride.pixelui.PixelToastQueueItem enqueue-uDTySfA(java.lang.String, long, int, com.purride.pixelui.PixelTextStyle);
-  public static com.purride.pixelui.PixelToastQueueItem enqueue-uDTySfA$default(com.purride.pixelui.PixelToastQueueController, java.lang.String, long, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final com.purride.pixelui.PixelToastQueueItem enqueue-HYWHPck(java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelToastQueueItem enqueue-HYWHPck$default(com.purride.pixelui.PixelToastQueueController, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final com.purride.pixelui.PixelToastQueueItem enqueue-2-6YVrg(java.lang.String, long, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelToastQueueItem enqueue-2-6YVrg$default(com.purride.pixelui.PixelToastQueueController, java.lang.String, long, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
   public final com.purride.pixelui.PixelToastQueueItem enqueueWithControlStates(java.lang.String, int, long, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle);
   public static com.purride.pixelui.PixelToastQueueItem enqueueWithControlStates$default(com.purride.pixelui.PixelToastQueueController, java.lang.String, int, long, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
   public final boolean dismissCurrent();
@@ -5533,21 +5459,21 @@ public final class com.purride.pixelui.PixelToastQueueController$Companion {
   public com.purride.pixelui.PixelToastQueueController$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelToastQueueItem {
-  public com.purride.pixelui.PixelToastQueueItem(int, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelToastQueueItem(int, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final int getId();
   public final java.lang.String getMessage();
-  public final int getFillColor-bODNPuc();
+  public final com.purride.pixelcore.PixelColor getFillColor-BDeX7ZQ();
   public final com.purride.pixelui.PixelTextStyle getTextStyle();
   public final int component1();
   public final java.lang.String component2();
-  public final int component3-bODNPuc();
+  public final com.purride.pixelcore.PixelColor component3-BDeX7ZQ();
   public final com.purride.pixelui.PixelTextStyle component4();
-  public final com.purride.pixelui.PixelToastQueueItem copy-YtVJrYg(int, java.lang.String, int, com.purride.pixelui.PixelTextStyle);
-  public static com.purride.pixelui.PixelToastQueueItem copy-YtVJrYg$default(com.purride.pixelui.PixelToastQueueItem, int, java.lang.String, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
+  public final com.purride.pixelui.PixelToastQueueItem copy-0YQJqKs(int, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle);
+  public static com.purride.pixelui.PixelToastQueueItem copy-0YQJqKs$default(com.purride.pixelui.PixelToastQueueItem, int, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
-  public com.purride.pixelui.PixelToastQueueItem(int, java.lang.String, int, com.purride.pixelui.PixelTextStyle, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelToastQueueItem(int, java.lang.String, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelTypedDeepLinkKt {
   public static final com.purride.pixelui.PixelTypedDeepLinkResult handleTypedDeepLink(com.purride.pixelui.PixelNavigatorState, java.lang.String, com.purride.pixelui.PixelTypedDeepLinkResolver, com.purride.pixelui.PixelTypedDeepLinkNavigationMode);
@@ -5674,7 +5600,6 @@ public final class com.purride.pixelui.PixelTypographyToken {
 }
 public final class com.purride.pixelui.PixelTypographyToken$Companion {
   public final com.purride.pixelui.PixelTypographyToken getDefault();
-  public final com.purride.pixelui.PixelTypographyToken fromLegacy(com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelColorRole);
   public com.purride.pixelui.PixelTypographyToken$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelTypographyTokens {
@@ -5844,12 +5769,12 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget GridView$default(java.util.List, int, int, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, int, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget GridViewBuilder(int, kotlin.jvm.functions.Function1<? super java.lang.Integer, ? extends com.purride.pixelui.Widget>, int, int, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, int, int, java.lang.Object);
   public static com.purride.pixelui.Widget GridViewBuilder$default(int, kotlin.jvm.functions.Function1, int, int, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, int, int, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Scrollbar-AD1dkFU(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, int, com.purride.pixelcore.PixelColor, int, java.lang.Object);
-  public static com.purride.pixelui.Widget Scrollbar-AD1dkFU$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, int, com.purride.pixelcore.PixelColor, int, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Scrollbar-9t4yM1s(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Object);
+  public static com.purride.pixelui.Widget Scrollbar-9t4yM1s$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ScrollbarWithControlStates(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, int, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, boolean, java.lang.Object, java.lang.String);
   public static com.purride.pixelui.Widget ScrollbarWithControlStates$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, int, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Integer, boolean, java.lang.Object, java.lang.String, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget RefreshIndicator-swMSA7U(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0<kotlin.Unit>, int, boolean, int, int, int, java.lang.Object, java.lang.String);
-  public static com.purride.pixelui.Widget RefreshIndicator-swMSA7U$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, int, boolean, int, int, int, java.lang.Object, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget RefreshIndicator-Ps4KX6c(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String);
+  public static com.purride.pixelui.Widget RefreshIndicator-Ps4KX6c$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, int, java.lang.Object);
   public static final com.purride.pixelui.Widget RefreshIndicatorWithControlStates(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, int, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String);
   public static com.purride.pixelui.Widget RefreshIndicatorWithControlStates$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, int, kotlin.jvm.functions.Function0, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SingleChildScrollView(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, java.lang.Object);
@@ -5862,8 +5787,8 @@ public final class com.purride.pixelui.PixelWidgetsKt {
   public static com.purride.pixelui.Widget TextFieldWithControlStates$default(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, int, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.TextAlign, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public static final com.purride.pixelui.Widget TextFieldWithControlStatesAndDecoration(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, int, com.purride.pixelui.FormFieldDecoration, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.TextAlign, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object, java.lang.String, java.lang.String, java.lang.String);
   public static com.purride.pixelui.Widget TextFieldWithControlStatesAndDecoration$default(com.purride.pixelui.state.PixelTextFieldState, com.purride.pixelui.state.PixelTextFieldController, int, com.purride.pixelui.FormFieldDecoration, java.lang.String, com.purride.pixelui.PixelTextFieldStyle, boolean, boolean, boolean, int, int, com.purride.pixelui.PixelInputType, com.purride.pixelui.TextAlign, com.purride.pixelui.PixelTextInputAction, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.FocusNode, java.lang.Object, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Slider-QFa2GOQ(float, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, int, int, java.lang.Object, java.lang.String, java.lang.String, int, boolean);
-  public static com.purride.pixelui.Widget Slider-QFa2GOQ$default(float, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, int, int, java.lang.Object, java.lang.String, java.lang.String, int, boolean, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget Slider-EiUDPwY(float, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, java.lang.String, int, boolean);
+  public static com.purride.pixelui.Widget Slider-EiUDPwY$default(float, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, java.lang.String, int, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SliderWithControlStates(float, int, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, java.lang.String, int, boolean);
   public static com.purride.pixelui.Widget SliderWithControlStates$default(float, int, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, java.lang.String, int, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget OutlinedButton-iU0IJ84(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.PixelButtonStyle, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object);
@@ -6043,8 +5968,8 @@ public abstract class com.purride.pixelui.StatelessWidget implements com.purride
   public com.purride.pixelui.StatelessWidget();
 }
 public final class com.purride.pixelui.SwipeRefreshScaffoldKt {
-  public static final com.purride.pixelui.Widget SwipeRefreshScaffold-1vmSQpk(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, boolean, int, int, int, java.lang.Object, java.lang.String);
-  public static com.purride.pixelui.Widget SwipeRefreshScaffold-1vmSQpk$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, boolean, int, int, int, java.lang.Object, java.lang.String, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget SwipeRefreshScaffold-IcPqSDY(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String);
+  public static com.purride.pixelui.Widget SwipeRefreshScaffold-IcPqSDY$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, kotlin.jvm.functions.Function0, com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SwipeRefreshScaffoldWithControlStates(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, int, kotlin.jvm.functions.Function0<kotlin.Unit>, com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String);
   public static com.purride.pixelui.Widget SwipeRefreshScaffoldWithControlStates$default(com.purride.pixelui.Widget, com.purride.pixelui.state.PixelRefreshIndicatorState, com.purride.pixelui.state.PixelRefreshIndicatorController, int, kotlin.jvm.functions.Function0, com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.lang.Integer, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, int, java.lang.Object);
 }

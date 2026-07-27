@@ -14,6 +14,17 @@ import com.purride.pixelui.TextAlign
 import com.purride.pixelui.internal.toPixelTextAlign
 
 /**
+ * 从继承的主题 token 图解析默认正文文本样式。
+ *
+ * Resolves the inherited body typography role into a concrete [PixelTextStyle].
+ */
+private fun resolveBodyTextStyle(context: BuildContext): PixelTextStyle {
+    /** 最近的完整 token 图，缺少提供者时回落到默认主题。 */
+    val tokens = PixelTheme.of(context)
+    return tokens.typography.body.resolve(tokens.colors)
+}
+
+/**
  * Flutter 风格 `Text` 的直接 render object widget。
  */
 internal data class TextWidget(
@@ -65,7 +76,7 @@ internal data class TextWidget(
         /** Complete Host scale read through the inherited dependency boundary. */
         val textScaleFactor = HostCapabilities.of(context).textScaleFactor
         /** Theme or explicit style before environment scaling. */
-        val themedStyle = if (style == PixelTextStyle.Default) PixelTheme.of(context).textStyle else style
+        val themedStyle = if (style == PixelTextStyle.Default) resolveBodyTextStyle(context) else style
         /** Explicit Text color applied before immutable metric/rasterizer scaling. */
         val coloredStyle = if (color != null) themedStyle.copy(color = color) else themedStyle
         return coloredStyle.withHostTextScale(textScaleFactor)
@@ -117,7 +128,7 @@ internal data class RichTextWidget(
         /** Complete Host scale read through the inherited dependency boundary. */
         val textScaleFactor = HostCapabilities.of(context).textScaleFactor
         /** Theme style substituted only for spans using the public default sentinel. */
-        val themeStyle = PixelTheme.of(context).textStyle
+        val themeStyle = resolveBodyTextStyle(context)
         return spans.map { span ->
             /** Concrete span style before Host scaling. */
             val resolvedStyle = if (span.style == PixelTextStyle.Default) themeStyle else span.style

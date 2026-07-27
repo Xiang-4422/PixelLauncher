@@ -388,7 +388,7 @@ class StandardComponentKeyboardInputTest {
     /** Caller shortcuts remain higher priority than a standard component's activation fallback. */
     @Test
     fun explicitFocusHandlerRunsBeforeButtonDefaultAction() {
-        /** Caller-owned node retained across the explicit compatibility wrapper. */
+        /** 调用方自持的焦点节点，跨显式 Focus 包装保持不变。 */
         val node = FocusNode(debugLabel = "custom-button")
         /** Number of events consumed by the caller shortcut. */
         var shortcutCount = 0
@@ -489,7 +489,7 @@ class StandardComponentKeyboardInputTest {
     /** Multiple TextFields below one ancestor Focus retain distinct logical and IME focus state. */
     @Test
     fun ancestorFocusKeepsTextFieldsIndependent() {
-        /** Ancestor compatibility node available to at most one automatic field. */
+        /** 祖先 Focus 节点，最多只会被一个自动聚焦字段接管。 */
         val ancestorNode = FocusNode(debugLabel = "form-shortcuts")
         /** Controller and state owned by the first editable field. */
         val firstController = PixelTextFieldController()

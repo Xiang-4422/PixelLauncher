@@ -13,21 +13,21 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** API 37 real-Host acceptance for scope-less legacy facade pixel compatibility. */
+/** API 37 真机 Host 验收：简洁入口与状态化入口等价，以及 token 解析。 API 37 real-Host acceptance for concise/state-aware component equivalence and token resolution. */
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 24)
-class PixelHostLegacyFacadeInstrumentedTest {
+class PixelHostComponentTokenInstrumentedTest {
     /**
-     * The scope-less ProgressBar must match its reviewed historical fixture exactly, while mounting
-     * the same old facade below an explicit PixelTheme must consume the new token colors and size.
+     * 简洁 ProgressBar 与状态化实现必须在真实 Host 上渲染完全相同的物理像素；
+     * 同一简洁入口挂载显式 PixelTheme 后必须消费新的 token 颜色与几何。
      */
     @Test
-    fun legacyProgressFacadeMatchesFixtureAndExplicitThemeChangesRealHostPixels() {
-        /** Physical Android frame produced by the public scope-less compatibility facade. */
-        lateinit var legacyFacadeFrame: HostPixelFrame
-        /** Physical Android frame produced by the explicit historical primitive fixture. */
-        lateinit var legacyFixtureFrame: HostPixelFrame
-        /** Physical Android frame produced by the old facade below an explicit theme provider. */
+    fun conciseProgressFacadeMatchesStateAwareAndExplicitThemeChangesRealHostPixels() {
+        /** 简洁公开入口产生的真实 Android 帧。 Physical Android frame produced by the concise public facade. */
+        lateinit var conciseFrame: HostPixelFrame
+        /** 状态化重载在相同输入下产生的真实 Android 帧。 Physical Android frame produced by the state-aware overload with identical inputs. */
+        lateinit var stateAwareFrame: HostPixelFrame
+        /** 简洁入口在显式主题提供者下产生的真实 Android 帧。 Physical Android frame produced by the concise facade below an explicit theme provider. */
         lateinit var explicitlyThemedFrame: HostPixelFrame
 
         ActivityScenario.launch(PixelHostLifecycleTestActivity::class.java).use { scenario ->
@@ -39,34 +39,35 @@ class PixelHostLegacyFacadeInstrumentedTest {
                 host.bezelColor = PixelColor.Black
                 host.offPixelColor = OFF_PIXEL_COLOR
 
-                legacyFacadeFrame = captureFrame(host) {
-                    ProgressBar(progress = LEGACY_PROGRESS)
+                conciseFrame = captureFrame(host) {
+                    ProgressBar(progress = SAMPLED_PROGRESS)
                 }
-                legacyFixtureFrame = captureFrame(host, ::reviewedLegacyProgressFixture)
+                stateAwareFrame = captureFrame(host) {
+                    ProgressBar(progress = SAMPLED_PROGRESS, states = PixelControlStateSet.Normal)
+                }
                 explicitlyThemedFrame = captureFrame(host) {
                     PixelTheme(
                         tokens = EXPLICIT_PROGRESS_THEME,
-                        child = ProgressBar(progress = LEGACY_PROGRESS),
+                        child = ProgressBar(progress = SAMPLED_PROGRESS),
                     )
                 }
             }
         }
 
         assertArrayEquals(
-            "Scope-less old facade must remain pixel-identical to the reviewed legacy fixture",
-            legacyFixtureFrame.pixels,
-            legacyFacadeFrame.pixels,
+            "Concise facade must remain pixel-identical to the state-aware implementation",
+            stateAwareFrame.pixels,
+            conciseFrame.pixels,
         )
-        assertEquals(LEGACY_ACTIVE_COLOR.argb, legacyFacadeFrame.logicalArgb(0, 0))
-        assertEquals(LEGACY_ACTIVE_COLOR.argb, legacyFacadeFrame.logicalArgb(23, 4))
-        assertEquals(PixelColor.White.argb, legacyFacadeFrame.logicalArgb(24, 0))
-        assertEquals(LEGACY_TRACK_COLOR.argb, legacyFacadeFrame.logicalArgb(25, 2))
-        assertEquals(PixelColor.White.argb, legacyFacadeFrame.logicalArgb(47, 4))
-        assertEquals(OFF_PIXEL_COLOR.argb, legacyFacadeFrame.logicalArgb(48, 2))
+        assertEquals(DEFAULT_ACTIVE_COLOR.argb, conciseFrame.logicalArgb(0, 0))
+        assertEquals(DEFAULT_ACTIVE_COLOR.argb, conciseFrame.logicalArgb(23, 6))
+        assertEquals(DEFAULT_TRACK_COLOR.argb, conciseFrame.logicalArgb(24, 3))
+        assertEquals(DEFAULT_TRACK_COLOR.argb, conciseFrame.logicalArgb(47, 6))
+        assertEquals(OFF_PIXEL_COLOR.argb, conciseFrame.logicalArgb(48, 3))
 
         assertFalse(
-            "An explicit PixelTheme must opt the old facade out of scope-less legacy rendering",
-            legacyFacadeFrame.pixels.contentEquals(explicitlyThemedFrame.pixels),
+            "An explicit PixelTheme must change the concise facade's resolved token output",
+            conciseFrame.pixels.contentEquals(explicitlyThemedFrame.pixels),
         )
         assertEquals(THEMED_ACTIVE_COLOR.argb, explicitlyThemedFrame.logicalArgb(0, 0))
         assertEquals(THEMED_ACTIVE_COLOR.argb, explicitlyThemedFrame.logicalArgb(30, 10))
@@ -75,32 +76,13 @@ class PixelHostLegacyFacadeInstrumentedTest {
         assertEquals(OFF_PIXEL_COLOR.argb, explicitlyThemedFrame.logicalArgb(63, 5))
         assertNotEquals(
             "The explicit provider must change the corresponding active pixel",
-            legacyFacadeFrame.logicalArgb(0, 0),
+            conciseFrame.logicalArgb(0, 0),
             explicitlyThemedFrame.logicalArgb(0, 0),
         )
         assertNotEquals(
             "The explicit provider must expand the token-controlled progress geometry",
-            legacyFacadeFrame.logicalArgb(48, 2),
-            explicitlyThemedFrame.logicalArgb(48, 2),
-        )
-    }
-
-    /** Builds the reviewed pre-theme ProgressBar stack without calling either public facade. */
-    private fun reviewedLegacyProgressFixture(): Widget {
-        return Stack(
-            children = listOf(
-                Container(
-                    width = LEGACY_WIDTH,
-                    height = LEGACY_HEIGHT,
-                    fillColor = LEGACY_TRACK_COLOR,
-                    borderColor = PixelColor.White,
-                ),
-                Container(
-                    width = LEGACY_FILLED_WIDTH,
-                    height = LEGACY_HEIGHT,
-                    fillColor = LEGACY_ACTIVE_COLOR,
-                ),
-            ),
+            conciseFrame.logicalArgb(48, 3),
+            explicitlyThemedFrame.logicalArgb(48, 3),
         )
     }
 
@@ -164,31 +146,22 @@ class PixelHostLegacyFacadeInstrumentedTest {
         }
     }
 
-    /** Reviewed legacy colors, geometry, and explicit-theme sentinels. */
+    /** 默认 token 颜色、几何与显式主题哨兵值。 Default-token colors, geometry, and explicit-theme sentinels. */
     private companion object {
-        /** Historical determinate progress fraction used by the public old facade. */
-        const val LEGACY_PROGRESS: Float = 0.5f
+        /** 两个公开入口共同采样的确定性进度比例。 Determinate progress fraction sampled by both public entry points. */
+        const val SAMPLED_PROGRESS: Float = 0.5f
 
-        /** Historical default ProgressBar width in logical pixels. */
-        const val LEGACY_WIDTH: Int = 48
-
-        /** Historical default ProgressBar height in logical pixels. */
-        const val LEGACY_HEIGHT: Int = 5
-
-        /** Historical integer filled width for [LEGACY_PROGRESS]. */
-        const val LEGACY_FILLED_WIDTH: Int = 24
-
-        /** Explicit-theme minimum width proving geometry leaves legacy compatibility mode. */
+        /** 显式主题最小宽度，证明组件几何 token 已被消费。 Explicit-theme minimum width proving component geometry tokens are consumed. */
         const val THEMED_MINIMUM_WIDTH: Int = 63
 
-        /** Explicit-theme minimum height proving geometry leaves legacy compatibility mode. */
+        /** 显式主题最小高度，证明组件几何 token 已被消费。 Explicit-theme minimum height proving component geometry tokens are consumed. */
         const val THEMED_MINIMUM_HEIGHT: Int = 11
 
-        /** Historical default active progress color. */
-        val LEGACY_ACTIVE_COLOR: PixelColor = PixelColor.fromRgb(80, 180, 110)
+        /** 默认深色主题由 Primary 角色解析出的进度前景色。 Default dark-theme active progress color resolved from the Primary role. */
+        val DEFAULT_ACTIVE_COLOR: PixelColor = PixelColorScheme.Dark.primary
 
-        /** Historical default progress track color. */
-        val LEGACY_TRACK_COLOR: PixelColor = PixelColor.fromRgb(60, 60, 60)
+        /** 默认深色主题由 Track 角色解析出的进度轨道色。 Default dark-theme progress track color resolved from the Track role. */
+        val DEFAULT_TRACK_COLOR: PixelColor = PixelColorScheme.Dark.track
 
         /** Distinct Host off-pixel sentinel used to prove component extents. */
         val OFF_PIXEL_COLOR: PixelColor = PixelColor.fromRgb(3, 5, 7)
@@ -199,7 +172,7 @@ class PixelHostLegacyFacadeInstrumentedTest {
         /** Distinct explicit-theme track color consumed through the Track role. */
         val THEMED_TRACK_COLOR: PixelColor = PixelColor.fromRgb(227, 41, 109)
 
-        /** Consumer theme whose progress colors and dimensions cannot match legacy defaults. */
+        /** 消费者主题，其进度颜色与尺寸不可能与默认 token 相同。 Consumer theme whose progress colors and dimensions cannot match default tokens. */
         val EXPLICIT_PROGRESS_THEME: PixelThemeTokens = PixelThemeTokens.Dark.copy(
             colors = PixelThemeTokens.Dark.colors.copy(
                 primary = THEMED_ACTIVE_COLOR,

@@ -504,18 +504,6 @@ public data class PixelMenuItem(
     val key: Any? = null,
 )
 
-/** Legacy Menu fill used only to recognize an omitted theme override. */
-private val LEGACY_MENU_FILL_COLOR: PixelColor = PixelColor.Black
-
-/** Legacy Menu outline used only to recognize an omitted theme override. */
-private val LEGACY_MENU_BORDER_COLOR: PixelColor = PixelColor.White
-
-/** Legacy Menu collection label retained when no theme provider is mounted. */
-private const val LEGACY_MENU_SEMANTIC_LABEL: String = "Menu"
-
-/** Legacy shortcut foreground retained when no theme provider is mounted. */
-private val LEGACY_MENU_SHORTCUT_COLOR: PixelColor = PixelColor.fromRgb(160, 160, 160)
-
 /** Selects the component-token family used by a standalone Menu or Dropdown popup. */
 private enum class PixelMenuTokenFamily {
     /** Standalone Menu surface and row tokens. */
@@ -535,10 +523,10 @@ private enum class PixelMenuTokenFamily {
 public fun Menu(
     items: List<PixelMenuItem>,
     enabled: Boolean = true,
-    fillColor: PixelColor = PixelColor.Black,
-    borderColor: PixelColor = PixelColor.White,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
     key: Any? = null,
-    semanticLabel: String = "Menu",
+    semanticLabel: String? = null,
     onDismissRequest: (() -> Unit)? = null,
     modal: Boolean = true,
 ): Widget {
@@ -546,13 +534,12 @@ public fun Menu(
         items = items,
         states = PixelControlStateSet.Normal,
         enabled = enabled,
-        fillColor = fillColor.takeUnless { color -> color == LEGACY_MENU_FILL_COLOR },
-        borderColor = borderColor.takeUnless { color -> color == LEGACY_MENU_BORDER_COLOR },
+        fillColor = fillColor,
+        borderColor = borderColor,
         key = key,
-        semanticLabel = semanticLabel.takeUnless { label -> label == LEGACY_MENU_SEMANTIC_LABEL },
+        semanticLabel = semanticLabel,
         onDismissRequest = onDismissRequest,
         modal = modal,
-        useLegacyFallbacks = true,
         tokenFamily = PixelMenuTokenFamily.Menu,
     )
 }
@@ -598,7 +585,6 @@ public fun Menu(
         semanticLabel = semanticLabel,
         onDismissRequest = onDismissRequest,
         modal = modal,
-        useLegacyFallbacks = false,
         tokenFamily = PixelMenuTokenFamily.Menu,
     )
 }
@@ -614,7 +600,6 @@ private fun buildMenu(
     semanticLabel: String?,
     onDismissRequest: (() -> Unit)?,
     modal: Boolean,
-    useLegacyFallbacks: Boolean,
     tokenFamily: PixelMenuTokenFamily,
 ): Widget {
     return PixelMenuWidget(
@@ -626,7 +611,6 @@ private fun buildMenu(
         semanticLabel = semanticLabel,
         onDismissRequest = onDismissRequest,
         modal = modal,
-        useLegacyFallbacks = useLegacyFallbacks,
         tokenFamily = tokenFamily,
         key = key,
     )
@@ -650,8 +634,6 @@ private data class PixelMenuWidget(
     val onDismissRequest: (() -> Unit)?,
     /** Whether this Menu should create a modal boundary. */
     val modal: Boolean,
-    /** Whether no-theme rendering must retain pre-token resting defaults. */
-    val useLegacyFallbacks: Boolean,
     /** Component-token family applied to both the collection surface and every row. */
     val tokenFamily: PixelMenuTokenFamily,
     /** Stable retained collection identity. */
@@ -659,8 +641,8 @@ private data class PixelMenuWidget(
 ) : StatelessWidget(key = key) {
     /** Resolves collection tokens, rows, semantics, and optional modal ownership. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited graph, retained separately to detect a scope-less legacy call. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
+        /** 继承的显式 token 图；保持可空以便标签兜底独立解析。 Explicit inherited graph, kept nullable so label fallbacks stay independent. */
+        val inheritedTheme = PixelTheme.maybeOf(context)
         /** Complete graph used for every token lookup in this frame. */
         val theme = inheritedTheme ?: PixelThemeTokens.Default
         /** Explicit localization bundle used only for text and semantic status resolution. */
@@ -673,25 +655,17 @@ private data class PixelMenuWidget(
         /** Persistent collection states after caller availability is normalized. */
         var effectiveStates = states
         if (!enabled) effectiveStates += PixelControlState.Disabled
-        /** True only for an old resting call outside an explicit PixelTheme provider. */
-        val legacyResting = useLegacyFallbacks && inheritedTheme == null && effectiveStates.isNormal
-        /** Surface fill following explicit parameter, legacy fallback, then component role order. */
-        val resolvedFillColor = fillColor ?: if (legacyResting) {
-            LEGACY_MENU_FILL_COLOR
-        } else {
-            tokens.resolveContainerColor(effectiveStates, theme.colors)
-        }
-        /** Surface outline following explicit parameter, legacy fallback, then component role order. */
-        val resolvedBorderColor = borderColor ?: if (legacyResting) {
-            LEGACY_MENU_BORDER_COLOR
-        } else {
-            tokens.resolveBorderColor(effectiveStates, theme.colors)
-        }
+        /** 表面填充色按显式参数、组件角色顺序解析。 Surface fill following explicit parameter, then component role order. */
+        val resolvedFillColor = fillColor
+            ?: tokens.resolveContainerColor(effectiveStates, theme.colors)
+        /** 表面边框色按显式参数、组件角色顺序解析。 Surface outline following explicit parameter, then component role order. */
+        val resolvedBorderColor = borderColor
+            ?: tokens.resolveBorderColor(effectiveStates, theme.colors)
         /** Collection name preserving nullable explicit text, provider, theme, then English order. */
         val resolvedSemanticLabel = semanticLabel
             ?: localizations?.labels?.menu
             ?: inheritedTheme?.labels?.menu
-            ?: LEGACY_MENU_SEMANTIC_LABEL
+            ?: PixelLabelTokens.Default.menu
         /** Loading status resolved independently from every visual compatibility branch. */
         val resolvedLoadingLabel = localizations?.labels?.loading
             ?: inheritedTheme?.labels?.loading
@@ -712,7 +686,6 @@ private data class PixelMenuWidget(
                 item = item,
                 rowIndex = index,
                 states = rowStates,
-                useLegacyFallbacks = useLegacyFallbacks,
                 tokenFamily = tokenFamily,
                 key = itemKey,
             )
@@ -723,27 +696,26 @@ private data class PixelMenuWidget(
             spacing = 0,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
         )
-        /** Scope-less legacy calls retain natural width; themed/new calls use overlay size tokens. */
-        val minimumWidth = if (useLegacyFallbacks && inheritedTheme == null) {
-            0
-        } else {
-            maxOf(tokens.resolveMinimumWidth(theme.sizes), theme.sizes.overlayMinimumWidth)
-        }
+        /** 两个公开重载共用的弹层最小宽度。 Overlay minimum width shared by both public overloads. */
+        val minimumWidth = maxOf(
+            tokens.resolveMinimumWidth(theme.sizes),
+            theme.sizes.overlayMinimumWidth,
+        )
         /** Painted Menu surface shared by visual rows and collection semantics. */
         val menuSurface = ConstrainedBox(
             constraints = PixelBoxConstraints(
                 minWidth = minimumWidth,
-                minHeight = if (legacyResting) 0 else tokens.resolveMinimumHeight(theme.sizes),
+                minHeight = tokens.resolveMinimumHeight(theme.sizes),
             ),
             child = PixelSurface(
-                padding = if (legacyResting) EdgeInsets.all(1) else tokens.resolvePadding(theme.spacing),
+                padding = tokens.resolvePadding(theme.spacing),
                 decoration = PixelSurfaceDecoration(
                     fillColor = resolvedFillColor,
                     borderColor = resolvedBorderColor,
-                    borderWidth = if (legacyResting) 1 else tokens.resolveBorderWidth(theme.borders),
-                    cornerRadius = if (legacyResting) 0 else tokens.resolveCornerRadius(theme.radii),
+                    borderWidth = tokens.resolveBorderWidth(theme.borders),
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
                     shadowColor = theme.colors.shadow,
-                    shadowOffset = if (legacyResting) 0 else tokens.resolveElevation(theme.elevations),
+                    shadowOffset = tokens.resolveElevation(theme.elevations),
                 ),
                 child = rowColumn,
                 key = key,
@@ -796,7 +768,6 @@ private fun PixelMenuRow(
     item: PixelMenuItem,
     rowIndex: Int,
     states: PixelControlStateSet,
-    useLegacyFallbacks: Boolean,
     tokenFamily: PixelMenuTokenFamily,
     key: Any?,
 ): Widget {
@@ -823,7 +794,6 @@ private fun PixelMenuRow(
             states = states,
             focusNode = focusNode,
             activate = activate,
-            useLegacyFallbacks = useLegacyFallbacks,
             tokenFamily = tokenFamily,
             key = key,
         )
@@ -842,8 +812,6 @@ private data class PixelMenuRowWidget(
     val focusNode: FocusNode,
     /** Shared activation callback, absent for Disabled and Loading. */
     val activate: (() -> Boolean)?,
-    /** Whether scope-less Normal rendering retains the old row defaults. */
-    val useLegacyFallbacks: Boolean,
     /** Component-token family shared with the owning collection surface. */
     val tokenFamily: PixelMenuTokenFamily,
     /** Stable row identity. */
@@ -863,8 +831,8 @@ private class PixelMenuRowState : State<PixelMenuRowWidget>() {
 
     /** Resolves row colors, focus outline, pointer behavior, and semantic state. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited graph retained to recognize a scope-less legacy row. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
+        /** 继承的显式 token 图；保持可空以便状态标签兜底独立解析。 Explicit inherited graph, kept nullable so status-label fallbacks stay independent. */
+        val inheritedTheme = PixelTheme.maybeOf(context)
         /** Complete theme graph used by this frame. */
         val theme = inheritedTheme ?: PixelThemeTokens.Default
         /** Explicit localization bundle used only for row semantic status text. */
@@ -897,47 +865,22 @@ private class PixelMenuRowState : State<PixelMenuRowWidget>() {
             pressed = false
             hovered = false
         }
-        /** Whether a non-focus state requires a visible role-based state treatment. */
-        val hasStateVisual = listOf(
-            PixelControlState.Hovered,
-            PixelControlState.Pressed,
-            PixelControlState.Selected,
-            PixelControlState.Disabled,
-            PixelControlState.Error,
-            PixelControlState.Loading,
-        ).any { state -> state in runtimeStates }
-        /** Scope-less legacy Normal row detector. */
-        val legacyResting = widget.useLegacyFallbacks && inheritedTheme == null && !hasStateVisual
-        /** Current row fill resolved from the state map, with the old transparent rest state retained. */
-        val fillColor = if (legacyResting) {
-            null
-        } else {
-            tokens.resolveContainerColor(runtimeStates, theme.colors)
-        }
+        /** 由状态映射解析出的当前行填充色。 Current row fill resolved from the state map. */
+        val fillColor = tokens.resolveContainerColor(runtimeStates, theme.colors)
         /** Current row foreground resolved independently from its fill. */
-        val contentColor = if (legacyResting) {
-            PixelTextStyle.Default.color
-        } else {
-            tokens.resolveContentColor(runtimeStates, theme.colors) ?: theme.colors.onSurface
-        }
-        /** Current row outline; Normal legacy rows intentionally remain borderless. */
-        val borderColor = if (legacyResting || tokens.borderWidth == 0) {
+        val contentColor = tokens.resolveContentColor(runtimeStates, theme.colors)
+            ?: theme.colors.onSurface
+        /** 当前行边框；组件 token 宽度为零时保持无边框。 Current row outline; a zero-width component token stays borderless. */
+        val borderColor = if (tokens.borderWidth == 0) {
             null
         } else {
             tokens.resolveBorderColor(runtimeStates, theme.colors)
         }
-        /** Base label metrics preserve old defaults outside a theme and use label tokens otherwise. */
-        val labelStyle = if (legacyResting) {
-            PixelTextStyle.Default
-        } else {
-            theme.typography.label.resolve(theme.colors).copy(color = contentColor)
-        }
+        /** 由 label 排版角色解析出的基础文本度量。 Base label metrics resolved from the label typography role. */
+        val labelStyle = theme.typography.label.resolve(theme.colors).copy(color = contentColor)
         /** Shortcut metrics use the caption role while following the same state foreground. */
-        val shortcutStyle = if (legacyResting) {
-            PixelTextStyle(color = LEGACY_MENU_SHORTCUT_COLOR)
-        } else {
-            theme.typography.caption.resolve(theme.colors).copy(color = contentColor)
-        }
+        val shortcutStyle = theme.typography.caption.resolve(theme.colors)
+            .copy(color = contentColor)
         /** Optional shortcut rendered at the trailing edge. */
         val shortcut = widget.item.shortcut?.let { shortcutText ->
             Text(shortcutText, style = shortcutStyle)
@@ -954,21 +897,17 @@ private class PixelMenuRowState : State<PixelMenuRowWidget>() {
         /** Row surface before focus and pointer layers are added. */
         val surface = ConstrainedBox(
             constraints = PixelBoxConstraints(
-                minWidth = if (legacyResting) 0 else tokens.resolveMinimumWidth(theme.sizes),
-                minHeight = if (legacyResting) 0 else tokens.resolveMinimumHeight(theme.sizes),
+                minWidth = tokens.resolveMinimumWidth(theme.sizes),
+                minHeight = tokens.resolveMinimumHeight(theme.sizes),
             ),
             child = PixelSurface(
                 child = rowContent,
-                padding = if (legacyResting) {
-                    EdgeInsets.symmetric(horizontal = 2, vertical = 2)
-                } else {
-                    tokens.resolvePadding(theme.spacing)
-                },
+                padding = tokens.resolvePadding(theme.spacing),
                 decoration = PixelSurfaceDecoration(
                     fillColor = fillColor,
                     borderColor = borderColor,
-                    borderWidth = if (legacyResting) 0 else tokens.resolveBorderWidth(theme.borders),
-                    cornerRadius = if (legacyResting) 0 else tokens.resolveCornerRadius(theme.radii),
+                    borderWidth = tokens.resolveBorderWidth(theme.borders),
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
                 ),
                 key = widget.key,
             ),
@@ -1070,7 +1009,7 @@ public fun Dropdown(
     onToggle: (() -> Unit)?,
     items: List<PixelMenuItem>,
     enabled: Boolean = true,
-    contentOffset: IntOffset = IntOffset(0, 14),
+    contentOffset: IntOffset? = null,
     key: Any? = null,
 ): Widget {
     return buildDropdown(
@@ -1081,24 +1020,14 @@ public fun Dropdown(
         items = items,
         states = PixelControlStateSet.Normal,
         enabled = enabled,
-        contentOffset = contentOffset.takeUnless { offset -> offset == LEGACY_DROPDOWN_CONTENT_OFFSET },
+        contentOffset = contentOffset,
         fillColor = null,
         borderColor = null,
         textStyle = null,
         semanticLabel = null,
-        useLegacyFallbacks = true,
         key = key,
     )
 }
-
-/** Legacy Dropdown popup offset used only to recognize an omitted theme spacing override. */
-private val LEGACY_DROPDOWN_CONTENT_OFFSET: IntOffset = IntOffset(0, 14)
-
-/** Legacy Dropdown outline retained for a scope-less resting anchor. */
-private val LEGACY_DROPDOWN_BORDER_COLOR: PixelColor = PixelColor.White
-
-/** Legacy Dropdown fallback label used only when all caller text is empty. */
-private const val LEGACY_DROPDOWN_SEMANTIC_LABEL: String = "Dropdown"
 
 /**
  * 执行 `OverlayControls` 的 `Dropdown` 公开行为；具体参数、返回和副作用见下文。
@@ -1116,7 +1045,7 @@ private const val LEGACY_DROPDOWN_SEMANTIC_LABEL: String = "Dropdown"
  * @param items Controlled popup rows.
  * @param states Persistent visual and capability states.
  * @param enabled Caller-level interaction availability.
- * @param contentOffset Optional explicit anchor offset above theme spacing.
+ * @param contentOffset Optional explicit popup offset above theme spacing.
  * @param fillColor Optional explicit anchor fill above component tokens.
  * @param borderColor Optional explicit anchor outline above component tokens.
  * @param textStyle Optional explicit anchor typography above component and foundation tokens.
@@ -1152,7 +1081,6 @@ public fun Dropdown(
         borderColor = borderColor,
         textStyle = textStyle,
         semanticLabel = semanticLabel,
-        useLegacyFallbacks = false,
         key = key,
     )
 }
@@ -1171,7 +1099,6 @@ private fun buildDropdown(
     borderColor: PixelColor?,
     textStyle: PixelTextStyle?,
     semanticLabel: String?,
-    useLegacyFallbacks: Boolean,
     key: Any?,
 ): Widget {
     return PixelDropdownWidget(
@@ -1187,7 +1114,6 @@ private fun buildDropdown(
         borderColor = borderColor,
         textStyle = textStyle,
         semanticLabel = semanticLabel,
-        useLegacyFallbacks = useLegacyFallbacks,
         key = key,
     )
 }
@@ -1218,17 +1144,13 @@ private data class PixelDropdownWidget(
     val textStyle: PixelTextStyle?,
     /** Optional explicit accessibility name. */
     val semanticLabel: String?,
-    /** Whether scope-less resting rendering retains old anchor geometry. */
-    val useLegacyFallbacks: Boolean,
     /** Stable Dropdown identity. */
     override val key: Any?,
 ) : StatelessWidget(key = key) {
     /** Builds the normalized anchor action, themed Menu, and controlled Popover. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited graph retained for scope-less compatibility detection. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
-        /** Complete theme used to resolve fallback spacing and labels. */
-        val theme = inheritedTheme ?: PixelThemeTokens.Default
+        /** 用于解析弹层间距的完整 token 图。 Complete theme used to resolve popup spacing. */
+        val theme = PixelTheme.of(context)
         /** Anchor states after expansion and public availability are normalized. */
         var anchorStates = states
         if (expanded) anchorStates += PixelControlState.Selected
@@ -1262,14 +1184,13 @@ private data class PixelDropdownWidget(
                 borderColor = borderColor,
                 textStyle = textStyle,
                 semanticLabel = semanticLabel,
-                useLegacyFallbacks = useLegacyFallbacks,
                 key = key?.let { "$it-anchor" },
             )
         }
         /** Menu states preserve caller Error/Loading while excluding anchor-only expansion state. */
         var menuStates = states
         if (!enabled || onToggle == null) menuStates += PixelControlState.Disabled
-        /** Popup Menu built with the same compatibility and inherited-theme policy. */
+        /** 使用 Dropdown 组件 token 族构建的弹出菜单。 Popup Menu built from the Dropdown component-token family. */
         val menu = buildMenu(
             items = items,
             states = menuStates,
@@ -1280,15 +1201,10 @@ private data class PixelDropdownWidget(
             semanticLabel = null,
             onDismissRequest = if (expanded) activate?.let { action -> { action() } } else null,
             modal = false,
-            useLegacyFallbacks = useLegacyFallbacks,
             tokenFamily = PixelMenuTokenFamily.Dropdown,
         )
-        /** Explicit offset, legacy fallback, then the current foundation spacing token. */
-        val resolvedContentOffset = contentOffset ?: if (useLegacyFallbacks && inheritedTheme == null) {
-            LEGACY_DROPDOWN_CONTENT_OFFSET
-        } else {
-            IntOffset(0, theme.spacing.medium)
-        }
+        /** 显式偏移优先于当前 foundation 间距 token。 Explicit offset before the current foundation spacing token. */
+        val resolvedContentOffset = contentOffset ?: IntOffset(0, theme.spacing.medium)
         return Popover(
             anchor = anchor,
             content = menu,
@@ -1324,8 +1240,6 @@ private data class PixelDropdownAnchorWidget(
     val textStyle: PixelTextStyle?,
     /** Optional explicit semantic name. */
     val semanticLabel: String?,
-    /** Whether a scope-less resting anchor retains pre-token geometry. */
-    val useLegacyFallbacks: Boolean,
     /** Stable anchor identity. */
     override val key: Any?,
 ) : StatefulWidget(key = key) {
@@ -1343,8 +1257,8 @@ private class PixelDropdownAnchorState : State<PixelDropdownAnchorWidget>() {
 
     /** Resolves the complete Dropdown anchor surface and structured semantics. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited graph retained for scope-less compatibility detection. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
+        /** 继承的显式 token 图；保持可空以便标签兜底独立解析。 Explicit inherited graph, kept nullable so label fallbacks stay independent. */
+        val inheritedTheme = PixelTheme.maybeOf(context)
         /** Complete theme graph used by all anchor channels. */
         val theme = inheritedTheme ?: PixelThemeTokens.Default
         /** Explicit localization bundle used only for fallback and state semantics. */
@@ -1366,65 +1280,44 @@ private class PixelDropdownAnchorState : State<PixelDropdownAnchorWidget>() {
             pressed = false
             hovered = false
         }
-        /** Whether a non-focus state requires token-based visual treatment. */
-        val hasStateVisual = listOf(
-            PixelControlState.Hovered,
-            PixelControlState.Pressed,
-            PixelControlState.Selected,
-            PixelControlState.Disabled,
-            PixelControlState.Error,
-            PixelControlState.Loading,
-        ).any { state -> state in runtimeStates }
-        /** Old collapsed Normal anchor outside a provider retains original button defaults. */
-        val legacyResting = widget.useLegacyFallbacks && inheritedTheme == null && !hasStateVisual
-        /** Explicit fill wins before legacy resting and role-based defaults. */
-        val resolvedFillColor = widget.fillColor ?: if (legacyResting) {
-            null
-        } else {
-            tokens.resolveContainerColor(runtimeStates, theme.colors)
-        }
-        /** Explicit outline wins before legacy resting and role-based defaults. */
-        val resolvedBorderColor = widget.borderColor ?: if (legacyResting) {
-            LEGACY_DROPDOWN_BORDER_COLOR
-        } else {
-            tokens.resolveBorderColor(runtimeStates, theme.colors)
-        }
+        /** 显式填充色优先于角色默认值。 Explicit fill wins before role-based defaults. */
+        val resolvedFillColor = widget.fillColor
+            ?: tokens.resolveContainerColor(runtimeStates, theme.colors)
+        /** 显式边框色优先于角色默认值。 Explicit outline wins before role-based defaults. */
+        val resolvedBorderColor = widget.borderColor
+            ?: tokens.resolveBorderColor(runtimeStates, theme.colors)
         /** Current state foreground role used only when no explicit text style is supplied. */
         val resolvedContentColor = tokens.resolveContentColor(runtimeStates, theme.colors)
             ?: theme.colors.onSurface
-        /** Explicit typography wins before legacy resting and role-aware button typography. */
-        val resolvedTextStyle = widget.textStyle ?: if (legacyResting) {
-            PixelTextStyle.Default
-        } else {
-            theme.typography.button.resolve(theme.colors).copy(color = resolvedContentColor)
-        }
+        /** 显式排版优先于状态感知的 button 排版。 Explicit typography wins before role-aware button typography. */
+        val resolvedTextStyle = widget.textStyle
+            ?: theme.typography.button.resolve(theme.colors).copy(color = resolvedContentColor)
         /** Visible anchor text combining label, selected value, and disclosure mark. */
         val buttonText = if (widget.label.isBlank()) {
             "${widget.selectedText} v"
         } else {
             "${widget.label}: ${widget.selectedText} v"
         }
-        /** Old resting anchor retains natural width; themed/state-aware anchors use overlay sizing. */
-        val minimumWidth = if (legacyResting) {
-            0
-        } else {
-            maxOf(tokens.resolveMinimumWidth(theme.sizes), theme.sizes.overlayMinimumWidth)
-        }
+        /** 两个公开重载共用的弹层最小宽度。 Overlay minimum width shared by both public overloads. */
+        val minimumWidth = maxOf(
+            tokens.resolveMinimumWidth(theme.sizes),
+            theme.sizes.overlayMinimumWidth,
+        )
         /** Token-resolved anchor surface before focus and pointer behavior. */
         val surface = ConstrainedBox(
             constraints = PixelBoxConstraints(
                 minWidth = minimumWidth,
-                minHeight = if (legacyResting) 0 else tokens.resolveMinimumHeight(theme.sizes),
+                minHeight = tokens.resolveMinimumHeight(theme.sizes),
             ),
             child = PixelSurface(
-                padding = if (legacyResting) EdgeInsets.all(2) else tokens.resolvePadding(theme.spacing),
+                padding = tokens.resolvePadding(theme.spacing),
                 decoration = PixelSurfaceDecoration(
                     fillColor = resolvedFillColor,
                     borderColor = resolvedBorderColor,
-                    borderWidth = if (legacyResting) 1 else tokens.resolveBorderWidth(theme.borders),
-                    cornerRadius = if (legacyResting) 0 else tokens.resolveCornerRadius(theme.radii),
+                    borderWidth = tokens.resolveBorderWidth(theme.borders),
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
                     shadowColor = theme.colors.shadow,
-                    shadowOffset = if (legacyResting) 0 else tokens.resolveElevation(theme.elevations),
+                    shadowOffset = tokens.resolveElevation(theme.elevations),
                 ),
                 child = Text(
                     buttonText,
@@ -1463,12 +1356,12 @@ private class PixelDropdownAnchorState : State<PixelDropdownAnchorWidget>() {
             ?: widget.selectedText.takeIf(String::isNotBlank)
             ?: localizations?.labels?.dropdown
             ?: inheritedTheme?.labels?.dropdown
-            ?: LEGACY_DROPDOWN_SEMANTIC_LABEL
-        /** Loading hint resolved independently from the anchor's visual compatibility branch. */
+            ?: PixelLabelTokens.Default.dropdown
+        /** 加载提示文本独立解析，不参与任何视觉 token 通道。 Loading hint resolved independently from every visual token channel. */
         val resolvedLoadingLabel = localizations?.labels?.loading
             ?: inheritedTheme?.labels?.loading
             ?: PixelLabelTokens.Default.loading
-        /** Error status resolved independently from the anchor's visual compatibility branch. */
+        /** 错误状态文本独立解析，不参与任何视觉 token 通道。 Error status resolved independently from every visual token channel. */
         val resolvedErrorLabel = localizations?.labels?.error
             ?: inheritedTheme?.labels?.error
             ?: PixelLabelTokens.Default.error
@@ -1509,15 +1402,24 @@ private class PixelDropdownAnchorState : State<PixelDropdownAnchorWidget>() {
  * 受控提示浮层。
  *
  * [visible] 由调用方根据焦点、长按或业务状态维护；组件不会监听 hover，也不会自动延迟显示。
+ *
+ * @param message 可见提示文本。
+ * @param visible 调用方持有的浮层可见性。
+ * @param child 在流内布局的锚点 widget。
+ * @param contentOffset 可选浮层偏移；null 时解析 foundation 间距 token。
+ * @param fillColor 可选表面填充色；null 时解析组件容器角色。
+ * @param borderColor 可选表面边框色；null 时解析组件边框角色。
+ * @param textStyle 可选文本样式；null 时解析 caption typography 与状态前景色。
+ * @param key 锚点与 retained 浮层共用的稳定 identity。
  */
 public fun Tooltip(
     message: String,
     visible: Boolean,
     child: Widget,
-    contentOffset: IntOffset = IntOffset(0, 10),
-    fillColor: PixelColor = PixelColor.Black,
-    borderColor: PixelColor = PixelColor.White,
-    textStyle: PixelTextStyle = PixelTextStyle.Default,
+    contentOffset: IntOffset? = null,
+    fillColor: PixelColor? = null,
+    borderColor: PixelColor? = null,
+    textStyle: PixelTextStyle? = null,
     key: Any? = null,
 ): Widget {
     return buildTooltip(
@@ -1525,27 +1427,14 @@ public fun Tooltip(
         visible = visible,
         child = child,
         states = PixelControlStateSet.Normal,
-        contentOffset = contentOffset.takeUnless { offset -> offset == LEGACY_TOOLTIP_CONTENT_OFFSET },
-        fillColor = fillColor.takeUnless { color -> color == LEGACY_TOOLTIP_FILL_COLOR },
-        borderColor = borderColor.takeUnless { color -> color == LEGACY_TOOLTIP_BORDER_COLOR },
-        textStyle = textStyle.takeUnless { style -> style == PixelTextStyle.Default },
+        contentOffset = contentOffset,
+        fillColor = fillColor,
+        borderColor = borderColor,
+        textStyle = textStyle,
         semanticLabel = null,
-        useLegacyFallbacks = true,
         key = key,
     )
 }
-
-/** Legacy Tooltip popup offset used only to recognize an omitted theme spacing override. */
-private val LEGACY_TOOLTIP_CONTENT_OFFSET: IntOffset = IntOffset(0, 10)
-
-/** Legacy Tooltip fill used only to recognize an omitted theme override. */
-private val LEGACY_TOOLTIP_FILL_COLOR: PixelColor = PixelColor.Black
-
-/** Legacy Tooltip outline used only to recognize an omitted theme override. */
-private val LEGACY_TOOLTIP_BORDER_COLOR: PixelColor = PixelColor.White
-
-/** Legacy Tooltip accessibility fallback used only when the message is empty. */
-private const val LEGACY_TOOLTIP_SEMANTIC_LABEL: String = "Tooltip"
 
 /**
  * 执行 `OverlayControls` 的 `Tooltip` 公开行为；具体参数、返回和副作用见下文。
@@ -1589,7 +1478,6 @@ public fun Tooltip(
         borderColor = borderColor,
         textStyle = textStyle,
         semanticLabel = semanticLabel,
-        useLegacyFallbacks = false,
         key = key,
     )
 }
@@ -1605,7 +1493,6 @@ private fun buildTooltip(
     borderColor: PixelColor?,
     textStyle: PixelTextStyle?,
     semanticLabel: String?,
-    useLegacyFallbacks: Boolean,
     key: Any?,
 ): Widget {
     return PixelTooltipWidget(
@@ -1618,7 +1505,6 @@ private fun buildTooltip(
         borderColor = borderColor,
         textStyle = textStyle,
         semanticLabel = semanticLabel,
-        useLegacyFallbacks = useLegacyFallbacks,
         key = key,
     )
 }
@@ -1643,83 +1529,60 @@ private data class PixelTooltipWidget(
     val textStyle: PixelTextStyle?,
     /** Optional explicit accessibility name. */
     val semanticLabel: String?,
-    /** Whether scope-less Normal rendering retains old geometry and colors. */
-    val useLegacyFallbacks: Boolean,
     /** Stable Tooltip identity. */
     override val key: Any?,
 ) : StatelessWidget(key = key) {
     /** Builds the resolved passive surface inside a non-modal Popover. */
     override fun build(context: BuildContext): Widget {
-        /** Explicit inherited graph retained for scope-less compatibility detection. */
-        val inheritedTheme = PixelTheme.maybeTokensOf(context)
+        /** 继承的显式 token 图；保持可空以便标签兜底独立解析。 Explicit inherited graph, kept nullable so label fallbacks stay independent. */
+        val inheritedTheme = PixelTheme.maybeOf(context)
         /** Complete graph used by every Tooltip channel. */
         val theme = inheritedTheme ?: PixelThemeTokens.Default
         /** Explicit localization bundle used only for fallback and state semantics. */
         val localizations = PixelLocalizations.maybeOf(context)
         /** Tooltip-specific state color and geometry tokens. */
         val tokens = theme.components.tooltip
-        /** Scope-less old Normal call retains the pre-token resting presentation. */
-        val legacyResting = useLegacyFallbacks && inheritedTheme == null && states.isNormal
-        /** Explicit fill wins before compatibility and role-based defaults. */
-        val resolvedFillColor = fillColor ?: if (legacyResting) {
-            LEGACY_TOOLTIP_FILL_COLOR
-        } else {
-            tokens.resolveContainerColor(states, theme.colors)
-        }
-        /** Explicit outline wins before compatibility and role-based defaults. */
-        val resolvedBorderColor = borderColor ?: if (legacyResting) {
-            LEGACY_TOOLTIP_BORDER_COLOR
-        } else {
-            tokens.resolveBorderColor(states, theme.colors)
-        }
+        /** 显式填充色优先于角色默认值。 Explicit fill wins before role-based defaults. */
+        val resolvedFillColor = fillColor ?: tokens.resolveContainerColor(states, theme.colors)
+        /** 显式边框色优先于角色默认值。 Explicit outline wins before role-based defaults. */
+        val resolvedBorderColor = borderColor ?: tokens.resolveBorderColor(states, theme.colors)
         /** Current foreground role used when no explicit typography is supplied. */
         val resolvedContentColor = tokens.resolveContentColor(states, theme.colors)
             ?: theme.colors.onSurface
-        /** Explicit typography wins before compatibility and caption typography tokens. */
-        val resolvedTextStyle = textStyle ?: if (legacyResting) {
-            PixelTextStyle.Default
-        } else {
-            theme.typography.caption.resolve(theme.colors).copy(color = resolvedContentColor)
-        }
-        /** Explicit offset, old fallback, then the current foundation spacing token. */
-        val resolvedContentOffset = contentOffset ?: if (useLegacyFallbacks && inheritedTheme == null) {
-            LEGACY_TOOLTIP_CONTENT_OFFSET
-        } else {
-            IntOffset(0, theme.spacing.medium)
-        }
+        /** 显式排版优先于 caption 排版 token。 Explicit typography wins before caption typography tokens. */
+        val resolvedTextStyle = textStyle
+            ?: theme.typography.caption.resolve(theme.colors).copy(color = resolvedContentColor)
+        /** 显式偏移优先于当前 foundation 间距 token。 Explicit offset before the current foundation spacing token. */
+        val resolvedContentOffset = contentOffset ?: IntOffset(0, theme.spacing.medium)
         /** Preferred name preserving blank explicit labels and existing message precedence. */
         val resolvedSemanticLabel = semanticLabel
             ?: message.takeIf(String::isNotBlank)
             ?: localizations?.labels?.tooltip
             ?: inheritedTheme?.labels?.tooltip
-            ?: LEGACY_TOOLTIP_SEMANTIC_LABEL
-        /** Loading status resolved independently from the Tooltip's visual compatibility branch. */
+            ?: PixelLabelTokens.Default.tooltip
+        /** 加载状态文本独立解析，不参与任何视觉 token 通道。 Loading status resolved independently from every visual token channel. */
         val resolvedLoadingLabel = localizations?.labels?.loading
             ?: inheritedTheme?.labels?.loading
             ?: PixelLabelTokens.Default.loading
-        /** Error status resolved independently from the Tooltip's visual compatibility branch. */
+        /** 错误状态文本独立解析，不参与任何视觉 token 通道。 Error status resolved independently from every visual token channel. */
         val resolvedErrorLabel = localizations?.labels?.error
             ?: inheritedTheme?.labels?.error
             ?: PixelLabelTokens.Default.error
         /** Token-resolved Tooltip surface before popup retention and placement. */
         val surface = ConstrainedBox(
             constraints = PixelBoxConstraints(
-                minWidth = if (legacyResting) 0 else tokens.resolveMinimumWidth(theme.sizes),
-                minHeight = if (legacyResting) 0 else tokens.resolveMinimumHeight(theme.sizes),
+                minWidth = tokens.resolveMinimumWidth(theme.sizes),
+                minHeight = tokens.resolveMinimumHeight(theme.sizes),
             ),
             child = PixelSurface(
-                padding = if (legacyResting) {
-                    EdgeInsets.symmetric(horizontal = 3, vertical = 2)
-                } else {
-                    tokens.resolvePadding(theme.spacing)
-                },
+                padding = tokens.resolvePadding(theme.spacing),
                 decoration = PixelSurfaceDecoration(
                     fillColor = resolvedFillColor,
                     borderColor = resolvedBorderColor,
-                    borderWidth = if (legacyResting) 1 else tokens.resolveBorderWidth(theme.borders),
-                    cornerRadius = if (legacyResting) 0 else tokens.resolveCornerRadius(theme.radii),
+                    borderWidth = tokens.resolveBorderWidth(theme.borders),
+                    cornerRadius = tokens.resolveCornerRadius(theme.radii),
                     shadowColor = theme.colors.shadow,
-                    shadowOffset = if (legacyResting) 0 else tokens.resolveElevation(theme.elevations),
+                    shadowOffset = tokens.resolveElevation(theme.elevations),
                 ),
                 child = Text(
                     message,

@@ -23,10 +23,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Localization precedence, retained state, and JVM compatibility for NavigationBar/Rail. */
+/** NavigationBar/Rail 的本地化优先级、retained 状态与两条入口的 JVM 表面。 */
 class NavigationControlsLocalizationTest {
     /** All four public entry points consume Chinese provider text without translating destinations. */
     @Test
@@ -131,9 +132,9 @@ class NavigationControlsLocalizationTest {
         }
     }
 
-    /** Explicit, provider, theme, and English layers retain the documented legacy-sentinel order. */
+    /** 显式、提供者、主题、英文四层按文档约定的“省略即 sentinel”顺序解析。 */
     @Test
-    fun containerAndStateLabelsFollowGrandfatheredPrecedence() {
+    fun containerAndStateLabelsFollowDocumentedPrecedence() {
         /** Theme-only state sentinels verify behavior when no localization provider is mounted. */
         val themeLabels = PixelLabelTokens.Default.copy(
             loading = "THEME LOADING",
@@ -157,7 +158,7 @@ class NavigationControlsLocalizationTest {
                 logicalWidth = 120,
                 logicalHeight = 48,
             )
-            /** No provider preserves the old English container and current theme state labels. */
+            /** 未挂载提供者时容器名用英文兜底，状态文本来自当前主题 label token。 */
             val noProvider = tester.semanticsNodesByLabel("Navigation bar").single()
             assertEquals("THEME LOADING", noProvider.value)
             assertEquals("THEME ERROR", noProvider.error)
@@ -199,9 +200,67 @@ class NavigationControlsLocalizationTest {
                 logicalWidth = 96,
                 logicalHeight = 72,
             )
-            /** Old overload cannot distinguish this exact English value from an omitted default. */
+            // 显式传入与英文兜底完全相同的文本时仍是显式值，优先于提供者标签。
+            assertEquals(1, tester.semanticsNodesByLabel("Navigation rail").size)
+            assertTrue(tester.semanticsNodesByLabel("导航侧栏").isEmpty())
+
+            tester.pumpWidget(
+                widget = PixelLocalizations(
+                    locale = PixelLocale("zh"),
+                    bundle = PixelLocalizationBundle.Chinese,
+                    child = NavigationRail(
+                        destinations = destinations(),
+                        selectedId = "home",
+                        onSelected = {},
+                    ),
+                ),
+                logicalWidth = 96,
+                logicalHeight = 72,
+            )
+            // 省略（null）才交给提供者解析。
             assertEquals(1, tester.semanticsNodesByLabel("导航侧栏").size)
             assertTrue(tester.semanticsNodesByLabel("Navigation rail").isEmpty())
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    /** 显式空白集合名称按公开契约在构建时被拒绝，`null` 省略则正常解析。 */
+    @Test
+    fun blankExplicitCollectionLabelIsRejectedWhileNullResolvesFallback() {
+        assertThrows(IllegalArgumentException::class.java) {
+            NavigationBar(
+                destinations = destinations(),
+                selectedId = "home",
+                onSelected = {},
+                semanticLabel = " ",
+            )
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            NavigationRail(
+                destinations = destinations(),
+                selectedId = "home",
+                onSelected = {},
+                semanticLabel = "",
+            )
+        }
+
+        /** 省略集合名称时验证内置英文兜底的运行时。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                widget = NavigationBar(
+                    destinations = destinations(),
+                    selectedId = "home",
+                    onSelected = {},
+                ),
+                logicalWidth = 120,
+                logicalHeight = 48,
+            )
+            assertEquals(
+                1,
+                tester.semanticsNodesByLabel(PixelLocalizationBundle.English.navigationBar).size,
+            )
         } finally {
             tester.dispose()
         }

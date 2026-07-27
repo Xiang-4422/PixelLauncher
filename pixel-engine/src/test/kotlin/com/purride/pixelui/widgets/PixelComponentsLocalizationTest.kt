@@ -37,7 +37,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Localization precedence, formatting, and scope-less visual compatibility for PixelComponents. */
+/** PixelComponents 的本地化优先级、格式化与渲染中立性覆盖。 */
 class PixelComponentsLocalizationTest {
     /** Built-in Chinese labels replace theme defaults across controls and compound selectors. */
     @Test
@@ -230,7 +230,7 @@ class PixelComponentsLocalizationTest {
                 bundle = bundle,
                 child = Toast(message = "", states = statusStates),
             )
-            /** Blank Toast message retains its historical omitted-value policy. */
+            /** 空白 Toast 消息按省略处理，解析主题 label token。 */
             val toast = tester.semanticsNodesByLabel(labels.toast).single()
             assertEquals(labels.loading, toast.value)
             assertEquals(labels.error, toast.error)
@@ -431,10 +431,10 @@ class PixelComponentsLocalizationTest {
         }
     }
 
-    /** Historical explicit-blank policies survive provider migration for every compatibility kind. */
+    /** 显式空白值策略按组件而定，并在挂载提供者后保持不变。 */
     @Test
-    fun explicitBlankCompatibilityRemainsComponentSpecific() {
-        /** Provider labels used only when the historical API treated blank as omitted. */
+    fun explicitBlankPolicyRemainsComponentSpecific() {
+        /** 仅在该入口把空白视为省略时才会生效的提供者标签。 */
         val labels = PixelLabelTokens.Default.copy(
             listTile = "PROVIDER LIST",
             checkbox = "PROVIDER CHECKBOX",
@@ -445,7 +445,7 @@ class PixelComponentsLocalizationTest {
             toast = "PROVIDER TOAST",
             snackbar = "PROVIDER SNACKBAR",
         )
-        /** Exact custom provider for direct and legacy facade blank checks. */
+        /** 供简洁入口与状态化入口空白检查共用的精确自定义提供者。 */
         val bundle = localizationBundle(labels)
         /** Reused runtime preserving production build-time validation behavior. */
         val tester = PixelTester()
@@ -475,7 +475,7 @@ class PixelComponentsLocalizationTest {
                 logicalWidth = 32,
                 logicalHeight = 20,
             )
-            /** Scope-less old facade preserves its explicit blank semantic name. */
+            /** 简洁入口保留调用方显式传入的空白朗读名称。 */
             assertEquals(1, tester.semanticsNodesByLabel("\t").size)
 
             pumpLocalized(
@@ -503,7 +503,7 @@ class PixelComponentsLocalizationTest {
                 bundle = bundle,
                 child = Toast(message = "", states = PixelControlStateSet.Normal),
             )
-            /** Toast historically treats a blank message as omitted rather than explicit blank. */
+            /** Toast 把空白消息视为省略而不是显式空白。 */
             assertEquals(1, tester.semanticsNodesByLabel(labels.toast).size)
 
             pumpLocalized(
@@ -523,8 +523,8 @@ class PixelComponentsLocalizationTest {
                 logicalWidth = 64,
                 logicalHeight = 24,
             )
-            /** Scope-less legacy Toast keeps its historically explicit blank message. */
-            assertEquals(1, tester.semanticsNodesByLabel("").size)
+            /** 无提供者的简洁 Toast 同样把空字符串视为省略并解析主题标签。 */
+            assertEquals(1, tester.semanticsNodesByLabel(labels.toast).size)
 
             tester.pumpWidget(
                 widget = PixelLocalizations(
@@ -535,21 +535,21 @@ class PixelComponentsLocalizationTest {
                 logicalWidth = 64,
                 logicalHeight = 24,
             )
-            /** Scope-less legacy Snackbar keeps the same explicit blank message contract. */
-            assertEquals(1, tester.semanticsNodesByLabel("").size)
+            /** 无提供者的简洁 Snackbar 遵循同一空白消息策略。 */
+            assertTrue(tester.semanticsNodesByLabel(labels.snackbar).isNotEmpty())
         } finally {
             tester.dispose()
         }
     }
 
-    /** Localization changes scope-less text only, preserving legacy pixels and absent semantics. */
+    /** 挂载本地化提供者只改变文本，绝不改变任何组件像素。 */
     @Test
-    fun providerPresencePreservesLegacyFacadeVisualBranches() {
-        /** Explicit checked color making an accidental Checkbox token branch observable. */
+    fun providerPresenceDoesNotChangeComponentPixels() {
+        /** 显式勾选色，可暴露 Checkbox 被意外改色。 Explicit checked color making an accidental Checkbox recolor observable. */
         val checkboxActive = PixelColor.fromRgb(37, 149, 83)
-        /** Explicit unchecked color retained as a second historical endpoint. */
+        /** 作为第二个端点保留的显式未勾选色。 Explicit unchecked color retained as a second endpoint. */
         val checkboxInactive = PixelColor.fromRgb(191, 61, 113)
-        /** Stable old Checkbox declaration reused before and after provider insertion. */
+        /** 在插入提供者前后复用的稳定简洁 Checkbox 声明。 Stable concise Checkbox declaration reused before and after provider insertion. */
         val checkbox = Checkbox(
             checked = true,
             onChanged = {},
@@ -560,16 +560,16 @@ class PixelComponentsLocalizationTest {
         val switchActive = PixelColor.fromRgb(227, 193, 41)
         /** Explicit unselected Switch endpoint retained for completeness. */
         val switchInactive = PixelColor.fromRgb(53, 107, 211)
-        /** Stable old Switch declaration reused across the localization boundary. */
+        /** 跨本地化边界复用的稳定简洁 Switch 声明。 Stable concise Switch declaration reused across the localization boundary. */
         val switch = Switch(
             checked = true,
             onChanged = {},
             activeColor = switchActive,
             inactiveColor = switchInactive,
         )
-        /** Historical progress foreground used to freeze the paint-only facade. */
+        /** 用于冻结绘制输出的显式进度前景色。 Explicit progress foreground used to freeze the painted output. */
         val progressFill = PixelColor.fromRgb(83, 173, 47)
-        /** Historical progress track used to freeze unfilled pixels. */
+        /** 用于冻结未填充像素的显式进度轨道色。 Explicit progress track used to freeze unfilled pixels. */
         val progressTrack = PixelColor.fromRgb(29, 43, 71)
         /** Custom progress label and formatter installed without a PixelTheme. */
         val progressBundle = localizationBundle(
@@ -580,7 +580,7 @@ class PixelComponentsLocalizationTest {
         val tester = PixelTester()
         try {
             tester.pumpWidget(checkbox, logicalWidth = 32, logicalHeight = 20)
-            /** Scope-less pre-provider frame and semantic baseline. */
+            /** 挂载提供者前的帧与语义基线。 Pre-provider frame and semantic baseline. */
             val checkboxPixels = capturePixels(tester, width = 32, height = 20)
             assertEquals(1, tester.semanticsNodesByLabel("Checkbox").size)
 
@@ -597,7 +597,7 @@ class PixelComponentsLocalizationTest {
             assertEquals(1, tester.semanticsNodesByLabel("复选框").size)
 
             tester.pumpWidget(switch, logicalWidth = 32, logicalHeight = 20)
-            /** Scope-less Switch frame proving localization cannot select token visuals. */
+            /** 证明本地化无法改变 token 视觉的 Switch 帧。 Switch frame proving localization cannot change token visuals. */
             val switchPixels = capturePixels(tester, width = 32, height = 20)
             assertEquals(1, tester.semanticsNodesByLabel("Switch").size)
 
@@ -613,7 +613,7 @@ class PixelComponentsLocalizationTest {
             assertEquals(switchPixels, capturePixels(tester, width = 32, height = 20))
             assertEquals(1, tester.semanticsNodesByLabel("开关").size)
 
-            /** Stable old ProgressBar declaration remains paint-only without localization. */
+            /** 跨本地化边界复用的稳定简洁 ProgressBar 声明。 Stable concise ProgressBar declaration reused across the localization boundary. */
             val progress = ProgressBar(
                 progress = 0.25f,
                 width = 12,
@@ -622,9 +622,9 @@ class PixelComponentsLocalizationTest {
                 trackColor = progressTrack,
             )
             tester.pumpWidget(progress, logicalWidth = 20, logicalHeight = 8)
-            /** Historical frame and absence of token-era semantics before explicit opt-in. */
+            /** 挂载提供者前的帧及其主题解析出的进度语义。 Pre-provider frame and its theme-resolved progress semantics. */
             val progressPixels = capturePixels(tester, width = 20, height = 8)
-            assertTrue(tester.semanticsNodesByLabel("Progress").isEmpty())
+            assertEquals(1, tester.semanticsNodesByLabel(PixelLabelTokens.Default.progress).size)
 
             tester.pumpWidget(
                 PixelLocalizations(
@@ -636,7 +636,7 @@ class PixelComponentsLocalizationTest {
                 logicalHeight = 8,
             )
             assertEquals(progressPixels, capturePixels(tester, width = 20, height = 8))
-            /** Provider adds localized semantics without changing one historical output pixel. */
+            /** 提供者只替换本地化语义，不改变任何输出像素。 Provider replaces localized semantics without changing one output pixel. */
             val localizedProgress = tester.semanticsNodesByLabel("CUSTOM PROGRESS").single()
             assertEquals("CUSTOM[0.25]", localizedProgress.value)
         } finally {

@@ -26,14 +26,12 @@ public class RenderRefreshIndicator(
     private var trackColor: PixelColor,
     /** Optional state-resolved outline. */
     private var borderColor: PixelColor?,
-    /** Foundation-resolved outline width. */
+    /** 由 foundation token 解析出的边框宽度。 Foundation-resolved outline width. */
     private var borderWidth: Int,
     /** Foundation-resolved pixel stair-step radius. */
     private var cornerRadius: Int,
     /** Foundation-resolved maximum indicator height. */
     private var indicatorHeight: Int,
-    /** Whether paint must reproduce the historical one-/two-row indicator algorithm. */
-    private var legacyPaint: Boolean,
     /** Retained callback for pressed-state ownership. */
     private var onPressedChanged: ((Boolean) -> Unit)?,
     /** Retained callback for mouse/stylus hover ownership. */
@@ -62,7 +60,6 @@ public class RenderRefreshIndicator(
         borderWidth: Int,
         cornerRadius: Int,
         indicatorHeight: Int,
-        legacyPaint: Boolean,
         onPressedChanged: ((Boolean) -> Unit)?,
         onHoveredChanged: ((Boolean) -> Unit)?,
         onRefresh: () -> Unit,
@@ -79,7 +76,6 @@ public class RenderRefreshIndicator(
             this.borderWidth == borderWidth &&
             this.cornerRadius == cornerRadius &&
             this.indicatorHeight == indicatorHeight &&
-            this.legacyPaint == legacyPaint &&
             this.onPressedChanged === onPressedChanged &&
             this.onHoveredChanged === onHoveredChanged &&
             this.onRefresh === onRefresh
@@ -97,7 +93,6 @@ public class RenderRefreshIndicator(
         this.borderWidth = borderWidth.coerceAtLeast(0)
         this.cornerRadius = cornerRadius.coerceAtLeast(0)
         this.indicatorHeight = indicatorHeight.coerceAtLeast(1)
-        this.legacyPaint = legacyPaint
         this.onPressedChanged = onPressedChanged
         this.onHoveredChanged = onHoveredChanged
         this.onRefresh = onRefresh
@@ -128,16 +123,6 @@ public class RenderRefreshIndicator(
             (state.pullDistancePx / safeThreshold.toFloat()).coerceIn(0f, 1f)
         }
         if (progress <= 0f) return
-        if (legacyPaint) {
-            /** Historical progress width uses the same deterministic integer quantization. */
-            val legacyBarWidth = (size.width * progress).toInt()
-                .coerceIn(1, size.width.coerceAtLeast(1))
-            context.fillRect(offsetX, offsetY, legacyBarWidth, 1, indicatorColor)
-            if (paintsLoading && size.height > 1) {
-                context.fillRect(offsetX, offsetY + 1, size.width.coerceAtLeast(1), 1, indicatorColor)
-            }
-            return
-        }
         /** Indicator height constrained by the actual child viewport. */
         val safeHeight = indicatorHeight.coerceIn(1, size.height.coerceAtLeast(1))
         /** Full-width track bounds behind the progress foreground. */

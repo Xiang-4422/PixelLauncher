@@ -34,7 +34,7 @@ public data class PixelComponentTokens(
 # A passing runtime proves bindings, two color channels, geometry, focus, and all foundation fields.
 COMPLETE_RUNTIME_SOURCE = """
 fun build(theme: PixelThemeTokens) {
-  val buttonTokens = PixelTheme.tokensOf(context).components.button
+  val buttonTokens = PixelTheme.of(context).components.button
   consume(buttonTokens.resolveContainerColor(states, theme.colors))
   consume(buttonTokens.resolveContentColor(states, theme.colors))
   consume(buttonTokens.resolvePadding(theme.spacing))
@@ -126,7 +126,7 @@ class ThemeTokenCoverageTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             runtime_source = COMPLETE_RUNTIME_SOURCE.replace(
-                "  val buttonTokens = PixelTheme.tokensOf(context).components.button\n",
+                "  val buttonTokens = PixelTheme.of(context).components.button\n",
                 "  val selectedTokens = when (family) {\n"
                 "    Family.Button -> theme.components.button\n"
                 "    Family.Toast -> theme.components.toast\n"
@@ -155,7 +155,7 @@ class ThemeTokenCoverageTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             runtime_source = COMPLETE_RUNTIME_SOURCE.replace(
-                "  val buttonTokens = PixelTheme.tokensOf(context).components.button\n",
+                "  val buttonTokens = PixelTheme.of(context).components.button\n",
                 "  val selectedTokens = when (family) {\n"
                 "    else -> theme.components.button\n"
                 "  }\n",
@@ -364,8 +364,8 @@ public data class PixelThemeTokens(public val typography: PixelTypographyTokens)
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             runtime_source = COMPLETE_RUNTIME_SOURCE.replace(
-                "  val buttonTokens = PixelTheme.tokensOf(context).components.button\n",
-                "  val buttonTokens = PixelTheme.tokensOf(context).components.button\n"
+                "  val buttonTokens = PixelTheme.of(context).components.button\n",
+                "  val buttonTokens = PixelTheme.of(context).components.button\n"
                 "  consume(buttonTokens == PixelComponentTokens.Default.button)\n",
             )
             source_root, tokens, report = self.write_fixture(root, runtime_source)

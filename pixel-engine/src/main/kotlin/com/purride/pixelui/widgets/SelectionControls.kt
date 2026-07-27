@@ -165,7 +165,7 @@ public fun <T : Any> RadioGroup(
         key = key,
     ) { context, _ ->
         /** Latest inherited tokens used for group spacing and option rendering. */
-        val theme = PixelTheme.tokensOf(context)
+        val theme = PixelTheme.of(context)
         /** Semantic collection descriptor shared by the rendered group node. */
         val collectionInfo = PixelSemanticsCollectionInfo(
             rowCount = options.size,
@@ -332,7 +332,7 @@ private class PixelRadioState : State<PixelRadioStateWidget>() {
     /** Resolves token paint, pointer behavior, focus, and structured radio semantics. */
     override fun build(context: BuildContext): Widget {
         /** Complete inherited theme token graph. */
-        val theme = PixelTheme.tokensOf(context)
+        val theme = PixelTheme.of(context)
         /** Provider labels override only status text while the option name remains caller-owned. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels ?: theme.labels
         /** Independent Radio component tokens. */
@@ -495,7 +495,7 @@ private class PixelIconButtonState : State<PixelIconButtonStateWidget>() {
     /** Resolves independent icon-button tokens, pointer feedback, focus, and merged semantics. */
     override fun build(context: BuildContext): Widget {
         /** Complete inherited theme token graph. */
-        val theme = PixelTheme.tokensOf(context)
+        val theme = PixelTheme.of(context)
         /** Provider labels override only status text while the required icon name stays explicit. */
         val localizedLabels = PixelLocalizations.maybeOf(context)?.labels ?: theme.labels
         /** Independent IconButton component tokens. */

@@ -1130,37 +1130,36 @@ public fun GridViewBuilder(
 }
 
 /**
- * 执行 `PixelWidgets` 的 `Scrollbar` 公开行为；具体参数、返回和副作用见下文。
+ * 在 [child] 外添加简洁 Scrollbar，全部默认值由现代 token 实现解析。
  *
- * Adds the binary-compatible scrollbar facade around [child].
+ * Adds the concise scrollbar facade around [child]; omitted colors and width resolve from
+ * `components.scrollbar` and the foundation size scale.
  *
- * Historical concrete defaults act as omission sentinels inside [PixelTheme], while explicit
- * non-default colors and width retain caller precedence.
+ * @param child Scrollable viewport whose list target supplies geometry and mutation ownership.
+ * @param state List state shared with the wrapped viewport.
+ * @param thumbColor Optional concrete thumb override; null resolves the component foreground role.
+ * @param trackColor Optional concrete track override; null resolves the component container role.
+ * @param width Optional logical width override; null resolves the component minimum-width token.
+ * @param key Stable identity shared by the semantics and render boundaries.
  */
 public fun Scrollbar(
     child: Widget,
     state: PixelListState,
-    thumbColor: PixelColor = PixelColor.White,
+    thumbColor: PixelColor? = null,
     trackColor: PixelColor? = null,
-    width: Int = 1,
+    width: Int? = null,
     key: Any? = null,
 ): Widget {
     return buildScrollbar(
         child = child,
         state = state,
         states = PixelControlStateSet.Normal,
-        // The historical default is an omission sentinel so theme roles can propagate.
-        thumbColor = thumbColor.takeUnless { color -> color == PixelColor.White },
+        thumbColor = thumbColor,
         trackColor = trackColor,
-        // The historical one-pixel default is resolved through the active size token.
-        width = width.takeUnless { value -> value == 1 },
+        width = width,
         enabled = true,
         key = key,
         semanticLabel = null,
-        legacyFacade = true,
-        legacyThumbColor = thumbColor,
-        legacyTrackColor = trackColor,
-        legacyWidth = width,
     )
 }
 
@@ -1169,8 +1168,8 @@ public fun Scrollbar(
  *
  * Adds a themed, state-aware scrollbar around [child].
  *
- * [states] is required so this overload remains source-distinct from the compatibility facade;
- * its stable JVM name also prevents future Kotlin default-argument changes from moving the Java
+ * [states] is required so this overload remains source-distinct from the concise facade; its
+ * stable JVM name also prevents future Kotlin default-argument changes from moving the Java
  * entry point. Scrollbar does not add an independent focus stop because its public contract has no
  * controller-backed key action; the wrapped scrollable continues to own keyboard and accessible
  * scrolling.
@@ -1207,14 +1206,10 @@ public fun Scrollbar(
         enabled = enabled,
         key = key,
         semanticLabel = semanticLabel,
-        legacyFacade = false,
-        legacyThumbColor = PixelColor.White,
-        legacyTrackColor = null,
-        legacyWidth = 1,
     )
 }
 
-/** Builds one Scrollbar while retaining whether historical defaults require scope-less fallback. */
+/** 归一化 Scrollbar 的能力状态并构建唯一的 retained 视觉实现。 */
 @Suppress("LongParameterList")
 private fun buildScrollbar(
     child: Widget,
@@ -1226,14 +1221,6 @@ private fun buildScrollbar(
     enabled: Boolean,
     key: Any?,
     semanticLabel: String?,
-    /** Whether mounting without an explicit PixelTheme must preserve old paint defaults. */
-    legacyFacade: Boolean,
-    /** Exact historical thumb value before omission-sentinel conversion. */
-    legacyThumbColor: PixelColor,
-    /** Exact historical optional track value before theme fallback. */
-    legacyTrackColor: PixelColor?,
-    /** Exact historical logical width before omission-sentinel conversion. */
-    legacyWidth: Int,
 ): Widget {
     /** Disabled is terminal for drag mutation even when other states are also present. */
     val disabled = !enabled || PixelControlState.Disabled in states
@@ -1252,10 +1239,6 @@ private fun buildScrollbar(
         width = width,
         enabled = interactive,
         semanticLabel = semanticLabel,
-        legacyFacade = legacyFacade,
-        legacyThumbColor = legacyThumbColor,
-        legacyTrackColor = legacyTrackColor,
-        legacyWidth = legacyWidth,
         key = key,
     )
 }
@@ -1272,26 +1255,26 @@ private fun buildScrollbar(
  * @param state 调用方持有的刷新阶段与下拉进度。
  * @param controller 驱动 [state] 刷新生命周期的控制器。
  * @param onRefresh 成功进入刷新阶段时调用一次的业务回调。
- * @param thresholdPx 从拉动进入 armed 状态所需的像素距离。
+ * @param thresholdPx 可选触发距离；null 时由 foundation 尺寸 token 解析。
  * @param enabled 是否接受下拉、键盘与无障碍刷新动作。
- * @param indicatorColor 普通拉动阶段的指示器颜色。
- * @param armedColor 达到触发阈值后的指示器颜色。
- * @param refreshingColor 正在刷新阶段的指示器颜色。
+ * @param indicatorColor 可选普通拉动阶段颜色；null 时解析组件前景角色。
+ * @param armedColor 可选 armed 阶段颜色；null 时回落到 [indicatorColor] 或组件角色。
+ * @param refreshingColor 可选刷新阶段颜色；null 时回落到 [indicatorColor] 或组件角色。
  * @param key 刷新边界及其语义节点的稳定 identity。
- * @param semanticLabel 与子内容分离的刷新动作无障碍名称。
+ * @param semanticLabel 可选无障碍名称；null 或空白时解析主题 label token。
  */
 public fun RefreshIndicator(
     child: Widget,
     state: PixelRefreshIndicatorState,
     controller: PixelRefreshIndicatorController,
     onRefresh: () -> Unit,
-    thresholdPx: Int = 12,
+    thresholdPx: Int? = null,
     enabled: Boolean = true,
-    indicatorColor: PixelColor = PixelColor.White,
-    armedColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
-    refreshingColor: PixelColor = PixelColor.fromRgb(255, 255, 0),
+    indicatorColor: PixelColor? = null,
+    armedColor: PixelColor? = null,
+    refreshingColor: PixelColor? = null,
     key: Any? = null,
-    semanticLabel: String = "Refresh",
+    semanticLabel: String? = null,
 ): Widget {
     return buildRefreshIndicator(
         child = child,
@@ -1299,19 +1282,13 @@ public fun RefreshIndicator(
         controller = controller,
         states = PixelControlStateSet.Normal,
         onRefresh = onRefresh,
-        // Historical defaults become omission sentinels for theme resolution.
-        thresholdPx = thresholdPx.takeUnless { value -> value == 12 },
+        thresholdPx = thresholdPx,
         enabled = enabled,
-        indicatorColor = indicatorColor.takeUnless { color -> color == PixelColor.White },
-        armedColor = armedColor.takeUnless { color -> color == LegacyRefreshArmedColor },
-        refreshingColor = refreshingColor.takeUnless { color -> color == LegacyRefreshingColor },
+        indicatorColor = indicatorColor,
+        armedColor = armedColor,
+        refreshingColor = refreshingColor,
         key = key,
-        semanticLabel = semanticLabel.takeUnless { label -> label == "Refresh" },
-        legacyFacade = true,
-        legacyThresholdPx = thresholdPx,
-        legacyIndicatorColor = indicatorColor,
-        legacyArmedColor = armedColor,
-        legacyRefreshingColor = refreshingColor,
+        semanticLabel = semanticLabel,
     )
 }
 
@@ -1365,15 +1342,10 @@ public fun RefreshIndicator(
         refreshingColor = refreshingColor,
         key = key,
         semanticLabel = semanticLabel,
-        legacyFacade = false,
-        legacyThresholdPx = 12,
-        legacyIndicatorColor = PixelColor.White,
-        legacyArmedColor = LegacyRefreshArmedColor,
-        legacyRefreshingColor = LegacyRefreshingColor,
     )
 }
 
-/** Builds one retained RefreshIndicator while keeping facade provenance internal to the SDK. */
+/** 构建唯一的 retained RefreshIndicator 实现，并统一解析触发距离与标签。 */
 @Suppress("LongParameterList")
 private fun buildRefreshIndicator(
     child: Widget,
@@ -1388,29 +1360,19 @@ private fun buildRefreshIndicator(
     refreshingColor: PixelColor?,
     key: Any?,
     semanticLabel: String?,
-    legacyFacade: Boolean,
-    legacyThresholdPx: Int,
-    legacyIndicatorColor: PixelColor,
-    legacyArmedColor: PixelColor,
-    legacyRefreshingColor: PixelColor,
 ): Widget {
     return Builder(key = key?.let(::RefreshThemeResolutionKey)) { themedContext ->
         /** Complete token graph resolved before sharing one threshold with every input path. */
-        val themeTokens = PixelTheme.tokensOf(themedContext)
+        val themeTokens = PixelTheme.of(themedContext)
         /** Optional application bundle overrides only provider-aware text and formatting. */
         val localizedLabels = PixelLocalizations.maybeOf(themedContext)?.labels
-        /** Scope-less legacy provenance used only for historical trigger and paint behavior. */
-        val scopeLessLegacy = legacyFacade && PixelTheme.maybeTokensOf(themedContext) == null
         /** Refresh-specific geometry used as a floor for the foundation compact-control scale. */
         val componentHeight = themeTokens.components.refresh
             .resolveMinimumHeight(themeTokens.sizes)
-        /** Omitted historical threshold resolved through live foundation size tokens. */
-        val resolvedThreshold = if (scopeLessLegacy) {
-            legacyThresholdPx.coerceAtLeast(1)
-        } else {
-            (thresholdPx ?: maxOf(componentHeight, themeTokens.sizes.compactControlHeight))
-                .coerceAtLeast(1)
-        }
+        /** 省略的触发距离由实时 foundation 尺寸 token 解析。 Omitted threshold resolved through live foundation size tokens. */
+        val resolvedThreshold = (
+            thresholdPx ?: maxOf(componentHeight, themeTokens.sizes.compactControlHeight)
+            ).coerceAtLeast(1)
         /** Localizable spoken label shared by focus diagnostics and semantics. */
         val resolvedLabel = semanticLabel?.takeIf { label -> label.isNotBlank() }
             ?: localizedLabels?.refresh
@@ -1450,10 +1412,6 @@ private fun buildRefreshIndicator(
                 indicatorColor = indicatorColor,
                 armedColor = armedColor,
                 refreshingColor = refreshingColor,
-                legacyFacade = legacyFacade,
-                legacyIndicatorColor = legacyIndicatorColor,
-                legacyArmedColor = legacyArmedColor,
-                legacyRefreshingColor = legacyRefreshingColor,
                 semanticAction = activate,
                 onRefresh = onRefresh ?: {},
                 semanticLabel = resolvedLabel,
@@ -1468,12 +1426,6 @@ private data class RefreshThemeResolutionKey(
     /** Original caller-owned component key. */
     val componentKey: Any,
 )
-
-/** Historical armed-color sentinel retained only by the binary compatibility facade. */
-private val LegacyRefreshArmedColor: PixelColor = PixelColor.fromRgb(200, 100, 0)
-
-/** Historical refreshing-color sentinel retained only by the binary compatibility facade. */
-private val LegacyRefreshingColor: PixelColor = PixelColor.fromRgb(255, 255, 0)
 
 /** 创建 `SingleChildScrollView` retained widget，并把调用参数冻结到后续布局与绘制使用的配置中。 */
 public fun SingleChildScrollView(
@@ -1722,12 +1674,11 @@ public fun TextField(
         borderColor = borderColor,
         focusNode = focusNode,
         key = key,
-        // A non-blank placeholder is the historical spoken label, not an omission sentinel.
+        // 非空白 placeholder 直接作为朗读标签；空白按省略处理并交由 token 解析。
         semanticLabel = semanticLabel.takeIf { candidate -> candidate.isNotBlank() },
         semanticHint = semanticHint,
         semanticError = semanticError,
         decoration = null,
-        legacyFacade = true,
     )
 }
 
@@ -1736,15 +1687,15 @@ public fun TextField(
  *
  * Controlled pixel text input with visible [decoration] and one merged accessibility node.
  *
- * [decoration] is explicit so this additive overload cannot change the JVM descriptor or default
- * bridge of the original TextField facade. A decoration error replaces its helper while preserving
- * its caller-formatted counter. Required state adds only a label marker and never validates input.
+ * [decoration] is explicit so this overload keeps a JVM descriptor distinct from the concise
+ * TextField facade. A decoration error replaces its helper while preserving its caller-formatted
+ * counter. Required state adds only a label marker and never validates input.
  *
  * @param state Caller-owned editable text, selection, composition, and focus state.
  * @param controller Controller that mutates and observes [state].
  * @param decoration Explicit label, supporting, validation, required, and counter presentation.
  * @param placeholder Text painted while [state] is empty.
- * @param style Optional legacy style override above theme component tokens.
+ * @param style Optional explicit style override above theme component tokens.
  * @param enabled Whether the field can receive focus and edit actions.
  * @param readOnly Whether focus is allowed while text mutation is suppressed.
  * @param autofocus Whether the field requests focus after mounting.
@@ -1761,7 +1712,7 @@ public fun TextField(
  * @param key Stable retained identity for input, decoration, focus, and semantics.
  * @param semanticLabel Optional accessibility name overriding [FormFieldDecoration.label].
  * @param semanticHint Optional accessibility instruction merged with visible supporting text.
- * @param semanticError Optional legacy validation fallback used when decoration error is blank.
+ * @param semanticError Optional explicit validation fallback used when decoration error is blank.
  */
 @kotlin.jvm.JvmName("TextFieldWithDecoration")
 public fun TextField(
@@ -1812,7 +1763,6 @@ public fun TextField(
         semanticHint = semanticHint,
         semanticError = semanticError,
         decoration = decoration,
-        legacyFacade = false,
     )
 }
 
@@ -1823,8 +1773,8 @@ public fun TextField(
  *
  * Transient focus is merged by the retained input widget. A non-blank [semanticError] always adds
  * [PixelControlState.Error], while Loading keeps the field focusable but suppresses editing.
- * [style], [fillColor], and [borderColor] remain explicit compatibility overrides above component
- * and foundation theme tokens.
+ * [style], [fillColor], and [borderColor] remain explicit caller overrides above component and
+ * foundation theme tokens.
  */
 @kotlin.jvm.JvmName("TextFieldWithControlStates")
 public fun TextField(
@@ -1875,7 +1825,6 @@ public fun TextField(
         semanticHint = semanticHint,
         semanticError = semanticError,
         decoration = null,
-        legacyFacade = false,
     )
 }
 
@@ -1884,16 +1833,16 @@ public fun TextField(
  *
  * State-aware controlled text input with explicit [decoration].
  *
- * Persistent [states] follow the existing TextField capability priority. Decoration consumes the
+ * Persistent [states] follow the shared TextField capability priority. Decoration consumes the
  * same `components.textField` family, and focus remains an additive input outline. This overload
- * has a dedicated JVM name and does not replace either existing TextField descriptor.
+ * has a dedicated JVM name and does not replace either other TextField descriptor.
  *
  * @param state Caller-owned editable text, selection, composition, and focus state.
  * @param controller Controller that mutates and observes [state].
  * @param states Persistent visual and capability states supplied by the caller.
  * @param decoration Explicit label, supporting, validation, required, and counter presentation.
  * @param placeholder Text painted while [state] is empty.
- * @param style Optional legacy style override above theme component tokens.
+ * @param style Optional explicit style override above theme component tokens.
  * @param enabled Whether the field can receive focus and edit actions.
  * @param readOnly Whether focus is allowed while text mutation is suppressed.
  * @param autofocus Whether the field requests focus after mounting.
@@ -1910,7 +1859,7 @@ public fun TextField(
  * @param key Stable retained identity for input, decoration, focus, and semantics.
  * @param semanticLabel Optional accessibility name overriding [FormFieldDecoration.label].
  * @param semanticHint Optional accessibility instruction merged with visible supporting text.
- * @param semanticError Optional legacy validation fallback used when decoration error is blank.
+ * @param semanticError Optional explicit validation fallback used when decoration error is blank.
  */
 @kotlin.jvm.JvmName("TextFieldWithControlStatesAndDecoration")
 public fun TextField(
@@ -1962,11 +1911,10 @@ public fun TextField(
         semanticHint = semanticHint,
         semanticError = semanticError,
         decoration = decoration,
-        legacyFacade = false,
     )
 }
 
-/** Builds either the legacy TextField facade or the state-aware overload without changing public ABI. */
+/** 归一化 TextField 的能力状态与装饰，并构建唯一的 retained 输入实现。 */
 private fun buildTextField(
     state: PixelTextFieldState,
     controller: PixelTextFieldController,
@@ -1990,10 +1938,8 @@ private fun buildTextField(
     semanticLabel: String?,
     semanticHint: String?,
     semanticError: String?,
-    /** Optional explicit decoration; null preserves the exact legacy widget tree. */
+    /** 可选的显式装饰；null 时只渲染裸输入表面。 Optional explicit decoration; null renders the bare input surface. */
     decoration: FormFieldDecoration?,
-    /** Whether scope-less mounting must retain the pre-token visual contract. */
-    legacyFacade: Boolean,
 ): Widget {
     /** Decoration normalized once so visual and semantic error precedence cannot diverge. */
     val resolvedDecoration = decoration?.resolveForTextField(
@@ -2015,7 +1961,7 @@ private fun buildTextField(
     val focusable = PixelControlState.Disabled !in effectiveStates
     /** Stable diagnostic label; rendered semantics resolve omitted labels from theme tokens. */
     val focusDebugLabel = effectiveSemanticLabel?.takeIf { label -> label.isNotBlank() }
-        ?: placeholder.ifBlank { LEGACY_TEXT_FIELD_DEBUG_LABEL }
+        ?: placeholder.ifBlank { TEXT_FIELD_DEBUG_LABEL }
     return AutomaticFocusAction(
         enabled = focusable,
         autofocus = autofocus,
@@ -2047,10 +1993,9 @@ private fun buildTextField(
             semanticHint = effectiveSemanticHint,
             semanticError = effectiveSemanticError,
             semanticRequired = resolvedDecoration?.required == true,
-            legacyFacade = legacyFacade,
             key = key,
         )
-        /** A null decoration returns the exact pre-M5-2 TextField subtree. */
+        /** decoration 为 null 时返回不带装饰的输入子树。 A null decoration returns the bare TextField subtree. */
         resolvedDecoration?.let { resolved ->
             FormFieldDecorationWidget(
                 decoration = resolved,
@@ -2069,10 +2014,10 @@ private fun buildTextField(
  * @param value      当前位置，0.0（左端）..1.0（右端）
  * @param onDrag     手指拖动时实时调用（适合需要即时反馈的场景，如 gap 大小）
  * @param onRelease  手指抬起时调用（适合代价较高的场景，如 dot 尺寸）
- * @param activeColor 填充区颜色，默认橙色
- * @param trackColor  轨道/边框颜色，默认白色
+ * @param activeColor 可选填充区颜色；null 时解析组件前景角色。
+ * @param trackColor  可选轨道颜色；null 时解析组件容器角色。
  * @param key Slider 焦点、语义与 retained 状态共用的稳定 identity。
- * @param semanticLabel 与当前值分离的无障碍控件名称。
+ * @param semanticLabel 可选无障碍控件名称；null 或空白时解析主题 label token。
  * @param semanticValue 可选本地化值；默认使用百分比。
  * @param semanticSteps 两端点之间的离散步数；`0` 表示连续值。
  * @param enabled 是否参与指针、键盘、DPAD 和无障碍动作。
@@ -2081,10 +2026,10 @@ public fun Slider(
     value: Float,
     onDrag: (Float) -> Unit = {},
     onRelease: (Float) -> Unit = {},
-    activeColor: PixelColor = PixelColor.fromRgb(200, 100, 0),
-    trackColor: PixelColor = PixelColor.White,
+    activeColor: PixelColor? = null,
+    trackColor: PixelColor? = null,
     key: Any? = null,
-    semanticLabel: String = "Slider",
+    semanticLabel: String? = null,
     semanticValue: String? = null,
     semanticSteps: Int = 0,
     enabled: Boolean = true,
@@ -2094,17 +2039,13 @@ public fun Slider(
         states = PixelControlStateSet.Normal,
         onDrag = onDrag,
         onRelease = onRelease,
-        // Each historical default is an independent omission sentinel under an explicit theme.
-        activeColor = activeColor.takeUnless { color -> color == LEGACY_SLIDER_ACTIVE_COLOR },
-        trackColor = trackColor.takeUnless { color -> color == LEGACY_SLIDER_TRACK_COLOR },
+        activeColor = activeColor,
+        trackColor = trackColor,
         key = key,
-        semanticLabel = semanticLabel.takeUnless { candidate -> candidate == LEGACY_SLIDER_SEMANTIC_LABEL },
+        semanticLabel = semanticLabel,
         semanticValue = semanticValue,
         semanticSteps = semanticSteps,
         enabled = enabled,
-        legacyFacade = true,
-        legacyActiveColor = activeColor,
-        legacyTrackColor = trackColor,
     )
 }
 
@@ -2142,13 +2083,10 @@ public fun Slider(
         semanticValue = semanticValue,
         semanticSteps = semanticSteps,
         enabled = enabled,
-        legacyFacade = false,
-        legacyActiveColor = LEGACY_SLIDER_ACTIVE_COLOR,
-        legacyTrackColor = LEGACY_SLIDER_TRACK_COLOR,
     )
 }
 
-/** Builds one Slider while retaining facade provenance until mounted theme resolution. */
+/** 归一化 Slider 的能力状态并构建唯一的 retained 视觉实现。 */
 @Suppress("LongParameterList")
 private fun buildSlider(
     value: Float,
@@ -2162,12 +2100,6 @@ private fun buildSlider(
     semanticValue: String?,
     semanticSteps: Int,
     enabled: Boolean,
-    /** Whether a scope-less mount must preserve the pre-token Slider visuals. */
-    legacyFacade: Boolean,
-    /** Exact active color passed through the historical facade. */
-    legacyActiveColor: PixelColor,
-    /** Exact track color passed through the historical facade. */
-    legacyTrackColor: PixelColor,
 ): Widget {
     /** 已处理 NaN 与越界输入的当前键盘操作基准值。 */
     val normalizedValue = if (value.isNaN()) 0f else value.coerceIn(0f, 1f)
@@ -2210,7 +2142,7 @@ private fun buildSlider(
     }
     /** Stable diagnostic label; rendered semantics resolve omitted labels from theme tokens. */
     val focusDebugLabel = semanticLabel?.takeIf { label -> label.isNotBlank() }
-        ?: LEGACY_SLIDER_SEMANTIC_LABEL
+        ?: SLIDER_DEBUG_LABEL
     return AutomaticFocusAction(
         enabled = focusable,
         debugLabel = focusDebugLabel,
@@ -2230,9 +2162,6 @@ private fun buildSlider(
             semanticSteps = semanticSteps,
             enabled = interactive,
             focusable = focusable,
-            legacyFacade = legacyFacade,
-            legacyActiveColor = legacyActiveColor,
-            legacyTrackColor = legacyTrackColor,
             key = key,
         )
     }
@@ -2257,7 +2186,6 @@ public fun OutlinedButton(
         fillColor = fillColor,
         borderColor = borderColor,
         key = key,
-        legacyFacade = true,
     )
 }
 
@@ -2289,11 +2217,10 @@ public fun OutlinedButton(
         fillColor = fillColor,
         borderColor = borderColor,
         key = key,
-        legacyFacade = false,
     )
 }
 
-/** Builds an outlined button while preserving the distinction between old and state-aware facades. */
+/** 归一化 OutlinedButton 的能力状态并构建唯一的 retained 视觉实现。 */
 private fun buildOutlinedButton(
     text: String,
     onPressed: (() -> Unit)?,
@@ -2303,8 +2230,6 @@ private fun buildOutlinedButton(
     fillColor: PixelColor?,
     borderColor: PixelColor?,
     key: Any?,
-    /** Whether scope-less mounting must retain the pre-token visual contract. */
-    legacyFacade: Boolean,
 ): Widget {
     /** 同时满足调用方启用状态与可执行回调的实际输入状态。 */
     var effectiveStates = states
@@ -2335,7 +2260,6 @@ private fun buildOutlinedButton(
             fillColor = fillColor,
             borderColor = borderColor,
             semanticAction = activate,
-            legacyFacade = legacyFacade,
             key = key,
         )
     }
@@ -2361,7 +2285,6 @@ public fun TextButton(
         style = style,
         enabled = enabled,
         key = key,
-        legacyFacade = true,
     )
 }
 
@@ -2386,11 +2309,10 @@ public fun TextButton(
         style = style,
         enabled = enabled,
         key = key,
-        legacyFacade = false,
     )
 }
 
-/** Builds a text button while preserving the distinction between old and state-aware facades. */
+/** 归一化 TextButton 的能力状态并构建唯一的 retained 视觉实现。 */
 private fun buildTextButton(
     text: String,
     onPressed: (() -> Unit)?,
@@ -2398,8 +2320,6 @@ private fun buildTextButton(
     style: TextButtonStyle,
     enabled: Boolean,
     key: Any?,
-    /** Whether scope-less mounting must retain the pre-token visual contract. */
-    legacyFacade: Boolean,
 ): Widget {
     /** 同时满足调用方启用状态与可执行回调的实际输入状态。 */
     var effectiveStates = states
@@ -2428,7 +2348,6 @@ private fun buildTextButton(
             style = style,
             enabled = enabled,
             semanticAction = activate,
-            legacyFacade = legacyFacade,
             key = key,
         )
     }
@@ -2437,14 +2356,8 @@ private fun buildTextButton(
 /** Default continuous Slider keyboard delta when no discrete semantic steps are declared. */
 private const val DEFAULT_SLIDER_KEYBOARD_STEP: Float = 0.05f
 
-/** Diagnostic fallback used when the localizable TextField semantic label is resolved later. */
-private const val LEGACY_TEXT_FIELD_DEBUG_LABEL: String = "TextField"
+/** TextField 焦点诊断使用的稳定兜底标签；朗读标签仍由主题 label token 解析。 */
+private const val TEXT_FIELD_DEBUG_LABEL: String = "TextField"
 
-/** Exact old Slider default interpreted as an omitted localizable semantic-label sentinel. */
-private const val LEGACY_SLIDER_SEMANTIC_LABEL: String = "Slider"
-
-/** Pre-token Slider active color retained only to identify the old default-argument pair. */
-private val LEGACY_SLIDER_ACTIVE_COLOR: PixelColor = PixelColor.fromRgb(200, 100, 0)
-
-/** Pre-token Slider track color retained only to identify the old default-argument pair. */
-private val LEGACY_SLIDER_TRACK_COLOR: PixelColor = PixelColor.White
+/** Slider 焦点诊断使用的稳定兜底标签；朗读标签仍由主题 label token 解析。 */
+private const val SLIDER_DEBUG_LABEL: String = "Slider"

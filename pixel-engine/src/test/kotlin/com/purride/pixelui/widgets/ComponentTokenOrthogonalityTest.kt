@@ -18,8 +18,6 @@ import com.purride.pixelui.PixelSizeTokens
 import com.purride.pixelui.PixelSpacingTokens
 import com.purride.pixelui.PixelStateProperty
 import com.purride.pixelui.PixelTheme
-import com.purride.pixelui.PixelThemeColors
-import com.purride.pixelui.PixelThemeData
 import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Slidable
 import com.purride.pixelui.SlidableAction
@@ -36,7 +34,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Regression coverage for independent component-token paint, geometry, and legacy propagation. */
+/** 组件 token 独立绘制、几何与 token 传播的回归覆盖。 Regression coverage for independent component-token paint, geometry, and token propagation. */
 class ComponentTokenOrthogonalityTest {
     /** Equivalent encoded and literal geometry keeps Switch and Tabs frames byte-for-byte equal. */
     @Test
@@ -69,7 +67,7 @@ class ComponentTokenOrthogonalityTest {
         ORTHOGONAL_STATES.forEach { states ->
             /** Controlled checked value matching the selected state in this matrix row. */
             val checked = PixelControlState.Selected in states
-            /** Encoded Switch frame used as the legacy-exact reference. */
+            /** 标准编码 token 渲染出的 Switch 帧，作为逐像素参考。 */
             val encodedSwitch = renderPixels(
                 widget = Switch(
                     checked = checked,
@@ -188,7 +186,7 @@ class ComponentTokenOrthogonalityTest {
         val tabTokens = baseTheme.components.tabs
         /** Baseline selected single-Tab frame. */
         val baseTabs = renderTabs(baseTheme)
-        /** Container-only Tab theme filling the historically transparent surface. */
+        /** 只改容器角色的 Tab 主题，用于填充默认透明的标签表面。 */
         val tabContainerTheme = baseTheme.withTabTokens(
             tabTokens.copy(
                 containerColor = PixelStateProperty.constant(PixelColorRole.SurfaceVariant),
@@ -231,26 +229,26 @@ class ComponentTokenOrthogonalityTest {
         )
     }
 
-    /** Tabs keeps its one-pixel legacy gap while explicit spacing tokens control themed layouts. */
+    /** Tabs 保持一像素默认间距，显式间距 token 控制主题化布局。 Tabs keeps its one-pixel default gap while explicit spacing tokens control themed layouts. */
     @Test
     fun tabsSpacingUsesFoundationTokenWithExactDefault() {
         assertEquals(1, tabGap(PixelThemeTokens.Dark))
-        /** Theme whose compact spacing sentinel must replace the old literal one-pixel gap. */
+        /** 紧凑间距哨兵值必须替换默认一像素间距的主题。 Theme whose compact spacing sentinel must replace the default one-pixel gap. */
         val spacedTheme = PixelThemeTokens.Dark.copy(
             spacing = PixelSpacingTokens.Default.copy(extraSmall = 4),
         )
         assertEquals(4, tabGap(spacedTheme))
     }
 
-    /** Scope-less legacy Slidable facades retain their pre-theme closed-frame pixels exactly. */
+    /** 无 PixelTheme 提供者时，简洁 Slidable API 与状态化实现渲染出完全一致的像素。 */
     @Test
-    fun scopeLessLegacySlidableFacadesKeepExactPixels() {
-        /** Explicit legacy action background sentinel. */
+    fun conciseSlidableFacadesMatchStateAwareWithoutProvider() {
+        /** 显式动作背景哨兵色。 Explicit action background sentinel. */
         val background = PixelColor.fromRgb(171, 43, 67)
-        /** Explicit legacy action foreground sentinel. */
+        /** 显式动作前景哨兵色。 Explicit action foreground sentinel. */
         val foreground = PixelColor.fromRgb(239, 231, 197)
-        /** Current legacy action facade frame. */
-        val actionPixels = renderPixels(
+        /** 简洁 SlidableAction 入口的当前帧。 */
+        val concisePixels = renderPixels(
             widget = SlidableAction(
                 label = "A",
                 backgroundColor = background,
@@ -261,64 +259,59 @@ class ComponentTokenOrthogonalityTest {
             logicalWidth = 32,
             logicalHeight = 16,
         )
-        /** Original borderless, zero-padding facade composition used as the exact reference. */
-        val referenceActionPixels = renderPixels(
-            widget = Container(
-                fillColor = background,
-                alignment = Alignment.CENTER,
-                child = Text(
-                    "A",
-                    style = TextStyle(color = foreground),
-                    textAlign = TextAlign.CENTER,
-                    overflow = TextOverflow.ELLIPSIS,
-                    softWrap = false,
-                    maxLines = 1,
-                ),
+        /** 现代状态化入口在同一输入下的参考帧。 */
+        val stateAwarePixels = renderPixels(
+            widget = SlidableAction(
+                label = "A",
+                onPressed = {},
+                states = PixelControlStateSet.Normal,
+                backgroundColor = background,
+                foregroundColor = foreground,
             ),
             theme = null,
             logicalWidth = 32,
             logicalHeight = 16,
         )
-        assertTrue(actionPixels.contentEquals(referenceActionPixels))
+        assertTrue(concisePixels.contentEquals(stateAwarePixels))
 
-        /** Legacy row child color proving no implicit surface or inset is introduced. */
+        /** 行子内容颜色，证明两个入口共用同一表面组合。 Row child color proving both entry points share one surface composition. */
         val rowColor = PixelColor.fromRgb(29, 103, 157)
-        /** Current closed legacy Slidable frame. */
-        val rowPixels = renderPixels(
-            widget = legacyRow(rowColor),
+        /** 简洁 Slidable 行的当前帧。 */
+        val conciseRowPixels = renderPixels(
+            widget = conciseRow(rowColor),
             theme = null,
             logicalWidth = 40,
             logicalHeight = 16,
         )
-        /** Original closed-row result: the child stretches directly across the Slidable width. */
-        val referenceRowPixels = renderPixels(
-            widget = Container(width = 40, height = 7, fillColor = rowColor),
+        /** 现代状态化 Slidable 行的参考帧。 */
+        val stateAwareRowPixels = renderPixels(
+            widget = stateAwareRow(rowColor),
             theme = null,
             logicalWidth = 40,
             logicalHeight = 16,
         )
-        assertTrue(rowPixels.contentEquals(referenceRowPixels))
+        assertTrue(conciseRowPixels.contentEquals(stateAwareRowPixels))
     }
 
-    /** Explicit themes opt both legacy Slidable facades into every geometry and focus token. */
+    /** 显式主题让两个简洁 Slidable 入口消费全部几何与焦点 token。 Explicit themes opt both concise Slidable facades into every geometry and focus token. */
     @Test
-    fun explicitThemePropagatesThroughLegacySlidableFacades() {
-        /** Explicit legacy action fill that must outrank the theme container role. */
+    fun explicitThemePropagatesThroughConciseSlidableFacades() {
+        /** 必须优先于主题容器角色的显式动作填充色。 Explicit action fill that must outrank the theme container role. */
         val explicitBackground = PixelColor.fromRgb(181, 47, 73)
-        /** Explicit legacy action foreground that must outrank the theme content role. */
+        /** 必须优先于主题内容角色的显式动作前景色。 Explicit action foreground that must outrank the theme content role. */
         val explicitForeground = PixelColor.fromRgb(247, 235, 199)
         /** Row child sentinel retained inside the themed Slidable surface. */
         val rowColor = PixelColor.fromRgb(31, 109, 163)
         /** Complete themed Slidable graph with unique geometry/elevation/focus sentinels. */
         val themedTokens = slidableTheme(cornerRadius = 2)
 
-        /** Scope-less legacy action geometry reference. */
+        /** 无提供者时默认 token 的动作几何参考。 Default-token action geometry reference. */
         val scopeLessAction = captureSnapshot(
             widget = SlidableAction("A", explicitBackground, explicitForeground, onPressed = {}),
             theme = null,
             label = "A",
         )
-        /** The same legacy facade under an explicit token provider. */
+        /** 同一简洁入口置于显式 token 提供者之下。 The same concise facade under an explicit token provider. */
         val themedAction = captureSnapshot(
             widget = SlidableAction("A", explicitBackground, explicitForeground, onPressed = {}),
             theme = themedTokens,
@@ -331,7 +324,7 @@ class ComponentTokenOrthogonalityTest {
         assertTrue(themedAction.hasColor(themedTokens.colors.outline))
         assertTrue(themedAction.hasColor(themedTokens.colors.shadow))
 
-        /** Square-corner variant proving the legacy facade consumes the radius field. */
+        /** 方角变体，证明简洁入口消费圆角字段。 Square-corner variant proving the concise facade consumes the radius field. */
         val squareAction = captureSnapshot(
             widget = SlidableAction("A", explicitBackground, explicitForeground, onPressed = {}),
             theme = slidableTheme(cornerRadius = 0),
@@ -341,7 +334,7 @@ class ComponentTokenOrthogonalityTest {
         assertEquals(themedAction.node.height, squareAction.node.height)
         assertTrue(!themedAction.pixels.contentEquals(squareAction.pixels))
 
-        /** Focused themed action proving the slidable focus token is no longer skipped. */
+        /** 聚焦的主题化动作，证明 slidable 焦点 token 参与解析。 Focused themed action proving the slidable focus token participates. */
         val focusedAction = captureSnapshot(
             widget = SlidableAction("A", explicitBackground, explicitForeground, onPressed = {}),
             theme = themedTokens,
@@ -350,15 +343,15 @@ class ComponentTokenOrthogonalityTest {
         )
         assertTrue(focusedAction.hasColor(themedTokens.colors.focus))
 
-        /** Scope-less legacy row geometry reference. */
+        /** 无提供者时默认 token 的行几何参考。 Default-token row geometry reference. */
         val scopeLessRow = captureSnapshot(
-            widget = legacyRow(rowColor),
+            widget = conciseRow(rowColor),
             theme = null,
             label = DEFAULT_SLIDABLE_LABEL,
         )
-        /** The same legacy row after an explicit theme opts it into complete surface tokens. */
+        /** 同一简洁行在显式主题下消费完整表面 token。 The same concise row after an explicit theme opts it into complete surface tokens. */
         val themedRow = captureSnapshot(
-            widget = legacyRow(rowColor),
+            widget = conciseRow(rowColor),
             theme = themedTokens,
             label = DEFAULT_SLIDABLE_LABEL,
         )
@@ -368,9 +361,9 @@ class ComponentTokenOrthogonalityTest {
         assertTrue(themedRow.hasColor(themedTokens.colors.outline))
         assertTrue(themedRow.hasColor(themedTokens.colors.shadow))
 
-        /** Focused themed row proving the old facade consumes the focus indicator token. */
+        /** 聚焦的主题化行，证明简洁入口消费焦点指示器 token。 Focused themed row proving the concise facade consumes the focus indicator token. */
         val focusedRow = captureSnapshot(
-            widget = legacyRow(rowColor),
+            widget = conciseRow(rowColor),
             theme = themedTokens,
             label = DEFAULT_SLIDABLE_LABEL,
             focusFirst = true,
@@ -378,78 +371,74 @@ class ComponentTokenOrthogonalityTest {
         assertTrue(focusedRow.hasColor(themedTokens.colors.focus))
     }
 
-    /** The legacy PixelThemeData constructor also opts old Slidable facades into token geometry. */
+    /** 显式 token 主题下，简洁 Slidable API 与状态化实现的像素与语义节点完全一致。 */
     @Test
-    fun legacyThemeDataProviderPropagatesThroughLegacySlidableFacades() {
-        /** Legacy palette sentinels projected into the complete token graph by PixelTheme. */
-        val legacyColors = PixelThemeColors.Default.copy(
-            surface = PixelColor.fromRgb(37, 71, 109),
-            border = PixelColor.fromRgb(229, 139, 37),
-            focus = PixelColor.fromRgb(11, 221, 239),
-        )
-        /** Legacy provider data exercising the preserved constructor path. */
-        val legacyData = PixelThemeData(colors = legacyColors)
-        /** Explicit old-facade action colors that must remain above projected token roles. */
+    fun conciseSlidableFacadesMatchStateAwareUnderTokenTheme() {
+        /** 同时暴露表面、边框与焦点通道的独立 token 图。 Distinct token graph exposing surface, outline, and focus channels. */
+        val themedTokens = slidableTheme(cornerRadius = 2)
+        /** 必须优先于解析出的 token 角色的显式动作颜色。 Explicit action colors that must remain above resolved token roles. */
         val actionBackground = PixelColor.fromRgb(179, 41, 69)
         val actionForeground = PixelColor.fromRgb(249, 237, 203)
-        /** Scope-less action geometry reference. */
-        val scopeLessAction = captureSnapshot(
+        /** 简洁 SlidableAction 在显式主题下的帧与语义节点。 */
+        val conciseAction = captureSnapshot(
             widget = SlidableAction("A", actionBackground, actionForeground, onPressed = {}),
-            theme = null,
+            theme = themedTokens,
             label = "A",
         )
-        /** Old action facade nested under the public legacy theme constructor. */
-        val dataAction = captureSnapshot(
-            widget = PixelTheme(
-                data = legacyData,
-                child = SlidableAction("A", actionBackground, actionForeground, onPressed = {}),
+        /** 现代状态化 SlidableAction 的参考帧与语义节点。 */
+        val stateAwareAction = captureSnapshot(
+            widget = SlidableAction(
+                label = "A",
+                onPressed = {},
+                states = PixelControlStateSet.Normal,
+                backgroundColor = actionBackground,
+                foregroundColor = actionForeground,
             ),
-            theme = null,
+            theme = themedTokens,
             label = "A",
         )
-        assertTrue(dataAction.node.width > scopeLessAction.node.width)
-        assertTrue(dataAction.node.height > scopeLessAction.node.height)
-        assertTrue(dataAction.hasColor(actionBackground))
-        assertTrue(dataAction.hasColor(actionForeground))
-        assertTrue(dataAction.hasColor(legacyColors.border))
+        assertEquals(stateAwareAction.node.width, conciseAction.node.width)
+        assertEquals(stateAwareAction.node.height, conciseAction.node.height)
+        assertTrue(conciseAction.pixels.contentEquals(stateAwareAction.pixels))
+        assertTrue(conciseAction.hasColor(actionBackground))
+        assertTrue(conciseAction.hasColor(actionForeground))
+        assertTrue(conciseAction.hasColor(themedTokens.colors.outline))
         /** Separate focused frame because the additive indicator intentionally covers a 1px border. */
-        val focusedDataAction = captureSnapshot(
-            widget = PixelTheme(
-                data = legacyData,
-                child = SlidableAction("A", actionBackground, actionForeground, onPressed = {}),
-            ),
-            theme = null,
+        val focusedConciseAction = captureSnapshot(
+            widget = SlidableAction("A", actionBackground, actionForeground, onPressed = {}),
+            theme = themedTokens,
             label = "A",
             focusFirst = true,
         )
-        assertTrue(focusedDataAction.hasColor(legacyColors.focus))
+        assertTrue(focusedConciseAction.hasColor(themedTokens.colors.focus))
 
-        /** Fixed row child proving the legacy data provider also decorates old Slidable rows. */
+        /** 固定行子内容，证明两个 Slidable 入口共用同一装饰表面。 Fixed row child proving both Slidable entry points share one decorated surface. */
         val rowColor = PixelColor.fromRgb(23, 101, 159)
-        /** Scope-less old-row geometry reference. */
-        val scopeLessRow = captureSnapshot(
-            widget = legacyRow(rowColor),
-            theme = null,
+        /** 简洁 Slidable 行在显式主题下的帧与语义节点。 */
+        val conciseRowSnapshot = captureSnapshot(
+            widget = conciseRow(rowColor),
+            theme = themedTokens,
             label = DEFAULT_SLIDABLE_LABEL,
         )
-        /** Old row facade nested under the legacy data constructor. */
-        val dataRow = captureSnapshot(
-            widget = PixelTheme(data = legacyData, child = legacyRow(rowColor)),
-            theme = null,
+        /** 现代状态化 Slidable 行的参考帧与语义节点。 */
+        val stateAwareRowSnapshot = captureSnapshot(
+            widget = stateAwareRow(rowColor),
+            theme = themedTokens,
             label = DEFAULT_SLIDABLE_LABEL,
         )
-        assertTrue(dataRow.node.height > scopeLessRow.node.height)
-        assertTrue(dataRow.hasColor(rowColor))
-        assertTrue(dataRow.hasColor(legacyColors.surface))
-        assertTrue(dataRow.hasColor(legacyColors.border))
-        /** Focused legacy-data frame proves additive focus independently from its covered border. */
-        val focusedDataRow = captureSnapshot(
-            widget = PixelTheme(data = legacyData, child = legacyRow(rowColor)),
-            theme = null,
+        assertEquals(stateAwareRowSnapshot.node.height, conciseRowSnapshot.node.height)
+        assertTrue(conciseRowSnapshot.pixels.contentEquals(stateAwareRowSnapshot.pixels))
+        assertTrue(conciseRowSnapshot.hasColor(rowColor))
+        assertTrue(conciseRowSnapshot.hasColor(themedTokens.colors.surfaceVariant))
+        assertTrue(conciseRowSnapshot.hasColor(themedTokens.colors.outline))
+        /** 聚焦帧证明叠加焦点独立于其覆盖的边框。 Focused frame proves additive focus independently from its covered border. */
+        val focusedConciseRow = captureSnapshot(
+            widget = conciseRow(rowColor),
+            theme = themedTokens,
             label = DEFAULT_SLIDABLE_LABEL,
             focusFirst = true,
         )
-        assertTrue(focusedDataRow.hasColor(legacyColors.focus))
+        assertTrue(focusedConciseRow.hasColor(themedTokens.colors.focus))
     }
 
     /** Renders one unchecked Switch frame for channel-isolation assertions. */
@@ -541,12 +530,22 @@ class ComponentTokenOrthogonalityTest {
         }
     }
 
-    /** Builds the original legacy row facade around one fixed-height colored child. */
-    private fun legacyRow(color: PixelColor): Widget {
+    /** 围绕一个固定高度着色子内容构建简洁 Slidable 行入口。 */
+    private fun conciseRow(color: PixelColor): Widget {
         return Slidable(
             child = Container(width = 20, height = 7, fillColor = color),
             onTap = {},
-            key = "legacy-row",
+            key = "concise-row",
+        )
+    }
+
+    /** 构建作为等价性参考的状态化 Slidable 行。 Builds the state-aware Slidable row used as the equivalence reference. */
+    private fun stateAwareRow(color: PixelColor): Widget {
+        return Slidable(
+            child = Container(width = 20, height = 7, fillColor = color),
+            states = PixelControlStateSet.Normal,
+            onTap = {},
+            key = "concise-row",
         )
     }
 
@@ -590,7 +589,7 @@ class ComponentTokenOrthogonalityTest {
         /** Off-screen runtime owning the temporary retained tree. */
         val tester = PixelTester()
         return try {
-            /** Optional explicit provider; null deliberately exercises the scope-less path. */
+            /** 可选显式提供者；null 走继承的 Default token 图。 Optional explicit provider; null exercises the inherited Default token graph. */
             val root = theme?.let { tokens -> PixelTheme(tokens = tokens, child = widget) } ?: widget
             tester.pumpWidget(root, logicalWidth = logicalWidth, logicalHeight = logicalHeight)
             requireNotNull(tester.renderResult).buffer.pixels.copyOf()
@@ -609,7 +608,7 @@ class ComponentTokenOrthogonalityTest {
         /** Off-screen runtime retained through optional keyboard focus. */
         val tester = PixelTester()
         return try {
-            /** Optional provider distinguishing legacy scope-less and themed propagation paths. */
+            /** 可选提供者用于区分默认 token 与显式主题解析。 Optional provider distinguishing default-token and explicit-theme resolution. */
             val root = theme?.let { tokens -> PixelTheme(tokens = tokens, child = widget) } ?: widget
             tester.pumpWidget(root, logicalWidth = 48, logicalHeight = 24)
             if (focusFirst) {
@@ -695,7 +694,7 @@ class ComponentTokenOrthogonalityTest {
             PixelControlStateSet.of(PixelControlState.Disabled),
         )
 
-        /** Default localized row label used by the legacy Slidable facade. */
+        /** 省略 semanticLabel 时由主题 label token 解析出的行标签。 */
         const val DEFAULT_SLIDABLE_LABEL: String = "Slidable"
     }
 }

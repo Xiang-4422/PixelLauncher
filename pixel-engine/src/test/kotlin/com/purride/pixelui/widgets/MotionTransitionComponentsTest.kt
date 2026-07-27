@@ -2,7 +2,10 @@ package com.purride.pixelui.widgets
 
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.Container
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.PixelComponentColorTokens
+import com.purride.pixelui.PixelComponentTokens
 import com.purride.pixelui.PixelMotionRole
 import com.purride.pixelui.PixelMotionScope
 import com.purride.pixelui.PixelMotionSettings
@@ -11,6 +14,9 @@ import com.purride.pixelui.PixelMotionTheme
 import com.purride.pixelui.PixelMotionThemeData
 import com.purride.pixelui.PixelMotionTransitionPreset
 import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelStateProperty
+import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Popover
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.Slidable
@@ -322,18 +328,38 @@ class MotionTransitionComponentsTest {
         dismissible: Boolean,
         onDismissed: ((SlidableDirection) -> Unit)? = null,
     ): Widget {
-        return Slidable(
-            child = Container(width = 40, height = 10, fillColor = foregroundColor),
-            endActionPane = SlidableActionPane(
-                children = listOf(Container(fillColor = paneColor)),
-                extentRatio = 0.5f,
-                dismissible = dismissible,
-                dismissThreshold = 0.5f,
+        return PixelTheme(
+            tokens = undecoratedSlidableTheme,
+            child = Slidable(
+                child = Container(width = 40, height = 10, fillColor = foregroundColor),
+                endActionPane = SlidableActionPane(
+                    children = listOf(Container(fillColor = paneColor)),
+                    extentRatio = 0.5f,
+                    dismissible = dismissible,
+                    dismissThreshold = 0.5f,
+                ),
+                onDismissed = onDismissed,
+                key = "slidable",
             ),
-            onDismissed = onDismissed,
-            key = "slidable",
         )
     }
+
+    /**
+     * 去除 Slidable 表面装饰的 token 图，使断言只测量水平位移而不受内边距与边框影响。
+     */
+    private val undecoratedSlidableTheme: PixelThemeTokens = PixelThemeTokens.Dark.copy(
+        components = PixelComponentTokens.Default.copy(
+            slidable = PixelComponentColorTokens(
+                containerColor = PixelStateProperty.constant(null),
+                contentColor = PixelComponentTokens.Default.slidable.contentColor,
+                borderColor = PixelStateProperty.constant(null),
+                focusIndicator = null,
+                padding = EdgeInsets.all(0),
+                borderWidth = 0,
+                cornerRadius = 0,
+            ),
+        ),
+    )
 
     /** Wraps a controlled Popover in deterministic enter and exit tokens. */
     private fun popoverRoot(

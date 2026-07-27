@@ -1,12 +1,11 @@
 package com.purride.pixelui
 
-import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelTextRasterizer
 
 /**
  * 定义 `PixelTypographyToken` 在 `PixelThemeTokens` 中承担的数据与行为边界。
  *
- * Role-aware typography token that resolves to the legacy [PixelTextStyle] rendering model.
+ * Role-aware typography token that resolves to the concrete [PixelTextStyle] rendering model.
  *
  * @property colorRole Semantic text color resolved from the current scheme.
  * @property textRasterizer Optional application-provided pixel glyph rasterizer.
@@ -52,25 +51,6 @@ public data class PixelTypographyToken(
  * Default body-text typography token.
  */
         public val Default: PixelTypographyToken = PixelTypographyToken()
-
-        /**
- * 创建或解析 `PixelThemeTokens` 的 `fromLegacy` 结果，并在返回前校验输入。
- *
-         * Copies non-color metrics from a legacy [style] while assigning semantic [colorRole].
-         */
-        public fun fromLegacy(
-            style: PixelTextStyle,
-            colorRole: PixelColorRole,
-        ): PixelTypographyToken {
-            return PixelTypographyToken(
-                colorRole = colorRole,
-                textRasterizer = style.textRasterizer,
-                lineSpacing = style.lineSpacing.coerceAtLeast(0),
-                letterSpacing = style.letterSpacing.coerceAtLeast(0),
-                lineHeight = style.lineHeight?.coerceAtLeast(1),
-                fontScale = style.fontScale.coerceAtLeast(1),
-            )
-        }
     }
 }
 
@@ -372,8 +352,8 @@ public enum class PixelThemeContrast {
  *
  * Complete immutable Pixel UI theme token graph.
  *
- * The legacy [PixelThemeData] constructor and accessors remain available through [PixelTheme];
- * new components should read this model with `PixelTheme.tokensOf(context)`.
+ * This is the only theme model provided by [PixelTheme]; components read it with
+ * `PixelTheme.of(context)`.
  *
  * @property brightness Declared light or dark surface mode.
  * @property contrast Declared standard or high-contrast policy.
@@ -402,89 +382,11 @@ public data class PixelThemeTokens(
     public val components: PixelComponentTokens = PixelComponentTokens.Default,
     public val labels: PixelLabelTokens = PixelLabelTokens.Default,
 ) {
-    /**
- * 执行 `PixelThemeTokens` 的 `toLegacyThemeData` 公开行为；具体参数、返回和副作用见下文。
- *
-     * Projects the complete token graph into the legacy style model consumed by existing widgets.
-     *
-     * Component colors are resolved at call time, so a copied [colors] scheme propagates through
-     * this compatibility projection without copying [components].
-     */
-    public fun toLegacyThemeData(): PixelThemeData {
-        /** Legacy palette exposed through PixelTheme.of. */
-        val legacyColors = colors.toLegacyColors()
-        /** Canonical Normal state used for compatibility style defaults. */
-        val normal = PixelControlStateSet.Normal
-        /** Focused state used for the legacy text-field border. */
-        val focused = PixelControlStateSet.of(PixelControlState.Focused)
-        /** Selected state used for the legacy read-only text-field border. */
-        val selected = PixelControlStateSet.of(PixelControlState.Selected)
-        /** Disabled state used for legacy disabled field colors. */
-        val disabled = PixelControlStateSet.of(PixelControlState.Disabled)
-        /** Concrete default body text style. */
-        val bodyStyle = typography.body.resolve(colors)
-        /** Button text style with its component foreground role applied. */
-        val buttonTextStyle = typography.button.resolve(colors).withOptionalColor(
-            components.button.resolveContentColor(normal, colors),
-        )
-        /** Text-button style with its component foreground role applied. */
-        val textButtonTextStyle = typography.button.resolve(colors).withOptionalColor(
-            components.textButton.resolveContentColor(normal, colors),
-        )
-        /** Editable input text style. */
-        val inputStyle = typography.input.resolve(colors).withOptionalColor(
-            components.textField.resolveContentColor(normal, colors),
-        )
-        /** Disabled input text style. */
-        val disabledInputStyle = typography.input.resolve(colors).withOptionalColor(
-            components.textField.resolveContentColor(disabled, colors),
-        )
-        /** Placeholder text style resolved from caption typography. */
-        val placeholderStyle = typography.caption.resolve(colors)
-        /** Legacy outlined button style projected from component roles. */
-        val buttonStyle = PixelButtonStyle.Default.copy(
-            fillColor = components.button.resolveContainerColor(normal, colors),
-            borderColor = components.button.resolveBorderColor(normal, colors),
-            textStyle = buttonTextStyle,
-        )
-        /** Legacy borderless text-button style projected from component roles. */
-        val textButtonStyle = PixelTextButtonStyle.Default.copy(
-            textStyle = textButtonTextStyle,
-            padding = components.textButton.padding,
-        )
-        /** Uniform legacy text-field padding derived from the leading component inset. */
-        val textFieldPadding = components.textField.padding.left
-        /** Legacy text-field style projected from component roles. */
-        val textFieldStyle = PixelTextFieldStyle.Default.copy(
-            fillColor = components.textField.resolveContainerColor(normal, colors),
-            borderColor = components.textField.resolveBorderColor(normal, colors),
-            focusedBorderColor = components.textField.resolveBorderColor(focused, colors),
-            disabledBorderColor = components.textField.resolveBorderColor(disabled, colors),
-            readOnlyBorderColor = components.textField.resolveBorderColor(selected, colors),
-            textStyle = inputStyle,
-            placeholderStyle = placeholderStyle,
-            disabledTextStyle = disabledInputStyle,
-            disabledPlaceholderStyle = disabledInputStyle,
-            cursorColor = colors.selection,
-            selectionColor = colors.selection,
-            compositionColor = colors.selection,
-            selectionHandleColor = colors.selection,
-            padding = textFieldPadding,
-        )
-        return PixelThemeData(
-            colors = legacyColors,
-            textStyle = bodyStyle,
-            buttonStyle = buttonStyle,
-            textButtonStyle = textButtonStyle,
-            textFieldStyle = textFieldStyle,
-        )
-    }
-
     /** 集中提供 `PixelThemeTokens` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /** 公开 `PixelThemeTokens` 的 `Dark` 配置或运行值。
  *
- * Dark preset preserving the original PixelThemeData.Default visual palette.
+ * Dark preset used as the default visual palette.
  */
         public val Dark: PixelThemeTokens = PixelThemeTokens(
             brightness = PixelThemeBrightness.Dark,
@@ -567,67 +469,7 @@ public data class PixelThemeTokens(
                 brightness = brightness,
             )
         }
-
-        /**
- * 创建或解析 `PixelThemeTokens` 的 `fromLegacy` 结果，并在返回前校验输入。
- *
-         * Builds a semantic compatibility view over legacy [data].
-         *
-         * Palette and text metrics are preserved. Concrete component-specific legacy overrides
-         * remain available through `PixelTheme.of(context)` because not every arbitrary color can
-         * be represented by a finite semantic role set.
-         */
-        public fun fromLegacy(data: PixelThemeData): PixelThemeTokens {
-            /** Semantic scheme projected from the legacy palette. */
-            val scheme = PixelColorScheme.fromLegacy(data.colors)
-            /** Role-aware typography projected from legacy style metrics. */
-            val typography = PixelTypographyTokens(
-                body = PixelTypographyToken.fromLegacy(data.textStyle, PixelColorRole.OnBackground),
-                label = PixelTypographyToken.fromLegacy(data.textStyle, PixelColorRole.OnSurface),
-                title = PixelTypographyToken.fromLegacy(data.textStyle, PixelColorRole.OnBackground),
-                caption = PixelTypographyToken.fromLegacy(
-                    data.textFieldStyle.placeholderStyle,
-                    PixelColorRole.OnSurfaceVariant,
-                ),
-                button = PixelTypographyToken.fromLegacy(
-                    data.buttonStyle.textStyle,
-                    PixelColorRole.OnBackground,
-                ),
-                input = PixelTypographyToken.fromLegacy(
-                    data.textFieldStyle.textStyle,
-                    PixelColorRole.OnBackground,
-                ),
-            )
-            /** Component geometry that can be represented without inventing semantic colors. */
-            val componentTokens = PixelComponentTokens.Default.copy(
-                textButton = PixelComponentTokens.Default.textButton.copy(
-                    padding = data.textButtonStyle.padding,
-                ),
-                textField = PixelComponentTokens.Default.textField.copy(
-                    padding = EdgeInsets.all(data.textFieldStyle.padding.coerceAtLeast(0)),
-                ),
-            )
-            return PixelThemeTokens(
-                brightness = scheme.inferredBrightness(),
-                contrast = PixelThemeContrast.Standard,
-                colors = scheme,
-                typography = typography,
-                components = componentTokens,
-            )
-        }
     }
-}
-
-/** Returns this style with [color] when non-null, otherwise preserves its current semantic color. */
-private fun PixelTextStyle.withOptionalColor(color: PixelColor?): PixelTextStyle {
-    return color?.let { resolvedColor -> copy(color = resolvedColor) } ?: this
-}
-
-/** Infers a legacy palette's declared brightness from its opaque background channels. */
-private fun PixelColorScheme.inferredBrightness(): PixelThemeBrightness {
-    /** Simple channel sum sufficient for choosing between the two declared rendering modes. */
-    val channelSum = background.red + background.green + background.blue
-    return if (channelSum >= 384) PixelThemeBrightness.Light else PixelThemeBrightness.Dark
 }
 
 /** Validates a group of named integer tokens that permit zero. */

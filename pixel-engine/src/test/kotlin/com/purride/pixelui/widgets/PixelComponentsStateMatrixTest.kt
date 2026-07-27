@@ -313,12 +313,12 @@ class PixelComponentsStateMatrixTest {
         }
     }
 
-    /** State-aware Badge preserves Normal while the compatibility facade retains Error styling. */
+    /** 简洁 Badge 入口等价于 `states = Error` 的状态化入口，并与 Normal 状态明确不同。 */
     @Test
-    fun badgeNormalStateDiffersFromLegacyErrorDefault() {
+    fun badgeConciseFacadeMatchesErrorStatesAndDiffersFromNormal() {
         /** Normal notification surface sentinel. */
         val normal = PixelColor.fromRgb(23, 71, 109)
-        /** Legacy Error badge sentinel. */
+        /** Error 状态哨兵色，用于证明简洁入口选择的正是 Error 角色。 */
         val error = PixelColor.fromRgb(211, 37, 59)
         /** Theme exposing both states as exact observable colors. */
         val theme = PixelThemeTokens.Default.copy(
@@ -339,8 +339,25 @@ class PixelComponentsStateMatrixTest {
                 logicalWidth = 48,
                 logicalHeight = 18,
             )
+            /** Normal 状态化入口的参考帧。 */
+            val normalPixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
             assertTrue(tester.hasPixel(normal))
             assertFalse(tester.hasPixel(error))
+
+            tester.pumpWidget(
+                PixelTheme(
+                    tokens = theme,
+                    child = Badge(
+                        child = Text("BODY"),
+                        label = Text("1"),
+                        states = PixelControlStateSet.of(PixelControlState.Error),
+                    ),
+                ),
+                logicalWidth = 48,
+                logicalHeight = 18,
+            )
+            /** Error 状态化入口的参考帧。 */
+            val errorStatePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
 
             tester.pumpWidget(
                 PixelTheme(
@@ -350,7 +367,34 @@ class PixelComponentsStateMatrixTest {
                 logicalWidth = 48,
                 logicalHeight = 18,
             )
+            /** 简洁入口的当前帧。 */
+            val concisePixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+
+            // 简洁入口直接委托到 Error states，因此与状态化 Error 帧逐像素相同。
+            assertTrue(concisePixels.contentEquals(errorStatePixels))
+            assertFalse(concisePixels.contentEquals(normalPixels))
             assertTrue(tester.hasPixel(error))
+            assertFalse(tester.hasPixel(normal))
+
+            tester.pumpWidget(
+                Badge(child = Text("BODY"), label = Text("1")),
+                logicalWidth = 48,
+                logicalHeight = 18,
+            )
+            /** 未挂载提供者时同一简洁入口的帧。 */
+            val withoutProviderPixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            tester.pumpWidget(
+                PixelTheme(
+                    tokens = PixelThemeTokens.Default,
+                    child = Badge(child = Text("BODY"), label = Text("1")),
+                ),
+                logicalWidth = 48,
+                logicalHeight = 18,
+            )
+            /** 挂载与默认值相同的 token 图后，同一简洁入口的帧。 */
+            val defaultProviderPixels = requireNotNull(tester.renderResult).buffer.pixels.copyOf()
+            // 有无 PixelTheme 只改变 token 解析结果；Default 图与无提供者必须完全一致。
+            assertTrue(withoutProviderPixels.contentEquals(defaultProviderPixels))
         } finally {
             tester.dispose()
         }

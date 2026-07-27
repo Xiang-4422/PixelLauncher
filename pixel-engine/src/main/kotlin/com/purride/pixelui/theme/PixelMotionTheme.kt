@@ -343,7 +343,7 @@ public class PixelMotionTheme(
         public fun maybeOf(context: BuildContext): PixelMotionThemeData? {
             /** 显式 runtime motion provider 始终具有最高优先级。 */
             val explicitTheme = context.dependOnInheritedWidgetOfExactType<PixelMotionTheme>()?.data
-            return explicitTheme ?: PixelTheme.maybeTokensOf(context)?.motion
+            return explicitTheme ?: PixelTheme.maybeOf(context)?.motion
         }
 
         /** 执行 `PixelMotionTheme` 的 `of` 公开行为；具体参数、返回和副作用见下文。
