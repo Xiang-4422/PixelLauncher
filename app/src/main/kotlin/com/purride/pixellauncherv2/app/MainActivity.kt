@@ -71,7 +71,7 @@ import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
-import com.purride.pixellauncherv2.render.LauncherAnimationState
+import com.purride.pixellauncherv2.animation.LauncherAnimationState
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import com.purride.pixelcore.PixelShape
