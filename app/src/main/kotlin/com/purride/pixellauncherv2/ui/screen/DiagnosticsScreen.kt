@@ -23,7 +23,7 @@ import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.DiagnosticsLine
 import com.purride.pixellauncherv2.launcher.DiagnosticsModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -35,7 +35,7 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 class DiagnosticsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
-    private val screenProfile: ScreenProfile,
+    private val screenProfile: LauncherLayoutProfile,
     private val onOpenDataHealth: () -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {

@@ -16,7 +16,7 @@ import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 
 /**
  * 重写后的 Launcher UI 状态快照。
@@ -75,7 +75,7 @@ data class LauncherUiState(
 
     // ── Appearance ────────────────────────────────────────────────────────────
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
-    val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
+    val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
 

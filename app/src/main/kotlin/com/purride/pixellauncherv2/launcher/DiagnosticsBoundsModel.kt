@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 
 data class DiagnosticsBoundsSnapshot(
     val contentWidthPx: Int,
@@ -17,7 +17,7 @@ data class DiagnosticsBoundsSnapshot(
 
 object DiagnosticsBoundsModel {
 
-    fun snapshot(screenProfile: ScreenProfile): DiagnosticsBoundsSnapshot {
+    fun snapshot(screenProfile: LauncherLayoutProfile): DiagnosticsBoundsSnapshot {
         val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile)
         val contentWidth = (screenProfile.logicalWidth - LauncherSpacing.CONTENT_HORIZONTAL * 2)
             .coerceAtLeast(0)

@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 data class DiagnosticsTextSample(
@@ -15,15 +15,15 @@ data class DiagnosticsTextSample(
 
 object DiagnosticsTextSampleModel {
 
-    fun summary(state: LauncherState, screenProfile: ScreenProfile): String {
+    fun summary(state: LauncherState, screenProfile: LauncherLayoutProfile): String {
         return summary(samples(state, screenProfile))
     }
 
-    fun summary(state: LauncherUiState, screenProfile: ScreenProfile): String {
+    fun summary(state: LauncherUiState, screenProfile: LauncherLayoutProfile): String {
         return summary(samples(state, screenProfile))
     }
 
-    fun samples(state: LauncherState, screenProfile: ScreenProfile): List<DiagnosticsTextSample> {
+    fun samples(state: LauncherState, screenProfile: LauncherLayoutProfile): List<DiagnosticsTextSample> {
         return buildSamples(
             homeLines = HomeInfoModel.lines(state).map { it.text },
             dataLines = DataHealthModel.lines(state).map { "${it.title} ${it.value}" },
@@ -31,7 +31,7 @@ object DiagnosticsTextSampleModel {
         )
     }
 
-    fun samples(state: LauncherUiState, screenProfile: ScreenProfile): List<DiagnosticsTextSample> {
+    fun samples(state: LauncherUiState, screenProfile: LauncherLayoutProfile): List<DiagnosticsTextSample> {
         return buildSamples(
             homeLines = HomeInfoModel.lines(state).map { it.text },
             dataLines = DataHealthModel.lines(state).map { "${it.title} ${it.value}" },
@@ -50,7 +50,7 @@ object DiagnosticsTextSampleModel {
     private fun buildSamples(
         homeLines: List<String>,
         dataLines: List<String>,
-        screenProfile: ScreenProfile,
+        screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsTextSample> {
         val availablePx = contentWidth(screenProfile)
         return buildList {
@@ -84,7 +84,7 @@ object DiagnosticsTextSampleModel {
         )
     }
 
-    private fun contentWidth(screenProfile: ScreenProfile): Int {
+    private fun contentWidth(screenProfile: LauncherLayoutProfile): Int {
         return (screenProfile.logicalWidth - CONTENT_HORIZONTAL_PADDING_PX * 2).coerceAtLeast(1)
     }
 

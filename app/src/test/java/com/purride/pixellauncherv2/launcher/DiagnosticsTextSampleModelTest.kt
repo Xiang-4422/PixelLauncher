@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -10,7 +10,7 @@ class DiagnosticsTextSampleModelTest {
 
     @Test
     fun samplesMeasureHomeDataAndSettingsTextAgainstContentWidth() {
-        val profile = ScreenProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
+        val profile = LauncherLayoutProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
         val state = LauncherState(
             hasLocationPermission = true,
             screenUsageTimeText = "00:20",
@@ -27,14 +27,14 @@ class DiagnosticsTextSampleModelTest {
 
     @Test
     fun summaryReportsOkWithLargestSampleAndAvailableWidth() {
-        val profile = ScreenProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
+        val profile = LauncherLayoutProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
 
         assertEquals("OK 114/116", DiagnosticsTextSampleModel.summary(readyState(), profile))
     }
 
     @Test
     fun summaryReportsRiskWhenSamplesExceedAvailableWidth() {
-        val profile = ScreenProfile(logicalWidth = 80, logicalHeight = 240, dotSizePx = 4)
+        val profile = LauncherLayoutProfile(logicalWidth = 80, logicalHeight = 240, dotSizePx = 4)
 
         assertTrue(DiagnosticsTextSampleModel.summary(readyState(), profile).startsWith("RISK "))
         assertFalse(DiagnosticsTextSampleModel.samples(readyState(), profile).all { it.fits })

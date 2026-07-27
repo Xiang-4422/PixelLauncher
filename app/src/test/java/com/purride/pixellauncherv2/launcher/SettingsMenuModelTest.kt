@@ -1,7 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixelcore.PixelShape
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -63,7 +63,7 @@ class SettingsMenuModelTest {
 
     @Test
     fun nextResolution_keepsOriginalDiscreteOptionsAndWraps() {
-        val options = ScreenProfileFactory.resolutionOptions(currentProfile = null)
+        val options = LauncherLayoutProfileFactory.resolutionOptions()
         assertEquals(options, SettingsMenuModel.resolutionOptions())
         assertEquals(0, SettingsMenuModel.resolutionIndex(options.first()))
         assertEquals(options.lastIndex, SettingsMenuModel.resolutionIndex(options.last()))

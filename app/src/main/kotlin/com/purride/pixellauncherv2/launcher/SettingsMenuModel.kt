@@ -1,8 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixelcore.PixelShape
-import com.purride.pixellauncherv2.render.ScreenProfile
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 
 enum class SettingsMenuItem {
     RESOLUTION,
@@ -52,13 +51,13 @@ object SettingsMenuModel {
         PixelShape.DIAMOND,
     )
     val themeOptions: List<PixelTheme> = PixelTheme.entries
-    fun rows(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsMenuRow> {
+    fun rows(state: LauncherState): List<SettingsMenuRow> {
         return buildList {
             add(
                 SettingsMenuRow(
                     item = SettingsMenuItem.RESOLUTION,
                     title = "PIXEL SIZE",
-                    value = resolutionLabel(state.selectedDotSizePx, screenProfile),
+                    value = resolutionLabel(state.selectedDotSizePx),
                     section = SettingsSection.DISPLAY,
                 ),
             )
@@ -230,8 +229,8 @@ object SettingsMenuModel {
         }
     }
 
-    fun sections(state: LauncherState, screenProfile: ScreenProfile? = null): List<SettingsSection> {
-        return rows(state, screenProfile).map { it.section }.distinct()
+    fun sections(state: LauncherState): List<SettingsSection> {
+        return rows(state).map { it.section }.distinct()
     }
 
     fun selectedItem(state: LauncherState): SettingsMenuItem {
@@ -245,18 +244,18 @@ object SettingsMenuModel {
         return styleOptions[nextIndex]
     }
 
-    fun nextResolution(current: Int, direction: Int, screenProfile: ScreenProfile? = null): Int {
-        val options = resolutionOptions(screenProfile)
-        val nextIndex = wrapIndex(resolutionIndex(current, screenProfile) + direction, options.size)
+    fun nextResolution(current: Int, direction: Int): Int {
+        val options = resolutionOptions()
+        val nextIndex = wrapIndex(resolutionIndex(current) + direction, options.size)
         return options[nextIndex]
     }
 
-    fun resolutionOptions(screenProfile: ScreenProfile? = null): List<Int> {
-        return ScreenProfileFactory.resolutionOptions(screenProfile)
+    fun resolutionOptions(): List<Int> {
+        return LauncherLayoutProfileFactory.resolutionOptions()
     }
 
-    fun resolutionIndex(current: Int, screenProfile: ScreenProfile? = null): Int {
-        return resolutionOptions(screenProfile).indexOf(current).takeIf { it >= 0 } ?: 0
+    fun resolutionIndex(current: Int): Int {
+        return resolutionOptions().indexOf(current).takeIf { it >= 0 } ?: 0
     }
 
     fun nextTheme(current: PixelTheme, direction: Int): PixelTheme {
@@ -340,7 +339,7 @@ object SettingsMenuModel {
         return if (value) "ON" else "OFF"
     }
 
-    fun resolutionLabel(dotSizePx: Int, screenProfile: ScreenProfile? = null): String {
+    fun resolutionLabel(dotSizePx: Int): String {
         return "${dotSizePx}PX"
     }
 

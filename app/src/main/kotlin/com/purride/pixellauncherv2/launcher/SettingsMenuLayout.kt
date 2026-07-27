@@ -1,7 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.render.GlyphStyle
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 
 /**
  * 设置页 / 短信收件箱的视口行数估算（状态机用）。
@@ -22,11 +22,11 @@ object SettingsMenuLayout {
     private val largeRowHeight: Int
         get() = (GlyphStyle.APP_LABEL_16.cellHeight * 2) + rowGap
 
-    fun visibleRows(screenProfile: ScreenProfile): Int = computeVisibleRows(screenProfile, rowHeight)
+    fun visibleRows(screenProfile: LauncherLayoutProfile): Int = computeVisibleRows(screenProfile, rowHeight)
 
-    fun largeVisibleRows(screenProfile: ScreenProfile): Int = computeVisibleRows(screenProfile, largeRowHeight)
+    fun largeVisibleRows(screenProfile: LauncherLayoutProfile): Int = computeVisibleRows(screenProfile, largeRowHeight)
 
-    private fun computeVisibleRows(screenProfile: ScreenProfile, listRowHeight: Int): Int {
+    private fun computeVisibleRows(screenProfile: LauncherLayoutProfile, listRowHeight: Int): Int {
         val panelTop = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val panelBottom = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(panelTop + 24)
         return TextListSupport.createLayoutMetrics(

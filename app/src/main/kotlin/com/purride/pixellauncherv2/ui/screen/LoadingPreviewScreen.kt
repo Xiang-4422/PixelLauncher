@@ -20,13 +20,13 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 
 class LoadingPreviewScreen(
     private val theme: LauncherTheme,
-    private val screenProfile: ScreenProfile,
+    private val screenProfile: LauncherLayoutProfile,
     private val vsync: PixelTickerProvider,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {

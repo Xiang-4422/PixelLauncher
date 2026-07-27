@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 
 /**
  * 抽屉应用列表的视口行数计算（状态机用）。
@@ -16,7 +16,7 @@ object AppListLayout {
     private val rowHeight: Int
         get() = DrawerListGeometry.rowPitch(PixelFontCatalog.defaultUiFontSize.px)
 
-    fun visibleRows(screenProfile: ScreenProfile): Int {
+    fun visibleRows(screenProfile: LauncherLayoutProfile): Int {
         val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val railHeight = (screenProfile.logicalHeight - listStartY - bottomPadding).coerceAtLeast(rowHeight)
         return TextListSupport.createLayoutMetrics(

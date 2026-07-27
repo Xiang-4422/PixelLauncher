@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -13,7 +13,7 @@ import org.junit.Test
  */
 class DiagnosticsModelTest {
 
-    private val profile = ScreenProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
+    private val profile = LauncherLayoutProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4)
 
     @Test
     fun lines_buildsRowsInExpectedOrder() {

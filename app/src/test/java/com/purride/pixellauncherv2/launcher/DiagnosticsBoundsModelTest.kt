@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -11,7 +11,7 @@ class DiagnosticsBoundsModelTest {
     @Test
     fun snapshotReportsUsableBodyRowsForNormalScreen() {
         val snapshot = DiagnosticsBoundsModel.snapshot(
-            ScreenProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4, statusBarHeight = 12),
+            LauncherLayoutProfile(logicalWidth = 120, logicalHeight = 240, dotSizePx = 4, statusBarHeight = 12),
         )
 
         assertTrue(snapshot.geometryOk)
@@ -24,7 +24,7 @@ class DiagnosticsBoundsModelTest {
     @Test
     fun snapshotReportsRiskWhenStatusConsumesBody() {
         val snapshot = DiagnosticsBoundsModel.snapshot(
-            ScreenProfile(logicalWidth = 120, logicalHeight = 12, dotSizePx = 4, statusBarHeight = 12),
+            LauncherLayoutProfile(logicalWidth = 120, logicalHeight = 12, dotSizePx = 4, statusBarHeight = 12),
         )
 
         assertFalse(snapshot.geometryOk)

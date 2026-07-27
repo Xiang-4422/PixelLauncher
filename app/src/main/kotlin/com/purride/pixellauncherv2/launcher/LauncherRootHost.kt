@@ -5,7 +5,7 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelAxis
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -74,7 +74,7 @@ internal class LauncherRootHost(
     private var uiState: LauncherUiState = LauncherUiState()
     private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY)
     private var chargeTick: Int = 0
-    private var screenProfile: ScreenProfile = ScreenProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
+    private var screenProfile: LauncherLayoutProfile = LauncherLayoutProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
     private val textRasterizers = LauncherTextRasterizers(context)
     /** Launcher 唯一的 Android Host View。 */
     private val hostView = PixelHostView(context)
@@ -188,7 +188,7 @@ internal class LauncherRootHost(
     fun update(
         state: LauncherUiState,
         theme: LauncherTheme,
-        screenProfile: ScreenProfile,
+        screenProfile: LauncherLayoutProfile,
         chargeTick: Int,
         pixelGapEnabled: Boolean = state.isPixelGapEnabled,
     ) {

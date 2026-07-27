@@ -7,7 +7,7 @@ import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixelcore.PixelShape
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 
 class FontSettingsRepository(
     context: Context,
@@ -114,7 +114,7 @@ class FontSettingsRepository(
     private fun readStoredDotSizePx(): Int {
         val storedValue = sharedPreferences.getInt(KEY_DOT_SIZE_PX, Int.MIN_VALUE)
         if (storedValue == Int.MIN_VALUE) {
-            return ScreenProfileFactory.defaultDotSizePx
+            return LauncherLayoutProfileFactory.defaultDotSizePx
         }
         return storedValue.coerceAtLeast(1)
     }

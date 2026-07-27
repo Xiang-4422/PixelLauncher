@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 data class DiagnosticsLine(
@@ -11,7 +11,7 @@ data class DiagnosticsLine(
 object DiagnosticsModel {
 
     /** Overload for [LauncherUiState] (pixel-engine path). */
-    fun lines(state: LauncherUiState, screenProfile: ScreenProfile): List<DiagnosticsLine> {
+    fun lines(state: LauncherUiState, screenProfile: LauncherLayoutProfile): List<DiagnosticsLine> {
         val textSamples = DiagnosticsTextSampleModel.samples(state, screenProfile)
         return lines(
             homeSummary = HomeInfoModel.summary(state),
@@ -27,7 +27,7 @@ object DiagnosticsModel {
         )
     }
 
-    fun lines(state: LauncherState, screenProfile: ScreenProfile): List<DiagnosticsLine> {
+    fun lines(state: LauncherState, screenProfile: LauncherLayoutProfile): List<DiagnosticsLine> {
         val textSamples = DiagnosticsTextSampleModel.samples(state, screenProfile)
         return lines(
             homeSummary = HomeInfoModel.summary(state),
@@ -53,7 +53,7 @@ object DiagnosticsModel {
         batteryLevel: Int,
         isCharging: Boolean,
         hasUsageAccess: Boolean,
-        screenProfile: ScreenProfile,
+        screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsLine> {
         val lastLaunch = lastLaunchPackageName
             ?.substringAfterLast('.')

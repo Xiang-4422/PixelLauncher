@@ -1,7 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.render.GlyphStyle
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,7 +15,7 @@ import org.junit.Test
  */
 class SettingsMenuLayoutTest {
 
-    private fun expectedVisibleRows(profile: ScreenProfile, rowHeight: Int): Int {
+    private fun expectedVisibleRows(profile: LauncherLayoutProfile, rowHeight: Int): Int {
         val top = LauncherHeaderLayout.firstContentItemTop(profile)
         val panelBottom = (profile.logicalHeight - LauncherSpacing.CONTENT_VERTICAL).coerceAtLeast(top + 24)
         val height = (panelBottom - top).coerceAtLeast(rowHeight)
@@ -25,7 +25,7 @@ class SettingsMenuLayoutTest {
     @Test
     fun visibleRows_matchesFixedPitchComposition() {
         for (h in listOf(200, 320, 480, 640)) {
-            val profile = ScreenProfile(120, h, 4)
+            val profile = LauncherLayoutProfile(120, h, 4)
             assertEquals(
                 "visibleRows mismatch at height=$h",
                 expectedVisibleRows(profile, SettingsListGeometry.ROW_PITCH_PX),
@@ -38,7 +38,7 @@ class SettingsMenuLayoutTest {
     fun largeVisibleRows_matchesDoubleHeightComposition() {
         val largeRowHeight = GlyphStyle.APP_LABEL_16.cellHeight * 2 + 2
         for (h in listOf(200, 320, 480, 640)) {
-            val profile = ScreenProfile(120, h, 4)
+            val profile = LauncherLayoutProfile(120, h, 4)
             assertEquals(
                 "largeVisibleRows mismatch at height=$h",
                 expectedVisibleRows(profile, largeRowHeight),
@@ -49,14 +49,14 @@ class SettingsMenuLayoutTest {
 
     @Test
     fun visibleRows_isAtLeastOneForTinyScreens() {
-        assertEquals(1, SettingsMenuLayout.visibleRows(ScreenProfile(64, 1, 4)))
+        assertEquals(1, SettingsMenuLayout.visibleRows(LauncherLayoutProfile(64, 1, 4)))
     }
 
     @Test
     fun visibleRows_usesStatusBarHeightFromProfile() {
-        val defaultHeader = SettingsMenuLayout.visibleRows(ScreenProfile(120, 240, 4))
+        val defaultHeader = SettingsMenuLayout.visibleRows(LauncherLayoutProfile(120, 240, 4))
         val tallerHeader = SettingsMenuLayout.visibleRows(
-            ScreenProfile(
+            LauncherLayoutProfile(
                 logicalWidth = 120,
                 logicalHeight = 240,
                 dotSizePx = 4,
@@ -66,7 +66,7 @@ class SettingsMenuLayoutTest {
 
         assertEquals(
             expectedVisibleRows(
-                ScreenProfile(120, 240, 4, statusBarHeight = 48),
+                LauncherLayoutProfile(120, 240, 4, statusBarHeight = 48),
                 SettingsListGeometry.ROW_PITCH_PX,
             ),
             tallerHeader,

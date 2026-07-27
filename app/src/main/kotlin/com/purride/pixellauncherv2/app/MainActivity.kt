@@ -73,12 +73,12 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.launcher.PixelTheme
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.model.DeviceStatus
-import com.purride.pixellauncherv2.render.ScreenProfile
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.ScreenGravityMapper
 import com.purride.pixellauncherv2.system.WindowModeController
@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
-    private var screenProfile: ScreenProfile = ScreenProfileFactory.create(widthPx = 1, heightPx = 1)
+    private var screenProfile: LauncherLayoutProfile = LauncherLayoutProfileFactory.create(widthPx = 1, heightPx = 1)
     private var selectedTheme: PixelTheme = PixelTheme.DAY
     private var pendingPixelAppearanceBaseline: PixelAppearanceBaseline? = null
     private var pendingPixelConfirmDeadlineUptimeMs: Long = 0L
@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
         windowModeController = WindowModeController(window)
         windowModeController.hideSystemBars()
         val metrics = resources.displayMetrics
-        screenProfile = ScreenProfileFactory.create(
+        screenProfile = LauncherLayoutProfileFactory.create(
             widthPx = metrics.widthPixels,
             heightPx = metrics.heightPixels,
             dotSizePx = appearanceSettings.dotSizePx,
@@ -1474,7 +1474,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateScreenProfile(widthPx: Int, heightPx: Int, render: Boolean = true): Boolean {
-        val newProfile = ScreenProfileFactory.create(
+        val newProfile = LauncherLayoutProfileFactory.create(
             widthPx = widthPx,
             heightPx = heightPx,
             dotSizePx = state.selectedDotSizePx,

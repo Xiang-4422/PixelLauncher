@@ -1,7 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixelcore.PixelShape
-import com.purride.pixellauncherv2.render.ScreenProfileFactory
+import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 
@@ -49,7 +49,7 @@ data class LauncherState(
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
-    val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
+    val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
