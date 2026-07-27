@@ -1,7 +1,9 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.data.DeviceStatus
-import com.purride.pixellauncherv2.data.LauncherStatsSnapshot
+import com.purride.pixellauncherv2.model.DeviceStatus
+import com.purride.pixellauncherv2.model.LauncherStatsSnapshot
+import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.render.PixelShape
 import java.text.Collator
 import java.util.Locale
@@ -699,7 +701,7 @@ object LauncherStateTransitions {
     }
 
     /** 用最新未读短信列表更新短信页状态，并尽量保持当前选中有效。 */
-    fun updateUnreadSmsEntries(state: LauncherState, entries: List<com.purride.pixellauncherv2.data.SmsMessageEntry>, visibleRows: Int): LauncherState {
+    fun updateUnreadSmsEntries(state: LauncherState, entries: List<SmsMessageEntry>, visibleRows: Int): LauncherState {
         val safeSelectedIndex = state.smsSelectedIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))
         val nextPageIndex = if (entries.isEmpty() && !state.isSmsThreadsLoading) SmsPageIndex.ALL else state.smsPageIndex
         return syncSmsWindow(
@@ -990,7 +992,7 @@ object LauncherStateTransitions {
 
     fun updateSmsThreads(
         state: LauncherState,
-        threads: List<com.purride.pixellauncherv2.data.SmsThreadSummary>,
+        threads: List<SmsThreadSummary>,
         visibleRows: Int,
     ): LauncherState {
         val safeSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, (threads.size - 1).coerceAtLeast(0))
@@ -1054,7 +1056,7 @@ object LauncherStateTransitions {
         isServiceConversation: Boolean = state.smsCurrentIsServiceConversation,
         threadId: Long?,
         address: String,
-        messages: List<com.purride.pixellauncherv2.data.SmsMessageEntry>,
+        messages: List<SmsMessageEntry>,
     ): LauncherState {
         return state.copy(
             smsCurrentConversationKey = conversationKey,
@@ -1068,7 +1070,7 @@ object LauncherStateTransitions {
 
     fun updateSmsAllMessages(
         state: LauncherState,
-        messages: List<com.purride.pixellauncherv2.data.SmsMessageEntry>,
+        messages: List<SmsMessageEntry>,
     ): LauncherState {
         return state.copy(smsAllMessages = messages)
     }

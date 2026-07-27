@@ -4,7 +4,7 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.ManualFrameScheduler
-import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
+import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

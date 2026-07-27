@@ -13,7 +13,7 @@ import com.purride.pixelui.advanced.PixelRenderObject
 import com.purride.pixelui.advanced.PixelRenderSize
 import com.purride.pixelui.animation.PixelTicker
 import com.purride.pixelui.animation.PixelTickerProvider
-import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
+import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min

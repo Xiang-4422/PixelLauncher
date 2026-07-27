@@ -8,7 +8,6 @@ import android.content.Intent
 import android.os.Handler
 import android.util.Log
 import com.purride.pixellauncherv2.data.SmsRepository
-import com.purride.pixellauncherv2.data.SmsSendRequest
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -17,6 +16,8 @@ import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
+import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsSendRequest
 import java.util.concurrent.ExecutorService
 
 /**
@@ -503,7 +504,7 @@ internal class SmsController(
         }
     }
 
-    private fun applySmsData(messages: List<com.purride.pixellauncherv2.data.SmsMessageEntry>) {
+    private fun applySmsData(messages: List<SmsMessageEntry>) {
         val threads = SmsConversationModel.summarize(messages)
         var nextState = LauncherStateTransitions.updateSmsAllMessages(
             state = host.state.copy(isSmsThreadsLoading = false),

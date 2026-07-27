@@ -6,11 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import androidx.core.content.ContextCompat
-
-data class DeviceStatus(
-    val batteryLevel: Int,
-    val isCharging: Boolean,
-)
+import com.purride.pixellauncherv2.model.DeviceStatus
 
 class DeviceStatusRepository(
     private val context: Context,

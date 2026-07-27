@@ -25,7 +25,7 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
-import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel

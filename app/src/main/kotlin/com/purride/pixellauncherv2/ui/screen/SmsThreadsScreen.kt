@@ -34,8 +34,8 @@ import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
-import com.purride.pixellauncherv2.data.SmsMessageEntry
-import com.purride.pixellauncherv2.data.SmsThreadSummary
+import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
 import com.purride.pixellauncherv2.launcher.LauncherSpacing

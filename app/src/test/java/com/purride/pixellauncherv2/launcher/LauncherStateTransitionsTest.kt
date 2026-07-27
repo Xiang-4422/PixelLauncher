@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
+import com.purride.pixellauncherv2.model.SmsMessageEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -358,7 +359,7 @@ class LauncherStateTransitionsTest {
             state = LauncherState(
                 mode = LauncherMode.SMS_THREADS,
                 smsMessages = listOf(
-                    com.purride.pixellauncherv2.data.SmsMessageEntry(
+                    SmsMessageEntry(
                         messageId = 1L,
                         threadId = 1L,
                         address = "old",

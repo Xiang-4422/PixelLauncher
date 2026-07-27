@@ -1,6 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.data.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

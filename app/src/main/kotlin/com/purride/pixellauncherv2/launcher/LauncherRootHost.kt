@@ -51,7 +51,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.ui.widget.LauncherSearchHeader
-import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
+import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import kotlin.time.Duration.Companion.milliseconds
 

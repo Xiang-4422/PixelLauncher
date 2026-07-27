@@ -31,8 +31,6 @@ import com.purride.pixellauncherv2.data.CommunicationStatus
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
 import com.purride.pixellauncherv2.data.DeviceLocationRepository
 import com.purride.pixellauncherv2.data.DeviceMotionRepository
-import com.purride.pixellauncherv2.data.DeviceMotionSnapshot
-import com.purride.pixellauncherv2.data.DeviceStatus
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.FontSettingsRepository
 import com.purride.pixellauncherv2.data.GeoPoint
@@ -78,6 +76,8 @@ import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
+import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
+import com.purride.pixellauncherv2.model.DeviceStatus
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.ScreenGravityMapper

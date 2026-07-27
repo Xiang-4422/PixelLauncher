@@ -1,7 +1,7 @@
 package com.purride.pixellauncherv2.viewmodel
 
-import com.purride.pixellauncherv2.data.SmsMessageEntry
-import com.purride.pixellauncherv2.data.SmsThreadSummary
+import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus

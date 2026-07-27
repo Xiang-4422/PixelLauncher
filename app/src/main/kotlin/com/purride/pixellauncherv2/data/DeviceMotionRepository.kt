@@ -5,26 +5,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import kotlin.math.sqrt
-
-data class DeviceMotionSnapshot(
-    val gravityX: Float = 0f,
-    val gravityY: Float = 0f,
-    val gravityZ: Float = 0f,
-    val linearAccelX: Float = 0f,
-    val linearAccelY: Float = 0f,
-    val linearAccelZ: Float = 0f,
-    val screenGravityX: Float = gravityX,
-    val screenGravityY: Float = gravityY,
-    val screenLinearAccelX: Float = linearAccelX,
-    val screenLinearAccelY: Float = linearAccelY,
-    val accelMagnitude: Float = staticGravityMagnitude,
-    val timestampNanos: Long = 0L,
-) {
-    companion object {
-        const val staticGravityMagnitude: Float = 9.81f
-    }
-}
 
 class DeviceMotionRepository(
     context: Context,

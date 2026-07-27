@@ -17,38 +17,8 @@ import androidx.core.content.ContextCompat
 import com.purride.pixellauncherv2.launcher.SmsConversationIdentity
 import com.purride.pixellauncherv2.launcher.SmsConversationModel
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
-
-data class SmsThreadSummary(
-    val threadId: Long,
-    val address: String,
-    val snippet: String,
-    val dateMillis: Long,
-    val unreadCount: Int,
-    val messageCount: Int,
-    val displayName: String = "",
-    val conversationKey: String = "thread:$threadId",
-    val isServiceConversation: Boolean = false,
-)
-
-data class SmsMessageEntry(
-    val messageId: Long,
-    val threadId: Long,
-    val address: String,
-    val body: String,
-    val dateMillis: Long,
-    val type: Int,
-    val isRead: Boolean,
-    val displayName: String = "",
-    val conversationKey: String = "thread:$threadId",
-    val conversationTitle: String = displayName.ifBlank { address },
-    val isServiceConversation: Boolean = false,
-)
-
-data class SmsSendRequest(
-    val address: String,
-    val body: String,
-    val threadId: Long? = null,
-)
+import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsSendRequest
 
 class SmsRepository(
     private val context: Context,

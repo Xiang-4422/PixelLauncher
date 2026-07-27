@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.purride.pixellauncherv2.R
 import com.purride.pixellauncherv2.app.MainActivity
+import com.purride.pixellauncherv2.model.SmsMessageEntry
 
 class SmsNotificationHelper(
     private val context: Context,

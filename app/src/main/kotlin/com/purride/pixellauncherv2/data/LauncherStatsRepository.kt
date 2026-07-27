@@ -2,12 +2,7 @@ package com.purride.pixellauncherv2.data
 
 import android.content.Context
 import com.purride.pixellauncherv2.launcher.AppEntry
-
-data class LauncherStatsSnapshot(
-    val launchCount: Int,
-    val recentApps: List<String>,
-    val lastLaunchPackageName: String?,
-)
+import com.purride.pixellauncherv2.model.LauncherStatsSnapshot
 
 class LauncherStatsRepository(
     context: Context,
