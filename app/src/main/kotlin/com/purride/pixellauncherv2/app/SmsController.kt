@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService
  */
 internal class SmsController(
     context: Context,
+    private val smsRepository: SmsRepository,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler,
     private val host: Host,
@@ -65,7 +66,7 @@ internal class SmsController(
 
     }
 
-    private val smsRepository = SmsRepository(context)
+    // 短信仓库由外部注入（禁止在此内部 new），构造边界见 AppContainer / AndroidComponentDependencies。
     private val appContext = context.applicationContext
 
     private var smsRolePromptDismissedThisSession = false

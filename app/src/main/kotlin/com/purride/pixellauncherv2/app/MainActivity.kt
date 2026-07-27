@@ -44,7 +44,6 @@ import com.purride.pixellauncherv2.data.NotificationCommandStore
 import com.purride.pixellauncherv2.data.NotificationSummaryRepository
 import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
 import com.purride.pixellauncherv2.data.NotificationSummaryStore
-import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
 import com.purride.pixellauncherv2.launcher.AppListLayout
@@ -258,35 +257,35 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.hide()
         window.setWindowAnimations(0)
 
-        appRepository = PackageManagerAppRepository(applicationContext)
-        appCustomizationRepository = AppCustomizationRepository(applicationContext)
-        fontSettingsRepository = FontSettingsRepository(applicationContext)
-        launcherStatsRepository = LauncherStatsRepository(applicationContext)
-        deviceStatusRepository = DeviceStatusRepository(applicationContext)
-        nextAlarmRepository = NextAlarmRepository(applicationContext)
-        screenUsageRepository = ScreenUsageRepository(applicationContext)
-        communicationStatusRepository = CommunicationStatusRepository(applicationContext)
-        notificationSummaryRepository = NotificationSummaryRepository()
-        notificationSummarySettingsRepository = NotificationSummarySettingsRepository(applicationContext)
-        mediaPlaybackRepository = MediaPlaybackRepository(
+        // 依赖组装收敛到 AppContainer；仅在 onCreate 内临时使用，把取到的依赖赋给现有字段后即可丢弃，
+        // 因此不作为 Activity 字段持有。
+        val appContainer = AppContainer(
             context = applicationContext,
-            notificationListener = ComponentName(applicationContext, LauncherNotificationListenerService::class.java),
+            backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
         )
+        appRepository = appContainer.appRepository
+        appCustomizationRepository = appContainer.appCustomizationRepository
+        fontSettingsRepository = appContainer.fontSettingsRepository
+        launcherStatsRepository = appContainer.launcherStatsRepository
+        deviceStatusRepository = appContainer.deviceStatusRepository
+        nextAlarmRepository = appContainer.nextAlarmRepository
+        screenUsageRepository = appContainer.screenUsageRepository
+        communicationStatusRepository = appContainer.communicationStatusRepository
+        notificationSummaryRepository = appContainer.notificationSummaryRepository
+        notificationSummarySettingsRepository = appContainer.notificationSummarySettingsRepository
+        mediaPlaybackRepository = appContainer.mediaPlaybackRepository
         smsController = SmsController(
             context = applicationContext,
+            smsRepository = appContainer.smsRepository,
             backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
             host = smsHost,
         )
-        deviceLocationRepository = DeviceLocationRepository(applicationContext)
-        deviceMotionRepository = DeviceMotionRepository(applicationContext)
-        handTrackingRepository = HandTrackingRepository(
-            context = applicationContext,
-            backgroundExecutor = backgroundExecutor,
-            mainHandler = mainHandler,
-        )
-        rainForecastRepository = RainForecastRepository()
+        deviceLocationRepository = appContainer.deviceLocationRepository
+        deviceMotionRepository = appContainer.deviceMotionRepository
+        handTrackingRepository = appContainer.handTrackingRepository
+        rainForecastRepository = appContainer.rainForecastRepository
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
         selectedTheme = appearanceSettings.theme

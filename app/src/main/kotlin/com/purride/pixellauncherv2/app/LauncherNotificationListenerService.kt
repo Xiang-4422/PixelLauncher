@@ -6,7 +6,6 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.purride.pixellauncherv2.data.NotificationCommand
 import com.purride.pixellauncherv2.data.NotificationCommandStore
-import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
 import com.purride.pixellauncherv2.data.NotificationSummaryStore
 import com.purride.pixellauncherv2.launcher.NotificationActionInfo
 import com.purride.pixellauncherv2.launcher.NotificationProgressInfo
@@ -48,7 +47,8 @@ class LauncherNotificationListenerService : NotificationListenerService() {
             .mapNotNull(::toCommand)
             .filterNot { command -> command.sourceId == packageName }
         NotificationCommandStore.update(commands)
-        val rules = NotificationSummarySettingsRepository(this).rules()
+        // 仓库通过 AndroidComponentDependencies 边界统一构造，避免在此处散落 new。
+        val rules = AndroidComponentDependencies.notificationSummarySettingsRepository(this).rules()
         NotificationSummaryStore.updateSignals(signals, rules)
     }
 
