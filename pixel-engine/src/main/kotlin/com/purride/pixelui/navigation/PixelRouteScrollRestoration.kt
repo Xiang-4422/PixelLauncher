@@ -1,10 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.State
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.Widget
-import com.purride.pixelui.dependOnInheritedWidgetOfExactType
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListRestorationPolicy
 import com.purride.pixelui.state.PixelListState

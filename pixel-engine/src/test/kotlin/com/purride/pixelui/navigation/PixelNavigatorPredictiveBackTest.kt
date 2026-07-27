@@ -1,10 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.PixelBackDispatcher
-import com.purride.pixelui.PixelBackHost
-import com.purride.pixelui.PixelPredictiveBackEvent
-import com.purride.pixelui.PixelPredictiveBackSwipeEdge
-import com.purride.pixelui.Text
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
@@ -27,7 +22,7 @@ class PixelNavigatorPredictiveBackTest {
         var navigator: PixelNavigatorState? = null
         // Explicit outcome proves system back remains distinct from nullable success.
         var outcome: PixelRouteOutcome<String?>? = null
-        // Persistable typed root avoids relying on the legacy route compatibility path.
+        // 可持久化的类型化根让预测性返回断言始终跑在受支持的路由 API 上。
         val root = pixelRouteDestination<Unit, Unit>(
             id = "root",
             transition = PixelRouteTransition.None,
@@ -44,7 +39,7 @@ class PixelNavigatorPredictiveBackTest {
         tester.pumpWidget(
             PixelBackHost(
                 dispatcher = dispatcher,
-                child = PixelNavigator.typed(
+                child = PixelNavigator(
                     initialRequest = PixelRouteRequest(root, Unit),
                     vsync = tester.vsync,
                     defaultTransition = PixelRouteTransition.None,
@@ -102,7 +97,7 @@ class PixelNavigatorPredictiveBackTest {
         tester.pumpWidget(
             PixelBackHost(
                 dispatcher = dispatcher,
-                child = PixelNavigator.typed(
+                child = PixelNavigator(
                     initialRequest = PixelRouteRequest(root, Unit),
                     vsync = tester.vsync,
                 ),
@@ -188,7 +183,7 @@ class PixelNavigatorPredictiveBackTest {
         tester.pumpWidget(
             PixelBackHost(
                 dispatcher = dispatcher,
-                child = PixelNavigator.typed(
+                child = PixelNavigator(
                     initialRequest = PixelRouteRequest(destination, "ROOT"),
                     vsync = tester.vsync,
                     defaultTransition = PixelRouteTransition.None,

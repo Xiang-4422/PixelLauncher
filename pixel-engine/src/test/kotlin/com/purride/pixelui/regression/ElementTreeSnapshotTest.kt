@@ -21,7 +21,7 @@ import com.purride.pixelui.Opacity
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelNavigator
-import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.testRouteRequest
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.ProgressBar
@@ -198,7 +198,7 @@ class ElementTreeSnapshotTest {
         },
         Scene(name = "navigator_route_scope") {
             PixelNavigator(
-                initialRoute = PixelRoute(
+                initialRequest = testRouteRequest(
                     name = "home",
                     builder = { context ->
                         AppScaffold(

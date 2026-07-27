@@ -294,7 +294,7 @@ internal class LauncherRootHost(
             children = listOf(
                 buildGlobalStatusBar(),
                 Expanded(
-                    child = PixelNavigator.typed(
+                    child = PixelNavigator(
                         initialRequest = routeRequestFor(initialDestination),
                         vsync = routeTickerProvider,
                         transitionDuration = ROUTE_TRANSITION_DURATION_MS.milliseconds,

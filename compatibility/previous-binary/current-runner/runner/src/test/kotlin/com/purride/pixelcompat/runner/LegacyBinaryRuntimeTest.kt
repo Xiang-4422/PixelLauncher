@@ -65,27 +65,6 @@ class LegacyBinaryRuntimeTest {
         assertEquals("create=1;update=2;first=true;second=true", summary)
     }
 
-    /** Invokes frozen navigation call sites against only the current engine runtime. */
-    @Test
-    fun oldNavigatorBinaryRunsOnCurrentEngine() {
-        /** Old navigation probe loaded exclusively from the precompiled consumer AAR. */
-        val probeClass = Class.forName("com.purride.pixelcompat.legacy.LegacyNavigatorBinaryProbe")
-        /** Static no-argument probe method compiled against the frozen Navigator API. */
-        val probeMethod = probeClass.getMethod("run")
-        /** Stable String summary crossing the binary boundary without current API types. */
-        val summary = probeMethod.invoke(null) as String
-
-        assertEquals(
-            "mounted=true;" +
-                "duplicate=legacy-root>legacy-shared>legacy-shared;" +
-                "pops=true,true;" +
-                "results=second=top,first=bottom;" +
-                "replace=replace-target,true,replace=transferred;" +
-                "deep=true,true,deep-root>deep-leaf",
-            summary,
-        )
-    }
-
     /** Invokes every frozen Theme constructor and data-class call site on the current engine. */
     @Test
     fun oldThemeBinaryRunsOnCurrentEngine() {

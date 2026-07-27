@@ -2,7 +2,6 @@ package com.purride.pixelcompat.routeentry
 
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelNavigatorState
-import com.purride.pixelui.PixelRoute
 import com.purride.pixelui.PixelRouteCancellationReason
 import com.purride.pixelui.PixelRouteCancelled
 import com.purride.pixelui.PixelRouteOutcome
@@ -35,16 +34,16 @@ public class RouteEntryConsumerTest {
     public fun duplicateTypedDestinationEntriesRemainIsolatedAndDistinguishNullFromCancellation() {
         // PixelTester provides a real retained widget host without an Android device.
         val tester = PixelTester()
-        // The mounted compatibility root exposes the public navigator controller.
+        // 已挂载的根负责暴露公开的 navigator 控制器。
         var navigator: PixelNavigatorState? = null
-        // A legacy root keeps the stack valid while both typed entries are completed.
-        val root = PixelRoute(
-            name = "root",
-            builder = { context ->
-                navigator = PixelNavigator.of(context)
-                Text("ROOT")
-            },
-        )
+        // 最小类型化根保证两个类型化 entry 收尾期间栈始终有效。
+        val rootDestination = pixelRouteDestination<Unit, Unit>(
+            id = "external-root",
+            transition = PixelRouteTransition.None,
+        ) { context, _ ->
+            navigator = PixelNavigator.of(context)
+            Text("ROOT")
+        }
         // One reusable typed destination deliberately creates two independent stack entries.
         val destination = pixelRouteDestination<String, String?>(
             id = "external-nullable-editor",
@@ -61,7 +60,7 @@ public class RouteEntryConsumerTest {
 
         tester.pumpWidget(
             widget = PixelNavigator(
-                initialRoute = root,
+                initialRequest = PixelRouteRequest(rootDestination, Unit),
                 vsync = tester.vsync,
                 defaultTransition = PixelRouteTransition.None,
             ),

@@ -1,4 +1,4 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -11,7 +11,8 @@ dependencies {
 }
 ```
 
-现有公开 package import 保持不变。删除 Compose `PixelHost` wrapper 调用；Compose 页面需要在应用侧
+公开导航声明统一位于根包 `com.purride.pixelui`，旧的 `com.purride.pixelui.widgets.navigation.*`
+import 需要改写为根包 import。其余公开 package import 保持不变。删除 Compose `PixelHost` wrapper 调用；Compose 页面需要在应用侧
 用 `AndroidView` 承载 `PixelHostSetup.rootView`，并在 owner 销毁时调用 `dispose()`。
 
 ## 从 0.x 源码迁移

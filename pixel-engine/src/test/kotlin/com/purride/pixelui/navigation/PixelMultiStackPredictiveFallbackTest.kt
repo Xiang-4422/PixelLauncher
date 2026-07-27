@@ -1,20 +1,6 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelui.Container
-import com.purride.pixelui.PixelBackDispatcher
-import com.purride.pixelui.PixelBackHost
-import com.purride.pixelui.PixelMotionScope
-import com.purride.pixelui.PixelMotionSettings
-import com.purride.pixelui.PixelMotionTheme
-import com.purride.pixelui.PixelPredictiveBackCallback
-import com.purride.pixelui.PixelPredictiveBackEvent
-import com.purride.pixelui.PixelPredictiveBackHandler
-import com.purride.pixelui.PixelPredictiveBackSwipeEdge
-import com.purride.pixelui.Text
-import com.purride.pixelui.ValueListenableBuilder
-import com.purride.pixelui.ValueNotifier
-import com.purride.pixelui.Widget
 import com.purride.pixelui.testing.PixelTester
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -197,17 +183,17 @@ class PixelMultiStackPredictiveFallbackTest {
     ): Widget {
         return PixelMultiStackNavigator(
             stacks = listOf(
-                PixelNavigatorStack(
+                PixelTypedNavigatorStack(
                     id = "home",
-                    initialRoute = PixelRoute(
+                    initialRequest = testRouteRequest(
                         name = "home",
                         transition = PixelRouteTransition.None,
                         builder = { home },
                     ),
                 ),
-                PixelNavigatorStack(
+                PixelTypedNavigatorStack(
                     id = "settings",
-                    initialRoute = PixelRoute(
+                    initialRequest = testRouteRequest(
                         name = "settings",
                         transition = PixelRouteTransition.None,
                         builder = { settings },

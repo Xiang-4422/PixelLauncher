@@ -375,7 +375,7 @@ class UiSpecStaticTest {
         assertTrue(
             "LauncherRootHost must keep the global status bar outside route transitions.",
             rootHostSource.contains("children = listOf(\n                buildGlobalStatusBar(),\n                Expanded(") &&
-                rootHostSource.contains("child = PixelNavigator.typed(") &&
+                rootHostSource.contains("child = PixelNavigator(") &&
                 !rootHostSource.contains("buildSharedStatusBar()") &&
                 presentationSource.contains("data object Search") &&
                 presentationSource.contains("data class Standard") &&

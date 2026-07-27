@@ -13,9 +13,10 @@ import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.widgets.animated.AnimatedSprite
-import com.purride.pixelui.widgets.navigation.PixelNavigator
-import com.purride.pixelui.widgets.navigation.PixelNavigatorState
-import com.purride.pixelui.widgets.navigation.PixelRoute
+import com.purride.pixelui.PixelNavigator
+import com.purride.pixelui.PixelNavigatorState
+import com.purride.pixelui.testRouteRequest
+import com.purride.pixelui.valueOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -43,7 +44,7 @@ class EngineLifecycleSoakTest {
         val tester = PixelTester()
         val disposed = mutableListOf<String>()
         var navigator: PixelNavigatorState? = null
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -53,17 +54,17 @@ class EngineLifecycleSoakTest {
         tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
 
         repeat(12) { index ->
-            val route = PixelRoute(
+            val route = testRouteRequest(
                 name = "route-$index",
                 builder = { Text("R$index") },
                 onDispose = { disposed += "route-$index" },
             )
             navigator!!.push(route)
             tester.pumpAndSettle()
-            assertEquals(route.name, navigator!!.currentRoute.name)
+            assertEquals(route.destination.id, navigator!!.currentEntry.destination.id)
             assertTrue(navigator!!.pop())
             tester.pumpAndSettle()
-            assertEquals("root", navigator!!.currentRoute.name)
+            assertEquals("root", navigator!!.currentEntry.destination.id)
         }
 
         assertEquals((0 until 12).map { "route-$it" }, disposed)
@@ -117,7 +118,7 @@ class EngineLifecycleSoakTest {
         val disposed = mutableListOf<String>()
         val results = mutableListOf<String>()
         var navigator: PixelNavigatorState? = null
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -127,38 +128,38 @@ class EngineLifecycleSoakTest {
         tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
 
         repeat(10) { index ->
-            val first = PixelRoute(
+            val first = testRouteRequest(
                 name = "first-$index",
                 builder = { Text("FIRST $index") },
                 onDispose = { disposed += "first-$index" },
             )
-            val second = PixelRoute(
+            val second = testRouteRequest(
                 name = "second-$index",
                 builder = { Text("SECOND $index") },
                 onDispose = { disposed += "second-$index" },
             )
-            val third = PixelRoute(
+            val third = testRouteRequest(
                 name = "third-$index",
                 builder = { Text("THIRD $index") },
                 onDispose = { disposed += "third-$index" },
             )
 
-            navigator!!.push(first) { result -> results += "first-$index=$result" }
+            navigator!!.push(first) { outcome -> results += "first-$index=${outcome.valueOrNull()}" }
             tester.pumpAndSettle()
             navigator!!.replace(second)
             tester.pumpAndSettle()
             assertTrue("replace should dispose the outgoing route", "first-$index" in disposed)
             assertEquals(0, tester.vsync.activeTickerCount)
 
-            navigator!!.push(third) { result -> results += "third-$index=$result" }
+            navigator!!.push(third) { outcome -> results += "third-$index=${outcome.valueOrNull()}" }
             tester.pumpAndSettle()
             navigator!!.popToRoot(animated = true)
             tester.pumpAndSettle()
 
-            assertEquals(listOf("root"), navigator!!.stack.map { it.name })
+            assertEquals(listOf("root"), navigator!!.entries.map { entry -> entry.destination.id })
             assertTrue("popToRoot should dispose the replaced route", "second-$index" in disposed)
             assertTrue("popToRoot should dispose the pushed route", "third-$index" in disposed)
-            assertTrue("popToRoot should complete replaced route callback", "first-$index=null" in results)
+            assertTrue("replace should settle the outgoing route callback", "first-$index=null" in results)
             assertTrue("popToRoot should complete top route callback", "third-$index=null" in results)
             assertEquals(0, tester.vsync.activeTickerCount)
         }

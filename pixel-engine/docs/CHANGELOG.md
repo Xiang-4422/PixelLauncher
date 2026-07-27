@@ -13,6 +13,11 @@ First public stable release of the Android-first Pixel Engine SDK.
   theming, animation, resource loading, testing, and debug SPI contracts.
 - Reviewed source, Metalava, and JVM ABI baselines; isolated Kotlin/Java/R8 consumers; Apache-2.0
   publication metadata; signed staging, SBOM, provenance, dependency locking, and checksums.
+- Navigation exposes exactly one public entry point: every navigation declaration now lives in
+  `com.purride.pixelui`, and `PixelNavigator` / `PixelNestedNavigator` / `PixelTypedNavigatorStack`
+  accept only typed `PixelRouteRequest` roots. The pre-release string-route layer (`PixelRoute`,
+  `currentRoute`, `stack`, `PixelNavigatorSnapshot`, `PixelDeepLinkResolver`, the
+  `widgets.navigation` package and its root-package typealiases) is removed.
 
 ### Compatibility
 

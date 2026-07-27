@@ -13,9 +13,9 @@ import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.host.ManualFrameScheduler
 import com.purride.pixelui.host.PixelHostFrameScope
 import com.purride.pixelui.internal.PixelUiRuntime
-import com.purride.pixelui.widgets.navigation.PixelNavigator
-import com.purride.pixelui.widgets.navigation.PixelRoute
-import com.purride.pixelui.widgets.navigation.PixelRouteTransition
+import com.purride.pixelui.PixelNavigator
+import com.purride.pixelui.testRouteRequest
+import com.purride.pixelui.PixelRouteTransition
 import kotlin.system.measureNanoTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -189,7 +189,7 @@ class EngineResourceLifecycleStressTest {
     ): Widget {
         counters.routeCreatedCount += 1
         // Route callbacks provide exact creation/activation/disposal accounting.
-        val route = PixelRoute(
+        val route = testRouteRequest(
             name = "resource-stress-$cycleIndex",
             transition = PixelRouteTransition.None,
             onEnter = { counters.routeEnteredCount += 1 },
@@ -208,7 +208,7 @@ class EngineResourceLifecycleStressTest {
             },
         )
         return PixelNavigator(
-            initialRoute = route,
+            initialRequest = route,
             vsync = frameScope.tickerProvider,
             defaultTransition = PixelRouteTransition.None,
         )

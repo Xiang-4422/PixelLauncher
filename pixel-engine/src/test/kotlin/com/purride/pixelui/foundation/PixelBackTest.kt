@@ -5,11 +5,11 @@ import com.purride.pixelui.PixelBackHost
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelOverlayController
 import com.purride.pixelui.PixelOverlayHost
-import com.purride.pixelui.PixelRoute
 import com.purride.pixelui.PixelRouteTransition
 import com.purride.pixelui.Text
 import com.purride.pixelui.internal.host.handlePixelHostBack
 import com.purride.pixelui.testing.PixelTester
+import com.purride.pixelui.testRouteRequest
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -110,8 +110,8 @@ class PixelBackTest {
         val dispatcher = PixelBackDispatcher()
         val overlay = PixelOverlayController()
         val tester = PixelTester()
-        var navigator: com.purride.pixelui.widgets.navigation.PixelNavigatorState? = null
-        val root = PixelRoute(
+        var navigator: com.purride.pixelui.PixelNavigatorState? = null
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -125,7 +125,7 @@ class PixelBackTest {
                 child = PixelOverlayHost(
                     controller = overlay,
                     child = PixelNavigator(
-                        initialRoute = root,
+                        initialRequest = root,
                         vsync = tester.vsync,
                         defaultTransition = PixelRouteTransition.None,
                     ),
@@ -135,7 +135,7 @@ class PixelBackTest {
             logicalHeight = 24,
         )
         navigator!!.push(
-            PixelRoute(
+            testRouteRequest(
                 name = "detail",
                 builder = { Text("DETAIL") },
             ),

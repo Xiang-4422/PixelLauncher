@@ -1,6 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.Text
 import java.nio.charset.StandardCharsets
 import java.util.Random
 import org.junit.Assert.assertEquals
@@ -112,12 +111,12 @@ class M81NavigationPropertyFuzzTest {
         val disposeCounts = linkedMapOf<String, Int>()
         /** 为路由生成全局唯一名称的递增编号。 */
         var nextRouteNumber = 0
-        /** 创建一个带释放探针的唯一 legacy 路由。 */
-        fun createRoute(): PixelRoute {
+        /** 创建一个带释放探针的唯一类型化路由请求。 */
+        fun createRoute(): PixelRouteRequest<Unit, Any?> {
             /** 当前新路由的稳定唯一名称。 */
             val name = "route-${nextRouteNumber++}"
             disposeCounts[name] = 0
-            return PixelRoute(
+            return testRouteRequest(
                 name = name,
                 builder = { Text(name) },
                 transition = PixelRouteTransition.None,
@@ -129,8 +128,8 @@ class M81NavigationPropertyFuzzTest {
         val root = createRoute()
         /** 被测 Navigator 状态机。 */
         val navigator = PixelNavigatorState(root)
-        /** 只保存期望路由名称的最小参考模型。 */
-        val model = mutableListOf(root.name)
+        /** 只保存期望目标标识的最小参考模型。 */
+        val model = mutableListOf(root.destination.id)
 
         repeat(5_000) { iteration ->
             when (random.nextInt(5)) {
@@ -138,7 +137,7 @@ class M81NavigationPropertyFuzzTest {
                     /** 当前 push 创建的新路由。 */
                     val route = createRoute()
                     navigator.push(route)
-                    model += route.name
+                    model += route.destination.id
                 }
                 1 -> {
                     /** 参考模型判断本轮是否允许 pop。 */
@@ -164,7 +163,7 @@ class M81NavigationPropertyFuzzTest {
                     /** 当前 replace 创建的新路由。 */
                     val route = createRoute()
                     navigator.replace(route, animated = false)
-                    model[model.lastIndex] = route.name
+                    model[model.lastIndex] = route.destination.id
                 }
                 else -> {
                     /** 参考模型判断当前 clear 是否会改变栈。 */
@@ -180,7 +179,11 @@ class M81NavigationPropertyFuzzTest {
                     }
                 }
             }
-            assertEquals("seed=$seed iteration=$iteration", model, navigator.snapshot().routeNames)
+            assertEquals(
+                "seed=$seed iteration=$iteration",
+                model,
+                navigator.entries.map { entry -> entry.destination.id },
+            )
             assertEquals(model.size > 1, navigator.canPop)
             assertFalse(navigator.entries.map { entry -> entry.id }.let { ids -> ids.size != ids.toSet().size })
         }

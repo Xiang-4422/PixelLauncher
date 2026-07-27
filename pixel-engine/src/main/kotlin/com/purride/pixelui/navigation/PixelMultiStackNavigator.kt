@@ -1,24 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.ChangeNotifier
-import com.purride.pixelui.Opacity
-import com.purride.pixelui.PixelBackDispatcher
-import com.purride.pixelui.PixelBackHost
-import com.purride.pixelui.PixelBackRegistration
-import com.purride.pixelui.PixelMotionScope
-import com.purride.pixelui.PixelMotionSettings
-import com.purride.pixelui.PixelMotionTheme
-import com.purride.pixelui.PixelMotionTransitionPreset
-import com.purride.pixelui.PixelResolvedMotion
-import com.purride.pixelui.PixelPredictiveBackCallback
-import com.purride.pixelui.PixelPredictiveBackEvent
-import com.purride.pixelui.PixelPredictiveBackHandler
-import com.purride.pixelui.Stack
-import com.purride.pixelui.State
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.StatelessWidget
-import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.Curve
 import com.purride.pixelui.animation.CurvedAnimation
 import com.purride.pixelui.animation.PixelAnimationController
@@ -29,72 +10,28 @@ import com.purride.pixelui.internal.VisualOnlyWidget
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-/** 定义 `PixelNavigatorStackDefinition` 在 `PixelMultiStackNavigator` 中的可替换调用契约。
- *
- * Common definition implemented by legacy and typed independently retained Navigator stacks.
- */
-public sealed interface PixelNavigatorStackDefinition {
-    /** 公开 `PixelMultiStackNavigator` 的 `id` 配置或运行值。
- *
- * Stable, non-blank identifier used for selection, restoration, and inspection.
- */
-    public val id: String
-}
-
-/**
- * 定义 `PixelNavigatorStack` 在 `PixelMultiStackNavigator` 中承担的数据与行为边界。
- *
- * Declarative definition of one independently retained Navigator stack.
- *
- * Stack identifiers must be unique inside one [PixelMultiStackNavigator]. The [initialRoute]
- * remains the bottom entry for this stack, which is a common fit for one bottom-navigation tab.
- *
- * @property id Stable, non-blank identifier used to select and inspect this stack.
- * @property initialRoute Root route used when this stack is mounted for the first time.
- */
-public data class PixelNavigatorStack(
-    override val id: String,
-    public val initialRoute: PixelRoute,
-) : PixelNavigatorStackDefinition {
-    init {
-        require(id.isNotBlank()) { "PixelNavigatorStack id must not be blank" }
-    }
-}
-
 /**
  * 定义 `PixelTypedNavigatorStack` 在 `PixelMultiStackNavigator` 中承担的数据与行为边界。
  *
  * Typed, persistable definition of one independently retained Navigator stack.
  *
- * @param A Non-null root argument type.
- * @param R Successful result type of the root entry.
- * @property id Stable stack identifier.
- * @property initialRequest Typed root request passed to [PixelNavigator.typed].
+ * 栈标识在同一个 [PixelMultiStackNavigator] 内必须唯一；[initialRequest] 始终是该栈的最底层
+ * entry，通常对应一个底部导航标签。
+ *
+ * Stack identifiers must be unique inside one [PixelMultiStackNavigator]. The [initialRequest]
+ * remains the bottom entry for this stack, which is a common fit for one bottom-navigation tab.
+ *
+ * @param A Non-null root argument type. 根 entry 的非空参数类型。
+ * @param R Successful result type of the root entry. 根 entry 的成功结果类型。
+ * @property id 选择、恢复和诊断该栈时使用的稳定非空标识。
+ * @property initialRequest 该栈首次挂载时用于创建根 entry 的类型化请求。
  */
 public data class PixelTypedNavigatorStack<A : Any, R>(
-    override val id: String,
+    public val id: String,
     public val initialRequest: PixelRouteRequest<A, R>,
-) : PixelNavigatorStackDefinition {
+) {
     init {
         require(id.isNotBlank()) { "PixelTypedNavigatorStack id must not be blank" }
-    }
-
-    /** Creates the typed child Navigator while retaining this definition's generic pairing. */
-    internal fun createNavigator(
-        vsync: PixelTickerProvider,
-        transitionDuration: Duration,
-        defaultTransition: PixelRouteTransition,
-        transitionBuilder: PixelRouteTransitionBuilder?,
-        key: Any?,
-    ): PixelNavigator {
-        return PixelNavigator.typed(
-            initialRequest = initialRequest,
-            vsync = vsync,
-            transitionDuration = transitionDuration,
-            defaultTransition = defaultTransition,
-            transitionBuilder = transitionBuilder,
-            key = key,
-        )
     }
 }
 
@@ -539,7 +476,7 @@ public class PixelNestedNavigatorController {
  */
 public class PixelMultiStackNavigator(
     /** 保存 `PixelMultiStackNavigator` 当前的 `stacks` 集合；元素顺序和所有权遵守所属类型契约。 */
-    public val stacks: List<PixelNavigatorStackDefinition>,
+    public val stacks: List<PixelTypedNavigatorStack<*, *>>,
     /** 提供 `PixelMultiStackNavigator` 执行 `controller` 职责时使用的协作者。 */
     public val controller: PixelMultiStackNavigatorController,
     /** 记录 `PixelMultiStackNavigator` 的 `vsync` 配置或运行值，读取与更新均遵守所属类型约束。 */
@@ -558,7 +495,7 @@ public class PixelMultiStackNavigator(
 ) : StatefulWidget(key = key) {
     init {
         require(stacks.isNotEmpty()) { "PixelMultiStackNavigator requires at least one stack" }
-        require(stacks.map(PixelNavigatorStackDefinition::id).distinct().size == stacks.size) {
+        require(stacks.map { stack -> stack.id }.distinct().size == stacks.size) {
             "PixelMultiStackNavigator stack ids must be unique"
         }
         require(stacks.any { stack -> stack.id == controller.initialStackId }) {
@@ -577,14 +514,18 @@ public class PixelMultiStackNavigator(
  *
  * Pass the surrounding typed route [parentEntry] so the nested back dispatcher cannot consume
  * events while that route is inactive. Without a parent entry, [backEnabled] alone controls back.
- * Use [typed] with a [PixelNestedNavigatorController] when the nested stack must support
- * versioned process restoration; the primary constructor remains the legacy route API.
+ * Supply a [controller] when the nested stack must support versioned process restoration.
+ *
+ * 传入外层类型化路由的 [parentEntry] 可以让嵌套返回分发器在该路由非活跃时不消费返回事件；
+ * 未传 parentEntry 时仅由 [backEnabled] 控制返回。需要版本化进程恢复时再传入 [controller]。
  */
 public class PixelNestedNavigator(
-    /** 提供 `PixelMultiStackNavigator` 当前管理的 `initialRoute` 内容。 */
-    public val initialRoute: PixelRoute,
+    /** 提供 `PixelMultiStackNavigator` 嵌套根 entry 的类型化请求。 */
+    public val initialRequest: PixelRouteRequest<*, *>,
     /** 记录 `PixelMultiStackNavigator` 的 `vsync` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val vsync: PixelTickerProvider,
+    /** 提供 `PixelMultiStackNavigator` 暴露嵌套 Navigator 状态的单宿主控制器；省略即不支持持久化恢复。 */
+    public val controller: PixelNestedNavigatorController? = null,
     /** 控制 `PixelMultiStackNavigator` 的 `transitionDuration` 时间参数，单位为声明约定的时间单位。 */
     public val transitionDuration: Duration = 200.milliseconds,
     /** 记录 `PixelMultiStackNavigator` 的 `defaultTransition` 配置或运行值，读取与更新均遵守所属类型约束。 */
@@ -599,69 +540,6 @@ public class PixelNestedNavigator(
 ) : StatefulWidget(key = key) {
     /** Creates state that keeps one isolated dispatcher stable across declarative rebuilds. */
     override fun createState(): State<out StatefulWidget> = PixelNestedNavigatorWidgetState()
-
-    /** 集中提供 `PixelMultiStackNavigator` 共享的工厂、常量或无状态辅助入口。 */
-    public companion object {
-        /**
- * 执行 `PixelMultiStackNavigator` 的 `typed` 公开行为；具体参数、返回和副作用见下文。
- *
-         * Creates a back-isolated nested Navigator with a typed, persistable root entry.
-         *
-         * The returned widget remains the existing [PixelNestedNavigator] JVM type. Its legacy
-         * constructor and properties are unchanged; a private marker carries [initialRequest] and
-         * [controller] until the nested state creates the real typed child Navigator.
-         */
-        public fun <A : Any, R> typed(
-            initialRequest: PixelRouteRequest<A, R>,
-            controller: PixelNestedNavigatorController,
-            vsync: PixelTickerProvider,
-            transitionDuration: Duration = 200.milliseconds,
-            defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
-            transitionBuilder: PixelRouteTransitionBuilder? = null,
-            backEnabled: Boolean = true,
-            parentEntry: PixelRouteEntry<*, *>? = null,
-            key: Any? = null,
-        ): PixelNestedNavigator {
-            // Synthetic legacy projection carries configuration without adding a constructor field.
-            val markerRoute = PixelRoute(
-                name = initialRequest.destination.id,
-                builder = TypedNestedInitialRouteBuilder(
-                    request = initialRequest,
-                    controller = controller,
-                ),
-                transition = initialRequest.destination.transition,
-                transitionBuilder = initialRequest.destination.transitionBuilder,
-            )
-            return PixelNestedNavigator(
-                initialRoute = markerRoute,
-                vsync = vsync,
-                transitionDuration = transitionDuration,
-                defaultTransition = defaultTransition,
-                transitionBuilder = transitionBuilder,
-                backEnabled = backEnabled,
-                parentEntry = parentEntry,
-                key = key,
-            )
-        }
-    }
-}
-
-/**
- * Marker builder carrying typed nested-host configuration through the unchanged legacy widget.
- *
- * [PixelNestedNavigatorWidgetState] consumes both values before building the child Navigator, so
- * [invoke] is only a defensive failure path for accidental legacy treatment.
- */
-private class TypedNestedInitialRouteBuilder(
-    /** Typed destination request used to create the nested root entry. */
-    val request: PixelRouteRequest<*, *>,
-    /** Single-host controller that exposes the mounted nested Navigator state. */
-    val controller: PixelNestedNavigatorController,
-) : (BuildContext) -> Widget {
-    /** Rejects accidental execution as an ordinary legacy route builder. */
-    override fun invoke(context: BuildContext): Widget {
-        error("TypedNestedInitialRouteBuilder must be consumed by PixelNestedNavigatorWidgetState")
-    }
 }
 
 /** State implementation that owns all mounted stack dispatchers and retained child Navigators. */
@@ -753,11 +631,12 @@ private class PixelMultiStackNavigatorWidgetState : State<PixelMultiStackNavigat
             widget.stacks.firstOrNull { definition -> definition.id == outgoingId }
         }
         // The interactive active stack paints below the exiting visual, which then reveals it.
-        val orderedDefinitions = (
+        // 显式标注类型，避免星投影泛型在列表拼接后失去可推断的元素类型。
+        val presentedDefinitions: List<PixelTypedNavigatorStack<*, *>> =
             widget.stacks.filter { definition ->
                 definition !== activeDefinition && definition !== outgoingDefinition
             } + listOfNotNull(activeDefinition, outgoingDefinition)
-            ).distinctBy(PixelNavigatorStackDefinition::id)
+        val orderedDefinitions = presentedDefinitions.distinctBy { definition -> definition.id }
         val stackChildren = orderedDefinitions.map { definition ->
             val stackDispatcher = stackBackDispatchers.getOrPut(definition.id) {
                 PixelBackDispatcher()
@@ -768,23 +647,14 @@ private class PixelMultiStackNavigatorWidgetState : State<PixelMultiStackNavigat
                 dispatcher = stackDispatcher,
             )
             val childKey = PixelMultiStackNavigatorChildKey(widget.controller, definition.id)
-            val navigator = when (definition) {
-                is PixelNavigatorStack -> PixelNavigator(
-                    initialRoute = definition.initialRoute,
-                    vsync = widget.vsync,
-                    transitionDuration = widget.transitionDuration,
-                    defaultTransition = widget.defaultTransition,
-                    transitionBuilder = widget.transitionBuilder,
-                    key = childKey,
-                )
-                is PixelTypedNavigatorStack<*, *> -> definition.createNavigatorErased(
-                    vsync = widget.vsync,
-                    transitionDuration = widget.transitionDuration,
-                    defaultTransition = widget.defaultTransition,
-                    transitionBuilder = widget.transitionBuilder,
-                    key = childKey,
-                )
-            }.observeState { navigatorState ->
+            val navigator = PixelNavigator(
+                initialRequest = definition.initialRequest,
+                vsync = widget.vsync,
+                transitionDuration = widget.transitionDuration,
+                defaultTransition = widget.defaultTransition,
+                transitionBuilder = widget.transitionBuilder,
+                key = childKey,
+            ).observeState { navigatorState ->
                 widget.controller.attachNavigator(
                     owner = hostOwner,
                     stackId = definition.id,
@@ -833,7 +703,7 @@ private class PixelMultiStackNavigatorWidgetState : State<PixelMultiStackNavigat
     private fun bindController() {
         widget.controller.bindHost(
             owner = hostOwner,
-            stackIds = widget.stacks.map(PixelNavigatorStackDefinition::id),
+            stackIds = widget.stacks.map { stack -> stack.id },
         )
     }
 
@@ -980,24 +850,6 @@ private fun multiStackDelayedCurve(
     }
 }
 
-/** Bridges a star-projected typed stack definition back to its internally paired request type. */
-@Suppress("UNCHECKED_CAST")
-private fun PixelTypedNavigatorStack<*, *>.createNavigatorErased(
-    vsync: PixelTickerProvider,
-    transitionDuration: Duration,
-    defaultTransition: PixelRouteTransition,
-    transitionBuilder: PixelRouteTransitionBuilder?,
-    key: Any?,
-): PixelNavigator {
-    return (this as PixelTypedNavigatorStack<Any, Any?>).createNavigator(
-        vsync = vsync,
-        transitionDuration = transitionDuration,
-        defaultTransition = defaultTransition,
-        transitionBuilder = transitionBuilder,
-        key = key,
-    )
-}
-
 /** State implementation that bridges one nested Navigator into its parent's back dispatcher. */
 private class PixelNestedNavigatorWidgetState : State<PixelNestedNavigator>() {
     /** Stable capability proving ownership of the optional typed nested controller. */
@@ -1012,7 +864,11 @@ private class PixelNestedNavigatorWidgetState : State<PixelNestedNavigator>() {
     /** Listener that removes the parent bridge when the nested tree cannot consume back. */
     private var availabilityRegistration: PixelBackRegistration? = null
 
-    /** Typed controller currently bound to this mounted host, or `null` for the legacy API. */
+    /**
+     * 当前已绑定到该挂载宿主的类型化控制器；未传入控制器时为 `null`。
+     *
+     * Typed controller currently bound to this mounted host, or `null` when none was supplied.
+     */
     private var boundController: PixelNestedNavigatorController? = null
 
     /** Parent-facing callback that forwards one complete session into the isolated dispatcher. */
@@ -1044,8 +900,8 @@ private class PixelNestedNavigatorWidgetState : State<PixelNestedNavigator>() {
 
     /** Observes inner handler availability before the first child Navigator registration. */
     override fun initState() {
-        // Typed marker owns the optional controller; legacy construction yields no binding.
-        val controller = widget.typedConfiguration()?.controller
+        // 未声明控制器的嵌套 Navigator 不建立任何宿主绑定。
+        val controller = widget.controller
         controller?.bindHost(hostOwner)
         boundController = controller
         availabilityRegistration = nestedBackDispatcher.addAvailabilityListener { available ->
@@ -1057,7 +913,7 @@ private class PixelNestedNavigatorWidgetState : State<PixelNestedNavigator>() {
     /** Rebinds controller ownership without recreating the already retained child Navigator. */
     override fun didUpdateWidget(oldWidget: PixelNestedNavigator) {
         // New ownership is validated before the previous controller releases this valid host.
-        val nextController = widget.typedConfiguration()?.controller
+        val nextController = widget.controller
         if (nextController === boundController) return
         nextController?.bindHost(hostOwner)
         boundController?.unbindHost(hostOwner)
@@ -1069,45 +925,27 @@ private class PixelNestedNavigatorWidgetState : State<PixelNestedNavigator>() {
         val parentIsActive = widget.parentEntry?.lifecycleState?.let { lifecycle ->
             lifecycle == PixelRouteLifecycleState.Active
         } ?: true
-        // Marker configuration selects typed creation while legacy widgets follow their old path.
-        val typedConfiguration = widget.typedConfiguration()
         // Child key remains stable so declarative rebuilds retain the same nested stack.
-        val navigator = if (typedConfiguration == null) {
-            PixelNavigator(
-                initialRoute = widget.initialRoute,
-                vsync = widget.vsync,
-                transitionDuration = widget.transitionDuration,
-                defaultTransition = widget.defaultTransition,
-                transitionBuilder = widget.transitionBuilder,
-                key = "pixel-nested-navigator-content",
+        val navigator = PixelNavigator(
+            initialRequest = widget.initialRequest,
+            vsync = widget.vsync,
+            transitionDuration = widget.transitionDuration,
+            defaultTransition = widget.defaultTransition,
+            transitionBuilder = widget.transitionBuilder,
+            key = "pixel-nested-navigator-content",
+        ).observeState { navigatorState ->
+            // 无控制器时观察者只是空转，不需要额外分支。
+            boundController?.attachNavigator(
+                owner = hostOwner,
+                navigatorState = navigatorState,
             )
-        } else {
-            createTypedNestedNavigator(
-                request = typedConfiguration.request,
-                vsync = widget.vsync,
-                transitionDuration = widget.transitionDuration,
-                defaultTransition = widget.defaultTransition,
-                transitionBuilder = widget.transitionBuilder,
-                key = "pixel-nested-navigator-content",
-            )
-        }
-        // Legacy construction does not install an observer or otherwise change its prior behavior.
-        val observedNavigator = if (typedConfiguration == null) {
-            navigator
-        } else {
-            navigator.observeState { navigatorState ->
-                boundController?.attachNavigator(
-                    owner = hostOwner,
-                    navigatorState = navigatorState,
-                )
-            }
         }
         return PixelPredictiveBackHandler(
             enabled = widget.backEnabled && parentIsActive && nestedCanHandleBack,
             callback = predictiveBackForwarder,
             child = PixelBackHost(
                 dispatcher = nestedBackDispatcher,
-                child = observedNavigator,
+                child = navigator,
                 key = "pixel-nested-navigator-back-host",
             ),
             key = "pixel-nested-navigator-back-handler",
@@ -1121,31 +959,6 @@ private class PixelNestedNavigatorWidgetState : State<PixelNestedNavigator>() {
         boundController?.unbindHost(hostOwner)
         boundController = null
     }
-}
-
-/** Returns typed configuration carried by this widget's synthetic marker route, when present. */
-private fun PixelNestedNavigator.typedConfiguration(): TypedNestedInitialRouteBuilder? {
-    return initialRoute.builder as? TypedNestedInitialRouteBuilder
-}
-
-/** Creates a typed child Navigator after safely recovering the request's paired generic types. */
-@Suppress("UNCHECKED_CAST")
-private fun createTypedNestedNavigator(
-    request: PixelRouteRequest<*, *>,
-    vsync: PixelTickerProvider,
-    transitionDuration: Duration,
-    defaultTransition: PixelRouteTransition,
-    transitionBuilder: PixelRouteTransitionBuilder?,
-    key: Any?,
-): PixelNavigator {
-    return PixelNavigator.typed(
-        initialRequest = request as PixelRouteRequest<Any, Any?>,
-        vsync = vsync,
-        transitionDuration = transitionDuration,
-        defaultTransition = defaultTransition,
-        transitionBuilder = transitionBuilder,
-        key = key,
-    )
 }
 
 /** Key that recreates child Navigator states when a different controller owns the same stack ID. */

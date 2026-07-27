@@ -1,4 +1,4 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import java.net.URI
 import java.net.URLDecoder
@@ -7,7 +7,9 @@ import java.nio.charset.StandardCharsets
 /**
  * 定义 `PixelDeepLink` 在 `PixelDeepLink` 中承担的数据与行为边界。
  *
- * Platform-neutral parsed deep link passed to [PixelDeepLinkResolver].
+ * Platform-neutral parsed deep link passed to [PixelTypedDeepLinkResolver].
+ *
+ * 与平台无关的已解析深链，交由 [PixelTypedDeepLinkResolver] 匹配。
  */
 public data class PixelDeepLink(
     val rawUri: String,
@@ -66,16 +68,4 @@ public data class PixelDeepLink(
             return URLDecoder.decode(value, StandardCharsets.UTF_8.name())
         }
     }
-}
-
-/**
- * 定义 `PixelDeepLinkResolver` 在 `PixelDeepLink` 中的可替换调用契约。
- *
- * Resolves a parsed deep link to the complete route stack that should become active.
- *
- * Return `null` when the link is not recognized. A handled link must return at least one route.
- */
-public fun interface PixelDeepLinkResolver {
-    /** 按 `PixelDeepLink` 的规则解析 `resolve` 目标，并返回稳定的匹配结果。 */
-    public fun resolve(link: PixelDeepLink): List<PixelRoute>?
 }

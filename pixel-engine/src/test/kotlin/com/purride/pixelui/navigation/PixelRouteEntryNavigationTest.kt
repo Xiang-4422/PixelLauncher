@@ -1,10 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.State
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.Text
-import com.purride.pixelui.Widget
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
@@ -29,12 +24,12 @@ class PixelRouteEntryNavigationTest {
     fun maintainedEntriesKeepStateInstanceAndValueAcrossDuplicateDestinationPushAndPop() {
         // Real widget hosting is required to prove element/state retention rather than bucket-only behavior.
         val tester = PixelTester()
-        // Navigator reference is captured from the mounted compatibility root.
+        // Navigator 引用由已挂载的根 entry 捕获。
         var navigator: PixelNavigatorState? = null
         // Every probe initialization is recorded by its typed route argument.
         val probeStates = mutableMapOf<String, MutableList<RouteStateProbeState>>()
         // Root provides the BuildContext used to access the mounted navigator state.
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -101,7 +96,7 @@ class PixelRouteEntryNavigationTest {
         // Probe instances are appended each time the non-maintained entry is rebuilt.
         val probeStates = mutableMapOf<String, MutableList<RouteStateProbeState>>()
         // Root retains access to the Navigator while typed entries are covered and revealed.
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -165,7 +160,7 @@ class PixelRouteEntryNavigationTest {
         // Probe histories reveal any unintended state recreation caused by sibling reordering.
         val probeStates = mutableMapOf<String, MutableList<RouteStateProbeState>>()
         // Root remains below all typed entries during the reconciliation scenarios.
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -221,27 +216,27 @@ class PixelRouteEntryNavigationTest {
         tester.dispose()
     }
 
-    /** Verifies repeated legacy pushes isolate identity, state, result, and lower-entry ownership. */
+    /** 验证重复入栈会隔离身份、状态、结果以及下层 entry 的归属。 */
     @Test
-    fun repeatedLegacyRoutePushesOwnIndependentEntriesBucketsAndChannels() {
+    fun repeatedRouteRequestPushesOwnIndependentEntriesBucketsAndChannels() {
         // Result delivery order proves that each repeated stack slot owns its callback.
         val results = mutableListOf<String>()
         // Root route keeps the stack non-empty throughout both pop operations.
-        val root = legacyRoute("root")
+        val root = simpleRoute("root")
         // One reusable route object deliberately appears in two stack positions.
-        val shared = legacyRoute("shared")
+        val shared = simpleRoute("shared")
         // Direct state access makes entry identity and channel state observable.
         val navigator = PixelNavigatorState(root)
         // One identity key is reused across both buckets to prove entry-level isolation.
         val stateKey = PixelRouteStateKey<String>("draft")
 
-        navigator.push(shared) { value -> results += "lower=$value" }
+        navigator.push(shared) { outcome -> results += "lower=${outcome.valueOrNull()}" }
         // Lower repeated entry must remain independently addressable after another push.
         val lowerEntry = navigator.currentEntry
         lowerEntry.stateBucket.write(stateKey, "lower-state")
         settleTransition(navigator)
 
-        navigator.push(shared) { value -> results += "top=$value" }
+        navigator.push(shared) { outcome -> results += "top=${outcome.valueOrNull()}" }
         // Top repeated entry is a new concrete entry despite sharing the route definition.
         val topEntry = navigator.currentEntry
         topEntry.stateBucket.write(stateKey, "top-state")
@@ -283,8 +278,8 @@ class PixelRouteEntryNavigationTest {
         val lowerOutcomes = mutableListOf<PixelRouteOutcome<String?>>()
         // Top callback outcomes prove that a successful null is still a success.
         val topOutcomes = mutableListOf<PixelRouteOutcome<String?>>()
-        // Navigator state starts with a compatibility root entry.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
+        // Navigator 状态从一个简单的类型化根 entry 开始。
+        val navigator = PixelNavigatorState(simpleRoute("root"))
         // Shared key object proves identical keys do not bridge entry buckets.
         val stateKey = PixelRouteStateKey<Int>("counter")
 
@@ -336,7 +331,7 @@ class PixelRouteEntryNavigationTest {
         // Ordered lifecycle log exposes every activation, removal, and terminal disposal.
         val events = mutableListOf<String>()
         // Root callbacks prove reactivation happens before outgoing entry disposal.
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { Text("ROOT") },
             onEnter = { events += "root-enter" },
@@ -395,49 +390,6 @@ class PixelRouteEntryNavigationTest {
         navigator.disposeNavigator()
     }
 
-    /** Verifies legacy replace transfers only its callback while allocating fresh entry state. */
-    @Test
-    fun legacyReplaceTransfersCallbackToFreshEntryWithoutSharingState() {
-        // Callback values prove compatibility ownership follows the replaced stack slot.
-        val callbackValues = mutableListOf<Any?>()
-        // Navigator starts from a stable compatibility root.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
-        // Shared key makes old-bucket clearing and new-bucket independence visible.
-        val stateKey = PixelRouteStateKey<String>("editor")
-
-        navigator.push(legacyRoute("old")) { value -> callbackValues += value }
-        // Old entry owns the callback before replacement.
-        val oldEntry = navigator.currentEntry
-        oldEntry.stateBucket.write(stateKey, "old-state")
-        settleTransition(navigator)
-
-        navigator.replace(legacyRoute("replacement"), animated = false)
-        // Replacement must never reuse the old entry object, ID, or state bucket.
-        val replacementEntry = navigator.currentEntry
-        replacementEntry.stateBucket.write(stateKey, "replacement-state")
-
-        assertNotEquals(oldEntry.id, replacementEntry.id)
-        assertNotSame(oldEntry.stateBucket, replacementEntry.stateBucket)
-        assertNull(oldEntry.stateBucket.read(stateKey))
-        assertEquals("replacement-state", replacementEntry.stateBucket.read(stateKey))
-        assertEquals(PixelRouteLifecycleState.Disposed, oldEntry.lifecycleState)
-        assertEquals(
-            PixelRouteOutcome.Cancelled(PixelRouteCancellationReason.Replaced),
-            oldEntry.resultChannel.outcome,
-        )
-        assertTrue(callbackValues.isEmpty())
-
-        assertTrue(navigator.pop("replacement-result"))
-        settleTransition(navigator)
-
-        assertEquals(listOf("replacement-result"), callbackValues)
-        assertEquals(
-            PixelRouteOutcome.Success("replacement-result"),
-            replacementEntry.resultChannel.outcome,
-        )
-        navigator.disposeNavigator()
-    }
-
     /** Verifies typed replace cancels the old channel and creates an independent new channel. */
     @Test
     fun typedReplaceCancelsOldChannelAsReplacedAndSettlesNewChannelIndependently() {
@@ -449,8 +401,8 @@ class PixelRouteEntryNavigationTest {
         val oldOutcomes = mutableListOf<PixelRouteOutcome<Int>>()
         // New outcomes must remain pending until the replacement entry completes.
         val newOutcomes = mutableListOf<PixelRouteOutcome<Int>>()
-        // Navigator under test uses a legacy root only as its retained base entry.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
+        // 被测 Navigator 只把这个简单根当作保留的底层 entry。
+        val navigator = PixelNavigatorState(simpleRoute("root"))
         // Bucket key proves typed replacement does not inherit prior state.
         val stateKey = PixelRouteStateKey<Int>("revision")
 
@@ -506,7 +458,7 @@ class PixelRouteEntryNavigationTest {
         // Current outcome confirms animated removal waits for transition settlement.
         val currentOutcomes = mutableListOf<PixelRouteOutcome<Unit>>()
         // Navigator begins with one non-removable final root.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
+        val navigator = PixelNavigatorState(simpleRoute("root"))
 
         // First typed entry becomes inactive after the second push.
         val inactiveEntry = navigator.push(PixelRouteRequest(destination, "inactive")) { outcome ->
@@ -560,35 +512,35 @@ class PixelRouteEntryNavigationTest {
         // Unified log captures the two ordered phases: all disposals, then all callbacks.
         val events = mutableListOf<String>()
         // Navigator retains this root after clear.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
+        val navigator = PixelNavigatorState(simpleRoute("root"))
         // First route is the bottom-most removable stack entry.
-        val firstRoute = PixelRoute(
+        val firstRoute = testRouteRequest(
             name = "first",
             builder = { Text("FIRST") },
             onDispose = { events += "first-dispose" },
         )
         // Second route occupies the middle removable stack position.
-        val secondRoute = PixelRoute(
+        val secondRoute = testRouteRequest(
             name = "second",
             builder = { Text("SECOND") },
             onDispose = { events += "second-dispose" },
         )
         // Third route is the foreground removable stack entry.
-        val thirdRoute = PixelRoute(
+        val thirdRoute = testRouteRequest(
             name = "third",
             builder = { Text("THIRD") },
             onDispose = { events += "third-dispose" },
         )
 
-        navigator.push(firstRoute) { value -> events += "first-result=$value" }
+        navigator.push(firstRoute) { outcome -> events += "first-result=${outcome.valueOrNull()}" }
         // Captured entry exposes terminal channel state after clear.
         val firstEntry = navigator.currentEntry
         settleTransition(navigator)
-        navigator.push(secondRoute) { value -> events += "second-result=$value" }
+        navigator.push(secondRoute) { outcome -> events += "second-result=${outcome.valueOrNull()}" }
         // Captured middle entry verifies bottom-to-top finalization.
         val secondEntry = navigator.currentEntry
         settleTransition(navigator)
-        navigator.push(thirdRoute) { value -> events += "third-result=$value" }
+        navigator.push(thirdRoute) { outcome -> events += "third-result=${outcome.valueOrNull()}" }
         // Captured top entry verifies it is finalized last.
         val thirdEntry = navigator.currentEntry
         settleTransition(navigator)
@@ -613,7 +565,7 @@ class PixelRouteEntryNavigationTest {
                 entry.resultChannel.outcome,
             )
         }
-        assertEquals(listOf("root"), navigator.snapshot().routeNames)
+        assertEquals(listOf("root"), navigator.entries.map { entry -> entry.destination.id })
         assertFalse(navigator.clear(animated = false))
         assertEquals(6, events.size)
         navigator.disposeNavigator()
@@ -629,7 +581,7 @@ class PixelRouteEntryNavigationTest {
         // Navigator reference is initialized by the mounted root builder.
         var navigator: PixelNavigatorState? = null
         // Root route proves the compatibility entry is also disposed by host teardown.
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -696,7 +648,7 @@ class PixelRouteEntryNavigationTest {
         // Recording observer receives every immutable event that survives another observer's throw.
         val events = mutableListOf<PixelNavigationEvent>()
         // Navigator under test starts with one active root entry.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
+        val navigator = PixelNavigatorState(simpleRoute("root"))
         // This observer deliberately fails on every callback.
         val throwingObserver = PixelNavigationObserver {
             throw IllegalStateException("observer failure")
@@ -776,7 +728,7 @@ class PixelRouteEntryNavigationTest {
             onDispose = { entry -> events += "${entry.arguments}-dispose" },
         ) { _, scope -> Text(scope.arguments) }
         // Navigator retains a root while all typed entries are cleared together.
-        val navigator = PixelNavigatorState(legacyRoute("root"))
+        val navigator = PixelNavigatorState(simpleRoute("root"))
         // First callback verifies a lifecycle failure does not prevent result delivery.
         var firstCallbackCount = 0
         // Second callback throws after terminal channel state has already been committed.
@@ -834,9 +786,9 @@ class PixelRouteEntryNavigationTest {
         navigator.disposeNavigator()
     }
 
-    /** Creates a minimal compatibility route for state-machine tests that do not render a host. */
-    private fun legacyRoute(name: String): PixelRoute {
-        return PixelRoute(name = name, builder = { Text(name.uppercase()) })
+    /** 为不渲染宿主的状态机测试创建最小类型化路由请求。 */
+    private fun simpleRoute(name: String): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(name = name, builder = { Text(name.uppercase()) })
     }
 
     /** Completes the navigator's current transition and fails fast when no transition exists. */

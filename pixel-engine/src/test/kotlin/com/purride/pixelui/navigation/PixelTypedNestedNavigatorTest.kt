@@ -1,8 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.PixelBackDispatcher
-import com.purride.pixelui.PixelBackHost
-import com.purride.pixelui.Text
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import java.nio.charset.StandardCharsets
@@ -47,7 +44,7 @@ class PixelTypedNestedNavigatorTest {
         originalTester.pumpWidget(
             PixelBackHost(
                 dispatcher = originalBackDispatcher,
-                child = PixelNavigator.typed(
+                child = PixelNavigator(
                     initialRequest = PixelRouteRequest(originalOuterDestination, "outer-root"),
                     vsync = originalTester.vsync,
                     defaultTransition = PixelRouteTransition.None,
@@ -120,7 +117,7 @@ class PixelTypedNestedNavigatorTest {
             onMounted = { state -> recreatedOuterState = state },
         )
         recreatedTester.pumpWidget(
-            PixelNavigator.typed(
+            PixelNavigator(
                 initialRequest = PixelRouteRequest(recreatedOuterDestination, "outer-fallback"),
                 vsync = recreatedTester.vsync,
                 defaultTransition = PixelRouteTransition.None,
@@ -170,7 +167,7 @@ class PixelTypedNestedNavigatorTest {
         // Second tester attempts the forbidden simultaneous attachment.
         val secondTester = PixelTester()
         firstTester.pumpWidget(
-            PixelNestedNavigator.typed(
+            PixelNestedNavigator(
                 initialRequest = PixelRouteRequest(destination, NestedPageArguments("first")),
                 controller = controller,
                 vsync = firstTester.vsync,
@@ -185,7 +182,7 @@ class PixelTypedNestedNavigatorTest {
         // Second mount must fail at controller binding before it can attach a competing state.
         val ownershipFailure = assertThrows(IllegalStateException::class.java) {
             secondTester.pumpWidget(
-                PixelNestedNavigator.typed(
+                PixelNestedNavigator(
                     initialRequest = PixelRouteRequest(
                         destination,
                         NestedPageArguments("second"),
@@ -233,7 +230,7 @@ class PixelTypedNestedNavigatorTest {
             transition = PixelRouteTransition.None,
         ) { context, scope ->
             onMounted(PixelNavigator.of(context))
-            PixelNestedNavigator.typed(
+            PixelNestedNavigator(
                 initialRequest = PixelRouteRequest(
                     nestedDestination,
                     NestedPageArguments("root"),
@@ -246,9 +243,9 @@ class PixelTypedNestedNavigatorTest {
         }
     }
 
-    /** Creates one deterministic legacy cover route for the surrounding outer Navigator. */
-    private fun textRoute(name: String, text: String): PixelRoute {
-        return PixelRoute(
+    /** 为外层 Navigator 创建一个确定性的遮盖路由。 */
+    private fun textRoute(name: String, text: String): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(
             name = name,
             transition = PixelRouteTransition.None,
             builder = { Text(text) },

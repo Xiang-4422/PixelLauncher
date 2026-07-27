@@ -15,7 +15,7 @@ import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelOverlayController
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelPoint
-import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.testRouteRequest
 import com.purride.pixelui.Polygon
 import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Row
@@ -363,7 +363,7 @@ class EnginePerformanceSmokeTest {
             maxAverageNanos = 40L * NANOS_PER_MILLISECOND,
         ) {
             PixelNavigator(
-                initialRoute = PixelRoute(
+                initialRequest = testRouteRequest(
                     name = "home",
                     builder = {
                         AppScaffold(

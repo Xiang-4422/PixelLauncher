@@ -1,4 +1,4 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import android.os.Bundle
 
@@ -201,7 +201,9 @@ public sealed interface PixelMultiStackRestoreResult {
  *
  * Captures every mounted child stack through its explicit destination [registries].
  *
- * The operation produces no snapshot if any child is legacy-only or rejects persistence.
+ * The operation produces no snapshot if any child rejects persistence.
+ *
+ * 只要任一子栈拒绝持久化，本次操作就不会产出任何快照。
  */
 public fun PixelMultiStackNavigatorController.persistentSnapshot(
     registries: Map<String, PixelRouteSnapshotRegistry>,
@@ -499,3 +501,21 @@ private const val MultiStackIdsField: String = "ids"
 
 /** Prefix for index-addressed child snapshot byte arrays. */
 private const val MultiStackChildFieldPrefix: String = "child."
+
+/** 为 `PixelMultiStackSnapshotEncodeResult.Encoded` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelMultiStackSnapshotEncoded = PixelMultiStackSnapshotEncodeResult.Encoded
+
+/** 为 `PixelMultiStackSnapshotEncodeResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelMultiStackSnapshotEncodeRejected = PixelMultiStackSnapshotEncodeResult.Rejected
+
+/** 为 `PixelMultiStackSnapshotDecodeResult.Decoded` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelMultiStackSnapshotDecoded = PixelMultiStackSnapshotDecodeResult.Decoded
+
+/** 为 `PixelMultiStackSnapshotDecodeResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelMultiStackSnapshotDecodeRejected = PixelMultiStackSnapshotDecodeResult.Rejected
+
+/** 为 `PixelMultiStackRestoreResult.Restored` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelMultiStackRestored = PixelMultiStackRestoreResult.Restored
+
+/** 为 `PixelMultiStackRestoreResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelMultiStackRestoreRejected = PixelMultiStackRestoreResult.Rejected

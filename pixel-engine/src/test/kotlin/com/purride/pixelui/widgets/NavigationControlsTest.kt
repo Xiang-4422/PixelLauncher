@@ -17,9 +17,10 @@ import com.purride.pixelui.PixelKey
 import com.purride.pixelui.PixelMultiStackNavigator
 import com.purride.pixelui.PixelMultiStackNavigatorController
 import com.purride.pixelui.PixelNavigationDestination
-import com.purride.pixelui.PixelNavigatorStack
-import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.PixelRouteRequest
+import com.purride.pixelui.PixelTypedNavigatorStack
 import com.purride.pixelui.PixelRouteTransition
+import com.purride.pixelui.testRouteRequest
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsAction
 import com.purride.pixelui.PixelSemanticsSelectionMode
@@ -372,17 +373,17 @@ class NavigationControlsTest {
         )
     }
 
-    /** Creates one independently retained Navigator stack root. */
-    private fun stack(id: String, label: String): PixelNavigatorStack {
-        return PixelNavigatorStack(
+    /** 创建一个独立保留的 Navigator 栈根。 */
+    private fun stack(id: String, label: String): PixelTypedNavigatorStack<Unit, Any?> {
+        return PixelTypedNavigatorStack(
             id = id,
-            initialRoute = route(name = "$id-root", label = label),
+            initialRequest = route(name = "$id-root", label = label),
         )
     }
 
-    /** Creates one deterministic non-animated route for stack-depth assertions. */
-    private fun route(name: String, label: String): PixelRoute {
-        return PixelRoute(
+    /** 为栈深度断言创建一个确定性的无动画路由。 */
+    private fun route(name: String, label: String): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(
             name = name,
             transition = PixelRouteTransition.None,
             builder = { Text(label) },

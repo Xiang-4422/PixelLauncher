@@ -89,12 +89,11 @@ import com.purride.pixelui.state.*
 import com.purride.pixelui.widgets.animated.*
 ```
 
-导航、手势、advanced 扩展有少量子包：
+手势与 advanced 扩展有少量子包；导航全部位于根包 `com.purride.pixelui`：
 
 ```kotlin
 import com.purride.pixelui.gesture.*
 import com.purride.pixelui.advanced.*
-import com.purride.pixelui.widgets.navigation.*
 ```
 
 ### 主流程覆盖矩阵
@@ -287,7 +286,7 @@ fun buildNavigator(hostView: PixelHostView): PixelNavigator {
     // Re-read this property after replacing the Host frame scheduler.
     val hostTickerProvider = hostView.tickerProvider
     return PixelNavigator(
-        initialRoute = PixelRoute(name = "home", builder = { Text("HOME") }),
+        initialRequest = PixelRouteRequest(homeDestination, Unit),
         vsync = hostTickerProvider,
     )
 }
@@ -896,12 +895,11 @@ override fun onSaveInstanceState(outState: Bundle) {
 }
 ```
 
-`PixelNavigatorState.saveToBundle` / `restoreFromBundle` 继续只保存旧版 `PixelRoute.name` 栈。
-需要恢复 typed destination、参数、entry ID 和允许落盘的 bucket 值时，使用
-`PixelNavigator.typed`、`PixelRouteSnapshotAdapter` 与
-`savePersistentSnapshotToBundle / restorePersistentSnapshotFromBundle`。result callback 不跨进程
-恢复。路由内滚动位置可以由 adapter 明确纳入 typed route state；legacy route 仍可使用
-`PixelRouteScrollRestoration`，但它只在 entry 留在当前 Navigator stack 内时生效。
+Navigator 只提供版本化 typed 恢复：用 `PixelRouteSnapshotAdapter` 注册 destination，再通过
+`savePersistentSnapshotToBundle / restorePersistentSnapshotFromBundle` 保存并恢复 typed
+destination、参数、entry ID 和允许落盘的 bucket 值。result callback 不跨进程恢复。路由内滚动
+位置可以由 adapter 明确纳入 typed route state；`PixelRouteScrollRestoration` 只在 entry 留在
+当前 Navigator stack 内时生效，不跨进程。
 
 ### Accessibility
 
@@ -1920,13 +1918,11 @@ scrollController.jumpToEnd(listState)
 | `PixelRouteSuccess<R>` / `PixelRouteCancelled` | 根包可直接构造并匹配的 outcome 分支别名 |
 | `PixelRouteStateKey<T>` / `PixelRouteStateBucket` | entry 私有的内存状态 |
 | `PixelRouteEntryInspection` / `PixelRouteTransitionInspection` | entry 与转场的无参数诊断快照 |
-| `PixelRoute` | 兼容保留的字符串 route 定义 |
 | `PixelRouteTransition` | None/Fade/SlideHorizontal/SlideVertical |
 | `PixelRouteTransitionBuilder` | 自定义 transition |
 | `PixelNavigationObserver` / `PixelNavigationFailure` | 有序事件与结构化失败诊断 |
 | `PixelNavigatorInspectionSnapshot` | 只读、仅内存的 entry stack 检查快照 |
-| `PixelNavigatorSnapshot` | 旧版 route name 栈保存；不是 typed entry snapshot |
-| `PixelNavigator.typed` | 创建可由 typed snapshot 恢复的 root entry |
+| `PixelNavigator` | 以 `PixelRouteRequest` 作为可恢复 root entry 的导航宿主 |
 | `PixelNavigatorSnapshotCodec` / `PixelRouteSnapshotRegistry` | 版本化 entry bytes 与 destination allowlist |
 | `PixelRouteSnapshotAdapter<A, R>` / `PixelRoutePayloadCodec<A>` | 参数、迁移和允许恢复的局部状态协议 |
 | `PixelMultiStackNavigator` / `PixelTypedNavigatorStack` | 始终挂载且 back 隔离的多返回栈 |
@@ -1937,7 +1933,6 @@ scrollController.jumpToEnd(listState)
 | `PixelTypedDeepLinkResolver` / `PixelTypedDeepLinkRoute` | matcher 与 typed 参数 decoder |
 | `PixelPredictiveBackEvent` / `PixelPredictiveBackHandler` | start/progress/cancel/commit 返回手势 |
 | `PixelDeepLink` | deep link 解析 |
-| `PixelDeepLinkResolver` | deep link 到 route stack |
 | `PixelRouteScrollRestoration` | route 内滚动位置恢复 |
 | `PixelListSavedState` | 列表/网格滚动位置保存 |
 | `PixelPagerSavedState` | PageView 当前页保存 |
@@ -1958,15 +1953,14 @@ import com.purride.pixelui.Text
 import com.purride.pixelui.TextButton
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
-import com.purride.pixelui.widgets.navigation.PixelNavigator
-import com.purride.pixelui.widgets.navigation.PixelRoute
-import com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason
-import com.purride.pixelui.widgets.navigation.PixelRouteDestination
-import com.purride.pixelui.widgets.navigation.PixelRouteEntry
-import com.purride.pixelui.widgets.navigation.PixelRouteOutcome
-import com.purride.pixelui.widgets.navigation.PixelRouteRequest
-import com.purride.pixelui.widgets.navigation.PixelRouteStateKey
-import com.purride.pixelui.widgets.navigation.pixelRouteDestination
+import com.purride.pixelui.PixelNavigator
+import com.purride.pixelui.PixelRouteCancellationReason
+import com.purride.pixelui.PixelRouteDestination
+import com.purride.pixelui.PixelRouteEntry
+import com.purride.pixelui.PixelRouteOutcome
+import com.purride.pixelui.PixelRouteRequest
+import com.purride.pixelui.PixelRouteStateKey
+import com.purride.pixelui.pixelRouteDestination
 
 /** Typed arguments captured independently by each editor entry. */
 data class EditorArgs(
@@ -2015,10 +2009,9 @@ class RouteEntryExample(
             )
         }
 
-    /** Compatibility root route used by the current PixelNavigator constructor. */
-    private val homeRoute = PixelRoute(
-        name = "home",
-        builder = { context ->
+    /** Typed root destination whose entry stays persistable across process death. */
+    private val homeDestination: PixelRouteDestination<Unit, Unit> =
+        pixelRouteDestination(id = "home") { context, _ ->
             // The mounted Navigator state owns all entry identities and operations.
             val navigator = PixelNavigator.of(context)
             TextButton(
@@ -2035,12 +2028,11 @@ class RouteEntryExample(
                     println("Opened entry ${entry.id.value}")
                 },
             )
-        },
-    )
+        }
 
     /** Produces the root Navigator widget for the host content provider. */
     fun build(): Widget = PixelNavigator(
-        initialRoute = homeRoute,
+        initialRequest = PixelRouteRequest(homeDestination, Unit),
         vsync = tickerProvider,
     )
 
@@ -2135,23 +2127,20 @@ maintained entry host 仍在稳定位置挂载，只是在自定义转场期间�
 动画操作会把离场 entry 保持在 `Removing`，直到转场 settle。下一次导航操作会先 settle 被打断的
 旧转场；过期的转场完成回调不会重复 dispose 或重复投递结果。
 
-legacy `pop()` 与 typed `complete(...)` 都会执行 destination 的 `canPop(entry)`；返回 false 或 callback
+`pop()` 与 typed `complete(...)` 都会执行 destination 的 `canPop(entry)`；返回 false 或 callback
 抛错时不改变 stack。`cancel(...)`、`remove(...)`、`replace(...)` 与 `clear(...)` 是显式管理
 操作，不经过 `canPop`。
 
-#### Legacy PixelRoute 兼容语义
+#### 重复入栈与 replace 结果语义
 
-`PixelRoute`、`currentRoute`、`stack`、字符串 deep link 和 route-name snapshot 继续保留。每次
-`push(samePixelRoute)` 仍会创建独立 entry，因此同一个 `PixelRoute` 实例重复入栈不再共享
-bucket、result channel 或生命周期。
+同一个 `PixelRouteRequest` 或 destination 重复入栈时，每个 stack 位置都会分配独立 entry ID、
+state bucket、result channel 与生命周期，绝不共享。
 
-- `push(route) { value -> ... }` 保持 `(Any?) -> Unit`；任何取消都映射为 `null`，因此旧 API
-  无法区分成功返回 null 与取消。
-- `replace(route)` 保持旧 stack-slot 约定：把仍 pending 的 legacy callback 转移给新的
-  replacement entry。旧 entry 自己的 channel 终结为 `Cancelled(Replaced)`，但转移出去的
-  callback 要等 replacement 最终退出才收到值或 `null`。
-- typed replace 不转移旧 callback；它取消旧 channel，并为 replacement 创建独立 callback。
-- 新代码应使用 `currentEntry` / `entries`；`currentRoute` / `stack` 只是兼容投影。
+- `replace(request)` 取消旧 entry 的 channel（`Cancelled(Replaced)`），并为 replacement 创建
+  独立 callback；旧 callback 不会被转移到新 entry。
+- `pop()` / `pop(result)` 沿用未类型化的 `Any?` 结果；需要区分「成功返回 null」与「取消」时使用
+  typed `complete(entry, result)` 与 `cancel(entry, reason)`。
+- stack 状态只通过 `currentEntry` / `entries` 读取。
 
 #### Observer、失败与 inspection
 
@@ -2164,13 +2153,12 @@ observer 抛错会被隔离并记录为 `ObserverCallbackFailed`，不会撤销�
 state key 名、当前 entry、转场和最近失败；它故意不持有参数或 widget。
 
 `PixelNavigatorInspectionSnapshot`、observer 事件和 `lastFailure` 都只用于当前进程内调试与测试，
-不可写入 Bundle 或作为恢复格式。`PixelNavigatorSnapshot` 继续是旧版 route-name 列表；typed
-持久化使用下面的版本化 codec。
+不可写入 Bundle 或作为恢复格式。持久化只走下面的版本化 typed codec。
 
 #### 版本化 typed snapshot
 
-需要恢复的 root 必须由 `PixelNavigator.typed(PixelRouteRequest(...))` 创建。每个 destination 用
-`PixelRouteSnapshotAdapter<A, R>` 注册：
+需要恢复的 root 由 `PixelNavigator(initialRequest = PixelRouteRequest(...))` 声明。每个
+destination 用 `PixelRouteSnapshotAdapter<A, R>` 注册：
 
 - `PixelRoutePayloadCodec<A>` 写入自己的参数 schema，并在 `decode` 中显式迁移旧版本；
 - `encodeRouteState` 只选择允许落盘的 bucket 值；
@@ -2205,7 +2193,7 @@ route history，但不 paint、hit-test、导出 semantics、出现在 finder �
 `PixelMultiStackNavigatorController` 负责：先 pop active 子栈，再从 secondary root 回到 initial stack。
 
 ```kotlin
-/** Stable destinations whose ids match PixelNavigatorStack ids. */
+/** Stable destinations whose ids match PixelTypedNavigatorStack ids. */
 val appDestinations = listOf(
     PixelNavigationDestination(id = "home", label = "HOME", icon = homeIcon),
     PixelNavigationDestination(id = "settings", label = "SETTINGS", icon = settingsIcon),
@@ -2225,9 +2213,9 @@ NavigationBar(
 Bar 使用 Left/Right，Rail 使用 Up/Down，都会循环跳过 disabled destination；可交互且至少有一个
 enabled destination 时整组是一个 Tab stop，并始终导出结构化 `SINGLE` collection。
 
-legacy tab root 使用 `PixelNavigatorStack`；需要进程恢复时使用
-`PixelTypedNavigatorStack<A, R>`。`PixelNestedNavigator` 位于 maintained route 中时传入
-`parentEntry`，parent inactive 后 nested back bridge 自动禁用。
+每个 tab root 都声明为 `PixelTypedNavigatorStack<A, R>`，因此多栈天然支持进程恢复。
+`PixelNestedNavigator` 位于 maintained route 中时传入 `parentEntry`，parent inactive 后
+nested back bridge 自动禁用；需要版本化恢复时额外传入 `PixelNestedNavigatorController`。
 
 #### Typed Deep Link
 
@@ -2312,9 +2300,9 @@ Android animator scale 会同时缩放 duration 与 delay。scale 0 同步提交
 而不是粗暴延迟逻辑状态。需要设置页预览或截图模式时可设置
 `PixelHostView.motionSettingsOverride`；设为 null 恢复跟随系统。
 
-Navigator 的具体非 `None` 通道仍由 `PixelRoute.transition` / `defaultTransition` 决定，以保持既有
-路由配置兼容；Motion route preset 为 `None` 时优先同步关闭内置和自定义转场，其余 preset 允许
-Navigator 使用该公开路由配置。
+Navigator 的具体非 `None` 通道由 `PixelRouteDestination.transition` / `defaultTransition` 决定；
+Motion route preset 为 `None` 时优先同步关闭内置和自定义转场，其余 preset 允许 Navigator 使用
+该公开路由配置。
 
 运行中切换 theme、scale 或 reduce motion 会从当前视觉帧 retarget。目标在 pointer down 后被移除、
 禁用或变为 opacity 0/paint-only 时，Host 与 `PixelTester` 会取消原 owner；up 不会触发旧 callback，

@@ -1,7 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListSavedState
 import java.util.IdentityHashMap
 
@@ -113,6 +111,12 @@ public sealed interface PixelRouteOutcome<out R> {
         public val reason: PixelRouteCancellationReason,
     ) : PixelRouteOutcome<Nothing>
 }
+
+/** 为 `PixelRouteOutcome.Success` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelRouteSuccess<R> = PixelRouteOutcome.Success<R>
+
+/** 为 `PixelRouteOutcome.Cancelled` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelRouteCancelled = PixelRouteOutcome.Cancelled
 
 /**
  * 定义 `PixelRouteStateKey` 在 `PixelRouteEntry` 中承担的数据与行为边界。
@@ -324,21 +328,6 @@ public class PixelRouteResultChannel<R> private constructor(
         return true
     }
 
-    /**
-     * Moves the still-pending callback to a replacement channel without sharing channel state.
-     *
-     * This is used only by the legacy `replace(PixelRoute)` compatibility path, whose established
-     * contract keeps the original stack-slot callback waiting for the replacement route.
-     */
-    internal fun takePendingCallbackForLegacyTransfer(): ((PixelRouteOutcome<R>) -> Unit)? {
-        if (state != PixelRouteResultState.Pending || delivered) return null
-        val callback = pendingCallback
-        pendingCallback = null
-        cancelExactlyOnce(PixelRouteCancellationReason.Replaced)
-        delivered = true
-        return callback
-    }
-
     /** Internal construction boundary keeps channel resolution under Navigator ownership. */
     internal companion object {
         /** Creates one pending typed channel for a newly allocated route entry. */
@@ -545,7 +534,6 @@ public class PixelRouteEntry<A : Any, R> private constructor(
     onOutcome: ((PixelRouteOutcome<R>) -> Unit)? = null,
     public val stateBucket: PixelRouteStateBucket,
     public val maintainState: Boolean = destination.maintainState,
-    internal val legacyRoute: PixelRoute? = null,
 ) {
     /** 公开 `PixelRouteEntry` 的 `resultChannel` 配置或运行值。
  *
@@ -693,11 +681,6 @@ public class PixelRouteEntry<A : Any, R> private constructor(
     /** Delivers this entry's resolved outcome after stack transition settlement. */
     internal fun drainResultDelivery(): Boolean = resultChannel.drainAndDeliver()
 
-    /** Transfers the legacy result callback while leaving this entry's channel terminal. */
-    internal fun takeLegacyResultCallback(): ((PixelRouteOutcome<R>) -> Unit)? {
-        return resultChannel.takePendingCallbackForLegacyTransfer()
-    }
-
     /** Produces a deterministic, argument-free inspection view of this entry. */
     internal fun inspection(): PixelRouteEntryInspection {
         return PixelRouteEntryInspection(
@@ -721,7 +704,6 @@ public class PixelRouteEntry<A : Any, R> private constructor(
             onOutcome: ((PixelRouteOutcome<R>) -> Unit)? = null,
             stateBucket: PixelRouteStateBucket = PixelRouteStateBucket.create(),
             maintainState: Boolean = destination.maintainState,
-            legacyRoute: PixelRoute? = null,
         ): PixelRouteEntry<A, R> {
             return PixelRouteEntry(
                 id = id,
@@ -731,7 +713,6 @@ public class PixelRouteEntry<A : Any, R> private constructor(
                 onOutcome = onOutcome,
                 stateBucket = stateBucket,
                 maintainState = maintainState,
-                legacyRoute = legacyRoute,
             )
         }
     }

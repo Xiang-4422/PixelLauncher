@@ -1,6 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.Text
 import com.purride.pixelui.testing.PixelTester
 import java.nio.charset.StandardCharsets
 import org.junit.Assert.assertEquals
@@ -171,7 +170,7 @@ class PixelMultiStackSnapshotTest {
         )
     }
 
-    /** Creates a host whose child roots use [PixelTypedNavigatorStack] rather than legacy routes. */
+    /** 创建一个子栈根全部声明为可持久化 [PixelTypedNavigatorStack] 的宿主。 */
     private fun multiStackWidget(
         controller: PixelMultiStackNavigatorController,
         home: PixelRouteDestination<String, Unit>,

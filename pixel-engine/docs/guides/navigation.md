@@ -1,7 +1,8 @@
 # 路由与恢复
 
-优先使用 typed entry API。`PixelRouteDestination<A, R>` 是可复用定义，`PixelRouteRequest` 每次
-创建独立 entry；entry 拥有自己的 ID、参数、状态桶、结果通道和生命周期。
+导航只有 typed entry API，全部位于根包 `com.purride.pixelui`。`PixelRouteDestination<A, R>` 是
+可复用定义，`PixelRouteRequest` 每次创建独立 entry；entry 拥有自己的 ID、参数、状态桶、结果通道
+和生命周期。
 
 ```kotlin
 data class EditorArgs(val documentId: String)
@@ -41,7 +42,7 @@ navigator.push(request) { outcome ->
 | `PixelNavigatorSnapshotDecoded` / `PixelNavigatorSnapshotDecodeRejected` | 单栈 envelope 解码成功或被拒绝 |
 | `PixelRoutePayloadDecoded` / `PixelRoutePayloadRejected` | destination 参数 payload 解码结果 |
 | `PixelRouteStateDecoded` / `PixelRouteStateRejected` | entry 局部状态解码结果 |
-| `PixelNavigatorStackDefinition` | legacy 与 typed retained stack 的统一定义 |
+| `PixelTypedNavigatorStack` | 独立保留的 typed retained stack 定义 |
 | `PixelDeepLinkDecodeResult` | 一个匹配 route 的 typed 参数解码结果 |
 | `PixelTypedDeepLinkResult` | deep link 导航的终态结果 |
 | `PixelMultiStackSnapshotEncoded` / `PixelMultiStackSnapshotEncodeRejected` | 多栈 snapshot 编码结果 |

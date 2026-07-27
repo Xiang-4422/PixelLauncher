@@ -56,7 +56,7 @@ public class NavigationRestorationConsumerTest {
             listOf(StringSnapshotAdapter(originalDestination)),
         )
         originalTester.pumpWidget(
-            PixelNavigator.typed(
+            PixelNavigator(
                 initialRequest = PixelRouteRequest(originalDestination, "root"),
                 vsync = originalTester.vsync,
                 defaultTransition = PixelRouteTransition.None,
@@ -79,7 +79,7 @@ public class NavigationRestorationConsumerTest {
             listOf(StringSnapshotAdapter(recreatedDestination)),
         )
         recreatedTester.pumpWidget(
-            PixelNavigator.typed(
+            PixelNavigator(
                 initialRequest = PixelRouteRequest(recreatedDestination, "fallback"),
                 vsync = recreatedTester.vsync,
                 defaultTransition = PixelRouteTransition.None,
@@ -159,7 +159,7 @@ public class NavigationRestorationConsumerTest {
             listOf(StringSnapshotAdapter(originalDestination)),
         )
         originalTester.pumpWidget(
-            PixelNestedNavigator.typed(
+            PixelNestedNavigator(
                 initialRequest = PixelRouteRequest(originalDestination, "nested-root"),
                 controller = originalController,
                 vsync = originalTester.vsync,
@@ -192,7 +192,7 @@ public class NavigationRestorationConsumerTest {
             listOf(StringSnapshotAdapter(recreatedDestination)),
         )
         recreatedTester.pumpWidget(
-            PixelNestedNavigator.typed(
+            PixelNestedNavigator(
                 initialRequest = PixelRouteRequest(recreatedDestination, "fallback"),
                 controller = recreatedController,
                 vsync = recreatedTester.vsync,

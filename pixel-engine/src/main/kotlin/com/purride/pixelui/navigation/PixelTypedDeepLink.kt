@@ -1,4 +1,4 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 /** 定义 `PixelDeepLinkArgumentFailureReason` 在 `PixelTypedDeepLink` 中承担的数据与行为边界。
  *

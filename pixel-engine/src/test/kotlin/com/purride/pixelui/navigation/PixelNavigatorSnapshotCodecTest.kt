@@ -1,11 +1,11 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.Text
 import com.purride.pixelui.testing.PixelTester
 import java.nio.charset.StandardCharsets
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -70,9 +70,9 @@ class PixelNavigatorSnapshotCodecTest {
         assertEquals(originalDetail.id.value + 1L, future.id.value)
     }
 
-    /** Verifies the public typed-root factory produces a stack the persistent codec can encode. */
+    /** 验证公开的类型化根 Widget 挂载出的栈可以被持久化 codec 编码。 */
     @Test
-    fun typedNavigatorFactoryAvoidsAnUnpersistableLegacyRoot() {
+    fun typedRootWidgetProducesAPersistableMountedStack() {
         // Test host supplies deterministic frame scheduling for the public widget factory.
         val tester = PixelTester()
         // Destination builder captures the mounted Navigator controller for assertions.
@@ -84,15 +84,15 @@ class PixelNavigatorSnapshotCodecTest {
         }
         // Explicit restoration adapter matches the exact destination instance.
         val registry = PixelRouteSnapshotRegistry(listOf(TestRouteSnapshotAdapter(destination)))
-        // The old PixelNavigator constructor still exists; typed() adds a source-level typed root path.
-        val widget = PixelNavigator.typed(
+        // Navigator 只接受类型化根请求，因此挂载后的栈天然可持久化。
+        val widget = PixelNavigator(
             initialRequest = PixelRouteRequest(destination, TestArguments("home", 7)),
             vsync = tester.vsync,
         )
 
         tester.pumpWidget(widget, logicalWidth = 16, logicalHeight = 8)
 
-        // Mounted root is a real typed entry rather than a legacy PixelRoute wrapper.
+        // 挂载后的根是真实类型化 entry，并携带其声明的参数。
         val navigator = checkNotNull(mountedNavigator)
         assertEquals(TestArguments("home", 7), typedEntry(navigator.currentEntry).arguments)
         assertTrue(navigator.persistentSnapshot(registry) is PixelNavigatorSnapshotEncodeResult.Encoded)
@@ -284,6 +284,26 @@ class PixelNavigatorSnapshotCodecTest {
         assertFalse(secondTarget.restore(decoded.plan))
         assertSame(secondRoot, secondTarget.currentEntry)
         assertNotSame(firstTarget.currentEntry, secondTarget.currentEntry)
+    }
+
+    /** 验证缺失 savedInstanceState 时类型化 Bundle 恢复既不改栈也不报错。 */
+    @Test
+    fun absentSavedInstanceStateLeavesTheTypedStackUnchanged() {
+        // 单一目标同时充当根与前台 entry 的定义来源。
+        val destination = testDestination("absent-bundle")
+        // 注册表只用于证明恢复被跳过时不会触碰任何 adapter。
+        val registry = PixelRouteSnapshotRegistry(listOf(TestRouteSnapshotAdapter(destination)))
+        val navigator = PixelNavigatorState(
+            PixelRouteRequest(destination, TestArguments("root", 1)),
+        )
+        navigator.push(PixelRouteRequest(destination, TestArguments("detail", 2)))
+        // 恢复前的栈拓扑，用于逐项比较恢复调用没有产生任何副作用。
+        val entryIdsBeforeRestore = navigator.entries.map { entry -> entry.id }
+
+        // `null` 表示进程从未保存快照，返回值必须是 `null` 而不是一个被拒绝的结果。
+        assertNull(navigator.restorePersistentSnapshotFromBundle(null, registry))
+        assertEquals(entryIdsBeforeRestore, navigator.entries.map { entry -> entry.id })
+        assertNull(navigator.lastFailure)
     }
 
     /** Creates one reusable destination with deterministic test UI. */

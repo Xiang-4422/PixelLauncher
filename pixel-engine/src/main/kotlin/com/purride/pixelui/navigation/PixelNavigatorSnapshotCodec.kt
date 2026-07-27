@@ -1,4 +1,4 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import android.os.Bundle
 import java.io.ByteArrayInputStream
@@ -1287,3 +1287,27 @@ private const val LegacyDefaultStateSchemaVersion: Int = 1
 
 /** Magic, schema, payload length, and CRC32 fields outside the schema payload. */
 private const val SnapshotEnvelopeOverhead: Int = Int.SIZE_BYTES * 4
+
+/** 为 `PixelRoutePayloadDecodeResult.Decoded` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelRoutePayloadDecoded<T> = PixelRoutePayloadDecodeResult.Decoded<T>
+
+/** 为 `PixelRoutePayloadDecodeResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelRoutePayloadRejected = PixelRoutePayloadDecodeResult.Rejected
+
+/** 为 `PixelRouteStateDecodeResult.Decoded` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelRouteStateDecoded = PixelRouteStateDecodeResult.Decoded
+
+/** 为 `PixelRouteStateDecodeResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelRouteStateRejected = PixelRouteStateDecodeResult.Rejected
+
+/** 为 `PixelNavigatorSnapshotEncodeResult.Encoded` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelNavigatorSnapshotEncoded = PixelNavigatorSnapshotEncodeResult.Encoded
+
+/** 为 `PixelNavigatorSnapshotEncodeResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelNavigatorSnapshotEncodeRejected = PixelNavigatorSnapshotEncodeResult.Rejected
+
+/** 为 `PixelNavigatorSnapshotDecodeResult.Decoded` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelNavigatorSnapshotDecoded = PixelNavigatorSnapshotDecodeResult.Decoded
+
+/** 为 `PixelNavigatorSnapshotDecodeResult.Rejected` 提供可直接构造与匹配的顶层短名。 */
+public typealias PixelNavigatorSnapshotDecodeRejected = PixelNavigatorSnapshotDecodeResult.Rejected

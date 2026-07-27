@@ -1,23 +1,6 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import com.purride.pixelcore.PixelColor
-import com.purride.pixelui.Container
-import com.purride.pixelui.GestureDetector
-import com.purride.pixelui.State
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.Stack
-import com.purride.pixelui.PixelMotionRole
-import com.purride.pixelui.PixelMotionScope
-import com.purride.pixelui.PixelMotionSettings
-import com.purride.pixelui.PixelMotionSpec
-import com.purride.pixelui.PixelMotionTheme
-import com.purride.pixelui.PixelMotionThemeData
-import com.purride.pixelui.PixelMotionTransitionPreset
-import com.purride.pixelui.PixelPredictiveBackEvent
-import com.purride.pixelui.PixelPredictiveBackSwipeEdge
-import com.purride.pixelui.PixelSemanticRole
-import com.purride.pixelui.Semantics
-import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.Curves
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
@@ -46,7 +29,7 @@ class PixelNavigationMotionTest {
             navigationMotionRoot(
                 tester = tester,
                 child = PixelNavigator(
-                    initialRoute = rootRoute,
+                    initialRequest = rootRoute,
                     vsync = tester.vsync,
                     transitionDuration = 100.milliseconds,
                     defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -92,7 +75,7 @@ class PixelNavigationMotionTest {
                 tester = tester,
                 routeDelayMs = 20,
                 child = PixelNavigator(
-                    initialRoute = rootRoute,
+                    initialRequest = rootRoute,
                     vsync = tester.vsync,
                     transitionDuration = 80.milliseconds,
                     defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -125,7 +108,7 @@ class PixelNavigationMotionTest {
         val rootRoute = coloredRoute("ROOT", rootColor) { context ->
             navigator = PixelNavigator.of(context)
         }
-        val customDetails = PixelRoute(
+        val customDetails = testRouteRequest(
             name = "DETAILS",
             builder = { coloredSurface("DETAILS", detailsColor) },
             transitionBuilder = PixelRouteTransitionBuilder { _, _, _, incoming ->
@@ -138,7 +121,7 @@ class PixelNavigationMotionTest {
                 tester = tester,
                 settings = PixelMotionSettings(reduceMotion = true),
                 child = PixelNavigator(
-                    initialRoute = rootRoute,
+                    initialRequest = rootRoute,
                     vsync = tester.vsync,
                     transitionDuration = 100.milliseconds,
                     defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -201,7 +184,7 @@ class PixelNavigationMotionTest {
         val rootRoute = coloredRoute("ROOT", rootColor) { context ->
             navigator = PixelNavigator.of(context)
         }
-        val customDetails = PixelRoute(
+        val customDetails = testRouteRequest(
             name = "DETAILS",
             builder = { coloredSurface("DETAILS", detailsColor) },
             transitionBuilder = PixelRouteTransitionBuilder { _, _, _, incoming ->
@@ -243,7 +226,7 @@ class PixelNavigationMotionTest {
                 tester = tester,
                 settings = PixelMotionSettings(reduceMotion = true),
                 child = PixelNavigator(
-                    initialRoute = rootRoute,
+                    initialRequest = rootRoute,
                     vsync = tester.vsync,
                     transitionDuration = 100.milliseconds,
                     defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -281,7 +264,7 @@ class PixelNavigationMotionTest {
             navigationMotionRoot(
                 tester = tester,
                 child = PixelNavigator(
-                    initialRoute = rootRoute,
+                    initialRequest = rootRoute,
                     vsync = tester.vsync,
                     transitionDuration = 100.milliseconds,
                     defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -320,7 +303,7 @@ class PixelNavigationMotionTest {
             navigator = PixelNavigator.of(context)
         }
         val navigatorWidget = PixelNavigator(
-            initialRoute = rootRoute,
+            initialRequest = rootRoute,
             vsync = tester.vsync,
             transitionDuration = 100.milliseconds,
             defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -367,7 +350,7 @@ class PixelNavigationMotionTest {
             navigator = PixelNavigator.of(context)
         }
         val navigatorWidget = PixelNavigator(
-            initialRoute = rootRoute,
+            initialRequest = rootRoute,
             vsync = tester.vsync,
             transitionDuration = 100.milliseconds,
             defaultTransition = PixelRouteTransition.SlideHorizontal,
@@ -407,7 +390,7 @@ class PixelNavigationMotionTest {
         var detailStateCreations = 0
         var rootTaps = 0
         var detailTaps = 0
-        val rootRoute = PixelRoute(
+        val rootRoute = testRouteRequest(
             name = "ROOT",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -420,7 +403,7 @@ class PixelNavigationMotionTest {
                 )
             },
         )
-        val detailRoute = PixelRoute(
+        val detailRoute = testRouteRequest(
             name = "DETAILS",
             builder = {
                 RouteStateProbe(
@@ -439,7 +422,7 @@ class PixelNavigationMotionTest {
             navigationMotionRoot(
                 tester = tester,
                 child = PixelNavigator(
-                    initialRoute = rootRoute,
+                    initialRequest = rootRoute,
                     vsync = tester.vsync,
                     transitionDuration = 100.milliseconds,
                 ),
@@ -483,13 +466,13 @@ class PixelNavigationMotionTest {
                 tester = tester,
                 child = PixelMultiStackNavigator(
                     stacks = listOf(
-                        PixelNavigatorStack(
+                        PixelTypedNavigatorStack(
                             id = "home",
-                            initialRoute = interactiveRoute("HOME", rootColor) { homeTaps += 1 },
+                            initialRequest = interactiveRoute("HOME", rootColor) { homeTaps += 1 },
                         ),
-                        PixelNavigatorStack(
+                        PixelTypedNavigatorStack(
                             id = "search",
-                            initialRoute = interactiveRoute("SEARCH", detailsColor) { searchTaps += 1 },
+                            initialRequest = interactiveRoute("SEARCH", detailsColor) { searchTaps += 1 },
                         ),
                     ),
                     controller = controller,
@@ -539,13 +522,13 @@ class PixelNavigationMotionTest {
         assertEquals(0, tester.vsync.liveTickerCount)
     }
 
-    /** Creates a route that captures context before returning one deterministic colored surface. */
+    /** 创建先捕获 BuildContext、再返回单一确定色块的路由。 */
     private fun coloredRoute(
         name: String,
         color: PixelColor,
-        beforeBuild: ((com.purride.pixelui.BuildContext) -> Unit)? = null,
-    ): PixelRoute {
-        return PixelRoute(
+        beforeBuild: ((BuildContext) -> Unit)? = null,
+    ): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(
             name = name,
             builder = { context ->
                 beforeBuild?.invoke(context)
@@ -554,13 +537,13 @@ class PixelNavigationMotionTest {
         )
     }
 
-    /** Creates an active-stack surface with a semantics label and a full-size tap target. */
+    /** 创建带语义标签和整块点击目标的活跃栈色块路由。 */
     private fun interactiveRoute(
         name: String,
         color: PixelColor,
         onTap: () -> Unit,
-    ): PixelRoute {
-        return PixelRoute(
+    ): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(
             name = name,
             transition = PixelRouteTransition.None,
             builder = {

@@ -1,17 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.GestureDetector
-import com.purride.pixelui.PixelBackDispatcher
-import com.purride.pixelui.PixelBackHost
-import com.purride.pixelui.PixelPredictiveBackCallback
-import com.purride.pixelui.PixelPredictiveBackEvent
-import com.purride.pixelui.PixelPredictiveBackHandler
-import com.purride.pixelui.PixelPredictiveBackSwipeEdge
-import com.purride.pixelui.State
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.Text
-import com.purride.pixelui.Widget
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
@@ -147,7 +135,7 @@ class PixelNestedAndTypedDeepLinkTest {
             (decoderFailure as PixelTypedDeepLinkRejected).reason,
         )
         assertEquals(1, navigator.entries.size)
-        assertEquals("root", navigator.currentRoute.name)
+        assertEquals("root", navigator.currentEntry.destination.id)
     }
 
     /** Verifies bottom-navigation stacks retain state while isolating presentation and back. */
@@ -273,9 +261,9 @@ class PixelNestedAndTypedDeepLinkTest {
         )
         // Each stack root contributes one predictive handler beneath its private PixelBackHost.
         val stacks = callbacks.map { (id, callback) ->
-            PixelNavigatorStack(
+            PixelTypedNavigatorStack(
                 id = id,
-                initialRoute = PixelRoute(
+                initialRequest = testRouteRequest(
                     name = id,
                     transition = PixelRouteTransition.None,
                     builder = {
@@ -345,7 +333,7 @@ class PixelNestedAndTypedDeepLinkTest {
         // Stable root entry identity controls nested back eligibility after the route is covered.
         var outerRootEntry: PixelRouteEntry<*, *>? = null
         // Inner root captures the nested state from its own Navigator scope.
-        val innerRoot = PixelRoute(
+        val innerRoot = testRouteRequest(
             name = "inner-root",
             transition = PixelRouteTransition.None,
             builder = { context ->
@@ -354,7 +342,7 @@ class PixelNestedAndTypedDeepLinkTest {
             },
         )
         // Outer root inserts the back-isolated nested wrapper under its concrete parent entry.
-        val outerRoot = PixelRoute(
+        val outerRoot = testRouteRequest(
             name = "outer-root",
             transition = PixelRouteTransition.None,
             builder = { context ->
@@ -362,7 +350,7 @@ class PixelNestedAndTypedDeepLinkTest {
                 outerNavigator = outer
                 if (outerRootEntry == null) outerRootEntry = outer.currentEntry
                 PixelNestedNavigator(
-                    initialRoute = innerRoot,
+                    initialRequest = innerRoot,
                     vsync = tester.vsync,
                     defaultTransition = PixelRouteTransition.None,
                     parentEntry = outerRootEntry,
@@ -374,7 +362,7 @@ class PixelNestedAndTypedDeepLinkTest {
             PixelBackHost(
                 dispatcher = rootBackDispatcher,
                 child = PixelNavigator(
-                    initialRoute = outerRoot,
+                    initialRequest = outerRoot,
                     vsync = tester.vsync,
                     defaultTransition = PixelRouteTransition.None,
                 ),
@@ -433,7 +421,7 @@ class PixelNestedAndTypedDeepLinkTest {
         var outerNavigator: PixelNavigatorState? = null
         var outerRootEntry: PixelRouteEntry<*, *>? = null
         // Inner root accepts predictive sessions when its parent route is active.
-        val innerRoot = PixelRoute(
+        val innerRoot = testRouteRequest(
             name = "predictive-inner-root",
             transition = PixelRouteTransition.None,
             builder = {
@@ -444,7 +432,7 @@ class PixelNestedAndTypedDeepLinkTest {
             },
         )
         // Outer root supplies its concrete entry to the nested wrapper's back gate.
-        val outerRoot = PixelRoute(
+        val outerRoot = testRouteRequest(
             name = "predictive-outer-root",
             transition = PixelRouteTransition.None,
             builder = { context ->
@@ -452,7 +440,7 @@ class PixelNestedAndTypedDeepLinkTest {
                 outerNavigator = outer
                 if (outerRootEntry == null) outerRootEntry = outer.currentEntry
                 PixelNestedNavigator(
-                    initialRoute = innerRoot,
+                    initialRequest = innerRoot,
                     vsync = tester.vsync,
                     defaultTransition = PixelRouteTransition.None,
                     parentEntry = outerRootEntry,
@@ -463,7 +451,7 @@ class PixelNestedAndTypedDeepLinkTest {
             PixelBackHost(
                 dispatcher = rootBackDispatcher,
                 child = PixelNavigator(
-                    initialRoute = outerRoot,
+                    initialRequest = outerRoot,
                     vsync = tester.vsync,
                     defaultTransition = PixelRouteTransition.None,
                 ),
@@ -608,16 +596,16 @@ class PixelNestedAndTypedDeepLinkTest {
         return PixelTypedDeepLinkResolver(listOf(route))
     }
 
-    /** Creates one independently capturable tab root with a retained state probe. */
+    /** 创建一个可独立捕获、带保留状态探针的标签页根栈。 */
     private fun stackDefinition(
         id: String,
         label: String,
         probes: MutableMap<String, StackProbeState>,
         navigatorStates: MutableMap<String, PixelNavigatorState>,
-    ): PixelNavigatorStack {
-        return PixelNavigatorStack(
+    ): PixelTypedNavigatorStack<Unit, Any?> {
+        return PixelTypedNavigatorStack(
             id = id,
-            initialRoute = PixelRoute(
+            initialRequest = testRouteRequest(
                 name = id,
                 transition = PixelRouteTransition.None,
                 builder = { context ->
@@ -628,9 +616,9 @@ class PixelNestedAndTypedDeepLinkTest {
         )
     }
 
-    /** Creates a simple non-interactive route with deterministic text and no animation. */
-    private fun textRoute(name: String, text: String): PixelRoute {
-        return PixelRoute(
+    /** 创建一个无动画、文本确定且不可交互的简单路由。 */
+    private fun textRoute(name: String, text: String): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(
             name = name,
             transition = PixelRouteTransition.None,
             builder = { Text(text) },

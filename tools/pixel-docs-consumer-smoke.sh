@@ -102,9 +102,9 @@ import com.purride.pixelui.advanced.PixelRenderBox
 import com.purride.pixelui.advanced.PixelRenderConstraints
 import com.purride.pixelui.advanced.PixelRenderObject
 import com.purride.pixelui.advanced.PixelRenderSize
+import com.purride.pixelui.PixelRouteDestination
 import com.purride.pixelui.createPixelHostSetup
-import com.purride.pixelui.widgets.navigation.PixelRouteDestination
-import com.purride.pixelui.widgets.navigation.pixelRouteDestination
+import com.purride.pixelui.pixelRouteDestination
 
 /** 仅依据 1.0 文档组合 Host、typed route 和公开 RenderObject SPI 的外部消费者。 */
 class DocsConsumer {

@@ -1,24 +1,6 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
 import android.os.Bundle
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.Builder
-import com.purride.pixelui.ChangeNotifier
-import com.purride.pixelui.InheritedWidget
-import com.purride.pixelui.Opacity
-import com.purride.pixelui.PixelMotionScope
-import com.purride.pixelui.PixelMotionSettings
-import com.purride.pixelui.PixelMotionTheme
-import com.purride.pixelui.PixelMotionTransitionPreset
-import com.purride.pixelui.PixelResolvedMotion
-import com.purride.pixelui.PixelPredictiveBackCallback
-import com.purride.pixelui.PixelPredictiveBackEvent
-import com.purride.pixelui.PixelPredictiveBackHandler
-import com.purride.pixelui.State
-import com.purride.pixelui.StatefulWidget
-import com.purride.pixelui.Stack
-import com.purride.pixelui.Widget
-import com.purride.pixelui.dependOnInheritedWidgetOfExactType
 import com.purride.pixelui.internal.HitTestResult
 import com.purride.pixelui.internal.ElementSubtreeVisibility
 import com.purride.pixelui.internal.LeafRenderObjectWidget
@@ -44,60 +26,7 @@ import com.purride.pixelui.animation.PixelAnimationStatus
 import com.purride.pixelui.animation.PixelTickerProvider
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import java.util.IdentityHashMap
 import kotlin.math.roundToInt
-
-/**
- * 公开 `PixelNavigator` 的 `PixelNavigatorBundleKey` 配置或运行值。
- *
- * Default [Bundle] key used by [PixelNavigatorState.saveToBundle] and
- * [PixelNavigatorState.restoreFromBundle].
- */
-public const val PixelNavigatorBundleKey: String = "com.purride.pixelui.navigator.routeNames"
-
-/** 定义 `PixelNavigator` 的路由栈操作与生命周期边界，失败不会留下部分提交状态。 */
-public data class PixelRoute(
-    val name: String,
-    val builder: (BuildContext) -> Widget,
-    val transition: PixelRouteTransition? = null,
-    val canPop: (() -> Boolean)? = null,
-    val onEnter: (() -> Unit)? = null,
-    val onExit: (() -> Unit)? = null,
-    val onDispose: (() -> Unit)? = null,
-    val transitionBuilder: PixelRouteTransitionBuilder? = null,
-)
-
-/** 保存 `PixelNavigator` 的可观察或可恢复状态；字段变更必须维持类型声明的不变量。 */
-public data class PixelNavigatorSnapshot(
-    val routeNames: List<String>,
-)
-
-/**
- * 执行 `PixelNavigator` 的 `saveToBundle` 公开行为；具体参数、返回和副作用见下文。
- *
- * Saves this route-name snapshot into an Android [Bundle].
- */
-public fun PixelNavigatorSnapshot.saveToBundle(
-    outState: Bundle,
-    key: String = PixelNavigatorBundleKey,
-) {
-    require(key.isNotBlank()) { "PixelNavigator snapshot Bundle key must not be blank" }
-    outState.putStringArrayList(key, ArrayList(routeNames))
-}
-
-/**
- * 查询 `PixelNavigator` 的 `getPixelNavigatorSnapshot` 结果，不产生额外状态变更。
- *
- * Reads a [PixelNavigatorSnapshot] previously saved into this Android [Bundle].
- */
-public fun Bundle.getPixelNavigatorSnapshot(
-    key: String = PixelNavigatorBundleKey,
-): PixelNavigatorSnapshot? {
-    require(key.isNotBlank()) { "PixelNavigator snapshot Bundle key must not be blank" }
-    val names = getStringArrayList(key) ?: return null
-    if (names.isEmpty()) return null
-    return PixelNavigatorSnapshot(routeNames = names.toList())
-}
 
 /** 定义 `PixelNavigator` 的路由栈操作与生命周期边界，失败不会留下部分提交状态。 */
 public enum class PixelRouteTransition {
@@ -152,35 +81,18 @@ public fun interface PixelRouteTransitionBuilder {
  *
  * Mutable navigation controller backed by independent [PixelRouteEntry] instances.
  *
- * The legacy [PixelRoute] API remains available as a compatibility projection. Every push still
- * creates a fresh entry, so repeated route objects never share state buckets or result channels.
+ * Every push allocates a fresh entry, so repeatedly pushing one [PixelRouteDestination] never
+ * shares state buckets or result channels between its stack positions.
+ *
+ * 每次入栈都会分配一个全新 entry，因此同一个 [PixelRouteDestination] 重复入栈时，各个栈位置
+ * 之间绝不共享状态桶或结果通道。
  */
-public class PixelNavigatorState private constructor(
-    /** Legacy root used by the source- and binary-compatible constructor. */
-    initialRoute: PixelRoute?,
-    /** Typed root used by [PixelNavigator.typed]. */
-    initialRequest: PixelRouteRequest<*, *>?,
+public class PixelNavigatorState internal constructor(
+    /** 类型化根请求，其目标与参数决定根 entry 的构建与持久化能力。 */
+    initialRequest: PixelRouteRequest<*, *>,
 ) : ChangeNotifier(), PixelPredictiveBackCallback {
-    /** Preserves the existing JVM constructor used by legacy Navigator widgets and consumers. */
-    internal constructor(initialRoute: PixelRoute) : this(
-        initialRoute = initialRoute,
-        initialRequest = null,
-    )
-
-    /** Creates a controller whose root is persistable through a typed destination adapter. */
-    internal constructor(initialRequest: PixelRouteRequest<*, *>) : this(
-        initialRoute = null,
-        initialRequest = initialRequest,
-    )
     /** Ordered stack entries from root to foreground. */
     private val routeEntries: MutableList<PixelRouteEntry<*, *>> = mutableListOf()
-
-    /** Legacy destination adapters cached by route object identity. */
-    private val legacyDestinations: IdentityHashMap<PixelRoute, LegacyPixelRouteDestination> =
-        IdentityHashMap()
-
-    /** Legacy route views synthesized for typed entries. */
-    private val typedRouteViews: MutableMap<PixelRouteEntryId, PixelRoute> = mutableMapOf()
 
     /** Entries awaiting transition settlement, disposal, and result delivery. */
     private val pendingFinalizations:
@@ -261,20 +173,6 @@ public class PixelNavigatorState private constructor(
     public val entries: List<PixelRouteEntry<*, *>>
         get() = routeEntries.toList()
 
-    /** 公开 `PixelNavigator` 的 `currentRoute` 配置或运行值。
- *
- * Legacy foreground route projection retained for source and binary compatibility.
- */
-    public val currentRoute: PixelRoute
-        get() = routeView(currentEntry)
-
-    /** 公开 `PixelNavigator` 的 `stack` 配置或运行值。
- *
- * Legacy route-stack projection retained for source and binary compatibility.
- */
-    public val stack: List<PixelRoute>
-        get() = routeEntries.map(::routeView)
-
     /** 公开 `PixelNavigator` 的 `lastFailure` 配置或运行值。
  *
  * Most recently recorded navigation failure, if any.
@@ -290,14 +188,7 @@ public class PixelNavigatorState private constructor(
         get() = predictiveBackTransition?.progress
 
     init {
-        require((initialRoute == null) != (initialRequest == null)) {
-            "PixelNavigatorState requires exactly one legacy route or typed request"
-        }
-        val rootEntry = if (initialRequest != null) {
-            createTypedInitialEntry(initialRequest)
-        } else {
-            createLegacyEntry(checkNotNull(initialRoute), onOutcome = null)
-        }
+        val rootEntry = createTypedInitialEntry(initialRequest)
         routeEntries += rootEntry
         invokeLifecycle(PixelNavigationAction.Push, rootEntry) {
             rootEntry.enterExactlyOnce()
@@ -342,25 +233,6 @@ public class PixelNavigatorState private constructor(
             lastFailure = latestFailure,
             isDisposed = navigatorDisposed,
         )
-    }
-
-    /** 执行 `PixelNavigator` 的 `push` 路由操作并保持结果恰好一次。
- *
- * Pushes one legacy string route and ignores its eventual result.
- */
-    public fun push(route: PixelRoute) {
-        pushLegacyInternal(route, onResult = null)
-    }
-
-    /** 执行 `PixelNavigator` 的 `push` 路由操作并保持结果恰好一次。
- *
- * Pushes one legacy string route and delivers its value, or `null` on cancellation.
- */
-    public fun push(
-        route: PixelRoute,
-        onResult: (Any?) -> Unit,
-    ) {
-        pushLegacyInternal(route, onResult)
     }
 
     /** 执行 `PixelNavigator` 的 `push` 路由操作并保持结果恰好一次。
@@ -437,13 +309,17 @@ public class PixelNavigatorState private constructor(
 
     /** 执行 `PixelNavigator` 的 `pop` 路由操作并保持结果恰好一次。
  *
- * Pops the foreground entry with the legacy successful `null` result.
+ * Pops the foreground entry with a successful `null` result.
+ *
+ * 以成功的 `null` 结果弹出前台 entry。
  */
     public fun pop(): Boolean = pop(result = null)
 
     /** 执行 `PixelNavigator` 的 `pop` 路由操作并保持结果恰好一次。
  *
- * Pops the foreground entry with a legacy untyped successful [result].
+ * Pops the foreground entry with an untyped successful [result].
+ *
+ * 以未类型化的成功值 [result] 弹出前台 entry。
  */
     public fun pop(result: Any?): Boolean {
         return popInternal(
@@ -460,7 +336,9 @@ public class PixelNavigatorState private constructor(
 
     /** 执行 `PixelNavigator` 的 `maybePop` 公开行为；具体参数、返回和副作用见下文。
  *
- * Attempts the same legacy successful completion behavior as [pop].
+ * Attempts the same untyped successful completion behavior as [pop].
+ *
+ * 与 [pop] 相同地尝试以未类型化成功值收尾。
  */
     public fun maybePop(result: Any?): Boolean = pop(result)
 
@@ -544,7 +422,10 @@ public class PixelNavigatorState private constructor(
  *
      * Clears every entry above root while retaining the root entry and its result channel.
      *
-     * Legacy callbacks are delivered as `null` in existing bottom-to-top stack order.
+     * Removed entries are cancelled as [PixelRouteCancellationReason.Cleared] in bottom-to-top
+     * stack order.
+     *
+     * 被移除的 entry 按自底向上的栈顺序统一以 [PixelRouteCancellationReason.Cleared] 取消。
      */
     public fun clear(animated: Boolean = true): Boolean {
         if (routeEntries.size <= 1) return false
@@ -592,35 +473,12 @@ public class PixelNavigatorState private constructor(
 
     /** 执行 `PixelNavigator` 的 `popToRoot` 路由操作并保持结果恰好一次。
  *
- * Legacy alias for [clear] retained with its established `Unit` return type.
+ * Applies [clear] without exposing its rejection flag to callers that ignore it.
+ *
+ * 执行 [clear]，但不向忽略返回值的调用方暴露其拒绝标记。
  */
     public fun popToRoot(animated: Boolean = true) {
         clear(animated)
-    }
-
-    /**
- * 执行 `PixelNavigator` 的 `replace` 路由操作并保持结果恰好一次。
- *
-     * Replaces the active legacy route while transferring its legacy stack-slot callback.
-     *
-     * Typed entries replaced through this compatibility overload are cancelled instead.
-     */
-    public fun replace(route: PixelRoute, animated: Boolean = true) {
-        ensureUsable(PixelNavigationAction.Replace)
-        settleInterruptedTransition()
-        val outgoing = currentEntry
-        val transferredCallback = takeLegacyCallback(outgoing)
-        val incoming = createLegacyEntry(route, transferredCallback)
-        replaceEntryInStack(
-            outgoing = outgoing,
-            incoming = incoming,
-            outgoingCompletion = if (transferredCallback == null && outgoing.legacyRoute == null) {
-                PendingRouteCompletion.Cancel(PixelRouteCancellationReason.Replaced)
-            } else {
-                PendingRouteCompletion.None
-            },
-            animated = animated,
-        )
     }
 
     /** 执行 `PixelNavigator` 的 `replace` 路由操作并保持结果恰好一次。
@@ -763,102 +621,6 @@ public class PixelNavigatorState private constructor(
         return restorePersistentSnapshot(bytes = bytes, registry = registry, codec = codec)
     }
 
-    /** 执行 `PixelNavigator` 的 `snapshot` 公开行为；具体参数、返回和副作用见下文。
- *
- * Captures the legacy route-name snapshot format used until M2-2.
- */
-    public fun snapshot(): PixelNavigatorSnapshot {
-        return PixelNavigatorSnapshot(routeNames = routeEntries.map { entry -> routeView(entry).name })
-    }
-
-    /** 执行 `PixelNavigator` 的 `saveToBundle` 公开行为；具体参数、返回和副作用见下文。
- *
- * Saves the legacy route-name snapshot into [outState].
- */
-    public fun saveToBundle(
-        outState: Bundle,
-        key: String = PixelNavigatorBundleKey,
-    ) {
-        snapshot().saveToBundle(outState, key)
-    }
-
-    /** 执行 `PixelNavigator` 的 `restore` 公开行为；具体参数、返回和副作用见下文。
- *
- * Restores a legacy route-name snapshot, allocating a fresh entry for every occurrence.
- */
-    public fun restore(
-        snapshot: PixelNavigatorSnapshot,
-        routeRegistry: Map<String, PixelRoute>,
-    ) {
-        if (snapshot.routeNames.isEmpty()) return
-        val restored = snapshot.routeNames.map { name ->
-            routeRegistry[name] ?: run {
-                reject(
-                    action = PixelNavigationAction.Restore,
-                    reason = PixelNavigationFailureReason.UnknownDestination,
-                    message = "PixelNavigator.restore() missing route '$name' in routeRegistry",
-                    destinationId = name,
-                )
-                error("PixelNavigator.restore() missing route '$name' in routeRegistry")
-            }
-        }
-        replaceRouteStack(restored, animated = false, action = PixelNavigationAction.Restore)
-    }
-
-    /** 执行 `PixelNavigator` 的 `restoreFromBundle` 公开行为；具体参数、返回和副作用见下文。
- *
- * Restores a legacy snapshot from [savedInstanceState] when one exists.
- */
-    public fun restoreFromBundle(
-        savedInstanceState: Bundle?,
-        routeRegistry: Map<String, PixelRoute>,
-        key: String = PixelNavigatorBundleKey,
-    ): Boolean {
-        val snapshot = savedInstanceState?.getPixelNavigatorSnapshot(key) ?: return false
-        restore(snapshot, routeRegistry)
-        return true
-    }
-
-    /** 执行 `PixelNavigator` 的 `handleDeepLink` 公开行为；具体参数、返回和副作用见下文。
- *
- * Parses [uri] and applies the legacy deep-link resolver.
- */
-    public fun handleDeepLink(
-        uri: String,
-        resolver: PixelDeepLinkResolver,
-        animated: Boolean = true,
-    ): Boolean {
-        return handleDeepLink(PixelDeepLink.parse(uri), resolver, animated)
-    }
-
-    /** 执行 `PixelNavigator` 的 `handleDeepLink` 公开行为；具体参数、返回和副作用见下文。
- *
- * Resolves [link] to a fresh legacy entry stack.
- */
-    public fun handleDeepLink(
-        link: PixelDeepLink,
-        resolver: PixelDeepLinkResolver,
-        animated: Boolean = true,
-    ): Boolean {
-        val resolved = resolver.resolve(link) ?: return reject(
-            action = PixelNavigationAction.DeepLink,
-            reason = PixelNavigationFailureReason.UnknownDestination,
-            message = "No PixelDeepLinkResolver destination matched '${link.rawUri}'",
-        )
-        if (resolved.isEmpty()) {
-            reject(
-                action = PixelNavigationAction.DeepLink,
-                reason = PixelNavigationFailureReason.InvalidStack,
-                message = "PixelDeepLinkResolver returned an empty route stack for '${link.rawUri}'",
-            )
-            throw IllegalArgumentException(
-                "PixelDeepLinkResolver returned an empty route stack for '${link.rawUri}'",
-            )
-        }
-        replaceRouteStack(resolved, animated, PixelNavigationAction.DeepLink)
-        return true
-    }
-
     /** Applies one already validated typed deep-link request under the DeepLink observer action. */
     internal fun <A : Any, R> navigateTypedDeepLink(
         request: PixelRouteRequest<A, R>,
@@ -941,8 +703,6 @@ public class PixelNavigatorState private constructor(
             fromEntryId = fromEntryId,
         )
         navigationObservers.clear()
-        typedRouteViews.clear()
-        legacyDestinations.clear()
     }
 
     /** Completes a typed scope only while its exact entry is foreground and poppable. */
@@ -968,24 +728,6 @@ public class PixelNavigatorState private constructor(
         onOutcome: ((PixelRouteOutcome<R>) -> Unit)?,
     ): PixelRouteEntry<A, R>? {
         return replaceTypedInternal(entry, request, onOutcome, animated = true)
-    }
-
-    /** Pushes one legacy route after adapting nullable cancellation semantics. */
-    private fun pushLegacyInternal(
-        route: PixelRoute,
-        onResult: ((Any?) -> Unit)?,
-    ) {
-        val onOutcome = onResult?.let { callback ->
-            { outcome: PixelRouteOutcome<Any?> ->
-                callback(
-                    when (outcome) {
-                        is PixelRouteOutcome.Success -> outcome.value
-                        is PixelRouteOutcome.Cancelled -> null
-                    },
-                )
-            }
-        }
-        pushEntry(createLegacyEntry(route, onOutcome))
     }
 
     /** Pushes one typed request after validating navigator liveness. */
@@ -1254,55 +996,6 @@ public class PixelNavigatorState private constructor(
         notifyListeners()
     }
 
-    /** Replaces the whole legacy stack with fresh entries and isolated state buckets. */
-    private fun replaceRouteStack(
-        restored: List<PixelRoute>,
-        animated: Boolean,
-        action: PixelNavigationAction,
-    ) {
-        require(restored.isNotEmpty()) { "PixelNavigator route stack must not be empty" }
-        ensureUsable(action)
-        settleInterruptedTransition()
-        val oldEntries = routeEntries.toList()
-        val outgoing = oldEntries.last()
-        val newEntries = restored.map { route -> createLegacyEntry(route, onOutcome = null) }
-        val incoming = newEntries.last()
-        emitEvent(
-            action = action,
-            type = PixelNavigationEventType.Started,
-            fromEntryId = outgoing.id,
-            toEntryId = incoming.id,
-        )
-        routeEntries.clear()
-        routeEntries += newEntries
-        newEntries.dropLast(1).forEach { entry -> entry.initializeInactiveExactlyOnce() }
-        oldEntries.forEach { entry ->
-            invokeLifecycle(action, entry) {
-                entry.beginRemovalExactlyOnce()
-            }
-            enqueueFinalization(
-                entry,
-                PendingRouteCompletion.Cancel(PixelRouteCancellationReason.StackReset),
-            )
-        }
-        invokeLifecycle(action, incoming) {
-            incoming.enterExactlyOnce()
-        }
-        activeTransition = if (animated) {
-            startTransition(outgoing, incoming, PixelNavigatorOperation.Replace)
-        } else {
-            finalizePendingEntries()
-            null
-        }
-        emitEvent(
-            action = action,
-            type = PixelNavigationEventType.Completed,
-            fromEntryId = outgoing.id,
-            toEntryId = incoming.id,
-        )
-        notifyListeners()
-    }
-
     /**
      * Replaces the whole stack with prevalidated persistent entries without allocating new IDs.
      *
@@ -1376,47 +1069,6 @@ public class PixelNavigatorState private constructor(
         )
     }
 
-    /** Creates one independent compatibility entry for [route]. */
-    private fun createLegacyEntry(
-        route: PixelRoute,
-        onOutcome: ((PixelRouteOutcome<Any?>) -> Unit)?,
-    ): PixelRouteEntry<Unit, Any?> {
-        val destination = legacyDestinations.getOrPut(route) {
-            LegacyPixelRouteDestination(route)
-        }
-        return PixelRouteEntry.create(
-            id = nextEntryId(),
-            destination = destination,
-            arguments = Unit,
-            owner = entryOwner,
-            onOutcome = onOutcome,
-            legacyRoute = route,
-        )
-    }
-
-    /** Returns the original legacy route or a stable projection for one typed entry. */
-    private fun routeView(entry: PixelRouteEntry<*, *>): PixelRoute {
-        entry.legacyRoute?.let { route -> return route }
-        return typedRouteViews.getOrPut(entry.id) {
-            PixelRoute(
-                name = entry.destination.id,
-                builder = { context -> entry.build(context) },
-                transition = entry.routeTransition,
-                canPop = { entry.canPop() },
-                transitionBuilder = entry.routeTransitionBuilder,
-            )
-        }
-    }
-
-    /** Transfers only legacy result callbacks; typed channels remain isolated. */
-    @Suppress("UNCHECKED_CAST")
-    private fun takeLegacyCallback(
-        entry: PixelRouteEntry<*, *>,
-    ): ((PixelRouteOutcome<Any?>) -> Unit)? {
-        if (entry.legacyRoute == null) return null
-        return (entry as PixelRouteEntry<Unit, Any?>).takeLegacyResultCallback()
-    }
-
     /** Starts one transition identified entirely by entry IDs. */
     private fun startTransition(
         outgoingEntry: PixelRouteEntry<*, *>,
@@ -1466,7 +1118,6 @@ public class PixelNavigatorState private constructor(
             invokeLifecycle(PixelNavigationAction.Dispose, pending.entry) {
                 pending.entry.disposeExactlyOnce()
             }
-            typedRouteViews.remove(pending.entry.id)
         }
         finalizations.forEach { pending ->
             resolveAndDeliver(pending)
@@ -1486,7 +1137,6 @@ public class PixelNavigatorState private constructor(
                 entry.cancelResultExactlyOnce(completion.reason)
                 PixelNavigationAction.Cancel
             }
-            PendingRouteCompletion.None -> return
         }
         try {
             entry.drainResultDelivery()
@@ -1613,67 +1263,10 @@ public class PixelNavigatorState private constructor(
     private fun nextTransitionId(): Long = ++nextTransitionIdValue
 }
 
-/** Compatibility destination wrapper for one reusable legacy [PixelRoute]. */
-private class LegacyPixelRouteDestination(
-    /** Legacy route definition adapted by this destination. */
-    private val route: PixelRoute,
-) : PixelRouteDestination<Unit, Any?>(route.name) {
-    /** Legacy entries retain their route subtree and local bucket by default. */
-    override val maintainState: Boolean = true
-
-    /** Legacy built-in transition override. */
-    override val transition: PixelRouteTransition? = route.transition
-
-    /** Legacy custom transition override. */
-    override val transitionBuilder: PixelRouteTransitionBuilder? = route.transitionBuilder
-
-    /** Delegates the legacy pop guard for this concrete entry. */
-    override fun canPop(entry: PixelRouteEntry<Unit, Any?>): Boolean {
-        return route.canPop?.invoke() ?: true
-    }
-
-    /** Delegates legacy route activation. */
-    override fun onEnter(entry: PixelRouteEntry<Unit, Any?>) {
-        route.onEnter?.invoke()
-    }
-
-    /** Delegates legacy route deactivation. */
-    override fun onExit(entry: PixelRouteEntry<Unit, Any?>) {
-        route.onExit?.invoke()
-    }
-
-    /** Delegates legacy route terminal disposal. */
-    override fun onDispose(entry: PixelRouteEntry<Unit, Any?>) {
-        route.onDispose?.invoke()
-    }
-
-    /** Builds the legacy route with its original builder. */
-    override fun build(
-        context: BuildContext,
-        scope: PixelRouteEntryScope<Unit, Any?>,
-    ): Widget = route.builder(context)
-}
-
-/**
- * Marker builder that carries a typed root request through the unchanged legacy widget ABI.
- *
- * [PixelNavigatorWidgetState] consumes [request] before route building, so [invoke] is only a
- * defensive failure path if a future widget-state implementation forgets the typed-root marker.
- */
-private class TypedInitialRouteBuilder(
-    /** Typed destination request used to create the real root entry. */
-    val request: PixelRouteRequest<*, *>,
-) : (BuildContext) -> Widget {
-    /** Rejects accidental use as an ordinary legacy route builder. */
-    override fun invoke(context: BuildContext): Widget {
-        error("TypedInitialRouteBuilder must be consumed by PixelNavigatorWidgetState")
-    }
-}
-
 /** 定义 `PixelNavigator` 的路由栈操作与生命周期边界，失败不会留下部分提交状态。 */
 public class PixelNavigator(
-    /** 提供 `PixelNavigator` 当前管理的 `initialRoute` 内容。 */
-    public val initialRoute: PixelRoute,
+    /** 提供 `PixelNavigator` 根 entry 的类型化请求，其目标同时决定持久化与恢复能力。 */
+    public val initialRequest: PixelRouteRequest<*, *>,
     /** 记录 `PixelNavigator` 的 `vsync` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val vsync: PixelTickerProvider,
     /** 控制 `PixelNavigator` 的 `transitionDuration` 时间参数，单位为声明约定的时间单位。 */
@@ -1684,10 +1277,14 @@ public class PixelNavigator(
     /** 记录 `PixelNavigator` 的 `transitionBuilder` 配置或运行值，读取与更新均遵守所属类型约束。 */
     public val transitionBuilder: PixelRouteTransitionBuilder? = null,
 ) : StatefulWidget(key = key) {
-    /** Internal observer used by composed navigation hosts without wrapping the consumer root. */
+    /**
+     * 供组合式导航宿主使用的内部观察者，无需为此包裹消费方的根 Widget。
+     *
+     * Internal observer used by composed navigation hosts without wrapping the consumer root.
+     */
     internal var stateObserver: ((PixelNavigatorState) -> Unit)? = null
 
-    /** Installs an internal state observer while preserving the public constructor ABI. */
+    /** 安装内部状态观察者，同时避免为此新增公开构造参数。 */
     internal fun observeState(observer: (PixelNavigatorState) -> Unit): PixelNavigator {
         stateObserver = observer
         return this
@@ -1697,39 +1294,6 @@ public class PixelNavigator(
 
     /** 集中提供 `PixelNavigator` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
-        /**
- * 执行 `PixelNavigator` 的 `typed` 公开行为；具体参数、返回和副作用见下文。
- *
-         * Creates a Navigator with a typed, persistable root entry.
-         *
-         * The returned widget remains the existing [PixelNavigator] JVM type and keeps its legacy
-         * constructor ABI intact. The marker route is converted to [initialRequest] before the
-         * first route subtree is built.
-         */
-        public fun <A : Any, R> typed(
-            initialRequest: PixelRouteRequest<A, R>,
-            vsync: PixelTickerProvider,
-            transitionDuration: Duration = 200.milliseconds,
-            defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
-            key: Any? = null,
-            transitionBuilder: PixelRouteTransitionBuilder? = null,
-        ): PixelNavigator {
-            val markerRoute = PixelRoute(
-                name = initialRequest.destination.id,
-                builder = TypedInitialRouteBuilder(initialRequest),
-                transition = initialRequest.destination.transition,
-                transitionBuilder = initialRequest.destination.transitionBuilder,
-            )
-            return PixelNavigator(
-                initialRoute = markerRoute,
-                vsync = vsync,
-                transitionDuration = transitionDuration,
-                defaultTransition = defaultTransition,
-                key = key,
-                transitionBuilder = transitionBuilder,
-            )
-        }
-
         /** 执行 `PixelNavigator` 的 `maybeOf` 公开行为；具体参数、返回和副作用见下文。
  *
  * Returns the nearest Navigator controller, or `null` outside a Navigator subtree.
@@ -1777,15 +1341,9 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
     private val presentationLinks: MutableMap<PixelRouteEntryId, PixelRoutePresentationLink> =
         mutableMapOf()
 
-    /** Creates the entry-backed state controller for the configured legacy root route. */
+    /** 依据配置的类型化根请求创建由 entry 支撑的导航状态控制器。 */
     override fun initState() {
-        val typedInitialRequest =
-            (widget.initialRoute.builder as? TypedInitialRouteBuilder)?.request
-        navigatorState = if (typedInitialRequest != null) {
-            PixelNavigatorState(typedInitialRequest)
-        } else {
-            PixelNavigatorState(widget.initialRoute)
-        }
+        navigatorState = PixelNavigatorState(widget.initialRequest)
         widget.stateObserver?.invoke(navigatorState)
     }
 
@@ -1990,8 +1548,8 @@ private class PixelNavigatorWidgetState : State<PixelNavigator>() {
             val transitionId = transitionRecord.id
             val controller = PixelAnimationController(
                 duration = motion.totalDuration,
-                // The inherited Host provider wins. The required legacy constructor provider is
-                // retained as a compatibility clock for existing direct Navigator consumers.
+                // 继承到的 Host provider 优先；构造参数传入的 provider 只作为 Navigator 挂载在
+                // Host Motion scope 之外时的回退时钟。
                 vsync = scope?.vsync ?: widget.vsync,
             )
             transitionController = controller
@@ -2702,14 +2260,11 @@ internal data class PixelNavigatorPredictiveBackRecord(
 
 /** Erased terminal result retained until an outgoing entry has been disposed. */
 private sealed interface PendingRouteCompletion {
-    /** Successful completion carrying a legacy-erased value. */
+    /** 携带类型擦除结果值的成功收尾。 */
     data class Success(val value: Any?) : PendingRouteCompletion
 
     /** Explicit cancellation carrying a machine-readable reason. */
     data class Cancel(val reason: PixelRouteCancellationReason) : PendingRouteCompletion
-
-    /** No delivery because legacy replace transferred the callback to a new entry. */
-    data object None : PendingRouteCompletion
 }
 
 /** Entry plus its deferred terminal result action. */

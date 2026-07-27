@@ -1,12 +1,5 @@
-package com.purride.pixelui.widgets.navigation
+package com.purride.pixelui
 
-import com.purride.pixelui.BuildContext
-import com.purride.pixelui.Column
-import com.purride.pixelui.ListView
-import com.purride.pixelui.OutlinedButton
-import com.purride.pixelui.SizedBox
-import com.purride.pixelui.Text
-import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixelui.testing.find
@@ -28,14 +21,14 @@ class PixelNavigatorTest {
             navigator = PixelNavigator.of(context)
             Text("ROOT")
         }
-        val details = PixelRoute(
+        val details = testRouteRequest(
             name = "details",
             transition = PixelRouteTransition.Fade,
             builder = { Text("DETAILS") },
         )
         tester.pumpWidget(
             PixelNavigator(
-                initialRoute = root,
+                initialRequest = root,
                 vsync = tester.vsync,
                 transitionDuration = 200.milliseconds,
             ),
@@ -68,21 +61,21 @@ class PixelNavigatorTest {
         assertFalse(state.canPop)
         state.push(route("details") { Text("DETAILS") })
         tester.pumpFrame(16)
-        assertEquals("details", state.currentRoute.name)
+        assertEquals("details", state.currentEntry.destination.id)
         assertTrue(state.canPop)
 
         assertTrue(state.pop())
         tester.pumpFrame(16)
-        assertEquals("root", state.currentRoute.name)
+        assertEquals("root", state.currentEntry.destination.id)
         assertFalse(state.pop())
 
         state.push(route("a") { Text("A") })
         state.push(route("b") { Text("B") })
         state.popToRoot()
-        assertEquals(listOf("root"), state.stack.map { it.name })
+        assertEquals(listOf("root"), state.entries.map { entry -> entry.destination.id })
 
         state.replace(route("replacement") { Text("R") })
-        assertEquals("replacement", state.currentRoute.name)
+        assertEquals("replacement", state.currentEntry.destination.id)
         tester.dispose()
     }
 
@@ -91,9 +84,9 @@ class PixelNavigatorTest {
         val tester = PixelTester()
         var navigator: PixelNavigatorState? = null
 
-        lateinit var root: PixelRoute
-        lateinit var details: PixelRoute
-        lateinit var replacement: PixelRoute
+        lateinit var root: PixelRouteRequest<Unit, Any?>
+        lateinit var details: PixelRouteRequest<Unit, Any?>
+        lateinit var replacement: PixelRouteRequest<Unit, Any?>
 
         root = route("root") { context ->
             navigator = PixelNavigator.of(context)
@@ -138,19 +131,19 @@ class PixelNavigatorTest {
 
         tester.tap(find.byText("PUSH"))
         tester.pumpAndSettle()
-        assertEquals("details", navigator!!.currentRoute.name)
+        assertEquals("details", navigator!!.currentEntry.destination.id)
 
         tester.tap(find.byText("BACK"))
         tester.pumpAndSettle()
-        assertEquals("root", navigator!!.currentRoute.name)
+        assertEquals("root", navigator!!.currentEntry.destination.id)
 
         tester.tap(find.byText("PUSH"))
         tester.pumpAndSettle()
         tester.tap(find.byText("REPLACE"))
-        assertEquals("replacement", navigator!!.currentRoute.name)
+        assertEquals("replacement", navigator!!.currentEntry.destination.id)
 
         tester.tap(find.byText("ROOT"))
-        assertEquals(listOf("root"), navigator!!.stack.map { it.name })
+        assertEquals(listOf("root"), navigator!!.entries.map { entry -> entry.destination.id })
         tester.dispose()
     }
 
@@ -185,15 +178,19 @@ class PixelNavigatorTest {
         )
 
         val state = navigator!!
-        state.push(PixelRoute(name = "blocked", builder = { Text("BLOCKED") }, canPop = { false }))
+        state.push(
+            testRouteRequest(name = "blocked", builder = { Text("BLOCKED") }, canPop = { false }),
+        )
         assertFalse(state.maybePop())
-        assertEquals("blocked", state.currentRoute.name)
+        assertEquals("blocked", state.currentEntry.destination.id)
         assertFalse(state.pop())
-        assertEquals("blocked", state.currentRoute.name)
+        assertEquals("blocked", state.currentEntry.destination.id)
 
-        state.replace(PixelRoute(name = "allowed", builder = { Text("ALLOWED") }, canPop = { true }))
+        state.replace(
+            testRouteRequest(name = "allowed", builder = { Text("ALLOWED") }, canPop = { true }),
+        )
         assertTrue(state.maybePop())
-        assertEquals("root", state.currentRoute.name)
+        assertEquals("root", state.currentEntry.destination.id)
         tester.dispose()
     }
 
@@ -202,7 +199,7 @@ class PixelNavigatorTest {
         val tester = PixelTester()
         val events = mutableListOf<String>()
         var navigator: PixelNavigatorState? = null
-        val root = PixelRoute(
+        val root = testRouteRequest(
             name = "root",
             builder = { context ->
                 navigator = PixelNavigator.of(context)
@@ -212,7 +209,7 @@ class PixelNavigatorTest {
             onExit = { events += "root-exit" },
             onDispose = { events += "root-dispose" },
         )
-        val details = PixelRoute(
+        val details = testRouteRequest(
             name = "details",
             builder = { Text("DETAILS") },
             onEnter = { events += "details-enter" },
@@ -249,7 +246,7 @@ class PixelNavigatorTest {
             navigator = PixelNavigator.of(context)
             Text("ROOT")
         }
-        val details = PixelRoute(
+        val details = testRouteRequest(
             name = "details",
             builder = { Text("DETAILS") },
             onDispose = { disposed += "details" },
@@ -260,7 +257,7 @@ class PixelNavigatorTest {
         )
         tester.pumpWidget(
             PixelNavigator(
-                initialRoute = root,
+                initialRequest = root,
                 vsync = tester.vsync,
                 transitionDuration = 200.milliseconds,
             ),
@@ -303,7 +300,7 @@ class PixelNavigatorTest {
             Text("ROOT")
         }
         val plain = route("plain") { Text("PLAIN") }
-        val custom = PixelRoute(
+        val custom = testRouteRequest(
             name = "custom",
             builder = { Text("CUSTOM") },
             transitionBuilder = PixelRouteTransitionBuilder { _, _, _, incoming ->
@@ -313,7 +310,7 @@ class PixelNavigatorTest {
         )
         tester.pumpWidget(
             PixelNavigator(
-                initialRoute = root,
+                initialRequest = root,
                 vsync = tester.vsync,
                 transitionBuilder = PixelRouteTransitionBuilder { _, _, _, incoming ->
                     fallbackFrames += 1
@@ -376,41 +373,20 @@ class PixelNavigatorTest {
             navigator = PixelNavigator.of(context)
             Text("ROOT")
         }
-        val details = PixelRoute(
+        val details = testRouteRequest(
             name = "details",
             builder = { Text("DETAILS") },
             onDispose = { events += "dispose" },
         )
         tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
 
-        navigator!!.push(details) { result -> events += "result=$result" }
+        navigator!!.push(details) { outcome -> events += "result=${outcome.valueOrNull()}" }
         tester.pumpAndSettle()
         assertTrue(navigator!!.pop("saved"))
         assertTrue(events.isEmpty())
         tester.pumpAndSettle()
 
         assertEquals(listOf("dispose", "result=saved"), events)
-        tester.dispose()
-    }
-
-    @Test
-    fun replaceKeepsResultCallbackForSameStackSlot() {
-        val tester = PixelTester()
-        var navigator: PixelNavigatorState? = null
-        var result: Any? = "unset"
-        val root = route("root") { context ->
-            navigator = PixelNavigator.of(context)
-            Text("ROOT")
-        }
-        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
-
-        navigator!!.push(route("first") { Text("FIRST") }) { value -> result = value }
-        tester.pumpAndSettle()
-        navigator!!.replace(route("replacement") { Text("REPLACEMENT") }, animated = false)
-        assertTrue(navigator!!.pop(42))
-        tester.pumpAndSettle()
-
-        assertEquals(42, result)
         tester.dispose()
     }
 
@@ -424,16 +400,16 @@ class PixelNavigatorTest {
             Text("ROOT")
         }
         var allowPop = false
-        val shared = PixelRoute(
+        val shared = testRouteRequest(
             name = "shared",
             builder = { Text("SHARED") },
             canPop = { allowPop },
         )
         tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
 
-        navigator!!.push(shared) { results += "first=$it" }
+        navigator!!.push(shared) { outcome -> results += "first=${outcome.valueOrNull()}" }
         tester.pumpAndSettle()
-        navigator!!.push(shared) { results += "second=$it" }
+        navigator!!.push(shared) { outcome -> results += "second=${outcome.valueOrNull()}" }
         tester.pumpAndSettle()
         assertFalse(navigator!!.pop("blocked"))
         assertTrue(results.isEmpty())
@@ -449,7 +425,7 @@ class PixelNavigatorTest {
     }
 
     @Test
-    fun popToRootAndRestoreCompleteRemovedCallbacksWithNull() {
+    fun popToRootAndClearCancelEveryRemovedEntryCallback() {
         val tester = PixelTester()
         val results = mutableListOf<String>()
         var navigator: PixelNavigatorState? = null
@@ -461,17 +437,17 @@ class PixelNavigatorTest {
         val second = route("second") { Text("SECOND") }
         tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
 
-        navigator!!.push(first) { results += "first=$it" }
+        navigator!!.push(first) { outcome -> results += "first=${outcome.valueOrNull()}" }
         tester.pumpAndSettle()
-        navigator!!.push(second) { results += "second=$it" }
+        navigator!!.push(second) { outcome -> results += "second=${outcome.valueOrNull()}" }
         tester.pumpAndSettle()
         navigator!!.popToRoot(animated = false)
         assertEquals(listOf("first=null", "second=null"), results)
 
-        navigator!!.push(first) { results += "restored=$it" }
+        navigator!!.push(first) { outcome -> results += "reopened=${outcome.valueOrNull()}" }
         tester.pumpAndSettle()
-        navigator!!.restore(PixelNavigatorSnapshot(listOf("root")), mapOf("root" to root))
-        assertEquals("restored=null", results.last())
+        navigator!!.clear(animated = false)
+        assertEquals("reopened=null", results.last())
         tester.dispose()
     }
 
@@ -519,7 +495,7 @@ class PixelNavigatorTest {
             navigator = PixelNavigator.of(context)
             Text("ROOT")
         }
-        val details = PixelRoute(
+        val details = testRouteRequest(
             name = "details",
             builder = { Text("DETAILS") },
             onDispose = { disposed += "details" },
@@ -548,12 +524,12 @@ class PixelNavigatorTest {
             navigator = PixelNavigator.of(context)
             Text("ROOT")
         }
-        val first = PixelRoute(
+        val first = testRouteRequest(
             name = "first",
             builder = { Text("FIRST") },
             onDispose = { disposed += "first" },
         )
-        val second = PixelRoute(
+        val second = testRouteRequest(
             name = "second",
             builder = { Text("SECOND") },
             onDispose = { disposed += "second" },
@@ -571,69 +547,7 @@ class PixelNavigatorTest {
         tester.pumpAndSettle()
 
         assertEquals(listOf("first", "second"), disposed)
-        assertEquals(listOf("root"), state.stack.map { it.name })
-        tester.dispose()
-    }
-
-    @Test
-    fun snapshotAndRestoreUseRouteNameStack() {
-        val tester = PixelTester()
-        var navigator: PixelNavigatorState? = null
-        val root = route("root") { context ->
-            navigator = PixelNavigator.of(context)
-            Text("ROOT")
-        }
-        val details = route("details") { Text("DETAILS") }
-        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
-
-        val state = navigator!!
-        state.push(details)
-        val snapshot = state.snapshot()
-        state.popToRoot(animated = false)
-        assertEquals(listOf("root"), state.stack.map { it.name })
-
-        state.restore(snapshot, mapOf("root" to root, "details" to details))
-        assertEquals(listOf("root", "details"), state.stack.map { it.name })
-        tester.dispose()
-    }
-
-    @Test
-    fun restoreReportsMissingRouteName() {
-        val tester = PixelTester()
-        var navigator: PixelNavigatorState? = null
-        tester.pumpWidget(
-            PixelNavigator(route("root") { context ->
-                navigator = PixelNavigator.of(context)
-                Text("ROOT")
-            }, tester.vsync),
-            32,
-            12,
-        )
-
-        try {
-            navigator!!.restore(PixelNavigatorSnapshot(listOf("missing")), emptyMap())
-            fail("restore should reject missing route names")
-        } catch (error: IllegalStateException) {
-            assertTrue(error.message.orEmpty().contains("missing route 'missing'"))
-        }
-        tester.dispose()
-    }
-
-    @Test
-    fun restoreFromNullBundleReturnsFalseWithoutChangingStack() {
-        val tester = PixelTester()
-        var navigator: PixelNavigatorState? = null
-        val root = route("root") { context ->
-            navigator = PixelNavigator.of(context)
-            Text("ROOT")
-        }
-        val details = route("details") { Text("DETAILS") }
-        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
-
-        val state = navigator!!
-        state.push(details)
-        assertFalse(state.restoreFromBundle(null, mapOf("root" to root, "details" to details)))
-        assertEquals(listOf("root", "details"), state.stack.map { it.name })
+        assertEquals(listOf("root"), state.entries.map { entry -> entry.destination.id })
         tester.dispose()
     }
 
@@ -743,120 +657,6 @@ class PixelNavigatorTest {
     }
 
     @Test
-    fun unmatchedDeepLinkLeavesStackAndLifecycleUntouched() {
-        val tester = PixelTester()
-        val events = mutableListOf<String>()
-        var navigator: PixelNavigatorState? = null
-        val root = PixelRoute(
-            name = "root",
-            builder = { context ->
-                navigator = PixelNavigator.of(context)
-                Text("ROOT")
-            },
-            onExit = { events += "exit" },
-        )
-        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
-
-        val handled = navigator!!.handleDeepLink(
-            uri = "pixel://demo/missing",
-            resolver = PixelDeepLinkResolver { null },
-        )
-
-        assertFalse(handled)
-        assertEquals(listOf("root"), navigator!!.stack.map { it.name })
-        assertTrue(events.isEmpty())
-        tester.dispose()
-    }
-
-    @Test
-    fun deepLinkAtomicallyReplacesStackAndSettlesLifecycleAndResults() {
-        val tester = PixelTester()
-        val events = mutableListOf<String>()
-        var navigator: PixelNavigatorState? = null
-        val root = route("root") { context ->
-            navigator = PixelNavigator.of(context)
-            Text("ROOT")
-        }
-        val details = PixelRoute(
-            name = "details",
-            builder = { Text("DETAILS") },
-            onExit = { events += "details-exit" },
-            onDispose = { events += "details-dispose" },
-        )
-        val deepRoot = route("deep-root") { Text("DEEP ROOT") }
-        val deepDetails = PixelRoute(
-            name = "deep-details",
-            builder = { Text("DEEP DETAILS") },
-            onEnter = { events += "deep-enter" },
-        )
-        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
-        navigator!!.push(details) { result -> events += "result=$result" }
-        tester.pumpAndSettle()
-
-        val handled = navigator!!.handleDeepLink(
-            uri = "pixel://demo/details?id=42",
-            resolver = PixelDeepLinkResolver { link ->
-                if (link.pathSegments == listOf("details") && link.queryParameter("id") == "42") {
-                    listOf(deepRoot, deepDetails)
-                } else {
-                    null
-                }
-            },
-        )
-
-        assertTrue(handled)
-        assertEquals(listOf("deep-root", "deep-details"), navigator!!.stack.map { it.name })
-        assertEquals(PixelNavigatorOperation.Replace, navigator!!.activeTransition?.operation)
-        assertEquals(listOf("details-exit", "deep-enter"), events)
-        tester.pumpAndSettle()
-        assertEquals(
-            listOf("details-exit", "deep-enter", "details-dispose", "result=null"),
-            events,
-        )
-        assertTrue(tester.exists(find.byText("DEEP DETAILS")))
-        tester.dispose()
-    }
-
-    @Test
-    fun nonAnimatedDeepLinkDisposesImmediatelyAndEmptyResolutionIsDiagnostic() {
-        val tester = PixelTester()
-        val events = mutableListOf<String>()
-        var navigator: PixelNavigatorState? = null
-        val root = PixelRoute(
-            name = "root",
-            builder = { context ->
-                navigator = PixelNavigator.of(context)
-                Text("ROOT")
-            },
-            onDispose = { events += "root-dispose" },
-        )
-        val target = route("target") { Text("TARGET") }
-        tester.pumpWidget(PixelNavigator(root, tester.vsync), 32, 12)
-
-        assertTrue(
-            navigator!!.handleDeepLink(
-                uri = "pixel://demo/target",
-                resolver = PixelDeepLinkResolver { listOf(target) },
-                animated = false,
-            ),
-        )
-        assertEquals(listOf("root-dispose"), events)
-        assertNull(navigator!!.activeTransition)
-
-        try {
-            navigator!!.handleDeepLink(
-                uri = "pixel://demo/empty",
-                resolver = PixelDeepLinkResolver { emptyList() },
-            )
-            fail("empty deep link route stack should be rejected")
-        } catch (error: IllegalArgumentException) {
-            assertTrue(error.message.orEmpty().contains("empty route stack"))
-            assertTrue(error.message.orEmpty().contains("pixel://demo/empty"))
-        }
-        tester.dispose()
-    }
-
-    @Test
     fun invalidDeepLinkUriReportsOriginalInput() {
         try {
             PixelDeepLink.parse("pixel://bad host/path")
@@ -866,7 +666,11 @@ class PixelNavigatorTest {
         }
     }
 
-    private fun route(name: String, builder: (BuildContext) -> Widget): PixelRoute {
-        return PixelRoute(name = name, builder = builder)
+    /** 构造被测用例只关心子树与名称的最小类型化路由请求。 */
+    private fun route(
+        name: String,
+        builder: (BuildContext) -> Widget,
+    ): PixelRouteRequest<Unit, Any?> {
+        return testRouteRequest(name = name, builder = builder)
     }
 }

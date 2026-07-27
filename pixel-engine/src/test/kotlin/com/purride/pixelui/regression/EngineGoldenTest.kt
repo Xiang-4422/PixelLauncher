@@ -31,7 +31,7 @@ import com.purride.pixelui.Path
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelPath
 import com.purride.pixelui.PixelPoint
-import com.purride.pixelui.PixelRoute
+import com.purride.pixelui.testRouteRequest
 import com.purride.pixelui.Polygon
 import com.purride.pixelui.PixelTextSpan
 import com.purride.pixelui.ProgressBar
@@ -339,7 +339,7 @@ class EngineGoldenTest {
         },
         Scene(name = "navigator_route_scope", width = 64, height = 22) {
             PixelNavigator(
-                initialRoute = PixelRoute(
+                initialRequest = testRouteRequest(
                     name = "home",
                     builder = { context ->
                         AppScaffold(

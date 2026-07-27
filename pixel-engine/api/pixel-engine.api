@@ -314,9 +314,12 @@ com.purride.pixelengine public val resourceResolver: PixelResourceResolver,
 com.purride.pixelengine public val services: PixelEngineServices,
 com.purride.pixelengine public val theme: PixelThemeTokens,
 com.purride.pixelengine public val tickerProviderFactory: PixelTickerProviderFactory,
+com.purride.pixelui public abstract class PixelRouteDestination<A : Any, R>(public val id: String)
+com.purride.pixelui public abstract class PixelRouteSnapshotAdapter<A : Any, R>(
 com.purride.pixelui public abstract class State<T : StatefulWidget>
 com.purride.pixelui public abstract class StatefulWidget(
 com.purride.pixelui public abstract class StatelessWidget(
+com.purride.pixelui public abstract fun build(
 com.purride.pixelui public abstract fun build(context: BuildContext): Widget
 com.purride.pixelui public abstract fun build(context: BuildContext): Widget
 com.purride.pixelui public abstract fun createState(): State<out StatefulWidget>
@@ -327,6 +330,7 @@ com.purride.pixelui public class AsyncBuilder<T>(
 com.purride.pixelui public class Builder(
 com.purride.pixelui public class DefaultTextRasterizer(
 com.purride.pixelui public class Directionality(
+com.purride.pixelui public class Encoded internal constructor(
 com.purride.pixelui public class FocusNode(
 com.purride.pixelui public class FocusScopeNode(
 com.purride.pixelui public class FormController(
@@ -350,13 +354,31 @@ com.purride.pixelui public class PixelLocalizationResolver @JvmOverloads constru
 com.purride.pixelui public class PixelLocalizations @JvmOverloads constructor(
 com.purride.pixelui public class PixelMotionScope(
 com.purride.pixelui public class PixelMotionTheme(
+com.purride.pixelui public class PixelMultiStackNavigator(
+com.purride.pixelui public class PixelMultiStackNavigatorController(
+com.purride.pixelui public class PixelMultiStackSnapshot internal constructor(
+com.purride.pixelui public class PixelNavigator(
+com.purride.pixelui public class PixelNavigatorRestorePlan internal constructor(
+com.purride.pixelui public class PixelNavigatorSnapshotCodec
+com.purride.pixelui public class PixelNavigatorState internal constructor(
+com.purride.pixelui public class PixelNestedNavigator(
+com.purride.pixelui public class PixelNestedNavigatorController
 com.purride.pixelui public class PixelOverlayController : ChangeNotifier()
 com.purride.pixelui public class PixelPopupRoute<R>(
+com.purride.pixelui public class PixelRouteEntry<A : Any, R> private constructor(
+com.purride.pixelui public class PixelRouteEntryScope<A : Any, R> private constructor(
+com.purride.pixelui public class PixelRouteResultChannel<R> private constructor(
+com.purride.pixelui public class PixelRouteScrollRestoration(
+com.purride.pixelui public class PixelRouteSnapshotRegistry(
+com.purride.pixelui public class PixelRouteStateBucket private constructor()
+com.purride.pixelui public class PixelRouteStateKey<T>(public val name: String)
 com.purride.pixelui public class PixelSnackbarQueueController : ChangeNotifier()
 com.purride.pixelui public class PixelStateMap<T>(
 com.purride.pixelui public class PixelTextInputBridge(
 com.purride.pixelui public class PixelTheme private constructor(
 com.purride.pixelui public class PixelToastQueueController : ChangeNotifier()
+com.purride.pixelui public class PixelTypedDeepLinkResolver(
+com.purride.pixelui public class PixelTypedDeepLinkRoute<A : Any, R>(
 com.purride.pixelui public class StatefulBuilder(
 com.purride.pixelui public class ValueListenableBuilder<T>(
 com.purride.pixelui public class ValueNotifier<T>(
@@ -416,11 +438,13 @@ com.purride.pixelui public companion object
 com.purride.pixelui public companion object
 com.purride.pixelui public companion object
 com.purride.pixelui public companion object
+com.purride.pixelui public companion object
+com.purride.pixelui public companion object
 com.purride.pixelui public const val FPS_WINDOW: Int = 30
 com.purride.pixelui public const val PixelMultiStackSnapshotBundleKey: String =
-com.purride.pixelui public const val PixelMultiStackSnapshotSchemaVersion: Int =
+com.purride.pixelui public const val PixelMultiStackSnapshotSchemaVersion: Int = 1
 com.purride.pixelui public const val PixelNavigatorPersistentSnapshotBundleKey: String =
-com.purride.pixelui public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int =
+com.purride.pixelui public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 2
 com.purride.pixelui public const val UnicodeVersion: String = "17.0.0"
 com.purride.pixelui public constructor(
 com.purride.pixelui public constructor(
@@ -429,11 +453,17 @@ com.purride.pixelui public constructor(
 com.purride.pixelui public data class AdaptiveDp(
 com.purride.pixelui public data class AdaptiveLogicalSize(
 com.purride.pixelui public data class AdaptivePixels(
+com.purride.pixelui public data class Cancelled(
 com.purride.pixelui public data class Completed<R>(public val result: R) : PixelOverlayOutcome<R>
 com.purride.pixelui public data class CubicTo(
+com.purride.pixelui public data class Decoded(
+com.purride.pixelui public data class Decoded(
+com.purride.pixelui public data class Decoded(
+com.purride.pixelui public data class Decoded<T : Any>(public val value: T) : PixelRoutePayloadDecodeResult<T>
 com.purride.pixelui public data class Dismissed(
 com.purride.pixelui public data class EdgeInsets(
 com.purride.pixelui public data class EdgeInsetsDirectional(
+com.purride.pixelui public data class Encoded(
 com.purride.pixelui public data class Failed(
 com.purride.pixelui public data class Failed(
 com.purride.pixelui public data class Failure(public val error: Throwable) : PixelAsyncSnapshot<Nothing>()
@@ -449,6 +479,10 @@ com.purride.pixelui public data class PixelButtonStyle(
 com.purride.pixelui public data class PixelColorScheme(
 com.purride.pixelui public data class PixelComponentColorTokens(
 com.purride.pixelui public data class PixelComponentTokens(
+com.purride.pixelui public data class PixelDeepLink(
+com.purride.pixelui public data class PixelDeepLinkArgumentFailure(
+com.purride.pixelui public data class PixelDeepLinkDecodeRejected(
+com.purride.pixelui public data class PixelDeepLinkDecoded<A : Any>(
 com.purride.pixelui public data class PixelDisplayFeature(
 com.purride.pixelui public data class PixelElevationTokens(
 com.purride.pixelui public data class PixelFocusIndicatorTokens(
@@ -475,7 +509,13 @@ com.purride.pixelui public data class PixelMenuItem(
 com.purride.pixelui public data class PixelMotionSettings(
 com.purride.pixelui public data class PixelMotionSpec(
 com.purride.pixelui public data class PixelMotionThemeData(
+com.purride.pixelui public data class PixelMultiStackSnapshotFailure(
 com.purride.pixelui public data class PixelNavigationDestination(
+com.purride.pixelui public data class PixelNavigationEvent(
+com.purride.pixelui public data class PixelNavigationFailure(
+com.purride.pixelui public data class PixelNavigatorInspectionSnapshot(
+com.purride.pixelui public data class PixelNavigatorRestoredEntryInspection(
+com.purride.pixelui public data class PixelNavigatorSnapshotFailure(
 com.purride.pixelui public data class PixelOpenAppSettingsAction(
 com.purride.pixelui public data class PixelOpenUriAction(
 com.purride.pixelui public data class PixelOverlayBarrier(
@@ -487,6 +527,10 @@ com.purride.pixelui public data class PixelRadioOption<T : Any>(
 com.purride.pixelui public data class PixelRadiusTokens(
 com.purride.pixelui public data class PixelRequestPermissionAction(
 com.purride.pixelui public data class PixelResolvedMotion(
+com.purride.pixelui public data class PixelRouteEntryId(public val value: Long)
+com.purride.pixelui public data class PixelRouteEntryInspection(
+com.purride.pixelui public data class PixelRouteRequest<A : Any, R>(
+com.purride.pixelui public data class PixelRouteTransitionInspection(
 com.purride.pixelui public data class PixelScrollPhysics(
 com.purride.pixelui public data class PixelSemanticsActions(
 com.purride.pixelui public data class PixelSemanticsCollectionInfo(
@@ -516,6 +560,10 @@ com.purride.pixelui public data class PixelThemeColors(
 com.purride.pixelui public data class PixelThemeData(
 com.purride.pixelui public data class PixelThemeTokens(
 com.purride.pixelui public data class PixelToastQueueItem(
+com.purride.pixelui public data class PixelTypedDeepLinkNavigated(
+com.purride.pixelui public data class PixelTypedDeepLinkNotMatched(
+com.purride.pixelui public data class PixelTypedDeepLinkRejected(
+com.purride.pixelui public data class PixelTypedNavigatorStack<A : Any, R>(
 com.purride.pixelui public data class PixelTypographyToken(
 com.purride.pixelui public data class PixelTypographyTokens(
 com.purride.pixelui public data class PixelUiState(
@@ -523,9 +571,18 @@ com.purride.pixelui public data class PixelUtf16Range(
 com.purride.pixelui public data class PixelWindowInsets(
 com.purride.pixelui public data class QuadraticTo(
 com.purride.pixelui public data class Radial(
+com.purride.pixelui public data class Rejected(
+com.purride.pixelui public data class Rejected(
+com.purride.pixelui public data class Rejected(
+com.purride.pixelui public data class Rejected(
+com.purride.pixelui public data class Rejected(
+com.purride.pixelui public data class Rejected(public val message: String) : PixelRoutePayloadDecodeResult<Nothing>
+com.purride.pixelui public data class Rejected(public val message: String) : PixelRouteStateDecodeResult
+com.purride.pixelui public data class Restored(
 com.purride.pixelui public data class SectionListSection(
 com.purride.pixelui public data class SlidableActionPane(
 com.purride.pixelui public data class Success<T>(public val value: T) : PixelAsyncSnapshot<T>()
+com.purride.pixelui public data class Success<out R>(public val value: R) : PixelRouteOutcome<R>
 com.purride.pixelui public data class Unsupported(
 com.purride.pixelui public data class Unsupported(
 com.purride.pixelui public data class Value<T>(
@@ -540,6 +597,7 @@ com.purride.pixelui public enum class MainAxisAlignment
 com.purride.pixelui public enum class MainAxisSize
 com.purride.pixelui public enum class PixelColorRole
 com.purride.pixelui public enum class PixelControlState
+com.purride.pixelui public enum class PixelDeepLinkArgumentFailureReason
 com.purride.pixelui public enum class PixelDisplayFeatureState
 com.purride.pixelui public enum class PixelDisplayFeatureType
 com.purride.pixelui public enum class PixelElevationRole
@@ -554,6 +612,12 @@ com.purride.pixelui public enum class PixelInspectorTargetKind
 com.purride.pixelui public enum class PixelKey
 com.purride.pixelui public enum class PixelMotionRole
 com.purride.pixelui public enum class PixelMotionTransitionPreset
+com.purride.pixelui public enum class PixelMultiStackSnapshotFailureReason
+com.purride.pixelui public enum class PixelNavigationAction
+com.purride.pixelui public enum class PixelNavigationEventType
+com.purride.pixelui public enum class PixelNavigationFailureReason
+com.purride.pixelui public enum class PixelNavigatorOperation
+com.purride.pixelui public enum class PixelNavigatorSnapshotFailureReason
 com.purride.pixelui public enum class PixelOverlayDismissAction
 com.purride.pixelui public enum class PixelOverlayDismissReason
 com.purride.pixelui public enum class PixelOverlayLayer
@@ -562,15 +626,22 @@ com.purride.pixelui public enum class PixelOverlayMotion
 com.purride.pixelui public enum class PixelPopoverAlignment
 com.purride.pixelui public enum class PixelPopoverPlacement
 com.purride.pixelui public enum class PixelPredictiveBackSwipeEdge
+com.purride.pixelui public enum class PixelRouteCancellationReason
+com.purride.pixelui public enum class PixelRouteLifecycleState
+com.purride.pixelui public enum class PixelRouteResultState
+com.purride.pixelui public enum class PixelRouteTransition
 com.purride.pixelui public enum class PixelSemanticRole
 com.purride.pixelui public enum class PixelSemanticsAction
 com.purride.pixelui public enum class PixelSemanticsLiveRegion
 com.purride.pixelui public enum class PixelSemanticsSelectionMode
+com.purride.pixelui public enum class PixelStackSelectionResult
 com.purride.pixelui public enum class PixelTextEditAction
 com.purride.pixelui public enum class PixelTextInputAction
 com.purride.pixelui public enum class PixelTextOverflow
 com.purride.pixelui public enum class PixelThemeBrightness
 com.purride.pixelui public enum class PixelThemeContrast
+com.purride.pixelui public enum class PixelTypedDeepLinkNavigationMode
+com.purride.pixelui public enum class PixelTypedDeepLinkRejectionReason
 com.purride.pixelui public enum class PixelWindowOrientation
 com.purride.pixelui public enum class PixelWindowSizeClass
 com.purride.pixelui public enum class SlidableDirection
@@ -578,6 +649,12 @@ com.purride.pixelui public enum class SlidableMotion
 com.purride.pixelui public enum class TextAlign
 com.purride.pixelui public enum class TextDirection
 com.purride.pixelui public fun <A : Any, R> pixelRouteDestination(
+com.purride.pixelui public fun <A : Any, R> push(
+com.purride.pixelui public fun <A : Any, R> push(request: PixelRouteRequest<A, R>): PixelRouteEntry<A, R>
+com.purride.pixelui public fun <A : Any, R> replace(
+com.purride.pixelui public fun <A : Any, R> replace(
+com.purride.pixelui public fun <NextA : Any> replaceWith(
+com.purride.pixelui public fun <R> complete(entry: PixelRouteEntry<*, R>, result: R): Boolean
 com.purride.pixelui public fun <R> show(route: PixelPopupRoute<R>): PixelOverlayEntry<R> = append(route)
 com.purride.pixelui public fun <T : Any> RadioGroup(
 com.purride.pixelui public fun <T : InheritedWidget> dependOnInheritedWidgetOfExactType(type: KClass<T>): T?
@@ -588,7 +665,10 @@ com.purride.pixelui public fun <T> LoadStateView(
 com.purride.pixelui public fun <T> SelectionList(
 com.purride.pixelui public fun <T> constant(value: T): PixelStateProperty<T> = PixelStateMap(normal = value)
 com.purride.pixelui public fun <T> pixelAsyncSourceOf(value: T): PixelAsyncSource<T>
+com.purride.pixelui public fun <T> read(key: PixelRouteStateKey<T>): T?
 com.purride.pixelui public fun <T> registerField(
+com.purride.pixelui public fun <T> remove(key: PixelRouteStateKey<T>): T? = values.remove(key) as T?
+com.purride.pixelui public fun <T> write(key: PixelRouteStateKey<T>, value: T)
 com.purride.pixelui public fun ActivityIndicator(
 com.purride.pixelui public fun ActivityIndicator(
 com.purride.pixelui public fun Align(
@@ -688,7 +768,7 @@ com.purride.pixelui public fun PixelMultiStackNavigatorController.handleTypedDee
 com.purride.pixelui public fun PixelMultiStackNavigatorController.persistentSnapshot(
 com.purride.pixelui public fun PixelMultiStackNavigatorController.restorePersistentSnapshot(
 com.purride.pixelui public fun PixelMultiStackSnapshot.saveToBundle(
-com.purride.pixelui public fun PixelNavigatorSnapshotEncoded.saveToBundle(
+com.purride.pixelui public fun PixelNavigatorSnapshotEncodeResult.Encoded.saveToBundle(
 com.purride.pixelui public fun PixelNavigatorState.handleTypedDeepLink(
 com.purride.pixelui public fun PixelNavigatorState.handleTypedDeepLink(
 com.purride.pixelui public fun PixelOverlayHost(
@@ -766,6 +846,7 @@ com.purride.pixelui public fun ValueAdjuster(
 com.purride.pixelui public fun Visibility(
 com.purride.pixelui public fun Wrap(
 com.purride.pixelui public fun addListener(listener: VoidCallback)
+com.purride.pixelui public fun addObserver(observer: PixelNavigationObserver)
 com.purride.pixelui public fun all(value: Int): EdgeInsets
 com.purride.pixelui public fun all(value: Int): EdgeInsetsDirectional
 com.purride.pixelui public fun announce(message: String): PixelCapabilityResult
@@ -774,6 +855,9 @@ com.purride.pixelui public fun atLeast(minimum: PixelWindowInsets): PixelWindowI
 com.purride.pixelui public fun attach(node: FocusNode)
 com.purride.pixelui public fun bindEngine(engine: PixelEngine): PixelHostView = apply
 com.purride.pixelui public fun bindLifecycleOwner(owner: LifecycleOwner)
+com.purride.pixelui public fun build(
+com.purride.pixelui public fun cancel(
+com.purride.pixelui public fun cancel(
 com.purride.pixelui public fun cancel()
 com.purride.pixelui public fun cancelPredictiveBack()
 com.purride.pixelui public fun capabilitiesOf(context: BuildContext): HostCapabilitiesData
@@ -783,16 +867,24 @@ com.purride.pixelui public fun circle(
 com.purride.pixelui public fun clear()
 com.purride.pixelui public fun clear()
 com.purride.pixelui public fun clear()
+com.purride.pixelui public fun clear()
+com.purride.pixelui public fun clear(animated: Boolean = true): Boolean
 com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun clearSubmitState()
 com.purride.pixelui public fun commitPredictiveBack(): Boolean
 com.purride.pixelui public fun complete(result: R): Boolean
+com.purride.pixelui public fun complete(result: R): Boolean = owner.completeEntry(entry, result)
+com.purride.pixelui public fun contains(destinationId: String): Boolean = destinationId in adapters
 com.purride.pixelui public fun contains(x: Int, y: Int): Boolean
 com.purride.pixelui public fun copy(
 com.purride.pixelui public fun createPixelHostSetup(
 com.purride.pixelui public fun createPixelHostSetup(
+com.purride.pixelui public fun decode(
+com.purride.pixelui public fun decode(
+com.purride.pixelui public fun decode(link: PixelDeepLink): PixelDeepLinkDecodeResult<A>
+com.purride.pixelui public fun decodeArguments(link: PixelDeepLink): PixelDeepLinkDecodeResult<A>
 com.purride.pixelui public fun destroy()
 com.purride.pixelui public fun detach(node: FocusNode)
 com.purride.pixelui public fun dismiss(): Boolean
@@ -827,6 +919,8 @@ com.purride.pixelui public fun drawRect(
 com.purride.pixelui public fun dumpElementTree(): String
 com.purride.pixelui public fun dumpRenderTree(): String
 com.purride.pixelui public fun dumpSemanticsTree(): String
+com.purride.pixelui public fun encode(
+com.purride.pixelui public fun encode(value: T): ByteArray
 com.purride.pixelui public fun enqueue(
 com.purride.pixelui public fun enqueue(
 com.purride.pixelui public fun enqueue(
@@ -854,6 +948,7 @@ com.purride.pixelui public fun fromLegacy(colors: PixelThemeColors): PixelColorS
 com.purride.pixelui public fun fromLegacy(data: PixelThemeData): PixelThemeTokens
 com.purride.pixelui public fun fromLegacyBridge(bridge: PixelHostBridge?): PixelHostCapabilitySet
 com.purride.pixelui public fun handleBack(): Boolean
+com.purride.pixelui public fun handleBack(switchToInitialStack: Boolean = true): Boolean
 com.purride.pixelui public fun handleBackPressed(): Boolean
 com.purride.pixelui public fun handlePredictiveBackCancelled()
 com.purride.pixelui public fun handlePredictiveBackCommitted(): Boolean
@@ -864,6 +959,7 @@ com.purride.pixelui public fun hideTextInput()
 com.purride.pixelui public fun hideTextInput(): PixelCapabilityResult
 com.purride.pixelui public fun highestPriority(): PixelControlState
 com.purride.pixelui public fun inspect(
+com.purride.pixelui public fun inspectionSnapshot(): PixelNavigatorInspectionSnapshot
 com.purride.pixelui public fun interface AsyncFormValidator
 com.purride.pixelui public fun interface AsyncValidator<T>
 com.purride.pixelui public fun interface FocusTraversalPolicy
@@ -873,17 +969,24 @@ com.purride.pixelui public fun interface FormSubmitter
 com.purride.pixelui public fun interface PixelAccessibilityCapability
 com.purride.pixelui public fun interface PixelAsyncSource<T>
 com.purride.pixelui public fun interface PixelBackCapability
+com.purride.pixelui public fun interface PixelDeepLinkArgumentDecoder<A : Any>
 com.purride.pixelui public fun interface PixelHapticCapability
 com.purride.pixelui public fun interface PixelIntegerFormatter
 com.purride.pixelui public fun interface PixelLocalizationDelegate
+com.purride.pixelui public fun interface PixelNavigationObserver
 com.purride.pixelui public fun interface PixelPercentFormatter
+com.purride.pixelui public fun interface PixelRouteStateRestorer
+com.purride.pixelui public fun interface PixelRouteTransitionBuilder
 com.purride.pixelui public fun interface PixelStateProperty<T>
 com.purride.pixelui public fun interface PixelSystemActionCapability
+com.purride.pixelui public fun interface PixelTypedDeepLinkMatcher
 com.purride.pixelui public fun interface VoidCallback
 com.purride.pixelui public fun invoke()
 com.purride.pixelui public fun isBoundary(offset: Int): Boolean
 com.purride.pixelui public fun load(locale: PixelLocale): PixelLocalizationBundle?
 com.purride.pixelui public fun localeOf(context: BuildContext): PixelLocale
+com.purride.pixelui public fun matches(link: PixelDeepLink): Boolean
+com.purride.pixelui public fun matches(link: PixelDeepLink): Boolean = matcher.matches(link)
 com.purride.pixelui public fun maybeCapabilitiesOf(context: BuildContext): HostCapabilitiesData?
 com.purride.pixelui public fun maybeLocaleOf(context: BuildContext): PixelLocale?
 com.purride.pixelui public fun maybeOf(context: BuildContext): HostCapabilitiesData?
@@ -893,11 +996,15 @@ com.purride.pixelui public fun maybeOf(context: BuildContext): PixelBackDispatch
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelLocalizationBundle?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelMotionScope?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelMotionThemeData?
+com.purride.pixelui public fun maybeOf(context: BuildContext): PixelNavigatorState?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelOverlayController?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelTextRasterizer?
 com.purride.pixelui public fun maybeOf(context: BuildContext): PixelThemeData?
 com.purride.pixelui public fun maybeOf(context: BuildContext): TextDirection?
+com.purride.pixelui public fun maybePop(): Boolean = pop()
+com.purride.pixelui public fun maybePop(result: Any?): Boolean = pop(result)
 com.purride.pixelui public fun maybeTokensOf(context: BuildContext): PixelThemeTokens?
+com.purride.pixelui public fun navigatorState(stackId: String): PixelNavigatorState? = navigatorStates[stackId]
 com.purride.pixelui public fun nearest(offset: Int): Int
 com.purride.pixelui public fun next(
 com.purride.pixelui public fun next(offset: Int): Int
@@ -909,6 +1016,7 @@ com.purride.pixelui public fun of(context: BuildContext): PixelHostCapabilitySet
 com.purride.pixelui public fun of(context: BuildContext): PixelLocalizationBundle
 com.purride.pixelui public fun of(context: BuildContext): PixelMotionScope
 com.purride.pixelui public fun of(context: BuildContext): PixelMotionThemeData
+com.purride.pixelui public fun of(context: BuildContext): PixelNavigatorState
 com.purride.pixelui public fun of(context: BuildContext): PixelOverlayController
 com.purride.pixelui public fun of(context: BuildContext): PixelThemeData
 com.purride.pixelui public fun of(context: BuildContext): TextDirection
@@ -919,9 +1027,11 @@ com.purride.pixelui public fun onBackCommitted(): Boolean
 com.purride.pixelui public fun onBackInvoked(): Boolean = onBackCommitted()
 com.purride.pixelui public fun onBackProgressed(event: PixelPredictiveBackEvent)
 com.purride.pixelui public fun onBackStarted(event: PixelPredictiveBackEvent): Boolean
+com.purride.pixelui public fun onNavigationEvent(event: PixelNavigationEvent)
 com.purride.pixelui public fun only(
 com.purride.pixelui public fun only(
 com.purride.pixelui public fun only(
+com.purride.pixelui public fun parse(uri: String): PixelDeepLink
 com.purride.pixelui public fun pause()
 com.purride.pixelui public fun perform(context: BuildContext, type: PixelHapticType): Boolean
 com.purride.pixelui public fun performAction(id: Int): Boolean
@@ -930,15 +1040,24 @@ com.purride.pixelui public fun performFocusedTextEditAction(action: PixelTextEdi
 com.purride.pixelui public fun performHapticFeedback(type: PixelHapticType)
 com.purride.pixelui public fun performHapticFeedback(type: PixelHapticType)
 com.purride.pixelui public fun performHapticFeedback(type: PixelHapticType): PixelCapabilityResult
+com.purride.pixelui public fun persistentSnapshot(
+com.purride.pixelui public fun persistentSnapshot(
+com.purride.pixelui public fun pop(): Boolean = pop(result = null)
+com.purride.pixelui public fun pop(result: Any?): Boolean
+com.purride.pixelui public fun popToRoot(animated: Boolean = true)
 com.purride.pixelui public fun previous(offset: Int): Int
+com.purride.pixelui public fun queryParameter(name: String): String? = queryParameters[name]?.firstOrNull()
 com.purride.pixelui public fun readClipboardText(): PixelCapabilityValueResult<String?>
 com.purride.pixelui public fun readClipboardText(): String?
 com.purride.pixelui public fun readClipboardText(): String? = null
 com.purride.pixelui public fun rect(
 com.purride.pixelui public fun register(handler: () -> Boolean): PixelBackRegistration
 com.purride.pixelui public fun registerPredictive(callback: PixelPredictiveBackCallback): PixelBackRegistration
+com.purride.pixelui public fun remove(entry: PixelRouteEntry<*, *>, animated: Boolean = true): Boolean
+com.purride.pixelui public fun remove(entryId: PixelRouteEntryId, animated: Boolean = true): Boolean
 com.purride.pixelui public fun remove(key: String): PixelCapabilityResult
 com.purride.pixelui public fun removeListener(listener: VoidCallback)
+com.purride.pixelui public fun removeObserver(observer: PixelNavigationObserver)
 com.purride.pixelui public fun removeState(key: String): PixelCapabilityResult
 com.purride.pixelui public fun requestBack(): PixelCapabilityResult
 com.purride.pixelui public fun requestBack(): PixelCapabilityResult
@@ -966,10 +1085,18 @@ com.purride.pixelui public fun resolvePadding(spacing: PixelSpacingTokens): Edge
 com.purride.pixelui public fun resolveText(
 com.purride.pixelui public fun resolveWidth(borders: PixelBorderTokens): Int
 com.purride.pixelui public fun restore(key: String): ByteArray?
+com.purride.pixelui public fun restore(plan: PixelNavigatorRestorePlan): Boolean
+com.purride.pixelui public fun restore(plan: PixelNavigatorRestorePlan): Boolean
+com.purride.pixelui public fun restore(stateBucket: PixelRouteStateBucket)
+com.purride.pixelui public fun restorePersistentSnapshot(
+com.purride.pixelui public fun restorePersistentSnapshot(
+com.purride.pixelui public fun restorePersistentSnapshotFromBundle(
 com.purride.pixelui public fun restoreState(key: String): PixelCapabilityValueResult<ByteArray?>
 com.purride.pixelui public fun resume()
 com.purride.pixelui public fun save(key: String, value: ByteArray): PixelCapabilityResult
+com.purride.pixelui public fun savePersistentSnapshotToBundle(
 com.purride.pixelui public fun saveState(key: String, value: ByteArray): PixelCapabilityResult
+com.purride.pixelui public fun selectStack(
 com.purride.pixelui public fun setContent(provider: RootWidgetProvider)
 com.purride.pixelui public fun setPixel(
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
@@ -985,6 +1112,7 @@ com.purride.pixelui public fun showTextInput(request: PixelTextInputRequest)
 com.purride.pixelui public fun showTextInput(request: PixelTextInputRequest)
 com.purride.pixelui public fun showTextInput(request: PixelTextInputRequest): PixelCapabilityResult
 com.purride.pixelui public fun showToast(
+com.purride.pixelui public fun snapshotBytes(stackId: String): ByteArray? = childSnapshots[stackId]?.copyOf()
 com.purride.pixelui public fun snapshotCurrentFrameBuffer(): PixelBuffer?
 com.purride.pixelui public fun start()
 com.purride.pixelui public fun startPredictiveBack(event: PixelPredictiveBackEvent): Boolean
@@ -1031,6 +1159,7 @@ com.purride.pixelui public interface PixelImeCapability
 com.purride.pixelui public interface PixelOverlayEntry<R> : PixelOverlayHandle
 com.purride.pixelui public interface PixelOverlayHandle
 com.purride.pixelui public interface PixelPredictiveBackCallback
+com.purride.pixelui public interface PixelRoutePayloadCodec<T : Any>
 com.purride.pixelui public interface PixelSavedStateCapability
 com.purride.pixelui public interface PixelTextEditingHostBridge : PixelHostBridge
 com.purride.pixelui public interface ValueListenable<T> : Listenable
@@ -1049,13 +1178,24 @@ com.purride.pixelui public object Transform
 com.purride.pixelui public open class ChangeNotifier : Listenable
 com.purride.pixelui public open class InheritedNotifier<T : Listenable>(
 com.purride.pixelui public open class InheritedWidget(
+com.purride.pixelui public open fun canPop(entry: PixelRouteEntry<A, R>): Boolean = true
+com.purride.pixelui public open fun decodeRouteState(
 com.purride.pixelui public open fun didChangeDependencies(): Unit = Unit
 com.purride.pixelui public open fun didUpdateWidget(oldWidget: T): Unit = Unit
 com.purride.pixelui public open fun dispose(): Unit = Unit
+com.purride.pixelui public open fun encodeRouteState(entry: PixelRouteEntry<A, R>): Map<String, ByteArray>
 com.purride.pixelui public open fun initState(): Unit = Unit
+com.purride.pixelui public open fun onDispose(entry: PixelRouteEntry<A, R>): Unit = Unit
+com.purride.pixelui public open fun onEnter(entry: PixelRouteEntry<A, R>): Unit = Unit
+com.purride.pixelui public open fun onExit(entry: PixelRouteEntry<A, R>): Unit = Unit
 com.purride.pixelui public open fun setState(action: () -> Unit)
 com.purride.pixelui public open fun updateShouldNotify(oldWidget: InheritedWidget): Boolean = true
 com.purride.pixelui public open val child: Widget,
+com.purride.pixelui public open val maintainState: Boolean = true
+com.purride.pixelui public open val stateSchemaVersion: Int = 1
+com.purride.pixelui public open val transition: PixelRouteTransition? = null
+com.purride.pixelui public open val transitionBuilder: PixelRouteTransitionBuilder? = null
+com.purride.pixelui public operator fun <T> contains(key: PixelRouteStateKey<T>): Boolean = values.containsKey(key)
 com.purride.pixelui public operator fun contains(state: PixelControlState): Boolean
 com.purride.pixelui public operator fun minus(state: PixelControlState): PixelControlStateSet
 com.purride.pixelui public operator fun plus(state: PixelControlState): PixelControlStateSet
@@ -1064,103 +1204,40 @@ com.purride.pixelui public sealed class PixelGradient
 com.purride.pixelui public sealed class PixelPathCommand
 com.purride.pixelui public sealed interface PixelCapabilityResult
 com.purride.pixelui public sealed interface PixelCapabilityValueResult<out T>
+com.purride.pixelui public sealed interface PixelDeepLinkDecodeResult<out A : Any>
 com.purride.pixelui public sealed interface PixelHostProfilePolicy
+com.purride.pixelui public sealed interface PixelMultiStackRestoreResult
+com.purride.pixelui public sealed interface PixelMultiStackSnapshotDecodeResult
+com.purride.pixelui public sealed interface PixelMultiStackSnapshotEncodeResult
+com.purride.pixelui public sealed interface PixelNavigatorSnapshotDecodeResult
+com.purride.pixelui public sealed interface PixelNavigatorSnapshotEncodeResult
 com.purride.pixelui public sealed interface PixelOverlayOutcome<out R>
+com.purride.pixelui public sealed interface PixelRouteOutcome<out R>
+com.purride.pixelui public sealed interface PixelRoutePayloadDecodeResult<out T : Any>
+com.purride.pixelui public sealed interface PixelRouteStateDecodeResult
 com.purride.pixelui public sealed interface PixelSliver
+com.purride.pixelui public sealed interface PixelTypedDeepLinkResult
 com.purride.pixelui public sealed interface PixelTypedSystemAction
 com.purride.pixelui public typealias Axis = PixelAxis
 com.purride.pixelui public typealias ButtonStyle = PixelButtonStyle
 com.purride.pixelui public typealias FormValidator = (Map<String, Any?>) -> Map<String, String>
 com.purride.pixelui public typealias PageController = PixelPagerController
-com.purride.pixelui public typealias PixelDeepLink = com.purride.pixelui.widgets.navigation.PixelDeepLink
-com.purride.pixelui public typealias PixelDeepLinkArgumentDecoder<A> =
-com.purride.pixelui public typealias PixelDeepLinkArgumentFailure =
-com.purride.pixelui public typealias PixelDeepLinkArgumentFailureReason =
-com.purride.pixelui public typealias PixelDeepLinkDecodeRejected =
-com.purride.pixelui public typealias PixelDeepLinkDecodeResult<A> =
-com.purride.pixelui public typealias PixelDeepLinkDecoded<A> =
-com.purride.pixelui public typealias PixelDeepLinkResolver = com.purride.pixelui.widgets.navigation.PixelDeepLinkResolver
-com.purride.pixelui public typealias PixelMultiStackNavigator =
-com.purride.pixelui public typealias PixelMultiStackNavigatorController =
-com.purride.pixelui public typealias PixelMultiStackRestoreRejected =
-com.purride.pixelui public typealias PixelMultiStackRestoreResult =
-com.purride.pixelui public typealias PixelMultiStackRestored =
-com.purride.pixelui public typealias PixelMultiStackSnapshot =
-com.purride.pixelui public typealias PixelMultiStackSnapshotDecodeRejected =
-com.purride.pixelui public typealias PixelMultiStackSnapshotDecodeResult =
-com.purride.pixelui public typealias PixelMultiStackSnapshotDecoded =
-com.purride.pixelui public typealias PixelMultiStackSnapshotEncodeRejected =
-com.purride.pixelui public typealias PixelMultiStackSnapshotEncodeResult =
-com.purride.pixelui public typealias PixelMultiStackSnapshotEncoded =
-com.purride.pixelui public typealias PixelMultiStackSnapshotFailure =
-com.purride.pixelui public typealias PixelMultiStackSnapshotFailureReason =
-com.purride.pixelui public typealias PixelNavigationAction = com.purride.pixelui.widgets.navigation.PixelNavigationAction
-com.purride.pixelui public typealias PixelNavigationEvent = com.purride.pixelui.widgets.navigation.PixelNavigationEvent
-com.purride.pixelui public typealias PixelNavigationEventType = com.purride.pixelui.widgets.navigation.PixelNavigationEventType
-com.purride.pixelui public typealias PixelNavigationFailure = com.purride.pixelui.widgets.navigation.PixelNavigationFailure
-com.purride.pixelui public typealias PixelNavigationFailureReason = com.purride.pixelui.widgets.navigation.PixelNavigationFailureReason
-com.purride.pixelui public typealias PixelNavigationObserver = com.purride.pixelui.widgets.navigation.PixelNavigationObserver
-com.purride.pixelui public typealias PixelNavigator = com.purride.pixelui.widgets.navigation.PixelNavigator
-com.purride.pixelui public typealias PixelNavigatorInspectionSnapshot =
-com.purride.pixelui public typealias PixelNavigatorOperation = com.purride.pixelui.widgets.navigation.PixelNavigatorOperation
-com.purride.pixelui public typealias PixelNavigatorRestorePlan =
-com.purride.pixelui public typealias PixelNavigatorRestoredEntryInspection =
-com.purride.pixelui public typealias PixelNavigatorSnapshot = com.purride.pixelui.widgets.navigation.PixelNavigatorSnapshot
-com.purride.pixelui public typealias PixelNavigatorSnapshotCodec =
-com.purride.pixelui public typealias PixelNavigatorSnapshotDecodeRejected =
-com.purride.pixelui public typealias PixelNavigatorSnapshotDecodeResult =
-com.purride.pixelui public typealias PixelNavigatorSnapshotDecoded =
-com.purride.pixelui public typealias PixelNavigatorSnapshotEncodeRejected =
-com.purride.pixelui public typealias PixelNavigatorSnapshotEncodeResult =
-com.purride.pixelui public typealias PixelNavigatorSnapshotEncoded =
-com.purride.pixelui public typealias PixelNavigatorSnapshotFailure =
-com.purride.pixelui public typealias PixelNavigatorSnapshotFailureReason =
-com.purride.pixelui public typealias PixelNavigatorStack =
-com.purride.pixelui public typealias PixelNavigatorStackDefinition =
-com.purride.pixelui public typealias PixelNavigatorState = com.purride.pixelui.widgets.navigation.PixelNavigatorState
-com.purride.pixelui public typealias PixelNestedNavigator =
-com.purride.pixelui public typealias PixelNestedNavigatorController =
-com.purride.pixelui public typealias PixelRoute = com.purride.pixelui.widgets.navigation.PixelRoute
-com.purride.pixelui public typealias PixelRouteCancellationReason = com.purride.pixelui.widgets.navigation.PixelRouteCancellationReason
-com.purride.pixelui public typealias PixelRouteCancelled =
-com.purride.pixelui public typealias PixelRouteDestination<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteDestination<A, R>
-com.purride.pixelui public typealias PixelRouteEntry<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteEntry<A, R>
-com.purride.pixelui public typealias PixelRouteEntryId = com.purride.pixelui.widgets.navigation.PixelRouteEntryId
-com.purride.pixelui public typealias PixelRouteEntryInspection = com.purride.pixelui.widgets.navigation.PixelRouteEntryInspection
-com.purride.pixelui public typealias PixelRouteEntryScope<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteEntryScope<A, R>
-com.purride.pixelui public typealias PixelRouteLifecycleState = com.purride.pixelui.widgets.navigation.PixelRouteLifecycleState
-com.purride.pixelui public typealias PixelRouteOutcome<R> = com.purride.pixelui.widgets.navigation.PixelRouteOutcome<R>
-com.purride.pixelui public typealias PixelRoutePayloadCodec<T> =
-com.purride.pixelui public typealias PixelRoutePayloadDecodeResult<T> =
-com.purride.pixelui public typealias PixelRoutePayloadDecoded<T> =
-com.purride.pixelui public typealias PixelRoutePayloadRejected =
-com.purride.pixelui public typealias PixelRouteRequest<A, R> = com.purride.pixelui.widgets.navigation.PixelRouteRequest<A, R>
-com.purride.pixelui public typealias PixelRouteResultChannel<R> = com.purride.pixelui.widgets.navigation.PixelRouteResultChannel<R>
-com.purride.pixelui public typealias PixelRouteResultState = com.purride.pixelui.widgets.navigation.PixelRouteResultState
-com.purride.pixelui public typealias PixelRouteScrollRestoration = com.purride.pixelui.widgets.navigation.PixelRouteScrollRestoration
-com.purride.pixelui public typealias PixelRouteSnapshotAdapter<A, R> =
-com.purride.pixelui public typealias PixelRouteSnapshotRegistry =
-com.purride.pixelui public typealias PixelRouteStateBucket = com.purride.pixelui.widgets.navigation.PixelRouteStateBucket
-com.purride.pixelui public typealias PixelRouteStateDecodeResult =
-com.purride.pixelui public typealias PixelRouteStateDecoded =
-com.purride.pixelui public typealias PixelRouteStateKey<T> = com.purride.pixelui.widgets.navigation.PixelRouteStateKey<T>
-com.purride.pixelui public typealias PixelRouteStateRejected =
-com.purride.pixelui public typealias PixelRouteStateRestorer =
-com.purride.pixelui public typealias PixelRouteSuccess<R> =
-com.purride.pixelui public typealias PixelRouteTransition = com.purride.pixelui.widgets.navigation.PixelRouteTransition
-com.purride.pixelui public typealias PixelRouteTransitionBuilder = com.purride.pixelui.widgets.navigation.PixelRouteTransitionBuilder
-com.purride.pixelui public typealias PixelRouteTransitionInspection = com.purride.pixelui.widgets.navigation.PixelRouteTransitionInspection
-com.purride.pixelui public typealias PixelStackSelectionResult =
-com.purride.pixelui public typealias PixelTypedDeepLinkMatcher =
-com.purride.pixelui public typealias PixelTypedDeepLinkNavigated =
-com.purride.pixelui public typealias PixelTypedDeepLinkNavigationMode =
-com.purride.pixelui public typealias PixelTypedDeepLinkNotMatched =
-com.purride.pixelui public typealias PixelTypedDeepLinkRejected =
-com.purride.pixelui public typealias PixelTypedDeepLinkRejectionReason =
-com.purride.pixelui public typealias PixelTypedDeepLinkResolver =
-com.purride.pixelui public typealias PixelTypedDeepLinkResult =
-com.purride.pixelui public typealias PixelTypedDeepLinkRoute<A, R> =
-com.purride.pixelui public typealias PixelTypedNavigatorStack<A, R> =
+com.purride.pixelui public typealias PixelMultiStackRestoreRejected = PixelMultiStackRestoreResult.Rejected
+com.purride.pixelui public typealias PixelMultiStackRestored = PixelMultiStackRestoreResult.Restored
+com.purride.pixelui public typealias PixelMultiStackSnapshotDecodeRejected = PixelMultiStackSnapshotDecodeResult.Rejected
+com.purride.pixelui public typealias PixelMultiStackSnapshotDecoded = PixelMultiStackSnapshotDecodeResult.Decoded
+com.purride.pixelui public typealias PixelMultiStackSnapshotEncodeRejected = PixelMultiStackSnapshotEncodeResult.Rejected
+com.purride.pixelui public typealias PixelMultiStackSnapshotEncoded = PixelMultiStackSnapshotEncodeResult.Encoded
+com.purride.pixelui public typealias PixelNavigatorSnapshotDecodeRejected = PixelNavigatorSnapshotDecodeResult.Rejected
+com.purride.pixelui public typealias PixelNavigatorSnapshotDecoded = PixelNavigatorSnapshotDecodeResult.Decoded
+com.purride.pixelui public typealias PixelNavigatorSnapshotEncodeRejected = PixelNavigatorSnapshotEncodeResult.Rejected
+com.purride.pixelui public typealias PixelNavigatorSnapshotEncoded = PixelNavigatorSnapshotEncodeResult.Encoded
+com.purride.pixelui public typealias PixelRouteCancelled = PixelRouteOutcome.Cancelled
+com.purride.pixelui public typealias PixelRoutePayloadDecoded<T> = PixelRoutePayloadDecodeResult.Decoded<T>
+com.purride.pixelui public typealias PixelRoutePayloadRejected = PixelRoutePayloadDecodeResult.Rejected
+com.purride.pixelui public typealias PixelRouteStateDecoded = PixelRouteStateDecodeResult.Decoded
+com.purride.pixelui public typealias PixelRouteStateRejected = PixelRouteStateDecodeResult.Rejected
+com.purride.pixelui public typealias PixelRouteSuccess<R> = PixelRouteOutcome.Success<R>
 com.purride.pixelui public typealias RootWidgetProvider = () -> Widget
 com.purride.pixelui public typealias ScrollController = PixelListController
 com.purride.pixelui public typealias StateSetter = (() -> Unit) -> Unit
@@ -1235,14 +1312,28 @@ com.purride.pixelui public val TextField: PixelComponentColorTokens = PixelCompo
 com.purride.pixelui public val TrackControl: PixelComponentColorTokens = PixelComponentColorTokens(
 com.purride.pixelui public val Zero: PixelWindowInsets = PixelWindowInsets()
 com.purride.pixelui public val accessibility: PixelAccessibilityCapability? = null,
+com.purride.pixelui public val action: PixelNavigationAction,
+com.purride.pixelui public val action: PixelNavigationAction,
 com.purride.pixelui public val actions: Set<PixelSemanticsAction> = emptySet(),
+com.purride.pixelui public val activeNavigatorState: PixelNavigatorState?
+com.purride.pixelui public val activeStackId: String,
+com.purride.pixelui public val activeStackId: String,
 com.purride.pixelui public val allocatedBytes: Long?,
 com.purride.pixelui public val androidDrawNanos: Long,
 com.purride.pixelui public val animatorDurationScale: Float = 1f,
+com.purride.pixelui public val argumentCodec: PixelRoutePayloadCodec<A>,
+com.purride.pixelui public val argumentFailure: PixelDeepLinkArgumentFailure? = null,
+com.purride.pixelui public val argumentSchemaVersion: Int,
+com.purride.pixelui public val arguments: A
+com.purride.pixelui public val arguments: A,
+com.purride.pixelui public val arguments: A,
+com.purride.pixelui public val arguments: A,
 com.purride.pixelui public val attachCount: Long,
 com.purride.pixelui public val attachmentState: PixelHostAttachmentState,
 com.purride.pixelui public val back: PixelBackCapability? = null,
 com.purride.pixelui public val back: PixelOverlayDismissAction = PixelOverlayDismissAction.Dismiss,
+com.purride.pixelui public val backEnabled: Boolean = true,
+com.purride.pixelui public val backEnabled: Boolean = true,
 com.purride.pixelui public val background: PixelColor,
 com.purride.pixelui public val barrier: PixelOverlayBarrier? = null,
 com.purride.pixelui public val barrierTap: PixelOverlayDismissAction = PixelOverlayDismissAction.Dismiss,
@@ -1269,7 +1360,11 @@ com.purride.pixelui public val bundle: PixelLocalizationBundle,
 com.purride.pixelui public val button: PixelComponentColorTokens = PixelComponentColorTokens.Button,
 com.purride.pixelui public val button: PixelTypographyToken = PixelTypographyToken.Default,
 com.purride.pixelui public val button: String = "Button",
+com.purride.pixelui public val bytes: ByteArray
 com.purride.pixelui public val cacheExtent: Int,
+com.purride.pixelui public val canHandleBack: Boolean
+com.purride.pixelui public val canPop: Boolean
+com.purride.pixelui public val canPop: Boolean,
 com.purride.pixelui public val cancel: String = "CANCEL",
 com.purride.pixelui public val capability: String,
 com.purride.pixelui public val capability: String,
@@ -1284,6 +1379,8 @@ com.purride.pixelui public val checked: Boolean? = null,
 com.purride.pixelui public val child: Widget,
 com.purride.pixelui public val child: Widget,
 com.purride.pixelui public val child: Widget,
+com.purride.pixelui public val child: Widget,
+com.purride.pixelui public val childFailure: PixelNavigatorSnapshotFailure? = null,
 com.purride.pixelui public val clipboard: PixelClipboardCapability? = null,
 com.purride.pixelui public val collapsedHeight: Int,
 com.purride.pixelui public val collectionInfo: PixelSemanticsCollectionInfo? = null,
@@ -1307,12 +1404,19 @@ com.purride.pixelui public val content: Widget,
 com.purride.pixelui public val contentColor: PixelStateProperty<PixelColorRole?> = PixelStateProperty.constant(
 com.purride.pixelui public val contrast: PixelThemeContrast = PixelThemeContrast.Standard,
 com.purride.pixelui public val controlHeight: Int = 16,
+com.purride.pixelui public val controller: PixelListController,
+com.purride.pixelui public val controller: PixelMultiStackNavigatorController,
+com.purride.pixelui public val controller: PixelNestedNavigatorController? = null,
 com.purride.pixelui public val cornerRadius: Int = 0,
 com.purride.pixelui public val cornerRadius: Int = 0,
 com.purride.pixelui public val counter: String? = null,
 com.purride.pixelui public val current: Float,
 com.purride.pixelui public val current: PixelSnackbarQueueItem?
 com.purride.pixelui public val current: PixelToastQueueItem?
+com.purride.pixelui public val currentEntry: PixelRouteEntry<*, *>
+com.purride.pixelui public val currentEntryId: PixelRouteEntryId,
+com.purride.pixelui public val currentEntryId: PixelRouteEntryId?,
+com.purride.pixelui public val currentSchemaVersion: Int,
 com.purride.pixelui public val currentTimeout: Duration?
 com.purride.pixelui public val currentTimeout: Duration?
 com.purride.pixelui public val curve: Curve = Curves.EaseInOut,
@@ -1329,11 +1433,26 @@ com.purride.pixelui public val data: PixelThemeData,
 com.purride.pixelui public val debugLabel: String? = null,
 com.purride.pixelui public val decrease: String = "Decrease",
 com.purride.pixelui public val defaultLocale: PixelLocale = PixelLocale.English,
+com.purride.pixelui public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
+com.purride.pixelui public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
+com.purride.pixelui public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
 com.purride.pixelui public val delay: Duration = Duration.ZERO,
 com.purride.pixelui public val delay: Duration,
 com.purride.pixelui public val delegate: PixelLocalizationDelegate? = null,
 com.purride.pixelui public val density: Float = 1f,
 com.purride.pixelui public val density: Float,
+com.purride.pixelui public val destination: PixelRouteDestination<A, R>,
+com.purride.pixelui public val destination: PixelRouteDestination<A, R>,
+com.purride.pixelui public val destination: PixelRouteDestination<A, R>,
+com.purride.pixelui public val destination: PixelRouteDestination<A, R>,
+com.purride.pixelui public val destinationId: String,
+com.purride.pixelui public val destinationId: String,
+com.purride.pixelui public val destinationId: String,
+com.purride.pixelui public val destinationId: String? = null,
+com.purride.pixelui public val destinationId: String? = null,
+com.purride.pixelui public val destinationId: String? = null,
+com.purride.pixelui public val destinationIds: List<String>
+com.purride.pixelui public val destinationIds: Set<String>
 com.purride.pixelui public val destroyCount: Long,
 com.purride.pixelui public val detachCount: Long,
 com.purride.pixelui public val dialog: PixelComponentColorTokens = PixelComponentColorTokens.Overlay.copy(
@@ -1361,6 +1480,15 @@ com.purride.pixelui public val enabled: Boolean = true,
 com.purride.pixelui public val enabled: Boolean = true,
 com.purride.pixelui public val enabled: Boolean,
 com.purride.pixelui public val end: Int,
+com.purride.pixelui public val entries: List<PixelNavigatorRestoredEntryInspection>,
+com.purride.pixelui public val entries: List<PixelRouteEntry<*, *>>
+com.purride.pixelui public val entries: List<PixelRouteEntryInspection>,
+com.purride.pixelui public val entry: PixelRouteEntry<*, *>,
+com.purride.pixelui public val entry: PixelRouteEntry<A, R>,
+com.purride.pixelui public val entryCount: Int,
+com.purride.pixelui public val entryId: PixelRouteEntryId? = null,
+com.purride.pixelui public val entryId: PixelRouteEntryId? = null,
+com.purride.pixelui public val entryIndex: Int? = null,
 com.purride.pixelui public val error: String = "ERROR",
 com.purride.pixelui public val error: String? = null,
 com.purride.pixelui public val error: String? = null,
@@ -1370,6 +1498,13 @@ com.purride.pixelui public val expanded: Boolean? = null,
 com.purride.pixelui public val expandedHeight: Int,
 com.purride.pixelui public val extraLarge: Int = 12,
 com.purride.pixelui public val extraSmall: Int = 1,
+com.purride.pixelui public val failure: PixelDeepLinkArgumentFailure,
+com.purride.pixelui public val failure: PixelMultiStackSnapshotFailure,
+com.purride.pixelui public val failure: PixelMultiStackSnapshotFailure,
+com.purride.pixelui public val failure: PixelMultiStackSnapshotFailure,
+com.purride.pixelui public val failure: PixelNavigationFailure? = null,
+com.purride.pixelui public val failure: PixelNavigatorSnapshotFailure,
+com.purride.pixelui public val failure: PixelNavigatorSnapshotFailure,
 com.purride.pixelui public val feedback: PixelMotionSpec = PixelMotionSpec(
 com.purride.pixelui public val fieldCount: Int
 com.purride.pixelui public val fillColor: PixelColor? = null,
@@ -1387,6 +1522,7 @@ com.purride.pixelui public val frameDiagnostics: PixelHostFrameDiagnostics?
 com.purride.pixelui public val frameIntervalNanos: Long,
 com.purride.pixelui public val frameNumber: Long,
 com.purride.pixelui public val frameScopeDiagnostics: PixelHostFrameScopeDiagnostics
+com.purride.pixelui public val fromEntryId: PixelRouteEntryId? = null,
 com.purride.pixelui public val garbageCollectionCount: Long?,
 com.purride.pixelui public val graphemeCount: Int
 com.purride.pixelui public val haptic: PixelHapticCapability? = null,
@@ -1410,18 +1546,31 @@ com.purride.pixelui public val iconSmall: Int = 8,
 com.purride.pixelui public val id: Int
 com.purride.pixelui public val id: Int
 com.purride.pixelui public val id: Long = 0L,
+com.purride.pixelui public val id: Long,
+com.purride.pixelui public val id: PixelRouteEntryId,
+com.purride.pixelui public val id: PixelRouteEntryId,
+com.purride.pixelui public val id: PixelRouteEntryId,
+com.purride.pixelui public val id: String,
 com.purride.pixelui public val id: String,
 com.purride.pixelui public val id: String,
 com.purride.pixelui public val id: T,
 com.purride.pixelui public val ignoredTransitionCount: Long,
 com.purride.pixelui public val ime: PixelImeCapability? = null,
 com.purride.pixelui public val inactive: PixelColor,
+com.purride.pixelui public val incomingEntryId: PixelRouteEntryId,
 com.purride.pixelui public val increase: String = "Increase",
 com.purride.pixelui public val initial: PixelAsyncSnapshot<T> = PixelAsyncSnapshot.Loading,
+com.purride.pixelui public val initialRequest: PixelRouteRequest<*, *>,
+com.purride.pixelui public val initialRequest: PixelRouteRequest<*, *>,
+com.purride.pixelui public val initialRequest: PixelRouteRequest<A, R>,
+com.purride.pixelui public val initialStackId: String,
 com.purride.pixelui public val input: PixelTypographyToken = PixelTypographyToken.Default,
 com.purride.pixelui public val inputView: EditText = createDefaultTextInputView(context),
 com.purride.pixelui public val inset: Int = 0,
+com.purride.pixelui public val isAttached: Boolean
+com.purride.pixelui public val isAttached: Boolean
 com.purride.pixelui public val isCollapsed: Boolean
+com.purride.pixelui public val isDisposed: Boolean = false,
 com.purride.pixelui public val isImmediate: Boolean,
 com.purride.pixelui public val isInteractive: Boolean,
 com.purride.pixelui public val isNormal: Boolean
@@ -1435,6 +1584,7 @@ com.purride.pixelui public val itemExtent: Int?,
 com.purride.pixelui public val items: List<Widget>,
 com.purride.pixelui public val key: Any?
 com.purride.pixelui public val key: Any?
+com.purride.pixelui public val keyNames: Set<String>
 com.purride.pixelui public val label: PixelTypographyToken = PixelTypographyToken(
 com.purride.pixelui public val label: String,
 com.purride.pixelui public val label: String,
@@ -1446,6 +1596,8 @@ com.purride.pixelui public val labels: PixelLabelTokens,
 com.purride.pixelui public val languageTag: String = canonicalizeLanguageTag(languageTag)
 com.purride.pixelui public val large: Int = 4,
 com.purride.pixelui public val large: Int = 8,
+com.purride.pixelui public val lastFailure: PixelNavigationFailure?
+com.purride.pixelui public val lastFailure: PixelNavigationFailure? = null,
 com.purride.pixelui public val latestFrameDiagnostics: PixelHostFrameDiagnostics?
 com.purride.pixelui public val layer: PixelOverlayLayer = PixelOverlayLayer.Popup,
 com.purride.pixelui public val layoutDirection: TextDirection = TextDirection.LTR,
@@ -1457,6 +1609,7 @@ com.purride.pixelui public val letterSpacing: Int = 0,
 com.purride.pixelui public val lifecycle: PixelOverlayLifecycle
 com.purride.pixelui public val lifecycleDiagnostics: PixelHostLifecycleDiagnostics
 com.purride.pixelui public val lifecycleState: PixelHostLifecycleState,
+com.purride.pixelui public val lifecycleState: PixelRouteLifecycleState,
 com.purride.pixelui public val lineHeight: Int? = null,
 com.purride.pixelui public val lineSpacing: Int = 0,
 com.purride.pixelui public val listTile: PixelComponentColorTokens = PixelComponentColorTokens.SurfaceControl.copy(
@@ -1472,6 +1625,8 @@ com.purride.pixelui public val logicalHeight: Int,
 com.purride.pixelui public val logicalWidth: Int,
 com.purride.pixelui public val logicalWidth: Int,
 com.purride.pixelui public val low: Int = 1,
+com.purride.pixelui public val maintainState: Boolean = destination.maintainState,
+com.purride.pixelui public val maintainState: Boolean,
 com.purride.pixelui public val mass: Float = 1f,
 com.purride.pixelui public val maximum: Float = 1f,
 com.purride.pixelui public val medium: Int = 2,
@@ -1479,11 +1634,18 @@ com.purride.pixelui public val medium: Int = 2,
 com.purride.pixelui public val medium: Int = 4,
 com.purride.pixelui public val menu: PixelComponentColorTokens = PixelComponentColorTokens.SurfaceControl.copy(
 com.purride.pixelui public val menu: String = "Menu",
+com.purride.pixelui public val message: String,
+com.purride.pixelui public val message: String,
+com.purride.pixelui public val message: String,
+com.purride.pixelui public val message: String,
+com.purride.pixelui public val message: String,
+com.purride.pixelui public val migratedFromOlderSchema: Boolean
 com.purride.pixelui public val minimum: Float = 0f,
 com.purride.pixelui public val minimumHeight: Int = 0,
 com.purride.pixelui public val minimumWidth: Int = 0,
 com.purride.pixelui public val missedVsyncCount: Int,
 com.purride.pixelui public val modal: Boolean = barrier != null,
+com.purride.pixelui public val mode: PixelTypedDeepLinkNavigationMode,
 com.purride.pixelui public val motion: PixelMotionThemeData = PixelMotionThemeData.Default,
 com.purride.pixelui public val motion: PixelOverlayMotion = PixelOverlayMotion.None,
 com.purride.pixelui public val motionSettings: PixelMotionSettings = PixelMotionSettings.Default,
@@ -1491,6 +1653,7 @@ com.purride.pixelui public val navigationBar: PixelComponentColorTokens = PixelC
 com.purride.pixelui public val navigationBar: String,
 com.purride.pixelui public val navigationRail: PixelComponentColorTokens = PixelComponentColorTokens.SurfaceControl.copy(
 com.purride.pixelui public val navigationRail: String,
+com.purride.pixelui public val navigatorState: PixelNavigatorState?
 com.purride.pixelui public val none: Int = 0,
 com.purride.pixelui public val none: Int = 0,
 com.purride.pixelui public val none: Int = 0,
@@ -1517,8 +1680,10 @@ com.purride.pixelui public val onSetText: ((String) -> Boolean)? = null,
 com.purride.pixelui public val onSurface: PixelColor,
 com.purride.pixelui public val onSurfaceVariant: PixelColor,
 com.purride.pixelui public val onWarning: PixelColor,
+com.purride.pixelui public val operation: PixelNavigatorOperation,
 com.purride.pixelui public val orientation: PixelWindowOrientation = when
 com.purride.pixelui public val outcome: PixelOverlayOutcome<R>?
+com.purride.pixelui public val outgoingEntryId: PixelRouteEntryId,
 com.purride.pixelui public val outline: PixelColor,
 com.purride.pixelui public val outlineVariant: PixelColor,
 com.purride.pixelui public val overlayMinimumWidth: Int = 40,
@@ -1529,6 +1694,9 @@ com.purride.pixelui public val padding: EdgeInsets = EdgeInsets.all(0),
 com.purride.pixelui public val padding: PixelWindowInsets = viewPadding,
 com.purride.pixelui public val paintNanos: Long,
 com.purride.pixelui public val paintedPixelCount: Long,
+com.purride.pixelui public val parameterName: String,
+com.purride.pixelui public val parentEntry: PixelRouteEntry<*, *>? = null,
+com.purride.pixelui public val parentEntry: PixelRouteEntry<*, *>? = null,
 com.purride.pixelui public val parentId: Long? = null,
 com.purride.pixelui public val pauseCount: Long,
 com.purride.pixelui public val permission: String,
@@ -1538,8 +1706,11 @@ com.purride.pixelui public val pill: Int = 999,
 com.purride.pixelui public val pixelShape: PixelShape = PixelShape.SQUARE,
 com.purride.pixelui public val pixelShape: PixelShape = PixelShape.SQUARE,
 com.purride.pixelui public val pixelShape: PixelShape = PixelShape.SQUARE,
+com.purride.pixelui public val plan: PixelNavigatorRestorePlan,
+com.purride.pixelui public val policy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset,
 com.purride.pixelui public val popoverEnter: PixelMotionSpec = PixelMotionSpec(
 com.purride.pixelui public val popoverExit: PixelMotionSpec = PixelMotionSpec(
+com.purride.pixelui public val predictiveBackProgress: Float?
 com.purride.pixelui public val primary: PixelColor,
 com.purride.pixelui public val profile: ScreenProfile,
 com.purride.pixelui public val progress: Float,
@@ -1549,7 +1720,17 @@ com.purride.pixelui public val radii: PixelRadiusTokens = PixelRadiusTokens.Defa
 com.purride.pixelui public val radio: PixelComponentColorTokens = PixelComponentColorTokens.SelectionControl.copy(
 com.purride.pixelui public val rangeInfo: PixelSemanticsRangeInfo? = null,
 com.purride.pixelui public val rasterizer: PixelTextRasterizer,
+com.purride.pixelui public val rawUri: String,
+com.purride.pixelui public val rawUri: String,
+com.purride.pixelui public val rawUri: String,
+com.purride.pixelui public val rawValue: String? = null,
+com.purride.pixelui public val reason: PixelDeepLinkArgumentFailureReason,
+com.purride.pixelui public val reason: PixelMultiStackSnapshotFailureReason,
+com.purride.pixelui public val reason: PixelNavigationFailureReason,
+com.purride.pixelui public val reason: PixelNavigatorSnapshotFailureReason,
 com.purride.pixelui public val reason: PixelOverlayDismissReason,
+com.purride.pixelui public val reason: PixelRouteCancellationReason,
+com.purride.pixelui public val reason: PixelTypedDeepLinkRejectionReason,
 com.purride.pixelui public val reason: String,
 com.purride.pixelui public val reason: String,
 com.purride.pixelui public val reduceMotion: Boolean = false,
@@ -1559,6 +1740,10 @@ com.purride.pixelui public val refreshRateHz: Float? = null,
 com.purride.pixelui public val renderCacheHit: Boolean,
 com.purride.pixelui public val required: Boolean = false,
 com.purride.pixelui public val resolver: PixelLocalizationResolver = PixelLocalizationResolver.Default,
+com.purride.pixelui public val restorationId: String,
+com.purride.pixelui public val restorer: PixelRouteStateRestorer,
+com.purride.pixelui public val resultChannel: PixelRouteResultChannel<R> = PixelRouteResultChannel.create(onOutcome)
+com.purride.pixelui public val resultState: PixelRouteResultState,
 com.purride.pixelui public val resumeCount: Long,
 com.purride.pixelui public val right: Float,
 com.purride.pixelui public val role: PixelMotionRole = PixelMotionRole.Spatial,
@@ -1570,6 +1755,9 @@ com.purride.pixelui public val rowCount: Int,
 com.purride.pixelui public val rowIndex: Int,
 com.purride.pixelui public val rowSpan: Int = 1,
 com.purride.pixelui public val savedState: PixelSavedStateCapability? = null,
+com.purride.pixelui public val schemaVersion: Int
+com.purride.pixelui public val schemaVersion: Int,
+com.purride.pixelui public val schemaVersion: Int,
 com.purride.pixelui public val scrim: PixelColor,
 com.purride.pixelui public val scrollbar: PixelComponentColorTokens = PixelComponentColorTokens.Scrollbar,
 com.purride.pixelui public val scrollbar: String = "Scrollbar",
@@ -1586,6 +1774,7 @@ com.purride.pixelui public val selectionEnd: Int = selectionStart,
 com.purride.pixelui public val selectionMode: PixelSemanticsSelectionMode = PixelSemanticsSelectionMode.NONE,
 com.purride.pixelui public val selectionStart: Int = -1,
 com.purride.pixelui public val selectionStart: Int = text.length,
+com.purride.pixelui public val sequence: Long,
 com.purride.pixelui public val settings: PixelMotionSettings,
 com.purride.pixelui public val shadow: PixelColor,
 com.purride.pixelui public val shadowColor: PixelColor? = null,
@@ -1604,15 +1793,29 @@ com.purride.pixelui public val small: Int = 2,
 com.purride.pixelui public val snackbar: PixelComponentColorTokens = PixelComponentColorTokens.Notification,
 com.purride.pixelui public val snackbar: String = "Snackbar",
 com.purride.pixelui public val snap: Boolean,
+com.purride.pixelui public val snapshot: PixelMultiStackSnapshot,
+com.purride.pixelui public val snapshot: PixelMultiStackSnapshot,
 com.purride.pixelui public val source: PixelAsyncSource<T>,
+com.purride.pixelui public val sourceSchemaVersion: Int,
 com.purride.pixelui public val spacing: Int,
 com.purride.pixelui public val spacing: Int,
 com.purride.pixelui public val spacing: PixelSpacingTokens = PixelSpacingTokens.Default,
 com.purride.pixelui public val spring: PixelSpringSpec? = null,
 com.purride.pixelui public val spring: PixelSpringSpec?,
+com.purride.pixelui public val stackId: String? = null,
+com.purride.pixelui public val stackIds: Set<String>
+com.purride.pixelui public val stackIds: Set<String>
+com.purride.pixelui public val stackIds: Set<String>,
+com.purride.pixelui public val stacks: List<PixelTypedNavigatorStack<*, *>>,
 com.purride.pixelui public val start: Int,
 com.purride.pixelui public val startCount: Long,
 com.purride.pixelui public val state: PixelDisplayFeatureState = PixelDisplayFeatureState.UNKNOWN,
+com.purride.pixelui public val state: PixelListState,
+com.purride.pixelui public val stateBucket: PixelRouteStateBucket
+com.purride.pixelui public val stateBucket: PixelRouteStateBucket,
+com.purride.pixelui public val stateKeyNames: Set<String>,
+com.purride.pixelui public val stateKeys: Set<String>,
+com.purride.pixelui public val stateSchemaVersion: Int,
 com.purride.pixelui public val steps: Int = 0,
 com.purride.pixelui public val stiffness: Float = 500f,
 com.purride.pixelui public val stopCount: Long,
@@ -1644,6 +1847,7 @@ com.purride.pixelui public val thin: Int = 1,
 com.purride.pixelui public val tickerProvider: PixelTickerProvider
 com.purride.pixelui public val timings: PixelFrameTimings,
 com.purride.pixelui public val title: PixelTypographyToken = PixelTypographyToken.Default,
+com.purride.pixelui public val toEntryId: PixelRouteEntryId? = null,
 com.purride.pixelui public val toast: PixelComponentColorTokens = PixelComponentColorTokens.Notification,
 com.purride.pixelui public val toast: String = "Toast",
 com.purride.pixelui public val tokens: PixelThemeTokens,
@@ -1659,8 +1863,16 @@ com.purride.pixelui public val track: PixelColor,
 com.purride.pixelui public val trackHeight: Int = 7,
 com.purride.pixelui public val transition: PixelMotionTransitionPreset = PixelMotionTransitionPreset.Fade,
 com.purride.pixelui public val transition: PixelMotionTransitionPreset,
+com.purride.pixelui public val transition: PixelRouteTransitionInspection? = null,
+com.purride.pixelui public val transitionBuilder: PixelRouteTransitionBuilder? = null,
+com.purride.pixelui public val transitionBuilder: PixelRouteTransitionBuilder? = null,
+com.purride.pixelui public val transitionBuilder: PixelRouteTransitionBuilder? = null,
+com.purride.pixelui public val transitionDuration: Duration = 200.milliseconds,
+com.purride.pixelui public val transitionDuration: Duration = 200.milliseconds,
+com.purride.pixelui public val transitionDuration: Duration = 200.milliseconds,
 com.purride.pixelui public val transitionSequence: Long,
 com.purride.pixelui public val type: PixelDisplayFeatureType = PixelDisplayFeatureType.UNKNOWN,
+com.purride.pixelui public val type: PixelNavigationEventType,
 com.purride.pixelui public val typography: PixelTypographyTokens = PixelTypographyTokens.Default,
 com.purride.pixelui public val unattributedNanos: Long,
 com.purride.pixelui public val uri: String,
@@ -1673,6 +1885,9 @@ com.purride.pixelui public val valueAdjuster: String = "ValueAdjuster",
 com.purride.pixelui public val viewInsets: PixelWindowInsets = PixelWindowInsets.Zero,
 com.purride.pixelui public val viewPadding: PixelWindowInsets = PixelWindowInsets.Zero,
 com.purride.pixelui public val vsync: PixelTickerProvider,
+com.purride.pixelui public val vsync: PixelTickerProvider,
+com.purride.pixelui public val vsync: PixelTickerProvider,
+com.purride.pixelui public val vsync: PixelTickerProvider,
 com.purride.pixelui public val warning: PixelColor,
 com.purride.pixelui public val widget: Widget
 com.purride.pixelui public val width: Float
@@ -1683,6 +1898,7 @@ com.purride.pixelui public val widthDp: Float = physicalWidthPx / density
 com.purride.pixelui public val widthSizeClass: PixelWindowSizeClass = PixelWindowSizeClass.forWidthDp(widthDp)
 com.purride.pixelui public val workload: PixelFrameWorkload,
 com.purride.pixelui public value class PixelControlStateSet private constructor(
+com.purride.pixelui public var activeStackId: String = initialStackId
 com.purride.pixelui public var androidPredictiveBackEnabled: Boolean = true
 com.purride.pixelui public var asyncValidators: List<AsyncFormValidator> = emptyList(),
 com.purride.pixelui public var backDispatcher: PixelBackDispatcher? = null
@@ -1698,18 +1914,21 @@ com.purride.pixelui public var frameStatsObserver: ((PixelHostFrameStats) -> Uni
 com.purride.pixelui public var hostBridge: PixelHostBridge? = null
 com.purride.pixelui public var isFocused: Boolean = false
 com.purride.pixelui public var layoutDirectionOverride: TextDirection? = null
+com.purride.pixelui public var lifecycleState: PixelRouteLifecycleState = PixelRouteLifecycleState.Created
 com.purride.pixelui public var motionSettingsOverride: PixelMotionSettings? = null
 com.purride.pixelui public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
 com.purride.pixelui public var offPixelColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
 com.purride.pixelui public var onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
 com.purride.pixelui public var onTextInput: ((PixelTextInputEvent) -> Boolean)? = null
 com.purride.pixelui public var onUnhandledBack: (() -> Boolean)? = null
+com.purride.pixelui public var outcome: PixelRouteOutcome<R>? = null
 com.purride.pixelui public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
 com.purride.pixelui public var primaryFocus: FocusNode?
 com.purride.pixelui public var profilePolicy: PixelHostProfilePolicy = PixelHostProfilePolicy.Fixed(screenProfile)
 com.purride.pixelui public var profilePreference: PixelHostProfilePreference? = null
 com.purride.pixelui public var screenProfile: ScreenProfile = ScreenProfile(
 com.purride.pixelui public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
+com.purride.pixelui public var state: PixelRouteResultState = PixelRouteResultState.Pending
 com.purride.pixelui public var submitErrorText: String? = null
 com.purride.pixelui public var submitState: FormSubmitState = FormSubmitState.IDLE
 com.purride.pixelui public var textDirection: TextDirection = TextDirection.LTR
@@ -2103,332 +2322,3 @@ com.purride.pixelui.widgets.animated public fun AnimatedSprite(
 com.purride.pixelui.widgets.animated public fun AnimatedSwitcher(
 com.purride.pixelui.widgets.animated public fun AnimatedVisibility(
 com.purride.pixelui.widgets.animated public fun quantizeOpacity(t: Float): Float = when
-com.purride.pixelui.widgets.navigation public abstract class PixelRouteDestination<A : Any, R>(public val id: String)
-com.purride.pixelui.widgets.navigation public abstract class PixelRouteSnapshotAdapter<A : Any, R>(
-com.purride.pixelui.widgets.navigation public abstract fun build(
-com.purride.pixelui.widgets.navigation public class Encoded internal constructor(
-com.purride.pixelui.widgets.navigation public class PixelMultiStackNavigator(
-com.purride.pixelui.widgets.navigation public class PixelMultiStackNavigatorController(
-com.purride.pixelui.widgets.navigation public class PixelMultiStackSnapshot internal constructor(
-com.purride.pixelui.widgets.navigation public class PixelNavigator(
-com.purride.pixelui.widgets.navigation public class PixelNavigatorRestorePlan internal constructor(
-com.purride.pixelui.widgets.navigation public class PixelNavigatorSnapshotCodec
-com.purride.pixelui.widgets.navigation public class PixelNavigatorState private constructor(
-com.purride.pixelui.widgets.navigation public class PixelNestedNavigator(
-com.purride.pixelui.widgets.navigation public class PixelNestedNavigatorController
-com.purride.pixelui.widgets.navigation public class PixelRouteEntry<A : Any, R> private constructor(
-com.purride.pixelui.widgets.navigation public class PixelRouteEntryScope<A : Any, R> private constructor(
-com.purride.pixelui.widgets.navigation public class PixelRouteResultChannel<R> private constructor(
-com.purride.pixelui.widgets.navigation public class PixelRouteScrollRestoration(
-com.purride.pixelui.widgets.navigation public class PixelRouteSnapshotRegistry(
-com.purride.pixelui.widgets.navigation public class PixelRouteStateBucket private constructor()
-com.purride.pixelui.widgets.navigation public class PixelRouteStateKey<T>(public val name: String)
-com.purride.pixelui.widgets.navigation public class PixelTypedDeepLinkResolver(
-com.purride.pixelui.widgets.navigation public class PixelTypedDeepLinkRoute<A : Any, R>(
-com.purride.pixelui.widgets.navigation public companion object
-com.purride.pixelui.widgets.navigation public companion object
-com.purride.pixelui.widgets.navigation public companion object
-com.purride.pixelui.widgets.navigation public const val PixelMultiStackSnapshotBundleKey: String =
-com.purride.pixelui.widgets.navigation public const val PixelMultiStackSnapshotSchemaVersion: Int = 1
-com.purride.pixelui.widgets.navigation public const val PixelNavigatorBundleKey: String = "com.purride.pixelui.navigator.routeNames"
-com.purride.pixelui.widgets.navigation public const val PixelNavigatorPersistentSnapshotBundleKey: String =
-com.purride.pixelui.widgets.navigation public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 2
-com.purride.pixelui.widgets.navigation public data class Cancelled(
-com.purride.pixelui.widgets.navigation public data class Decoded(
-com.purride.pixelui.widgets.navigation public data class Decoded(
-com.purride.pixelui.widgets.navigation public data class Decoded(
-com.purride.pixelui.widgets.navigation public data class Decoded<T : Any>(public val value: T) : PixelRoutePayloadDecodeResult<T>
-com.purride.pixelui.widgets.navigation public data class Encoded(
-com.purride.pixelui.widgets.navigation public data class PixelDeepLink(
-com.purride.pixelui.widgets.navigation public data class PixelDeepLinkArgumentFailure(
-com.purride.pixelui.widgets.navigation public data class PixelDeepLinkDecodeRejected(
-com.purride.pixelui.widgets.navigation public data class PixelDeepLinkDecoded<A : Any>(
-com.purride.pixelui.widgets.navigation public data class PixelMultiStackSnapshotFailure(
-com.purride.pixelui.widgets.navigation public data class PixelNavigationEvent(
-com.purride.pixelui.widgets.navigation public data class PixelNavigationFailure(
-com.purride.pixelui.widgets.navigation public data class PixelNavigatorInspectionSnapshot(
-com.purride.pixelui.widgets.navigation public data class PixelNavigatorRestoredEntryInspection(
-com.purride.pixelui.widgets.navigation public data class PixelNavigatorSnapshot(
-com.purride.pixelui.widgets.navigation public data class PixelNavigatorSnapshotFailure(
-com.purride.pixelui.widgets.navigation public data class PixelNavigatorStack(
-com.purride.pixelui.widgets.navigation public data class PixelRoute(
-com.purride.pixelui.widgets.navigation public data class PixelRouteEntryId(public val value: Long)
-com.purride.pixelui.widgets.navigation public data class PixelRouteEntryInspection(
-com.purride.pixelui.widgets.navigation public data class PixelRouteRequest<A : Any, R>(
-com.purride.pixelui.widgets.navigation public data class PixelRouteTransitionInspection(
-com.purride.pixelui.widgets.navigation public data class PixelTypedDeepLinkNavigated(
-com.purride.pixelui.widgets.navigation public data class PixelTypedDeepLinkNotMatched(
-com.purride.pixelui.widgets.navigation public data class PixelTypedDeepLinkRejected(
-com.purride.pixelui.widgets.navigation public data class PixelTypedNavigatorStack<A : Any, R>(
-com.purride.pixelui.widgets.navigation public data class Rejected(
-com.purride.pixelui.widgets.navigation public data class Rejected(
-com.purride.pixelui.widgets.navigation public data class Rejected(
-com.purride.pixelui.widgets.navigation public data class Rejected(
-com.purride.pixelui.widgets.navigation public data class Rejected(
-com.purride.pixelui.widgets.navigation public data class Rejected(public val message: String) : PixelRoutePayloadDecodeResult<Nothing>
-com.purride.pixelui.widgets.navigation public data class Rejected(public val message: String) : PixelRouteStateDecodeResult
-com.purride.pixelui.widgets.navigation public data class Restored(
-com.purride.pixelui.widgets.navigation public data class Success<out R>(public val value: R) : PixelRouteOutcome<R>
-com.purride.pixelui.widgets.navigation public enum class PixelDeepLinkArgumentFailureReason
-com.purride.pixelui.widgets.navigation public enum class PixelMultiStackSnapshotFailureReason
-com.purride.pixelui.widgets.navigation public enum class PixelNavigationAction
-com.purride.pixelui.widgets.navigation public enum class PixelNavigationEventType
-com.purride.pixelui.widgets.navigation public enum class PixelNavigationFailureReason
-com.purride.pixelui.widgets.navigation public enum class PixelNavigatorOperation
-com.purride.pixelui.widgets.navigation public enum class PixelNavigatorSnapshotFailureReason
-com.purride.pixelui.widgets.navigation public enum class PixelRouteCancellationReason
-com.purride.pixelui.widgets.navigation public enum class PixelRouteLifecycleState
-com.purride.pixelui.widgets.navigation public enum class PixelRouteResultState
-com.purride.pixelui.widgets.navigation public enum class PixelRouteTransition
-com.purride.pixelui.widgets.navigation public enum class PixelStackSelectionResult
-com.purride.pixelui.widgets.navigation public enum class PixelTypedDeepLinkNavigationMode
-com.purride.pixelui.widgets.navigation public enum class PixelTypedDeepLinkRejectionReason
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> pixelRouteDestination(
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> push(
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> push(request: PixelRouteRequest<A, R>): PixelRouteEntry<A, R>
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> replace(
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> replace(
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> typed(
-com.purride.pixelui.widgets.navigation public fun <A : Any, R> typed(
-com.purride.pixelui.widgets.navigation public fun <NextA : Any> replaceWith(
-com.purride.pixelui.widgets.navigation public fun <R> complete(entry: PixelRouteEntry<*, R>, result: R): Boolean
-com.purride.pixelui.widgets.navigation public fun <T> read(key: PixelRouteStateKey<T>): T?
-com.purride.pixelui.widgets.navigation public fun <T> remove(key: PixelRouteStateKey<T>): T? = values.remove(key) as T?
-com.purride.pixelui.widgets.navigation public fun <T> write(key: PixelRouteStateKey<T>, value: T)
-com.purride.pixelui.widgets.navigation public fun Bundle.getPixelMultiStackSnapshot(
-com.purride.pixelui.widgets.navigation public fun Bundle.getPixelNavigatorPersistentSnapshotBytes(
-com.purride.pixelui.widgets.navigation public fun Bundle.getPixelNavigatorSnapshot(
-com.purride.pixelui.widgets.navigation public fun PixelMultiStackNavigatorController.handleTypedDeepLink(
-com.purride.pixelui.widgets.navigation public fun PixelMultiStackNavigatorController.persistentSnapshot(
-com.purride.pixelui.widgets.navigation public fun PixelMultiStackNavigatorController.restorePersistentSnapshot(
-com.purride.pixelui.widgets.navigation public fun PixelMultiStackSnapshot.saveToBundle(
-com.purride.pixelui.widgets.navigation public fun PixelNavigatorSnapshot.saveToBundle(
-com.purride.pixelui.widgets.navigation public fun PixelNavigatorSnapshotEncodeResult.Encoded.saveToBundle(
-com.purride.pixelui.widgets.navigation public fun PixelNavigatorState.handleTypedDeepLink(
-com.purride.pixelui.widgets.navigation public fun PixelNavigatorState.handleTypedDeepLink(
-com.purride.pixelui.widgets.navigation public fun addObserver(observer: PixelNavigationObserver)
-com.purride.pixelui.widgets.navigation public fun build(
-com.purride.pixelui.widgets.navigation public fun cancel(
-com.purride.pixelui.widgets.navigation public fun cancel(
-com.purride.pixelui.widgets.navigation public fun clear()
-com.purride.pixelui.widgets.navigation public fun clear(animated: Boolean = true): Boolean
-com.purride.pixelui.widgets.navigation public fun complete(result: R): Boolean = owner.completeEntry(entry, result)
-com.purride.pixelui.widgets.navigation public fun contains(destinationId: String): Boolean = destinationId in adapters
-com.purride.pixelui.widgets.navigation public fun decode(
-com.purride.pixelui.widgets.navigation public fun decode(
-com.purride.pixelui.widgets.navigation public fun decode(link: PixelDeepLink): PixelDeepLinkDecodeResult<A>
-com.purride.pixelui.widgets.navigation public fun decodeArguments(link: PixelDeepLink): PixelDeepLinkDecodeResult<A>
-com.purride.pixelui.widgets.navigation public fun encode(
-com.purride.pixelui.widgets.navigation public fun encode(value: T): ByteArray
-com.purride.pixelui.widgets.navigation public fun handleBack(switchToInitialStack: Boolean = true): Boolean
-com.purride.pixelui.widgets.navigation public fun handleDeepLink(
-com.purride.pixelui.widgets.navigation public fun handleDeepLink(
-com.purride.pixelui.widgets.navigation public fun inspectionSnapshot(): PixelNavigatorInspectionSnapshot
-com.purride.pixelui.widgets.navigation public fun interface PixelDeepLinkArgumentDecoder<A : Any>
-com.purride.pixelui.widgets.navigation public fun interface PixelDeepLinkResolver
-com.purride.pixelui.widgets.navigation public fun interface PixelNavigationObserver
-com.purride.pixelui.widgets.navigation public fun interface PixelRouteStateRestorer
-com.purride.pixelui.widgets.navigation public fun interface PixelRouteTransitionBuilder
-com.purride.pixelui.widgets.navigation public fun interface PixelTypedDeepLinkMatcher
-com.purride.pixelui.widgets.navigation public fun matches(link: PixelDeepLink): Boolean
-com.purride.pixelui.widgets.navigation public fun matches(link: PixelDeepLink): Boolean = matcher.matches(link)
-com.purride.pixelui.widgets.navigation public fun maybeOf(context: BuildContext): PixelNavigatorState?
-com.purride.pixelui.widgets.navigation public fun maybePop(): Boolean = pop()
-com.purride.pixelui.widgets.navigation public fun maybePop(result: Any?): Boolean = pop(result)
-com.purride.pixelui.widgets.navigation public fun navigatorState(stackId: String): PixelNavigatorState? = navigatorStates[stackId]
-com.purride.pixelui.widgets.navigation public fun of(context: BuildContext): PixelNavigatorState
-com.purride.pixelui.widgets.navigation public fun onNavigationEvent(event: PixelNavigationEvent)
-com.purride.pixelui.widgets.navigation public fun parse(uri: String): PixelDeepLink
-com.purride.pixelui.widgets.navigation public fun persistentSnapshot(
-com.purride.pixelui.widgets.navigation public fun persistentSnapshot(
-com.purride.pixelui.widgets.navigation public fun pop(): Boolean = pop(result = null)
-com.purride.pixelui.widgets.navigation public fun pop(result: Any?): Boolean
-com.purride.pixelui.widgets.navigation public fun popToRoot(animated: Boolean = true)
-com.purride.pixelui.widgets.navigation public fun push(
-com.purride.pixelui.widgets.navigation public fun push(route: PixelRoute)
-com.purride.pixelui.widgets.navigation public fun queryParameter(name: String): String? = queryParameters[name]?.firstOrNull()
-com.purride.pixelui.widgets.navigation public fun remove(entry: PixelRouteEntry<*, *>, animated: Boolean = true): Boolean
-com.purride.pixelui.widgets.navigation public fun remove(entryId: PixelRouteEntryId, animated: Boolean = true): Boolean
-com.purride.pixelui.widgets.navigation public fun removeObserver(observer: PixelNavigationObserver)
-com.purride.pixelui.widgets.navigation public fun replace(route: PixelRoute, animated: Boolean = true)
-com.purride.pixelui.widgets.navigation public fun resolve(link: PixelDeepLink): List<PixelRoute>?
-com.purride.pixelui.widgets.navigation public fun restore(
-com.purride.pixelui.widgets.navigation public fun restore(plan: PixelNavigatorRestorePlan): Boolean
-com.purride.pixelui.widgets.navigation public fun restore(plan: PixelNavigatorRestorePlan): Boolean
-com.purride.pixelui.widgets.navigation public fun restore(stateBucket: PixelRouteStateBucket)
-com.purride.pixelui.widgets.navigation public fun restoreFromBundle(
-com.purride.pixelui.widgets.navigation public fun restorePersistentSnapshot(
-com.purride.pixelui.widgets.navigation public fun restorePersistentSnapshot(
-com.purride.pixelui.widgets.navigation public fun restorePersistentSnapshotFromBundle(
-com.purride.pixelui.widgets.navigation public fun savePersistentSnapshotToBundle(
-com.purride.pixelui.widgets.navigation public fun saveToBundle(
-com.purride.pixelui.widgets.navigation public fun selectStack(
-com.purride.pixelui.widgets.navigation public fun snapshot(): PixelNavigatorSnapshot
-com.purride.pixelui.widgets.navigation public fun snapshotBytes(stackId: String): ByteArray? = childSnapshots[stackId]?.copyOf()
-com.purride.pixelui.widgets.navigation public interface PixelRoutePayloadCodec<T : Any>
-com.purride.pixelui.widgets.navigation public open fun canPop(entry: PixelRouteEntry<A, R>): Boolean = true
-com.purride.pixelui.widgets.navigation public open fun decodeRouteState(
-com.purride.pixelui.widgets.navigation public open fun encodeRouteState(entry: PixelRouteEntry<A, R>): Map<String, ByteArray>
-com.purride.pixelui.widgets.navigation public open fun onDispose(entry: PixelRouteEntry<A, R>): Unit = Unit
-com.purride.pixelui.widgets.navigation public open fun onEnter(entry: PixelRouteEntry<A, R>): Unit = Unit
-com.purride.pixelui.widgets.navigation public open fun onExit(entry: PixelRouteEntry<A, R>): Unit = Unit
-com.purride.pixelui.widgets.navigation public open val maintainState: Boolean = true
-com.purride.pixelui.widgets.navigation public open val stateSchemaVersion: Int = 1
-com.purride.pixelui.widgets.navigation public open val transition: PixelRouteTransition? = null
-com.purride.pixelui.widgets.navigation public open val transitionBuilder: PixelRouteTransitionBuilder? = null
-com.purride.pixelui.widgets.navigation public operator fun <T> contains(key: PixelRouteStateKey<T>): Boolean = values.containsKey(key)
-com.purride.pixelui.widgets.navigation public sealed interface PixelDeepLinkDecodeResult<out A : Any>
-com.purride.pixelui.widgets.navigation public sealed interface PixelMultiStackRestoreResult
-com.purride.pixelui.widgets.navigation public sealed interface PixelMultiStackSnapshotDecodeResult
-com.purride.pixelui.widgets.navigation public sealed interface PixelMultiStackSnapshotEncodeResult
-com.purride.pixelui.widgets.navigation public sealed interface PixelNavigatorSnapshotDecodeResult
-com.purride.pixelui.widgets.navigation public sealed interface PixelNavigatorSnapshotEncodeResult
-com.purride.pixelui.widgets.navigation public sealed interface PixelNavigatorStackDefinition
-com.purride.pixelui.widgets.navigation public sealed interface PixelRouteOutcome<out R>
-com.purride.pixelui.widgets.navigation public sealed interface PixelRoutePayloadDecodeResult<out T : Any>
-com.purride.pixelui.widgets.navigation public sealed interface PixelRouteStateDecodeResult
-com.purride.pixelui.widgets.navigation public sealed interface PixelTypedDeepLinkResult
-com.purride.pixelui.widgets.navigation public val action: PixelNavigationAction,
-com.purride.pixelui.widgets.navigation public val action: PixelNavigationAction,
-com.purride.pixelui.widgets.navigation public val activeNavigatorState: PixelNavigatorState?
-com.purride.pixelui.widgets.navigation public val activeStackId: String,
-com.purride.pixelui.widgets.navigation public val activeStackId: String,
-com.purride.pixelui.widgets.navigation public val argumentCodec: PixelRoutePayloadCodec<A>,
-com.purride.pixelui.widgets.navigation public val argumentFailure: PixelDeepLinkArgumentFailure? = null,
-com.purride.pixelui.widgets.navigation public val argumentSchemaVersion: Int,
-com.purride.pixelui.widgets.navigation public val arguments: A
-com.purride.pixelui.widgets.navigation public val arguments: A,
-com.purride.pixelui.widgets.navigation public val arguments: A,
-com.purride.pixelui.widgets.navigation public val arguments: A,
-com.purride.pixelui.widgets.navigation public val backEnabled: Boolean = true,
-com.purride.pixelui.widgets.navigation public val backEnabled: Boolean = true,
-com.purride.pixelui.widgets.navigation public val bytes: ByteArray
-com.purride.pixelui.widgets.navigation public val canHandleBack: Boolean
-com.purride.pixelui.widgets.navigation public val canPop: Boolean
-com.purride.pixelui.widgets.navigation public val canPop: Boolean,
-com.purride.pixelui.widgets.navigation public val child: Widget,
-com.purride.pixelui.widgets.navigation public val childFailure: PixelNavigatorSnapshotFailure? = null,
-com.purride.pixelui.widgets.navigation public val controller: PixelListController,
-com.purride.pixelui.widgets.navigation public val controller: PixelMultiStackNavigatorController,
-com.purride.pixelui.widgets.navigation public val currentEntry: PixelRouteEntry<*, *>
-com.purride.pixelui.widgets.navigation public val currentEntryId: PixelRouteEntryId,
-com.purride.pixelui.widgets.navigation public val currentEntryId: PixelRouteEntryId?,
-com.purride.pixelui.widgets.navigation public val currentRoute: PixelRoute
-com.purride.pixelui.widgets.navigation public val currentSchemaVersion: Int,
-com.purride.pixelui.widgets.navigation public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
-com.purride.pixelui.widgets.navigation public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
-com.purride.pixelui.widgets.navigation public val defaultTransition: PixelRouteTransition = PixelRouteTransition.SlideHorizontal,
-com.purride.pixelui.widgets.navigation public val destination: PixelRouteDestination<A, R>,
-com.purride.pixelui.widgets.navigation public val destination: PixelRouteDestination<A, R>,
-com.purride.pixelui.widgets.navigation public val destination: PixelRouteDestination<A, R>,
-com.purride.pixelui.widgets.navigation public val destination: PixelRouteDestination<A, R>,
-com.purride.pixelui.widgets.navigation public val destinationId: String,
-com.purride.pixelui.widgets.navigation public val destinationId: String,
-com.purride.pixelui.widgets.navigation public val destinationId: String,
-com.purride.pixelui.widgets.navigation public val destinationId: String? = null,
-com.purride.pixelui.widgets.navigation public val destinationId: String? = null,
-com.purride.pixelui.widgets.navigation public val destinationId: String? = null,
-com.purride.pixelui.widgets.navigation public val destinationIds: List<String>
-com.purride.pixelui.widgets.navigation public val destinationIds: Set<String>
-com.purride.pixelui.widgets.navigation public val entries: List<PixelNavigatorRestoredEntryInspection>,
-com.purride.pixelui.widgets.navigation public val entries: List<PixelRouteEntry<*, *>>
-com.purride.pixelui.widgets.navigation public val entries: List<PixelRouteEntryInspection>,
-com.purride.pixelui.widgets.navigation public val entry: PixelRouteEntry<*, *>,
-com.purride.pixelui.widgets.navigation public val entry: PixelRouteEntry<A, R>,
-com.purride.pixelui.widgets.navigation public val entryCount: Int,
-com.purride.pixelui.widgets.navigation public val entryId: PixelRouteEntryId? = null,
-com.purride.pixelui.widgets.navigation public val entryId: PixelRouteEntryId? = null,
-com.purride.pixelui.widgets.navigation public val entryIndex: Int? = null,
-com.purride.pixelui.widgets.navigation public val failure: PixelDeepLinkArgumentFailure,
-com.purride.pixelui.widgets.navigation public val failure: PixelMultiStackSnapshotFailure,
-com.purride.pixelui.widgets.navigation public val failure: PixelMultiStackSnapshotFailure,
-com.purride.pixelui.widgets.navigation public val failure: PixelMultiStackSnapshotFailure,
-com.purride.pixelui.widgets.navigation public val failure: PixelNavigationFailure? = null,
-com.purride.pixelui.widgets.navigation public val failure: PixelNavigatorSnapshotFailure,
-com.purride.pixelui.widgets.navigation public val failure: PixelNavigatorSnapshotFailure,
-com.purride.pixelui.widgets.navigation public val fromEntryId: PixelRouteEntryId? = null,
-com.purride.pixelui.widgets.navigation public val id: Long,
-com.purride.pixelui.widgets.navigation public val id: PixelRouteEntryId,
-com.purride.pixelui.widgets.navigation public val id: PixelRouteEntryId,
-com.purride.pixelui.widgets.navigation public val id: PixelRouteEntryId,
-com.purride.pixelui.widgets.navigation public val id: String
-com.purride.pixelui.widgets.navigation public val incomingEntryId: PixelRouteEntryId,
-com.purride.pixelui.widgets.navigation public val initialRequest: PixelRouteRequest<A, R>,
-com.purride.pixelui.widgets.navigation public val initialRoute: PixelRoute,
-com.purride.pixelui.widgets.navigation public val initialRoute: PixelRoute,
-com.purride.pixelui.widgets.navigation public val initialRoute: PixelRoute,
-com.purride.pixelui.widgets.navigation public val initialStackId: String,
-com.purride.pixelui.widgets.navigation public val isAttached: Boolean
-com.purride.pixelui.widgets.navigation public val isAttached: Boolean
-com.purride.pixelui.widgets.navigation public val isDisposed: Boolean = false,
-com.purride.pixelui.widgets.navigation public val keyNames: Set<String>
-com.purride.pixelui.widgets.navigation public val lastFailure: PixelNavigationFailure?
-com.purride.pixelui.widgets.navigation public val lastFailure: PixelNavigationFailure? = null,
-com.purride.pixelui.widgets.navigation public val lifecycleState: PixelRouteLifecycleState,
-com.purride.pixelui.widgets.navigation public val maintainState: Boolean = destination.maintainState,
-com.purride.pixelui.widgets.navigation public val maintainState: Boolean,
-com.purride.pixelui.widgets.navigation public val message: String,
-com.purride.pixelui.widgets.navigation public val message: String,
-com.purride.pixelui.widgets.navigation public val message: String,
-com.purride.pixelui.widgets.navigation public val message: String,
-com.purride.pixelui.widgets.navigation public val message: String,
-com.purride.pixelui.widgets.navigation public val migratedFromOlderSchema: Boolean
-com.purride.pixelui.widgets.navigation public val mode: PixelTypedDeepLinkNavigationMode,
-com.purride.pixelui.widgets.navigation public val navigatorState: PixelNavigatorState?
-com.purride.pixelui.widgets.navigation public val operation: PixelNavigatorOperation,
-com.purride.pixelui.widgets.navigation public val outgoingEntryId: PixelRouteEntryId,
-com.purride.pixelui.widgets.navigation public val parameterName: String,
-com.purride.pixelui.widgets.navigation public val parentEntry: PixelRouteEntry<*, *>? = null,
-com.purride.pixelui.widgets.navigation public val parentEntry: PixelRouteEntry<*, *>? = null,
-com.purride.pixelui.widgets.navigation public val plan: PixelNavigatorRestorePlan,
-com.purride.pixelui.widgets.navigation public val policy: PixelListRestorationPolicy = PixelListRestorationPolicy.AbsoluteOffset,
-com.purride.pixelui.widgets.navigation public val predictiveBackProgress: Float?
-com.purride.pixelui.widgets.navigation public val rawUri: String,
-com.purride.pixelui.widgets.navigation public val rawUri: String,
-com.purride.pixelui.widgets.navigation public val rawUri: String,
-com.purride.pixelui.widgets.navigation public val rawValue: String? = null,
-com.purride.pixelui.widgets.navigation public val reason: PixelDeepLinkArgumentFailureReason,
-com.purride.pixelui.widgets.navigation public val reason: PixelMultiStackSnapshotFailureReason,
-com.purride.pixelui.widgets.navigation public val reason: PixelNavigationFailureReason,
-com.purride.pixelui.widgets.navigation public val reason: PixelNavigatorSnapshotFailureReason,
-com.purride.pixelui.widgets.navigation public val reason: PixelRouteCancellationReason,
-com.purride.pixelui.widgets.navigation public val reason: PixelTypedDeepLinkRejectionReason,
-com.purride.pixelui.widgets.navigation public val restorationId: String,
-com.purride.pixelui.widgets.navigation public val restorer: PixelRouteStateRestorer,
-com.purride.pixelui.widgets.navigation public val resultChannel: PixelRouteResultChannel<R> = PixelRouteResultChannel.create(onOutcome)
-com.purride.pixelui.widgets.navigation public val resultState: PixelRouteResultState,
-com.purride.pixelui.widgets.navigation public val schemaVersion: Int
-com.purride.pixelui.widgets.navigation public val schemaVersion: Int,
-com.purride.pixelui.widgets.navigation public val schemaVersion: Int,
-com.purride.pixelui.widgets.navigation public val sequence: Long,
-com.purride.pixelui.widgets.navigation public val snapshot: PixelMultiStackSnapshot,
-com.purride.pixelui.widgets.navigation public val snapshot: PixelMultiStackSnapshot,
-com.purride.pixelui.widgets.navigation public val sourceSchemaVersion: Int,
-com.purride.pixelui.widgets.navigation public val stack: List<PixelRoute>
-com.purride.pixelui.widgets.navigation public val stackId: String? = null,
-com.purride.pixelui.widgets.navigation public val stackIds: Set<String>
-com.purride.pixelui.widgets.navigation public val stackIds: Set<String>
-com.purride.pixelui.widgets.navigation public val stackIds: Set<String>,
-com.purride.pixelui.widgets.navigation public val stacks: List<PixelNavigatorStackDefinition>,
-com.purride.pixelui.widgets.navigation public val state: PixelListState,
-com.purride.pixelui.widgets.navigation public val stateBucket: PixelRouteStateBucket
-com.purride.pixelui.widgets.navigation public val stateBucket: PixelRouteStateBucket,
-com.purride.pixelui.widgets.navigation public val stateKeyNames: Set<String>,
-com.purride.pixelui.widgets.navigation public val stateKeys: Set<String>,
-com.purride.pixelui.widgets.navigation public val stateSchemaVersion: Int,
-com.purride.pixelui.widgets.navigation public val toEntryId: PixelRouteEntryId? = null,
-com.purride.pixelui.widgets.navigation public val transition: PixelRouteTransitionInspection? = null,
-com.purride.pixelui.widgets.navigation public val transitionBuilder: PixelRouteTransitionBuilder? = null,
-com.purride.pixelui.widgets.navigation public val transitionBuilder: PixelRouteTransitionBuilder? = null,
-com.purride.pixelui.widgets.navigation public val transitionBuilder: PixelRouteTransitionBuilder? = null,
-com.purride.pixelui.widgets.navigation public val transitionDuration: Duration = 200.milliseconds,
-com.purride.pixelui.widgets.navigation public val transitionDuration: Duration = 200.milliseconds,
-com.purride.pixelui.widgets.navigation public val transitionDuration: Duration = 200.milliseconds,
-com.purride.pixelui.widgets.navigation public val type: PixelNavigationEventType,
-com.purride.pixelui.widgets.navigation public val vsync: PixelTickerProvider,
-com.purride.pixelui.widgets.navigation public val vsync: PixelTickerProvider,
-com.purride.pixelui.widgets.navigation public val vsync: PixelTickerProvider,
-com.purride.pixelui.widgets.navigation public var activeStackId: String = initialStackId
-com.purride.pixelui.widgets.navigation public var lifecycleState: PixelRouteLifecycleState = PixelRouteLifecycleState.Created
-com.purride.pixelui.widgets.navigation public var outcome: PixelRouteOutcome<R>? = null
-com.purride.pixelui.widgets.navigation public var state: PixelRouteResultState = PixelRouteResultState.Pending
