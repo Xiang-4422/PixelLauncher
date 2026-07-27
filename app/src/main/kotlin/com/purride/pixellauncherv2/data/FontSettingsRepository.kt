@@ -6,7 +6,7 @@ import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.PixelTheme
-import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 class FontSettingsRepository(

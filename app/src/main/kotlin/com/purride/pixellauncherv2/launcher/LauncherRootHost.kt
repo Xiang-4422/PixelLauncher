@@ -5,8 +5,6 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelAxis
-import com.purride.pixelcore.PixelShape as EnginePixelShape
-import com.purride.pixellauncherv2.render.PixelShape
 import com.purride.pixellauncherv2.render.ScreenProfile
 import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
@@ -206,7 +204,7 @@ internal class LauncherRootHost(
 
         setup.hostView.profilePreference = PixelHostProfilePreference(
             dotSizePx = screenProfile.dotSizePx,
-            pixelShape = screenProfile.pixelShape.toEngineShape(),
+            pixelShape = screenProfile.pixelShape,
         )
         setup.hostView.setPixelGapEnabled(pixelGapEnabled)
         setup.hostView.setPixelGapRatio(if (pixelGapEnabled) 1f else 0f)
@@ -745,9 +743,6 @@ internal class LauncherRootHost(
                 LauncherRouteNavigationAction.REPLACE
             }
         }
-
-        private fun PixelShape.toEngineShape(): EnginePixelShape =
-            EnginePixelShape.valueOf(name)
     }
 }
 

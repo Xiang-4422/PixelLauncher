@@ -14,13 +14,12 @@ import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
-import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
 
 /**
  * 重写后的 Launcher UI 状态快照。
- * 外观类型目前仍引用旧 render 层类型，将在后续逐步迁移至 pixel-engine 类型。
  */
 data class LauncherUiState(
     // ── App Drawer ────────────────────────────────────────────────────────────
@@ -74,7 +73,7 @@ data class LauncherUiState(
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
 
-    // ── Appearance (old render types; migrated to pixel-engine in Phase 1+) ───
+    // ── Appearance ────────────────────────────────────────────────────────────
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = ScreenProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,

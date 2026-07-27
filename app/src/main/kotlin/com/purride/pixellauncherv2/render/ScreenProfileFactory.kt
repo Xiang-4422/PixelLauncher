@@ -1,5 +1,7 @@
 package com.purride.pixellauncherv2.render
 
+import com.purride.pixelcore.PixelShape
+
 object ScreenProfileFactory {
 
     const val defaultDotSizePx: Int = 12

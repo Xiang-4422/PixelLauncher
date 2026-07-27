@@ -74,7 +74,7 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.render.LauncherAnimationState
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.render.ScreenProfileFactory
-import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.model.DeviceStatus

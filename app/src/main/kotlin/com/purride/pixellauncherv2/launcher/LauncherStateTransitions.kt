@@ -4,7 +4,7 @@ import com.purride.pixellauncherv2.model.DeviceStatus
 import com.purride.pixellauncherv2.model.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
-import com.purride.pixellauncherv2.render.PixelShape
+import com.purride.pixelcore.PixelShape
 import java.text.Collator
 import java.util.Locale
 
