@@ -1,6 +1,5 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -8,15 +7,15 @@ import org.junit.Test
 
 /**
  * Coverage for [AppListLayout.visibleRows] — verifies it composes the shared
- * drawer row geometry (DrawerListGeometry.rowPitch of APP_LABEL_16) and the
- * header content offset into a visible-row count. Expected values are recomputed
+ * drawer row geometry (DrawerListGeometry.rowPitch of PixelFontCatalog's default
+ * UI metrics) and the header content offset into a visible-row count. Expected values are recomputed
  * from the same public parts rather than asserting brittle pixel constants.
  * JVM-safe; no Android dependencies.
  */
 class AppListLayoutTest {
 
     private fun expectedVisibleRows(profile: LauncherLayoutProfile): Int {
-        val rowHeight = DrawerListGeometry.rowPitch(GlyphStyle.APP_LABEL_16.cellHeight)
+        val rowHeight = DrawerListGeometry.rowPitch(PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize).cellHeight)
         val top = LauncherHeaderLayout.firstContentItemTop(profile)
         val rail = (profile.logicalHeight - top).coerceAtLeast(rowHeight)
         return (rail / rowHeight).coerceAtLeast(1)

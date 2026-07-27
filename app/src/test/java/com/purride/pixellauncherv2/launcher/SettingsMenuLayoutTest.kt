@@ -1,6 +1,5 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -36,7 +35,7 @@ class SettingsMenuLayoutTest {
 
     @Test
     fun largeVisibleRows_matchesDoubleHeightComposition() {
-        val largeRowHeight = GlyphStyle.APP_LABEL_16.cellHeight * 2 + 2
+        val largeRowHeight = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize).cellHeight * 2 + 2
         for (h in listOf(200, 320, 480, 640)) {
             val profile = LauncherLayoutProfile(120, h, 4)
             assertEquals(

@@ -1,6 +1,5 @@
 package com.purride.pixellauncherv2.launcher
 
-import com.purride.pixellauncherv2.render.GlyphStyle
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 
 /**
@@ -15,12 +14,15 @@ object SettingsMenuLayout {
     private const val panelBottomPadding = LauncherSpacing.CONTENT_VERTICAL
     private const val rowGap = LauncherSpacing.ROW_SPACING
 
+    /** 默认 UI 字号的不可变指标，避免每次访问都重新计算。 */
+    private val uiFontMetrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize)
+
     /** 设置列表估算行距（单一来源 [SettingsListGeometry]）。 */
     private val rowHeight: Int
         get() = SettingsListGeometry.ROW_PITCH_PX
 
     private val largeRowHeight: Int
-        get() = (GlyphStyle.APP_LABEL_16.cellHeight * 2) + rowGap
+        get() = (uiFontMetrics.cellHeight * 2) + rowGap
 
     fun visibleRows(screenProfile: LauncherLayoutProfile): Int = computeVisibleRows(screenProfile, rowHeight)
 
