@@ -12,52 +12,11 @@ from pathlib import Path
 from typing import Any
 
 
-# 1.0 正式发布必须同时提供的全部 Android library 坐标。
-ARTIFACTS = (
-    "pixel-core",
-    "pixel-runtime",
-    "pixel-widgets",
-    "pixel-navigation",
-    "pixel-android",
-    "pixel-testing",
-    "pixel-debug",
-    "pixel-compose",
-    "pixel-engine",
-)
+# 1.0 正式发布只提供统一的 Android library 坐标。
+ARTIFACTS = ("pixel-engine",)
 
 # 每个坐标通过 POM 和 Gradle module metadata 必须传递的内部依赖。
-EXPECTED_INTERNAL_DEPENDENCIES = {
-    "pixel-core": set(),
-    "pixel-runtime": {"pixel-core"},
-    "pixel-widgets": {"pixel-core", "pixel-runtime"},
-    "pixel-navigation": {"pixel-core", "pixel-runtime", "pixel-widgets"},
-    "pixel-android": {"pixel-core", "pixel-runtime", "pixel-widgets", "pixel-navigation"},
-    "pixel-testing": {"pixel-core", "pixel-runtime", "pixel-widgets", "pixel-navigation"},
-    "pixel-debug": {
-        "pixel-core",
-        "pixel-runtime",
-        "pixel-widgets",
-        "pixel-navigation",
-        "pixel-android",
-        "pixel-testing",
-    },
-    "pixel-compose": {
-        "pixel-core",
-        "pixel-runtime",
-        "pixel-widgets",
-        "pixel-navigation",
-        "pixel-android",
-    },
-    "pixel-engine": {
-        "pixel-core",
-        "pixel-runtime",
-        "pixel-widgets",
-        "pixel-navigation",
-        "pixel-android",
-        "pixel-testing",
-        "pixel-debug",
-    },
-}
+EXPECTED_INTERNAL_DEPENDENCIES = {"pixel-engine": set()}
 
 # 所有 AAR 必须显式声明的最低消费者构建环境。
 EXPECTED_MIN_AGP = "8.10.0"

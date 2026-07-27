@@ -15,13 +15,6 @@ EXTERNAL_BYTECODE_REPORT="$ROOT_DIR/build/reports/compatibility/external-spi-byt
 rm -rf "$COMPATIBILITY_REPOSITORY"
 
 "$GRADLEW_BIN" \
-  :pixel-core:publishReleasePublicationToCompatibilityRepository \
-  :pixel-runtime:publishReleasePublicationToCompatibilityRepository \
-  :pixel-widgets:publishReleasePublicationToCompatibilityRepository \
-  :pixel-navigation:publishReleasePublicationToCompatibilityRepository \
-  :pixel-android:publishReleasePublicationToCompatibilityRepository \
-  :pixel-testing:publishReleasePublicationToCompatibilityRepository \
-  :pixel-debug:publishReleasePublicationToCompatibilityRepository \
   :pixel-engine:publishReleasePublicationToCompatibilityRepository \
   --no-daemon
 

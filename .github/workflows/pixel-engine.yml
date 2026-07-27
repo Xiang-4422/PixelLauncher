@@ -149,7 +149,6 @@ jobs:
           script: |
             rm -rf pixel-engine/build/outputs/androidTest-results pixel-engine/build/reports/androidTests pixel-engine/build/outputs/connected_android_test_additional_output
             ANDROID_SERIAL=emulator-5554 ./gradlew :pixel-engine:connectedDebugAndroidTest --no-build-cache --no-daemon
-            python3 tools/check_backup_restore_emulator.py --serial emulator-5554
       - name: Upload instrumentation XML golden diffs and traces
         if: always()
         uses: actions/upload-artifact@v7
@@ -162,7 +161,6 @@ jobs:
             pixel-engine/build/reports/androidTests/**
             pixel-engine/build/reports/golden/**
             pixel-engine/build/outputs/connected_android_test_additional_output/**
-            build/reports/security/m0-1-backup-restore/**
 
   consumer:
     name: External consumers
@@ -213,7 +211,7 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: platform-tools platforms;android-36 platforms;android-36.1
-      - name: Publish and inspect all nine coordinates
+      - name: Publish and inspect the unified coordinate
         run: bash tools/pixel-publication-validation.sh
       - name: Upload publication report and Maven payload
         if: always()

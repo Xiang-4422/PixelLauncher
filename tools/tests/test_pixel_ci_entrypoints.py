@@ -84,8 +84,8 @@ class PixelCiEntrypointFailureTest(unittest.TestCase):
                     )
                     self.assertEqual(FAILURE_CODE, result.returncode)
 
-    def test_shell_aggregate_entrypoints_propagate_failure(self) -> None:
-        """consumer 与 performance 必须在任一子门禁失败时立即失败。"""
+    def test_shell_aggregate_entrypoint_propagates_failure(self) -> None:
+        """consumer 必须在任一子门禁失败时立即失败。"""
 
         # 使用独立临时目录，避免和 Gradle 入口测试共享状态。
         with tempfile.TemporaryDirectory() as temporary_path:
@@ -93,10 +93,7 @@ class PixelCiEntrypointFailureTest(unittest.TestCase):
             temporary_directory = Path(temporary_path)
             # 固定失败命令模拟首个兼容或性能子脚本报错。
             failing_command = self.create_failing_command(temporary_directory)
-            for script_name in (
-                "pixel-ci-consumer.sh",
-                "pixel-ci-performance.sh",
-            ):
+            for script_name in ("pixel-ci-consumer.sh",):
                 with self.subTest(script_name=script_name):
                     # 当前入口结果必须保留失败替身的退出码。
                     result = self.run_entrypoint(

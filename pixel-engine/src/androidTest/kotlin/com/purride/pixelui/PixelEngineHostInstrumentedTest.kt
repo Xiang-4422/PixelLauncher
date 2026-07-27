@@ -8,9 +8,9 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** 验证独立 pixel-android artifact 能完成真实 Android Host 装配与释放。 */
+/** 验证统一 pixel-engine 能完成真实 Android Host 装配与释放。 */
 @RunWith(AndroidJUnit4::class)
-class PixelAndroidArtifactInstrumentedTest {
+class PixelEngineHostInstrumentedTest {
     /** 验证默认装配只创建一个 HostView 和一个隐藏输入桥，并保持公开对象引用一致。 */
     @Test
     fun createsAndDisposesDefaultHostSetup() {
@@ -18,7 +18,7 @@ class PixelAndroidArtifactInstrumentedTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
 
         instrumentation.runOnMainSync {
-            /** 从独立 pixel-android 公开工厂创建的完整宿主装配。 */
+            /** 从统一 pixel-engine 公开工厂创建的完整宿主装配。 */
             val setup = createPixelHostSetup(instrumentation.targetContext)
 
             assertEquals(2, setup.rootView.childCount)

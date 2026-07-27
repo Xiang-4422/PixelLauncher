@@ -12,42 +12,20 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.android.test) apply false
-    alias(libs.plugins.androidx.baselineprofile) apply false
-    alias(libs.plugins.androidx.benchmark) apply false
-    alias(libs.plugins.compose.compiler) apply false
 }
 
-/** 组成 Pixel Engine 1.0 SDK 的全部可发布 Gradle 子工程。 */
-val pixelSdkProjectNames = setOf(
-    "pixel-core",
-    "pixel-runtime",
-    "pixel-widgets",
-    "pixel-navigation",
-    "pixel-android",
-    "pixel-testing",
-    "pixel-debug",
-    "pixel-compose",
-    "pixel-engine",
-)
+/** 主工程唯一对外发布的 Pixel Engine SDK 子工程。 */
+val pixelSdkProjectNames = setOf("pixel-engine")
 
 /** 各发布坐标面向 Maven 消费者的稳定职责描述。 */
 val pixelPublicationDescriptions = mapOf(
-    "pixel-core" to "Pixel buffer, color, font, bitmap, sprite, and resource data primitives.",
-    "pixel-runtime" to "Pixel SDK platform-neutral retained runtime, layout, state, and scheduling contracts.",
-    "pixel-widgets" to "Pixel SDK standard widgets, themes, overlays, scrolling, and motion components.",
-    "pixel-navigation" to "Pixel SDK routing, typed entries, restoration, deep links, and transitions.",
-    "pixel-android" to "Pixel SDK Android host, IME, accessibility, lifecycle, and window adapters.",
-    "pixel-testing" to "Pixel SDK deterministic widget testing, input driving, finders, and assertions.",
-    "pixel-debug" to "Pixel SDK inspector panels, bounds overlays, and frame diagnostics UI.",
-    "pixel-compose" to "Optional Pixel SDK Compose wrapper for hosting a complete Pixel Host.",
-    "pixel-engine" to "Pixel UI engine aggregate for Android-hosted pixel-grid interfaces.",
+    "pixel-engine" to "Complete Pixel UI engine SDK for Android-hosted pixel-grid interfaces.",
 )
 
 /** 由仓库维护者审阅的发布元数据文件；许可证未确认时不得生成虚假声明。 */
 val pixelReleaseMetadataFile = file("pixel-engine/config/release-metadata.properties")
 
-/** 统一提供给九个 MavenPublication 的发布元数据。 */
+/** 提供给 Pixel Engine MavenPublication 的发布元数据。 */
 val pixelReleaseMetadata = Properties().apply {
     pixelReleaseMetadataFile.inputStream().use(::load)
 }

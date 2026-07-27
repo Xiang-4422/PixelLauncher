@@ -6,16 +6,10 @@
     "maxMethodCount": 16000
   },
   "dependencies": {
-    "maxPublishedRuntimeDependencyCount": 8,
-    "maxResolvedRuntimeArtifactCount": 24,
+    "maxPublishedRuntimeDependencyCount": 2,
+    "maxResolvedRuntimeArtifactCount": 17,
     "expectedPublishedRuntimeDependencies": [
-      "com.purride:pixel-android:1.0.0",
-      "com.purride:pixel-core:1.0.0",
-      "com.purride:pixel-debug:1.0.0",
-      "com.purride:pixel-navigation:1.0.0",
-      "com.purride:pixel-runtime:1.0.0",
-      "com.purride:pixel-testing:1.0.0",
-      "com.purride:pixel-widgets:1.0.0",
+      "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7",
       "org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
     ],
     "expectedResolvedRuntimeArtifacts": [
@@ -30,13 +24,6 @@
       "androidx.startup:startup-runtime:1.1.1",
       "androidx.tracing:tracing:1.0.0",
       "com.google.guava:listenablefuture:1.0",
-      "com.purride:pixel-android:1.0.0",
-      "com.purride:pixel-core:1.0.0",
-      "com.purride:pixel-debug:1.0.0",
-      "com.purride:pixel-navigation:1.0.0",
-      "com.purride:pixel-runtime:1.0.0",
-      "com.purride:pixel-testing:1.0.0",
-      "com.purride:pixel-widgets:1.0.0",
       "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20",
       "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20",
       "org.jetbrains.kotlin:kotlin-stdlib:2.2.10",

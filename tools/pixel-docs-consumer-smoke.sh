@@ -20,12 +20,7 @@ trap cleanup EXIT
 if [[ "${PIXEL_SKIP_COMPATIBILITY_PUBLISH:-0}" != "1" ]]; then
   rm -rf "$COMPATIBILITY_REPOSITORY"
   "$GRADLEW_BIN" \
-    :pixel-core:publishReleasePublicationToCompatibilityRepository \
-    :pixel-runtime:publishReleasePublicationToCompatibilityRepository \
-    :pixel-widgets:publishReleasePublicationToCompatibilityRepository \
-    :pixel-navigation:publishReleasePublicationToCompatibilityRepository \
-    :pixel-android:publishReleasePublicationToCompatibilityRepository \
-    :pixel-testing:publishReleasePublicationToCompatibilityRepository \
+    :pixel-engine:publishReleasePublicationToCompatibilityRepository \
     --no-daemon
 fi
 
@@ -81,8 +76,7 @@ android {
 }
 
 dependencies {
-    implementation("com.purride:pixel-android:1.0.0")
-    testImplementation("com.purride:pixel-testing:1.0.0")
+    implementation("com.purride:pixel-engine:1.0.0")
     testImplementation("junit:junit:4.13.2")
 }
 EOF

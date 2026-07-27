@@ -8,10 +8,10 @@
 
 ## 1. 快速接入
 
-pixel-engine 是 Android library SDK，最低 `minSdk = 24`，当前 `compileSdk = 36`。M7-1 已把 SDK
-拆为按需依赖的独立 artifact。兼容坐标 `com.purride:pixel-engine` 保留旧单依赖体验和历史 API；
-新接入的最小 Android Host 推荐直接依赖 `com.purride:pixel-android`，不会传递 testing、debug 或
-compose。
+pixel-engine 是完整的单模块 Android library SDK，最低 `minSdk = 24`，当前 `compileSdk = 36`。
+Launcher 与外部消费者都只依赖 `com.purride:pixel-engine`；核心、运行时、组件、路由、Android
+Host、测试工具和调试能力由同一 AAR 提供，不再维护拆分 artifact。Compose Host 不进入主 Engine，
+避免 Compose 编译器改写普通 SDK ABI；需要 Compose 时由应用使用 `AndroidView` 承载 `PixelHostView`。
 
 ### 消费者构建环境
 
@@ -23,7 +23,7 @@ compose。
 | 最低支持 | `2.2.10` | `8.10.1` | `8.11.1` | `36` | `17+` |
 | 推荐 | AGP 9 内置 `2.2.10` | `9.1.1` | `9.3.1` | `36.1` | `21` |
 
-全部 AAR 都显式声明 `minAndroidGradlePluginVersion=8.10.0` 和 `minCompileSdk=36`。AGP 低于
+Pixel Engine AAR 显式声明 `minAndroidGradlePluginVersion=8.10.0` 和 `minCompileSdk=36`。AGP 低于
 `8.10.0` 或 compileSdk 低于 `36` 时，`checkAarMetadata` 会在编译/R8 前给出升级提示；不应使用
 `android.suppressUnsupportedCompileSdk` 绕过该边界。AGP 8 消费者必须显式应用 Kotlin
 `2.2.10+`，并让 Kotlin/Java JVM target 保持一致；AGP 9 默认使用内置 Kotlin，无需再应用
@@ -37,11 +37,6 @@ compose。
 
 ```kotlin
 include(":pixel-engine")
-include(":pixel-core")
-include(":pixel-runtime")
-include(":pixel-widgets")
-include(":pixel-navigation")
-include(":pixel-android")
 ```
 
 在 app 模块中依赖：
@@ -52,27 +47,17 @@ dependencies {
 }
 ```
 
-仓库内只使用 core 原语的模块可以改为最小依赖：
+公开基础类型包括 `PixelUiState`、`WidgetBuilder`、`RootWidgetProvider`、`StateSetter`、`PixelFocusDirection`、
+`ReadingOrderFocusTraversalPolicy`、`FormValidator`、`PixelPagerSnapshot`、
+`PixelColorResourceDefinition`、`PixelFontResourceDefinition`、`PixelResourceCacheSnapshot`、
+`PixelSpriteFrameDefinition`、`PixelSpriteAtlasDefinition` 与 `PixelSpriteAtlas`。这些类型与 Host、
+组件、路由、测试和调试 API 一样，都由唯一的 `pixel-engine` 坐标提供。
 
-```kotlin
-dependencies {
-    implementation(project(":pixel-core"))
-}
-```
-
-仓库内最小 Host 接入可以改为：
-
-```kotlin
-dependencies {
-    implementation(project(":pixel-android"))
-}
-```
-
-如果按 SDK 包消费本地发布产物：
+如果按 SDK 包消费发布产物：
 
 ```kotlin
 repositories {
-    mavenLocal()
+    mavenCentral()
 }
 
 dependencies {
@@ -80,48 +65,8 @@ dependencies {
 }
 ```
 
-只使用 `PixelColor`、`PixelBuffer`、字体、bitmap、sprite 或资源解析时：
-
-```kotlin
-dependencies {
-    implementation("com.purride:pixel-core:1.0.0")
-}
-```
-
-按能力选择坐标：
-
-| 坐标 | 用途 | 关键传递边界 |
-|---|---|---|
-| `pixel-core` | 像素、字体、bitmap、sprite、资源 | 不含 UI/Lifecycle/testing/debug/Compose |
-| `pixel-runtime` | Widget/Element/RenderObject 与调度 | 只传递 core |
-| `pixel-widgets` | 标准组件、主题、动画、Overlay | 传递 core/runtime |
-| `pixel-navigation` | route、entry、恢复、转场 | 传递 core/runtime/widgets |
-| `pixel-android` | Host、IME、accessibility、lifecycle、window | 最小 Android Host；不含 testing/debug/compose |
-| `pixel-testing` | `PixelTester`、finder、golden | 测试源码显式依赖 |
-| `pixel-debug` | inspector、bounds、诊断 UI | 调试源码显式依赖 |
-| `pixel-compose` | Compose 页面托管完整 Pixel Host 的可选 wrapper | 只由显式依赖者取得 Compose；不进入最小 Host 或 legacy 聚合图 |
-| `pixel-engine` | 旧单依赖兼容聚合 | 为历史 API 仍传递独立 testing/debug，不含 Compose |
-
-例如最小发布 Host：
-
-```kotlin
-dependencies {
-    implementation("com.purride:pixel-android:1.0.0")
-}
-```
-
-测试和诊断能力按 source set 显式加入：
-
-```kotlin
-dependencies {
-    testImplementation("com.purride:pixel-testing:1.0.0")
-    debugImplementation("com.purride:pixel-debug:1.0.0")
-}
-```
-
-不要同时显式依赖相同版本的 `pixel-engine` 和拆分坐标；聚合 POM 已经传递 legacy API 所需模块。
-发布门禁会在隔离 file-Maven 仓库中逐个编译、测试并执行消费者侧 R8，同时拒绝重复 class 和
-非预期传递依赖。
+`PixelColor`、`PixelBuffer`、字体、组件、路由、Host、`PixelTester` 和诊断 API 均来自同一个
+`pixel-engine` 坐标。源码包名用于表达职责，不对应额外 Maven artifact。
 
 可单独复现完整消费者矩阵：
 
@@ -129,8 +74,8 @@ dependencies {
 ./tools/pixel-consumer-compatibility-matrix.sh
 ```
 
-该命令先向 `build/compatibility-repository` 发布全部九个正式坐标，再校验 AAR、POM、Gradle
-module metadata、sources、Dokka Javadoc/KDoc、consumer ProGuard rules 与传递依赖。随后在最低和
+该命令先向 `build/compatibility-repository` 发布统一正式坐标，再校验 AAR、POM、Gradle
+module metadata、sources、Dokka Javadoc/KDoc、consumer ProGuard rules 与依赖。随后在最低和
 推荐两档独立工程中构建 debug、minified release，运行 Kotlin 自定义 RenderObject SPI 与 Java
 调用测试；最后确认低 AGP、低 compileSdk 两种组合按预期提前失败。机读结果位于
 `build/reports/compatibility/m8-2/`。
@@ -200,36 +145,11 @@ class HelloPixelActivity : AppCompatActivity() {
 - 默认 `PixelTextInputBridge`
 - 包含宿主和隐藏输入框的 `FrameLayout`
 
-### Compose 页面托管 Pixel Host
+### Compose 页面
 
-只有 Compose 页面需要增加可选坐标和 Kotlin 2 Compose compiler plugin：
-
-```kotlin
-dependencies {
-    implementation("com.purride:pixel-compose:1.0.0")
-}
-```
-
-```kotlin
-PixelHost(
-    engine = PixelEngine.Builder().build(),
-    modifier = Modifier.fillMaxSize(),
-    stateKey = "settings-pixel-host",
-    content = {
-        Semantics(
-            label = "Pixel settings",
-            child = Center(child = Text("SETTINGS")),
-        )
-    },
-)
-```
-
-`content` 是 `() -> Widget`，不是 `@Composable` slot。wrapper 内部创建标准 `PixelHostSetup`，
-Compose `AndroidView` 自动传递 ViewTree lifecycle、density、焦点、IME 和 accessibility；容器显式转发
-WindowInsets。Compose `rememberSaveable` 提供缺省 saved-state capability，Engine 中调用方显式配置的
-saved state 仍优先。Activity 旋转/重建会创建新 Host，旧 Host 随 owner destroy 释放，状态通过
-SavedStateRegistry 恢复。完整契约见
-[Compose Host 互操作迁移指南](migrations/1.0.0-compose-host.md)。
+当前 SDK 不发布 Compose wrapper。Compose 应用可以在自身代码中通过 `AndroidView` 承载
+`PixelHostView`，并按普通 View 的规则管理 `PixelHostSetup.dispose()`。这样可避免 Compose 编译器
+向引擎公开类型注入额外 ABI 字段。
 
 ## 3. 宿主配置
 
@@ -571,20 +491,14 @@ descriptor 和 Kotlin `$default` bridge 保持兼容。既有组件的 state-awa
 也无法区分“省略默认值”和“显式传入与旧默认完全相同的值”。要锁定该值，应在 state-aware 重载
 暴露对应 nullable 覆写时传入非空值；否则复制相应 component token。
 
-### Theme Showcase
+### 主题验证
 
-运行 `pixel-demo`，进入 Theme 分类的 `Theme Showcase`，或搜索 `PixelThemeTokens` / `high-contrast`。
-场景提供 Light、Dark、HighContrastDark、HighContrastLight、Custom 五个切换项；Custom 是 demo
-自定义样例，不是 SDK 的第五个内置 preset。页面同时展示 25 个真实生产组件族、九组 foundation 和
-25×8（200 格）组件状态色板。主题切换会保留 Checkbox、Radio、Switch、Slider、Tabs、NavigationBar、
-Dropdown 等受控状态；主题按钮支持 Tab 聚焦与 Enter 激活。
-
-`ThemeShowcaseScene` 是 demo 内部实现，不属于发布 SDK API。业务应复制它的
-`PixelTheme(tokens = ...)` 与受控状态模式，而不是导入该场景。
+主题变更由 `PixelThemeTokens`、高对比度和组件状态矩阵的 JVM 测试验证。需要产品级可视化时，
+在 `app` 中增加真实使用场景，不再维护独立 demo 模块。
 
 ```bash
-./gradlew :pixel-demo:assembleDebug
-./gradlew :pixel-demo:testDebugUnitTest --tests 'com.purride.pixeldemo.showcase.ThemeShowcaseSceneTest'
+./gradlew :pixel-engine:testDebugUnitTest
+./gradlew :app:assembleDebug
 ```
 
 主题边界：
@@ -915,15 +829,10 @@ Navigation 栈不会因为 resize、IME、density 或 fold 更新而丢失。`Te
 完整迁移与兼容规则见
 [自适应 Host 与 Viewport 迁移指南](migrations/1.0.0-adaptive-host-viewport.md)。
 
-#### 综合 Demo 与只读 golden
+#### 自适应与只读 golden
 
-`pixel-demo` 的 `布局 → 系统边界 → Adaptive & Localization` 是这组 API 的真实设备验收入口。
-场景使用 `PixelHostView.capabilitiesOverride` 和 `PixelHostProfilePolicy.AdaptiveDp` 实时切换中文、
-RTL、2× text scale、高对比度、reduce motion、2× density/120Hz 与逻辑 hinge，并显示 physical/
-logical size、window class、SafeArea/IME 和 display features。场景中的 TextField 连接真实 Android
-IME，NavigationBar 绑定两个始终 mounted 的独立 Navigator 栈；切换环境不会重建文本、selection、
-focus、滚动位置、route entry 或 semantic identity。离开场景会恢复进入前的 Host override 与
-profile policy。
+自适应、RTL、文本缩放、高对比度、reduce motion、density、逻辑 hinge 和状态保持由 JVM golden、
+Host instrumentation 与 `app` 集成测试共同覆盖。
 
 对应 JVM 基线为
 `src/test/resources/element-snapshots/m5-3-adaptive-localization.txt` 和
@@ -2949,13 +2858,13 @@ M8-1 综合基线位于 `src/test/resources/golden/m8-1-deterministic-pixels.txt
 
 - `PixelTester` 是 JVM 内离屏测试工具，用于验证 widget、layout、输入分发、滚动和像素输出。
 - 它不启动 Android `Activity`，不覆盖真实 `PixelHostView` 接线、Android IME、系统剪贴板、无障碍服务和设备 GPU/刷新率行为。
-- 宿主接线使用 host 单测和 SDK consumer smoke 验证；真实设备交互、性能和渲染节奏使用 `pixel-device-smoke.sh` 与 `pixel-perf-smoke.sh` 验证。
+- 宿主接线使用 host 单测、instrumentation 和 SDK consumer smoke 验证；性能和渲染节奏留给后续独立性能目标。
 - golden 文本快照应优先覆盖小尺寸、确定性 UI；复杂动效只断言关键状态和收敛结果。
 
 常用验证：
 
 ```bash
-./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:assembleDebug :pixel-demo:assembleDebug --no-daemon
+./gradlew :pixel-engine:testDebugUnitTest :pixel-engine:assembleDebug :app:assembleDebug --no-daemon
 ./tools/pixel-release-check.sh
 ./tools/pixel-sdk-consumer-smoke.sh
 ```

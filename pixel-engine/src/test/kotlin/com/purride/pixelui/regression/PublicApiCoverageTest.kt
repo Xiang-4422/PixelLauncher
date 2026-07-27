@@ -7,18 +7,16 @@ import java.io.File
 /**
  * 公开 API 的最低覆盖门禁。
  *
- * 新增公开 class / object / typealias / widget 函数时，至少要在 docs / tests / demo 中出现一次。
+ * 新增公开 class / object / typealias / widget 函数时，至少要在 docs、tests 或 Launcher 中出现一次。
  *
- * widget 工厂函数（`public fun Name(` 命名规范）使用更严格的 demo 规则：
- * 要求 `Name(` 形式的调用出现在非 import 行，仅 import 不计为覆盖。
- * 其它公开类型（class / object / typealias）允许以 `Name.xxx` 或类型注解形式出现，
- * 使用宽松的 `\bName\b` 规则，不限定调用形式。
+ * widget 工厂函数与其它公开类型都必须被单模块文档或测试明确提及。
  */
 class PublicApiCoverageTest {
 
     @Test
-    fun publicApiAppearsInDocsDemoOrTests() {
+    fun publicApiAppearsInDocsTestsOrLauncher() {
         val moduleRoot = resolveModuleRoot()
+        /** 包含 Launcher 真实 SDK 调用点的仓库根目录。 */
         val repoRoot = requireNotNull(moduleRoot.parentFile)
 
         val (widgetFunctions, otherApis) = collectPublicApiNames(moduleRoot)
@@ -26,39 +24,21 @@ class PublicApiCoverageTest {
         val docsAndTestsText = buildString {
             appendDirectory(moduleRoot.resolve("docs"))
             appendDirectory(moduleRoot.resolve("src/test/kotlin"))
+            appendDirectory(repoRoot.resolve("app/src/main"))
         }
-
-        val demoText = buildString {
-            appendDirectory(repoRoot.resolve("pixel-demo/src/main/kotlin"))
-        }
-        val demoNonImportText = stripImportLines(demoText)
-
-        val combined = docsAndTestsText + demoText
 
         val missingFunctions = widgetFunctions.filterNot { name ->
-            Regex("\\b$name\\b").containsMatchIn(docsAndTestsText) ||
-                Regex("\\b$name\\s*\\(").containsMatchIn(demoNonImportText)
+            Regex("\\b$name\\b").containsMatchIn(docsAndTestsText)
         }
 
         val missingOthers = otherApis.filterNot { name ->
-            Regex("\\b$name\\b").containsMatchIn(combined)
+            Regex("\\b$name\\b").containsMatchIn(docsAndTestsText)
         }
 
         val missing = missingFunctions + missingOthers
 
-        val importOnlyFunctions = if (missing.isEmpty()) emptyList() else {
-            missingFunctions.filter { name ->
-                Regex("\\b$name\\b").containsMatchIn(demoText) &&
-                    !Regex("\\b$name\\s*\\(").containsMatchIn(demoNonImportText)
-            }
-        }
-
-        val importOnlyMsg = if (importOnlyFunctions.isNotEmpty()) {
-            "\nNote: $importOnlyFunctions appear in import statements but have no call site"
-        } else ""
-
         assertTrue(
-            "Public APIs missing docs/demo/test coverage: $missing$importOnlyMsg",
+            "Public APIs missing docs/test/Launcher coverage: $missing",
             missing.isEmpty(),
         )
     }
@@ -75,7 +55,7 @@ class PublicApiCoverageTest {
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheet.kt"),
             moduleRoot.resolve("src/main/kotlin/com/purride/pixelcore/PixelSpriteSheetLoader.kt"),
         )
-        /** 排除明确标记为兄弟 artifact 内部 SPI 的 public JVM 声明。 */
+        /** 排除只为冻结二进制桥接而保留的内部 public JVM 声明。 */
         val stablePublicPrefix = "(?<!@PixelArtifactInternalApi\\n)^public "
         val widgetFunctionPattern =
             Regex("${stablePublicPrefix}fun ([A-Z][A-Za-z0-9_]*)\\(", RegexOption.MULTILINE)
@@ -109,12 +89,6 @@ class PublicApiCoverageTest {
                 }
             }
         return widgetFunctions to otherApis
-    }
-
-    private fun stripImportLines(text: String): String {
-        return text.lines().filterNot { line ->
-            line.trimStart().startsWith("import ")
-        }.joinToString("\n")
     }
 
     private fun resolveModuleRoot(): File {

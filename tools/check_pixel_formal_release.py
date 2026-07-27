@@ -15,18 +15,8 @@ from urllib.parse import urlparse
 
 # 当前脚本所在仓库根目录。
 ROOT = Path(__file__).resolve().parents[1]
-# 九个正式发布模块必须共享同一 groupId 和版本。
-ARTIFACTS = (
-    "pixel-core",
-    "pixel-runtime",
-    "pixel-widgets",
-    "pixel-navigation",
-    "pixel-android",
-    "pixel-testing",
-    "pixel-debug",
-    "pixel-compose",
-    "pixel-engine",
-)
+# 正式发布只允许统一的 pixel-engine 坐标。
+ARTIFACTS = ("pixel-engine",)
 # OpenPGP v4/v5 指纹只接受完整十六进制文本。
 FINGERPRINT_PATTERN = re.compile(r"(?:[0-9A-F]{40}|[0-9A-F]{64})")
 # GitHub 状态报告在正式发布时最多允许十五分钟陈旧。

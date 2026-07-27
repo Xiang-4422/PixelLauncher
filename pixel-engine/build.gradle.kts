@@ -1,7 +1,4 @@
-import groovy.json.JsonSlurper
-import org.gradle.api.tasks.Sync
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.android.library)
@@ -11,81 +8,8 @@ plugins {
 group = "com.purride"
 version = "1.0.0"
 
-/** 仓库中唯一受审的 artifact 所有权清单。 */
-val artifactOwnershipManifestFile = file("config/artifact-ownership.json")
-
-/** 拆分期间保留冻结 package 与源码历史的共享 Kotlin 源码根。 */
+/** Pixel Engine 单模块持有的完整 Kotlin 生产源码根。 */
 val sharedProductionSourceRoot = file("src/main/kotlin")
-
-/** 解析后的 artifact ownership JSON 根对象。 */
-@Suppress("UNCHECKED_CAST")
-val artifactOwnershipConfiguration =
-    JsonSlurper().parse(artifactOwnershipManifestFile) as Map<String, Any?>
-
-/** 清单中的源码归属配置。 */
-@Suppress("UNCHECKED_CAST")
-val artifactOwnershipRules =
-    artifactOwnershipConfiguration.getValue("ownership") as Map<String, Any?>
-
-/** 优先于目录规则的精确文件归属表。 */
-@Suppress("UNCHECKED_CAST")
-val exactAggregateArtifactOwners = artifactOwnershipRules.getValue("files") as Map<String, String>
-
-/** 使用最长匹配原则的目录归属规则。 */
-@Suppress("UNCHECKED_CAST")
-val aggregateArtifactPathPrefixes =
-    artifactOwnershipRules.getValue("pathPrefixes") as List<Map<String, String>>
-
-/**
- * 按“精确文件优先、最长目录前缀次之”解析源码所属 artifact。
- *
- * @param relativePath 相对于共享 Kotlin 源码根的规范路径。
- * @return 清单声明的 artifact 名称；没有归属时返回 null。
- */
-fun resolveAggregateArtifactOwner(relativePath: String): String? {
-    exactAggregateArtifactOwners[relativePath]?.let { exactOwner -> return exactOwner }
-    /** 当前路径命中的全部目录规则。 */
-    val matchingRules = aggregateArtifactPathPrefixes.filter { rule ->
-        /** 追加目录分隔符，防止短目录名误匹配同前缀目录。 */
-        val pathPrefix = rule.getValue("path").trimEnd('/') + "/"
-        relativePath.startsWith(pathPrefix)
-    }
-    /** 最具体的目录规则决定源码归属。 */
-    return matchingRules.maxByOrNull { rule -> rule.getValue("path").length }?.get("artifact")
-}
-
-/** 已由独立依赖提供、不得再次打入聚合 AAR 的 artifact。 */
-val externallyPackagedArtifacts = setOf(
-    "pixel-core",
-    "pixel-runtime",
-    "pixel-widgets",
-    "pixel-navigation",
-    "pixel-android",
-    "pixel-testing",
-    "pixel-debug",
-)
-
-/** 聚合模块仍负责打包的生产 Kotlin 相对路径。 */
-val aggregateProductionPaths = fileTree(sharedProductionSourceRoot) {
-    include("**/*.kt")
-}.files.map { sourceFile ->
-    sourceFile.relativeTo(sharedProductionSourceRoot).invariantSeparatorsPath
-}.filter { relativePath ->
-    resolveAggregateArtifactOwner(relativePath) !in externallyPackagedArtifacts
-}.sorted()
-
-/** build 目录中由归属清单生成的聚合模块 Kotlin 源码根。 */
-val stagedAggregateSourceRoot = layout.buildDirectory.dir("generated/artifact-sources/main/kotlin")
-
-/** 将仍归聚合模块打包的源码确定性同步到生成源集。 */
-val stageAggregateSources by tasks.registering(Sync::class) {
-    inputs.file(artifactOwnershipManifestFile)
-    from(sharedProductionSourceRoot) {
-        include(aggregateProductionPaths)
-    }
-    into(stagedAggregateSourceRoot)
-    includeEmptyDirs = false
-}
 
 android {
     namespace = "com.purride.pixelengine"
@@ -102,28 +26,6 @@ android {
             minAgpVersion = "8.10.0"
             /** 发布物以 Android 36 API 编译，低版本 compileSdk 必须在解析期明确失败。 */
             minCompileSdk = 36
-        }
-    }
-
-    sourceSets {
-        getByName("main") {
-            /** core 与 runtime 由依赖提供，聚合 AAR 只编译其余 owner 的生成源码。 */
-            kotlin.directories.clear()
-            kotlin.directories.add(stagedAggregateSourceRoot.get().asFile.path)
-            /** Unicode Bidi Java 实现已经由 pixel-runtime 提供，聚合模块不得重复编译。 */
-            java.directories.clear()
-            /** Unicode 数据与许可证均由 pixel-runtime 发布，聚合 AAR 不重复打包同名资源。 */
-            resources.directories.clear()
-        }
-        getByName("test") {
-            /** 纯 core 测试由 pixel-core 独立执行，聚合模块只运行 UI 与 Android adapter 测试。 */
-            kotlin.directories.clear()
-            kotlin.directories.addAll(
-                listOf(
-                    "src/test/kotlin/com/purride/pixelui",
-                    "src/test/kotlin/com/purride/pixelandroid",
-                ),
-            )
         }
     }
 
@@ -153,13 +55,7 @@ kotlin {
 }
 
 dependencies {
-    api(project(":pixel-core"))
-    api(project(":pixel-runtime"))
-    api(project(":pixel-widgets"))
-    api(project(":pixel-navigation"))
-    api(project(":pixel-android"))
-    api(project(":pixel-testing"))
-    api(project(":pixel-debug"))
+    api(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -202,96 +98,6 @@ androidComponents {
     }
 }
 
-/** 所有读取聚合生成源码的构建任务必须先完成确定性同步。 */
-tasks.configureEach {
-    if (
-        name != stageAggregateSources.name &&
-        (name.contains("Kotlin") || name.contains("SourcesJar") || name.contains("SourceJar") || name == "preBuild")
-    ) {
-        dependsOn(stageAggregateSources)
-    }
-}
-
-/** runtime Debug classes jar，仅供聚合模块的白盒测试读取 Kotlin internal。 */
-val pixelRuntimeDebugFriendJar = project(":pixel-runtime").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/** core Debug classes jar，仅供聚合模块的历史白盒测试读取 Kotlin internal。 */
-val pixelCoreDebugFriendJar = project(":pixel-core").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/** widgets Debug classes jar，仅供聚合模块的历史白盒测试读取 Kotlin internal。 */
-val pixelWidgetsDebugFriendJar = project(":pixel-widgets").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/** navigation Debug classes jar，仅供聚合模块的历史白盒测试读取 Kotlin internal。 */
-val pixelNavigationDebugFriendJar = project(":pixel-navigation").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/** android Debug classes jar，仅供聚合模块的历史白盒测试读取 Kotlin internal。 */
-val pixelAndroidDebugFriendJar = project(":pixel-android").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/** testing Debug classes jar，仅供聚合模块的历史白盒测试读取 Kotlin internal。 */
-val pixelTestingDebugFriendJar = project(":pixel-testing").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/** debug Debug classes jar，仅供聚合模块的历史白盒测试读取 Kotlin internal。 */
-val pixelDebugDebugFriendJar = project(":pixel-debug").layout.buildDirectory.file(
-    "intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar",
-)
-
-/**
- * 聚合回归测试历史上覆盖完整单模块内部实现；拆分后只给测试编译开放已拆 artifact 的 friend path。
- *
- * 生产源码编译没有 friend path，所有跨 artifact 生产调用仍必须经过明确 public/internal SPI。
- */
-tasks.withType<KotlinJvmCompile>().configureEach {
-    if (name == "compileDebugUnitTestKotlin" || name == "compileDebugAndroidTestKotlin") {
-        dependsOn(":pixel-runtime:bundleLibCompileToJarDebug")
-        dependsOn(":pixel-core:bundleLibCompileToJarDebug")
-        dependsOn(":pixel-widgets:bundleLibCompileToJarDebug")
-        dependsOn(":pixel-navigation:bundleLibCompileToJarDebug")
-        dependsOn(":pixel-android:bundleLibCompileToJarDebug")
-        dependsOn(":pixel-testing:bundleLibCompileToJarDebug")
-        dependsOn(":pixel-debug:bundleLibCompileToJarDebug")
-        inputs.file(pixelRuntimeDebugFriendJar)
-        inputs.file(pixelCoreDebugFriendJar)
-        inputs.file(pixelWidgetsDebugFriendJar)
-        inputs.file(pixelNavigationDebugFriendJar)
-        inputs.file(pixelAndroidDebugFriendJar)
-        inputs.file(pixelTestingDebugFriendJar)
-        inputs.file(pixelDebugDebugFriendJar)
-        compilerOptions.freeCompilerArgs.add(
-            pixelRuntimeDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-        compilerOptions.freeCompilerArgs.add(
-            pixelCoreDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-        compilerOptions.freeCompilerArgs.add(
-            pixelWidgetsDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-        compilerOptions.freeCompilerArgs.add(
-            pixelNavigationDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-        compilerOptions.freeCompilerArgs.add(
-            pixelAndroidDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-        compilerOptions.freeCompilerArgs.add(
-            pixelTestingDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-        compilerOptions.freeCompilerArgs.add(
-            pixelDebugDebugFriendJar.map { friendJar -> "-Xfriend-paths=${friendJar.asFile.absolutePath}" },
-        )
-    }
-}
-
 /** Deterministic source-file manifest consumed through Metalava's @file syntax. */
 val metalavaSourceManifest = layout.buildDirectory.file("intermediates/metalava/release/source-files.txt")
 
@@ -311,17 +117,6 @@ val stableApiBoundaryTool = rootProject.layout.projectDirectory.file("tools/chec
 val stableApiBoundaryReport =
     layout.buildDirectory.file("reports/compatibility/stable-api-boundary.json")
 
-/** M7-1 的 artifact 文件归属、无环依赖和平台边界清单。 */
-val artifactOwnershipManifest = layout.projectDirectory.file("config/artifact-ownership.json")
-
-/** 执行 M7-1 源码边界审计的独立工具。 */
-val artifactBoundaryTool =
-    rootProject.layout.projectDirectory.file("tools/check_pixel_artifact_boundaries.py")
-
-/** M7-1 artifact 边界的机器可读验收报告。 */
-val artifactBoundaryReport =
-    layout.buildDirectory.file("reports/architecture/artifact-boundaries.json")
-
 /** M6-3 固定的 Release AAR、class/method 与运行时依赖预算。 */
 val releaseArtifactBudget = layout.projectDirectory.file("config/release-artifact-budget.json")
 
@@ -331,34 +126,6 @@ val releaseArtifactBudgetTool =
 
 /** 当前 Release AAR，由预算门禁直接检查最终发布字节。 */
 val releaseArtifactAar = layout.buildDirectory.file("outputs/aar/pixel-engine-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-core Release AAR。 */
-val pixelCoreReleaseArtifactAar =
-    project(":pixel-core").layout.buildDirectory.file("outputs/aar/pixel-core-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-runtime Release AAR。 */
-val pixelRuntimeReleaseArtifactAar =
-    project(":pixel-runtime").layout.buildDirectory.file("outputs/aar/pixel-runtime-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-widgets Release AAR。 */
-val pixelWidgetsReleaseArtifactAar =
-    project(":pixel-widgets").layout.buildDirectory.file("outputs/aar/pixel-widgets-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-navigation Release AAR。 */
-val pixelNavigationReleaseArtifactAar =
-    project(":pixel-navigation").layout.buildDirectory.file("outputs/aar/pixel-navigation-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-android Release AAR。 */
-val pixelAndroidReleaseArtifactAar =
-    project(":pixel-android").layout.buildDirectory.file("outputs/aar/pixel-android-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-testing Release AAR。 */
-val pixelTestingReleaseArtifactAar =
-    project(":pixel-testing").layout.buildDirectory.file("outputs/aar/pixel-testing-release.aar")
-
-/** 聚合坐标传递依赖的 pixel-debug Release AAR。 */
-val pixelDebugReleaseArtifactAar =
-    project(":pixel-debug").layout.buildDirectory.file("outputs/aar/pixel-debug-release.aar")
 
 /** 当前 Maven Publication 生成的发布 POM。 */
 val releaseArtifactPom = layout.buildDirectory.file("publications/release/pom-default.xml")
@@ -524,33 +291,6 @@ val checkStableApiBoundary by tasks.registering(Exec::class) {
         generatedMetalavaApi.get().asFile,
         "--report",
         stableApiBoundaryReport.get().asFile,
-    )
-}
-
-/** 阻止未归属源码、artifact 依赖环、非法反向边和 Android/Compose 泄漏。 */
-val checkArtifactBoundaries by tasks.registering(Exec::class) {
-    group = "verification"
-    description = "Checks M7-1 artifact ownership, acyclic dependencies, and platform boundaries."
-    workingDir(rootProject.projectDir)
-
-    inputs.file(artifactOwnershipManifest)
-        .withPropertyName("artifactOwnershipManifest")
-        .withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.file(artifactBoundaryTool)
-        .withPropertyName("artifactBoundaryTool")
-        .withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.dir(layout.projectDirectory.dir("src/main/kotlin"))
-        .withPropertyName("artifactBoundarySources")
-        .withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.file(artifactBoundaryReport)
-
-    commandLine(
-        "python3",
-        artifactBoundaryTool.asFile,
-        "--manifest",
-        artifactOwnershipManifest.asFile,
-        "--report",
-        artifactBoundaryReport.get().asFile,
     )
 }
 
@@ -909,77 +649,19 @@ val releaseRuntimeClasses = layout.buildDirectory.dir(
     "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
 )
 
-/** 独立 pixel-core 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelCoreReleaseRuntimeClasses = project(":pixel-core").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
-/** 独立 pixel-runtime 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelRuntimeReleaseRuntimeClasses = project(":pixel-runtime").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
-/** 独立 pixel-widgets 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelWidgetsReleaseRuntimeClasses = project(":pixel-widgets").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
-/** 独立 pixel-navigation 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelNavigationReleaseRuntimeClasses = project(":pixel-navigation").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
-/** 独立 pixel-android 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelAndroidReleaseRuntimeClasses = project(":pixel-android").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
-/** 独立 pixel-testing 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelTestingReleaseRuntimeClasses = project(":pixel-testing").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
-/** 独立 pixel-debug 的 release class 目录，参与旧聚合坐标的 JVM ABI 并集。 */
-val pixelDebugReleaseRuntimeClasses = project(":pixel-debug").layout.buildDirectory.dir(
-    "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
-)
-
 val dumpBinaryApi by tasks.registering {
     group = "verification"
     description = "Writes a deterministic javap dump of pixel-engine release binary API."
     dependsOn("bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-core:bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-runtime:bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-widgets:bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-navigation:bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-android:bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-testing:bundleLibRuntimeToDirRelease")
-    dependsOn(":pixel-debug:bundleLibRuntimeToDirRelease")
     dependsOn(generateMetalavaApi)
 
     inputs.dir(releaseRuntimeClasses)
-    inputs.dir(pixelCoreReleaseRuntimeClasses)
-    inputs.dir(pixelRuntimeReleaseRuntimeClasses)
-    inputs.dir(pixelWidgetsReleaseRuntimeClasses)
-    inputs.dir(pixelNavigationReleaseRuntimeClasses)
-    inputs.dir(pixelAndroidReleaseRuntimeClasses)
-    inputs.dir(pixelTestingReleaseRuntimeClasses)
-    inputs.dir(pixelDebugReleaseRuntimeClasses)
     inputs.file(generatedMetalavaApi)
     outputs.file(layout.buildDirectory.file("reports/api/pixel-engine.binary-api"))
 
     doLast {
-        /** 聚合实现及三个已拆独立 artifact 的 release class 目录。 */
-        val classDirectories = listOf(
-            releaseRuntimeClasses.get().asFile,
-            pixelCoreReleaseRuntimeClasses.get().asFile,
-            pixelRuntimeReleaseRuntimeClasses.get().asFile,
-            pixelWidgetsReleaseRuntimeClasses.get().asFile,
-            pixelNavigationReleaseRuntimeClasses.get().asFile,
-            pixelAndroidReleaseRuntimeClasses.get().asFile,
-            pixelTestingReleaseRuntimeClasses.get().asFile,
-            pixelDebugReleaseRuntimeClasses.get().asFile,
-        )
+        /** 单模块 Release 变体产生的完整运行时 class 目录。 */
+        val classDirectories = listOf(releaseRuntimeClasses.get().asFile)
         classDirectories.forEach { classDirectory ->
             if (!classDirectory.exists()) {
                 throw GradleException("Missing release runtime classes at ${classDirectory.path}")
@@ -1009,7 +691,7 @@ val dumpBinaryApi by tasks.registering {
             .sorted()
             .toList()
 
-        /** javap 同时解析聚合及已拆 artifact class，保留所有跨 artifact 参数类型。 */
+        /** javap 通过单一 classpath 解析完整 Pixel Engine API。 */
         val aggregateClasspath = classDirectories.joinToString(File.pathSeparator, transform = File::getAbsolutePath)
 
         val output = buildString {
@@ -1167,24 +849,10 @@ val checkReleaseArtifactBudget by tasks.registering(Exec::class) {
     group = "verification"
     description = "Fails when the Release SDK exceeds its reviewed artifact or dependency budget."
     dependsOn("assembleRelease", "generatePomFileForReleasePublication")
-    dependsOn(":pixel-core:assembleRelease")
-    dependsOn(":pixel-runtime:assembleRelease")
-    dependsOn(":pixel-widgets:assembleRelease")
-    dependsOn(":pixel-navigation:assembleRelease")
-    dependsOn(":pixel-android:assembleRelease")
-    dependsOn(":pixel-testing:assembleRelease")
-    dependsOn(":pixel-debug:assembleRelease")
     dependsOn(writeReleaseRuntimeDependencyManifest)
     workingDir(rootProject.projectDir)
 
     inputs.file(releaseArtifactAar)
-    inputs.file(pixelCoreReleaseArtifactAar)
-    inputs.file(pixelRuntimeReleaseArtifactAar)
-    inputs.file(pixelWidgetsReleaseArtifactAar)
-    inputs.file(pixelNavigationReleaseArtifactAar)
-    inputs.file(pixelAndroidReleaseArtifactAar)
-    inputs.file(pixelTestingReleaseArtifactAar)
-    inputs.file(pixelDebugReleaseArtifactAar)
     inputs.file(releaseArtifactPom)
     inputs.file(releaseRuntimeDependencyManifest)
     inputs.file(releaseArtifactBudget)
@@ -1196,20 +864,6 @@ val checkReleaseArtifactBudget by tasks.registering(Exec::class) {
         releaseArtifactBudgetTool.asFile,
         "--aar",
         releaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelCoreReleaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelRuntimeReleaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelWidgetsReleaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelNavigationReleaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelAndroidReleaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelTestingReleaseArtifactAar.get().asFile,
-        "--dependency-aar",
-        pixelDebugReleaseArtifactAar.get().asFile,
         "--pom",
         releaseArtifactPom.get().asFile,
         "--runtime-dependencies",
@@ -1227,7 +881,6 @@ tasks.named("check") {
     dependsOn(checkMetalavaApi)
     dependsOn(checkMetalavaReleasedCompatibility)
     dependsOn(checkStableApiBoundary)
-    dependsOn(checkArtifactBoundaries)
     dependsOn(checkKdocCoverage)
     dependsOn(checkThemeTokenCoverage)
     dependsOn(checkUnicodeGraphemeDataGeneration)
@@ -1252,6 +905,15 @@ publishing {
 
             afterEvaluate {
                 from(components["release"])
+            }
+
+            versionMapping {
+                usage("java-api") {
+                    fromResolutionOf("releaseRuntimeClasspath")
+                }
+                usage("java-runtime") {
+                    fromResolutionResult()
+                }
             }
 
             pom {

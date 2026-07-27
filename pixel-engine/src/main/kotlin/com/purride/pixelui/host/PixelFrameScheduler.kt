@@ -3,8 +3,8 @@ package com.purride.pixelui.host
 /**
  * 帧调度抽象。
  *
- * pixel-engine 的 Android Host 默认依赖 `Choreographer` 触发重绘，runtime 只保留本协议，
- * 避免只使用 runtime 的消费者被迫引入 Android UI 实现。以下场景需要更细粒度的帧时机控制：
+ * pixel-engine 的 Android Host 默认依赖 `Choreographer` 触发重绘。本协议允许以下场景
+ * 注入更细粒度的帧时机控制：
  *
  * - **动画引擎**：业务侧实现自定义动画驱动时，需要知道下一帧的精确时间戳
  *   （`frameTimeNanos`）来推进物理或时间曲线；
@@ -29,47 +29,13 @@ public interface PixelFrameScheduler {
     /** 集中提供 `PixelFrameScheduler` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /**
-         * 解析由 `pixel-android` 提供的默认帧调度器。
+         * 解析 pixel-engine 内置的默认 Android 帧调度器。
          *
-         * 未安装 Android 适配 artifact 时访问该属性会明确失败；测试和非 Android 宿主应注入
-         * [ManualFrameScheduler] 或自定义实现。通过类名解析是为了保留已经冻结的 `Default`
-         * JVM 描述符，同时消除 runtime 到 Android artifact 的编译依赖。
+         * 测试和非 Android 宿主应注入 [ManualFrameScheduler] 或自定义实现。通过类名解析
+         * 保留已经冻结的 `Default` JVM 描述符。
          */
         public val Default: PixelFrameScheduler
-            get() = PixelAndroidFrameSchedulerResolver.resolve()
-    }
-}
-
-/**
- * 兼容旧 `PixelFrameScheduler.Default` 描述符的 Android 实现解析器。
- *
- * 解析只发生在显式读取默认值时；runtime 本身不静态引用 Android 类。
- */
-private object PixelAndroidFrameSchedulerResolver {
-    /** `pixel-android` 中默认实现的稳定二进制类名。 */
-    private const val ANDROID_SCHEDULER_CLASS_NAME: String =
-        "com.purride.pixelui.host.ChoreographerFrameScheduler"
-
-    /**
-     * 返回 Android artifact 的单例调度器；缺少适配 artifact 时给出可操作的错误信息。
-     */
-    fun resolve(): PixelFrameScheduler {
-        try {
-            /** 反射类只在默认调度器被请求时加载，纯 runtime 消费者不会触发 Android 类解析。 */
-            val schedulerClass: Class<*> = Class.forName(ANDROID_SCHEDULER_CLASS_NAME)
-            /** Kotlin object 的 `INSTANCE` 字段保存唯一 Android 调度器实例。 */
-            val schedulerInstance: Any? = schedulerClass.getField("INSTANCE").get(null)
-            return schedulerInstance as? PixelFrameScheduler
-                ?: throw IllegalStateException(
-                    "$ANDROID_SCHEDULER_CLASS_NAME does not implement PixelFrameScheduler",
-                )
-        } catch (error: ReflectiveOperationException) {
-            throw IllegalStateException(
-                "PixelFrameScheduler.Default requires the pixel-android artifact; " +
-                    "inject a scheduler when running pixel-runtime without Android Host support.",
-                error,
-            )
-        }
+            get() = ChoreographerFrameScheduler
     }
 }
 

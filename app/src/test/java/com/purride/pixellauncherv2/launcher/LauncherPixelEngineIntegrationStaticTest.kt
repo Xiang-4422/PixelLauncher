@@ -5,19 +5,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 防止 Launcher 退回旧聚合依赖、默认 Engine 或字符串路由的静态集成门禁。 */
+/** 防止 Launcher 偏离单模块 Pixel Engine、显式 Engine 或类型化路由的静态集成门禁。 */
 class LauncherPixelEngineIntegrationStaticTest {
 
-    /** 验证生产依赖只通过新版 Android Host artifact 接入。 */
+    /** 验证生产依赖只通过唯一的 Pixel Engine SDK 模块接入。 */
     @Test
-    fun appUsesDirectPixelAndroidDependency() {
+    fun appUsesSinglePixelEngineDependency() {
         /** 当前 app 模块目录。 */
         val moduleRoot = resolveModuleRoot()
         /** app 的 Gradle 构建脚本。 */
         val buildScript = moduleRoot.resolve("build.gradle.kts").readText()
 
-        assertTrue(buildScript.contains("implementation(project(\":pixel-android\"))"))
-        assertFalse(buildScript.contains("implementation(project(\":pixel-engine\"))"))
+        assertTrue(buildScript.contains("implementation(project(\":pixel-engine\"))"))
+        assertFalse(buildScript.contains("implementation(project(\":pixel-android\"))"))
     }
 
     /** 验证 Host 显式绑定 Engine、typed Navigator 和终态释放。 */

@@ -19,7 +19,7 @@ class AdaptiveTextContrastRtlTest {
     /** 拆分后的 engine 应通过 core 桥测量内置字体，不得递归调用同名扩展。 */
     @Test
     fun scaledCoreBitmapFontMeasuresAdjacentTextWithoutRecursion() {
-        /** 来自独立 pixel-core artifact 的默认位图字体。 */
+        /** 来自 pixel-engine 核心层的默认位图字体。 */
         val base = PixelBitmapFont.Default
         /** 来自 pixel-engine artifact 的 Host 缩放适配器。 */
         val scaled = PixelTextScaleRasterizer(base, scaleFactor = 1.5f)

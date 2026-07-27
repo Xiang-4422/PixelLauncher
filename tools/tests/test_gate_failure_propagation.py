@@ -23,65 +23,6 @@ class GateFailurePropagationTest(unittest.TestCase):
 
         self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-sdk-consumer-smoke.sh"))
 
-    def test_runtime_consumer_gate_propagates_publish_failure(self) -> None:
-        """The runtime-only consumer wrapper must stop when publishing its artifacts fails."""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-runtime-consumer-smoke.sh"))
-
-    def test_widgets_consumer_gate_propagates_publish_failure(self) -> None:
-        """widgets 独立消费者必须在发布失败时立即停止。"""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-widgets-consumer-smoke.sh"))
-
-    def test_navigation_consumer_gate_propagates_publish_failure(self) -> None:
-        """navigation 独立消费者必须在发布失败时立即停止。"""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-navigation-consumer-smoke.sh"))
-
-    def test_android_consumer_gate_propagates_publish_failure(self) -> None:
-        """android 独立消费者必须在发布失败时立即停止。"""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-android-consumer-smoke.sh"))
-
-    def test_testing_consumer_gate_propagates_publish_failure(self) -> None:
-        """testing 独立消费者必须在发布失败时立即停止。"""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-testing-consumer-smoke.sh"))
-
-    def test_debug_consumer_gate_propagates_publish_failure(self) -> None:
-        """debug 独立消费者必须在发布失败时立即停止。"""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-debug-consumer-smoke.sh"))
-
-    def test_compose_consumer_gate_propagates_publish_failure(self) -> None:
-        """compose 可选边界消费者必须在发布失败时立即停止。"""
-
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-compose-consumer-smoke.sh"))
-
-    def test_isolated_consumer_coordinate_assertions_follow_stable_version(self) -> None:
-        """隔离消费者的传递坐标断言必须跟随 1.0.0 正式版本。"""
-
-        # 仓库根用于读取真实发布门禁脚本，避免测试复制另一份版本常量。
-        repository_root = Path(__file__).resolve().parents[2]
-        # 这些脚本都会检查当前坐标的全部必需传递依赖。
-        scripts = (
-            "pixel-runtime-consumer-smoke.sh",
-            "pixel-widgets-consumer-smoke.sh",
-            "pixel-navigation-consumer-smoke.sh",
-            "pixel-android-consumer-smoke.sh",
-            "pixel-testing-consumer-smoke.sh",
-            "pixel-debug-consumer-smoke.sh",
-            "pixel-compose-consumer-smoke.sh",
-        )
-        for script in scripts:
-            # 脚本文本必须拒绝继续使用内部 snapshot 坐标作为正式传递依赖断言。
-            source = (repository_root / "tools" / script).read_text(encoding="utf-8")
-            # 双引号 shell 正则需要双反斜线；归一化后统一比较实际传给 rg 的模式。
-            normalized_source = source.replace("\\\\", "\\")
-            with self.subTest(script=script):
-                self.assertNotIn("0\\.1\\.0-SNAPSHOT", normalized_source)
-                self.assertIn("1\\.0\\.0", normalized_source)
-
     def test_route_entry_gate_propagates_publish_failure(self) -> None:
         """The route-entry wrapper must stop when its isolated SDK publication fails."""
 

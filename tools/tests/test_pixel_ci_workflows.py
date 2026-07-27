@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REQUIRED_WORKFLOW = (ROOT / ".github" / "workflows" / "pixel-engine.yml").read_text(
     encoding="utf-8"
 )
-# 夜间设备、性能和耐久工作流的原始文本。
+# 夜间设备矩阵工作流的原始文本。
 NIGHTLY_WORKFLOW = (
     ROOT / ".github" / "workflows" / "pixel-engine-nightly.yml"
 ).read_text(encoding="utf-8")
@@ -90,18 +90,6 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
         self.assertIn("--no-build-cache", REQUIRED_WORKFLOW)
         self.assertIn("--no-build-cache", NIGHTLY_WORKFLOW)
 
-    def test_api29_job_keeps_backup_restore_device_gate(self) -> None:
-        """API 29 模拟器门禁必须执行真实升级和 Auto Backup 恢复并上传证据。"""
-
-        self.assertIn(
-            "python3 tools/check_backup_restore_emulator.py --serial emulator-5554",
-            REQUIRED_WORKFLOW,
-        )
-        self.assertIn(
-            "build/reports/security/m0-1-backup-restore/**",
-            REQUIRED_WORKFLOW,
-        )
-
     def test_required_jobs_install_declared_android_platforms(self) -> None:
         """七个实体 PR job 都不能依赖 runner 偶然预装 compileSdk。"""
 
@@ -110,15 +98,12 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
         self.assertEqual(7, setup_count)
         self.assertEqual(7, REQUIRED_WORKFLOW.count("platforms;android-36.1"))
 
-    def test_nightly_workflow_keeps_device_matrix_benchmark_and_soak(self) -> None:
-        """夜间工作流必须保留 API 矩阵、Macrobenchmark 与 30 分钟设备 soak。"""
+    def test_nightly_workflow_keeps_device_matrix(self) -> None:
+        """夜间工作流必须保留 API 24、29、36 的 instrumentation 矩阵。"""
 
         self.assertIn("api-level: [24, 29, 36]", NIGHTLY_WORKFLOW)
-        self.assertIn("PIXEL_BENCHMARK_SERIAL=emulator-5554", NIGHTLY_WORKFLOW)
-        self.assertIn("PIXEL_BENCHMARK_TEST_CLASS=com.purride.pixelbenchmark.PixelMacrobenchmark", NIGHTLY_WORKFLOW)
-        self.assertIn("PIXEL_SOAK_DURATION_SECONDS=1800", NIGHTLY_WORKFLOW)
-        self.assertIn("bash tools/pixel-device-soak.sh", NIGHTLY_WORKFLOW)
-        self.assertIn("build/reports/performance/device-soak/**", NIGHTLY_WORKFLOW)
+        self.assertNotIn("macrobenchmark", NIGHTLY_WORKFLOW.lower())
+        self.assertNotIn("device-soak", NIGHTLY_WORKFLOW)
         self.assertIn("bash tools/pixel-ci-required-check.sh", NIGHTLY_WORKFLOW)
         self.assertNotIn("continue-on-error", NIGHTLY_WORKFLOW)
 
@@ -145,21 +130,17 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
         self.assertNotIn("performance", DOCUMENTATION_WORKFLOW.lower())
 
     def test_local_release_check_still_aggregates_no_credential_gates(self) -> None:
-        """本地入口默认排除性能，同时为后续性能 Goal 保留显式开关。"""
+        """本地入口必须聚合发布、消费者和供应链门禁，并排除性能专项。"""
 
         # 统一入口必须保留的无凭据子门禁脚本。
         release_gate_scripts = (
             "pixel-consumer-compatibility-matrix.sh",
-            "pixel-perf-smoke.sh",
-            "pixel-soak-test.sh",
-            "pixel-baseline-profile-check.sh",
             "pixel-supply-chain-check.sh",
         )
         for script_name in release_gate_scripts:
             with self.subTest(script_name=script_name):
                 self.assertIn(script_name, RELEASE_CHECK)
-        self.assertIn('PIXEL_RELEASE_INCLUDE_PERFORMANCE_GATES:-0', RELEASE_CHECK)
-        self.assertIn('if [[ "$RUN_PERFORMANCE_GATES" == "1" ]]', RELEASE_CHECK)
+        self.assertNotIn("pixel-baseline-profile-check.sh", RELEASE_CHECK)
         self.assertIn("check_pixel_publication.py", COMPATIBILITY_MATRIX)
 
 

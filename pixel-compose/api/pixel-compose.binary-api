@@ -1,4 +1,0 @@
-# pixel-compose binary API baseline
-public final class com.purride.pixelcompose.PixelComposeHostKt {
-  public static final void PixelHost(com.purride.pixelengine.PixelEngine, kotlin.jvm.functions.Function0<? extends com.purride.pixelui.Widget>, androidx.compose.ui.Modifier, java.lang.String, com.purride.pixelui.PixelHostSetupConfig, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelHostView, kotlin.Unit>, androidx.compose.runtime.Composer, int, int);
-}

@@ -14,18 +14,9 @@ cd "$ROOT_DIR"
 "$PYTHON_BIN" tools/check_secrets.py --git-history
 
 "$GRADLEW_BIN" \
-  :pixel-core:testDebugUnitTest \
-  :pixel-runtime:testDebugUnitTest \
-  :pixel-widgets:testDebugUnitTest \
-  :pixel-navigation:testDebugUnitTest \
-  :pixel-testing:testDebugUnitTest \
-  :pixel-debug:testDebugUnitTest \
-  :pixel-compose:testDebugUnitTest \
   :pixel-engine:testPixelTooling \
   :pixel-engine:testDebugUnitTest \
-  :pixel-demo:testDebugUnitTest \
   :app:testDebugUnitTest \
-  :pixel-compose-sample:assembleDebug \
   --continue \
   --no-build-cache \
   --no-daemon

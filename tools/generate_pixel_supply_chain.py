@@ -14,18 +14,8 @@ from typing import Any
 
 # Pixel SDK 的 Maven group，与发布脚本和消费者坐标保持一致。
 PIXEL_GROUP = "com.purride"
-# 需要进入聚合 SBOM 的九个正式发布坐标。
-PIXEL_ARTIFACTS = (
-    "pixel-core",
-    "pixel-runtime",
-    "pixel-widgets",
-    "pixel-navigation",
-    "pixel-android",
-    "pixel-testing",
-    "pixel-debug",
-    "pixel-compose",
-    "pixel-engine",
-)
+# 需要进入 SBOM 的统一正式发布坐标。
+PIXEL_ARTIFACTS = ("pixel-engine",)
 # Maven 主体文件使用的校验算法；同时覆盖 Central 必需和现代强摘要。
 CHECKSUM_ALGORITHMS = ("md5", "sha1", "sha256", "sha512")
 # CycloneDX 序列号的稳定命名空间，不依赖运行时随机数。
@@ -109,7 +99,7 @@ def write_checksum_sidecars(path: Path) -> dict[str, str]:
 
 
 def publication_files(repository: Path, version: str) -> list[Path]:
-    """返回九个坐标中需要签名和校验和的 Maven 主体文件。"""
+    """返回统一坐标中需要签名和校验和的 Maven 主体文件。"""
 
     # 后缀集合只接受发布契约中的主体，不把已有旁车递归纳入。
     accepted_suffixes = (".aar", ".pom", ".module", ".jar")

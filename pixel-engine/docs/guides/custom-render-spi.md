@@ -1,6 +1,6 @@
 # 自定义 RenderObject SPI
 
-先组合 `pixel-widgets`。只有需要自定义 layout、paint、hit test 或 semantics 时，才 opt-in
+普通页面优先组合标准组件。只有需要自定义 layout、paint、hit test 或 semantics 时，才使用
 `com.purride.pixelui.advanced` 的真实公共 SPI；禁止 import `internal.*`。
 
 实现清单：

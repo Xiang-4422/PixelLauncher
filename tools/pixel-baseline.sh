@@ -6,7 +6,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # External executables are injectable for deterministic shell failure-contract tests.
 GRADLEW_BIN="${PIXEL_GRADLEW_BIN:-$ROOT_DIR/gradlew}"
 PYTHON_BIN="${PIXEL_PYTHON_BIN:-python3}"
-BASH_BIN="${PIXEL_BASH_BIN:-bash}"
 # Stable locale prevents decimal and sorting differences in text reports parsed into baseline JSON.
 export LC_ALL=C
 
@@ -26,8 +25,6 @@ fi
   :pixel-engine:testDebugUnitTest \
   :pixel-engine:lintDebug \
   :pixel-engine:assembleRelease \
-  :pixel-demo:testDebugUnitTest \
-  :pixel-demo:assembleDebug \
   :app:testDebugUnitTest \
   :app:lintDebug \
   :app:assembleDebug \
@@ -44,10 +41,5 @@ fi
 "$PYTHON_BIN" tools/verify_backup_contract.py \
   --apk app/build/outputs/apk/debug/app-debug.apk \
   --apk app/build/outputs/apk/release/app-release-unsigned.apk
-
-# Device collection is optional at this stage but its absence is recorded explicitly in the JSON report.
-if [[ "${PIXEL_BASELINE_WITH_DEVICE:-0}" == "1" ]]; then
-  "$BASH_BIN" tools/pixel-device-baseline.sh
-fi
 
 "$PYTHON_BIN" tools/collect_pixel_baseline.py

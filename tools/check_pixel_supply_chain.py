@@ -16,18 +16,8 @@ from pathlib import Path
 from typing import Any
 
 
-# 九个受支持的正式 Maven artifactId。
-PIXEL_ARTIFACTS = (
-    "pixel-core",
-    "pixel-runtime",
-    "pixel-widgets",
-    "pixel-navigation",
-    "pixel-android",
-    "pixel-testing",
-    "pixel-debug",
-    "pixel-compose",
-    "pixel-engine",
-)
+# 唯一受支持的正式 Maven artifactId。
+PIXEL_ARTIFACTS = ("pixel-engine",)
 # 所有发布主体都必须具备的校验算法。
 CHECKSUM_ALGORITHMS = ("md5", "sha1", "sha256", "sha512")
 # 不得进入任何生产 AAR 的测试框架或夹具类路径片段。
@@ -38,39 +28,12 @@ GLOBAL_FORBIDDEN_CLASS_PARTS = (
     "org/junit/",
     "androidx/test/",
 )
-# 仅 pixel-testing 可以拥有的公开测试 DSL 类名片段。
-TESTING_ONLY_CLASS_PARTS = (
-    "/PixelTester",
-    "/PixelFinder",
-    "/PixelFinders",
-    "/PixelMatchResult",
-)
-# 仅 pixel-debug 可以拥有的 inspector/诊断 UI 类名片段。
-DEBUG_ONLY_CLASS_PARTS = (
-    "/PixelDebugOverlay",
-    "/PixelInspectorPanel",
-    "/PixelInspectorController",
-    "/PixelInspectorNode",
-)
 # 每个坐标允许直接暴露给 Maven 消费者的外部依赖与 scope。
 EXPECTED_EXTERNAL_POM_DEPENDENCIES = {
-    "pixel-core": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
-    "pixel-runtime": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
-    "pixel-widgets": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
-    "pixel-navigation": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
-    "pixel-android": {
+    "pixel-engine": {
         ("androidx.lifecycle", "lifecycle-runtime-ktx", "compile"),
         ("org.jetbrains.kotlin", "kotlin-stdlib", "compile"),
     },
-    "pixel-testing": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
-    "pixel-debug": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
-    "pixel-compose": {
-        ("androidx.compose.runtime", "runtime", "compile"),
-        ("androidx.compose.ui", "ui", "compile"),
-        ("org.jetbrains.kotlin", "kotlin-stdlib", "compile"),
-        ("androidx.compose.runtime", "runtime-saveable", "runtime"),
-    },
-    "pixel-engine": {("org.jetbrains.kotlin", "kotlin-stdlib", "compile")},
 }
 # 允许进入 AAR 的资源根；其他资源必须由发布契约显式解释。
 ALLOWED_AAR_RESOURCE_PREFIXES = (
@@ -219,7 +182,7 @@ def require_unique(directory: Path, pattern: str) -> Path:
 
 
 def primary_files(repository: Path, version: str) -> list[Path]:
-    """返回九个坐标的 AAR、POM、module、sources 和 Javadoc 文件。"""
+    """返回统一坐标的 AAR、POM、module、sources 和 Javadoc 文件。"""
 
     # 汇总后的文件列表按 Maven 相对路径稳定排序。
     files: list[Path] = []
@@ -315,7 +278,7 @@ def validate_pom(path: Path, artifact: str, metadata: dict[str, str], require_li
             raise AssertionError(f"{path}: unconfirmed release must not infer a license")
         if require_license:
             raise AssertionError("Pixel release license is still UNCONFIRMED")
-    # artifact 参数被显式使用，防止误把某一 POM 重复校验九次。
+    # artifact 参数被显式使用，防止误把其他 POM 当成统一引擎产物。
     if root.findtext("m:artifactId", default="", namespaces=namespace) != artifact:
         raise AssertionError(f"{path}: artifactId does not match {artifact}")
 
@@ -356,7 +319,7 @@ def nested_class_names(aar: Path) -> list[str]:
 
 
 def validate_aar_contents(aar: Path, artifact: str) -> dict[str, Any]:
-    """拒绝测试夹具、跨 artifact debug/testing 类和未知 AAR 根条目。"""
+    """拒绝测试框架、测试夹具和未知 AAR 根条目。"""
 
     with zipfile.ZipFile(aar) as archive:
         # AAR 根条目清单用于定位意外资源和嵌套依赖。
@@ -377,20 +340,6 @@ def validate_aar_contents(aar: Path, artifact: str) -> dict[str, Any]:
     ]
     if forbidden_global:
         raise AssertionError(f"{aar}: test fixture/framework classes leaked: {forbidden_global[:20]}")
-    if artifact != "pixel-testing":
-        # 非 testing 坐标不得夹带测试 DSL。
-        leaked_testing = [
-            name for name in class_names if any(part in name for part in TESTING_ONLY_CLASS_PARTS)
-        ]
-        if leaked_testing:
-            raise AssertionError(f"{aar}: pixel-testing classes leaked: {leaked_testing[:20]}")
-    if artifact != "pixel-debug":
-        # 非 debug 坐标不得夹带 inspector/诊断 UI。
-        leaked_debug = [
-            name for name in class_names if any(part in name for part in DEBUG_ONLY_CLASS_PARTS)
-        ]
-        if leaked_debug:
-            raise AssertionError(f"{aar}: pixel-debug classes leaked: {leaked_debug[:20]}")
     # 资源清单进入报告供人工发现仍未能自动判断的无用资源。
     resource_entries = [name for name in archive_names if name.startswith(("res/", "assets/"))]
     return {
@@ -431,13 +380,21 @@ def validate_gradle_verification_metadata(path: Path) -> dict[str, Any]:
     verify_metadata = root.findtext("v:configuration/v:verify-metadata", default="", namespaces=namespace)
     if verify_metadata.strip().lower() != "true":
         raise AssertionError(f"{path}: verify-metadata must be true")
-    # 广泛信任 artifact 或忽略签名密钥会绕过逐文件 checksum 审阅。
-    forbidden_configuration = (
-        root.find("v:configuration/v:trusted-artifacts", namespace),
-        root.find("v:configuration/v:ignored-keys", namespace),
-    )
-    if any(element is not None and len(element) > 0 for element in forbidden_configuration):
-        raise AssertionError(f"{path}: broad trusted artifacts or ignored keys are forbidden")
+    # 只允许 Android Studio 动态请求且不参与编译/打包的 AndroidX 示例源码附件。
+    trusted_artifacts = root.findall("v:configuration/v:trusted-artifacts/v:trust", namespace)
+    # 允许规则的完整属性必须精确匹配，防止扩大到普通 sources 或二进制产物。
+    allowed_trust_rule = {
+        "group": r"androidx\..*",
+        "file": r".*-samples-sources\.jar",
+        "regex": "true",
+        "reason": "AndroidX IDE 示例源码附件不参与编译或打包，且其逻辑文件名由 Android Studio 动态生成",
+    }
+    if any(element.attrib != allowed_trust_rule for element in trusted_artifacts):
+        raise AssertionError(f"{path}: broad trusted artifacts are forbidden")
+    # 忽略签名密钥会绕过逐文件 checksum 审阅，任何形式都不允许。
+    ignored_keys = root.find("v:configuration/v:ignored-keys", namespace)
+    if ignored_keys is not None and len(ignored_keys) > 0:
+        raise AssertionError(f"{path}: ignored keys are forbidden")
 
     # 全部受审 artifact 必须至少有一个合法 SHA-256。
     artifacts = root.findall("v:components/v:component/v:artifact", namespace)
@@ -475,7 +432,7 @@ def validate_gradle_verification_metadata(path: Path) -> dict[str, Any]:
 
 
 def validate_gradle_lockfiles(paths: list[Path]) -> dict[str, Any]:
-    """校验九个 SDK 模块都锁定 Release 编译与运行配置。"""
+    """校验统一 SDK 模块锁定 Release 编译与运行配置。"""
 
     if len(paths) != len(PIXEL_ARTIFACTS):
         raise AssertionError(f"Expected {len(PIXEL_ARTIFACTS)} module lockfiles, found {len(paths)}")
@@ -570,7 +527,7 @@ def validate_sbom(path: Path, version: str, metadata: dict[str, str]) -> dict[st
     components = sbom.get("components")
     if not isinstance(components, list):
         raise AssertionError(f"{path}: missing components array")
-    # 当前 SBOM 中的九个内部坐标。
+    # 当前 SBOM 中的统一内部坐标。
     internal_components = {
         component.get("name")
         for component in components
@@ -610,7 +567,7 @@ def validate_provenance(path: Path, repository: Path, subjects: list[Path]) -> d
         subject.get("name"): subject.get("digest", {}).get("sha256")
         for subject in provenance.get("subject", [])
     }
-    # 期望 subject 来自九个坐标的 45 个 Maven 主体文件。
+    # 期望 subject 来自统一坐标的五个 Maven 主体文件。
     expected_subjects = {
         subject.relative_to(repository).as_posix(): hash_file(subject, "sha256")
         for subject in subjects
@@ -661,12 +618,12 @@ def main() -> int:
             raise AssertionError("Confirmed release requires a repository NOTICE file")
         repository_notice_report = validate_repository_notice(args.repository_notice, metadata)
 
-    # Gradle 依赖校验和九模块锁文件必须在发布内容校验前通过。
+    # Gradle 依赖校验和模块锁文件必须在发布内容校验前通过。
     gradle_verification_report = validate_gradle_verification_metadata(args.verification_metadata)
     # 各模块 Release 配置锁定摘要。
     gradle_lock_report = validate_gradle_lockfiles(args.lockfile)
 
-    # 九个坐标共 45 个 Maven 主体文件。
+    # 统一坐标共五个 Maven 主体文件。
     files = primary_files(args.repository, args.version)
     # AAR 发布内容审计结果。
     aar_reports: list[dict[str, Any]] = []
@@ -689,7 +646,7 @@ def main() -> int:
         aggregate_directory,
         f"pixel-engine-{args.version}-provenance.intoto.json",
     )
-    # 签名与 checksum 覆盖 45 个主体和 2 个补充物。
+    # 签名与 checksum 覆盖五个主体和两个补充物。
     signed_files = files + [sbom, provenance]
     # 每个文件的强摘要进入验收报告。
     checksum_reports = {

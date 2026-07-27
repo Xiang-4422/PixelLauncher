@@ -10,11 +10,10 @@ import com.purride.pixelcore.requireSha256
 import java.io.InputStream
 
 /**
- * Pixel SDK sibling artifact 访问 core 热路径与安全原语的非稳定桥。
+ * Pixel SDK 内部访问 core 热路径与安全原语的非稳定入口。
  *
- * 该对象位于明确的 `internal` package，不属于消费者稳定 API；它只用于让独立编译的
- * `pixel-runtime`、`pixel-widgets` 和 `pixel-android` 复用同一份实现，避免 friend-path 或复制代码。
- * 任何签名变化都必须同步编译全部 sibling artifact，但不承诺第三方源码兼容。
+ * 该对象位于明确的 `internal` package，不属于消费者稳定 API；引擎内部各层通过它复用
+ * bitmap 与字形转换逻辑，避免热路径复制。
  */
 public object PixelCoreArtifactAccess {
     /** manifest、catalog 或 sprite JSON 的最大安全字符预算。 */

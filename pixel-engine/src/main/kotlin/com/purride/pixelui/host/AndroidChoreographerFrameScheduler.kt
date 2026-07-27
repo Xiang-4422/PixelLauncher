@@ -5,7 +5,7 @@ import android.view.Choreographer
 /**
  * Android 默认帧调度器。
  *
- * 实现由 `pixel-android` artifact 持有，并直接委托给系统 [Choreographer]，从而同步
+ * 实现由统一 `pixel-engine` 持有，并直接委托给系统 [Choreographer]，从而同步
  * 60/90/120Hz 等不同屏幕帧节拍。
  */
 internal object ChoreographerFrameScheduler : PixelCancellableFrameScheduler {

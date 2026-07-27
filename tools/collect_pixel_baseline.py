@@ -294,7 +294,6 @@ def collect_baseline(root: Path) -> dict[str, Any]:
     aar_path = root / "pixel-engine/build/outputs/aar/pixel-engine-release.aar"
     test_roots = {
         "pixel-engine": root / "pixel-engine/build/test-results/testDebugUnitTest",
-        "pixel-demo": root / "pixel-demo/build/test-results/testDebugUnitTest",
         "app": root / "app/build/test-results/testDebugUnitTest",
     }
     changed_paths = git_changed_paths(root)

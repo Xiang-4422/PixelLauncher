@@ -41,13 +41,6 @@ if grep -R -n -F 'com.purride.pixelui.widgets.navigation' "$ROUTE_ENTRY_CONSUMER
 fi
 
 "$GRADLEW_BIN" \
-  :pixel-core:publishReleasePublicationToCompatibilityRepository \
-  :pixel-runtime:publishReleasePublicationToCompatibilityRepository \
-  :pixel-widgets:publishReleasePublicationToCompatibilityRepository \
-  :pixel-navigation:publishReleasePublicationToCompatibilityRepository \
-  :pixel-android:publishReleasePublicationToCompatibilityRepository \
-  :pixel-testing:publishReleasePublicationToCompatibilityRepository \
-  :pixel-debug:publishReleasePublicationToCompatibilityRepository \
   :pixel-engine:publishReleasePublicationToCompatibilityRepository \
   --no-daemon
 

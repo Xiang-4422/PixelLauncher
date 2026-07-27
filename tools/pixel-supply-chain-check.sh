@@ -94,14 +94,6 @@ export ORG_GRADLE_PROJECT_pixelStagingRepositoryUrl="$STAGING_REPOSITORY"
 # 锁文件必须已经存在且与 Release 编译/运行依赖图一致；这里不使用 --write-locks 自动放宽差异。
 "$GRADLEW_BIN" \
   writePixelReleaseDependencyGraph \
-  :pixel-core:publishReleasePublicationToPixelStagingRepository \
-  :pixel-runtime:publishReleasePublicationToPixelStagingRepository \
-  :pixel-widgets:publishReleasePublicationToPixelStagingRepository \
-  :pixel-navigation:publishReleasePublicationToPixelStagingRepository \
-  :pixel-android:publishReleasePublicationToPixelStagingRepository \
-  :pixel-testing:publishReleasePublicationToPixelStagingRepository \
-  :pixel-debug:publishReleasePublicationToPixelStagingRepository \
-  :pixel-compose:publishReleasePublicationToPixelStagingRepository \
   :pixel-engine:publishReleasePublicationToPixelStagingRepository \
   --no-build-cache \
   --no-daemon
@@ -131,7 +123,7 @@ for supplemental_file in \
     "$supplemental_file"
 done
 
-# 复用 M8 发布契约，验证九坐标内部依赖 DAG、AAR metadata、sources、Javadoc 和 Gradle variants。
+# 复用发布契约，验证统一坐标的 AAR metadata、sources、Javadoc 和 Gradle variants。
 "$PYTHON_BIN" tools/check_pixel_publication.py \
   --repository "$STAGING_REPOSITORY" \
   --version "1.0.0" \
@@ -153,20 +145,12 @@ if [[ "$REQUIRE_LICENSE" == "1" ]]; then
   )
 fi
 
-# 隔离 keyring 重验 47 个签名，并重算全部 checksum、POM、SBOM、来源和 AAR 内容边界。
+# 隔离 keyring 重验签名，并重算全部 checksum、POM、SBOM、来源和 AAR 内容边界。
 "$PYTHON_BIN" tools/check_pixel_supply_chain.py \
   --repository "$STAGING_REPOSITORY" \
   --version "1.0.0" \
   --metadata "$RELEASE_METADATA" \
   --verification-metadata "$ROOT_DIR/gradle/verification-metadata.xml" \
-  --lockfile "$ROOT_DIR/pixel-core/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-runtime/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-widgets/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-navigation/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-android/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-testing/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-debug/gradle.lockfile" \
-  --lockfile "$ROOT_DIR/pixel-compose/gradle.lockfile" \
   --lockfile "$ROOT_DIR/pixel-engine/gradle.lockfile" \
   --public-key "$PUBLIC_KEY" \
   --report "$REPORT_DIR/validation.json" \

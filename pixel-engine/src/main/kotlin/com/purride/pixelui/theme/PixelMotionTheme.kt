@@ -343,7 +343,7 @@ public class PixelMotionTheme(
         public fun maybeOf(context: BuildContext): PixelMotionThemeData? {
             /** 显式 runtime motion provider 始终具有最高优先级。 */
             val explicitTheme = context.dependOnInheritedWidgetOfExactType<PixelMotionTheme>()?.data
-            return explicitTheme ?: PixelWidgetArtifactResolver.motionTheme(context)
+            return explicitTheme ?: PixelTheme.maybeTokensOf(context)?.motion
         }
 
         /** 执行 `PixelMotionTheme` 的 `of` 公开行为；具体参数、返回和副作用见下文。
@@ -356,29 +356,6 @@ public class PixelMotionTheme(
     }
 }
 
-/**
- * 在不让 runtime 反向依赖 widgets 的前提下读取兼容 `PixelTheme.tokens.motion`。
- *
- * 聚合或 pixel-widgets 消费者会提供固定 internal bridge；纯 runtime 消费者没有该类时返回 null，
- * 随后使用 [PixelMotionThemeData.Default]。
- */
-private object PixelWidgetArtifactResolver {
-    /** widgets sibling bridge 的冻结内部类名。 */
-    private const val BridgeClassName: String = "com.purride.pixelui.internal.PixelWidgetArtifactAccess"
-
-    /** 从可选 widgets artifact 解析当前 PixelTheme motion token。 */
-    fun motionTheme(context: BuildContext): PixelMotionThemeData? {
-        return runCatching {
-            /** widgets artifact 的 Kotlin object class。 */
-            val bridgeClass = Class.forName(BridgeClassName)
-            /** Kotlin object 的唯一实例。 */
-            val bridge = bridgeClass.getField("INSTANCE").get(null)
-            /** 明确签名的 sibling bridge 方法。 */
-            val method = bridgeClass.getMethod("motionTheme", BuildContext::class.java)
-            method.invoke(bridge, context) as? PixelMotionThemeData
-        }.getOrNull()
-    }
-}
 
 /**
  * 定义 `PixelMotionScope` 在 `PixelMotionTheme` 中承担的数据与行为边界。

@@ -13,14 +13,6 @@ cd "$ROOT_DIR"
 "$BASH_BIN" tools/pixel-previous-binary-compatibility.sh
 "$BASH_BIN" tools/pixel-consumer-compatibility-matrix.sh
 PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-sdk-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-core-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-runtime-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-widgets-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-navigation-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-android-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-testing-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-debug-consumer-smoke.sh
-PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-compose-consumer-smoke.sh
 # 同一隔离工程必须仅依据发布文档完成 Host、typed route、公开 SPI 和 PixelTester 接入。
 PIXEL_SKIP_COMPATIBILITY_PUBLISH=1 "$BASH_BIN" tools/pixel-docs-consumer-smoke.sh
 

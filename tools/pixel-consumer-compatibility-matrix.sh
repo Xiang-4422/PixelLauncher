@@ -48,14 +48,6 @@ mkdir -p "$REPORT_DIR"
 if [[ "${PIXEL_SKIP_COMPATIBILITY_PUBLISH:-0}" != "1" ]]; then
   rm -rf "$COMPATIBILITY_REPOSITORY"
   "$GRADLEW_BIN" \
-    :pixel-core:publishReleasePublicationToCompatibilityRepository \
-    :pixel-runtime:publishReleasePublicationToCompatibilityRepository \
-    :pixel-widgets:publishReleasePublicationToCompatibilityRepository \
-    :pixel-navigation:publishReleasePublicationToCompatibilityRepository \
-    :pixel-android:publishReleasePublicationToCompatibilityRepository \
-    :pixel-testing:publishReleasePublicationToCompatibilityRepository \
-    :pixel-debug:publishReleasePublicationToCompatibilityRepository \
-    :pixel-compose:publishReleasePublicationToCompatibilityRepository \
     :pixel-engine:publishReleasePublicationToCompatibilityRepository \
     --no-daemon
 fi

@@ -14,28 +14,11 @@ cd "$ROOT_DIR"
 # API 报告必须由本次源码重新生成，不能读取上一次 build 目录。
 "$GRADLEW_BIN" clean --no-build-cache --no-daemon
 "$GRADLEW_BIN" \
-  :pixel-core:checkBinaryApi \
-  :pixel-core:checkMetalavaApi \
-  :pixel-runtime:checkRuntimeBinaryApi \
-  :pixel-runtime:checkRuntimeMetalavaApi \
-  :pixel-widgets:checkWidgetsBinaryApi \
-  :pixel-widgets:checkWidgetsMetalavaApi \
-  :pixel-navigation:checkNavigationBinaryApi \
-  :pixel-navigation:checkNavigationMetalavaApi \
-  :pixel-android:checkAndroidBinaryApi \
-  :pixel-android:checkAndroidMetalavaApi \
-  :pixel-testing:checkTestingBinaryApi \
-  :pixel-testing:checkTestingMetalavaApi \
-  :pixel-debug:checkDebugBinaryApi \
-  :pixel-debug:checkDebugMetalavaApi \
-  :pixel-compose:checkComposeBinaryApi \
-  :pixel-compose:checkComposeMetalavaApi \
   :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkMetalavaApi \
   :pixel-engine:checkMetalavaReleasedCompatibility \
   :pixel-engine:checkStableApiBoundary \
-  :pixel-engine:checkArtifactBoundaries \
   :pixel-engine:checkThemeTokenCoverage \
   :pixel-engine:checkUnicodeGraphemeDataGeneration \
   :pixel-engine:checkUnicodeBidiDataGeneration \

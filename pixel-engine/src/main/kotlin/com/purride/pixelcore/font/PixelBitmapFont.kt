@@ -3,7 +3,7 @@ package com.purride.pixelcore
 /**
  * 最小可用位图字体。
  *
- * 这一层继续给 pixel-engine UI layer 和 `pixel-demo` 提供零资产依赖的默认文本能力，
+ * 这一层给 pixel-engine UI 层和宿主应用提供零资产依赖的默认文本能力，
  * 但内部已经改为复用 `PixelFontEngine`。这样后续无论切到真实字形包还是保留内置字体，
  * 上层都走同一条文本测量与绘制链路。
  */

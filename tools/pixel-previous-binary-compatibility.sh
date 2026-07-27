@@ -19,20 +19,6 @@ CURRENT_RUNNER_BUILD="$ROOT_DIR/compatibility/previous-binary/current-runner"
 CURRENT_REPOSITORY="$ROOT_DIR/build/compatibility-repository"
 # Current producer AAR used as the authoritative runtime digest.
 CURRENT_AAR="$ROOT_DIR/pixel-engine/build/outputs/aar/pixel-engine-release.aar"
-# 当前独立 core AAR，用于确认旧消费者运行时解析到精确的拆分产物。
-CURRENT_CORE_AAR="$ROOT_DIR/pixel-core/build/outputs/aar/pixel-core-release.aar"
-# 当前独立 runtime AAR，用于确认聚合 POM 传递解析到精确的运行时产物。
-CURRENT_RUNTIME_AAR="$ROOT_DIR/pixel-runtime/build/outputs/aar/pixel-runtime-release.aar"
-# 当前独立 widgets AAR，用于确认旧消费者运行时使用拆分后的标准组件产物。
-CURRENT_WIDGETS_AAR="$ROOT_DIR/pixel-widgets/build/outputs/aar/pixel-widgets-release.aar"
-# 当前独立 navigation AAR，用于确认旧消费者运行时使用拆分后的路由产物。
-CURRENT_NAVIGATION_AAR="$ROOT_DIR/pixel-navigation/build/outputs/aar/pixel-navigation-release.aar"
-# 当前独立 android AAR，用于确认旧消费者运行时使用拆分后的平台宿主产物。
-CURRENT_ANDROID_AAR="$ROOT_DIR/pixel-android/build/outputs/aar/pixel-android-release.aar"
-# 当前独立 testing AAR，用于确认旧消费者运行时使用拆分后的测试工具产物。
-CURRENT_TESTING_AAR="$ROOT_DIR/pixel-testing/build/outputs/aar/pixel-testing-release.aar"
-# 当前独立 debug AAR，用于确认旧消费者运行时使用拆分后的诊断 UI 产物。
-CURRENT_DEBUG_AAR="$ROOT_DIR/pixel-debug/build/outputs/aar/pixel-debug-release.aar"
 # Stable report proving the old compiler used only the frozen baseline AAR.
 OLD_PROVENANCE_REPORT="$ROOT_DIR/build/reports/compatibility/old-consumer-provenance.json"
 # Stable report proving the runtime resolves only the current engine AAR.
@@ -51,13 +37,6 @@ RUNTIME_CLASSPATH_REPORT="$ROOT_DIR/build/reports/compatibility/runtime-classpat
 # side effect or a stale artifact left in the shared compatibility repository.
 rm -rf "$CURRENT_REPOSITORY"
 "$GRADLEW_BIN" \
-  :pixel-core:publishReleasePublicationToCompatibilityRepository \
-  :pixel-runtime:publishReleasePublicationToCompatibilityRepository \
-  :pixel-widgets:publishReleasePublicationToCompatibilityRepository \
-  :pixel-navigation:publishReleasePublicationToCompatibilityRepository \
-  :pixel-android:publishReleasePublicationToCompatibilityRepository \
-  :pixel-testing:publishReleasePublicationToCompatibilityRepository \
-  :pixel-debug:publishReleasePublicationToCompatibilityRepository \
   :pixel-engine:publishReleasePublicationToCompatibilityRepository \
   --no-daemon
 
@@ -68,13 +47,6 @@ rm -rf "$CURRENT_REPOSITORY"
   -PlegacyConsumerAar="$OLD_CONSUMER_AAR" \
   -PbaselineEngineAar="$BASELINE_AAR" \
   -PcurrentEngineAar="$CURRENT_AAR" \
-  -PcurrentCoreAar="$CURRENT_CORE_AAR" \
-  -PcurrentRuntimeAar="$CURRENT_RUNTIME_AAR" \
-  -PcurrentWidgetsAar="$CURRENT_WIDGETS_AAR" \
-  -PcurrentNavigationAar="$CURRENT_NAVIGATION_AAR" \
-  -PcurrentAndroidAar="$CURRENT_ANDROID_AAR" \
-  -PcurrentTestingAar="$CURRENT_TESTING_AAR" \
-  -PcurrentDebugAar="$CURRENT_DEBUG_AAR" \
   -PruntimeClasspathReport="$RUNTIME_CLASSPATH_REPORT" \
   :runner:testDebugUnitTest \
   --no-daemon

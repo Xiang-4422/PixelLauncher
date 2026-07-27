@@ -10,14 +10,6 @@ cd "$ROOT_DIR"
 # 删除旧 lint model/report 并禁止 build cache 恢复缺失报告。
 "$GRADLEW_BIN" clean --no-build-cache --no-daemon
 "$GRADLEW_BIN" \
-  :pixel-core:lintDebug \
-  :pixel-runtime:lintDebug \
-  :pixel-widgets:lintDebug \
-  :pixel-navigation:lintDebug \
-  :pixel-android:lintDebug \
-  :pixel-testing:lintDebug \
-  :pixel-debug:lintDebug \
-  :pixel-compose:lintDebug \
   :pixel-engine:lintDebug \
   :app:lintDebug \
   --continue \

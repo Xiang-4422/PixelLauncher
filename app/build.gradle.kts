@@ -91,8 +91,8 @@ android {
 }
 
 dependencies {
-    // Launcher 直接消费新版最小 Android Host 边界，不再依赖 legacy 聚合 artifact。
-    implementation(project(":pixel-android"))
+    // Launcher 直接消费唯一的 Pixel Engine SDK 模块。
+    implementation(project(":pixel-engine"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

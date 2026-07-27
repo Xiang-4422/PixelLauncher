@@ -1,15 +1,15 @@
-# 迁移到 1.0
+# 迁移到统一 pixel-engine
 
-不要直接跨版本替换 AAR。先在旧版本执行测试与 API dump，再升级到 1.0 artifact 图并完整 clean，
-最后按失败领域逐项迁移。
+从旧拆分 artifact 迁移时按以下顺序处理：
 
-1. 将新工程从聚合 `pixel-engine` 改为 `pixel-android` 加按需 testing/debug/Compose；旧导入别名仍保留。
-2. 只 import 公开包，RenderObject 改用 `advanced.Pixel*` 真实 SPI。
-3. Host 改用 `PixelEngine`/`PixelHostSetup`，owner 终态显式 dispose。
-4. 主题改用语义 token 与八状态集合，删除复制的固定组件颜色。
-5. 路由改用 typed destination/request/entry/outcome，并注册版本化 snapshot adapter。
-6. 文本 offset 保持 UTF-16 API，但编辑、selection、caret 和 hit test 必须落在 Unicode 17 grapheme 边界。
-7. clean Gradle/build cache，重新编译全部消费者，再执行 JVM、instrumentation、R8 和性能门禁。
+1. 删除 `pixel-core`、`pixel-runtime`、`pixel-widgets`、`pixel-navigation`、`pixel-android`、`pixel-testing`、`pixel-debug` 和 `pixel-compose` 依赖。
+2. 生产与测试源码统一依赖 `com.purride:pixel-engine:1.0.0`。
+3. 保留现有公开包 import；源码包名没有因产物合并而改变。
+4. 删除 Compose `PixelHost` wrapper 调用；需要 Compose 时在应用侧用 `AndroidView` 承载 `PixelHostSetup.rootView`。
+5. clean 后重新执行 JVM 测试、instrumentation 和消费者侧 R8。
 
-细分迁移文档位于 [migrations 目录说明](../migrations/TEMPLATE.md)；破坏、弃用周期和 SemVer 规则见
-[发布与兼容策略](../发布与兼容策略.md)。
+```bash
+./gradlew clean test lint assemble
+```
+
+细分 API 迁移文档位于 [migrations 目录说明](../migrations/TEMPLATE.md)，兼容规则见 [发布与兼容策略](../发布与兼容策略.md)。

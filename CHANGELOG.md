@@ -6,9 +6,8 @@ First public stable release of the Android-first Pixel Engine SDK.
 
 ### Release highlights
 
-- Nine independently consumable artifacts: `pixel-core`, `pixel-runtime`, `pixel-widgets`,
-  `pixel-navigation`, `pixel-android`, `pixel-testing`, `pixel-debug`, optional `pixel-compose`,
-  and the compatibility aggregate `pixel-engine`.
+- One consumer-facing artifact, `pixel-engine`, containing the complete SDK surface. Source
+  packages retain clear responsibilities without exposing internal module assembly to consumers.
 - Stable retained rendering, typed navigation and restoration, lifecycle-safe Host integration,
   accessibility semantics, keyboard/gamepad input, Unicode-safe text editing, adaptive layout,
   theming, animation, resource loading, testing, and debug SPI contracts.
@@ -24,8 +23,8 @@ First public stable release of the Android-first Pixel Engine SDK.
 
 ### Known limits
 
-- The SDK is Android-first; Compose support hosts a complete Pixel Host and does not embed
-  arbitrary Composables inside the retained Pixel render tree.
+- The SDK is Android-first. Compose wrappers are intentionally excluded from the core artifact;
+  Compose applications may host the Android View surface from application code.
 - Representative device performance baselines and performance soak remain a separate follow-up
   workstream and are not part of this release candidate's acceptance scope.
 
@@ -61,23 +60,15 @@ Internal 0.x SDK baseline for `pixel-engine`.
 
 ### Added SDK surface
 
-- Optional `pixel-compose` now provides the real `PixelHost` Composable wrapper, a buildable
-  `pixel-compose-sample`, ViewTree lifecycle/density/focus/IME/accessibility propagation, explicit
-  WindowInsets forwarding, and bounded `rememberSaveable` state fallback. Compose remains absent
-  from `pixel-android` and the legacy aggregate graph; arbitrary Composables cannot be embedded in
-  the retained Pixel render tree. See `pixel-engine/docs/migrations/1.0.0-compose-host.md`.
 - Immutable `PixelEngine.Builder` instances with injectable clock, frame scheduler, per-Host ticker
   factory, structured error reporter/logger, resource resolver/cache, Host environment, focused
   Host capabilities, and explicit theme override. New typed Host actions replace string protocols;
   missing and failed optional capabilities return explicit sealed results. Legacy
   `PixelHostBridge`, setup, and frame-scope descriptors remain compatible. See
   `pixel-engine/docs/migrations/1.0.0-engine-services.md`.
-- Nine-artifact M7-1 publication boundary: independently versioned `pixel-core`, `pixel-runtime`,
-  `pixel-widgets`, `pixel-navigation`, `pixel-android`, `pixel-testing`, `pixel-debug`, optional
-  `pixel-compose`, and the legacy `pixel-engine` aggregate. Every coordinate has independent
-  Metalava/JVM ABI baselines, POM, consumer rules, artifact/dependency budgets, and an isolated
-  Maven/R8 consumer. The minimal `pixel-android` Host graph excludes testing/debug/compose;
-  Compose dependencies are resolved only by consumers that explicitly select `pixel-compose`.
+- The SDK publication was consolidated into one `pixel-engine` AAR, POM, API/ABI baseline,
+  artifact budget, dependency lock and isolated Maven/R8 consumer. Obsolete split-artifact,
+  Compose sample, demo and benchmark modules were removed from the main build.
 - Thread-safe byte-bounded `PixelResourceCache` with per-kind/global LRU budgets, glyph-pack
   caching, single-flight misses, lock-free loading, observable eviction snapshots, and stale
   in-flight writeback prevention; plus `PixelResourceLoader` for caller-owned executors,

@@ -18,14 +18,6 @@ rm -rf "$COMPATIBILITY_REPOSITORY"
 rm -f "$PUBLICATION_REPORT"
 
 "$GRADLEW_BIN" \
-  :pixel-core:publishReleasePublicationToCompatibilityRepository \
-  :pixel-runtime:publishReleasePublicationToCompatibilityRepository \
-  :pixel-widgets:publishReleasePublicationToCompatibilityRepository \
-  :pixel-navigation:publishReleasePublicationToCompatibilityRepository \
-  :pixel-android:publishReleasePublicationToCompatibilityRepository \
-  :pixel-testing:publishReleasePublicationToCompatibilityRepository \
-  :pixel-debug:publishReleasePublicationToCompatibilityRepository \
-  :pixel-compose:publishReleasePublicationToCompatibilityRepository \
   :pixel-engine:publishReleasePublicationToCompatibilityRepository \
   --no-build-cache \
   --no-daemon
