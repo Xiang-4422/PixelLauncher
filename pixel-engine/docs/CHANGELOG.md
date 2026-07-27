@@ -44,7 +44,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
   classes. Source using the `advanced` names remains compatible after recompilation, but binaries
   compiled against the old aliases must be rebuilt because their descriptors referenced
   `com.purride.pixelui.internal.*`. See
-  `pixel-engine/docs/migrations/0.1.0-SNAPSHOT-real-render-spi.md`.
+  See `pixel-engine/docs/guides/migration.md`.
 - `PixelHostView.backgroundColor` was renamed to `bezelColor`.
 - `PixelHostView.pixelGridColor` was renamed to `offPixelColor`.
 - `PixelPagerController.startDrag` now requires `viewportSizePx`.
@@ -52,11 +52,11 @@ Internal 0.x SDK baseline for `pixel-engine`.
   `ListTile`, `PixelMenuItem`, `Menu`, `Dialog`, `TextField`, and `Slider` Kotlin APIs. Existing
   source calls remain valid after recompilation, but binaries compiled against the earlier
   `0.1.0-SNAPSHOT` JVM descriptors must be rebuilt. See
-  `pixel-engine/docs/migrations/1.0.0-accessibility-semantics.md`.
+  See `pixel-engine/docs/guides/migration.md`.
 - Per-Host focus/input appends defaulted parameters to `Popover`, `Menu`, `Dialog`, `Slider`,
   `Tabs`, `SegmentedControl`, `RefreshIndicator`, and `SwipeRefreshScaffold`. Existing source calls
   remain valid after recompilation, but binaries compiled against the earlier snapshot JVM
-  descriptors must be rebuilt. See `pixel-engine/docs/migrations/1.0.0-modal-focus.md`.
+  descriptors must be rebuilt. See `pixel-engine/docs/guides/migration.md`.
 
 ### Added SDK surface
 
@@ -65,7 +65,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
   Host capabilities, and explicit theme override. New typed Host actions replace string protocols;
   missing and failed optional capabilities return explicit sealed results. Legacy
   `PixelHostBridge`, setup, and frame-scope descriptors remain compatible. See
-  `pixel-engine/docs/migrations/1.0.0-engine-services.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - The SDK publication was consolidated into one `pixel-engine` AAR, POM, API/ABI baseline,
   artifact budget, dependency lock and isolated Maven/R8 consumer. Obsolete split-artifact,
   Compose sample, demo and benchmark modules were removed from the main build.
@@ -76,27 +76,27 @@ Internal 0.x SDK baseline for `pixel-engine`.
   failure caching. Bitmap/sprite/manifest/glyph inputs now have strict limits, checksum and
   corruption validation, while public pixel/glyph arrays use defensive copies. Existing resource
   constructors and `copy$default` JVM descriptors remain present. See
-  `pixel-engine/docs/migrations/1.0.0-resource-loading-memory.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - `PixelHostFrameDiagnostics`, exclusive `PixelFrameTimings`, `PixelFrameWorkload`, and
   `PixelFrameDropReason` for opt-in build/layout/paint/buffer-submit/Android-draw timing, dirty and
   pixel work, ART allocation/GC deltas, cache activity, refresh-rate budgets, and deadline
   attribution. Disabled Hosts do not sample ART or allocate diagnostics snapshots. See
-  `pixel-engine/docs/migrations/1.0.0-frame-diagnostics.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - A real advanced RenderObject SPI, `@PixelExperimentalApi`, isolated Maven consumer tests,
   Metalava compatibility gates, and an old-consumer-binary runtime fixture.
 - Entry-backed typed navigation with `PixelRouteDestination<A, R>`, `PixelRouteRequest<A, R>`,
   independent `PixelRouteEntry<A, R>` instances, explicit `PixelRouteOutcome`, entry-local typed
   state, lifecycle inspection, navigation observers, and structured failures. See
-  `pixel-engine/docs/migrations/1.0.0-route-entry.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - Versioned typed Navigator snapshots, destination-owned argument/state migration, typed roots,
   nested and retained multi-stack navigation, validated typed deep links, and Android predictive
-  back progress. See `pixel-engine/docs/migrations/1.0.0-navigation-restoration.md`.
+  back progress. See `pixel-engine/docs/guides/migration.md`.
 - `PixelErrorBoundary` and `PixelErrorPanel` for build/render-time widget fallback.
 - `PixelBackDispatcher`, discrete/predictive back handlers, automatic API 33/34+ Host registration,
   and the API 24–32 `PixelHostView.handleBackPressed` compatibility path.
 - Orthogonal Host attachment/owner lifecycle, automatic ViewTree owner binding, explicit
   start/resume/pause/stop/destroy APIs, lifecycle diagnostics, and Host-owned cancellable
-  frame/ticker scopes. See `pixel-engine/docs/migrations/1.0.0-host-lifecycle.md`.
+  frame/ticker scopes. See `pixel-engine/docs/guides/migration.md`.
 - `PixelHapticFeedback` for widget-level host haptic requests.
 - `PixelHostView.dispose` and `PixelHostSetup.dispose` as idempotent destroy-compatible teardown.
 - Typed `PixelPopupRoute<R>`, `PixelOverlayEntry<R>`, explicit overlay layers, dismiss policies,
@@ -106,13 +106,13 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - Stable retained semantics trees, complete state/range/collection/live-region properties, typed
   accessibility actions, per-Host monotonic Android virtual IDs, focus/hover/event bridging, and
   structured `PixelTester` semantics assertions. See
-  `pixel-engine/docs/migrations/1.0.0-accessibility-semantics.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - `PixelThemeTokens` with semantic light/dark/high-contrast color schemes, typography, spacing,
   sizes, stair-step radii, integer borders, hard-shadow elevation, motion, labels, and 21 component
   token families; legacy `PixelThemeData` remains available through a compatibility projection.
 - `PixelControlStateSet`, `PixelStateProperty`, and `PixelStateMap` with one shared eight-state
   priority contract, additive focus indicators, Loading focus retention, and Disabled traversal
-  removal. See `pixel-engine/docs/migrations/1.0.0-theme-tokens-and-component-states.md`.
+  removal. See `pixel-engine/docs/guides/migration.md`.
 - `Visibility` for simple child/replacement switching.
 - `LoadStateView` for `PixelAsyncSnapshot` loading/empty/error/content rendering.
 - `SelectionList` and `OptionList` for controlled single-choice lists.
@@ -124,7 +124,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `AnimatedVisibility` for animated child/replacement visibility changes.
 - `PixelMotionTheme`, role-aware motion tokens, spring settle parameters, Host-injected live Android
   animator settings, and `PixelHostView.motionSettingsOverride`. See
-  `pixel-engine/docs/migrations/1.0.0-motion-theme.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - `FocusTraversalGroup` for local focus traversal policy scopes.
 - `ShortcutHint` for visual keyboard/gamepad shortcut hints.
 - Root-portal `Popover`, `Menu`, `PixelMenuItem`, `Dropdown`, and `Tooltip` with measured anchors,
@@ -143,15 +143,15 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - Fixed Unicode 17.0.0 `PixelGraphemeBoundaryMap` / `PixelUtf16Range`, grapheme-safe TextField
   Controller operations, exact `PixelTextInputEvent`, `PixelTester.pressText`, and the additive
   `PixelTextEditingHostBridge` / `PixelTextEditingValue` composition contract. See
-  `pixel-engine/docs/migrations/1.0.0-unicode-text-editing.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - Additive code-point `Int` glyph source/provider overloads, full-scalar glyph-pack/cache lookup,
   `PixelClusterTextRasterizer`, grapheme-cluster paragraph units, and fixed Unicode 17.0.0 UAX #9
   revision 51 visual ordering. See
-  `pixel-engine/docs/migrations/1.0.0-codepoint-cluster-bidi-text.md`.
+  `pixel-engine/docs/guides/migration.md`.
 - Orthogonal `PixelViewportPolicy`, explicit `PixelHostProfilePolicy`, automatic Android Host
   capability observation, raw physical system/IME/cutout reprojection, capability-aware text scale
   and contrast presets, RTL Flex visual ordering, and `PixelAdaptiveLayoutData`/`AdaptiveBuilder`.
-  See `pixel-engine/docs/migrations/1.0.0-adaptive-host-viewport.md`.
+  See `pixel-engine/docs/guides/migration.md`.
 
 ### Adaptive Host behavior changes
 
@@ -326,11 +326,11 @@ Internal 0.x SDK baseline for `pixel-engine`.
   ticker time, freeze while the Host is paused, honor reduce-motion policy, and leave no ticker or
   scheduler callback after completion or disposal.
 
-See [the 1.0 production overlay migration guide](pixel-engine/docs/migrations/1.0.0-production-overlay.md).
+See [the consolidated migration guide](guides/migration.md).
 
 Migration details and the fixed zero/negative-duration, cancellation, retarget, and key semantics
 are documented in the
-[1.0.0 animation correctness guide](pixel-engine/docs/migrations/1.0.0-animation-correctness.md).
+[consolidated migration guide](guides/migration.md).
 
 ### Compatibility policy
 

@@ -93,12 +93,12 @@ tools/                       CI、发布、供应链与文档工具
 ## 文档入口
 
 - [项目总览](docs/项目总览.md)
-- [设计文档](docs/设计文档.md)
+- [Pixel Engine 文档入口](pixel-engine/README.md)
 - [SDK 首页](pixel-engine/docs/index.md)
+- [SDK Changelog](pixel-engine/docs/CHANGELOG.md)
 - [快速开始](pixel-engine/docs/guides/quickstart.md)
 - [使用说明与 API 手册](pixel-engine/docs/使用说明与API手册.md)
-- [发布与兼容策略](pixel-engine/docs/发布与兼容策略.md)
-- [1.0 Goal](pixel-engine/docs/1.0-GOAL.md)
+- [发布与维护](pixel-engine/docs/发布与维护.md)
 
 ## 提交约定
 

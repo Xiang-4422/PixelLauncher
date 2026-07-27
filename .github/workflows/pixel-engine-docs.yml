@@ -48,7 +48,7 @@ jobs:
           fi
           # CHANGELOG 条目证明 tag 版本与站点内容使用同一发布版本。
           PIXEL_DOCS_VERSION="${PIXEL_DOCS_REF#v}"
-          if ! grep -F "## $PIXEL_DOCS_VERSION - " CHANGELOG.md >/dev/null; then
+          if ! grep -F "## $PIXEL_DOCS_VERSION - " pixel-engine/docs/CHANGELOG.md >/dev/null; then
             echo "CHANGELOG 缺少版本条目：$PIXEL_DOCS_VERSION" >&2
             exit 1
           fi

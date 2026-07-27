@@ -33,6 +33,24 @@ navigator.push(request) { outcome ->
 - `PixelMultiStackNavigator` 保持各栈挂载与 Back 隔离；inactive parent 不抢占 child Back。
 - deep link 先匹配、再 typed decode、最后原子提交导航，拒绝时不改变当前栈。
 
-完整恢复、嵌套、多栈与 Predictive Back 示例见
-[API 手册导航章节](../使用说明与API手册.md) 和
-[导航恢复迁移指南](../migrations/1.0.0-navigation-restoration.md)。
+## 快照与结果类型
+
+| 类型 | 语义 |
+|---|---|
+| `PixelNavigatorSnapshotEncoded` / `PixelNavigatorSnapshotEncodeRejected` | 单栈快照编码成功或被拒绝 |
+| `PixelNavigatorSnapshotDecoded` / `PixelNavigatorSnapshotDecodeRejected` | 单栈 envelope 解码成功或被拒绝 |
+| `PixelRoutePayloadDecoded` / `PixelRoutePayloadRejected` | destination 参数 payload 解码结果 |
+| `PixelRouteStateDecoded` / `PixelRouteStateRejected` | entry 局部状态解码结果 |
+| `PixelNavigatorStackDefinition` | legacy 与 typed retained stack 的统一定义 |
+| `PixelDeepLinkDecodeResult` | 一个匹配 route 的 typed 参数解码结果 |
+| `PixelTypedDeepLinkResult` | deep link 导航的终态结果 |
+| `PixelMultiStackSnapshotEncoded` / `PixelMultiStackSnapshotEncodeRejected` | 多栈 snapshot 编码结果 |
+| `PixelMultiStackSnapshotDecodeResult` | 多栈 snapshot envelope 的解码结果父类型 |
+| `PixelMultiStackSnapshotDecoded` / `PixelMultiStackSnapshotDecodeRejected` | 多栈 snapshot 解码成功或拒绝 |
+| `PixelMultiStackRestored` / `PixelMultiStackRestoreRejected` | 多栈原子恢复结果 |
+| `PixelMultiStackSnapshotFailure` | 多栈 snapshot 失败的结构化上下文 |
+
+所有 rejected 结果都必须保留原 live stack，不允许半提交。
+
+完整恢复、嵌套、多栈与 Predictive Back 示例见[API 手册导航章节](../使用说明与API手册.md)和
+[统一迁移指南](migration.md)。

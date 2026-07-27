@@ -48,5 +48,5 @@ python3 tools/check_device_benchmarks.py \
 但不能覆盖失败样本，也不能替代同一代表性 60/120Hz 实体设备上的批准 baseline、绝对阈值和
 优化前后 trace。
 
-帧阶段和归因 API 见 [完整帧诊断迁移指南](../migrations/1.0.0-frame-diagnostics.md)，资源内存见
+帧阶段和归因 API 见 [API 手册](../使用说明与API手册.md)，资源内存见
 [资源与内存](resources.md)。

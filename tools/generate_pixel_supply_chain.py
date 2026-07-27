@@ -282,7 +282,7 @@ def build_provenance(
         "predicateType": "https://slsa.dev/provenance/v1",
         "predicate": {
             "buildDefinition": {
-                "buildType": f"{metadata['projectUrl']}/blob/main/pixel-engine/docs/build-type-gradle-android.md",
+                "buildType": f"{metadata['projectUrl']}/blob/main/pixel-engine/docs/发布与维护.md",
                 "externalParameters": {
                     "version": version,
                     "tasks": "publishReleasePublicationToPixelStagingRepository",

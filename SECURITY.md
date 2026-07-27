@@ -1,14 +1,13 @@
 # Security Policy
 
-Pixel Engine 尚未发布正式 1.0.0；当前 snapshot 不承诺生产安全支持。1.0 发布后，最新 minor 的最新
-patch 为默认支持版本，上一 minor 仅在新 minor 发布后的 90 天内接受安全 backport，除非 release notes
-另有声明。
+本文是仓库级安全报告入口。Pixel Engine 的版本支持、分级与发布规则位于
+[Engine 发布与维护](pixel-engine/docs/发布与维护.md#6-安全支持与响应)。
 
 请通过仓库 GitHub Security 页面创建私密 security advisory。不要用公开 issue 提交漏洞利用步骤、真实
 凭据、个人数据或尚未协调的披露。报告请包含受影响版本、最小复现、影响、前提条件和建议缓解方式。
 
-维护者会按 `pixel-engine/docs/security-release-process.md` 分级、修复、发布和协调披露。普通 bug、功能
-请求和不含敏感细节的加固建议仍使用 GitHub Issues。
+维护者会按 Engine 或 Launcher 对应流程分级、修复、发布和协调披露。普通 bug、功能请求和不含敏感
+细节的加固建议仍使用 GitHub Issues。
 
 ## Launcher 本地敏感数据边界
 

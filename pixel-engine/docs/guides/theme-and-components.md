@@ -17,5 +17,7 @@ val engine = PixelEngine.Builder()
 - RTL、textScale、HighContrast、ReducedMotion 和 Touch/TV profile 都由 Host 环境进入同一树。
 - 自定义组件先组合公开 widget；只有布局/绘制无法表达时才进入 RenderObject SPI。
 
-组件参数、token 表和状态优先级见 [使用说明与 API 手册](../使用说明与API手册.md)，历史迁移见
-[主题 Token 与组件状态](../migrations/1.0.0-theme-tokens-and-component-states.md)。
+表单同步字段校验使用 `Validator<T>`，整表校验使用 `FormValidator`；异步版本必须返回取消函数，
+防止字段更新或页面释放后旧结果覆盖新状态。
+
+组件参数、token 表、表单和状态优先级见[使用说明与 API 手册](../使用说明与API手册.md)。

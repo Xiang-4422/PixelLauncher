@@ -3,8 +3,8 @@
 本文面向使用 Pixel Engine 1.0 构建像素 UI 的开发者。首次接入建议先读
 [Quickstart](guides/quickstart.md)，再按需阅读 [Host](guides/host-integration.md)、
 [主题](guides/theme-and-components.md)、[路由](guides/navigation.md)、[资源](guides/resources.md)、
-[SPI](guides/custom-render-spi.md)、[测试](guides/testing.md) 与 [性能](guides/performance.md)。
-内部实现和维护规则见 [架构与技术实现](架构与技术实现.md)。
+[架构与 SPI](架构与设计.md)、[测试](guides/testing.md) 与 [性能](guides/performance.md)。
+内部实现和维护规则见 [架构与设计](架构与设计.md)。
 
 ## 1. 快速接入
 
@@ -228,8 +228,7 @@ Host frame/ticker scope；不要继续持有切换前的 ticker provider。
 “显式主题”作用域；只有调用 `.theme(...)` 才会让旧 facade 进入 token-aware 分支。
 
 纯 JVM 测试应注入 `ManualFrameScheduler` 和 fake `PixelClock`，不要读取 Android 默认调度器。完整
-默认值、共享规则和迁移步骤见
-[PixelEngine 实例与服务迁移指南](migrations/1.0.0-engine-services.md)。
+默认值、共享规则和迁移步骤见 [Android Host 指南](guides/host-integration.md)。
 
 ### Android 宿主契约
 
@@ -507,10 +506,7 @@ descriptor 和 Kotlin `$default` bridge 保持兼容。既有组件的 state-awa
 - 不提供 Material / Cupertino token，也不追求通用设计系统。
 - 只接受整数逻辑像素；标准 surface 使用阶梯圆角、整数边框和无模糊硬阴影。
 
-主题基础、最初 21 个组件族的兼容限制和测试方法见
-[主题 Token 与组件状态迁移指南](migrations/1.0.0-theme-tokens-and-component-states.md)；新增 4 个组件族、
-完整 25×8（200 格）生产矩阵和高价值组件迁移见
-[高价值组件迁移指南](migrations/1.0.0-high-value-components.md)。
+主题、组件状态与测试方法见[主题与组件指南](guides/theme-and-components.md)。
 
 字体优先级：
 
@@ -559,8 +555,8 @@ descriptor 和 Kotlin `$default` bridge 保持兼容。既有组件的 state-awa
 4. `glyphCount`。
 5. 每个 glyph 依次写入 `codePoint`、`advanceWidth`、`width`、`dataLength`、按位压缩的像素数据。
 
-`codePoint` 是完整 Unicode scalar 的 32-bit 整数，不是 UTF-16 `Char`。兼容和自定义字体示例见
-[code-point 字体、cluster 段落与 Bidi 迁移指南](migrations/1.0.0-codepoint-cluster-bidi-text.md)。
+`codePoint` 是完整 Unicode scalar 的 32-bit 整数，不是 UTF-16 `Char`。旧字体实现的兼容注意事项见
+[统一迁移指南](guides/migration.md)。
 
 ## 6. 常见页面模式
 
@@ -826,8 +822,7 @@ Navigation 栈不会因为 resize、IME、density 或 fold 更新而丢失。`Te
 `TextField` 自动消费 `textScaleFactor`；RTL Row 反转视觉顺序但保持声明/semantics 顺序。主题可用
 `PixelThemeTokens.forHost(context, brightness)` 自动选择高对比度 preset。
 
-完整迁移与兼容规则见
-[自适应 Host 与 Viewport 迁移指南](migrations/1.0.0-adaptive-host-viewport.md)。
+完整 Host 与 viewport 规则见 [Android Host 指南](guides/host-integration.md)。
 
 #### 自适应与只读 golden
 
@@ -837,7 +832,7 @@ Host instrumentation 与 `app` 集成测试共同覆盖。
 对应 JVM 基线为
 `src/test/resources/element-snapshots/m5-3-adaptive-localization.txt` 和
 `src/test/resources/golden/m5-3-adaptive-localization.txt`。普通测试只会把候选差异写入
-`build/reports/acceptance/`，不会创建/修改源码基线，也没有 `REGEN` 自动接受入口。
+`build/reports/golden/`，不会创建或修改源码基线，也没有 `REGEN` 自动接受入口。
 
 ### Lifecycle
 
@@ -870,8 +865,8 @@ override fun onDestroyView() {
 
 可通过 `hostView.lifecycleDiagnostics` 检查 attachment、owner 状态、owner 来源、
 `isInteractive` 和各阶段计数；通过 `hostView.tickerProvider.diagnostics()` 检查 active/live ticker、
-pending frame、active time 及 pause/dispose 状态。完整迁移规则见
-[Host 生命周期与调度迁移指南](migrations/1.0.0-host-lifecycle.md)。
+pending frame、active time 及 pause/dispose 状态。完整规则见
+[Android Host 指南](guides/host-integration.md)。
 
 ### Saved State
 
@@ -974,7 +969,7 @@ check(
 )
 ```
 
-完整迁移说明见 `docs/migrations/1.0.0-accessibility-semantics.md`。键盘/DPAD 的 input focus
+测试与兼容要求见[测试指南](guides/testing.md)。键盘/DPAD 的 input focus
 继续与 Android accessibility focus 分离；Dialog、Menu 和模态 Popover 会在各自 runtime 内
 建立闭环焦点域，逻辑关闭时立即恢复打开前的 input focus。
 
@@ -1821,8 +1816,7 @@ CRLF 都只能整体编辑。已有非配对 surrogate 会作为隔离恢复单�
 `PixelHostView.dispatchPixelTextInput` 或 `PixelTester.pressText`。旧 `PixelKeyEvent.character` 只为
 一个非 surrogate BMP `Char` 保留，不能承载 emoji surrogate pair。
 
-详细兼容边界和自定义 Host 示例见
-[Unicode 文本编辑迁移指南](migrations/1.0.0-unicode-text-editing.md)。字体、段落和 Bidi 已使用
+详细兼容边界和旧实现调整见[统一迁移指南](guides/migration.md)。字体、段落和 Bidi 已使用
 同一 cluster 边界，但编辑安全、Bidi 排序和真实 glyph/shaping 覆盖仍是三个独立能力。
 
 ### Code-point 字体、cluster 段落与 Bidi 几何
@@ -1849,8 +1843,7 @@ UTF-16 code unit 索引：一个 grapheme 中的组合 code unit、supplementary
 既有 Accessibility action 兼容路径。
 
 1.0 不承诺内置 Arabic/Indic contextual shaping、彩色 emoji、全部 ZWJ ligature 资产或脚本专属
-hyphenation。完整能力边界和迁移步骤见
-[code-point 字体、cluster 段落与 Bidi 迁移指南](migrations/1.0.0-codepoint-cluster-bidi-text.md)。
+hyphenation。旧字体和文本实现的迁移步骤见[统一迁移指南](guides/migration.md)。
 
 ### 剪贴板与文本编辑动作
 
@@ -2191,7 +2184,7 @@ bytes 或迁移拒绝都返回结构化 `Rejected`，原 stack 不变。
 
 pending callback、Widget/State、listener 和 ticker 不跨进程恢复。恢复后的 allocator 从最大 entry
 ID 继续递增，避免新 push 与旧 ID 碰撞。完整 adapter 示例和 Bundle 流程见
-[导航恢复、多返回栈与 Predictive Back 迁移指南](migrations/1.0.0-navigation-restoration.md)。
+[路由与恢复指南](guides/navigation.md)。
 
 #### 嵌套和多返回栈
 
@@ -2325,8 +2318,7 @@ Navigator 使用该公开路由配置。
 
 运行中切换 theme、scale 或 reduce motion 会从当前视觉帧 retarget。目标在 pointer down 后被移除、
 禁用或变为 opacity 0/paint-only 时，Host 与 `PixelTester` 会取消原 owner；up 不会触发旧 callback，
-也不会落到同坐标背景控件。完整行为、测试方式与迁移清单见
-[MotionTheme 迁移指南](migrations/1.0.0-motion-theme.md)。
+也不会落到同坐标背景控件。完整行为和测试方式见[主题与组件指南](guides/theme-and-components.md)。
 
 #### PixelAnimationController 时间与取消契约
 
@@ -2360,8 +2352,7 @@ Tween 实例，每个声明式 target 应提供独立实例。
 `AnimatedSwitcher` 使用稳定 `Stack` 同时挂载 outgoing 与 incoming，并为每个视觉
 entry 保留独立 keyed `Opacity`。只有 runtime type 和 key 都相同时才原地更新；快速
 连续切换会保留仍有视觉贡献的所有 outgoing，切回旧 key 则提升原 entry 而不重建
-State。完整的行为差异、迁移步骤和虚拟时钟验证见
-[动画正确性迁移指南](migrations/1.0.0-animation-correctness.md)。
+State。旧动画实现迁移和虚拟时钟验证见[统一迁移指南](guides/migration.md)。
 
 ### 调试组件
 
@@ -2412,7 +2403,7 @@ phase 加上 unattributed 必须恰好等于 total。
 默认 `frameDiagnosticsEnabled == false` 且 observer 为 null，此时不读取 ART counter、不创建
 完整诊断快照。只想在 Inspector 中按需读取时可以启用 `frameDiagnosticsEnabled`，再通过
 `inspect().frameDiagnostics` 或 `latestFrameDiagnostics` 读取；完成诊断后应重新关闭。完整迁移和
-线程/成本边界见 [完整帧诊断迁移指南](migrations/1.0.0-frame-diagnostics.md)。
+线程/成本边界见[性能指南](guides/performance.md)。
 
 ### pixelcore 常用类型
 
@@ -2636,7 +2627,7 @@ val handle = resourceLoader.loadBitmapAsync("runner@v3") {
 - loader 失败默认缓存 5 秒，避免损坏文件或临时 IO 故障造成重试风暴；`clearFailure` / `clearFailures` 可显式解除。
 - 未完成句柄禁止在 Android 主线程 `await()`；已经完成的结果可以无阻塞读取。
 
-完整行为变化和迁移方式见 [资源加载与内存边界迁移指南](migrations/1.0.0-resource-loading-memory.md)。
+完整行为和迁移方式见[资源与内存指南](guides/resources.md)。
 
 #### 资源打包工具
 

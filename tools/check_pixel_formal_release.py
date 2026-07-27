@@ -256,10 +256,10 @@ def main() -> int:
     arguments = parse_arguments()
     # 受版本控制的发布元数据是 namespace、仓库和签名身份的唯一来源。
     metadata = read_properties(arguments.metadata)
-    # 九模块坐标必须从当前构建脚本重新读取。
+    # 统一 Engine 坐标必须从当前构建脚本重新读取。
     module_coordinates = read_module_coordinates()
     # CHANGELOG 必须包含真实 ISO 日期，Unreleased 不满足正式发布。
-    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    changelog = (ROOT / "pixel-engine" / "docs" / "CHANGELOG.md").read_text(encoding="utf-8")
     changelog_dated = bool(
         re.search(rf"(?m)^## {re.escape(arguments.version)} - \d{{4}}-\d{{2}}-\d{{2}}$", changelog)
     )

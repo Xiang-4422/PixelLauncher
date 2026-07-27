@@ -20,4 +20,4 @@ tester.dispose()
 - consumer：从隔离 file-Maven 解析发布坐标并构建 R8 release；不能 project dependency 偷渡。
 - 性能：功能测试不能替代后续独立性能目标中的 benchmark 和 soak。
 
-仓库门禁入口见 [发布与兼容策略](../发布与兼容策略.md)，性能范围见[性能指南](performance.md)。
+仓库门禁入口见 [发布与维护](../发布与维护.md)，性能范围见[性能指南](performance.md)。

@@ -11,4 +11,4 @@
 - 生产资源失败通过 sealed result/error reporter 上报，不能在渲染热路径抛出未分类异常。
 
 资源格式、manifest 与预热 API 见 [API 手册](../使用说明与API手册.md)，安全与内存边界变化见
-[资源加载迁移指南](../migrations/1.0.0-resource-loading-memory.md)。
+[统一迁移指南](migration.md)。
