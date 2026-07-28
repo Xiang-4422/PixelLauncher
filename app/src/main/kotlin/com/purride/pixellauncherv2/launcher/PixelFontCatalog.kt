@@ -151,6 +151,8 @@ data class FontPackDescriptor(
     val sourceSha256: String,
     /** catalog 中引用的 Unicode 范围集合。 */
     val rangeSet: String,
+    /** manifest 在缺少独立记录时使用的默认 advance。 */
+    val defaultAdvance: Int,
 )
 
 /** 一个精确可渲染 face 的能力、度量和资源。 */

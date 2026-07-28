@@ -150,7 +150,7 @@ class SettingsMenuModelTest {
         assertEquals("MONO", SettingsMenuModel.fontWidthLabel(LauncherFontWidthMode.MONOSPACED))
         assertEquals("16PX", SettingsMenuModel.fontSizeLabel(PixelFontSize.PX_16))
         assertEquals(
-            30,
+            15,
             PixelFontCatalog.estimatedTextWidth(
                 "ABC",
                 selection = LauncherFontSelection(

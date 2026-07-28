@@ -47,15 +47,10 @@ class LauncherFontAssetsTest {
                 val metrics = PixelFontCatalog.metrics(selection)
                 assertEquals(metrics.cellHeight, manifest.cellHeight)
                 assertEquals(metrics.baseline, manifest.baseline)
-                /** Fusion 的中文分包使用宽字符默认前进宽度；其余分包使用窄字符默认值。 */
-                val expectedDefaultAdvance = if (
-                    family == LauncherFontFamily.FUSION && assetDirectory.endsWith("_zh_hans")
-                ) {
-                    metrics.wideAdvanceWidth
-                } else {
-                    metrics.narrowAdvanceWidth
+                val packDescriptor = PixelFontCatalog.requireFace(selection).packs.single { pack ->
+                    pack.assetDirectory == assetDirectory
                 }
-                assertEquals(expectedDefaultAdvance, manifest.defaultAdvance)
+                assertEquals(packDescriptor.defaultAdvance, manifest.defaultAdvance)
                 binaryFile.inputStream().use { input ->
                     PixelGlyphPackParser.parseBinary(manifest = manifest, inputStream = input)
                 }

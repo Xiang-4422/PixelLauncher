@@ -35,7 +35,7 @@ class SettingsMenuLayoutTest {
 
     @Test
     fun largeVisibleRows_matchesDoubleHeightComposition() {
-        val largeRowHeight = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize).cellHeight * 2 + 2
+        val largeRowHeight = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection).cellHeight * 2 + 2
         for (h in listOf(200, 320, 480, 640)) {
             val profile = LauncherLayoutProfile(120, h, 4)
             assertEquals(

@@ -81,10 +81,10 @@ class PixelFontCatalogTest {
         )
     }
 
-    /** 不支持的字号应在所选字体族和宽度模式内选择最近值。 */
+    /** 不支持的设置必须恢复到 catalog 明确默认 face，不能近似字号。 */
     @Test
     fun normalize_keepsFamilyAndWidthMode() {
-        /** Ark Mono 8px 不存在，应收敛为同字体同模式的 10px。 */
+        /** Ark Mono 8px 不存在，应恢复为家族默认 Prop 10px。 */
         val normalized = PixelFontCatalog.normalize(
             LauncherFontSelection(
                 family = LauncherFontFamily.ARK,
@@ -94,21 +94,20 @@ class PixelFontCatalogTest {
         )
 
         assertEquals(LauncherFontFamily.ARK, normalized.family)
-        assertEquals(LauncherFontWidthMode.MONOSPACED, normalized.widthMode)
+        assertEquals(LauncherFontWidthMode.PROPORTIONAL, normalized.widthMode)
         assertEquals(PixelFontSize.PX_10, normalized.size)
         assertTrue(PixelFontCatalog.supports(normalized))
     }
 
-    /** 基础布局度量应覆盖新增的 16px 原生字号。 */
+    /** 度量标签必须来自完整 face，而不是脱离家族的全局字号。 */
     @Test
     fun metricsLabel_formatsCellBaselineAndAdvance() {
-        assertEquals("C7 B6 A4/7", PixelFontCatalog.metricsLabel(PixelFontSize.PX_7))
-        assertEquals("C8 B7 A4/8", PixelFontCatalog.metricsLabel(PixelFontSize.PX_8))
-        assertEquals("C9 B8 A5/9", PixelFontCatalog.metricsLabel(PixelFontSize.PX_9))
-        assertEquals("C10 B9 A6/10", PixelFontCatalog.metricsLabel(PixelFontSize.PX_10))
-        assertEquals("C11 B10 A6/11", PixelFontCatalog.metricsLabel(PixelFontSize.PX_11))
-        assertEquals("C12 B11 A8/12", PixelFontCatalog.metricsLabel(PixelFontSize.PX_12))
-        assertEquals("C16 B15 A8/16", PixelFontCatalog.metricsLabel(PixelFontSize.PX_16))
+        assertEquals("C10 B8 A5/10", PixelFontCatalog.metricsLabel(
+            LauncherFontSelection(LauncherFontFamily.ARK, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_10),
+        ))
+        assertEquals("C18 B13 A11/16", PixelFontCatalog.metricsLabel(
+            LauncherFontSelection(LauncherFontFamily.DOTTED_CIRCLE, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_16),
+        ))
     }
 
     /** 完整选择应使用对应官方变体的基线和窄字符宽度。 */
@@ -132,19 +131,19 @@ class PixelFontCatalogTest {
         )
 
         assertEquals(PixelFontMetrics(PixelFontSize.PX_10, 10, 8, 5, 10), arkProportional)
-        assertEquals(PixelFontMetrics(PixelFontSize.PX_12, 12, 10, 12, 12), fusionMonospaced)
+        assertEquals(PixelFontMetrics(PixelFontSize.PX_12, 12, 10, 6, 12), fusionMonospaced)
     }
 
     /** 每个字体都应提供同家族 10px chrome 资源，但不把它混入原生 SIZE 选项。 */
     @Test
     fun renderableSelections_includePrivateChromeSizeForEveryFamily() {
         LauncherFontFamily.entries.forEach { family ->
-            assertTrue(
-                "missing 10px chrome resource for $family",
-                PixelFontCatalog.renderableSelections().any { selection ->
-                    selection.family == family && selection.size == PixelFontSize.PX_10
-                },
-            )
+            PixelFontCatalog.widthModeOptions(family).forEach { widthMode ->
+                assertEquals(
+                    PixelFontSize.PX_10,
+                    PixelFontCatalog.selectionForRole(family, widthMode, LauncherTextRole.CHROME_10).size,
+                )
+            }
         }
         assertEquals(
             listOf(PixelFontSize.PX_12),

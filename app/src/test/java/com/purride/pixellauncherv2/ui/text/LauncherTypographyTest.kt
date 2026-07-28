@@ -41,12 +41,12 @@ class LauncherTypographyTest {
         )
     }
 
-    /** 不支持的显式字号只能收敛到当前字体内，不能切换到其他字体家族。 */
-    @Test
-    fun rasterizer_normalizesUnsupportedSizeWithinSelectedFamily() {
+    /** 不支持的显式字号必须立即失败，不能近似或切换字体家族。 */
+    @Test(expected = IllegalArgumentException::class)
+    fun rasterizer_rejectsUnsupportedExactSize() {
         /** 记录归一化后的解析参数。 */
         var resolvedSelection: LauncherFontSelection? = null
-        /** Ark 不提供 8px，因此应保留 Ark Mono 并选择最近的 10px。 */
+        /** Ark 不提供 8px，调用必须在进入解析器前失败。 */
         val typography = LauncherTypography(
             selection = LauncherFontSelection(
                 family = LauncherFontFamily.ARK,
@@ -60,14 +60,6 @@ class LauncherTypographyTest {
         )
 
         typography.rasterizer(PixelFontSize.PX_8)
-
-        assertEquals(
-            LauncherFontSelection(
-                family = LauncherFontFamily.ARK,
-                widthMode = LauncherFontWidthMode.MONOSPACED,
-                size = PixelFontSize.PX_10,
-            ),
-            resolvedSelection,
-        )
+        assertEquals(null, resolvedSelection)
     }
 }

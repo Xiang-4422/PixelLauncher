@@ -37,24 +37,29 @@ def build_snapshot() -> dict[str, Any]:
 
     catalog_bytes = CATALOG_PATH.read_bytes()
     catalog = json.loads(catalog_bytes)
-    declared: dict[str, tuple[int, int]] = {}
+    declared: dict[str, tuple[int, int, int]] = {}
     for family in catalog["families"]:
         for face in family["faces"]:
             for pack in face["packs"]:
                 pack_id = pack["id"]
                 if pack_id in declared:
                     raise ValueError(f"重复 pack: {pack_id}")
-                declared[pack_id] = (face["cellHeight"], face["baseline"])
+                declared[pack_id] = (face["cellHeight"], face["baseline"], pack["defaultAdvance"])
     actual = {path.name for path in PACK_ROOT.iterdir() if path.is_dir()}
     if actual != set(declared):
         raise ValueError(f"glyphpacks 与 catalog 不一致: missing={set(declared)-actual}, orphan={actual-set(declared)}")
     packs: dict[str, dict[str, str]] = {}
-    for pack_id, (cell_height, baseline) in sorted(declared.items()):
+    for pack_id, (cell_height, baseline, default_advance) in sorted(declared.items()):
         directory = PACK_ROOT / pack_id
         manifest_path = directory / "manifest.json"
         binary_path = directory / "glyphs.bin"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest["packId"] != pack_id or manifest["cellHeight"] != cell_height or manifest["baseline"] != baseline:
+        if (
+            manifest["packId"] != pack_id
+            or manifest["cellHeight"] != cell_height
+            or manifest["baseline"] != baseline
+            or manifest["defaultAdvance"] != default_advance
+        ):
             raise ValueError(f"manifest metrics 与 catalog 不一致: {pack_id}")
         packs[pack_id] = {
             "manifestSha256": digest(manifest_path),

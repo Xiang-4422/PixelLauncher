@@ -189,6 +189,7 @@ def render_kotlin(root: dict[str, Any]) -> str:
                         f'                            sourcePath = {quote(pack["source"])},',
                         f'                            sourceSha256 = "{pack["sourceSha256"]}",',
                         f'                            rangeSet = "{pack["rangeSet"]}",',
+                        f'                            defaultAdvance = {pack["defaultAdvance"]},',
                         "                        ),",
                     ],
                 )
