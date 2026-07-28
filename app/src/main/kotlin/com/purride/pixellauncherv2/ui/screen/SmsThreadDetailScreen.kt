@@ -269,7 +269,9 @@ private fun buildMessage(
     onMessageLongPressed: (Long) -> Unit,
 ): Widget {
     val isOutgoing = SmsMessageStatusModel.isOutgoing(msg.type)
-    val code = SmsVerificationCodeModel.extract(msg.body)
+    // CODE 标签用严格提取（须命中关键词），避免把订单号/年份标成验证码；
+    // 点按复制与菜单 COPY CODE 仍用宽松的 extract。
+    val code = SmsVerificationCodeModel.displayCode(msg.body)
     return GestureDetector(
         onTap = { onMessagePressed(msg.messageId) },
         onLongPress = { onMessageLongPressed(msg.messageId) },
