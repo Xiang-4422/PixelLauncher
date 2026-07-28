@@ -47,6 +47,14 @@ class SmsMessageStatusModelTest {
     }
 
     @Test
+    fun deliveredMatchesStatusCompleteOnly() {
+        assertTrue(SmsMessageStatusModel.isDelivered(0))
+        assertFalse(SmsMessageStatusModel.isDelivered(-1))
+        assertFalse(SmsMessageStatusModel.isDelivered(32))
+        assertFalse(SmsMessageStatusModel.isDelivered(64))
+    }
+
+    @Test
     fun failedCoversFailedTypeOnly() {
         assertTrue(SmsMessageStatusModel.isFailed(TYPE_FAILED))
         assertFalse(SmsMessageStatusModel.isFailed(TYPE_SENT))

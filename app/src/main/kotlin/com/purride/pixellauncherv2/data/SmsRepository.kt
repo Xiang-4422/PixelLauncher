@@ -140,6 +140,7 @@ class SmsRepository(
                     Telephony.Sms.DATE,
                     Telephony.Sms.READ,
                     Telephony.Sms.TYPE,
+                    Telephony.Sms.STATUS,
                 ),
                 "${Telephony.Sms.TYPE} IN (${visibleTypes.joinToString(",") { "?" }})",
                 visibleTypes.map(Int::toString).toTypedArray(),
@@ -157,6 +158,7 @@ class SmsRepository(
             val idDate = queryCursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
             val idRead = queryCursor.getColumnIndexOrThrow(Telephony.Sms.READ)
             val idType = queryCursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+            val idStatus = queryCursor.getColumnIndexOrThrow(Telephony.Sms.STATUS)
             val messages = ArrayList<SmsMessageEntry>(queryCursor.count.coerceAtLeast(0))
             while (queryCursor.moveToNext()) {
                 val address = queryCursor.getString(idAddress).orEmpty()
@@ -169,6 +171,7 @@ class SmsRepository(
                     dateMillis = queryCursor.getLong(idDate),
                     type = queryCursor.getInt(idType),
                     isRead = queryCursor.getInt(idRead) != 0,
+                    deliveryStatus = queryCursor.getInt(idStatus),
                 )
             }
             return messages
@@ -286,17 +289,37 @@ class SmsRepository(
             val messageId = uri?.lastPathSegment?.toLongOrNull() ?: -1L
             // 非默认短信应用时 OUTBOX 落库会失败（messageId <= 0），此时不挂回执，
             // 行为退化为“发出即认为成功”，与仅有 SEND_SMS 权限的场景保持一致。
-            val sentIntent = if (messageId > 0L) buildSentPendingIntent(messageId) else null
+            val sentIntent = if (messageId > 0L) {
+                buildResultPendingIntent(messageId, SmsSendResultReceiver.ACTION_SMS_SENT)
+            } else {
+                null
+            }
+            val deliveryIntent = if (messageId > 0L) {
+                buildResultPendingIntent(messageId, SmsSendResultReceiver.ACTION_SMS_DELIVERED)
+            } else {
+                null
+            }
 
             val parts = smsManager.divideMessage(body)
             try {
                 if (parts.size > 1) {
                     val sentIntents = ArrayList<PendingIntent?>(parts.size)
-                    repeat(parts.size - 1) { sentIntents.add(null) }
+                    val deliveryIntents = ArrayList<PendingIntent?>(parts.size)
+                    repeat(parts.size - 1) {
+                        sentIntents.add(null)
+                        deliveryIntents.add(null)
+                    }
                     sentIntents.add(sentIntent)
-                    smsManager.sendMultipartTextMessage(address, null, ArrayList(parts), sentIntents, null)
+                    deliveryIntents.add(deliveryIntent)
+                    smsManager.sendMultipartTextMessage(
+                        address,
+                        null,
+                        ArrayList(parts),
+                        sentIntents,
+                        deliveryIntents,
+                    )
                 } else {
-                    smsManager.sendTextMessage(address, null, body, sentIntent, null)
+                    smsManager.sendTextMessage(address, null, body, sentIntent, deliveryIntent)
                 }
             } catch (t: Throwable) {
                 // 提交给无线电层都没成功，回执永远不会来：把刚落的 OUTBOX 记录
@@ -361,10 +384,29 @@ class SmsRepository(
         }.getOrDefault(false)
     }
 
-    private fun buildSentPendingIntent(messageId: Long): PendingIntent {
+    /** 送达回执到达后更新 STATUS 列（详情页显示 DELIVERED 用）。 */
+    fun applyDeliveryResult(messageId: Long, delivered: Boolean): Boolean {
+        if (messageId <= 0L || !delivered) {
+            return false
+        }
+        val values = ContentValues().apply {
+            put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_COMPLETE)
+        }
+        return runCatching {
+            contentResolver.update(
+                Telephony.Sms.CONTENT_URI,
+                values,
+                "${Telephony.Sms._ID} = ?",
+                arrayOf(messageId.toString()),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
+    private fun buildResultPendingIntent(messageId: Long, action: String): PendingIntent {
         val intent = Intent(context, SmsSendResultReceiver::class.java)
-            .setAction(SmsSendResultReceiver.ACTION_SMS_SENT)
+            .setAction(action)
             .putExtra(SmsSendResultReceiver.EXTRA_MESSAGE_ID, messageId)
+        // requestCode 都用 messageId：action 不同即视为不同 PendingIntent，互不覆盖。
         return PendingIntent.getBroadcast(
             context,
             messageId.toInt(),
@@ -439,6 +481,7 @@ class SmsRepository(
         dateMillis: Long,
         type: Int,
         isRead: Boolean,
+        deliveryStatus: Int = -1,
     ): SmsMessageEntry {
         val displayName = contactResolver.displayName(address)
         val conversation = SmsConversationModel.identify(
@@ -456,6 +499,7 @@ class SmsRepository(
             dateMillis = dateMillis,
             type = type,
             isRead = isRead,
+            deliveryStatus = deliveryStatus,
             displayName = displayName,
             conversationKey = conversation.key,
             conversationTitle = conversation.title,

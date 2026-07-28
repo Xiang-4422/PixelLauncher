@@ -15,22 +15,27 @@ import android.content.Intent
 class SmsSendResultReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != ACTION_SMS_SENT) {
-            return
-        }
         val messageId = intent.getLongExtra(EXTRA_MESSAGE_ID, -1L)
         if (messageId <= 0L) {
             return
         }
-        AndroidComponentDependencies.smsRepository(context).applySendResult(
-            messageId = messageId,
-            success = resultCode == Activity.RESULT_OK,
-            errorCode = resultCode,
-        )
+        when (intent.action) {
+            ACTION_SMS_SENT -> AndroidComponentDependencies.smsRepository(context).applySendResult(
+                messageId = messageId,
+                success = resultCode == Activity.RESULT_OK,
+                errorCode = resultCode,
+            )
+
+            ACTION_SMS_DELIVERED -> AndroidComponentDependencies.smsRepository(context).applyDeliveryResult(
+                messageId = messageId,
+                delivered = resultCode == Activity.RESULT_OK,
+            )
+        }
     }
 
     companion object {
         const val ACTION_SMS_SENT = "com.purride.pixellauncherv2.action.SMS_SENT"
+        const val ACTION_SMS_DELIVERED = "com.purride.pixellauncherv2.action.SMS_DELIVERED"
         const val EXTRA_MESSAGE_ID = "extra_message_id"
     }
 }

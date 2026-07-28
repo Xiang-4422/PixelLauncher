@@ -21,6 +21,9 @@ object SmsMessageStatusModel {
     /** 发送失败，可重发。 */
     fun isFailed(type: Int): Boolean = type == TYPE_FAILED
 
+    /** 已收到对端送达回执（Telephony.Sms.STATUS_COMPLETE = 0）。 */
+    fun isDelivered(deliveryStatus: Int): Boolean = deliveryStatus == STATUS_COMPLETE
+
     /**
      * 会话流中可展示的消息类型：收件 + 全部发出方向。
      * 草稿（MESSAGE_TYPE_DRAFT = 3）与未知类型一律过滤，否则历史遗留的
@@ -43,4 +46,7 @@ object SmsMessageStatusModel {
 
     /** android.provider.Telephony.Sms.MESSAGE_TYPE_QUEUED = 6 */
     private const val TYPE_QUEUED = 6
+
+    /** android.provider.Telephony.Sms.STATUS_COMPLETE = 0 */
+    private const val STATUS_COMPLETE = 0
 }

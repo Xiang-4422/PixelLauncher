@@ -98,8 +98,14 @@ fun SmsThreadDetailScreen(
                                     crossAxisAlignment = CrossAxisAlignment.STRETCH,
                                     mainAxisSize = MainAxisSize.MIN,
                                     spacing = LauncherSpacing.ROW_SPACING * 2,
-                                    children = uiState.smsMessages.map { msg ->
-                                        buildMessage(msg, theme, onMessagePressed, onMessageLongPressed)
+                                    children = uiState.smsMessages.mapIndexed { index, msg ->
+                                        buildMessage(
+                                            msg = msg,
+                                            theme = theme,
+                                            onMessagePressed = onMessagePressed,
+                                            onMessageLongPressed = onMessageLongPressed,
+                                            isLatestMessage = index == uiState.smsMessages.lastIndex,
+                                        )
                                     },
                                 ),
                             ),
@@ -267,6 +273,7 @@ private fun buildMessage(
     theme: LauncherTheme,
     onMessagePressed: (Long) -> Unit,
     onMessageLongPressed: (Long) -> Unit,
+    isLatestMessage: Boolean,
 ): Widget {
     val isOutgoing = SmsMessageStatusModel.isOutgoing(msg.type)
     // CODE 标签用严格提取（须命中关键词），避免把订单号/年份标成验证码；
@@ -291,12 +298,19 @@ private fun buildMessage(
                         textAlign = if (isOutgoing) TextAlign.END else TextAlign.START,
                     ),
                 )
-                // 回执未到 → SENDING；发送失败 → 失败提示，点按整条消息即重发。
+                // 回执未到 → SENDING；发送失败 → 失败提示，点按整条消息即重发；
+                // 送达回执只在会话最后一条消息下显示，避免整屏 DELIVERED 噪声。
                 if (SmsMessageStatusModel.isPending(msg.type)) {
                     add(messageStatusLine("SENDING", theme.sms.timestamp))
                 }
                 if (SmsMessageStatusModel.isFailed(msg.type)) {
                     add(messageStatusLine("FAILED - TAP TO RESEND", theme.semantic.danger))
+                }
+                if (isLatestMessage &&
+                    SmsMessageStatusModel.isSent(msg.type) &&
+                    SmsMessageStatusModel.isDelivered(msg.deliveryStatus)
+                ) {
+                    add(messageStatusLine("DELIVERED", theme.sms.timestamp))
                 }
             },
         ),

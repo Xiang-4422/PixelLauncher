@@ -42,6 +42,8 @@ data class SmsMessageEntry(
     val type: Int,
     /** 是否已读。 */
     val isRead: Boolean,
+    /** 送达状态（对应 Telephony.Sms.STATUS：-1 无回执，0 已送达）。 */
+    val deliveryStatus: Int = -1,
     /** 联系人展示名，未匹配到联系人时为空字符串。 */
     val displayName: String = "",
     /** 会话在 UI 层的唯一标识键，默认按 threadId 生成。 */
