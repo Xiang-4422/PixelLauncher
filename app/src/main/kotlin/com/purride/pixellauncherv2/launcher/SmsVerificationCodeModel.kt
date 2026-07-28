@@ -7,8 +7,10 @@ object SmsVerificationCodeModel {
         if (normalized.isEmpty()) return null
         val keywordMatch = keywordPattern.find(normalized)
         if (keywordMatch != null) {
-            return codePattern.find(normalized, keywordMatch.range.last.coerceAtLeast(0))
-                ?.value
+            // 优先取关键词之后最近的数字；"123456（动态验证码）"这类验证码在关键词
+            // 之前的格式，关键词后找不到数字时回退到全文查找。
+            codePattern.find(normalized, keywordMatch.range.last.coerceAtLeast(0))
+                ?.let { return it.value }
         }
         return codePattern.find(normalized)?.value
     }
