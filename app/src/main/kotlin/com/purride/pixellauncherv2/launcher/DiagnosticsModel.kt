@@ -24,6 +24,8 @@ object DiagnosticsModel {
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
             fontSelection = state.fontSelection,
+            isFontLoading = state.isFontLoading,
+            fontCacheSummary = state.fontCacheSummary,
             screenProfile = screenProfile,
         )
     }
@@ -41,6 +43,8 @@ object DiagnosticsModel {
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
             fontSelection = state.fontSelection,
+            isFontLoading = state.isFontLoading,
+            fontCacheSummary = state.fontCacheSummary,
             screenProfile = screenProfile,
         )
     }
@@ -57,6 +61,10 @@ object DiagnosticsModel {
         hasUsageAccess: Boolean,
         /** 当前由设置页明确选择的字体家族、宽度模式和字号。 */
         fontSelection: LauncherFontSelection,
+        /** 候选字体是否仍在后台准备。 */
+        isFontLoading: Boolean,
+        /** indexed pack 缓存条目/占用摘要。 */
+        fontCacheSummary: String,
         screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsLine> {
         val lastLaunch = lastLaunchPackageName
@@ -80,6 +88,8 @@ object DiagnosticsModel {
         val textSummary = DiagnosticsTextSampleModel.summary(textSamples)
         val maxTextSample = DiagnosticsTextSampleModel.maxSample(textSamples)
         val boundsSnapshot = DiagnosticsBoundsModel.snapshot(screenProfile)
+        val familyDescriptor = requireNotNull(PixelFontCatalog.familyDescriptor(fontSelection.family))
+        val faceDescriptor = PixelFontCatalog.requireFace(fontSelection)
 
         return listOf(
             DiagnosticsLine("HOME", homeSummary),
@@ -94,6 +104,12 @@ object DiagnosticsModel {
                     "${PixelFontCatalog.widthModeLabel(fontSelection.widthMode)} " +
                     PixelFontCatalog.sizeLabel(fontSelection.size),
             ),
+            DiagnosticsLine("FONT ID", fontSelection.family.id.uppercase()),
+            DiagnosticsLine("FONT SRC", familyDescriptor.sourceVersion),
+            DiagnosticsLine("FONT PACK", faceDescriptor.packs.joinToString("+") { pack -> pack.id }.take(32)),
+            DiagnosticsLine("FONT RANGE", faceDescriptor.packs.map { pack -> pack.rangeSet }.distinct().joinToString("+")),
+            DiagnosticsLine("FONT LOAD", if (isFontLoading) "LOADING" else "READY"),
+            DiagnosticsLine("FONT CACHE", fontCacheSummary),
         ) + fontRows + listOf(
             DiagnosticsLine("TEXT", textSummary),
             DiagnosticsLine(

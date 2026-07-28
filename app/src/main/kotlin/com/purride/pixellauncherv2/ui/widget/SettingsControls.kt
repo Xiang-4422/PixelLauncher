@@ -117,16 +117,37 @@ fun SettingsOptionStepperRow(
     theme: LauncherTheme,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    enabled: Boolean = true,
 ): Widget = Container(
     child = settingsInlineRow(
-        title = GestureDetector(
-            onTap = onPrevious,
-            child = settingsTitleCell(title = title, theme = theme),
-        ),
-        trailing = GestureDetector(
-            onTap = onNext,
-            child = settingsValueCell(valueLabel = valueLabel, theme = theme),
-        ),
+        title = if (enabled) {
+            GestureDetector(
+                onTap = onPrevious,
+                child = settingsTitleCell(title = title, theme = theme),
+            )
+        } else {
+            settingsTitleCell(title = title, theme = theme, enabled = false)
+        },
+        trailing = if (enabled) {
+            GestureDetector(
+                onTap = onNext,
+                child = settingsValueCell(valueLabel = valueLabel, theme = theme),
+            )
+        } else {
+            settingsValueCell(valueLabel = valueLabel, theme = theme, enabled = false)
+        },
+    ),
+)
+
+/** 不参与点击和焦点遍历的设置只读信息行。 */
+fun SettingsInfoRow(
+    title: String,
+    valueLabel: String,
+    theme: LauncherTheme,
+): Widget = Container(
+    child = settingsInlineRow(
+        title = settingsTitleCell(title = title, theme = theme),
+        trailing = settingsValueCell(valueLabel = valueLabel, theme = theme),
     ),
 )
 
@@ -194,11 +215,12 @@ private fun settingsRowCell(
 private fun settingsTitleCell(
     title: String,
     theme: LauncherTheme,
+    enabled: Boolean = true,
 ): Widget = Container(
     alignment = Alignment.CENTER_START,
     child = Text(
         title,
-        style = TextStyle(color = theme.settings.itemTitle),
+        style = TextStyle(color = if (enabled) theme.settings.itemTitle else theme.button.disabledText),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
@@ -208,11 +230,12 @@ private fun settingsTitleCell(
 private fun settingsValueCell(
     valueLabel: String,
     theme: LauncherTheme,
+    enabled: Boolean = true,
 ): Widget = Container(
     alignment = Alignment.CENTER_END,
     child = Text(
         valueLabel,
-        style = TextStyle(color = theme.settings.itemValue),
+        style = TextStyle(color = if (enabled) theme.settings.itemValue else theme.button.disabledText),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
