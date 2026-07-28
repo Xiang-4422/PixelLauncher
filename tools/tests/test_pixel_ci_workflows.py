@@ -103,7 +103,10 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
 
         self.assertIn("Verify dependency metadata from an empty Gradle home", REQUIRED_WORKFLOW)
         self.assertIn("GRADLE_USER_HOME: ${{ runner.temp }}/pixel-cold-gradle-home", REQUIRED_WORKFLOW)
-        self.assertIn("./gradlew help :pixel-engine:assembleDebugAndroidTest", REQUIRED_WORKFLOW)
+        self.assertIn(
+            "./gradlew help :pixel-engine:dependencies :pixel-engine:assembleDebugAndroidTest",
+            REQUIRED_WORKFLOW,
+        )
 
     def test_nightly_workflow_keeps_device_matrix(self) -> None:
         """夜间工作流必须保留 API 24、29、36 的 instrumentation 矩阵。"""

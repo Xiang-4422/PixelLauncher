@@ -41,7 +41,7 @@ jobs:
         env:
           GRADLE_USER_HOME: ${{ runner.temp }}/pixel-cold-gradle-home
         run: >-
-          ./gradlew help :pixel-engine:assembleDebugAndroidTest
+          ./gradlew help :pixel-engine:dependencies :pixel-engine:assembleDebugAndroidTest
           --no-build-cache --no-daemon --console=plain
       - name: Run fast gate from a clean output tree
         run: bash tools/pixel-ci-fast.sh

@@ -59,6 +59,8 @@ EXPECTED_AAPT2_PLATFORM_SHA256 = {
 }
 # 冷缓存 CI 必须解析并校验的 AGP classpath/UTP 元数据，防止暖缓存掩盖缺项。
 EXPECTED_CI_METADATA_SHA256 = {
+    ("com.fasterxml.jackson", "jackson-base", "2.15.0", "jackson-base-2.15.0.pom"):
+        "524296bede32185ac11012f07d9246e38c19253c2b513f1cf28799121a34e770",
     ("com.google.guava", "guava-parent", "33.3.1-jre", "guava-parent-33.3.1-jre.pom"):
         "55441db27e8869dfefe053059bdf478bdc7e95585642bf391f0023345fd56287",
     ("org.junit", "junit-bom", "5.11.0-M2", "junit-bom-5.11.0-M2.module"):

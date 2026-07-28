@@ -164,6 +164,7 @@ class SupplyChainToolsTest(unittest.TestCase):
 <verification-metadata xmlns="https://schema.gradle.org/dependency-verification">
   <configuration><verify-metadata>true</verify-metadata><verify-signatures>false</verify-signatures></configuration>
   <components>
+  <component group="com.fasterxml.jackson" name="jackson-base" version="2.15.0"><artifact name="jackson-base-2.15.0.pom"><sha256 value="524296bede32185ac11012f07d9246e38c19253c2b513f1cf28799121a34e770"/></artifact></component>
   <component group="com.google.guava" name="guava-parent" version="33.3.1-jre"><artifact name="guava-parent-33.3.1-jre.pom"><sha256 value="55441db27e8869dfefe053059bdf478bdc7e95585642bf391f0023345fd56287"/></artifact></component>
   <component group="org.junit" name="junit-bom" version="5.11.0-M2"><artifact name="junit-bom-5.11.0-M2.module"><sha256 value="86477abcf490d6ca059aa9973cb108d22a506f49d1a5569bb32cc6cbf43c2cce"/></artifact></component>
   <component group="org.junit" name="junit-bom" version="5.9.2"><artifact name="junit-bom-5.9.2.module"><sha256 value="ab137ba5a8e32c9b066bf9126a1c76dd5614b724ba5c0b02549772b5e9f4cf1f"/></artifact></component>
@@ -182,7 +183,7 @@ class SupplyChainToolsTest(unittest.TestCase):
         """只登记组件 POM 而漏掉冷缓存实际请求的 module 时必须失败。"""
 
         with tempfile.TemporaryDirectory() as directory:
-            # 最小元数据故意不包含四项 CI 冷缓存元数据，错误必须先指出闭包缺失。
+            # 最小元数据故意不包含五项 CI 冷缓存元数据，错误必须先指出闭包缺失。
             metadata = Path(directory) / "verification-metadata.xml"
             metadata.write_text(
                 """<?xml version="1.0" encoding="UTF-8"?>
