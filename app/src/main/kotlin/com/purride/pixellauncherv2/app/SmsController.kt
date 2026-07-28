@@ -13,6 +13,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.SmsConversationModel
+import com.purride.pixellauncherv2.launcher.SmsDraftStore
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -81,6 +82,9 @@ internal class SmsController(
     /** 重发在途的失败消息 id 集合；只在主线程读写，用于防重复点按。 */
     private val resendInFlightMessageIds = mutableSetOf<Long>()
 
+    /** 按会话保存的未发送草稿；只在主线程读写。 */
+    private val draftStore = SmsDraftStore()
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /** 前台时开始监听短信内容变化。 */
@@ -137,6 +141,7 @@ internal class SmsController(
     }
 
     fun draftChanged(text: String) {
+        draftStore.update(host.state.smsCurrentConversationKey, text)
         host.state = LauncherStateTransitions.updateSmsSendStatusText(
             state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text),
             smsSendStatusText = "",
@@ -406,6 +411,8 @@ internal class SmsController(
                 }
                 val stillInConversation = host.state.smsCurrentConversationKey == conversationKey
                 result.onSuccess { sentEntry ->
+                    // 无论用户是否已切换会话，发出去的草稿都不应再被恢复。
+                    draftStore.clear(conversationKey)
                     if (stillInConversation) {
                         val nextMessages = host.state.smsMessages + sentEntry
                         host.state = LauncherStateTransitions.updateSmsAllMessages(
@@ -623,13 +630,14 @@ internal class SmsController(
             "openSmsConversation key=$conversationKey threadId=$threadId address=$address beforeMode=${host.state.mode}",
         )
         host.state = LauncherStateTransitions.showSmsThreadDetail(
-            // 进入会话时清掉上一个会话残留的状态文案（SENDING/FAILED/COPIED）。
+            // 进入会话时清掉上一个会话残留的状态文案（SENDING/FAILED/COPIED），
+            // 并恢复该会话此前未发送的草稿（深链预填内容优先）。
             state = LauncherStateTransitions.updateSmsDraftText(
                 state = LauncherStateTransitions.updateSmsSendStatusText(
                     state = host.state,
                     smsSendStatusText = "",
                 ),
-                smsDraftText = prefilledDraft,
+                smsDraftText = draftStore.restore(conversationKey, prefilled = prefilledDraft),
             ),
             conversationKey = conversationKey,
             conversationTitle = title,
