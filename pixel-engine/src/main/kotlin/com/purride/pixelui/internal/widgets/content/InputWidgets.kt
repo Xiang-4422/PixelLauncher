@@ -193,6 +193,7 @@ internal data class TextFieldWidget(
             onSubmitted = onSubmitted,
             cursorColor = inputBehaviorStyle.cursorColor.takeIf { editable },
             cursorVisible = state.cursorVisible,
+            cursorGap = inputBehaviorStyle.cursorGap.coerceAtLeast(0),
             selectionColor = inputBehaviorStyle.selectionColor.takeIf { editable },
             compositionColor = inputBehaviorStyle.compositionColor.takeIf { editable },
             selectionHandleColor = inputBehaviorStyle.selectionHandleColor.takeIf {
@@ -206,7 +207,10 @@ internal data class TextFieldWidget(
                 maxLines = safeMaxLines,
                 overflow = if (safeMaxLines > 1) PixelTextOverflow.CLIP else PixelTextOverflow.ELLIPSIS,
                 textAlign = textAlign,
-                paddingRight = if (textAlign == TextAlign.END) resolvedPadding.right else 0,
+                paddingRight = resolveTextFieldTextPaddingRight(
+                    textAlign = textAlign,
+                    surfacePaddingRight = resolvedPadding.right,
+                ),
                 key = key?.let { "$it-text" },
             ),
         )
@@ -285,6 +289,27 @@ internal data class TextFieldWidget(
 }
 
 /**
+ * 解析 TextField 内部文字的右侧尾距。
+ *
+ * END 对齐时，最少保留“1px 空隙 + 1px 光标列”；输入表面的 padding 仍独立参与布局，
+ * 因而 `surfacePaddingRight = 0` 时光标可以固定在字段最右列而不覆盖文字。
+ */
+internal fun resolveTextFieldTextPaddingRight(
+    /** 当前输入文字的逻辑对齐方式。 */
+    textAlign: TextAlign,
+    /** 输入表面已经解析出的右侧内容 padding。 */
+    surfacePaddingRight: Int,
+): Int {
+    if (textAlign != TextAlign.END) return 0
+    /** 调用方提供的非负尾距。 */
+    val safeSurfacePadding = surfacePaddingRight.coerceAtLeast(0)
+    return safeSurfacePadding.coerceAtLeast(MIN_END_ALIGNED_TEXT_PADDING_PX)
+}
+
+/** END 对齐文字末端所需的最小空间：1px 空隙和 1px 光标列。 */
+private const val MIN_END_ALIGNED_TEXT_PADDING_PX = 2
+
+/**
  * TextField 视觉和文本输入目标导出的 direct render object widget。
  */
 private data class TextInputSurfaceWidget(
@@ -317,6 +342,8 @@ private data class TextInputSurfaceWidget(
     val onSubmitted: ((String) -> Unit)?,
     val cursorColor: PixelColor?,
     val cursorVisible: Boolean,
+    /** 非空文本末尾字形与光标之间的额外像素间隙。 */
+    val cursorGap: Int,
     val selectionColor: PixelColor?,
     val compositionColor: PixelColor?,
     val selectionHandleColor: PixelColor?,
@@ -348,6 +375,7 @@ private data class TextInputSurfaceWidget(
             textInputOnSubmitted = onSubmitted,
             textInputCursorColor = cursorColor,
             textInputCursorVisible = cursorVisible,
+            textInputCursorGap = cursorGap,
             textInputSelectionColor = selectionColor,
             textInputCompositionColor = compositionColor,
             textInputSelectionHandleColor = selectionHandleColor,
@@ -380,6 +408,7 @@ private data class TextInputSurfaceWidget(
             textInputOnSubmitted = onSubmitted,
             textInputCursorColor = cursorColor,
             textInputCursorVisible = cursorVisible,
+            textInputCursorGap = cursorGap,
             textInputSelectionColor = selectionColor,
             textInputCompositionColor = compositionColor,
             textInputSelectionHandleColor = selectionHandleColor,

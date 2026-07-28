@@ -588,6 +588,7 @@ private fun statusBarSearchRow(
                         textStyle = TextStyle(color = theme.statusBar.searchText),
                         placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
                         padding = 0,
+                        cursorGap = SEARCH_CURSOR_GAP_PX,
                     ),
                     onChanged = onChanged,
                     onSubmitted = { onSubmitted() },
@@ -616,10 +617,12 @@ internal fun searchRowPadding(
     } else {
         drawerHorizontalInset
     }
+    /** 右对齐字段内部会提供两层 1px 尾部空间，因此搜索行无需再保留外侧右留白。 */
+    val rightInset = if (textAlign == TextAlign.END) 0 else drawerHorizontalInset
     return EdgeInsets(
         left = leftInset,
         top = STATUS_BAR_TITLE_EDGE_PADDING_PX,
-        right = drawerHorizontalInset,
+        right = rightInset,
         bottom = STATUS_BAR_TITLE_EDGE_PADDING_PX,
     )
 }
@@ -658,6 +661,8 @@ private const val STATUS_BAR_MEDIA_BORDER_PX = LauncherChromeLayout.sharedBorder
 private const val STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX = LauncherChromeLayout.sharedSegmentHeightPx
 private const val STATUS_BAR_MEDIA_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
 private const val STATUS_BAR_TITLE_EDGE_PADDING_PX = STATUS_BAR_MEDIA_BORDER_PX
+/** Drawer 搜索输入末尾字形与光标之间保留的像素间隙。 */
+private const val SEARCH_CURSOR_GAP_PX = 1
 private const val STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX
 private const val STATUS_BAR_TITLE_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
 private const val STATUS_BAR_TITLE_CONTENT_HEIGHT_PX =

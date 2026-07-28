@@ -4,6 +4,7 @@ import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelTextStyle
+import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.state.PixelTextFieldController
@@ -72,6 +73,7 @@ class RenderSurfaceCursorTest {
         renderedText: String,
         textAlign: PixelTextAlign,
         fieldWidth: Int,
+        cursorGap: Int = 0,
     ): Pair<RenderSurface, PixelBuffer> {
         val state = PixelTextFieldState(
             initialText = backingText,
@@ -89,7 +91,14 @@ class RenderSurfaceCursorTest {
             maxLines = 1,
             defaultTextRasterizer = PixelBitmapFont.Default,
             explicitWidth = fieldWidth,
-            paddingRight = if (textAlign == PixelTextAlign.END) 2 else 0,
+            paddingRight = if (textAlign == PixelTextAlign.END) {
+                resolveTextFieldTextPaddingRight(
+                    textAlign = TextAlign.END,
+                    surfacePaddingRight = 0,
+                )
+            } else {
+                0
+            },
         )
         val surface = RenderSurface(
             fillColor = null,
@@ -97,6 +106,7 @@ class RenderSurfaceCursorTest {
             textInputState = state,
             textInputController = PixelTextFieldController(),
             textInputCursorColor = cursorColor,
+            textInputCursorGap = cursorGap,
         )
         surface.setRenderObjectChild(textChild)
         surface.layout(RenderConstraints(maxWidth = fieldWidth, maxHeight = 24))
@@ -274,6 +284,31 @@ class RenderSurfaceCursorTest {
         )
         assertEquals(fieldWidth - 1, caret.x)
         assertEquals("right-aligned text must leave one empty pixel before the fixed cursor column", caret.x - 1, textRect.x + textRect.width)
+    }
+
+    @Test
+    fun leftAlignedInputTextLeavesConfiguredGapBeforeTrailingCursor() {
+        /** 两个字形后的末尾 selection，用于验证输入过程中最常见的光标位置。 */
+        val text = "AB"
+        /** 足够宽且不会裁剪尾部光标的输入字段。 */
+        val fieldWidth = 80
+        val (surface, buffer) = makeTextFieldSurface(
+            backingText = text,
+            renderedText = text,
+            textAlign = PixelTextAlign.START,
+            fieldWidth = fieldWidth,
+            cursorGap = 1,
+        )
+
+        surface.paint(PaintContext(buffer), offsetX = 0, offsetY = 0)
+
+        /** 最后一个真实文字像素的横坐标。 */
+        val lastTextX = buffer.pixels.indices
+            .filter { index -> buffer.pixels[index] == textColor.argb }
+            .maxOf { index -> index % fieldWidth }
+        /** 光标唯一像素列的横坐标。 */
+        val cursorX = buffer.pixels.indexOfFirst { pixel -> pixel == cursorColor.argb } % fieldWidth
+        assertEquals("text and cursor must contain one empty pixel column", lastTextX + 2, cursorX)
     }
 
     @Test

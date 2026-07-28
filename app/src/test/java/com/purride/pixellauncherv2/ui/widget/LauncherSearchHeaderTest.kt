@@ -24,9 +24,9 @@ class LauncherSearchHeaderTest {
         assertEquals(LauncherSpacing.CONTENT_HORIZONTAL, padding.right)
     }
 
-    /** 居中和右对齐不依赖首字形左边距，应保持与 drawer 相同的对称边界。 */
+    /** 居中对齐不依赖首字形左边距，应保持与 drawer 相同的对称边界。 */
     @Test
-    fun searchRowPadding_centerAndEndAlignment_keepDrawerInsets() {
+    fun searchRowPadding_centerAlignment_keepsDrawerInsets() {
         /** drawer 内容区域对应的完整对称留白。 */
         val expectedPadding = EdgeInsets(
             left = LauncherSpacing.CONTENT_HORIZONTAL,
@@ -36,6 +36,15 @@ class LauncherSearchHeaderTest {
         )
 
         assertEquals(expectedPadding, searchRowPadding(TextAlign.CENTER, placeholderLeadingInkInset = 2))
-        assertEquals(expectedPadding, searchRowPadding(TextAlign.END, placeholderLeadingInkInset = 2))
+    }
+
+    /** 右对齐时字段延伸到屏幕右缘，文字尾距由 TextField 内部提供。 */
+    @Test
+    fun searchRowPadding_endAlignment_reachesScreenEdge() {
+        /** 右对齐搜索行使用的外层留白。 */
+        val rowPadding = searchRowPadding(TextAlign.END, placeholderLeadingInkInset = 2)
+
+        assertEquals(LauncherSpacing.CONTENT_HORIZONTAL, rowPadding.left)
+        assertEquals(0, rowPadding.right)
     }
 }

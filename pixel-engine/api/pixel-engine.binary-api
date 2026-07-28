@@ -5109,7 +5109,7 @@ public final class com.purride.pixelui.PixelTextEditingValue {
 }
 public final class com.purride.pixelui.PixelTextFieldStyle {
   public static final com.purride.pixelui.PixelTextFieldStyle$Companion Companion;
-  public com.purride.pixelui.PixelTextFieldStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelTextFieldStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelcore.PixelColor getFillColor-BDeX7ZQ();
   public final com.purride.pixelcore.PixelColor getBorderColor-BDeX7ZQ();
   public final com.purride.pixelcore.PixelColor getFocusedBorderColor-BDeX7ZQ();
@@ -5127,6 +5127,7 @@ public final class com.purride.pixelui.PixelTextFieldStyle {
   public final boolean getCursorBlinkEnabled();
   public final long getCursorBlinkPeriodMs();
   public final int getPadding();
+  public final int getCursorGap();
   public final com.purride.pixelcore.PixelColor component1-BDeX7ZQ();
   public final com.purride.pixelcore.PixelColor component2-BDeX7ZQ();
   public final com.purride.pixelcore.PixelColor component3-BDeX7ZQ();
@@ -5144,12 +5145,13 @@ public final class com.purride.pixelui.PixelTextFieldStyle {
   public final boolean component15();
   public final long component16();
   public final int component17();
-  public final com.purride.pixelui.PixelTextFieldStyle copy-EXsO8jc(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int);
-  public static com.purride.pixelui.PixelTextFieldStyle copy-EXsO8jc$default(com.purride.pixelui.PixelTextFieldStyle, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int, java.lang.Object);
+  public final int component18();
+  public final com.purride.pixelui.PixelTextFieldStyle copy-JdIwGKw(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int);
+  public static com.purride.pixelui.PixelTextFieldStyle copy-JdIwGKw$default(com.purride.pixelui.PixelTextFieldStyle, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
-  public com.purride.pixelui.PixelTextFieldStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelTextFieldStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, com.purride.pixelui.PixelTextStyle, int, int, int, int, boolean, boolean, long, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelTextFieldStyle$Companion {
   public final com.purride.pixelui.PixelTextFieldStyle getDefault();

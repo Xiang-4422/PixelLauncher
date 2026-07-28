@@ -39,6 +39,8 @@ public data class PixelTextFieldStyle(
     val cursorBlinkEnabled: Boolean = true,
     val cursorBlinkPeriodMs: Long = 1_000L,
     val padding: Int = 2,
+    /** 非空文本末尾字形与光标之间的额外像素间隙；中间编辑位置不应用。 */
+    val cursorGap: Int = 0,
 ) {
     /** 集中提供 `PixelTextField` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {

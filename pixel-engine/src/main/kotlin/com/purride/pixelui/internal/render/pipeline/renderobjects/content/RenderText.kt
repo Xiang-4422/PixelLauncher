@@ -331,14 +331,22 @@ public class RenderText(
  *
  * Resolves a TextField caret without exposing placeholder geometry as editable text.
  */
-    public fun textInputCaretRect(backingText: String, selectionStart: Int): PixelTextRangeRect {
+    public fun textInputCaretRect(
+        backingText: String,
+        selectionStart: Int,
+        trailingCursorGap: Int = 0,
+    ): PixelTextRangeRect {
         if (backingText.isEmpty()) {
             return if (textAlign == PixelTextAlign.END) visibleTextEndCaretRect() else caretRect(0)
         }
         if (textAlign == PixelTextAlign.END && selectionStart >= backingText.length) {
             return visibleTextEndCaretRect()
         }
-        return caretRect(selectionStart)
+        /** 当前 selection 对应的原始字素边界光标。 */
+        val caret = caretRect(selectionStart)
+        if (selectionStart < backingText.length) return caret
+        /** 仅文本末尾应用调用方要求的非负视觉间隙。 */
+        return caret.copy(x = caret.x + trailingCursorGap.coerceAtLeast(0))
     }
 
     /** 执行 `RenderText` 的 `textIndexAt` 公开行为；具体参数、返回和副作用见下文。

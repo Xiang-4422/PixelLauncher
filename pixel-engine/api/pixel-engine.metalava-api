@@ -5326,7 +5326,7 @@ package com.purride.pixelui {
 
   public final class PixelTextFieldStyle {
     ctor public PixelTextFieldStyle();
-    ctor @KotlinOnly public PixelTextFieldStyle(optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelcore.PixelColor? focusedBorderColor, optional com.purride.pixelcore.PixelColor? disabledBorderColor, optional com.purride.pixelcore.PixelColor? readOnlyBorderColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional com.purride.pixelui.PixelTextStyle placeholderStyle, optional com.purride.pixelui.PixelTextStyle disabledTextStyle, optional com.purride.pixelui.PixelTextStyle disabledPlaceholderStyle, optional com.purride.pixelcore.PixelColor cursorColor, optional com.purride.pixelcore.PixelColor selectionColor, optional com.purride.pixelcore.PixelColor compositionColor, optional com.purride.pixelcore.PixelColor selectionHandleColor, optional boolean selectionHandlesEnabled, optional boolean cursorBlinkEnabled, optional long cursorBlinkPeriodMs, optional int padding);
+    ctor @KotlinOnly public PixelTextFieldStyle(optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelcore.PixelColor? focusedBorderColor, optional com.purride.pixelcore.PixelColor? disabledBorderColor, optional com.purride.pixelcore.PixelColor? readOnlyBorderColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional com.purride.pixelui.PixelTextStyle placeholderStyle, optional com.purride.pixelui.PixelTextStyle disabledTextStyle, optional com.purride.pixelui.PixelTextStyle disabledPlaceholderStyle, optional com.purride.pixelcore.PixelColor cursorColor, optional com.purride.pixelcore.PixelColor selectionColor, optional com.purride.pixelcore.PixelColor compositionColor, optional com.purride.pixelcore.PixelColor selectionHandleColor, optional boolean selectionHandlesEnabled, optional boolean cursorBlinkEnabled, optional long cursorBlinkPeriodMs, optional int padding, optional int cursorGap);
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component1();
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor component10();
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor component11();
@@ -5336,6 +5336,7 @@ package com.purride.pixelui {
     method public boolean component15();
     method public long component16();
     method public int component17();
+    method public int component18();
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component2();
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component3();
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component4();
@@ -5344,9 +5345,10 @@ package com.purride.pixelui {
     method public com.purride.pixelui.PixelTextStyle component7();
     method public com.purride.pixelui.PixelTextStyle component8();
     method public com.purride.pixelui.PixelTextStyle component9();
-    method @KotlinOnly public com.purride.pixelui.PixelTextFieldStyle copy(optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelcore.PixelColor? focusedBorderColor, optional com.purride.pixelcore.PixelColor? disabledBorderColor, optional com.purride.pixelcore.PixelColor? readOnlyBorderColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional com.purride.pixelui.PixelTextStyle placeholderStyle, optional com.purride.pixelui.PixelTextStyle disabledTextStyle, optional com.purride.pixelui.PixelTextStyle disabledPlaceholderStyle, optional com.purride.pixelcore.PixelColor cursorColor, optional com.purride.pixelcore.PixelColor selectionColor, optional com.purride.pixelcore.PixelColor compositionColor, optional com.purride.pixelcore.PixelColor selectionHandleColor, optional boolean selectionHandlesEnabled, optional boolean cursorBlinkEnabled, optional long cursorBlinkPeriodMs, optional int padding);
+    method @KotlinOnly public com.purride.pixelui.PixelTextFieldStyle copy(optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelcore.PixelColor? focusedBorderColor, optional com.purride.pixelcore.PixelColor? disabledBorderColor, optional com.purride.pixelcore.PixelColor? readOnlyBorderColor, optional com.purride.pixelui.PixelTextStyle textStyle, optional com.purride.pixelui.PixelTextStyle placeholderStyle, optional com.purride.pixelui.PixelTextStyle disabledTextStyle, optional com.purride.pixelui.PixelTextStyle disabledPlaceholderStyle, optional com.purride.pixelcore.PixelColor cursorColor, optional com.purride.pixelcore.PixelColor selectionColor, optional com.purride.pixelcore.PixelColor compositionColor, optional com.purride.pixelcore.PixelColor selectionHandleColor, optional boolean selectionHandlesEnabled, optional boolean cursorBlinkEnabled, optional long cursorBlinkPeriodMs, optional int padding, optional int cursorGap);
     method @InaccessibleFromKotlin public boolean getCursorBlinkEnabled();
     method @InaccessibleFromKotlin public long getCursorBlinkPeriodMs();
+    method @InaccessibleFromKotlin public int getCursorGap();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle getDisabledPlaceholderStyle();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelTextStyle getDisabledTextStyle();
     method @InaccessibleFromKotlin public int getPadding();
@@ -5358,6 +5360,7 @@ package com.purride.pixelui {
     property public boolean cursorBlinkEnabled;
     property public long cursorBlinkPeriodMs;
     property public com.purride.pixelcore.PixelColor cursorColor;
+    property public int cursorGap;
     property public com.purride.pixelcore.PixelColor? disabledBorderColor;
     property public com.purride.pixelui.PixelTextStyle disabledPlaceholderStyle;
     property public com.purride.pixelui.PixelTextStyle disabledTextStyle;

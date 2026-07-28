@@ -68,6 +68,8 @@ public class RenderSurface(
     private var textInputOnSubmitted: ((String) -> Unit)? = null,
     private var textInputCursorColor: PixelColor? = null,
     private var textInputCursorVisible: Boolean = true,
+    /** 非空文本末尾字形与光标之间的额外像素间隙。 */
+    private var textInputCursorGap: Int = 0,
     private var textInputSelectionColor: PixelColor? = null,
     private var textInputCompositionColor: PixelColor? = null,
     private var textInputSelectionHandleColor: PixelColor? = null,
@@ -81,6 +83,7 @@ public class RenderSurface(
         shadowOffset = shadowOffset.coerceAtLeast(0).takeIf { shadowColor != null } ?: 0
         textInputMinLines = textInputMinLines.coerceAtLeast(1)
         textInputMaxLines = textInputMaxLines.coerceAtLeast(textInputMinLines)
+        textInputCursorGap = textInputCursorGap.coerceAtLeast(0)
         setRenderObjectChild(child)
     }
 
@@ -133,6 +136,7 @@ public class RenderSurface(
         textInputOnSubmitted: ((String) -> Unit)? = null,
         textInputCursorColor: PixelColor? = null,
         textInputCursorVisible: Boolean = true,
+        textInputCursorGap: Int = 0,
         textInputSelectionColor: PixelColor? = null,
         textInputCompositionColor: PixelColor? = null,
         textInputSelectionHandleColor: PixelColor? = null,
@@ -145,6 +149,8 @@ public class RenderSurface(
         val coercedCornerRadius = cornerRadius.coerceAtLeast(0)
         /** A missing shadow color makes the offset layout-neutral. */
         val coercedShadowOffset = shadowOffset.coerceAtLeast(0).takeIf { shadowColor != null } ?: 0
+        /** 负间隙没有排版含义，统一收敛为零。 */
+        val coercedCursorGap = textInputCursorGap.coerceAtLeast(0)
         if (
             this.fillColor == fillColor &&
             this.borderColor == borderColor &&
@@ -191,6 +197,7 @@ public class RenderSurface(
             this.textInputOnSubmitted == textInputOnSubmitted &&
             this.textInputCursorColor == textInputCursorColor &&
             this.textInputCursorVisible == textInputCursorVisible &&
+            this.textInputCursorGap == coercedCursorGap &&
             this.textInputSelectionColor == textInputSelectionColor &&
             this.textInputCompositionColor == textInputCompositionColor &&
             this.textInputSelectionHandleColor == textInputSelectionHandleColor
@@ -242,6 +249,7 @@ public class RenderSurface(
         this.textInputOnSubmitted = textInputOnSubmitted
         this.textInputCursorColor = textInputCursorColor
         this.textInputCursorVisible = textInputCursorVisible
+        this.textInputCursorGap = coercedCursorGap
         this.textInputSelectionColor = textInputSelectionColor
         this.textInputCompositionColor = textInputCompositionColor
         this.textInputSelectionHandleColor = textInputSelectionHandleColor
@@ -542,6 +550,7 @@ public class RenderSurface(
         val caret = (child as? RenderText)?.textInputCaretRect(
             backingText = state.text,
             selectionStart = state.selectionStart,
+            trailingCursorGap = textInputCursorGap,
         )
         val fallbackCaret = if (caret == null) resolveTextInputCaret(state.text, state.selectionStart, child) else 0L
         val cursorX = cursorBaseX + (caret?.x ?: caretX(fallbackCaret))
