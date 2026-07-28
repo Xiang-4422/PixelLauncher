@@ -354,9 +354,6 @@ class SmsRepository(
     }
 
     fun storeIncomingFromIntent(intent: Intent): SmsMessageEntry? {
-        if (!isDefaultSmsApp()) {
-            return null
-        }
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty()) {
             return null
@@ -364,7 +361,19 @@ class SmsRepository(
         val address = messages.firstOrNull()?.originatingAddress.orEmpty()
         val body = messages.joinToString(separator = "") { it.messageBody.orEmpty() }
         val dateMillis = messages.firstOrNull()?.timestampMillis?.takeIf { it > 0L } ?: System.currentTimeMillis()
-        return insertIncomingMessage(address = address, body = body, dateMillis = dateMillis)
+        insertIncomingMessage(address = address, body = body, dateMillis = dateMillis)?.let { return it }
+        // 入库失败（异常或默认应用角色竞态）也不能吞掉来信：
+        // 返回未落库的条目，至少保证通知可见。
+        Log.w(LOG_TAG, "storeIncomingFromIntent: insert failed, notify without persistence")
+        return buildMessageEntry(
+            messageId = -1L,
+            threadId = -1L,
+            address = address,
+            body = body,
+            dateMillis = dateMillis,
+            type = Telephony.Sms.MESSAGE_TYPE_INBOX,
+            isRead = false,
+        )
     }
 
     fun insertIncomingMessage(

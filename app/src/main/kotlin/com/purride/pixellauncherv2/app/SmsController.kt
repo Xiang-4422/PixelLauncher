@@ -483,25 +483,34 @@ internal class SmsController(
     /** 处理短信深链：刷新能力后打开指定（或按地址解析的）会话。 */
     fun openDeepLinkedThread(threadId: Long?, address: String, draft: String) {
         refreshSmsCapability(render = false)
-        val messages = smsRepository.readMessages()
-        applySmsData(messages)
-        val normalizedAddress = SmsConversationModel.normalizeAddress(address)
-        val target = messages.firstOrNull {
-            (threadId != null && it.threadId == threadId) ||
-                SmsConversationModel.normalizeAddress(it.address) == normalizedAddress
+        // 深链常在点通知冷启动时到达：全量读库与联系人解析不能占主线程，
+        // 读完投递回主线程再打开会话。
+        backgroundExecutor.execute {
+            val messages = smsRepository.readMessages()
+            val fallbackConversation = smsRepository.conversationForAddress(address)
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                applySmsData(messages)
+                val normalizedAddress = SmsConversationModel.normalizeAddress(address)
+                val target = messages.firstOrNull {
+                    (threadId != null && it.threadId == threadId) ||
+                        SmsConversationModel.normalizeAddress(it.address) == normalizedAddress
+                }
+                if (target != null) {
+                    openSmsConversation(target.conversationKey, prefilledDraft = draft)
+                    return@post
+                }
+                openSmsConversation(
+                    conversationKey = fallbackConversation.key,
+                    prefilledDraft = draft,
+                    fallbackAddress = address,
+                    fallbackTitle = fallbackConversation.title,
+                    fallbackIsService = fallbackConversation.isService,
+                )
+            }
         }
-        if (target != null) {
-            openSmsConversation(target.conversationKey, prefilledDraft = draft)
-            return
-        }
-        val conversation = smsRepository.conversationForAddress(address)
-        openSmsConversation(
-            conversationKey = conversation.key,
-            prefilledDraft = draft,
-            fallbackAddress = address,
-            fallbackTitle = conversation.title,
-            fallbackIsService = conversation.isService,
-        )
     }
 
     // ── Internal orchestration ────────────────────────────────────────────────

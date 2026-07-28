@@ -9,9 +9,22 @@ import android.provider.Telephony
 class SmsDeliverReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val repository = AndroidComponentDependencies.smsRepository(context)
-        val entry = repository.storeIncomingFromIntent(intent) ?: return
-        AndroidComponentDependencies.smsNotificationHelper(context).showIncomingMessage(entry)
-        resultCode = Telephony.Sms.Intents.RESULT_SMS_HANDLED
+        // 入库与联系人解析都是跨进程 IO，不能占用接收器主线程：
+        // goAsync 保活后移到工作线程执行，完成后 finish。
+        val pendingResult = goAsync()
+        val appContext = context.applicationContext
+        Thread {
+            try {
+                val entry = AndroidComponentDependencies.smsRepository(appContext)
+                    .storeIncomingFromIntent(intent)
+                if (entry != null) {
+                    AndroidComponentDependencies.smsNotificationHelper(appContext)
+                        .showIncomingMessage(entry)
+                    pendingResult.resultCode = Telephony.Sms.Intents.RESULT_SMS_HANDLED
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }.start()
     }
 }

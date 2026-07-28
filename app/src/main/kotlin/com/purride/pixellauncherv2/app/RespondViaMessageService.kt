@@ -26,12 +26,17 @@ class RespondViaMessageService : Service() {
             return START_NOT_STICKY
         }
         sendExecutor.execute {
-            AndroidComponentDependencies.smsRepository(applicationContext).sendMessage(
+            val result = AndroidComponentDependencies.smsRepository(applicationContext).sendMessage(
                 SmsSendRequest(
                     address = address,
                     body = body,
                 ),
             )
+            if (result.isFailure) {
+                // 快捷回复没有任何界面：发送失败必须以通知可见，点按可进会话补发。
+                AndroidComponentDependencies.smsNotificationHelper(applicationContext)
+                    .showSendFailure(address)
+            }
             stopSelf(startId)
         }
         return START_NOT_STICKY

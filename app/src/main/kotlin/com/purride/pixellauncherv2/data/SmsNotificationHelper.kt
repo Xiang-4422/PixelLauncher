@@ -71,6 +71,37 @@ class SmsNotificationHelper(
         NotificationManagerCompat.from(context).cancel(threadId.toInt())
     }
 
+    /** 快捷回复（通话中“以短信回复”）发送失败时提示；点按进入对应会话补发。 */
+    fun showSendFailure(address: String) {
+        ensureChannel()
+        val launchIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(MainActivity.EXTRA_OPEN_SMS_ADDRESS, address)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            address.hashCode(),
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_stat_sms)
+            .setContentTitle("SEND FAILED")
+            .setContentText(address.ifBlank { "SMS" })
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        // 用独立 tag 划分命名空间，避免与按 threadId 编号的来信通知互相覆盖/误撤。
+        NotificationManagerCompat.from(context)
+            .notify(SEND_FAILURE_TAG, address.hashCode(), notification)
+    }
+
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return
@@ -94,5 +125,6 @@ class SmsNotificationHelper(
     private companion object {
         const val channelId = "sms_incoming"
         const val unsupportedMmsNotificationId = 8000
+        const val SEND_FAILURE_TAG = "sms_send_failure"
     }
 }
