@@ -4,6 +4,8 @@ import android.content.Context
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
+import com.purride.pixellauncherv2.launcher.LauncherFontFamily
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixelcore.PixelShape
@@ -20,6 +22,8 @@ class FontSettingsRepository(
         val dotSizePx: Int,
         val pixelGapEnabled: Boolean,
         val theme: PixelTheme,
+        /** 用户在设置页明确选择的 Launcher 字体家族。 */
+        val fontFamily: LauncherFontFamily,
     )
 
     data class UiBehaviorSettings(
@@ -43,6 +47,7 @@ class FontSettingsRepository(
             dotSizePx = dotSizePx,
             pixelGapEnabled = readStoredPixelGapEnabled(),
             theme = readStoredTheme(),
+            fontFamily = readStoredFontFamily(),
         )
     }
 
@@ -67,6 +72,7 @@ class FontSettingsRepository(
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
+        fontFamily: LauncherFontFamily,
     ) {
         val safeDotSizePx = dotSizePx.coerceAtLeast(1)
         sharedPreferences.edit()
@@ -74,6 +80,7 @@ class FontSettingsRepository(
             .putInt(KEY_DOT_SIZE_PX, safeDotSizePx)
             .putBoolean(KEY_PIXEL_GAP_ENABLED, pixelGapEnabled)
             .putString(KEY_THEME, theme.name)
+            .putString(KEY_FONT_FAMILY, fontFamily.name)
             .apply()
     }
 
@@ -124,6 +131,13 @@ class FontSettingsRepository(
         return PixelTheme.entries.firstOrNull { it.name == storedValue } ?: PixelTheme.DAY
     }
 
+    /** 读取已保存字体；旧版本或无效值稳定回退到默认字体。 */
+    private fun readStoredFontFamily(): LauncherFontFamily {
+        val storedValue = sharedPreferences.getString(KEY_FONT_FAMILY, null)
+        return LauncherFontFamily.entries.firstOrNull { it.name == storedValue }
+            ?: PixelFontCatalog.defaultUiFontFamily
+    }
+
     private fun readStoredPixelGapEnabled(): Boolean {
         return sharedPreferences.getBoolean(KEY_PIXEL_GAP_ENABLED, true)
     }
@@ -165,6 +179,8 @@ class FontSettingsRepository(
         const val KEY_DOT_SIZE_PX = "selected_dot_size_px"
         const val KEY_PIXEL_GAP_ENABLED = "pixel_gap_enabled"
         const val KEY_THEME = "selected_theme"
+        /** 字体家族对应的 SharedPreferences 键。 */
+        const val KEY_FONT_FAMILY = "selected_font_family"
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"
         const val KEY_IDLE_PAGE_ENABLED = "idle_page_enabled"
         const val KEY_CHARGE_AUTO_IDLE_ENABLED = "charge_auto_idle_enabled"

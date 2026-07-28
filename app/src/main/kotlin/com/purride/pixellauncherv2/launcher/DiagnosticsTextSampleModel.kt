@@ -27,6 +27,7 @@ object DiagnosticsTextSampleModel {
         return buildSamples(
             homeLines = HomeInfoModel.lines(state).map { it.text },
             dataLines = DataHealthModel.lines(state).map { "${it.title} ${it.value}" },
+            selectedFontFamily = state.selectedFontFamily,
             screenProfile = screenProfile,
         )
     }
@@ -35,6 +36,7 @@ object DiagnosticsTextSampleModel {
         return buildSamples(
             homeLines = HomeInfoModel.lines(state).map { it.text },
             dataLines = DataHealthModel.lines(state).map { "${it.title} ${it.value}" },
+            selectedFontFamily = state.selectedFontFamily,
             screenProfile = screenProfile,
         )
     }
@@ -50,13 +52,21 @@ object DiagnosticsTextSampleModel {
     private fun buildSamples(
         homeLines: List<String>,
         dataLines: List<String>,
+        /** 诊断宽度估算所使用的当前字体家族。 */
+        selectedFontFamily: LauncherFontFamily,
         screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsTextSample> {
         val availablePx = contentWidth(screenProfile)
         return buildList {
-            addAll(homeLines.map { sample(group = "HOME", text = it, availablePx = availablePx) })
-            addAll(dataLines.map { sample(group = "DATA", text = it, availablePx = availablePx) })
-            addAll(settingsSamples.map { sample(group = "SETTINGS", text = it, availablePx = availablePx) })
+            addAll(homeLines.map {
+                sample(group = "HOME", text = it, availablePx = availablePx, fontFamily = selectedFontFamily)
+            })
+            addAll(dataLines.map {
+                sample(group = "DATA", text = it, availablePx = availablePx, fontFamily = selectedFontFamily)
+            })
+            addAll(settingsSamples.map {
+                sample(group = "SETTINGS", text = it, availablePx = availablePx, fontFamily = selectedFontFamily)
+            })
         }
     }
 
@@ -75,11 +85,12 @@ object DiagnosticsTextSampleModel {
         group: String,
         text: String,
         availablePx: Int,
+        fontFamily: LauncherFontFamily,
     ): DiagnosticsTextSample {
         return DiagnosticsTextSample(
             group = group,
             text = text,
-            widthPx = PixelFontCatalog.estimatedTextWidth(text),
+            widthPx = PixelFontCatalog.estimatedTextWidth(text, family = fontFamily),
             availablePx = availablePx,
         )
     }
@@ -98,6 +109,7 @@ object DiagnosticsTextSampleModel {
         "PIXEL 999PX",
         "GAP 100%",
         "THEME NIGHT",
+        "FONT MONO",
         "STATUS 3 ROWS",
         "ALIGN CENTER",
         "SEARCH ON",

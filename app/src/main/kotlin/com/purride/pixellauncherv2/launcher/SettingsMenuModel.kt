@@ -8,6 +8,7 @@ enum class SettingsMenuItem {
     PIXEL_GAP,
     STYLE,
     THEME,
+    FONT,
     HOME_STATUS,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
@@ -51,6 +52,9 @@ object SettingsMenuModel {
         PixelShape.DIAMOND,
     )
     val themeOptions: List<PixelTheme> = PixelTheme.entries
+    /** 设置页允许循环选择的字体家族。 */
+    val fontOptions: List<LauncherFontFamily> = PixelFontCatalog.fontFamilyOptions()
+
     fun rows(state: LauncherState): List<SettingsMenuRow> {
         return buildList {
             add(
@@ -84,6 +88,14 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.THEME,
                     title = "THEME",
                     value = themeLabel(state.selectedTheme),
+                    section = SettingsSection.DISPLAY,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.FONT,
+                    title = "FONT",
+                    value = fontLabel(state.selectedFontFamily),
                     section = SettingsSection.DISPLAY,
                 ),
             )
@@ -264,6 +276,13 @@ object SettingsMenuModel {
         return themeOptions[nextIndex]
     }
 
+    /** 按设置页方向循环选择字体家族。 */
+    fun nextFont(current: LauncherFontFamily, direction: Int): LauncherFontFamily {
+        val currentIndex = fontOptions.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, fontOptions.size)
+        return fontOptions[nextIndex]
+    }
+
     fun styleLabel(pixelShape: PixelShape): String {
         return when (pixelShape) {
             PixelShape.SQUARE -> "SQUARE"
@@ -274,6 +293,11 @@ object SettingsMenuModel {
 
     fun themeLabel(theme: PixelTheme): String {
         return theme.displayLabel
+    }
+
+    /** 返回设置页展示的字体名称。 */
+    fun fontLabel(fontFamily: LauncherFontFamily): String {
+        return PixelFontCatalog.familyLabel(fontFamily)
     }
 
     fun nextDrawerListAlignment(current: DrawerListAlignment, direction: Int): DrawerListAlignment {

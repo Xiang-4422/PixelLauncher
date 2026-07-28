@@ -117,6 +117,15 @@ class SettingsScreen(
                     onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
                 ),
             )
+            add(
+                SettingsOptionStepperRow(
+                    title = "FONT",
+                    valueLabel = SettingsMenuModel.fontLabel(selectedFontFamily),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.FONT, +1) },
+                ),
+            )
             addSection(SettingsSection.HOME, t)
             add(
                 SettingsActionRow(

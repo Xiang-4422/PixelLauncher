@@ -61,6 +61,23 @@ class SettingsMenuModelTest {
         assertEquals(first, SettingsMenuModel.nextTheme(stepped, -1))
     }
 
+    /** 字体选择应在比例版和等宽版之间双向循环。 */
+    @Test
+    fun nextFont_wrapsAtBothEnds() {
+        assertEquals(
+            LauncherFontFamily.FUSION_MONOSPACED,
+            SettingsMenuModel.nextFont(LauncherFontFamily.FUSION_PROPORTIONAL, 1),
+        )
+        assertEquals(
+            LauncherFontFamily.FUSION_MONOSPACED,
+            SettingsMenuModel.nextFont(LauncherFontFamily.FUSION_PROPORTIONAL, -1),
+        )
+        assertEquals(
+            LauncherFontFamily.FUSION_PROPORTIONAL,
+            SettingsMenuModel.nextFont(LauncherFontFamily.FUSION_MONOSPACED, 1),
+        )
+    }
+
     @Test
     fun nextResolution_keepsOriginalDiscreteOptionsAndWraps() {
         val options = LauncherLayoutProfileFactory.resolutionOptions()
@@ -83,6 +100,11 @@ class SettingsMenuModelTest {
         assertEquals("CENTER", SettingsMenuModel.drawerListAlignmentLabel(DrawerListAlignment.CENTER))
         assertEquals("DOT MATRIX", SettingsMenuModel.chargeIdleEffectLabel(ChargeIdleEffect.DOT_MATRIX))
         assertEquals("30S", SettingsMenuModel.idleTimeoutLabel(30))
+        assertEquals("MONO", SettingsMenuModel.fontLabel(LauncherFontFamily.FUSION_MONOSPACED))
+        assertEquals(
+            30,
+            PixelFontCatalog.estimatedTextWidth("ABC", family = LauncherFontFamily.FUSION_MONOSPACED),
+        )
     }
 
     @Test
@@ -146,6 +168,7 @@ class SettingsMenuModelTest {
         assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL))
         assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
+        assertTrue(items.contains(SettingsMenuItem.FONT))
         assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.CHARGE_AUTO_IDLE }.value)
@@ -161,6 +184,7 @@ class SettingsMenuModelTest {
         assertEquals("OFF", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
+        assertEquals("FUSION", rows.first { it.item == SettingsMenuItem.FONT }.value)
     }
 
     @Test
@@ -184,6 +208,7 @@ class SettingsMenuModelTest {
         )
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.RESOLUTION }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME }.section)
+        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT }.section)
         assertEquals(SettingsSection.HOME, rows.first { it.item == SettingsMenuItem.HOME_STATUS }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.section)

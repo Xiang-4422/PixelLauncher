@@ -23,6 +23,7 @@ object DiagnosticsModel {
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
+            selectedFontFamily = state.selectedFontFamily,
             screenProfile = screenProfile,
         )
     }
@@ -39,6 +40,7 @@ object DiagnosticsModel {
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
+            selectedFontFamily = state.selectedFontFamily,
             screenProfile = screenProfile,
         )
     }
@@ -53,6 +55,8 @@ object DiagnosticsModel {
         batteryLevel: Int,
         isCharging: Boolean,
         hasUsageAccess: Boolean,
+        /** 当前由设置页明确选择的字体家族。 */
+        selectedFontFamily: LauncherFontFamily,
         screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsLine> {
         val lastLaunch = lastLaunchPackageName
@@ -82,7 +86,11 @@ object DiagnosticsModel {
             DiagnosticsLine("LAUNCHES", launchCount.toString()),
             DiagnosticsLine("LAST", lastLaunch),
             DiagnosticsLine("RECENT", recentSummary),
-            DiagnosticsLine("FONT", "FUSION ${PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize)}"),
+            DiagnosticsLine(
+                "FONT",
+                "${PixelFontCatalog.familyLabel(selectedFontFamily)} " +
+                    PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize),
+            ),
         ) + fontRows + listOf(
             DiagnosticsLine("TEXT", textSummary),
             DiagnosticsLine(

@@ -57,6 +57,7 @@ import com.purride.pixellauncherv2.launcher.DrawerSearchAutoLaunchPolicy
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
 import com.purride.pixellauncherv2.launcher.IdleAutoEntryPolicy
+import com.purride.pixellauncherv2.launcher.LauncherFontFamily
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -296,6 +297,7 @@ class MainActivity : AppCompatActivity() {
             selectedDotSizePx = appearanceSettings.dotSizePx,
             isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
+            selectedFontFamily = appearanceSettings.fontFamily,
         )
         state = LauncherStateTransitions.updateUiBehavior(
             state = state,
@@ -1187,6 +1189,17 @@ class MainActivity : AppCompatActivity() {
                     newDotSizePx = current.selectedDotSizePx,
                     newPixelGapEnabled = current.isPixelGapEnabled,
                     newTheme = SettingsMenuModel.nextTheme(current.selectedTheme, direction),
+                )
+            }
+            SettingsMenuItem.FONT -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val current = state
+                applyAppearance(
+                    newPixelShape = current.selectedPixelShape,
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newTheme = current.selectedTheme,
+                    newFontFamily = SettingsMenuModel.nextFont(current.selectedFontFamily, direction),
                 )
             }
             SettingsMenuItem.HOME_STATUS -> {
@@ -2113,18 +2126,21 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
+        newFontFamily: LauncherFontFamily = state.selectedFontFamily,
     ) {
         persistAppearance(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
             pixelGapEnabled = newPixelGapEnabled,
             theme = newTheme,
+            fontFamily = newFontFamily,
         )
         applyAppearanceState(
             newPixelShape = newPixelShape,
             newDotSizePx = newDotSizePx,
             newPixelGapEnabled = newPixelGapEnabled,
             newTheme = newTheme,
+            newFontFamily = newFontFamily,
         )
     }
 
@@ -2133,12 +2149,14 @@ class MainActivity : AppCompatActivity() {
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
+        fontFamily: LauncherFontFamily = state.selectedFontFamily,
     ) {
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = pixelShape,
             dotSizePx = dotSizePx,
             pixelGapEnabled = pixelGapEnabled,
             theme = theme,
+            fontFamily = fontFamily,
         )
     }
 
@@ -2147,6 +2165,7 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
+        newFontFamily: LauncherFontFamily = state.selectedFontFamily,
         render: Boolean = true,
     ) {
         selectedTheme = newTheme
@@ -2156,6 +2175,7 @@ class MainActivity : AppCompatActivity() {
             selectedDotSizePx = newDotSizePx,
             isPixelGapEnabled = newPixelGapEnabled,
             selectedTheme = newTheme,
+            selectedFontFamily = newFontFamily,
         )
 
         val widthPx = launcherRootHost.rootView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
@@ -2201,6 +2221,7 @@ class MainActivity : AppCompatActivity() {
             dotSizePx = confirmedState.selectedDotSizePx,
             pixelGapEnabled = confirmedState.isPixelGapEnabled,
             theme = confirmedState.selectedTheme,
+            fontFamily = confirmedState.selectedFontFamily,
         )
         clearPendingPixelAppearanceChange()
     }

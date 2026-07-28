@@ -52,6 +52,8 @@ data class LauncherState(
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
+    /** 设置页当前明确选中的全局字体家族。 */
+    val selectedFontFamily: LauncherFontFamily = PixelFontCatalog.defaultUiFontFamily,
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     val isIdlePageEnabled: Boolean = false,
     val chargeAutoIdleEnabled: Boolean = false,

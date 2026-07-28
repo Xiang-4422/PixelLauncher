@@ -111,6 +111,15 @@ class DiagnosticsModelTest {
         assertEquals("DATA HEALTH", byTitle["DEBUG"])
     }
 
+    /** 诊断页应展示设置页当前选中的字体，而不是固定默认名称。 */
+    @Test
+    fun lines_exposesSelectedFontFamily() {
+        val state = LauncherState(selectedFontFamily = LauncherFontFamily.FUSION_MONOSPACED)
+        val byTitle = DiagnosticsModel.lines(state, profile).associate { it.title to it.value }
+
+        assertEquals("MONO 10PX", byTitle["FONT"])
+    }
+
     @Test
     fun lines_powerOmitsChargeSuffixWhenNotCharging() {
         val state = LauncherState(batteryLevel = 55, isCharging = false)

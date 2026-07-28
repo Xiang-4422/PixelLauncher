@@ -88,7 +88,8 @@ internal class LauncherRootHost(
         hostView = hostView,
         config = PixelHostSetupConfig(
             textRasterizer = textRasterizers.getRasterizer(
-                PixelFontCatalog.defaultUiFontSize,
+                family = PixelFontCatalog.defaultUiFontFamily,
+                size = PixelFontCatalog.defaultUiFontSize,
             ),
             content = { buildRoot() },
         ),
@@ -212,7 +213,8 @@ internal class LauncherRootHost(
         setup.hostView.bezelColor = theme.surface.bezelColor
         setup.hostView.offPixelColor = theme.surface.offPixelColor
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
-            PixelFontCatalog.defaultUiFontSize,
+            family = state.selectedFontFamily,
+            size = PixelFontCatalog.defaultUiFontSize,
         )
 
         // ── Sync main pager ───────────────────────────────────────────────────
@@ -535,6 +537,7 @@ internal class LauncherRootHost(
                     placeholder = "SEARCH APP",
                     placeholderLeadingInkInset = textRasterizers.leadingInkInset(
                         text = "SEARCH APP",
+                        family = uiState.selectedFontFamily,
                         size = PixelFontCatalog.defaultUiFontSize,
                     ),
                     autofocus = uiState.isDrawerSearchFocused,
@@ -616,6 +619,7 @@ internal class LauncherRootHost(
         resolveLabelLeadingInkInset = { label ->
             textRasterizers.leadingInkInset(
                 text = label,
+                family = uiState.selectedFontFamily,
                 size = PixelFontCatalog.defaultUiFontSize,
             )
         },

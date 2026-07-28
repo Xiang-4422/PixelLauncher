@@ -12,6 +12,7 @@ import com.purride.pixelcore.PixelGlyphPack
 import com.purride.pixelcore.PixelGlyphPackAssetLoader
 import com.purride.pixelcore.PixelStyledTextRasterizer
 import com.purride.pixelcore.PixelTextRasterizer
+import com.purride.pixellauncherv2.launcher.LauncherFontFamily
 import com.purride.pixellauncherv2.launcher.PixelFontSize
 
 /**
@@ -24,12 +25,12 @@ class LauncherTextRasterizers(
 
     /** 复用 pixel-engine 资源缓存的字形包加载器。 */
     private val glyphPackLoader = PixelGlyphPackAssetLoader(context)
-    /** 按固定字号缓存栅格器及其视觉边界解析器。 */
-    private val cache = mutableMapOf<PixelFontSize, RasterizerEntry>()
+    /** 按字体家族与固定字号缓存栅格器及其视觉边界解析器。 */
+    private val cache = mutableMapOf<RasterizerKey, RasterizerEntry>()
 
-    /** 返回指定像素字号的共享文本栅格器。 */
-    fun getRasterizer(size: PixelFontSize): PixelTextRasterizer {
-        return entryFor(size).rasterizer
+    /** 返回指定字体家族和像素字号的共享文本栅格器。 */
+    fun getRasterizer(family: LauncherFontFamily, size: PixelFontSize): PixelTextRasterizer {
+        return entryFor(family = family, size = size).rasterizer
     }
 
     /**
@@ -37,16 +38,18 @@ class LauncherTextRasterizers(
      *
      * 前导空格属于应用名内容，不会被当作字体边距消除。
      */
-    fun leadingInkInset(text: String, size: PixelFontSize): Int {
-        return entryFor(size).leadingInkResolver.resolve(text)
+    fun leadingInkInset(text: String, family: LauncherFontFamily, size: PixelFontSize): Int {
+        return entryFor(family = family, size = size).leadingInkResolver.resolve(text)
     }
 
-    /** 获取或创建同时服务测量、绘制和视觉边界查询的字号条目。 */
-    private fun entryFor(size: PixelFontSize): RasterizerEntry {
-        return cache.getOrPut(size) {
+    /** 获取或创建同时服务测量、绘制和视觉边界查询的字体条目。 */
+    private fun entryFor(family: LauncherFontFamily, size: PixelFontSize): RasterizerEntry {
+        /** 区分字体家族和字号的稳定缓存键。 */
+        val key = RasterizerKey(family = family, size = size)
+        return cache.getOrPut(key) {
             fusionRasterizer(
-                latinAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${DEFAULT_STYLE_NAME}_latin",
-                zhHansAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${DEFAULT_STYLE_NAME}_zh_hans",
+                latinAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${family.assetStyleName}_latin",
+                zhHansAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${family.assetStyleName}_zh_hans",
             )
         }
     }
@@ -115,10 +118,13 @@ class LauncherTextRasterizers(
         val leadingInkResolver: GlyphPackLeadingInkResolver,
     )
 
-    private companion object {
-        /** Launcher 固定使用的 Fusion Pixel 字体样式名。 */
-        const val DEFAULT_STYLE_NAME = "proportional"
-    }
+    /** 唯一标识一个可复用字体栅格器的缓存键。 */
+    private data class RasterizerKey(
+        /** 用户选择的字体家族。 */
+        val family: LauncherFontFamily,
+        /** 字体家族对应的像素字号。 */
+        val size: PixelFontSize,
+    )
 }
 
 /**
