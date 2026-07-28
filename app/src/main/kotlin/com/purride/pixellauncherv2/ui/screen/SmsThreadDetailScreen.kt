@@ -35,6 +35,7 @@ import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
+import com.purride.pixellauncherv2.launcher.SmsSendStatus
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.util.SmsTimeFormatter
@@ -228,10 +229,16 @@ private fun buildComposeArea(
         mainAxisSize = MainAxisSize.MIN,
         spacing = LauncherSpacing.ROW_SPACING,
         children = buildList {
-            if (uiState.smsSendStatusText.isNotBlank()) {
+            // 发送状态是持续态（发送中/失败），由渲染层映射文案。
+            val sendStatusLabel = when (uiState.smsSendStatus) {
+                SmsSendStatus.SENDING -> "SENDING"
+                SmsSendStatus.FAILED -> "FAILED"
+                SmsSendStatus.NONE -> ""
+            }
+            if (sendStatusLabel.isNotBlank()) {
                 add(
                     Text(
-                        uiState.smsSendStatusText,
+                        sendStatusLabel,
                         style = TextStyle(color = theme.sms.timestamp),
                         overflow = TextOverflow.ELLIPSIS,
                         softWrap = false,

@@ -281,7 +281,7 @@ object LauncherStateTransitions {
             mode = LauncherMode.HOME,
             smsDraftText = "",
             smsThreadSearchQuery = "",
-            smsSendStatusText = "",
+            smsSendStatus = SmsSendStatus.NONE,
             isSmsThreadMenuVisible = false,
             smsThreadMenuConversationKey = "",
         )
@@ -305,7 +305,7 @@ object LauncherStateTransitions {
             smsCurrentThreadId = threadId,
             smsCurrentAddress = address,
             smsMessages = emptyList(),
-            smsSendStatusText = "",
+            smsSendStatus = SmsSendStatus.NONE,
             isSmsMessageMenuVisible = false,
             smsMessageMenuMessageId = -1L,
         )
@@ -364,7 +364,7 @@ object LauncherStateTransitions {
             mode = LauncherMode.SMS_THREADS,
             returnMode = LauncherMode.HOME,
             smsDraftText = "",
-            smsSendStatusText = "",
+            smsSendStatus = SmsSendStatus.NONE,
             isSmsMessageMenuVisible = false,
             smsMessageMenuMessageId = -1L,
         )
@@ -1146,11 +1146,11 @@ object LauncherStateTransitions {
         )
     }
 
-    fun updateSmsSendStatusText(
+    fun updateSmsSendStatus(
         state: LauncherState,
-        smsSendStatusText: String,
+        smsSendStatus: SmsSendStatus,
     ): LauncherState {
-        return state.copy(smsSendStatusText = smsSendStatusText)
+        return state.copy(smsSendStatus = smsSendStatus)
     }
 
     /**

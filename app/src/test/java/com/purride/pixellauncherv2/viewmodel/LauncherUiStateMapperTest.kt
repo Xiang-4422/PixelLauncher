@@ -11,6 +11,7 @@ import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
+import com.purride.pixellauncherv2.launcher.SmsSendStatus
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -46,7 +47,7 @@ class LauncherUiStateMapperTest {
             smsPageIndex = SmsPageIndex.ALL,
             isSmsThreadsLoading = true,
             smsDraftText = "draft",
-            smsSendStatusText = "FAILED",
+            smsSendStatus = SmsSendStatus.FAILED,
             smsCurrentThreadId = 7L,
             smsCurrentAddress = "10086",
             smsThreadSearchQuery = "code",
@@ -123,7 +124,7 @@ class LauncherUiStateMapperTest {
         assertEquals(SmsPageIndex.ALL, ui.smsPageIndex)
         assertEquals(true, ui.isSmsThreadsLoading)
         assertEquals("draft", ui.smsDraftText)
-        assertEquals("FAILED", ui.smsSendStatusText)
+        assertEquals(SmsSendStatus.FAILED, ui.smsSendStatus)
         assertEquals(7L, ui.smsCurrentThreadId)
         assertEquals("10086", ui.smsCurrentAddress)
         assertEquals("code", ui.smsThreadSearchQuery)

@@ -17,6 +17,7 @@ import com.purride.pixellauncherv2.launcher.SmsConversationModel
 import com.purride.pixellauncherv2.launcher.SmsDraftStore
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
+import com.purride.pixellauncherv2.launcher.SmsSendStatus
 import com.purride.pixellauncherv2.launcher.SmsSendRetryPolicy
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
@@ -160,9 +161,9 @@ internal class SmsController(
 
     fun draftChanged(text: String) {
         draftStore.update(host.state.smsCurrentConversationKey, text)
-        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+        host.state = LauncherStateTransitions.updateSmsSendStatus(
             state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text),
-            smsSendStatusText = "",
+            smsSendStatus = SmsSendStatus.NONE,
         )
     }
 
@@ -516,7 +517,7 @@ internal class SmsController(
             return
         }
         // 上一次发送还没回来时忽略重复触发（连点 SEND / 输入法 SEND 键），避免重复发送。
-        if (host.state.smsSendStatusText == SMS_STATUS_SENDING) {
+        if (host.state.smsSendStatus == SmsSendStatus.SENDING) {
             return
         }
         val address = host.state.smsCurrentAddress.trim()
@@ -534,9 +535,9 @@ internal class SmsController(
         val threadId = host.state.smsCurrentThreadId
         // 双卡：沿用该会话最近一条消息的 SIM 回复，避免跨卡回错号码。
         val subscriptionId = host.state.smsMessages.lastOrNull { it.subscriptionId >= 0 }?.subscriptionId
-        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+        host.state = LauncherStateTransitions.updateSmsSendStatus(
             state = host.state,
-            smsSendStatusText = SMS_STATUS_SENDING,
+            smsSendStatus = SmsSendStatus.SENDING,
         )
         host.render()
         backgroundExecutor.execute {
@@ -560,12 +561,12 @@ internal class SmsController(
                         val nextMessages = host.state.smsMessages + sentEntry
                         host.state = LauncherStateTransitions.updateSmsAllMessages(
                             state = LauncherStateTransitions.updateSmsMessages(
-                                state = LauncherStateTransitions.updateSmsSendStatusText(
+                                state = LauncherStateTransitions.updateSmsSendStatus(
                                     state = LauncherStateTransitions.updateSmsDraftText(
                                         state = host.state,
                                         smsDraftText = "",
                                     ),
-                                    smsSendStatusText = "",
+                                    smsSendStatus = SmsSendStatus.NONE,
                                 ),
                                 threadId = sentEntry.threadId.takeIf { it > 0L } ?: host.state.smsCurrentThreadId,
                                 address = sentEntry.address,
@@ -579,9 +580,9 @@ internal class SmsController(
                         // 已离开原会话：不并入当前消息流、不动草稿，清掉残留的 SENDING
                         // 后把消息汇入全量列表并整体刷新（消息已在提供者里，刷新自然归位）。
                         host.state = LauncherStateTransitions.updateSmsAllMessages(
-                            state = LauncherStateTransitions.updateSmsSendStatusText(
+                            state = LauncherStateTransitions.updateSmsSendStatus(
                                 state = host.state,
-                                smsSendStatusText = "",
+                                smsSendStatus = SmsSendStatus.NONE,
                             ),
                             messages = listOf(sentEntry) + host.state.smsAllMessages,
                         )
@@ -591,15 +592,15 @@ internal class SmsController(
                 }
                 result.onFailure {
                     if (stillInConversation) {
-                        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                        host.state = LauncherStateTransitions.updateSmsSendStatus(
                             state = host.state,
-                            smsSendStatusText = SMS_STATUS_FAILED,
+                            smsSendStatus = SmsSendStatus.FAILED,
                         )
                         host.render()
                     } else {
-                        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                        host.state = LauncherStateTransitions.updateSmsSendStatus(
                             state = host.state,
-                            smsSendStatusText = "",
+                            smsSendStatus = SmsSendStatus.NONE,
                         )
                         refreshSmsData(render = true)
                     }
@@ -624,9 +625,9 @@ internal class SmsController(
         if (!resendInFlightMessageIds.add(message.messageId)) {
             return
         }
-        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+        host.state = LauncherStateTransitions.updateSmsSendStatus(
             state = host.state,
-            smsSendStatusText = SMS_STATUS_SENDING,
+            smsSendStatus = SmsSendStatus.SENDING,
         )
         host.render()
         backgroundExecutor.execute {
@@ -644,9 +645,9 @@ internal class SmsController(
                 if (!host.isActive()) {
                     return@post
                 }
-                host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                host.state = LauncherStateTransitions.updateSmsSendStatus(
                     state = host.state,
-                    smsSendStatusText = if (result.isSuccess) "" else SMS_STATUS_FAILED,
+                    smsSendStatus = if (result.isSuccess) SmsSendStatus.NONE else SmsSendStatus.FAILED,
                 )
                 host.render()
                 refreshSmsData(render = true)
@@ -777,9 +778,9 @@ internal class SmsController(
             // 进入会话时清掉上一个会话残留的状态文案（SENDING/FAILED/COPIED），
             // 并恢复该会话此前未发送的草稿（深链预填内容优先）。
             state = LauncherStateTransitions.updateSmsDraftText(
-                state = LauncherStateTransitions.updateSmsSendStatusText(
+                state = LauncherStateTransitions.updateSmsSendStatus(
                     state = host.state,
-                    smsSendStatusText = "",
+                    smsSendStatus = SmsSendStatus.NONE,
                 ),
                 smsDraftText = draftStore.restore(conversationKey, prefilled = prefilledDraft),
             ),
@@ -908,8 +909,6 @@ internal class SmsController(
 
     private companion object {
         const val LOG_TAG = "SmsIntent"
-        const val SMS_STATUS_SENDING = "SENDING"
-        const val SMS_STATUS_FAILED = "FAILED"
         const val SMS_STATUS_COPIED_CODE = "COPIED CODE"
         const val SMS_STATUS_COPIED_BODY = "COPIED MSG"
         const val SMS_STATUS_DELETED = "DELETED"

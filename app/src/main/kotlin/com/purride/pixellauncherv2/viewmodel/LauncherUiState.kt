@@ -14,6 +14,7 @@ import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
+import com.purride.pixellauncherv2.launcher.SmsSendStatus
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
@@ -69,7 +70,8 @@ data class LauncherUiState(
     val smsMessages: List<SmsMessageEntry> = emptyList(),
     val smsThreadSearchQuery: String = "",
     val smsDraftText: String = "",
-    val smsSendStatusText: String = "",
+    /** 详情页输入区的发送状态；文案由渲染层映射。 */
+    val smsSendStatus: SmsSendStatus = SmsSendStatus.NONE,
     /** 详情页消息长按浮层菜单是否可见。 */
     val isSmsMessageMenuVisible: Boolean = false,
     /** 浮层菜单对应的消息 id；菜单不可见时为 -1。 */

@@ -45,7 +45,7 @@ data class LauncherState(
     val smsMessages: List<SmsMessageEntry> = emptyList(),
     val smsThreadSearchQuery: String = "",
     val smsDraftText: String = "",
-    val smsSendStatusText: String = "",
+    val smsSendStatus: SmsSendStatus = SmsSendStatus.NONE,
     /** 详情页消息长按浮层菜单是否可见。 */
     val isSmsMessageMenuVisible: Boolean = false,
     /** 浮层菜单对应的消息 id；菜单不可见时为 -1。 */

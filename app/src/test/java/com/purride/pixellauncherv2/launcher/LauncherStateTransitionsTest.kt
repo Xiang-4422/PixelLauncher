@@ -372,7 +372,7 @@ class LauncherStateTransitionsTest {
                     ),
                 ),
                 smsThreadSearchQuery = "old",
-                smsSendStatusText = "FAILED",
+                smsSendStatus = SmsSendStatus.FAILED,
             ),
             conversationKey = "service:china-mobile",
             conversationTitle = "China Mobile",
@@ -388,7 +388,7 @@ class LauncherStateTransitionsTest {
         assertEquals("10086", result.smsCurrentAddress)
         assertEquals(LauncherMode.SMS_THREADS, result.returnMode)
         assertEquals("old", result.smsThreadSearchQuery)
-        assertEquals("", result.smsSendStatusText)
+        assertEquals(SmsSendStatus.NONE, result.smsSendStatus)
         assertTrue(result.smsMessages.isEmpty())
     }
 
@@ -509,13 +509,13 @@ class LauncherStateTransitionsTest {
             mode = LauncherMode.SMS_THREAD_DETAIL,
             smsThreadSearchQuery = "code",
             smsDraftText = "unsent",
-            smsSendStatusText = "FAILED",
+            smsSendStatus = SmsSendStatus.FAILED,
         )
         val result = LauncherStateTransitions.hideSmsThreadDetail(state)
         assertEquals(LauncherMode.SMS_THREADS, result.mode)
         assertEquals("code", result.smsThreadSearchQuery)
         assertEquals("", result.smsDraftText)
-        assertEquals("", result.smsSendStatusText)
+        assertEquals(SmsSendStatus.NONE, result.smsSendStatus)
     }
 
     @Test
@@ -523,12 +523,12 @@ class LauncherStateTransitionsTest {
         val state = LauncherState(
             mode = LauncherMode.SMS_THREADS,
             smsDraftText = "unsent",
-            smsSendStatusText = "FAILED",
+            smsSendStatus = SmsSendStatus.FAILED,
         )
         val result = LauncherStateTransitions.hideSmsThreads(state)
         assertEquals(LauncherMode.HOME, result.mode)
         assertEquals("", result.smsDraftText)
-        assertEquals("", result.smsSendStatusText)
+        assertEquals(SmsSendStatus.NONE, result.smsSendStatus)
     }
 
     @Test
@@ -595,14 +595,14 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
-    fun updateSmsSendStatusText_updatesOnlyDraftStatus() {
-        val result = LauncherStateTransitions.updateSmsSendStatusText(
+    fun updateSmsSendStatus_updatesOnlyDraftStatus() {
+        val result = LauncherStateTransitions.updateSmsSendStatus(
             state = LauncherState(smsDraftText = "hello"),
-            smsSendStatusText = "SENDING",
+            smsSendStatus = SmsSendStatus.SENDING,
         )
 
         assertEquals("hello", result.smsDraftText)
-        assertEquals("SENDING", result.smsSendStatusText)
+        assertEquals(SmsSendStatus.SENDING, result.smsSendStatus)
     }
 
     @Test
