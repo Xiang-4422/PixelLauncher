@@ -108,6 +108,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- 发送回执接收器：仅接收本应用 PendingIntent 回执，无需对外导出。 -->
+        <receiver
+            android:name=".app.SmsSendResultReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".app.MmsDeliverReceiver"
             android:exported="true"

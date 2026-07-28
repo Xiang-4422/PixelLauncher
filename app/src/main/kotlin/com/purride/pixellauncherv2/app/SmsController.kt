@@ -13,6 +13,7 @@ import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.SmsConversationModel
+import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
@@ -73,6 +74,9 @@ internal class SmsController(
     private val appContext = context.applicationContext
 
     private var smsRolePromptDismissedThisSession = false
+
+    /** 重发在途的失败消息 id 集合；只在主线程读写，用于防重复点按。 */
+    private val resendInFlightMessageIds = mutableSetOf<Long>()
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -276,6 +280,10 @@ internal class SmsController(
         if (host.state.smsCurrentIsServiceConversation) {
             return
         }
+        // 上一次发送还没回来时忽略重复触发（连点 SEND / 输入法 SEND 键），避免重复发送。
+        if (host.state.smsSendStatusText == SMS_STATUS_SENDING) {
+            return
+        }
         val address = host.state.smsCurrentAddress.trim()
         val draft = host.state.smsDraftText.trim()
         if (address.isBlank() || draft.isBlank()) {
@@ -334,8 +342,53 @@ internal class SmsController(
         }
     }
 
-    fun copyMessageCodeOrBody(messageId: Long) {
+    /** 消息点按入口：失败消息触发重发，其余复制验证码或正文。 */
+    fun messagePressed(messageId: Long) {
         val message = host.state.smsMessages.firstOrNull { it.messageId == messageId } ?: return
+        if (SmsMessageStatusModel.isFailed(message.type)) {
+            resendMessage(message)
+            return
+        }
+        copyMessageCodeOrBody(message)
+    }
+
+    /** 删除旧的失败记录后按原地址原文重发，走同一套 OUTBOX→回执流转。 */
+    private fun resendMessage(message: SmsMessageEntry) {
+        // 主线程守卫：同一条失败消息的重发在途时忽略重复点按，避免重复发送。
+        if (!resendInFlightMessageIds.add(message.messageId)) {
+            return
+        }
+        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+            state = host.state,
+            smsSendStatusText = SMS_STATUS_SENDING,
+        )
+        host.render()
+        backgroundExecutor.execute {
+            smsRepository.deleteMessage(message.messageId)
+            val result = smsRepository.sendMessage(
+                SmsSendRequest(
+                    address = message.address,
+                    body = message.body,
+                    threadId = message.threadId.takeIf { it > 0L },
+                ),
+            )
+            mainHandler.post {
+                resendInFlightMessageIds.remove(message.messageId)
+                if (!host.isActive()) {
+                    return@post
+                }
+                host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                    state = host.state,
+                    smsSendStatusText = if (result.isSuccess) "" else SMS_STATUS_FAILED,
+                )
+                host.render()
+                refreshSmsData(render = true)
+                host.refreshCommunicationStatus(render = false)
+            }
+        }
+    }
+
+    private fun copyMessageCodeOrBody(message: SmsMessageEntry) {
         val code = SmsVerificationCodeModel.extract(message.body)
         val textToCopy = code ?: message.body.trim()
         if (textToCopy.isBlank()) return

@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.data
 
 import android.Manifest
+import android.app.PendingIntent
 import android.app.role.RoleManager
 import android.content.ContentResolver
 import android.content.ContentValues
@@ -14,6 +15,7 @@ import android.provider.Telephony
 import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.purride.pixellauncherv2.app.SmsSendResultReceiver
 import com.purride.pixellauncherv2.launcher.SmsConversationIdentity
 import com.purride.pixellauncherv2.launcher.SmsConversationModel
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
@@ -236,13 +238,9 @@ class SmsRepository(
                 @Suppress("DEPRECATION")
                 SmsManager.getDefault()
             } ?: error("SmsManager unavailable")
-            val parts = smsManager.divideMessage(body)
-            if (parts.size > 1) {
-                smsManager.sendMultipartTextMessage(address, null, ArrayList(parts), null, null)
-            } else {
-                smsManager.sendTextMessage(address, null, body, null, null)
-            }
 
+            // 先落一条 OUTBOX 记录并对最后一个分段挂发送回执：回执到达后由
+            // SmsSendResultReceiver 把该记录更新为 SENT/FAILED，UI 才能呈现真实结果。
             val now = System.currentTimeMillis()
             val threadId = request.threadId ?: resolveThreadId(address)
             val values = ContentValues().apply {
@@ -251,23 +249,100 @@ class SmsRepository(
                 put(Telephony.Sms.DATE, now)
                 put(Telephony.Sms.READ, 1)
                 put(Telephony.Sms.SEEN, 1)
-                put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
+                put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_OUTBOX)
                 if (threadId > 0L) {
                     put(Telephony.Sms.THREAD_ID, threadId)
                 }
             }
-            val uri = contentResolver.insert(Telephony.Sms.Sent.CONTENT_URI, values)
+            val uri = contentResolver.insert(Telephony.Sms.Outbox.CONTENT_URI, values)
             val messageId = uri?.lastPathSegment?.toLongOrNull() ?: -1L
+            // 非默认短信应用时 OUTBOX 落库会失败（messageId <= 0），此时不挂回执，
+            // 行为退化为“发出即认为成功”，与仅有 SEND_SMS 权限的场景保持一致。
+            val sentIntent = if (messageId > 0L) buildSentPendingIntent(messageId) else null
+
+            val parts = smsManager.divideMessage(body)
+            try {
+                if (parts.size > 1) {
+                    val sentIntents = ArrayList<PendingIntent?>(parts.size)
+                    repeat(parts.size - 1) { sentIntents.add(null) }
+                    sentIntents.add(sentIntent)
+                    smsManager.sendMultipartTextMessage(address, null, ArrayList(parts), sentIntents, null)
+                } else {
+                    smsManager.sendTextMessage(address, null, body, sentIntent, null)
+                }
+            } catch (t: Throwable) {
+                // 提交给无线电层都没成功，回执永远不会来：把刚落的 OUTBOX 记录
+                // 标成 FAILED，避免它永远停留在 SENDING。
+                if (messageId > 0L) {
+                    applySendResult(messageId, success = false, errorCode = SEND_ERROR_SUBMIT)
+                }
+                throw t
+            }
+
             buildMessageEntry(
                 messageId = messageId,
                 threadId = threadId,
                 address = address,
                 body = body,
                 dateMillis = now,
-                type = Telephony.Sms.MESSAGE_TYPE_SENT,
+                type = if (messageId > 0L) {
+                    Telephony.Sms.MESSAGE_TYPE_OUTBOX
+                } else {
+                    Telephony.Sms.MESSAGE_TYPE_SENT
+                },
                 isRead = true,
             )
         }
+    }
+
+    /** 发送回执到达后更新消息状态；成功 → SENT，失败 → FAILED 并记录错误码。 */
+    fun applySendResult(messageId: Long, success: Boolean, errorCode: Int): Boolean {
+        if (messageId <= 0L) {
+            return false
+        }
+        val values = ContentValues().apply {
+            put(
+                Telephony.Sms.TYPE,
+                if (success) Telephony.Sms.MESSAGE_TYPE_SENT else Telephony.Sms.MESSAGE_TYPE_FAILED,
+            )
+            if (!success) {
+                put(Telephony.Sms.ERROR_CODE, errorCode)
+            }
+        }
+        return runCatching {
+            contentResolver.update(
+                Telephony.Sms.CONTENT_URI,
+                values,
+                "${Telephony.Sms._ID} = ?",
+                arrayOf(messageId.toString()),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
+    /** 删除单条消息（重发失败消息前清理旧记录用）；仅默认短信应用可写。 */
+    fun deleteMessage(messageId: Long): Boolean {
+        if (!isDefaultSmsApp() || messageId <= 0L) {
+            return false
+        }
+        return runCatching {
+            contentResolver.delete(
+                Telephony.Sms.CONTENT_URI,
+                "${Telephony.Sms._ID} = ?",
+                arrayOf(messageId.toString()),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
+    private fun buildSentPendingIntent(messageId: Long): PendingIntent {
+        val intent = Intent(context, SmsSendResultReceiver::class.java)
+            .setAction(SmsSendResultReceiver.ACTION_SMS_SENT)
+            .putExtra(SmsSendResultReceiver.EXTRA_MESSAGE_ID, messageId)
+        return PendingIntent.getBroadcast(
+            context,
+            messageId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     fun storeIncomingFromIntent(intent: Intent): SmsMessageEntry? {
@@ -359,5 +434,8 @@ class SmsRepository(
 
     companion object {
         private const val LOG_TAG = "SmsRepo"
+
+        /** 本地哨兵错误码：消息尚未提交给无线电层即抛异常。 */
+        private const val SEND_ERROR_SUBMIT = -1
     }
 }

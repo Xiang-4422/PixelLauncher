@@ -59,7 +59,7 @@ object SmsConversationModel {
                 )
             }
             summary.messageCount += 1
-            if (!message.isRead && message.type != TYPE_SENT) {
+            if (!message.isRead && !SmsMessageStatusModel.isOutgoing(message.type)) {
                 summary.unreadCount += 1
             }
         }
@@ -88,7 +88,7 @@ object SmsConversationModel {
     }
 
     fun unread(messages: List<SmsMessageEntry>): List<SmsMessageEntry> {
-        return messages.filter { !it.isRead && it.type != TYPE_SENT }
+        return messages.filter { !it.isRead && !SmsMessageStatusModel.isOutgoing(it.type) }
     }
 
     fun stripLeadingSource(body: String): String {
@@ -127,5 +127,4 @@ object SmsConversationModel {
 
     private val mainlandMobile = Regex("^1[3-9]\\d{9}$")
     private val sourcePattern = Regex("^[\\s\\u3000]*【([^】\\r\\n]+)】")
-    private const val TYPE_SENT = 2
 }

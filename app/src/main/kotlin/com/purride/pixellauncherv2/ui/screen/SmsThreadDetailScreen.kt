@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.ui.screen
 
+import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
 import com.purride.pixelui.CrossAxisAlignment
@@ -166,13 +167,13 @@ private fun buildComposeArea(
     ),
 )
 
-/** 一条消息：时间 + 完整正文，通过左右对齐区分方向。 */
+/** 一条消息：时间 + 完整正文，通过左右对齐区分方向；发出方向附加发送状态行。 */
 private fun buildMessage(
     msg: SmsMessageEntry,
     theme: LauncherTheme,
     onMessagePressed: (Long) -> Unit,
 ): Widget {
-    val isSent = SmsMessageStatusModel.isSent(msg.type)
+    val isOutgoing = SmsMessageStatusModel.isOutgoing(msg.type)
     val code = SmsVerificationCodeModel.extract(msg.body)
     return GestureDetector(
         onTap = { onMessagePressed(msg.messageId) },
@@ -180,20 +181,42 @@ private fun buildMessage(
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             mainAxisSize = MainAxisSize.MIN,
             spacing = 1,
-            children = listOf(
-                messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme),
-                Text(
-                    msg.body,
-                    style = TextStyle(color = theme.sms.body),
-                    softWrap = true,
-                    maxLines = Int.MAX_VALUE,
-                    // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
-                    textAlign = if (isSent) TextAlign.END else TextAlign.START,
-                ),
-            ),
+            children = buildList {
+                add(messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme))
+                add(
+                    Text(
+                        msg.body,
+                        style = TextStyle(color = theme.sms.body),
+                        softWrap = true,
+                        maxLines = Int.MAX_VALUE,
+                        // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。
+                        textAlign = if (isOutgoing) TextAlign.END else TextAlign.START,
+                    ),
+                )
+                // 回执未到 → SENDING；发送失败 → 失败提示，点按整条消息即重发。
+                if (SmsMessageStatusModel.isPending(msg.type)) {
+                    add(messageStatusLine("SENDING", theme.sms.timestamp))
+                }
+                if (SmsMessageStatusModel.isFailed(msg.type)) {
+                    add(messageStatusLine("FAILED - TAP TO RESEND", theme.semantic.danger))
+                }
+            },
         ),
     )
 }
+
+/** 发送状态行：靠尾端对齐的单行小字，与发出消息同侧。 */
+private fun messageStatusLine(
+    text: String,
+    color: PixelColor,
+): Widget = Text(
+    text,
+    style = TextStyle(color = color),
+    overflow = TextOverflow.ELLIPSIS,
+    softWrap = false,
+    maxLines = 1,
+    textAlign = TextAlign.END,
+)
 
 private class ImeBottomPadding(
     private val child: Widget,

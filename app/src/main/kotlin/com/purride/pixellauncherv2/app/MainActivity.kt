@@ -386,7 +386,7 @@ class MainActivity : AppCompatActivity() {
                 onDraftChanged       = smsController::draftChanged,
                 onSmsThreadSearchChanged = smsController::threadSearchChanged,
                 onSendDraft          = smsController::sendDraft,
-                onSmsMessagePressed  = smsController::copyMessageCodeOrBody,
+                onSmsMessagePressed  = smsController::messagePressed,
                 onMainPageChanged    = ::onMainPageChanged,
                 onMainPageDragStart  = ::onMainPageDragStart,
             ),
