@@ -25,6 +25,20 @@ class ManifestContractTest {
         )
     }
 
+    /** Launcher 根任务不应作为普通应用卡片出现在系统最近任务列表中。 */
+    @Test
+    fun manifestExcludesLauncherTaskFromRecents() {
+        /** 应用模块根目录。 */
+        val moduleRoot = resolveModuleRoot()
+        /** 当前主 Manifest 文本。 */
+        val manifest = moduleRoot.resolve("src/main/AndroidManifest.xml").readText()
+
+        assertTrue(
+            "MainActivity must exclude the launcher task from system Recents.",
+            manifest.contains("""android:excludeFromRecents="true"""),
+        )
+    }
+
     private fun resolveModuleRoot(): File {
         val cwd = File(".").canonicalFile
         return if (cwd.name == "app") cwd else cwd.resolve("app")
