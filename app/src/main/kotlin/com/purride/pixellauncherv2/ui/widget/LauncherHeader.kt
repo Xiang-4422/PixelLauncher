@@ -24,7 +24,6 @@ import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextFieldStyle
 import com.purride.pixelui.TextInputAction
-import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelTextFieldState
@@ -32,6 +31,7 @@ import com.purride.pixelui.widgets.animated.AnimatedSwitcher
 import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
+import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -138,7 +138,7 @@ private fun statusBarText(
     color: PixelColor = theme.statusBar.text,
 ): Widget = Text(
     text,
-    style = TextStyle(color = color),
+    style = theme.typography.textStyle(color = color, size = PixelFontSize.PX_10),
     textAlign = textAlign,
     overflow = TextOverflow.ELLIPSIS,
     softWrap = false,
@@ -303,7 +303,7 @@ private fun statusBarFullWidthAction(
     val textColor = PixelColor.White
     val labelText = Text(
         actionLabel,
-        style = TextStyle(color = textColor),
+        style = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
@@ -321,7 +321,7 @@ private fun statusBarFullWidthAction(
         listOf(
             Text(
                 leadingText,
-                style = TextStyle(color = textColor),
+                style = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
                 overflow = TextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,
@@ -376,7 +376,9 @@ private fun statusBarCenterAction(
         text = actionLabel,
         onPressed = onAction,
         enabled = enabled,
-        style = TextButtonStyle(textStyle = TextStyle(color = textColor)),
+        style = TextButtonStyle(
+            textStyle = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
+        ),
     )
     val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null
     if (leadingText.isBlank()) {
@@ -395,7 +397,7 @@ private fun statusBarCenterAction(
             children = listOf(
                 Text(
                     leadingText,
-                    style = TextStyle(color = textColor),
+                    style = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
                     overflow = TextOverflow.ELLIPSIS,
                     softWrap = false,
                     maxLines = 1,
@@ -585,8 +587,14 @@ private fun statusBarSearchRow(
                         borderColor = PixelColor.Transparent,
                         // 聚焦指示器复用该颜色，透明色同时保留光标并移除黄色外框。
                         focusedBorderColor = PixelColor.Transparent,
-                        textStyle = TextStyle(color = theme.statusBar.searchText),
-                        placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
+                        textStyle = theme.typography.textStyle(
+                            color = theme.statusBar.searchText,
+                            size = PixelFontSize.PX_10,
+                        ),
+                        placeholderStyle = theme.typography.textStyle(
+                            color = theme.statusBar.searchPlaceholder,
+                            size = PixelFontSize.PX_10,
+                        ),
                         padding = 0,
                     ),
                     onChanged = onChanged,

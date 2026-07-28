@@ -3,137 +3,101 @@ package com.purride.pixellauncherv2.launcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
-/**
- * Coverage for [PixelFontCatalog] — fixed pixel-size choices and the documented
- * UI default. JVM-safe; no Android dependencies.
- */
+/** 验证字体能力矩阵、默认选择和不跨家族归一化规则。 */
 class PixelFontCatalogTest {
 
+    /** 字号标签应使用稳定的 PX 表示。 */
     @Test
     fun sizeLabel_mapsPixelSizes() {
         assertEquals("8PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_8))
         assertEquals("10PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_10))
         assertEquals("12PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_12))
+        assertEquals("16PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_16))
     }
 
+    /** 诊断页字号选项应覆盖全部原生字号。 */
     @Test
     fun options_exposeAllEnumEntries() {
         assertEquals(PixelFontSize.entries.toList(), PixelFontCatalog.fontSizeOptions())
     }
 
+    /** 缺失设置时应继续使用 Fusion Prop 10px。 */
     @Test
-    fun default_is10px() {
-        assertEquals(PixelFontSize.PX_10, PixelFontCatalog.defaultUiFontSize)
+    fun default_isFusionProportional10px() {
+        assertEquals(
+            LauncherFontSelection(
+                family = LauncherFontFamily.FUSION,
+                widthMode = LauncherFontWidthMode.PROPORTIONAL,
+                size = PixelFontSize.PX_10,
+            ),
+            PixelFontCatalog.defaultUiFontSelection,
+        )
     }
 
+    /** 每个字体族只应暴露自身真正存在的字号。 */
     @Test
-    fun fontSizes_haveMatchingProportionalGlyphPacks() {
-        val assetsRoot = resolveModuleRoot().resolve("src/main/assets/glyphpacks")
-
-        PixelFontSize.entries.forEach { size ->
-            val catalogMetrics = PixelFontCatalog.metrics(size)
-            val metrics = glyphPackLanguages.map { language ->
-                val directory = assetsRoot.resolve("fusion_pixel_${size.px}px_proportional_$language")
-                val manifest = directory.resolve("manifest.json")
-                val glyphs = directory.resolve("glyphs.bin")
-
-                assertTrue("Missing glyph pack directory: $directory", directory.isDirectory)
-                assertTrue("Missing glyph pack manifest: $manifest", manifest.isFile)
-                assertTrue("Missing glyph data: $glyphs", glyphs.isFile)
-
-                GlyphPackMetrics(
-                    cellHeight = manifest.readManifestInt("cellHeight"),
-                    baseline = manifest.readManifestInt("baseline"),
-                    defaultAdvance = manifest.readManifestInt("defaultAdvance"),
-                )
-            }
-
-            metrics.forEach { metric ->
-                assertEquals(size.px, metric.cellHeight)
-                assertTrue("Glyph advance must be positive for ${size.px}px", metric.defaultAdvance > 0)
-            }
-            assertEquals(catalogMetrics.cellHeight, metrics.first().cellHeight)
-            assertEquals(catalogMetrics.baseline, metrics.first().baseline)
-            assertEquals(catalogMetrics.narrowAdvanceWidth, metrics.first().defaultAdvance)
-            assertEquals(catalogMetrics.wideAdvanceWidth, metrics.last().defaultAdvance)
-            assertEquals(metrics.first().cellHeight, metrics.last().cellHeight)
-            assertEquals(metrics.first().baseline, metrics.last().baseline)
+    fun fontSizes_followSelectedFamilyCapabilities() {
+        LauncherFontWidthMode.entries.forEach { widthMode ->
+            assertEquals(
+                listOf(PixelFontSize.PX_8, PixelFontSize.PX_10, PixelFontSize.PX_12),
+                PixelFontCatalog.fontSizeOptions(LauncherFontFamily.FUSION, widthMode),
+            )
+            assertEquals(
+                listOf(PixelFontSize.PX_10, PixelFontSize.PX_12, PixelFontSize.PX_16),
+                PixelFontCatalog.fontSizeOptions(LauncherFontFamily.ARK, widthMode),
+            )
         }
     }
 
+    /** 不支持的字号应在所选字体族和宽度模式内选择最近值。 */
+    @Test
+    fun normalize_keepsFamilyAndWidthMode() {
+        /** Ark Mono 8px 不存在，应收敛为同字体同模式的 10px。 */
+        val normalized = PixelFontCatalog.normalize(
+            LauncherFontSelection(
+                family = LauncherFontFamily.ARK,
+                widthMode = LauncherFontWidthMode.MONOSPACED,
+                size = PixelFontSize.PX_8,
+            ),
+        )
+
+        assertEquals(LauncherFontFamily.ARK, normalized.family)
+        assertEquals(LauncherFontWidthMode.MONOSPACED, normalized.widthMode)
+        assertEquals(PixelFontSize.PX_10, normalized.size)
+        assertTrue(PixelFontCatalog.supports(normalized))
+    }
+
+    /** 基础布局度量应覆盖新增的 16px 原生字号。 */
     @Test
     fun metricsLabel_formatsCellBaselineAndAdvance() {
         assertEquals("C8 B7 A4/8", PixelFontCatalog.metricsLabel(PixelFontSize.PX_8))
         assertEquals("C10 B9 A6/10", PixelFontCatalog.metricsLabel(PixelFontSize.PX_10))
         assertEquals("C12 B11 A8/12", PixelFontCatalog.metricsLabel(PixelFontSize.PX_12))
+        assertEquals("C16 B15 A8/16", PixelFontCatalog.metricsLabel(PixelFontSize.PX_16))
     }
 
+    /** 完整选择应使用对应官方变体的基线和窄字符宽度。 */
     @Test
-    fun settingsAndStateDoNotExposeUserFontChoices() {
-        val moduleRoot = resolveModuleRoot()
-        val offenders = filesThatMustNotExposeFontChoices.flatMap { relativePath ->
-            val file = moduleRoot.resolve(relativePath)
-            file.readLines().flatMapIndexed { index, line ->
-                forbiddenUserFontChoicePatterns.mapNotNull { pattern ->
-                    if (pattern.regex.containsMatchIn(line)) {
-                        "${file.relativeTo(moduleRoot).invariantSeparatorsPath}:${index + 1}: " +
-                            "${pattern.description}: ${line.trim()}"
-                    } else {
-                        null
-                    }
-                }
-            }
-        }
-
-        assertTrue(
-            "Font size/style must stay out of user settings and state:\n${offenders.joinToString("\n")}",
-            offenders.isEmpty(),
+    fun metrics_usesSelectedFamilyAndWidthVariant() {
+        /** Ark 10px 比例变体为保护常用下行笔画而使用第 8 行基线。 */
+        val arkProportional = PixelFontCatalog.metrics(
+            LauncherFontSelection(
+                family = LauncherFontFamily.ARK,
+                widthMode = LauncherFontWidthMode.PROPORTIONAL,
+                size = PixelFontSize.PX_10,
+            ),
         )
-    }
-
-    private fun File.readManifestInt(fieldName: String): Int {
-        val match = Regex(""""$fieldName"\s*:\s*(\d+)""").find(readText())
-        return requireNotNull(match?.groupValues?.getOrNull(1)?.toIntOrNull()) {
-            "Missing numeric manifest field $fieldName in $this"
-        }
-    }
-
-    private fun resolveModuleRoot(): File {
-        val cwd = File(".").canonicalFile
-        return if (cwd.name == "app") cwd else cwd.resolve("app")
-    }
-
-    private data class GlyphPackMetrics(
-        val cellHeight: Int,
-        val baseline: Int,
-        val defaultAdvance: Int,
-    )
-
-    private data class ForbiddenPattern(
-        val regex: Regex,
-        val description: String,
-    )
-
-    private companion object {
-        val glyphPackLanguages = listOf("latin", "zh_hans")
-
-        val filesThatMustNotExposeFontChoices = listOf(
-            "src/main/kotlin/com/purride/pixellauncherv2/data/FontSettingsRepository.kt",
-            "src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt",
-            "src/main/kotlin/com/purride/pixellauncherv2/launcher/SettingsMenuModel.kt",
-            "src/main/kotlin/com/purride/pixellauncherv2/viewmodel/LauncherUiState.kt",
-            "src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt",
+        /** Fusion 12px 等宽包使用自身清单中的第 10 行基线。 */
+        val fusionMonospaced = PixelFontCatalog.metrics(
+            LauncherFontSelection(
+                family = LauncherFontFamily.FUSION,
+                widthMode = LauncherFontWidthMode.MONOSPACED,
+                size = PixelFontSize.PX_12,
+            ),
         )
 
-        val forbiddenUserFontChoicePatterns = listOf(
-            ForbiddenPattern(Regex("""\bKEY_FONT\b"""), "do not persist font settings"),
-            ForbiddenPattern(Regex("""\bFONT_SIZE\b"""), "do not expose user font size"),
-            ForbiddenPattern(Regex("""\bFONT_STYLE\b"""), "do not expose user font style"),
-            ForbiddenPattern(Regex("""\bfont(size|style|scale)\b""", RegexOption.IGNORE_CASE), "do not expose user font size/style"),
-            ForbiddenPattern(Regex("""\bfont_(size|style|scale)\b""", RegexOption.IGNORE_CASE), "do not expose user font size/style keys"),
-            ForbiddenPattern(Regex("""\bPixelFontSize\b"""), "settings/state must not store font size enum"),
-        )
+        assertEquals(PixelFontMetrics(PixelFontSize.PX_10, 10, 8, 5, 10), arkProportional)
+        assertEquals(PixelFontMetrics(PixelFontSize.PX_12, 12, 10, 12, 12), fusionMonospaced)
     }
 }

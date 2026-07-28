@@ -27,7 +27,7 @@ object DiagnosticsTextSampleModel {
         return buildSamples(
             homeLines = HomeInfoModel.lines(state).map { it.text },
             dataLines = DataHealthModel.lines(state).map { "${it.title} ${it.value}" },
-            selectedFontFamily = state.selectedFontFamily,
+            fontSelection = state.fontSelection,
             screenProfile = screenProfile,
         )
     }
@@ -36,7 +36,7 @@ object DiagnosticsTextSampleModel {
         return buildSamples(
             homeLines = HomeInfoModel.lines(state).map { it.text },
             dataLines = DataHealthModel.lines(state).map { "${it.title} ${it.value}" },
-            selectedFontFamily = state.selectedFontFamily,
+            fontSelection = state.fontSelection,
             screenProfile = screenProfile,
         )
     }
@@ -52,20 +52,20 @@ object DiagnosticsTextSampleModel {
     private fun buildSamples(
         homeLines: List<String>,
         dataLines: List<String>,
-        /** 诊断宽度估算所使用的当前字体家族。 */
-        selectedFontFamily: LauncherFontFamily,
+        /** 诊断宽度估算所使用的完整字体选择。 */
+        fontSelection: LauncherFontSelection,
         screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsTextSample> {
         val availablePx = contentWidth(screenProfile)
         return buildList {
             addAll(homeLines.map {
-                sample(group = "HOME", text = it, availablePx = availablePx, fontFamily = selectedFontFamily)
+                sample(group = "HOME", text = it, availablePx = availablePx, fontSelection = fontSelection)
             })
             addAll(dataLines.map {
-                sample(group = "DATA", text = it, availablePx = availablePx, fontFamily = selectedFontFamily)
+                sample(group = "DATA", text = it, availablePx = availablePx, fontSelection = fontSelection)
             })
             addAll(settingsSamples.map {
-                sample(group = "SETTINGS", text = it, availablePx = availablePx, fontFamily = selectedFontFamily)
+                sample(group = "SETTINGS", text = it, availablePx = availablePx, fontSelection = fontSelection)
             })
         }
     }
@@ -85,12 +85,12 @@ object DiagnosticsTextSampleModel {
         group: String,
         text: String,
         availablePx: Int,
-        fontFamily: LauncherFontFamily,
+        fontSelection: LauncherFontSelection,
     ): DiagnosticsTextSample {
         return DiagnosticsTextSample(
             group = group,
             text = text,
-            widthPx = PixelFontCatalog.estimatedTextWidth(text, family = fontFamily),
+            widthPx = PixelFontCatalog.estimatedTextWidth(text, selection = fontSelection),
             availablePx = availablePx,
         )
     }
@@ -109,7 +109,9 @@ object DiagnosticsTextSampleModel {
         "PIXEL 999PX",
         "GAP 100%",
         "THEME NIGHT",
-        "FONT MONO",
+        "FONT FUSION",
+        "WIDTH MONO",
+        "SIZE 16PX",
         "STATUS 3 ROWS",
         "ALIGN CENTER",
         "SEARCH ON",

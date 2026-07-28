@@ -1,42 +1,71 @@
 package com.purride.pixellauncherv2.ui.text
 
 import com.purride.pixelcore.PixelGlyphPackParser
+import com.purride.pixellauncherv2.launcher.LauncherFontFamily
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 验证设置页公开的每个字体选项都具备可加载的默认字号资源。 */
+/** 验证设置页公开的每个字体组合都具备可加载且不跨家族回退的资源。 */
 class LauncherFontAssetsTest {
 
-    /** 所有可选字体都必须同时提供拉丁和简体中文字形包。 */
+    /** 所有可选组合都必须能由生产解析器读取，并且目录只属于所选家族。 */
     @Test
-    fun selectableFamilies_haveLoadableDefaultAssets() {
+    fun selectableCombinations_haveStrictSingleFamilyAssets() {
         /** 应用模块内实际参与 APK 打包的字形包根目录。 */
         val glyphPackRoot = resolveModuleRoot().resolve("src/main/assets/glyphpacks")
-        /** 设置页和 Host 共用的默认像素字号。 */
-        val size = PixelFontCatalog.defaultUiFontSize
 
         PixelFontCatalog.fontFamilyOptions().forEach { family ->
-            SUPPORTED_LANGUAGE_SUFFIXES.forEach { languageSuffix ->
-                /** 与生产加载规则完全一致的字形包目录。 */
-                val directory = glyphPackRoot.resolve(
-                    "fusion_pixel_${size.px}px_${family.assetStyleName}_$languageSuffix",
-                )
-                assertTrue("missing glyph pack directory: $directory", directory.isDirectory)
-                /** 当前字体包的清单文件。 */
-                val manifestFile = directory.resolve("manifest.json")
-                /** 当前字体包的二进制字形文件。 */
-                val binaryFile = directory.resolve("glyphs.bin")
-                assertTrue("missing manifest: $manifestFile", manifestFile.isFile)
-                assertTrue("missing glyph binary: $binaryFile", binaryFile.isFile)
+            PixelFontCatalog.widthModeOptions(family).forEach { widthMode ->
+                PixelFontCatalog.fontSizeOptions(family, widthMode).forEach { size ->
+                    /** 当前设置页能够产生的完整字体组合。 */
+                    val selection = LauncherFontSelection(
+                        family = family,
+                        widthMode = widthMode,
+                        size = size,
+                    )
+                    /** 所选家族允许查询的资源目录前缀。 */
+                    val expectedPrefix = when (family) {
+                        LauncherFontFamily.FUSION -> "fusion_pixel_"
+                        LauncherFontFamily.ARK -> "ark_pixel_"
+                    }
+                    PixelFontCatalog.assetDirectories(selection).forEach { assetDirectory ->
+                        assertTrue(
+                            "cross-family fallback is forbidden: $assetDirectory",
+                            assetDirectory.substringAfterLast('/').startsWith(expectedPrefix),
+                        )
+                        /** 与生产加载规则完全一致的字形包目录。 */
+                        val directory = glyphPackRoot.resolve(assetDirectory.substringAfter("glyphpacks/"))
+                        assertTrue("missing glyph pack directory: $directory", directory.isDirectory)
+                        /** 当前字体包的清单文件。 */
+                        val manifestFile = directory.resolve("manifest.json")
+                        /** 当前字体包的二进制字形文件。 */
+                        val binaryFile = directory.resolve("glyphs.bin")
+                        assertTrue("missing manifest: $manifestFile", manifestFile.isFile)
+                        assertTrue("missing glyph binary: $binaryFile", binaryFile.isFile)
 
-                /** 通过生产解析器校验的字形包元数据。 */
-                val manifest = PixelGlyphPackParser.parseManifest(manifestFile.readText())
-                assertEquals(size.px, manifest.cellHeight)
-                binaryFile.inputStream().use { input ->
-                    PixelGlyphPackParser.parseBinary(manifest = manifest, inputStream = input)
+                        /** 通过生产解析器校验的字形包元数据。 */
+                        val manifest = PixelGlyphPackParser.parseManifest(manifestFile.readText())
+                        /** 当前选择声明的真实排版度量。 */
+                        val metrics = PixelFontCatalog.metrics(selection)
+                        assertEquals(metrics.cellHeight, manifest.cellHeight)
+                        assertEquals(metrics.baseline, manifest.baseline)
+                        /** Fusion 的中文分包使用宽字符默认前进宽度；其余分包使用窄字符默认值。 */
+                        val expectedDefaultAdvance = if (
+                            family == LauncherFontFamily.FUSION && assetDirectory.endsWith("_zh_hans")
+                        ) {
+                            metrics.wideAdvanceWidth
+                        } else {
+                            metrics.narrowAdvanceWidth
+                        }
+                        assertEquals(expectedDefaultAdvance, manifest.defaultAdvance)
+                        binaryFile.inputStream().use { input ->
+                            PixelGlyphPackParser.parseBinary(manifest = manifest, inputStream = input)
+                        }
+                    }
                 }
             }
         }
@@ -47,10 +76,5 @@ class LauncherFontAssetsTest {
         /** 当前测试进程的规范工作目录。 */
         val currentDirectory = File(".").canonicalFile
         return if (currentDirectory.name == "app") currentDirectory else currentDirectory.resolve("app")
-    }
-
-    private companion object {
-        /** Launcher 字体组合固定要求覆盖的语言包后缀。 */
-        val SUPPORTED_LANGUAGE_SUFFIXES: List<String> = listOf("latin", "zh_hans")
     }
 }

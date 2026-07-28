@@ -57,7 +57,7 @@ import com.purride.pixellauncherv2.launcher.DrawerSearchAutoLaunchPolicy
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
 import com.purride.pixellauncherv2.launcher.IdleAutoEntryPolicy
-import com.purride.pixellauncherv2.launcher.LauncherFontFamily
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -169,10 +169,10 @@ class MainActivity : AppCompatActivity() {
         override fun isActive(): Boolean = !(isDestroyed || isFinishing)
 
         override fun smsThreadsVisibleRows(): Int =
-            SmsLayout.threadVisibleRows(screenProfile)
+            SmsLayout.threadVisibleRows(screenProfile, state.fontSelection.size)
 
         override fun smsInboxVisibleRows(): Int =
-            SettingsMenuLayout.largeVisibleRows(screenProfile)
+            SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection.size)
 
         override fun updateTextInputFocus() = this@MainActivity.updateTextInputFocus()
 
@@ -297,7 +297,7 @@ class MainActivity : AppCompatActivity() {
             selectedDotSizePx = appearanceSettings.dotSizePx,
             isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
-            selectedFontFamily = appearanceSettings.fontFamily,
+            fontSelection = appearanceSettings.fontSelection,
         )
         state = LauncherStateTransitions.updateUiBehavior(
             state = state,
@@ -1199,7 +1199,29 @@ class MainActivity : AppCompatActivity() {
                     newDotSizePx = current.selectedDotSizePx,
                     newPixelGapEnabled = current.isPixelGapEnabled,
                     newTheme = current.selectedTheme,
-                    newFontFamily = SettingsMenuModel.nextFont(current.selectedFontFamily, direction),
+                    newFontSelection = SettingsMenuModel.nextFontFamily(current.fontSelection, direction),
+                )
+            }
+            SettingsMenuItem.FONT_WIDTH -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val current = state
+                applyAppearance(
+                    newPixelShape = current.selectedPixelShape,
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newTheme = current.selectedTheme,
+                    newFontSelection = SettingsMenuModel.nextFontWidth(current.fontSelection, direction),
+                )
+            }
+            SettingsMenuItem.FONT_SIZE -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val current = state
+                applyAppearance(
+                    newPixelShape = current.selectedPixelShape,
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newTheme = current.selectedTheme,
+                    newFontSelection = SettingsMenuModel.nextFontSize(current.fontSelection, direction),
                 )
             }
             SettingsMenuItem.HOME_STATUS -> {
@@ -1510,11 +1532,11 @@ class MainActivity : AppCompatActivity() {
         )
         state = LauncherStateTransitions.reflowSmsWindow(
             state = state,
-            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile),
+            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection.size),
         )
         state = LauncherStateTransitions.reflowSmsThreadWindow(
             state = state,
-            visibleRows = SmsLayout.threadVisibleRows(screenProfile),
+            visibleRows = SmsLayout.threadVisibleRows(screenProfile, state.fontSelection.size),
         )
         if (render) {
             renderCurrentFrame()
@@ -1539,9 +1561,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun visibleRows(): Int = AppListLayout.visibleRows(screenProfile)
+    private fun visibleRows(): Int = AppListLayout.visibleRows(
+        screenProfile = screenProfile,
+        fontSize = state.fontSelection.size,
+    )
 
-    private fun settingsVisibleRows(): Int = SettingsMenuLayout.visibleRows(screenProfile)
+    private fun settingsVisibleRows(): Int = SettingsMenuLayout.visibleRows(
+        screenProfile = screenProfile,
+        fontSize = state.fontSelection.size,
+    )
 
     /**
      * 从当前页面打开抽屉，并根据持久化偏好决定是否默认进入搜索态。
@@ -2126,21 +2154,21 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
-        newFontFamily: LauncherFontFamily = state.selectedFontFamily,
+        newFontSelection: LauncherFontSelection = state.fontSelection,
     ) {
         persistAppearance(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
             pixelGapEnabled = newPixelGapEnabled,
             theme = newTheme,
-            fontFamily = newFontFamily,
+            fontSelection = newFontSelection,
         )
         applyAppearanceState(
             newPixelShape = newPixelShape,
             newDotSizePx = newDotSizePx,
             newPixelGapEnabled = newPixelGapEnabled,
             newTheme = newTheme,
-            newFontFamily = newFontFamily,
+            newFontSelection = newFontSelection,
         )
     }
 
@@ -2149,14 +2177,14 @@ class MainActivity : AppCompatActivity() {
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
-        fontFamily: LauncherFontFamily = state.selectedFontFamily,
+        fontSelection: LauncherFontSelection = state.fontSelection,
     ) {
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = pixelShape,
             dotSizePx = dotSizePx,
             pixelGapEnabled = pixelGapEnabled,
             theme = theme,
-            fontFamily = fontFamily,
+            fontSelection = fontSelection,
         )
     }
 
@@ -2165,7 +2193,7 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
-        newFontFamily: LauncherFontFamily = state.selectedFontFamily,
+        newFontSelection: LauncherFontSelection = state.fontSelection,
         render: Boolean = true,
     ) {
         selectedTheme = newTheme
@@ -2175,7 +2203,7 @@ class MainActivity : AppCompatActivity() {
             selectedDotSizePx = newDotSizePx,
             isPixelGapEnabled = newPixelGapEnabled,
             selectedTheme = newTheme,
-            selectedFontFamily = newFontFamily,
+            fontSelection = newFontSelection,
         )
 
         val widthPx = launcherRootHost.rootView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
@@ -2221,7 +2249,7 @@ class MainActivity : AppCompatActivity() {
             dotSizePx = confirmedState.selectedDotSizePx,
             pixelGapEnabled = confirmedState.isPixelGapEnabled,
             theme = confirmedState.selectedTheme,
-            fontFamily = confirmedState.selectedFontFamily,
+            fontSelection = confirmedState.fontSelection,
         )
         clearPendingPixelAppearanceChange()
     }

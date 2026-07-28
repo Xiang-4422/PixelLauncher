@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.ui.theme
 import android.content.Context
 import com.purride.pixelcore.PixelColor
 import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.ui.text.LauncherTypography
 import org.json.JSONObject
 
 data class LauncherTheme(
@@ -17,6 +18,8 @@ data class LauncherTheme(
     val button: ButtonColors,
     val sms: SmsColors,
     val semantic: SemanticColors,
+    /** 当前字体选择以及供组件显式覆盖字号的入口。 */
+    val typography: LauncherTypography = LauncherTypography.Default,
 )
 
 enum class LauncherThemeMode {

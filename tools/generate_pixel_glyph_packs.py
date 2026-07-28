@@ -12,6 +12,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT_DIR / "app" / "src" / "main" / "assets"
 FONT_DIR = ASSETS_DIR / "fonts"
 OUTPUT_DIR = ASSETS_DIR / "glyphpacks"
+FONT_SOURCE_DIR = ROOT_DIR / "tools" / "font_sources"
 
 MAGIC = 0x50474C59  # PGLY
 VERSION = 1
@@ -56,6 +57,19 @@ class FusionPackSpec:
     display_name: str
     font_path: Path
     font_size: int
+    baseline: int
+    default_advance: int
+    supported_ranges: list[RangeSpec]
+
+
+@dataclass(frozen=True)
+class BdfPackSpec:
+    """描述一个随仓库保存、由 BDF 构建的内置字形包。"""
+
+    pack_id: str
+    display_name: str
+    font_path: Path
+    cell_height: int
     baseline: int
     default_advance: int
     supported_ranges: list[RangeSpec]
@@ -183,6 +197,43 @@ FUSION_PACKS = [
     ),
 ]
 
+def ark_pack_spec(
+    size: int,
+    width_mode: str,
+    baseline: int,
+    default_advance: int,
+) -> BdfPackSpec:
+    """创建一个 Ark Pixel 大陆简体 BDF 内置包定义。"""
+
+    return BdfPackSpec(
+        pack_id=f"ark_pixel_{size}px_{width_mode}_zh_cn",
+        display_name=f"Ark Pixel {size}px {width_mode.title()} (zh_cn)",
+        font_path=(
+            FONT_SOURCE_DIR
+            / "ark_pixel"
+            / "2026.07.20"
+            / f"ark-pixel-{size}px-{width_mode}-zh_cn.bdf"
+        ),
+        cell_height=size,
+        baseline=baseline,
+        default_advance=default_advance,
+        supported_ranges=[
+            RangeSpec(0x0020, 0xD7FF),
+            RangeSpec(0xE000, 0xFFFD),
+        ],
+    )
+
+
+# Ark Pixel 官方提供的字号与宽度模式矩阵；每个选择只加载对应家族资源。
+ARK_PACKS = [
+    ark_pack_spec(size=10, width_mode="proportional", baseline=8, default_advance=5),
+    ark_pack_spec(size=10, width_mode="monospaced", baseline=9, default_advance=5),
+    ark_pack_spec(size=12, width_mode="proportional", baseline=10, default_advance=6),
+    ark_pack_spec(size=12, width_mode="monospaced", baseline=10, default_advance=6),
+    ark_pack_spec(size=16, width_mode="proportional", baseline=13, default_advance=7),
+    ark_pack_spec(size=16, width_mode="monospaced", baseline=13, default_advance=8),
+]
+
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = build_argument_parser()
@@ -191,6 +242,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         for pack in FUSION_PACKS:
             generate_fusion_pack(pack)
+        for pack in ARK_PACKS:
+            generate_bdf_builtin_pack(pack)
         return
 
     try:
@@ -277,6 +330,21 @@ def generate_fusion_pack(spec: FusionPackSpec) -> None:
         display_name=spec.display_name,
         font_size=spec.font_size,
         cell_height=spec.font_size,
+        baseline=spec.baseline,
+        default_advance=spec.default_advance,
+        supported_ranges=spec.supported_ranges,
+    )
+
+
+def generate_bdf_builtin_pack(spec: BdfPackSpec) -> None:
+    """把仓库内置 BDF 源转换成 engine 的稳定二进制字形包。"""
+
+    generate_bdf_pack(
+        font_path=spec.font_path,
+        output_dir=OUTPUT_DIR,
+        pack_id=spec.pack_id,
+        display_name=spec.display_name,
+        cell_height=spec.cell_height,
         baseline=spec.baseline,
         default_advance=spec.default_advance,
         supported_ranges=spec.supported_ranges,

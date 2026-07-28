@@ -5,7 +5,7 @@ import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
-import com.purride.pixellauncherv2.launcher.LauncherFontFamily
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSignal
@@ -80,8 +80,8 @@ data class LauncherUiState(
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
-    /** 设置页当前明确选中的全局字体家族。 */
-    val selectedFontFamily: LauncherFontFamily = PixelFontCatalog.defaultUiFontFamily,
+    /** 设置页当前明确选中的字体家族、宽度模式和默认字号。 */
+    val fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
 
     // ── UI behaviour ──────────────────────────────────────────────────────────
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,

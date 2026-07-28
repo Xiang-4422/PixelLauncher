@@ -88,8 +88,7 @@ internal class LauncherRootHost(
         hostView = hostView,
         config = PixelHostSetupConfig(
             textRasterizer = textRasterizers.getRasterizer(
-                family = PixelFontCatalog.defaultUiFontFamily,
-                size = PixelFontCatalog.defaultUiFontSize,
+                selection = PixelFontCatalog.defaultUiFontSelection,
             ),
             content = { buildRoot() },
         ),
@@ -198,7 +197,7 @@ internal class LauncherRootHost(
             !msgListState.isSettling &&
             msgListController.isAtEnd(msgListState)
         uiState = state
-        this.theme = theme
+        this.theme = theme.copy(typography = textRasterizers.typography(state.fontSelection))
         this.chargeTick = chargeTick
         this.screenProfile = screenProfile
         syncNavigatorRoute(state.mode)
@@ -213,8 +212,7 @@ internal class LauncherRootHost(
         setup.hostView.bezelColor = theme.surface.bezelColor
         setup.hostView.offPixelColor = theme.surface.offPixelColor
         setup.hostView.textRasterizer = textRasterizers.getRasterizer(
-            family = state.selectedFontFamily,
-            size = PixelFontCatalog.defaultUiFontSize,
+            selection = state.fontSelection,
         )
 
         // ── Sync main pager ───────────────────────────────────────────────────
@@ -537,8 +535,9 @@ internal class LauncherRootHost(
                     placeholder = "SEARCH APP",
                     placeholderLeadingInkInset = textRasterizers.leadingInkInset(
                         text = "SEARCH APP",
-                        family = uiState.selectedFontFamily,
-                        size = PixelFontCatalog.defaultUiFontSize,
+                        selection = PixelFontCatalog.normalize(
+                            uiState.fontSelection.copy(size = PixelFontSize.PX_10),
+                        ),
                     ),
                     autofocus = uiState.isDrawerSearchFocused,
                     textAlign = when (uiState.drawerListAlignment) {
@@ -619,8 +618,7 @@ internal class LauncherRootHost(
         resolveLabelLeadingInkInset = { label ->
             textRasterizers.leadingInkInset(
                 text = label,
-                family = uiState.selectedFontFamily,
-                size = PixelFontCatalog.defaultUiFontSize,
+                selection = uiState.fontSelection,
             )
         },
     )

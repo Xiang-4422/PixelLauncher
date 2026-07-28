@@ -3,10 +3,7 @@ package com.purride.pixellauncherv2.launcher
 /**
  * 设置页与短信会话列表的行几何（单一来源）。
  *
- * 与抽屉不同（[DrawerListGeometry] 是字号派生），这里的基础行距不随字体设置变化。
- * `SettingsScreen` 使用该值作为滚动估算，短信会话列表仍按固定 itemExtent 渲染；状态机
- * 的 `visibleRows`（`SettingsMenuLayout` / `SmsLayout`）继续用同一套行距做选择 / 滚动窗口
- * 估算，避免列表状态明显错位。
+ * 设置列表按内容自适应；短信会话列表则通过 [SmsThreadGeometry] 按当前字号派生高度。
  */
 object SettingsListGeometry {
     /** 单行内容高度估算；短信列表使用为固定 itemExtent。 */
@@ -20,7 +17,7 @@ object SettingsListGeometry {
 }
 
 object SmsThreadGeometry {
-    /** 单行内容高度（顶部地址行 + 底部摘要行 + 稳定内边距）。 */
+    /** 10px 默认字体对应的兼容行高。 */
     const val ROW_EXTENT_PX = 25
 
     /** 行与行之间的间距像素。 */
@@ -28,4 +25,14 @@ object SmsThreadGeometry {
 
     /** 行距（item + spacing）；状态机据此把视口高度换算成可见行数。 */
     const val ROW_PITCH_PX = ROW_EXTENT_PX + ROW_SPACING_PX
+
+    /** 两行文本之外保留的固定上下内边距。 */
+    private const val VERTICAL_PADDING_PX = 5
+
+    /** 根据当前原生字号返回短信会话的两行内容高度。 */
+    fun rowExtent(fontSize: PixelFontSize): Int =
+        maxOf(ROW_EXTENT_PX, fontSize.px * 2 + VERTICAL_PADDING_PX)
+
+    /** 根据当前原生字号返回包含列表间距的行距。 */
+    fun rowPitch(fontSize: PixelFontSize): Int = rowExtent(fontSize) + ROW_SPACING_PX
 }

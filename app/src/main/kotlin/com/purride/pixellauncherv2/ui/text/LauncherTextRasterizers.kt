@@ -12,25 +12,37 @@ import com.purride.pixelcore.PixelGlyphPack
 import com.purride.pixelcore.PixelGlyphPackAssetLoader
 import com.purride.pixelcore.PixelStyledTextRasterizer
 import com.purride.pixelcore.PixelTextRasterizer
-import com.purride.pixellauncherv2.launcher.LauncherFontFamily
-import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.launcher.PixelFontMetrics
 
 /**
  * Launcher 字体栅格器仓库，同时提供基于真实字形墨迹边界的视觉对齐信息。
  */
 class LauncherTextRasterizers(
-    /** 用于从 assets 加载 Fusion Pixel 字形包的 Android 上下文。 */
+    /** 用于从 assets 加载所选字体字形包的 Android 上下文。 */
     context: Context,
 ) {
 
     /** 复用 pixel-engine 资源缓存的字形包加载器。 */
     private val glyphPackLoader = PixelGlyphPackAssetLoader(context)
-    /** 按字体家族与固定字号缓存栅格器及其视觉边界解析器。 */
-    private val cache = mutableMapOf<RasterizerKey, RasterizerEntry>()
+    /** 按完整字体选择缓存栅格器及其视觉边界解析器。 */
+    private val cache = mutableMapOf<LauncherFontSelection, RasterizerEntry>()
+    /** 按默认选择缓存提供给 UI 组件的字号覆盖入口。 */
+    private val typographyCache = mutableMapOf<LauncherFontSelection, LauncherTypography>()
 
-    /** 返回指定字体家族和像素字号的共享文本栅格器。 */
-    fun getRasterizer(family: LauncherFontFamily, size: PixelFontSize): PixelTextRasterizer {
-        return entryFor(family = family, size = size).rasterizer
+    /** 返回指定字体家族、宽度模式和字号的共享文本栅格器。 */
+    fun getRasterizer(selection: LauncherFontSelection): PixelTextRasterizer {
+        return entryFor(selection).rasterizer
+    }
+
+    /** 返回允许 UI 组件在同一字体内明确选择字号的 typography。 */
+    fun typography(selection: LauncherFontSelection): LauncherTypography {
+        /** 防止无效选择形成重复 typography 实例。 */
+        val normalized = PixelFontCatalog.normalize(selection)
+        return typographyCache.getOrPut(normalized) {
+            LauncherTypography(selection = normalized, rasterizerResolver = ::getRasterizer)
+        }
     }
 
     /**
@@ -38,40 +50,27 @@ class LauncherTextRasterizers(
      *
      * 前导空格属于应用名内容，不会被当作字体边距消除。
      */
-    fun leadingInkInset(text: String, family: LauncherFontFamily, size: PixelFontSize): Int {
-        return entryFor(family = family, size = size).leadingInkResolver.resolve(text)
+    fun leadingInkInset(text: String, selection: LauncherFontSelection): Int {
+        return entryFor(selection).leadingInkResolver.resolve(text)
     }
 
     /** 获取或创建同时服务测量、绘制和视觉边界查询的字体条目。 */
-    private fun entryFor(family: LauncherFontFamily, size: PixelFontSize): RasterizerEntry {
-        /** 区分字体家族和字号的稳定缓存键。 */
-        val key = RasterizerKey(family = family, size = size)
-        return cache.getOrPut(key) {
-            fusionRasterizer(
-                latinAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${family.assetStyleName}_latin",
-                zhHansAssetDirectory = "glyphpacks/fusion_pixel_${size.px}px_${family.assetStyleName}_zh_hans",
-            )
-        }
+    private fun entryFor(selection: LauncherFontSelection): RasterizerEntry {
+        /** 防止无效持久化组合进入资源路径。 */
+        val normalized = PixelFontCatalog.normalize(selection)
+        return cache.getOrPut(normalized) { createRasterizerEntry(normalized) }
     }
 
-    /** 加载同字号的中英文字形包并构建一个共享栅格器条目。 */
-    private fun fusionRasterizer(
-        /** 拉丁字形包的 assets 目录。 */
-        latinAssetDirectory: String,
-        /** 简体中文字形包的 assets 目录。 */
-        zhHansAssetDirectory: String,
-    ): RasterizerEntry {
-        /** 与当前字号匹配的拉丁字形包。 */
-        val latinPack = glyphPackLoader.load(latinAssetDirectory)
-        /** 与当前字号匹配的简体中文字形包。 */
-        val zhHansPack = glyphPackLoader.load(zhHansAssetDirectory)
-
-        require(latinPack.manifest.cellHeight == zhHansPack.manifest.cellHeight) {
-            "Fusion Pixel latin and zh_hans packs must share cellHeight"
+    /** 只加载当前选择所属字体家族的字形包，不追加其他家族回退。 */
+    private fun createRasterizerEntry(selection: LauncherFontSelection): RasterizerEntry {
+        /** 当前选择声明的同家族字形包。 */
+        val orderedPacks = PixelFontCatalog.assetDirectories(selection).map(glyphPackLoader::load)
+        require(orderedPacks.isNotEmpty()) { "Font selection must declare at least one glyph pack" }
+        /** 当前字号和宽度模式对应的基础排版度量。 */
+        val metrics = PixelFontCatalog.metrics(selection)
+        require(orderedPacks.all { pack -> pack.manifest.cellHeight == metrics.cellHeight }) {
+            "Font packs must match selected ${metrics.cellHeight}px cell height"
         }
-
-        /** 与实际字形查找顺序一致的有序字形包。 */
-        val orderedPacks = listOf(latinPack, zhHansPack)
         return RasterizerEntry(
             rasterizer = PixelStyledTextRasterizer(
                 engine = PixelFontEngine(
@@ -79,24 +78,22 @@ class LauncherTextRasterizers(
                         listOf(BitmapGlyphSource(orderedPacks)),
                     ),
                 ),
-                style = styleFor(latinPack, zhHansPack),
+                style = styleFor(metrics),
                 lineSpacing = 1,
             ),
             leadingInkResolver = GlyphPackLeadingInkResolver(orderedPacks),
         )
     }
 
-    /** 根据两套同字号字形包构建统一的宽窄字形样式。 */
+    /** 根据当前字体选择构建统一的宽窄字形样式。 */
     private fun styleFor(
-        /** 提供窄字形默认前进宽度的拉丁字形包。 */
-        latinPack: PixelGlyphPack,
-        /** 提供宽字形默认前进宽度的简体中文字形包。 */
-        zhHansPack: PixelGlyphPack,
+        /** 当前字体选择对应的真实像素度量。 */
+        metrics: PixelFontMetrics,
     ): GlyphStyle {
         return GlyphStyle(
-            cellHeight = latinPack.manifest.cellHeight,
-            narrowAdvanceWidth = latinPack.manifest.defaultAdvance,
-            wideAdvanceWidth = zhHansPack.manifest.defaultAdvance,
+            cellHeight = metrics.cellHeight,
+            narrowAdvanceWidth = metrics.narrowAdvanceWidth,
+            wideAdvanceWidth = metrics.wideAdvanceWidth,
             oversampleFactor = 1,
             narrowMinimumSampleRatio = 1f,
             wideMinimumSampleRatio = 1f,
@@ -118,13 +115,6 @@ class LauncherTextRasterizers(
         val leadingInkResolver: GlyphPackLeadingInkResolver,
     )
 
-    /** 唯一标识一个可复用字体栅格器的缓存键。 */
-    private data class RasterizerKey(
-        /** 用户选择的字体家族。 */
-        val family: LauncherFontFamily,
-        /** 字体家族对应的像素字号。 */
-        val size: PixelFontSize,
-    )
 }
 
 /**

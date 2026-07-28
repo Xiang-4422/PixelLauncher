@@ -4,12 +4,15 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.LauncherFontFamily
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
+import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import org.junit.Assert.assertEquals
@@ -56,7 +59,11 @@ class LauncherUiStateMapperTest {
             selectedDotSizePx = 9,
             isPixelGapEnabled = false,
             selectedTheme = PixelTheme.NIGHT,
-            selectedFontFamily = LauncherFontFamily.FUSION_MONOSPACED,
+            fontSelection = LauncherFontSelection(
+                family = LauncherFontFamily.ARK,
+                widthMode = LauncherFontWidthMode.MONOSPACED,
+                size = PixelFontSize.PX_16,
+            ),
             drawerListAlignment = DrawerListAlignment.CENTER,
             isIdlePageEnabled = true,
             chargeAutoIdleEnabled = true,
@@ -135,7 +142,7 @@ class LauncherUiStateMapperTest {
         assertEquals(9, ui.selectedDotSizePx)
         assertEquals(false, ui.isPixelGapEnabled)
         assertEquals(PixelTheme.NIGHT, ui.selectedTheme)
-        assertEquals(LauncherFontFamily.FUSION_MONOSPACED, ui.selectedFontFamily)
+        assertEquals(state.fontSelection, ui.fontSelection)
         assertEquals(DrawerListAlignment.CENTER, ui.drawerListAlignment)
         assertEquals(true, ui.isIdlePageEnabled)
         assertEquals(true, ui.chargeAutoIdleEnabled)

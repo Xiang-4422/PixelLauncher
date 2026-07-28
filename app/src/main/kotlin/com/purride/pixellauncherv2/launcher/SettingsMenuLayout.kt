@@ -14,19 +14,25 @@ object SettingsMenuLayout {
     private const val panelBottomPadding = LauncherSpacing.CONTENT_VERTICAL
     private const val rowGap = LauncherSpacing.ROW_SPACING
 
-    /** 默认 UI 字号的不可变指标，避免每次访问都重新计算。 */
-    private val uiFontMetrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize)
-
     /** 设置列表估算行距（单一来源 [SettingsListGeometry]）。 */
     private val rowHeight: Int
         get() = SettingsListGeometry.ROW_PITCH_PX
 
-    private val largeRowHeight: Int
-        get() = (uiFontMetrics.cellHeight * 2) + rowGap
+    fun visibleRows(
+        screenProfile: LauncherLayoutProfile,
+        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+    ): Int = computeVisibleRows(
+        screenProfile = screenProfile,
+        listRowHeight = maxOf(rowHeight, fontSize.px + rowGap),
+    )
 
-    fun visibleRows(screenProfile: LauncherLayoutProfile): Int = computeVisibleRows(screenProfile, rowHeight)
-
-    fun largeVisibleRows(screenProfile: LauncherLayoutProfile): Int = computeVisibleRows(screenProfile, largeRowHeight)
+    fun largeVisibleRows(
+        screenProfile: LauncherLayoutProfile,
+        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+    ): Int = computeVisibleRows(
+        screenProfile = screenProfile,
+        listRowHeight = (fontSize.px * 2) + rowGap,
+    )
 
     private fun computeVisibleRows(screenProfile: LauncherLayoutProfile, listRowHeight: Int): Int {
         val panelTop = LauncherHeaderLayout.firstContentItemTop(screenProfile)

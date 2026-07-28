@@ -98,7 +98,7 @@ class DiagnosticsModelTest {
     fun lines_exposesFontMetricsForUiDiagnostics() {
         val byTitle = DiagnosticsModel.lines(LauncherState(), profile).associate { it.title to it.value }
 
-        assertEquals("FUSION 10PX", byTitle["FONT"])
+        assertEquals("FUSION PROP 10PX", byTitle["FONT"])
         assertEquals("C8 B7 A4/8", byTitle["8PX"])
         assertEquals("C10 B9 A6/10", byTitle["10PX"])
         assertEquals("C12 B11 A8/12", byTitle["12PX"])
@@ -114,10 +114,20 @@ class DiagnosticsModelTest {
     /** 诊断页应展示设置页当前选中的字体，而不是固定默认名称。 */
     @Test
     fun lines_exposesSelectedFontFamily() {
-        val state = LauncherState(selectedFontFamily = LauncherFontFamily.FUSION_MONOSPACED)
+        val state = LauncherState(
+            fontSelection = LauncherFontSelection(
+                family = LauncherFontFamily.ARK,
+                widthMode = LauncherFontWidthMode.MONOSPACED,
+                size = PixelFontSize.PX_16,
+            ),
+        )
         val byTitle = DiagnosticsModel.lines(state, profile).associate { it.title to it.value }
 
-        assertEquals("MONO 10PX", byTitle["FONT"])
+        assertEquals("ARK MONO 16PX", byTitle["FONT"])
+        assertEquals("C10 B9 A5/10", byTitle["10PX"])
+        assertEquals("C12 B10 A6/12", byTitle["12PX"])
+        assertEquals("C16 B13 A8/16", byTitle["16PX"])
+        assertEquals(null, byTitle["8PX"])
     }
 
     @Test

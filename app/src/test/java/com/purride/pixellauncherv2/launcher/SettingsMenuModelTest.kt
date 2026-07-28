@@ -61,20 +61,47 @@ class SettingsMenuModelTest {
         assertEquals(first, SettingsMenuModel.nextTheme(stepped, -1))
     }
 
-    /** 字体选择应在比例版和等宽版之间双向循环。 */
+    /** 字体家族切换后应保留受支持维度，并把不支持字号收敛到最近选项。 */
     @Test
-    fun nextFont_wrapsAtBothEnds() {
-        assertEquals(
-            LauncherFontFamily.FUSION_MONOSPACED,
-            SettingsMenuModel.nextFont(LauncherFontFamily.FUSION_PROPORTIONAL, 1),
+    fun nextFontFamily_wrapsAndNormalizesUnsupportedSize() {
+        val fusion8 = LauncherFontSelection(
+            family = LauncherFontFamily.FUSION,
+            widthMode = LauncherFontWidthMode.PROPORTIONAL,
+            size = PixelFontSize.PX_8,
         )
         assertEquals(
-            LauncherFontFamily.FUSION_MONOSPACED,
-            SettingsMenuModel.nextFont(LauncherFontFamily.FUSION_PROPORTIONAL, -1),
+            LauncherFontSelection(
+                family = LauncherFontFamily.ARK,
+                widthMode = LauncherFontWidthMode.PROPORTIONAL,
+                size = PixelFontSize.PX_10,
+            ),
+            SettingsMenuModel.nextFontFamily(fusion8, 1),
         )
         assertEquals(
-            LauncherFontFamily.FUSION_PROPORTIONAL,
-            SettingsMenuModel.nextFont(LauncherFontFamily.FUSION_MONOSPACED, 1),
+            fusion8.copy(size = PixelFontSize.PX_10),
+            SettingsMenuModel.nextFontFamily(
+                fusion8.copy(family = LauncherFontFamily.ARK, size = PixelFontSize.PX_10),
+                1,
+            ),
+        )
+    }
+
+    /** 宽度模式与字号只在当前字体实际资源矩阵内循环。 */
+    @Test
+    fun nextFontWidthAndSize_useCurrentFamilyCapabilityMatrix() {
+        val ark10 = LauncherFontSelection(
+            family = LauncherFontFamily.ARK,
+            widthMode = LauncherFontWidthMode.PROPORTIONAL,
+            size = PixelFontSize.PX_10,
+        )
+        assertEquals(
+            ark10.copy(widthMode = LauncherFontWidthMode.MONOSPACED),
+            SettingsMenuModel.nextFontWidth(ark10, 1),
+        )
+        assertEquals(ark10.copy(size = PixelFontSize.PX_12), SettingsMenuModel.nextFontSize(ark10, 1))
+        assertEquals(
+            ark10,
+            SettingsMenuModel.nextFontSize(ark10.copy(size = PixelFontSize.PX_16), 1),
         )
     }
 
@@ -100,10 +127,19 @@ class SettingsMenuModelTest {
         assertEquals("CENTER", SettingsMenuModel.drawerListAlignmentLabel(DrawerListAlignment.CENTER))
         assertEquals("DOT MATRIX", SettingsMenuModel.chargeIdleEffectLabel(ChargeIdleEffect.DOT_MATRIX))
         assertEquals("30S", SettingsMenuModel.idleTimeoutLabel(30))
-        assertEquals("MONO", SettingsMenuModel.fontLabel(LauncherFontFamily.FUSION_MONOSPACED))
+        assertEquals("ARK", SettingsMenuModel.fontLabel(LauncherFontFamily.ARK))
+        assertEquals("MONO", SettingsMenuModel.fontWidthLabel(LauncherFontWidthMode.MONOSPACED))
+        assertEquals("16PX", SettingsMenuModel.fontSizeLabel(PixelFontSize.PX_16))
         assertEquals(
             30,
-            PixelFontCatalog.estimatedTextWidth("ABC", family = LauncherFontFamily.FUSION_MONOSPACED),
+            PixelFontCatalog.estimatedTextWidth(
+                "ABC",
+                selection = LauncherFontSelection(
+                    family = LauncherFontFamily.FUSION,
+                    widthMode = LauncherFontWidthMode.MONOSPACED,
+                    size = PixelFontSize.PX_10,
+                ),
+            ),
         )
     }
 
@@ -169,6 +205,8 @@ class SettingsMenuModelTest {
         assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
         assertTrue(items.contains(SettingsMenuItem.ADVANCED))
         assertTrue(items.contains(SettingsMenuItem.FONT))
+        assertTrue(items.contains(SettingsMenuItem.FONT_WIDTH))
+        assertTrue(items.contains(SettingsMenuItem.FONT_SIZE))
         assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.CHARGE_AUTO_IDLE }.value)
@@ -185,6 +223,8 @@ class SettingsMenuModelTest {
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.value)
         assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
         assertEquals("FUSION", rows.first { it.item == SettingsMenuItem.FONT }.value)
+        assertEquals("PROP", rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.value)
+        assertEquals("10PX", rows.first { it.item == SettingsMenuItem.FONT_SIZE }.value)
     }
 
     @Test
@@ -209,6 +249,8 @@ class SettingsMenuModelTest {
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.RESOLUTION }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT }.section)
+        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.section)
+        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT_SIZE }.section)
         assertEquals(SettingsSection.HOME, rows.first { it.item == SettingsMenuItem.HOME_STATUS }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.section)

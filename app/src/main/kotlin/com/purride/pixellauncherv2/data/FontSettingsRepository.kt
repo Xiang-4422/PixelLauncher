@@ -5,7 +5,10 @@ import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherFontFamily
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
+import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixelcore.PixelShape
@@ -22,8 +25,8 @@ class FontSettingsRepository(
         val dotSizePx: Int,
         val pixelGapEnabled: Boolean,
         val theme: PixelTheme,
-        /** 用户在设置页明确选择的 Launcher 字体家族。 */
-        val fontFamily: LauncherFontFamily,
+        /** 用户在设置页明确选择的字体家族、宽度模式和字号。 */
+        val fontSelection: LauncherFontSelection,
     )
 
     data class UiBehaviorSettings(
@@ -47,7 +50,7 @@ class FontSettingsRepository(
             dotSizePx = dotSizePx,
             pixelGapEnabled = readStoredPixelGapEnabled(),
             theme = readStoredTheme(),
-            fontFamily = readStoredFontFamily(),
+            fontSelection = readStoredFontSelection(),
         )
     }
 
@@ -72,15 +75,19 @@ class FontSettingsRepository(
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
-        fontFamily: LauncherFontFamily,
+        fontSelection: LauncherFontSelection,
     ) {
         val safeDotSizePx = dotSizePx.coerceAtLeast(1)
+        /** 防止外部调用把不存在的字体组合持久化。 */
+        val normalizedFontSelection = PixelFontCatalog.normalize(fontSelection)
         sharedPreferences.edit()
             .putString(KEY_PIXEL_SHAPE, pixelShape.name)
             .putInt(KEY_DOT_SIZE_PX, safeDotSizePx)
             .putBoolean(KEY_PIXEL_GAP_ENABLED, pixelGapEnabled)
             .putString(KEY_THEME, theme.name)
-            .putString(KEY_FONT_FAMILY, fontFamily.name)
+            .putString(KEY_FONT_FAMILY, normalizedFontSelection.family.name)
+            .putString(KEY_FONT_WIDTH_MODE, normalizedFontSelection.widthMode.name)
+            .putString(KEY_FONT_SIZE, normalizedFontSelection.size.name)
             .apply()
     }
 
@@ -131,11 +138,31 @@ class FontSettingsRepository(
         return PixelTheme.entries.firstOrNull { it.name == storedValue } ?: PixelTheme.DAY
     }
 
-    /** 读取已保存字体；旧版本或无效值稳定回退到默认字体。 */
-    private fun readStoredFontFamily(): LauncherFontFamily {
-        val storedValue = sharedPreferences.getString(KEY_FONT_FAMILY, null)
-        return LauncherFontFamily.entries.firstOrNull { it.name == storedValue }
-            ?: PixelFontCatalog.defaultUiFontFamily
+    /** 读取完整字体选择，并兼容早期把 Fusion 宽度模式编码进家族名的设置。 */
+    private fun readStoredFontSelection(): LauncherFontSelection {
+        /** 旧版或新版保存的字体家族原始名称。 */
+        val storedFamily = sharedPreferences.getString(KEY_FONT_FAMILY, null)
+        /** 从旧版家族名称中恢复出的宽度模式。 */
+        val legacyWidthMode = when (storedFamily) {
+            LEGACY_FUSION_MONOSPACED -> LauncherFontWidthMode.MONOSPACED
+            LEGACY_FUSION_PROPORTIONAL -> LauncherFontWidthMode.PROPORTIONAL
+            else -> null
+        }
+        /** 新版家族值；旧版 Fusion 名称统一迁移到 FUSION。 */
+        val family = LauncherFontFamily.entries.firstOrNull { family -> family.name == storedFamily }
+            ?: if (legacyWidthMode != null) LauncherFontFamily.FUSION else PixelFontCatalog.defaultUiFontSelection.family
+        /** 新版宽度模式，无值时优先采用旧版迁移结果。 */
+        val widthMode = sharedPreferences.getString(KEY_FONT_WIDTH_MODE, null)
+            ?.let { stored -> LauncherFontWidthMode.entries.firstOrNull { mode -> mode.name == stored } }
+            ?: legacyWidthMode
+            ?: PixelFontCatalog.defaultUiFontSelection.widthMode
+        /** 新版默认字号，无值或非法值时采用应用默认字号。 */
+        val size = sharedPreferences.getString(KEY_FONT_SIZE, null)
+            ?.let { stored -> PixelFontSize.entries.firstOrNull { candidate -> candidate.name == stored } }
+            ?: PixelFontCatalog.defaultUiFontSelection.size
+        return PixelFontCatalog.normalize(
+            LauncherFontSelection(family = family, widthMode = widthMode, size = size),
+        )
     }
 
     private fun readStoredPixelGapEnabled(): Boolean {
@@ -181,6 +208,14 @@ class FontSettingsRepository(
         const val KEY_THEME = "selected_theme"
         /** 字体家族对应的 SharedPreferences 键。 */
         const val KEY_FONT_FAMILY = "selected_font_family"
+        /** 字体宽度模式对应的 SharedPreferences 键。 */
+        const val KEY_FONT_WIDTH_MODE = "selected_font_width_mode"
+        /** 默认字体字号对应的 SharedPreferences 键。 */
+        const val KEY_FONT_SIZE = "selected_font_size"
+        /** 第一版设置中代表 Fusion 比例模式的旧家族名称。 */
+        const val LEGACY_FUSION_PROPORTIONAL = "FUSION_PROPORTIONAL"
+        /** 第一版设置中代表 Fusion 等宽模式的旧家族名称。 */
+        const val LEGACY_FUSION_MONOSPACED = "FUSION_MONOSPACED"
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"
         const val KEY_IDLE_PAGE_ENABLED = "idle_page_enabled"
         const val KEY_CHARGE_AUTO_IDLE_ENABLED = "charge_auto_idle_enabled"

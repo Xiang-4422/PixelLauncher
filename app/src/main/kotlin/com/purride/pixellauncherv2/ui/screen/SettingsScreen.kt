@@ -120,10 +120,28 @@ class SettingsScreen(
             add(
                 SettingsOptionStepperRow(
                     title = "FONT",
-                    valueLabel = SettingsMenuModel.fontLabel(selectedFontFamily),
+                    valueLabel = SettingsMenuModel.fontLabel(fontSelection.family),
                     theme = t,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.FONT, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.FONT, +1) },
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "WIDTH",
+                    valueLabel = SettingsMenuModel.fontWidthLabel(fontSelection.widthMode),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, +1) },
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "SIZE",
+                    valueLabel = SettingsMenuModel.fontSizeLabel(fontSelection.size),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, +1) },
                 ),
             )
             addSection(SettingsSection.HOME, t)

@@ -3,18 +3,20 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 
 /**
- * 短信会话列表的视口行数计算（状态机用）。行高与引擎 SmsThreadsScreen 共用固定
- * [SmsThreadGeometry]，保证两侧一致。
+ * 短信会话列表的视口行数计算（状态机用）。行高与引擎 SmsThreadsScreen 共用
+ * [SmsThreadGeometry] 的字号派生规则，保证两侧一致。
  */
 object SmsLayout {
 
     private const val panelBottomPadding = 2
 
-    /** 与引擎 SmsThreadsScreen 渲染行距一致（单一来源 [SmsThreadGeometry]）。 */
-    private val threadRowHeight: Int
-        get() = SmsThreadGeometry.ROW_PITCH_PX
-
-    fun threadVisibleRows(screenProfile: LauncherLayoutProfile): Int {
+    /** 按当前字体字号计算可见的短信会话行数。 */
+    fun threadVisibleRows(
+        screenProfile: LauncherLayoutProfile,
+        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+    ): Int {
+        /** 与渲染列表完全一致的动态行距。 */
+        val threadRowHeight = SmsThreadGeometry.rowPitch(fontSize)
         val top = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val bottomExclusive = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(top + threadRowHeight)
         return TextListSupport.createLayoutMetrics(

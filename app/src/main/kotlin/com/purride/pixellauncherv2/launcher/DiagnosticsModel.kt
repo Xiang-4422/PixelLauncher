@@ -23,7 +23,7 @@ object DiagnosticsModel {
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
-            selectedFontFamily = state.selectedFontFamily,
+            fontSelection = state.fontSelection,
             screenProfile = screenProfile,
         )
     }
@@ -40,7 +40,7 @@ object DiagnosticsModel {
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
-            selectedFontFamily = state.selectedFontFamily,
+            fontSelection = state.fontSelection,
             screenProfile = screenProfile,
         )
     }
@@ -55,8 +55,8 @@ object DiagnosticsModel {
         batteryLevel: Int,
         isCharging: Boolean,
         hasUsageAccess: Boolean,
-        /** 当前由设置页明确选择的字体家族。 */
-        selectedFontFamily: LauncherFontFamily,
+        /** 当前由设置页明确选择的字体家族、宽度模式和字号。 */
+        fontSelection: LauncherFontSelection,
         screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsLine> {
         val lastLaunch = lastLaunchPackageName
@@ -72,8 +72,10 @@ object DiagnosticsModel {
             ?.ifBlank { "0" }
             ?: "0"
         val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile)
-        val fontRows = PixelFontCatalog.fontSizeOptions().map { size ->
-            DiagnosticsLine(PixelFontCatalog.sizeLabel(size), PixelFontCatalog.metricsLabel(size))
+        val fontRows = PixelFontCatalog.fontSizeOptions(fontSelection.family, fontSelection.widthMode).map { size ->
+            /** 同一字体家族与宽度模式下该字号的真实度量。 */
+            val sizedSelection = fontSelection.copy(size = size)
+            DiagnosticsLine(PixelFontCatalog.sizeLabel(size), PixelFontCatalog.metricsLabel(sizedSelection))
         }
         val textSummary = DiagnosticsTextSampleModel.summary(textSamples)
         val maxTextSample = DiagnosticsTextSampleModel.maxSample(textSamples)
@@ -88,8 +90,9 @@ object DiagnosticsModel {
             DiagnosticsLine("RECENT", recentSummary),
             DiagnosticsLine(
                 "FONT",
-                "${PixelFontCatalog.familyLabel(selectedFontFamily)} " +
-                    PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize),
+                "${PixelFontCatalog.familyLabel(fontSelection.family)} " +
+                    "${PixelFontCatalog.widthModeLabel(fontSelection.widthMode)} " +
+                    PixelFontCatalog.sizeLabel(fontSelection.size),
             ),
         ) + fontRows + listOf(
             DiagnosticsLine("TEXT", textSummary),
