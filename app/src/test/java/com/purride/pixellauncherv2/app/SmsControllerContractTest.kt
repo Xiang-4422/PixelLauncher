@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.content.Context
 import android.os.Handler
+import com.purride.pixellauncherv2.data.SmsNotificationHelper
 import com.purride.pixellauncherv2.data.SmsRepository
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,6 +23,7 @@ class SmsControllerContractTest {
         val constructor = SmsController::class.java.getDeclaredConstructor(
             Context::class.java,
             SmsRepository::class.java,
+            SmsNotificationHelper::class.java,
             ExecutorService::class.java,
             Handler::class.java,
             SmsController.Host::class.java,

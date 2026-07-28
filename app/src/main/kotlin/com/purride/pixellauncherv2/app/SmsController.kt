@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.util.Log
+import com.purride.pixellauncherv2.data.SmsNotificationHelper
 import com.purride.pixellauncherv2.data.SmsRepository
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
@@ -31,6 +32,7 @@ import java.util.concurrent.ExecutorService
 internal class SmsController(
     context: Context,
     private val smsRepository: SmsRepository,
+    private val smsNotificationHelper: SmsNotificationHelper,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler,
     private val host: Host,
@@ -239,24 +241,29 @@ internal class SmsController(
         if (host.state.unreadSmsEntries.isEmpty()) {
             return
         }
+        val notifiedThreadIds = host.state.unreadSmsEntries.map { it.threadId }.distinct()
         backgroundExecutor.execute {
             val changed = smsRepository.markAllRead()
             if (!changed) {
                 return@execute
             }
+            notifiedThreadIds.forEach(smsNotificationHelper::cancelForThread)
             refreshSmsData(render = true)
             host.refreshCommunicationStatus(render = true)
         }
     }
 
     fun markMessageRead(messageId: Long) {
-        if (host.state.unreadSmsEntries.none { it.messageId == messageId }) {
-            return
-        }
+        val entry = host.state.unreadSmsEntries.firstOrNull { it.messageId == messageId } ?: return
+        // 该会话只剩这一条未读时，它挂着的通知也一并撤下。
+        val clearsThread = host.state.unreadSmsEntries.count { it.threadId == entry.threadId } <= 1
         backgroundExecutor.execute {
             val changed = smsRepository.markMessagesRead(listOf(messageId))
             if (!changed) {
                 return@execute
+            }
+            if (clearsThread) {
+                smsNotificationHelper.cancelForThread(entry.threadId)
             }
             refreshSmsData(render = true)
             host.refreshCommunicationStatus(render = true)
@@ -463,6 +470,7 @@ internal class SmsController(
         )
         host.render()
         host.updateTextInputFocus()
+        threadId?.let(smsNotificationHelper::cancelForThread)
         val unreadIds = SmsConversationModel.unread(messages).map { it.messageId }
         if (unreadIds.isNotEmpty()) {
             backgroundExecutor.execute {

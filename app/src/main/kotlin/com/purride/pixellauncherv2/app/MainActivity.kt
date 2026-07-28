@@ -278,6 +278,7 @@ class MainActivity : AppCompatActivity() {
         smsController = SmsController(
             context = applicationContext,
             smsRepository = appContainer.smsRepository,
+            smsNotificationHelper = appContainer.smsNotificationHelper,
             backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
             host = smsHost,

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 状态栏短信小图标：像素风对话气泡（纯白单色，遵循通知小图标规范）。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M3,4h18v12h-10v2h-2v2h-2v-4H3zM6,8v2h2V8zM11,8v2h2V8zM16,8v2h2V8z" />
+</vector>

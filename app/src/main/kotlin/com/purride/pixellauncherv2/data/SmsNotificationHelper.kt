@@ -33,8 +33,8 @@ class SmsNotificationHelper(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.stat_notify_chat)
-            .setContentTitle(entry.address.ifBlank { "SMS" })
+            .setSmallIcon(R.drawable.ic_stat_sms)
+            .setContentTitle(entry.conversationTitle.ifBlank { entry.address }.ifBlank { "SMS" })
             .setContentText(entry.body.ifBlank { "(EMPTY)" })
             .setStyle(NotificationCompat.BigTextStyle().bigText(entry.body.ifBlank { "(EMPTY)" }))
             .setContentIntent(pendingIntent)
@@ -52,7 +52,7 @@ class SmsNotificationHelper(
     fun showUnsupportedMms() {
         ensureChannel()
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setSmallIcon(R.drawable.ic_stat_sms)
             .setContentTitle("MMS RECEIVED")
             .setContentText("THIS LAUNCHER DOES NOT YET SUPPORT MMS")
             .setAutoCancel(true)
@@ -64,6 +64,11 @@ class SmsNotificationHelper(
             return
         }
         NotificationManagerCompat.from(context).notify(unsupportedMmsNotificationId, notification)
+    }
+
+    /** 会话被打开或标记已读后，撤下它挂着的通知（通知 id 与 threadId 一一对应）。 */
+    fun cancelForThread(threadId: Long) {
+        NotificationManagerCompat.from(context).cancel(threadId.toInt())
     }
 
     private fun ensureChannel() {
