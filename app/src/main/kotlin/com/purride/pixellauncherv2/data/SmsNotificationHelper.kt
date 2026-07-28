@@ -49,12 +49,16 @@ class SmsNotificationHelper(
         NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), notification)
     }
 
-    fun showUnsupportedMms() {
+    /**
+     * 彩信到达提示。[senderTitle] 为发件人（联系人名或号码），可为空。
+     * 通知 id 按发件人区分，多个发件人的彩信提示不互相覆盖。
+     */
+    fun showUnsupportedMms(senderTitle: String = "") {
         ensureChannel()
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_sms)
-            .setContentTitle("MMS RECEIVED")
-            .setContentText("THIS LAUNCHER DOES NOT YET SUPPORT MMS")
+            .setContentTitle(if (senderTitle.isBlank()) "MMS RECEIVED" else "MMS FROM $senderTitle")
+            .setContentText("THIS LAUNCHER DOES NOT SUPPORT MMS")
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
@@ -63,7 +67,8 @@ class SmsNotificationHelper(
         ) {
             return
         }
-        NotificationManagerCompat.from(context).notify(unsupportedMmsNotificationId, notification)
+        NotificationManagerCompat.from(context)
+            .notify(UNSUPPORTED_MMS_TAG, senderTitle.hashCode(), notification)
     }
 
     /** 会话被打开或标记已读后，撤下它挂着的通知（通知 id 与 threadId 一一对应）。 */
@@ -124,7 +129,7 @@ class SmsNotificationHelper(
 
     private companion object {
         const val channelId = "sms_incoming"
-        const val unsupportedMmsNotificationId = 8000
         const val SEND_FAILURE_TAG = "sms_send_failure"
+        const val UNSUPPORTED_MMS_TAG = "mms_unsupported"
     }
 }
