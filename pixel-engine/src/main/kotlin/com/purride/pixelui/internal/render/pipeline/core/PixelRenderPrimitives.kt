@@ -337,38 +337,53 @@ internal data class PixelRenderSession(
      * 固化当前会话为对外渲染结果。
      */
     fun toRenderResult(): PixelRenderResult {
-        /** Every target source participates in selecting the newest active modal boundary. */
-        val targetSources = buildList {
-            addAll(clickTargets.map(PixelClickTarget::source))
-            addAll(pagerTargets.map(PixelPagerTarget::source))
-            addAll(listTargets.map(PixelListTarget::source))
-            addAll(scrollbarTargets.map(PixelScrollbarTarget::source))
-            addAll(refreshTargets.map(PixelRefreshTarget::source))
-            addAll(textInputTargets.map(PixelTextInputTarget::source))
-            addAll(sliderTargets.map(PixelSliderTarget::source))
-            addAll(semanticsTargets.map(PixelSemanticsTarget::source))
-        }
-        /** Selected activation and route order represent the top logical modal for this frame. */
-        val modalFilter = highestActiveModalFilter(targetSources)
-        /** Click targets exported after a modal sibling are still removed by ancestry, not order. */
-        val effectiveClickTargets = clickTargets.filterForModal(modalFilter, PixelClickTarget::source)
-        /** Pager targets outside the active modal cannot retain gesture ownership. */
-        val effectivePagerTargets = pagerTargets.filterForModal(modalFilter, PixelPagerTarget::source)
-        /** List targets outside the active modal cannot retain scroll ownership. */
-        val effectiveListTargets = listTargets.filterForModal(modalFilter, PixelListTarget::source)
-        /** Scrollbar targets outside the active modal cannot retain drag ownership. */
-        val effectiveScrollbarTargets = scrollbarTargets.filterForModal(modalFilter, PixelScrollbarTarget::source)
-        /** Refresh targets outside the active modal cannot retain pull ownership. */
-        val effectiveRefreshTargets = refreshTargets.filterForModal(modalFilter, PixelRefreshTarget::source)
-        /** Text fields outside the active modal cannot retain IME ownership. */
-        val effectiveTextInputTargets = textInputTargets.filterForModal(modalFilter, PixelTextInputTarget::source)
-        /** Sliders outside the active modal cannot retain direct-manipulation ownership. */
-        val effectiveSliderTargets = sliderTargets.filterForModal(modalFilter, PixelSliderTarget::source)
-        /** Private modal markers select the scope but are never exposed to clients or Android. */
-        val effectiveSemanticsTargets = semanticsTargets
-            .filterNot { target -> target.source is RenderModalInteractionScope }
-            .filterForModal(modalFilter, PixelSemanticsTarget::source)
-            .repairParentsAfterModalFiltering()
+        /** 跨全部目标族复用的 modal 选择器，避免先拼装一份来源列表。 */
+        val modalAccumulator = ActiveModalFilterAccumulator()
+        clickTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        pagerTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        listTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        scrollbarTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        refreshTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        textInputTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        sliderTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        semanticsTargets.forEach { target -> modalAccumulator.inspect(target.source) }
+        /** 当前帧最高优先级的 modal；普通帧为 null。 */
+        val modalFilter = modalAccumulator.toFilter()
+        /** 普通帧直接复用已完成会话列表，只有 modal 帧才创建过滤副本。 */
+        val effectiveClickTargets = modalFilter?.let { filter ->
+            clickTargets.filterForModal(filter, PixelClickTarget::source)
+        } ?: clickTargets
+        /** 普通帧直接复用分页目标列表。 */
+        val effectivePagerTargets = modalFilter?.let { filter ->
+            pagerTargets.filterForModal(filter, PixelPagerTarget::source)
+        } ?: pagerTargets
+        /** 普通帧直接复用列表滚动目标。 */
+        val effectiveListTargets = modalFilter?.let { filter ->
+            listTargets.filterForModal(filter, PixelListTarget::source)
+        } ?: listTargets
+        /** 普通帧直接复用滚动条目标。 */
+        val effectiveScrollbarTargets = modalFilter?.let { filter ->
+            scrollbarTargets.filterForModal(filter, PixelScrollbarTarget::source)
+        } ?: scrollbarTargets
+        /** 普通帧直接复用刷新目标。 */
+        val effectiveRefreshTargets = modalFilter?.let { filter ->
+            refreshTargets.filterForModal(filter, PixelRefreshTarget::source)
+        } ?: refreshTargets
+        /** 普通帧直接复用文本输入目标。 */
+        val effectiveTextInputTargets = modalFilter?.let { filter ->
+            textInputTargets.filterForModal(filter, PixelTextInputTarget::source)
+        } ?: textInputTargets
+        /** 普通帧直接复用滑块目标。 */
+        val effectiveSliderTargets = modalFilter?.let { filter ->
+            sliderTargets.filterForModal(filter, PixelSliderTarget::source)
+        } ?: sliderTargets
+        /** 只有 modal 帧需要移除私有 marker 并修复语义父节点。 */
+        val effectiveSemanticsTargets = modalFilter?.let { filter ->
+            semanticsTargets
+                .filterNot { target -> target.source is RenderModalInteractionScope }
+                .filterForModal(filter, PixelSemanticsTarget::source)
+                .repairParentsAfterModalFiltering()
+        } ?: semanticsTargets
         return PixelRenderResult(
             buffer = buffer,
             clickTargets = effectiveClickTargets,
@@ -386,10 +401,9 @@ internal data class PixelRenderSession(
 
 /** Keeps every target without a modal, otherwise only the modal and higher hosted routes. */
 private fun <T> Iterable<T>.filterForModal(
-    modalFilter: ActiveModalFilter?,
+    modalFilter: ActiveModalFilter,
     source: (T) -> RenderObject?,
 ): List<T> {
-    if (modalFilter == null) return toList()
     return filter { target -> sourceAllowedByModal(source(target), modalFilter) }
 }
 

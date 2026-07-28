@@ -74,7 +74,6 @@ com.purride.pixelcore public enum class PixelShape
 com.purride.pixelcore public enum class PixelViewportAlignment
 com.purride.pixelcore public enum class PixelViewportFit
 com.purride.pixelcore public enum class PixelViewportQuantization
-com.purride.pixelcore public fun <T> measure(stage: String, block: () -> T): T
 com.purride.pixelcore public fun acquire(width: Int, height: Int): PixelBuffer
 com.purride.pixelcore public fun asView(): View
 com.purride.pixelcore public fun await(): T
@@ -136,7 +135,6 @@ com.purride.pixelcore public fun loadGlyphPackAsync(
 com.purride.pixelcore public fun loadSpriteSheet(key: String, loader: () -> PixelSpriteSheet): PixelSpriteSheet
 com.purride.pixelcore public fun loadSpriteSheetAsync(
 com.purride.pixelcore public fun mapSurfaceToLogical(
-com.purride.pixelcore public fun mark(event: String, detail: String)
 com.purride.pixelcore public fun measureHeight(text: String): Int
 com.purride.pixelcore public fun measureText(text: String): Int
 com.purride.pixelcore public fun measureText(text: String, style: GlyphStyle): Int
@@ -169,7 +167,6 @@ com.purride.pixelcore public fun prefetchBitmap(
 com.purride.pixelcore public fun prefetchGlyphPack(
 com.purride.pixelcore public fun prefetchSpriteSheet(
 com.purride.pixelcore public fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap
-com.purride.pixelcore public fun record(stage: String, durationNs: Long)
 com.purride.pixelcore public fun release(buffer: PixelBuffer)
 com.purride.pixelcore public fun remove(
 com.purride.pixelcore public fun remove(key: String)
@@ -199,7 +196,6 @@ com.purride.pixelcore public object PixelGlyphPackParser
 com.purride.pixelcore public object PixelGridGeometryResolver
 com.purride.pixelcore public object PixelResourceManifestJsonLoader
 com.purride.pixelcore public object PixelSpriteSheetJsonLoader
-com.purride.pixelcore public object RenderPerfLogger
 com.purride.pixelcore public object ScreenProfileFactory
 com.purride.pixelcore public operator fun component1(): Int = codePoint
 com.purride.pixelcore public operator fun component2(): Int = advanceWidth

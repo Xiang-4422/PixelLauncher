@@ -1048,13 +1048,6 @@ package com.purride.pixelcore {
     enum_constant public static final com.purride.pixelcore.PixelViewportQuantization INTEGER;
   }
 
-  public final class RenderPerfLogger {
-    method public void mark(String event, String detail);
-    method public <T> T measure(String stage, kotlin.jvm.functions.Function0<? extends T> block);
-    method public void record(String stage, long durationNs);
-    field public static final com.purride.pixelcore.RenderPerfLogger INSTANCE;
-  }
-
   public final class ScreenProfile {
     ctor public ScreenProfile(int logicalWidth, int logicalHeight, int dotSizePx, optional com.purride.pixelcore.PixelShape pixelShape);
     method public int component1();

@@ -48,7 +48,7 @@ class SupplyChainToolsTest(unittest.TestCase):
                 GENERATOR.read_properties(metadata)
 
     def test_sbom_contains_all_internal_components_and_stable_serial(self) -> None:
-        """同一依赖图必须生成相同序列号并保留九个 SDK 坐标。"""
+        """同一依赖图必须生成相同序列号并保留全部 SDK 坐标。"""
 
         # 最小依赖图包含全部内部组件和一个外部依赖。
         components = [
@@ -177,7 +177,7 @@ class SupplyChainToolsTest(unittest.TestCase):
         """任一模块只锁编译配置而未锁运行配置时必须失败。"""
 
         with tempfile.TemporaryDirectory() as directory:
-            # 九个同名模块目录模拟真实模块锁文件布局。
+            # 当前发布模块目录模拟真实模块锁文件布局。
             lockfiles = []
             for artifact in CHECKER.PIXEL_ARTIFACTS:
                 # 当前模块临时目录。

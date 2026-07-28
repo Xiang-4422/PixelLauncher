@@ -24,7 +24,7 @@ class PixelFormalReleasePreflightTest(unittest.TestCase):
             "signingIdentityStatus": "CONFIRMED",
             "signingFingerprint": "A" * 40,
         }
-        # 九个模块必须共享完全相同的正式 GAV 前缀。
+        # 当前发布模块必须使用正式 GAV 前缀。
         coordinates = {
             artifact: {"group": "com.purride", "version": "1.0.0"}
             for artifact in ARTIFACTS

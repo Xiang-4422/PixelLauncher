@@ -540,11 +540,22 @@ public class PixelResourceCache @JvmOverloads public constructor(
         return PixelResourceEviction(key = key, kind = kind, byteSize = byteSize, reason = reason)
     }
 
-    /** 在缓存锁外逐个通知监听器。 */
+    /** 在缓存锁外逐个通知监听器，并把消费方异常降级为可观测日志。 */
     private fun notifyEvictions(evictions: List<PixelResourceEviction>) {
         /** 当前缓存的可选监听器。 */
         val listener = evictionListener ?: return
-        evictions.forEach { eviction -> runCatching { listener.onEvicted(eviction) } }
+        evictions.forEach { eviction ->
+            try {
+                listener.onEvicted(eviction)
+            } catch (failure: Throwable) {
+                // 监听器属于消费方隔离边界：缓存结果保持成功，但异常必须留下诊断证据。
+                RenderPerfLogger.mark(
+                    event = "resource.eviction-listener.failure",
+                    detail = "kind=${eviction.kind} key=${eviction.key} " +
+                        "failure=${failure.javaClass.name}",
+                )
+            }
+        }
     }
 
     /** 记录指定类型命中。调用方必须持有 [lock]。 */

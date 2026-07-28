@@ -1020,12 +1020,6 @@ public final class com.purride.pixelcore.PixelViewportQuantization extends java.
   public static com.purride.pixelcore.PixelViewportQuantization valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelcore.PixelViewportQuantization> getEntries();
 }
-public final class com.purride.pixelcore.RenderPerfLogger {
-  public static final com.purride.pixelcore.RenderPerfLogger INSTANCE;
-  public final void mark(java.lang.String, java.lang.String);
-  public final <T> T measure(java.lang.String, kotlin.jvm.functions.Function0<? extends T>);
-  public final void record(java.lang.String, long);
-}
 public final class com.purride.pixelcore.ScreenProfile {
   public com.purride.pixelcore.ScreenProfile(int, int, int, com.purride.pixelcore.PixelShape);
   public com.purride.pixelcore.ScreenProfile(int, int, int, com.purride.pixelcore.PixelShape, int, kotlin.jvm.internal.DefaultConstructorMarker);

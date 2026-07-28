@@ -85,6 +85,25 @@ class PixelResourceCacheAdvancedTest {
         assertEquals(PixelResourceEvictionReason.ENTRY_TOO_LARGE, events.single().reason)
     }
 
+    /** 消费方淘汰监听器失败时缓存结果仍成功，并保持已经提交的淘汰状态。 */
+    @Test
+    fun evictionListenerFailureDoesNotCorruptCommittedCacheState() {
+        /** 只允许两个单像素 bitmap 的缓存，用第三次写入稳定触发淘汰。 */
+        val cache = PixelResourceCache(
+            limits = limits(maxTotalBytes = 128L, maxBitmapBytes = 8L),
+            evictionListener = PixelResourceEvictionListener { throw IllegalStateException("listener failed") },
+        )
+
+        cache.getBitmap("first") { bitmap(PixelColor.White) }
+        cache.getBitmap("second") { bitmap(PixelColor.Black) }
+        /** 监听器异常不得把已经完成的第三次资源加载改写成失败。 */
+        val loaded = cache.getBitmap("third") { bitmap(PixelColor.fromRgb(255, 0, 0)) }
+
+        assertEquals(PixelColor.fromRgb(255, 0, 0).argb, loaded.pixels.single())
+        assertEquals(listOf("second", "third"), cache.detailedSnapshot().entries.map { entry -> entry.key })
+        assertEquals(1L, cache.detailedSnapshot().evictionCount)
+    }
+
     /** 多线程并发未命中同一 key 时 loader 只执行一次且共享同一实例。 */
     @Test
     fun concurrentMissesShareExactlyOneLoader() {

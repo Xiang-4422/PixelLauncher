@@ -1,6 +1,7 @@
 package com.purride.pixelui.internal
 
 import com.purride.pixelcore.PixelAxis
+import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsNode
@@ -18,6 +19,29 @@ import org.junit.Test
 
 /** Locks modal target filtering to the completed render tree rather than collection order. */
 class ModalInteractionPipelineTest {
+    /** 普通帧应直接发布完成会话的目标列表，避免为无 modal 场景复制八个列表。 */
+    @Test
+    fun ordinarySessionReusesCompletedTargetLists() {
+        /** 不含 modal marker 的普通渲染会话。 */
+        val session = PixelRenderSession(buffer = PixelBuffer(width = 1, height = 1))
+        session.clickTargets += PixelClickTarget(
+            bounds = PixelRect(left = 0, top = 0, width = 1, height = 1),
+            onClick = { },
+        )
+
+        /** 固化后的普通帧结果。 */
+        val result = session.toRenderResult()
+
+        assertSame(session.clickTargets, result.clickTargets)
+        assertSame(session.pagerTargets, result.pagerTargets)
+        assertSame(session.listTargets, result.listTargets)
+        assertSame(session.scrollbarTargets, result.scrollbarTargets)
+        assertSame(session.refreshTargets, result.refreshTargets)
+        assertSame(session.textInputTargets, result.textInputTargets)
+        assertSame(session.sliderTargets, result.sliderTargets)
+        assertSame(session.semanticsTargets, result.semanticsTargets)
+    }
+
     /** Every later-sibling target category is removed after the active modal is selected. */
     @Test
     fun activeModalFiltersEveryLaterSiblingTargetAndPrivateMarker() {

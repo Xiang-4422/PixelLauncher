@@ -132,7 +132,7 @@ def read_assignment(path: Path, key: str) -> str | None:
 
 
 def read_module_coordinates() -> dict[str, dict[str, str | None]]:
-    """读取九个发布模块当前声明的 group 与 version。"""
+    """读取当前发布模块声明的 group 与 version。"""
 
     # 每个模块的坐标快照用于报告具体漂移，而不是只给出总失败。
     coordinates: dict[str, dict[str, str | None]] = {}
@@ -186,7 +186,7 @@ def evaluate_formal_release(
 ) -> dict[str, Any]:
     """把本地、GitHub、namespace 和签名条件汇总为正式发布判定。"""
 
-    # 元数据中的候选 groupId 必须与九个模块当前声明完全一致。
+    # 元数据中的候选 groupId 必须与当前发布模块声明完全一致。
     group_id = metadata.get("groupId", "")
     # 坐标一致性同时检查 group 和不可变版本。
     coordinates_consistent = bool(group_id) and all(

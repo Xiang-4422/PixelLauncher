@@ -180,39 +180,63 @@ internal fun sourceAllowedByModal(source: RenderObject?, filter: ActiveModalFilt
     return sourceOrder != null && sourceOrder > modalOrder
 }
 
-/** Returns the newest active modal plus its inherited OverlayHost order across [sources]. */
-internal fun highestActiveModalFilter(sources: Iterable<RenderObject?>): ActiveModalFilter? {
-    /** Newest modal activation encountered across all source ancestry chains. */
-    var selectedToken: Long? = null
-    /** OverlayHost order inherited by the currently selected modal activation. */
-    var selectedOrder: Long? = null
-    sources.forEach { source ->
-        /** Ancestors retained so a selected nested modal can inherit its route wrapper's order. */
-        val ancestry = mutableListOf<RenderObject>()
-        /** Current source ancestor inspected while walking toward the render root. */
+/** 在多个目标族之间复用的 modal 选择器，遍历祖先时不创建临时列表。 */
+internal class ActiveModalFilterAccumulator {
+    /** 当前已发现的最新 modal 激活序号。 */
+    private var selectedToken: Long? = null
+
+    /** 当前最新 modal 所在 OverlayHost 路由的最大展示顺序。 */
+    private var selectedOrder: Long? = null
+
+    /** 检查一个目标来源的完整祖先链，并合并到当前选择结果。 */
+    fun inspect(source: RenderObject?) {
+        /** 当前来源链中最新的 modal 激活序号。 */
+        var chainToken: Long? = null
+        /** 当前来源链中继承的最大 OverlayHost 展示顺序。 */
+        var chainOrder: Long? = null
+        /** 正在向根节点遍历的渲染对象。 */
         var candidate = source
         while (candidate != null) {
-            ancestry += candidate
+            /** 当前祖先在 modal 边界上携带的激活与路由信息。 */
+            val scope = candidate as? RenderModalInteractionScope
+            /** 当前祖先的激活序号。 */
+            val token = scope?.activeModalToken
+            /** 本链此前已发现的激活序号。 */
+            val previousChainToken = chainToken
+            if (token != null && (previousChainToken == null || token > previousChainToken)) {
+                chainToken = token
+            }
+            /** 当前祖先携带的 OverlayHost 展示顺序。 */
+            val order = scope?.presentationOrder()
+            /** 本链此前已发现的最大展示顺序。 */
+            val previousChainOrder = chainOrder
+            if (order != null && (previousChainOrder == null || order > previousChainOrder)) {
+                chainOrder = order
+            }
             candidate = candidate.parent
         }
-        /** Greatest route order on this source chain, shared by every nested boundary on it. */
-        val ancestryOrder = ancestry
-            .mapNotNull { ancestor ->
-                (ancestor as? RenderModalInteractionScope)?.presentationOrder()
-            }
-            .maxOrNull()
-        ancestry.forEach { ancestor ->
-            /** Active modal identity owned by this ancestor, when it is a modal boundary. */
-            val token = (ancestor as? RenderModalInteractionScope)?.activeModalToken
-            /** Previous maximum retained to keep the nullable comparison explicit. */
-            val previousToken = selectedToken
-            if (token != null && (previousToken == null || token > previousToken)) {
-                selectedToken = token
-                selectedOrder = ancestryOrder
-            }
+        /** 本链没有 active modal 时不影响全局选择。 */
+        val candidateToken = chainToken ?: return
+        /** 全局此前已选择的激活序号。 */
+        val previousSelectedToken = selectedToken
+        if (previousSelectedToken == null || candidateToken > previousSelectedToken) {
+            selectedToken = candidateToken
+            selectedOrder = chainOrder
         }
     }
-    /** Immutable filter returned only when at least one active marker was collected. */
-    val token = selectedToken ?: return null
-    return ActiveModalFilter(token = token, overlayOrder = selectedOrder)
+
+    /** 固化当前选择结果；没有 active modal 时返回 null。 */
+    fun toFilter(): ActiveModalFilter? {
+        /** 已选择的最终激活序号。 */
+        val token = selectedToken ?: return null
+        return ActiveModalFilter(token = token, overlayOrder = selectedOrder)
+    }
+}
+
+/** 返回全部来源中最新的 active modal 及其 OverlayHost 展示顺序。 */
+internal fun highestActiveModalFilter(sources: Iterable<RenderObject?>): ActiveModalFilter? {
+    /** 单次调用共享的无临时祖先列表选择器。 */
+    val accumulator = ActiveModalFilterAccumulator()
+    sources.forEach(accumulator::inspect)
+    return accumulator.toFilter()
 }

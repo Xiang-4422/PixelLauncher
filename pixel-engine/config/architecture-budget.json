@@ -1,0 +1,17 @@
+{
+  "defaultMaxProductionKotlinLines": 1200,
+  "maxProductionFunctionLines": 220,
+  "grandfatheredProductionKotlinFiles": {
+    "src/main/kotlin/com/purride/pixelui/foundation/PixelFocus.kt": 2222,
+    "src/main/kotlin/com/purride/pixelui/host/PixelHostView.kt": 2027,
+    "src/main/kotlin/com/purride/pixelui/internal/host/PixelHostAccessibilityNodeProvider.kt": 1975,
+    "src/main/kotlin/com/purride/pixelui/internal/render/pipeline/renderobjects/viewport/RenderScrollViewport.kt": 1591,
+    "src/main/kotlin/com/purride/pixelui/navigation/PixelNavigator.kt": 2276,
+    "src/main/kotlin/com/purride/pixelui/navigation/PixelNavigatorSnapshotCodec.kt": 1281,
+    "src/main/kotlin/com/purride/pixelui/testing/PixelTester.kt": 2202,
+    "src/main/kotlin/com/purride/pixelui/widgets/OverlayControls.kt": 1591,
+    "src/main/kotlin/com/purride/pixelui/widgets/PixelComponents.kt": 4994,
+    "src/main/kotlin/com/purride/pixelui/widgets/PixelWidgets.kt": 2366,
+    "src/main/kotlin/com/purride/pixelui/widgets/Slidable.kt": 1554
+  }
+}

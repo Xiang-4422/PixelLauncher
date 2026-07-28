@@ -72,15 +72,15 @@ dependencies {
     add(metalavaClasspath.name, libs.metalava.cli)
 }
 
-/** 旧聚合坐标承诺的完整 Kotlin 与 Java API 源码并集。 */
+/** 单一发布坐标承诺的完整 Kotlin 与 Java API 源码集合。 */
 val metalavaSourceDirectories = objects.fileCollection()
 
-/** 全部 Kotlin 源码按原始路径扫描，避免 artifact 物理拆分制造虚假 API 差异。 */
+/** 全部 Kotlin 源码按原始路径扫描，避免目录整理制造虚假 API 差异。 */
 val aggregateMetalavaKotlinSources = fileTree(sharedProductionSourceRoot) {
     include("**/*.kt", "**/*.java")
 }
 
-/** runtime 拥有的 Unicode Bidi Java 参考实现也属于旧聚合坐标 API 并集。 */
+/** Unicode Bidi Java 参考实现也属于当前单一坐标的源码集合。 */
 val aggregateMetalavaJavaSources = fileTree("src/main/java") {
     include("**/*.java")
 }
@@ -150,6 +150,16 @@ val themeTokenRuntimeSourceRoot = layout.projectDirectory.dir("src/main/kotlin")
 
 /** Machine-readable M5 token-consumption evidence retained by the verification gate. */
 val themeTokenCoverageReport = layout.buildDirectory.file("reports/theme/theme-token-coverage.json")
+
+/** 单模块架构文本与生产 Kotlin 文件规模检查器。 */
+val architectureGovernanceTool = rootProject.layout.projectDirectory.file("tools/check_pixel_architecture.py")
+
+/** 人工审阅后的生产 Kotlin 文件规模预算。 */
+val architectureBudget = layout.projectDirectory.file("config/architecture-budget.json")
+
+/** 架构治理检查输出的机器可读报告。 */
+val architectureGovernanceReport =
+    layout.buildDirectory.file("reports/architecture/architecture-governance.json")
 
 /** Generates the canonical current signature from the AGP release variant. */
 val generateMetalavaApi by tasks.registering(JavaExec::class) {
@@ -308,6 +318,51 @@ val testPixelTooling by tasks.registering(Exec::class) {
         "tools/tests",
         "-p",
         "test_*.py",
+    )
+}
+
+/** 阻止超大生产文件继续增长，并拒绝已删除模块重新进入治理文本。 */
+val checkArchitectureGovernance by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks Pixel Engine source-size budgets and single-module governance text."
+    workingDir(rootProject.projectDir)
+
+    inputs.file(architectureGovernanceTool)
+        .withPropertyName("architectureGovernanceTool")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(architectureBudget)
+        .withPropertyName("architectureBudget")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(sharedProductionSourceRoot)
+        .withPropertyName("productionKotlinSources")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files(
+        rootProject.file("build.gradle.kts"),
+        rootProject.file("settings.gradle.kts"),
+        rootProject.file("README.md"),
+        rootProject.file("mkdocs.yml"),
+        rootProject.fileTree(".github/workflows") { include("**/*.yml", "**/*.yaml") },
+        rootProject.fileTree("docs") { include("**/*.md") },
+        rootProject.fileTree("tools") {
+            include("**/*.py", "**/*.sh")
+            exclude("**/__pycache__/**")
+        },
+        layout.projectDirectory.file("build.gradle.kts"),
+        layout.projectDirectory.file("consumer-rules.pro"),
+        layout.projectDirectory.dir("docs"),
+    ).withPropertyName("architectureGovernanceText")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(architectureGovernanceReport)
+
+    commandLine(
+        "python3",
+        architectureGovernanceTool.asFile,
+        "--root",
+        rootProject.projectDir,
+        "--budget",
+        architectureBudget.asFile,
+        "--report",
+        architectureGovernanceReport.get().asFile,
     )
 }
 
@@ -666,7 +721,7 @@ val checkKdocCoverage by tasks.registering(Exec::class) {
     group = "verification"
     description = "Checks every explicit public/protected Kotlin declaration has valid KDoc."
 
-    /** 共享源码根仍包含拆分后九个 artifact 的完整公开源码并集。 */
+    /** 单模块源码根包含 Pixel Engine 的完整公开源码集合。 */
     val sourceFiles = fileTree(sharedProductionSourceRoot) {
         include("**/*.kt")
     }
@@ -776,6 +831,7 @@ tasks.named("check") {
     dependsOn(checkUnicodeBidiDataGeneration)
     dependsOn(checkReleaseArtifactBudget)
     dependsOn(testPixelTooling)
+    dependsOn(checkArchitectureGovernance)
 }
 
 publishing {
@@ -1012,7 +1068,7 @@ fun String.binaryApiMemberName(): String? {
     return prefix.takeIf(String::isNotEmpty)?.substringAfterLast(' ')
 }
 
-/** 规范化 javap 输出，并排除明确标记为兄弟 artifact 内部契约的 member。 */
+/** 规范化 javap 输出，并排除明确标记为发布物内部契约的 member。 */
 fun String.normalizeBinaryApiDump(hiddenArtifactMemberNames: Set<String> = emptySet()): String {
     return lineSequence()
         .map { line -> line.trimEnd() }
@@ -1020,7 +1076,7 @@ fun String.normalizeBinaryApiDump(hiddenArtifactMemberNames: Set<String> = empty
         .filterNot { line -> line.isBlank() }
         /** Kotlin internal 成员按 module 名改写后仍不是稳定 Java/Kotlin API。 */
         .filterNot { line -> Regex("\\\$pixel_[A-Za-z0-9_]+").containsMatchIn(line) }
-        /** 拆分后 JVM public、但经注解声明不属于消费者稳定 ABI 的兄弟 artifact SPI。 */
+        /** JVM public、但经注解声明不属于消费者稳定 ABI 的发布物内部 SPI。 */
         .filterNot { line -> line.trim().binaryApiMemberName() in hiddenArtifactMemberNames }
         .filterNot { line -> line.contains(" access\$") }
         .joinToString(separator = "\n")

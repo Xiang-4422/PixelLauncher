@@ -17,7 +17,7 @@ plugins {
 /** 主工程唯一对外发布的 Pixel Engine SDK 子工程。 */
 val pixelSdkProjectNames = setOf("pixel-engine")
 
-/** 各发布坐标面向 Maven 消费者的稳定职责描述。 */
+/** 单一发布坐标面向 Maven 消费者的稳定职责描述。 */
 val pixelPublicationDescriptions = mapOf(
     "pixel-engine" to "Complete Pixel UI engine SDK for Android-hosted pixel-grid interfaces.",
 )
@@ -179,11 +179,11 @@ val pixelReleaseDependencyGraph = layout.buildDirectory.file(
     "reports/supply-chain/release-dependency-graph.json",
 )
 
-/** 解析九个 SDK 的 Release runtime 图并保存为无 Gradle 内部对象的稳定 JSON。 */
+/** 解析 Pixel Engine 的 Release runtime 图并保存为无 Gradle 内部对象的稳定 JSON。 */
 tasks.register("writePixelReleaseDependencyGraph") {
     group = "verification"
     description = "Writes the resolved Pixel SDK release dependency graph for SBOM generation."
-    /** sdkCoordinates 把九个项目的最终版本纳入任务身份，禁止版本切换后复用旧依赖图。 */
+    /** sdkCoordinates 把当前发布项目的最终版本纳入任务身份，禁止版本切换后复用旧依赖图。 */
     val sdkCoordinates = providers.provider {
         pixelSdkProjectNames.sorted().map { sdkProjectName ->
             /** sdkProject 是当前坐标对应、已完成配置的发布子工程。 */

@@ -126,6 +126,13 @@ existed only for that purpose is removed in favor of one canonical model:
   UTF-16 in `PixelGraphemeBoundaryMap`, integer/fractional viewport quantization, pre-API-30
   `WindowInsets` splitting, and the platform-version branches behind motion settings, predictive
   back and accessibility projections are all current behavior, not history.
+- `RenderPerfLogger` is internal implementation diagnostics rather than consumer API. Resource
+  eviction-listener failures remain isolated from committed cache results but now emit a diagnostic
+  event instead of disappearing silently.
+- Ordinary render sessions publish their completed target lists directly and select modal ancestry
+  without per-target temporary ancestor lists. Modal frames retain their required filtered copies.
+- The required fast gate now enforces reviewed per-file Kotlin size budgets, a 220-line function
+  ceiling, and the absence of deleted-module names or nine-module wording in governance files.
 
 ### Compatibility
 
@@ -155,4 +162,4 @@ Until `1.0.0` is published there is no cross-version compatibility promise and n
 baseline. Every intentional API change must update the reviewed current source, Metalava, and JVM
 ABI baselines under `pixel-engine/api/` in the same change. The released-signature compatibility
 gate is introduced with the first formal release, as described in
-[发布与维护](发布与维护.md#11-released-baseline-与兼容门禁启用时机).
+[发布与维护](发布与维护.md#11-released-baseline).

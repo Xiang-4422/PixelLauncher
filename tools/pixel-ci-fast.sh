@@ -15,6 +15,7 @@ cd "$ROOT_DIR"
 
 "$GRADLEW_BIN" \
   :pixel-engine:testPixelTooling \
+  :pixel-engine:checkArchitectureGovernance \
   :pixel-engine:testDebugUnitTest \
   :app:testDebugUnitTest \
   --continue \
