@@ -41,12 +41,13 @@ class PixelHostMotionSettingsInstrumentedTest {
                 assertEquals(platformUpdate, capture.settings)
 
                 val explicitOverride = PixelMotionSettings(animatorDurationScale = 0f, reduceMotion = false)
-                host.motionSettingsOverride = explicitOverride
+                // 环境覆盖只通过完整快照表达，从当前快照派生即可只改动 motion 字段。
+                host.capabilitiesOverride = host.hostCapabilities.copy(motionSettings = explicitOverride)
                 fakeSource.emit(PixelMotionSettings(animatorDurationScale = 2f, reduceMotion = false))
                 renderSynchronously(host)
                 assertEquals(explicitOverride, capture.settings)
 
-                host.motionSettingsOverride = null
+                host.capabilitiesOverride = null
                 renderSynchronously(host)
                 assertEquals(PixelMotionSettings(animatorDurationScale = 2f), capture.settings)
 

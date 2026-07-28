@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 永久排除旧版明文敏感偏好，覆盖 Android 12+ 云备份和设备迁移。 -->
+<!-- 排除只对本机有效的已安装应用清单缓存，覆盖 Android 12+ 云备份与设备迁移两条通道。 -->
 <data-extraction-rules>
     <cloud-backup>
-        <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
-        <exclude domain="device_sharedpref" path="pixel_launcher_ai_prefs.xml" />
+        <exclude domain="sharedpref" path="app_repository_cache.xml" />
+        <exclude domain="device_sharedpref" path="app_repository_cache.xml" />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
-        <exclude domain="device_sharedpref" path="pixel_launcher_ai_prefs.xml" />
+        <exclude domain="sharedpref" path="app_repository_cache.xml" />
+        <exclude domain="device_sharedpref" path="app_repository_cache.xml" />
     </device-transfer>
 </data-extraction-rules>

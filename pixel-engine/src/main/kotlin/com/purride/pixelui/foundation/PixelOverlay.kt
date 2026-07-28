@@ -73,10 +73,10 @@ public enum class PixelOverlayLifecycle {
 
 /** 没有产生业务结果时的稳定关闭原因。 */
 public enum class PixelOverlayDismissReason {
-    /** 调用兼容 handle 的无参 [PixelOverlayHandle.dismiss]。 */
+    /** 调用方通过 route 句柄主动关闭。 */
     Handle,
 
-    /** 调用 controller id API 或其他业务关闭入口。 */
+    /** 调用 controller 的 [PixelOverlayController.dismissTop] 或其他业务关闭入口。 */
     Programmatic,
 
     /** 系统 Back 关闭了当前 route。 */
@@ -155,7 +155,7 @@ public class PixelPopupRoute<R>(
 /**
  * Typed route 的稳定控制句柄。
  *
- * [complete] 和两种 [dismiss] 入口中只有首次会改变状态并产生
+ * [complete] 与 [dismiss] 中只有首次调用会改变状态并产生
  * [outcome]；其余调用返回 `false`。
  */
 public interface PixelOverlayEntry<R> : PixelOverlayHandle {
@@ -167,9 +167,6 @@ public interface PixelOverlayEntry<R> : PixelOverlayHandle {
 
     /** 以 typed [result] 完成 route。 */
     public fun complete(result: R): Boolean
-
-    /** 以显式 [reason] 关闭 route。 */
-    public fun dismiss(reason: PixelOverlayDismissReason): Boolean
 }
 
 /**
@@ -180,9 +177,6 @@ public interface PixelOverlayEntry<R> : PixelOverlayHandle {
  * 更快的同步退出不会越过更早开始的 dialog 退出；没有 Host 时则可立即终结。
  */
 public class PixelOverlayController : ChangeNotifier() {
-    /** Monotonic identifier that is never reused within this controller. */
-    private var nextId = 1
-
     /** Monotonic insertion order used as the deterministic tie-breaker within one layer. */
     private var nextInsertionOrder: Long = 1L
 
@@ -262,7 +256,7 @@ public class PixelOverlayController : ChangeNotifier() {
         borderColor: PixelColor = PixelColor.White,
     ): PixelOverlayHandle {
         /** Assigned immediately after append so the retained dismiss action targets this entry. */
-        var dialogId = 0
+        var dialogHandle: PixelOverlayHandle? = null
         val handle = show(
             PixelPopupRoute<Unit>(
                 content = Dialog(
@@ -271,7 +265,9 @@ public class PixelOverlayController : ChangeNotifier() {
                     actions = actions,
                     fillColor = fillColor,
                     borderColor = borderColor,
-                    onDismissRequest = { dismiss(dialogId) },
+                    onDismissRequest = {
+                        dialogHandle?.dismiss(PixelOverlayDismissReason.Programmatic)
+                    },
                     modal = false,
                 ),
                 layer = PixelOverlayLayer.Modal,
@@ -281,7 +277,7 @@ public class PixelOverlayController : ChangeNotifier() {
                 motion = PixelOverlayMotion.Dialog,
             ),
         )
-        dialogId = handle.id
+        dialogHandle = handle
         return handle
     }
 
@@ -314,14 +310,6 @@ public class PixelOverlayController : ChangeNotifier() {
     }
 
     /**
-     * 关闭指定 id 的 overlay。
-     */
-    public fun dismiss(id: Int): Boolean {
-        val item = items.firstOrNull { candidate -> candidate.id == id } ?: return false
-        return dismissItem(item, PixelOverlayDismissReason.Programmatic)
-    }
-
-    /**
      * 关闭当前最上层 overlay。
      */
     public fun dismissTop(): Boolean {
@@ -351,19 +339,16 @@ public class PixelOverlayController : ChangeNotifier() {
 
     /** Adds one typed logical route and returns its permanent-identity entry. */
     private fun <R> append(route: PixelPopupRoute<R>): PixelOverlayEntry<R> {
-        val id = nextId++
         /** Process-wide identity prevents State migration across controller switches and id reuse. */
         val identity = nextPixelOverlayIdentity.getAndIncrement()
         /** Typed entry that owns exactly one terminal outcome callback. */
         val entry = DefaultPixelOverlayEntry(
             controller = this,
-            id = id,
             identity = identity,
             onOutcome = route.onOutcome,
         )
         /** Immutable route snapshot used by every attached host. */
         val item = PixelOverlayItem(
-            id = id,
             identity = identity,
             insertionOrder = nextInsertionOrder++,
             widget = route.content,
@@ -561,14 +546,9 @@ public class PixelOverlayController : ChangeNotifier() {
  */
 public interface PixelOverlayHandle {
     /**
-     * overlay 在当前 controller 内的 id。
+     * 以显式 [reason] 关闭当前 overlay；重复调用返回 `false`。
      */
-    public val id: Int
-
-    /**
-     * 关闭当前 overlay。
-     */
-    public fun dismiss(): Boolean
+    public fun dismiss(reason: PixelOverlayDismissReason): Boolean
 }
 
 /**
@@ -608,8 +588,6 @@ public fun PixelOverlayHost(
 
 /** Immutable logical overlay entry owned by [PixelOverlayController]. */
 internal data class PixelOverlayItem(
-    /** Stable controller-local compatibility id. */
-    val id: Int,
     /** Process-wide identity that is never reused by another controller. */
     val identity: Long,
     /** Monotonic insertion order within the owning controller. */
@@ -686,8 +664,7 @@ private data class PixelOverlayFocusLayerKey(
 internal class DefaultPixelOverlayEntry<R>(
     /** Owning controller used by complete and dismissal calls. */
     private val controller: PixelOverlayController,
-    override val id: Int,
-    /** Process-wide retained identity used independently from compatibility [id]. */
+    /** 进程内唯一的 retained 身份，任何其他 controller 都不会复用。 */
     internal val identity: Long,
     /** User callback invoked after the logical stack has already changed. */
     private val onOutcome: (PixelOverlayOutcome<R>) -> Unit,
@@ -705,9 +682,6 @@ internal class DefaultPixelOverlayEntry<R>(
 
     /** Completes this entry with one typed business value. */
     override fun complete(result: R): Boolean = controller.completeEntry(this, result)
-
-    /** Preserves the legacy no-argument handle dismissal reason. */
-    override fun dismiss(): Boolean = dismiss(PixelOverlayDismissReason.Handle)
 
     /** Dismisses this entry with a caller-selected reason. */
     override fun dismiss(reason: PixelOverlayDismissReason): Boolean {

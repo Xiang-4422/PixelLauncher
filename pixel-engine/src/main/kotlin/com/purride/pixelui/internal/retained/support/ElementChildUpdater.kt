@@ -39,9 +39,8 @@ internal class DefaultElementChildUpdater(
             current?.unmount()
             return null
         }
-        // HostCapabilities is a new opt-in boundary whose equal-value notification contract must
-        // not be defeated by updating the exact same child instance. Existing widget families keep
-        // their historical per-frame update behavior until they can adopt this contract explicitly.
+        // HostCapabilities 的等值静默契约要求：完全相同的子 Widget 实例不得触发一次更新，
+        // 否则依赖方会在快照未变时被重建。其他 widget 家族不共享该契约，仍按每帧更新语义处理。
         if (
             current != null &&
             current.widget === newWidget &&

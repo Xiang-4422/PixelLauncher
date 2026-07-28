@@ -756,7 +756,7 @@ internal class PixelFocusOwner(
                 dismissRequest.invoke()
                 return true
             }
-            /** Standalone modal surfaces preserve their historical non-dismissible key trap. */
+            /** 未提供 dismiss 回调的独立 modal 表面按声明继续拦截关闭键。 */
             if (topModal.consumeUnhandledDismissRequest) return true
         }
         if (event.key == PixelKey.ESCAPE || event.key == PixelKey.BACK) {

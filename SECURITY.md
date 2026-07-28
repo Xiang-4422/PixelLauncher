@@ -11,8 +11,10 @@
 
 ## Launcher 本地敏感数据边界
 
-Launcher 不内置第三方客户端凭据，也不提供已无网络消费者的明文 Key 配置入口。旧版本使用过的
-`pixel_launcher_ai_prefs.xml` 被 Android 11 及以下的 `fullBackupContent`、Android 12 及以上的云备份
-和设备迁移规则永久排除。版本升级时应用会同步清空并删除该文件；若历史 Auto Backup 数据已存在，
-`BackupAgent.onRestoreFinished()` 会在应用可供用户启动前再次清理。该边界由 API 29 和 API 37
-模拟器上的覆盖升级、卸载重装与真实本地 Auto Backup/restore 门禁持续验证。
+Launcher 不内置第三方客户端凭据，也不提供明文 Key 配置入口；单元测试会扫描 `app/src/main` 全部
+文本资源，禁止任何具备凭据形状的长字符串进入主源码。
+
+只对本机有效的已安装应用清单缓存 `app_repository_cache.xml` 被 Android 11 及以下的
+`fullBackupContent`、Android 12 及以上的云备份和设备迁移规则同时排除，因此用户的装机列表不会
+随备份或换机迁移离开当前设备。该边界由源码级契约测试与 `tools/verify_backup_contract.py`
+对 debug/release 两个 APK 的合并 Manifest 与编译后 XML 资源共同验证。

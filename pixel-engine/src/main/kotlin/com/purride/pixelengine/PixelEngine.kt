@@ -113,10 +113,9 @@ public class PixelEngine private constructor(
     public val services: PixelEngineServices,
     /** 当前 Engine 对外可见的完整主题 token；未配置时返回稳定默认值。 */
     public val theme: PixelThemeTokens,
+    /** 仅在调用方显式配置主题时注入 Host；null 表示沿用默认主题而不建立新的根作用域。 */
+    internal val themeOverride: PixelThemeTokens?,
 ) {
-    /** 仅在调用方显式配置主题时注入 Host；类体字段不改变已冻结私有构造器的 JVM 描述符。 */
-    internal var themeOverride: PixelThemeTokens? = null
-        private set
 
     /**
      * 返回一个共享现有服务、但用 [fallback] 补齐缺失 Host capability 的 Engine。
@@ -141,9 +140,11 @@ public class PixelEngine private constructor(
             hostServices = mergedHostServices,
         )
         /** 保留显式主题标记，避免默认主题被误装成新的根作用域。 */
-        val mergedEngine = PixelEngine(services = mergedServices, theme = theme)
-        mergedEngine.themeOverride = themeOverride
-        return mergedEngine
+        return PixelEngine(
+            services = mergedServices,
+            theme = theme,
+            themeOverride = themeOverride,
+        )
     }
 
     /** 构建隔离 [PixelEngine] 实例的可变装配器。 */
@@ -237,8 +238,7 @@ public class PixelEngine private constructor(
             val resolvedResourceCache = resourceCache ?: PixelResourceCache()
             /** 对外始终暴露完整主题，但只有显式值才进入继承树。 */
             val resolvedTheme = theme ?: PixelThemeTokens.Default
-            /** 先使用冻结的双参数构造器创建实例，再记录不进入公共 API 的显式主题标记。 */
-            val engine = PixelEngine(
+            return PixelEngine(
                 services = PixelEngineServices(
                     clock = clock,
                     frameScheduler = resolvedFrameScheduler,
@@ -251,9 +251,8 @@ public class PixelEngine private constructor(
                     hostServices = hostServices,
                 ),
                 theme = resolvedTheme,
+                themeOverride = theme,
             )
-            engine.themeOverride = theme
-            return engine
         }
     }
 }

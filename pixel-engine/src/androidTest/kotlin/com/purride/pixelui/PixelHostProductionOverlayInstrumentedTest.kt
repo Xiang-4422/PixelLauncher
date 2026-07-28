@@ -44,7 +44,8 @@ class PixelHostProductionOverlayInstrumentedTest {
             scenario.onActivity { activity ->
                 /** 已 attach、resumed 且具有真实 Android Window 的被测 Host。 */
                 val host = activity.hostView
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setWindowInsets(left = 3, top = 4, right = 5, bottom = 6)
                 host.setViewInsets(bottom = 14)
                 host.setContent {
@@ -111,7 +112,8 @@ class PixelHostProductionOverlayInstrumentedTest {
                 /** 已 attach、resumed 且使用真实 View 输入管线的被测 Host。 */
                 val host = activity.hostView
                 host.frameScheduler = scheduler
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(logicalWidth = 64, logicalHeight = 40, dotSizePx = 1))
                 host.backDispatcher = backDispatcher
                 host.setContent {

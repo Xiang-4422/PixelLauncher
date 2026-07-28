@@ -441,7 +441,7 @@ class PixelOverlayLifecycleTest {
         assertTrue(tester.pressKey(PixelKey.ENTER))
         assertEquals(1, systemEnterCount)
 
-        assertTrue(system.dismiss())
+        assertTrue(system.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(0)
 
         assertEquals(PixelOverlayLifecycle.Disposed, system.lifecycle)
@@ -557,7 +557,7 @@ class PixelOverlayLifecycleTest {
 
         assertTrue(systemFocus.isFocused)
         assertFalse(modalFocus.isFocused)
-        assertTrue(modal.dismiss())
+        assertTrue(modal.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(0)
 
         assertEquals(PixelOverlayLifecycle.Disposed, modal.lifecycle)
@@ -608,7 +608,7 @@ class PixelOverlayLifecycleTest {
         assertTrue(backgroundFocus.isFocused)
         assertFalse(popupFocus.isFocused)
 
-        assertTrue(popup.dismiss())
+        assertTrue(popup.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(0)
         assertEquals(PixelOverlayLifecycle.Disposed, popup.lifecycle)
         assertTrue(backgroundFocus.isFocused)
@@ -757,7 +757,7 @@ class PixelOverlayLifecycleTest {
         )
         tester.pumpFrame(0)
 
-        assertTrue(entry.dismiss())
+        assertTrue(entry.dismiss(PixelOverlayDismissReason.Handle))
         assertEquals(PixelOverlayLifecycle.Removing, entry.lifecycle)
         assertFalse(childDisposed)
         assertNull(callbackObservedDisposal)
@@ -836,7 +836,7 @@ class PixelOverlayLifecycleTest {
             assertTrue(throwingFocus.isFocused)
             assertEquals(1, tester.semanticsNodesByLabel("THROWING OVERLAY").size)
 
-            assertTrue(entry.dismiss())
+            assertTrue(entry.dismiss(PixelOverlayDismissReason.Handle))
             /** Failure must escape only after the keyed presentation and descendants unmount. */
             val failure = assertThrows(IllegalStateException::class.java) {
                 tester.pumpFrame(0)
@@ -887,7 +887,7 @@ class PixelOverlayLifecycleTest {
             assertEquals(1, tester.semanticsNodesByLabel("REPLACEMENT OVERLAY").size)
             tester.tap(find.byKey("replacement-overlay-action"))
             assertEquals(1, replacementTapCount)
-            assertTrue(replacement.dismiss())
+            assertTrue(replacement.dismiss(PixelOverlayDismissReason.Handle))
             tester.pumpFrame(0)
             assertEquals(PixelOverlayLifecycle.Disposed, replacement.lifecycle)
             assertFalse(replacementFocus.isFocused)
@@ -934,7 +934,7 @@ class PixelOverlayLifecycleTest {
         /** Failure reported to the mutator only after every listener received the close. */
         var observedFailure: Throwable? = null
         try {
-            hostedEntry.dismiss()
+            hostedEntry.dismiss(PixelOverlayDismissReason.Handle)
         } catch (failure: Throwable) {
             observedFailure = failure
         }
@@ -963,7 +963,7 @@ class PixelOverlayLifecycleTest {
         )
         unhostedController.addListener(VoidCallback { error("unhosted-listener-failure") })
         try {
-            unhostedEntry.dismiss()
+            unhostedEntry.dismiss(PixelOverlayDismissReason.Handle)
         } catch (_: IllegalStateException) {
             // The listener failure remains observable after the ready outcome has been delivered.
         }
@@ -1032,7 +1032,7 @@ class PixelOverlayLifecycleTest {
                 onOutcome = { laterOutcomeCount += 1 },
             ),
         )
-        assertTrue(later.dismiss())
+        assertTrue(later.dismiss(PixelOverlayDismissReason.Handle))
         assertEquals(PixelOverlayLifecycle.Disposed, later.lifecycle)
         assertEquals(1, laterOutcomeCount)
     }
@@ -1069,7 +1069,7 @@ class PixelOverlayLifecycleTest {
         )
         tester.pumpFrame(0)
 
-        assertTrue(entry.dismiss())
+        assertTrue(entry.dismiss(PixelOverlayDismissReason.Handle))
         assertEquals(PixelOverlayLifecycle.Removing, entry.lifecycle)
         tester.pumpFrame(0)
 
@@ -1119,8 +1119,8 @@ class PixelOverlayLifecycleTest {
         tester.pumpFrame(0)
         tester.pumpFrame(MotionDurationMillis)
 
-        assertTrue(slow.dismiss())
-        assertTrue(fast.dismiss())
+        assertTrue(slow.dismiss(PixelOverlayDismissReason.Handle))
+        assertTrue(fast.dismiss(PixelOverlayDismissReason.Handle))
         assertTrue(callbackOrder.isEmpty())
         tester.pumpFrame(0)
         tester.pumpFrame(0)
@@ -1154,7 +1154,7 @@ class PixelOverlayLifecycleTest {
         assertTrue(tester.exists(find.byText("FIRST")))
         assertTrue(tester.exists(find.byText("SECOND")))
 
-        assertTrue(first.dismiss())
+        assertTrue(first.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(0)
 
         assertFalse(tester.exists(find.byText("FIRST")))
@@ -1229,7 +1229,7 @@ class PixelOverlayLifecycleTest {
         tester.pumpFrame(0)
         tester.pumpFrame(MotionDurationMillis)
 
-        assertTrue(entry.dismiss())
+        assertTrue(entry.dismiss(PixelOverlayDismissReason.Handle))
         assertEquals(PixelOverlayLifecycle.Removing, entry.lifecycle)
         tester.pumpFrame(0)
         tester.pumpFrame(0)

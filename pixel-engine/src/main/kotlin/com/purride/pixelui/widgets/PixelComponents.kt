@@ -581,7 +581,7 @@ private class PixelCheckboxState : State<PixelCheckboxStateWidget>() {
         } else {
             explicitBaseColor ?: tokens.resolveBorderColor(resolvedStates, theme.colors)
         }
-        /** Resolved glyph color with the same compatibility precedence as the outline. */
+        /** 与描边采用同一优先级顺序解析出的字形颜色。 */
         val contentColor = if (usesStateRole) {
             tokens.resolveContentColor(resolvedStates, theme.colors)
         } else {

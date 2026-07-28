@@ -34,7 +34,8 @@ class PixelHostComponentTokenInstrumentedTest {
             scenario.onActivity { activity ->
                 /** Attached production PixelHostView used for every compared physical frame. */
                 val host = activity.hostView
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setPixelGapEnabled(false)
                 host.bezelColor = PixelColor.Black
                 host.offPixelColor = OFF_PIXEL_COLOR

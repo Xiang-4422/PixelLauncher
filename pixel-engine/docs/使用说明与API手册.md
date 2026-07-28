@@ -161,7 +161,6 @@ val setup = createPixelHostSetup(
             pixelShape = PixelShape.SQUARE,
         ),
         bezelColor = PixelColor.Black,
-        textDirection = TextDirection.LTR,
         content = { AppRoot() },
     ),
 )
@@ -178,7 +177,7 @@ setup.hostView.setPixelGapRatio(0.6f)
 | `profilePolicy` | 逻辑屏幕解析策略：`Fixed` / `AdaptivePixels` / `AdaptiveDp` / `AdaptiveLogicalSize` |
 | `bezelColor` | 屏幕外框和画布背景色 |
 | `textRasterizer` | 默认文本栅格器 |
-| `textDirection` | LTR / RTL |
+| `capabilitiesOverride` | 完整 `HostCapabilitiesData` 环境覆盖；null 跟随平台 |
 | `pagerGesturePolicy` | PageView 手势启动策略 |
 | `nestedScrollPolicy` | 嵌套滚动仲裁策略 |
 | `scrollPhysics` | 列表滚动物理 |
@@ -799,8 +798,9 @@ fun configureResponsivePixels(hostView: PixelHostView) {
 ```
 
 普通 Android Host 会自动采集 locale、direction、fontScale、density、contrast、motion、refresh 和
-cutout。`capabilitiesOverride` 是测试/调试用的完整快照覆盖；`layoutDirectionOverride = null` 表示
-恢复 Android 自动方向。所有 Host capability source 操作都属于主线程。
+cutout。`PixelHostView.hostCapabilities` 返回当前生效的完整快照；`capabilitiesOverride` 是唯一的
+环境覆盖入口，只想改动个别字段时从 `hostCapabilities.copy(...)` 派生，设为 `null` 即完整恢复跟随
+Android 平台配置。所有 Host capability source 操作都属于主线程。
 
 `AdaptiveBuilder` 的 `builder` 不是构造器最后一个参数，因此使用显式命名参数：
 
@@ -2302,7 +2302,8 @@ fun motionThemedContent(child: Widget): Widget {
 Android animator scale 会同时缩放 duration 与 delay。scale 0 同步提交终态；reduce motion 按 role
 替换策略：feedback/selection/continuous 立即完成，spatial 变为无 delay、最长 80ms 的线性 fade，
 而不是粗暴延迟逻辑状态。需要设置页预览或截图模式时可设置
-`PixelHostView.motionSettingsOverride`；设为 null 恢复跟随系统。
+`PixelHostView.capabilitiesOverride = hostCapabilities.copy(motionSettings = ...)`；设为 null
+恢复跟随系统。
 
 Navigator 的具体非 `None` 通道由 `PixelRouteDestination.transition` / `defaultTransition` 决定；
 Motion route preset 为 `None` 时优先同步关闭内置和自定义转场，其余 preset 允许 Navigator 使用

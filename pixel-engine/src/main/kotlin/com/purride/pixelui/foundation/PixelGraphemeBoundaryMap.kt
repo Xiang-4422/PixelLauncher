@@ -204,8 +204,11 @@ public class PixelGraphemeBoundaryMap(
      * silently discarded. A collapsed range remains collapsed and snaps through [nearest], whose
      * exact-tie behavior is documented as logical downstream affinity.
      *
-     * Endpoints clamp to the text. An inverted legacy selection collapses at the normalized
-     * [start] rather than reversing caller intent, preserving the controller's historical ABI.
+     * 端点会被夹取到文本范围内。反向 selection 在归一化后的 [start] 处折叠，而不是反转调用方意图，
+     * 从而让反向选择保持确定性。
+     *
+     * Endpoints clamp to the text. An inverted selection collapses at the normalized
+     * [start] rather than reversing caller intent, keeping reverse selections deterministic.
      */
     public fun expand(start: Int, end: Int): PixelUtf16Range {
         /** Selection start constrained to the represented UTF-16 text. */

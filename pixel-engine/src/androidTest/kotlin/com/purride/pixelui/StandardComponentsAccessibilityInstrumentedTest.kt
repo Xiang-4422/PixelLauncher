@@ -48,7 +48,8 @@ class StandardComponentsAccessibilityInstrumentedTest {
                 /** Actual Host attached to the Activity window. */
                 val host = activity.hostView
                 // Immediate motion makes modal semantics deterministic without waiting on wall-clock frames.
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setContent(fixture::build)
                 renderSynchronously(host)
 
@@ -238,7 +239,8 @@ class StandardComponentsAccessibilityInstrumentedTest {
                 /** Actual Activity-attached Host under observation. */
                 val host = activity.hostView
                 // Immediate motion isolates window-event assertions from animation frame timing.
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 /** Host-owned provider whose test observer receives emitted Android events. */
                 val provider = host.accessibilityProvider()
                 /** Immutable copies of event type and Android class captured before framework reuse. */
@@ -307,7 +309,8 @@ class StandardComponentsAccessibilityInstrumentedTest {
                 /** Real Activity-attached Host exported through Android's virtual-node connection. */
                 val host = activity.hostView
                 // Immediate motion exposes each logically opened modal in the same rendered frame.
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setContent(fixture::build)
                 renderSynchronously(host)
             }

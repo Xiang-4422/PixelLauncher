@@ -30,7 +30,7 @@ public class PixelCanvas internal constructor(
     public val width: Int,
     public val height: Int,
 ) {
-    /** Internal helper context used only by legacy rasterization functions behind this facade. */
+    /** 内部 helper context：把公开 paint capability 适配到内部光栅化函数所需的类型。 */
     private val internalContext = PaintContext(
         buffer = context.buffer,
         bufferPool = context.bufferPool,

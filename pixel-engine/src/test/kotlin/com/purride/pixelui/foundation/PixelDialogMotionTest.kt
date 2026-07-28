@@ -10,6 +10,7 @@ import com.purride.pixelui.PixelMotionTheme
 import com.purride.pixelui.PixelMotionThemeData
 import com.purride.pixelui.PixelMotionTransitionPreset
 import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayDismissReason
 import com.purride.pixelui.PixelOverlayHandle
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.SizedBox
@@ -49,7 +50,7 @@ class PixelDialogMotionTest {
         assertEquals(1, overlayController.size)
         assertEquals(0, tester.vsync.activeTickerCount)
 
-        assertTrue(handle.dismiss())
+        assertTrue(handle.dismiss(PixelOverlayDismissReason.Handle))
         assertEquals(0, overlayController.size)
         tester.pumpFrame(0)
         assertDialogPixel(tester, alpha = 255)
@@ -83,7 +84,7 @@ class PixelDialogMotionTest {
         tester.pumpFrame(HalfMillis)
         assertDialogPixel(tester, alpha = 128)
 
-        assertTrue(handle.dismiss())
+        assertTrue(handle.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(0)
         assertDialogPixel(tester, alpha = 128)
         tester.pumpFrame(0)
@@ -115,7 +116,7 @@ class PixelDialogMotionTest {
         assertEquals(0, tester.vsync.liveTickerCount)
         assertEquals(0, tester.scheduler.pendingCount)
 
-        assertTrue(handle.dismiss())
+        assertTrue(handle.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(0)
         assertDialogPixel(tester, alpha = 0)
         assertEquals(0, overlayController.size)

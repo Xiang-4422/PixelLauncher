@@ -2,7 +2,7 @@
 package com.purride.pixelcore {
 
   public final class AxisBufferComposer {
-    method public com.purride.pixelcore.PixelBuffer compose(com.purride.pixelcore.PixelBuffer primary, com.purride.pixelcore.PixelBuffer? secondary, com.purride.pixelcore.PixelAxis axis, float offsetPx, optional com.purride.pixelcore.PixelBuffer? out);
+    method public com.purride.pixelcore.PixelBuffer compose(com.purride.pixelcore.PixelBuffer primary, com.purride.pixelcore.PixelBuffer? secondary, com.purride.pixelcore.PixelAxis axis, float offsetPx, com.purride.pixelcore.PixelBuffer out);
     method public boolean isCompositionNeeded(com.purride.pixelcore.PixelBuffer? secondary, float offsetPx);
     field public static final com.purride.pixelcore.AxisBufferComposer INSTANCE;
   }
@@ -301,10 +301,10 @@ package com.purride.pixelcore {
   public final class PixelBitmapResourceDefinition {
     ctor public PixelBitmapResourceDefinition(String id, String path);
     ctor public PixelBitmapResourceDefinition(String id, String path, optional String? sha256);
-    method public operator String component1();
-    method public operator String component2();
-    method public operator String? component3();
-    method public com.purride.pixelcore.PixelBitmapResourceDefinition copy(optional String id, optional String path);
+    method public String component1();
+    method public String component2();
+    method public String? component3();
+    method public com.purride.pixelcore.PixelBitmapResourceDefinition copy(optional String id, optional String path, optional String? sha256);
     method @InaccessibleFromKotlin public String getId();
     method @InaccessibleFromKotlin public String getPath();
     method @InaccessibleFromKotlin public String? getSha256();
@@ -466,12 +466,12 @@ package com.purride.pixelcore {
     ctor public PixelFontResourceDefinition(String id, String manifestPath, String binaryPath);
     ctor public PixelFontResourceDefinition(String id, String manifestPath, String binaryPath, optional String? manifestSha256);
     ctor public PixelFontResourceDefinition(String id, String manifestPath, String binaryPath, optional String? manifestSha256, optional String? binarySha256);
-    method public operator String component1();
-    method public operator String component2();
-    method public operator String component3();
-    method public operator String? component4();
-    method public operator String? component5();
-    method public com.purride.pixelcore.PixelFontResourceDefinition copy(optional String id, optional String manifestPath, optional String binaryPath);
+    method public String component1();
+    method public String component2();
+    method public String component3();
+    method public String? component4();
+    method public String? component5();
+    method public com.purride.pixelcore.PixelFontResourceDefinition copy(optional String id, optional String manifestPath, optional String binaryPath, optional String? manifestSha256, optional String? binarySha256);
     method @InaccessibleFromKotlin public String getBinaryPath();
     method @InaccessibleFromKotlin public String? getBinarySha256();
     method @InaccessibleFromKotlin public String getId();
@@ -705,32 +705,32 @@ package com.purride.pixelcore {
   }
 
   public final class PixelResourceCacheSnapshot {
-    ctor public PixelResourceCacheSnapshot(int bitmapCount, int spriteSheetCount, int bitmapHits, int bitmapMisses, int spriteSheetHits, int spriteSheetMisses, int removeCount, int clearCount);
+    ctor public PixelResourceCacheSnapshot(int bitmapCount, int spriteSheetCount, long bitmapHits, long bitmapMisses, long spriteSheetHits, long spriteSheetMisses, long removeCount, long clearCount);
     method public int component1();
     method public int component2();
-    method public int component3();
-    method public int component4();
-    method public int component5();
-    method public int component6();
-    method public int component7();
-    method public int component8();
-    method public com.purride.pixelcore.PixelResourceCacheSnapshot copy(optional int bitmapCount, optional int spriteSheetCount, optional int bitmapHits, optional int bitmapMisses, optional int spriteSheetHits, optional int spriteSheetMisses, optional int removeCount, optional int clearCount);
+    method public long component3();
+    method public long component4();
+    method public long component5();
+    method public long component6();
+    method public long component7();
+    method public long component8();
+    method public com.purride.pixelcore.PixelResourceCacheSnapshot copy(optional int bitmapCount, optional int spriteSheetCount, optional long bitmapHits, optional long bitmapMisses, optional long spriteSheetHits, optional long spriteSheetMisses, optional long removeCount, optional long clearCount);
     method @InaccessibleFromKotlin public int getBitmapCount();
-    method @InaccessibleFromKotlin public int getBitmapHits();
-    method @InaccessibleFromKotlin public int getBitmapMisses();
-    method @InaccessibleFromKotlin public int getClearCount();
-    method @InaccessibleFromKotlin public int getRemoveCount();
+    method @InaccessibleFromKotlin public long getBitmapHits();
+    method @InaccessibleFromKotlin public long getBitmapMisses();
+    method @InaccessibleFromKotlin public long getClearCount();
+    method @InaccessibleFromKotlin public long getRemoveCount();
     method @InaccessibleFromKotlin public int getSpriteSheetCount();
-    method @InaccessibleFromKotlin public int getSpriteSheetHits();
-    method @InaccessibleFromKotlin public int getSpriteSheetMisses();
+    method @InaccessibleFromKotlin public long getSpriteSheetHits();
+    method @InaccessibleFromKotlin public long getSpriteSheetMisses();
     property public int bitmapCount;
-    property public int bitmapHits;
-    property public int bitmapMisses;
-    property public int clearCount;
-    property public int removeCount;
+    property public long bitmapHits;
+    property public long bitmapMisses;
+    property public long clearCount;
+    property public long removeCount;
     property public int spriteSheetCount;
-    property public int spriteSheetHits;
-    property public int spriteSheetMisses;
+    property public long spriteSheetHits;
+    property public long spriteSheetMisses;
   }
 
   public final class PixelResourceCatalog {
@@ -854,6 +854,11 @@ package com.purride.pixelcore {
     field public static final com.purride.pixelcore.PixelResourceManifestJsonLoader INSTANCE;
   }
 
+  public final class PixelResourceManifestKt {
+    property public static int PixelResourceManifestVersion;
+    field public static final int PixelResourceManifestVersion = 1; // 0x1
+  }
+
   public final class PixelResourceManifestLoadException extends java.lang.IllegalArgumentException {
     ctor public PixelResourceManifestLoadException(String message, optional Throwable? cause);
   }
@@ -968,14 +973,19 @@ package com.purride.pixelcore {
     ctor public PixelSpriteSheetLoadException(String message, optional Throwable? cause);
   }
 
+  public final class PixelSpriteSheetLoaderKt {
+    property public static int PixelSpriteSheetVersion;
+    field public static final int PixelSpriteSheetVersion = 1; // 0x1
+  }
+
   public final class PixelSpriteSheetResourceDefinition {
     ctor public PixelSpriteSheetResourceDefinition(String id, String path, String bitmap);
     ctor public PixelSpriteSheetResourceDefinition(String id, String path, String bitmap, optional String? sha256);
-    method public operator String component1();
-    method public operator String component2();
-    method public operator String component3();
-    method public operator String? component4();
-    method public com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy(optional String id, optional String path, optional String bitmap);
+    method public String component1();
+    method public String component2();
+    method public String component3();
+    method public String? component4();
+    method public com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy(optional String id, optional String path, optional String bitmap, optional String? sha256);
     method @InaccessibleFromKotlin public String getBitmap();
     method @InaccessibleFromKotlin public String getId();
     method @InaccessibleFromKotlin public String getPath();
@@ -1097,10 +1107,6 @@ package com.purride.pixelengine {
     method public com.purride.pixelengine.PixelEngine.Builder resourceResolver(com.purride.pixelengine.PixelResourceResolver resourceResolver);
     method public com.purride.pixelengine.PixelEngine.Builder theme(com.purride.pixelui.PixelThemeTokens theme);
     method public com.purride.pixelengine.PixelEngine.Builder tickerProviderFactory(com.purride.pixelui.animation.PixelTickerProviderFactory factory);
-  }
-
-  @Deprecated public final class PixelEngineModule {
-    field @Deprecated public static final com.purride.pixelengine.PixelEngineModule INSTANCE;
   }
 
   public final class PixelEngineServices {
@@ -1579,7 +1585,6 @@ package com.purride.pixelui {
   }
 
   public final class MediaQueryData {
-    ctor public MediaQueryData(int logicalWidth, int logicalHeight, com.purride.pixelcore.ScreenProfile screenProfile);
     ctor public MediaQueryData(int logicalWidth, int logicalHeight, com.purride.pixelcore.ScreenProfile screenProfile, optional com.purride.pixelui.PixelWindowInsets viewInsets, optional com.purride.pixelui.PixelWindowInsets viewPadding, optional com.purride.pixelui.PixelWindowInsets padding);
     method public int component1();
     method public int component2();
@@ -1620,8 +1625,7 @@ package com.purride.pixelui {
     method @KotlinOnly public static com.purride.pixelui.Widget Menu(java.util.List<com.purride.pixelui.PixelMenuItem> items, optional boolean enabled, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method @KotlinOnly public static com.purride.pixelui.Widget Menu(java.util.List<com.purride.pixelui.PixelMenuItem> items, com.purride.pixelui.PixelControlStateSet states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget MenuWithControlStates(java.util.List<com.purride.pixelui.PixelMenuItem> items, int states, optional boolean enabled, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional Object? key, optional String? semanticLabel, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismissRequest, optional boolean modal);
-    method public static com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget anchor, com.purride.pixelui.Widget content, boolean expanded, optional com.purride.pixelui.animation.IntOffset contentOffset, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key, optional boolean modal);
-    method public static com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget anchor, com.purride.pixelui.Widget content, boolean expanded, optional com.purride.pixelui.animation.IntOffset contentOffset, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key, optional boolean modal, com.purride.pixelui.PixelPopoverPlacement placement, optional com.purride.pixelui.PixelPopoverAlignment alignment, optional int viewportMargin);
+    method public static com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget anchor, com.purride.pixelui.Widget content, boolean expanded, optional com.purride.pixelui.animation.IntOffset contentOffset, optional boolean dismissible, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onDismiss, optional Object? key, optional boolean modal, optional com.purride.pixelui.PixelPopoverPlacement placement, optional com.purride.pixelui.PixelPopoverAlignment alignment, optional int viewportMargin);
     method @KotlinOnly public static com.purride.pixelui.Widget Tooltip(String message, boolean visible, com.purride.pixelui.Widget child, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Tooltip(String message, boolean visible, com.purride.pixelui.Widget child, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional String? semanticLabel, optional Object? key);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget TooltipWithControlStates(String message, boolean visible, com.purride.pixelui.Widget child, int states, optional com.purride.pixelui.animation.IntOffset? contentOffset, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional String? semanticLabel, optional Object? key);
@@ -2846,20 +2850,21 @@ package com.purride.pixelui {
 
   public final class PixelHostSetupConfig {
     ctor public PixelHostSetupConfig();
-    ctor @KotlinOnly public PixelHostSetupConfig(optional com.purride.pixelui.PixelHostProfilePolicy? profilePolicy, optional com.purride.pixelcore.PixelColor bezelColor, optional com.purride.pixelcore.PixelTextRasterizer? textRasterizer, optional com.purride.pixelui.TextDirection textDirection, optional kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? content, optional com.purride.pixelui.PixelBackDispatcher backDispatcher, optional kotlin.jvm.functions.Function0<java.lang.Boolean>? onUnhandledBack, optional com.purride.pixelui.gesture.PagerGesturePolicy pagerGesturePolicy, optional com.purride.pixelui.gesture.NestedScrollGesturePolicy nestedScrollPolicy, optional com.purride.pixelui.PixelScrollPhysics scrollPhysics, optional com.purride.pixelui.host.PixelFrameScheduler frameScheduler);
+    ctor @KotlinOnly public PixelHostSetupConfig(optional com.purride.pixelui.PixelHostProfilePolicy? profilePolicy, optional com.purride.pixelcore.PixelColor bezelColor, optional com.purride.pixelcore.PixelTextRasterizer? textRasterizer, optional com.purride.pixelui.HostCapabilitiesData? capabilitiesOverride, optional kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? content, optional com.purride.pixelui.PixelBackDispatcher backDispatcher, optional kotlin.jvm.functions.Function0<java.lang.Boolean>? onUnhandledBack, optional com.purride.pixelui.gesture.PagerGesturePolicy pagerGesturePolicy, optional com.purride.pixelui.gesture.NestedScrollGesturePolicy nestedScrollPolicy, optional com.purride.pixelui.PixelScrollPhysics scrollPhysics, optional com.purride.pixelui.host.PixelFrameScheduler frameScheduler);
     method public com.purride.pixelui.PixelHostProfilePolicy? component1();
     method public com.purride.pixelui.PixelScrollPhysics component10();
     method public com.purride.pixelui.host.PixelFrameScheduler component11();
     method @KotlinOnly public operator com.purride.pixelcore.PixelColor component2();
     method public com.purride.pixelcore.PixelTextRasterizer? component3();
-    method public com.purride.pixelui.TextDirection component4();
+    method public com.purride.pixelui.HostCapabilitiesData? component4();
     method public kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? component5();
     method public com.purride.pixelui.PixelBackDispatcher component6();
     method public kotlin.jvm.functions.Function0<java.lang.Boolean>? component7();
     method public com.purride.pixelui.gesture.PagerGesturePolicy component8();
     method public com.purride.pixelui.gesture.NestedScrollGesturePolicy component9();
-    method @KotlinOnly public com.purride.pixelui.PixelHostSetupConfig copy(optional com.purride.pixelui.PixelHostProfilePolicy? profilePolicy, optional com.purride.pixelcore.PixelColor bezelColor, optional com.purride.pixelcore.PixelTextRasterizer? textRasterizer, optional com.purride.pixelui.TextDirection textDirection, optional kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? content, optional com.purride.pixelui.PixelBackDispatcher backDispatcher, optional kotlin.jvm.functions.Function0<java.lang.Boolean>? onUnhandledBack, optional com.purride.pixelui.gesture.PagerGesturePolicy pagerGesturePolicy, optional com.purride.pixelui.gesture.NestedScrollGesturePolicy nestedScrollPolicy, optional com.purride.pixelui.PixelScrollPhysics scrollPhysics, optional com.purride.pixelui.host.PixelFrameScheduler frameScheduler);
+    method @KotlinOnly public com.purride.pixelui.PixelHostSetupConfig copy(optional com.purride.pixelui.PixelHostProfilePolicy? profilePolicy, optional com.purride.pixelcore.PixelColor bezelColor, optional com.purride.pixelcore.PixelTextRasterizer? textRasterizer, optional com.purride.pixelui.HostCapabilitiesData? capabilitiesOverride, optional kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? content, optional com.purride.pixelui.PixelBackDispatcher backDispatcher, optional kotlin.jvm.functions.Function0<java.lang.Boolean>? onUnhandledBack, optional com.purride.pixelui.gesture.PagerGesturePolicy pagerGesturePolicy, optional com.purride.pixelui.gesture.NestedScrollGesturePolicy nestedScrollPolicy, optional com.purride.pixelui.PixelScrollPhysics scrollPhysics, optional com.purride.pixelui.host.PixelFrameScheduler frameScheduler);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelBackDispatcher getBackDispatcher();
+    method @InaccessibleFromKotlin public com.purride.pixelui.HostCapabilitiesData? getCapabilitiesOverride();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? getContent();
     method @InaccessibleFromKotlin public com.purride.pixelui.host.PixelFrameScheduler getFrameScheduler();
     method @InaccessibleFromKotlin public com.purride.pixelui.gesture.NestedScrollGesturePolicy getNestedScrollPolicy();
@@ -2867,10 +2872,10 @@ package com.purride.pixelui {
     method @InaccessibleFromKotlin public com.purride.pixelui.gesture.PagerGesturePolicy getPagerGesturePolicy();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelHostProfilePolicy? getProfilePolicy();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelScrollPhysics getScrollPhysics();
-    method @InaccessibleFromKotlin public com.purride.pixelui.TextDirection getTextDirection();
     method @InaccessibleFromKotlin public com.purride.pixelcore.PixelTextRasterizer? getTextRasterizer();
     property public com.purride.pixelui.PixelBackDispatcher backDispatcher;
     property public com.purride.pixelcore.PixelColor bezelColor;
+    property public com.purride.pixelui.HostCapabilitiesData? capabilitiesOverride;
     property public kotlin.jvm.functions.Function0<com.purride.pixelui.Widget>? content;
     property public com.purride.pixelui.host.PixelFrameScheduler frameScheduler;
     property public com.purride.pixelui.gesture.NestedScrollGesturePolicy nestedScrollPolicy;
@@ -2878,7 +2883,6 @@ package com.purride.pixelui {
     property public com.purride.pixelui.gesture.PagerGesturePolicy pagerGesturePolicy;
     property public com.purride.pixelui.PixelHostProfilePolicy? profilePolicy;
     property public com.purride.pixelui.PixelScrollPhysics scrollPhysics;
-    property public com.purride.pixelui.TextDirection textDirection;
     property public com.purride.pixelcore.PixelTextRasterizer? textRasterizer;
   }
 
@@ -2909,18 +2913,16 @@ package com.purride.pixelui {
     method @InaccessibleFromKotlin public com.purride.pixelui.host.PixelFrameScheduler getFrameScheduler();
     method @InaccessibleFromKotlin public com.purride.pixelui.host.PixelHostFrameScopeDiagnostics getFrameScopeDiagnostics();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<com.purride.pixelui.PixelHostFrameStats,kotlin.Unit>? getFrameStatsObserver();
+    method @InaccessibleFromKotlin public com.purride.pixelui.HostCapabilitiesData getHostCapabilities();
     method @InaccessibleFromKotlin public com.purride.pixelcore.PixelFrameView.InteractionListener? getInteractionListener();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelHostFrameDiagnostics? getLatestFrameDiagnostics();
-    method @InaccessibleFromKotlin public com.purride.pixelui.TextDirection? getLayoutDirectionOverride();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelHostLifecycleDiagnostics getLifecycleDiagnostics();
-    method @InaccessibleFromKotlin public com.purride.pixelui.PixelMotionSettings? getMotionSettingsOverride();
     method @InaccessibleFromKotlin public com.purride.pixelui.gesture.NestedScrollGesturePolicy getNestedScrollPolicy();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<java.lang.Boolean>? getOnUnhandledBack();
     method @InaccessibleFromKotlin public com.purride.pixelui.gesture.PagerGesturePolicy getPagerGesturePolicy();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelHostProfilePolicy getProfilePolicy();
     method @InaccessibleFromKotlin public com.purride.pixelcore.ScreenProfile getScreenProfile();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelScrollPhysics getScrollPhysics();
-    method @InaccessibleFromKotlin public com.purride.pixelui.TextDirection getTextDirection();
     method @InaccessibleFromKotlin public com.purride.pixelcore.PixelTextRasterizer getTextRasterizer();
     method @InaccessibleFromKotlin public com.purride.pixelui.animation.PixelTickerProvider getTickerProvider();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelWindowInsets getViewInsets();
@@ -2945,15 +2947,12 @@ package com.purride.pixelui {
     method @InaccessibleFromKotlin public void setFrameScheduler(com.purride.pixelui.host.PixelFrameScheduler);
     method @InaccessibleFromKotlin public void setFrameStatsObserver(kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelHostFrameStats,kotlin.Unit>?);
     method @InaccessibleFromKotlin public void setInteractionListener(com.purride.pixelcore.PixelFrameView.InteractionListener?);
-    method @InaccessibleFromKotlin public void setLayoutDirectionOverride(com.purride.pixelui.TextDirection?);
-    method @InaccessibleFromKotlin public void setMotionSettingsOverride(com.purride.pixelui.PixelMotionSettings?);
     method @InaccessibleFromKotlin public void setNestedScrollPolicy(com.purride.pixelui.gesture.NestedScrollGesturePolicy);
     method @InaccessibleFromKotlin public void setOnUnhandledBack(kotlin.jvm.functions.Function0<java.lang.Boolean>?);
     method @InaccessibleFromKotlin public void setPagerGesturePolicy(com.purride.pixelui.gesture.PagerGesturePolicy);
     method public void setPixelGapRatio(float ratio);
     method @InaccessibleFromKotlin public void setProfilePolicy(com.purride.pixelui.PixelHostProfilePolicy);
     method @InaccessibleFromKotlin public void setScrollPhysics(com.purride.pixelui.PixelScrollPhysics);
-    method @InaccessibleFromKotlin public void setTextDirection(com.purride.pixelui.TextDirection);
     method @InaccessibleFromKotlin public void setTextRasterizer(com.purride.pixelcore.PixelTextRasterizer);
     method @InaccessibleFromKotlin public void setViewInsets(com.purride.pixelui.PixelWindowInsets);
     method public void setViewInsets(optional int left, optional int top, optional int right, optional int bottom);
@@ -2977,11 +2976,10 @@ package com.purride.pixelui {
     property public com.purride.pixelui.host.PixelFrameScheduler frameScheduler;
     property public com.purride.pixelui.host.PixelHostFrameScopeDiagnostics frameScopeDiagnostics;
     property public kotlin.jvm.functions.Function1<com.purride.pixelui.PixelHostFrameStats,kotlin.Unit>? frameStatsObserver;
+    property public com.purride.pixelui.HostCapabilitiesData hostCapabilities;
     property public com.purride.pixelcore.PixelFrameView.InteractionListener? interactionListener;
     property public com.purride.pixelui.PixelHostFrameDiagnostics? latestFrameDiagnostics;
-    property public com.purride.pixelui.TextDirection? layoutDirectionOverride;
     property public com.purride.pixelui.PixelHostLifecycleDiagnostics lifecycleDiagnostics;
-    property public com.purride.pixelui.PixelMotionSettings? motionSettingsOverride;
     property public com.purride.pixelui.gesture.NestedScrollGesturePolicy nestedScrollPolicy;
     property public com.purride.pixelcore.PixelColor offPixelColor;
     property public kotlin.jvm.functions.Function0<java.lang.Boolean>? onUnhandledBack;
@@ -2989,7 +2987,6 @@ package com.purride.pixelui {
     property public com.purride.pixelui.PixelHostProfilePolicy profilePolicy;
     property public com.purride.pixelcore.ScreenProfile screenProfile;
     property public com.purride.pixelui.PixelScrollPhysics scrollPhysics;
-    property public com.purride.pixelui.TextDirection textDirection;
     property public com.purride.pixelcore.PixelTextRasterizer textRasterizer;
     property public com.purride.pixelui.animation.PixelTickerProvider tickerProvider;
     property public com.purride.pixelui.PixelWindowInsets viewInsets;
@@ -3901,15 +3898,11 @@ package com.purride.pixelui {
 
   public final class PixelNavigatorRestorePlan {
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelRouteEntryId getCurrentEntryId();
-    method @InaccessibleFromKotlin public int getCurrentSchemaVersion();
     method @InaccessibleFromKotlin public java.util.List<com.purride.pixelui.PixelNavigatorRestoredEntryInspection> getEntries();
-    method @InaccessibleFromKotlin public boolean getMigratedFromOlderSchema();
-    method @InaccessibleFromKotlin public int getSourceSchemaVersion();
+    method @InaccessibleFromKotlin public int getSchemaVersion();
     property public com.purride.pixelui.PixelRouteEntryId currentEntryId;
-    property public int currentSchemaVersion;
     property public java.util.List<com.purride.pixelui.PixelNavigatorRestoredEntryInspection> entries;
-    property public boolean migratedFromOlderSchema;
-    property public int sourceSchemaVersion;
+    property public int schemaVersion;
   }
 
   public final class PixelNavigatorRestoredEntryInspection {
@@ -3944,7 +3937,7 @@ package com.purride.pixelui {
     property public static String PixelNavigatorPersistentSnapshotBundleKey;
     property public static int PixelNavigatorPersistentSnapshotSchemaVersion;
     field public static final String PixelNavigatorPersistentSnapshotBundleKey = "com.purride.pixelui.navigator.persistentSnapshot";
-    field public static final int PixelNavigatorPersistentSnapshotSchemaVersion = 2; // 0x2
+    field public static final int PixelNavigatorPersistentSnapshotSchemaVersion = 1; // 0x1
   }
 
   public sealed exhaustive interface PixelNavigatorSnapshotDecodeResult {
@@ -4113,7 +4106,6 @@ package com.purride.pixelui {
   public final class PixelOverlayController extends com.purride.pixelui.ChangeNotifier {
     ctor public PixelOverlayController();
     method public void clear();
-    method public boolean dismiss(int id);
     method public boolean dismissTop();
     method @InaccessibleFromKotlin public int getSize();
     method public <R> com.purride.pixelui.PixelOverlayEntry<R> show(com.purride.pixelui.PixelPopupRoute<R> route);
@@ -4172,7 +4164,6 @@ package com.purride.pixelui {
 
   public interface PixelOverlayEntry<R> extends com.purride.pixelui.PixelOverlayHandle {
     method public boolean complete(R result);
-    method public boolean dismiss(com.purride.pixelui.PixelOverlayDismissReason reason);
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelOverlayLifecycle getLifecycle();
     method @InaccessibleFromKotlin public com.purride.pixelui.PixelOverlayOutcome<R>? getOutcome();
     property public abstract com.purride.pixelui.PixelOverlayLifecycle lifecycle;
@@ -4180,9 +4171,7 @@ package com.purride.pixelui {
   }
 
   public interface PixelOverlayHandle {
-    method public boolean dismiss();
-    method @InaccessibleFromKotlin public int getId();
-    property public abstract int id;
+    method public boolean dismiss(com.purride.pixelui.PixelOverlayDismissReason reason);
   }
 
   public final class PixelOverlayKt {
@@ -4892,7 +4881,7 @@ package com.purride.pixelui {
   }
 
   public final class PixelSemanticsNode {
-    ctor public PixelSemanticsNode(String label, com.purride.pixelui.PixelSemanticRole role, boolean enabled, boolean focused, int left, int top, int width, int height, optional long id, optional Long? parentId, optional String? value, optional String? hint, optional String? error, optional boolean selected, optional Boolean? checked, optional Boolean? expanded, optional int selectionStart, optional int selectionEnd, optional com.purride.pixelui.PixelSemanticsRangeInfo? rangeInfo, optional com.purride.pixelui.PixelSemanticsLiveRegion liveRegion, optional com.purride.pixelui.PixelSemanticsCollectionInfo? collectionInfo, optional com.purride.pixelui.PixelSemanticsCollectionItemInfo? collectionItemInfo, optional java.util.Set<? extends com.purride.pixelui.PixelSemanticsAction> actions, optional java.util.Map<java.lang.String,java.lang.String> customActionLabels);
+    ctor public PixelSemanticsNode(String label, com.purride.pixelui.PixelSemanticRole role, boolean enabled, boolean focused, int left, int top, int width, int height, long id, optional Long? parentId, optional String? value, optional String? hint, optional String? error, optional boolean selected, optional Boolean? checked, optional Boolean? expanded, optional int selectionStart, optional int selectionEnd, optional com.purride.pixelui.PixelSemanticsRangeInfo? rangeInfo, optional com.purride.pixelui.PixelSemanticsLiveRegion liveRegion, optional com.purride.pixelui.PixelSemanticsCollectionInfo? collectionInfo, optional com.purride.pixelui.PixelSemanticsCollectionItemInfo? collectionItemInfo, optional java.util.Set<? extends com.purride.pixelui.PixelSemanticsAction> actions, optional java.util.Map<java.lang.String,java.lang.String> customActionLabels);
     method public String component1();
     method public Long? component10();
     method public String? component11();
@@ -6583,7 +6572,7 @@ package com.purride.pixelui.host {
 
   public final class PixelHostFrameScope implements com.purride.pixelui.host.PixelFrameScheduler {
     ctor public PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler sourceScheduler);
-    ctor public PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler sourceScheduler, com.purride.pixelui.animation.PixelTickerProviderFactory tickerProviderFactory);
+    ctor public PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler sourceScheduler, optional com.purride.pixelui.animation.PixelTickerProviderFactory tickerProviderFactory);
     method public com.purride.pixelui.host.PixelFrameListenerRegistration addFrameListener(kotlin.jvm.functions.Function1<? super java.lang.Long,kotlin.Unit> listener);
     method public com.purride.pixelui.host.PixelHostFrameScopeDiagnostics diagnostics();
     method public void dispose();

@@ -74,7 +74,7 @@ class ModalInteractionPipelineTest {
         val owner = PipelineOwner(root = root)
         owner.render(logicalWidth = 8, logicalHeight = 8)
 
-        modal.updateActive(false)
+        modal.update(active = false)
         /** First frame after logical close must already include normal background targets. */
         val result = owner.render(logicalWidth = 8, logicalHeight = 8)
 

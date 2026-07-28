@@ -18,7 +18,6 @@ cd "$ROOT_DIR"
   :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkMetalavaApi \
-  :pixel-engine:checkMetalavaReleasedCompatibility \
   :pixel-engine:checkStableApiBoundary \
   :pixel-engine:checkThemeTokenCoverage \
   :pixel-engine:checkUnicodeGraphemeDataGeneration \
@@ -48,10 +47,9 @@ cd "$ROOT_DIR"
   --apk app/build/outputs/apk/debug/app-debug.apk \
   --apk app/build/outputs/apk/release/app-release-unsigned.apk
 
-# 通过隔离构建验证源码、旧二进制与运行时行为兼容性。
+# 通过隔离构建验证公开 SPI 源码与 typed route 运行时行为。
 "$BASH_BIN" tools/pixel-render-spi-compatibility.sh
 "$BASH_BIN" tools/pixel-route-entry-compatibility.sh
-"$BASH_BIN" tools/pixel-previous-binary-compatibility.sh
 # 发布全部正式坐标，校验 sources/Javadoc/POM/module/AAR metadata，并执行最低/推荐消费者矩阵。
 "$BASH_BIN" tools/pixel-consumer-compatibility-matrix.sh
 # 正式 release gate 强制验证 Apache-2.0 LICENSE、POM 与 SBOM 一致。

@@ -327,7 +327,7 @@ class PixelHostLifecycleInstrumentedTest {
                         type = PixelDisplayFeatureType.CUTOUT,
                         state = PixelDisplayFeatureState.UNKNOWN,
                     ),
-                    host.effectiveCapabilities.displayFeatures.single(),
+                    host.hostCapabilities.displayFeatures.single(),
                 )
 
                 host.viewportPolicy = PixelViewportPolicy(
@@ -491,7 +491,7 @@ private class CapabilityLifecycleProbeState : State<CapabilityLifecycleProbeWidg
 
     /** Records one projection from the single capability snapshot inherited by this build. */
     override fun build(context: BuildContext): Widget {
-        /** Atomic snapshot must supply every recorded field without consulting legacy scopes. */
+        /** 原子快照必须自身提供全部记录字段，不再回落到其他继承 scope。 */
         val capabilities = HostCapabilities.of(context)
         widget.tracker.observations += CapabilityObservation(
             textScaleFactor = capabilities.textScaleFactor,

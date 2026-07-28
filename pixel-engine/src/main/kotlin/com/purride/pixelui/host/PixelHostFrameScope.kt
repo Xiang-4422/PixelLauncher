@@ -75,30 +75,12 @@ public data class PixelHostFrameScopeDiagnostics(
  * A scope is intended for one Host/UI thread. Separate instances never share callbacks, tickers,
  * time accounting, or diagnostics even when they use the same source scheduler.
  */
-public class PixelHostFrameScope private constructor(
+public class PixelHostFrameScope @JvmOverloads public constructor(
     /** Host 平台或测试提供的上游帧调度器。 */
     private val sourceScheduler: PixelFrameScheduler,
-    /** 为当前 scope 创建唯一 ticker provider 的工厂。 */
-    tickerProviderFactory: PixelTickerProviderFactory,
-    /** 仅用于区分公开兼容构造器与内部主构造器。 */
-    @Suppress("UNUSED_PARAMETER") constructorMarker: Unit,
+    /** 为当前 scope 创建唯一 ticker provider 的工厂；默认每个 scope 独占一个 provider。 */
+    tickerProviderFactory: PixelTickerProviderFactory = PixelTickerProviderFactory.Default,
 ) : PixelFrameScheduler {
-    /** 使用默认 ticker 工厂创建 Host 私有帧边界，保留历史构造器描述符。 */
-    public constructor(sourceScheduler: PixelFrameScheduler) : this(
-        sourceScheduler = sourceScheduler,
-        tickerProviderFactory = PixelTickerProviderFactory.Default,
-        constructorMarker = Unit,
-    )
-
-    /** 使用可注入 ticker 工厂创建 Host 私有帧边界。 */
-    public constructor(
-        sourceScheduler: PixelFrameScheduler,
-        tickerProviderFactory: PixelTickerProviderFactory,
-    ) : this(
-        sourceScheduler = sourceScheduler,
-        tickerProviderFactory = tickerProviderFactory,
-        constructorMarker = Unit,
-    )
     /** One-shot callbacks waiting for an active source frame. */
     private val pendingCallbacks: LinkedHashSet<ScopeFrameCallbackRegistration> = linkedSetOf()
 

@@ -1297,8 +1297,11 @@ public fun RefreshIndicator(
  *
  * Adds state-aware pull, keyboard, and accessibility refresh activation around [child].
  *
- * The required [states] parameter and stable JVM name keep this overload separate from the legacy
- * binary facade. Armed contributes Selected, refreshing contributes Loading, and both merge with
+ * 必填的 [states] 参数与稳定 JVM 名称使该重载与上方简洁入口互不冲突。armed 贡献 Selected，
+ * refreshing 贡献 Loading，两者在解析 `components.refresh` 前与 retained hover、press、focus 合并。
+ *
+ * The required [states] parameter and stable JVM name keep this overload separate from the concise
+ * entry point above. Armed contributes Selected, refreshing contributes Loading, and both merge with
  * retained hover, press, and focus before resolving `components.refresh`.
  *
  * @param child Content receiving pull gestures while retaining semantic descendants.

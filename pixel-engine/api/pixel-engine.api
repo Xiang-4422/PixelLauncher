@@ -8,12 +8,10 @@ com.purride.pixelcore public class PixelBitmap private constructor(
 com.purride.pixelcore public class PixelBitmapAssetLoader(
 com.purride.pixelcore public class PixelBitmapFont(
 com.purride.pixelcore public class PixelBitmapLoadException(
-com.purride.pixelcore public class PixelBitmapResourceDefinition @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelBitmapResourceLoader(
 com.purride.pixelcore public class PixelBuffer(
 com.purride.pixelcore public class PixelBufferPool(
 com.purride.pixelcore public class PixelFontEngine(
-com.purride.pixelcore public class PixelFontResourceDefinition @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelGlyphPackAssetLoader @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelGlyphPackLoadException(
 com.purride.pixelcore public class PixelResourceCache @JvmOverloads public constructor(
@@ -21,7 +19,6 @@ com.purride.pixelcore public class PixelResourceLoadHandle<T : Any> internal con
 com.purride.pixelcore public class PixelResourceLoader(
 com.purride.pixelcore public class PixelResourceManifestLoadException(
 com.purride.pixelcore public class PixelSpriteSheetLoadException(
-com.purride.pixelcore public class PixelSpriteSheetResourceDefinition @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelStyledTextRasterizer(
 com.purride.pixelcore public companion object
 com.purride.pixelcore public companion object
@@ -30,6 +27,8 @@ com.purride.pixelcore public companion object
 com.purride.pixelcore public companion object
 com.purride.pixelcore public companion object
 com.purride.pixelcore public companion object
+com.purride.pixelcore public const val PixelResourceManifestVersion: Int = 1
+com.purride.pixelcore public const val PixelSpriteSheetVersion: Int = 1
 com.purride.pixelcore public const val defaultDotSizePx: Int = 12
 com.purride.pixelcore public constructor(width: Int, height: Int, pixels: IntArray) :
 com.purride.pixelcore public data class AxisMotionState(
@@ -40,9 +39,11 @@ com.purride.pixelcore public data class GlyphMetrics(
 com.purride.pixelcore public data class GlyphStyle(
 com.purride.pixelcore public data class PixelBitmapDecodeLimits(
 com.purride.pixelcore public data class PixelBitmapRegion(
+com.purride.pixelcore public data class PixelBitmapResourceDefinition @JvmOverloads public constructor(
 com.purride.pixelcore public data class PixelBufferPoolStats(
 com.purride.pixelcore public data class PixelColorResourceDefinition(
 com.purride.pixelcore public data class PixelFontMetrics(
+com.purride.pixelcore public data class PixelFontResourceDefinition @JvmOverloads public constructor(
 com.purride.pixelcore public data class PixelGlyphPack(
 com.purride.pixelcore public data class PixelGlyphPackManifest(
 com.purride.pixelcore public data class PixelGridGeometry(
@@ -60,6 +61,7 @@ com.purride.pixelcore public data class PixelSpriteAtlasDefinition(
 com.purride.pixelcore public data class PixelSpriteFrameDefinition(
 com.purride.pixelcore public data class PixelSpriteSheet(
 com.purride.pixelcore public data class PixelSpriteSheetDefinition(
+com.purride.pixelcore public data class PixelSpriteSheetResourceDefinition @JvmOverloads public constructor(
 com.purride.pixelcore public data class PixelViewportPolicy(
 com.purride.pixelcore public data class ScreenProfile(
 com.purride.pixelcore public enum class PixelAxis
@@ -92,9 +94,6 @@ com.purride.pixelcore public fun clearFailure(kind: PixelResourceKind, key: Stri
 com.purride.pixelcore public fun clearFailures()
 com.purride.pixelcore public fun compose(
 com.purride.pixelcore public fun consumeLatest(afterSequence: Long): FramePayload?
-com.purride.pixelcore public fun copy(
-com.purride.pixelcore public fun copy(
-com.purride.pixelcore public fun copy(
 com.purride.pixelcore public fun copy(
 com.purride.pixelcore public fun copy(): PixelBuffer
 com.purride.pixelcore public fun create(
@@ -203,21 +202,9 @@ com.purride.pixelcore public object PixelSpriteSheetJsonLoader
 com.purride.pixelcore public object RenderPerfLogger
 com.purride.pixelcore public object ScreenProfileFactory
 com.purride.pixelcore public operator fun component1(): Int = codePoint
-com.purride.pixelcore public operator fun component1(): String = id
-com.purride.pixelcore public operator fun component1(): String = id
-com.purride.pixelcore public operator fun component1(): String = id
 com.purride.pixelcore public operator fun component2(): Int = advanceWidth
-com.purride.pixelcore public operator fun component2(): String = manifestPath
-com.purride.pixelcore public operator fun component2(): String = path
-com.purride.pixelcore public operator fun component2(): String = path
 com.purride.pixelcore public operator fun component3(): Int = width
-com.purride.pixelcore public operator fun component3(): String = binaryPath
-com.purride.pixelcore public operator fun component3(): String = bitmap
-com.purride.pixelcore public operator fun component3(): String? = sha256
 com.purride.pixelcore public operator fun component4(): ByteArray = packedPixels
-com.purride.pixelcore public operator fun component4(): String? = manifestSha256
-com.purride.pixelcore public operator fun component4(): String? = sha256
-com.purride.pixelcore public operator fun component5(): String? = binarySha256
 com.purride.pixelcore public val Black: PixelColor = fromRgb(0, 0, 0)
 com.purride.pixelcore public val Default: PixelBitmapFont = PixelBitmapFont()
 com.purride.pixelcore public val Transparent: PixelColor = PixelColor(0)
@@ -286,7 +273,6 @@ com.purride.pixelengine public fun resourceResolver(resourceResolver: PixelResou
 com.purride.pixelengine public fun theme(theme: PixelThemeTokens): Builder = apply
 com.purride.pixelengine public fun tickerProviderFactory(factory: PixelTickerProviderFactory): Builder = apply
 com.purride.pixelengine public fun withHostServicesFallback(fallback: PixelHostCapabilitySet): PixelEngine
-com.purride.pixelengine public object PixelEngineModule
 com.purride.pixelengine public sealed interface PixelResourceResolution
 com.purride.pixelengine public val Identity: PixelResourceResolver = PixelResourceResolver { request ->
 com.purride.pixelengine public val canonicalKey: String,
@@ -434,9 +420,8 @@ com.purride.pixelui public const val FPS_WINDOW: Int = 30
 com.purride.pixelui public const val PixelMultiStackSnapshotBundleKey: String =
 com.purride.pixelui public const val PixelMultiStackSnapshotSchemaVersion: Int = 1
 com.purride.pixelui public const val PixelNavigatorPersistentSnapshotBundleKey: String =
-com.purride.pixelui public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 2
+com.purride.pixelui public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 1
 com.purride.pixelui public const val UnicodeVersion: String = "17.0.0"
-com.purride.pixelui public constructor(
 com.purride.pixelui public constructor(
 com.purride.pixelui public data class AdaptiveDp(
 com.purride.pixelui public data class AdaptiveLogicalSize(
@@ -762,7 +747,6 @@ com.purride.pixelui public fun PixelSurface(
 com.purride.pixelui public fun Polygon(
 com.purride.pixelui public fun Polygon(
 com.purride.pixelui public fun Popover(
-com.purride.pixelui public fun Popover(
 com.purride.pixelui public fun Positioned(
 com.purride.pixelui public fun PositionedDirectional(
 com.purride.pixelui public fun PositionedFill(
@@ -868,8 +852,6 @@ com.purride.pixelui public fun decode(link: PixelDeepLink): PixelDeepLinkDecodeR
 com.purride.pixelui public fun decodeArguments(link: PixelDeepLink): PixelDeepLinkDecodeResult<A>
 com.purride.pixelui public fun destroy()
 com.purride.pixelui public fun detach(node: FocusNode)
-com.purride.pixelui public fun dismiss(): Boolean
-com.purride.pixelui public fun dismiss(id: Int): Boolean
 com.purride.pixelui public fun dismiss(id: Int): Boolean
 com.purride.pixelui public fun dismiss(id: Int): Boolean
 com.purride.pixelui public fun dismiss(reason: PixelOverlayDismissReason): Boolean
@@ -1370,7 +1352,6 @@ com.purride.pixelui public val current: PixelToastQueueItem?
 com.purride.pixelui public val currentEntry: PixelRouteEntry<*, *>
 com.purride.pixelui public val currentEntryId: PixelRouteEntryId,
 com.purride.pixelui public val currentEntryId: PixelRouteEntryId?,
-com.purride.pixelui public val currentSchemaVersion: Int,
 com.purride.pixelui public val currentTimeout: Duration?
 com.purride.pixelui public val currentTimeout: Duration?
 com.purride.pixelui public val curve: Curve = Curves.EaseInOut,
@@ -1491,6 +1472,7 @@ com.purride.pixelui public val hierarchical: Boolean = false,
 com.purride.pixelui public val high: Int = 4,
 com.purride.pixelui public val highContrast: Boolean = false,
 com.purride.pixelui public val hint: String? = null,
+com.purride.pixelui public val hostCapabilities: HostCapabilitiesData
 com.purride.pixelui public val icon: PixelIconData,
 com.purride.pixelui public val iconButton: PixelComponentColorTokens = PixelComponentColorTokens.Button.copy(
 com.purride.pixelui public val iconLarge: Int = 16,
@@ -1498,8 +1480,7 @@ com.purride.pixelui public val iconMedium: Int = 12,
 com.purride.pixelui public val iconSmall: Int = 8,
 com.purride.pixelui public val id: Any,
 com.purride.pixelui public val id: Int
-com.purride.pixelui public val id: Int
-com.purride.pixelui public val id: Long = 0L,
+com.purride.pixelui public val id: Long,
 com.purride.pixelui public val id: Long,
 com.purride.pixelui public val id: PixelRouteEntryId,
 com.purride.pixelui public val id: PixelRouteEntryId,
@@ -1593,7 +1574,6 @@ com.purride.pixelui public val message: String,
 com.purride.pixelui public val message: String,
 com.purride.pixelui public val message: String,
 com.purride.pixelui public val message: String,
-com.purride.pixelui public val migratedFromOlderSchema: Boolean
 com.purride.pixelui public val minimum: Float = 0f,
 com.purride.pixelui public val minimumHeight: Int = 0,
 com.purride.pixelui public val minimumWidth: Int = 0,
@@ -1712,6 +1692,7 @@ com.purride.pixelui public val savedState: PixelSavedStateCapability? = null,
 com.purride.pixelui public val schemaVersion: Int
 com.purride.pixelui public val schemaVersion: Int,
 com.purride.pixelui public val schemaVersion: Int,
+com.purride.pixelui public val schemaVersion: Int,
 com.purride.pixelui public val scrim: PixelColor,
 com.purride.pixelui public val scrollbar: PixelComponentColorTokens = PixelComponentColorTokens.Scrollbar,
 com.purride.pixelui public val scrollbar: String = "Scrollbar",
@@ -1750,7 +1731,6 @@ com.purride.pixelui public val snap: Boolean,
 com.purride.pixelui public val snapshot: PixelMultiStackSnapshot,
 com.purride.pixelui public val snapshot: PixelMultiStackSnapshot,
 com.purride.pixelui public val source: PixelAsyncSource<T>,
-com.purride.pixelui public val sourceSchemaVersion: Int,
 com.purride.pixelui public val spacing: Int,
 com.purride.pixelui public val spacing: Int,
 com.purride.pixelui public val spacing: PixelSpacingTokens = PixelSpacingTokens.Default,
@@ -1867,9 +1847,7 @@ com.purride.pixelui public var frameDiagnosticsObserver: ((PixelHostFrameDiagnos
 com.purride.pixelui public var frameScheduler: PixelFrameScheduler = PixelFrameScheduler.Default
 com.purride.pixelui public var frameStatsObserver: ((PixelHostFrameStats) -> Unit)? = null
 com.purride.pixelui public var isFocused: Boolean = false
-com.purride.pixelui public var layoutDirectionOverride: TextDirection? = null
 com.purride.pixelui public var lifecycleState: PixelRouteLifecycleState = PixelRouteLifecycleState.Created
-com.purride.pixelui public var motionSettingsOverride: PixelMotionSettings? = null
 com.purride.pixelui public var nestedScrollPolicy: NestedScrollGesturePolicy = NestedScrollGesturePolicy.Default
 com.purride.pixelui public var offPixelColor: PixelColor = PixelColor.fromRgb(17, 17, 17)
 com.purride.pixelui public var onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
@@ -1883,7 +1861,6 @@ com.purride.pixelui public var scrollPhysics: PixelScrollPhysics = PixelScrollPh
 com.purride.pixelui public var state: PixelRouteResultState = PixelRouteResultState.Pending
 com.purride.pixelui public var submitErrorText: String? = null
 com.purride.pixelui public var submitState: FormSubmitState = FormSubmitState.IDLE
-com.purride.pixelui public var textDirection: TextDirection = TextDirection.LTR
 com.purride.pixelui public var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
 com.purride.pixelui public var traversalPolicy: FocusTraversalPolicy = ReadingOrderFocusTraversalPolicy,
 com.purride.pixelui public var validators: List<FormValidator> = emptyList(),
@@ -2018,10 +1995,8 @@ com.purride.pixelui.gesture public open fun shouldStartDrag(
 com.purride.pixelui.gesture public val Default: NestedScrollGesturePolicy = NestedScrollGesturePolicy()
 com.purride.pixelui.gesture public val Default: PagerGesturePolicy = PagerGesturePolicy()
 com.purride.pixelui.host public class ManualFrameScheduler : PixelFrameScheduler
-com.purride.pixelui.host public class PixelHostFrameScope private constructor(
+com.purride.pixelui.host public class PixelHostFrameScope @JvmOverloads public constructor(
 com.purride.pixelui.host public companion object
-com.purride.pixelui.host public constructor(
-com.purride.pixelui.host public constructor(sourceScheduler: PixelFrameScheduler) : this(
 com.purride.pixelui.host public data class PixelHostFrameScopeDiagnostics(
 com.purride.pixelui.host public fun addFrameListener(
 com.purride.pixelui.host public fun advanceFrame(frameTimeNanos: Long)

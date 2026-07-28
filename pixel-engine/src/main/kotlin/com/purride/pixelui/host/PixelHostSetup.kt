@@ -50,7 +50,8 @@ public data class PixelHostSetupConfig(
     val profilePolicy: PixelHostProfilePolicy? = null,
     val bezelColor: PixelColor = PixelColor.Black,
     val textRasterizer: PixelTextRasterizer? = null,
-    val textDirection: TextDirection = TextDirection.LTR,
+    /** 完整 Host 环境快照覆盖；null 表示跟随 Android 平台配置。 */
+    val capabilitiesOverride: HostCapabilitiesData? = null,
     val content: RootWidgetProvider? = null,
     /**
      * 宿主 back 事件调度器。默认 setup 会用它包一层 [PixelBackHost]。
@@ -110,9 +111,7 @@ public fun createPixelHostSetup(
     config.profilePolicy?.let { hostView.profilePolicy = it }
     config.textRasterizer?.let { hostView.textRasterizer = it }
     hostView.bezelColor = config.bezelColor
-    if (config.textDirection != TextDirection.LTR) {
-        hostView.textDirection = config.textDirection
-    }
+    config.capabilitiesOverride?.let { snapshot -> hostView.capabilitiesOverride = snapshot }
     hostView.pagerGesturePolicy = config.pagerGesturePolicy
     hostView.nestedScrollPolicy = config.nestedScrollPolicy
     hostView.scrollPhysics = config.scrollPhysics

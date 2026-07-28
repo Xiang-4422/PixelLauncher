@@ -102,13 +102,18 @@ public class RenderPagerViewport(
         val needsCompose = AxisBufferComposer.isCompositionNeeded(secondary, snapshot.dragOffsetPx)
         val composeOut = if (needsCompose) pool.acquire(primary.width, primary.height) else null
         try {
-            val composed = AxisBufferComposer.compose(
-                primary = primary,
-                secondary = secondary,
-                axis = snapshot.axis,
-                offsetPx = snapshot.dragOffsetPx,
-                out = composeOut,
-            )
+            /** 不需要合成时直接沿用锚点页缓冲，避免为 0 偏移帧分配输出缓冲。 */
+            val composed = if (composeOut == null) {
+                primary
+            } else {
+                AxisBufferComposer.compose(
+                    primary = primary,
+                    secondary = secondary,
+                    axis = snapshot.axis,
+                    offsetPx = snapshot.dragOffsetPx,
+                    out = composeOut,
+                )
+            }
             context.buffer.blit(
                 source = composed,
                 destX = offsetX,

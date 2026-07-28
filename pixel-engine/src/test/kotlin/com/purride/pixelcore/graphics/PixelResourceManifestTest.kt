@@ -91,7 +91,7 @@ class PixelResourceManifestTest {
         val catalog = PixelResourceManifestJsonLoader.parseCatalog(
             """
             {
-              "version": 2,
+              "version": 1,
               "bitmaps": [
                 { "id": "icons", "path": "images/icons.png" }
               ],
@@ -110,7 +110,7 @@ class PixelResourceManifestTest {
             """.trimIndent(),
         )
 
-        assertEquals(2, catalog.resources.version)
+        assertEquals(PixelResourceManifestVersion, catalog.resources.version)
         assertEquals("images/icons.png", catalog.resources.bitmaps.single().path)
         assertEquals(PixelColor.fromRgb(0x22, 0xAA, 0xFF), catalog.colors[0].color)
         assertEquals(PixelColor.fromArgb(0x80, 0x22, 0x44, 0x66), catalog.colors[1].color)
@@ -120,9 +120,9 @@ class PixelResourceManifestTest {
     }
 
     @Test
-    fun parseCatalogRequiresVersionTwoForColorsAndFonts() {
+    fun parseCatalogRejectsUnsupportedVersion() {
         val error = expectCatalogError(
-            """{"version":1,"colors":[{"id":"accent","value":"#FFFFFF"}]}""",
+            """{"version":2,"colors":[{"id":"accent","value":"#FFFFFF"}]}""",
         )
 
         assertTrue(error.message.orEmpty().contains("version 2"))
@@ -133,7 +133,7 @@ class PixelResourceManifestTest {
         val error = expectCatalogError(
             """
             {
-              "version": 2,
+              "version": 1,
               "bitmaps": [{ "id": "shared", "path": "image.png" }],
               "fonts": [{ "id": "shared", "manifest": "font.json", "binary": "font.bin" }]
             }
@@ -146,7 +146,7 @@ class PixelResourceManifestTest {
     @Test
     fun parseCatalogRejectsInvalidColorEncoding() {
         val error = expectCatalogError(
-            """{"version":2,"colors":[{"id":"accent","value":"#1234"}]}""",
+            """{"version":1,"colors":[{"id":"accent","value":"#1234"}]}""",
         )
 
         assertTrue(error.message.orEmpty().contains("#RRGGBB or #AARRGGBB"))

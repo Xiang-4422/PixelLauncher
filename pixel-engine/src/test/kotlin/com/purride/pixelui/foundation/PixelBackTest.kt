@@ -4,6 +4,7 @@ import com.purride.pixelui.PixelBackDispatcher
 import com.purride.pixelui.PixelBackHost
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayDismissReason
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelRouteTransition
 import com.purride.pixelui.Text
@@ -156,7 +157,7 @@ class PixelBackTest {
         assertFalse(tester.exists(find.byText("DETAIL")))
         assertTrue(tester.exists(find.byText("TOAST")))
 
-        assertTrue(toast.dismiss())
+        assertTrue(toast.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(16)
         assertFalse(tester.exists(find.byText("TOAST")))
         tester.dispose()

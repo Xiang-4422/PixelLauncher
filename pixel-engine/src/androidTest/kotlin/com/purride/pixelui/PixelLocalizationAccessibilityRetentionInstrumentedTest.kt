@@ -44,7 +44,8 @@ class PixelLocalizationAccessibilityRetentionInstrumentedTest {
             scenario.onActivity { activity ->
                 /** Real Activity-attached Host used for rendering and platform accessibility. */
                 val host = activity.hostView
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setContent(fixture::build)
                 drawLocalizationSynchronously(host)
 

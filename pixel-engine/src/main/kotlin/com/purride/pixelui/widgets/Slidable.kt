@@ -271,7 +271,7 @@ private data class PixelSlidableActionWidget(
     val states: PixelControlStateSet,
     /** Shared activation action, or null while inert. */
     val activate: (() -> Boolean)?,
-    /** Original callback retained as the pointer target identity for compatibility. */
+    /** 指针目标身份使用的原始回调，与 [activate] 共享同一业务动作。 */
     val pointerAction: (() -> Unit)?,
     /** Optional explicit container color. */
     val backgroundColor: PixelColor?,
@@ -407,7 +407,7 @@ private class PixelSlidableActionState : State<PixelSlidableActionWidget>() {
     }
 }
 
-/** Retained configuration shared by the legacy and state-aware Slidable facades. */
+/** 简洁与 state-aware 两个 Slidable 公开入口共享的唯一 retained 配置。 */
 private class SlidableWidget(
     /** Foreground row content translated above the action panes. */
     val child: Widget,
@@ -423,7 +423,6 @@ private class SlidableWidget(
     val states: PixelControlStateSet,
     /** Optional caller semantics label; null resolves from theme localization. */
     val semanticLabel: String?,
-    /** Whether the legacy overload must retain its original undecorated row geometry. */
     /** Stable retained identity shared by focus, semantics, gestures, and render state. */
     key: Any?,
 ) : StatefulWidget(key = key) {

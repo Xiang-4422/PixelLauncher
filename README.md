@@ -85,7 +85,7 @@ pixel-engine/                像素引擎 SDK
   src/main/                  引擎实现
   src/test/                  JVM 测试
   src/androidTest/           Android Host 测试
-compatibility/               隔离 Maven 消费者与旧二进制兼容夹具
+compatibility/               隔离 Maven 消费者与当前公开 API 验证工程
 docs/                        项目级文档
 tools/                       CI、发布、供应链与文档工具
 ```

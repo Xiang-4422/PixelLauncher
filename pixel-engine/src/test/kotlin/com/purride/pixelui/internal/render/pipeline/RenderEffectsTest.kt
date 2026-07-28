@@ -213,6 +213,7 @@ class RenderEffectsTest {
                     top = offsetY,
                     width = size.width,
                     height = size.height,
+                    id = 1L,
                 ),
                 source = this,
             )

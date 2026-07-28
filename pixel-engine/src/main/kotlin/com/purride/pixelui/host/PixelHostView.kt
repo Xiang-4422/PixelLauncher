@@ -375,12 +375,18 @@ public class PixelHostView @JvmOverloads constructor(
     /**
  * 公开 `PixelHostView` 的 `capabilitiesOverride` 配置或运行值。
  *
-     * Optional application-owned snapshot for the complete Host environment.
+     * 完整 Host 环境快照的唯一覆盖入口。
      *
-     * `null` follows Android locale, direction, text scale, contrast, density and refresh rate,
-     * merged atomically with live motion and logical cutout features. A non-null value is the
-     * authoritative complete snapshot. While present it suppresses [layoutDirectionOverride] and
-     * [motionSettingsOverride] without discarding them. Callers must assign this property on the
+     * `null` 表示跟随 Android 的 locale、方向、文字缩放、对比度、密度、刷新率与动效设置，并原子地
+     * 合并逻辑 cutout 特性。非 null 值是权威的完整快照，此后不再跟随平台变化；只想改动个别字段时
+     * 请从 [hostCapabilities] 派生。该属性必须在拥有当前 Host 的线程上赋值。
+     *
+     * Only application-owned override for the complete Host environment snapshot.
+     *
+     * `null` follows Android locale, direction, text scale, contrast, density, refresh rate and
+     * animator settings, merged atomically with logical cutout features. A non-null value is the
+     * authoritative complete snapshot and no longer tracks later platform changes; build it from
+     * [hostCapabilities] to adjust only selected fields. Callers must assign this property on the
      * thread that owns this Host.
      */
     public var capabilitiesOverride: HostCapabilitiesData? = null
@@ -394,44 +400,33 @@ public class PixelHostView @JvmOverloads constructor(
             invalidate()
         }
 
-    /**
- * 公开 `PixelHostView` 的 `motionSettingsOverride` 配置或运行值。
- *
-     * Optional application override for animator scale and reduce-motion behavior.
-     *
-     * When [capabilitiesOverride] is null, null follows Android's live setting and a non-null value
-     * is injected into [PixelMotionScope]. A complete [capabilitiesOverride] is authoritative and
-     * temporarily suppresses this legacy control without discarding its stored value.
-     */
-    public var motionSettingsOverride: PixelMotionSettings? = null
-        set(value) {
-            if (field == value) return
-            field = value
-            markEffectiveCapabilitiesDirty()
-            if (capabilitiesOverride == null) invalidate()
-        }
-
-    /** Legacy motion fallback used only when no complete capability snapshot is supplied. */
-    internal val effectiveMotionSettings: PixelMotionSettings
-        get() = motionSettingsOverride ?: systemMotionSettings
-
     /** Whether the next automatic capability read must rebuild its immutable merged snapshot. */
     private var effectiveCapabilitiesDirty: Boolean = true
 
     /** Reusable merged snapshot avoiding defensive-list copies on every rendered frame. */
     private var cachedAutomaticCapabilities: HostCapabilitiesData = HostCapabilitiesData.Default
 
-    /** Complete immutable capability snapshot inherited by the next rendered widget tree. */
-    internal val effectiveCapabilities: HostCapabilitiesData
+    /**
+ * 公开 `PixelHostView` 的 `hostCapabilities` 配置或运行值。
+ *
+     * 下一帧 widget 树将继承的完整不可变环境快照。
+     *
+     * 安装了 [capabilitiesOverride] 时直接返回该覆盖值，否则返回实时 Android 快照与当前 Host 的
+     * 动效设置、逻辑显示特性的合并结果。读取它是基于当前平台值构造部分覆盖的受支持做法。
+     *
+     * Complete immutable environment snapshot inherited by the next rendered widget tree.
+     *
+     * It returns [capabilitiesOverride] when one is installed, otherwise the live Android snapshot
+     * merged with this Host's animator settings and logical display features. Reading it is the
+     * supported way to build a partial [capabilitiesOverride] from current platform values.
+     */
+    public val hostCapabilities: HostCapabilitiesData
         get() {
             capabilitiesOverride?.let { explicitSnapshot -> return explicitSnapshot }
             if (effectiveCapabilitiesDirty) {
-                /** Automatic direction unless a consumer deliberately installed a legacy override. */
-                val direction = layoutDirectionOverride ?: systemHostCapabilities.layoutDirection
                 /** Android snapshot plus Host-owned motion and logical display-feature projection. */
                 cachedAutomaticCapabilities = systemHostCapabilities.copy(
-                    layoutDirection = direction,
-                    motionSettings = effectiveMotionSettings,
+                    motionSettings = systemMotionSettings,
                     displayFeatures = resolveLogicalDisplayFeatures(),
                 )
                 effectiveCapabilitiesDirty = false
@@ -459,7 +454,7 @@ public class PixelHostView @JvmOverloads constructor(
         if (isAttachedToWindow) {
             source.attach(::handleSystemMotionSettingsChanged)
         }
-        if (motionSettingsOverride == null && capabilitiesOverride == null) invalidate()
+        if (capabilitiesOverride == null) invalidate()
     }
 
     /** Replaces Android configuration observation with a deterministic source for integration tests. */
@@ -645,38 +640,6 @@ public class PixelHostView @JvmOverloads constructor(
      */
     public val frameScopeDiagnostics: PixelHostFrameScopeDiagnostics
         get() = frameScope.diagnostics()
-
-    /**
- * 公开 `PixelHostView` 的 `layoutDirectionOverride` 配置或运行值。
- *
-     * Optional application direction override applied on top of automatic Android configuration.
-     *
-     * `null` follows the platform source. A present value is retained while a complete
-     * [capabilitiesOverride] is installed and becomes visible when that complete override clears.
-     */
-    public var layoutDirectionOverride: TextDirection? = null
-        set(value) {
-            if (field == value) return
-            field = value
-            if (value != null && textDirection != value) textDirection = value
-            markEffectiveCapabilitiesDirty()
-            if (capabilitiesOverride == null) invalidate()
-        }
-
-    /**
- * 公开 `PixelHostView` 的 `textDirection` 配置或运行值。
- *
-     * Frozen non-null direction compatibility property.
-     *
-     * Assigning it now installs the equivalent [layoutDirectionOverride]. New code can clear the
-     * override by assigning `null` to [layoutDirectionOverride] and resume automatic Android RTL.
-     */
-    public var textDirection: TextDirection = TextDirection.LTR
-        set(value) {
-            if (field == value && layoutDirectionOverride == value) return
-            field = value
-            layoutDirectionOverride = value
-        }
 
     /** 保存 `PixelHostView` 对外传递的 `textRasterizer` 数据；写入后由所属对象在下一次状态同步时生效。 */
     public var textRasterizer: PixelTextRasterizer = PixelBitmapFont.Default
@@ -1061,7 +1024,7 @@ public class PixelHostView @JvmOverloads constructor(
             )
         } ?: PixelInspectorTargetCounts.Empty
         val nodeAssociations = renderCoordinator.collectInspectorNodeAssociations()
-        /** Constructor-compatible snapshot before additive full-frame diagnostics are attached. */
+        /** 附加整帧诊断前的基础统计快照。 */
         val snapshot = PixelInspectorSnapshot(
             frameStats = if (includeFrameStats) renderCoordinator.snapshotFrameStats() else null,
             allocationSample = if (includeAllocationSample) snapshotAllocationSample() else null,
@@ -1923,7 +1886,7 @@ public class PixelHostView @JvmOverloads constructor(
         if (terminalResourcesDisposed || systemMotionSettings == settings) return
         systemMotionSettings = settings
         markEffectiveCapabilitiesDirty()
-        if (motionSettingsOverride == null && capabilitiesOverride == null) invalidate()
+        if (capabilitiesOverride == null) invalidate()
     }
 
     /** Applies one distinct Android configuration/contrast/display snapshot atomically. */
@@ -1938,23 +1901,6 @@ public class PixelHostView @JvmOverloads constructor(
         markEffectiveCapabilitiesDirty()
         if (capabilitiesOverride == null) invalidate()
     }
-}
-
-/**
- * Resolves one atomic Host snapshot without requiring Android View construction in JVM tests.
- *
- * A caller-supplied snapshot is authoritative. The compatibility path changes only direction
- * and motion while retaining every other documented [HostCapabilitiesData.Default] field.
- */
-internal fun resolveEffectiveHostCapabilities(
-    capabilitiesOverride: HostCapabilitiesData?,
-    textDirection: TextDirection,
-    motionSettings: PixelMotionSettings,
-): HostCapabilitiesData {
-    return capabilitiesOverride ?: HostCapabilitiesData.Default.copy(
-        layoutDirection = textDirection,
-        motionSettings = motionSettings,
-    )
 }
 
 /** Immutable Android edge insets retained in physical pixel coordinates. */
@@ -2004,7 +1950,7 @@ internal data class PixelLegacyPlatformInsetSplit(
  *
  * A transient edge larger than its positive stable counterpart is treated as IME and retains the
  * complete combined extent, matching API 30 `Type.ime()` semantics. When a device supplies no
- * stable value, the current system edge remains a bar for conservative compatibility.
+ * stable value, the current system edge conservatively remains a system bar.
  */
 internal fun splitLegacyPlatformInsets(
     /** Current combined system-window inset snapshot. */

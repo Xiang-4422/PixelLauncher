@@ -68,7 +68,7 @@ internal fun FormFieldDecoration.resolveForTextField(
         required -> REQUIRED_MARKER
         else -> null
     }
-    /** Decoration error takes priority, while the legacy semantic error remains a visible fallback. */
+    /** decoration 显式错误优先；未提供时沿用语义错误文本作为可见提示。 */
     val activeError = error.nonBlankOrNull() ?: semanticError.nonBlankOrNull()
     /** Helper is hidden whenever an active error exists. */
     val supportingText = activeError ?: helper.nonBlankOrNull()

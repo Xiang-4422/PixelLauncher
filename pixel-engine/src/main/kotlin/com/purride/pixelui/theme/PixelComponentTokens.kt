@@ -445,7 +445,9 @@ public data class PixelComponentColorTokens(
 }
 
 /**
- * Switch defaults with every legacy paint channel encoded independently in the token graph.
+ * Switch 默认值，token 图中每个绘制通道都独立编码。
+ *
+ * Switch defaults with every paint channel encoded independently in the token graph.
  *
  * The track remains a Surface, while thumb/content and outline retain the historical inactive,
  * primary, focus, capability, and validation endpoints. Keeping these roles in fields makes a
@@ -477,7 +479,9 @@ private val DEFAULT_SWITCH_COMPONENT_TOKENS: PixelComponentColorTokens = PixelCo
 )
 
 /**
- * Tab defaults preserving the legacy transparent strip and on-background label channel.
+ * Tab 默认值，使用透明条带与 on-background 标签通道。
+ *
+ * Tab defaults using a transparent strip and an on-background label channel.
  *
  * Selection and capability/validation feedback live in border and content maps rather than an
  * object-equality branch, so copying padding or another geometry field cannot alter paint.

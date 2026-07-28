@@ -388,7 +388,7 @@ private fun RenderConstraints.toAdvancedConstraints(): PixelRenderConstraints {
     )
 }
 
-/** Converts a public layout constraint into the legacy internal pipeline representation. */
+/** 把公开 SPI 的布局约束转换为内部 pipeline 表示。 */
 private fun PixelRenderConstraints.toInternalConstraints(): RenderConstraints {
     return RenderConstraints(
         minWidth = minWidth,
@@ -403,7 +403,7 @@ private fun RenderSize.toAdvancedSize(): PixelRenderSize {
     return PixelRenderSize(width = width, height = height)
 }
 
-/** Converts a public size into the legacy internal pipeline representation. */
+/** 把公开 SPI 的尺寸转换为内部 pipeline 表示。 */
 private fun PixelRenderSize.toInternalSize(): RenderSize {
     return RenderSize(width = width, height = height)
 }

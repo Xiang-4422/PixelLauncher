@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify that built APK manifests and XML resources exclude the retired plaintext credential file."""
+"""Verify that built APK manifests and XML resources exclude the device-local app inventory cache."""
 
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ from xml.etree import ElementTree
 
 # Android XML namespace used by manifest attributes in apkanalyzer output.
 ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
-# The retired preference file must remain excluded forever so old backups cannot restore it.
-LEGACY_PREFERENCE_FILE = "pixel_launcher_ai_prefs.xml"
+# The device-local app inventory cache must stay excluded so it never crosses devices.
+DEVICE_LOCAL_PREFERENCE_FILE = "app_repository_cache.xml"
 
 
 @dataclass(frozen=True)
@@ -88,12 +88,12 @@ def run_apkanalyzer(executable: Path, arguments: Sequence[str]) -> str:
 
 
 def has_exact_exclude(parent: ElementTree.Element, domain: str) -> bool:
-    """Return true when one scope excludes the exact retired preference file and domain."""
+    """Return true when one scope excludes the exact device-local preference file and domain."""
 
     return any(
         child.tag == "exclude"
         and child.attrib.get("domain") == domain
-        and child.attrib.get("path") == LEGACY_PREFERENCE_FILE
+        and child.attrib.get("path") == DEVICE_LOCAL_PREFERENCE_FILE
         for child in parent
     )
 
@@ -121,7 +121,7 @@ def validate_contract(
     full_backup = ElementTree.fromstring(full_backup_xml)
     full_backup_excluded = has_exact_exclude(full_backup, "sharedpref")
     if not full_backup_excluded:
-        raise ValueError(f"API 24–30 backup rules do not exclude the retired preference: {apk_label}")
+        raise ValueError(f"API 24–30 backup rules do not exclude the device-local cache: {apk_label}")
 
     data_extraction = ElementTree.fromstring(data_extraction_xml)
     cloud_backup = data_extraction.find("cloud-backup")
@@ -129,7 +129,7 @@ def validate_contract(
     cloud_backup_excluded = cloud_backup is not None and has_exact_exclude(cloud_backup, "sharedpref")
     device_transfer_excluded = device_transfer is not None and has_exact_exclude(device_transfer, "sharedpref")
     if not cloud_backup_excluded or not device_transfer_excluded:
-        raise ValueError(f"API 31+ cloud/device rules do not both exclude the retired preference: {apk_label}")
+        raise ValueError(f"API 31+ cloud/device rules do not both exclude the device-local cache: {apk_label}")
 
     return BackupContractEvidence(
         apk=apk_label,
@@ -187,7 +187,7 @@ def write_report(path: Path, evidence: Sequence[BackupContractEvidence]) -> None
     report = {
         "schemaVersion": 1,
         "status": "passed",
-        "legacyPreferenceFile": LEGACY_PREFERENCE_FILE,
+        "deviceLocalPreferenceFile": DEVICE_LOCAL_PREFERENCE_FILE,
         "apks": [
             {
                 "apk": item.apk,

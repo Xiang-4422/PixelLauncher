@@ -3,7 +3,6 @@ public final class com.purride.pixelcore.AxisBufferComposer {
   public static final com.purride.pixelcore.AxisBufferComposer INSTANCE;
   public final boolean isCompositionNeeded(com.purride.pixelcore.PixelBuffer, float);
   public final com.purride.pixelcore.PixelBuffer compose(com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.PixelAxis, float, com.purride.pixelcore.PixelBuffer);
-  public static com.purride.pixelcore.PixelBuffer compose$default(com.purride.pixelcore.AxisBufferComposer, com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.PixelBuffer, com.purride.pixelcore.PixelAxis, float, com.purride.pixelcore.PixelBuffer, int, java.lang.Object);
 }
 public final class com.purride.pixelcore.AxisMotionController {
   public static final com.purride.pixelcore.AxisMotionController$Companion Companion;
@@ -285,11 +284,11 @@ public final class com.purride.pixelcore.PixelBitmapResourceDefinition {
   public final java.lang.String component1();
   public final java.lang.String component2();
   public final java.lang.String component3();
-  public final com.purride.pixelcore.PixelBitmapResourceDefinition copy(java.lang.String, java.lang.String);
-  public static com.purride.pixelcore.PixelBitmapResourceDefinition copy$default(com.purride.pixelcore.PixelBitmapResourceDefinition, java.lang.String, java.lang.String, int, java.lang.Object);
-  public boolean equals(java.lang.Object);
-  public int hashCode();
+  public final com.purride.pixelcore.PixelBitmapResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelBitmapResourceDefinition copy$default(com.purride.pixelcore.PixelBitmapResourceDefinition, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
   public com.purride.pixelcore.PixelBitmapResourceDefinition(java.lang.String, java.lang.String);
 }
 public final class com.purride.pixelcore.PixelBitmapResourceLoader {
@@ -462,11 +461,11 @@ public final class com.purride.pixelcore.PixelFontResourceDefinition {
   public final java.lang.String component3();
   public final java.lang.String component4();
   public final java.lang.String component5();
-  public final com.purride.pixelcore.PixelFontResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String);
-  public static com.purride.pixelcore.PixelFontResourceDefinition copy$default(com.purride.pixelcore.PixelFontResourceDefinition, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
-  public boolean equals(java.lang.Object);
-  public int hashCode();
+  public final com.purride.pixelcore.PixelFontResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelFontResourceDefinition copy$default(com.purride.pixelcore.PixelFontResourceDefinition, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
   public com.purride.pixelcore.PixelFontResourceDefinition(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
   public com.purride.pixelcore.PixelFontResourceDefinition(java.lang.String, java.lang.String, java.lang.String);
 }
@@ -673,25 +672,25 @@ public final class com.purride.pixelcore.PixelResourceCacheLimits {
   public com.purride.pixelcore.PixelResourceCacheLimits();
 }
 public final class com.purride.pixelcore.PixelResourceCacheSnapshot {
-  public com.purride.pixelcore.PixelResourceCacheSnapshot(int, int, int, int, int, int, int, int);
+  public com.purride.pixelcore.PixelResourceCacheSnapshot(int, int, long, long, long, long, long, long);
   public final int getBitmapCount();
   public final int getSpriteSheetCount();
-  public final int getBitmapHits();
-  public final int getBitmapMisses();
-  public final int getSpriteSheetHits();
-  public final int getSpriteSheetMisses();
-  public final int getRemoveCount();
-  public final int getClearCount();
+  public final long getBitmapHits();
+  public final long getBitmapMisses();
+  public final long getSpriteSheetHits();
+  public final long getSpriteSheetMisses();
+  public final long getRemoveCount();
+  public final long getClearCount();
   public final int component1();
   public final int component2();
-  public final int component3();
-  public final int component4();
-  public final int component5();
-  public final int component6();
-  public final int component7();
-  public final int component8();
-  public final com.purride.pixelcore.PixelResourceCacheSnapshot copy(int, int, int, int, int, int, int, int);
-  public static com.purride.pixelcore.PixelResourceCacheSnapshot copy$default(com.purride.pixelcore.PixelResourceCacheSnapshot, int, int, int, int, int, int, int, int, int, java.lang.Object);
+  public final long component3();
+  public final long component4();
+  public final long component5();
+  public final long component6();
+  public final long component7();
+  public final long component8();
+  public final com.purride.pixelcore.PixelResourceCacheSnapshot copy(int, int, long, long, long, long, long, long);
+  public static com.purride.pixelcore.PixelResourceCacheSnapshot copy$default(com.purride.pixelcore.PixelResourceCacheSnapshot, int, int, long, long, long, long, long, long, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -819,6 +818,9 @@ public final class com.purride.pixelcore.PixelResourceManifestJsonLoader {
   public final com.purride.pixelcore.PixelResourceCatalog parseCatalog(java.lang.String);
   public final com.purride.pixelcore.PixelResourceCatalog parseCatalog(java.lang.String, java.lang.String);
 }
+public final class com.purride.pixelcore.PixelResourceManifestKt {
+  public static final int PixelResourceManifestVersion;
+}
 public final class com.purride.pixelcore.PixelResourceManifestLoadException extends java.lang.IllegalArgumentException {
   public com.purride.pixelcore.PixelResourceManifestLoadException(java.lang.String, java.lang.Throwable);
   public com.purride.pixelcore.PixelResourceManifestLoadException(java.lang.String, java.lang.Throwable, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -931,6 +933,9 @@ public final class com.purride.pixelcore.PixelSpriteSheetLoadException extends j
   public com.purride.pixelcore.PixelSpriteSheetLoadException(java.lang.String, java.lang.Throwable);
   public com.purride.pixelcore.PixelSpriteSheetLoadException(java.lang.String, java.lang.Throwable, int, kotlin.jvm.internal.DefaultConstructorMarker);
 }
+public final class com.purride.pixelcore.PixelSpriteSheetLoaderKt {
+  public static final int PixelSpriteSheetVersion;
+}
 public final class com.purride.pixelcore.PixelSpriteSheetResourceDefinition {
   public com.purride.pixelcore.PixelSpriteSheetResourceDefinition(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
   public com.purride.pixelcore.PixelSpriteSheetResourceDefinition(java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
@@ -942,11 +947,11 @@ public final class com.purride.pixelcore.PixelSpriteSheetResourceDefinition {
   public final java.lang.String component2();
   public final java.lang.String component3();
   public final java.lang.String component4();
-  public final com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String);
-  public static com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy$default(com.purride.pixelcore.PixelSpriteSheetResourceDefinition, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
-  public boolean equals(java.lang.Object);
-  public int hashCode();
+  public final com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelSpriteSheetResourceDefinition copy$default(com.purride.pixelcore.PixelSpriteSheetResourceDefinition, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
   public com.purride.pixelcore.PixelSpriteSheetResourceDefinition(java.lang.String, java.lang.String, java.lang.String);
 }
 public final class com.purride.pixelcore.PixelStyledTextRasterizer implements com.purride.pixelcore.PixelClusterTextRasterizer {
@@ -1050,7 +1055,7 @@ public final class com.purride.pixelengine.PixelEngine {
   public final com.purride.pixelengine.PixelEngineServices getServices();
   public final com.purride.pixelui.PixelThemeTokens getTheme();
   public final com.purride.pixelengine.PixelEngine withHostServicesFallback(com.purride.pixelui.PixelHostCapabilitySet);
-  public com.purride.pixelengine.PixelEngine(com.purride.pixelengine.PixelEngineServices, com.purride.pixelui.PixelThemeTokens, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelengine.PixelEngine(com.purride.pixelengine.PixelEngineServices, com.purride.pixelui.PixelThemeTokens, com.purride.pixelui.PixelThemeTokens, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelengine.PixelEngine$Builder {
   public com.purride.pixelengine.PixelEngine$Builder();
@@ -1065,9 +1070,6 @@ public final class com.purride.pixelengine.PixelEngine$Builder {
   public final com.purride.pixelengine.PixelEngine$Builder hostServices(com.purride.pixelui.PixelHostCapabilitySet);
   public final com.purride.pixelengine.PixelEngine$Builder theme(com.purride.pixelui.PixelThemeTokens);
   public final com.purride.pixelengine.PixelEngine build();
-}
-public final class com.purride.pixelengine.PixelEngineModule {
-  public static final com.purride.pixelengine.PixelEngineModule INSTANCE;
 }
 public final class com.purride.pixelengine.PixelEngineServices {
   public com.purride.pixelengine.PixelEngineServices(com.purride.pixelui.services.PixelClock, com.purride.pixelui.host.PixelFrameScheduler, com.purride.pixelui.animation.PixelTickerProviderFactory, com.purride.pixelui.services.PixelErrorReporter, com.purride.pixelengine.PixelResourceResolver, com.purride.pixelcore.PixelResourceCache, com.purride.pixelui.services.PixelLogger, com.purride.pixelui.HostCapabilitiesData, com.purride.pixelui.PixelHostCapabilitySet);
@@ -1515,7 +1517,6 @@ public final class com.purride.pixelui.MediaQueryData {
   public final com.purride.pixelui.PixelWindowInsets getViewInsets();
   public final com.purride.pixelui.PixelWindowInsets getViewPadding();
   public final com.purride.pixelui.PixelWindowInsets getPadding();
-  public com.purride.pixelui.MediaQueryData(int, int, com.purride.pixelcore.ScreenProfile);
   public final int component1();
   public final int component2();
   public final com.purride.pixelcore.ScreenProfile component3();
@@ -1539,8 +1540,6 @@ public final class com.purride.pixelui.NavigationControlsKt {
   public static com.purride.pixelui.Widget NavigationRailWithController$default(java.util.List, com.purride.pixelui.PixelMultiStackNavigatorController, boolean, boolean, int, boolean, java.lang.String, java.lang.Object, int, java.lang.Object);
 }
 public final class com.purride.pixelui.OverlayControlsKt {
-  public static final com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object, boolean);
-  public static com.purride.pixelui.Widget Popover$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Popover(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.Object, boolean, com.purride.pixelui.PixelPopoverPlacement, com.purride.pixelui.PixelPopoverAlignment, int);
   public static com.purride.pixelui.Widget Popover$default(com.purride.pixelui.Widget, com.purride.pixelui.Widget, boolean, com.purride.pixelui.animation.IntOffset, boolean, kotlin.jvm.functions.Function0, java.lang.Object, boolean, com.purride.pixelui.PixelPopoverPlacement, com.purride.pixelui.PixelPopoverAlignment, int, int, java.lang.Object);
   public static final com.purride.pixelui.Widget Menu-2_wJP-4(java.util.List<com.purride.pixelui.PixelMenuItem>, boolean, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, java.lang.Object, java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, boolean);
@@ -2758,11 +2757,11 @@ public final class com.purride.pixelui.PixelHostSetup {
   public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelui.PixelHostSetupConfig {
-  public com.purride.pixelui.PixelHostSetupConfig(com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.TextDirection, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelHostSetupConfig(com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.HostCapabilitiesData, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelui.PixelHostProfilePolicy getProfilePolicy();
   public final int getBezelColor-bODNPuc();
   public final com.purride.pixelcore.PixelTextRasterizer getTextRasterizer();
-  public final com.purride.pixelui.TextDirection getTextDirection();
+  public final com.purride.pixelui.HostCapabilitiesData getCapabilitiesOverride();
   public final kotlin.jvm.functions.Function0<com.purride.pixelui.Widget> getContent();
   public final com.purride.pixelui.PixelBackDispatcher getBackDispatcher();
   public final kotlin.jvm.functions.Function0<java.lang.Boolean> getOnUnhandledBack();
@@ -2773,7 +2772,7 @@ public final class com.purride.pixelui.PixelHostSetupConfig {
   public final com.purride.pixelui.PixelHostProfilePolicy component1();
   public final int component2-bODNPuc();
   public final com.purride.pixelcore.PixelTextRasterizer component3();
-  public final com.purride.pixelui.TextDirection component4();
+  public final com.purride.pixelui.HostCapabilitiesData component4();
   public final kotlin.jvm.functions.Function0<com.purride.pixelui.Widget> component5();
   public final com.purride.pixelui.PixelBackDispatcher component6();
   public final kotlin.jvm.functions.Function0<java.lang.Boolean> component7();
@@ -2781,12 +2780,12 @@ public final class com.purride.pixelui.PixelHostSetupConfig {
   public final com.purride.pixelui.gesture.NestedScrollGesturePolicy component9();
   public final com.purride.pixelui.PixelScrollPhysics component10();
   public final com.purride.pixelui.host.PixelFrameScheduler component11();
-  public final com.purride.pixelui.PixelHostSetupConfig copy-OP2bVwo(com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.TextDirection, kotlin.jvm.functions.Function0<? extends com.purride.pixelui.Widget>, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0<java.lang.Boolean>, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler);
-  public static com.purride.pixelui.PixelHostSetupConfig copy-OP2bVwo$default(com.purride.pixelui.PixelHostSetupConfig, com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.TextDirection, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, int, java.lang.Object);
+  public final com.purride.pixelui.PixelHostSetupConfig copy-OP2bVwo(com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.HostCapabilitiesData, kotlin.jvm.functions.Function0<? extends com.purride.pixelui.Widget>, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0<java.lang.Boolean>, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler);
+  public static com.purride.pixelui.PixelHostSetupConfig copy-OP2bVwo$default(com.purride.pixelui.PixelHostSetupConfig, com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.HostCapabilitiesData, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
-  public com.purride.pixelui.PixelHostSetupConfig(com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.TextDirection, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelHostSetupConfig(com.purride.pixelui.PixelHostProfilePolicy, int, com.purride.pixelcore.PixelTextRasterizer, com.purride.pixelui.HostCapabilitiesData, kotlin.jvm.functions.Function0, com.purride.pixelui.PixelBackDispatcher, kotlin.jvm.functions.Function0, com.purride.pixelui.gesture.PagerGesturePolicy, com.purride.pixelui.gesture.NestedScrollGesturePolicy, com.purride.pixelui.PixelScrollPhysics, com.purride.pixelui.host.PixelFrameScheduler, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.PixelHostSetupKt {
   public static final com.purride.pixelui.PixelHostSetup createPixelHostSetup(android.content.Context, com.purride.pixelengine.PixelEngine, com.purride.pixelui.PixelHostView, com.purride.pixelui.PixelHostSetupConfig);
@@ -2815,8 +2814,7 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setViewInsets(com.purride.pixelui.PixelWindowInsets);
   public final com.purride.pixelui.HostCapabilitiesData getCapabilitiesOverride();
   public final void setCapabilitiesOverride(com.purride.pixelui.HostCapabilitiesData);
-  public final com.purride.pixelui.PixelMotionSettings getMotionSettingsOverride();
-  public final void setMotionSettingsOverride(com.purride.pixelui.PixelMotionSettings);
+  public final com.purride.pixelui.HostCapabilitiesData getHostCapabilities();
   public final com.purride.pixelui.PixelHostLifecycleDiagnostics getLifecycleDiagnostics();
   public final void bindLifecycleOwner(androidx.lifecycle.LifecycleOwner);
   public final void unbindLifecycleOwner();
@@ -2843,10 +2841,6 @@ public final class com.purride.pixelui.PixelHostView extends android.view.View i
   public final void setFrameScheduler(com.purride.pixelui.host.PixelFrameScheduler);
   public final com.purride.pixelui.animation.PixelTickerProvider getTickerProvider();
   public final com.purride.pixelui.host.PixelHostFrameScopeDiagnostics getFrameScopeDiagnostics();
-  public final com.purride.pixelui.TextDirection getLayoutDirectionOverride();
-  public final void setLayoutDirectionOverride(com.purride.pixelui.TextDirection);
-  public final com.purride.pixelui.TextDirection getTextDirection();
-  public final void setTextDirection(com.purride.pixelui.TextDirection);
   public final com.purride.pixelcore.PixelTextRasterizer getTextRasterizer();
   public final void setTextRasterizer(com.purride.pixelcore.PixelTextRasterizer);
   public final kotlin.jvm.functions.Function1<com.purride.pixelui.PixelHostFrameStats, kotlin.Unit> getFrameStatsObserver();
@@ -3726,12 +3720,10 @@ public final class com.purride.pixelui.PixelNavigatorOperation extends java.lang
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelNavigatorOperation> getEntries();
 }
 public final class com.purride.pixelui.PixelNavigatorRestorePlan {
-  public com.purride.pixelui.PixelNavigatorRestorePlan(int, int, com.purride.pixelui.PixelRouteEntryId, java.util.List<com.purride.pixelui.PixelNavigatorRestoredEntryInspection>, java.util.List<? extends com.purride.pixelui.ResolvedPersistentRouteEntry>);
-  public final int getSourceSchemaVersion();
-  public final int getCurrentSchemaVersion();
+  public com.purride.pixelui.PixelNavigatorRestorePlan(int, com.purride.pixelui.PixelRouteEntryId, java.util.List<com.purride.pixelui.PixelNavigatorRestoredEntryInspection>, java.util.List<? extends com.purride.pixelui.ResolvedPersistentRouteEntry>);
+  public final int getSchemaVersion();
   public final com.purride.pixelui.PixelRouteEntryId getCurrentEntryId();
   public final java.util.List<com.purride.pixelui.PixelNavigatorRestoredEntryInspection> getEntries();
-  public final boolean getMigratedFromOlderSchema();
 }
 public final class com.purride.pixelui.PixelNavigatorRestoredEntryInspection {
   public com.purride.pixelui.PixelNavigatorRestoredEntryInspection(com.purride.pixelui.PixelRouteEntryId, java.lang.String, int, int, java.util.Set<java.lang.String>);
@@ -3949,7 +3941,6 @@ public final class com.purride.pixelui.PixelOverlayController extends com.purrid
   public static com.purride.pixelui.PixelOverlayHandle showDialog-4KCRWhc$default(com.purride.pixelui.PixelOverlayController, com.purride.pixelui.Widget, com.purride.pixelui.Widget, java.util.List, int, int, int, java.lang.Object);
   public final com.purride.pixelui.PixelOverlayHandle showSnackbar-YtVJrYg(java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle);
   public static com.purride.pixelui.PixelOverlayHandle showSnackbar-YtVJrYg$default(com.purride.pixelui.PixelOverlayController, java.lang.String, com.purride.pixelui.Widget, int, com.purride.pixelui.PixelTextStyle, int, java.lang.Object);
-  public final boolean dismiss(int);
   public final boolean dismissTop();
   public final void clear();
 }
@@ -4005,11 +3996,9 @@ public interface com.purride.pixelui.PixelOverlayEntry<R> extends com.purride.pi
   public abstract com.purride.pixelui.PixelOverlayLifecycle getLifecycle();
   public abstract com.purride.pixelui.PixelOverlayOutcome<R> getOutcome();
   public abstract boolean complete(R);
-  public abstract boolean dismiss(com.purride.pixelui.PixelOverlayDismissReason);
 }
 public interface com.purride.pixelui.PixelOverlayHandle {
-  public abstract int getId();
-  public abstract boolean dismiss();
+  public abstract boolean dismiss(com.purride.pixelui.PixelOverlayDismissReason);
 }
 public final class com.purride.pixelui.PixelOverlayKt {
   public static final com.purride.pixelui.Widget PixelOverlaySurface(com.purride.pixelui.Widget, java.lang.Object);
@@ -6275,8 +6264,8 @@ public final class com.purride.pixelui.host.PixelFrameScheduler$Companion {
   public final com.purride.pixelui.host.PixelFrameScheduler getDefault();
 }
 public final class com.purride.pixelui.host.PixelHostFrameScope implements com.purride.pixelui.host.PixelFrameScheduler {
-  public com.purride.pixelui.host.PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler);
   public com.purride.pixelui.host.PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler, com.purride.pixelui.animation.PixelTickerProviderFactory);
+  public com.purride.pixelui.host.PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler, com.purride.pixelui.animation.PixelTickerProviderFactory, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final boolean isPaused();
   public final boolean isDisposed();
   public final com.purride.pixelui.animation.PixelTickerProvider getTickerProvider();
@@ -6286,6 +6275,7 @@ public final class com.purride.pixelui.host.PixelHostFrameScope implements com.p
   public final void resume();
   public final void dispose();
   public final com.purride.pixelui.host.PixelHostFrameScopeDiagnostics diagnostics();
+  public com.purride.pixelui.host.PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler);
 }
 public final class com.purride.pixelui.host.PixelHostFrameScopeDiagnostics {
   public com.purride.pixelui.host.PixelHostFrameScopeDiagnostics(boolean, boolean, long, int, int, int, int, boolean, long, long, long, long, long, long, long, long);

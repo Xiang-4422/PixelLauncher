@@ -38,7 +38,7 @@ public class RenderText(
     private val explicitWidth: Int? = null,
     /** Optional fixed outer height. */
     private val explicitHeight: Int? = null,
-    /** Whether legacy Text should occupy the full available width. */
+    /** 该 Text 是否占满可用宽度。 */
     private val occupyFullWidth: Boolean = false,
     /** Whether constraints should force maximum width. */
     private val fillMaxWidth: Boolean = false,
@@ -63,7 +63,7 @@ public class RenderText(
     private var textHeight = 0
     /** Shared immutable cluster/Bidi geometry for paint, input and Accessibility. */
     private var paragraphLayout: PixelParagraphLayout = PixelParagraphLayout(lines = emptyList())
-    /** Compatibility paint payload reconstructed from visible paragraph runs. */
+    /** 由可见段落 run 重建的绘制文本，供单次 drawText 快路径使用。 */
     private var displayText = text
     /** Local horizontal origin of the aligned paragraph. */
     private var drawTextX = 0
@@ -254,7 +254,7 @@ public class RenderText(
                 ),
             )
         }
-        /** Grapheme boundary nearest the requested legacy or platform offset. */
+        /** 与请求偏移最接近的 grapheme 边界。 */
         val caretIndex = PixelGraphemeBoundaryMap(text).nearest(index)
         /** Exact soft/hard line chosen from the requested logical side of the boundary. */
         val exactAffinityLine = when (affinity) {
@@ -617,7 +617,7 @@ public class RenderText(
         )
     }
 
-    /** Returns whether a single compatibility draw call preserves this style's metrics. */
+    /** 返回该样式能否用一次普通 drawText 调用保持完整度量。 */
     private fun PixelTextStyle.usesPlainRasterizer(): Boolean {
         return letterSpacing <= 0 && fontScale <= 1 && lineHeight == null && lineSpacing <= 0
     }

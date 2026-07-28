@@ -368,9 +368,11 @@ public data class PixelSemanticsNode(
     public val height: Int,
     /** 公开 `PixelSemantics` 的 `id` 配置或运行值。
  *
- * Stable opaque identifier; `0` is reserved for legacy manually-created snapshots.
+ * 由 `RenderObject.semanticNodeId` 分配的稳定正整数标识。
+ *
+ * Stable positive identifier allocated by `RenderObject.semanticNodeId`.
  */
-    public val id: Long = 0L,
+    public val id: Long,
     /** 公开 `PixelSemantics` 的 `parentId` 配置或运行值。
  *
  * Stable identifier of the direct semantic parent, or `null` for a Host child.
@@ -446,7 +448,11 @@ public data class PixelSemanticsNode(
  * Stable id-to-label pairs for custom actions, without executable callbacks.
  */
     public val customActionLabels: Map<String, String> = emptyMap(),
-)
+) {
+    init {
+        require(id > 0L) { "PixelSemanticsNode.id must be a positive allocated semantic id" }
+    }
+}
 
 /**
  * 执行 `PixelSemantics` 的 `Semantics` 公开行为；具体参数、返回和副作用见下文。

@@ -1,13 +1,16 @@
 package com.purride.pixelcore
 
+/** 当前唯一的资源 manifest/catalog 协议版本。 */
+public const val PixelResourceManifestVersion: Int = 1
+
 /** 资源 manifest 或 catalog JSON 解析失败。 */
 public class PixelResourceManifestLoadException(
     message: String,
     cause: Throwable? = null,
 ) : IllegalArgumentException(message, cause)
 
-/** manifest 中的一张 bitmap 资源定义，并保留旧 data class 的二进制契约。 */
-public class PixelBitmapResourceDefinition @JvmOverloads public constructor(
+/** manifest 中的一张 bitmap 资源定义。 */
+public data class PixelBitmapResourceDefinition @JvmOverloads public constructor(
     /** catalog 内稳定且非空的资源 id。 */
     public val id: String,
     /** 相对资源根目录的安全路径。 */
@@ -20,48 +23,10 @@ public class PixelBitmapResourceDefinition @JvmOverloads public constructor(
         requireResourcePath(path, "bitmap path")
         requireOptionalSha256(sha256, "bitmap '$id' sha256")
     }
-
-    /** 保留旧 data class 的第一个解构槽位。 */
-    public operator fun component1(): String = id
-
-    /** 保留旧 data class 的第二个解构槽位。 */
-    public operator fun component2(): String = path
-
-    /** 新增 checksum 解构槽位。 */
-    public operator fun component3(): String? = sha256
-
-    /** 保留旧两参数 copy 描述符，并默认延续当前 checksum。 */
-    public fun copy(
-        id: String = this.id,
-        path: String = this.path,
-    ): PixelBitmapResourceDefinition = PixelBitmapResourceDefinition(id, path, sha256)
-
-    /** 按资源定义的全部字段比较。 */
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PixelBitmapResourceDefinition) return false
-        return id == other.id && path == other.path && sha256 == other.sha256
-    }
-
-    /** 对无 checksum 的旧实例保持原 data class 哈希。 */
-    override fun hashCode(): Int {
-        /** 旧 id/path 字段生成的哈希。 */
-        val legacyHash = 31 * id.hashCode() + path.hashCode()
-        return sha256?.let { checksum -> 31 * legacyHash + checksum.hashCode() } ?: legacyHash
-    }
-
-    /** 对无 checksum 的旧实例保持原 data class 文本。 */
-    override fun toString(): String {
-        return if (sha256 == null) {
-            "PixelBitmapResourceDefinition(id=$id, path=$path)"
-        } else {
-            "PixelBitmapResourceDefinition(id=$id, path=$path, sha256=$sha256)"
-        }
-    }
 }
 
-/** manifest 中的一张 sprite sheet 定义，并保留旧 data class 的二进制契约。 */
-public class PixelSpriteSheetResourceDefinition @JvmOverloads public constructor(
+/** manifest 中的一张 sprite sheet 定义。 */
+public data class PixelSpriteSheetResourceDefinition @JvmOverloads public constructor(
     /** catalog 内稳定且非空的资源 id。 */
     public val id: String,
     /** 相对资源根目录的 sheet JSON 路径。 */
@@ -77,48 +42,6 @@ public class PixelSpriteSheetResourceDefinition @JvmOverloads public constructor
         requireResourceId(bitmap, "sprite sheet bitmap")
         requireOptionalSha256(sha256, "sprite sheet '$id' sha256")
     }
-
-    /** 保留旧 data class 的第一个解构槽位。 */
-    public operator fun component1(): String = id
-
-    /** 保留旧 data class 的第二个解构槽位。 */
-    public operator fun component2(): String = path
-
-    /** 保留旧 data class 的第三个解构槽位。 */
-    public operator fun component3(): String = bitmap
-
-    /** 新增 checksum 解构槽位。 */
-    public operator fun component4(): String? = sha256
-
-    /** 保留旧三参数 copy 描述符，并默认延续当前 checksum。 */
-    public fun copy(
-        id: String = this.id,
-        path: String = this.path,
-        bitmap: String = this.bitmap,
-    ): PixelSpriteSheetResourceDefinition = PixelSpriteSheetResourceDefinition(id, path, bitmap, sha256)
-
-    /** 按资源定义的全部字段比较。 */
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PixelSpriteSheetResourceDefinition) return false
-        return id == other.id && path == other.path && bitmap == other.bitmap && sha256 == other.sha256
-    }
-
-    /** 对无 checksum 的旧实例保持原 data class 哈希。 */
-    override fun hashCode(): Int {
-        /** 旧 id/path/bitmap 字段生成的哈希。 */
-        val legacyHash = 31 * (31 * id.hashCode() + path.hashCode()) + bitmap.hashCode()
-        return sha256?.let { checksum -> 31 * legacyHash + checksum.hashCode() } ?: legacyHash
-    }
-
-    /** 对无 checksum 的旧实例保持原 data class 文本。 */
-    override fun toString(): String {
-        return if (sha256 == null) {
-            "PixelSpriteSheetResourceDefinition(id=$id, path=$path, bitmap=$bitmap)"
-        } else {
-            "PixelSpriteSheetResourceDefinition(id=$id, path=$path, bitmap=$bitmap, sha256=$sha256)"
-        }
-    }
 }
 
 /** catalog 中的命名颜色资源。 */
@@ -133,8 +56,8 @@ public data class PixelColorResourceDefinition(
     }
 }
 
-/** catalog 中的字形包资源，并保留旧 data class 的二进制契约。 */
-public class PixelFontResourceDefinition @JvmOverloads public constructor(
+/** catalog 中的字形包资源。 */
+public data class PixelFontResourceDefinition @JvmOverloads public constructor(
     /** catalog 内稳定且非空的资源 id。 */
     public val id: String,
     /** 相对资源根目录的 glyph manifest 路径。 */
@@ -153,67 +76,6 @@ public class PixelFontResourceDefinition @JvmOverloads public constructor(
         requireOptionalSha256(manifestSha256, "font '$id' manifestSha256")
         requireOptionalSha256(binarySha256, "font '$id' binarySha256")
     }
-
-    /** 保留旧 data class 的第一个解构槽位。 */
-    public operator fun component1(): String = id
-
-    /** 保留旧 data class 的第二个解构槽位。 */
-    public operator fun component2(): String = manifestPath
-
-    /** 保留旧 data class 的第三个解构槽位。 */
-    public operator fun component3(): String = binaryPath
-
-    /** 新增 manifest checksum 解构槽位。 */
-    public operator fun component4(): String? = manifestSha256
-
-    /** 新增二进制 checksum 解构槽位。 */
-    public operator fun component5(): String? = binarySha256
-
-    /** 保留旧三参数 copy 描述符，并默认延续当前 checksum。 */
-    public fun copy(
-        id: String = this.id,
-        manifestPath: String = this.manifestPath,
-        binaryPath: String = this.binaryPath,
-    ): PixelFontResourceDefinition = PixelFontResourceDefinition(
-        id = id,
-        manifestPath = manifestPath,
-        binaryPath = binaryPath,
-        manifestSha256 = manifestSha256,
-        binarySha256 = binarySha256,
-    )
-
-    /** 按资源定义的全部字段比较。 */
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PixelFontResourceDefinition) return false
-        return id == other.id &&
-            manifestPath == other.manifestPath &&
-            binaryPath == other.binaryPath &&
-            manifestSha256 == other.manifestSha256 &&
-            binarySha256 == other.binarySha256
-    }
-
-    /** 对无 checksum 的旧实例保持原 data class 哈希。 */
-    override fun hashCode(): Int {
-        /** 旧 id/manifest/binary 字段生成的哈希。 */
-        val legacyHash = 31 * (31 * id.hashCode() + manifestPath.hashCode()) + binaryPath.hashCode()
-        if (manifestSha256 == null && binarySha256 == null) return legacyHash
-        /** 包含两个可选 checksum 的新哈希。 */
-        var result = legacyHash
-        result = 31 * result + (manifestSha256?.hashCode() ?: 0)
-        result = 31 * result + (binarySha256?.hashCode() ?: 0)
-        return result
-    }
-
-    /** 对无 checksum 的旧实例保持原 data class 文本。 */
-    override fun toString(): String {
-        return if (manifestSha256 == null && binarySha256 == null) {
-            "PixelFontResourceDefinition(id=$id, manifestPath=$manifestPath, binaryPath=$binaryPath)"
-        } else {
-            "PixelFontResourceDefinition(id=$id, manifestPath=$manifestPath, binaryPath=$binaryPath, " +
-                "manifestSha256=$manifestSha256, binarySha256=$binarySha256)"
-        }
-    }
 }
 
 /** bitmap 与 sprite sheet 的基础资源清单。 */
@@ -222,13 +84,15 @@ public data class PixelResourceManifest(
     val bitmaps: List<PixelBitmapResourceDefinition>,
     /** 按声明顺序保存的 sprite sheet 定义。 */
     val spriteSheets: List<PixelSpriteSheetResourceDefinition>,
-    /** 资源协议版本；当前只接受 1 和 2。 */
-    val version: Int = 1,
+    /** 资源协议版本；当前只存在一个版本。 */
+    val version: Int = PixelResourceManifestVersion,
     /** 只允许字符串键值且受数量限制的附加信息。 */
     val metadata: Map<String, String> = emptyMap(),
 ) {
     init {
-        require(version in 1..2) { "unsupported resource manifest version $version" }
+        require(version == PixelResourceManifestVersion) {
+            "unsupported resource manifest version $version"
+        }
         require(bitmaps.size <= PixelResourceSafetyLimits.MaxEntries) {
             "bitmap count ${bitmaps.size} exceeds ${PixelResourceSafetyLimits.MaxEntries}"
         }
@@ -271,9 +135,6 @@ public data class PixelResourceCatalog(
     val fonts: List<PixelFontResourceDefinition>,
 ) {
     init {
-        require(resources.version == 2 || (colors.isEmpty() && fonts.isEmpty())) {
-            "resource manifest version 2 is required for colors or fonts"
-        }
         require(colors.size <= PixelResourceSafetyLimits.MaxEntries) {
             "color count ${colors.size} exceeds ${PixelResourceSafetyLimits.MaxEntries}"
         }
@@ -363,8 +224,8 @@ public object PixelResourceManifestJsonLoader {
 
     /** 从已校验根对象构建基础 manifest。 */
     private fun parseManifestObject(root: PixelJsonObject): PixelResourceManifest {
-        /** 未声明时保持第一版兼容的协议版本。 */
-        val version = root.optionalInt("version") ?: 1
+        /** 未声明时按当前唯一协议版本处理。 */
+        val version = root.optionalInt("version") ?: PixelResourceManifestVersion
         /** 可选字符串 metadata。 */
         val metadata = root.optionalObject("metadata")
             ?.requireStringMap("metadata")

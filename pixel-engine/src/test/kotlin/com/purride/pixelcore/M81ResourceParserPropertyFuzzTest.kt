@@ -31,7 +31,7 @@ class M81ResourceParserPropertyFuzzTest {
             val second = PixelResourceManifestJsonLoader.parseCatalog(json, digest)
 
             assertEquals(first, second)
-            assertEquals(2, first.resources.version)
+            assertEquals(PixelResourceManifestVersion, first.resources.version)
             assertTrue(first.resources.bitmaps.isNotEmpty())
             /** 当前 catalog 中可以被 sprite sheet 引用的 bitmap id。 */
             val bitmapIds = first.resources.bitmaps.map { definition -> definition.id }.toSet()
@@ -69,7 +69,7 @@ class M81ResourceParserPropertyFuzzTest {
             try {
                 /** 少量随机文本可能恰好构成合法 manifest。 */
                 val manifest = PixelResourceManifestJsonLoader.parse(text)
-                assertTrue(manifest.version in 1..2)
+                assertEquals(PixelResourceManifestVersion, manifest.version)
                 assertEquals(
                     manifest.bitmaps.size,
                     manifest.bitmaps.map { definition -> definition.id }.toSet().size,
@@ -195,7 +195,7 @@ class M81ResourceParserPropertyFuzzTest {
                 "\"binary\":\"fonts/$index/glyphs.bin\"}"
         }
         return "{" +
-            "\"version\":2," +
+            "\"version\":1," +
             "\"metadata\":{\"seed\":\"2026071401\",\"iteration\":\"$iteration\"}," +
             "\"bitmaps\":[$bitmaps]," +
             "\"spriteSheets\":[$sheets]," +

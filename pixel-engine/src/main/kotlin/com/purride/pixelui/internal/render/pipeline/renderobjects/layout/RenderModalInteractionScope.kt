@@ -44,11 +44,6 @@ internal class RenderModalInteractionScope(
         markNeedsPaint()
     }
 
-    /** Compatibility helper for tests and standalone callers that only change ownership. */
-    fun updateActive(active: Boolean) {
-        update(active = active)
-    }
-
     /** Returns the canonical OverlayHost order attached to this retained presentation. */
     internal fun presentationOrder(): Long? = overlayOrder
 

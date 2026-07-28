@@ -60,7 +60,7 @@ public fun interface PixelPercentFormatter {
  * Immutable localized strings and numeric formatters for one exact [locale].
  *
  * Existing standard component names remain in [PixelLabelTokens], preserving that data class's
- * constructor and copy ABI. Navigation container names and number formatting are additive here.
+ * 构造器与 copy 契约。导航容器名称和数字格式化同样定义在这里。
  * Every static label and every formatter result must be non-blank.
  *
  * @property locale Exact locale key represented by this bundle.
@@ -318,7 +318,7 @@ private class BundleMapLocalizationDelegate(
  * For each requested locale, bundle lookup tries its exact canonical tag and then its language
  * subtag. It next tries the configured default locale and its language, then English. A custom
  * [delegate] wins over built-ins for every exact candidate; built-in English remains terminal.
- * Constructing this resolver does not install [PixelLocalizations] or alter legacy theme labels.
+ * 构造该 resolver 本身不会安装 [PixelLocalizations]。
  *
  * @property delegate Optional consumer exact-locale delegate evaluated before built-ins.
  * @property defaultLocale Configured fallback tried after requested exact/language candidates.
@@ -429,8 +429,9 @@ public class PixelLocalizationResolver @JvmOverloads constructor(
  * the nearest [HostCapabilities] snapshot. The first requested locale remains the published active
  * locale while bundle lookup may reach a later supported preference. An absent or empty Host list
  * falls back to [PixelLocalizationResolver.defaultLocale]. A non-null override avoids the Host
- * locale dependency. Hosts never add this provider automatically, preserving legacy theme-label
- * behavior until an application opts in.
+ * locale dependency. Hosts never add this provider automatically: until an application opts in,
+ * components resolve their text from theme label tokens。Host 不会自动安装该 provider，未接入前
+ * 组件从 theme label token 解析文本。
  *
  * @property child Descendant subtree receiving the resolved localization bundle.
  * @property resolver Deterministic custom/built-in bundle resolver.
@@ -468,9 +469,13 @@ public class PixelLocalizationProvider @JvmOverloads constructor(
  *
  * Explicit opt-in inherited localization provider for one active [locale] and resolved [bundle].
  *
- * A Host capability locale does not install this provider automatically. Components can use
- * [maybeOf] to preserve legacy theme labels when no provider is present; [of] deliberately fails
- * outside an explicit provider. Nested providers resolve to the nearest retained boundary.
+ * Host capability 中的 locale 不会自动安装该 provider。组件使用 [maybeOf]，因此缺少 provider 时
+ * 会回落到 theme label token；[of] 在显式 provider 之外会故意失败。嵌套 provider 解析到最近的
+ * retained 边界。
+ *
+ * A Host capability locale does not install this provider automatically. Components use [maybeOf]
+ * so an absent provider falls through to theme label tokens; [of] deliberately fails outside an
+ * explicit provider. Nested providers resolve to the nearest retained boundary.
  *
  * @property locale Active requested locale, which may differ from [bundle]'s fallback locale.
  * @property bundle Resolved immutable strings and formatters inherited by descendants.

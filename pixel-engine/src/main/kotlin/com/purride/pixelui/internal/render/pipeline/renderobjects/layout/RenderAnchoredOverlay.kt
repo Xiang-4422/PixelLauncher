@@ -667,7 +667,7 @@ public class RenderAnchoredOverlayFollower(
 
         /** Anchor-relative origin below the anchor before collision handling. */
         val belowY = anchorTop + contentOffsetY
-        /** Legacy offset portion interpreted as the visual gap beyond the anchor edge. */
+        /** contentOffset 中被解释为锚点边缘外视觉间隙的部分。 */
         val gapFromAnchorEdge = (contentOffsetY - anchorHeight).coerceAtLeast(0L)
         /** Mirrored origin above the anchor using the same non-negative visual gap. */
         val aboveY = anchorTop - gapFromAnchorEdge - childHeight

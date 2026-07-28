@@ -17,7 +17,6 @@ cd "$ROOT_DIR"
   :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkMetalavaApi \
-  :pixel-engine:checkMetalavaReleasedCompatibility \
   :pixel-engine:checkStableApiBoundary \
   :pixel-engine:checkThemeTokenCoverage \
   :pixel-engine:checkUnicodeGraphemeDataGeneration \

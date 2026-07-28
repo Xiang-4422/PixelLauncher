@@ -217,6 +217,7 @@ import com.purride.pixelui.PixelLocalizationDelegate
 import com.purride.pixelui.PixelLocalizationProvider
 import com.purride.pixelui.PixelLocalizationResolver
 import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayDismissReason
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelPercentFormatter
 import com.purride.pixelui.PixelAdaptiveEnvironment
@@ -260,7 +261,7 @@ class PixelTesterConsumerTest {
             logicalHeight = 8,
         )
 
-        // Compatibility toast handle proves passive notifications do not steal application Back.
+        // Toast handle proves passive notifications do not steal application Back.
         val passiveToast = overlay.showToast("SAVED")
         tester.pumpFrame(16)
 
@@ -268,7 +269,7 @@ class PixelTesterConsumerTest {
         assertFalse(hapticHandled)
         assertTrue(tester.exists(find.byText("SAVED")))
         assertFalse(backDispatcher.handleBack())
-        assertTrue(passiveToast.dismiss())
+        assertTrue(passiveToast.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(16)
         assertFalse(tester.exists(find.byText("SAVED")))
 

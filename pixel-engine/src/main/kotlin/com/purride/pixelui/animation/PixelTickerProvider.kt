@@ -35,8 +35,10 @@ public data class PixelTickerProviderDiagnostics(
  *
  * Creates and coalesces [PixelTicker] instances on one frame scheduler.
  *
- * The original constructor and ticker factory remain source and binary compatible. Additive
- * lifecycle methods let a Host-owned scope freeze active time, cancel its pending source frame,
+ * 生命周期方法允许 Host 私有 scope 冻结 active time、取消在途上游帧、连续恢复，并确定性地释放
+ * 全部 ticker。
+ *
+ * Lifecycle methods let a Host-owned scope freeze active time, cancel its pending source frame,
  * resume continuously, and dispose every ticker deterministically.
  */
 public class PixelTickerProvider(

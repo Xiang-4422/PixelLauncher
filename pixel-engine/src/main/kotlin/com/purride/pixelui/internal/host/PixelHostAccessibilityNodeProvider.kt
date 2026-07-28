@@ -1127,30 +1127,6 @@ internal sealed interface PixelAccessibilityNodeIdentity {
         override val stableDebugId: String = semanticId.toString()
     }
 
-    /** Referential fallback for legacy render targets that still export semantic id zero. */
-    class RetainedSource(
-        /** Retained render source compared by reference rather than structural equality. */
-        private val source: Any,
-    ) : PixelAccessibilityNodeIdentity {
-        /** Stable diagnostic representation for this process lifetime. */
-        override val stableDebugId: String = "legacy-source-${System.identityHashCode(source)}"
-
-        /** Preserves referential source identity across snapshot wrapper recreation. */
-        override fun equals(other: Any?): Boolean =
-            other is RetainedSource && source === other.source
-
-        /** Uses the referential source hash expected by [equals]. */
-        override fun hashCode(): Int = System.identityHashCode(source)
-    }
-
-    /** Frame-local fallback reserved for manually-created legacy snapshots without a source. */
-    data class LegacyIndex(
-        /** Preorder position within the legacy frame. */
-        val index: Int,
-    ) : PixelAccessibilityNodeIdentity {
-        /** Diagnostic representation; real retained nodes never depend on this fallback. */
-        override val stableDebugId: String = "legacy-index-$index"
-    }
 }
 
 /** Monotonic virtual-id allocator that never maps one active id to a different logical node. */
@@ -1419,13 +1395,11 @@ internal fun buildPixelAccessibilityTreeSnapshot(
     virtualIdRegistry: PixelAccessibilityVirtualIdRegistry,
     customActionRegistry: PixelAccessibilityCustomActionRegistry,
 ): PixelAccessibilityTreeSnapshot {
-    val nonZeroIds = semanticsTargets.map { target -> target.node.id }.filter { id -> id != 0L }
-    require(nonZeroIds.distinct().size == nonZeroIds.size) {
+    val semanticIds = semanticsTargets.map { target -> target.node.id }
+    require(semanticIds.distinct().size == semanticIds.size) {
         "A semantic tree cannot expose duplicate retained semantic ids."
     }
-    val targetsBySemanticId = semanticsTargets
-        .filter { target -> target.node.id != 0L }
-        .associateBy { target -> target.node.id }
+    val targetsBySemanticId = semanticsTargets.associateBy { target -> target.node.id }
     val childTargetsByParentId = semanticsTargets
         .filter { target -> target.node.parentId != null && target.node.parentId in targetsBySemanticId }
         .groupBy { target -> target.node.parentId }
@@ -1440,15 +1414,12 @@ internal fun buildPixelAccessibilityTreeSnapshot(
     )
     val pendingNodes = mutableListOf<PixelAccessibilityPendingNode>()
     val visitedTargets = IdentityHashMap<PixelSemanticsTarget, Boolean>()
-    val targetIndices = IdentityHashMap<PixelSemanticsTarget, Int>().apply {
-        semanticsTargets.forEachIndexed { index, target -> put(target, index) }
-    }
 
     fun visit(target: PixelSemanticsTarget, inheritedClip: PixelAccessibilityBounds) {
         if (visitedTargets.put(target, true) != null) return
         val rawBounds = target.node.toAccessibilityBounds(geometry) ?: return
         val clippedBounds = rawBounds.intersect(inheritedClip) ?: return
-        val identity = target.toAccessibilityIdentity(targetIndices.getValue(target))
+        val identity = target.toAccessibilityIdentity()
         pendingNodes += PixelAccessibilityPendingNode(
             identity = identity,
             target = target,
@@ -1464,7 +1435,6 @@ internal fun buildPixelAccessibilityTreeSnapshot(
     roots.forEach { root -> visit(root, contentClip) }
     val virtualIds = virtualIdRegistry.reconcile(pendingNodes.map(PixelAccessibilityPendingNode::identity))
     val semanticIdToVirtualId = pendingNodes
-        .filter { pending -> pending.target.node.id != 0L }
         .associate { pending -> pending.target.node.id to virtualIds.getValue(pending.identity) }
     val customIdentities = pendingNodes.flatMap { pending ->
         pending.target.actions.customActions.map { action ->
@@ -1507,7 +1477,7 @@ internal fun buildPixelAccessibilityTreeSnapshot(
     )
 }
 
-/** Compatibility helper retained for pure mapping tests of manually-created semantics nodes. */
+/** 仅供纯映射测试使用的入口：直接委托给唯一的树构建实现。 */
 internal fun buildPixelAccessibilityNodeSnapshots(
     semanticsNodes: List<PixelSemanticsNode>,
     geometry: PixelGridGeometry,
@@ -1645,16 +1615,9 @@ private fun PixelPagerTarget.toAccessibilityScrollInfo(
     )
 }
 
-/** Converts one target into its stable retained identity or a documented legacy fallback. */
-private fun PixelSemanticsTarget.toAccessibilityIdentity(index: Int): PixelAccessibilityNodeIdentity {
-    /** retained source 的稳定快照，避免跨 artifact 属性智能类型转换。 */
-    val retainedSource = source
-    return when {
-        node.id != 0L -> PixelAccessibilityNodeIdentity.Semantic(node.id)
-        retainedSource != null -> PixelAccessibilityNodeIdentity.RetainedSource(retainedSource)
-        else -> PixelAccessibilityNodeIdentity.LegacyIndex(index)
-    }
-}
+/** 把一个语义目标转换为其稳定的 retained 语义身份。 */
+private fun PixelSemanticsTarget.toAccessibilityIdentity(): PixelAccessibilityNodeIdentity =
+    PixelAccessibilityNodeIdentity.Semantic(node.id)
 
 /** Converts logical semantic bounds to Host physical pixels without clipping. */
 private fun PixelSemanticsNode.toAccessibilityBounds(

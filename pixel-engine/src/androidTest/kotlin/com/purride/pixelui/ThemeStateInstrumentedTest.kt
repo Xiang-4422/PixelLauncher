@@ -40,7 +40,8 @@ class ThemeStateInstrumentedTest {
                 scenario.onActivity { activity ->
                     /** Production PixelHostView created and attached by the test Activity. */
                     val host = activity.hostView
-                    host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                    host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                     host.setContent {
                         themedStateFixture(themeCase, focusNode)
                     }
@@ -141,7 +142,8 @@ class ThemeStateInstrumentedTest {
             scenario.onActivity { activity ->
                 /** Production Host receiving the controlled public widget tree. */
                 val host = activity.hostView
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setContent(fixture::build)
                 drawSynchronously(host)
                 fixture.focusNode.requestFocus()
@@ -220,7 +222,8 @@ class ThemeStateInstrumentedTest {
             scenario.onActivity { activity ->
                 /** Production Host receiving the controlled public widget tree. */
                 val host = activity.hostView
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setContent(fixture::build)
                 drawSynchronously(host)
             }

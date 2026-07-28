@@ -57,7 +57,7 @@ internal class PixelTextScaleRasterizer(
         )
     }
 
-    /** Preserves cluster support while keeping the legacy single-code-point fallback contract. */
+    /** 支持 grapheme cluster，同时保留单 code point 的确定性回落路径。 */
     override fun canRasterizeCluster(cluster: String): Boolean {
         /** Optional atomic cluster capability implemented by the wrapped rasterizer. */
         val clusterDelegate = delegate as? PixelClusterTextRasterizer

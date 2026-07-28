@@ -10,5 +10,5 @@
 - Activity/Fragment 销毁时释放 Host 引用；不要让 drawable/stream/context 进入长期 cache value。
 - 生产资源失败通过 sealed result/error reporter 上报，不能在渲染热路径抛出未分类异常。
 
-资源格式、manifest 与预热 API 见 [API 手册](../使用说明与API手册.md)，安全与内存边界变化见
-[统一迁移指南](migration.md)。
+资源格式、manifest 与预热 API 见 [API 手册](../使用说明与API手册.md)，当前唯一协议版本与
+接入约定见[接入与升级指南](migration.md)。

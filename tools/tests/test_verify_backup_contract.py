@@ -20,16 +20,16 @@ class BackupContractVerifierTest(unittest.TestCase):
         """
         full_backup = """
             <full-backup-content>
-              <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
+              <exclude domain="sharedpref" path="app_repository_cache.xml" />
             </full-backup-content>
         """
         data_extraction = """
             <data-extraction-rules>
               <cloud-backup>
-                <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
+                <exclude domain="sharedpref" path="app_repository_cache.xml" />
               </cloud-backup>
               <device-transfer>
-                <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
+                <exclude domain="sharedpref" path="app_repository_cache.xml" />
               </device-transfer>
             </data-extraction-rules>
         """
@@ -58,13 +58,13 @@ class BackupContractVerifierTest(unittest.TestCase):
         """
         full_backup = """
             <full-backup-content>
-              <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
+              <exclude domain="sharedpref" path="app_repository_cache.xml" />
             </full-backup-content>
         """
         data_extraction = """
             <data-extraction-rules>
               <cloud-backup>
-                <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
+                <exclude domain="sharedpref" path="app_repository_cache.xml" />
               </cloud-backup>
               <device-transfer />
             </data-extraction-rules>

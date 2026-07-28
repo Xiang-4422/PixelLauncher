@@ -1296,7 +1296,8 @@ public class PixelTester {
 
         // Stateful controls retain the public configuration widget and build an internal
         // InteractionDetector whose forwarding onTap owns the render target. Match that retained
-        // descendant by the same key so find.byKey keeps its historical behavior.
+        // descendant by the same key so find.byKey resolves the real render target.
+        // 即按同一 key 匹配该 retained 后代，使 find.byKey 命中真实渲染目标。
         val widgetKey = widget.readField("key")
         if (widgetKey != null) {
             runtime.collectWidgets()

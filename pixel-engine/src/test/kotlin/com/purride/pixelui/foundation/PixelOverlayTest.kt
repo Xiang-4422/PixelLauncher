@@ -4,6 +4,7 @@ import com.purride.pixelui.Builder
 import com.purride.pixelui.ModalBarrier
 import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayDismissReason
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.PixelToastQueueController
 import com.purride.pixelui.Stack
@@ -94,7 +95,7 @@ class PixelOverlayTest {
         assertEquals(1, controller.size)
         assertTrue(tester.exists(find.byText("SAVED")))
 
-        assertTrue(handle.dismiss())
+        assertTrue(handle.dismiss(PixelOverlayDismissReason.Handle))
         tester.pumpFrame(16)
 
         assertEquals(0, controller.size)

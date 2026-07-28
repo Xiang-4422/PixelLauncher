@@ -15,48 +15,73 @@ import org.junit.Test
 /** Host resolution and retained-root integration contract for [HostCapabilitiesData]. */
 class PixelHostCapabilitiesIntegrationTest {
 
-    /** Verifies the compatibility default and authoritative override resolution paths. */
+    /** 验证唯一环境模型：从基础快照派生的部分覆盖只改动指定字段，其余字段逐项保留。 */
     @Test
-    fun effectiveResolutionUsesCompatibilityDefaultsUntilAnAtomicOverrideIsProvided() {
-        /** Non-default platform motion makes fallback derivation observable. */
-        val platformMotion = PixelMotionSettings(animatorDurationScale = 0.5f, reduceMotion = true)
-        /** Compatibility snapshot should preserve defaults except for legacy Host controls. */
-        val compatibilitySnapshot = resolveEffectiveHostCapabilities(
-            capabilitiesOverride = null,
-            textDirection = TextDirection.RTL,
-            motionSettings = platformMotion,
+    fun partialOverrideDerivedFromSnapshotKeepsEveryOtherEnvironmentField() {
+        /** 模拟平台当前上报的完整环境快照。 */
+        val platformSnapshot = HostCapabilitiesData(
+            locales = listOf(PixelLocale("fr-FR"), PixelLocale.English),
+            layoutDirection = TextDirection.RTL,
+            textScaleFactor = 1.25f,
+            highContrast = true,
+            motionSettings = PixelMotionSettings(animatorDurationScale = 0.5f, reduceMotion = true),
+            density = 2.75f,
+            refreshRateHz = 90f,
+        )
+        /** 调用方按快照模型只关闭动画，不再需要独立的 motion/direction 入口。 */
+        val partialOverride = platformSnapshot.copy(
+            motionSettings = PixelMotionSettings(animatorDurationScale = 0f),
         )
 
-        assertEquals(
-            HostCapabilitiesData.Default.copy(
-                layoutDirection = TextDirection.RTL,
-                motionSettings = platformMotion,
-            ),
-            compatibilitySnapshot,
-        )
+        assertEquals(0f, partialOverride.motionSettings.animatorDurationScale)
+        assertFalse(partialOverride.motionSettings.reduceMotion)
+        assertEquals(platformSnapshot.locales, partialOverride.locales)
+        assertEquals(platformSnapshot.layoutDirection, partialOverride.layoutDirection)
+        assertEquals(platformSnapshot.textScaleFactor, partialOverride.textScaleFactor)
+        assertEquals(platformSnapshot.highContrast, partialOverride.highContrast)
+        assertEquals(platformSnapshot.density, partialOverride.density)
+        assertEquals(platformSnapshot.refreshRateHz, partialOverride.refreshRateHz)
+        assertEquals(platformSnapshot.displayFeatures, partialOverride.displayFeatures)
+    }
 
-        /** Explicit snapshot must remain authoritative over both legacy fallback inputs. */
+    /** 验证完整覆盖快照被原样发布到 retained tree，不会被任何环境字段重新推导。 */
+    @Test
+    fun completeOverrideSnapshotIsPublishedToTheRetainedTreeUnchanged() {
+        /** 与平台默认值处处不同的显式完整快照。 */
         val overrideSnapshot = HostCapabilitiesData(
-            layoutDirection = TextDirection.LTR,
+            layoutDirection = TextDirection.RTL,
             textScaleFactor = 1.75f,
             highContrast = true,
             motionSettings = PixelMotionSettings(animatorDurationScale = 0f),
             density = 3f,
             refreshRateHz = 120f,
         )
-        val resolvedOverride = resolveEffectiveHostCapabilities(
-            capabilitiesOverride = overrideSnapshot,
-            textDirection = TextDirection.RTL,
-            motionSettings = platformMotion,
-        )
+        /** Retained runtime 复现 Host 每帧发布环境快照的真实路径。 */
+        val runtime = PixelUiRuntime()
+        var inheritedCapabilities: HostCapabilitiesData? = null
+        try {
+            runtime.render(
+                root = hostRoot(
+                    capabilities = overrideSnapshot,
+                    child = Builder { context ->
+                        inheritedCapabilities = HostCapabilities.of(context)
+                        SizedBox(width = 1, height = 1)
+                    },
+                ),
+                logicalWidth = 8,
+                logicalHeight = 8,
+            )
+        } finally {
+            runtime.dispose()
+        }
 
-        assertSame(overrideSnapshot, resolvedOverride)
+        assertSame(overrideSnapshot, inheritedCapabilities)
     }
 
     /** Verifies capability, direction, and motion providers observe one immutable snapshot. */
     @Test
     fun hostRootDerivesDirectionAndMotionFromTheSameCapabilitySnapshot() {
-        /** Distinct direction and reduced-motion values expose accidental legacy-field mixing. */
+        /** 方向与 reduce-motion 取不同值，可暴露环境字段被错误混用的情况。 */
         val capabilities = HostCapabilitiesData(
             layoutDirection = TextDirection.RTL,
             motionSettings = PixelMotionSettings(animatorDurationScale = 0.25f, reduceMotion = true),
@@ -184,7 +209,7 @@ class PixelHostCapabilitiesIntegrationTest {
         }
     }
 
-    /** Builds the additive capability boundary without unrelated Host environment wrappers. */
+    /** 构建纯粹的 capability 继承边界，不叠加其他 Host 环境包装。 */
     private fun capabilityScope(
         capabilities: HostCapabilitiesData,
         child: Widget,

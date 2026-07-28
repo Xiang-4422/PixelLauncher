@@ -8,11 +8,11 @@ import java.io.DataOutputStream
 import java.nio.charset.StandardCharsets
 import java.util.zip.CRC32
 
-/** 公开 `PixelNavigatorSnapshotCodec` 的 `PixelNavigatorPersistentSnapshotSchemaVersion` 配置或运行值。
+/** [PixelNavigatorSnapshotCodec] 写入并接受的唯一持久化 Navigator 快照 schema。
  *
- * Current persistent Navigator snapshot schema written by [PixelNavigatorSnapshotCodec].
+ * Only persistent Navigator snapshot schema written and accepted by [PixelNavigatorSnapshotCodec].
  */
-public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 2
+public const val PixelNavigatorPersistentSnapshotSchemaVersion: Int = 1
 
 /** 公开 `PixelNavigatorSnapshotCodec` 的 `PixelNavigatorPersistentSnapshotBundleKey` 配置或运行值。
  *
@@ -26,9 +26,12 @@ public const val PixelNavigatorPersistentSnapshotBundleKey: String =
  *
  * Versioned codec for one destination argument value.
  *
- * [schemaVersion] is written next to every argument payload. [decode] must explicitly accept and
- * migrate every older version that remains supported. Returning [PixelRoutePayloadDecodeResult.Rejected]
- * safely rejects the complete stack before any live Navigator state is changed.
+ * [schemaVersion] 会与每份参数 payload 一起写入；[decode] 只能显式接受自己能理解的版本，返回
+ * [PixelRoutePayloadDecodeResult.Rejected] 会在改动任何活跃 Navigator 状态前整体拒绝该栈。
+ *
+ * [schemaVersion] is written next to every argument payload. [decode] must explicitly accept only
+ * the versions it understands. Returning [PixelRoutePayloadDecodeResult.Rejected] safely rejects the
+ * complete stack before any live Navigator state is changed.
  *
  * @param T Non-null argument value represented by this codec.
  */
@@ -47,7 +50,9 @@ public interface PixelRoutePayloadCodec<T : Any> {
 
     /** 执行 `PixelNavigatorSnapshotCodec` 的 `decode` 公开行为；具体参数、返回和副作用见下文。
  *
- * Decodes or migrates [payload] written with [schemaVersion].
+ * 解码由 [schemaVersion] 写入的 [payload]。
+ *
+ * Decodes [payload] written with [schemaVersion].
  */
     public fun decode(
         schemaVersion: Int,
@@ -63,7 +68,9 @@ public sealed interface PixelRoutePayloadDecodeResult<out T : Any> {
     /**
  * 定义 `Decoded` 在 `PixelNavigatorSnapshotCodec` 中承担的数据与行为边界。
  *
-     * Successfully decoded or migrated argument value.
+     * 解码成功的参数值。
+     *
+     * Successfully decoded argument value.
      *
      * @property value Validated value that may be used to create a restored route request.
      */
@@ -123,8 +130,9 @@ public sealed interface PixelRouteStateDecodeResult {
  * Persistence adapter for one typed [destination].
  *
  * The adapter is the allowlist boundary for process restoration. Arguments and route-local state
- * are never serialized reflectively. Implementations choose stable payloads, validate their size
- * and contents, and explicitly migrate older payload schema versions.
+ * are never serialized reflectively. Implementations choose stable payloads and validate their size
+ * and contents before any live Navigator state changes。实现必须自行选择稳定 payload，并在改动
+ * 活跃 Navigator 状态前完成尺寸与内容校验。
  *
  * @param A Non-null argument type accepted by [destination].
  * @param R Successful result type produced by [destination].
@@ -156,7 +164,9 @@ public abstract class PixelRouteSnapshotAdapter<A : Any, R>(
     /**
  * 执行 `PixelNavigatorSnapshotCodec` 的 `decodeRouteState` 公开行为；具体参数、返回和副作用见下文。
  *
-     * Validates or migrates route-local [payloads] written with [schemaVersion].
+     * 校验由 [schemaVersion] 写入的 route-local [payloads]。
+     *
+     * Validates route-local [payloads] written with [schemaVersion].
      *
      * The default accepts only an empty payload. Destinations that persist state must override
      * this method and return a restorer containing already validated values.
@@ -235,7 +245,7 @@ public enum class PixelNavigatorSnapshotFailureReason {
     /** The envelope magic, checksum, lengths, or encoded value structure was invalid. */
     CorruptData,
 
-    /** The envelope uses a snapshot schema newer than or unrelated to supported schemas. */
+    /** envelope schema 与本 SDK 唯一写入并接受的 schema 不一致。 */
     UnsupportedSchema,
 
     /** Entry IDs, current-entry identity, or stack shape violated Navigator invariants. */
@@ -369,27 +379,18 @@ public data class PixelNavigatorRestoredEntryInspection(
  * not expose those potentially sensitive values. A Navigator must consume the whole plan or keep
  * its existing stack; partial entry restoration is deliberately unsupported.
  *
- * @property sourceSchemaVersion Schema read from the encoded envelope.
- * @property currentSchemaVersion Schema used by the current SDK.
+ * @property schemaVersion 产生该计划的快照 schema。
  * @property currentEntryId Foreground entry identity preserved by the snapshot.
  * @property entries Argument-free root-to-foreground entry inspections.
  */
 public class PixelNavigatorRestorePlan internal constructor(
-    public val sourceSchemaVersion: Int,
-    public val currentSchemaVersion: Int,
+    public val schemaVersion: Int,
     public val currentEntryId: PixelRouteEntryId,
     public val entries: List<PixelNavigatorRestoredEntryInspection>,
     internal val resolvedEntries: List<ResolvedPersistentRouteEntry>,
 ) {
     /** Whether the detached decoded entries have already been claimed by a Navigator. */
     private var consumed: Boolean = false
-
-    /** 公开 `PixelNavigatorSnapshotCodec` 的 `migratedFromOlderSchema` 配置或运行值。
- *
- * Whether this plan migrated an older outer Navigator snapshot schema.
- */
-    public val migratedFromOlderSchema: Boolean
-        get() = sourceSchemaVersion != currentSchemaVersion
 
     /** Claims every detached entry exactly once for atomic Navigator installation. */
     @Synchronized
@@ -428,9 +429,13 @@ public fun Bundle.getPixelNavigatorPersistentSnapshotBytes(
  *
  * Bounded, checksummed codec for versioned typed Navigator snapshots.
  *
- * The current schema stores entry identity, destination ID, versioned argument bytes, versioned
+ * 该 schema 保存 entry 身份、destination ID、版本化参数字节、destination 批准的 route-local
+ * state 以及前台 entry ID。解码对任意字节数组都是全函数：畸形、未知、超限或被 adapter 拒绝的输入
+ * 一律返回 [PixelNavigatorSnapshotDecodeResult.Rejected]，既不抛出异常也不半途恢复栈。
+ *
+ * The schema stores entry identity, destination ID, versioned argument bytes, versioned
  * destination-approved local state, and the foreground entry ID. Decoding is total for arbitrary
- * byte arrays: malformed, unknown, oversized, or migration-rejected input returns [PixelNavigatorSnapshotDecodeResult.Rejected]
+ * byte arrays: malformed, unknown, oversized, or adapter-rejected input returns [PixelNavigatorSnapshotDecodeResult.Rejected]
  * instead of throwing or partially restoring a stack.
  */
 public class PixelNavigatorSnapshotCodec {
@@ -448,7 +453,7 @@ public class PixelNavigatorSnapshotCodec {
         }
         val rawEntries = (rawEntriesResult as CaptureEntriesResult.Captured).entries
         return try {
-            val payload = encodeSchema2Payload(
+            val payload = encodePayload(
                 currentEntryId = rawEntries.last().entryId,
                 entries = rawEntries,
             )
@@ -512,14 +517,13 @@ public class PixelNavigatorSnapshotCodec {
             )
         }
         val rawStack = try {
-            when (envelope.schemaVersion) {
-                LegacySnapshotSchemaVersion -> decodeSchema1Payload(envelope.payload)
-                PixelNavigatorPersistentSnapshotSchemaVersion -> decodeSchema2Payload(envelope.payload)
-                else -> return rejectedDecode(
+            if (envelope.schemaVersion != PixelNavigatorPersistentSnapshotSchemaVersion) {
+                return rejectedDecode(
                     PixelNavigatorSnapshotFailureReason.UnsupportedSchema,
                     "Unsupported Navigator snapshot schema ${envelope.schemaVersion}",
                 )
             }
+            decodePayload(envelope.payload)
         } catch (error: SnapshotLimitException) {
             return rejectedDecode(
                 PixelNavigatorSnapshotFailureReason.LimitExceeded,
@@ -534,11 +538,7 @@ public class PixelNavigatorSnapshotCodec {
         validateRawStack(rawStack)?.let { failure ->
             return PixelNavigatorSnapshotDecodeResult.Rejected(failure)
         }
-        return resolveRawStack(
-            sourceSchemaVersion = envelope.schemaVersion,
-            rawStack = rawStack,
-            registry = registry,
-        )
+        return resolveRawStack(rawStack = rawStack, registry = registry)
     }
 
     /** Captures and validates each live entry before any bytes are emitted. */
@@ -689,7 +689,6 @@ public class PixelNavigatorSnapshotCodec {
 
     /** Resolves every raw entry or rejects the complete stack on the first unsafe value. */
     private fun resolveRawStack(
-        sourceSchemaVersion: Int,
         rawStack: RawPersistentRouteStack,
         registry: PixelRouteSnapshotRegistry,
     ): PixelNavigatorSnapshotDecodeResult {
@@ -729,8 +728,7 @@ public class PixelNavigatorSnapshotCodec {
         }
         return PixelNavigatorSnapshotDecodeResult.Decoded(
             PixelNavigatorRestorePlan(
-                sourceSchemaVersion = sourceSchemaVersion,
-                currentSchemaVersion = PixelNavigatorPersistentSnapshotSchemaVersion,
+                schemaVersion = PixelNavigatorPersistentSnapshotSchemaVersion,
                 currentEntryId = rawStack.currentEntryId,
                 entries = inspections,
                 resolvedEntries = resolvedEntries,
@@ -874,8 +872,8 @@ public class PixelNavigatorSnapshotCodec {
         return null
     }
 
-    /** Encodes the current schema payload without the envelope header or checksum. */
-    private fun encodeSchema2Payload(
+    /** 编码不含 envelope 头与校验和的 schema payload。 */
+    private fun encodePayload(
         currentEntryId: PixelRouteEntryId,
         entries: List<RawPersistentRouteEntry>,
     ): ByteArray {
@@ -883,81 +881,58 @@ public class PixelNavigatorSnapshotCodec {
             DataOutputStream(byteOutput).use { output ->
                 output.writeLong(currentEntryId.value)
                 output.writeInt(entries.size)
-                entries.forEach { entry -> writeRawEntry(output, entry, includeState = true) }
+                entries.forEach { entry -> writeRawEntry(output, entry) }
             }
             byteOutput.toByteArray()
         }
     }
 
-    /** Decodes the current schema payload and rejects trailing bytes. */
-    private fun decodeSchema2Payload(payload: ByteArray): RawPersistentRouteStack {
+    /** 解码 schema payload，并拒绝任何尾部多余字节。 */
+    private fun decodePayload(payload: ByteArray): RawPersistentRouteStack {
         return DataInputStream(ByteArrayInputStream(payload)).use { input ->
             val currentEntryId = PixelRouteEntryId(readPositiveLong(input, "current entry ID"))
             val entryCount = readBoundedCount(input, "entry", SnapshotLimits.MaxEntries)
-            val entries = List(entryCount) { readRawEntry(input, includeState = true) }
-            require(input.available() == 0) { "Trailing bytes after schema 2 payload" }
+            val entries = List(entryCount) { readRawEntry(input) }
+            require(input.available() == 0) { "Trailing bytes after snapshot payload" }
             RawPersistentRouteStack(currentEntryId = currentEntryId, entries = entries)
         }
     }
 
-    /** Decodes schema 1, which lacked a foreground ID and route-local state payloads. */
-    private fun decodeSchema1Payload(payload: ByteArray): RawPersistentRouteStack {
-        return DataInputStream(ByteArrayInputStream(payload)).use { input ->
-            val entryCount = readBoundedCount(input, "entry", SnapshotLimits.MaxEntries)
-            val entries = List(entryCount) { readRawEntry(input, includeState = false) }
-            require(input.available() == 0) { "Trailing bytes after schema 1 payload" }
-            val currentEntryId = entries.lastOrNull()?.entryId
-                ?: throw IllegalArgumentException("Schema 1 Navigator stack is empty")
-            RawPersistentRouteStack(currentEntryId = currentEntryId, entries = entries)
-        }
-    }
-
-    /** Writes one raw entry in the selected outer schema layout. */
+    /** 按当前唯一 payload 布局写出一条原始 entry。 */
     private fun writeRawEntry(
         output: DataOutputStream,
         entry: RawPersistentRouteEntry,
-        includeState: Boolean,
     ) {
         output.writeLong(entry.entryId.value)
         writeString(output, entry.destinationId)
         output.writeInt(entry.argumentSchemaVersion)
         writeByteArray(output, entry.argumentPayload, SnapshotLimits.MaxArgumentBytes)
-        if (includeState) {
-            output.writeInt(entry.stateSchemaVersion)
-            output.writeInt(entry.statePayloads.size)
-            entry.statePayloads.toSortedMap().forEach { (key, payload) ->
-                writeString(output, key)
-                writeByteArray(output, payload, SnapshotLimits.MaxStateValueBytes)
-            }
+        output.writeInt(entry.stateSchemaVersion)
+        output.writeInt(entry.statePayloads.size)
+        entry.statePayloads.toSortedMap().forEach { (key, payload) ->
+            writeString(output, key)
+            writeByteArray(output, payload, SnapshotLimits.MaxStateValueBytes)
         }
     }
 
-    /** Reads one raw entry from the selected outer schema layout. */
-    private fun readRawEntry(
-        input: DataInputStream,
-        includeState: Boolean,
-    ): RawPersistentRouteEntry {
+    /** 按当前唯一 payload 布局读取一条原始 entry。 */
+    private fun readRawEntry(input: DataInputStream): RawPersistentRouteEntry {
         val entryId = PixelRouteEntryId(readPositiveLong(input, "entry ID"))
         val destinationId = readString(input)
         require(destinationId.isNotBlank()) { "Destination ID must not be blank" }
         val argumentSchemaVersion = readPositiveInt(input, "argument schema version")
         val argumentPayload = readByteArray(input, SnapshotLimits.MaxArgumentBytes)
-        val stateSchemaVersion: Int
-        val statePayloads: Map<String, ByteArray>
-        if (includeState) {
-            stateSchemaVersion = readPositiveInt(input, "state schema version")
-            val stateCount = readBoundedCount(input, "state value", SnapshotLimits.MaxStateValues)
-            val values = linkedMapOf<String, ByteArray>()
-            repeat(stateCount) {
-                val key = readString(input)
-                require(key.isNotBlank()) { "Route-state key must not be blank" }
-                require(key !in values) { "Duplicate route-state key '$key'" }
-                values[key] = readByteArray(input, SnapshotLimits.MaxStateValueBytes)
-            }
-            statePayloads = values
-        } else {
-            stateSchemaVersion = LegacyDefaultStateSchemaVersion
-            statePayloads = emptyMap()
+        /** 当前 schema 始终显式写入 state schema 与已批准的 state 键值。 */
+        val stateSchemaVersion = readPositiveInt(input, "state schema version")
+        /** 有界读取的 route-local state 键值，键名重复即整体拒绝。 */
+        val stateCount = readBoundedCount(input, "state value", SnapshotLimits.MaxStateValues)
+        /** 保持读取顺序的已校验 state 值。 */
+        val statePayloads = linkedMapOf<String, ByteArray>()
+        repeat(stateCount) {
+            val key = readString(input)
+            require(key.isNotBlank()) { "Route-state key must not be blank" }
+            require(key !in statePayloads) { "Duplicate route-state key '$key'" }
+            statePayloads[key] = readByteArray(input, SnapshotLimits.MaxStateValueBytes)
         }
         return RawPersistentRouteEntry(
             entryId = entryId,
@@ -1141,16 +1116,15 @@ public class PixelNavigatorSnapshotCodec {
         return error.message?.takeIf(String::isNotBlank) ?: error::class.java.simpleName
     }
 
-    /** Internal test hook for proving deterministic migration from the supported schema 1 layout. */
-    internal fun encodeLegacySchema1ForTest(entries: List<RawPersistentRouteEntry>): ByteArray {
-        val payload = ByteArrayOutputStream().use { byteOutput ->
-            DataOutputStream(byteOutput).use { output ->
-                output.writeInt(entries.size)
-                entries.forEach { entry -> writeRawEntry(output, entry, includeState = false) }
-            }
-            byteOutput.toByteArray()
-        }
-        return encodeEnvelope(LegacySnapshotSchemaVersion, payload)
+    /** 仅供测试使用的内部入口：把原始 entry 编码为当前 payload 与 envelope。 */
+    internal fun encodePayloadForTest(
+        currentEntryId: PixelRouteEntryId,
+        entries: List<RawPersistentRouteEntry>,
+    ): ByteArray {
+        return encodeEnvelope(
+            PixelNavigatorPersistentSnapshotSchemaVersion,
+            encodePayload(currentEntryId, entries),
+        )
     }
 
     /** Internal test hook for producing a valid envelope around adversarial payload bytes. */
@@ -1278,12 +1252,6 @@ private object SnapshotLimits {
 
 /** Four-byte `PXNV` snapshot magic. */
 private const val SnapshotMagic: Int = 0x50584E56
-
-/** Supported legacy outer schema without explicit foreground ID or route-local state. */
-private const val LegacySnapshotSchemaVersion: Int = 1
-
-/** State schema inferred for the empty route-local state of legacy schema 1 entries. */
-private const val LegacyDefaultStateSchemaVersion: Int = 1
 
 /** Magic, schema, payload length, and CRC32 fields outside the schema payload. */
 private const val SnapshotEnvelopeOverhead: Int = Int.SIZE_BYTES * 4

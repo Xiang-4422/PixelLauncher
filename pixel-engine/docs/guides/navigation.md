@@ -53,5 +53,5 @@ navigator.push(request) { outcome ->
 
 所有 rejected 结果都必须保留原 live stack，不允许半提交。
 
-完整恢复、嵌套、多栈与 Predictive Back 示例见[API 手册导航章节](../使用说明与API手册.md)和
-[统一迁移指南](migration.md)。
+完整恢复、嵌套、多栈与 Predictive Back 示例见[API 手册导航章节](../使用说明与API手册.md)；
+当前唯一 snapshot schema 与 adapter 约定见[接入与升级指南](migration.md)。

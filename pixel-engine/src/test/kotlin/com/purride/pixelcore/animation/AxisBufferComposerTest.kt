@@ -22,6 +22,7 @@ class AxisBufferComposerTest {
             secondary = secondary,
             axis = PixelAxis.HORIZONTAL,
             offsetPx = -2f,
+            out = PixelBuffer(width = 4, height = 2),
         )
 
         assertEquals(colorA, composed.getPixel(0, 0))
@@ -44,6 +45,7 @@ class AxisBufferComposerTest {
             secondary = secondary,
             axis = PixelAxis.VERTICAL,
             offsetPx = -2f,
+            out = PixelBuffer(width = 2, height = 4),
         )
 
         assertEquals(colorA, composed.getPixel(0, 0))

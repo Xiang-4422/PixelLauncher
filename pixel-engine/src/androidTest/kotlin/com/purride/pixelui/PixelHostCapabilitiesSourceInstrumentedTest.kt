@@ -42,7 +42,7 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
                 /** Attached production Host whose Android source has completed its initial read. */
                 val host = activity.hostView
                 /** Immutable engine projection exposed to the retained widget tree. */
-                val actual = host.effectiveCapabilities
+                val actual = host.hostCapabilities
                 /** Current Android configuration used as the independent expected-value source. */
                 val configuration = activity.resources.configuration
                 /** Ordered and deduplicated locale preference copied into public engine values. */
@@ -118,13 +118,16 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
 
                 assertEquals(1, source.attachCount)
                 assertEquals(listOf(host.display?.displayId), source.attachedDisplayIds)
-                assertAutomaticFields(first, host.effectiveCapabilities)
-                assertTrue(host.effectiveCapabilities.displayFeatures.contains(sourceFeature))
+                assertAutomaticFields(first, host.hostCapabilities)
+                assertTrue(host.hostCapabilities.displayFeatures.contains(sourceFeature))
 
-                host.layoutDirectionOverride = TextDirection.LTR
+                // 部分覆盖同样表达为完整快照：从当前快照派生后只改动方向字段。
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(layoutDirection = TextDirection.LTR)
                 renderSynchronously(host)
-                assertEquals(TextDirection.LTR, host.effectiveCapabilities.layoutDirection)
-                assertEquals(first.textScaleFactor, host.effectiveCapabilities.textScaleFactor, 0f)
+                assertEquals(TextDirection.LTR, host.hostCapabilities.layoutDirection)
+                assertEquals(first.textScaleFactor, host.hostCapabilities.textScaleFactor, 0f)
+                assertTrue(host.hostCapabilities.displayFeatures.contains(sourceFeature))
 
                 /** Complete application override that must suppress every automatic source field. */
                 val completeOverride = HostCapabilitiesData(
@@ -137,7 +140,7 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
                 )
                 host.capabilitiesOverride = completeOverride
                 renderSynchronously(host)
-                assertSame(completeOverride, host.effectiveCapabilities)
+                assertSame(completeOverride, host.hostCapabilities)
 
                 /** Newest automatic snapshot emitted while the complete override is authoritative. */
                 val second = first.copy(
@@ -150,16 +153,14 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
                 )
                 source.emit(second)
                 renderSynchronously(host)
-                assertSame(completeOverride, host.effectiveCapabilities)
+                assertSame(completeOverride, host.hostCapabilities)
 
+                // 清除唯一覆盖入口后立即完整恢复最新自动快照，不保留任何独立的方向状态。
                 host.capabilitiesOverride = null
                 renderSynchronously(host)
-                assertEquals(TextDirection.LTR, host.effectiveCapabilities.layoutDirection)
-                assertEquals(second.textScaleFactor, host.effectiveCapabilities.textScaleFactor, 0f)
-
-                host.layoutDirectionOverride = null
-                renderSynchronously(host)
-                assertAutomaticFields(second, host.effectiveCapabilities)
+                assertEquals(second.layoutDirection, host.hostCapabilities.layoutDirection)
+                assertEquals(second.textScaleFactor, host.hostCapabilities.textScaleFactor, 0f)
+                assertAutomaticFields(second, host.hostCapabilities)
 
                 activity.rootView.removeView(host)
                 assertEquals(1, source.detachCount)
@@ -173,12 +174,12 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
                     refreshRateHz = 144f,
                 )
                 source.emit(detachedLatest)
-                assertAutomaticFields(second, host.effectiveCapabilities)
+                assertAutomaticFields(second, host.hostCapabilities)
 
                 activity.rootView.addView(host)
                 renderSynchronously(host)
                 assertEquals(2, source.attachCount)
-                assertAutomaticFields(detachedLatest, host.effectiveCapabilities)
+                assertAutomaticFields(detachedLatest, host.hostCapabilities)
                 assertEquals(1, tracker.states.size)
                 assertSame(originalState, tracker.states.single())
                 assertEquals(0, tracker.disposeCount)

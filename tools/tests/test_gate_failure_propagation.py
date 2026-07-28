@@ -28,10 +28,15 @@ class GateFailurePropagationTest(unittest.TestCase):
 
         self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-route-entry-compatibility.sh"))
 
-    def test_previous_binary_gate_propagates_producer_or_consumer_failure(self) -> None:
-        """The old-binary wrapper must never continue after a failed isolated Gradle phase."""
+    def test_render_spi_gate_propagates_producer_or_consumer_failure(self) -> None:
+        """The external render SPI wrapper must never continue after a failed isolated Gradle phase."""
 
-        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-previous-binary-compatibility.sh"))
+        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-render-spi-compatibility.sh"))
+
+    def test_consumer_matrix_gate_propagates_publish_failure(self) -> None:
+        """The consumer matrix wrapper must stop when the shared SDK publication fails."""
+
+        self.assertEqual(73, self.run_with_failing_gradle("tools/pixel-consumer-compatibility-matrix.sh"))
 
     def test_baseline_gate_propagates_clean_failure(self) -> None:
         """The reproducible baseline wrapper must not collect stale reports after clean fails."""

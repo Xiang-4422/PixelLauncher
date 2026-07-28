@@ -12,7 +12,7 @@ Pixel Engine 是 Android-first 的 retained-mode 像素 UI SDK，以一个 AAR �
 - [资源与内存](guides/resources.md)
 - [测试](guides/testing.md)
 - [性能](guides/performance.md)
-- [迁移](guides/migration.md)
+- [接入与升级](guides/migration.md)
 - [完整 API 手册](使用说明与API手册.md)
 
 ## 维护

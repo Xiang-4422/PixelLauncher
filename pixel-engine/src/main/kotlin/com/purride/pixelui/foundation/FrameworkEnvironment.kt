@@ -37,27 +37,7 @@ public data class MediaQueryData(
     val viewInsets: PixelWindowInsets = PixelWindowInsets.Zero,
     val viewPadding: PixelWindowInsets = PixelWindowInsets.Zero,
     val padding: PixelWindowInsets = viewPadding,
-) {
-    /**
- * 创建 `FrameworkEnvironment` 实例并建立初始不变量。
- *
-     * Creates viewport data without any safe or obscured edges.
-     *
-     * This constructor is retained as the original three-argument JVM compatibility entry.
-     */
-    public constructor(
-        logicalWidth: Int,
-        logicalHeight: Int,
-        screenProfile: ScreenProfile,
-    ) : this(
-        logicalWidth = logicalWidth,
-        logicalHeight = logicalHeight,
-        screenProfile = screenProfile,
-        viewInsets = PixelWindowInsets.Zero,
-        viewPadding = PixelWindowInsets.Zero,
-        padding = PixelWindowInsets.Zero,
-    )
-}
+)
 
 /**
  * 通过 [MediaQuery] 暴露给 widget 的逻辑像素 inset。

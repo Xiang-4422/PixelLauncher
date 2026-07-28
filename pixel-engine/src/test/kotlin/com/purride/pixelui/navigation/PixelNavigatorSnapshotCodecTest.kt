@@ -99,21 +99,22 @@ class PixelNavigatorSnapshotCodecTest {
         tester.dispose()
     }
 
-    /** Verifies schema 1 and destination argument schema 1 migrate without inventing local state. */
+    /** 验证 destination 自有的旧 argument schema 仍由其 adapter 解码，且不会伪造 route-local state。 */
     @Test
-    fun legacyOuterAndArgumentSchemasMigrateSafely() {
-        // Current application destination remains stable across an SDK schema upgrade.
-        val destination = testDestination("migrating")
-        // Current adapter accepts its documented legacy argument schema.
+    fun destinationOwnedOlderArgumentSchemaIsDecodedByItsAdapter() {
+        // 目标定义在 destination 自行升级 argument schema 前后保持稳定。
+        val destination = testDestination("adapter-versioned")
+        // 该 adapter 按其公开契约同时接受 argument schema 1 与当前版本。
         val registry = PixelRouteSnapshotRegistry(listOf(TestRouteSnapshotAdapter(destination)))
-        // Schema 1 stored entry IDs, destination IDs, and arguments but no local state or current ID.
-        val legacyBytes = PixelNavigatorSnapshotCodec().encodeLegacySchema1ForTest(
-            listOf(
+        // 快照使用当前唯一的外层 schema，只有 destination 自有的 payload 版本是旧的。
+        val encodedBytes = PixelNavigatorSnapshotCodec().encodePayloadForTest(
+            currentEntryId = PixelRouteEntryId(41L),
+            entries = listOf(
                 rawEntry(
                     id = 41L,
                     destinationId = destination.id,
                     argumentSchemaVersion = 1,
-                    argumentPayload = "legacy-label".toByteArray(StandardCharsets.UTF_8),
+                    argumentPayload = "older-label".toByteArray(StandardCharsets.UTF_8),
                 ),
             ),
         )
@@ -122,18 +123,18 @@ class PixelNavigatorSnapshotCodecTest {
             PixelRouteRequest(destination, TestArguments("fallback", 0)),
         )
 
-        val decoded = navigator.restorePersistentSnapshot(legacyBytes, registry)
+        val decoded = navigator.restorePersistentSnapshot(encodedBytes, registry)
 
         assertTrue(decoded is PixelNavigatorSnapshotDecodeResult.Decoded)
         val plan: PixelNavigatorRestorePlan =
             (decoded as PixelNavigatorSnapshotDecodeResult.Decoded).plan
         // Public inspection exposes persisted metadata without leaking decoded arguments.
         val restoredInspection: PixelNavigatorRestoredEntryInspection = plan.entries.single()
-        assertTrue(plan.migratedFromOlderSchema)
-        assertEquals(1, plan.sourceSchemaVersion)
+        assertEquals(PixelNavigatorPersistentSnapshotSchemaVersion, plan.schemaVersion)
+        assertEquals(1, restoredInspection.argumentSchemaVersion)
         assertEquals(destination.id, restoredInspection.destinationId)
         assertEquals(41L, navigator.currentEntry.id.value)
-        assertEquals(TestArguments("legacy-label", 0), typedEntry(navigator.currentEntry).arguments)
+        assertEquals(TestArguments("older-label", 0), typedEntry(navigator.currentEntry).arguments)
         assertEquals(null, typedEntry(navigator.currentEntry).stateBucket.read(CounterStateKey))
         // Restored maximum identity moves the allocator forward rather than restarting from one.
         val next = navigator.push(
@@ -185,9 +186,10 @@ class PixelNavigatorSnapshotCodecTest {
         val destination = testDestination("rejecting")
         // Normal adapter is used to produce a valid current snapshot with route-local state.
         val acceptingAdapter = TestRouteSnapshotAdapter(destination)
-        // Raw legacy entry contains an invalid empty argument for schema 1.
-        val invalidArguments = PixelNavigatorSnapshotCodec().encodeLegacySchema1ForTest(
-            listOf(
+        // 原始 entry 携带 argument schema 1 下非法的空 payload。
+        val invalidArguments = PixelNavigatorSnapshotCodec().encodePayloadForTest(
+            currentEntryId = PixelRouteEntryId(8L),
+            entries = listOf(
                 rawEntry(
                     id = 8L,
                     destinationId = destination.id,
@@ -226,9 +228,10 @@ class PixelNavigatorSnapshotCodecTest {
         val destination = testDestination("limits")
         // Matching adapter owns the destination's migration behavior.
         val registry = PixelRouteSnapshotRegistry(listOf(TestRouteSnapshotAdapter(destination)))
-        // Schema 1 duplicate IDs must not become two live entries sharing identity.
-        val duplicateIds = PixelNavigatorSnapshotCodec().encodeLegacySchema1ForTest(
-            listOf(
+        // 重复 entry ID 不能变成两个共享身份的活跃 entry。
+        val duplicateIds = PixelNavigatorSnapshotCodec().encodePayloadForTest(
+            currentEntryId = PixelRouteEntryId(5L),
+            entries = listOf(
                 rawEntry(5L, destination.id, 1, "first".toByteArray()),
                 rawEntry(5L, destination.id, 1, "second".toByteArray()),
             ),
@@ -337,7 +340,7 @@ class PixelNavigatorSnapshotCodecTest {
         assertEquals(reason, failure.reason)
     }
 
-    /** Creates one raw schema-migration fixture entry with no route-local state. */
+    /** 构造一个不含 route-local state 的原始 fixture entry。 */
     private fun rawEntry(
         id: Long,
         destinationId: String,
@@ -358,11 +361,11 @@ class PixelNavigatorSnapshotCodecTest {
     private data class TestArguments(
         /** Human-readable page label. */
         val label: String,
-        /** Additional typed value absent from legacy argument schema 1. */
+        /** destination 自有 argument schema 1 中尚不存在的附加类型化字段。 */
         val count: Int,
     )
 
-    /** Versioned argument codec whose schema 1 migration supplies the new count field. */
+    /** destination 自有的版本化 argument codec；解码 schema 1 时补齐新增的 count 字段。 */
     private object TestArgumentsCodec : PixelRoutePayloadCodec<TestArguments> {
         /** Current test argument payload schema. */
         override val schemaVersion: Int = 2
@@ -372,7 +375,7 @@ class PixelNavigatorSnapshotCodecTest {
             return "${value.label}\u0000${value.count}".toByteArray(StandardCharsets.UTF_8)
         }
 
-        /** Decodes schema 2 or migrates schema 1's label-only representation. */
+        /** 解码当前 schema 2，或把 schema 1 仅含 label 的表示补齐为完整参数。 */
         override fun decode(
             schemaVersion: Int,
             payload: ByteArray,
@@ -382,7 +385,7 @@ class PixelNavigatorSnapshotCodecTest {
                 1 -> if (text.isNotBlank()) {
                     PixelRoutePayloadDecodeResult.Decoded(TestArguments(text, 0))
                 } else {
-                    PixelRoutePayloadDecodeResult.Rejected("Legacy label must not be blank")
+                    PixelRoutePayloadDecodeResult.Rejected("Schema 1 label must not be blank")
                 }
                 2 -> {
                     val separator = text.lastIndexOf('\u0000')
@@ -417,7 +420,7 @@ class PixelNavigatorSnapshotCodecTest {
             return mapOf(CounterPayloadKey to counter.toString().toByteArray(StandardCharsets.UTF_8))
         }
 
-        /** Validates current counter bytes or accepts the empty local state of outer schema 1. */
+        /** 校验当前 counter 字节，或接受 destination 自有 state schema 1 的空局部状态。 */
         override fun decodeRouteState(
             schemaVersion: Int,
             payloads: Map<String, ByteArray>,

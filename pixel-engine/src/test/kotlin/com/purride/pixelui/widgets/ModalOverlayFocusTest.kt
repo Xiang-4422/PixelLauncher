@@ -11,6 +11,7 @@ import com.purride.pixelui.PixelMenuItem
 import com.purride.pixelui.PixelMotionScope
 import com.purride.pixelui.PixelMotionSettings
 import com.purride.pixelui.PixelOverlayController
+import com.purride.pixelui.PixelOverlayDismissReason
 import com.purride.pixelui.PixelOverlayHost
 import com.purride.pixelui.Popover
 import com.purride.pixelui.Text
@@ -388,12 +389,12 @@ class ModalOverlayFocusTest {
             tester.pumpFrame(0)
             assertTrue(upperAction.isFocused)
 
-            assertTrue(lowerHandle.dismiss())
+            assertTrue(lowerHandle.dismiss(PixelOverlayDismissReason.Handle))
             tester.pumpFrame(0)
             assertTrue(upperAction.isFocused)
             assertFalse(lowerAction.requestFocus())
 
-            assertTrue(upperHandle.dismiss())
+            assertTrue(upperHandle.dismiss(PixelOverlayDismissReason.Handle))
             tester.pumpFrame(0)
             assertTrue(background.isFocused)
             assertFalse(lowerAction.requestFocus())

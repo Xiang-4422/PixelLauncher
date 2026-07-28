@@ -22,37 +22,6 @@ import kotlin.time.Duration
 /**
  * 执行 `OverlayControls` 的 `Popover` 路由操作并保持结果恰好一次。
  *
- * Creates the source- and binary-compatible automatic Popover overload.
- *
- * This keeps the pre-M4-3 JVM descriptor and maps it to [PixelPopoverPlacement.Auto],
- * [PixelPopoverAlignment.Start], and a one-pixel safe viewport margin.
- */
-public fun Popover(
-    anchor: Widget,
-    content: Widget,
-    expanded: Boolean,
-    contentOffset: IntOffset = IntOffset(0, 10),
-    dismissible: Boolean = false,
-    onDismiss: (() -> Unit)? = null,
-    key: Any? = null,
-    modal: Boolean = true,
-): Widget = Popover(
-    anchor = anchor,
-    content = content,
-    expanded = expanded,
-    contentOffset = contentOffset,
-    dismissible = dismissible,
-    onDismiss = onDismiss,
-    key = key,
-    modal = modal,
-    placement = PixelPopoverPlacement.Auto,
-    alignment = PixelPopoverAlignment.Start,
-    viewportMargin = 1,
-)
-
-/**
- * 执行 `OverlayControls` 的 `Popover` 路由操作并保持结果恰好一次。
- *
  * Creates one controlled, collision-aware popup presentation.
  *
  * [expanded] is caller-owned. The presentation uses the anchor's actual global paint bounds,
@@ -63,12 +32,12 @@ public fun Popover(
  * @param anchor In-flow widget whose real global bounds drive placement.
  * @param content Popup subtree measured inside the safe Host viewport.
  * @param expanded Whether content is logically open and interactive.
- * @param contentOffset Legacy offset from the anchor's global top-start origin.
+ * @param contentOffset 相对锚点全局左上原点的偏移。
  * @param dismissible Whether an open popup installs a full-viewport outside-tap barrier.
  * @param onDismiss Controlled dismissal callback used by barrier, Escape, and Back.
  * @param key Stable retained identity for anchor, follower, focus, and motion state.
  * @param modal Whether the presentation isolates background focus, input, and semantics.
- * @param placement Preferred vertical side and collision-flip policy.
+ * @param placement 首选竖直方向与碰撞翻转策略；默认自动选择。
  * @param alignment Horizontal alignment relative to the measured anchor.
  * @param viewportMargin Additional logical pixels retained from safe viewport edges.
  */
@@ -81,7 +50,7 @@ public fun Popover(
     onDismiss: (() -> Unit)? = null,
     key: Any? = null,
     modal: Boolean = true,
-    placement: PixelPopoverPlacement,
+    placement: PixelPopoverPlacement = PixelPopoverPlacement.Auto,
     alignment: PixelPopoverAlignment = PixelPopoverAlignment.Start,
     viewportMargin: Int = 1,
 ): Widget = PopoverWidget(
@@ -98,7 +67,7 @@ public fun Popover(
     key = key,
 )
 
-/** Retained implementation behind the source-compatible [Popover] function. */
+/** 公开 [Popover] 函数背后唯一的 retained 实现。 */
 private class PopoverWidget(
     /** Anchor that remains the first stable Stack child across enter and exit. */
     val anchor: Widget,
@@ -666,17 +635,17 @@ private data class PixelMenuWidget(
             ?: localizations?.labels?.menu
             ?: inheritedTheme?.labels?.menu
             ?: PixelLabelTokens.Default.menu
-        /** Loading status resolved independently from every visual compatibility branch. */
+        /** 加载状态文本独立解析，不受任何视觉状态分支影响。 */
         val resolvedLoadingLabel = localizations?.labels?.loading
             ?: inheritedTheme?.labels?.loading
             ?: PixelLabelTokens.Default.loading
-        /** Error status resolved independently from every visual compatibility branch. */
+        /** 错误状态文本独立解析，不受任何视觉状态分支影响。 */
         val resolvedErrorLabel = localizations?.labels?.error
             ?: inheritedTheme?.labels?.error
             ?: PixelLabelTokens.Default.error
         /** Ordered row widgets derived from the caller's stable item list. */
         val rows = items.mapIndexed { index, item ->
-            /** Stable business key, with an index fallback for source compatibility. */
+            /** 业务提供的稳定 key；未提供时按行下标派生一个稳定 retained identity。 */
             val itemKey = item.key ?: key?.let { "$it-$index" }
             /** Row states combine Menu policy with controlled selection and row availability. */
             var rowStates = effectiveStates

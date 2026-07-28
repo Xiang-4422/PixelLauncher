@@ -1,24 +1,27 @@
 package com.purride.pixelcore
 
+/** 当前唯一的 sprite sheet / atlas 协议版本。 */
+public const val PixelSpriteSheetVersion: Int = 1
+
 /** sprite sheet JSON 解析或 atlas 构建失败。 */
 public class PixelSpriteSheetLoadException(
     message: String,
     cause: Throwable? = null,
 ) : IllegalArgumentException(message, cause)
 
-/** 简单 sprite sheet 定义，只包含 bitmap id 和 frame 矩形。 */
+/** 只包含 bitmap id 和 frame 矩形的精简 sheet 视图。 */
 public data class PixelSpriteSheetDefinition(
     /** 被引用的 bitmap 资源 id。 */
     val bitmap: String,
     /** 按播放顺序排列的非空帧区域。 */
     val frames: List<PixelBitmapRegion>,
-    /** sheet 协议版本。 */
-    val version: Int = 1,
+    /** sheet 协议版本；当前只存在一个版本。 */
+    val version: Int = PixelSpriteSheetVersion,
     /** 有界字符串 metadata。 */
     val metadata: Map<String, String> = emptyMap(),
 ) {
     init {
-        require(version in 1..2) { "unsupported sprite sheet version $version" }
+        require(version == PixelSpriteSheetVersion) { "unsupported sprite sheet version $version" }
         require(bitmap.isNotBlank()) { "bitmap must not be blank" }
         require(bitmap.length <= 256) { "bitmap id exceeds 256 chars" }
         require(frames.isNotEmpty()) { "frames must not be empty" }
@@ -76,8 +79,8 @@ public data class PixelSpriteAtlasDefinition(
     val frames: List<PixelSpriteFrameDefinition>,
     /** 逻辑尺寸到 bitmap 像素的正整数比例。 */
     val scale: Int = 1,
-    /** atlas 协议版本。 */
-    val version: Int = 2,
+    /** atlas 协议版本；当前只存在一个版本。 */
+    val version: Int = PixelSpriteSheetVersion,
     /** 有界字符串 metadata。 */
     val metadata: Map<String, String> = emptyMap(),
 ) {
@@ -91,7 +94,7 @@ public data class PixelSpriteAtlasDefinition(
         require(scale in 1..PixelResourceSafetyLimits.MaxDimension) {
             "scale must be within 1..${PixelResourceSafetyLimits.MaxDimension}, got $scale"
         }
-        require(version in 1..2) { "unsupported sprite sheet version $version" }
+        require(version == PixelSpriteSheetVersion) { "unsupported sprite sheet version $version" }
         require(metadata.size <= PixelResourceSafetyLimits.MaxMetadataEntries) {
             "metadata count ${metadata.size} exceeds ${PixelResourceSafetyLimits.MaxMetadataEntries}"
         }
@@ -117,7 +120,7 @@ public data class PixelSpriteAtlas(
 
 /** 严格有界 JSON 解析器，用于读取 sprite sheet 和 atlas 定义。 */
 public object PixelSpriteSheetJsonLoader {
-    /** 解析向后兼容的简单 sheet 定义。 */
+    /** 解析只保留 frame 矩形的精简 sheet 视图。 */
     public fun parseDefinition(json: String): PixelSpriteSheetDefinition =
         parseDefinition(json, expectedSha256 = null)
 
@@ -150,8 +153,8 @@ public object PixelSpriteSheetJsonLoader {
             )
             /** 被引用的 bitmap id。 */
             val bitmap = root.requireString("bitmap")
-            /** 未声明时保持第一版兼容的协议版本。 */
-            val version = root.optionalInt("version") ?: 1
+            /** 未声明时按当前唯一协议版本处理。 */
+            val version = root.optionalInt("version") ?: PixelSpriteSheetVersion
             /** 未声明时使用一个 bitmap 像素对应一个逻辑像素。 */
             val scale = root.optionalInt("scale") ?: 1
             /** 可选字符串 metadata。 */

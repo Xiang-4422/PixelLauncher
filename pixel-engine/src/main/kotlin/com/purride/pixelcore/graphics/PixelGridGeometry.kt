@@ -184,10 +184,10 @@ public object PixelGridGeometryResolver {
         freeSpace: Float,
         /** Fraction of [freeSpace] placed before the content. */
         alignmentFraction: Float,
-        /** Quantization policy controlling historical integer-origin flooring. */
+        /** 原点量化策略：整数取整或保留精确小数。 */
         quantization: PixelViewportQuantization,
     ): Float {
-        /** Exact aligned physical origin before compatibility rounding. */
+        /** 量化取整前的精确对齐物理原点。 */
         val exactOrigin = freeSpace * alignmentFraction
         return when (quantization) {
             PixelViewportQuantization.INTEGER -> floor(exactOrigin)

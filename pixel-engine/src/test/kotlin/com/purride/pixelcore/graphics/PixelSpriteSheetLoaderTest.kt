@@ -75,7 +75,7 @@ class PixelSpriteSheetLoaderTest {
         val definition = PixelSpriteSheetJsonLoader.parseAtlasDefinition(
             """
             {
-              "version": 2,
+              "version": 1,
               "bitmap": "sprites/runner.png",
               "scale": 2,
               "frames": [
@@ -90,7 +90,7 @@ class PixelSpriteSheetLoaderTest {
             """.trimIndent(),
         )
 
-        assertEquals(2, definition.version)
+        assertEquals(PixelSpriteSheetVersion, definition.version)
         assertEquals(2, definition.scale)
         assertEquals(PixelBitmapRegion(0, 0, 6, 8), definition.frames.single().region)
         assertEquals(10, definition.frames.single().sourceWidth)
@@ -102,7 +102,7 @@ class PixelSpriteSheetLoaderTest {
     }
 
     @Test
-    fun parseAtlasDefinitionDefaultsSourcePivotScaleAndVersionForLegacyFrames() {
+    fun parseAtlasDefinitionDefaultsSourcePivotScaleAndVersionForMinimalFrames() {
         val definition = PixelSpriteSheetJsonLoader.parseAtlasDefinition(
             """
             {
@@ -115,7 +115,7 @@ class PixelSpriteSheetLoaderTest {
         )
         val frame = definition.frames.single()
 
-        assertEquals(1, definition.version)
+        assertEquals(PixelSpriteSheetVersion, definition.version)
         assertEquals(1, definition.scale)
         assertEquals(4, frame.sourceWidth)
         assertEquals(5, frame.sourceHeight)
@@ -126,13 +126,13 @@ class PixelSpriteSheetLoaderTest {
     }
 
     @Test
-    fun loadAtlasRetainsMetadataWithoutChangingLegacySheetRegions() {
+    fun loadAtlasRetainsMetadataWithoutChangingSheetRegions() {
         val bitmap = PixelBitmap(width = 8, height = 8, pixels = IntArray(64))
         val atlas = PixelSpriteSheetJsonLoader.loadAtlas(
             json =
                 """
                 {
-                  "version": 2,
+                  "version": 1,
                   "bitmap": "runner.png",
                   "scale": 2,
                   "frames": [
@@ -160,7 +160,7 @@ class PixelSpriteSheetLoaderTest {
             PixelSpriteSheetJsonLoader.parseAtlasDefinition(
                 """
                 {
-                  "version": 2,
+                  "version": 1,
                   "bitmap": "runner.png",
                   "frames": [
                     {
@@ -182,7 +182,7 @@ class PixelSpriteSheetLoaderTest {
     fun parseAtlasRejectsNonPositiveScale() {
         try {
             PixelSpriteSheetJsonLoader.parseAtlasDefinition(
-                """{"version":2,"bitmap":"runner.png","scale":0,"frames":[{"left":0,"top":0,"width":1,"height":1}]}""",
+                """{"version":1,"bitmap":"runner.png","scale":0,"frames":[{"left":0,"top":0,"width":1,"height":1}]}""",
             )
             error("non-positive scale should fail")
         } catch (error: PixelSpriteSheetLoadException) {

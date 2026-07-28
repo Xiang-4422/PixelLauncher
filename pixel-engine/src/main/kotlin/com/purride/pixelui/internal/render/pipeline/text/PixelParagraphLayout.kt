@@ -332,7 +332,7 @@ internal object PixelParagraphLayouter {
         return lines
     }
 
-    /** Removes only complete clusters until a three-dot compatibility ellipsis fits. */
+    /** 只按完整 cluster 删除，直到三点省略号可以放入。 */
     private fun ellipsize(
         line: LogicalParagraphLine,
         availableWidth: Int,

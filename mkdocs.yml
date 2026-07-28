@@ -21,7 +21,7 @@ nav:
       - 资源与内存: pixel-engine/docs/guides/resources.md
       - 测试: pixel-engine/docs/guides/testing.md
       - 性能: pixel-engine/docs/guides/performance.md
-      - 迁移: pixel-engine/docs/guides/migration.md
+      - 接入与升级: pixel-engine/docs/guides/migration.md
   - API 手册: pixel-engine/docs/使用说明与API手册.md
   - 架构与设计: pixel-engine/docs/架构与设计.md
   - 发布与维护: pixel-engine/docs/发布与维护.md

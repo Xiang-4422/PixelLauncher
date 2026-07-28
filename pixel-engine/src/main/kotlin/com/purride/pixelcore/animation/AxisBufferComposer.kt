@@ -22,8 +22,7 @@ public object AxisBufferComposer {
     /**
      * 把 primary/secondary 拼成一帧。
      *
-     * 当 [out] 为 null 时，会内部新建一份缓冲（兼容旧用法）；推荐传入一个
-     * 来自 PixelBufferPool 的 buffer 以避开每帧分配。当合成本身不必要
+     * [out] 由调用方拥有，通常来自 PixelBufferPool，以避开每帧分配。当合成本身不必要
      * （secondary 为空或偏移不足 epsilon）时，直接返回 primary，
      * 此时 [out] 不会被写入，仍由调用方负责归还。
      */
@@ -32,13 +31,14 @@ public object AxisBufferComposer {
         secondary: PixelBuffer?,
         axis: PixelAxis,
         offsetPx: Float,
-        out: PixelBuffer? = null,
+        out: PixelBuffer,
     ): PixelBuffer {
         if (!isCompositionNeeded(secondary, offsetPx)) {
             return primary
         }
 
-        val target = out ?: PixelBuffer(width = primary.width, height = primary.height)
+        /** 调用方提供的输出缓冲，写入前先清空以免残留上一帧像素。 */
+        val target = out
         target.clear()
 
         when (axis) {

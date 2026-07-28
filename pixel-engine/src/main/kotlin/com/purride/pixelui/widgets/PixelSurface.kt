@@ -51,7 +51,9 @@ public data class PixelSurfaceDecoration(
  *
  * Paints one pixel-aligned surface with optional stair-step radius and hard elevation shadow.
  *
- * Unlike the legacy [Container], the complete [decoration] is one required value, so this API can
+ * 与 [Container] 不同，完整的 [decoration] 是一个必填值，因此该 API 可以
+ *
+ * Unlike [Container], the complete [decoration] is one required value, so this API can
  * evolve independently without changing the existing Container JVM descriptor. Standard
  * components resolve [PixelComponentColorTokens] into this primitive at build time.
  *

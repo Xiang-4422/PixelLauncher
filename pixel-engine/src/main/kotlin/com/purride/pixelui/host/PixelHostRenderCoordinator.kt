@@ -125,7 +125,7 @@ internal class PixelHostRenderCoordinator(
         if (frameDiagnosticsActive) {
             /** Budget derived from the same immutable capability snapshot rendered by this frame. */
             val frameBudgetNanos = PixelFrameDiagnosticsRecorder.frameBudgetNanos(
-                host.effectiveCapabilities.refreshRateHz,
+                host.hostCapabilities.refreshRateHz,
             )
             frameDiagnosticsRecorder.beginFrame(frameBudgetNanos = frameBudgetNanos)
         }
@@ -199,7 +199,7 @@ internal class PixelHostRenderCoordinator(
                 hostServices = host.effectiveHostServices,
                 themeTokens = host.engine.themeOverride,
                 motionVsync = host.tickerProvider,
-                capabilities = host.effectiveCapabilities,
+                capabilities = host.hostCapabilities,
                 child = rootWidget,
                 key = "host-root",
             )

@@ -202,7 +202,7 @@ class PixelGraphemeInputConnectionInstrumentedTest {
             assertEquals(0, fixture.state.compositionStart)
             assertEquals(2, fixture.state.compositionEnd)
 
-            /** Legacy malformed state is preserved until an explicit whole-cluster edit removes it. */
+            /** 已存在的畸形 UTF-16 状态被原样保留，直到一次完整 cluster 编辑将其移除。 */
             fixture.setup.hostView.updateFocusedTextInput(
                 text = "A\uD83DB",
                 selectionStart = 2,

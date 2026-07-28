@@ -148,7 +148,7 @@ public class PixelRouteStateBucket private constructor() {
     /** Values indexed by key identity rather than structural equality. */
     private val values: IdentityHashMap<PixelRouteStateKey<*>, Any?> = IdentityHashMap()
 
-    /** Scroll snapshots retained for existing restoration-aware list widgets. */
+    /** 由 route 级滚动恢复 widget 按 restorationId 保存的滚动快照。 */
     private val scrollStates: MutableMap<String, PixelListSavedState> = mutableMapOf()
 
     /** Whether inactive-route writes are currently eligible for later restoration. */
@@ -205,20 +205,22 @@ public class PixelRouteStateBucket private constructor() {
 
     /** 从 `PixelRouteEntry` 释放 `clear` 内容并收敛相关所有权。
  *
- * Clears typed values and compatibility scroll snapshots owned by this entry.
+ * 清空该 entry 拥有的 typed 值与滚动快照。
+ *
+ * Clears typed values and scroll snapshots owned by this entry.
  */
     public fun clear() {
         values.clear()
         scrollStates.clear()
     }
 
-    /** Reads a compatibility scroll snapshot for [restorationId]. */
+    /** 读取 [restorationId] 对应的已保存滚动快照。 */
     internal fun readScrollState(restorationId: String): PixelListSavedState? {
         if (!retentionEnabled) return null
         return scrollStates[restorationId]
     }
 
-    /** Writes a compatibility scroll snapshot for [restorationId]. */
+    /** 写入 [restorationId] 对应的滚动快照。 */
     internal fun writeScrollState(
         restorationId: String,
         savedState: PixelListSavedState,

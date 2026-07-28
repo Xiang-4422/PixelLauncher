@@ -9,55 +9,39 @@ import org.w3c.dom.Element
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
-/** 验证敏感数据清理、备份排除和源码凭据禁入规则不会被后续改动绕过。 */
+/** 验证备份排除规则和源码凭据禁入规则不会被后续改动绕过。 */
 class SensitiveDataContractTest {
 
-    /** 应用启动后的第一个自定义动作必须是清除旧版敏感偏好。 */
+    /** Manifest 必须同时引用两份备份规则资源，否则排除项不会进入构建产物。 */
     @Test
-    fun applicationStartupClearsLegacySensitiveDataFirst() {
-        // Application 源码用于锁定清理调用的精确启动顺序。
-        val applicationSource = moduleRoot()
-            .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/PixelLauncherApp.kt")
-            .readText()
-        // 父类初始化调用是允许出现在清理之前的唯一语句。
-        val superCall = "super.onCreate()"
-        // 安全清理调用必须是首个自定义启动动作。
-        val cleanupCall = "LegacySensitiveDataCleaner.clear(applicationContext)"
-        // 父类调用位置用于确定允许的启动边界。
-        val superCallIndex = applicationSource.indexOf(superCall)
-        // 清理调用位置用于断言顺序和存在性。
-        val cleanupCallIndex = applicationSource.indexOf(cleanupCall)
+    fun manifestReferencesBothBackupRuleResources() {
+        // Manifest 文档用于验证备份规则资源引用。
+        val manifest = parseXml(moduleRoot().resolve("src/main/AndroidManifest.xml"))
+        // Application 节点承载本测试需要的备份属性。
+        val application = manifest.getElementsByTagName("application").item(0) as Element
 
         assertTrue(
-            "Application.onCreate must call its superclass before cleanup.",
-            superCallIndex >= 0,
+            "Manifest must reference the API 24-30 full-backup rules.",
+            application.getAttribute("android:fullBackupContent") == "@xml/backup_rules",
         )
         assertTrue(
-            "Application.onCreate must synchronously clear legacy sensitive data.",
-            cleanupCallIndex > superCallIndex,
-        )
-        // 两个调用之间的源码必须为空，防止其他组件先读取旧数据。
-        val statementsBetweenStartupAndCleanup = applicationSource
-            .substring(superCallIndex + superCall.length, cleanupCallIndex)
-            .trim()
-        assertTrue(
-            "Legacy cleanup must be the first custom application startup action.",
-            statementsBetweenStartupAndCleanup.isEmpty(),
+            "Manifest must reference the API 31+ data-extraction rules.",
+            application.getAttribute("android:dataExtractionRules") == "@xml/data_extraction_rules",
         )
     }
 
-    /** Android 11 及以下的 Auto Backup 必须排除旧偏好文件的两种存储域。 */
+    /** Android 11 及以下的 Auto Backup 必须排除本机应用清单缓存的两种存储域。 */
     @Test
-    fun legacyPreferencesAreExcludedFromFullBackup() {
+    fun deviceLocalCacheIsExcludedFromFullBackup() {
         // Android 11 及以下的编译前备份规则文档。
         val backupRules = parseXml(moduleRoot().resolve("src/main/res/xml/backup_rules.xml"))
 
-        assertLegacyPreferenceExclusions(backupRules.documentElement)
+        assertDeviceLocalCacheExclusions(backupRules.documentElement)
     }
 
-    /** Android 12+ 的云备份与设备迁移必须分别排除旧偏好文件。 */
+    /** Android 12+ 的云备份与设备迁移必须分别排除本机应用清单缓存。 */
     @Test
-    fun legacyPreferencesAreExcludedFromCloudBackupAndDeviceTransfer() {
+    fun deviceLocalCacheIsExcludedFromCloudBackupAndDeviceTransfer() {
         // Android 12 及以上的数据提取规则文档。
         val extractionRules = parseXml(moduleRoot().resolve("src/main/res/xml/data_extraction_rules.xml"))
         // 云备份节点必须独立存在并包含排除项。
@@ -67,38 +51,21 @@ class SensitiveDataContractTest {
 
         assertNotNull("Android 12+ rules must define cloud-backup.", cloudBackup)
         assertNotNull("Android 12+ rules must define device-transfer.", deviceTransfer)
-        assertLegacyPreferenceExclusions(checkNotNull(cloudBackup))
-        assertLegacyPreferenceExclusions(checkNotNull(deviceTransfer))
+        assertDeviceLocalCacheExclusions(checkNotNull(cloudBackup))
+        assertDeviceLocalCacheExclusions(checkNotNull(deviceTransfer))
     }
 
-    /** 历史备份恢复必须由受限模式 BackupAgent 在首次 Activity 启动前再次清理。 */
+    /** 被排除的偏好文件名必须与真实写入方保持一致，避免规则指向不存在的文件。 */
     @Test
-    fun backupAgentClearsHistoricalRestoreBeforeNormalApplicationStartup() {
-        // Manifest 文档用于验证恢复代理及文件型备份模式声明。
-        val manifest = parseXml(moduleRoot().resolve("src/main/AndroidManifest.xml"))
-        // Application 节点承载本测试需要的备份属性。
-        val application = manifest.getElementsByTagName("application").item(0) as Element
-        // 代理源码用于锁定默认完整备份和恢复完成清理调用。
-        val agentSource = moduleRoot()
-            .resolve("src/main/kotlin/com/purride/pixellauncherv2/data/LegacySensitiveDataBackupAgent.kt")
+    fun excludedPreferenceFileMatchesItsRuntimeWriter() {
+        // 应用清单缓存仓库源码是该偏好文件的唯一写入方。
+        val repositorySource = moduleRoot()
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/data/PackageManagerAppRepository.kt")
             .readText()
 
         assertTrue(
-            "Manifest must declare the historical sensitive-data BackupAgent.",
-            application.getAttribute("android:backupAgent") == ".data.LegacySensitiveDataBackupAgent",
-        )
-        assertTrue(
-            "BackupAgent must retain file-based Auto Backup.",
-            application.getAttribute("android:fullBackupOnly") == "true",
-        )
-        assertTrue(
-            "BackupAgent must keep the platform XML-backed full backup implementation.",
-            agentSource.contains("super.onFullBackup(data)"),
-        )
-        assertTrue(
-            "BackupAgent must erase historical preferences when restore completes.",
-            agentSource.contains("override fun onRestoreFinished()") &&
-                agentSource.contains("LegacySensitiveDataCleaner.clear(this)"),
+            "Backup rules must exclude a preference file that the app actually writes.",
+            repositorySource.contains("\"${DEVICE_LOCAL_PREFERENCES_FILE.removeSuffix(".xml")}\""),
         )
     }
 
@@ -124,25 +91,25 @@ class SensitiveDataContractTest {
         )
     }
 
-    /** 验证指定备份节点同时排除凭据保护和设备保护的旧偏好文件。 */
-    private fun assertLegacyPreferenceExclusions(parent: Element) {
-        // 实际排除域集合只统计目标历史文件，忽略其他规则。
+    /** 验证指定备份节点同时排除凭据保护和设备保护的本机缓存偏好文件。 */
+    private fun assertDeviceLocalCacheExclusions(parent: Element) {
+        // 实际排除域集合只统计目标缓存文件，忽略其他规则。
         val excludedDomains = parent.getElementsByTagName("exclude")
             .let { nodes ->
                 (0 until nodes.length)
                     .map { index -> nodes.item(index) as Element }
-                    .filter { element -> element.getAttribute("path") == LEGACY_PREFERENCES_FILE }
+                    .filter { element -> element.getAttribute("path") == DEVICE_LOCAL_PREFERENCES_FILE }
                     .map { element -> element.getAttribute("domain") }
                     .toSet()
             }
 
         REQUIRED_SHARED_PREFERENCE_DOMAINS.forEach { domain ->
             assertTrue(
-                "$domain must exclude $LEGACY_PREFERENCES_FILE under ${parent.tagName}.",
+                "$domain must exclude $DEVICE_LOCAL_PREFERENCES_FILE under ${parent.tagName}.",
                 domain in excludedDomains,
             )
         }
-        assertFalse("Legacy preferences exclusion must not use an empty domain.", "" in excludedDomains)
+        assertFalse("Backup exclusion must not use an empty domain.", "" in excludedDomains)
     }
 
     /** 使用禁用外部实体的解析器读取仓库内受信任的 XML 契约。 */
@@ -163,8 +130,8 @@ class SensitiveDataContractTest {
     }
 
     private companion object {
-        /** Android 备份 XML 中旧偏好文件使用的完整文件名。 */
-        const val LEGACY_PREFERENCES_FILE: String = "pixel_launcher_ai_prefs.xml"
+        /** Android 备份 XML 中本机应用清单缓存使用的完整文件名。 */
+        const val DEVICE_LOCAL_PREFERENCES_FILE: String = "app_repository_cache.xml"
 
         /** 同时覆盖凭据保护和设备保护 SharedPreferences 的备份域。 */
         val REQUIRED_SHARED_PREFERENCE_DOMAINS: Set<String> = setOf("sharedpref", "device_sharedpref")

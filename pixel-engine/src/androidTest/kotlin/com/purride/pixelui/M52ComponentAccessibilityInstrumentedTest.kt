@@ -392,7 +392,8 @@ class M52ComponentAccessibilityInstrumentedTest {
             scenario.onActivity { activity ->
                 /** Real Activity-attached Host whose immediate motion makes endpoints deterministic. */
                 val host = activity.hostView
-                host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
+                host.capabilitiesOverride =
+                    host.hostCapabilities.copy(motionSettings = PixelMotionSettings(animatorDurationScale = 0f))
                 host.setContent {
                     Column(
                         children = listOf(

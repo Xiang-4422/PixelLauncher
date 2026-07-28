@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 永久排除旧版明文敏感偏好，避免历史云备份在升级后恢复。 -->
+<!-- 排除只对本机有效的已安装应用清单缓存，避免用户装机列表进入云备份。 -->
 <full-backup-content>
-    <exclude domain="sharedpref" path="pixel_launcher_ai_prefs.xml" />
-    <exclude domain="device_sharedpref" path="pixel_launcher_ai_prefs.xml" />
+    <exclude domain="sharedpref" path="app_repository_cache.xml" />
+    <exclude domain="device_sharedpref" path="app_repository_cache.xml" />
 </full-backup-content>

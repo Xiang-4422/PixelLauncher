@@ -11,17 +11,17 @@ public data class PixelResourceCacheSnapshot(
     /** 当前 sprite sheet 条目数。 */
     val spriteSheetCount: Int,
     /** bitmap 命中次数。 */
-    val bitmapHits: Int,
+    val bitmapHits: Long,
     /** bitmap 未命中次数。 */
-    val bitmapMisses: Int,
+    val bitmapMisses: Long,
     /** sprite sheet 命中次数。 */
-    val spriteSheetHits: Int,
+    val spriteSheetHits: Long,
     /** sprite sheet 未命中次数。 */
-    val spriteSheetMisses: Int,
+    val spriteSheetMisses: Long,
     /** 至少移除一个同名条目的显式 remove 次数。 */
-    val removeCount: Int,
+    val removeCount: Long,
     /** 至少清理一个条目的 clear 次数。 */
-    val clearCount: Int,
+    val clearCount: Long,
 )
 
 /** 缓存能够独立预算和观测的资源类型。 */
@@ -266,17 +266,17 @@ public class PixelResourceCache @JvmOverloads public constructor(
         }
     }
 
-    /** 返回兼容的条目和命中计数快照。 */
+    /** 返回 bitmap/sprite sheet 条目数与累计命中计数快照。 */
     public fun snapshot(): PixelResourceCacheSnapshot = synchronized(lock) {
         PixelResourceCacheSnapshot(
             bitmapCount = bitmaps.size,
             spriteSheetCount = spriteSheets.size,
-            bitmapHits = bitmapHits.saturatedInt(),
-            bitmapMisses = bitmapMisses.saturatedInt(),
-            spriteSheetHits = spriteSheetHits.saturatedInt(),
-            spriteSheetMisses = spriteSheetMisses.saturatedInt(),
-            removeCount = removeCount.saturatedInt(),
-            clearCount = clearCount.saturatedInt(),
+            bitmapHits = bitmapHits,
+            bitmapMisses = bitmapMisses,
+            spriteSheetHits = spriteSheetHits,
+            spriteSheetMisses = spriteSheetMisses,
+            removeCount = removeCount,
+            clearCount = clearCount,
         )
     }
 
@@ -676,6 +676,3 @@ private fun estimateGlyphPackBytes(pack: PixelGlyphPack): Long {
     }
     return manifestBytes + glyphBytes
 }
-
-/** 把 Long 兼容计数饱和为旧 API 的 Int。 */
-private fun Long.saturatedInt(): Int = coerceAtMost(Int.MAX_VALUE.toLong()).toInt()

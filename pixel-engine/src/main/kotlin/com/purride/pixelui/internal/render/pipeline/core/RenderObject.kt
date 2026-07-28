@@ -163,7 +163,7 @@ public abstract class RenderObject {
     }
 
     private companion object {
-        /** Monotonic id source; zero remains reserved for legacy manually-created snapshots. */
+        /** 单调递增的 id 源；从 1 开始分配，保证导出的每个节点 id 都是正数。 */
         val NextSemanticNodeId: AtomicLong = AtomicLong(1L)
 
         /** Default local slot for render objects that expose exactly one semantic node. */
