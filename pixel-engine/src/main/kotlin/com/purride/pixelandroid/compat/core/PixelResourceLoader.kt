@@ -110,6 +110,15 @@ public class PixelResourceLoader(
         return loadGlyphPackInternal(key, loader)
     }
 
+    /** 在当前后台线程同步读取 indexed glyph pack。 */
+    public fun loadIndexedGlyphPack(
+        key: String,
+        loader: () -> PixelIndexedGlyphPack,
+    ): PixelIndexedGlyphPack {
+        requireSynchronousThread("loadIndexedGlyphPack")
+        return loadIndexedGlyphPackInternal(key, loader)
+    }
+
     /** 在 [executor] 上异步读取 bitmap，同 key 调用共享一次后台工作。 */
     public fun loadBitmapAsync(
         key: String,
@@ -146,6 +155,19 @@ public class PixelResourceLoader(
         )
     }
 
+    /** 在 [executor] 上异步读取 indexed glyph pack，同 key 共享一次后台工作。 */
+    public fun loadIndexedGlyphPackAsync(
+        key: String,
+        loader: () -> PixelIndexedGlyphPack,
+    ): PixelResourceLoadHandle<PixelIndexedGlyphPack> {
+        val indexedKey = indexedLoadKey(key)
+        return loadAsync(
+            key = indexedKey,
+            kind = PixelResourceKind.GLYPH_PACK,
+            loader = { loadIndexedGlyphPackInternal(key, loader) },
+        )
+    }
+
     /** 提前异步填充 bitmap 缓存；句柄可用于观察或取消当前订阅。 */
     public fun prefetchBitmap(
         key: String,
@@ -163,6 +185,12 @@ public class PixelResourceLoader(
         key: String,
         loader: () -> PixelGlyphPack,
     ): PixelResourceLoadHandle<PixelGlyphPack> = loadGlyphPackAsync(key, loader)
+
+    /** 提前异步填充 indexed glyph pack 缓存。 */
+    public fun prefetchIndexedGlyphPack(
+        key: String,
+        loader: () -> PixelIndexedGlyphPack,
+    ): PixelResourceLoadHandle<PixelIndexedGlyphPack> = loadIndexedGlyphPackAsync(key, loader)
 
     /** 移除全部失败记录，使下一次请求立即重试。 */
     public fun clearFailures() {
@@ -207,6 +235,15 @@ public class PixelResourceLoader(
         /** 经过空白校验的复合 key。 */
         val loadKey = LoadKey(PixelResourceKind.GLYPH_PACK, requireKey(key))
         return withFailureCache(loadKey) { cache.getGlyphPack(loadKey.key, loader) }
+    }
+
+    /** 不重复主线程检查的 indexed glyph pack 内部加载。 */
+    private fun loadIndexedGlyphPackInternal(
+        key: String,
+        loader: () -> PixelIndexedGlyphPack,
+    ): PixelIndexedGlyphPack {
+        val loadKey = LoadKey(PixelResourceKind.GLYPH_PACK, indexedLoadKey(key))
+        return withFailureCache(loadKey) { cache.getIndexedGlyphPack(key, loader) }
     }
 
     /** 返回独立可取消订阅，同时让相同类型/key 共享一个后台 future。 */
@@ -312,6 +349,9 @@ public class PixelResourceLoader(
         require(key.length <= 1_024) { "resource key exceeds 1024 chars" }
         return key
     }
+
+    /** 把 indexed 表示放入独立 single-flight/失败缓存命名空间。 */
+    private fun indexedLoadKey(key: String): String = "@indexed:${requireKey(key)}"
 
     /** 构建已经失败的 future，兼容 API 24 desugaring。 */
     private fun <T : Any> failedFuture(error: Throwable): CompletableFuture<T> {

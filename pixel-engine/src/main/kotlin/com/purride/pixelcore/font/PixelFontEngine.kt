@@ -1,5 +1,7 @@
 package com.purride.pixelcore
 
+import java.util.LinkedHashMap
+
 /**
  * 字形样式描述。
  *
@@ -191,8 +193,10 @@ public class BitmapGlyphSource(
     private val packs: List<PixelGlyphPack>,
 ) : GlyphSource {
 
-    /** Unpacked bitmap cache keyed by full scalar value and style-sensitive metrics. */
-    private val unpackedGlyphCache = mutableMapOf<GlyphCacheKey, GlyphBitmap>()
+    /** 按访问顺序保存的解压字形缓存。 */
+    private val unpackedGlyphCache = LinkedHashMap<GlyphCacheKey, GlyphBitmap>(16, 0.75f, true)
+    /** 解压像素与对象的当前保守字节数。 */
+    private var unpackedGlyphBytes: Long = 0L
 
     /** Looks up a complete scalar key, including supplementary glyph-pack records. */
     override fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap? {
@@ -211,7 +215,8 @@ public class BitmapGlyphSource(
                 codePoint = codePoint,
                 narrowAdvanceWidth = style.narrowAdvanceWidth,
             )
-            return unpackedGlyphCache.getOrPut(cacheKey) {
+            unpackedGlyphCache[cacheKey]?.let { cached -> return cached }
+            val bitmap = run {
                 /** Exact binary bitmap expanded to one byte per logical pixel. */
                 val unpackedPixels = unpackBits(
                     packed = record.packedPixelsUnsafe,
@@ -240,6 +245,8 @@ public class BitmapGlyphSource(
                     ),
                 )
             }
+            putUnpackedGlyph(cacheKey, bitmap)
+            return bitmap
         }
         return null
     }
@@ -247,6 +254,22 @@ public class BitmapGlyphSource(
     /** Drops every unpacked bitmap while retaining immutable pack bytes. */
     override fun clearCache() {
         unpackedGlyphCache.clear()
+        unpackedGlyphBytes = 0L
+    }
+
+    /** 插入解压字形，并按固定字节预算淘汰最旧条目。 */
+    private fun putUnpackedGlyph(key: GlyphCacheKey, bitmap: GlyphBitmap) {
+        val bytes = bitmap.pixels.size.toLong() + GLYPH_CACHE_OBJECT_BYTES
+        if (bytes > MAX_UNPACKED_GLYPH_BYTES) return
+        unpackedGlyphCache.put(key, bitmap)?.let { previous ->
+            unpackedGlyphBytes -= previous.pixels.size.toLong() + GLYPH_CACHE_OBJECT_BYTES
+        }
+        unpackedGlyphBytes += bytes
+        while (unpackedGlyphBytes > MAX_UNPACKED_GLYPH_BYTES && unpackedGlyphCache.isNotEmpty()) {
+            val eldest = unpackedGlyphCache.entries.first()
+            unpackedGlyphCache.remove(eldest.key)
+            unpackedGlyphBytes -= eldest.value.pixels.size.toLong() + GLYPH_CACHE_OBJECT_BYTES
+        }
     }
 
     /** Expands MSB-first packed bits into one binary byte per requested pixel. */
@@ -295,6 +318,13 @@ public class BitmapGlyphSource(
         /** Style input affecting wide/narrow metric classification. */
         val narrowAdvanceWidth: Int,
     )
+
+    private companion object {
+        /** 每个 V1 source 的解压像素预算。 */
+        const val MAX_UNPACKED_GLYPH_BYTES: Long = 2L * 1024L * 1024L
+        /** 单个缓存 key、bitmap 和度量的保守对象开销。 */
+        const val GLYPH_CACHE_OBJECT_BYTES: Long = 64L
+    }
 }
 
 /**
@@ -641,7 +671,7 @@ public data class GlyphCacheStats(
 }
 
 /** Returns whether one scalar participates in the engine's minimum visual-gap policy. */
-private fun requiresVisualGapProtection(codePoint: Int, isWideGlyph: Boolean): Boolean {
+internal fun requiresVisualGapProtection(codePoint: Int, isWideGlyph: Boolean): Boolean {
     if (isWideGlyph) {
         return true
     }

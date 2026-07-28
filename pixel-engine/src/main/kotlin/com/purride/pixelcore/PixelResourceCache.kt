@@ -167,7 +167,7 @@ public class PixelResourceCache @JvmOverloads public constructor(
     /** sprite sheet 的 access-order LRU。 */
     private val spriteSheets = LinkedHashMap<String, CacheEntry<PixelSpriteSheet>>(16, 0.75f, true)
     /** glyph pack 的 access-order LRU。 */
-    private val glyphPacks = LinkedHashMap<String, CacheEntry<PixelGlyphPack>>(16, 0.75f, true)
+    private val glyphPacks = LinkedHashMap<String, CacheEntry<Any>>(16, 0.75f, true)
     /** 相同类型/key 共享的加载任务。 */
     private val inFlight = mutableMapOf<ResourceKey, LoadingSlot>()
     /** 每次命中或插入递增的全局 LRU 序号。 */
@@ -231,6 +231,19 @@ public class PixelResourceCache @JvmOverloads public constructor(
         )
     }
 
+    /** 读取 indexed glyph pack；与 V1 pack 共享 glyph 字节和条目预算。 */
+    public fun getIndexedGlyphPack(
+        key: String,
+        loader: () -> PixelIndexedGlyphPack,
+    ): PixelIndexedGlyphPack {
+        return getOrLoad(
+            key = indexedGlyphKey(key),
+            kind = PixelResourceKind.GLYPH_PACK,
+            loader = loader,
+            estimator = PixelIndexedGlyphPack::byteSize,
+        )
+    }
+
     /** 移除同名 bitmap、sprite sheet 和 glyph pack 条目，并使同名在途结果失去写回资格。 */
     public fun remove(key: String) {
         /** 经过空白校验的稳定 key。 */
@@ -241,8 +254,15 @@ public class PixelResourceCache @JvmOverloads public constructor(
             bitmaps.remove(safeKey)?.let { entry -> bitmapBytes -= entry.byteSize; removed += 1 }
             spriteSheets.remove(safeKey)?.let { entry -> spriteSheetBytes -= entry.byteSize; removed += 1 }
             glyphPacks.remove(safeKey)?.let { entry -> glyphPackBytes -= entry.byteSize; removed += 1 }
+            glyphPacks.remove(indexedGlyphKey(safeKey))?.let { entry ->
+                glyphPackBytes -= entry.byteSize
+                removed += 1
+            }
             /** 是否存在尚未完成的同名加载。 */
-            val hasInFlight = inFlight.keys.any { resourceKey -> resourceKey.key == safeKey }
+            val indexedKey = indexedGlyphKey(safeKey)
+            val hasInFlight = inFlight.keys.any { resourceKey ->
+                resourceKey.key == safeKey || resourceKey.key == indexedKey
+            }
             if (removed > 0 || hasInFlight) mutationGeneration += 1L
             if (removed > 0) removeCount += 1L
         }
@@ -472,7 +492,7 @@ public class PixelResourceCache @JvmOverloads public constructor(
             }
             PixelResourceKind.GLYPH_PACK -> {
                 /** 被相同 key 替换的旧条目。 */
-                val previous = glyphPacks.put(key, entry as CacheEntry<PixelGlyphPack>)
+                val previous = glyphPacks.put(key, entry as CacheEntry<Any>)
                 glyphPackBytes += entry.byteSize - (previous?.byteSize ?: 0L)
             }
         }
@@ -618,6 +638,9 @@ public class PixelResourceCache @JvmOverloads public constructor(
         require(key.length <= 1_024) { "resource cache key exceeds 1024 chars" }
         return key
     }
+
+    /** 为 indexed 表示建立独立命名空间，避免与同目录 V1 对象发生错误强转。 */
+    private fun indexedGlyphKey(key: String): String = "@indexed:${requireKey(key)}"
 
     /** 缓存值、字节权重和最近访问序号。 */
     private data class CacheEntry<T : Any>(

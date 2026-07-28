@@ -49,6 +49,11 @@ android {
         buildConfig = true
     }
 
+    androidResources {
+        // indexed glyph loader 通过 AssetFileDescriptor mmap 未压缩 PGLY 二进制。
+        noCompress += "bin"
+    }
+
     signingConfigs {
         if (hasReleaseKeystore) {
             create("release") {
