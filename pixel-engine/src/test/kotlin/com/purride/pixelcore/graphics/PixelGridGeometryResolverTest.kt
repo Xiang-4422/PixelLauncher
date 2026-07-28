@@ -5,24 +5,25 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Verifies legacy and orthogonal viewport transforms use one paint/touch geometry. */
+/** Verifies every orthogonal viewport policy resolves one shared paint/touch geometry. */
 class PixelGridGeometryResolverTest {
 
-    /** Historical FIT_CENTER remains centered, integer and contained. */
+    /** canonical 默认策略保持 contain + integer + center。 */
     @Test
     fun resolveProducesExpectedCenteredGeometry() {
-        /** Frozen profile whose 2:1 grid is limited by the physical width. */
+        /** 2:1 grid limited by the physical width. */
         val profile = ScreenProfile(
             logicalWidth = 10,
             logicalHeight = 5,
             dotSizePx = 8,
         )
 
-        /** Geometry returned through the frozen pre-policy overload. */
+        /** Geometry returned by the canonical default policy. */
         val geometry = PixelGridGeometryResolver.resolve(
             viewWidth = 120,
             viewHeight = 80,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
 
         assertNotNull(geometry)
@@ -31,10 +32,10 @@ class PixelGridGeometryResolverTest {
         assertEquals(10f, geometry?.originY ?: 0f, 1e-4f)
     }
 
-    /** Historical inverse mapping still rejects the centered top letterbox. */
+    /** canonical 默认策略下的反向映射仍然拒绝居中留白区域。 */
     @Test
     fun mapSurfaceToLogicalRejectsTouchesOutsideContent() {
-        /** Frozen profile used by both paint and pointer mapping. */
+        /** Profile shared by both paint and pointer mapping. */
         val profile = ScreenProfile(
             logicalWidth = 10,
             logicalHeight = 5,
@@ -48,31 +49,37 @@ class PixelGridGeometryResolverTest {
             viewWidth = 120,
             viewHeight = 80,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
 
         assertNull(logicalPoint)
     }
 
-    /** Explicit legacy policy produces byte-for-byte equivalent transform values. */
+    /** canonical 默认策略与显式 contain+integer+center 组合逐字段等价。 */
     @Test
-    fun legacyScaleModeMapsExactlyToContainIntegerCenter() {
-        /** Odd physical remainders exercise the historical origin floor behavior. */
+    fun defaultPolicyEqualsExplicitContainIntegerCenter() {
+        /** Odd physical remainders exercise the integer origin floor behavior. */
         val profile = ScreenProfile(logicalWidth = 10, logicalHeight = 5, dotSizePx = 8)
-        /** Geometry resolved through the frozen overload. */
-        val legacy = PixelGridGeometryResolver.resolve(
+        /** Geometry resolved through the canonical default policy. */
+        val default = PixelGridGeometryResolver.resolve(
             viewWidth = 125,
             viewHeight = 83,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
-        /** Geometry resolved through the additive orthogonal policy overload. */
+        /** Geometry resolved through a fully spelled-out equivalent policy. */
         val explicit = PixelGridGeometryResolver.resolve(
             viewWidth = 125,
             viewHeight = 83,
             profile = profile,
-            viewportPolicy = PixelViewportPolicy.LegacyFitCenter,
+            viewportPolicy = PixelViewportPolicy(
+                fit = PixelViewportFit.CONTAIN,
+                quantization = PixelViewportQuantization.INTEGER,
+                alignment = PixelViewportAlignment.CENTER,
+            ),
         )
 
-        assertEquals(legacy, explicit)
+        assertEquals(default, explicit)
         assertEquals(12f, explicit?.cellSize ?: 0f, 0f)
         assertEquals(2f, explicit?.originX ?: 0f, 0f)
         assertEquals(11f, explicit?.originY ?: 0f, 0f)

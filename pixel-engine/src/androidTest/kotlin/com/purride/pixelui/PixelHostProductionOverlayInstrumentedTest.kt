@@ -58,12 +58,12 @@ class PixelHostProductionOverlayInstrumentedTest {
                 }
 
                 /** 先以窄而高的逻辑屏验证四角 collision/flip 与 IME 顶边。 */
-                host.screenProfile = ScreenProfile(logicalWidth = 48, logicalHeight = 72, dotSizePx = 1)
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(logicalWidth = 48, logicalHeight = 72, dotSizePx = 1))
                 renderSynchronously(host)
                 assertFourPopoversInsideSafeViewport(host)
 
                 /** 再横竖交换逻辑尺寸，并改变两类 inset，验证同一 retained 状态重新布局。 */
-                host.screenProfile = ScreenProfile(logicalWidth = 72, logicalHeight = 48, dotSizePx = 1)
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(logicalWidth = 72, logicalHeight = 48, dotSizePx = 1))
                 host.setWindowInsets(left = 2, top = 3, right = 7, bottom = 5)
                 host.setViewInsets(left = 4, bottom = 10)
                 renderSynchronously(host)
@@ -112,7 +112,7 @@ class PixelHostProductionOverlayInstrumentedTest {
                 val host = activity.hostView
                 host.frameScheduler = scheduler
                 host.motionSettingsOverride = PixelMotionSettings(animatorDurationScale = 0f)
-                host.screenProfile = ScreenProfile(logicalWidth = 64, logicalHeight = 40, dotSizePx = 1)
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(logicalWidth = 64, logicalHeight = 40, dotSizePx = 1))
                 host.backDispatcher = backDispatcher
                 host.setContent {
                     PixelBackHost(

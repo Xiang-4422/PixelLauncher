@@ -25,6 +25,7 @@ class PixelGridGeometryTest {
             viewWidth = 120,
             viewHeight = 80,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
 
         assertNotNull(geometry)
@@ -47,6 +48,7 @@ class PixelGridGeometryTest {
             viewWidth = 120,
             viewHeight = 80,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
 
         assertEquals(2 to 1, logicalPoint)
@@ -66,6 +68,7 @@ class PixelGridGeometryTest {
             viewWidth = 120,
             viewHeight = 80,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
 
         assertNull(logicalPoint)
@@ -83,6 +86,7 @@ class PixelGridGeometryTest {
             viewWidth = 80,
             viewHeight = 160,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
         )
 
         assertNotNull(geometry)
@@ -103,6 +107,7 @@ class PixelGridGeometryTest {
             viewWidth = 80,
             viewHeight = 160,
             profile = profile,
+            viewportPolicy = PixelViewportPolicy(),
             pixelGapEnabled = false,
         )
 

@@ -90,7 +90,6 @@ public class PixelHostView @JvmOverloads constructor(
             field = value
             capabilitiesOverride = value.services.hostCapabilities
             frameScheduler = value.services.frameScheduler
-            invalidateHostServices()
             invalidate()
         }
 
@@ -99,26 +98,22 @@ public class PixelHostView @JvmOverloads constructor(
         this.engine = engine
     }
 
-    /** Guards policy-driven profile assignments from being mistaken for manual fixed profiles. */
-    private var applyingProfilePolicy: Boolean = false
-
-    /** Prevents legacy preference synchronization from recursively changing the new policy. */
-    private var synchronizingLegacyProfilePreference: Boolean = false
-
     override var interactionListener: PixelFrameView.InteractionListener? = null
 
-    /** 记录 `PixelHostView` 的 `screenProfile` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
+    /**
+     * 当前生效的逻辑屏幕配置。
+     *
+     * 该值始终由 [profilePolicy] 与当前视口、密度、[viewportPolicy] 解析得到，不能直接赋值；
+     * 需要固定网格时请赋 [PixelHostProfilePolicy.Fixed]。
+     */
     public var screenProfile: ScreenProfile = ScreenProfile(
         logicalWidth = 96,
         logicalHeight = 96,
         dotSizePx = 8,
     )
-        set(value) {
+        private set(value) {
             if (field == value) return
             field = value
-            if (!applyingProfilePolicy) {
-                profilePolicy = PixelHostProfilePolicy.Fixed(value)
-            }
             markEffectiveCapabilitiesDirty()
             reprojectPlatformInsets()
             requestApplyInsets()
@@ -126,15 +121,12 @@ public class PixelHostView @JvmOverloads constructor(
         }
 
     /**
- * 公开 `PixelHostView` 的 `viewportPolicy` 配置或运行值。
- *
-     * Optional orthogonal viewport policy for this Host.
+     * 当前 Host 的 canonical 视口策略。
      *
-     * `null` preserves [ScreenProfile.scaleMode] and therefore the exact historical
-     * `FIT_CENTER` transform. A present value controls contain/cover, integer/fractional scale and
-     * alignment without changing the frozen [ScreenProfile] constructor or copy ABI.
+     * 控制 contain/cover、整数/分数缩放与对齐；默认值 Contain + Integer + Center 就是引擎的
+     * canonical 默认策略。绘制、命中映射和 inset 投影共用同一份策略解析出的几何。
      */
-    public var viewportPolicy: PixelViewportPolicy? = null
+    public var viewportPolicy: PixelViewportPolicy = PixelViewportPolicy()
         set(value) {
             if (field == value) return
             field = value
@@ -145,38 +137,19 @@ public class PixelHostView @JvmOverloads constructor(
             invalidate()
         }
 
-    /** Explicit Host policy or the stable mapping of the frozen profile scale mode. */
-    private val effectiveViewportPolicy: PixelViewportPolicy
-        get() = viewportPolicy ?: PixelViewportPolicy.fromLegacyScaleMode(screenProfile.scaleMode)
-
-    /** 记录 `PixelHostView` 的 `profilePreference` 配置或运行值，读取与更新均遵守所属类型约束；写入后由所属对象在下一次状态同步时生效。 */
-    public var profilePreference: PixelHostProfilePreference? = null
-        set(value) {
-            if (field == value) return
-            field = value
-            if (synchronizingLegacyProfilePreference) return
-            profilePolicy = value?.let { preference ->
-                PixelHostProfilePolicy.AdaptivePixels(
-                    dotSizePx = preference.dotSizePx,
-                    pixelShape = preference.pixelShape,
-                )
-            } ?: PixelHostProfilePolicy.Fixed(screenProfile)
-        }
-
     /**
- * 公开 `PixelHostView` 的 `profilePolicy` 配置或运行值。
- *
+     * 逻辑屏幕解析策略；这是 Host profile 配置的唯一入口。
+     *
      * Fixed or adaptive logical-screen policy evaluated against current Host environment.
      *
      * Assigning [PixelHostProfilePolicy.Fixed] replaces [screenProfile] immediately. Adaptive
      * policies wait for a non-empty viewport and then re-evaluate after size, density or viewport
-     * policy changes. Direct [screenProfile] assignment switches this property back to Fixed.
+     * policy changes.
      */
     public var profilePolicy: PixelHostProfilePolicy = PixelHostProfilePolicy.Fixed(screenProfile)
         set(value) {
             if (field == value) return
             field = value
-            synchronizeLegacyProfilePreference(value)
             updateScreenProfileFromPolicy()
         }
 
@@ -395,42 +368,9 @@ public class PixelHostView @JvmOverloads constructor(
         isFocusableInTouchMode = true
     }
 
-    /** 提供 `PixelHostView` 用于识别或兼容校验的 `hostBridge` 值；写入后由所属对象在下一次状态同步时生效。 */
-    public var hostBridge: PixelHostBridge? = null
-        set(value) {
-            if (field === value) return
-            field = value
-            invalidateHostServices()
-            invalidate()
-        }
-
-    /** 上次合并 capability 时读取的 Engine。 */
-    private var cachedHostServicesEngine: PixelEngine? = null
-
-    /** 上次合并 capability 时读取的旧桥接。 */
-    private var cachedHostServicesBridge: PixelHostBridge? = null
-
-    /** 当前 Host 复用的 capability 合并结果，避免逐帧创建适配器。 */
-    private var cachedHostServices: PixelHostCapabilitySet = PixelHostCapabilitySet.Empty
-
-    /** 当前 Engine capability 优先、旧桥接只补缺的有效集合。 */
+    /** 当前 Host 唯一的平台能力来源，即所绑定 Engine 装配好的 typed capability 集合。 */
     internal val effectiveHostServices: PixelHostCapabilitySet
-        get() {
-            if (cachedHostServicesEngine !== engine || cachedHostServicesBridge !== hostBridge) {
-                cachedHostServices = engine.services.hostServices.withFallback(
-                    PixelHostCapabilitySet.fromLegacyBridge(hostBridge),
-                )
-                cachedHostServicesEngine = engine
-                cachedHostServicesBridge = hostBridge
-            }
-            return cachedHostServices
-        }
-
-    /** 使下一次渲染重新合并 Engine capability 与旧桥接。 */
-    private fun invalidateHostServices() {
-        cachedHostServicesEngine = null
-        cachedHostServicesBridge = null
-    }
+        get() = engine.services.hostServices
 
     /**
  * 公开 `PixelHostView` 的 `capabilitiesOverride` 配置或运行值。
@@ -1178,7 +1118,7 @@ public class PixelHostView @JvmOverloads constructor(
             predictiveBackSession.cancel()
             cancelPendingClick()
             gestureRouter.cancelActiveGesture()
-            hostBridge?.hideTextInput()
+            effectiveHostServices.hideTextInput()
         }
         platformBackController.refresh()
         if (diagnostics.lifecycleState == PixelHostLifecycleState.Destroyed) {
@@ -1197,7 +1137,7 @@ public class PixelHostView @JvmOverloads constructor(
         cancelPendingClick()
         gestureRouter.cancelActiveGesture()
         textInputCoordinator.clearFocusedTextInput()
-        hostBridge?.hideTextInput()
+        effectiveHostServices.hideTextInput()
         frameScope.dispose()
         motionSettingsSource.destroy()
         hostCapabilitiesSource.destroy()
@@ -1210,7 +1150,6 @@ public class PixelHostView @JvmOverloads constructor(
         lastClickTapSource = null
         backDispatcher = null
         onUnhandledBack = null
-        hostBridge = null
         frameStatsObserver = null
         frameDiagnosticsObserver = null
         frameDiagnosticsEnabled = false
@@ -1409,43 +1348,18 @@ public class PixelHostView @JvmOverloads constructor(
         val policy = profilePolicy
         if (policy !is PixelHostProfilePolicy.Fixed && (width <= 0 || height <= 0)) return
         /** Resolved profile derived by the same viewport strategy used for painting and input. */
-        val resolved = PixelHostProfileResolver.resolve(
+        screenProfile = PixelHostProfileResolver.resolve(
             policy = policy,
             widthPx = width,
             heightPx = height,
             density = effectiveProfileDensity(),
-            viewportPolicy = effectiveViewportPolicy,
+            viewportPolicy = viewportPolicy,
         )
-        applyingProfilePolicy = true
-        try {
-            screenProfile = resolved
-        } finally {
-            applyingProfilePolicy = false
-        }
     }
 
     /** Returns the density currently visible to an adaptive-dp profile. */
     private fun effectiveProfileDensity(): Float {
         return capabilitiesOverride?.density ?: systemHostCapabilities.density
-    }
-
-    /** Keeps the frozen pixel preference facade coherent with direct policy assignments. */
-    private fun synchronizeLegacyProfilePreference(policy: PixelHostProfilePolicy) {
-        /** Legacy value representable only by the physical-pixel adaptive policy. */
-        val legacyPreference = when (policy) {
-            is PixelHostProfilePolicy.AdaptivePixels -> PixelHostProfilePreference(
-                dotSizePx = policy.dotSizePx,
-                pixelShape = policy.pixelShape,
-            )
-            else -> null
-        }
-        if (profilePreference == legacyPreference) return
-        synchronizingLegacyProfilePreference = true
-        try {
-            profilePreference = legacyPreference
-        } finally {
-            synchronizingLegacyProfilePreference = false
-        }
     }
 
     /**
@@ -1649,7 +1563,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
-            viewportPolicy = effectiveViewportPolicy,
+            viewportPolicy = viewportPolicy,
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         )
@@ -1669,7 +1583,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
-            viewportPolicy = effectiveViewportPolicy,
+            viewportPolicy = viewportPolicy,
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         ) ?: return
@@ -1767,7 +1681,7 @@ public class PixelHostView @JvmOverloads constructor(
         }
         if (
             shape == PixelShape.SQUARE &&
-            effectiveViewportPolicy.quantization == PixelViewportQuantization.INTEGER
+            viewportPolicy.quantization == PixelViewportQuantization.INTEGER
         ) {
             drawSquarePixelBitmap(canvas = canvas, buffer = buffer, geometry = geometry)
             return
@@ -2000,7 +1914,7 @@ public class PixelHostView @JvmOverloads constructor(
             viewWidth = width,
             viewHeight = height,
             profile = screenProfile,
-            viewportPolicy = effectiveViewportPolicy,
+            viewportPolicy = viewportPolicy,
             pixelGapEnabled = pixelGapEnabled,
             pixelGapRatio = pixelGapRatio,
         )

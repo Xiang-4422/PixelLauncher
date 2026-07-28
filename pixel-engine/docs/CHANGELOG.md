@@ -24,6 +24,26 @@ First public stable release of the Android-first Pixel Engine SDK.
   `PixelThemeTokens.toLegacyThemeData`, `PixelColorScheme.fromLegacy`,
   `PixelColorScheme.toLegacyColors`, `PixelTypographyToken.fromLegacy`) and the
   `tokensOf` / `maybeTokensOf` second query pair are removed.
+- Host capabilities expose exactly one model: assemble a `PixelHostCapabilitySet` and inject it
+  through `PixelEngine.Builder.hostServices(...)`. `PixelHostView` reads only
+  `engine.services.hostServices`, so there is no second Host-level entry point. The pre-release
+  aggregate bridge layer (`PixelHostBridge`, `PixelTextEditingHostBridge`, `PixelSystemAction`,
+  `PixelHostCapabilitySet.fromLegacyBridge`, `PixelHostView.hostBridge` and the internal
+  `PixelHostBridgeScope`) is removed, together with the unused `requestFrame` bridge method —
+  frame scheduling stays with `PixelFrameScheduler`. `PixelImeCapability` now takes one
+  `PixelTextEditingSession` (`id` + `request` + `value`) on every method, and
+  `PixelTextInputBridge` owns a fixed engine-provided hidden editor instead of accepting an
+  arbitrary `EditText` with a weak `TextWatcher` write-back path.
+- The viewport has exactly one representation: `PixelViewportPolicy`. `ScaleMode`,
+  `ScreenProfile.scaleMode`, `PixelViewportPolicy.LegacyFitCenter`, `fromLegacyScaleMode` and the
+  policy-less `PixelGridGeometryResolver.resolve` / `mapSurfaceToLogical` overloads are removed.
+  `PixelHostView.viewportPolicy` is non-null and defaults to `PixelViewportPolicy()`, the canonical
+  Contain + Integer + Center policy that reproduces the historical `FIT_CENTER` transform exactly.
+- The logical screen has exactly one configuration entry: `PixelHostProfilePolicy`.
+  `PixelHostProfilePreference`, `PixelHostView.profilePreference` and
+  `PixelHostSetupConfig.profilePreference` are removed in favor of
+  `PixelHostProfilePolicy.AdaptivePixels`, and `PixelHostView.screenProfile` becomes a read-only
+  value derived from the policy; pinning a grid now uses `PixelHostProfilePolicy.Fixed(profile)`.
 - Concise component APIs (`OutlinedButton`, `TextButton`, `Checkbox`, `Switch`, `ListTile`,
   `Dialog`, `BottomSheet`, `ConfirmDialog`, `ModalBarrier`, `Toast`, `Snackbar`, `ProgressBar`,
   `PixelLoadingBar`, `AnimatedPixelLoadingBar`, `Badge`, `Divider`, `AppScaffold`, `EmptyState`,
@@ -88,10 +108,9 @@ Internal 0.x SDK baseline for `pixel-engine`.
 
 - Immutable `PixelEngine.Builder` instances with injectable clock, frame scheduler, per-Host ticker
   factory, structured error reporter/logger, resource resolver/cache, Host environment, focused
-  Host capabilities, and explicit theme override. New typed Host actions replace string protocols;
-  missing and failed optional capabilities return explicit sealed results. Legacy
-  `PixelHostBridge`, setup, and frame-scope descriptors remain compatible. See
-  `pixel-engine/docs/guides/migration.md`.
+  Host capabilities, and explicit theme override. Typed Host actions replace string protocols;
+  missing and failed optional capabilities return explicit sealed results. `hostServices` is the
+  only Host capability entry point. See `pixel-engine/docs/guides/migration.md`.
 - The SDK publication was consolidated into one `pixel-engine` AAR, POM, API/ABI baseline,
   artifact budget, dependency lock and isolated Maven/R8 consumer. Obsolete split-artifact,
   Compose sample, demo and benchmark modules were removed from the main build.
@@ -160,15 +179,14 @@ Internal 0.x SDK baseline for `pixel-engine`.
 - `TextButton` and `PixelTextButtonStyle`.
 - `EmptyState` and `ConfirmDialog` feedback components.
 - `Slidable`, `SlidableAction`, and `SlidableActionPane`.
-- `PixelHostBridge.updateTextInput`.
 - `PixelListController.isAtEnd`.
 - `PixelPagerSavedState` / `PixelTextFieldSavedState` Android `Bundle` helpers.
 - Android accessibility bridge backed by the existing semantics tree.
 - Runtime-local Host focus ownership, `PixelKey.SPACE`, and
   `PixelHostView.dispatchPixelKeyEvent` for custom keyboard/gamepad bridges.
 - Fixed Unicode 17.0.0 `PixelGraphemeBoundaryMap` / `PixelUtf16Range`, grapheme-safe TextField
-  Controller operations, exact `PixelTextInputEvent`, `PixelTester.pressText`, and the additive
-  `PixelTextEditingHostBridge` / `PixelTextEditingValue` composition contract. See
+  Controller operations, exact `PixelTextInputEvent`, `PixelTester.pressText`, and the
+  `PixelTextEditingSession` / `PixelTextEditingValue` composition contract. See
   `pixel-engine/docs/guides/migration.md`.
 - Additive code-point `Int` glyph source/provider overloads, full-scalar glyph-pack/cache lookup,
   `PixelClusterTextRasterizer`, grapheme-cluster paragraph units, and fixed Unicode 17.0.0 UAX #9
@@ -181,10 +199,10 @@ Internal 0.x SDK baseline for `pixel-engine`.
 
 ### Adaptive Host behavior changes
 
-- Frozen `ScaleMode.FIT_CENTER` remains Contain + Integer + Center. Explicit policies can combine
-  Contain/Cover, Integer/Fractional and nine alignments without changing legacy descriptors.
-- Direct `screenProfile` assignment selects `PixelHostProfilePolicy.Fixed`; adaptive px/dp/logical
-  policies re-resolve after size, density or viewport-strategy changes.
+- The canonical default `PixelViewportPolicy()` is Contain + Integer + Center. Explicit policies
+  combine Contain/Cover, Integer/Fractional and nine alignments on one uniform cell scale.
+- `PixelHostProfilePolicy.Fixed` pins a caller-owned grid; adaptive px/dp/logical policies
+  re-resolve after size, density or viewport-strategy changes.
 - Android API 24–29 now separates a larger current IME edge from stable system bars instead of
   unconditionally publishing zero `viewInsets`; API 30+ uses typed system-bar/IME/cutout channels.
 - Physical platform insets and cutout rectangles are retained and reprojected after geometry

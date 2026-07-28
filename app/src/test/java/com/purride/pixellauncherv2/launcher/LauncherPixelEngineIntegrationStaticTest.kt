@@ -49,6 +49,11 @@ class LauncherPixelEngineIntegrationStaticTest {
         assertTrue(hostSource.contains("navigator.entries.map"))
         assertFalse(hostSource.contains("PixelRoute("))
         assertFalse(hostSource.contains("navigator.stack"))
+        // Launcher 只通过 typed capability set 与唯一的 profile 策略入口装配 Host。
+        assertTrue(engineSource.contains("PixelHostCapabilitySet("))
+        assertTrue(hostSource.contains("PixelHostProfilePolicy.AdaptivePixels("))
+        assertFalse(hostSource.contains("hostBridge"))
+        assertFalse(hostSource.contains("profilePreference"))
         assertFalse(activitySource.contains(".hostBridge"))
         assertTrue(activitySource.contains("launcherRootHost.dispose()"))
     }

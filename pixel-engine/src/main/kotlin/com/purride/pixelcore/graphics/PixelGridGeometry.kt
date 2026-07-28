@@ -40,38 +40,16 @@ public object PixelGridGeometryResolver {
     private const val COMPACT_CELL_SIZE_THRESHOLD_PX = 8f
 
     /**
-     * 按冻结的缩放兼容规则解析 View、逻辑网格和像素点之间的统一几何。
+     * 解析 View、逻辑网格和像素点之间的统一几何。
      *
-     * Resolves geometry with the frozen [ScreenProfile.scaleMode] compatibility mapping.
-     *
-     * @param pixelGapRatio  间隙大小比例，0.0 = 无间隙，1.0 = 最大间隙（默认 1.0）。
-     *   当 [pixelGapEnabled] 为 false 或本值 ≤ 0 时，dotInset 均为 0。
-     */
-    public fun resolve(
-        viewWidth: Int,
-        viewHeight: Int,
-        profile: ScreenProfile,
-        pixelGapEnabled: Boolean = true,
-        pixelGapRatio: Float = 1.0f,
-    ): PixelGridGeometry? {
-        return resolve(
-            viewWidth = viewWidth,
-            viewHeight = viewHeight,
-            profile = profile,
-            viewportPolicy = PixelViewportPolicy.fromLegacyScaleMode(profile.scaleMode),
-            pixelGapEnabled = pixelGapEnabled,
-            pixelGapRatio = pixelGapRatio,
-        )
-    }
-
-    /**
- * 查询 `PixelGridGeometry` 的 `resolve` 结果，不产生额外状态变更。
- *
-     * Resolves one uniform grid transform from an explicit orthogonal viewport policy.
+     * Resolves one uniform grid transform from the explicit orthogonal viewport policy.
      *
      * Integer contain rounds down and integer cover rounds up so quantization cannot violate the
      * selected fit invariant. Fractional policies retain the exact axis-derived scale. Integer
-     * alignment floors a half-pixel remainder to preserve historical `FIT_CENTER` origins.
+     * alignment floors a half-pixel remainder so a centered grid keeps a stable physical origin.
+     *
+     * @param pixelGapRatio  间隙大小比例，0.0 = 无间隙，1.0 = 最大间隙（默认 1.0）。
+     *   当 [pixelGapEnabled] 为 false 或本值 ≤ 0 时，dotInset 均为 0。
      */
     public fun resolve(
         /** Physical Host width in pixels. */
@@ -150,31 +128,6 @@ public object PixelGridGeometryResolver {
             contentHeight = contentHeight,
             dotInset = dotInset,
             dotSize = dotSize,
-        )
-    }
-
-    /** 执行 `PixelGridGeometry` 的 `mapSurfaceToLogical` 公开行为；具体参数、返回和副作用见下文。
- *
- * Maps a physical point using the frozen [ScreenProfile.scaleMode] compatibility policy.
- */
-    public fun mapSurfaceToLogical(
-        touchX: Float,
-        touchY: Float,
-        viewWidth: Int,
-        viewHeight: Int,
-        profile: ScreenProfile,
-        pixelGapEnabled: Boolean = true,
-        pixelGapRatio: Float = 1.0f,
-    ): Pair<Int, Int>? {
-        return mapSurfaceToLogical(
-            touchX = touchX,
-            touchY = touchY,
-            viewWidth = viewWidth,
-            viewHeight = viewHeight,
-            profile = profile,
-            viewportPolicy = PixelViewportPolicy.fromLegacyScaleMode(profile.scaleMode),
-            pixelGapEnabled = pixelGapEnabled,
-            pixelGapRatio = pixelGapRatio,
         )
     }
 

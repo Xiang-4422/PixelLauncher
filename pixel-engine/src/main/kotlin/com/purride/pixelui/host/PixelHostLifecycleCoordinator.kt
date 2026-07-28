@@ -321,11 +321,8 @@ internal class PixelHostLifecycleCoordinator(
         viewHeight: Int,
         /** Current logical grid profile. */
         screenProfile: ScreenProfile,
-        /**
-         * Explicit viewport policy, or `null` to retain the historical inset conversion that
-         * predates alignment-aware viewport policies.
-         */
-        viewportPolicy: PixelViewportPolicy? = null,
+        /** 当前 Host 的 canonical 视口策略；投影必须与绘制、命中共用同一份几何。 */
+        viewportPolicy: PixelViewportPolicy,
         /**
          * Whether physical viewport cropping contributes to the logical inset. Stable system-bar
          * padding includes it; transient IME obscuration excludes crop that exists without IME.
@@ -337,34 +334,16 @@ internal class PixelHostLifecycleCoordinator(
         pixelGapRatio: Float,
     ): PixelWindowInsets {
         /** Paint/touch geometry shared by the inset conversion. */
-        val geometry = if (viewportPolicy == null) {
-            PixelGridGeometryResolver.resolve(
-                viewWidth = viewWidth,
-                viewHeight = viewHeight,
-                profile = screenProfile,
-                pixelGapEnabled = pixelGapEnabled,
-                pixelGapRatio = pixelGapRatio,
-            )
-        } else {
-            PixelGridGeometryResolver.resolve(
-                viewWidth = viewWidth,
-                viewHeight = viewHeight,
-                profile = screenProfile,
-                viewportPolicy = viewportPolicy,
-                pixelGapEnabled = pixelGapEnabled,
-                pixelGapRatio = pixelGapRatio,
-            )
-        } ?: return PixelWindowInsets.Zero
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = viewWidth,
+            viewHeight = viewHeight,
+            profile = screenProfile,
+            viewportPolicy = viewportPolicy,
+            pixelGapEnabled = pixelGapEnabled,
+            pixelGapRatio = pixelGapRatio,
+        ) ?: return PixelWindowInsets.Zero
         /** Positive physical scale used to convert obscured edge spans. */
         val cellSize = geometry.cellSize.coerceAtLeast(1f)
-        if (viewportPolicy == null) {
-            return PixelWindowInsets(
-                left = leftPx.toLogicalInset(cellSize),
-                top = topPx.toLogicalInset(cellSize),
-                right = rightPx.toLogicalInset(cellSize),
-                bottom = bottomPx.toLogicalInset(cellSize),
-            )
-        }
         /** Physical left content boundary used as the inset projection baseline. */
         val contentLeft = if (includeViewportCrop) geometry.originX else maxOf(geometry.originX, 0f)
         /** Physical top content boundary used as the inset projection baseline. */
@@ -455,12 +434,6 @@ internal class PixelHostLifecycleCoordinator(
     private fun emitChange() {
         transitionSequence += 1L
         onDiagnosticsChanged(diagnostics())
-    }
-
-    /** 向上取整地把一个正物理 inset 转成逻辑像素。 */
-    private fun Int.toLogicalInset(cellSize: Float): Int {
-        if (this <= 0) return 0
-        return ceil(this / cellSize).toInt()
     }
 
     /** Rounds one positive physical overlap up to a complete obscured logical cell. */

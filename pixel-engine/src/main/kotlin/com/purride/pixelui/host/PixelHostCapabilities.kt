@@ -64,13 +64,18 @@ public sealed interface PixelCapabilityValueResult<out T> {
     ) : PixelCapabilityValueResult<Nothing>
 }
 
-/** 平台输入法 capability。 */
+/**
+ * 平台输入法 capability。
+ *
+ * 这是 runtime 面向平台编辑器的唯一契约：三个方法都以 [PixelTextEditingSession] 表达
+ * 完整的配置、编辑状态和会话身份，不存在只带 request 的简化路径。
+ */
 public interface PixelImeCapability {
-    /** 启动一个文本输入会话。 */
-    public fun showTextInput(request: PixelTextInputRequest)
+    /** 启动或切换到 [session] 标识的文本输入会话。 */
+    public fun showTextInput(session: PixelTextEditingSession)
 
-    /** 同步已启动输入会话的文本与选区。 */
-    public fun updateTextInput(request: PixelTextInputRequest)
+    /** 同步已启动会话的文本、选区与 composition。 */
+    public fun updateTextInput(session: PixelTextEditingSession)
 
     /** 隐藏并结束当前文本输入会话。 */
     public fun hideTextInput()
@@ -175,16 +180,16 @@ public data class PixelHostCapabilitySet(
     /** 可选类型安全系统动作 capability。 */
     public val systemActions: PixelSystemActionCapability? = null,
 ) {
-    /** 启动输入法；缺失 capability 时返回明确不支持结果。 */
-    public fun showTextInput(request: PixelTextInputRequest): PixelCapabilityResult {
+    /** 启动输入会话；缺失 capability 时返回明确不支持结果。 */
+    public fun showTextInput(session: PixelTextEditingSession): PixelCapabilityResult {
         val capability = ime ?: return unsupported("ime")
-        return capabilityCall("ime") { capability.showTextInput(request) }
+        return capabilityCall("ime") { capability.showTextInput(session) }
     }
 
-    /** 同步输入法状态；缺失 capability 时返回明确不支持结果。 */
-    public fun updateTextInput(request: PixelTextInputRequest): PixelCapabilityResult {
+    /** 同步输入会话状态；缺失 capability 时返回明确不支持结果。 */
+    public fun updateTextInput(session: PixelTextEditingSession): PixelCapabilityResult {
         val capability = ime ?: return unsupported("ime")
-        return capabilityCall("ime") { capability.updateTextInput(request) }
+        return capabilityCall("ime") { capability.updateTextInput(session) }
     }
 
     /** 隐藏输入法；缺失 capability 时返回明确不支持结果。 */
@@ -281,17 +286,6 @@ public data class PixelHostCapabilitySet(
     public companion object {
         /** 不声明任何平台能力的显式空集合。 */
         public val Empty: PixelHostCapabilitySet = PixelHostCapabilitySet()
-
-        /** 把冻结的聚合桥接协议适配为聚焦 capability 集合。 */
-        public fun fromLegacyBridge(bridge: PixelHostBridge?): PixelHostCapabilitySet {
-            if (bridge == null) return Empty
-            return PixelHostCapabilitySet(
-                ime = LegacyImeCapability(bridge),
-                clipboard = LegacyClipboardCapability(bridge),
-                haptic = LegacyHapticCapability(bridge),
-                systemActions = LegacySystemActionCapability(bridge),
-            )
-        }
     }
 }
 
@@ -322,78 +316,9 @@ private fun unsupportedValue(capability: String): PixelCapabilityValueResult.Uns
     )
 }
 
-/** 把冻结桥接的输入法方法适配到聚焦 capability。 */
-private class LegacyImeCapability(
-    /** 接收旧输入法调用的桥接实例。 */
-    private val bridge: PixelHostBridge,
-) : PixelImeCapability {
-    /** 转发显示输入法请求。 */
-    override fun showTextInput(request: PixelTextInputRequest) {
-        bridge.showTextInput(request)
-    }
-
-    /** 转发输入状态同步请求。 */
-    override fun updateTextInput(request: PixelTextInputRequest) {
-        bridge.updateTextInput(request)
-    }
-
-    /** 转发隐藏输入法请求。 */
-    override fun hideTextInput() {
-        bridge.hideTextInput()
-    }
-}
-
-/** 把冻结桥接的剪贴板方法适配到聚焦 capability。 */
-private class LegacyClipboardCapability(
-    /** 接收旧剪贴板调用的桥接实例。 */
-    private val bridge: PixelHostBridge,
-) : PixelClipboardCapability {
-    /** 转发剪贴板读取。 */
-    override fun readClipboardText(): String? = bridge.readClipboardText()
-
-    /** 转发剪贴板写入。 */
-    override fun writeClipboardText(text: String) {
-        bridge.writeClipboardText(text)
-    }
-}
-
-/** 把冻结桥接的震动方法适配到聚焦 capability。 */
-private class LegacyHapticCapability(
-    /** 接收旧震动调用的桥接实例。 */
-    private val bridge: PixelHostBridge,
-) : PixelHapticCapability {
-    /** 转发语义化震动请求。 */
-    override fun performHapticFeedback(type: PixelHapticType) {
-        bridge.performHapticFeedback(type)
-    }
-}
-
-/** 把类型安全动作转换到旧桥接协议的兼容适配器。 */
-private class LegacySystemActionCapability(
-    /** 接收旧 [PixelSystemAction] 的桥接实例。 */
-    private val bridge: PixelHostBridge,
-) : PixelSystemActionCapability {
-    /** 转换动作后调用旧桥接，并把成功调用标记为已处理。 */
-    override fun dispatch(action: PixelTypedSystemAction): PixelCapabilityResult {
-        bridge.dispatchSystemAction(action.toLegacySystemAction())
-        return PixelCapabilityResult.Handled
-    }
-}
-
-/** 把封闭动作模型映射为冻结字符串协议，仅用于旧 Host 兼容层。 */
-private fun PixelTypedSystemAction.toLegacySystemAction(): PixelSystemAction {
-    return when (this) {
-        is PixelOpenUriAction -> PixelSystemAction(type = "open_uri", payload = uri)
-        PixelNavigateBackAction -> PixelSystemAction(type = "navigate_back")
-        is PixelOpenAppSettingsAction -> PixelSystemAction(
-            type = "open_app_settings",
-            payload = packageName,
-        )
-        is PixelRequestPermissionAction -> PixelSystemAction(
-            type = "request_permission",
-            payload = permission,
-        )
-    }
+/** 读取剪贴板纯文本；不支持、为空或读取失败时统一按“没有内容”返回 null。 */
+internal fun PixelHostCapabilitySet.clipboardTextOrNull(): String? {
+    return (readClipboardText() as? PixelCapabilityValueResult.Value)?.value
 }
 
 /** widget 树读取当前聚焦 Host capability 的入口。 */

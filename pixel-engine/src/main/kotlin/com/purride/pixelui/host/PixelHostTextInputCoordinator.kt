@@ -11,7 +11,7 @@ import com.purride.pixelui.state.PixelTextFieldState
  * PixelHostView 仍然是 Android 入口；这里把文本输入状态机从绘制和手势路由中拆出来。
  */
 internal class PixelHostTextInputCoordinator(
-    /** Host whose current retained text target and platform bridge are coordinated atomically. */
+    /** Host whose current retained text target and IME capability are coordinated atomically. */
     private val host: PixelHostView,
 ) {
     /** Applies one normalized platform editing snapshot to the currently focused writable target. */
@@ -46,10 +46,10 @@ internal class PixelHostTextInputCoordinator(
         /** Active target whose composition must end before its editor generation retires. */
         val target = host.focusedTextInputTarget ?: return
         target.controller.blur(target.state)
-        host.hostBridge?.updateTarget(target)
+        host.effectiveHostServices.updateTextInput(target.toEditingSession())
         target.focusNode?.unfocus()
         host.nestedScrollSession.clearTextInputOwner()
-        host.hostBridge?.hideTextInput()
+        host.effectiveHostServices.hideTextInput()
         host.invalidate()
     }
 
@@ -68,28 +68,28 @@ internal class PixelHostTextInputCoordinator(
     fun performEditAction(action: PixelTextEditAction): Boolean {
         /** Active target whose read-only and boundary invariants govern the edit. */
         val target = host.focusedTextInputTarget ?: return false
-        /** Optional platform bridge providing clipboard capability. */
-        val bridge = host.hostBridge
+        /** 当前 Host 的 typed capability 集合，剪贴板缺失时返回明确不支持结果。 */
+        val hostServices = host.effectiveHostServices
         /** Whether the action changed text and therefore needs callback plus editor rebind. */
         val changed = when (action) {
             PixelTextEditAction.COPY -> {
                 /** Whole-grapheme selection copied without changing retained text. */
                 val selected = target.controller.selectedText(target.state)
                 if (selected.isEmpty()) return false
-                bridge?.writeClipboardText(selected)
+                hostServices.writeClipboardText(selected)
                 false
             }
             PixelTextEditAction.CUT -> {
                 if (target.readOnly) return false
                 /** Removed whole-grapheme selection written to clipboard after successful cut. */
                 val selected = target.controller.cutSelection(target.state) ?: return false
-                bridge?.writeClipboardText(selected)
+                hostServices.writeClipboardText(selected)
                 true
             }
             PixelTextEditAction.PASTE -> {
                 if (target.readOnly) return false
                 /** Exact clipboard payload inserted without Unicode normalization. */
-                val clipboardText = bridge?.readClipboardText().orEmpty()
+                val clipboardText = hostServices.clipboardTextOrNull().orEmpty()
                 if (clipboardText.isEmpty()) return false
                 target.controller.paste(target.state, clipboardText)
                 true
@@ -188,7 +188,7 @@ internal class PixelHostTextInputCoordinator(
             if (current !== previous) {
                 host.nestedScrollSession.markTextInputOwner(current)
             }
-            host.hostBridge?.updateTarget(current)
+            host.effectiveHostServices.updateTextInput(current.toEditingSession())
         }
     }
 
@@ -202,65 +202,33 @@ internal class PixelHostTextInputCoordinator(
         target.controller.focus(target.state)
         target.focusNode?.requestFocus()
         host.nestedScrollSession.markTextInputOwner(target)
-        host.hostBridge?.showTarget(target)
+        host.effectiveHostServices.showTextInput(target.toEditingSession())
     }
 }
 
 /**
- * 显示 [target] 的输入会话，并仅向 opt-in bridge 发送 composition 扩展值。
+ * 把一个 retained target 转换成唯一的平台编辑会话契约。
+ *
+ * 会话身份直接用 retained [PixelTextFieldState]，因此同一字段的重建不会重启 IME，
+ * 而切换到另一个字段一定会让宿主作废上一代 InputConnection。
  */
-private fun PixelHostBridge.showTarget(target: PixelTextInputTarget) {
-    /** Frozen compatibility request shared by full and legacy bridge paths. */
-    val request = target.toTextInputRequest()
-    if (this is PixelTextInputBridge) {
-        showTextEditingForTarget(
-            request = request,
-            value = target.toTextEditingValue(),
-            targetIdentity = target.state,
-        )
-    } else if (this is PixelTextEditingHostBridge) {
-        showTextEditing(request = request, value = target.toTextEditingValue())
-    } else {
-        showTextInput(request)
-    }
-}
-
-/**
- * 更新 [target] 的输入会话，同时保留旧 bridge 的八字段请求兼容路径。
- */
-private fun PixelHostBridge.updateTarget(target: PixelTextInputTarget) {
-    /** Frozen compatibility request shared by full and legacy bridge paths. */
-    val request = target.toTextInputRequest()
-    if (this is PixelTextInputBridge) {
-        updateTextEditingForTarget(
-            request = request,
-            value = target.toTextEditingValue(),
-            targetIdentity = target.state,
-        )
-    } else if (this is PixelTextEditingHostBridge) {
-        updateTextEditing(request = request, value = target.toTextEditingValue())
-    } else {
-        updateTextInput(request)
-    }
-}
-
-/** Converts one retained target into the frozen request-only compatibility contract. */
-private fun PixelTextInputTarget.toTextInputRequest(): PixelTextInputRequest = PixelTextInputRequest(
-    text = state.text,
-    selectionStart = state.selectionStart,
-    selectionEnd = state.selectionEnd,
-    readOnly = readOnly,
-    minLines = minLines,
-    maxLines = maxLines,
-    inputType = inputType,
-    action = action,
-)
-
-/** Converts the retained text-field state into the additive full editing-value contract. */
-private fun PixelTextInputTarget.toTextEditingValue(): PixelTextEditingValue = PixelTextEditingValue(
-    text = state.text,
-    selectionStart = state.selectionStart,
-    selectionEnd = state.selectionEnd,
-    compositionStart = state.compositionStart,
-    compositionEnd = state.compositionEnd,
+private fun PixelTextInputTarget.toEditingSession(): PixelTextEditingSession = PixelTextEditingSession(
+    id = state,
+    request = PixelTextInputRequest(
+        text = state.text,
+        selectionStart = state.selectionStart,
+        selectionEnd = state.selectionEnd,
+        readOnly = readOnly,
+        minLines = minLines,
+        maxLines = maxLines,
+        inputType = inputType,
+        action = action,
+    ),
+    value = PixelTextEditingValue(
+        text = state.text,
+        selectionStart = state.selectionStart,
+        selectionEnd = state.selectionEnd,
+        compositionStart = state.compositionStart,
+        compositionEnd = state.compositionEnd,
+    ),
 )

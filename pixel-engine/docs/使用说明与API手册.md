@@ -156,7 +156,7 @@ class HelloPixelActivity : AppCompatActivity() {
 val setup = createPixelHostSetup(
     context = this,
     config = PixelHostSetupConfig(
-        profilePreference = PixelHostProfilePreference(
+        profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
             dotSizePx = 8,
             pixelShape = PixelShape.SQUARE,
         ),
@@ -175,7 +175,7 @@ setup.hostView.setPixelGapRatio(0.6f)
 
 | 配置 | 说明 |
 |---|---|
-| `profilePreference` | 点大小、像素形状偏好 |
+| `profilePolicy` | 逻辑屏幕解析策略：`Fixed` / `AdaptivePixels` / `AdaptiveDp` / `AdaptiveLogicalSize` |
 | `bezelColor` | 屏幕外框和画布背景色 |
 | `textRasterizer` | 默认文本栅格器 |
 | `textDirection` | LTR / RTL |
@@ -187,8 +187,9 @@ setup.hostView.setPixelGapRatio(0.6f)
 | `onUnhandledBack` | back 未被 widget 消费时的 app fallback |
 | `content` | 根 widget provider |
 
-`createPixelHostSetup(context, engine, ...)` 中 Engine 的 frame scheduler、capability 和其他服务是最终
-权威来源；config 先完成普通 View 装配，随后绑定 Engine，避免默认 config scheduler 掩盖注入服务。
+`createPixelHostSetup(context, engine, ...)` 中 Engine 是 Host 服务的唯一来源：setup 会把默认 Android
+编辑器提供的 IME、剪贴板、震动能力作为 **fallback** 补进 `engine.services.hostServices`，调用方在
+Engine 上显式声明的同名 capability 始终优先。
 
 ### PixelEngine 实例与服务注入
 
@@ -231,18 +232,18 @@ Host frame/ticker scope；不要继续持有切换前的 ticker provider。
 
 ### Android 宿主契约
 
-pixel-engine 当前只承诺 Android 宿主。默认路径使用 `createPixelHostSetup`；只有自定义宿主、
-测试宿主或替代输入桥时才直接操作 `PixelHostView` / `PixelHostBridge`。
+pixel-engine 当前只承诺 Android 宿主。默认路径使用 `createPixelHostSetup`；只有自定义宿主或
+测试宿主才需要直接操作 `PixelHostView` 并自行组装 `PixelHostCapabilitySet`。
 
 | 层级 | SDK 负责 | App 负责 |
 |---|---|---|
 | `PixelHostSetup` | 创建 `PixelHostView`、默认 `PixelTextInputBridge` 和根 `FrameLayout` | 把 `rootView` 放进 Activity / Fragment |
 | `PixelHostView` | 渲染、输入、insets、accessibility、ViewTree lifecycle、Host 私有 ticker provider 和调试 dump | 在真实终态释放 setup；需要时提供显式 owner 或 lifecycle |
-| `PixelTextInputBridge` | 隐藏 `EditText`、IME 映射、selection / composition 同步、剪贴板和 haptic 默认桥接 | 业务侧决定何时聚焦、提交、保存文本状态 |
+| `PixelTextInputBridge` | 引擎自有隐藏编辑器、IME 映射、selection / composition 同步，并实现 `PixelImeCapability` / `PixelClipboardCapability` / `PixelHapticCapability` | 业务侧决定何时聚焦、提交、保存文本状态 |
 | `PixelBackDispatcher` | 维护 widget 内 back 栈，并按栈顶优先派发 | 提供 `onUnhandledBack` 或回落到系统 back |
 | saved state helpers | 提供 navigator / list / pager / text field 的 `Bundle` 保存恢复 API | 在 Activity / Fragment 生命周期里显式调用保存恢复 |
 
-新自定义宿主应按需实现聚焦 capability：
+自定义宿主按需实现聚焦 capability：
 
 - `PixelImeCapability`
 - `PixelClipboardCapability`
@@ -257,23 +258,17 @@ pixel-engine 当前只承诺 Android 宿主。默认路径使用 `createPixelHos
 `PixelOpenUriAction`、`PixelNavigateBackAction`、`PixelOpenAppSettingsAction` 和
 `PixelRequestPermissionAction`，新代码不应新增字符串协议。
 
-已经发布的自定义宿主可以继续实现 `PixelHostBridge`：
-
-- `showTextInput` / `updateTextInput` / `hideTextInput`
-- `performHapticFeedback`
-- `requestFrame`
-- `dispatchSystemAction`
-- `readClipboardText` / `writeClipboardText`
-
-Host 合并时 Engine capability 优先，旧 bridge 只补齐缺失的 IME、clipboard、haptic 和 system
-action；旧接口的源码与 JVM 形状保持不变。
+typed capability set 是唯一的宿主能力模型：`PixelHostView` 只从所绑定 Engine 读取
+`services.hostServices`，不存在第二个 Host 级注入入口。帧调度不属于 capability，由
+`PixelFrameScheduler`（`PixelEngine.Builder.frameScheduler` 或 `PixelHostView.frameScheduler`）单独负责。
 
 边界：
 
 - `PixelHostView` attach 时自动绑定 `ViewTreeLifecycleOwner`；普通 detach 只暂停并保留 retained tree，
   `destroy()` / `dispose()` 才是不可逆释放。
 - SDK 不自动保存 Android `savedInstanceState`；业务 controller/state 由 app 显式保存恢复。
-- SDK 不封装权限、Intent、通知、文件选择等 Android 业务能力；这类能力通过 app 层或 `PixelSystemAction` 自行接线。
+- SDK 不封装权限、Intent、通知、文件选择等 Android 业务能力；这类能力通过 app 层或
+  `PixelSystemActionCapability` 自行接线。
 - SDK 不提供 Material / Cupertino 组件库；宿主契约只保证像素 UI 引擎和 Android 系统能力的连接。
 
 ### Host-owned ticker 与帧源
@@ -784,9 +779,10 @@ override fun onCreateView(
 - `PixelAdaptiveLayoutData`：当前物理/dp/逻辑尺寸、inset、density、orientation、size class 和
   display features 的同帧快照。
 
-旧 `ScaleMode.FIT_CENTER` 仍精确映射为 Contain + Integer + Center；不设置
-`PixelHostView.viewportPolicy` 时不会改变既有 paint、touch 或 inset。直接赋值 `screenProfile` 会切回
-`PixelHostProfilePolicy.Fixed`；旧 `profilePreference` 继续兼容并映射为 `AdaptivePixels`。
+`PixelHostView.viewportPolicy` 非空，默认值 `PixelViewportPolicy()` 即 canonical 默认策略
+（Contain + Integer + Center）；paint、touch 和 inset 投影共用同一份策略解析出的几何。
+`PixelHostView.screenProfile` 只读，始终由 `profilePolicy` 与当前视口、密度、`viewportPolicy` 解析得到；
+需要固定网格时赋 `PixelHostProfilePolicy.Fixed(profile)`。
 
 ```kotlin
 /** Configures a density-aware logical grid and an exact fractional contain viewport. */
@@ -1506,7 +1502,7 @@ selection、composition 或 IME target。
 | `createPixelHostSetup` | 创建默认 Android 宿主 | `context`、可选 `engine`、`hostView`、`config` |
 | `PixelHostSetup` | 宿主装配结果 | `rootView`、`hostView`、`textInputBridge` |
 | `PixelHostSetupConfig` | 宿主配置 | 背景、字体、手势策略、滚动物理、根内容 |
-| `PixelHostProfilePreference` | 点阵显示偏好 | `dotSizePx`、`pixelShape` |
+| `PixelHostProfilePolicy` | 逻辑屏幕解析策略 | `Fixed` / `AdaptivePixels` / `AdaptiveDp` / `AdaptiveLogicalSize` |
 | `PixelHostProfilePolicy` | 固定或自适应逻辑 profile | `Fixed`、`AdaptivePixels`、`AdaptiveDp`、`AdaptiveLogicalSize` |
 | `PixelViewportPolicy` | 物理到逻辑的正交映射 | fit、quantization、alignment |
 | `PixelHostView` | Android 像素宿主 | `setContent`、lifecycle、`tickerProvider`、insets、debug stats |
@@ -1763,15 +1759,13 @@ Tab traversal 不会形成新的 trap，逻辑关闭后会恢复低层 modal 的
 
 ### 输入法与 TextField 宿主契约
 
-默认 Android `PixelTextInputBridge` 使用隐藏 `EditText` 接入系统 IME。普通 Activity 通过
-`createPixelHostSetup` 接入时不需要手动处理输入法；自定义宿主才需要实现
-`PixelHostBridge.showTextInput`、`PixelHostBridge.updateTextInput` 和
-`PixelHostBridge.hideTextInput`。
+默认 Android `PixelTextInputBridge` 使用引擎自有隐藏编辑器接入系统 IME，并实现
+`PixelImeCapability`。普通 Activity 通过 `createPixelHostSetup` 接入时不需要手动处理输入法；
+自定义宿主才需要自行实现 `PixelImeCapability.showTextInput` / `updateTextInput` / `hideTextInput`。
 
-默认隐藏 editor 是 engine-owned 实现，并在平台 InputConnection 外增加 grapheme guard。显式传入
-普通自定义 `EditText` 只属于旧版弱兼容路径：它不能保证 selection-only/composition-only 回写，
-也不能保证任意子类的 InputConnection 命令经过 grapheme 规范化。生产代码需要完整 1.0 文本契约时
-应保留默认 editor。
+隐藏 editor 固定为 engine-owned 实现，在平台 InputConnection 外增加 grapheme guard，因此不接受
+外部替换成普通 `EditText`——那类编辑器无法保证 selection-only/composition-only 回写，也无法保证
+任意子类的 InputConnection 命令经过 grapheme 规范化。
 
 | 契约 | 行为 |
 |---|---|
@@ -1780,12 +1774,12 @@ Tab traversal 不会形成新的 trap，逻辑关闭后会恢复低层 modal 的
 | `PixelHostView.updateFocusedTextInput` | 宿主把文本、selection 和 composition 同步回当前聚焦的 `TextField` |
 | `PixelHostView.submitFocusedTextInput` | 宿主触发提交；所有 action 都会触发 `onSubmitted`，`NEXT` 会额外发起焦点遍历 |
 | `readOnly` | 宿主回传文本会被忽略；`COPY` / `SELECT_ALL` 这类只读编辑动作仍可使用 |
-| `PixelTextEditingHostBridge` | additive 完整宿主能力，通过 `PixelTextEditingValue` 同步 text、selection 和 composition |
+| `PixelTextEditingSession` | 唯一的编辑会话契约：`id`（会话身份）+ `request`（编辑器配置）+ `value`（完整 text/selection/composition） |
 
-`PixelTextInputBridge` 只在焦点目标或 editor config 改变时重启 IME；普通文本、selection 和
-composition 更新会走 identified `updateTextEditing`，避免输入过程中反复重建键盘。旧
-`PixelHostBridge` 实现继续接收冻结的八字段 request，不需要新增方法，但不能跨 Host 保存
-composition。
+`PixelTextInputBridge` 只在会话身份或 editor config 改变时重启 IME；普通文本、selection 和
+composition 更新会走 `updateTextInput`，避免输入过程中反复重建键盘。`PixelTextEditingSession.id`
+在同一 TextField 的连续更新中保持引用相等，切换到另一个字段时一定不同，宿主据此作废上一代
+InputConnection，防止跨字段串写。
 
 TextField 聚焦时，字符、物理键盘方向键与 Enter 由隐藏 editor 优先处理；Tab、Escape，以及
 DPAD/游戏手柄来源的方向、确认和取消键转发给当前 Host 的 focus owner。IME `NEXT` 使用同一
@@ -1848,8 +1842,8 @@ hyphenation。旧字体和文本实现的迁移步骤见[统一迁移指南](gui
 
 ### 剪贴板与文本编辑动作
 
-默认 Android `PixelTextInputBridge` 会把 `PixelHostBridge.readClipboardText` /
-`writeClipboardText` 接到系统 `ClipboardManager`。页面或宿主可以通过
+默认 Android `PixelTextInputBridge` 实现 `PixelClipboardCapability`，把读写接到系统
+`ClipboardManager`。页面或宿主可以通过
 `PixelHostView.performFocusedTextEditAction` 对当前聚焦的 `TextField` 执行标准动作。
 
 | Action | 行为 |
@@ -1863,12 +1857,12 @@ hyphenation。旧字体和文本实现的迁移步骤见[统一迁移指南](gui
 val handled = setup.hostView.performFocusedTextEditAction(PixelTextEditAction.PASTE)
 ```
 
-自定义宿主只需要实现 `PixelHostBridge.readClipboardText` 和
-`PixelHostBridge.writeClipboardText`；不支持剪贴板时保留默认实现即可。
+自定义宿主只需要实现 `PixelClipboardCapability`；不支持剪贴板时不装配该 capability 即可，
+调用方会收到明确的 `Unsupported` 结果。
 
 ### Haptic
 
-默认 Android `PixelTextInputBridge` 会把 `PixelHapticType.TAP` /
+默认 Android `PixelTextInputBridge` 实现 `PixelHapticCapability`，把 `PixelHapticType.TAP` /
 `PixelHapticType.LONG_PRESS` 映射到系统 haptic feedback。widget 树需要主动震动时，
 通过 build context 调用 `PixelHapticFeedback.perform`。
 
@@ -1884,7 +1878,8 @@ Builder { context ->
 }
 ```
 
-`perform` 返回 `false` 表示当前宿主没有提供 `PixelHostBridge`。内置长按手势会自动触发
+`perform` 返回 `false` 表示当前宿主没有装配 `PixelHapticCapability`，或该 capability 执行失败。
+内置长按手势会自动触发
 `LONG_PRESS`，普通点击不自动触发，避免替业务决定交互强度。
 
 ### Controller

@@ -9,15 +9,20 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** 验证 widget 树内的震动入口只依赖 typed Host capability。 */
 class PixelHapticFeedbackTest {
+    /** 装配了震动 capability 时，widget 能直接触发宿主反馈。 */
     @Test
-    fun performUsesHostBridgeFromContext() {
-        val bridge = RecordingHostBridge()
+    fun performUsesHapticCapabilityFromContext() {
+        /** 记录收到的语义化震动类型。 */
+        val haptics = mutableListOf<PixelHapticType>()
         val runtime = PixelUiRuntime()
 
         runtime.render(
             root = hostRoot(
-                hostBridge = bridge,
+                hostServices = PixelHostCapabilitySet(
+                    haptic = PixelHapticCapability { type -> haptics += type },
+                ),
                 child = Builder { context ->
                     assertTrue(PixelHapticFeedback.perform(context, PixelHapticType.TAP))
                     SizedBox(width = 1, height = 1)
@@ -27,12 +32,13 @@ class PixelHapticFeedbackTest {
             logicalHeight = 4,
         )
 
-        assertEquals(listOf(PixelHapticType.TAP), bridge.haptics)
+        assertEquals(listOf(PixelHapticType.TAP), haptics)
         runtime.dispose()
     }
 
+    /** 缺失震动 capability 时返回明确的不支持结果，调用方无需兜底。 */
     @Test
-    fun performReturnsFalseWithoutHostBridge() {
+    fun performReturnsFalseWithoutHapticCapability() {
         val runtime = PixelUiRuntime()
         var handled = true
 
@@ -51,8 +57,33 @@ class PixelHapticFeedbackTest {
         runtime.dispose()
     }
 
+    /** capability 抛错时不会穿透到 widget，调用方只看到未处理结果。 */
+    @Test
+    fun performReturnsFalseWhenHapticCapabilityFails() {
+        val runtime = PixelUiRuntime()
+        var handled = true
+
+        runtime.render(
+            root = hostRoot(
+                hostServices = PixelHostCapabilitySet(
+                    haptic = PixelHapticCapability { throw IllegalStateException("vibrator unavailable") },
+                ),
+                child = Builder { context ->
+                    handled = PixelHapticFeedback.perform(context, PixelHapticType.TAP)
+                    SizedBox(width = 1, height = 1)
+                },
+            ),
+            logicalWidth = 4,
+            logicalHeight = 4,
+        )
+
+        assertFalse(handled)
+        runtime.dispose()
+    }
+
+    /** 构造一棵只注入指定 Host capability 的最小根树。 */
     private fun hostRoot(
-        hostBridge: PixelHostBridge? = null,
+        hostServices: PixelHostCapabilitySet = PixelHostCapabilitySet.Empty,
         child: Widget,
     ): Widget {
         return HostRootWidget(
@@ -61,24 +92,8 @@ class PixelHapticFeedbackTest {
             textRasterizer = PixelBitmapFont.Default,
             windowInsets = PixelWindowInsets.Zero,
             viewInsets = PixelWindowInsets.Zero,
-            hostBridge = hostBridge,
+            hostServices = hostServices,
             child = child,
         )
-    }
-
-    private class RecordingHostBridge : PixelHostBridge {
-        val haptics = mutableListOf<PixelHapticType>()
-
-        override fun showTextInput(request: PixelTextInputRequest): Unit = Unit
-
-        override fun hideTextInput(): Unit = Unit
-
-        override fun performHapticFeedback(type: PixelHapticType) {
-            haptics += type
-        }
-
-        override fun requestFrame(): Unit = Unit
-
-        override fun dispatchSystemAction(action: PixelSystemAction): Unit = Unit
     }
 }

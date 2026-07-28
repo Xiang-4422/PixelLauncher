@@ -6,6 +6,7 @@ import android.view.KeyEvent
 import android.view.ViewGroup
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.purride.pixelengine.PixelEngine
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
 import org.junit.Assert.assertEquals
@@ -75,21 +76,21 @@ class PixelHostMultiHostFocusInstrumentedTest {
         val firstFixture = TextInputFocusFixture("first")
         /** Text state, focus nodes, and submission trace owned by Host B. */
         val secondFixture = TextInputFocusFixture("second")
-        /** IME bridge recording only requests originating from Host A. */
-        val firstBridge = MultiHostRecordingBridge()
-        /** IME bridge recording only requests originating from Host B. */
-        val secondBridge = MultiHostRecordingBridge()
+        /** IME capability recording only sessions originating from Host A. */
+        val firstIme = MultiHostRecordingImeCapability()
+        /** IME capability recording only sessions originating from Host B. */
+        val secondIme = MultiHostRecordingImeCapability()
 
         ActivityScenario.launch(PixelHostFragmentTestActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                /** Host A connected exclusively to [firstBridge]. */
+                /** Host A connected exclusively to [firstIme] through its own Engine. */
                 val firstHost = PixelHostView(activity).apply {
-                    hostBridge = firstBridge
+                    engine = engineWithIme(firstIme)
                     setContent(firstFixture::build)
                 }
-                /** Host B connected exclusively to [secondBridge]. */
+                /** Host B connected exclusively to [secondIme] through its own Engine. */
                 val secondHost = PixelHostView(activity).apply {
-                    hostBridge = secondBridge
+                    engine = engineWithIme(secondIme)
                     setContent(secondFixture::build)
                 }
                 activity.rootView.addView(firstHost, fullSizeLayoutParams())
@@ -99,39 +100,39 @@ class PixelHostMultiHostFocusInstrumentedTest {
 
                 assertTrue(firstFixture.fieldNode.isFocused)
                 assertTrue(secondFixture.fieldNode.isFocused)
-                assertTrue(firstBridge.showRequests.isNotEmpty())
-                assertTrue(secondBridge.showRequests.isNotEmpty())
-                assertTrue(firstBridge.showRequests.all { request -> request.action == PixelTextInputAction.NEXT })
-                assertTrue(secondBridge.showRequests.all { request -> request.action == PixelTextInputAction.NEXT })
+                assertTrue(firstIme.showSessions.isNotEmpty())
+                assertTrue(secondIme.showSessions.isNotEmpty())
+                assertTrue(firstIme.showSessions.all { session -> session.request.action == PixelTextInputAction.NEXT })
+                assertTrue(secondIme.showSessions.all { session -> session.request.action == PixelTextInputAction.NEXT })
                 /** Host B show-request count that must remain stable while only Host A is operated. */
-                val secondInitialShowCount = secondBridge.showRequests.size
+                val secondInitialShowCount = secondIme.showSessions.size
                 /** Host A lifecycle hide count before this test explicitly clears its field. */
-                val firstInitialHideCount = firstBridge.hideCount
+                val firstInitialHideCount = firstIme.hideCount
                 /** Host B lifecycle hide count that must remain unchanged by every Host A action. */
-                val secondInitialHideCount = secondBridge.hideCount
+                val secondInitialHideCount = secondIme.hideCount
 
                 firstHost.updateFocusedTextInput("Alpha")
                 assertEquals("Alpha", firstFixture.fieldState.text)
                 assertEquals("", secondFixture.fieldState.text)
-                assertEquals(secondInitialShowCount, secondBridge.showRequests.size)
+                assertEquals(secondInitialShowCount, secondIme.showSessions.size)
 
                 firstHost.submitFocusedTextInput()
                 assertEquals("Alpha", firstFixture.lastSubmittedText)
                 assertEquals("", secondFixture.lastSubmittedText)
                 assertTrue(firstFixture.nextNode.isFocused)
                 assertTrue(secondFixture.fieldNode.isFocused)
-                assertEquals(secondInitialShowCount, secondBridge.showRequests.size)
+                assertEquals(secondInitialShowCount, secondIme.showSessions.size)
 
                 firstHost.clearFocusedTextInput()
                 assertFalse(firstFixture.fieldState.isFocused)
                 assertTrue(secondFixture.fieldState.isFocused)
-                assertTrue(firstBridge.hideCount > firstInitialHideCount)
-                assertEquals(secondInitialHideCount, secondBridge.hideCount)
+                assertTrue(firstIme.hideCount > firstInitialHideCount)
+                assertEquals(secondInitialHideCount, secondIme.hideCount)
 
                 firstHost.destroy()
                 assertTrue(secondFixture.fieldNode.isFocused)
                 assertTrue(secondFixture.fieldState.isFocused)
-                assertEquals(secondInitialHideCount, secondBridge.hideCount)
+                assertEquals(secondInitialHideCount, secondIme.hideCount)
 
                 secondHost.updateFocusedTextInput("Beta")
                 assertEquals("Beta", secondFixture.fieldState.text)
@@ -263,38 +264,36 @@ private class TextInputFocusFixture(
     }
 }
 
-/** Minimal Host bridge that records only IME ownership signals relevant to this test. */
-private class MultiHostRecordingBridge : PixelHostBridge {
-    /** All IME show requests received from this bridge's Host. */
-    val showRequests: MutableList<PixelTextInputRequest> = mutableListOf()
+/** 只记录本测试关心的 IME 归属信号的最小 capability 实现。 */
+private class MultiHostRecordingImeCapability : PixelImeCapability {
+    /** All IME show sessions received from this capability's Host. */
+    val showSessions: MutableList<PixelTextEditingSession> = mutableListOf()
 
-    /** All non-restarting IME update requests received from this bridge's Host. */
-    val updateRequests: MutableList<PixelTextInputRequest> = mutableListOf()
+    /** All non-restarting IME update sessions received from this capability's Host. */
+    val updateSessions: MutableList<PixelTextEditingSession> = mutableListOf()
 
-    /** Number of hide requests received from this bridge's Host. */
+    /** Number of hide requests received from this capability's Host. */
     var hideCount: Int = 0
 
     /** Records one Host-owned IME show request. */
-    override fun showTextInput(request: PixelTextInputRequest) {
-        showRequests += request
+    override fun showTextInput(session: PixelTextEditingSession) {
+        showSessions += session
     }
 
     /** Records one Host-owned non-restarting IME update. */
-    override fun updateTextInput(request: PixelTextInputRequest) {
-        updateRequests += request
+    override fun updateTextInput(session: PixelTextEditingSession) {
+        updateSessions += session
     }
 
     /** Records one Host-owned IME hide request. */
     override fun hideTextInput() {
         hideCount += 1
     }
+}
 
-    /** Haptic feedback is outside this focus-isolation test. */
-    override fun performHapticFeedback(type: PixelHapticType): Unit = Unit
-
-    /** Frames are rendered explicitly by the test. */
-    override fun requestFrame(): Unit = Unit
-
-    /** System actions are outside this focus-isolation test. */
-    override fun dispatchSystemAction(action: PixelSystemAction): Unit = Unit
+/** 为单个 Host 组装一个只声明 IME capability 的独立 Engine。 */
+private fun engineWithIme(ime: PixelImeCapability): PixelEngine {
+    return PixelEngine.Builder()
+        .hostServices(PixelHostCapabilitySet(ime = ime))
+        .build()
 }

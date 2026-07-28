@@ -101,7 +101,8 @@ internal class PixelHostRenderCoordinator(
         backgroundColor: PixelColor,
     ) {
         if (disposed) return
-        host.screenProfile = screenProfile
+        // 外部直接提交像素帧等价于声明一次固定逻辑网格，仍然走唯一的 profile 策略入口。
+        host.profilePolicy = PixelHostProfilePolicy.Fixed(screenProfile)
         host.bezelColor = backgroundColor
         lastRenderResult = PixelRenderResult(
             buffer = pixelBuffer,
@@ -195,7 +196,6 @@ internal class PixelHostRenderCoordinator(
                 textRasterizer = host.textRasterizer,
                 windowInsets = host.windowInsets,
                 viewInsets = host.viewInsets,
-                hostBridge = host.hostBridge,
                 hostServices = host.effectiveHostServices,
                 themeTokens = host.engine.themeOverride,
                 motionVsync = host.tickerProvider,

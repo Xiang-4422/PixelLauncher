@@ -29,6 +29,24 @@ import 需要改写为根包 import。其余公开 package import 保持不变�
 - 可选 `semanticLabel` 同样改为 nullable 且默认 `null`。`NavigationBar` / `NavigationRail` 删除了
   `"Navigation bar"` / `"Navigation rail"` 默认字符串 sentinel：显式传入该文本现在优先于本地化
   provider；需要 provider 解析的调用方应改为省略该参数。显式空白集合名称仍在构建时被拒绝。
+- 宿主能力只有 typed capability set 一个模型。`PixelHostBridge`、`PixelTextEditingHostBridge`、
+  `PixelSystemAction`、`PixelHostCapabilitySet.fromLegacyBridge` 和 `PixelHostView.hostBridge`
+  全部删除：改为组装 `PixelHostCapabilitySet` 并通过 `PixelEngine.Builder.hostServices(...)` 注入，
+  `PixelHostView` 只从所绑定 Engine 读取 `services.hostServices`。帧调度不再是 bridge 方法
+  （`requestFrame` 删除），由 `PixelFrameScheduler` 单独负责。
+- `PixelImeCapability` 的三个方法统一接收 `PixelTextEditingSession`（`id` + `request` + `value`），
+  不再有只带 `PixelTextInputRequest` 的简化重载。`PixelTextInputBridge` 的隐藏编辑器固定为
+  引擎自有实现，不再接受外部 `EditText`，普通 `EditText` 的弱兼容 `TextWatcher` 写回路径删除。
+- viewport 只有 `PixelViewportPolicy` 一套表示。`ScaleMode`、`ScreenProfile.scaleMode`、
+  `PixelViewportPolicy.LegacyFitCenter`、`fromLegacyScaleMode` 以及
+  `PixelGridGeometryResolver.resolve` / `mapSurfaceToLogical` 的无策略重载全部删除；
+  `PixelHostView.viewportPolicy` 改为非空，默认值 `PixelViewportPolicy()` 就是 canonical 默认策略
+  （Contain + Integer + Center），行为与旧 `FIT_CENTER` 一致。
+- profile 只有 `PixelHostProfilePolicy` 一个入口。`PixelHostProfilePreference`、
+  `PixelHostView.profilePreference` 和 `PixelHostSetupConfig.profilePreference` 删除，
+  改用 `PixelHostProfilePolicy.AdaptivePixels(dotSizePx, pixelShape)`；
+  `PixelHostView.screenProfile` 变为只读派生值，原先的直接赋值改为
+  `profilePolicy = PixelHostProfilePolicy.Fixed(profile)`。
 - 主题使用语义 token 与组件状态集合，不复制旧固定颜色。
 - 路由使用 typed destination/request/entry/outcome 和版本化 snapshot adapter。
 - 文本 offset 对外保持 UTF-16，但 selection、caret、编辑和 hit test 必须落在 grapheme 边界。

@@ -11,6 +11,7 @@ import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelGridGeometry
 import com.purride.pixelcore.PixelGridGeometryResolver
+import com.purride.pixelcore.PixelViewportPolicy
 import com.purride.pixelcore.PixelShape
 import com.purride.pixelcore.ScreenProfile
 import org.junit.Assert.assertArrayEquals
@@ -148,6 +149,7 @@ class PixelHostSquareGapBatchInstrumentedTest {
                 viewWidth = viewWidth,
                 viewHeight = viewHeight,
                 profile = TestProfile,
+                viewportPolicy = PixelViewportPolicy(),
                 pixelGapEnabled = true,
                 pixelGapRatio = 1f,
             ),

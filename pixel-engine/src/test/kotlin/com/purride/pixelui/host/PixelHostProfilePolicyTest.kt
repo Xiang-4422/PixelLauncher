@@ -12,10 +12,10 @@ import org.junit.Test
 
 /** Verifies all fixed and adaptive profile policies through the pure Host resolver. */
 class PixelHostProfilePolicyTest {
-    /** Fixed compatibility mode returns the caller-owned profile without environment influence. */
+    /** Fixed 策略返回调用方拥有的 profile，不受视口与密度影响。 */
     @Test
     fun fixedProfileRemainsExactAcrossViewportAndDensityInputs() {
-        /** Exact manual profile used by the compatibility policy. */
+        /** Exact manual profile pinned by the fixed policy. */
         val profile = ScreenProfile(
             logicalWidth = 37,
             logicalHeight = 19,
@@ -137,7 +137,7 @@ class PixelHostProfilePolicyTest {
             widthPx = widthPx,
             heightPx = heightPx,
             density = density,
-            viewportPolicy = PixelViewportPolicy.LegacyFitCenter,
+            viewportPolicy = PixelViewportPolicy(),
         )
     }
 }

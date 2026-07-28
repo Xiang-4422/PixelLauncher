@@ -8,7 +8,12 @@ import com.purride.pixelui.PixelNavigateBackAction
 import com.purride.pixelui.PixelOpenAppSettingsAction
 import com.purride.pixelui.PixelOpenUriAction
 import com.purride.pixelui.PixelRequestPermissionAction
+import com.purride.pixelui.PixelImeCapability
+import com.purride.pixelui.PixelInputType
 import com.purride.pixelui.PixelSystemActionCapability
+import com.purride.pixelui.PixelTextEditingSession
+import com.purride.pixelui.PixelTextEditingValue
+import com.purride.pixelui.PixelTextInputRequest
 import com.purride.pixelui.PixelTypedSystemAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -28,6 +33,7 @@ class PixelHostCapabilitySetTest {
                 PixelCapabilityResult.Unsupported,
         )
         assertTrue(capabilities.requestBack() is PixelCapabilityResult.Unsupported)
+        assertTrue(capabilities.hideTextInput() is PixelCapabilityResult.Unsupported)
         assertTrue(capabilities.announce("hello") is PixelCapabilityResult.Unsupported)
         assertTrue(capabilities.readClipboardText() is PixelCapabilityValueResult.Unsupported)
         assertTrue(capabilities.restoreState("screen") is PixelCapabilityValueResult.Unsupported)
@@ -65,6 +71,61 @@ class PixelHostCapabilitySetTest {
             listOf(openUri, openSettings, requestPermission, PixelNavigateBackAction),
             received,
         )
+    }
+
+    /** IME capability 收到的会话保留完整配置、编辑状态和会话身份。 */
+    @Test
+    fun imeSessionsCarryRequestValueAndSessionIdentity() {
+        /** 记录 capability 收到的完整会话。 */
+        val shown = mutableListOf<PixelTextEditingSession>()
+        /** 记录 capability 收到的同步会话。 */
+        val updated = mutableListOf<PixelTextEditingSession>()
+        /** 只安装输入法能力的集合。 */
+        val capabilities = PixelHostCapabilitySet(
+            ime = object : PixelImeCapability {
+                override fun showTextInput(session: PixelTextEditingSession) {
+                    shown += session
+                }
+
+                override fun updateTextInput(session: PixelTextEditingSession) {
+                    updated += session
+                }
+
+                override fun hideTextInput(): Unit = Unit
+            },
+        )
+        /** 两个逻辑上不同字段各自的会话身份。 */
+        val firstId = Any()
+        val secondId = Any()
+        /** 携带 composition 的完整编辑状态。 */
+        val value = PixelTextEditingValue(
+            text = "\uD83D\uDE42AB",
+            selectionStart = 2,
+            selectionEnd = 3,
+            compositionStart = 2,
+            compositionEnd = 4,
+        )
+        /** 数字面板配置，用来确认 request 不会在边界上被裁剪。 */
+        val request = PixelTextInputRequest(text = value.text, inputType = PixelInputType.NUMBER)
+
+        assertSame(
+            PixelCapabilityResult.Handled,
+            capabilities.showTextInput(PixelTextEditingSession(firstId, request, value)),
+        )
+        assertSame(
+            PixelCapabilityResult.Handled,
+            capabilities.updateTextInput(PixelTextEditingSession(firstId, request, value)),
+        )
+        assertSame(
+            PixelCapabilityResult.Handled,
+            capabilities.showTextInput(PixelTextEditingSession(secondId, request, value)),
+        )
+
+        assertEquals(listOf(firstId, secondId), shown.map(PixelTextEditingSession::id))
+        assertEquals(listOf(firstId), updated.map(PixelTextEditingSession::id))
+        assertEquals(PixelInputType.NUMBER, shown.first().request.inputType)
+        assertEquals(2, shown.first().value.compositionStart)
+        assertEquals(4, shown.first().value.compositionEnd)
     }
 
     /** capability 抛错被转换为结构化 Failed，不穿透到 widget 调用方。 */

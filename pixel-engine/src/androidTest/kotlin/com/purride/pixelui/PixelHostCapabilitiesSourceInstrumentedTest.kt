@@ -271,33 +271,25 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
                 renderSynchronously(host)
                 assertEquals(ScreenProfile(40, 20, 4, PixelShape.DIAMOND), host.screenProfile)
 
-                host.profilePreference = PixelHostProfilePreference(
+                host.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
                     dotSizePx = 10,
                     pixelShape = PixelShape.CIRCLE,
                 )
                 renderSynchronously(host)
-                assertEquals(
-                    PixelHostProfilePolicy.AdaptivePixels(
-                        dotSizePx = 10,
-                        pixelShape = PixelShape.CIRCLE,
-                    ),
-                    host.profilePolicy,
-                )
                 assertEquals(ScreenProfile(10, 8, 10, PixelShape.CIRCLE), host.screenProfile)
 
-                /** Manual compatibility profile expected to disable every adaptive reevaluation. */
+                /** 固定策略必须让后续所有自适应重算失效。 */
                 val manual = ScreenProfile(
                     logicalWidth = 7,
                     logicalHeight = 9,
                     dotSizePx = 3,
                     pixelShape = PixelShape.SQUARE,
                 )
-                host.screenProfile = manual
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(manual)
                 host.layout(0, 0, 200, 160)
                 renderSynchronously(host)
 
                 assertEquals(PixelHostProfilePolicy.Fixed(manual), host.profilePolicy)
-                assertEquals(null, host.profilePreference)
                 assertEquals(manual, host.screenProfile)
                 assertEquals(1, tracker.states.size)
                 assertSame(originalState, tracker.states.single())
@@ -334,7 +326,7 @@ class PixelHostCapabilitiesSourceInstrumentedTest {
                 /** Attached Host driven through real size and inherited-root code paths. */
                 val host = activity.hostView
                 host.layout(0, 0, 100, 80)
-                host.screenProfile = ScreenProfile(logicalWidth = 10, logicalHeight = 8, dotSizePx = 10)
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(logicalWidth = 10, logicalHeight = 8, dotSizePx = 10))
                 host.windowInsets = PixelWindowInsets(top = 2, right = 1)
                 host.viewInsets = PixelWindowInsets(bottom = 3)
                 host.replaceHostCapabilitiesSourceForTesting(source)

@@ -15,7 +15,7 @@ import com.purride.pixelui.PageController
 import com.purride.pixelui.PageView
 import com.purride.pixelui.PixelCapabilityResult
 import com.purride.pixelui.PixelHapticType
-import com.purride.pixelui.PixelHostProfilePreference
+import com.purride.pixelui.PixelHostProfilePolicy
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelui.PixelHostView
@@ -202,7 +202,8 @@ internal class LauncherRootHost(
         this.screenProfile = screenProfile
         syncNavigatorRoute(state.mode)
 
-        setup.hostView.profilePreference = PixelHostProfilePreference(
+        // Launcher 的逻辑网格随点阵大小自适应，统一走 Host 唯一的 profile 策略入口。
+        setup.hostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
             dotSizePx = screenProfile.dotSizePx,
             pixelShape = screenProfile.pixelShape,
         )

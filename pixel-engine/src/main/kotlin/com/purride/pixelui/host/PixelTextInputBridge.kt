@@ -3,13 +3,10 @@ package com.purride.pixelui
 import android.content.Context
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.text.Editable
-import android.text.TextWatcher
 import android.os.LocaleList
 import android.view.KeyEvent
 import android.view.InputDevice
 import android.view.HapticFeedbackConstants
-import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -26,32 +23,35 @@ import com.purride.pixelui.internal.host.mapAndroidKeyCodeToPixelTextInputEvent
 import java.util.Locale
 
 /**
- * 默认的 Android 文本输入桥接。
+ * Android 平台编辑器 capability 实现。
  *
  * 这层把“隐藏输入框 + IME 同步”收进 pixel-engine UI layer，这样宿主页面不需要每次都手写
- * 一整套 `EditText + TextWatcher + InputMethodManager` 样板。
+ * 一整套 `EditText + InputMethodManager` 样板。
  *
  * 当前职责很克制：
- * - 持有一个隐藏 `EditText`
- * - 把 runtime 的焦点文本同步到隐藏输入框
- * - 把隐藏输入框的文本变化回写到 `PixelHostView`
- * - 提供一个默认的 `PixelHostBridge` 实现
+ * - 持有唯一的引擎自有隐藏编辑器
+ * - 把 runtime 的焦点会话同步到隐藏编辑器
+ * - 把隐藏编辑器的编辑值回写到 `PixelHostView`
+ * - 以 [PixelImeCapability]、[PixelClipboardCapability]、[PixelHapticCapability] 的形式
+ *   参与 Host 的 typed capability 装配
  *
- * 默认 [inputView] 是引擎自有编辑器，提供完整 grapheme、selection 和 composition 保证。
- * 显式传入普通 `EditText` 只保留旧版文本回调兼容，无法拦截其 InputConnection，也不能
- * 保证 selection-only/composition-only 同步；需要完整 1.0 输入契约时不得替换默认实例。
+ * [inputView] 固定为引擎自有编辑器，提供完整 grapheme、selection 和 composition 保证；
+ * 不接受外部替换，避免出现无法拦截 InputConnection 的弱兼容编辑器。
  *
  * @param context 提供 Android IME、剪贴板和隐藏编辑器服务的 Context。
  * @param hostView 接收平台编辑事件的 Pixel Host。
- * @param inputView 隐藏平台编辑器；默认值提供完整保证，自定义实例仅为弱兼容路径。
  */
 public class PixelTextInputBridge(
     context: Context,
     /** 接收平台输入并持有当前 retained TextField target 的 Host。 */
     private val hostView: PixelHostView,
-    /** Android IME 实际连接的隐藏编辑器。 */
-    public val inputView: EditText = createDefaultTextInputView(context),
-) : PixelTextEditingHostBridge {
+) : PixelImeCapability, PixelClipboardCapability, PixelHapticCapability {
+
+    /** Android IME 实际连接的引擎自有隐藏编辑器。 */
+    private val engineInputView: PixelEngineTextInputView = PixelEngineTextInputView(context)
+
+    /** 隐藏编辑器的 Android View 视图，供宿主容器挂载。 */
+    public val inputView: EditText get() = engineInputView
 
     /** Android 输入法管理器；测试或无服务 Context 下允许为空。 */
     private val inputMethodManager = context.getSystemService(InputMethodManager::class.java)
@@ -65,8 +65,8 @@ public class PixelTextInputBridge(
     /** 当前平台编辑器配置，用于只在配置变化时重启同一目标的 IME。 */
     private var editorConfig: AndroidTextInputEditorConfig? = null
 
-    /** 当前 retained state 的引用身份，用于隔离复用同一隐藏 View 的多个字段会话。 */
-    private var activeTargetIdentity: Any? = null
+    /** 当前活动会话的引用身份，用于隔离复用同一隐藏 View 的多个字段会话。 */
+    private var activeSessionId: Any? = null
 
     init {
         inputView.alpha = 0f
@@ -115,52 +115,28 @@ public class PixelTextInputBridge(
                 false
             }
         }
-        if (inputView is PixelEngineTextInputView) {
-            inputView.setEditingValueListener(::dispatchPlatformEditingValue)
-        } else {
-            installLegacyTextWatcher()
-        }
+        engineInputView.setEditingValueListener(::dispatchPlatformEditingValue)
     }
 
-    /** Preserves the frozen request-only entry point by deriving an empty-composition value. */
-    override fun showTextInput(request: PixelTextInputRequest) {
-        showTextEditing(request = request, value = request.toEditingValue())
-    }
-
-    /** Shows the default Android editor with full selection and composition state. */
-    override fun showTextEditing(
-        request: PixelTextInputRequest,
-        value: PixelTextEditingValue,
-    ) {
-        /** Direct callers cannot provide target identity, so every show establishes a fresh session. */
-        val wasFocused = inputView.hasFocus()
-        activeTargetIdentity = null
-        (inputView as? PixelEngineTextInputView)?.retireInputConnections()
-        showTextEditingInternal(request, value, forceRestartInput = wasFocused)
-    }
-
-    /** Starts a target-identified session so stale connections cannot cross TextField boundaries. */
-    internal fun showTextEditingForTarget(
-        request: PixelTextInputRequest,
-        value: PixelTextEditingValue,
-        targetIdentity: Any,
-    ) {
+    /** 启动或切换会话；切换字段时先作废上一代 InputConnection，避免跨字段串写。 */
+    override fun showTextInput(session: PixelTextEditingSession) {
         /** Identity changes only for a logically different retained text state. */
-        val targetChanged = activeTargetIdentity !== targetIdentity
+        val targetChanged = activeSessionId !== session.id
         if (targetChanged) {
-            (inputView as? PixelEngineTextInputView)?.retireInputConnections()
-            activeTargetIdentity = targetIdentity
+            engineInputView.retireInputConnections()
+            activeSessionId = session.id
         }
-        showTextEditingInternal(request, value, forceRestartInput = targetChanged)
+        showSessionInternal(session, forceRestartInput = targetChanged)
     }
 
-    /** Shared show path with an explicit restart bit for logical target changes. */
-    private fun showTextEditingInternal(
-        request: PixelTextInputRequest,
-        value: PixelTextEditingValue,
+    /** Shared show path with an explicit restart bit for logical session changes. */
+    private fun showSessionInternal(
+        session: PixelTextEditingSession,
         forceRestartInput: Boolean,
     ) {
-        /** Android editor configuration derived from the frozen request fields. */
+        /** 当前会话的编辑器配置。 */
+        val request = session.request
+        /** Android editor configuration derived from the request fields. */
         val nextEditorConfig = request.toAndroidEditorConfig()
         /** Whether Android must discard cached editor metadata for this show. */
         val shouldRestartInput = shouldRestartAndroidTextInput(
@@ -180,7 +156,7 @@ public class PixelTextInputBridge(
                 }
                 editorConfig = nextEditorConfig
             }
-            applyEditingValue(value)
+            applyEditingValue(session.value)
         } finally {
             syncingFromHostDepth -= 1
         }
@@ -197,40 +173,19 @@ public class PixelTextInputBridge(
         }
     }
 
-    /** Preserves the frozen request-only update path for legacy bridge callers. */
-    override fun updateTextInput(request: PixelTextInputRequest) {
-        updateTextEditing(request = request, value = request.toEditingValue())
-    }
-
-    /** Updates the active Android editor without discarding an engine composition range. */
-    override fun updateTextEditing(
-        request: PixelTextInputRequest,
-        value: PixelTextEditingValue,
-    ) {
+    /** 同步已激活会话；身份或编辑器配置变化时升级为一次完整 show。 */
+    override fun updateTextInput(session: PixelTextEditingSession) {
         /** Android editor configuration used to detect metadata-changing updates. */
-        val nextEditorConfig = request.toAndroidEditorConfig()
-        if (!inputView.hasFocus() || editorConfig != nextEditorConfig) {
-            showTextEditing(request = request, value = value)
+        val nextEditorConfig = session.request.toAndroidEditorConfig()
+        if (activeSessionId !== session.id || !inputView.hasFocus() || editorConfig != nextEditorConfig) {
+            showTextInput(session)
             return
         }
         syncingFromHostDepth += 1
         try {
-            applyEditingValue(value)
+            applyEditingValue(session.value)
         } finally {
             syncingFromHostDepth -= 1
-        }
-    }
-
-    /** Updates one identified target, promoting an unexpected identity change to a new session. */
-    internal fun updateTextEditingForTarget(
-        request: PixelTextInputRequest,
-        value: PixelTextEditingValue,
-        targetIdentity: Any,
-    ) {
-        if (activeTargetIdentity !== targetIdentity) {
-            showTextEditingForTarget(request, value, targetIdentity)
-        } else {
-            updateTextEditing(request, value)
         }
     }
 
@@ -238,8 +193,8 @@ public class PixelTextInputBridge(
     override fun hideTextInput() {
         inputMethodManager?.hideSoftInputFromWindow(inputView.windowToken, 0)
         inputView.clearFocus()
-        activeTargetIdentity = null
-        (inputView as? PixelEngineTextInputView)?.retireInputConnections()
+        activeSessionId = null
+        engineInputView.retireInputConnections()
     }
 
     /** Maps the stable SDK haptic enum to the closest Android feedback constant. */
@@ -251,14 +206,6 @@ public class PixelTextInputBridge(
         }
         hostView.performHapticFeedback(feedbackConstant)
     }
-
-    /** Requests one retained Host render frame. */
-    override fun requestFrame() {
-        hostView.requestRender()
-    }
-
-    /** Default bridge has no generic string-based system action to execute. */
-    override fun dispatchSystemAction(action: PixelSystemAction): Unit = Unit
 
     /** Reads the first primary-clip item when Android clipboard service is available. */
     override fun readClipboardText(): String? {
@@ -273,26 +220,9 @@ public class PixelTextInputBridge(
         clipboardManager?.setPrimaryClip(ClipData.newPlainText("pixel-text", text))
     }
 
-    /** Applies full state on the engine-owned view and the legacy text/selection subset otherwise. */
+    /** 把完整 text/selection/composition 状态写入引擎自有编辑器。 */
     private fun applyEditingValue(value: PixelTextEditingValue) {
-        /** Full-contract editor, or null for the explicitly supplied weak compatibility path. */
-        val engineInputView = inputView as? PixelEngineTextInputView
-        if (engineInputView != null) {
-            engineInputView.applyHostEditingValue(value)
-            return
-        }
-        if (inputView.text?.toString() != value.text) {
-            inputView.setText(value.text)
-        }
-        /** Post-write length constraining legacy EditText selection offsets. */
-        val textLength = inputView.text?.length ?: 0
-        /** Legacy selection start clipped to the actual filtered text. */
-        val safeSelectionStart = value.selectionStart.coerceIn(0, textLength)
-        /** Legacy selection end ordered after the clipped start. */
-        val safeSelectionEnd = value.selectionEnd.coerceIn(safeSelectionStart, textLength)
-        if (inputView.selectionStart != safeSelectionStart || inputView.selectionEnd != safeSelectionEnd) {
-            inputView.setSelection(safeSelectionStart, safeSelectionEnd)
-        }
+        engineInputView.applyHostEditingValue(value)
     }
 
     /** Sends one engine-owned view snapshot back to the focused retained TextField. */
@@ -304,57 +234,6 @@ public class PixelTextInputBridge(
             selectionEnd = value.selectionEnd,
             compositionStart = value.compositionStart,
             compositionEnd = value.compositionEnd,
-        )
-    }
-
-    /**
-     * Installs the compatibility watcher for explicitly supplied ordinary EditText instances.
-     *
-     * This path retains historical text callbacks but cannot observe composition-only changes or
-     * wrap an arbitrary subclass's InputConnection; full guarantees require the default view.
-     */
-    private fun installLegacyTextWatcher() {
-        inputView.addTextChangedListener(
-            /** Compatibility observer used only when the consumer replaces the engine editor. */
-            object : TextWatcher {
-                /** Legacy watcher has no work before a text mutation. */
-                override fun beforeTextChanged(
-                    text: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int,
-                ): Unit = Unit
-
-                /** Legacy watcher waits for the final Editable snapshot. */
-                override fun onTextChanged(
-                    text: CharSequence?,
-                    start: Int,
-                    before: Int,
-                    count: Int,
-                ): Unit = Unit
-
-                /** Publishes the best available text, selection, and composing-span snapshot. */
-                override fun afterTextChanged(editable: Editable?) {
-                    if (syncingFromHostDepth > 0) return
-                    /** Platform composing marker start visible on the legacy Editable. */
-                    val compositionStart = editable
-                        ?.let(BaseInputConnection::getComposingSpanStart)
-                        ?: -1
-                    /** Platform composing marker end visible on the legacy Editable. */
-                    val compositionEnd = editable
-                        ?.let(BaseInputConnection::getComposingSpanEnd)
-                        ?: -1
-                    dispatchPlatformEditingValue(
-                        PixelTextEditingValue(
-                            text = editable?.toString().orEmpty(),
-                            selectionStart = inputView.selectionStart.coerceAtLeast(0),
-                            selectionEnd = inputView.selectionEnd.coerceAtLeast(0),
-                            compositionStart = compositionStart,
-                            compositionEnd = compositionEnd,
-                        ),
-                    )
-                }
-            },
         )
     }
 
@@ -409,15 +288,3 @@ public class PixelTextInputBridge(
             keyCode == KeyEvent.KEYCODE_BUTTON_MODE
     }
 }
-
-/** Creates the engine-owned editor without exposing its internal implementation in public defaults. */
-private fun createDefaultTextInputView(context: Context): EditText {
-    return PixelEngineTextInputView(context)
-}
-
-/** Converts the frozen request subset into a complete value with no active composition. */
-private fun PixelTextInputRequest.toEditingValue(): PixelTextEditingValue = PixelTextEditingValue(
-    text = text,
-    selectionStart = selectionStart,
-    selectionEnd = selectionEnd,
-)

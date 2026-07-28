@@ -3,6 +3,7 @@ package com.purride.pixelui
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import com.purride.pixelcore.PixelGridGeometryResolver
+import com.purride.pixelcore.PixelViewportPolicy
 import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.internal.PixelRect
 import com.purride.pixelui.internal.PixelSemanticsTarget
@@ -77,6 +78,7 @@ class PixelHostAccessibilityNodeProviderTest {
             viewWidth = 100,
             viewHeight = 80,
             profile = ScreenProfile(logicalWidth = 10, logicalHeight = 8, dotSizePx = 10),
+            viewportPolicy = PixelViewportPolicy(),
             pixelGapEnabled = false,
             pixelGapRatio = 0f,
         )!!
@@ -114,6 +116,7 @@ class PixelHostAccessibilityNodeProviderTest {
             viewWidth = 100,
             viewHeight = 80,
             profile = ScreenProfile(logicalWidth = 10, logicalHeight = 8, dotSizePx = 10),
+            viewportPolicy = PixelViewportPolicy(),
             pixelGapEnabled = false,
             pixelGapRatio = 0f,
         )!!
@@ -528,6 +531,7 @@ class PixelHostAccessibilityNodeProviderTest {
         viewWidth = 100,
         viewHeight = 80,
         profile = ScreenProfile(logicalWidth = 10, logicalHeight = 8, dotSizePx = 10),
+        viewportPolicy = PixelViewportPolicy(),
         pixelGapEnabled = false,
         pixelGapRatio = 0f,
     )!!

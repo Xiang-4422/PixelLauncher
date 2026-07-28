@@ -8,29 +8,19 @@ import com.purride.pixelcore.ScreenProfileFactory
 import kotlin.math.roundToInt
 
 /**
- * 宿主希望使用的点阵显示偏好。
+ * 定义 `PixelHostProfilePolicy` 的可替换调用契约。
  *
- * 这一层只表达“点大小和像素形状偏好”，真正的逻辑分辨率仍然交给
- * `PixelHostView` 根据当前可用尺寸自动推导。
- */
-public data class PixelHostProfilePreference(
-    /** Preferred physical size of one logical pixel, in device pixels. */
-    val dotSizePx: Int,
-    /** Shape painted inside each resolved logical pixel cell. */
-    val pixelShape: PixelShape = PixelShape.SQUARE,
-)
-
-/**
- * 定义 `PixelHostProfilePolicy` 在 `PixelHostProfilePreference` 中的可替换调用契约。
+ * Host 解析逻辑 [ScreenProfile] 的唯一配置入口：调用方声明“要什么”，Host 负责在
+ * 视口尺寸、密度或视口策略变化后重新解析出“是什么”。
  *
  * Declares how a Host resolves its logical [ScreenProfile] from physical viewport information.
  *
- * [Fixed] is the compatibility mode used by direct `PixelHostView.screenProfile` assignment.
- * Adaptive policies are re-evaluated after viewport size, density or viewport strategy changes.
+ * [Fixed] pins one caller-owned grid; the adaptive variants are re-evaluated after viewport size,
+ * density or viewport strategy changes.
  */
 public sealed interface PixelHostProfilePolicy {
     /**
- * 定义 `Fixed` 在 `PixelHostProfilePreference` 中承担的数据与行为边界。
+ * 定义 `Fixed` 在 `PixelHostProfilePolicy` 中承担的数据与行为边界。
  *
      * Keeps one caller-owned profile unchanged across viewport and density changes.
      *
@@ -41,7 +31,7 @@ public sealed interface PixelHostProfilePolicy {
     ) : PixelHostProfilePolicy
 
     /**
- * 定义 `AdaptivePixels` 在 `PixelHostProfilePreference` 中承担的数据与行为边界。
+ * 定义 `AdaptivePixels` 在 `PixelHostProfilePolicy` 中承担的数据与行为边界。
  *
      * Derives logical dimensions from a physical logical-pixel dot size.
      *
@@ -59,7 +49,7 @@ public sealed interface PixelHostProfilePolicy {
     }
 
     /**
- * 定义 `AdaptiveDp` 在 `PixelHostProfilePreference` 中承担的数据与行为边界。
+ * 定义 `AdaptiveDp` 在 `PixelHostProfilePolicy` 中承担的数据与行为边界。
  *
      * Derives physical dot size from density-independent pixels, then resolves logical dimensions.
      *
@@ -79,12 +69,12 @@ public sealed interface PixelHostProfilePolicy {
     }
 
     /**
- * 定义 `AdaptiveLogicalSize` 在 `PixelHostProfilePreference` 中承担的数据与行为边界。
+ * 定义 `AdaptiveLogicalSize` 在 `PixelHostProfilePolicy` 中承担的数据与行为边界。
  *
      * Keeps logical dimensions stable while recomputing the diagnostic physical dot size.
      *
      * Actual paint geometry still comes from [PixelViewportPolicy], so fractional scale remains
-     * exact even though legacy [ScreenProfile.dotSizePx] can store only a positive integer.
+     * exact even though [ScreenProfile.dotSizePx] can store only a positive integer.
      *
      * @property logicalWidth Positive fixed logical column count.
      * @property logicalHeight Positive fixed logical row count.

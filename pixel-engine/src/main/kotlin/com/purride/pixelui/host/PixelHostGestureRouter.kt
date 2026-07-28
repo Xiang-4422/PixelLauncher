@@ -622,7 +622,7 @@ internal class PixelHostGestureRouter(
                 val pressedMs = event.eventTime - event.downTime
                 if (!target.readOnly && pressedMs >= LONG_PRESS_TIMEOUT_MS) {
                     target.controller.selectWordAt(target.state, selection)
-                    host.hostBridge?.performHapticFeedback(PixelHapticType.LONG_PRESS)
+                    host.effectiveHostServices.performHapticFeedback(PixelHapticType.LONG_PRESS)
                     host.showTextSelectionMenu(target)
                 } else if (!target.readOnly &&
                     host.lastTextInputTapState === target.state &&
@@ -650,7 +650,7 @@ internal class PixelHostGestureRouter(
                 host.cancelPendingClick()
                 host.lastClickTapSource = null
                 host.lastClickTapTimeMs = -1L
-                host.hostBridge?.performHapticFeedback(PixelHapticType.LONG_PRESS)
+                host.effectiveHostServices.performHapticFeedback(PixelHapticType.LONG_PRESS)
                 longPress.invoke()
             } else {
                 handleClickTargetTap(clickTarget, event)

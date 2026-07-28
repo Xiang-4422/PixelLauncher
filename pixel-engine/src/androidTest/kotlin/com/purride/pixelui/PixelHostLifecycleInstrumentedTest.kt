@@ -298,11 +298,11 @@ class PixelHostLifecycleInstrumentedTest {
                 /** Real attached Host receiving deterministic physical dimensions. */
                 val host = activity.hostView
                 host.layout(0, 0, 100, 80)
-                host.screenProfile = ScreenProfile(
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(
                     logicalWidth = 10,
                     logicalHeight = 5,
                     dotSizePx = 8,
-                )
+                ))
                 host.viewportPolicy = PixelViewportPolicy(
                     fit = PixelViewportFit.COVER,
                     quantization = PixelViewportQuantization.INTEGER,
@@ -339,11 +339,11 @@ class PixelHostLifecycleInstrumentedTest {
                 assertEquals(PixelWindowInsets(right = 2), host.windowInsets)
                 assertEquals(PixelWindowInsets(bottom = 4), host.viewInsets)
 
-                host.screenProfile = ScreenProfile(
+                host.profilePolicy = PixelHostProfilePolicy.Fixed(ScreenProfile(
                     logicalWidth = 20,
                     logicalHeight = 10,
                     dotSizePx = 4,
-                )
+                ))
 
                 assertEquals(PixelWindowInsets(right = 4), host.windowInsets)
                 assertEquals(PixelWindowInsets(bottom = 7), host.viewInsets)

@@ -10,7 +10,6 @@ import com.purride.pixelui.HostCapabilities
 import com.purride.pixelui.HostCapabilitiesData
 import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
-import com.purride.pixelui.PixelHostBridge
 import com.purride.pixelui.PixelHostCapabilitySet
 import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.PixelThemeTokens
@@ -20,7 +19,6 @@ import com.purride.pixelui.PixelWindowInsets
 import com.purride.pixelui.StatelessWidget
 import com.purride.pixelui.TextDirection
 import com.purride.pixelui.Widget
-import com.purride.pixelui.internal.host.PixelHostBridgeScope
 import com.purride.pixelui.internal.host.PixelHostCapabilityScope
 import com.purride.pixelui.animation.PixelTickerProvider
 
@@ -45,9 +43,7 @@ internal data class HostRootWidget(
     val windowInsets: PixelWindowInsets,
     /** Temporary IME or obstruction inset in logical pixels. */
     val viewInsets: PixelWindowInsets,
-    /** Optional bridge to Android input and haptic services. */
-    val hostBridge: PixelHostBridge? = null,
-    /** 当前 Engine 与本地桥接合并后的聚焦 Host capability。 */
+    /** 当前 Engine 提供给本 Host 的聚焦 Host capability。 */
     val hostServices: PixelHostCapabilitySet = PixelHostCapabilitySet.Empty,
     /** 当前 Engine 注入根树的主题 token；null 保留历史无显式 Theme 包装行为。 */
     val themeTokens: PixelThemeTokens? = null,
@@ -89,15 +85,12 @@ internal data class HostRootWidget(
         val themedChild: Widget = themeTokens?.let { tokens ->
             PixelTheme(tokens = tokens, child = child)
         } ?: child
-        /** 旧桥接与新 capability 同时发布，保证冻结 API 和新能力模型都可用。 */
-        val bridgedChild = PixelHostBridgeScope(
-            bridge = hostBridge,
-            child = PixelHostCapabilityScope(
-                capabilities = hostServices,
-                child = DefaultTextRasterizer(
-                    rasterizer = textRasterizer,
-                    child = themedChild,
-                ),
+        /** 唯一的 Host capability 作用域，widget 树只从这里读取平台能力。 */
+        val capabilityChild = PixelHostCapabilityScope(
+            capabilities = hostServices,
+            child = DefaultTextRasterizer(
+                rasterizer = textRasterizer,
+                child = themedChild,
             ),
         )
         /** 有 ticker 时再追加 motion scope；其余环境顺序保持历史语义。 */
@@ -105,9 +98,9 @@ internal data class HostRootWidget(
             PixelMotionScope(
                 vsync = vsync,
                 settings = capabilities.motionSettings,
-                child = bridgedChild,
+                child = capabilityChild,
             )
-        } ?: bridgedChild
+        } ?: capabilityChild
         return HostCapabilities(
             data = capabilities,
             child = PixelAdaptiveEnvironment(

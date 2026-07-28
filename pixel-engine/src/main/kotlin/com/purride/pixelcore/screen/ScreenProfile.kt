@@ -15,8 +15,6 @@ public data class ScreenProfile(
     val dotSizePx: Int,
     /** Shape used when the Host paints each logical pixel. */
     val pixelShape: PixelShape = PixelShape.SQUARE,
-    /** Frozen legacy scale selector; new Hosts use [PixelViewportPolicy] additively. */
-    val scaleMode: ScaleMode = ScaleMode.FIT_CENTER,
 )
 
 /** 定义 `PixelShape` 在 `ScreenProfile` 中承担的数据与行为边界。
@@ -32,20 +30,6 @@ public enum class PixelShape {
 
     /** Forty-five-degree rotated square inscribed in its cell. */
     DIAMOND,
-}
-
-/**
- * 定义 `ScaleMode` 在 `ScreenProfile` 中承担的数据与行为边界。
- *
- * Frozen pre-1.0 viewport mode retained in [ScreenProfile]'s constructor and copy ABI.
- *
- * [FIT_CENTER] maps exactly to contain + integer quantization + centered alignment. New code that
- * needs an orthogonal policy should use [PixelViewportPolicy] instead of extending this enum with
- * every possible combination.
- */
-public enum class ScaleMode {
-    /** Preserves the historical centered integer contain behavior. */
-    FIT_CENTER,
 }
 
 /** 定义 `PixelViewportFit` 在 `ScreenProfile` 中承担的数据与行为边界。
@@ -125,9 +109,11 @@ public enum class PixelViewportAlignment {
 /**
  * 定义 `PixelViewportPolicy` 在 `ScreenProfile` 中承担的数据与行为边界。
  *
+ * 逻辑网格投影到物理视口的唯一策略模型；三个轴彼此正交，调用方不需要组合枚举。
+ * 默认构造值（Contain + Integer + Center）就是引擎的 canonical 默认策略。
+ *
  * Orthogonal physical-to-logical viewport policy.
  *
- * The three axes intentionally remain independent so consumers do not need a combinatorial enum.
  * Stretch is absent by design: every policy uses one uniform cell scale and therefore preserves
  * square logical-pixel geometry.
  *
@@ -139,26 +125,4 @@ public data class PixelViewportPolicy(
     public val fit: PixelViewportFit = PixelViewportFit.CONTAIN,
     public val quantization: PixelViewportQuantization = PixelViewportQuantization.INTEGER,
     public val alignment: PixelViewportAlignment = PixelViewportAlignment.CENTER,
-) {
-    /** 集中提供 `ScreenProfile` 的 `<companion>` 共享入口。
- *
- * Stable policies and the frozen [ScaleMode] compatibility mapping.
- */
-    public companion object {
-        /** 公开 `ScreenProfile` 的 `LegacyFitCenter` 配置或运行值。
- *
- * Exact policy represented by the historical [ScaleMode.FIT_CENTER] value.
- */
-        public val LegacyFitCenter: PixelViewportPolicy = PixelViewportPolicy()
-
-        /** 创建或解析 `ScreenProfile` 的 `fromLegacyScaleMode` 结果，并在返回前校验输入。
- *
- * Maps a frozen legacy mode to its additive orthogonal policy.
- */
-        public fun fromLegacyScaleMode(scaleMode: ScaleMode): PixelViewportPolicy {
-            return when (scaleMode) {
-                ScaleMode.FIT_CENTER -> LegacyFitCenter
-            }
-        }
-    }
-}
+)

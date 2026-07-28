@@ -14,6 +14,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.purride.pixelcore.PixelColor
+import com.purride.pixelengine.PixelEngine
 import com.purride.pixelui.internal.host.PixelHostAccessibilityNodeProvider
 import com.purride.pixelui.state.PixelTextFieldController
 import org.junit.Assert.assertEquals
@@ -227,13 +228,21 @@ class PixelHostAccessibilityInstrumentedTest {
     fun textFieldActionsFocusExactHostTargetAndMutateTextSelectionClipboard() {
         val controller = PixelTextFieldController()
         val state = controller.create(initialText = "HELLO", selectionStart = 1, selectionEnd = 4)
-        val bridge = RecordingHostBridge()
+        val hostCapabilities = RecordingHostCapabilities()
         val changedValues = mutableListOf<String>()
 
         ActivityScenario.launch(PixelHostLifecycleTestActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val host = activity.hostView
-                host.hostBridge = bridge
+                // 测试直接组装并注入 typed capability set，Host 只从绑定 Engine 读取平台能力。
+                host.engine = PixelEngine.Builder()
+                    .hostServices(
+                        PixelHostCapabilitySet(
+                            ime = hostCapabilities,
+                            clipboard = hostCapabilities,
+                        ),
+                    )
+                    .build()
                 val provider = host.accessibilityProvider()
                 val eventTypes = mutableListOf<Int>()
                 provider.eventObserverForTesting = { event -> eventTypes += event.eventType }
@@ -261,7 +270,7 @@ class PixelHostAccessibilityInstrumentedTest {
 
                 assertTrue(provider.performAction(field.virtualViewId, AccessibilityNodeInfo.ACTION_CLICK, null))
                 assertTrue(state.isFocused)
-                assertEquals(1, bridge.showTextInputCount)
+                assertEquals(1, hostCapabilities.showTextInputCount)
 
                 val setTextArguments = Bundle().apply {
                     putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "WORLD")
@@ -288,10 +297,10 @@ class PixelHostAccessibilityInstrumentedTest {
                 assertTrue(AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED in eventTypes)
 
                 assertTrue(provider.performAction(field.virtualViewId, AccessibilityNodeInfo.ACTION_COPY, null))
-                assertEquals("OR", bridge.clipboardText)
+                assertEquals("OR", hostCapabilities.clipboardText)
                 assertTrue(provider.performAction(field.virtualViewId, AccessibilityNodeInfo.ACTION_CUT, null))
                 assertEquals("WLD", state.text)
-                bridge.clipboardText = "XY"
+                hostCapabilities.clipboardText = "XY"
                 assertTrue(provider.performAction(field.virtualViewId, AccessibilityNodeInfo.ACTION_PASTE, null))
                 assertEquals("WXYLD", state.text)
                 assertEquals(listOf("WORLD", "WLD", "WXYLD"), changedValues)
@@ -580,8 +589,8 @@ private data class AccessibilityItem(
     val value: String,
 )
 
-/** Minimal deterministic Host bridge for TextField focus and clipboard instrumentation. */
-private class RecordingHostBridge : PixelHostBridge {
+/** 面向 TextField 焦点与剪贴板断言的最小确定性 Host capability 实现。 */
+private class RecordingHostCapabilities : PixelImeCapability, PixelClipboardCapability {
     /** Number of Host-coordinated text focus requests. */
     var showTextInputCount: Int = 0
 
@@ -589,21 +598,15 @@ private class RecordingHostBridge : PixelHostBridge {
     var clipboardText: String? = null
 
     /** Records one text-input focus request without opening a real IME. */
-    override fun showTextInput(request: PixelTextInputRequest) {
+    override fun showTextInput(session: PixelTextEditingSession) {
         showTextInputCount += 1
     }
 
-    /** No real IME is retained by this bridge. */
+    /** 同步不会新增一次会话启动计数。 */
+    override fun updateTextInput(session: PixelTextEditingSession): Unit = Unit
+
+    /** No real IME is retained by this capability. */
     override fun hideTextInput(): Unit = Unit
-
-    /** Haptic output is outside this accessibility test. */
-    override fun performHapticFeedback(type: PixelHapticType): Unit = Unit
-
-    /** Host frames are drawn explicitly by the test. */
-    override fun requestFrame(): Unit = Unit
-
-    /** System actions are outside this accessibility test. */
-    override fun dispatchSystemAction(action: PixelSystemAction): Unit = Unit
 
     /** Returns the deterministic in-memory clipboard value. */
     override fun readClipboardText(): String? = clipboardText

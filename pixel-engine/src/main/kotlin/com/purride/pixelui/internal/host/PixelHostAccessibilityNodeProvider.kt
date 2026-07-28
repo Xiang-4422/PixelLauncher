@@ -27,6 +27,7 @@ import com.purride.pixelui.PixelSemanticsNode
 import com.purride.pixelui.PixelSemanticsRangeInfo
 import com.purride.pixelui.PixelSemanticsSelectionMode
 import com.purride.pixelui.PixelTextEditAction
+import com.purride.pixelui.clipboardTextOrNull
 import com.purride.pixelui.internal.PixelListTarget
 import com.purride.pixelui.internal.PixelPagerTarget
 import com.purride.pixelui.internal.PixelRect
@@ -662,7 +663,7 @@ internal class PixelHostAccessibilityNodeProvider(
         val hasSelection = target.state.selectionStart < target.state.selectionEnd
         if (hasSelection) info.addAction(AccessibilityNodeInfo.ACTION_COPY)
         if (hasSelection && !target.readOnly) info.addAction(AccessibilityNodeInfo.ACTION_CUT)
-        if (!target.readOnly && !host.hostBridge?.readClipboardText().isNullOrEmpty()) {
+        if (!target.readOnly && !host.effectiveHostServices.clipboardTextOrNull().isNullOrEmpty()) {
             info.addAction(AccessibilityNodeInfo.ACTION_PASTE)
         }
     }
@@ -750,24 +751,25 @@ internal class PixelHostAccessibilityNodeProvider(
         action: PixelTextEditAction,
     ): Boolean {
         val target = resolveTextInputTarget(snapshot) ?: return false
-        val bridge = host.hostBridge
+        /** 当前 Host 的 typed capability 集合；剪贴板缺失时按无内容降级。 */
+        val hostServices = host.effectiveHostServices
         return when (action) {
             PixelTextEditAction.COPY -> {
                 val selected = target.controller.selectedText(target.state)
                 if (selected.isEmpty()) return false
-                bridge?.writeClipboardText(selected)
+                hostServices.writeClipboardText(selected)
                 true
             }
             PixelTextEditAction.CUT -> {
                 if (target.readOnly) return false
                 val selected = target.controller.cutSelection(target.state) ?: return false
-                bridge?.writeClipboardText(selected)
+                hostServices.writeClipboardText(selected)
                 target.onChanged?.invoke(target.state.text)
                 true
             }
             PixelTextEditAction.PASTE -> {
                 if (target.readOnly) return false
-                val text = bridge?.readClipboardText().orEmpty()
+                val text = hostServices.clipboardTextOrNull().orEmpty()
                 if (text.isEmpty()) return false
                 target.controller.paste(target.state, text)
                 target.onChanged?.invoke(target.state.text)

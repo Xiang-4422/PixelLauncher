@@ -144,7 +144,7 @@ class PixelHostLifecycleCoordinatorTest {
         assertEquals(PixelWindowInsets(left = 1, top = 2, right = 3, bottom = 4), insets)
     }
 
-    /** Android 物理 inset 按网格 cell size 向上取整。 */
+    /** canonical 默认策略下，Android 物理 inset 按网格 cell size 向上取整。 */
     @Test
     fun platformInsetsMapToLogicalPixels() {
         val coordinator = PixelHostLifecycleCoordinator()
@@ -157,6 +157,7 @@ class PixelHostLifecycleCoordinatorTest {
             viewWidth = 80,
             viewHeight = 80,
             screenProfile = ScreenProfile(logicalWidth = 10, logicalHeight = 10, dotSizePx = 8),
+            viewportPolicy = PixelViewportPolicy(),
             pixelGapEnabled = false,
             pixelGapRatio = 0f,
         )

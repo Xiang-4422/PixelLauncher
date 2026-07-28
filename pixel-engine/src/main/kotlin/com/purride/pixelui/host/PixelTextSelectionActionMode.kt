@@ -22,7 +22,7 @@ internal fun PixelHostView.showPixelTextSelectionActionMode(target: PixelTextInp
             if (hasSelection && editable) {
                 menu.add(Menu.NONE, ACTION_CUT, 1, "Cut").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             }
-            if (editable && !hostBridge?.readClipboardText().isNullOrEmpty()) {
+            if (editable && !effectiveHostServices.clipboardTextOrNull().isNullOrEmpty()) {
                 menu.add(Menu.NONE, ACTION_PASTE, 2, "Paste").setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             }
             if (target.state.text.isNotEmpty() && !isAllSelected(target)) {

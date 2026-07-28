@@ -42,7 +42,12 @@ public data class PixelHostSetup(
  * 屏幕外框颜色通过 [bezelColor] 控制；不再有 palette / themeData / colorMode 概念。
  */
 public data class PixelHostSetupConfig(
-    val profilePreference: PixelHostProfilePreference? = null,
+    /**
+     * 逻辑屏幕解析策略；null 表示保留 Host 当前策略。
+     *
+     * 这是 setup 层唯一的 profile 配置入口，固定网格与自适应网格都通过它表达。
+     */
+    val profilePolicy: PixelHostProfilePolicy? = null,
     val bezelColor: PixelColor = PixelColor.Black,
     val textRasterizer: PixelTextRasterizer? = null,
     val textDirection: TextDirection = TextDirection.LTR,
@@ -80,11 +85,14 @@ public data class PixelHostSetupConfig(
  *
  * 当前会完成三件事：
  * 1. 创建或接收一个 `PixelHostView`
- * 2. 连接默认的 `PixelTextInputBridge`
+ * 2. 把默认 Android 编辑器的 IME、剪贴板、震动能力补进 [engine] 的 typed capability 集合
  * 3. 返回已经装好宿主视图和隐藏输入框的根容器
+ *
+ * 平台能力只作为 fallback 补缺：调用方在 [engine] 上显式声明的同名 capability 始终优先。
  */
 public fun createPixelHostSetup(
     context: Context,
+    engine: PixelEngine = PixelEngine.Builder().build(),
     hostView: PixelHostView = PixelHostView(context),
     config: PixelHostSetupConfig = PixelHostSetupConfig(),
 ): PixelHostSetup {
@@ -92,8 +100,14 @@ public fun createPixelHostSetup(
         context = context,
         hostView = hostView,
     )
-    hostView.hostBridge = textInputBridge
-    config.profilePreference?.let { hostView.profilePreference = it }
+    /** 默认 Android 宿主按 SDK 契约提供的平台能力。 */
+    val platformCapabilities = PixelHostCapabilitySet(
+        ime = textInputBridge,
+        clipboard = textInputBridge,
+        haptic = textInputBridge,
+    )
+    hostView.engine = engine.withHostServicesFallback(platformCapabilities)
+    config.profilePolicy?.let { hostView.profilePolicy = it }
     config.textRasterizer?.let { hostView.textRasterizer = it }
     hostView.bezelColor = config.bezelColor
     if (config.textDirection != TextDirection.LTR) {
@@ -130,25 +144,4 @@ public fun createPixelHostSetup(
         textInputBridge = textInputBridge,
         backDispatcher = config.backDispatcher,
     )
-}
-
-/**
- * 使用指定 [PixelEngine] 创建默认宿主装配。
- *
- * 该重载不会改变冻结的 config 构造器；Engine 会在输入桥接和内容安装前绑定到 Host。
- */
-public fun createPixelHostSetup(
-    context: Context,
-    engine: PixelEngine,
-    hostView: PixelHostView = PixelHostView(context),
-    config: PixelHostSetupConfig = PixelHostSetupConfig(),
-): PixelHostSetup {
-    /** 先完成旧 config 装配，再让 Engine 服务成为最终权威来源。 */
-    val setup = createPixelHostSetup(
-        context = context,
-        hostView = hostView,
-        config = config,
-    )
-    setup.hostView.bindEngine(engine)
-    return setup
 }
