@@ -415,6 +415,11 @@ internal class LauncherRootHost(
             onMarkUnreadMessageRead = callbacks.onMarkUnreadMessageRead,
             onOpenThread = callbacks.onOpenThread,
             onComposeNewThread = callbacks.onComposeNewThread,
+            onThreadLongPressed = callbacks.onSmsThreadLongPressed,
+            onThreadMenuMarkRead = callbacks.onSmsThreadMenuMarkRead,
+            onThreadMenuToggleMute = callbacks.onSmsThreadMenuToggleMute,
+            onThreadMenuDelete = callbacks.onSmsThreadMenuDelete,
+            onThreadMenuDismiss = callbacks.onSmsThreadMenuDismiss,
         )
         LauncherRouteDestination.SMS_THREAD_DETAIL -> SmsThreadDetailScreen(
             uiState = uiState,

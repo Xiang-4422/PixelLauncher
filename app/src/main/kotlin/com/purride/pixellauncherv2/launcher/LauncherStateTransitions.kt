@@ -282,6 +282,8 @@ object LauncherStateTransitions {
             smsDraftText = "",
             smsThreadSearchQuery = "",
             smsSendStatusText = "",
+            isSmsThreadMenuVisible = false,
+            smsThreadMenuConversationKey = "",
         )
     }
 
@@ -328,6 +330,32 @@ object LauncherStateTransitions {
             isSmsMessageMenuVisible = false,
             smsMessageMenuMessageId = -1L,
         )
+    }
+
+    /** 打开会话列表长按浮层菜单；会话不存在时保持关闭。 */
+    fun showSmsThreadMenu(state: LauncherState, conversationKey: String): LauncherState {
+        if (state.mode != LauncherMode.SMS_THREADS ||
+            state.smsThreads.none { it.conversationKey == conversationKey }
+        ) {
+            return hideSmsThreadMenu(state)
+        }
+        return state.copy(
+            isSmsThreadMenuVisible = true,
+            smsThreadMenuConversationKey = conversationKey,
+        )
+    }
+
+    /** 关闭会话列表长按浮层菜单。 */
+    fun hideSmsThreadMenu(state: LauncherState): LauncherState {
+        return state.copy(
+            isSmsThreadMenuVisible = false,
+            smsThreadMenuConversationKey = "",
+        )
+    }
+
+    /** 同步被静音的会话键集合。 */
+    fun updateSmsMutedConversations(state: LauncherState, mutedKeys: Set<String>): LauncherState {
+        return state.copy(smsMutedConversationKeys = mutedKeys)
     }
 
     /** 从详情页返回短信会话列表。 */

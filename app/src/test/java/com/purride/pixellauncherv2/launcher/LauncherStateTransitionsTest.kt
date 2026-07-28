@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsThreadSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
@@ -447,6 +448,59 @@ class LauncherStateTransitionsTest {
         val result = LauncherStateTransitions.hideSmsThreadDetail(state)
         assertFalse(result.isSmsMessageMenuVisible)
         assertEquals(-1L, result.smsMessageMenuMessageId)
+    }
+
+    @Test
+    fun showSmsThreadMenu_opensOnlyForExistingThread() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREADS,
+            smsThreads = listOf(
+                SmsThreadSummary(
+                    threadId = 1L,
+                    address = "10086",
+                    snippet = "hello",
+                    dateMillis = 1L,
+                    unreadCount = 1,
+                    messageCount = 2,
+                    conversationKey = "service:china-mobile",
+                ),
+            ),
+        )
+
+        val shown = LauncherStateTransitions.showSmsThreadMenu(state, "service:china-mobile")
+        assertTrue(shown.isSmsThreadMenuVisible)
+        assertEquals("service:china-mobile", shown.smsThreadMenuConversationKey)
+
+        val missing = LauncherStateTransitions.showSmsThreadMenu(state, "person:unknown")
+        assertFalse(missing.isSmsThreadMenuVisible)
+
+        val wrongMode = LauncherStateTransitions.showSmsThreadMenu(
+            state.copy(mode = LauncherMode.HOME),
+            "service:china-mobile",
+        )
+        assertFalse(wrongMode.isSmsThreadMenuVisible)
+    }
+
+    @Test
+    fun hideSmsThreads_dismissesThreadMenu() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREADS,
+            isSmsThreadMenuVisible = true,
+            smsThreadMenuConversationKey = "person:10086",
+        )
+
+        val result = LauncherStateTransitions.hideSmsThreads(state)
+        assertFalse(result.isSmsThreadMenuVisible)
+        assertEquals("", result.smsThreadMenuConversationKey)
+    }
+
+    @Test
+    fun updateSmsMutedConversations_replacesMutedSet() {
+        val result = LauncherStateTransitions.updateSmsMutedConversations(
+            LauncherState(),
+            setOf("service:a", "person:b"),
+        )
+        assertEquals(setOf("service:a", "person:b"), result.smsMutedConversationKeys)
     }
 
     @Test

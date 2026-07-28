@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.content.Context
 import android.os.Handler
+import com.purride.pixellauncherv2.data.SmsMuteSettingsRepository
 import com.purride.pixellauncherv2.data.SmsNotificationHelper
 import com.purride.pixellauncherv2.data.SmsRepository
 import org.junit.Assert.assertFalse
@@ -24,6 +25,7 @@ class SmsControllerContractTest {
             Context::class.java,
             SmsRepository::class.java,
             SmsNotificationHelper::class.java,
+            SmsMuteSettingsRepository::class.java,
             ExecutorService::class.java,
             Handler::class.java,
             SmsController.Host::class.java,

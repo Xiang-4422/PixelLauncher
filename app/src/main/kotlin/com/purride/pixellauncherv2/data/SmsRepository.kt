@@ -454,6 +454,26 @@ class SmsRepository(
         }.getOrDefault(false)
     }
 
+    /**
+     * 批量删除消息（删除整个会话用）。按 500 条分块走 IN 子句，
+     * 与 markMessagesRead 的分块模式一致；仅默认短信应用可写。
+     */
+    fun deleteMessages(messageIds: Collection<Long>): Boolean {
+        if (!isDefaultSmsApp() || messageIds.isEmpty()) {
+            return false
+        }
+        return runCatching {
+            messageIds.distinct().filter { it > 0L }.chunked(500).sumOf { ids ->
+                val placeholders = ids.joinToString(",") { "?" }
+                contentResolver.delete(
+                    Telephony.Sms.CONTENT_URI,
+                    "${Telephony.Sms._ID} IN ($placeholders)",
+                    ids.map(Long::toString).toTypedArray(),
+                )
+            } > 0
+        }.getOrDefault(false)
+    }
+
     /** 送达回执到达后更新 STATUS 列（详情页显示 DELIVERED 用）。 */
     fun applyDeliveryResult(messageId: Long, delivered: Boolean): Boolean {
         if (messageId <= 0L || !delivered) {

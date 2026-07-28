@@ -7,6 +7,7 @@ import com.purride.pixelui.Axis
 import com.purride.pixelui.Column
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Dialog
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
@@ -15,9 +16,13 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.Slidable
+import com.purride.pixelui.Stack
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.SlidableAction
 import com.purride.pixelui.SlidableActionPane
 import com.purride.pixelui.Text
@@ -71,11 +76,16 @@ fun SmsThreadsScreen(
     onMarkUnreadMessageRead: (Long) -> Unit,
     onOpenThread: (conversationKey: String) -> Unit,
     onComposeNewThread: (address: String) -> Unit,
+    onThreadLongPressed: (conversationKey: String) -> Unit,
+    onThreadMenuMarkRead: () -> Unit,
+    onThreadMenuToggleMute: () -> Unit,
+    onThreadMenuDelete: () -> Unit,
+    onThreadMenuDismiss: () -> Unit,
 ): Widget {
     val showUnreadTabs =
         uiState.unreadSmsEntries.isNotEmpty() ||
             (uiState.isSmsThreadsLoading && uiState.smsPageIndex == SmsPageIndex.UNREAD)
-    return Column(
+    val content = Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MAX,
         spacing = 0,
@@ -108,6 +118,7 @@ fun SmsThreadsScreen(
                                     onSearchChanged = onSearchChanged,
                                     onOpenThread = onOpenThread,
                                     onComposeNewThread = onComposeNewThread,
+                                    onThreadLongPressed = onThreadLongPressed,
                                 ),
                             ),
                             onPageChanged = onSmsPageSelected,
@@ -124,6 +135,7 @@ fun SmsThreadsScreen(
                             onSearchChanged = onSearchChanged,
                             onOpenThread = onOpenThread,
                             onComposeNewThread = onComposeNewThread,
+                            onThreadLongPressed = onThreadLongPressed,
                         )
                     },
                 ),
@@ -143,6 +155,85 @@ fun SmsThreadsScreen(
             }
         },
     )
+    // 长按会话行弹出的 Playdate 风格轻量浮层菜单：点浮层外任意位置即关闭。
+    val menuThread = uiState.smsThreads
+        .firstOrNull { it.conversationKey == uiState.smsThreadMenuConversationKey }
+    if (!uiState.isSmsThreadMenuVisible || menuThread == null) {
+        return content
+    }
+    return Stack(
+        children = listOf(
+            content,
+            PositionedFill(
+                child = GestureDetector(
+                    onTap = onThreadMenuDismiss,
+                    child = Container(fillColor = PixelColor.Transparent),
+                ),
+            ),
+            smsThreadActionMenu(
+                thread = menuThread,
+                isMuted = menuThread.conversationKey in uiState.smsMutedConversationKeys,
+                theme = theme,
+                onMarkRead = onThreadMenuMarkRead,
+                onToggleMute = onThreadMenuToggleMute,
+                onDelete = onThreadMenuDelete,
+                onDismiss = onThreadMenuDismiss,
+            ),
+        ),
+    )
+}
+
+/** 会话操作浮层：（有未读时）标记已读 / 静音切换 / 删除会话。 */
+private fun smsThreadActionMenu(
+    thread: SmsThreadSummary,
+    isMuted: Boolean,
+    theme: LauncherTheme,
+    onMarkRead: () -> Unit,
+    onToggleMute: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit,
+): Widget {
+    val actionStyle = TextButtonStyle(
+        textStyle = TextStyle(color = theme.button.text),
+        padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
+    )
+    return Dialog(
+        title = Text(
+            smsThreadMenuTitle(thread),
+            style = TextStyle(color = theme.text.primary),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        ),
+        content = Column(
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            spacing = LauncherSpacing.ROW_SPACING,
+            children = buildList {
+                if (thread.unreadCount > 0) {
+                    add(TextButton(text = "MARK READ", onPressed = onMarkRead, style = actionStyle))
+                }
+                add(
+                    TextButton(
+                        text = if (isMuted) "UNMUTE" else "MUTE",
+                        onPressed = onToggleMute,
+                        style = actionStyle,
+                    ),
+                )
+                add(TextButton(text = "DELETE", onPressed = onDelete, style = actionStyle))
+                add(TextButton(text = "CANCEL", onPressed = onDismiss, style = actionStyle))
+            },
+        ),
+        fillColor = theme.surface.panel,
+        borderColor = theme.button.border,
+    )
+}
+
+/** 菜单标题：会话名（联系人名/服务号来源/号码），超长省略。 */
+private fun smsThreadMenuTitle(thread: SmsThreadSummary): String {
+    val title = thread.displayName.ifBlank { thread.address }.ifBlank { "SMS" }.uppercase()
+    val maxChars = 18
+    return if (title.length <= maxChars) title else "${title.take(maxChars - 2)}.."
 }
 
 private fun smsBottomTabs(
@@ -224,6 +315,7 @@ private fun buildAllThreadsPage(
     onSearchChanged: (String) -> Unit,
     onOpenThread: (conversationKey: String) -> Unit,
     onComposeNewThread: (address: String) -> Unit,
+    onThreadLongPressed: (conversationKey: String) -> Unit,
 ): Widget {
     val query = uiState.smsThreadSearchQuery
     val searchResults = SmsThreadSearchModel.filter(uiState.smsAllMessages, query)
@@ -251,7 +343,7 @@ private fun buildAllThreadsPage(
             itemExtent = SmsThreadGeometry.ROW_EXTENT_PX,
             spacing = SmsThreadGeometry.ROW_SPACING_PX,
             itemBuilder = { index ->
-                buildThreadRow(uiState.smsThreads[index], theme, onOpenThread)
+                buildThreadRow(uiState.smsThreads[index], theme, onOpenThread, onThreadLongPressed)
             },
         )
     }
@@ -415,8 +507,10 @@ private fun buildThreadRow(
     thread: SmsThreadSummary,
     theme: LauncherTheme,
     onOpenThread: (conversationKey: String) -> Unit,
+    onThreadLongPressed: (conversationKey: String) -> Unit,
 ): Widget = GestureDetector(
     onTap = { onOpenThread(thread.conversationKey) },
+    onLongPress = { onThreadLongPressed(thread.conversationKey) },
     child = Padding(
         horizontal = SMS_THREAD_ROW_PADDING_PX,
         vertical = SMS_THREAD_ROW_PADDING_PX,

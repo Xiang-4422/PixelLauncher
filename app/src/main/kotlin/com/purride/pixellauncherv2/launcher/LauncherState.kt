@@ -50,6 +50,12 @@ data class LauncherState(
     val isSmsMessageMenuVisible: Boolean = false,
     /** 浮层菜单对应的消息 id；菜单不可见时为 -1。 */
     val smsMessageMenuMessageId: Long = -1L,
+    /** 会话列表长按浮层菜单是否可见。 */
+    val isSmsThreadMenuVisible: Boolean = false,
+    /** 会话浮层菜单对应的会话键；菜单不可见时为空。 */
+    val smsThreadMenuConversationKey: String = "",
+    /** 被静音（不弹通知）的会话键集合。 */
+    val smsMutedConversationKeys: Set<String> = emptySet(),
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,

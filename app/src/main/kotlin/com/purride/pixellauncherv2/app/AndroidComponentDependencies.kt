@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.content.Context
 import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
+import com.purride.pixellauncherv2.data.SmsMuteSettingsRepository
 import com.purride.pixellauncherv2.data.SmsNotificationHelper
 import com.purride.pixellauncherv2.data.SmsRepository
 
@@ -26,6 +27,10 @@ object AndroidComponentDependencies {
     /** 构造短信到达通知的展示辅助类。 */
     fun smsNotificationHelper(context: Context): SmsNotificationHelper =
         SmsNotificationHelper(context.applicationContext)
+
+    /** 构造会话静音规则仓库（接收器决定是否弹通知时使用）。 */
+    fun smsMuteSettingsRepository(context: Context): SmsMuteSettingsRepository =
+        SmsMuteSettingsRepository(context.applicationContext)
 
     /** 构造通知摘要的静音/优先级规则仓库。 */
     fun notificationSummarySettingsRepository(context: Context): NotificationSummarySettingsRepository =

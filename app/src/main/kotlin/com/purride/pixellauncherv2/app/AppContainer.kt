@@ -19,6 +19,7 @@ import com.purride.pixellauncherv2.data.NotificationSummarySettingsRepository
 import com.purride.pixellauncherv2.data.PackageManagerAppRepository
 import com.purride.pixellauncherv2.data.RainForecastRepository
 import com.purride.pixellauncherv2.data.ScreenUsageRepository
+import com.purride.pixellauncherv2.data.SmsMuteSettingsRepository
 import com.purride.pixellauncherv2.data.SmsNotificationHelper
 import com.purride.pixellauncherv2.data.SmsRepository
 import java.util.concurrent.ExecutorService
@@ -107,4 +108,8 @@ internal class AppContainer(
     /** 短信通知展示辅助类，同样复用框架组件共用的构造边界。 */
     val smsNotificationHelper: SmsNotificationHelper =
         AndroidComponentDependencies.smsNotificationHelper(appContext)
+
+    /** 会话静音规则仓库，复用框架组件共用的构造边界。 */
+    val smsMuteSettingsRepository: SmsMuteSettingsRepository =
+        AndroidComponentDependencies.smsMuteSettingsRepository(appContext)
 }

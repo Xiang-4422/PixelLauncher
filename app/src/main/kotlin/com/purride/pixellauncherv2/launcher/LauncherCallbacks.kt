@@ -69,6 +69,12 @@ data class LauncherCallbacks(
     val onSmsMessageMenuResend: () -> Unit,
     val onSmsMessageMenuDelete: () -> Unit,
     val onSmsMessageMenuDismiss: () -> Unit,
+    /** 会话列表行长按 → 打开会话浮层操作菜单。 */
+    val onSmsThreadLongPressed: (conversationKey: String) -> Unit,
+    val onSmsThreadMenuMarkRead: () -> Unit,
+    val onSmsThreadMenuToggleMute: () -> Unit,
+    val onSmsThreadMenuDelete: () -> Unit,
+    val onSmsThreadMenuDismiss: () -> Unit,
 
     // ── Navigation ────────────────────────────────────────────────────────────
     /**

@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.util.Log
+import com.purride.pixellauncherv2.data.SmsMuteSettingsRepository
 import com.purride.pixellauncherv2.data.SmsNotificationHelper
 import com.purride.pixellauncherv2.data.SmsRepository
 import com.purride.pixellauncherv2.launcher.LauncherMode
@@ -36,6 +37,7 @@ internal class SmsController(
     context: Context,
     private val smsRepository: SmsRepository,
     private val smsNotificationHelper: SmsNotificationHelper,
+    private val smsMuteSettingsRepository: SmsMuteSettingsRepository,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler,
     private val host: Host,
@@ -91,9 +93,18 @@ internal class SmsController(
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    /** 前台时开始监听短信内容变化。 */
+    /** 前台时开始监听短信内容变化，并加载会话静音规则。 */
     fun start() {
         smsRepository.start(::onSmsProviderChanged)
+        backgroundExecutor.execute {
+            val mutedKeys = smsMuteSettingsRepository.mutedConversationKeys()
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                host.state = LauncherStateTransitions.updateSmsMutedConversations(host.state, mutedKeys)
+            }
+        }
     }
 
     /** 后台时停止监听。 */
@@ -206,6 +217,11 @@ internal class SmsController(
     }
 
     fun closeModule() {
+        // 会话浮层菜单打开时，返回操作只关菜单、不退出模块。
+        if (host.state.isSmsThreadMenuVisible) {
+            threadMenuDismiss()
+            return
+        }
         host.state = LauncherStateTransitions.hideSmsThreads(host.state)
         host.render()
         host.updateTextInputFocus()
@@ -294,6 +310,79 @@ internal class SmsController(
 
     private fun menuMessage(): SmsMessageEntry? =
         host.state.smsMessages.firstOrNull { it.messageId == host.state.smsMessageMenuMessageId }
+
+    // ── Thread long-press menu ────────────────────────────────────────────────
+
+    fun threadLongPressed(conversationKey: String) {
+        host.state = LauncherStateTransitions.showSmsThreadMenu(host.state, conversationKey)
+        host.render()
+    }
+
+    fun threadMenuDismiss() {
+        host.state = LauncherStateTransitions.hideSmsThreadMenu(host.state)
+        host.render()
+    }
+
+    /** 把该会话的全部未读置为已读并撤下通知。 */
+    fun threadMenuMarkRead() {
+        val conversationKey = menuConversationKey()
+        threadMenuDismiss()
+        if (conversationKey.isBlank()) return
+        val unread = SmsConversationModel.unread(
+            SmsConversationModel.messages(host.state.smsAllMessages, conversationKey),
+        )
+        if (unread.isEmpty()) return
+        backgroundExecutor.execute {
+            if (!smsRepository.markMessagesRead(unread.map { it.messageId })) {
+                return@execute
+            }
+            unread.map { it.threadId }.distinct().forEach(smsNotificationHelper::cancelForThread)
+            refreshSmsData(render = true)
+            host.refreshCommunicationStatus(render = true)
+        }
+    }
+
+    /** 切换该会话的静音状态（静音只挡通知，不影响入库与未读计数）。 */
+    fun threadMenuToggleMute() {
+        val conversationKey = menuConversationKey()
+        val muted = conversationKey in host.state.smsMutedConversationKeys
+        threadMenuDismiss()
+        if (conversationKey.isBlank()) return
+        backgroundExecutor.execute {
+            val mutedKeys = smsMuteSettingsRepository.setMuted(conversationKey, !muted)
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                host.state = LauncherStateTransitions.updateSmsMutedConversations(host.state, mutedKeys)
+                host.showStatusBarMessage(if (muted) SMS_STATUS_UNMUTED else SMS_STATUS_MUTED)
+            }
+        }
+    }
+
+    /** 删除整个会话：按 conversationKey 汇总消息 id 批量删除（服务号聚合会话跨多个 thread）。 */
+    fun threadMenuDelete() {
+        val conversationKey = menuConversationKey()
+        threadMenuDismiss()
+        if (conversationKey.isBlank()) return
+        val messages = SmsConversationModel.messages(host.state.smsAllMessages, conversationKey)
+        if (messages.isEmpty()) return
+        backgroundExecutor.execute {
+            if (!smsRepository.deleteMessages(messages.map { it.messageId })) {
+                return@execute
+            }
+            messages.map { it.threadId }.distinct().forEach(smsNotificationHelper::cancelForThread)
+            mainHandler.post {
+                if (host.isActive()) {
+                    host.showStatusBarMessage(SMS_STATUS_DELETED)
+                }
+            }
+            refreshSmsData(render = true)
+            host.refreshCommunicationStatus(render = true)
+        }
+    }
+
+    private fun menuConversationKey(): String = host.state.smsThreadMenuConversationKey
 
     // ── Queued auto retry ─────────────────────────────────────────────────────
 
@@ -824,6 +913,8 @@ internal class SmsController(
         const val SMS_STATUS_COPIED_CODE = "COPIED CODE"
         const val SMS_STATUS_COPIED_BODY = "COPIED MSG"
         const val SMS_STATUS_DELETED = "DELETED"
+        const val SMS_STATUS_MUTED = "MUTED"
+        const val SMS_STATUS_UNMUTED = "UNMUTED"
 
         /** 内容变更防抖窗口：合并批量写库触发的连环 onChange。 */
         const val PROVIDER_CHANGE_DEBOUNCE_MS = 300L

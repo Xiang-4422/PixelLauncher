@@ -18,13 +18,18 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 val repository = AndroidComponentDependencies.smsRepository(appContext)
                 val entry = repository.storeIncomingFromIntent(intent)
                 if (entry != null) {
-                    // 取该线程最近未读用于通知堆叠；入库失败（threadId <= 0）时自然为空。
-                    val recentUnread = repository.recentUnreadInboxMessages(
-                        threadId = entry.threadId,
-                        limit = 5,
-                    )
-                    AndroidComponentDependencies.smsNotificationHelper(appContext)
-                        .showIncomingMessage(entry, recentUnread)
+                    // 静音会话照常入库，只是不弹通知。
+                    val muted = AndroidComponentDependencies.smsMuteSettingsRepository(appContext)
+                        .isMuted(entry.conversationKey)
+                    if (!muted) {
+                        // 取该线程最近未读用于通知堆叠；入库失败（threadId <= 0）时自然为空。
+                        val recentUnread = repository.recentUnreadInboxMessages(
+                            threadId = entry.threadId,
+                            limit = 5,
+                        )
+                        AndroidComponentDependencies.smsNotificationHelper(appContext)
+                            .showIncomingMessage(entry, recentUnread)
+                    }
                     pendingResult.resultCode = Telephony.Sms.Intents.RESULT_SMS_HANDLED
                 }
             } finally {
