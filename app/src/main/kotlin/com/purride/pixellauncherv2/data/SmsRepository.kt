@@ -366,14 +366,14 @@ class SmsRepository(
             val parts = smsManager.divideMessage(body)
             try {
                 if (parts.size > 1) {
+                    // 每个分段都挂同一个回执：任一分段失败都会把整条判为失败
+                    // （applySendResult 的类型限定保证失败优先、成功不可回翻）。
                     val sentIntents = ArrayList<PendingIntent?>(parts.size)
                     val deliveryIntents = ArrayList<PendingIntent?>(parts.size)
-                    repeat(parts.size - 1) {
-                        sentIntents.add(null)
-                        deliveryIntents.add(null)
+                    repeat(parts.size) {
+                        sentIntents.add(sentIntent)
+                        deliveryIntents.add(deliveryIntent)
                     }
-                    sentIntents.add(sentIntent)
-                    deliveryIntents.add(deliveryIntent)
                     smsManager.sendMultipartTextMessage(
                         address,
                         null,
@@ -430,11 +430,18 @@ class SmsRepository(
                 put(Telephony.Sms.ERROR_CODE, errorCode)
             }
         }
+        // 类型限定双保险：成功只允许 OUTBOX→SENT（分段失败后不被后续成功回翻）；
+        // 失败可覆盖 OUTBOX/SENT（失败优先）。同时避免旧回执污染复用 rowid 的新行。
+        val allowedTypes = if (success) {
+            "${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_OUTBOX}"
+        } else {
+            "${Telephony.Sms.TYPE} IN (${Telephony.Sms.MESSAGE_TYPE_OUTBOX}, ${Telephony.Sms.MESSAGE_TYPE_SENT})"
+        }
         return runCatching {
             contentResolver.update(
                 Telephony.Sms.CONTENT_URI,
                 values,
-                "${Telephony.Sms._ID} = ?",
+                "${Telephony.Sms._ID} = ? AND $allowedTypes",
                 arrayOf(messageId.toString()),
             ) > 0
         }.getOrDefault(false)
@@ -486,8 +493,31 @@ class SmsRepository(
             contentResolver.update(
                 Telephony.Sms.CONTENT_URI,
                 values,
-                "${Telephony.Sms._ID} = ?",
+                "${Telephony.Sms._ID} = ? AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_SENT}",
                 arrayOf(messageId.toString()),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
+    /**
+     * 启动对账：把滞留超过 [olderThanMillis] 的 OUTBOX 记录判为 FAILED。
+     * 回执广播极端情况下可能丢失（系统被杀），没有对账会让消息永远停在“发送中”。
+     */
+    fun failStaleOutboxMessages(olderThanMillis: Long): Boolean {
+        if (!isDefaultSmsApp()) {
+            return false
+        }
+        val cutoff = System.currentTimeMillis() - olderThanMillis
+        val values = ContentValues().apply {
+            put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_FAILED)
+            put(Telephony.Sms.ERROR_CODE, SEND_ERROR_RECEIPT_LOST)
+        }
+        return runCatching {
+            contentResolver.update(
+                Telephony.Sms.CONTENT_URI,
+                values,
+                "${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_OUTBOX} AND ${Telephony.Sms.DATE} < ?",
+                arrayOf(cutoff.toString()),
             ) > 0
         }.getOrDefault(false)
     }
@@ -614,7 +644,9 @@ class SmsRepository(
             address = address,
             body = body,
             contactName = displayName,
-            allowSource = type != Telephony.Sms.MESSAGE_TYPE_SENT,
+            // 发出方向一律不做服务号来源识别：以【】开头的外发消息不能被剥前缀
+            // 或归入服务号会话，否则重发会用失真的展示正文。
+            allowSource = !SmsMessageStatusModel.isOutgoing(type),
         )
         val displayBody = if (conversation.isService) SmsConversationModel.stripLeadingSource(body) else body
         return SmsMessageEntry(
@@ -645,5 +677,8 @@ class SmsRepository(
 
         /** 本地哨兵错误码：消息尚未提交给无线电层即抛异常。 */
         private const val SEND_ERROR_SUBMIT = -1
+
+        /** 本地哨兵错误码：OUTBOX 滞留超时，回执判定为已丢失。 */
+        private const val SEND_ERROR_RECEIPT_LOST = -2
     }
 }

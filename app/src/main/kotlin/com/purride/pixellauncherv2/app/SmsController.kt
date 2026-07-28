@@ -98,6 +98,9 @@ internal class SmsController(
     fun start() {
         smsRepository.start(::onSmsProviderChanged)
         backgroundExecutor.execute {
+            // 启动对账：回执广播可能丢失（极端系统状态），把滞留过久的
+            // OUTBOX 记录判为失败，避免永远停在“发送中”。
+            smsRepository.failStaleOutboxMessages(STALE_OUTBOX_TIMEOUT_MS)
             val mutedKeys = smsMuteSettingsRepository.mutedConversationKeys()
             mainHandler.post {
                 if (!host.isActive()) {
@@ -406,7 +409,11 @@ internal class SmsController(
         }
         backgroundExecutor.execute {
             queued.forEach { message ->
-                smsRepository.deleteMessage(message.messageId)
+                // 状态快照可能过期（消息已被手动重发/删除）：删除原记录成功
+                // 才算认领本次补发，否则跳过避免重复发送。
+                if (!smsRepository.deleteMessage(message.messageId)) {
+                    return@forEach
+                }
                 smsRepository.sendMessage(
                     SmsSendRequest(
                         address = message.address,
@@ -619,7 +626,23 @@ internal class SmsController(
         )
         host.render()
         backgroundExecutor.execute {
-            smsRepository.deleteMessage(message.messageId)
+            // 删除原记录即“认领”这次重发：删除失败说明记录已被并发路径
+            // （自动重试/另一次点按）处理，放弃本次以避免重复发送。
+            if (!smsRepository.deleteMessage(message.messageId)) {
+                mainHandler.post {
+                    resendInFlightMessageIds.remove(message.messageId)
+                    if (!host.isActive()) {
+                        return@post
+                    }
+                    host.state = LauncherStateTransitions.updateSmsSendStatus(
+                        state = host.state,
+                        smsSendStatus = SmsSendStatus.NONE,
+                    )
+                    host.render()
+                    refreshSmsData(render = true)
+                }
+                return@execute
+            }
             val result = smsRepository.sendMessage(
                 SmsSendRequest(
                     address = message.address,
@@ -904,5 +927,8 @@ internal class SmsController(
 
         /** 内容变更防抖窗口：合并批量写库触发的连环 onChange。 */
         const val PROVIDER_CHANGE_DEBOUNCE_MS = 300L
+
+        /** OUTBOX 滞留超过该时长即判定回执丢失（启动对账用）。 */
+        const val STALE_OUTBOX_TIMEOUT_MS = 10 * 60_000L
     }
 }
