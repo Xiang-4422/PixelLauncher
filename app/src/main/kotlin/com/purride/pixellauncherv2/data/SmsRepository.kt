@@ -560,7 +560,11 @@ class SmsRepository(
     }
 
     fun storeIncomingFromIntent(intent: Intent): SmsMessageEntry? {
-        val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
+        // 平台返回值可能为 null 数组或含 null 元素（畸形 PDU），防御后再用。
+        val messages = runCatching { Telephony.Sms.Intents.getMessagesFromIntent(intent) }
+            .getOrNull()
+            ?.filterNotNull()
+            .orEmpty()
         if (messages.isEmpty()) {
             return null
         }

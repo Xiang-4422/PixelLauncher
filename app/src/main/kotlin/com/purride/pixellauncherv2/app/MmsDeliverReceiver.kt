@@ -19,16 +19,19 @@ class MmsDeliverReceiver : BroadcastReceiver() {
         val appContext = context.applicationContext
         Thread {
             try {
-                val sender = pdu?.let(MmsNotificationModel::extractSender).orEmpty()
-                val senderTitle = if (sender.isBlank()) {
-                    ""
-                } else {
-                    AndroidComponentDependencies.smsRepository(appContext)
-                        .conversationForAddress(sender)
-                        .title
-                }
-                AndroidComponentDependencies.smsNotificationHelper(appContext)
-                    .showUnsupportedMms(senderTitle.ifBlank { sender })
+                // 工作线程的未捕获异常会杀死整个进程：全程兜底，只记日志。
+                runCatching {
+                    val sender = pdu?.let(MmsNotificationModel::extractSender).orEmpty()
+                    val senderTitle = if (sender.isBlank()) {
+                        ""
+                    } else {
+                        AndroidComponentDependencies.smsRepository(appContext)
+                            .conversationForAddress(sender)
+                            .title
+                    }
+                    AndroidComponentDependencies.smsNotificationHelper(appContext)
+                        .showUnsupportedMms(senderTitle.ifBlank { sender })
+                }.onFailure { android.util.Log.w("MmsDeliver", "handle incoming mms failed", it) }
             } finally {
                 pendingResult.finish()
             }

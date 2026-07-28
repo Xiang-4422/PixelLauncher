@@ -27,10 +27,13 @@ class SmsNotificationActionReceiver : BroadcastReceiver() {
         val appContext = context.applicationContext
         Thread {
             try {
-                when (action) {
-                    ACTION_REPLY -> handleReply(appContext, threadId, address, replyText)
-                    ACTION_MARK_READ -> handleMarkRead(appContext, threadId)
-                }
+                // 工作线程的未捕获异常会杀死整个进程：全程兜底，只记日志。
+                runCatching {
+                    when (action) {
+                        ACTION_REPLY -> handleReply(appContext, threadId, address, replyText)
+                        ACTION_MARK_READ -> handleMarkRead(appContext, threadId)
+                    }
+                }.onFailure { android.util.Log.w("SmsAction", "handle notification action failed", it) }
             } finally {
                 pendingResult.finish()
             }
