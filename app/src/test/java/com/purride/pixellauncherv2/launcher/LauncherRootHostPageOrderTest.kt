@@ -24,7 +24,6 @@ class LauncherRootHostPageOrderTest {
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.SETTINGS))
         assertEquals(LauncherRouteDestination.LOADING_PREVIEW, LauncherRootHost.destinationFor(LauncherMode.LOADING_PREVIEW))
         assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_THREADS))
-        assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_INBOX))
         assertEquals(
             LauncherRouteDestination.SMS_THREAD_DETAIL,
             LauncherRootHost.destinationFor(LauncherMode.SMS_THREAD_DETAIL),

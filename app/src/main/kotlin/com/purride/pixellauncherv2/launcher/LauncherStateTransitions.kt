@@ -27,7 +27,6 @@ object LauncherStateTransitions {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE,
-            LauncherMode.SMS_INBOX,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL -> state.mode
@@ -62,7 +61,6 @@ object LauncherStateTransitions {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.IDLE,
-            LauncherMode.SMS_INBOX,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL -> state.returnMode
@@ -166,8 +164,7 @@ object LauncherStateTransitions {
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.SMS_INBOX -> LauncherMode.SETTINGS
+            LauncherMode.SMS_THREAD_DETAIL -> LauncherMode.SETTINGS
         }
         return state.copy(mode = returnMode)
     }
@@ -219,25 +216,6 @@ object LauncherStateTransitions {
     /** 从 Idle 返回到进入前的页面模式。 */
     fun hideIdle(state: LauncherState): LauncherState {
         return state.copy(mode = state.returnMode)
-    }
-
-    /** 打开短信首页，并默认定位到未读页。 */
-    fun showUnreadSmsInbox(state: LauncherState, visibleRows: Int): LauncherState {
-        return syncSmsWindow(
-            state = state.copy(
-                mode = LauncherMode.SMS_THREADS,
-                returnMode = LauncherMode.HOME,
-                smsPageIndex = SmsPageIndex.UNREAD,
-                smsSelectedIndex = 0,
-                smsListStartIndex = 0,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 关闭未读短信列表页，返回 Home。 */
-    fun hideUnreadSmsInbox(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.HOME)
     }
 
     /** 打开短信角色引导页。 */
@@ -800,29 +778,6 @@ object LauncherStateTransitions {
         )
     }
 
-    /** 滚动短信页可视窗口，并尽量保持当前焦点相对位置。 */
-    fun scrollSmsWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        val rows = state.unreadSmsEntries
-        if (rows.isEmpty() || delta == 0) {
-            return reflowSmsWindow(state, visibleRows)
-        }
-
-        val safeVisibleRows = visibleRows.coerceAtLeast(1)
-        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
-        val safeListStartIndex = state.smsListStartIndex.coerceIn(0, maxStartIndex)
-        val nextListStartIndex = (safeListStartIndex + delta).coerceIn(0, maxStartIndex)
-        val relativeFocusIndex = (state.smsSelectedIndex - safeListStartIndex)
-            .coerceIn(0, safeVisibleRows - 1)
-        val maxVisibleIndex = (nextListStartIndex + safeVisibleRows - 1).coerceAtMost(rows.lastIndex)
-        val nextSelectedIndex = (nextListStartIndex + relativeFocusIndex)
-            .coerceIn(nextListStartIndex, maxVisibleIndex)
-
-        return state.copy(
-            smsSelectedIndex = nextSelectedIndex,
-            smsListStartIndex = nextListStartIndex,
-        )
-    }
-
     /** 在 viewport 或内容变化后，重新校正短信页的焦点和窗口。 */
     fun reflowSmsWindow(state: LauncherState, visibleRows: Int): LauncherState {
         val maxIndex = (state.unreadSmsEntries.size - 1).coerceAtLeast(0)
@@ -1071,24 +1026,6 @@ object LauncherStateTransitions {
             state = state,
             index = state.smsThreadSelectedIndex + delta,
             visibleRows = visibleRows,
-        )
-    }
-
-    fun scrollSmsThreadWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        val rows = state.smsThreads
-        if (rows.isEmpty() || delta == 0) {
-            return reflowSmsThreadWindow(state, visibleRows)
-        }
-        val safeVisibleRows = visibleRows.coerceAtLeast(1)
-        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
-        val safeListStartIndex = state.smsThreadListStartIndex.coerceIn(0, maxStartIndex)
-        val nextListStartIndex = (safeListStartIndex + delta).coerceIn(0, maxStartIndex)
-        val relativeFocusIndex = (state.smsThreadSelectedIndex - safeListStartIndex).coerceIn(0, safeVisibleRows - 1)
-        val maxVisibleIndex = (nextListStartIndex + safeVisibleRows - 1).coerceAtMost(rows.lastIndex)
-        val nextSelectedIndex = (nextListStartIndex + relativeFocusIndex).coerceIn(nextListStartIndex, maxVisibleIndex)
-        return state.copy(
-            smsThreadSelectedIndex = nextSelectedIndex,
-            smsThreadListStartIndex = nextListStartIndex,
         )
     }
 

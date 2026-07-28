@@ -670,7 +670,7 @@ class UiSpecStaticTest {
             rootHostSource.contains("centerActionLabel = if (showSmsReadAction) \"READ\" else \"\"") &&
                 rootHostSource.contains("isCenterActionEnabled = uiState.unreadSmsEntries.isNotEmpty()") &&
                 rootHostSource.contains("onCenterAction = if (showSmsReadAction) callbacks.onMarkSmsRead else null") &&
-                statusPresentationSource.contains("showSmsReadAction = mode == LauncherMode.SMS_THREADS || mode == LauncherMode.SMS_INBOX") &&
+                statusPresentationSource.contains("showSmsReadAction = mode == LauncherMode.SMS_THREADS,") &&
                 !source.contains("LauncherHeader(") &&
                 source.contains("onMarkUnreadMessageRead") &&
                 unreadPageSource.isNotEmpty() &&

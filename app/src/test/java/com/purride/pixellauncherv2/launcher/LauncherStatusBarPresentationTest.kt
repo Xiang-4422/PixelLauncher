@@ -22,7 +22,6 @@ class LauncherStatusBarPresentationTest {
             LauncherMode.SETTINGS to "SETTINGS",
             LauncherMode.SMS_ROLE_PROMPT to "SMS",
             LauncherMode.SMS_THREADS to "SMS",
-            LauncherMode.SMS_INBOX to "SMS",
             LauncherMode.SMS_THREAD_DETAIL to "SMS",
             LauncherMode.APP_MANAGEMENT to "APP",
             LauncherMode.DATA_HEALTH to "DATA",
@@ -40,12 +39,10 @@ class LauncherStatusBarPresentationTest {
     @Test
     fun smsReadActionOnlyAppearsOnSmsListPresentation() {
         val smsThreads = LauncherStatusBarPresentation.forMode(LauncherMode.SMS_THREADS)
-        val smsInbox = LauncherStatusBarPresentation.forMode(LauncherMode.SMS_INBOX)
         val smsDetail = LauncherStatusBarPresentation.forMode(LauncherMode.SMS_THREAD_DETAIL)
         val home = LauncherStatusBarPresentation.forMode(LauncherMode.HOME)
 
         assertTrue((smsThreads as LauncherStatusBarPresentation.Standard).showSmsReadAction)
-        assertTrue((smsInbox as LauncherStatusBarPresentation.Standard).showSmsReadAction)
         assertFalse((smsDetail as LauncherStatusBarPresentation.Standard).showSmsReadAction)
         assertFalse((home as LauncherStatusBarPresentation.Standard).showSmsReadAction)
     }

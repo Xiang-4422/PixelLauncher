@@ -59,7 +59,7 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  * 架构：
  * - HOME / APP_DRAWER / SETTINGS → 3 页横向 [PageView]（主页面 Pager）
- * - SMS_ROLE_PROMPT / SMS_THREADS / SMS_INBOX / SMS_THREAD_DETAIL → 全屏 SMS 内容
+ * - SMS_ROLE_PROMPT / SMS_THREADS / SMS_THREAD_DETAIL → 全屏 SMS 内容
  * - DIAGNOSTICS / IDLE → 全屏杂项内容
  *
  * 所有控制器/状态均由本类持有，[update] 负责外部状态同步。
@@ -233,7 +233,7 @@ internal class LauncherRootHost(
                 pageCount = SmsPageIndex.COUNT,
             )
         }
-        if (state.mode == LauncherMode.SMS_THREADS || state.mode == LauncherMode.SMS_INBOX) {
+        if (state.mode == LauncherMode.SMS_THREADS) {
             val targetSmsPage = SmsPageIndex.coerce(state.smsPageIndex)
             if (smsPagerState.currentPage != targetSmsPage) {
                 smsPagerController.jumpToPage(smsPagerState, targetSmsPage)
@@ -710,7 +710,7 @@ internal class LauncherRootHost(
             )
         }
         val searchIsVisible =
-            (uiState.mode == LauncherMode.SMS_THREADS || uiState.mode == LauncherMode.SMS_INBOX) &&
+            uiState.mode == LauncherMode.SMS_THREADS &&
                 uiState.smsPageIndex == SmsPageIndex.ALL
         if (!searchIsVisible) {
             smsSearchController.requestBlur(smsSearchState)
@@ -753,9 +753,7 @@ internal class LauncherRootHost(
             LauncherMode.SETTINGS,
             -> LauncherRouteDestination.MAIN
             LauncherMode.SMS_ROLE_PROMPT -> LauncherRouteDestination.SMS_ROLE_PROMPT
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_INBOX,
-            -> LauncherRouteDestination.SMS_THREADS
+            LauncherMode.SMS_THREADS -> LauncherRouteDestination.SMS_THREADS
             LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
             LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH

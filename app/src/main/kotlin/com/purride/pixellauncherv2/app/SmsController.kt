@@ -145,10 +145,6 @@ internal class SmsController(
         }
     }
 
-    fun selectIndex(index: Int) {
-        host.state = host.state.copy(smsSelectedIndex = index)
-    }
-
     fun selectPage(index: Int) {
         val nextState = LauncherStateTransitions.selectSmsPage(host.state, index)
         if (nextState.smsPageIndex == host.state.smsPageIndex) {
@@ -429,16 +425,8 @@ internal class SmsController(
         }
     }
 
-    fun openUnreadInbox() {
-        openModule(initialPage = SmsPageIndex.UNREAD)
-    }
-
     fun openUnreadSummaryTarget() {
         openModule(initialPage = SmsPageIndex.UNREAD)
-    }
-
-    fun closeUnreadInbox() {
-        closeModule()
     }
 
     // ── Hardware-key navigation ───────────────────────────────────────────────
@@ -898,8 +886,7 @@ internal class SmsController(
             return@Runnable
         }
         refreshSmsCapability(render = false)
-        val renderSmsHome = host.state.mode == LauncherMode.SMS_THREADS ||
-            host.state.mode == LauncherMode.SMS_INBOX
+        val renderSmsHome = host.state.mode == LauncherMode.SMS_THREADS
         refreshSmsData(
             render = renderSmsHome ||
                 host.state.mode == LauncherMode.SMS_ROLE_PROMPT ||

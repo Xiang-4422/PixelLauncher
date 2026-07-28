@@ -385,7 +385,6 @@ class MainActivity : AppCompatActivity() {
                 onOpenThread         = smsController::openThread,
                 onComposeNewThread   = smsController::composeNewThread,
                 onSmsPageSelected    = smsController::selectPage,
-                onSelectSmsIndex     = smsController::selectIndex,
                 onMarkSmsRead        = smsController::markAllRead,
                 onMarkUnreadMessageRead = smsController::markMessageRead,
                 onDraftChanged       = smsController::draftChanged,
@@ -441,7 +440,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.closeModule()
                     LauncherMode.SMS_THREADS -> smsController.closeModule()
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
-                    LauncherMode.SMS_INBOX -> smsController.closeUnreadInbox()
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -502,8 +500,7 @@ class MainActivity : AppCompatActivity() {
         if (
             state.mode != LauncherMode.SMS_ROLE_PROMPT &&
             state.mode != LauncherMode.SMS_THREADS &&
-            state.mode != LauncherMode.SMS_THREAD_DETAIL &&
-            state.mode != LauncherMode.SMS_INBOX
+            state.mode != LauncherMode.SMS_THREAD_DETAIL
         ) {
             state = LauncherStateTransitions.showHome(state)
         }
@@ -839,9 +836,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.SMS_INBOX -> {
-                        smsController.moveInboxSelection(-1)
-                    }
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -867,9 +861,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.SMS_INBOX -> {
-                        smsController.moveInboxSelection(1)
-                    }
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -890,7 +881,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
-                    LauncherMode.SMS_INBOX -> smsController.moveInboxSelection(-1)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -909,7 +899,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
-                    LauncherMode.SMS_INBOX -> smsController.moveInboxSelection(1)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -941,10 +930,6 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             smsController.sendDraft()
                         }
-                    }
-                    LauncherMode.SMS_INBOX -> {
-                        settleSettingsMotionBeforeExplicitAction()
-                        smsController.openSelectedUnreadThread()
                     }
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -1704,7 +1689,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateTextInputFocus() {
         val drawerWantsTextInput = state.mode == LauncherMode.APP_DRAWER && state.isDrawerSearchFocused
         val smsSearchWantsTextInput =
-            (state.mode == LauncherMode.SMS_THREADS || state.mode == LauncherMode.SMS_INBOX) &&
+            state.mode == LauncherMode.SMS_THREADS &&
                 state.smsPageIndex == SmsPageIndex.ALL
         val smsDraftWantsTextInput =
             state.mode == LauncherMode.SMS_THREAD_DETAIL && !state.smsCurrentIsServiceConversation
@@ -2067,7 +2052,6 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
-            LauncherMode.SMS_INBOX,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,

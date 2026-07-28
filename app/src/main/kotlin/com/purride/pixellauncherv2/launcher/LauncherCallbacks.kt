@@ -55,7 +55,6 @@ data class LauncherCallbacks(
     /** 用户点按搜索页的"新建会话"入口 → 对该号码发起新会话。 */
     val onComposeNewThread: (address: String) -> Unit,
     val onSmsPageSelected: (Int) -> Unit,
-    val onSelectSmsIndex: (Int) -> Unit,
     val onMarkSmsRead: () -> Unit,
     val onMarkUnreadMessageRead: (Long) -> Unit,
     val onDraftChanged: (String) -> Unit,

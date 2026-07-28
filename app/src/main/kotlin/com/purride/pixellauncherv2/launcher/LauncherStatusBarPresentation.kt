@@ -13,7 +13,7 @@ internal sealed class LauncherStatusBarPresentation {
             LauncherMode.APP_DRAWER -> Search
             else -> Standard(
                 pageTitle = pageTitleFor(mode),
-                showSmsReadAction = mode == LauncherMode.SMS_THREADS || mode == LauncherMode.SMS_INBOX,
+                showSmsReadAction = mode == LauncherMode.SMS_THREADS,
             )
         }
 
@@ -25,7 +25,6 @@ internal sealed class LauncherStatusBarPresentation {
             -> "APP"
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_INBOX,
             LauncherMode.SMS_THREAD_DETAIL,
             -> "SMS"
             LauncherMode.DATA_HEALTH -> "DATA"
