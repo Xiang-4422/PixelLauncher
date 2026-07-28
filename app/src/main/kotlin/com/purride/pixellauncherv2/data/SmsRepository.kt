@@ -142,6 +142,7 @@ class SmsRepository(
                     Telephony.Sms.READ,
                     Telephony.Sms.TYPE,
                     Telephony.Sms.STATUS,
+                    Telephony.Sms.SUBSCRIPTION_ID,
                 ),
                 "${Telephony.Sms.TYPE} IN (${visibleTypes.joinToString(",") { "?" }})",
                 visibleTypes.map(Int::toString).toTypedArray(),
@@ -160,6 +161,7 @@ class SmsRepository(
             val idRead = queryCursor.getColumnIndexOrThrow(Telephony.Sms.READ)
             val idType = queryCursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
             val idStatus = queryCursor.getColumnIndexOrThrow(Telephony.Sms.STATUS)
+            val idSubscription = queryCursor.getColumnIndexOrThrow(Telephony.Sms.SUBSCRIPTION_ID)
             val messages = ArrayList<SmsMessageEntry>(queryCursor.count.coerceAtLeast(0))
             while (queryCursor.moveToNext()) {
                 val address = queryCursor.getString(idAddress).orEmpty()
@@ -173,6 +175,7 @@ class SmsRepository(
                     type = queryCursor.getInt(idType),
                     isRead = queryCursor.getInt(idRead) != 0,
                     deliveryStatus = queryCursor.getInt(idStatus),
+                    subscriptionId = queryCursor.getInt(idSubscription),
                 )
             }
             return messages
@@ -264,12 +267,8 @@ class SmsRepository(
             return Result.failure(SecurityException("Missing SEND_SMS permission"))
         }
         return runCatching {
-            val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                context.getSystemService(SmsManager::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                SmsManager.getDefault()
-            } ?: error("SmsManager unavailable")
+            val smsManager = resolveSmsManager(request.subscriptionId)
+                ?: error("SmsManager unavailable")
 
             // 先落一条 OUTBOX 记录并对最后一个分段挂发送回执：回执到达后由
             // SmsSendResultReceiver 把该记录更新为 SENT/FAILED，UI 才能呈现真实结果。
@@ -284,6 +283,10 @@ class SmsRepository(
                 put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_OUTBOX)
                 if (threadId > 0L) {
                     put(Telephony.Sms.THREAD_ID, threadId)
+                }
+                // 记录发送用的 SIM，自动重试与后续回复能保持同卡。
+                request.subscriptionId?.takeIf { it >= 0 }?.let {
+                    put(Telephony.Sms.SUBSCRIPTION_ID, it)
                 }
             }
             val uri = contentResolver.insert(Telephony.Sms.Outbox.CONTENT_URI, values)
@@ -410,6 +413,30 @@ class SmsRepository(
         }.getOrDefault(false)
     }
 
+    /**
+     * 解析发送用的 SmsManager：指定了有效订阅 id 时用对应 SIM（双卡同卡回复），
+     * 否则用系统默认 SIM。订阅已失效（换卡）时回退默认。
+     */
+    private fun resolveSmsManager(subscriptionId: Int?): SmsManager? {
+        val default = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.getSystemService(SmsManager::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            SmsManager.getDefault()
+        }
+        if (subscriptionId == null || subscriptionId < 0) {
+            return default
+        }
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                default?.createForSubscriptionId(subscriptionId)
+            } else {
+                @Suppress("DEPRECATION")
+                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+            }
+        }.getOrNull() ?: default
+    }
+
     private fun buildResultPendingIntent(messageId: Long, action: String): PendingIntent {
         val intent = Intent(context, SmsSendResultReceiver::class.java)
             .setAction(action)
@@ -431,7 +458,14 @@ class SmsRepository(
         val address = messages.firstOrNull()?.originatingAddress.orEmpty()
         val body = messages.joinToString(separator = "") { it.messageBody.orEmpty() }
         val dateMillis = messages.firstOrNull()?.timestampMillis?.takeIf { it > 0L } ?: System.currentTimeMillis()
-        insertIncomingMessage(address = address, body = body, dateMillis = dateMillis)?.let { return it }
+        // SMS_DELIVER 附带来信 SIM 的订阅 id，记录后回复可保持同卡。
+        val subscriptionId = intent.getIntExtra("subscription", -1)
+        insertIncomingMessage(
+            address = address,
+            body = body,
+            dateMillis = dateMillis,
+            subscriptionId = subscriptionId,
+        )?.let { return it }
         // 入库失败（异常或默认应用角色竞态）也不能吞掉来信：
         // 返回未落库的条目，至少保证通知可见。
         Log.w(LOG_TAG, "storeIncomingFromIntent: insert failed, notify without persistence")
@@ -450,6 +484,7 @@ class SmsRepository(
         address: String,
         body: String,
         dateMillis: Long = System.currentTimeMillis(),
+        subscriptionId: Int = -1,
     ): SmsMessageEntry? {
         if (!isDefaultSmsApp()) {
             return null
@@ -465,6 +500,9 @@ class SmsRepository(
                 put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_INBOX)
                 if (threadId > 0L) {
                     put(Telephony.Sms.THREAD_ID, threadId)
+                }
+                if (subscriptionId >= 0) {
+                    put(Telephony.Sms.SUBSCRIPTION_ID, subscriptionId)
                 }
             }
             val uri = contentResolver.insert(Telephony.Sms.Inbox.CONTENT_URI, values)
@@ -490,6 +528,7 @@ class SmsRepository(
         type: Int,
         isRead: Boolean,
         deliveryStatus: Int = -1,
+        subscriptionId: Int = -1,
     ): SmsMessageEntry {
         val displayName = contactResolver.displayName(address)
         val conversation = SmsConversationModel.identify(
@@ -508,6 +547,7 @@ class SmsRepository(
             type = type,
             isRead = isRead,
             deliveryStatus = deliveryStatus,
+            subscriptionId = subscriptionId,
             displayName = displayName,
             conversationKey = conversation.key,
             conversationTitle = conversation.title,

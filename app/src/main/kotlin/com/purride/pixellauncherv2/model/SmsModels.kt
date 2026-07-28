@@ -44,6 +44,8 @@ data class SmsMessageEntry(
     val isRead: Boolean,
     /** 送达状态（对应 Telephony.Sms.STATUS：-1 无回执，0 已送达）。 */
     val deliveryStatus: Int = -1,
+    /** 收发所用的 SIM 订阅 id（Telephony.Sms.SUBSCRIPTION_ID），未知为 -1。 */
+    val subscriptionId: Int = -1,
     /** 联系人展示名，未匹配到联系人时为空字符串。 */
     val displayName: String = "",
     /** 会话在 UI 层的唯一标识键，默认按 threadId 生成。 */
@@ -64,4 +66,6 @@ data class SmsSendRequest(
     val body: String,
     /** 目标会话线程 ID；为空时由发送逻辑自行解析或创建。 */
     val threadId: Long? = null,
+    /** 发送使用的 SIM 订阅 id；为空或负值时使用系统默认 SIM。 */
+    val subscriptionId: Int? = null,
 )

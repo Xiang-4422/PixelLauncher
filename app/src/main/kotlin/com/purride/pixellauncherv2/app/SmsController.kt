@@ -326,6 +326,7 @@ internal class SmsController(
                         address = message.address,
                         body = message.body,
                         threadId = message.threadId.takeIf { it > 0L },
+                        subscriptionId = message.subscriptionId.takeIf { it >= 0 },
                     ),
                 )
             }
@@ -442,6 +443,8 @@ internal class SmsController(
         // 且发送期间用户可能切换会话，回调时需要校验是否仍停留在原会话。
         val conversationKey = host.state.smsCurrentConversationKey
         val threadId = host.state.smsCurrentThreadId
+        // 双卡：沿用该会话最近一条消息的 SIM 回复，避免跨卡回错号码。
+        val subscriptionId = host.state.smsMessages.lastOrNull { it.subscriptionId >= 0 }?.subscriptionId
         host.state = LauncherStateTransitions.updateSmsSendStatusText(
             state = host.state,
             smsSendStatusText = SMS_STATUS_SENDING,
@@ -453,6 +456,7 @@ internal class SmsController(
                     address = address,
                     body = draft,
                     threadId = threadId,
+                    subscriptionId = subscriptionId,
                 ),
             )
             mainHandler.post {
@@ -543,6 +547,7 @@ internal class SmsController(
                     address = message.address,
                     body = message.body,
                     threadId = message.threadId.takeIf { it > 0L },
+                    subscriptionId = message.subscriptionId.takeIf { it >= 0 },
                 ),
             )
             mainHandler.post {
