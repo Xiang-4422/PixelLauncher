@@ -99,6 +99,29 @@ internal class SmsController(
         openSmsConversation(conversationKey)
     }
 
+    /** 对搜索到的任意号码发起新会话；联系人解析走后台线程。 */
+    fun composeNewThread(address: String) {
+        val trimmed = address.trim()
+        if (trimmed.isBlank()) {
+            return
+        }
+        backgroundExecutor.execute {
+            val conversation = smsRepository.conversationForAddress(trimmed)
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                // 号码若属于既有会话，openSmsConversation 会按 key 命中并打开原会话。
+                openSmsConversation(
+                    conversationKey = conversation.key,
+                    fallbackAddress = trimmed,
+                    fallbackTitle = conversation.title,
+                    fallbackIsService = conversation.isService,
+                )
+            }
+        }
+    }
+
     fun selectIndex(index: Int) {
         host.state = host.state.copy(smsSelectedIndex = index)
     }

@@ -70,6 +70,7 @@ fun SmsThreadsScreen(
     onSearchChanged: (String) -> Unit,
     onMarkUnreadMessageRead: (Long) -> Unit,
     onOpenThread: (conversationKey: String) -> Unit,
+    onComposeNewThread: (address: String) -> Unit,
 ): Widget {
     val showUnreadTabs =
         uiState.unreadSmsEntries.isNotEmpty() ||
@@ -106,6 +107,7 @@ fun SmsThreadsScreen(
                                     searchState = searchState,
                                     onSearchChanged = onSearchChanged,
                                     onOpenThread = onOpenThread,
+                                    onComposeNewThread = onComposeNewThread,
                                 ),
                             ),
                             onPageChanged = onSmsPageSelected,
@@ -121,6 +123,7 @@ fun SmsThreadsScreen(
                             searchState = searchState,
                             onSearchChanged = onSearchChanged,
                             onOpenThread = onOpenThread,
+                            onComposeNewThread = onComposeNewThread,
                         )
                     },
                 ),
@@ -220,11 +223,16 @@ private fun buildAllThreadsPage(
     searchState: PixelTextFieldState,
     onSearchChanged: (String) -> Unit,
     onOpenThread: (conversationKey: String) -> Unit,
+    onComposeNewThread: (address: String) -> Unit,
 ): Widget {
     val query = uiState.smsThreadSearchQuery
     val searchResults = SmsThreadSearchModel.filter(uiState.smsAllMessages, query)
+    val composeAddress = SmsThreadSearchModel.composeAddress(query)
     val content = when {
         uiState.isSmsThreadsLoading -> centeredSmsLoading(theme, vsync)
+        // 搜索词是可拨号号码且无既有会话匹配：给一行"发给该号码"的新建会话入口。
+        query.isNotBlank() && searchResults.isEmpty() && composeAddress != null ->
+            buildComposeNewThreadRow(composeAddress, theme, onComposeNewThread)
         query.isNotBlank() && searchResults.isEmpty() -> centeredSmsStatus("NO MATCH", theme)
         query.isNotBlank() -> ListViewBuilder(
             itemCount = searchResults.size,
@@ -268,6 +276,33 @@ private fun buildAllThreadsPage(
         ),
     )
 }
+
+/** 新建会话入口行：搜索的号码没有既有会话时，点按直接对该号码发起会话。 */
+private fun buildComposeNewThreadRow(
+    address: String,
+    theme: LauncherTheme,
+    onComposeNewThread: (address: String) -> Unit,
+): Widget = Column(
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    mainAxisSize = MainAxisSize.MAX,
+    spacing = 0,
+    children = listOf(
+        GestureDetector(
+            onTap = { onComposeNewThread(address) },
+            child = Padding(
+                horizontal = SMS_THREAD_ROW_PADDING_PX,
+                vertical = SMS_THREAD_ROW_PADDING_PX,
+                child = Text(
+                    "NEW MSG TO $address",
+                    style = TextStyle(color = theme.sms.sender),
+                    overflow = TextOverflow.ELLIPSIS,
+                    softWrap = false,
+                    maxLines = 1,
+                ),
+            ),
+        ),
+    ),
+)
 
 private fun centeredSmsStatus(
     text: String,

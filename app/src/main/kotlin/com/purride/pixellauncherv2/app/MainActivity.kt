@@ -382,6 +382,7 @@ class MainActivity : AppCompatActivity() {
                 onNotificationSourcePressed = ::onNotificationSourcePressed,
                 onRequestSmsRole     = smsController::requestDefaultRole,
                 onOpenThread         = smsController::openThread,
+                onComposeNewThread   = smsController::composeNewThread,
                 onSmsPageSelected    = smsController::selectPage,
                 onSelectSmsIndex     = smsController::selectIndex,
                 onMarkSmsRead        = smsController::markAllRead,

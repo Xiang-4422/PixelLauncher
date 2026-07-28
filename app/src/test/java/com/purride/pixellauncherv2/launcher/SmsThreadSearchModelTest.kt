@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SmsThreadSearchModelTest {
@@ -34,6 +35,22 @@ class SmsThreadSearchModelTest {
         ).copy(conversationTitle = "借呗")
 
         assertEquals(listOf(service), SmsThreadSearchModel.filter(listOf(service), "借呗"))
+    }
+
+    @Test
+    fun composeAddressAcceptsDialableNumbers() {
+        assertEquals("13800138000", SmsThreadSearchModel.composeAddress("138 0013-8000"))
+        assertEquals("+8613800138000", SmsThreadSearchModel.composeAddress("+86 138 0013 8000"))
+        assertEquals("10086", SmsThreadSearchModel.composeAddress("10086"))
+    }
+
+    @Test
+    fun composeAddressRejectsNonNumberQueries() {
+        assertNull(SmsThreadSearchModel.composeAddress(""))
+        assertNull(SmsThreadSearchModel.composeAddress("bank"))
+        assertNull(SmsThreadSearchModel.composeAddress("code 123456"))
+        assertNull(SmsThreadSearchModel.composeAddress("12"))
+        assertNull(SmsThreadSearchModel.composeAddress("123+456"))
     }
 
     private fun message(
