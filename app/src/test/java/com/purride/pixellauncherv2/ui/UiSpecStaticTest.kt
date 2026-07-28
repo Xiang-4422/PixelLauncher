@@ -481,9 +481,11 @@ class UiSpecStaticTest {
                 !searchHeaderSource.contains("messageText") &&
                 !searchHeaderSource.contains("actionLabel") &&
                 searchRowSource.contains("height = STATUS_BAR_TITLE_ROW_HEIGHT_PX") &&
-                searchRowSource.contains("padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX)") &&
+                searchRowSource.contains("padding = searchRowPadding(") &&
                 searchRowSource.contains("child = TextField(") &&
                 searchRowSource.contains("textAlign = textAlign") &&
+                searchRowSource.contains("borderColor = PixelColor.Transparent") &&
+                searchRowSource.contains("focusedBorderColor = PixelColor.Transparent") &&
                 searchRowSource.contains("crossAxisAlignment = CrossAxisAlignment.STRETCH") &&
                 !searchRowSource.contains("TextAlign.CENTER -> Row(") &&
                 !searchRowSource.contains("textAlign = if (textAlign == TextAlign.CENTER)") &&

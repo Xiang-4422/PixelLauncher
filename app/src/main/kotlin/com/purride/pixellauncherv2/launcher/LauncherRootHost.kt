@@ -533,6 +533,10 @@ internal class LauncherRootHost(
                     state = drawerQueryState,
                     controller = drawerTextController,
                     placeholder = "SEARCH APP",
+                    placeholderLeadingInkInset = textRasterizers.leadingInkInset(
+                        text = "SEARCH APP",
+                        size = PixelFontCatalog.defaultUiFontSize,
+                    ),
                     autofocus = uiState.isDrawerSearchFocused,
                     textAlign = when (uiState.drawerListAlignment) {
                         DrawerListAlignment.LEFT -> TextAlign.START

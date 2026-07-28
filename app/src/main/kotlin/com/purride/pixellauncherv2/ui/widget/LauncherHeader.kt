@@ -31,6 +31,7 @@ import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.widgets.animated.AnimatedSwitcher
 import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -504,11 +505,14 @@ private fun statusBarDivider(theme: LauncherTheme): Widget = Container(
  *
  * 外层结构必须和 [LauncherHeader] 保持一致：一行内容 + 贴底 BatteryDivider。
  * 这样 HOME / DRAWER / SETTINGS 之间切换时，状态栏尺寸不会跳变。
+ *
+ * @param placeholderLeadingInkInset placeholder 首字形在实际字形包中的左侧空白像素数
  */
 fun LauncherSearchHeader(
     state: PixelTextFieldState,
     controller: TextEditingController,
     placeholder: String,
+    placeholderLeadingInkInset: Int,
     autofocus: Boolean,
     textAlign: TextAlign = TextAlign.START,
     batteryLevel: Int,
@@ -527,6 +531,7 @@ fun LauncherSearchHeader(
                 state = state,
                 controller = controller,
                 placeholder = placeholder,
+                placeholderLeadingInkInset = placeholderLeadingInkInset,
                 autofocus = autofocus,
                 textAlign = textAlign,
                 theme = theme,
@@ -552,6 +557,7 @@ private fun statusBarSearchRow(
     state: PixelTextFieldState,
     controller: TextEditingController,
     placeholder: String,
+    placeholderLeadingInkInset: Int,
     autofocus: Boolean,
     textAlign: TextAlign,
     theme: LauncherTheme,
@@ -559,7 +565,10 @@ private fun statusBarSearchRow(
     onSubmitted: () -> Unit,
 ): Widget = Container(
     height = STATUS_BAR_TITLE_ROW_HEIGHT_PX,
-    padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX),
+    padding = searchRowPadding(
+        textAlign = textAlign,
+        placeholderLeadingInkInset = placeholderLeadingInkInset,
+    ),
     child = Row(
         children = listOf(
             Expanded(
@@ -572,8 +581,10 @@ private fun statusBarSearchRow(
                     textAlign = textAlign,
                     textInputAction = TextInputAction.SEARCH,
                     style = TextFieldStyle(
-                        borderColor = null,
-                        focusedBorderColor = null,
+                        // null 会回落到组件 token；透明色才表示普通态明确不绘制边框。
+                        borderColor = PixelColor.Transparent,
+                        // 聚焦指示器复用该颜色，透明色同时保留光标并移除黄色外框。
+                        focusedBorderColor = PixelColor.Transparent,
                         textStyle = TextStyle(color = theme.statusBar.searchText),
                         placeholderStyle = TextStyle(color = theme.statusBar.searchPlaceholder),
                         padding = 0,
@@ -587,6 +598,31 @@ private fun statusBarSearchRow(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
     ),
 )
+
+/**
+ * 计算搜索行的内容留白，使 hint 与采用相同对齐方式的 drawer 应用名共用视觉边界。
+ */
+internal fun searchRowPadding(
+    /** 搜索文字与 drawer 列表共同使用的对齐方式。 */
+    textAlign: TextAlign,
+    /** hint 首字形真实墨迹之前的空白像素数。 */
+    placeholderLeadingInkInset: Int,
+): EdgeInsets {
+    /** drawer 应用列表左右两侧的统一内容边界。 */
+    val drawerHorizontalInset = LauncherSpacing.CONTENT_HORIZONTAL
+    /** 左对齐时预先扣除 hint 字形自带的空白，其他模式保留对称内容边界。 */
+    val leftInset = if (textAlign == TextAlign.START) {
+        (drawerHorizontalInset - placeholderLeadingInkInset.coerceAtLeast(0)).coerceAtLeast(0)
+    } else {
+        drawerHorizontalInset
+    }
+    return EdgeInsets(
+        left = leftInset,
+        top = STATUS_BAR_TITLE_EDGE_PADDING_PX,
+        right = drawerHorizontalInset,
+        bottom = STATUS_BAR_TITLE_EDGE_PADDING_PX,
+    )
+}
 
 private fun statusBarActionBackgroundColor(
     isDanger: Boolean,
