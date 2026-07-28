@@ -79,6 +79,10 @@ class PixelGraphemeBoundaryMapTest {
         assertBoundaries(codePointString(0x1F1E6, 0x1F1E7, 0x1F1E8, 0x1F1E9), 0, 4, 8)
         assertBoundaries("1\uFE0F\u20E3", 0, 3) // Keycap sequence through GB9.
         assertBoundaries("A\u200D" + codePointString(0x1F4BB), 0, 2, 4) // GB11 needs EP prefix.
+        // U+2701 两侧都不是 Extended_Pictographic，GB11 不适用，ZWJ 后必须断开。
+        // 平台 ICU 用自有 ZWJ 裁剪将整串并为一簇，该版本化差异按 profile 精确登记在
+        // androidTest 的 android-icu-expected-differences.txt 中；此处在 JVM 上固定引擎侧权威。
+        assertBoundaries("\u2701\u200D\u2701", 0, 2, 3)
     }
 
     /** Strict movement, inclusive snaps, downstream ties, and range expansion share one contract. */

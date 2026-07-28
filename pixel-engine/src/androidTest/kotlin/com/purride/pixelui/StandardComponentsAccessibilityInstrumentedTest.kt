@@ -448,10 +448,12 @@ class StandardComponentsAccessibilityInstrumentedTest {
             )
 
             /** Programmatic insertion exposes a standalone Menu without Popover clipping. */
-            scenario.onActivity { activity ->
-                fixture.showMenu = true
-                activity.hostView.invalidate()
-                renderSynchronously(activity.hostView)
+            automation.mutateModalTreeAndAwaitWindowEvent(MENU_ANDROID_CLASS_NAME) {
+                scenario.onActivity { activity ->
+                    fixture.showMenu = true
+                    activity.hostView.invalidate()
+                    renderSynchronously(activity.hostView)
+                }
             }
             instrumentation.waitForIdleSync()
             /** Refreshed window containing the standalone Menu collection and items. */
@@ -471,10 +473,12 @@ class StandardComponentsAccessibilityInstrumentedTest {
             assertFalse(fixture.showMenu)
 
             /** Programmatic window insertion isolates Dialog traversal from the already tested Button. */
-            scenario.onActivity { activity ->
-                fixture.showDialog = true
-                activity.hostView.invalidate()
-                renderSynchronously(activity.hostView)
+            automation.mutateModalTreeAndAwaitWindowEvent(DIALOG_ANDROID_CLASS_NAME) {
+                scenario.onActivity { activity ->
+                    fixture.showDialog = true
+                    activity.hostView.invalidate()
+                    renderSynchronously(activity.hostView)
+                }
             }
             assertTrue(fixture.showDialog)
             instrumentation.waitForIdleSync()
@@ -887,6 +891,29 @@ private fun AccessibilityNodeInfo.requireDescendantWithDescription(
     return requireDescendant { node -> node.contentDescription?.toString() == description }
 }
 
+/**
+ * 改变模态语义结构，并等待对应的窗口事件真正抵达测试进程。
+ *
+ * `Instrumentation.waitForIdleSync` 只保证被测应用主线程排空：Host 发布新语义树后，
+ * `TYPE_WINDOW_STATE_CHANGED` 仍要经 system_server 异步转发到测试进程，才会让本进程的
+ * `AccessibilityCache` 失效。在事件抵达前读取 `rootInActiveWindow` 可能命中插入模态之前的
+ * 缓存子树，从而观察到本应被模态隔离的背景控件。等待生产语义已经承诺发送的那一个事件，
+ * 就是等待缓存失效本身，既不放宽断言也不依赖固定睡眠。
+ */
+private fun UiAutomation.mutateModalTreeAndAwaitWindowEvent(
+    androidClassName: String,
+    mutateModalTree: () -> Unit,
+) {
+    executeAndWaitForEvent(
+        Runnable(mutateModalTree),
+        UiAutomation.AccessibilityEventFilter { event ->
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+                event.className?.toString() == androidClassName
+        },
+        ACCESSIBILITY_TREE_UPDATE_TIMEOUT_MS,
+    )
+}
+
 /** Polls Android's asynchronous accessibility connection until one exact description appears. */
 private fun UiAutomation.requireDescendantWithDescriptionEventually(
     description: String,
@@ -1025,6 +1052,12 @@ private const val MENU_ITEM_COUNT: Int = 2
 
 /** Spoken label of the standalone Menu item selected through Android accessibility. */
 private const val MENU_ITEM_LABEL: String = "Light"
+
+/** Android 类名：Menu 角色映射出的集合窗口，用于精确匹配它的窗口状态事件。 */
+private const val MENU_ANDROID_CLASS_NAME: String = "android.widget.ListView"
+
+/** Android 类名：Dialog 角色映射出的窗口，用于精确匹配它的窗口状态事件。 */
+private const val DIALOG_ANDROID_CLASS_NAME: String = "android.app.Dialog"
 
 /** Maximum wait for an external touch-exploration service to publish global focus. */
 private const val TOUCH_EXPLORATION_FOCUS_TIMEOUT_MS: Long = 1_000L

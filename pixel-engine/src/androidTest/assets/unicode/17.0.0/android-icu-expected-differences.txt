@@ -18,4 +18,12 @@ sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-emoji-extend-zwj|0,10|0,2,6,8,10|IC
 sdk=24;icu=56.1.0.0;unicode=8.0.0.0|official-stop-sign-zwj|0,5|0,3,5|Unicode 8 predates U+1F6D1 and GB11 Extended_Pictographic handling; ICU 56 breaks after the ZWJ.
 sdk=29;icu=63.2.0.0;unicode=11.0.0.0|controlled-gb9c-devanagari|0,3|0,2,3|Unicode 11 predates GB9c Indic_Conjunct_Break; Unicode 17 keeps consonant virama consonant in one grapheme.
 sdk=29;icu=63.2.0.0;unicode=11.0.0.0|official-scissors-non-pictographic|0,2,3|0,3|ICU 63 applies its older emoji ZWJ behavior to U+2701; the reviewed Unicode 17 conformance case breaks before the second non-pictographic scissors character.
+# 人工审查记录（Redmi K20 Pro / Android 12 / ICU 68.2）：
+# 用例文本为 U+2701 U+200D U+2701。U+2701 不属于 Unicode 的 Extended_Pictographic，
+# 因此官方 Unicode 17 子集 `÷ 2701 × 200D ÷ 2701 ÷` 不适用 GB11，第二个剪刀符前必须断开，
+# 即 UTF-16 边界 0,2,3；本测试同时校验引擎输出与该官方子集逐位一致。
+# 平台 ICU 68 沿用 ICU 自有的 ZWJ 连接裁剪（tailoring），把整个 ZWJ 序列并为一个字符簇，
+# 给出 0,3。这与已记录的 ICU 63（sdk=29）、ICU 76（sdk=36）是同一个版本化差异，
+# 差异只来自平台 ICU 版本，不是引擎缺陷；此处按 profile 精确登记，不做任何通配放行。
+sdk=31;icu=68.2.0.0;unicode=13.0.0.0|official-scissors-non-pictographic|0,2,3|0,3|ICU 68 applies its own emoji ZWJ tailoring to the non-pictographic U+2701; the reviewed Unicode 17 conformance case breaks before the second scissors character.
 sdk=36;icu=76.1.0.0;unicode=16.0.0.0|official-scissors-non-pictographic|0,2,3|0,3|ICU 76 applies its Unicode 16 emoji ZWJ behavior to U+2701; the reviewed Unicode 17 conformance case breaks before the second non-pictographic scissors character.
