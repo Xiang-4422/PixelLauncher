@@ -57,6 +57,17 @@ EXPECTED_AAPT2_PLATFORM_SHA256 = {
     "aapt2-9.0.1-14304508-osx.jar": "4cf09e80b16a217a4cc1f997208599de7158dff283ecee2bd966246541b33070",
     "aapt2-9.0.1-14304508-windows.jar": "8b46160a24a87f3a4dd33af6979b424d4f8c25e5329aa4eb26c93beaa727c741",
 }
+# 冷缓存 CI 必须解析并校验的 AGP classpath/UTP 元数据，防止暖缓存掩盖缺项。
+EXPECTED_CI_METADATA_SHA256 = {
+    ("com.google.guava", "guava-parent", "33.3.1-jre", "guava-parent-33.3.1-jre.pom"):
+        "55441db27e8869dfefe053059bdf478bdc7e95585642bf391f0023345fd56287",
+    ("org.junit", "junit-bom", "5.11.0-M2", "junit-bom-5.11.0-M2.module"):
+        "86477abcf490d6ca059aa9973cb108d22a506f49d1a5569bb32cc6cbf43c2cce",
+    ("org.junit", "junit-bom", "5.9.2", "junit-bom-5.9.2.module"):
+        "ab137ba5a8e32c9b066bf9126a1c76dd5614b724ba5c0b02549772b5e9f4cf1f",
+    ("org.jetbrains.kotlinx", "kotlinx-coroutines-bom", "1.8.0", "kotlinx-coroutines-bom-1.8.0.pom"):
+        "1239e9dbe1397cd5971342956b2511bc3ace7b641842e4372a088dcfa8b9ad55",
+}
 # 每个 SDK 模块的发布锁文件只允许绑定这两个受审配置。
 EXPECTED_LOCK_CONFIGURATIONS = {"releaseCompileClasspath", "releaseRuntimeClasspath"}
 # SHA-256 必须是完整的小写十六进制摘要。
@@ -370,7 +381,7 @@ def validate_checksums(path: Path) -> dict[str, str]:
 
 
 def validate_gradle_verification_metadata(path: Path) -> dict[str, Any]:
-    """校验 Gradle 依赖元数据使用逐文件 SHA-256 且覆盖三平台 AAPT2。"""
+    """校验 Gradle 依赖元数据使用逐文件 SHA-256 且覆盖 CI 冷缓存必需文件。"""
 
     # Gradle dependency-verification 1.3 的默认命名空间。
     namespace = {"v": "https://schema.gradle.org/dependency-verification"}
@@ -408,6 +419,25 @@ def validate_gradle_verification_metadata(path: Path) -> dict[str, Any]:
         if not checksums or any(SHA256_PATTERN.fullmatch(value) is None for value in checksums):
             raise AssertionError(f"{path}: {artifact_name} is missing a valid SHA-256")
 
+    # 关键 CI 元数据按完整坐标和文件名索引，不能由同组件的 POM/JAR 冒充覆盖。
+    component_checksums: dict[tuple[str, str, str, str], set[str]] = {}
+    for component in root.findall("v:components/v:component", namespace):
+        # 当前组件坐标用于区分相同 artifact 文件名的不同版本。
+        component_coordinate = (
+            component.get("group", ""),
+            component.get("name", ""),
+            component.get("version", ""),
+        )
+        for artifact in component.findall("v:artifact", namespace):
+            # 当前文件的全部受审摘要允许 Maven 镜像存在多个合法内容版本。
+            artifact_checksums = {
+                element.get("value", "") for element in artifact.findall("v:sha256", namespace)
+            }
+            component_checksums[(*component_coordinate, artifact.get("name", ""))] = artifact_checksums
+    for coordinate, expected_checksum in EXPECTED_CI_METADATA_SHA256.items():
+        if expected_checksum not in component_checksums.get(coordinate, set()):
+            raise AssertionError(f"{path}: missing verified CI metadata {':'.join(coordinate)}")
+
     # AAPT2 组件必须显式覆盖 Linux、macOS、Windows 构建机。
     aapt2_component = root.find(
         "v:components/v:component[@group='com.android.tools.build'][@name='aapt2'][@version='9.0.1-14304508']",
@@ -428,6 +458,7 @@ def validate_gradle_verification_metadata(path: Path) -> dict[str, Any]:
     return {
         "artifactCount": len(artifacts),
         "aapt2Platforms": sorted(EXPECTED_AAPT2_PLATFORM_SHA256),
+        "ciMetadataArtifacts": sorted(":".join(coordinate) for coordinate in EXPECTED_CI_METADATA_SHA256),
     }
 
 

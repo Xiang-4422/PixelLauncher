@@ -36,6 +36,13 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Verify dependency metadata from an empty Gradle home
+        # 独立用户目录强制重新读取原始 POM/module，避免共享缓存掩盖校验闭包缺项。
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/pixel-cold-gradle-home
+        run: >-
+          ./gradlew help :pixel-engine:assembleDebugAndroidTest
+          --no-build-cache --no-daemon --console=plain
       - name: Run fast gate from a clean output tree
         run: bash tools/pixel-ci-fast.sh
       - name: Upload fast reports and golden diffs
@@ -140,6 +147,8 @@ jobs:
           packages: platform-tools platforms;android-36 platforms;android-36.1
       - name: Run instrumentation on an isolated emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          JAVA_TOOL_OPTIONS: -Dddmlib.getprop.timeout.sec=30
         with:
           api-level: 29
           target: google_apis
@@ -148,6 +157,14 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             rm -rf pixel-engine/build/outputs/androidTest-results pixel-engine/build/reports/androidTests pixel-engine/build/outputs/connected_android_test_additional_output
+            # device_api 保存已观察 SDK；attempt 最多重试 12 次，避免尚未就绪的设备进入 ddmlib。
+            device_api=""
+            for attempt in $(seq 1 12); do
+              device_api="$(adb -s emulator-5554 shell getprop ro.build.version.sdk | tr -d '\r')"
+              [ "$device_api" = "29" ] && break
+              sleep 5
+            done
+            [ "$device_api" = "29" ] || { echo "Expected emulator API 29, got: $device_api" >&2; exit 1; }
             ANDROID_SERIAL=emulator-5554 ./gradlew :pixel-engine:connectedDebugAndroidTest --no-build-cache --no-daemon
       - name: Upload instrumentation XML golden diffs and traces
         if: always()

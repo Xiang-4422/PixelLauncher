@@ -37,6 +37,8 @@ jobs:
           packages: platform-tools platforms;android-36 platforms;android-36.1
       - name: Run full instrumentation matrix entry
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          JAVA_TOOL_OPTIONS: -Dddmlib.getprop.timeout.sec=30
         with:
           api-level: ${{ matrix.api-level }}
           target: google_apis
@@ -45,6 +47,14 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             rm -rf pixel-engine/build/outputs/androidTest-results pixel-engine/build/reports/androidTests pixel-engine/build/outputs/connected_android_test_additional_output
+            # device_api 保存已观察 SDK；attempt 最多重试 12 次并确认它与当前矩阵项一致。
+            device_api=""
+            for attempt in $(seq 1 12); do
+              device_api="$(adb -s emulator-5554 shell getprop ro.build.version.sdk | tr -d '\r')"
+              [ "$device_api" = "${{ matrix.api-level }}" ] && break
+              sleep 5
+            done
+            [ "$device_api" = "${{ matrix.api-level }}" ] || { echo "Expected emulator API ${{ matrix.api-level }}, got: $device_api" >&2; exit 1; }
             ANDROID_SERIAL=emulator-5554 ./gradlew :pixel-engine:connectedDebugAndroidTest --no-build-cache --no-daemon
       - name: Upload emulator reports and traces
         if: always()

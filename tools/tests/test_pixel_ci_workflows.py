@@ -98,6 +98,13 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
         self.assertEqual(7, setup_count)
         self.assertEqual(7, REQUIRED_WORKFLOW.count("platforms;android-36.1"))
 
+    def test_required_workflow_verifies_dependencies_with_empty_gradle_home(self) -> None:
+        """required 门禁必须从独立 Gradle Home 构建 AndroidTest，不能依赖共享暖缓存。"""
+
+        self.assertIn("Verify dependency metadata from an empty Gradle home", REQUIRED_WORKFLOW)
+        self.assertIn("GRADLE_USER_HOME: ${{ runner.temp }}/pixel-cold-gradle-home", REQUIRED_WORKFLOW)
+        self.assertIn("./gradlew help :pixel-engine:assembleDebugAndroidTest", REQUIRED_WORKFLOW)
+
     def test_nightly_workflow_keeps_device_matrix(self) -> None:
         """夜间工作流必须保留 API 24、29、36 的 instrumentation 矩阵。"""
 

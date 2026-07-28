@@ -163,7 +163,12 @@ class SupplyChainToolsTest(unittest.TestCase):
                 """<?xml version="1.0" encoding="UTF-8"?>
 <verification-metadata xmlns="https://schema.gradle.org/dependency-verification">
   <configuration><verify-metadata>true</verify-metadata><verify-signatures>false</verify-signatures></configuration>
-  <components><component group="com.android.tools.build" name="aapt2" version="9.0.1-14304508">
+  <components>
+  <component group="com.google.guava" name="guava-parent" version="33.3.1-jre"><artifact name="guava-parent-33.3.1-jre.pom"><sha256 value="55441db27e8869dfefe053059bdf478bdc7e95585642bf391f0023345fd56287"/></artifact></component>
+  <component group="org.junit" name="junit-bom" version="5.11.0-M2"><artifact name="junit-bom-5.11.0-M2.module"><sha256 value="86477abcf490d6ca059aa9973cb108d22a506f49d1a5569bb32cc6cbf43c2cce"/></artifact></component>
+  <component group="org.junit" name="junit-bom" version="5.9.2"><artifact name="junit-bom-5.9.2.module"><sha256 value="ab137ba5a8e32c9b066bf9126a1c76dd5614b724ba5c0b02549772b5e9f4cf1f"/></artifact></component>
+  <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-bom" version="1.8.0"><artifact name="kotlinx-coroutines-bom-1.8.0.pom"><sha256 value="1239e9dbe1397cd5971342956b2511bc3ace7b641842e4372a088dcfa8b9ad55"/></artifact></component>
+  <component group="com.android.tools.build" name="aapt2" version="9.0.1-14304508">
     <artifact name="aapt2-9.0.1-14304508-linux.jar"><sha256 value="ab04484e27480404a32df818c1da12bebaceadab4895f50880153dfaad84e748"/></artifact>
   </component></components>
 </verification-metadata>
@@ -171,6 +176,26 @@ class SupplyChainToolsTest(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(AssertionError, "missing verified aapt2-9.0.1-14304508-osx.jar"):
+                CHECKER.validate_gradle_verification_metadata(metadata)
+
+    def test_gradle_verification_requires_cold_cache_ci_metadata(self) -> None:
+        """只登记组件 POM 而漏掉冷缓存实际请求的 module 时必须失败。"""
+
+        with tempfile.TemporaryDirectory() as directory:
+            # 最小元数据故意不包含四项 CI 冷缓存元数据，错误必须先指出闭包缺失。
+            metadata = Path(directory) / "verification-metadata.xml"
+            metadata.write_text(
+                """<?xml version="1.0" encoding="UTF-8"?>
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification">
+  <configuration><verify-metadata>true</verify-metadata><verify-signatures>false</verify-signatures></configuration>
+  <components><component group="org.example" name="sample" version="1.0">
+    <artifact name="sample-1.0.pom"><sha256 value="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"/></artifact>
+  </component></components>
+</verification-metadata>
+""",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(AssertionError, "missing verified CI metadata"):
                 CHECKER.validate_gradle_verification_metadata(metadata)
 
     def test_gradle_lockfile_requires_both_release_configurations(self) -> None:
