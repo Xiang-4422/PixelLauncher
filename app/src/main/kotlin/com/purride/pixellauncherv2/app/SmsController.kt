@@ -94,6 +94,7 @@ internal class SmsController(
 
     /** 后台时停止监听。 */
     fun stop() {
+        mainHandler.removeCallbacks(providerChangeDebounceRunnable)
         smsRepository.stop()
     }
 
@@ -738,7 +739,19 @@ internal class SmsController(
         host.state = nextState
     }
 
+    /**
+     * 内容观察者回调（主线程）。批量写库（标记全部已读、删除会话）会触发
+     * 连环 onChange，每次都全表重读代价高：合并 300ms 窗口内的变更只刷一次。
+     */
     private fun onSmsProviderChanged() {
+        mainHandler.removeCallbacks(providerChangeDebounceRunnable)
+        mainHandler.postDelayed(providerChangeDebounceRunnable, PROVIDER_CHANGE_DEBOUNCE_MS)
+    }
+
+    private val providerChangeDebounceRunnable = Runnable {
+        if (!host.isActive()) {
+            return@Runnable
+        }
         refreshSmsCapability(render = false)
         val renderSmsHome = host.state.mode == LauncherMode.SMS_THREADS ||
             host.state.mode == LauncherMode.SMS_INBOX
@@ -756,5 +769,8 @@ internal class SmsController(
         const val SMS_STATUS_COPIED_CODE = "COPIED CODE"
         const val SMS_STATUS_COPIED_BODY = "COPIED MSG"
         const val SMS_STATUS_DELETED = "DELETED"
+
+        /** 内容变更防抖窗口：合并批量写库触发的连环 onChange。 */
+        const val PROVIDER_CHANGE_DEBOUNCE_MS = 300L
     }
 }
