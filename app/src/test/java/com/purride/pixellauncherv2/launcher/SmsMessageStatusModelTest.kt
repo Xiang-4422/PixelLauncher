@@ -47,6 +47,16 @@ class SmsMessageStatusModelTest {
     }
 
     @Test
+    fun queuedAndRetryableCoverTransientAndFailedStates() {
+        assertTrue(SmsMessageStatusModel.isQueued(TYPE_QUEUED))
+        assertFalse(SmsMessageStatusModel.isQueued(TYPE_OUTBOX))
+        assertTrue(SmsMessageStatusModel.isRetryable(TYPE_QUEUED))
+        assertTrue(SmsMessageStatusModel.isRetryable(TYPE_FAILED))
+        assertFalse(SmsMessageStatusModel.isRetryable(TYPE_SENT))
+        assertFalse(SmsMessageStatusModel.isRetryable(TYPE_OUTBOX))
+    }
+
+    @Test
     fun deliveredMatchesStatusCompleteOnly() {
         assertTrue(SmsMessageStatusModel.isDelivered(0))
         assertFalse(SmsMessageStatusModel.isDelivered(-1))

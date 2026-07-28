@@ -21,6 +21,7 @@ import com.purride.pixellauncherv2.app.SmsSendResultReceiver
 import com.purride.pixellauncherv2.launcher.SmsConversationIdentity
 import com.purride.pixellauncherv2.launcher.SmsConversationModel
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
+import com.purride.pixellauncherv2.launcher.SmsSendRetryPolicy
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsSendRequest
@@ -346,7 +347,10 @@ class SmsRepository(
         }
     }
 
-    /** 发送回执到达后更新消息状态；成功 → SENT，失败 → FAILED 并记录错误码。 */
+    /**
+     * 发送回执到达后更新消息状态；成功 → SENT，临时性错误（无服务/飞行模式）
+     * → QUEUED 等待自动重试，其余错误 → FAILED 并记录错误码。
+     */
     fun applySendResult(messageId: Long, success: Boolean, errorCode: Int): Boolean {
         if (messageId <= 0L) {
             return false
@@ -354,7 +358,11 @@ class SmsRepository(
         val values = ContentValues().apply {
             put(
                 Telephony.Sms.TYPE,
-                if (success) Telephony.Sms.MESSAGE_TYPE_SENT else Telephony.Sms.MESSAGE_TYPE_FAILED,
+                when {
+                    success -> Telephony.Sms.MESSAGE_TYPE_SENT
+                    SmsSendRetryPolicy.isTransientError(errorCode) -> Telephony.Sms.MESSAGE_TYPE_QUEUED
+                    else -> Telephony.Sms.MESSAGE_TYPE_FAILED
+                },
             )
             if (!success) {
                 put(Telephony.Sms.ERROR_CODE, errorCode)

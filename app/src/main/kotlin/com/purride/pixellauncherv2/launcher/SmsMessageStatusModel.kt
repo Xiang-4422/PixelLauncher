@@ -18,8 +18,14 @@ object SmsMessageStatusModel {
     /** 已提交发送、回执尚未到达。 */
     fun isPending(type: Int): Boolean = type == TYPE_OUTBOX || type == TYPE_QUEUED
 
+    /** 因临时性错误（无服务/飞行模式）排队，等待自动重试。 */
+    fun isQueued(type: Int): Boolean = type == TYPE_QUEUED
+
     /** 发送失败，可重发。 */
     fun isFailed(type: Int): Boolean = type == TYPE_FAILED
+
+    /** 用户可主动触发重发的状态（失败或排队中）。 */
+    fun isRetryable(type: Int): Boolean = isFailed(type) || isQueued(type)
 
     /** 已收到对端送达回执（Telephony.Sms.STATUS_COMPLETE = 0）。 */
     fun isDelivered(deliveryStatus: Int): Boolean = deliveryStatus == STATUS_COMPLETE

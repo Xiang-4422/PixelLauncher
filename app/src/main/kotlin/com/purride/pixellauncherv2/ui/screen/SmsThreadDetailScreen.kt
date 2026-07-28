@@ -298,9 +298,12 @@ private fun buildMessage(
                         textAlign = if (isOutgoing) TextAlign.END else TextAlign.START,
                     ),
                 )
-                // 回执未到 → SENDING；发送失败 → 失败提示，点按整条消息即重发；
+                // 回执未到 → SENDING；临时性失败排队 → QUEUED（自动重试，点按立即重试）；
+                // 发送失败 → 失败提示，点按整条消息即重发；
                 // 送达回执只在会话最后一条消息下显示，避免整屏 DELIVERED 噪声。
-                if (SmsMessageStatusModel.isPending(msg.type)) {
+                if (SmsMessageStatusModel.isQueued(msg.type)) {
+                    add(messageStatusLine("QUEUED - AUTO RETRY", theme.sms.timestamp))
+                } else if (SmsMessageStatusModel.isPending(msg.type)) {
                     add(messageStatusLine("SENDING", theme.sms.timestamp))
                 }
                 if (SmsMessageStatusModel.isFailed(msg.type)) {

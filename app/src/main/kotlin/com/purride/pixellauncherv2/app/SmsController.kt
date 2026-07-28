@@ -16,6 +16,7 @@ import com.purride.pixellauncherv2.launcher.SmsConversationModel
 import com.purride.pixellauncherv2.launcher.SmsDraftStore
 import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
+import com.purride.pixellauncherv2.launcher.SmsSendRetryPolicy
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
@@ -85,6 +86,9 @@ internal class SmsController(
     /** 按会话保存的未发送草稿；只在主线程读写。 */
     private val draftStore = SmsDraftStore()
 
+    /** 自动补发是否已在排程中；只在主线程读写。 */
+    private var queuedRetryScheduled = false
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /** 前台时开始监听短信内容变化。 */
@@ -95,6 +99,8 @@ internal class SmsController(
     /** 后台时停止监听。 */
     fun stop() {
         mainHandler.removeCallbacks(providerChangeDebounceRunnable)
+        mainHandler.removeCallbacks(queuedRetryRunnable)
+        queuedRetryScheduled = false
         smsRepository.stop()
     }
 
@@ -264,7 +270,7 @@ internal class SmsController(
     fun messageMenuResend() {
         val message = menuMessage()
         messageMenuDismiss()
-        if (message == null || !SmsMessageStatusModel.isFailed(message.type)) return
+        if (message == null || !SmsMessageStatusModel.isRetryable(message.type)) return
         resendMessage(message)
     }
 
@@ -288,6 +294,49 @@ internal class SmsController(
 
     private fun menuMessage(): SmsMessageEntry? =
         host.state.smsMessages.firstOrNull { it.messageId == host.state.smsMessageMenuMessageId }
+
+    // ── Queued auto retry ─────────────────────────────────────────────────────
+
+    /** 数据刷新后发现 QUEUED 消息时安排一次自动补发；主线程调用。 */
+    private fun scheduleQueuedRetryIfNeeded(messages: List<SmsMessageEntry>) {
+        if (queuedRetryScheduled || messages.none { SmsMessageStatusModel.isQueued(it.type) }) {
+            return
+        }
+        queuedRetryScheduled = true
+        mainHandler.postDelayed(queuedRetryRunnable, SmsSendRetryPolicy.RETRY_INTERVAL_MS)
+    }
+
+    private val queuedRetryRunnable = Runnable {
+        queuedRetryScheduled = false
+        if (!host.isActive()) {
+            return@Runnable
+        }
+        // 仍未成功的会再次落成 QUEUED，由下一轮刷新重新调度，形成固定间隔的重试环。
+        val queued = host.state.smsAllMessages
+            .filter { SmsMessageStatusModel.isQueued(it.type) }
+            .filter { resendInFlightMessageIds.add(it.messageId) }
+        if (queued.isEmpty()) {
+            return@Runnable
+        }
+        backgroundExecutor.execute {
+            queued.forEach { message ->
+                smsRepository.deleteMessage(message.messageId)
+                smsRepository.sendMessage(
+                    SmsSendRequest(
+                        address = message.address,
+                        body = message.body,
+                        threadId = message.threadId.takeIf { it > 0L },
+                    ),
+                )
+            }
+            mainHandler.post {
+                queued.forEach { resendInFlightMessageIds.remove(it.messageId) }
+                if (host.isActive()) {
+                    refreshSmsData(render = true)
+                }
+            }
+        }
+    }
 
     fun openUnreadInbox() {
         openModule(initialPage = SmsPageIndex.UNREAD)
@@ -466,10 +515,10 @@ internal class SmsController(
         }
     }
 
-    /** 消息点按入口：失败消息触发重发，其余复制验证码或正文。 */
+    /** 消息点按入口：失败/排队消息触发立即重发，其余复制验证码或正文。 */
     fun messagePressed(messageId: Long) {
         val message = host.state.smsMessages.firstOrNull { it.messageId == messageId } ?: return
-        if (SmsMessageStatusModel.isFailed(message.type)) {
+        if (SmsMessageStatusModel.isRetryable(message.type)) {
             resendMessage(message)
             return
         }
@@ -719,6 +768,7 @@ internal class SmsController(
             entries = SmsConversationModel.unread(messages),
             visibleRows = host.smsInboxVisibleRows(),
         )
+        scheduleQueuedRetryIfNeeded(messages)
         if (nextState.mode == LauncherMode.SMS_THREAD_DETAIL && nextState.smsCurrentConversationKey.isNotBlank()) {
             val conversationMessages = SmsConversationModel.messages(
                 allMessages = messages,
