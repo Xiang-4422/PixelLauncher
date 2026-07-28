@@ -127,6 +127,17 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
         self.assertNotIn("\n            for attempt in $(seq 1 12); do", REQUIRED_WORKFLOW)
         self.assertNotIn("\n            for attempt in $(seq 1 12); do", NIGHTLY_WORKFLOW)
 
+    def test_emulator_jobs_enable_kvm_and_wait_for_package_service(self) -> None:
+        """required/nightly 模拟器必须启用 KVM，并在安装前确认包管理服务可查询。"""
+
+        for workflow in (REQUIRED_WORKFLOW, NIGHTLY_WORKFLOW):
+            with self.subTest(workflow=workflow):
+                self.assertIn("Enable KVM for the Android emulator", workflow)
+                self.assertIn("udevadm trigger --name-match=kvm", workflow)
+                self.assertIn("Build the instrumentation APK before emulator startup", workflow)
+                self.assertIn("package_ready=\"\"; for attempt in $(seq 1 30); do", workflow)
+                self.assertIn("shell cmd package list packages", workflow)
+
     def test_documentation_workflow_deploys_only_from_release_tags(self) -> None:
         """Pages 只能从公开 Release 或手动指定的既有 SemVer tag 严格构建。"""
 

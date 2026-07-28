@@ -35,6 +35,13 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: platform-tools platforms;android-36 platforms;android-36.1
+      - name: Enable KVM for the Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Build the instrumentation APK before emulator startup
+        run: ./gradlew :pixel-engine:assembleDebugAndroidTest --no-build-cache --no-daemon
       - name: Run full instrumentation matrix entry
         uses: reactivecircus/android-emulator-runner@v2
         env:
@@ -49,6 +56,8 @@ jobs:
             rm -rf pixel-engine/build/outputs/androidTest-results pixel-engine/build/reports/androidTests pixel-engine/build/outputs/connected_android_test_additional_output
             # device_api 保存已观察 SDK；attempt 最多重试 12 次并确认它与当前矩阵项一致。
             device_api=""; for attempt in $(seq 1 12); do device_api="$(adb -s emulator-5554 shell getprop ro.build.version.sdk | tr -d '\r')"; [ "$device_api" = "${{ matrix.api-level }}" ] && break; sleep 5; done; [ "$device_api" = "${{ matrix.api-level }}" ] || { echo "Expected emulator API ${{ matrix.api-level }}, got: $device_api" >&2; exit 1; }
+            # package_ready 等待包管理服务完成真实查询，不能只依赖 sys.boot_completed。
+            package_ready=""; for attempt in $(seq 1 30); do if adb -s emulator-5554 shell cmd package list packages >/dev/null 2>&1; then package_ready="yes"; break; fi; sleep 5; done; [ "$package_ready" = "yes" ] || { echo "Android package service did not become ready" >&2; exit 1; }
             ANDROID_SERIAL=emulator-5554 ./gradlew :pixel-engine:connectedDebugAndroidTest --no-build-cache --no-daemon
       - name: Upload emulator reports and traces
         if: always()
