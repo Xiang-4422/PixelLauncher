@@ -623,6 +623,7 @@ package com.purride.pixelcore {
     ctor public PixelIndexedGlyphPackAssetLoader(android.content.Context context, optional com.purride.pixelcore.PixelResourceCache cache);
     method public com.purride.pixelcore.PixelIndexedGlyphPack load(String assetDirectory);
     method public com.purride.pixelcore.PixelIndexedGlyphPack load(String assetDirectory, String? manifestSha256, String? binarySha256);
+    method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelIndexedGlyphPack> loadAsync(com.purride.pixelcore.PixelResourceLoader resourceLoader, String assetDirectory, optional String? manifestSha256, optional String? binarySha256);
     method public void remove(String assetDirectory, optional String? manifestSha256, optional String? binarySha256);
   }
 

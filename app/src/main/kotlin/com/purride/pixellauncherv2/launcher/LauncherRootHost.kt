@@ -44,7 +44,7 @@ import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadsScreen
-import com.purride.pixellauncherv2.ui.text.LauncherTextRasterizers
+import com.purride.pixellauncherv2.ui.text.PreparedLauncherFont
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -65,6 +65,8 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 internal class LauncherRootHost(
     context: Context,
+    /** 冷启动前已完整准备、不会在 Host 内执行 IO 的字体。 */
+    initialFont: PreparedLauncherFont,
     private val callbacks: LauncherCallbacks,
     private val onPixelMatterEffectStart: () -> Unit = {},
     private val onPixelMatterRestoreStart: () -> Unit = {},
@@ -72,10 +74,13 @@ internal class LauncherRootHost(
 ) {
     // ── Mutable model fields ──────────────────────────────────────────────────
     private var uiState: LauncherUiState = LauncherUiState()
-    private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY)
+    private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY).copy(
+        typography = initialFont.typography,
+    )
     private var chargeTick: Int = 0
     private var screenProfile: LauncherLayoutProfile = LauncherLayoutProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
-    private val textRasterizers = LauncherTextRasterizers(context)
+    /** 每帧与业务 selection 原子更新的完整字体。 */
+    private var preparedFont: PreparedLauncherFont = initialFont
     /** Launcher 唯一的 Android Host View。 */
     private val hostView = PixelHostView(context)
     /** 与当前 Host 一一对应的新版 Engine 实例。 */
@@ -87,9 +92,7 @@ internal class LauncherRootHost(
         engine = engine,
         hostView = hostView,
         config = PixelHostSetupConfig(
-            textRasterizer = textRasterizers.getRasterizer(
-                selection = PixelFontCatalog.defaultUiFontSelection,
-            ),
+            textRasterizer = initialFont.defaultRasterizer,
             content = { buildRoot() },
         ),
     )
@@ -190,6 +193,7 @@ internal class LauncherRootHost(
         theme: LauncherTheme,
         screenProfile: LauncherLayoutProfile,
         chargeTick: Int,
+        preparedFont: PreparedLauncherFont,
         pixelGapEnabled: Boolean = state.isPixelGapEnabled,
     ) {
         val previousState = uiState
@@ -197,7 +201,9 @@ internal class LauncherRootHost(
             !msgListState.isSettling &&
             msgListController.isAtEnd(msgListState)
         uiState = state
-        this.theme = theme.copy(typography = textRasterizers.typography(state.fontSelection))
+        require(preparedFont.selection == state.fontSelection) { "Prepared font must match UI state" }
+        this.preparedFont = preparedFont
+        this.theme = theme.copy(typography = preparedFont.typography)
         this.chargeTick = chargeTick
         this.screenProfile = screenProfile
         syncNavigatorRoute(state.mode)
@@ -211,9 +217,7 @@ internal class LauncherRootHost(
         setup.hostView.setPixelGapRatio(if (pixelGapEnabled) 1f else 0f)
         setup.hostView.bezelColor = theme.surface.bezelColor
         setup.hostView.offPixelColor = theme.surface.offPixelColor
-        setup.hostView.textRasterizer = textRasterizers.getRasterizer(
-            selection = state.fontSelection,
-        )
+        setup.hostView.textRasterizer = preparedFont.defaultRasterizer
 
         // ── Sync main pager ───────────────────────────────────────────────────
         val targetMainPage = modeToMainPage(state.mode)
@@ -533,9 +537,9 @@ internal class LauncherRootHost(
                     state = drawerQueryState,
                     controller = drawerTextController,
                     placeholder = "SEARCH APP",
-                    placeholderLeadingInkInset = textRasterizers.leadingInkInset(
+                    placeholderLeadingInkInset = preparedFont.leadingInkInset(
                         text = "SEARCH APP",
-                        selection = PixelFontCatalog.resolveRenderable(
+                        faceSelection = PixelFontCatalog.resolveRenderable(
                             uiState.fontSelection.copy(size = PixelFontSize.PX_10),
                         ),
                     ),
@@ -616,9 +620,9 @@ internal class LauncherRootHost(
         onAppMenuRefresh = callbacks.onDrawerAppMenuRefresh,
         onAppMenuDismiss = callbacks.onDrawerAppMenuDismiss,
         resolveLabelLeadingInkInset = { label ->
-            textRasterizers.leadingInkInset(
+            preparedFont.leadingInkInset(
                 text = label,
-                selection = uiState.fontSelection,
+                faceSelection = uiState.fontSelection,
             )
         },
     )

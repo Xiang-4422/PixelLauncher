@@ -811,6 +811,14 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 只更新字体后台准备状态，不提前改变当前激活字体。 */
+    fun updateFontLoading(state: LauncherState, isLoading: Boolean): LauncherState =
+        state.copy(isFontLoading = isLoading)
+
+    /** 更新字体资源缓存诊断文本，不改变字体选择。 */
+    fun updateFontCacheSummary(state: LauncherState, summary: String): LauncherState =
+        state.copy(fontCacheSummary = summary.trim().ifBlank { "0/0K" })
+
     /** 把抽屉对齐、Idle 开关等非视觉行为偏好写回状态。 */
     fun updateUiBehavior(
         state: LauncherState,

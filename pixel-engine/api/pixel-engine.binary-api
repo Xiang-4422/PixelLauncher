@@ -605,6 +605,8 @@ public final class com.purride.pixelcore.PixelIndexedGlyphPackAssetLoader {
   public com.purride.pixelcore.PixelIndexedGlyphPackAssetLoader(android.content.Context, com.purride.pixelcore.PixelResourceCache, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final com.purride.pixelcore.PixelIndexedGlyphPack load(java.lang.String);
   public final com.purride.pixelcore.PixelIndexedGlyphPack load(java.lang.String, java.lang.String, java.lang.String);
+  public final com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelIndexedGlyphPack> loadAsync(com.purride.pixelcore.PixelResourceLoader, java.lang.String, java.lang.String, java.lang.String);
+  public static com.purride.pixelcore.PixelResourceLoadHandle loadAsync$default(com.purride.pixelcore.PixelIndexedGlyphPackAssetLoader, com.purride.pixelcore.PixelResourceLoader, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public final void remove(java.lang.String, java.lang.String, java.lang.String);
   public static void remove$default(com.purride.pixelcore.PixelIndexedGlyphPackAssetLoader, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
   public com.purride.pixelcore.PixelIndexedGlyphPackAssetLoader(android.content.Context);

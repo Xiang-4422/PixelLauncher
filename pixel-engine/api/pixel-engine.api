@@ -133,6 +133,7 @@ com.purride.pixelcore public fun load(assetDirectory: String): PixelIndexedGlyph
 com.purride.pixelcore public fun load(json: String, bitmap: PixelBitmap): PixelSpriteSheet =
 com.purride.pixelcore public fun load(path: String): PixelBitmap = load(
 com.purride.pixelcore public fun load(resourceId: Int): PixelBitmap = load(
+com.purride.pixelcore public fun loadAsync(
 com.purride.pixelcore public fun loadAtlas(
 com.purride.pixelcore public fun loadAtlas(json: String, bitmap: PixelBitmap): PixelSpriteAtlas =
 com.purride.pixelcore public fun loadBitmap(key: String, loader: () -> PixelBitmap): PixelBitmap

@@ -36,17 +36,20 @@ public class PixelIndexedGlyphPackAssetLoader @JvmOverloads public constructor(
     ): PixelIndexedGlyphPack {
         requireSafeGlyphDirectory(assetDirectory)
         val cacheKey = "$assetDirectory#${manifestSha256 ?: "-"}#${binarySha256 ?: "-"}"
-        return cache.getIndexedGlyphPack(cacheKey) {
-            val manifest = loadManifest(assetDirectory, manifestSha256)
-            val binaryPath = "$assetDirectory/glyphs.bin"
-            val mapped = mapAssetOrNull(binaryPath)
-            if (mapped != null) {
-                PixelIndexedGlyphPackParser.parseBinary(manifest, mapped, binarySha256)
-            } else {
-                assets.open(binaryPath).use { input ->
-                    PixelIndexedGlyphPackParser.parseBinary(manifest, input, binarySha256)
-                }
-            }
+        return cache.getIndexedGlyphPack(cacheKey) { loadUncached(assetDirectory, manifestSha256, binarySha256) }
+    }
+
+    /** 通过正式资源加载器异步读取，避免 UI 线程阻塞并复用 single-flight/失败缓存。 */
+    public fun loadAsync(
+        resourceLoader: PixelResourceLoader,
+        assetDirectory: String,
+        manifestSha256: String? = null,
+        binarySha256: String? = null,
+    ): PixelResourceLoadHandle<PixelIndexedGlyphPack> {
+        requireSafeGlyphDirectory(assetDirectory)
+        val cacheKey = "$assetDirectory#${manifestSha256 ?: "-"}#${binarySha256 ?: "-"}"
+        return resourceLoader.loadIndexedGlyphPackAsync(cacheKey) {
+            loadUncached(assetDirectory, manifestSha256, binarySha256)
         }
     }
 
@@ -75,6 +78,24 @@ public class PixelIndexedGlyphPackAssetLoader @JvmOverloads public constructor(
             .decode(ByteBuffer.wrap(bytes))
             .toString()
         return PixelGlyphPackParser.parseManifest(json, expectedSha256)
+    }
+
+    /** 不经过第二层缓存读取一个 pack，供 [loadAsync] 的 single-flight loader 使用。 */
+    private fun loadUncached(
+        assetDirectory: String,
+        manifestSha256: String?,
+        binarySha256: String?,
+    ): PixelIndexedGlyphPack {
+        val manifest = loadManifest(assetDirectory, manifestSha256)
+        val binaryPath = "$assetDirectory/glyphs.bin"
+        val mapped = mapAssetOrNull(binaryPath)
+        return if (mapped != null) {
+            PixelIndexedGlyphPackParser.parseBinary(manifest, mapped, binarySha256)
+        } else {
+            assets.open(binaryPath).use { input ->
+                PixelIndexedGlyphPackParser.parseBinary(manifest, input, binarySha256)
+            }
+        }
     }
 
     /** 尝试 mmap 未压缩 asset；压缩 asset 或设备异常返回 null 走安全流路径。 */

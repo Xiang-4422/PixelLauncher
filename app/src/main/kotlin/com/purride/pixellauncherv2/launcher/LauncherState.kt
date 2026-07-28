@@ -54,6 +54,10 @@ data class LauncherState(
     val selectedTheme: PixelTheme = PixelTheme.DAY,
     /** 设置页当前明确选中的字体家族、宽度模式和默认字号。 */
     val fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
+    /** 候选字体正在后台准备，当前字体仍保持激活。 */
+    val isFontLoading: Boolean = false,
+    /** indexed pack 缓存的紧凑诊断摘要。 */
+    val fontCacheSummary: String = "0/0K",
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,
     val isIdlePageEnabled: Boolean = false,
     val chargeAutoIdleEnabled: Boolean = false,
