@@ -8,6 +8,7 @@ import android.os.Handler
 import android.provider.CallLog
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
+import java.util.concurrent.atomic.AtomicLong
 
 data class CommunicationStatus(
     val missedCallCount: Int,
@@ -23,6 +24,9 @@ class CommunicationStatusRepository(
     private val contentResolver = context.contentResolver
     private var callObserver: ContentObserver? = null
     private var smsObserver: ContentObserver? = null
+
+    /** 状态投递取号器：只允许最新一票落地，丢弃乱序的旧值。 */
+    private val deliverySequence = AtomicLong(0L)
 
     /** 判断当前是否具备读取未接来电数据的权限。 */
     fun hasCallLogPermission(): Boolean {
@@ -50,8 +54,7 @@ class CommunicationStatusRepository(
         if (hasCallLogPermission()) {
             val observer = object : ContentObserver(null) {
                 override fun onChange(selfChange: Boolean) {
-                    val status = readStatus()
-                    mainHandler.post { onStatusChanged(status) }
+                    deliverLatestStatus(onStatusChanged)
                 }
             }
             callObserver = observer
@@ -64,8 +67,7 @@ class CommunicationStatusRepository(
         if (hasSmsPermission()) {
             val observer = object : ContentObserver(null) {
                 override fun onChange(selfChange: Boolean) {
-                    val status = readStatus()
-                    mainHandler.post { onStatusChanged(status) }
+                    deliverLatestStatus(onStatusChanged)
                 }
             }
             smsObserver = observer
@@ -76,6 +78,20 @@ class CommunicationStatusRepository(
             )
         }
         onStatusChanged(readStatus())
+    }
+
+    /**
+     * Binder 池是多线程的：两次相邻变更可能乱序投递，让角标停留在旧值。
+     * 读取前取号，投递时校验仍是最新一票才回调。
+     */
+    private fun deliverLatestStatus(onStatusChanged: (CommunicationStatus) -> Unit) {
+        val ticket = deliverySequence.incrementAndGet()
+        val status = readStatus()
+        mainHandler.post {
+            if (ticket == deliverySequence.get()) {
+                onStatusChanged(status)
+            }
+        }
     }
 
     /** 停止已经注册的内容观察者。 */

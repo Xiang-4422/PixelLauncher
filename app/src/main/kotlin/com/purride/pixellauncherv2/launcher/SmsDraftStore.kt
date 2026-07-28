@@ -30,8 +30,18 @@ class SmsDraftStore {
         }
     }
 
-    /** 发送成功后清除对应会话的草稿。 */
+    /** 会话被删除等场景下无条件清除草稿。 */
     fun clear(conversationKey: String) {
         drafts.remove(conversationKey)
+    }
+
+    /**
+     * 仅当存储的草稿仍与已发送文本一致时清除：
+     * 发送在途期间用户可能又输入了新内容，不能连带丢掉。
+     */
+    fun clearIfUnchanged(conversationKey: String, sentDraft: String) {
+        if (drafts[conversationKey]?.trim() == sentDraft.trim()) {
+            drafts.remove(conversationKey)
+        }
     }
 }

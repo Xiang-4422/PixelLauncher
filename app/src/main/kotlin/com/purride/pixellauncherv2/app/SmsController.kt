@@ -25,6 +25,7 @@ import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsSendRequest
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * 短信模块的运行时编排，从 [MainActivity] 抽出。
@@ -97,7 +98,7 @@ internal class SmsController(
     /** 前台时开始监听短信内容变化，并加载会话静音规则。 */
     fun start() {
         smsRepository.start(::onSmsProviderChanged)
-        backgroundExecutor.execute {
+        runInBackground {
             // 启动对账：回执广播可能丢失（极端系统状态），把滞留过久的
             // OUTBOX 记录判为失败，避免永远停在“发送中”。
             smsRepository.failStaleOutboxMessages(STALE_OUTBOX_TIMEOUT_MS)
@@ -131,7 +132,7 @@ internal class SmsController(
         if (trimmed.isBlank()) {
             return
         }
-        backgroundExecutor.execute {
+        runInBackground {
             val conversation = smsRepository.conversationForAddress(trimmed)
             mainHandler.post {
                 if (!host.isActive()) {
@@ -294,9 +295,9 @@ internal class SmsController(
         val message = menuMessage()
         messageMenuDismiss()
         if (message == null) return
-        backgroundExecutor.execute {
+        runInBackground {
             if (!smsRepository.deleteMessage(message.messageId)) {
-                return@execute
+                return@runInBackground
             }
             mainHandler.post {
                 if (host.isActive()) {
@@ -332,9 +333,9 @@ internal class SmsController(
             SmsConversationModel.messages(host.state.smsAllMessages, conversationKey),
         )
         if (unread.isEmpty()) return
-        backgroundExecutor.execute {
+        runInBackground {
             if (!smsRepository.markMessagesRead(unread.map { it.messageId })) {
-                return@execute
+                return@runInBackground
             }
             unread.map { it.threadId }.distinct().forEach(smsNotificationHelper::cancelForThread)
             refreshSmsData(render = true)
@@ -348,7 +349,7 @@ internal class SmsController(
         val muted = conversationKey in host.state.smsMutedConversationKeys
         threadMenuDismiss()
         if (conversationKey.isBlank()) return
-        backgroundExecutor.execute {
+        runInBackground {
             val mutedKeys = smsMuteSettingsRepository.setMuted(conversationKey, !muted)
             mainHandler.post {
                 if (!host.isActive()) {
@@ -367,9 +368,11 @@ internal class SmsController(
         if (conversationKey.isBlank()) return
         val messages = SmsConversationModel.messages(host.state.smsAllMessages, conversationKey)
         if (messages.isEmpty()) return
-        backgroundExecutor.execute {
+        // 会话整体删除，草稿一并清掉。
+        draftStore.clear(conversationKey)
+        runInBackground {
             if (!smsRepository.deleteMessages(messages.map { it.messageId })) {
-                return@execute
+                return@runInBackground
             }
             messages.map { it.threadId }.distinct().forEach(smsNotificationHelper::cancelForThread)
             mainHandler.post {
@@ -407,7 +410,7 @@ internal class SmsController(
         if (queued.isEmpty()) {
             return@Runnable
         }
-        backgroundExecutor.execute {
+        runInBackground {
             queued.forEach { message ->
                 // 状态快照可能过期（消息已被手动重发/删除）：删除原记录成功
                 // 才算认领本次补发，否则跳过避免重复发送。
@@ -477,10 +480,10 @@ internal class SmsController(
             return
         }
         val notifiedThreadIds = host.state.unreadSmsEntries.map { it.threadId }.distinct()
-        backgroundExecutor.execute {
+        runInBackground {
             val changed = smsRepository.markAllRead()
             if (!changed) {
-                return@execute
+                return@runInBackground
             }
             notifiedThreadIds.forEach(smsNotificationHelper::cancelForThread)
             refreshSmsData(render = true)
@@ -492,10 +495,10 @@ internal class SmsController(
         val entry = host.state.unreadSmsEntries.firstOrNull { it.messageId == messageId } ?: return
         // 该会话只剩这一条未读时，它挂着的通知也一并撤下。
         val clearsThread = host.state.unreadSmsEntries.count { it.threadId == entry.threadId } <= 1
-        backgroundExecutor.execute {
+        runInBackground {
             val changed = smsRepository.markMessagesRead(listOf(messageId))
             if (!changed) {
-                return@execute
+                return@runInBackground
             }
             if (clearsThread) {
                 smsNotificationHelper.cancelForThread(entry.threadId)
@@ -535,7 +538,7 @@ internal class SmsController(
             smsSendStatus = SmsSendStatus.SENDING,
         )
         host.render()
-        backgroundExecutor.execute {
+        runInBackground {
             val result = smsRepository.sendMessage(
                 SmsSendRequest(
                     address = address,
@@ -550,16 +553,17 @@ internal class SmsController(
                 }
                 val stillInConversation = host.state.smsCurrentConversationKey == conversationKey
                 result.onSuccess { sentEntry ->
-                    // 无论用户是否已切换会话，发出去的草稿都不应再被恢复。
-                    draftStore.clear(conversationKey)
+                    // 只清除与已发送文本一致的草稿：发送在途期间用户可能又输入了新内容。
+                    draftStore.clearIfUnchanged(conversationKey, draft)
                     if (stillInConversation) {
+                        val draftUnchanged = host.state.smsDraftText.trim() == draft
                         val nextMessages = host.state.smsMessages + sentEntry
                         host.state = LauncherStateTransitions.updateSmsAllMessages(
                             state = LauncherStateTransitions.updateSmsMessages(
                                 state = LauncherStateTransitions.updateSmsSendStatus(
                                     state = LauncherStateTransitions.updateSmsDraftText(
                                         state = host.state,
-                                        smsDraftText = "",
+                                        smsDraftText = if (draftUnchanged) "" else host.state.smsDraftText,
                                     ),
                                     smsSendStatus = SmsSendStatus.NONE,
                                 ),
@@ -625,7 +629,7 @@ internal class SmsController(
             smsSendStatus = SmsSendStatus.SENDING,
         )
         host.render()
-        backgroundExecutor.execute {
+        runInBackground {
             // 删除原记录即“认领”这次重发：删除失败说明记录已被并发路径
             // （自动重试/另一次点按）处理，放弃本次以避免重复发送。
             if (!smsRepository.deleteMessage(message.messageId)) {
@@ -641,7 +645,7 @@ internal class SmsController(
                     host.render()
                     refreshSmsData(render = true)
                 }
-                return@execute
+                return@runInBackground
             }
             val result = smsRepository.sendMessage(
                 SmsSendRequest(
@@ -738,7 +742,7 @@ internal class SmsController(
         refreshSmsCapability(render = false)
         // 深链常在点通知冷启动时到达：全量读库与联系人解析不能占主线程，
         // 读完投递回主线程再打开会话。
-        backgroundExecutor.execute {
+        runInBackground {
             val messages = smsRepository.readMessages()
             val fallbackConversation = smsRepository.conversationForAddress(address)
             mainHandler.post {
@@ -819,7 +823,7 @@ internal class SmsController(
         threadId?.let(smsNotificationHelper::cancelForThread)
         val unreadIds = SmsConversationModel.unread(messages).map { it.messageId }
         if (unreadIds.isNotEmpty()) {
-            backgroundExecutor.execute {
+            runInBackground {
                 if (smsRepository.markMessagesRead(unreadIds)) {
                     refreshSmsData(render = true)
                     host.refreshCommunicationStatus(render = true)
@@ -844,7 +848,7 @@ internal class SmsController(
     }
 
     private fun refreshSmsData(render: Boolean) {
-        backgroundExecutor.execute {
+        runInBackground {
             val messages = smsRepository.readMessages()
             mainHandler.post {
                 if (!host.isActive()) {
@@ -899,6 +903,17 @@ internal class SmsController(
      * 内容观察者回调（主线程）。批量写库（标记全部已读、删除会话）会触发
      * 连环 onChange，每次都全表重读代价高：合并 300ms 窗口内的变更只刷一次。
      */
+    /**
+     * 提交后台任务。宿主销毁时执行器被 shutdownNow：此后到达的异步回调再提交
+     * 任务会抛 RejectedExecutionException 杀死进程——此时结果已无处落地，静默丢弃。
+     */
+    private fun runInBackground(task: () -> Unit) {
+        try {
+            backgroundExecutor.execute { task() }
+        } catch (_: RejectedExecutionException) {
+        }
+    }
+
     private fun onSmsProviderChanged() {
         mainHandler.removeCallbacks(providerChangeDebounceRunnable)
         mainHandler.postDelayed(providerChangeDebounceRunnable, PROVIDER_CHANGE_DEBOUNCE_MS)

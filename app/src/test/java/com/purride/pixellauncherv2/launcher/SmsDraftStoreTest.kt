@@ -47,6 +47,26 @@ class SmsDraftStoreTest {
     }
 
     @Test
+    fun clearIfUnchangedKeepsNewerDraftTypedDuringSend() {
+        val store = SmsDraftStore()
+        store.update("person:a", "sent text")
+        // 发送在途期间用户又输入了新内容：不应被成功回调清掉。
+        store.update("person:a", "newer text")
+        store.clearIfUnchanged("person:a", sentDraft = "sent text")
+
+        assertEquals("newer text", store.restore("person:a", prefilled = ""))
+    }
+
+    @Test
+    fun clearIfUnchangedRemovesMatchingDraft() {
+        val store = SmsDraftStore()
+        store.update("person:a", " sent text ")
+        store.clearIfUnchanged("person:a", sentDraft = "sent text")
+
+        assertEquals("", store.restore("person:a", prefilled = ""))
+    }
+
+    @Test
     fun blankConversationKeyIsIgnored() {
         val store = SmsDraftStore()
         store.update("", "hello")
