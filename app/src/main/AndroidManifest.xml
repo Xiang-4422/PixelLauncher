@@ -113,6 +113,11 @@
             android:name=".app.SmsSendResultReceiver"
             android:exported="false" />
 
+        <!-- 通知栏快捷操作（直接回复/标记已读）：仅接收本应用 PendingIntent。 -->
+        <receiver
+            android:name=".app.SmsNotificationActionReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".app.MmsDeliverReceiver"
             android:exported="true"

@@ -10,9 +10,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.purride.pixellauncherv2.R
 import com.purride.pixellauncherv2.app.MainActivity
+import com.purride.pixellauncherv2.app.SmsNotificationActionReceiver
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 
 class SmsNotificationHelper(
@@ -32,7 +34,7 @@ class SmsNotificationHelper(
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(context, channelId)
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_sms)
             .setContentTitle(entry.conversationTitle.ifBlank { entry.address }.ifBlank { "SMS" })
             .setContentText(entry.body.ifBlank { "(EMPTY)" })
@@ -40,7 +42,14 @@ class SmsNotificationHelper(
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
+        if (entry.threadId > 0L) {
+            // 服务号会话只读，不提供回复入口；个人会话支持通知栏直接回复。
+            if (!entry.isServiceConversation && entry.address.isNotBlank()) {
+                builder.addAction(buildReplyAction(entry))
+            }
+            builder.addAction(buildMarkReadAction(entry))
+        }
+        val notification = builder.build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -105,6 +114,46 @@ class SmsNotificationHelper(
         // 用独立 tag 划分命名空间，避免与按 threadId 编号的来信通知互相覆盖/误撤。
         NotificationManagerCompat.from(context)
             .notify(SEND_FAILURE_TAG, address.hashCode(), notification)
+    }
+
+    /** 通知栏直接回复：RemoteInput 要求 PendingIntent 可变（S+ 必须显式 FLAG_MUTABLE）。 */
+    private fun buildReplyAction(entry: SmsMessageEntry): NotificationCompat.Action {
+        val remoteInput = RemoteInput.Builder(SmsNotificationActionReceiver.KEY_REPLY_TEXT)
+            .setLabel("REPLY")
+            .build()
+        val intent = Intent(context, SmsNotificationActionReceiver::class.java)
+            .setAction(SmsNotificationActionReceiver.ACTION_REPLY)
+            .putExtra(SmsNotificationActionReceiver.EXTRA_THREAD_ID, entry.threadId)
+            .putExtra(SmsNotificationActionReceiver.EXTRA_ADDRESS, entry.address)
+        val mutabilityFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE
+        } else {
+            0
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            entry.threadId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or mutabilityFlag,
+        )
+        return NotificationCompat.Action.Builder(R.drawable.ic_stat_sms, "REPLY", pendingIntent)
+            .addRemoteInput(remoteInput)
+            .setAllowGeneratedReplies(false)
+            .build()
+    }
+
+    private fun buildMarkReadAction(entry: SmsMessageEntry): NotificationCompat.Action {
+        val intent = Intent(context, SmsNotificationActionReceiver::class.java)
+            .setAction(SmsNotificationActionReceiver.ACTION_MARK_READ)
+            .putExtra(SmsNotificationActionReceiver.EXTRA_THREAD_ID, entry.threadId)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            entry.threadId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Action.Builder(R.drawable.ic_stat_sms, "READ", pendingIntent)
+            .build()
     }
 
     private fun ensureChannel() {

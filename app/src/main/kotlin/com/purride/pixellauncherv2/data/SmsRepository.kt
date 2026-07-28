@@ -205,6 +205,26 @@ class SmsRepository(
         }.getOrDefault(false)
     }
 
+    /** 将某会话线程的收件消息全部置为已读（通知栏 READ 操作用）。 */
+    fun markThreadRead(threadId: Long): Boolean {
+        if (!isDefaultSmsApp() || threadId <= 0L) {
+            return false
+        }
+        val values = ContentValues().apply {
+            put(Telephony.Sms.READ, 1)
+            put(Telephony.Sms.SEEN, 1)
+        }
+        return runCatching {
+            contentResolver.update(
+                Telephony.Sms.CONTENT_URI,
+                values,
+                "${Telephony.Sms.THREAD_ID} = ? AND ${Telephony.Sms.READ} = 0 " +
+                    "AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_INBOX}",
+                arrayOf(threadId.toString()),
+            ) > 0
+        }.getOrDefault(false)
+    }
+
     fun markAllRead(): Boolean {
         if (!isDefaultSmsApp()) {
             Log.d(LOG_TAG, "markAllRead skipped: not default sms app")
