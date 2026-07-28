@@ -3,10 +3,16 @@ package com.purride.pixellauncherv2.ui.screen
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.Dialog
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.PositionedFill
+import com.purride.pixelui.Stack
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.MediaQuery
@@ -54,8 +60,14 @@ fun SmsThreadDetailScreen(
     onDraftChanged: (String) -> Unit,
     onSendDraft: () -> Unit,
     onMessagePressed: (Long) -> Unit,
+    onMessageLongPressed: (Long) -> Unit,
+    onMenuCopy: () -> Unit,
+    onMenuCopyCode: () -> Unit,
+    onMenuResend: () -> Unit,
+    onMenuDelete: () -> Unit,
+    onMenuDismiss: () -> Unit,
 ): Widget {
-    return Column(
+    val content = Column(
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
         mainAxisSize = MainAxisSize.MAX,
         spacing = 0,
@@ -87,7 +99,7 @@ fun SmsThreadDetailScreen(
                                     mainAxisSize = MainAxisSize.MIN,
                                     spacing = LauncherSpacing.ROW_SPACING * 2,
                                     children = uiState.smsMessages.map { msg ->
-                                        buildMessage(msg, theme, onMessagePressed)
+                                        buildMessage(msg, theme, onMessagePressed, onMessageLongPressed)
                                     },
                                 ),
                             ),
@@ -111,6 +123,88 @@ fun SmsThreadDetailScreen(
             }
         },
     )
+    // 长按消息弹出的 Playdate 风格轻量浮层菜单（UI 规范 §10）：
+    // 点击浮层外任意位置即关闭。
+    val menuMessage = uiState.smsMessages
+        .firstOrNull { it.messageId == uiState.smsMessageMenuMessageId }
+    if (!uiState.isSmsMessageMenuVisible || menuMessage == null) {
+        return content
+    }
+    return Stack(
+        children = listOf(
+            content,
+            PositionedFill(
+                child = GestureDetector(
+                    onTap = onMenuDismiss,
+                    child = Container(fillColor = PixelColor.Transparent),
+                ),
+            ),
+            smsMessageActionMenu(
+                message = menuMessage,
+                theme = theme,
+                onCopy = onMenuCopy,
+                onCopyCode = onMenuCopyCode,
+                onResend = onMenuResend,
+                onDelete = onMenuDelete,
+                onDismiss = onMenuDismiss,
+            ),
+        ),
+    )
+}
+
+/** 消息操作浮层：复制 /（有验证码时）复制验证码 /（发送失败时）重发 / 删除。 */
+private fun smsMessageActionMenu(
+    message: SmsMessageEntry,
+    theme: LauncherTheme,
+    onCopy: () -> Unit,
+    onCopyCode: () -> Unit,
+    onResend: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit,
+): Widget {
+    val actionStyle = TextButtonStyle(
+        textStyle = TextStyle(color = theme.button.text),
+        padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
+    )
+    val code = SmsVerificationCodeModel.extract(message.body)
+    return Dialog(
+        title = Text(
+            smsMessageMenuTitle(message),
+            style = TextStyle(color = theme.text.primary),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        ),
+        content = Column(
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.STRETCH,
+            spacing = LauncherSpacing.ROW_SPACING,
+            children = buildList {
+                add(TextButton(text = "COPY", onPressed = onCopy, style = actionStyle))
+                if (code != null) {
+                    add(TextButton(text = "COPY CODE", onPressed = onCopyCode, style = actionStyle))
+                }
+                if (SmsMessageStatusModel.isFailed(message.type)) {
+                    add(TextButton(text = "RESEND", onPressed = onResend, style = actionStyle))
+                }
+                add(TextButton(text = "DELETE", onPressed = onDelete, style = actionStyle))
+                add(TextButton(text = "CANCEL", onPressed = onDismiss, style = actionStyle))
+            },
+        ),
+        fillColor = theme.surface.panel,
+        borderColor = theme.button.border,
+    )
+}
+
+/** 菜单标题：取正文首行压缩空白，超长省略，让用户确认操作对象。 */
+private fun smsMessageMenuTitle(message: SmsMessageEntry): String {
+    val body = message.body.trim().replace(Regex("\\s+"), " ")
+    val maxChars = 18
+    return when {
+        body.isEmpty() -> "MSG"
+        body.length <= maxChars -> body
+        else -> "${body.take(maxChars - 2)}.."
+    }
 }
 
 private fun buildComposeArea(
@@ -172,11 +266,13 @@ private fun buildMessage(
     msg: SmsMessageEntry,
     theme: LauncherTheme,
     onMessagePressed: (Long) -> Unit,
+    onMessageLongPressed: (Long) -> Unit,
 ): Widget {
     val isOutgoing = SmsMessageStatusModel.isOutgoing(msg.type)
     val code = SmsVerificationCodeModel.extract(msg.body)
     return GestureDetector(
         onTap = { onMessagePressed(msg.messageId) },
+        onLongPress = { onMessageLongPressed(msg.messageId) },
         child = Column(
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             mainAxisSize = MainAxisSize.MIN,

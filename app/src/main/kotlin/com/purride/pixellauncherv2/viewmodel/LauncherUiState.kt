@@ -70,6 +70,10 @@ data class LauncherUiState(
     val smsThreadSearchQuery: String = "",
     val smsDraftText: String = "",
     val smsSendStatusText: String = "",
+    /** 详情页消息长按浮层菜单是否可见。 */
+    val isSmsMessageMenuVisible: Boolean = false,
+    /** 浮层菜单对应的消息 id；菜单不可见时为 -1。 */
+    val smsMessageMenuMessageId: Long = -1L,
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
 

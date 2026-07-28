@@ -425,6 +425,12 @@ internal class LauncherRootHost(
             onDraftChanged = callbacks.onDraftChanged,
             onSendDraft = callbacks.onSendDraft,
             onMessagePressed = callbacks.onSmsMessagePressed,
+            onMessageLongPressed = callbacks.onSmsMessageLongPressed,
+            onMenuCopy = callbacks.onSmsMessageMenuCopy,
+            onMenuCopyCode = callbacks.onSmsMessageMenuCopyCode,
+            onMenuResend = callbacks.onSmsMessageMenuResend,
+            onMenuDelete = callbacks.onSmsMessageMenuDelete,
+            onMenuDismiss = callbacks.onSmsMessageMenuDismiss,
         )
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,

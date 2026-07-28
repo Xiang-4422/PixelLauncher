@@ -214,10 +214,74 @@ internal class SmsController(
     }
 
     fun closeThreadDetail() {
+        // 浮层菜单打开时，返回操作只关菜单、不退出会话。
+        if (host.state.isSmsMessageMenuVisible) {
+            messageMenuDismiss()
+            return
+        }
         host.state = LauncherStateTransitions.hideSmsThreadDetail(host.state)
         host.render()
         host.updateTextInputFocus()
     }
+
+    // ── Message long-press menu ───────────────────────────────────────────────
+
+    fun messageLongPressed(messageId: Long) {
+        host.state = LauncherStateTransitions.showSmsMessageMenu(host.state, messageId)
+        host.render()
+    }
+
+    fun messageMenuDismiss() {
+        host.state = LauncherStateTransitions.hideSmsMessageMenu(host.state)
+        host.render()
+    }
+
+    fun messageMenuCopyBody() {
+        val message = menuMessage()
+        messageMenuDismiss()
+        val body = message?.body?.trim().orEmpty()
+        if (body.isBlank()) return
+        if (copyToClipboard(label = "SMS BODY", text = body)) {
+            host.showStatusBarMessage(SMS_STATUS_COPIED_BODY)
+        }
+    }
+
+    fun messageMenuCopyCode() {
+        val message = menuMessage()
+        messageMenuDismiss()
+        val code = message?.body?.let(SmsVerificationCodeModel::extract) ?: return
+        if (copyToClipboard(label = "SMS CODE", text = code)) {
+            host.showStatusBarMessage(SMS_STATUS_COPIED_CODE)
+        }
+    }
+
+    fun messageMenuResend() {
+        val message = menuMessage()
+        messageMenuDismiss()
+        if (message == null || !SmsMessageStatusModel.isFailed(message.type)) return
+        resendMessage(message)
+    }
+
+    fun messageMenuDelete() {
+        val message = menuMessage()
+        messageMenuDismiss()
+        if (message == null) return
+        backgroundExecutor.execute {
+            if (!smsRepository.deleteMessage(message.messageId)) {
+                return@execute
+            }
+            mainHandler.post {
+                if (host.isActive()) {
+                    host.showStatusBarMessage(SMS_STATUS_DELETED)
+                }
+            }
+            refreshSmsData(render = true)
+            host.refreshCommunicationStatus(render = true)
+        }
+    }
+
+    private fun menuMessage(): SmsMessageEntry? =
+        host.state.smsMessages.firstOrNull { it.messageId == host.state.smsMessageMenuMessageId }
 
     fun openUnreadInbox() {
         openModule(initialPage = SmsPageIndex.UNREAD)
@@ -444,16 +508,18 @@ internal class SmsController(
         val code = SmsVerificationCodeModel.extract(message.body)
         val textToCopy = code ?: message.body.trim()
         if (textToCopy.isBlank()) return
-        val clipboard = appContext.getSystemService(ClipboardManager::class.java) ?: return
-        clipboard.setPrimaryClip(
-            ClipData.newPlainText(
-                if (code != null) "SMS CODE" else "SMS BODY",
-                textToCopy,
-            ),
-        )
+        if (!copyToClipboard(label = if (code != null) "SMS CODE" else "SMS BODY", text = textToCopy)) {
+            return
+        }
         // 复制反馈走全局状态栏临时消息：服务号（验证码）会话不渲染输入区，
         // 写 smsSendStatusText 在最高频的验证码复制场景完全不可见。
         host.showStatusBarMessage(if (code != null) SMS_STATUS_COPIED_CODE else SMS_STATUS_COPIED_BODY)
+    }
+
+    private fun copyToClipboard(label: String, text: String): Boolean {
+        val clipboard = appContext.getSystemService(ClipboardManager::class.java) ?: return false
+        clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+        return true
     }
 
     /** 申请默认短信应用角色；若已是默认应用则直接进入会话列表。 */
@@ -681,5 +747,6 @@ internal class SmsController(
         const val SMS_STATUS_FAILED = "FAILED"
         const val SMS_STATUS_COPIED_CODE = "COPIED CODE"
         const val SMS_STATUS_COPIED_BODY = "COPIED MSG"
+        const val SMS_STATUS_DELETED = "DELETED"
     }
 }

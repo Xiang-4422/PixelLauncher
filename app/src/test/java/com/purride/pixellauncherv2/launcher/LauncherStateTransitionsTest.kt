@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -388,6 +389,64 @@ class LauncherStateTransitionsTest {
         assertEquals("old", result.smsThreadSearchQuery)
         assertEquals("", result.smsSendStatusText)
         assertTrue(result.smsMessages.isEmpty())
+    }
+
+    @Test
+    fun showSmsMessageMenu_opensOnlyForMessageInCurrentConversation() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREAD_DETAIL,
+            smsMessages = listOf(
+                SmsMessageEntry(
+                    messageId = 7L,
+                    threadId = 1L,
+                    address = "10086",
+                    body = "BODY",
+                    dateMillis = 1L,
+                    type = 1,
+                    isRead = true,
+                ),
+            ),
+        )
+
+        val shown = LauncherStateTransitions.showSmsMessageMenu(state, messageId = 7L)
+        assertTrue(shown.isSmsMessageMenuVisible)
+        assertEquals(7L, shown.smsMessageMenuMessageId)
+
+        val missing = LauncherStateTransitions.showSmsMessageMenu(state, messageId = 99L)
+        assertFalse(missing.isSmsMessageMenuVisible)
+        assertEquals(-1L, missing.smsMessageMenuMessageId)
+
+        val wrongMode = LauncherStateTransitions.showSmsMessageMenu(
+            state.copy(mode = LauncherMode.SMS_THREADS),
+            messageId = 7L,
+        )
+        assertFalse(wrongMode.isSmsMessageMenuVisible)
+    }
+
+    @Test
+    fun hideSmsMessageMenu_resetsMenuState() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREAD_DETAIL,
+            isSmsMessageMenuVisible = true,
+            smsMessageMenuMessageId = 7L,
+        )
+
+        val result = LauncherStateTransitions.hideSmsMessageMenu(state)
+        assertFalse(result.isSmsMessageMenuVisible)
+        assertEquals(-1L, result.smsMessageMenuMessageId)
+    }
+
+    @Test
+    fun hideSmsThreadDetail_dismissesMessageMenu() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREAD_DETAIL,
+            isSmsMessageMenuVisible = true,
+            smsMessageMenuMessageId = 7L,
+        )
+
+        val result = LauncherStateTransitions.hideSmsThreadDetail(state)
+        assertFalse(result.isSmsMessageMenuVisible)
+        assertEquals(-1L, result.smsMessageMenuMessageId)
     }
 
     @Test

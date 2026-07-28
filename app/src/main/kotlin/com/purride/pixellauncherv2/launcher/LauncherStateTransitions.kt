@@ -304,6 +304,29 @@ object LauncherStateTransitions {
             smsCurrentAddress = address,
             smsMessages = emptyList(),
             smsSendStatusText = "",
+            isSmsMessageMenuVisible = false,
+            smsMessageMenuMessageId = -1L,
+        )
+    }
+
+    /** 打开详情页消息长按浮层菜单；消息不在当前会话时保持关闭。 */
+    fun showSmsMessageMenu(state: LauncherState, messageId: Long): LauncherState {
+        if (state.mode != LauncherMode.SMS_THREAD_DETAIL ||
+            state.smsMessages.none { it.messageId == messageId }
+        ) {
+            return hideSmsMessageMenu(state)
+        }
+        return state.copy(
+            isSmsMessageMenuVisible = true,
+            smsMessageMenuMessageId = messageId,
+        )
+    }
+
+    /** 关闭详情页消息长按浮层菜单。 */
+    fun hideSmsMessageMenu(state: LauncherState): LauncherState {
+        return state.copy(
+            isSmsMessageMenuVisible = false,
+            smsMessageMenuMessageId = -1L,
         )
     }
 
@@ -314,6 +337,8 @@ object LauncherStateTransitions {
             returnMode = LauncherMode.HOME,
             smsDraftText = "",
             smsSendStatusText = "",
+            isSmsMessageMenuVisible = false,
+            smsMessageMenuMessageId = -1L,
         )
     }
 
