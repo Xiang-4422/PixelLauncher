@@ -89,6 +89,11 @@ enum class PixelFontSize(val px: Int) {
 - `OutlinedButton` 的文字与边框之间最小 padding 使用 `EdgeInsets.all(2)`。
 - `TextButton` 默认 padding 为零，需要扩大点击区域时由调用方显式配置。
 - Home、Drawer、Settings 的普通内容统一使用 `LauncherSpacing.CONTENT_HORIZONTAL` 作为页面左右边距。
+- Home 底部操作区与媒体控制区也属于页面内容，左右使用 `CONTENT_HORIZONTAL`，底部使用 `CONTENT_VERTICAL`。
+- Drawer 搜索框的空态光标按交互规则贴屏；hint 与应用名仍使用普通内容边界。
+- Drawer、Home、Settings 和状态栏的左侧边缘文字统一消除首字形 side bearing，以真实墨迹对齐内容边界。
+- Settings 右侧无边框值文字消除末字形 side bearing；有边框控件仍按控件外边界对齐。
+- 状态栏时间锚定左侧内容边界，页面标题锚定右侧内容边界；中间态及按钮内部文字保持自身居中。
 - 普通无边框行使用自然尺寸，不在页面边距之外重复增加行内 padding。
 - 三个主页面的普通行间距统一使用 `LauncherSpacing.ROW_SPACING`。
 - 边框不能贴字，不能只在顶部看起来有 1px 空隙。
@@ -101,7 +106,6 @@ Launcher 页面空间常量集中在 `LauncherSpacing`：
 | `CONTENT_HORIZONTAL` | 2 | 状态栏文字、搜索框以及 Home、Drawer、Settings 正文左右边距 |
 | `CONTENT_VERTICAL` | 2 | Home、Drawer、Settings 正文顶部和底部边距 |
 | `ROW_SPACING` | 2 | 三个主页面普通同级行之间的间距 |
-| `EDGE_ACTION` | 1 | Home 底部 `CALL` / `SMS` 距左右及底部屏幕边缘 |
 | `BORDERED_CONTROL_INSET` | 2 | Settings Switch 等自定义有边框控件的文字内距 |
 
 禁止：

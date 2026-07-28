@@ -18,6 +18,25 @@ import com.purride.pixelui.ValueAdjusterStyle
 import com.purride.pixelui.Widget
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.text.opticallyAlignEndText
+import com.purride.pixellauncherv2.ui.text.opticallyAlignStartText
+
+/** SETTINGS 页面左右两列文字使用的真实字形墨迹边界解析器。 */
+data class SettingsTextEdgeResolvers(
+    /** 返回左列文字首字形的左侧空白像素数。 */
+    val leadingInkInset: (String) -> Int,
+    /** 返回右列文字末字形的右侧空白像素数。 */
+    val trailingInkInset: (String) -> Int,
+) {
+    /** 集中提供无需光学补偿的默认解析器。 */
+    companion object {
+        /** 非 SETTINGS 页面或预览控件使用的零补偿配置。 */
+        val None = SettingsTextEdgeResolvers(
+            leadingInkInset = { 0 },
+            trailingInkInset = { 0 },
+        )
+    }
+}
 
 /** Switch 的 OFF/ON 分段之间保留一条像素缝，不属于页面行间距。 */
 private const val SETTINGS_SWITCH_SEGMENT_GAP_PX = 1
@@ -30,11 +49,12 @@ fun SettingsSegmentedControlRow(
     labels: List<String>,
     selectedIndex: Int,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     onSelected: (Int) -> Unit,
 ): Widget {
     return Container(
         child = settingsInlineRow(
-            title = settingsTitleCell(title = title, theme = theme),
+            title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
             trailing = SegmentedControl(
                 labels = labels,
                 selectedIndex = selectedIndex,
@@ -50,13 +70,14 @@ fun SettingsPixelSizeControl(
     title: String,
     valueLabel: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     onDecrease: (() -> Unit)?,
     onIncrease: (() -> Unit)?,
     key: Any? = null,
 ): Widget {
     return Container(
         child = settingsInlineRow(
-            title = settingsTitleCell(title = title, theme = theme),
+            title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
             trailing = ValueAdjuster(
                 valueText = valueLabel,
                 onDecrease = onDecrease,
@@ -73,6 +94,7 @@ fun SettingsSwitchRow(
     title: String,
     checked: Boolean,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     showLabels: Boolean = true,
     offLabel: String = "OFF",
     onLabel: String = "ON",
@@ -81,7 +103,7 @@ fun SettingsSwitchRow(
     child = settingsInlineRow(
         title = GestureDetector(
             onTap = onToggle,
-            child = settingsTitleCell(title = title, theme = theme),
+            child = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
         ),
         trailing = SettingsSwitch(
             checked = checked,
@@ -100,11 +122,13 @@ fun SettingsSegmentedSwitchRow(
     leftLabel: String,
     rightLabel: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     onToggle: () -> Unit,
 ): Widget = SettingsSwitchRow(
     title = title,
     checked = rightSelected,
     theme = theme,
+    textEdgeResolvers = textEdgeResolvers,
     showLabels = true,
     offLabel = leftLabel,
     onLabel = rightLabel,
@@ -115,17 +139,22 @@ fun SettingsOptionStepperRow(
     title: String,
     valueLabel: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ): Widget = Container(
     child = settingsInlineRow(
         title = GestureDetector(
             onTap = onPrevious,
-            child = settingsTitleCell(title = title, theme = theme),
+            child = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
         ),
         trailing = GestureDetector(
             onTap = onNext,
-            child = settingsValueCell(valueLabel = valueLabel, theme = theme),
+            child = settingsValueCell(
+                valueLabel = valueLabel,
+                theme = theme,
+                textEdgeResolvers = textEdgeResolvers,
+            ),
         ),
     ),
 )
@@ -134,6 +163,7 @@ fun SettingsActionRow(
     title: String,
     valueLabel: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     onPressed: () -> Unit,
     key: Any? = null,
 ): Widget = GestureDetector(
@@ -141,8 +171,12 @@ fun SettingsActionRow(
     key = key,
     child = Container(
         child = settingsInlineRow(
-            title = settingsTitleCell(title = title, theme = theme),
-            trailing = settingsValueCell(valueLabel = valueLabel, theme = theme),
+            title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
+            trailing = settingsValueCell(
+                valueLabel = valueLabel,
+                theme = theme,
+                textEdgeResolvers = textEdgeResolvers,
+            ),
         ),
     ),
 )
@@ -150,6 +184,7 @@ fun SettingsActionRow(
 fun SettingsSectionHeader(
     title: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     topMargin: Int = 0,
 ): Widget = Container(
     margin = EdgeInsets.only(top = topMargin),
@@ -159,12 +194,16 @@ fun SettingsSectionHeader(
         vertical = LauncherSpacing.ROW_SPACING,
     ),
     alignment = Alignment.CENTER_START,
-    child = Text(
-        title,
-        style = TextStyle(color = theme.surface.offPixelColor),
-        overflow = TextOverflow.ELLIPSIS,
-        softWrap = false,
-        maxLines = 1,
+    child = opticallyAlignStartText(
+        text = title,
+        resolveLeadingInkInset = textEdgeResolvers.leadingInkInset,
+        child = Text(
+            title,
+            style = TextStyle(color = theme.surface.offPixelColor),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        ),
     ),
 )
 
@@ -194,28 +233,38 @@ private fun settingsRowCell(
 private fun settingsTitleCell(
     title: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers,
 ): Widget = Container(
     alignment = Alignment.CENTER_START,
-    child = Text(
-        title,
-        style = TextStyle(color = theme.settings.itemTitle),
-        overflow = TextOverflow.ELLIPSIS,
-        softWrap = false,
-        maxLines = 1,
+    child = opticallyAlignStartText(
+        text = title,
+        resolveLeadingInkInset = textEdgeResolvers.leadingInkInset,
+        child = Text(
+            title,
+            style = TextStyle(color = theme.settings.itemTitle),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        ),
     ),
 )
 
 private fun settingsValueCell(
     valueLabel: String,
     theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers,
 ): Widget = Container(
     alignment = Alignment.CENTER_END,
-    child = Text(
-        valueLabel,
-        style = TextStyle(color = theme.settings.itemValue),
-        overflow = TextOverflow.ELLIPSIS,
-        softWrap = false,
-        maxLines = 1,
+    child = opticallyAlignEndText(
+        text = valueLabel,
+        resolveTrailingInkInset = textEdgeResolvers.trailingInkInset,
+        child = Text(
+            valueLabel,
+            style = TextStyle(color = theme.settings.itemValue),
+            overflow = TextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        ),
     ),
 )
 

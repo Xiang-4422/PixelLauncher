@@ -47,4 +47,30 @@ class LauncherSearchHeaderTest {
         assertEquals(LauncherSpacing.CONTENT_HORIZONTAL, rowPadding.left)
         assertEquals(0, rowPadding.right)
     }
+
+    /** 状态栏空间充足时，右侧页面标题段应保持真实测量宽度和两侧 1px 内距。 */
+    @Test
+    fun statusBarPageTagWidth_fittingTitle_preservesMeasuredWidth() {
+        assertEquals(
+            42,
+            statusBarPageTagWidth(
+                statusBarWidth = 160,
+                timeTextWidth = 30,
+                pageTitleTextWidth = 40,
+            ),
+        )
+    }
+
+    /** 长页面标题必须限制在时间段之后的剩余空间内。 */
+    @Test
+    fun statusBarPageTagWidth_longTitle_preservesTimeSegment() {
+        assertEquals(
+            16,
+            statusBarPageTagWidth(
+                statusBarWidth = 50,
+                timeTextWidth = 30,
+                pageTitleTextWidth = 80,
+            ),
+        )
+    }
 }

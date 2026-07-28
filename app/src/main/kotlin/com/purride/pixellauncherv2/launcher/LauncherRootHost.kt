@@ -49,6 +49,7 @@ import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
 import com.purride.pixellauncherv2.ui.widget.LauncherSearchHeader
+import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
 import com.purride.pixellauncherv2.model.DeviceMotionSnapshot
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import kotlin.time.Duration.Companion.milliseconds
@@ -525,11 +526,31 @@ internal class LauncherRootHost(
         onMediaSeek = callbacks.onMediaSeek,
         onNotificationPressed = callbacks.onHomeNotificationPressed,
         onNotificationAction = callbacks.onHomeNotificationAction,
+        resolveLeadingInkInset = { text ->
+            textRasterizers.leadingInkInset(
+                text = text,
+                size = PixelFontCatalog.defaultUiFontSize,
+            )
+        },
     )
 
     private fun buildSettingsPage(): Widget = com.purride.pixellauncherv2.ui.screen.SettingsScreen(
         uiState = uiState,
         theme = theme,
+        textEdgeResolvers = SettingsTextEdgeResolvers(
+            leadingInkInset = { text ->
+                textRasterizers.leadingInkInset(
+                    text = text,
+                    size = PixelFontCatalog.defaultUiFontSize,
+                )
+            },
+            trailingInkInset = { text ->
+                textRasterizers.trailingInkInset(
+                    text = text,
+                    size = PixelFontCatalog.defaultUiFontSize,
+                )
+            },
+        ),
         onItemAction = callbacks.onSettingsItemAction,
     )
 
@@ -554,6 +575,7 @@ internal class LauncherRootHost(
                     isCharging = uiState.isCharging,
                     chargeTick = chargeTick,
                     theme = theme,
+                    statusBarWidth = screenProfile.logicalWidth,
                     statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
                     onChanged = callbacks.onDrawerQueryChanged,
                     onSubmitted = callbacks.onDrawerSubmitSearch,
@@ -582,6 +604,19 @@ internal class LauncherRootHost(
                     isCharging = uiState.isCharging,
                     chargeTick = chargeTick,
                     theme = theme,
+                    statusBarWidth = screenProfile.logicalWidth,
+                    resolveLeadingInkInset = { text ->
+                        textRasterizers.leadingInkInset(
+                            text = text,
+                            size = PixelFontCatalog.defaultUiFontSize,
+                        )
+                    },
+                    measureTextWidth = { text ->
+                        textRasterizers.measureTextWidth(
+                            text = text,
+                            size = PixelFontCatalog.defaultUiFontSize,
+                        )
+                    },
                     statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
                     pageTagVsync = routeTickerProvider,
                     onAction = callbacks.onStatusBarAction,

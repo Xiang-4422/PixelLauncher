@@ -16,6 +16,8 @@ import com.purride.pixelui.advanced.PixelRenderSize
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 
 fun StatusBarBatteryFrame(
+    /** 状态栏内容和电量线共同使用的完整逻辑宽度。 */
+    width: Int,
     contentHeight: Int,
     row: Widget,
     divider: Widget,
@@ -24,6 +26,7 @@ fun StatusBarBatteryFrame(
     return Column(
         children = listOf(
             Container(
+                width = width.coerceAtLeast(1),
                 height = rowHeight,
                 child = row,
             ),

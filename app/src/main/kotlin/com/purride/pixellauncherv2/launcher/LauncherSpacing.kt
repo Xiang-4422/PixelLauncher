@@ -41,14 +41,6 @@ object LauncherSpacing {
     const val SETTINGS_SECTION_GAP = ROW_SPACING * 2
 
     /**
-     * 贴屏命令与屏幕边缘之间的特殊间距。
-     *
-     * 当前仅用于 Home 底部左侧 CALL 和右侧 SMS，使其距离左右及底部边缘 1px。
-     * 该值不能用于普通正文、状态栏文字或带边框控件内部。
-     */
-    const val EDGE_ACTION = 1
-
-    /**
      * Launcher 自定义带边框控件中文字到边框或色块边缘的最小内距。
      *
      * 当前用于 Settings 的 Switch 分段。该值不用于无边框 TextButton，也不应同时在

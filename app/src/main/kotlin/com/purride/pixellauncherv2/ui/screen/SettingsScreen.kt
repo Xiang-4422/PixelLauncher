@@ -27,6 +27,7 @@ import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
+import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -39,11 +40,13 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
  *
  * @param uiState       当前 UI 状态快照（读取设置值 + 已选索引）
  * @param theme         当前颜色主题
+ * @param textEdgeResolvers 设置页左右两列真实字形墨迹边界解析器
  * @param onItemAction  设置项动作回调：(item, direction) → 更新 ViewModel
  */
 class SettingsScreen(
     private val uiState: LauncherUiState,
     private val theme: LauncherTheme,
+    private val textEdgeResolvers: SettingsTextEdgeResolvers,
     private val onItemAction: (SettingsMenuItem, Int) -> Unit,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
@@ -86,6 +89,7 @@ class SettingsScreen(
                     title = "PIXEL",
                     valueLabel = SettingsMenuModel.resolutionLabel(selectedDotSizePx),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onDecrease = { widget.onItemAction(SettingsMenuItem.RESOLUTION, -1) },
                     onIncrease = { widget.onItemAction(SettingsMenuItem.RESOLUTION, +1) },
                 ),
@@ -95,6 +99,7 @@ class SettingsScreen(
                     title = "GAP",
                     checked = isPixelGapEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_GAP, +1) },
                 ),
@@ -104,6 +109,7 @@ class SettingsScreen(
                     title = "STYLE",
                     valueLabel = SettingsMenuModel.styleLabel(selectedPixelShape),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.STYLE, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.STYLE, +1) },
                 ),
@@ -113,6 +119,7 @@ class SettingsScreen(
                     title = "THEME",
                     valueLabel = SettingsMenuModel.themeLabel(selectedTheme),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.THEME, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
                 ),
@@ -123,6 +130,7 @@ class SettingsScreen(
                     title = "STATUS",
                     valueLabel = HomeInfoModel.summary(this@toSettingsWidgets),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.HOME_STATUS, +1) },
                 ),
             )
@@ -132,6 +140,7 @@ class SettingsScreen(
                     title = "ALIGN",
                     valueLabel = SettingsMenuModel.drawerListAlignmentLabel(drawerListAlignment),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.APP_LIST_ALIGNMENT, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.APP_LIST_ALIGNMENT, +1) },
                 ),
@@ -141,6 +150,7 @@ class SettingsScreen(
                     title = "SEARCH",
                     checked = openDrawerInSearchMode,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.DRAWER_AUTO_SEARCH, +1) },
                 ),
@@ -150,6 +160,7 @@ class SettingsScreen(
                     title = "APPS",
                     valueLabel = if (apps.isEmpty()) "EMPTY" else "OPEN",
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.APP_MANAGEMENT, +1) },
                 ),
             )
@@ -159,6 +170,7 @@ class SettingsScreen(
                     title = "IDLE",
                     checked = isIdlePageEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.IDLE_PAGE, +1) },
                 ),
@@ -168,6 +180,7 @@ class SettingsScreen(
                     title = "CHARGE",
                     checked = chargeAutoIdleEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.CHARGE_AUTO_IDLE, +1) },
                 ),
@@ -177,6 +190,7 @@ class SettingsScreen(
                     title = "AUTO",
                     checked = inactivityAutoIdleEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.INACTIVITY_AUTO_IDLE, +1) },
                 ),
@@ -186,6 +200,7 @@ class SettingsScreen(
                     title = "TIMEOUT",
                     valueLabel = SettingsMenuModel.idleTimeoutLabel(idleTimeoutSeconds),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, +1) },
                 ),
@@ -195,6 +210,7 @@ class SettingsScreen(
                     title = "EFFECT",
                     valueLabel = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, +1) },
                 ),
@@ -208,6 +224,7 @@ class SettingsScreen(
                         prioritySourceIds = priorityNotificationSourceIds,
                     ),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.NOTIFICATIONS, +1) },
                 ),
             )
@@ -216,6 +233,7 @@ class SettingsScreen(
                     title = "DATA",
                     valueLabel = DataHealthModel.summary(this@toSettingsWidgets),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.DATA_HEALTH, +1) },
                 ),
             )
@@ -225,6 +243,7 @@ class SettingsScreen(
                     title = "LOADING",
                     valueLabel = "OPEN",
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.LOADING_PREVIEW, +1) },
                 ),
             )
@@ -233,6 +252,7 @@ class SettingsScreen(
                     title = "SHAKE",
                     checked = isPixelMatterEffectEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT, +1) },
                 ),
@@ -242,6 +262,7 @@ class SettingsScreen(
                     title = "MODE",
                     valueLabel = pixelMatterEffectModeLabel(pixelMatterEffectMode),
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE, +1) },
                 ),
             )
@@ -250,6 +271,7 @@ class SettingsScreen(
                     title = "HAND",
                     checked = isPixelMatterHandControlEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL, +1) },
                 ),
@@ -259,6 +281,7 @@ class SettingsScreen(
                     title = "HAND DEBUG",
                     checked = isPixelMatterHandDebugEnabled,
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     showLabels = true,
                     onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG, +1) },
                 ),
@@ -268,6 +291,7 @@ class SettingsScreen(
                     title = "ADVANCED",
                     valueLabel = "OPEN",
                     theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.ADVANCED, +1) },
                 ),
             )
@@ -279,6 +303,7 @@ class SettingsScreen(
                 SettingsSectionHeader(
                     title = SettingsMenuModel.sectionLabel(section),
                     theme = theme,
+                    textEdgeResolvers = widget.textEdgeResolvers,
                     topMargin = topMargin,
                 ),
             )

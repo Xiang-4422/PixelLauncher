@@ -38,7 +38,17 @@ class LauncherTextRasterizers(
      * 前导空格属于应用名内容，不会被当作字体边距消除。
      */
     fun leadingInkInset(text: String, size: PixelFontSize): Int {
-        return entryFor(size).leadingInkResolver.resolve(text)
+        return entryFor(size).inkInsetResolver.resolveLeading(text)
+    }
+
+    /** 返回文本末字形在逻辑前进宽度末端之前的空白像素数，用于右对齐视觉校正。 */
+    fun trailingInkInset(text: String, size: PixelFontSize): Int {
+        return entryFor(size).inkInsetResolver.resolveTrailing(text)
+    }
+
+    /** 返回与实际 Launcher 绘制一致的文字逻辑宽度。 */
+    fun measureTextWidth(text: String, size: PixelFontSize): Int {
+        return entryFor(size).rasterizer.measureText(text)
     }
 
     /** 获取或创建同时服务测量、绘制和视觉边界查询的字号条目。 */
@@ -79,7 +89,7 @@ class LauncherTextRasterizers(
                 style = styleFor(latinPack, zhHansPack),
                 lineSpacing = 1,
             ),
-            leadingInkResolver = GlyphPackLeadingInkResolver(orderedPacks),
+            inkInsetResolver = GlyphPackInkInsetResolver(orderedPacks),
         )
     }
 
@@ -107,12 +117,12 @@ class LauncherTextRasterizers(
         )
     }
 
-    /** 一个字号对应的栅格器及首字形墨迹边界解析器。 */
+    /** 一个字号对应的栅格器及首末字形墨迹边界解析器。 */
     private data class RasterizerEntry(
         /** 供 Host 实际测量和绘制文本使用的栅格器。 */
         val rasterizer: PixelTextRasterizer,
-        /** 供 drawer 左对齐时查询首字形视觉空白的解析器。 */
-        val leadingInkResolver: GlyphPackLeadingInkResolver,
+        /** 供页面边缘文字查询首末字形视觉空白的解析器。 */
+        val inkInsetResolver: GlyphPackInkInsetResolver,
     )
 
     private companion object {
@@ -122,25 +132,36 @@ class LauncherTextRasterizers(
 }
 
 /**
- * 按渲染时的字形包优先级解析首字形左侧墨迹空白。
+ * 按渲染时的字形包优先级解析首末字形的墨迹空白。
  *
  * 解析结果来自打包后的真实像素，而不是按语言或字符宽度猜测，因此能够覆盖 `I`、`M`、
  * 中文及其他 Unicode 字形之间不同的 side bearing。
  */
-internal class GlyphPackLeadingInkResolver(
+internal class GlyphPackInkInsetResolver(
     /** 与 [BitmapGlyphSource] 一致的字形包查找顺序。 */
     private val orderedPacks: List<PixelGlyphPack>,
 ) {
     /** 按完整 Unicode 码点缓存已经扫描出的左侧空白像素数。 */
     private val insetCache = mutableMapOf<Int, Int>()
+    /** 按完整 Unicode 码点缓存已经扫描出的右侧空白像素数。 */
+    private val trailingInsetCache = mutableMapOf<Int, Int>()
 
     /** 返回文本首字形的左侧空白；空文本、前导空白和缺失字形均不补偿。 */
-    fun resolve(text: String): Int {
+    fun resolveLeading(text: String): Int {
         if (text.isEmpty()) return 0
         /** 文本第一个完整 Unicode 标量。 */
         val codePoint = Character.codePointAt(text, 0)
         if (Character.isWhitespace(codePoint) || Character.isISOControl(codePoint)) return 0
         return insetCache.getOrPut(codePoint) { resolveCodePoint(codePoint) }
+    }
+
+    /** 返回文本末字形的右侧空白；空文本、尾随空白和缺失字形均不补偿。 */
+    fun resolveTrailing(text: String): Int {
+        if (text.isEmpty()) return 0
+        /** 文本最后一个完整 Unicode 标量。 */
+        val codePoint = Character.codePointBefore(text, text.length)
+        if (Character.isWhitespace(codePoint) || Character.isISOControl(codePoint)) return 0
+        return trailingInsetCache.getOrPut(codePoint) { resolveTrailingCodePoint(codePoint) }
     }
 
     /** 按实际 fallback 顺序找到字形，并扫描第一列可见墨迹。 */
@@ -149,6 +170,16 @@ internal class GlyphPackLeadingInkResolver(
             /** 当前字形包中与完整码点对应的压缩记录。 */
             val record = pack.glyphs[codePoint] ?: return@forEach
             return leadingInkInset(record = record, cellHeight = pack.manifest.cellHeight)
+        }
+        return 0
+    }
+
+    /** 按实际 fallback 顺序找到末字形，并扫描最后一列可见墨迹。 */
+    private fun resolveTrailingCodePoint(codePoint: Int): Int {
+        orderedPacks.forEach { pack ->
+            /** 当前字形包中与完整码点对应的压缩记录。 */
+            val record = pack.glyphs[codePoint] ?: return@forEach
+            return trailingInkInset(record = record, cellHeight = pack.manifest.cellHeight)
         }
         return 0
     }
@@ -166,6 +197,26 @@ internal class GlyphPackLeadingInkResolver(
                 /** 当前像素在 MSB-first 字节中的位移。 */
                 val bitShift = LAST_BIT_INDEX - (pixelIndex % BITS_PER_BYTE)
                 if (((packedByte shr bitShift) and 1) != 0) return x
+            }
+        }
+        return 0
+    }
+
+    /** 从 MSB-first 压缩位图中计算最后一列墨迹到前进宽度末端的空白。 */
+    private fun trailingInkInset(record: PackedGlyphRecord, cellHeight: Int): Int {
+        /** 防御性复制后的压缩字形像素。 */
+        val packedPixels = record.packedPixels
+        for (x in record.width - 1 downTo 0) {
+            for (y in 0 until cellHeight) {
+                /** 当前二维像素在线性位图中的位置。 */
+                val pixelIndex = (y * record.width) + x
+                /** 当前像素所在压缩字节的无符号值。 */
+                val packedByte = packedPixels[pixelIndex / BITS_PER_BYTE].toInt() and 0xFF
+                /** 当前像素在 MSB-first 字节中的位移。 */
+                val bitShift = LAST_BIT_INDEX - (pixelIndex % BITS_PER_BYTE)
+                if (((packedByte shr bitShift) and 1) != 0) {
+                    return (record.advanceWidth - x - 1).coerceAtLeast(0)
+                }
             }
         }
         return 0

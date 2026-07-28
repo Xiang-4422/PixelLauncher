@@ -43,6 +43,7 @@ import com.purride.pixellauncherv2.launcher.NotificationActionInfo
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.text.opticallyAlignStartText
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -64,6 +65,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * @param onOpenCall     点击 CALL → 打开通话记录
  * @param onOpenSms      点击 SMS → 进入短信模块
  * @param onInfoAction   点击 HOME 信息行
+ * @param resolveLeadingInkInset 查询页面边缘文字首字形的左侧空白像素数
  */
 class HomeScreen(
     private val uiState: LauncherUiState,
@@ -80,6 +82,7 @@ class HomeScreen(
     private val onMediaSeek: (Float) -> Unit,
     private val onNotificationPressed: (String) -> Unit,
     private val onNotificationAction: (String, Int) -> Unit,
+    private val resolveLeadingInkInset: (String) -> Int,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -136,21 +139,9 @@ class HomeScreen(
                     ),
                     Padding(
                         padding = EdgeInsets.only(
-                            left = if (s.mediaPlayback.hasTrack) {
-                                0
-                            } else {
-                                LauncherSpacing.EDGE_ACTION
-                            },
-                            right = if (s.mediaPlayback.hasTrack) {
-                                0
-                            } else {
-                                LauncherSpacing.EDGE_ACTION
-                            },
-                            bottom = if (s.mediaPlayback.hasTrack) {
-                                0
-                            } else {
-                                LauncherSpacing.EDGE_ACTION
-                            },
+                            left = LauncherSpacing.CONTENT_HORIZONTAL,
+                            right = LauncherSpacing.CONTENT_HORIZONTAL,
+                            bottom = LauncherSpacing.CONTENT_VERTICAL,
                         ),
                         child = buildBottomBar(s, t),
                     ),
@@ -161,11 +152,8 @@ class HomeScreen(
         private fun buildBottomBar(s: LauncherUiState, t: LauncherTheme): Widget {
             val media = s.mediaPlayback
             val canScrub = media.hasTrack
-            val horizontalInset = if (media.hasTrack) {
-                0
-            } else {
-                LauncherSpacing.EDGE_ACTION
-            }
+            /** HOME 底栏与三个主页面的普通内容共用水平页面边距。 */
+            val horizontalInset = LauncherSpacing.CONTENT_HORIZONTAL
             val barWidth = (widget.screenWidthPx - horizontalInset * 2).coerceAtLeast(1)
             val showProgress = isScrubbingMedia && canScrub
             fun startScrub() {
@@ -324,12 +312,10 @@ class HomeScreen(
             buildList {
                 // Date row (primary color)
                 add(
-                    Text(
-                        s.currentDateText.ifBlank { "--- --- --" },
-                        style = TextStyle(color = t.text.primary),
-                        overflow = TextOverflow.ELLIPSIS,
-                        softWrap = false,
-                        maxLines = 1,
+                    homeEdgeText(
+                        text = s.currentDateText.ifBlank { "--- --- --" },
+                        theme = t,
+                        resolveLeadingInkInset = widget.resolveLeadingInkInset,
                     ),
                 )
                 add(
@@ -338,6 +324,7 @@ class HomeScreen(
                         theme = t,
                         onAction = widget.onInfoAction,
                         onDetail = widget.onInfoDetail,
+                        resolveLeadingInkInset = widget.resolveLeadingInkInset,
                     ),
                 )
                 HomeInfoModel.lines(s).forEach { line ->
@@ -347,6 +334,7 @@ class HomeScreen(
                             theme = t,
                             onAction = widget.onInfoAction,
                             onDetail = widget.onInfoDetail,
+                            resolveLeadingInkInset = widget.resolveLeadingInkInset,
                         ),
                     )
                 }
@@ -361,13 +349,13 @@ private fun HomeInfoRow(
     theme: LauncherTheme,
     onAction: (HomeInfoAction) -> Unit,
     onDetail: (HomeInfoAction) -> Unit,
+    resolveLeadingInkInset: (String) -> Int,
 ): Widget {
-    val text = Text(
-        line.text,
-        style = TextStyle(color = theme.text.primary),
-        overflow = TextOverflow.ELLIPSIS,
-        softWrap = false,
-        maxLines = 1,
+    /** 与 Drawer 左对齐应用名共用真实字形墨迹边界的 HOME 信息文字。 */
+    val text = homeEdgeText(
+        text = line.text,
+        theme = theme,
+        resolveLeadingInkInset = resolveLeadingInkInset,
     )
     val action = line.action ?: return text
     return Semantics(
@@ -386,6 +374,26 @@ private fun HomeInfoRow(
         ),
     )
 }
+
+/** 构建锚定 HOME 左侧页面边界的单行文字。 */
+private fun homeEdgeText(
+    /** 实际显示并用于解析首字形的文字。 */
+    text: String,
+    /** 提供 HOME 主文字颜色的主题。 */
+    theme: LauncherTheme,
+    /** 返回首字形左侧空白像素数的解析函数。 */
+    resolveLeadingInkInset: (String) -> Int,
+): Widget = opticallyAlignStartText(
+    text = text,
+    resolveLeadingInkInset = resolveLeadingInkInset,
+    child = Text(
+        text,
+        style = TextStyle(color = theme.text.primary),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    ),
+)
 
 private fun HomeNotificationPanel(
     notifications: List<NotificationSignal>,

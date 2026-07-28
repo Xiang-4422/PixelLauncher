@@ -22,9 +22,7 @@ import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Stack
-import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
-import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
@@ -32,6 +30,7 @@ import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.DrawerListGeometry
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.ui.text.opticallyAlignStartText
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -178,16 +177,11 @@ private fun drawerListItem(
     )
     /** 左对齐时消除首字形自带的空白列，使中英文的真实墨迹起点一致。 */
     val visuallyAlignedLabel = if (alignment == DrawerListAlignment.LEFT) {
-        /** 从当前实际字形包解析出的非负左侧空白像素数。 */
-        val leadingInkInset = resolveLeadingInkInset(label).coerceAtLeast(0)
-        if (leadingInkInset > 0) {
-            Transform.translate(
-                offset = IntOffset(x = -leadingInkInset, y = 0),
-                child = labelText,
-            )
-        } else {
-            labelText
-        }
+        opticallyAlignStartText(
+            text = label,
+            resolveLeadingInkInset = resolveLeadingInkInset,
+            child = labelText,
+        )
     } else {
         labelText
     }

@@ -64,7 +64,7 @@ class UiSpecStaticTest {
             } else {
                 null
             },
-            if (!spacingSource.contains("const val EDGE_ACTION = 1")) "EDGE_ACTION must be 1" else null,
+            if (spacingSource.contains("EDGE_ACTION")) "main pages must not define a separate edge-action spacing" else null,
             if (!spacingSource.contains("const val BORDERED_CONTROL_INSET = 2")) {
                 "BORDERED_CONTROL_INSET must be 2"
             } else {
@@ -90,9 +90,12 @@ class UiSpecStaticTest {
                 null
             },
             if (!settingsSource.contains("horizontal = LauncherSpacing.CONTENT_HORIZONTAL") ||
-                controlsSource.contains("settingsRowPadding")
+                controlsSource.contains("settingsRowPadding") ||
+                !settingsSource.contains("SettingsTextEdgeResolvers") ||
+                !controlsSource.contains("opticallyAlignStartText(") ||
+                !controlsSource.contains("opticallyAlignEndText(")
             ) {
-                "Settings must use page padding without duplicate row padding"
+                "Settings must use shared page padding and glyph-ink alignment without duplicate row padding"
             } else {
                 null
             },
@@ -399,14 +402,17 @@ class UiSpecStaticTest {
         )
         assertTrue(
             "Home information rows must use primary text consistently.",
-            source.contains("style = TextStyle(color = t.text.primary)") &&
-                source.contains("style = TextStyle(color = theme.text.primary)") &&
+            source.contains("style = TextStyle(color = theme.text.primary)") &&
                 !source.contains("style = TextStyle(color = theme.text.secondary)"),
+        )
+        assertTrue(
+            "Home edge text must reuse the Drawer glyph-ink alignment helper.",
+            source.contains("homeEdgeText(") && source.contains("opticallyAlignStartText("),
         )
     }
 
     @Test
-    fun screenEdgeStatusAndHomeActionsUseTheirSemanticSpacingTokens() {
+    fun mainPageContentUsesSharedScreenInsets() {
         val moduleRoot = resolveModuleRoot()
         val headerLayoutSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherHeaderLayout.kt")
@@ -423,19 +429,19 @@ class UiSpecStaticTest {
 
         assertTrue(
             "Status bar time and page title must use the shared 2px content edge.",
-            headerLayoutSource.contains("horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL"),
+            headerLayoutSource.contains("horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL") &&
+                headerSource.contains("resolveLeadingInkInset") &&
+                headerSource.contains("mainAxisSize = MainAxisSize.MAX") &&
+                headerSource.contains("opticallyAlignStartText("),
         )
         assertTrue(
-            "Home media controls must fill the horizontal and bottom edges while normal actions keep the 1px edge spacing.",
-            homeSource.contains("left = if (s.mediaPlayback.hasTrack) {") &&
-                homeSource.contains("0") &&
-                homeSource.contains("LauncherSpacing.EDGE_ACTION") &&
-                homeSource.contains("right = if (s.mediaPlayback.hasTrack) {") &&
-                homeSource.contains("bottom = if (s.mediaPlayback.hasTrack) {") &&
-                homeSource.contains("val horizontalInset = if (media.hasTrack)") &&
-                homeSource.contains("0\n            } else {\n                LauncherSpacing.EDGE_ACTION") &&
+            "Home bottom actions and media controls must use the same page edge as Settings and Drawer.",
+            homeSource.contains("left = LauncherSpacing.CONTENT_HORIZONTAL") &&
+                homeSource.contains("right = LauncherSpacing.CONTENT_HORIZONTAL") &&
+                homeSource.contains("bottom = LauncherSpacing.CONTENT_VERTICAL") &&
+                homeSource.contains("val horizontalInset = LauncherSpacing.CONTENT_HORIZONTAL") &&
                 homeSource.contains("val barWidth = (widget.screenWidthPx - horizontalInset * 2).coerceAtLeast(1)") &&
-                !homeSource.contains("if (s.mediaPlayback.hasTrack) 0 else LauncherSpacing.EDGE_ACTION"),
+                !homeSource.contains("LauncherSpacing.EDGE_ACTION"),
         )
         assertTrue(
             "Home actions must use the engine TextButton instead of a local button wrapper.",
