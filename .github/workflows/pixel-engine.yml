@@ -158,13 +158,7 @@ jobs:
           script: |
             rm -rf pixel-engine/build/outputs/androidTest-results pixel-engine/build/reports/androidTests pixel-engine/build/outputs/connected_android_test_additional_output
             # device_api 保存已观察 SDK；attempt 最多重试 12 次，避免尚未就绪的设备进入 ddmlib。
-            device_api=""
-            for attempt in $(seq 1 12); do
-              device_api="$(adb -s emulator-5554 shell getprop ro.build.version.sdk | tr -d '\r')"
-              [ "$device_api" = "29" ] && break
-              sleep 5
-            done
-            [ "$device_api" = "29" ] || { echo "Expected emulator API 29, got: $device_api" >&2; exit 1; }
+            device_api=""; for attempt in $(seq 1 12); do device_api="$(adb -s emulator-5554 shell getprop ro.build.version.sdk | tr -d '\r')"; [ "$device_api" = "29" ] && break; sleep 5; done; [ "$device_api" = "29" ] || { echo "Expected emulator API 29, got: $device_api" >&2; exit 1; }
             ANDROID_SERIAL=emulator-5554 ./gradlew :pixel-engine:connectedDebugAndroidTest --no-build-cache --no-daemon
       - name: Upload instrumentation XML golden diffs and traces
         if: always()

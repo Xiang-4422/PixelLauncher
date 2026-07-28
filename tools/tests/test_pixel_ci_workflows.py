@@ -114,6 +114,16 @@ class PixelCiWorkflowContractTest(unittest.TestCase):
         self.assertIn("bash tools/pixel-ci-required-check.sh", NIGHTLY_WORKFLOW)
         self.assertNotIn("continue-on-error", NIGHTLY_WORKFLOW)
 
+    def test_emulator_readiness_retry_stays_on_one_action_script_line(self) -> None:
+        """emulator-runner 会逐行执行 script，SDK 重试循环必须保持为单条 shell 命令。"""
+
+        # 单行前缀同时冻结 required 与 nightly 的 runner 兼容写法。
+        retry_prefix = 'device_api=""; for attempt in $(seq 1 12); do'
+        self.assertIn(retry_prefix, REQUIRED_WORKFLOW)
+        self.assertIn(retry_prefix, NIGHTLY_WORKFLOW)
+        self.assertNotIn("\n            for attempt in $(seq 1 12); do", REQUIRED_WORKFLOW)
+        self.assertNotIn("\n            for attempt in $(seq 1 12); do", NIGHTLY_WORKFLOW)
+
     def test_documentation_workflow_deploys_only_from_release_tags(self) -> None:
         """Pages 只能从公开 Release 或手动指定的既有 SemVer tag 严格构建。"""
 
