@@ -609,6 +609,12 @@ internal class LauncherRootHost(
         onAppMenuEdit = callbacks.onDrawerAppMenuEdit,
         onAppMenuRefresh = callbacks.onDrawerAppMenuRefresh,
         onAppMenuDismiss = callbacks.onDrawerAppMenuDismiss,
+        resolveLabelLeadingInkInset = { label ->
+            textRasterizers.leadingInkInset(
+                text = label,
+                size = PixelFontCatalog.defaultUiFontSize,
+            )
+        },
     )
 
     // ── Sync helpers ──────────────────────────────────────────────────────────

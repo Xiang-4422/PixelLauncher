@@ -22,7 +22,9 @@ import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Stack
+import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
+import com.purride.pixelui.animation.IntOffset
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListState
 import com.purride.pixellauncherv2.launcher.AppEntry
@@ -46,6 +48,7 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
  * @param listController host 持有的列表滚动控制器
  * @param onAppPressed   点击某行应用（按可见列表下标）
  * @param onAppLongPressed 长按某行应用（按可见列表下标）
+ * @param resolveLabelLeadingInkInset 查询应用名首字形的左侧空白像素数
  */
 fun DrawerScreen(
     uiState: LauncherUiState,
@@ -58,6 +61,7 @@ fun DrawerScreen(
     onAppMenuEdit: () -> Unit,
     onAppMenuRefresh: () -> Unit,
     onAppMenuDismiss: () -> Unit,
+    resolveLabelLeadingInkInset: (String) -> Int,
 ): Widget {
     val apps = drawerApps(uiState)
     val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.defaultUiFontSize.px)
@@ -89,6 +93,7 @@ fun DrawerScreen(
                                     rowHeight = rowHeight,
                                     alignment = uiState.drawerListAlignment,
                                     theme = theme,
+                                    resolveLeadingInkInset = resolveLabelLeadingInkInset,
                                     onTap = app?.let { { onAppPressed(index) } },
                                     onLongPress = app?.let { { onAppLongPressed(index) } },
                                 )
@@ -159,9 +164,33 @@ private fun drawerListItem(
     rowHeight: Int,
     alignment: DrawerListAlignment,
     theme: LauncherTheme,
+    resolveLeadingInkInset: (String) -> Int,
     onTap: (() -> Unit)?,
     onLongPress: (() -> Unit)?,
 ): Widget {
+    /** 使用逻辑宽度参与省略和布局的原始应用名文本。 */
+    val labelText = Text(
+        label,
+        style = TextStyle(color = if (enabled) theme.drawer.itemText else theme.drawer.itemTextMuted),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
+    )
+    /** 左对齐时消除首字形自带的空白列，使中英文的真实墨迹起点一致。 */
+    val visuallyAlignedLabel = if (alignment == DrawerListAlignment.LEFT) {
+        /** 从当前实际字形包解析出的非负左侧空白像素数。 */
+        val leadingInkInset = resolveLeadingInkInset(label).coerceAtLeast(0)
+        if (leadingInkInset > 0) {
+            Transform.translate(
+                offset = IntOffset(x = -leadingInkInset, y = 0),
+                child = labelText,
+            )
+        } else {
+            labelText
+        }
+    } else {
+        labelText
+    }
     val item = Row(
         mainAxisSize = MainAxisSize.MAX,
         crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -176,13 +205,7 @@ private fun drawerListItem(
                         DrawerListAlignment.CENTER -> Alignment.CENTER
                         DrawerListAlignment.RIGHT -> Alignment.CENTER_END
                     },
-                    child = Text(
-                        label,
-                        style = TextStyle(color = if (enabled) theme.drawer.itemText else theme.drawer.itemTextMuted),
-                        overflow = TextOverflow.ELLIPSIS,
-                        softWrap = false,
-                        maxLines = 1,
-                    ),
+                    child = visuallyAlignedLabel,
                 ),
             ),
         ),
