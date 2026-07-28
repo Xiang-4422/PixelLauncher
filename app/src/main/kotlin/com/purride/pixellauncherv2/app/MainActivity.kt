@@ -188,6 +188,9 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(intent, smsRoleRequestCode)
         }
 
+        override fun showStatusBarMessage(message: String) =
+            this@MainActivity.showStatusBarMessage(message)
+
     }
 
     private val clockTicker = object : Runnable {

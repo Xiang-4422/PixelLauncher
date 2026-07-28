@@ -68,6 +68,9 @@ internal class SmsController(
         /** 发起默认短信应用角色申请。 */
         fun startSmsRoleRequest(intent: Intent)
 
+        /** 全局状态栏临时消息（自动消失），用于承载页面级一次性提示。 */
+        fun showStatusBarMessage(message: String)
+
     }
 
     // 短信仓库由外部注入（禁止在此内部 new），构造边界见 AppContainer / AndroidComponentDependencies。
@@ -425,11 +428,9 @@ internal class SmsController(
                 textToCopy,
             ),
         )
-        host.state = LauncherStateTransitions.updateSmsSendStatusText(
-            state = host.state,
-            smsSendStatusText = if (code != null) SMS_STATUS_COPIED_CODE else SMS_STATUS_COPIED_BODY,
-        )
-        host.render()
+        // 复制反馈走全局状态栏临时消息：服务号（验证码）会话不渲染输入区，
+        // 写 smsSendStatusText 在最高频的验证码复制场景完全不可见。
+        host.showStatusBarMessage(if (code != null) SMS_STATUS_COPIED_CODE else SMS_STATUS_COPIED_BODY)
     }
 
     /** 申请默认短信应用角色；若已是默认应用则直接进入会话列表。 */
